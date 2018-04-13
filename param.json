@@ -1,0 +1,40 @@
+{    
+    "numb_iter":	100,
+    "fp_style":		"vasp",
+    "fp_command":	"vasp",
+    "fp_files":		["POTCAR"],
+    "fp_params":	{
+	"kpoints":	[11,11,11],
+	"ecut":		600,
+	"_comment":	" that's all "
+    },
+
+    "_comment":		" 00.train ",
+    "numb_models":	4,
+    "init_data_sys":	["/home/wanghan/study/deep.md/results.01/data//al.ldy/10-300-900/"],
+    "deepmd_path":	"/home/wanghan/study/deep.md/deep.pot/source/build.5/tmp",
+    "train_nthreads":	1,
+
+    "_comment":		" 01.model_devi ",
+    "model_devi_jobs":	{
+	"ensemble":	"nvt",
+	"trj_freq":	20,
+	"nsteps":	2000,
+	"job_0":	{
+	    "systems":	[["/home/wanghan/study/deep.md/results.01/test.model_devi/poscars/3?/POSCAR"]],
+	    "mass_map":	[27.0],
+	    "temps":	[600, 900],
+	    "press":	[1.0],
+	    "trj_freq":	10,
+	    "nsteps":	100,
+	    "ensemble":	"nvt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" that's all "
+    },
+    "lmp_path":		"/home/wanghan/Soft/lammps/lammps-16Mar18/src/",
+    "model_devi_np":	1,
+    "model_devi_trust":	0.04,
+
+    "_comment":		" that's all "
+}
