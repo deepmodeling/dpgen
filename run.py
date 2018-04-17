@@ -16,6 +16,7 @@ import glob
 import json
 import random
 import logging
+import warnings
 import numpy as np
 from lib.utils import make_iter_name
 from lib.utils import create_path
@@ -24,6 +25,8 @@ from lib.utils import replace
 from lib.utils import cmd_append_log
 from lib.lammps import cvt_lammps_conf
 from lib.lammps import make_lammps_input
+from lib.vasp import make_vasp_incar
+from lib.vasp import make_vasp_kpoints
 import lib.MachineLocal as MachineLocal
 import lib.MachineSlurm as MachineSlurm
 from lib.machine_exec import exec_hosts
@@ -35,9 +38,12 @@ train_task_fmt = '%03d'
 train_files = ['input.json']
 train_param = 'input.json'
 train_tmpl_path = os.path.join(template_name, train_name)
+data_system_fmt = '%03d'
 model_devi_name = '01.model_devi'
-model_devi_task_fmt = '%03d.%06d'
-model_devi_conf_fmt = '%03d.%04d'
+model_devi_task_fmt = data_system_fmt + '.%06d'
+model_devi_conf_fmt = data_system_fmt + '.%04d'
+fp_name = '02.fp'
+fp_task_fmt = data_system_fmt + '.%06d'
 
 def get_job_names(jdata) :
     jobkeys = []
@@ -53,6 +59,8 @@ def make_model_devi_task_name (sys_idx, task_idx) :
 def make_model_devi_conf_name (sys_idx, conf_idx) :
     return model_devi_conf_fmt % (sys_idx, conf_idx)
 
+def make_fp_task_name(sys_idx, counter) : 
+    return 'task.' + fp_task_fmt % (sys_idx, counter)
 
 def make_train (iter_index, 
                jdata) :    
@@ -244,22 +252,76 @@ def post_model_devi (iter_index,
 
     exec_hosts (MachineLocal, command, 1, all_task)
 
-    # for ii in all_task :
-    #     task_path = ii
-    #     model_devi = np.loadtxt(os.path.join(task_path, "model_devi.out"))
-    #     all_idx = model_devi[:,0]
-    #     # all_idx = all_idx.astype(int)
-    #     all_idx = all_idx.astype(int)
-    #     sel_idx = []
-    #     sel = model_devi[:,1] > model_devi_trust
-    #     for kk in range(len(sel)) :
-    #         if sel[kk]:
-    #             sel_idx.append(all_idx[kk])
-    #     print(sel)
-    #     print(model_devi)
-    #     print(all_idx)
-    #     print (sel_idx)
-    #     exit(0)
+def make_vasp_fp (iter_index, 
+                  jdata) :
+    fp_params = jdata['fp_params']
+    kpoints = fp_params['kpoints']
+    ecut = fp_params['ecut']
+    ediff = fp_params['ediff']
+    npar = fp_params['npar']
+    kpar = fp_params['kpar']
+
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    create_path(work_path)
+    modd_path = os.path.join(iter_name, model_devi_name)
+    modd_task = glob.glob(os.path.join(modd_path, "task.*"))
+    system_index = []
+    for ii in modd_task :        
+        system_index.append(os.path.basename(ii).split('.')[1])
+    system_index.sort()
+    set_tmp = set(system_index)
+    system_index = list(set_tmp)
+
+    fp_tasks = []
+    for ss in system_index :
+        modd_system_glob = os.path.join(modd_path, 'task.' + ss + '.*')
+        modd_system_task = glob.glob(modd_system_glob)
+        modd_system_task.sort()
+        cc = 0
+        for tt in modd_system_task :
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                sel_conf = np.loadtxt(os.path.join(tt, 'sel.out'))
+                sel_conf = np.reshape(sel_conf, [-1,2])
+                if sel_conf.shape[0] == 0:
+                    continue
+                sel_conf = sel_conf[:,0]
+                sel_conf = sel_conf.astype(int)
+                for ii in sel_conf :
+                    conf_name = os.path.join(tt, "traj")
+                    conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
+                    conf_name = os.path.abspath(conf_name)
+                    fp_task_name = make_fp_task_name(int(ss), cc)
+                    fp_task_path = os.path.join(work_path, fp_task_name)
+                    create_path(fp_task_path)
+                    fp_tasks.append(fp_task_path)
+                    cwd = os.getcwd()
+                    os.chdir(fp_task_path)
+                    os.symlink(os.path.relpath(conf_name), 'conf.lmp')
+                    incar = make_vasp_incar(ecut, ediff, npar, kpar)
+                    with open('INCAR', 'w') as fp:
+                        fp.write(incar)
+                    kpt = make_vasp_kpoints(kpoints)
+                    with open('KPOINTS', 'w') as fp:
+                        fp.write(kpt)
+                    os.chdir(cwd)
+                    cc += 1
+
+    command = os.path.join(os.getcwd(), "lib/ovito_file_convert.py")
+    command += " conf.lmp POSCAR"
+    exec_hosts(MachineLocal, command, 1, fp_tasks)
+
+
+def make_fp (iter_index,
+             jdata) :
+    fp_style = jdata['fp_style']
+
+    if fp_style == "vasp" :
+        make_vasp_fp(iter_index, jdata) 
+    else :
+        raise RuntimeError ("unsupported fp style")
+
     
 def run_iter (json_file, exec_machine) :
     prev_model = init_model
@@ -338,4 +400,5 @@ if __name__ == '__main__':
     logging.basicConfig (level=logging.INFO, format='%(asctime)s %(message)s')
     # make_model_devi(0, jdata, None)
     # run_model_devi(0, jdata, MachineLocal)
-    post_model_devi(0, jdata)
+    # post_model_devi(0, jdata)
+    make_fp(0, jdata)
