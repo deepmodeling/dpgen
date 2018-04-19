@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
-import os, shutil
+import os, shutil, logging
 
 iter_format = "%06d"
+task_format = "%02d"
+log_iter_head = "iter " + iter_format + " task " + task_format + ": "
 
 def make_iter_name (iter_index) :
     return "iter." + (iter_format % iter_index)
@@ -42,3 +44,20 @@ def cmd_append_log (cmd,
     ret = ret + " 1> " + log_file
     ret = ret + " 2> " + log_file
     return ret
+
+def log_iter (task, ii, jj) :
+    logging.info ((log_iter_head + "%s") % (ii, jj, task))
+
+def repeat_to_length(string_to_expand, length):
+    ret = ""
+    for ii in range (length) : 
+        ret += string_to_expand
+    return ret
+
+def log_task (message) :
+    header = repeat_to_length (" ", len(log_iter_head % (0, 0)))
+    logging.info (header + message)
+
+def record_iter (record, ii, jj) :
+    with open (record, "a") as frec :
+        frec.write ("%d %d\n" % (ii, jj)) 

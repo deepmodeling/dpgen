@@ -17,18 +17,24 @@ import json
 import random
 import logging
 import warnings
+import shutil
 import numpy as np
+import subprocess as sp
 from lib.utils import make_iter_name
 from lib.utils import create_path
 from lib.utils import copy_file_list
 from lib.utils import replace
 from lib.utils import cmd_append_log
+from lib.utils import log_iter
+from lib.utils import record_iter
+from lib.utils import log_task
 from lib.lammps import cvt_lammps_conf
 from lib.lammps import make_lammps_input
 from lib.vasp import make_vasp_incar
 from lib.vasp import make_vasp_kpoints
 import lib.MachineLocal as MachineLocal
 import lib.MachineSlurm as MachineSlurm
+import lib.MachinePBS as MachinePBS
 from lib.machine_exec import exec_hosts
 from lib.machine_exec import exec_hosts_batch
 
@@ -65,11 +71,26 @@ def make_fp_task_name(sys_idx, counter) :
 def make_train (iter_index, 
                jdata) :    
     # load json param
+    stop_batch = jdata['stop_batch']
+    start_lr = jdata['start_lr']
+    decay_steps = jdata['decay_steps']
+    decay_rate = jdata['decay_rate']
+    if iter_index > 0 :
+        stop_batch = jdata['res_stop_batch']
+        start_lr = jdata['res_start_lr']
+        decay_steps = jdata['res_decay_steps']
+        decay_rate = jdata['res_decay_rate']
     numb_models = jdata['numb_models']
     init_data_sys_ = jdata['init_data_sys']    
     init_data_sys = []
     for ii in init_data_sys_ :
         init_data_sys.append(os.path.abspath(ii))
+    if iter_index > 0 :
+        for ii in range(iter_index) :
+            fp_path = os.path.join(make_iter_name(ii), fp_name)
+            fp_data_sys = glob.glob(os.path.join(fp_path, "data.*"))
+            for jj in fp_data_sys :
+                init_data_sys.append(os.path.abspath(jj))
     for ii in init_data_sys :
         if not os.path.isdir(ii) :
             raise RuntimeError ("data sys %s does not exists" % ii)
@@ -85,8 +106,30 @@ def make_train (iter_index,
         task_path = os.path.join(work_path, train_task_fmt % ii)
         create_path(task_path)
         jinput['seed'] = random.randrange(sys.maxsize)
+        jinput['stop_batch'] = stop_batch
+        jinput['start_lr'] = start_lr
+        jinput['decay_steps'] = decay_steps
+        jinput['decay_rate'] = decay_rate
         with open(os.path.join(task_path, train_param), 'w') as outfile:
             json.dump(jinput, outfile, indent = 4)
+    # link old models
+    if iter_index > 0 :
+        prev_iter_name = make_iter_name(iter_index-1)
+        prev_work_path = os.path.join(prev_iter_name, train_name)
+        for ii in range(numb_models) :
+            prev_task_path =  os.path.join(prev_work_path, train_task_fmt%ii)
+            old_model_files = glob.glob(
+                os.path.join(prev_task_path, "model.ckpt*"))
+            task_path = os.path.join(work_path, train_task_fmt % ii)
+            task_old_path = os.path.join(task_path, 'old')
+            create_path(task_old_path)
+            cwd = os.getcwd()
+            for jj in old_model_files:
+                absjj = os.path.abspath(jj)
+                basejj = os.path.basename(jj)
+                os.chdir(task_old_path)
+                os.symlink(os.path.relpath(absjj), basejj)
+                os.chdir(cwd)            
 
 def run_train (iter_index,
                jdata, 
@@ -104,6 +147,8 @@ def run_train (iter_index,
         task_path = os.path.join(work_path, train_task_fmt % ii)
         all_task.append(task_path)
     command = os.path.join(deepmd_path, 'bin/dp_train') + ' ' + train_param
+    if iter_index > 0:
+        command += ' --init-model old/model.ckpt '
     command = cmd_append_log (command, 'train.log')
     # train models
     exec_hosts_batch(exec_machine, command, train_nthreads, all_task, None)
@@ -128,12 +173,12 @@ def post_train (iter_index,
     for ii in range(numb_models) :
         task_file = os.path.join(train_task_fmt % ii, 'frozen_model.pb')
         ofile = os.path.join(work_path, 'graph.%03d.pb' % ii)
-        os.remove(ofile)
-        os.symlink(task_file, ofile)
+        if os.path.isfile(ofile) :
+            os.remove(ofile)
+        os.symlink(task_file, ofile)    
 
 def make_model_devi (iter_index, 
-                     jdata, 
-                     FPMananger) :
+                     jdata) :
     model_devi_jobs = jdata['model_devi_jobs']
     ensemble = model_devi_jobs['ensemble']
     nsteps = model_devi_jobs['nsteps']
@@ -252,9 +297,10 @@ def post_model_devi (iter_index,
 
     exec_hosts (MachineLocal, command, 1, all_task)
 
-def make_vasp_fp (iter_index, 
+def make_fp_vasp (iter_index, 
                   jdata) :
     fp_params = jdata['fp_params']
+    fp_link_files = jdata['fp_link_files']
     kpoints = fp_params['kpoints']
     ecut = fp_params['ecut']
     ediff = fp_params['ediff']
@@ -305,6 +351,8 @@ def make_vasp_fp (iter_index,
                     kpt = make_vasp_kpoints(kpoints)
                     with open('KPOINTS', 'w') as fp:
                         fp.write(kpt)
+                    for pair in fp_link_files :
+                        os.symlink(pair[0], pair[1])
                     os.chdir(cwd)
                     cc += 1
 
@@ -318,17 +366,108 @@ def make_fp (iter_index,
     fp_style = jdata['fp_style']
 
     if fp_style == "vasp" :
-        make_vasp_fp(iter_index, jdata) 
+        make_fp_vasp(iter_index, jdata) 
     else :
         raise RuntimeError ("unsupported fp style")
 
+def run_fp_vasp (iter_index,
+                 jdata,
+                 exec_machine) :
+    fp_command = jdata['fp_command']
+    fp_np = jdata['fp_np']
+    fp_command = ("OMP_NUM_THREADS=1 mpirun -n %d " % fp_np) + fp_command
+    fp_command = cmd_append_log(fp_command, "vasp.log")
+
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+
+    fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
+
+    exec_hosts_batch(exec_machine, fp_command, fp_np, fp_tasks)
+        
+def run_fp (iter_index,
+            jdata,
+            exec_machine) :
+    fp_style = jdata['fp_style']
+
+    if fp_style == "vasp" :
+        run_fp_vasp(iter_index, jdata, exec_machine) 
+    else :
+        raise RuntimeError ("unsupported fp style")    
+
+
+def post_fp_vasp (iter_index,
+                  jdata):
+    model_devi_jobs = jdata['model_devi_jobs']
+    job_names = get_job_names (model_devi_jobs)
+    assert (iter_index < len(job_names)) 
+    cur_job_name = job_names[iter_index]    
+    cur_job = model_devi_jobs[cur_job_name]
+    ncopies = cur_job['ncopies']
+
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
+    fp_tasks.sort()
+
+    system_index = []
+    for ii in fp_tasks :        
+        system_index.append(os.path.basename(ii).split('.')[1])
+    system_index.sort()
+    set_tmp = set(system_index)
+    system_index = list(set_tmp)
+    system_index.sort()
+
+    to_config = 'template/tools.vasp/cessp2force_lin.py'
+    to_config = os.path.abspath(to_config)
+    cmd_to_config = to_config + " OUTCAR "
+    cmd_to_config = cmd_append_log(cmd_to_config, "to_config.log")
+    exec_hosts(MachineLocal, cmd_to_config, 1, fp_tasks)
+
+    convert_to_raw = 'template/tools.vasp/convert2raw.py'
+    shuffle_raw = 'template/tools.raw/shuffle_raw.py'
+    copy_raw = 'template/tools.raw/copy_raw.py'
+    raw_to_set = 'template/tools.raw/raw_to_set.sh'
+    convert_to_raw = os.path.abspath(convert_to_raw)
+    shuffle_raw = os.path.abspath(shuffle_raw)
+    copy_raw = os.path.abspath(copy_raw)
+    raw_to_set = os.path.abspath(raw_to_set)
+    cwd = os.getcwd()
+    for ss in system_index :
+        sys_config_data = glob.glob(os.path.join(work_path, "task.%s.*/test.configs"%ss))
+        sys_data_path = os.path.join(work_path, 'data.%s/orig'%ss)
+        create_path(sys_data_path)
+        with open(os.path.join(sys_data_path, 'data.configs'), 'wb') as wfd:
+            for f in sys_config_data :
+                with open(f, 'rb') as fd:
+                    shutil.copyfileobj(fd, wfd, 1024*1024*10)
+        os.chdir(sys_data_path)
+        sp.check_call(convert_to_raw + ' data.configs', shell = True)
+        sp.check_call(shuffle_raw + ' . .', shell = True)
+        os.chdir('..')
+        ncopy = ncopies[int(ss)]
+        param = ""
+        for ii in ncopy :
+            param += " " + str(ii)
+        sp.check_call(copy_raw + ' orig . -n ' + param, shell = True)
+        sp.check_call(raw_to_set, shell = True)
+        os.chdir(cwd)
+
+def post_fp (iter_index,
+             jdata) :
+    fp_style = jdata['fp_style']
+
+    if fp_style == "vasp" :
+        post_fp_vasp(iter_index, jdata) 
+    else :
+        raise RuntimeError ("unsupported fp style")            
     
 def run_iter (json_file, exec_machine) :
-    prev_model = init_model
     fp = open (json_file, 'r')
     jdata = json.load (fp)
     numb_iter = jdata["numb_iter"]
-    numb_task = 8
+    max_tasks = 10000
+    numb_task = 9
     record = "record.dpgen"
 
     iter_rec = [0, -1]
@@ -339,22 +478,39 @@ def run_iter (json_file, exec_machine) :
         logging.info ("continue from iter %03d task %02d" % (iter_rec[0], iter_rec[1]))
 
     for ii in range (numb_iter) :
-        if ii > 0 :
-            prev_model = glob.glob (make_iter_name(ii-1) + "/" + train_name + "/*pb")
         for jj in range (numb_task) :
             if ii * max_tasks + jj <= iter_rec[0] * max_tasks + iter_rec[1] : 
                 continue
             if   jj == 0 :
                 log_iter ("make_train", ii, jj)
-                make_train (ii, jdata, prev_model) 
+                make_train (ii, jdata) 
             elif jj == 1 :
                 log_iter ("run_train", ii, jj)
                 run_train  (ii, jdata, exec_machine)
-            # else :
-            #     raise RuntimeError ("unknow task %d, something wrong" % jj)
-
+            elif jj == 2 :
+                log_iter ("post_train", ii, jj)
+                post_train  (ii, jdata)
+            elif jj == 3 :
+                log_iter ("make_model_devi", ii, jj)
+                make_model_devi  (ii, jdata)
+            elif jj == 4 :
+                log_iter ("run_model_devi", ii, jj)
+                run_model_devi  (ii, jdata, exec_machine)
+            elif jj == 5 :
+                log_iter ("post_model_devi", ii, jj)
+                post_model_devi  (ii, jdata)
+            elif jj == 6 :
+                log_iter ("make_fp", ii, jj)
+                make_fp (ii, jdata)
+            elif jj == 7 :
+                log_iter ("run_fp", ii, jj, exec_machine)
+                run_fp (ii, jdata)
+            elif jj == 8 :
+                log_iter ("post_fp", ii, jj)
+                post_fp (ii, jdata)
+            else :
+                raise RuntimeError ("unknow task %d, something wrong" % jj)
             record_iter (record, ii, jj)
-
 
 
 def _main () :
@@ -398,7 +554,12 @@ if __name__ == '__main__':
     jdata = json.load (fp)
     # post_train(0, jdata)
     logging.basicConfig (level=logging.INFO, format='%(asctime)s %(message)s')
+    run_iter('param.json', MachinePBS)
     # make_model_devi(0, jdata, None)
     # run_model_devi(0, jdata, MachineLocal)
     # post_model_devi(0, jdata)
-    make_fp(0, jdata)
+    # make_fp(0, jdata)
+    # run_fp(0, jdata, MachineLocal)
+#    post_fp(0, jdata)
+#    make_train(1, jdata)
+#    run_train(1, jdata, MachineLocal)

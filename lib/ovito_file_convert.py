@@ -41,9 +41,9 @@ columns = None
 if ofmt == "lammps_dump" :
     columns=["Particle Identifier", "Particle Type", "Position.X", "Position.Y", "Position.Z"]
 
-node = import_file(fin, multiple_frames=True)
+node = import_file(fin)
 if columns is not None :
-    export_file(node, fout, ofmt, multiple_frames=True, columns = columns)
+    export_file(node, fout, ofmt, columns = columns)
 else :
-    export_file(node, fout, ofmt, multiple_frames=True)
+    export_file(node, fout, ofmt)
     
