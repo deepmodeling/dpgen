@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import os
+import logging
+import shutil
 import subprocess as sp
 import multiprocessing as mp
 
@@ -27,7 +29,7 @@ def get_node_list () :
         nodes = fp.read().rstrip().split('\n')
     a = list(set(nodes))
     a.sort()
-    # a = ['cu03', 'cu04']
+#    a = ['cu03', 'cu04']
     return a
 
 def get_core_per_node () :
@@ -67,7 +69,46 @@ def exec_batch (cmd,
         os.chdir(cmd_dir)
     os.chdir(cwd)
     return ret
-    
+
+def exec_mpi (cmd,
+              cmd_dir_,
+              task_batch,
+              args_batch,
+              work_threads) :
+    cwd = os.getcwd()
+    cmd_dir = os.path.abspath(cmd_dir_)
+    os.chdir(cmd_dir)
+    node_file = os.getenv('PBS_NODEFILE')
+    ntasks = len(task_batch)
+    sp.check_call("split -a 6 -n %d -d %s " % (ntasks, node_file), shell = True)
+    ret = []
+    for ii in range(ntasks):
+        os.chdir(task_batch[ii])
+        mynodefile = os.path.join(cmd_dir, "x%06d" % ii)
+        shutil.move(mynodefile, "x%06d" % ii)
+        mynodefile = "x%06d" % ii
+        with open(mynodefile, "r") as fp:
+            nodes = fp.read().rstrip().split('\n')
+        logging.info (str(nodes))
+        numb_nodes = len(nodes)
+        if numb_nodes > work_threads:
+            numb_nodes = work_threads
+            mynodefile += ".1"
+            with open(mynodefile, "w") as fp:
+                for ii in range(numb_nodes) :
+                    fp.write("%s\n"%nodes[ii])
+        myenv = os.environ.copy()
+        myenv['OMP_NUM_THREADS'] = '1'
+        sph = sp.Popen("mpirun -n %d -hostfile %s %s" % (numb_nodes, mynodefile, cmd), shell = True, env = myenv)
+        logging.info ("mpirun -n %d -hostfile %s %s" % (numb_nodes, mynodefile, cmd))
+        ret.append(sph)
+        os.chdir(cmd_dir)    
+    # nodefiles = glob.glob("x*")
+    # for ii in nodefiles:
+    #     if os.path.isfile(ii):
+    #         os.remove(ii)
+    os.chdir(cwd)
+    return ret
     
 # print(get_node_list()    )
 # print(get_core_per_node()   )

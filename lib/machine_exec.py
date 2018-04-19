@@ -33,7 +33,8 @@ def exec_hosts (machine_env,
                 cmd, 
                 work_thread,
                 task_dirs,
-                task_args = None) :
+                task_args = None,
+                verbose = False) :
     ntasks = len(task_dirs)
     if task_args != None :
         assert ntasks == len(task_args) or len(task_args) == 1
@@ -64,7 +65,8 @@ def exec_hosts (machine_env,
             work_args = args_batch[jj]
             host = host_list[jj % nnode]
             work_name = os.path.basename (work_path)
-            logging.info(("%s %03d %s: %s %s" % (host, ii, work_name, cmd, work_args)))
+            if verbose:
+                logging.info(("%s %03d %s: %s %s" % (host, ii, work_name, cmd, work_args)))
             ps.append(machine_env.exec_cmd(host, cmd, work_path, work_args))
         while True :
             if not(any(p.wait() for p in ps)) :
@@ -75,7 +77,9 @@ def exec_hosts_batch (machine_env,
                       cmd, 
                       work_thread,
                       task_dirs,
-                      task_args = None) :
+                      task_args = None,
+                      verbose = False,
+                      mpi = False) :
     ntasks = len(task_dirs)
     if task_args != None :
         assert ntasks == len(task_args) or len(task_args) == 1
@@ -100,9 +104,14 @@ def exec_hosts_batch (machine_env,
     for ii in range(nbatch) :
         task_batch = task_chunks[ii]
         args_batch = args_chunks[ii]
-        logging.info(("%s %03d : %s with %d jobs %s" % (host_list, ii, cmd, len(task_batch), task_batch)))
-        ps = machine_env.exec_batch(cmd, ".", task_batch, task_args, work_thread)
+        if verbose:
+            logging.info(("%s %03d : %s with %d jobs %s" % (host_list, ii, cmd, len(task_batch), task_batch)))
+        if mpi :
+            ps = machine_env.exec_mpi(cmd, ".", task_batch, task_args, work_thread)
+        else :
+            ps = machine_env.exec_batch(cmd, ".", task_batch, task_args, work_thread)
         while True :
             if not(any(p.wait() for p in ps)) :
                 break
             time.sleep(1)    
+    time.sleep(10)

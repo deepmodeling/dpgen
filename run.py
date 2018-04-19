@@ -151,7 +151,7 @@ def run_train (iter_index,
         command += ' --init-model old/model.ckpt '
     command = cmd_append_log (command, 'train.log')
     # train models
-    exec_hosts_batch(exec_machine, command, train_nthreads, all_task, None)
+    exec_hosts_batch(exec_machine, command, train_nthreads, all_task, None, verbose = True)
 
 def post_train (iter_index,
                 jdata) :
@@ -283,7 +283,7 @@ def run_model_devi (iter_index,
     command = lmp_exec + " -i input.lammps"
     command = cmd_append_log(command, "model_devi.log")
     
-    exec_hosts_batch(exec_machine, command, model_devi_np, all_task)
+    exec_hosts_batch(exec_machine, command, model_devi_np, all_task, verbose = True, mpi = True)
 
 def post_model_devi (iter_index, 
                      jdata) :
@@ -383,7 +383,7 @@ def run_fp_vasp (iter_index,
 
     fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
 
-    exec_hosts_batch(exec_machine, fp_command, fp_np, fp_tasks)
+    exec_hosts_batch(exec_machine, fp_command, fp_np, fp_tasks, verbose = True, mpi = True)
         
 def run_fp (iter_index,
             jdata,
