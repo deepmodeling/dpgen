@@ -3,6 +3,7 @@
 import os
 import logging
 import shutil
+import time
 import subprocess as sp
 import multiprocessing as mp
 
@@ -70,37 +71,40 @@ def exec_batch (cmd,
     os.chdir(cwd)
     return ret
 
+def _make_mpi_command (cmd,
+                       np,
+                       node_file,
+                       nthreads) :
+    ret = "mpirun -n %d -genv OMP_NUM_THREADS %d -hostfile %s %s" \
+          % (np, nthreads, node_file, cmd)
+    return ret
+    
 def exec_mpi (cmd,
               cmd_dir_,
               task_batch,
               args_batch,
-              work_threads) :
+              work_np) :
     cwd = os.getcwd()
     cmd_dir = os.path.abspath(cmd_dir_)
     os.chdir(cmd_dir)
-    node_file = os.getenv('PBS_NODEFILE')
     ntasks = len(task_batch)
-    sp.check_call("split -a 6 -n %d -d %s " % (ntasks, node_file), shell = True)
+    node_file = os.getenv('PBS_NODEFILE')
+    with open(node_file, "r") as fp:
+        nodes = fp.read().rstrip().split('\n')
+    numb_nodes = len(nodes)
+    assert(numb_nodes >= ntasks * work_np)    
     ret = []
     for ii in range(ntasks):
         os.chdir(task_batch[ii])
-        mynodefile = os.path.join(cmd_dir, "x%06d" % ii)
-        shutil.move(mynodefile, "x%06d" % ii)
         mynodefile = "x%06d" % ii
-        with open(mynodefile, "r") as fp:
-            nodes = fp.read().rstrip().split('\n')
-        logging.info (str(nodes))
-        numb_nodes = len(nodes)
-        if numb_nodes > work_threads:
-            numb_nodes = work_threads
-            mynodefile += ".1"
-            with open(mynodefile, "w") as fp:
-                for ii in range(numb_nodes) :
-                    fp.write("%s\n"%nodes[ii])
+        with open(mynodefile, "w") as fp:
+            for jj in range(work_np*ii, work_np*(ii+1)) :
+                fp.write("%s\n"%nodes[jj])
         myenv = os.environ.copy()
         myenv['OMP_NUM_THREADS'] = '1'
-        sph = sp.Popen("mpirun -n %d -hostfile %s %s" % (numb_nodes, mynodefile, cmd), shell = True, env = myenv)
-        logging.info ("mpirun -n %d -hostfile %s %s" % (numb_nodes, mynodefile, cmd))
+        mpi_cmd = _make_mpi_command(cmd, work_np, mynodefile, 1)
+        sph = sp.Popen(mpi_cmd, shell = True, env = myenv)
+        logging.info (mpi_cmd)
         ret.append(sph)
         os.chdir(cmd_dir)    
     # nodefiles = glob.glob("x*")

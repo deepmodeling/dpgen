@@ -297,29 +297,27 @@ def post_model_devi (iter_index,
 
     exec_hosts (MachineLocal, command, 1, all_task)
 
-def make_fp_vasp (iter_index, 
-                  jdata) :
-    fp_params = jdata['fp_params']
-    fp_link_files = jdata['fp_link_files']
+def _make_fp_vasp_inner (modd_path,
+                         work_path,
+                         system_index,
+                         fp_task_max,
+                         fp_link_files,
+                         fp_params):
+    """
+    modd_path           string          path of model devi
+    work_path           string          path of fp
+    system_index        [string]        index of systems
+    fp_task_max         int             max number of tasks
+    fp_link_files       [string]        linked files for fp, POTCAR for example
+    fp_params           map             parameters for fp
+    """
     kpoints = fp_params['kpoints']
     ecut = fp_params['ecut']
     ediff = fp_params['ediff']
     npar = fp_params['npar']
     kpar = fp_params['kpar']
-
-    iter_name = make_iter_name(iter_index)
-    work_path = os.path.join(iter_name, fp_name)
-    create_path(work_path)
-    modd_path = os.path.join(iter_name, model_devi_name)
-    modd_task = glob.glob(os.path.join(modd_path, "task.*"))
-    system_index = []
-    for ii in modd_task :        
-        system_index.append(os.path.basename(ii).split('.')[1])
-    system_index.sort()
-    set_tmp = set(system_index)
-    system_index = list(set_tmp)
-
     fp_tasks = []
+    count_total = 0
     for ss in system_index :
         modd_system_glob = os.path.join(modd_path, 'task.' + ss + '.*')
         modd_system_task = glob.glob(modd_system_glob)
@@ -355,10 +353,34 @@ def make_fp_vasp (iter_index,
                         os.symlink(pair[0], pair[1])
                     os.chdir(cwd)
                     cc += 1
+                    count_total += 1
+                    if count_total > fp_task_max :
+                        return fp_tasks
+    return fp_tasks
+
+def make_fp_vasp (iter_index, 
+                  jdata) :
+    fp_task_max = jdata['fp_task_max']
+    fp_params = jdata['fp_params']
+    fp_link_files = jdata['fp_link_files']
+
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    create_path(work_path)
+    modd_path = os.path.join(iter_name, model_devi_name)
+    modd_task = glob.glob(os.path.join(modd_path, "task.*"))
+    system_index = []
+    for ii in modd_task :        
+        system_index.append(os.path.basename(ii).split('.')[1])
+    system_index.sort()
+    set_tmp = set(system_index)
+    system_index = list(set_tmp)
+
+    fp_tasks = _make_fp_vasp_inner(modd_path, work_path, system_index, fp_task_max, fp_link_files, fp_params)
 
     command = os.path.join(os.getcwd(), "lib/ovito_file_convert.py")
     command += " conf.lmp POSCAR"
-    exec_hosts(MachineLocal, command, 1, fp_tasks)
+    exec_hosts(MachineLocal, command, 1, fp_tasks, verbose = True)
 
 
 def make_fp (iter_index,
@@ -375,13 +397,14 @@ def run_fp_vasp (iter_index,
                  exec_machine) :
     fp_command = jdata['fp_command']
     fp_np = jdata['fp_np']
-    fp_command = ("OMP_NUM_THREADS=1 mpirun -n %d " % fp_np) + fp_command
+#    fp_command = ("OMP_NUM_THREADS=1 mpirun -n %d " % fp_np) + fp_command
     fp_command = cmd_append_log(fp_command, "vasp.log")
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
 
     fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
+    fp_tasks.sort()
 
     exec_hosts_batch(exec_machine, fp_command, fp_np, fp_tasks, verbose = True, mpi = True)
         
@@ -503,8 +526,8 @@ def run_iter (json_file, exec_machine) :
                 log_iter ("make_fp", ii, jj)
                 make_fp (ii, jdata)
             elif jj == 7 :
-                log_iter ("run_fp", ii, jj, exec_machine)
-                run_fp (ii, jdata)
+                log_iter ("run_fp", ii, jj)
+                run_fp (ii, jdata, exec_machine)
             elif jj == 8 :
                 log_iter ("post_fp", ii, jj)
                 post_fp (ii, jdata)
