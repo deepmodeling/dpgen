@@ -78,7 +78,21 @@ def _make_mpi_command (cmd,
     ret = "mpirun -n %d -genv OMP_NUM_THREADS %d -hostfile %s %s" \
           % (np, nthreads, node_file, cmd)
     return ret
-    
+
+def _make_mpi_command_nl (cmd,
+                          np,
+                          node_list,
+                          nthreads) :
+    args = ""
+    for ii in range(len(node_list)) :
+        if ii == 0 :
+            args += node_list[ii]
+        else:
+            args += "," + node_list[ii]
+    ret = "mpirun -n %d -genv OMP_NUM_THREADS %d -hosts %s %s" \
+          % (np, nthreads, args, cmd)
+    return ret
+
 def exec_mpi (cmd,
               cmd_dir_,
               task_batch,
@@ -97,13 +111,17 @@ def exec_mpi (cmd,
     for ii in range(ntasks):
         os.chdir(task_batch[ii])
         mynodefile = "x%06d" % ii
+        mynodes = []
         with open(mynodefile, "w") as fp:
             for jj in range(work_np*ii, work_np*(ii+1)) :
                 fp.write("%s\n"%nodes[jj])
+                mynodes.append(nodes[jj])                
         myenv = os.environ.copy()
         myenv['OMP_NUM_THREADS'] = '1'
         mpi_cmd = _make_mpi_command(cmd, work_np, mynodefile, 1)
+#        mpi_cmd = _make_mpi_command_nl(cmd, work_np, mynodes, 1)
         sph = sp.Popen(mpi_cmd, shell = True, env = myenv)
+        time.sleep(0.5)
         logging.info (mpi_cmd)
         ret.append(sph)
         os.chdir(cmd_dir)    

@@ -9,7 +9,7 @@ def make_vasp_kpoints (kpoints) :
     ret += "0  0  0\n"
     return ret
 
-def make_vasp_incar (ecut, ediff, npar, kpar) :
+def make_vasp_incar (ecut, ediff, npar, kpar, kspacing = 0.5, kgamma = True) :
     ret = ''
     ret += 'PREC=A\n'
     ret += 'ENCUT=%d\n' % ecut
@@ -33,6 +33,12 @@ def make_vasp_incar (ecut, ediff, npar, kpar) :
     ret += 'LWAVE=F\n'
     ret += 'LCHARG=F\n'
     ret += 'PSTRESS=0\n'
+    ret += "\n"
+    ret += 'KSPACING=%f\n' % kspacing
+    if kgamma:
+        ret += 'KGAMMA=.TRUE.\n'
+    else :
+        ret += 'KGAMMA=.FALSE.\n'
 
     return ret
 

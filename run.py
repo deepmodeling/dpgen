@@ -31,7 +31,6 @@ from lib.utils import log_task
 from lib.lammps import cvt_lammps_conf
 from lib.lammps import make_lammps_input
 from lib.vasp import make_vasp_incar
-from lib.vasp import make_vasp_kpoints
 import lib.MachineLocal as MachineLocal
 import lib.MachineSlurm as MachineSlurm
 import lib.MachinePBS as MachinePBS
@@ -41,8 +40,6 @@ from lib.machine_exec import exec_hosts_batch
 template_name = 'template'
 train_name = '00.train'
 train_task_fmt = '%03d'
-train_files = ['input.json']
-train_param = 'input.json'
 train_tmpl_path = os.path.join(template_name, train_name)
 data_system_fmt = '%03d'
 model_devi_name = '01.model_devi'
@@ -68,13 +65,31 @@ def make_model_devi_conf_name (sys_idx, conf_idx) :
 def make_fp_task_name(sys_idx, counter) : 
     return 'task.' + fp_task_fmt % (sys_idx, counter)
 
+def check_empty_iter(iter_index) :
+    fp_path = os.path.join(make_iter_name(iter_index), fp_name)
+    fp_data_sys = glob.glob(os.path.join(fp_path, "data.*"))
+    return (len(fp_data_sys) == 0)
+
+def copy_model(numb_model, prv_iter_index, cur_iter_index) :
+    cwd=os.getcwd()
+    prv_train_path = os.path.join(make_iter_name(prv_iter_index), train_name)
+    cur_train_path = os.path.join(make_iter_name(cur_iter_index), train_name)
+    prv_train_path = os.path.abspath(prv_train_path)
+    cur_train_path = os.path.abspath(cur_train_path)
+    create_path(cur_train_path)
+    for ii in range(numb_model) :
+        prv_train_task = os.path.join(prv_train_path, train_task_fmt%ii)
+        os.chdir(cur_train_path)
+        os.symlink(os.path.relpath(prv_train_task), train_task_fmt%ii)
+        os.symlink(os.path.join(train_task_fmt%ii, 'frozen_model.pb'), 'graph.%03d.pb' % ii)
+        os.chdir(cwd)
+    with open(os.path.join(cur_train_path, "copied"), 'w') as fp:
+        None 
+
 def make_train (iter_index, 
                jdata) :    
     # load json param
-    stop_batch = jdata['stop_batch']
-    start_lr = jdata['start_lr']
-    decay_steps = jdata['decay_steps']
-    decay_rate = jdata['decay_rate']
+    train_param = jdata['train_param']
     if iter_index > 0 :
         stop_batch = jdata['res_stop_batch']
         start_lr = jdata['res_start_lr']
@@ -82,6 +97,18 @@ def make_train (iter_index,
         decay_rate = jdata['res_decay_rate']
     numb_models = jdata['numb_models']
     init_data_sys_ = jdata['init_data_sys']    
+    
+    if iter_index > 0 and check_empty_iter(iter_index-1) :
+        log_task('prev data is empty, copy prev model')
+        copy_model(numb_models, iter_index-1, iter_index)
+        return
+    else :
+        iter_name = make_iter_name(iter_index)
+        work_path = os.path.join(iter_name, train_name)
+        copy_flag = os.path.join(work_path, 'copied')
+        if os.path.isfile(copy_flag) :
+            os.remove(copy_flag)
+
     init_data_sys = []
     for ii in init_data_sys_ :
         init_data_sys.append(os.path.abspath(ii))
@@ -98,18 +125,13 @@ def make_train (iter_index,
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, train_name)
     create_path(work_path)
-    copy_file_list(train_files, train_tmpl_path, work_path)
     # establish tasks
-    jinput = json.load(open(os.path.join(work_path, train_param), 'r'))
+    jinput = jdata['default_training_param']
     jinput['systems'] = init_data_sys    
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         create_path(task_path)
         jinput['seed'] = random.randrange(sys.maxsize)
-        jinput['stop_batch'] = stop_batch
-        jinput['start_lr'] = start_lr
-        jinput['decay_steps'] = decay_steps
-        jinput['decay_rate'] = decay_rate
         with open(os.path.join(task_path, train_param), 'w') as outfile:
             json.dump(jinput, outfile, indent = 4)
     # link old models
@@ -138,9 +160,15 @@ def run_train (iter_index,
     numb_models = jdata['numb_models']
     deepmd_path = jdata['deepmd_path']
     train_nthreads = jdata['train_nthreads']
+    train_param = jdata['train_param']
     # paths
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, train_name)
+    # check if is copied
+    copy_flag = os.path.join(work_path, 'copied')
+    if os.path.isfile(copy_flag) :
+        log_task('copied model, do not train')
+        return
     # make tasks
     all_task = []
     for ii in range(numb_models) :
@@ -161,6 +189,11 @@ def post_train (iter_index,
     # paths
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, train_name)
+    # check if is copied
+    copy_flag = os.path.join(work_path, 'copied')
+    if os.path.isfile(copy_flag) :
+        log_task('copied model, do not post train')
+        return
     all_task = []
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
@@ -311,11 +344,11 @@ def _make_fp_vasp_inner (modd_path,
     fp_link_files       [string]        linked files for fp, POTCAR for example
     fp_params           map             parameters for fp
     """
-    kpoints = fp_params['kpoints']
     ecut = fp_params['ecut']
     ediff = fp_params['ediff']
     npar = fp_params['npar']
     kpar = fp_params['kpar']
+    kspacing = fp_params['kspacing']
     fp_tasks = []
     count_total = 0
     for ss in system_index :
@@ -343,12 +376,9 @@ def _make_fp_vasp_inner (modd_path,
                     cwd = os.getcwd()
                     os.chdir(fp_task_path)
                     os.symlink(os.path.relpath(conf_name), 'conf.lmp')
-                    incar = make_vasp_incar(ecut, ediff, npar, kpar)
+                    incar = make_vasp_incar(ecut, ediff, npar, kpar, kspacing = kspacing, kgamma = True)
                     with open('INCAR', 'w') as fp:
                         fp.write(incar)
-                    kpt = make_vasp_kpoints(kpoints)
-                    with open('KPOINTS', 'w') as fp:
-                        fp.write(kpt)
                     for pair in fp_link_files :
                         os.symlink(pair[0], pair[1])
                     os.chdir(cwd)
@@ -377,6 +407,8 @@ def make_fp_vasp (iter_index,
     system_index = list(set_tmp)
 
     fp_tasks = _make_fp_vasp_inner(modd_path, work_path, system_index, fp_task_max, fp_link_files, fp_params)
+    if len(fp_tasks) == 0 :
+        return
 
     command = os.path.join(os.getcwd(), "lib/ovito_file_convert.py")
     command += " conf.lmp POSCAR"
@@ -405,8 +437,21 @@ def run_fp_vasp (iter_index,
 
     fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
     fp_tasks.sort()
+    if len(fp_tasks) == 0 :
+        return
 
-    exec_hosts_batch(exec_machine, fp_command, fp_np, fp_tasks, verbose = True, mpi = True)
+    fp_run_tasks = []
+    for ii in fp_tasks :
+        if os.path.isfile(os.path.join(ii, 'OUTCAR')) :
+            with open(os.path.join(ii, 'OUTCAR'), 'r') as fp :
+                content = fp.read()
+                count = content.count('TOTAL-FORCE')
+                if count != 1 :
+                    fp_run_tasks.append(ii)
+        else :
+            fp_run_tasks.append(ii)
+
+    exec_hosts_batch(exec_machine, fp_command, fp_np, fp_run_tasks, verbose = True, mpi = True)
         
 def run_fp (iter_index,
             jdata,
@@ -426,12 +471,13 @@ def post_fp_vasp (iter_index,
     assert (iter_index < len(job_names)) 
     cur_job_name = job_names[iter_index]    
     cur_job = model_devi_jobs[cur_job_name]
-    ncopies = cur_job['ncopies']
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
     fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
     fp_tasks.sort()
+    if len(fp_tasks) == 0 :
+        return
 
     system_index = []
     for ii in fp_tasks :        
@@ -466,13 +512,11 @@ def post_fp_vasp (iter_index,
                     shutil.copyfileobj(fd, wfd, 1024*1024*10)
         os.chdir(sys_data_path)
         sp.check_call(convert_to_raw + ' data.configs', shell = True)
-        sp.check_call(shuffle_raw + ' . .', shell = True)
         os.chdir('..')
-        ncopy = ncopies[int(ss)]
-        param = ""
-        for ii in ncopy :
-            param += " " + str(ii)
-        sp.check_call(copy_raw + ' orig . -n ' + param, shell = True)
+        sp.check_call(shuffle_raw + ' orig/ .', shell = True)
+        if os.path.isfile('type.raw') :
+            os.remove('type.raw')
+        os.symlink('orig/type.raw', 'type.raw')
         sp.check_call(raw_to_set, shell = True)
         os.chdir(cwd)
 

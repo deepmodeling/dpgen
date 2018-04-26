@@ -3,14 +3,53 @@
 
     "_comment":		" 00.train ",
     "numb_models":	4,
-    "init_data_sys":	["/home/wang_han/study/deepmd/data/al.ldy"],
-    "deepmd_path":	"/home/wang_han/Soft/deep.pot.para/source/build/tmp/",
+    "init_data_sys":	["/home/wang_han/study/deepmd/data.01/al.n04.e0600.k011/raw/403-413-t900"],
+    "deepmd_path":	"/home/wang_han/Soft/deep.pot.sregion/source/build/tmp/",
     "train_nthreads":	28,
+    "train_param":	"input.json",
 
-    "stop_batch":	100000,
-    "start_lr":		0.001,
-    "decay_steps":	500,
-    "decay_rate":	0.95,
+    "default_training_param" : {
+	"_comment": " model parameters",
+	"use_smooth":		true,
+	"sel_a":		[72],
+	"rcut_smth":		5.50,
+	"rcut":			6.00,
+	"filter_neuron":	[20, 40, 80],
+	"filter_resnet_dt":	false,
+	"n_axis_neuron":	12,
+	"n_neuron":		[160, 160, 160],
+	"resnet_dt":		true,
+
+	"_comment": " traing controls",
+	"set_prefix":		"set",    
+	"stop_batch":		40000,
+	"batch_size":		1,
+	"start_lr":		0.005,
+	"decay_steps":		200,
+	"decay_rate":		0.95,
+
+	"start_pref_e":		0.02,
+	"limit_pref_e":		0.2,
+	"start_pref_f":		1000,
+	"limit_pref_f":		10,
+	"start_pref_v":		0.0,
+	"limit_pref_v":		0.0,
+
+	"_comment": " display and restart",
+	"_comment": " frequencies counted in batch",
+	"disp_file":		"lcurve.out",
+	"disp_freq":		200,
+	"numb_test":		5,
+	"save_freq":		200,
+	"save_ckpt":		"model.ckpt",
+	"load_ckpt":		"model.ckpt",
+	"disp_training":	true,
+	"time_training":	true,
+	"profiling":		false,
+	"profiling_file":	"timeline.json",
+
+	"_comment":		"that's all"
+    },
 
     "res_stop_batch":	100000,
     "res_start_lr":	0.0003,
@@ -18,16 +57,16 @@
     "res_decay_rate":	0.95,
 
     "_comment":		" 01.model_devi ",
+    "lmp_path":		"/home/wang_han/Soft/lammps/lammps-16Mar18/src",
+    "model_devi_np":	1,
+    "model_devi_trust":	0.050,
     "model_devi_jobs":	{
 	"ensemble":	"nvt",
 	"trj_freq":	20,
 	"nsteps":	20000,
 	"job_0":	{
-	    "systems":	[["/home/wang_han/study/data.al/nnp.d05e003.k05.e600/POSCARs4DFT/4.03/d01e003/3*/POSCAR"], 
-			 ["/home/wang_han/study/data.al/nnp.d05e003.k05.e600/POSCARs4DFT/4.03/d01e003/4*/POSCAR"]
-			],
-	    "ncopies":	[[2,2,2], 
-			 [2,2,2]
+	    "systems":	[["/home/wang_han/study/data.al/POSCARs4DFT.n004/4.03/d01e003/9*/POSCAR"], 
+			 ["/home/wang_han/study/data.al/POSCARs4DFT.n004/4.13/d01e003/9*/POSCAR"]
 			],
 	    "mass_map":	[27.0],
 	    "temps":	[600, 900],
@@ -38,14 +77,11 @@
 	    "_comment":	" that's all "
 	},
 	"job_1":	{
-	    "systems":	[["/home/wang_han/study/data.al/nnp.d05e003.k05.e600/POSCARs4DFT/4.03/d01e003/3*/POSCAR"], 
-			 ["/home/wang_han/study/data.al/nnp.d05e003.k05.e600/POSCARs4DFT/4.03/d01e003/4*/POSCAR"]
-			],
-	    "ncopies":	[[2,2,2], 
-			 [2,2,2]
+	    "systems":	[["/home/wang_han/study/data.al/POSCARs4DFT/4.03/d01e003/9[0-2]*/POSCAR"], 
+			 ["/home/wang_han/study/data.al/POSCARs4DFT/4.13/d01e003/9[0-2]*/POSCAR"]
 			],
 	    "mass_map":	[27.0],
-	    "temps":	[600, 900, 1100],
+	    "temps":	[600, 900],
 	    "press":	[1.0],
 	    "trj_freq":	10,
 	    "nsteps":	1000,
@@ -53,11 +89,20 @@
 	    "_comment":	" that's all "
 	},
 	"job_2":	{
-	    "systems":	[["/home/wang_han/study/data.al/nnp.d05e003.k05.e600/POSCARs4DFT/4.03/d01e003/3*/POSCAR"], 
-			 ["/home/wang_han/study/data.al/nnp.d05e003.k05.e600/POSCARs4DFT/4.03/d01e003/4*/POSCAR"]
+	    "systems":	[["/home/wang_han/study/data.al/POSCARs4DFT/4.03/d01e003/9[0-2]*/POSCAR"], 
+			 ["/home/wang_han/study/data.al/POSCARs4DFT/4.13/d01e003/9[0-2]*/POSCAR"]
 			],
-	    "ncopies":	[[2,2,2], 
-			 [2,2,2]
+	    "mass_map":	[27.0],
+	    "temps":	[600, 900],
+	    "press":	[1.0],
+	    "trj_freq":	10,
+	    "nsteps":	1000,
+	    "ensemble":	"nvt",
+	    "_comment":	" that's all "
+	},
+	"job_3":	{
+	    "systems":	[["/home/wang_han/study/data.al/POSCARs4DFT/4.03/d01e003/9*/POSCAR"], 
+			 ["/home/wang_han/study/data.al/POSCARs4DFT/4.13/d01e003/9*/POSCAR"]
 			],
 	    "mass_map":	[27.0],
 	    "temps":	[900, 1100, 1300],
@@ -67,11 +112,56 @@
 	    "ensemble":	"nvt",
 	    "_comment":	" that's all "
 	},
+	"job_4":	{
+	    "systems":	[["/home/wang_han/study/data.al/POSCARs4DFT/4.03/d01e003/9*/POSCAR"], 
+			 ["/home/wang_han/study/data.al/POSCARs4DFT/4.13/d01e003/9*/POSCAR"]
+			],
+	    "mass_map":	[27.0],
+	    "temps":	[900, 1100, 1300],
+	    "press":	[1.0],
+	    "trj_freq":	10,
+	    "nsteps":	1000,
+	    "ensemble":	"nvt",
+	    "_comment":	" that's all "
+	},
+	"job_5":	{
+	    "systems":	[["/home/wang_han/study/data.al/POSCARs4DFT/4.03/d01e003/9*/POSCAR"], 
+			 ["/home/wang_han/study/data.al/POSCARs4DFT/4.13/d01e003/9*/POSCAR"]
+			],
+	    "mass_map":	[27.0],
+	    "temps":	[900, 1100, 1300],
+	    "press":	[1.0],
+	    "trj_freq":	10,
+	    "nsteps":	1000,
+	    "ensemble":	"nvt",
+	    "_comment":	" that's all "
+	},
+	"job_6":	{
+	    "systems":	[["/home/wang_han/study/data.al/POSCARs4DFT/4.03/d01e003/9*/POSCAR"], 
+			 ["/home/wang_han/study/data.al/POSCARs4DFT/4.13/d01e003/9*/POSCAR"]
+			],
+	    "mass_map":	[27.0],
+	    "temps":	[1300, 1500],
+	    "press":	[1.0],
+	    "trj_freq":	10,
+	    "nsteps":	1000,
+	    "ensemble":	"nvt",
+	    "_comment":	" that's all "
+	},
+	"job_7":	{
+	    "systems":	[["/home/wang_han/study/data.al/POSCARs4DFT/4.03/d01e003/9*/POSCAR"], 
+			 ["/home/wang_han/study/data.al/POSCARs4DFT/4.13/d01e003/9*/POSCAR"]
+			],
+	    "mass_map":	[27.0],
+	    "temps":	[1300, 1500],
+	    "press":	[1.0],
+	    "trj_freq":	10,
+	    "nsteps":	1000,
+	    "ensemble":	"nvt",
+	    "_comment":	" that's all "
+	},
 	"_comment":	" that's all "
     },
-    "lmp_path":		"/home/wang_han/Soft/lammps/lammps-16Mar18/src",
-    "model_devi_np":	4,
-    "model_devi_trust":	0.050,
 
     "_comment":		" 02.fp ",
     "fp_style":		"vasp",
@@ -82,9 +172,9 @@
 	["/home/wang_han/study/data.al/nnp.d05e003.k05.e600/template/POTCAR", "POTCAR"]
 	],
     "fp_params":	{
-	"kpoints":	[5,5,5],
 	"ecut":		600,
 	"ediff":	1e-6,
+	"kspacing":	0.16,
 	"npar":		2,
 	"kpar":		1,
 	"_comment":	" that's all "
