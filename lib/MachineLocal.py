@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
 import os
+import logging
+import shutil
+import time
 import subprocess as sp
 import multiprocessing as mp
 
@@ -70,6 +73,36 @@ def exec_batch (cmd,
         ps.append(exec_cmd(host, cmd, work_path, work_args))    
     os.chdir(cwd)
     return ps
+
+def _make_mpi_command (cmd,
+                       np,
+                       nthreads) :
+    ret = "mpirun -n %d -genv OMP_NUM_THREADS %d %s" \
+          % (np, nthreads, cmd)
+    return ret
+
+def exec_mpi (cmd,
+              cmd_dir_,
+              task_batch,
+              args_batch,
+              work_np) :
+    cwd = os.getcwd()
+    cmd_dir = os.path.abspath(cmd_dir_)
+    os.chdir(cmd_dir)
+    ntasks = len(task_batch)
+    ret = []
+    for ii in range(ntasks):
+        os.chdir(task_batch[ii])
+        myenv = os.environ.copy()
+        myenv['OMP_NUM_THREADS'] = '1'
+        mpi_cmd = _make_mpi_command(cmd, work_np, 1)
+        sph = sp.Popen(mpi_cmd, shell = True, env = myenv)
+        time.sleep(0.1)
+        logging.info (mpi_cmd)
+        ret.append(sph)
+        os.chdir(cmd_dir)    
+    os.chdir(cwd)
+    return ret
 
 # # nlist = get_node_list()
 # # print (nlist)

@@ -110,14 +110,18 @@ def make_train (iter_index,
             os.remove(copy_flag)
 
     init_data_sys = []
+    init_batch_size = jdata['init_batch_size']
+    sys_batch_size = jdata['sys_batch_size']
     for ii in init_data_sys_ :
         init_data_sys.append(os.path.abspath(ii))
     if iter_index > 0 :
         for ii in range(iter_index) :
             fp_path = os.path.join(make_iter_name(ii), fp_name)
-            fp_data_sys = glob.glob(os.path.join(fp_path, "data.*"))
-            for jj in fp_data_sys :
+            fp_data_sys = glob.glob(os.path.join(fp_path, "data.*"))            
+            for jj in fp_data_sys :                
                 init_data_sys.append(os.path.abspath(jj))
+                sys_idx = int(jj.split('.')[-1])
+                init_batch_size.append(sys_batch_size[sys_idx])                
     for ii in init_data_sys :
         if not os.path.isdir(ii) :
             raise RuntimeError ("data sys %s does not exists" % ii)
@@ -128,6 +132,7 @@ def make_train (iter_index,
     # establish tasks
     jinput = jdata['default_training_param']
     jinput['systems'] = init_data_sys    
+    jinput['batch_size'] = init_batch_size
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         create_path(task_path)
@@ -226,16 +231,20 @@ def make_model_devi (iter_index,
         nsteps = cur_job['nsteps']
     if 'trj_freq' in cur_job.keys() :
         trj_freq = cur_job['trj_freq']
+    sys_configs = jdata['sys_configs']
 
-    conf_systems_glob = cur_job['systems']
+    sys_idx = cur_job['sys_idx']
+    if (len(sys_idx) != len(list(set(sys_idx)))) :
+        raise RuntimeError("system index should be uniq")
     conf_systems = []
-    for ss in conf_systems_glob :
+    for idx in sys_idx :
         cur_systems = []
+        ss = sys_configs[idx]
         for ii in ss :
             cur_systems += glob.glob(ii)
         cur_systems.sort()
         conf_systems.append (cur_systems)
-    mass_map = cur_job['mass_map']
+    mass_map = jdata['mass_map']
     temps = cur_job['temps']
     press = cur_job['press']
 
@@ -260,7 +269,7 @@ def make_model_devi (iter_index,
     for ss in conf_systems:
         conf_counter = 0
         for cc in ss :            
-            conf_name = make_model_devi_conf_name(sys_counter, conf_counter)
+            conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter)
             poscar_name = conf_name + '.poscar'
             lmp_name = conf_name + '.lmp'
             os.symlink(cc, os.path.join(conf_path, poscar_name))
@@ -277,8 +286,8 @@ def make_model_devi (iter_index,
         for cc in ss :            
             for tt in temps:
                 for pp in press:
-                    task_name = make_model_devi_task_name(sys_counter, task_counter)
-                    conf_name = make_model_devi_conf_name(sys_counter, conf_counter) + '.lmp'
+                    task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
+                    conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter) + '.lmp'
                     task_path = os.path.join(work_path, task_name)
                     # print(task_path)
                     create_path(task_path)
@@ -399,12 +408,14 @@ def make_fp_vasp (iter_index,
     create_path(work_path)
     modd_path = os.path.join(iter_name, model_devi_name)
     modd_task = glob.glob(os.path.join(modd_path, "task.*"))
+    modd_task.sort()
     system_index = []
     for ii in modd_task :        
         system_index.append(os.path.basename(ii).split('.')[1])
     system_index.sort()
     set_tmp = set(system_index)
     system_index = list(set_tmp)
+    system_index.sort()
 
     fp_tasks = _make_fp_vasp_inner(modd_path, work_path, system_index, fp_task_max, fp_link_files, fp_params)
     if len(fp_tasks) == 0 :
@@ -622,11 +633,4 @@ if __name__ == '__main__':
     # post_train(0, jdata)
     logging.basicConfig (level=logging.INFO, format='%(asctime)s %(message)s')
     run_iter('param.json', MachinePBS)
-    # make_model_devi(0, jdata, None)
-    # run_model_devi(0, jdata, MachineLocal)
-    # post_model_devi(0, jdata)
-    # make_fp(0, jdata)
-    # run_fp(0, jdata, MachineLocal)
-#    post_fp(0, jdata)
-#    make_train(1, jdata)
-#    run_train(1, jdata, MachineLocal)
+#    run_iter('param.json', MachineLocal)
