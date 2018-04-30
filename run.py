@@ -65,10 +65,10 @@ def make_model_devi_conf_name (sys_idx, conf_idx) :
 def make_fp_task_name(sys_idx, counter) : 
     return 'task.' + fp_task_fmt % (sys_idx, counter)
 
-def check_empty_iter(iter_index) :
+def check_empty_iter(iter_index, max_v = 0) :
     fp_path = os.path.join(make_iter_name(iter_index), fp_name)
-    fp_data_sys = glob.glob(os.path.join(fp_path, "data.*"))
-    return (len(fp_data_sys) == 0)
+    fp_tasks = glob.glob(os.path.join(fp_path, "task.*"))
+    return (len(fp_tasks) < max_v)
 
 def copy_model(numb_model, prv_iter_index, cur_iter_index) :
     cwd=os.getcwd()
@@ -97,8 +97,9 @@ def make_train (iter_index,
         decay_rate = jdata['res_decay_rate']
     numb_models = jdata['numb_models']
     init_data_sys_ = jdata['init_data_sys']    
+    fp_task_min = jdata['fp_task_min']    
     
-    if iter_index > 0 and check_empty_iter(iter_index-1) :
+    if iter_index > 0 and check_empty_iter(iter_index-1, fp_task_min) :
         log_task('prev data is empty, copy prev model')
         copy_model(numb_models, iter_index-1, iter_index)
         return
@@ -118,7 +119,11 @@ def make_train (iter_index,
         for ii in range(iter_index) :
             fp_path = os.path.join(make_iter_name(ii), fp_name)
             fp_data_sys = glob.glob(os.path.join(fp_path, "data.*"))            
-            for jj in fp_data_sys :                
+            for jj in fp_data_sys :
+                nframes = np.loadtxt(os.path.join(jj, 'box.raw')).shape[0]
+                if nframes < fp_task_min :
+                    log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
+                    continue
                 init_data_sys.append(os.path.abspath(jj))
                 sys_idx = int(jj.split('.')[-1])
                 init_batch_size.append(sys_batch_size[sys_idx])                
@@ -393,7 +398,7 @@ def _make_fp_vasp_inner (modd_path,
                     os.chdir(cwd)
                     cc += 1
                     count_total += 1
-                    if count_total > fp_task_max :
+                    if count_total >= fp_task_max :
                         return fp_tasks
     return fp_tasks
 

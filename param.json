@@ -156,6 +156,7 @@
     "fp_command":	"/home/wang_han/local/bin/vasp.5.3.kreal.sca",
     "fp_np":		4,
     "fp_task_max":	50,
+    "fp_task_min":	10,
     "fp_link_files":	[
 	["/home/wang_han/study/data.al/nnp.d05e003.k05.e600/template/POTCAR", "POTCAR"]
 	],
