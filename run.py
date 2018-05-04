@@ -111,7 +111,7 @@ def make_train (iter_index,
             os.remove(copy_flag)
 
     init_data_sys = []
-    init_batch_size = jdata['init_batch_size']
+    init_batch_size = list(jdata['init_batch_size'])
     sys_batch_size = jdata['sys_batch_size']
     for ii in init_data_sys_ :
         init_data_sys.append(os.path.abspath(ii))
@@ -185,8 +185,8 @@ def run_train (iter_index,
         task_path = os.path.join(work_path, train_task_fmt % ii)
         all_task.append(task_path)
     command = os.path.join(deepmd_path, 'bin/dp_train') + ' ' + train_param
-    if iter_index > 0:
-        command += ' --init-model old/model.ckpt '
+    # if iter_index > 0:
+    #     command += ' --init-model old/model.ckpt '
     command = cmd_append_log (command, 'train.log')
     # train models
     exec_hosts_batch(exec_machine, command, train_nthreads, all_task, None, verbose = True)
