@@ -1,23 +1,25 @@
 {    
     "numb_iter":	100,
 
-    "_comment":		" 00.train ",
-    "numb_models":	4,
-    "init_data_sys":	["/home/wang_han/study/deepmd/data.01/al.n04.e0600.k011/raw/403-413-t900"],
+    "init_data_sys":	["/home/wang_han/study/deepmd/data.01/al.n04.e0600.k011/raw/403-413-t900-2k"],
     "init_batch_size":	[8],
     "sys_configs":	[ ["/home/wang_han/study/data.al/POSCARs4DFT.n004/4.03/d01e003/9*/POSCAR"],
 			  ["/home/wang_han/study/data.al/POSCARs4DFT.n004/4.13/d01e003/9*/POSCAR"],
-			  ["/home/wang_han/study/data.al/POSCARs4DFT/4.03/d01e003/8[0-1]/POSCAR",
-			   "/home/wang_han/study/data.al/POSCARs4DFT/4.03/d01e003/9[0-1]/POSCAR"],
-			  ["/home/wang_han/study/data.al/POSCARs4DFT/4.13/d01e003/8[0-1]/POSCAR",
-			   "/home/wang_han/study/data.al/POSCARs4DFT/4.13/d01e003/9[0-1]/POSCAR"]
+			  ["/home/wang_han/study/data.al/POSCARs4DFT/4.03/d01e003/9*/POSCAR"],
+			  ["/home/wang_han/study/data.al/POSCARs4DFT/4.13/d01e003/9*/POSCAR"],
+			  ["/home/wang_han/study/data.al/POSCARs4DFT/4.03/d01e003/[1-2]*/POSCAR"],
+			  ["/home/wang_han/study/data.al/POSCARs4DFT/4.13/d01e003/[1-2]*/POSCAR"],
+			  ["/home/wang_han/study/data.al/POSCARs4DFT/3.93/d01e003/9*/POSCAR"],
+			  ["/home/wang_han/study/data.al/POSCARs4DFT/4.23/d01e003/9*/POSCAR"]
 			],
-    "sys_batch_size":	[8, 8, 1, 1],
+    "sys_batch_size":	[8, 8, 1, 1, 1, 1, 1, 1],
     "mass_map":		[27],
-    "deepmd_path":	"/home/wang_han/Soft/deep.pot.sregion.bs/source/build/tmp/",
-    "train_nthreads":	7,
-    "train_param":	"input.json",
 
+    "_comment":		" 00.train ",
+    "numb_models":	5,
+    "deepmd_path":	"/home/wang_han/Soft/deep.pot.sregion.bs/source/build/tmp/",
+    "train_nthreads":	28,
+    "train_param":	"input.json",
     "default_training_param" : {
 	"_comment": " model parameters",
 	"use_smooth":		true,
@@ -33,10 +35,10 @@
 	"_comment": " traing controls",
 	"systems":		[],
 	"set_prefix":		"set",    
-	"stop_batch":		10000,
+	"stop_batch":		400000,
 	"batch_size":		1,
 	"start_lr":		0.005,
-	"decay_steps":		50,
+	"decay_steps":		2000,
 	"decay_rate":		0.95,
 	"seed":			0,
 
@@ -51,7 +53,7 @@
 	"_comment": " frequencies counted in batch",
 	"disp_file":		"lcurve.out",
 	"disp_freq":		200,
-	"numb_test":		5,
+	"numb_test":		10,
 	"save_freq":		200,
 	"save_ckpt":		"model.ckpt",
 	"load_ckpt":		"model.ckpt",
@@ -71,22 +73,14 @@
     "_comment":		" 01.model_devi ",
     "lmp_path":		"/home/wang_han/Soft/lammps/lammps-16Mar18/src",
     "model_devi_np":	1,
-    "model_devi_trust":	0.050,
+    "model_devi_trust":	0.030,
     "model_devi_jobs":	{
 	"ensemble":	"nvt",
 	"trj_freq":	20,
 	"nsteps":	20000,
-	"job_0":	{
-	    "sys_idx":	[2, 3],
-	    "temps":	[600],
-	    "press":	[1.0],
-	    "trj_freq":	10,
-	    "nsteps":	1000,
-	    "ensemble":	"nvt",
-	    "_comment":	" that's all "
-	},
-	"job_1":	{
-	    "sys_idx":	[2, 3],
+	"_comment":	" 000 ",
+	"job_00":	{
+	    "sys_idx":	[0, 1],
 	    "temps":	[600, 900],
 	    "press":	[1.0],
 	    "trj_freq":	10,
@@ -94,57 +88,343 @@
 	    "ensemble":	"nvt",
 	    "_comment":	" that's all "
 	},
-	"job_2":	{
+	"_comment":	" 001 ",
+	"job_10":	{
+	    "sys_idx":	[2, 3],
+	    "temps":	[900],
+	    "press":	[1.0],
+	    "trj_freq":	20,
+	    "nsteps":	500,
+	    "ensemble":	"nvt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" 002 ",
+	"job_11":	{
+	    "sys_idx":	[2, 3],
+	    "temps":	[900],
+	    "press":	[1.0],
+	    "trj_freq":	20,
+	    "nsteps":	500,
+	    "ensemble":	"nvt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" 003 ",
+	"job_12":	{
 	    "sys_idx":	[2, 3],
 	    "temps":	[600, 900],
 	    "press":	[1.0],
-	    "trj_freq":	10,
+	    "trj_freq":	20,
 	    "nsteps":	1000,
 	    "ensemble":	"nvt",
 	    "_comment":	" that's all "
 	},
-	"job_3":	{
-	    "sys_idx":	[2, 3],
+	"_comment":	" 004 ",
+	"job_13":	{
+	    "sys_idx":	[3],
+	    "temps":	[600, 900],
+	    "press":	[1.0],
+	    "trj_freq":	20,
+	    "nsteps":	2000,
+	    "ensemble":	"nvt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" 005 ",
+	"job_14":	{
+	    "sys_idx":	[2],
+	    "temps":	[600, 900],
+	    "press":	[1.0],
+	    "trj_freq":	20,
+	    "nsteps":	2000,
+	    "ensemble":	"nvt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" 006 ",
+	"job_20":	{
+	    "sys_idx":	[2],
 	    "temps":	[900, 1100, 1300],
 	    "press":	[1.0],
-	    "trj_freq":	10,
+	    "trj_freq":	20,
 	    "nsteps":	1000,
 	    "ensemble":	"nvt",
 	    "_comment":	" that's all "
 	},
-	"job_4":	{
-	    "sys_idx":	[2, 3],
+	"_comment":	" 007 ",
+	"job_21":	{
+	    "sys_idx":	[3],
 	    "temps":	[900, 1100, 1300],
 	    "press":	[1.0],
-	    "trj_freq":	10,
-	    "nsteps":	1000,
+	    "trj_freq":	20,
+	    "nsteps":	5000,
 	    "ensemble":	"nvt",
 	    "_comment":	" that's all "
 	},
-	"job_5":	{
-	    "sys_idx":	[2, 3],
+	"_comment":	" 008 ",
+	"job_22":	{
+	    "sys_idx":	[2],
 	    "temps":	[900, 1100, 1300],
 	    "press":	[1.0],
-	    "trj_freq":	10,
-	    "nsteps":	1000,
+	    "trj_freq":	20,
+	    "nsteps":	5000,
 	    "ensemble":	"nvt",
 	    "_comment":	" that's all "
 	},
-	"job_6":	{
-	    "sys_idx":	[2, 3],
+	"_comment":	" 009 ",
+	"job_23":	{
+	    "sys_idx":	[3],
+	    "temps":	[900, 1100, 1300],
+	    "press":	[1.0],
+	    "trj_freq":	20,
+	    "nsteps":	10000,
+	    "ensemble":	"nvt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" 010 ",
+	"job_24":	{
+	    "sys_idx":	[2],
+	    "temps":	[900, 1100, 1300],
+	    "press":	[1.0],
+	    "trj_freq":	20,
+	    "nsteps":	10000,
+	    "ensemble":	"nvt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" 011 ",
+	"job_30":	{
+	    "sys_idx":	[3],
 	    "temps":	[1300, 1500],
 	    "press":	[1.0],
-	    "trj_freq":	10,
+	    "trj_freq":	20,
 	    "nsteps":	1000,
 	    "ensemble":	"nvt",
 	    "_comment":	" that's all "
 	},
-	"job_7":	{
-	    "sys_idx":	[2, 3],
+	"_comment":	" 012 ",
+	"job_31":	{
+	    "sys_idx":	[2],
 	    "temps":	[1300, 1500],
 	    "press":	[1.0],
-	    "trj_freq":	10,
+	    "trj_freq":	20,
 	    "nsteps":	1000,
+	    "ensemble":	"nvt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" 013 ",
+	"job_32":	{
+	    "sys_idx":	[3],
+	    "temps":	[1300, 1500],
+	    "press":	[1.0],
+	    "trj_freq":	20,
+	    "nsteps":	5000,
+	    "ensemble":	"nvt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" 014 ",
+	"job_33":	{
+	    "sys_idx":	[2],
+	    "temps":	[1300, 1500],
+	    "press":	[1.0],
+	    "trj_freq":	20,
+	    "nsteps":	5000,
+	    "ensemble":	"nvt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" 015 ",
+	"job_34":	{
+	    "sys_idx":	[3],
+	    "temps":	[1300, 1500],
+	    "press":	[1.0],
+	    "trj_freq":	20,
+	    "nsteps":	10000,
+	    "ensemble":	"nvt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" 016 ",
+	"job_35":	{
+	    "sys_idx":	[2],
+	    "temps":	[1300, 1500],
+	    "press":	[1.0],
+	    "trj_freq":	20,
+	    "nsteps":	10000,
+	    "ensemble":	"nvt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" 017 ",
+	"job_40":	{
+	    "sys_idx":	[5],
+	    "temps":	[600, 900],
+	    "press":	[1.0],
+	    "trj_freq":	20,
+	    "nsteps":	10000,
+	    "ensemble":	"nvt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" 018 ",
+	"job_41":	{
+	    "sys_idx":	[4],
+	    "temps":	[600, 900],
+	    "press":	[1.0],
+	    "trj_freq":	20,
+	    "nsteps":	10000,
+	    "ensemble":	"nvt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" 019 ",
+	"job_42":	{
+	    "sys_idx":	[5],
+	    "temps":	[600, 900],
+	    "press":	[1.0],
+	    "trj_freq":	20,
+	    "nsteps":	10000,
+	    "ensemble":	"nvt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" 020 ",
+	"job_43":	{
+	    "sys_idx":	[4],
+	    "temps":	[600, 900],
+	    "press":	[1.0],
+	    "trj_freq":	20,
+	    "nsteps":	10000,
+	    "ensemble":	"nvt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" 021 ",
+	"job_50":	{
+	    "sys_idx":	[5],
+	    "temps":	[600, 900],
+	    "press":	[1.0],
+	    "trj_freq":	20,
+	    "nsteps":	10000,
+	    "ensemble":	"npt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" 022 ",
+	"job_51":	{
+	    "sys_idx":	[4],
+	    "temps":	[600, 900],
+	    "press":	[1.0],
+	    "trj_freq":	20,
+	    "nsteps":	10000,
+	    "ensemble":	"npt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" 023 ",
+	"job_52":	{
+	    "sys_idx":	[2],
+	    "temps":	[600, 900],
+	    "press":	[1.0],
+	    "trj_freq":	20,
+	    "nsteps":	10000,
+	    "ensemble":	"npt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" 024 ",
+	"job_53":	{
+	    "sys_idx":	[3],
+	    "temps":	[600, 900],
+	    "press":	[1.0],
+	    "trj_freq":	20,
+	    "nsteps":	10000,
+	    "ensemble":	"npt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" 025 ",
+	"job_60":	{
+	    "sys_idx":	[5],
+	    "temps":	[600, 900],
+	    "press":	[1.0],
+	    "trj_freq":	20,
+	    "nsteps":	10000,
+	    "ensemble":	"nvt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" 026 ",
+	"job_61":	{
+	    "sys_idx":	[4],
+	    "temps":	[600, 900],
+	    "press":	[1.0],
+	    "trj_freq":	20,
+	    "nsteps":	10000,
+	    "ensemble":	"nvt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" 027 ",
+	"job_62":	{
+	    "sys_idx":	[5],
+	    "temps":	[600, 900],
+	    "press":	[1.0],
+	    "trj_freq":	20,
+	    "nsteps":	10000,
+	    "ensemble":	"nvt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" 028 ",
+	"job_63":	{
+	    "sys_idx":	[4],
+	    "temps":	[600, 900],
+	    "press":	[1.0],
+	    "trj_freq":	20,
+	    "nsteps":	10000,
+	    "ensemble":	"nvt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" 029 ",
+	"job_64":	{
+	    "sys_idx":	[5],
+	    "temps":	[600, 900],
+	    "press":	[1.0],
+	    "trj_freq":	20,
+	    "nsteps":	10000,
+	    "ensemble":	"npt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" 030 ",
+	"job_65":	{
+	    "sys_idx":	[4],
+	    "temps":	[600, 900],
+	    "press":	[1.0],
+	    "trj_freq":	20,
+	    "nsteps":	10000,
+	    "ensemble":	"npt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" 031 ",
+	"job_66":	{
+	    "sys_idx":	[2],
+	    "temps":	[600, 900],
+	    "press":	[1.0],
+	    "trj_freq":	20,
+	    "nsteps":	10000,
+	    "ensemble":	"npt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" 032 ",
+	"job_67":	{
+	    "sys_idx":	[3],
+	    "temps":	[600, 900],
+	    "press":	[1.0],
+	    "trj_freq":	20,
+	    "nsteps":	10000,
+	    "ensemble":	"npt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" 033 ",
+	"job_68":	{
+	    "sys_idx":	[7],
+	    "temps":	[600, 900],
+	    "press":	[1.0],
+	    "trj_freq":	20,
+	    "nsteps":	10000,
+	    "ensemble":	"nvt",
+	    "_comment":	" that's all "
+	},
+	"_comment":	" 034 ",
+	"job_69":	{
+	    "sys_idx":	[6],
+	    "temps":	[600, 900],
+	    "press":	[1.0],
+	    "trj_freq":	20,
+	    "nsteps":	10000,
 	    "ensemble":	"nvt",
 	    "_comment":	" that's all "
 	},
@@ -154,8 +434,8 @@
     "_comment":		" 02.fp ",
     "fp_style":		"vasp",
     "fp_command":	"/home/wang_han/local/bin/vasp.5.3.kreal.sca",
-    "fp_np":		4,
-    "fp_task_max":	50,
+    "fp_np":		28,
+    "fp_task_max":	1000,
     "fp_task_min":	10,
     "fp_link_files":	[
 	["/home/wang_han/study/data.al/nnp.d05e003.k05.e600/template/POTCAR", "POTCAR"]
@@ -163,7 +443,7 @@
     "fp_params":	{
 	"ecut":		600,
 	"ediff":	1e-6,
-	"kspacing":	0.8,
+	"kspacing":	0.16,
 	"npar":		2,
 	"kpar":		1,
 	"_comment":	" that's all "
