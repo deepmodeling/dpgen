@@ -77,8 +77,8 @@ def exec_batch (cmd,
 def _make_mpi_command (cmd,
                        np,
                        nthreads) :
-    ret = "mpirun -n %d -genv OMP_NUM_THREADS %d %s" \
-          % (np, nthreads, cmd)
+    ret = "OMP_NUM_THREADS=%d mpirun -n %d %s" \
+          % (nthreads, np, cmd)
     return ret
 
 def exec_mpi (cmd,

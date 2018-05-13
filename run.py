@@ -346,25 +346,34 @@ def post_model_devi (iter_index,
 
 def _make_fp_vasp_inner (modd_path,
                          work_path,
-                         system_index,
+                         trust_lo,
+                         trust_hi,
                          fp_task_max,
                          fp_link_files,
                          fp_params):
     """
     modd_path           string          path of model devi
     work_path           string          path of fp
-    system_index        [string]        index of systems
     fp_task_max         int             max number of tasks
     fp_link_files       [string]        linked files for fp, POTCAR for example
     fp_params           map             parameters for fp
     """
+    modd_task = glob.glob(os.path.join(modd_path, "task.*"))
+    modd_task.sort()
+    system_index = []
+    for ii in modd_task :
+        system_index.append(os.path.basename(ii).split('.')[1])
+    set_tmp = set(system_index)
+    system_index = list(set_tmp)
+    system_index.sort()
+
     ecut = fp_params['ecut']
     ediff = fp_params['ediff']
     npar = fp_params['npar']
     kpar = fp_params['kpar']
     kspacing = fp_params['kspacing']
     fp_tasks = []
-    count_total = 0
+    fp_candidate = []
     for ss in system_index :
         modd_system_glob = os.path.join(modd_path, 'task.' + ss + '.*')
         modd_system_task = glob.glob(modd_system_glob)
@@ -373,33 +382,41 @@ def _make_fp_vasp_inner (modd_path,
         for tt in modd_system_task :
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                sel_conf = np.loadtxt(os.path.join(tt, 'sel.out'))
-                sel_conf = np.reshape(sel_conf, [-1,2])
-                if sel_conf.shape[0] == 0:
-                    continue
-                sel_conf = sel_conf[:,0]
-                sel_conf = sel_conf.astype(int)
-                for ii in sel_conf :
-                    conf_name = os.path.join(tt, "traj")
-                    conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
-                    conf_name = os.path.abspath(conf_name)
-                    fp_task_name = make_fp_task_name(int(ss), cc)
-                    fp_task_path = os.path.join(work_path, fp_task_name)
-                    create_path(fp_task_path)
-                    fp_tasks.append(fp_task_path)
-                    cwd = os.getcwd()
-                    os.chdir(fp_task_path)
-                    os.symlink(os.path.relpath(conf_name), 'conf.lmp')
-                    incar = make_vasp_incar(ecut, ediff, npar, kpar, kspacing = kspacing, kgamma = True)
-                    with open('INCAR', 'w') as fp:
-                        fp.write(incar)
-                    for pair in fp_link_files :
-                        os.symlink(pair[0], pair[1])
-                    os.chdir(cwd)
-                    cc += 1
-                    count_total += 1
-                    if count_total >= fp_task_max :
-                        return fp_tasks
+                all_conf = np.loadtxt(os.path.join(tt, 'model_devi.out'))
+                sel_conf = []
+                for ii in range(all_conf.shape[0]) :
+                    if all_conf[ii][1] < trust_hi and all_conf[ii][1] > trust_lo:
+                        sel_conf.append(int(all_conf[ii][0]))
+                for ii in sel_conf:
+                    fp_candidate.append([tt, ii])
+    with open(os.path.join(work_path,'candidate.out'), 'w') as fp:
+        for ii in fp_candidate:
+            fp.write(str(ii[0]) + " " + str(ii[1]) + "\n")
+    random.shuffle(fp_candidate)
+    with open(os.path.join(work_path,'candidate.shuffled.out'), 'w') as fp:
+        for ii in fp_candidate:
+            fp.write(str(ii[0]) + " " + str(ii[1]) + "\n")
+    numb_task = min(fp_task_max, len(fp_candidate))
+    for cc in range(numb_task) :
+        tt = fp_candidate[cc][0]
+        ii = fp_candidate[cc][1]
+        ss = os.path.basename(tt).split('.')[1]
+        conf_name = os.path.join(tt, "traj")
+        conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
+        conf_name = os.path.abspath(conf_name)
+        fp_task_name = make_fp_task_name(int(ss), cc)
+        fp_task_path = os.path.join(work_path, fp_task_name)
+        create_path(fp_task_path)
+        fp_tasks.append(fp_task_path)
+        cwd = os.getcwd()
+        os.chdir(fp_task_path)
+        os.symlink(os.path.relpath(conf_name), 'conf.lmp')
+        incar = make_vasp_incar(ecut, ediff, npar, kpar, kspacing = kspacing, kgamma = True)
+        with open('INCAR', 'w') as fp:
+            fp.write(incar)
+        for pair in fp_link_files :
+            os.symlink(pair[0], pair[1])
+        os.chdir(cwd)
     return fp_tasks
 
 def make_fp_vasp (iter_index, 
@@ -407,22 +424,17 @@ def make_fp_vasp (iter_index,
     fp_task_max = jdata['fp_task_max']
     fp_params = jdata['fp_params']
     fp_link_files = jdata['fp_link_files']
+    trust_lo = jdata['model_devi_trust_lo']
+    trust_hi = jdata['model_devi_trust_hi']
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
     create_path(work_path)
     modd_path = os.path.join(iter_name, model_devi_name)
-    modd_task = glob.glob(os.path.join(modd_path, "task.*"))
-    modd_task.sort()
-    system_index = []
-    for ii in modd_task :        
-        system_index.append(os.path.basename(ii).split('.')[1])
-    system_index.sort()
-    set_tmp = set(system_index)
-    system_index = list(set_tmp)
-    system_index.sort()
 
-    fp_tasks = _make_fp_vasp_inner(modd_path, work_path, system_index, fp_task_max, fp_link_files, fp_params)
+    fp_tasks = _make_fp_vasp_inner(modd_path, work_path,
+                                   trust_lo, trust_hi,
+                                   fp_task_max, fp_link_files, fp_params)
     if len(fp_tasks) == 0 :
         return
 
@@ -638,4 +650,4 @@ if __name__ == '__main__':
     # post_train(0, jdata)
     logging.basicConfig (level=logging.INFO, format='%(asctime)s %(message)s')
     run_iter('param.json', MachinePBS)
-#    run_iter('param.json', MachineLocal)
+    # run_iter('param.json', MachineLocal)
