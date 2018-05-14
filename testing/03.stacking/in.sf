@@ -1,0 +1,72 @@
+# Input file for Stack Fault Energy surface of Nickel
+# Richard Glaze, 2014
+# --------------------- INITIALIZAITION ---------------------
+clear
+units		metal
+dimension	3
+boundary	p p s
+atom_style	atomic
+#variable	latparam1	equal 3.52
+variable	latparam1	equal 4.043
+variable	x_displace	equal -1*(${latparam1}/sqrt(6))
+variable	xdim		equal ${latparam1}*sqrt(6)/2*10
+variable	ydim		equal ${latparam1}*sqrt(2)/2*10
+# --------------------- ATOM DEFINITION ---------------------
+lattice		fcc ${latparam1}
+region		1 block -.001 ${xdim} -.001 ${ydim} -.001 16.5 units box
+region 		2 block -.001 ${xdim} -.001 ${ydim} 16.5 36.5808 units box
+region		whole block 0 ${xdim} 0 ${ydim} 0 36.5808 units box
+create_box 	2 whole
+lattice		fcc ${latparam1} orient x 1 1 2 orient y -1 1 0 orient z -1 -1 1
+create_atoms	1 region 1
+lattice		fcc ${latparam1} orient x 1 1 2 orient y -1 1 0 orient z -1 -1 1
+create_atoms 	1 region 2 
+mass		1 27
+mass		2 27
+# --------------------- FORCE FIELDS ---------------------
+pair_style	deepmd graph.000.pb
+pair_coeff
+# --------------------- SETTINGS ---------------------
+compute		peratom all pe/atom
+compute		eatoms all reduce sum c_peratom
+compute		csym all centro/atom fcc
+thermo		1
+thermo_style	custom step pe lx ly lz press pxx pyy pzz c_eatoms
+dump		1 all custom 10 dump.relax.1.* id type xs ys zs c_peratom c_csym
+# fix		1 all setforce 0 0 NULL
+fix		2 all lineforce 0 0 1.0
+min_style	cg
+minimize	1e-10 1e-10 5000 5000
+run		0
+undump		1
+#this command creates a model of the script before the displacement and minimization occur
+variable	E equal "c_eatoms"
+variable	Eo equal $E
+#variable E equal "c_eatoms" computes the initial energy of the model before any sliding is done
+#E is necessary to store the initial energy in Eo
+group		bot region 1
+group		top region 2
+displace_atoms	top move ${x_displace} 0.0 0.0 units box
+#displace_atoms is the command neccessary to move atoms into the next stacking arrangement (ie: A -> B)
+
+dump		2 all custom 10 dump.relax.2.* id type xs ys zs c_peratom c_csym
+# fix		1 all setforce 0 0 NULL
+fix		2 all lineforce 0 0 1.0
+min_style	cg
+minimize	1e-10 1e-10 1000 1000
+run		0
+variable	Ef equal "c_eatoms"
+variable	Cf equal 1.60217657e-16
+variable	A equal (${xdim}*${ydim})*1e-20
+variable	SFE equal ((${Ef}-${Eo})*${Cf})/${A}
+
+#variable Ef equal "c_eatoms" computes the final energy of the system after sliding is done
+#variable A is the area of the Stacking fault plane
+#variable Cf is the conversion factor of electro volts to millijoules
+#variable SFE is the stacking-fault energy of the system
+####################################
+# SIMULATION DONE
+print "All done"
+print "Initial energy of atoms = ${Eo} eV"
+print "Final energy of atoms = ${Ef} eV"
+print "Stacking-fault energy = ${SFE} mJ/m^2"
