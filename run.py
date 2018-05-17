@@ -223,19 +223,18 @@ def post_train (iter_index,
 def make_model_devi (iter_index, 
                      jdata) :
     model_devi_jobs = jdata['model_devi_jobs']
-    ensemble = model_devi_jobs['ensemble']
-    nsteps = model_devi_jobs['nsteps']
-    trj_freq = model_devi_jobs['trj_freq']
-    job_names = get_job_names (model_devi_jobs)
-    assert (iter_index < len(job_names)) 
-    cur_job_name = job_names[iter_index]    
-    cur_job = model_devi_jobs[cur_job_name]
-    if 'ensemble' in cur_job.keys() :
-        ensemble = cur_job['ensemble']
-    if 'nsteps' in cur_job.keys() :
-        nsteps = cur_job['nsteps']
-    if 'trj_freq' in cur_job.keys() :
-        trj_freq = cur_job['trj_freq']
+    assert (iter_index < len(model_devi_jobs))
+    cur_job = model_devi_jobs[iter_index]
+    # ensemble = model_devi_jobs['ensemble']
+    # nsteps = model_devi_jobs['nsteps']
+    # trj_freq = model_devi_jobs['trj_freq']
+    # job_names = get_job_names (model_devi_jobs)
+    # assert (iter_index < len(job_names)) 
+    # cur_job_name = job_names[iter_index]    
+    # cur_job = model_devi_jobs[cur_job_name]
+    ensemble = cur_job['ensemble']
+    nsteps = cur_job['nsteps']
+    trj_freq = cur_job['trj_freq']
     sys_configs = jdata['sys_configs']
 
     sys_idx = cur_job['sys_idx']
@@ -265,6 +264,8 @@ def make_model_devi (iter_index,
     for mm in models :
         model_name = os.path.basename(mm)
         os.symlink(mm, os.path.join(work_path, model_name))
+    with open(os.path.join(work_path, 'cur_job.json'), 'w') as outfile:
+        json.dump(cur_job, outfile, indent = 4)
 
     all_task = []
     task_param = []
@@ -495,10 +496,12 @@ def run_fp (iter_index,
 def post_fp_vasp (iter_index,
                   jdata):
     model_devi_jobs = jdata['model_devi_jobs']
-    job_names = get_job_names (model_devi_jobs)
-    assert (iter_index < len(job_names)) 
-    cur_job_name = job_names[iter_index]    
-    cur_job = model_devi_jobs[cur_job_name]
+    assert (iter_index < len(model_devi_jobs)) 
+    cur_job = model_devi_jobs[iter_index]
+    # job_names = get_job_names (model_devi_jobs)
+    # assert (iter_index < len(job_names)) 
+    # cur_job_name = job_names[iter_index]    
+    # cur_job = model_devi_jobs[cur_job_name]
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)

@@ -22,3 +22,6 @@ ener.edr
 state*cpt
 CMakeCache.txt
 CMakeFiles
+*.pb
+log.lammps
+restart.*
