@@ -3,8 +3,8 @@ variable	ao		equal 4.04
 variable	ncopy		equal 4
 variable	thermo_freq	equal 50
 variable	dump_freq	equal 50
-variable	mini_etol	equal 1e-12
-variable	mini_ftol	equal 1e-12
+variable	mini_etol	equal 1e-10
+variable	mini_ftol	equal 1e-5
 
 #----Create system----------------------------------------------
 clear
