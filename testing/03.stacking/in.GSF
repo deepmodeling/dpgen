@@ -28,10 +28,11 @@ compute		peratom all pe/atom
 compute		eatoms all reduce sum c_peratom
 thermo		1
 thermo_style	custom step pe pxx pyy pzz c_eatoms
+dump		1 all custom 10 dump.relax type xs ys zs c_peratom fx fy fz
 
 fix		1 all setforce 0 0 NULL
 min_style	cg
-minimize	1e-10 1e-10 100 100
+minimize	1e-10 1e-10 1000 1000
 
 run		0
 variable	E equal "c_eatoms"
@@ -44,12 +45,9 @@ group		bot region 2
 # ------------------------- Displacement -----------------------
 displace_atoms	bot move ${x_displace} 0.0 0.0 units box
 
-# Dump to comp  for Ovito post processing 
-dump		1 all custom 10 dump.comp.* id type xs ys zs c_peratom fx fy fz
-
 fix		1 all setforce 0 0 NULL
 min_style	cg
-minimize	1e-10 1e-10 100 100
+minimize	1e-10 1e-10 1000 1000
 
 run		0
 variable	Ef equal "c_eatoms"
