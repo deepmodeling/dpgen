@@ -1,0 +1,71 @@
+variable	test_temp	equal 900
+variable	temp_damp	equal 0.5
+variable	test_pres	equal 0.0
+variable	pres_damp	equal 0.5
+variable	liquid_temp	equal 2000
+variable	solid_temp	equal 300
+
+dimension 	3
+boundary	p p p
+units		metal
+
+atom_style	atomic
+neighbor	1.0 bin
+neigh_modify	every 10 delay 0 check no
+
+variable	numb_x equal 20
+variable	numb_y equal 4
+variable	numb_z equal 4
+variable	latt_a equal 4.04
+variable	protct equal 0.001
+variable	size_x equal ${numb_x}*${latt_a}-${protct}
+variable	size_y equal ${numb_y}*${latt_a}-${protct}
+variable	size_z equal ${numb_z}*${latt_a}-${protct}
+variable	save_y equal 1000
+variable	save_z equal 1000
+
+lattice		fcc ${latt_a}
+region		whole block -${protct} ${size_x} -${protct} ${size_y} -${protct} ${size_z} units box
+create_box	1 whole
+create_atoms	1 region whole
+mass		1 27
+
+include		potential.mod
+
+dump		phase1 all atom 1000 dump.atom
+timestep	0.002
+thermo_style	custom step temp pe etotal press pxx pyy pzz lx ly lz vol
+thermo		20
+
+# equilibrium simulation region
+fix		1 all npt temp ${solid_temp} ${solid_temp} ${temp_damp} aniso ${test_pres} ${test_pres} ${pres_damp}
+velocity	all create ${solid_temp} 31415
+run		5000 
+unfix		1
+
+variable	d1 equal ${size_x}*0.225
+variable	d2 equal ${size_x}*0.275
+
+region		del block ${d1} ${d2} -10 ${save_y} -10 ${save_z} units box
+delete_atoms	region del
+neigh_modify	every 10 delay 0 check no
+
+variable	half_x equal ${size_x}*0.5
+region		liquid block -10 ${half_x} -10 ${save_y} -10 ${save_z} units box
+group		liquid region liquid
+
+fix		2 liquid nvt temp ${liquid_temp} ${liquid_temp} ${temp_damp}
+velocity	liquid create ${liquid_temp} 31415
+run		5000
+unfix		2
+
+fix		3 all npt temp ${test_temp} ${test_temp} ${temp_damp} aniso ${test_pres} ${test_pres} ${pres_damp}
+velocity	all create ${test_temp} 31415
+run		3000 
+
+write_restart	equilibrium.restart
+
+run		100000 
+
+
+
