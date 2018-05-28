@@ -7,7 +7,7 @@ variable	No equal $N
 variable	E equal "c_pot"
 variable	Eo equal $E
 
-include		add_del_100.mod
+include		add_oh.mod
 
 include		relax.2.mod
 variable	Ef equal "c_pot"

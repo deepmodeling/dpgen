@@ -1,81 +1,17 @@
-#----Input parameters-------------------------------------------
-variable	ao		equal 4.04
-variable	ncopy		equal 4
-variable	thermo_freq	equal 10
-variable	dump_freq	equal 50
-variable	mini_etol	equal 1e-12
-variable	mini_ftol	equal 1e-12
-
-#----Create system----------------------------------------------
-clear
-units 		metal
-dimension	3
-boundary	p	p    p      
-atom_style	atomic
-
-variable	hnc equal ${ncopy}/2
-variable	mhnc equal -${ncopy}/2
-lattice         fcc ${ao}
-region		simbox block ${mhnc} ${hnc} ${mhnc} ${hnc} ${mhnc} ${hnc}
-create_box	1 simbox
-lattice 	fcc ${ao} orient x 1 0 0 orient y 0 1 0 orient z 0 0 1
-create_atoms	1 region simbox
-mass		1 27
-
-#----Force field------------------------------------------------
-neigh_modify	every 1 delay 0 check yes
-pair_style	deepmd graph.000.pb graph.001.pb graph.002.pb graph.003.pb ${dump_freq} model_devi.out
-pair_coeff
-
-#----Eenergy Computation----------------------------------------
-compute		pot all pe
-
-#----Relax system-----------------------------------------------
-reset_timestep	0
-
-thermo		${thermo_freq}
-thermo_style	custom step pe lx ly lz press pxx pyy pzz c_pot
-
-dump		1 all custom ${dump_freq} dump.relax.1 id type xs ys zs 
-
-fix		1 all box/relax  aniso 0.0 
-min_style	cg
-minimize	${mini_etol} ${mini_ftol} 5000 5000
-
-run		0
-undump		1
+include		init.mod
+include		potential.mod
+include		relax.1.mod
 
 variable	N equal count(all)
 variable	No equal $N
-
 variable	E equal "c_pot"
 variable	Eo equal $E
 
-#----Add interstitial atom--------------------------------------
-# r2 is the radius of the copper atom
-# variable	r2 equal sqrt(${ao}^2+${ao}^2)/4
-# region		select sphere 0 0 0 ${r2} units box
-variable	r2 equal ${ao}/10.0
-region		del sphere 0 0 0 ${r2} units box
-delete_atoms	region del
-variable	qhao_0 equal ${ao}/6.0 
-variable	qhao_1 equal -${ao}/6.0 
-create_atoms	1 single ${qhao_0} ${qhao_0} 0 units box
-create_atoms	1 single ${qhao_1} ${qhao_1} 0 units box
+include		add_del_110.mod
 
-#----Relax system-----------------------------------------------
-reset_timestep	0
-
-thermo		${thermo_freq}
-thermo_style	custom step pe lx ly lz press pxx pyy pzz c_pot
-
-dump		1 all custom ${dump_freq} dump.relax.2 id type xs ys zs 
-
-min_style	cg
-minimize	${mini_etol} ${mini_ftol} 5000 5000
-
-variable Ef equal "c_pot"
-variable Ei equal (${Ef}-((${No}+1)/${No})*${Eo})
+include		relax.2.mod
+variable	Ef equal "c_pot"
+variable	Ei equal (${Ef}-((${No}+1)/${No})*${Eo})
 
 ######################################
 # SIMULATION DONE
