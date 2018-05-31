@@ -13,3 +13,4 @@ do
     echo $epv $epa $coa
 done
 
+rm -f in.tmp

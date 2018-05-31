@@ -12,3 +12,4 @@ do
     echo $epv $epa
 done
 
+rm -f in.tmp
