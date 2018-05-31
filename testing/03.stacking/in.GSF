@@ -9,8 +9,8 @@ atom_style	atomic
 variable	latt_a		equal 4.04
 variable	protct		equal 0.01
 variable	x_displace	equal -1*(${latt_a}/sqrt(6))
-variable	numb_x		equal 10
-variable	numb_y		equal 10
+variable	numb_x		equal 4
+variable	numb_y		equal 4
 variable	numb_z		equal 24
 variable	size_x		equal ${latt_a}*${numb_x}*sqrt(6)/2
 variable	size_y		equal ${latt_a}*${numb_y}*sqrt(2)/2
