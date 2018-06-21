@@ -79,7 +79,8 @@ def exec_hosts_batch (machine_env,
                       task_dirs,
                       task_args = None,
                       verbose = False,
-                      mpi = False) :
+                      mpi = False,
+                      gpu = False) :
     ntasks = len(task_dirs)
     if task_args != None :
         assert ntasks == len(task_args) or len(task_args) == 1
@@ -108,10 +109,10 @@ def exec_hosts_batch (machine_env,
             logging.info(("%s %03d : %s with %d jobs %s" % (host_list, ii, cmd, len(task_batch), task_batch)))
         if mpi :
             ps = machine_env.exec_mpi(cmd, ".", task_batch, task_args, work_thread)
-        else :
+        elif gpu :
+            ps = machine_env.exec_gpu(cmd, ".", task_batch, task_args, work_thread)
+        else:
             ps = machine_env.exec_batch(cmd, ".", task_batch, task_args, work_thread)
         while True :
             if not(any(p.wait() for p in ps)) :
                 break
-            time.sleep(1)    
-    time.sleep(10)

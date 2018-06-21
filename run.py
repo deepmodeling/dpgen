@@ -32,6 +32,7 @@ from lib.lammps import cvt_lammps_conf
 from lib.lammps import make_lammps_input
 from lib.vasp import make_vasp_incar
 import lib.MachineLocal as MachineLocal
+import lib.MachineLocalGPU as MachineLocalGPU
 import lib.MachineSlurm as MachineSlurm
 import lib.MachinePBS as MachinePBS
 from lib.machine_exec import exec_hosts
@@ -65,10 +66,25 @@ def make_model_devi_conf_name (sys_idx, conf_idx) :
 def make_fp_task_name(sys_idx, counter) : 
     return 'task.' + fp_task_fmt % (sys_idx, counter)
 
+def get_sys_index(task) :
+    task.sort()
+    system_index = []
+    for ii in task :
+        system_index.append(os.path.basename(ii).split('.')[1])
+    set_tmp = set(system_index)
+    system_index = list(set_tmp)
+    system_index.sort()
+    return system_index
+    
 def check_empty_iter(iter_index, max_v = 0) :
     fp_path = os.path.join(make_iter_name(iter_index), fp_name)
     fp_tasks = glob.glob(os.path.join(fp_path, "task.*"))
-    return (len(fp_tasks) < max_v)
+    sys_index = get_sys_index(fp_tasks)
+    empty_sys = []
+    for ii in sys_index:
+        sys_tasks = glob.glob(os.path.join(fp_path, "task." + ii + ".*"))
+        empty_sys.append(len(sys_tasks) < max_v)
+    return all(empty_sys)
 
 def copy_model(numb_model, prv_iter_index, cur_iter_index) :
     cwd=os.getcwd()
@@ -189,7 +205,7 @@ def run_train (iter_index,
     #     command += ' --init-model old/model.ckpt '
     command = cmd_append_log (command, 'train.log')
     # train models
-    exec_hosts_batch(exec_machine, command, train_nthreads, all_task, None, verbose = True)
+    exec_hosts_batch(exec_machine, command, train_nthreads, all_task, None, verbose = True, mpi = False,gpu = True)
 
 def post_train (iter_index,
                 jdata) :
@@ -210,6 +226,7 @@ def post_train (iter_index,
         all_task.append(task_path)
     command = os.path.join(deepmd_path, 'bin/dp_frz')
     command = cmd_append_log(command, 'freeze.log')
+    command = 'CUDA_VISIBLE_DEVICES="" ' + command
     # frz models
     exec_hosts(MachineLocal, command, 1, all_task, None)
     # symlink models
@@ -320,8 +337,7 @@ def run_model_devi (iter_index,
                     jdata, 
                     exec_machine) :
     model_devi_np = jdata['model_devi_np']
-    lmp_path = jdata['lmp_path']
-    lmp_exec = os.path.join(lmp_path, 'lmp_mpi')
+    lmp_exec = jdata['lmp_command']
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, model_devi_name)
@@ -330,8 +346,24 @@ def run_model_devi (iter_index,
     all_task.sort()
     command = lmp_exec + " -i input.lammps"
     command = cmd_append_log(command, "model_devi.log")
+
+    fp = open (os.path.join(work_path, 'cur_job.json'), 'r')
+    cur_job = json.load (fp)
+    traj_freq = cur_job['trj_freq']
+    nsteps = cur_job['nsteps']
+    nframes = nsteps // traj_freq + 1
     
-    exec_hosts_batch(exec_machine, command, model_devi_np, all_task, verbose = True, mpi = True)
+    run_tasks = []
+    for ii in all_task:
+        fres = os.path.join(ii, 'model_devi.out')
+        if os.path.isfile(fres) :
+            nlines = np.loadtxt(fres).shape[0]
+            if nframes != nlines :
+                run_tasks.append(ii)
+        else :
+            run_tasks.append(ii)
+
+    exec_hosts_batch(exec_machine, command, model_devi_np, run_tasks, None, verbose = True, gpu = True)
 
 def post_model_devi (iter_index, 
                      jdata) :
@@ -347,8 +379,11 @@ def post_model_devi (iter_index,
 
 def _make_fp_vasp_inner (modd_path,
                          work_path,
-                         trust_lo,
-                         trust_hi,
+                         e_trust_lo,
+                         e_trust_hi,
+                         f_trust_lo,
+                         f_trust_hi,
+                         fp_task_min,
                          fp_task_max,
                          fp_link_files,
                          fp_params):
@@ -374,8 +409,9 @@ def _make_fp_vasp_inner (modd_path,
     kpar = fp_params['kpar']
     kspacing = fp_params['kspacing']
     fp_tasks = []
-    fp_candidate = []
     for ss in system_index :
+        fp_candidate = []
+        fp_rest = []
         modd_system_glob = os.path.join(modd_path, 'task.' + ss + '.*')
         modd_system_task = glob.glob(modd_system_glob)
         modd_system_task.sort()
@@ -385,39 +421,68 @@ def _make_fp_vasp_inner (modd_path,
                 warnings.simplefilter("ignore")
                 all_conf = np.loadtxt(os.path.join(tt, 'model_devi.out'))
                 sel_conf = []
+                res_conf = []
                 for ii in range(all_conf.shape[0]) :
-                    if all_conf[ii][1] < trust_hi and all_conf[ii][1] > trust_lo:
+                    if (all_conf[ii][1] < e_trust_hi and all_conf[ii][1] > e_trust_lo) or \
+                       (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] > f_trust_lo) :
                         sel_conf.append(int(all_conf[ii][0]))
+                    else :
+                        res_conf.append(int(all_conf[ii][0]))
                 for ii in sel_conf:
                     fp_candidate.append([tt, ii])
-    with open(os.path.join(work_path,'candidate.out'), 'w') as fp:
-        for ii in fp_candidate:
-            fp.write(str(ii[0]) + " " + str(ii[1]) + "\n")
-    random.shuffle(fp_candidate)
-    with open(os.path.join(work_path,'candidate.shuffled.out'), 'w') as fp:
-        for ii in fp_candidate:
-            fp.write(str(ii[0]) + " " + str(ii[1]) + "\n")
-    numb_task = min(fp_task_max, len(fp_candidate))
-    for cc in range(numb_task) :
-        tt = fp_candidate[cc][0]
-        ii = fp_candidate[cc][1]
-        ss = os.path.basename(tt).split('.')[1]
-        conf_name = os.path.join(tt, "traj")
-        conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
-        conf_name = os.path.abspath(conf_name)
-        fp_task_name = make_fp_task_name(int(ss), cc)
-        fp_task_path = os.path.join(work_path, fp_task_name)
-        create_path(fp_task_path)
-        fp_tasks.append(fp_task_path)
-        cwd = os.getcwd()
-        os.chdir(fp_task_path)
-        os.symlink(os.path.relpath(conf_name), 'conf.lmp')
-        incar = make_vasp_incar(ecut, ediff, npar, kpar, kspacing = kspacing, kgamma = True)
-        with open('INCAR', 'w') as fp:
-            fp.write(incar)
-        for pair in fp_link_files :
-            os.symlink(pair[0], pair[1])
-        os.chdir(cwd)
+                for ii in res_conf:
+                    fp_rest.append([tt, ii])
+        random.shuffle(fp_candidate)
+        with open(os.path.join(work_path,'candidate.shuffled.%s.out'%ss), 'w') as fp:
+            for ii in fp_candidate:
+                fp.write(str(ii[0]) + " " + str(ii[1]) + "\n")
+        random.shuffle(fp_rest)
+        with open(os.path.join(work_path,'rest.shuffled.%s.out'%ss), 'w') as fp:
+            for ii in fp_rest:
+                fp.write(str(ii[0]) + " " + str(ii[1]) + "\n")
+        numb_task = min(fp_task_max, len(fp_candidate))
+        for cc in range(numb_task) :
+            tt = fp_candidate[cc][0]
+            ii = fp_candidate[cc][1]
+            ss = os.path.basename(tt).split('.')[1]
+            conf_name = os.path.join(tt, "traj")
+            conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
+            conf_name = os.path.abspath(conf_name)
+            fp_task_name = make_fp_task_name(int(ss), cc)
+            fp_task_path = os.path.join(work_path, fp_task_name)
+            create_path(fp_task_path)
+            fp_tasks.append(fp_task_path)
+            cwd = os.getcwd()
+            os.chdir(fp_task_path)
+            os.symlink(os.path.relpath(conf_name), 'conf.lmp')
+            incar = make_vasp_incar(ecut, ediff, npar, kpar, kspacing = kspacing, kgamma = True)
+            with open('INCAR', 'w') as fp:
+                fp.write(incar)
+            for pair in fp_link_files :
+                os.symlink(pair[0], pair[1])
+            os.chdir(cwd)
+        if numb_task < fp_task_min:
+            for cc in range(fp_task_min - numb_task) :
+                tt = fp_rest[cc][0]
+                ii = fp_rest[cc][1]
+                ss = os.path.basename(tt).split('.')[1]
+                conf_name = os.path.join(tt, "traj")
+                conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
+                conf_name = os.path.abspath(conf_name)
+                fp_task_name = make_fp_task_name(int(ss), cc + numb_task)
+                fp_task_path = os.path.join(work_path, fp_task_name)
+                create_path(fp_task_path)
+                fp_tasks.append(fp_task_path)
+                cwd = os.getcwd()
+                os.chdir(fp_task_path)
+                os.symlink(os.path.relpath(conf_name), 'conf.lmp')
+                shutil.copyfile(os.path.relpath(conf_name), 'conf.lmp.bk')
+                incar = make_vasp_incar(ecut, ediff, npar, kpar, kspacing = kspacing, kgamma = True)
+                with open('INCAR', 'w') as fp:
+                    fp.write(incar)
+                for pair in fp_link_files :
+                    os.symlink(pair[0], pair[1])
+                os.chdir(cwd)            
     return fp_tasks
 
 def make_fp_vasp (iter_index, 
@@ -425,17 +490,24 @@ def make_fp_vasp (iter_index,
     fp_task_max = jdata['fp_task_max']
     fp_params = jdata['fp_params']
     fp_link_files = jdata['fp_link_files']
-    trust_lo = jdata['model_devi_trust_lo']
-    trust_hi = jdata['model_devi_trust_hi']
+    e_trust_lo = jdata['model_devi_e_trust_lo']
+    e_trust_hi = jdata['model_devi_e_trust_hi']
+    f_trust_lo = jdata['model_devi_f_trust_lo']
+    f_trust_hi = jdata['model_devi_f_trust_hi']
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
     create_path(work_path)
     modd_path = os.path.join(iter_name, model_devi_name)
+    cur_job = json.load(open(os.path.join(modd_path, 'cur_job.json'), 'r'))
+    task_min = -1
+    if 'task_min' in cur_job :
+        task_min = cur_job['task_min']
 
     fp_tasks = _make_fp_vasp_inner(modd_path, work_path,
-                                   trust_lo, trust_hi,
-                                   fp_task_max, fp_link_files, fp_params)
+                                   e_trust_lo, e_trust_hi,
+                                   f_trust_lo, f_trust_hi,
+                                   task_min, fp_task_max, fp_link_files, fp_params)
     if len(fp_tasks) == 0 :
         return
 
@@ -443,6 +515,9 @@ def make_fp_vasp (iter_index,
     command += " conf.lmp POSCAR"
     exec_hosts(MachineLocal, command, 1, fp_tasks, verbose = True)
 
+    md_trajs = glob.glob(os.path.join(modd_path, 'task*/traj'))
+    for ii in md_trajs :
+        shutil.rmtree(ii)
 
 def make_fp (iter_index,
              jdata) :
@@ -480,7 +555,7 @@ def run_fp_vasp (iter_index,
         else :
             fp_run_tasks.append(ii)
 
-    exec_hosts_batch(exec_machine, fp_command, fp_np, fp_run_tasks, verbose = True, mpi = True)
+    exec_hosts_batch(exec_machine, fp_command, fp_np, fp_run_tasks, verbose = True, mpi = False, gpu=True)
         
 def run_fp (iter_index,
             jdata,
@@ -652,5 +727,5 @@ if __name__ == '__main__':
     jdata = json.load (fp)
     # post_train(0, jdata)
     logging.basicConfig (level=logging.INFO, format='%(asctime)s %(message)s')
-    run_iter('param.json', MachinePBS)
+    run_iter('param.json', MachineLocalGPU)
     # run_iter('param.json', MachineLocal)

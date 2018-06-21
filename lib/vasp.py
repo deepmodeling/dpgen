@@ -16,9 +16,7 @@ def make_vasp_incar (ecut, ediff, npar, kpar, kspacing = 0.5, kgamma = True) :
     ret += 'ISYM=0\n'
     ret += 'ALGO=fast\n'
     ret += 'EDIFF=%e\n' % ediff
-    ret += 'LREAL=F\n'
-    ret += 'AMIN=0.01\n'
-    ret += 'BMIX=2\n'
+    ret += 'LREAL=T\n'
     ret += 'NPAR=%d\n' % npar
     ret += 'KPAR=%d\n' % kpar
     ret += "\n"
