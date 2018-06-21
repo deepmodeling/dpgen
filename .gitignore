@@ -25,3 +25,5 @@ CMakeFiles
 *.pb
 log.lammps
 restart.*
+dump.*
+*.out
