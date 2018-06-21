@@ -1,15 +1,18 @@
 #!/bin/bash
 
-targets=`seq 3.78 0.01 4.33`
-lmp_cmd=/home/wanghan/Soft/lammps/lammps-16Mar18/src/lmp_mpi
+source env.sh
 
+targets=`seq 3.78 0.01 4.33`
+
+script_file=in.tmp.$$
+out_file=tmp.out.$$
 for ii in $targets
 do
-    sed "s/LATT_A/$ii/g" in.fcc > in.tmp
-    $lmp_cmd -i in.tmp &> tmp.out
-    epa=`grep ENER_PER_ATOM tmp.out | awk '{print $2}'`
-    epv=`grep VOLM_PER_ATOM tmp.out | awk '{print $2}'`
+    sed "s/LATT_A/$ii/g" in.fcc > $script_file
+    $lmp_cmd -i $script_file &> $out_file
+    epa=`grep ENER_PER_ATOM $out_file | awk '{print $2}'`
+    epv=`grep VOLM_PER_ATOM $out_file | awk '{print $2}'`
     echo $epv $epa
 done
 
-rm -f in.tmp
+rm -f $script_file $out_file
