@@ -2,7 +2,7 @@
 
 source env.sh
 
-targets=`seq 3.06 0.02 3.40`
+targets=`seq 3.06 0.02 3.50`
 
 script_file=in.tmp.$$
 out_file=tmp.out.$$

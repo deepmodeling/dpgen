@@ -1,8 +1,8 @@
 #----Input parameters-------------------------------------------
-variable	ao		equal 4.03
+variable	ao		equal 4.04
 variable	ncopy		equal 8
 variable	thermo_freq	equal 10
-variable	dump_freq	equal 400
+variable	dump_freq	equal 10
 variable	mini_etol	equal 1e-12
 variable	mini_ftol	equal 1e-12
 
@@ -22,12 +22,7 @@ lattice 	fcc ${ao} orient x 1 0 0 orient y 0 1 0 orient z 0 0 1
 create_atoms	1 region simbox
 mass		1 27
 
-#----Force field------------------------------------------------
-neigh_modify	every 1 delay 0 check yes
-pair_style	deepmd graph.000.pb graph.001.pb graph.002.pb graph.003.pb graph.004.pb ${dump_freq} model_devi.out
-pair_coeff
-# pair_style	eam/alloy
-# pair_coeff	* * Al.lammps.eam Al
+include		potential.mod
 
 #----Eenergy Computation----------------------------------------
 compute		pot all pe
@@ -38,7 +33,7 @@ reset_timestep	0
 thermo		${thermo_freq}
 thermo_style	custom step pe lx ly lz press pxx pyy pzz c_pot
 
-dump		1 all custom ${dump_freq} dump.relax.1.* id type xs ys zs 
+dump		1 all custom ${dump_freq} dump.relax id type xs ys zs 
 
 fix		1 all box/relax  aniso 0.0 
 min_style	cg
@@ -64,7 +59,7 @@ reset_timestep	0
 thermo		${thermo_freq}
 thermo_style	custom step pe lx ly lz press pxx pyy pzz c_pot
 
-dump		1 all custom ${dump_freq} dump.relax.2.* id type xs ys zs 
+dump		1 all custom ${dump_freq} dump.relax id type xs ys zs 
 
 min_style	cg
 minimize	${mini_etol} ${mini_ftol} 5000 5000

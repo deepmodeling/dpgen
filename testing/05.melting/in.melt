@@ -1,71 +1,101 @@
-variable	test_temp	equal 900
-variable	temp_damp	equal 0.5
-variable	test_pres	equal 0.0
-variable	pres_damp	equal 0.5
-variable	liquid_temp	equal 2000
-variable	solid_temp	equal 300
+### This lammps-script was used for calculation of melting line (Fe and Al) in work
+### Starikov S.V., Stegailov V.V. Premelting of iron and aluminum: implication for 
+### high-pressure melting curve measurements // Phys. Rev. B., 2009, V. 80, P. 220104(R)
+###
+### calculation of melting temperature of aluminum  at low pressure
 
 dimension 	3
 boundary	p p p
 units		metal
 
 atom_style	atomic
-neighbor	1.0 bin
-neigh_modify	every 10 delay 0 check no
+neighbor	0.3 bin
+neigh_modify	every 20 delay 0 check no
 
-variable	numb_x equal 20
-variable	numb_y equal 4
-variable	numb_z equal 4
-variable	latt_a equal 4.04
-variable	protct equal 0.001
-variable	size_x equal ${numb_x}*${latt_a}-${protct}
-variable	size_y equal ${numb_y}*${latt_a}-${protct}
-variable	size_z equal ${numb_z}*${latt_a}-${protct}
-variable	save_y equal 1000
-variable	save_z equal 1000
+### T0 - initial temperatura of calculation
+### Given temperature ${realT0} devided to 2.2 must be some bigger than expected melting temperature Tm 
 
-lattice		fcc ${latt_a}
-region		whole block -${protct} ${size_x} -${protct} ${size_y} -${protct} ${size_z} units box
-create_box	1 whole
-create_atoms	1 region whole
-mass		1 27
+variable	T0 equal 1070
+variable	realT0 equal ${T0}*2.2
+variable	Tm equal 950
 
-include		potential.mod
+### x - number of crystal cell in x-direction 
+### a - lattice constant
+### l - size of calculation cell in x-direction
 
-dump		phase1 all atom 1000 dump.atom
-timestep	0.002
-thermo_style	custom step temp pe etotal press pxx pyy pzz lx ly lz vol
-thermo		20
+variable	x equal 45
+variable	a equal 4.05
+variable	l equal $x*$a
 
-# equilibrium simulation region
-fix		1 all npt temp ${solid_temp} ${solid_temp} ${temp_damp} aniso ${test_pres} ${test_pres} ${pres_damp}
-velocity	all create ${solid_temp} 31415
-run		5000 
+lattice		fcc $a
+
+region		box block 0 $x 0 15 0 15
+create_box	1 box
+create_atoms	1 box
+
+mass		1 26.98
+
+# pair_style	deepmd graph.000.pb
+# pair_coeff	
+
+pair_style	eam/alloy 
+pair_coeff	* * AlCu.eam.alloy Al
+
+velocity	all create ${realT0} 481516
+
+dump		phase1 all atom 1000 dump.phase1
+
+timestep	0.0005
+thermo_style	custom step temp etotal pe press pxx pyy pzz vol
+thermo		30
+
+### Equilibration with or without Langevin thermostat
+fix		1 all nve
+#fix		2 all langevin ${T0} ${T0} 20 481516
+run		3000 
 unfix		1
+#unfix		2
 
-variable	d1 equal ${size_x}*0.225
-variable	d2 equal ${size_x}*0.275
+lattice		sc 1.00
 
-region		del block ${d1} ${d2} -10 ${save_y} -10 ${save_z} units box
+variable	d1 equal $l*0.225
+variable	d2 equal $l*0.275
+
+region		del block ${d1} ${d2} -10 100 -10 100
 delete_atoms	region del
-neigh_modify	every 10 delay 0 check no
 
-variable	half_x equal ${size_x}*0.5
-region		liquid block -10 ${half_x} -10 ${save_y} -10 ${save_z} units box
+variable	h equal $l*0.5
+
+
+region		liquid block -10 $h -10 100 -10 100
 group		liquid region liquid
 
-fix		2 liquid nvt temp ${liquid_temp} ${liquid_temp} ${temp_damp}
-velocity	liquid create ${liquid_temp} 31415
-run		5000
-unfix		2
+### Creation of two-phase system
+fix		3 liquid nve
+run		50000
+unfix		3
 
-fix		3 all npt temp ${test_temp} ${test_temp} ${temp_damp} aniso ${test_pres} ${test_pres} ${pres_damp}
-velocity	all create ${test_temp} 31415
-run		3000 
+velocity	all create ${Tm} 481516
 
-write_restart	equilibrium.restart
+fix		4 all nve
+run		50000 
+unfix		4
 
+
+#write_restart	/home/user/equilibrium.restart
+
+### main calculation
+
+variable	len equal $l*0.95
+
+region		twophase block 5 ${len} -10 100 -10 100
+group		twophase region twophase
+fix		5 twophase nve
 run		100000 
+		
+#write_restart	/home/user/end.restart
 
+### The analysis about accuracy of the initial estimation of melting temperature Tm can be perfermed by change of temperature,
+### visually observation of phase interface or on the basis of parameter of order [Phys.Rev.B., 2009, V.80, P.220104(R)]
 
 
