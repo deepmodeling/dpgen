@@ -1,0 +1,9 @@
+{
+    "cell_type":	"hcp",
+    "out_dir":		"output",
+    "latt":		4.03,
+    "scale":		[0.96, 0.98, 1.00, 1.02, 1.04, 1.06],
+    "super_cell":	[3, 2, 2],
+    "elements":		["Al", "Mg"],
+    "_comment":		"that's all"
+}
