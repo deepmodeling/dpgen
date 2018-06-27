@@ -1,9 +1,17 @@
 {
     "cell_type":	"hcp",
-    "out_dir":		"output",
+    "_out_dir":		"almg.fcc.2x2x2",
     "latt":		4.03,
-    "scale":		[0.96, 0.98, 1.00, 1.02, 1.04, 1.06],
-    "super_cell":	[3, 2, 2],
+    "super_cell":	[2, 1, 1],
     "elements":		["Al", "Mg"],
+    "encut":		600,
+    "kspacing":		0.08,
+    "kgamma":		false,
+    "scale":		[0.96, 0.98, 1.00, 1.02, 1.04, 1.06],
+    "pert_numb":	100,
+    "pert_box":		0.03,
+    "pert_atom":	0.01,
+    "init_temp":	100,
+    "init_nstep":	10,
     "_comment":		"that's all"
 }

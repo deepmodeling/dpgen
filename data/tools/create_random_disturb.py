@@ -83,7 +83,7 @@ def create_disturbs_ase(fin, nfile, dmax=1.0, ofmt="lmp", dstyle='uniform', writ
             # for lammps, use my personal output functions
             io_lammps.ase2lammpsdata(atoms_d, fout)
         else:
-            ase.io.write(fout, atoms_d, ofmt)
+            ase.io.write(fout, atoms_d, ofmt, vasp5 = True)
         if write_d:
             fw.close()
     return
@@ -159,7 +159,7 @@ def create_disturbs_ase_dev(fin, nfile, dmax=1.0, etmax=0.1, ofmt="lmp", dstyle=
             # for lammps, use my personal output functions
             io_lammps.ase2lammpsdata(atoms_d, fout=fout)
         else:
-            ase.io.write(fout, atoms_d, ofmt)
+            ase.io.write(fout, atoms_d, ofmt, vasp5 = True)
         if write_d:
             fw.close()
     return
@@ -208,7 +208,7 @@ def create_random_alloys(fin, alloy_dist, ifmt='vasp', ofmt='vasp'):
 
     # write it as ofmt
     fout = fin.split(',')[0] + '_random' + ofmt
-    ase.io.write(fout, atoms, format=ofmt)
+    ase.io.write(fout, atoms, format=ofmt, vasp5 = True)
     return
 
 
