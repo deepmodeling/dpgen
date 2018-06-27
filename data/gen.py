@@ -224,7 +224,8 @@ def make_vasp_relax (jdata) :
         os.remove(os.path.join(work_dir, 'INCAR' ))
     if os.path.isfile(os.path.join(work_dir, 'POTCAR')) :
         os.remove(os.path.join(work_dir, 'POTCAR'))
-    shutil.copy2(os.path.join(vasp_dir, 'INCAR.rlx' ), work_dir)
+    shutil.copy2(os.path.join(vasp_dir, 'INCAR.rlx' ), 
+                 os.path.join(work_dir, 'INCAR'))
     shutil.copy2(os.path.join(vasp_dir, 'POTCAR'), work_dir)
     
     os.chdir(work_dir)
@@ -314,21 +315,66 @@ def pert_scaled(jdata) :
             poscar_shuffle(pos_in, pos_out)
             os.chdir(cwd)
 
-def make_md(jdata) :
+def make_vasp_md(jdata) :
     out_dir = jdata['out_dir']
+    scale = jdata['scale']    
     encut = jdata['encut']
     kspacing = jdata['kspacing']
     kgamma = jdata['kgamma']
+    pert_numb = jdata['pert_numb']
+    md_temp = jdata['md_temp']
+    md_nstep = jdata['md_nstep']
 
     cwd = os.getcwd()
+    vasp_dir = os.path.join(cwd, 'vasp.in')
+    vasp_dir = os.path.join(cwd, vasp_dir)
     path_ps = os.path.join(out_dir, global_dirname_03)
-    path_md = os.path.join(out_dir, global_dirname_04)
-    assert(os.path.isdir(path_sp))
+    path_ps = os.path.abspath(path_ps)
+    assert(os.path.isdir(path_ps))
     os.chdir(path_ps)
-    sys_pe = glob.glob('sys-*')
-    sys_pe.sort()
+    sys_ps = glob.glob('sys-*')
+    sys_ps.sort()
     os.chdir(cwd) 
+    path_md = os.path.join(out_dir, global_dirname_04)
+    path_md = os.path.abspath(path_md)
+    create_path(path_md)
+    shutil.copy2(os.path.join(vasp_dir, 'INCAR.md'), 
+                 os.path.join(path_md, 'INCAR'))
+    shutil.copy2(os.path.join(vasp_dir, 'POTCAR'), path_md)
+    os.chdir(path_md)
+    replace('INCAR', 'ENCUT=.*', 'ENCUT=%f' % encut)
+    replace('INCAR', 'ISIF=.*', 'ISIF=2')
+    replace('INCAR', 'KSPACING=.*', 'KSPACING=%f' % kspacing)
+    if kgamma :
+        replace('INCAR', 'KGAMMA=.*', 'KGAMMA=T')
+    else :
+        replace('INCAR', 'KGAMMA=.*', 'KGAMMA=F')    
+    replace('INCAR', 'NSW=.*', 'NSW=%d' % md_nstep)
+    replace('INCAR', 'TEBEG=.*', 'TEBEG=%d' % md_temp)
+    replace('INCAR', 'TEEND=.*', 'TEEND=%d' % md_temp)
+    os.chdir(cwd)    
 
+    for ii in sys_ps :
+        for jj in scale :
+            for kk in range(pert_numb) :
+                path_work = path_md
+                path_work = os.path.join(path_work, ii)
+                path_work = os.path.join(path_work, "sys-%.3f" % jj)
+                path_work = os.path.join(path_work, "%06d" % kk)
+                create_path(path_work)
+                os.chdir(path_work)                
+                path_pos = path_ps
+                path_pos = os.path.join(path_pos, ii)
+                path_pos = os.path.join(path_pos, "sys-%.3f" % jj)
+                path_pos = os.path.join(path_pos, "%06d" % kk)
+                init_pos = os.path.join(path_pos, 'POSCAR')
+                shutil.copy2 (init_pos, 'POSCAR')
+                file_incar = os.path.join(path_md, 'INCAR')
+                file_potcar = os.path.join(path_md, 'POTCAR')
+                os.symlink(os.path.relpath(file_incar), 'INCAR')
+                os.symlink(os.path.relpath(file_potcar), 'POTCAR')
+                os.chdir(cwd)                
+                
 def _main() :
     parser = argparse.ArgumentParser(
         description="gen init confs")
@@ -345,6 +391,7 @@ def _main() :
         jdata = json.load (fp)
     out_dir = out_dir_name(jdata)
     jdata['out_dir'] = out_dir
+    print ("# working dir %s" % out_dir)
 
     stage = args.STAGE
 
@@ -358,7 +405,7 @@ def _main() :
         make_scale(jdata)
         pert_scaled(jdata)
     elif stage == 3 :
-        None
+        make_vasp_md(jdata)
     else :
         raise RuntimeError("unknow stage %d" % stage)
 
