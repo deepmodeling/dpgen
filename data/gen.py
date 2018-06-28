@@ -211,6 +211,7 @@ def place_element (jdata) :
 
 def make_vasp_relax (jdata) :
     out_dir = jdata['out_dir']
+    potcars = jdata['potcars']
     encut = jdata['encut']
     kspacing = jdata['kspacing']
     kgamma = jdata['kgamma']
@@ -226,7 +227,11 @@ def make_vasp_relax (jdata) :
         os.remove(os.path.join(work_dir, 'POTCAR'))
     shutil.copy2(os.path.join(vasp_dir, 'INCAR.rlx' ), 
                  os.path.join(work_dir, 'INCAR'))
-    shutil.copy2(os.path.join(vasp_dir, 'POTCAR'), work_dir)
+    out_potcar = os.path.join(work_dir, 'POTCAR')
+    with open(out_potcar, 'w') as outfile:
+        for fname in potcars:
+            with open(fname) as infile:
+                outfile.write(infile.read())
     
     os.chdir(work_dir)
     replace('INCAR', 'ENCUT=.*', 'ENCUT=%f' % encut)
@@ -250,6 +255,7 @@ def make_vasp_relax (jdata) :
 def make_scale(jdata):
     out_dir = jdata['out_dir']
     scale = jdata['scale']    
+    skip_relax = jdata['skip_relax']    
 
     cwd = os.getcwd()
     init_path = os.path.join(out_dir, global_dirname_02)
@@ -265,7 +271,11 @@ def make_scale(jdata):
         for jj in scale :
             pos_src = os.path.join(os.path.join(init_path, ii), 'CONTCAR')
             if not os.path.isfile(pos_src):
-                raise RuntimeError("not file %s, vasp relaxation should be run before scale poscar")
+                if skip_relax :
+                    pos_src = os.path.join(os.path.join(init_path, ii), 'POSCAR')
+                    assert(os.path.isfile(pos_src))
+                else :
+                    raise RuntimeError("not file %s, vasp relaxation should be run before scale poscar")
             scale_path = os.path.join(work_path, ii)
             scale_path = os.path.join(scale_path, "sys-%.3f" % jj)
             create_path(scale_path)
@@ -317,6 +327,7 @@ def pert_scaled(jdata) :
 
 def make_vasp_md(jdata) :
     out_dir = jdata['out_dir']
+    potcars = jdata['potcars']
     scale = jdata['scale']    
     encut = jdata['encut']
     kspacing = jdata['kspacing']
@@ -340,7 +351,11 @@ def make_vasp_md(jdata) :
     create_path(path_md)
     shutil.copy2(os.path.join(vasp_dir, 'INCAR.md'), 
                  os.path.join(path_md, 'INCAR'))
-    shutil.copy2(os.path.join(vasp_dir, 'POTCAR'), path_md)
+    out_potcar = os.path.join(path_md, 'POTCAR')
+    with open(out_potcar, 'w') as outfile:
+        for fname in potcars:
+            with open(fname) as infile:
+                outfile.write(infile.read())
     os.chdir(path_md)
     replace('INCAR', 'ENCUT=.*', 'ENCUT=%f' % encut)
     replace('INCAR', 'ISIF=.*', 'ISIF=2')
