@@ -6,10 +6,16 @@ boundary	p p p
 atom_style	atomic
 variable	latparam1	equal 4.05
 variable	d_protct	equal 0.0001
+variable	Nx		equal 2
+variable	Ny		equal 1
+variable	Nz		equal 1
+variable	xl		equal sqrt(2)/2
+variable	yl		equal sqrt(1)
+variable	zl		equal sqrt(2)/2
 variable	z_elong		equal 0
-variable	xdim		equal ${latparam1}*sqrt(2)/2*2-${d_protct}
-variable	ydim		equal ${latparam1}*sqrt(1)/1*1-${d_protct}
-variable	zdim0		equal ${latparam1}*sqrt(2)/2*1-${d_protct}
+variable	xdim		equal ${latparam1}*${xl}*${Nx}-${d_protct}
+variable	ydim		equal ${latparam1}*${yl}*${Ny}-${d_protct}
+variable	zdim0		equal ${latparam1}*${zl}*${Nz}-${d_protct}
 variable	zdim		equal ${zdim0}+${z_elong}
 
 # --------------------- ATOM DEFINITION ---------------------
