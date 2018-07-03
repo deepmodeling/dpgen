@@ -1,0 +1,36 @@
+clear
+units		metal
+dimension	3
+boundary	p p p
+
+atom_style	atomic
+variable	latparam1	equal 4.05
+variable	d_protct	equal 0.0001
+variable	z_elong		equal 0
+variable	xdim		equal ${latparam1}*sqrt(2)/2*2-${d_protct}
+variable	ydim		equal ${latparam1}*sqrt(1)/1*1-${d_protct}
+variable	zdim0		equal ${latparam1}*sqrt(2)/2*1-${d_protct}
+variable	zdim		equal ${zdim0}+${z_elong}
+
+# --------------------- ATOM DEFINITION ---------------------
+lattice		fcc ${latparam1}
+region		1 block -${d_protct} ${xdim} -${d_protct} ${ydim} ${zdim0} ${zdim} units box
+region		whole block -${d_protct} ${xdim} -${d_protct} ${ydim} -${d_protct} ${zdim} units box
+create_box	1 whole
+lattice		fcc ${latparam1} orient x 1 -1 0 orient y 0 0 -1 orient z 1 1 0
+create_atoms	1 region whole
+mass		1 27
+group		1 region 1
+delete_atoms	group 1
+
+# ----------------------- FORCE FIELDS -----------------------
+pair_style	lj/cut 2.4
+pair_coeff	* * 1 1
+neigh_modify	every 10
+# ------------------------- before disp -----------------------
+thermo_style	custom step pe pxx pyy pzz lx ly lz 
+
+dump		1 all atom 1 dump.atom
+run		0
+print "atom z-dim ${zdim0}"
+print "box  z-dim ${zdim}"
