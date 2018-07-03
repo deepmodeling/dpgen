@@ -7,13 +7,16 @@ atom_style	atomic
 variable	latparam0	equal 4.5
 variable	latparam1	equal ${latparam0}/sqrt(2)
 variable	d_protct	equal 0.0001
+variable	Nx		equal 1
+variable	Ny		equal 1
+variable	Nz		equal 1
 variable	xl		equal 1.0
 variable	yl		equal sqrt(3)
 variable	zl		equal sqrt(8./3.)
 variable	z_elong		equal 0
-variable	xdim		equal ${latparam1}*${xl}*1-${d_protct}
-variable	ydim		equal ${latparam1}*${yl}*1-${d_protct}
-variable	zdim0		equal ${latparam1}*${zl}*1-${d_protct}
+variable	xdim		equal ${latparam1}*${xl}*${Nx}-${d_protct}
+variable	ydim		equal ${latparam1}*${yl}*${Ny}-${d_protct}
+variable	zdim0		equal ${latparam1}*${zl}*${Nz}-${d_protct}
 variable	zdim		equal ${zdim0}+${z_elong}
 
 # --------------------- ATOM DEFINITION ---------------------
