@@ -36,11 +36,9 @@ def replace (file_name, pattern, subst) :
 3, relax
 4, perturb
 """
-global_dirname_00 = '00.unit_cell'
-global_dirname_01 = '01.super_cell'
-global_dirname_02 = '02.place_ele'
-global_dirname_03 = '03.scale_pert'
-global_dirname_04 = '04.md'
+global_dirname_02 = '00.place_ele'
+global_dirname_03 = '01.scale_pert'
+global_dirname_04 = '02.md'
 
 def out_dir_name(jdata) :
     cell_type = jdata['cell_type']
@@ -137,7 +135,7 @@ def poscar_scale (poscar_in, poscar_out, scale) :
 def make_unit_cell (jdata) :
     latt = jdata['latt']
     out_dir = jdata['out_dir']
-    path_uc = os.path.join(out_dir, global_dirname_00)
+    path_uc = os.path.join(out_dir, global_dirname_02)
     cell_type = class_cell_type(jdata)
 
     cwd = os.getcwd()    
@@ -145,20 +143,22 @@ def make_unit_cell (jdata) :
     # path_work = create_path(os.path.join(path_uc, '%.3f' % ii))
     path_work = create_path(path_uc)    
     os.chdir(path_work)
-    with open('POSCAR', 'w') as fp:
+    with open('POSCAR.unit', 'w') as fp:
         fp.write (cell_type.poscar_unit(latt))
     os.chdir(cwd)        
 
 def make_super_cell (jdata) :
     out_dir = jdata['out_dir']
     super_cell = jdata['super_cell']
-    path_uc = os.path.join(out_dir, global_dirname_00)
-    path_sc = os.path.join(out_dir, global_dirname_01)
+    path_uc = os.path.join(out_dir, global_dirname_02)
+    path_sc = os.path.join(out_dir, global_dirname_02)
+    assert(os.path.isdir(path_uc)), "path %s should exists" % path_uc
+    assert(os.path.isdir(path_sc)), "path %s should exists" % path_sc
 
     # for ii in scale :
     from_path = path_uc
-    from_file = os.path.join(from_path, 'POSCAR')
-    to_path = create_path(path_sc)
+    from_file = os.path.join(from_path, 'POSCAR.unit')
+    to_path = path_sc
     to_file = os.path.join(to_path, 'POSCAR')
     cmd = "./tools/poscar_copy.py -n %d %d %d " % (super_cell[0], super_cell[1], super_cell[2]) + \
           from_file + " " + \
@@ -187,11 +187,11 @@ def place_element (jdata) :
     cell_type = class_cell_type(jdata)
     natoms = np.cumprod(super_cell)[-1] * cell_type.numb_atoms()
     elements = jdata['elements']
-    path_sc = os.path.join(out_dir, global_dirname_01)
+    path_sc = os.path.join(out_dir, global_dirname_02)
     path_pe = os.path.join(out_dir, global_dirname_02)    
     combines = np.array(make_combines(len(elements), natoms), dtype = int)
     
-    create_path(path_pe)
+    assert(os.path.isdir(path_pe))
     cwd = os.getcwd()
     for ii in combines :
         if any(ii == 0) :
@@ -213,7 +213,7 @@ def make_vasp_relax (jdata) :
     out_dir = jdata['out_dir']
     potcars = jdata['potcars']
     encut = jdata['encut']
-    kspacing = jdata['kspacing']
+    kspacing = jdata['kspacing_relax']
     kgamma = jdata['kgamma']
     cwd = os.getcwd()
     vasp_dir = os.path.join(cwd, 'vasp.in')
@@ -277,7 +277,7 @@ def make_scale(jdata):
                 else :
                     raise RuntimeError("not file %s, vasp relaxation should be run before scale poscar")
             scale_path = os.path.join(work_path, ii)
-            scale_path = os.path.join(scale_path, "sys-%.3f" % jj)
+            scale_path = os.path.join(scale_path, "scale-%.3f" % jj)
             create_path(scale_path)
             os.chdir(scale_path) 
             poscar_scale(pos_src, 'POSCAR', jj)
@@ -306,7 +306,7 @@ def pert_scaled(jdata) :
         for jj in scale :
             path_work = path_sp
             path_work = os.path.join(path_work, ii)
-            path_work = os.path.join(path_work, 'sys-%.3f' % jj)
+            path_work = os.path.join(path_work, 'scale-%.3f' % jj)
             assert(os.path.isdir(path_work))
             os.chdir(path_work)
             sp.check_call(pert_cmd, shell = True)
@@ -330,7 +330,7 @@ def make_vasp_md(jdata) :
     potcars = jdata['potcars']
     scale = jdata['scale']    
     encut = jdata['encut']
-    kspacing = jdata['kspacing']
+    kspacing = jdata['kspacing_md']
     kgamma = jdata['kgamma']
     pert_numb = jdata['pert_numb']
     md_temp = jdata['md_temp']
@@ -374,13 +374,13 @@ def make_vasp_md(jdata) :
             for kk in range(pert_numb) :
                 path_work = path_md
                 path_work = os.path.join(path_work, ii)
-                path_work = os.path.join(path_work, "sys-%.3f" % jj)
+                path_work = os.path.join(path_work, "scale-%.3f" % jj)
                 path_work = os.path.join(path_work, "%06d" % kk)
                 create_path(path_work)
                 os.chdir(path_work)                
                 path_pos = path_ps
                 path_pos = os.path.join(path_pos, ii)
-                path_pos = os.path.join(path_pos, "sys-%.3f" % jj)
+                path_pos = os.path.join(path_pos, "scale-%.3f" % jj)
                 path_pos = os.path.join(path_pos, "%06d" % kk)
                 init_pos = os.path.join(path_pos, 'POSCAR')
                 shutil.copy2 (init_pos, 'POSCAR')
@@ -389,6 +389,75 @@ def make_vasp_md(jdata) :
                 os.symlink(os.path.relpath(file_incar), 'INCAR')
                 os.symlink(os.path.relpath(file_potcar), 'POTCAR')
                 os.chdir(cwd)                
+
+def coll_vasp_md(jdata) :
+    out_dir = jdata['out_dir']
+    md_nstep = jdata['md_nstep']
+    scale = jdata['scale']    
+    pert_numb = jdata['pert_numb']
+    deepgen_templ = jdata['deepgen_templ']
+    coll_ndata = jdata['coll_ndata']
+    raw_files = ['box.raw', 'coord.raw', 'energy.raw', 'force.raw', 'virial.raw']
+
+    deepgen_templ = os.path.abspath(deepgen_templ)
+    cmd_cvt = os.path.join(deepgen_templ, 'tools.vasp')
+    cmd_cvt = os.path.join(cmd_cvt, 'cessp2force_lin.py')
+    cmd_2raw = os.path.join(deepgen_templ, 'tools.vasp')
+    cmd_2raw = os.path.join(cmd_2raw, 'convert2raw.py')
+    cmd_shfl = os.path.join(deepgen_templ, 'tools.raw')
+    cmd_shfl = os.path.join(cmd_shfl, 'shuffle_raw.py')
+    cmd_2set = os.path.join(deepgen_templ, 'tools.raw')
+    cmd_2set = os.path.join(cmd_2set, 'raw_to_set.sh')
+
+    cwd = os.getcwd()
+    path_md = os.path.join(out_dir, global_dirname_04)
+    path_md = os.path.abspath(path_md)
+    assert(os.path.isdir(path_md)), "md path should exists"
+    os.chdir(path_md)
+    sys_md = glob.glob('sys-*')
+    sys_md.sort()
+
+    for ii in sys_md :
+        os.chdir(ii)
+        # convert outcars
+        valid_outcars = []
+        for jj in scale :
+            for kk in range(pert_numb) :
+                path_work = os.path.join("scale-%.3f" % jj, "%06d" % kk)
+                outcar = os.path.join(path_work, 'OUTCAR')
+                if os.path.isfile(outcar) :
+                    with open(outcar, 'r') as fin:
+                        nforce = fin.read().count('TOTAL-FORCE')
+                    if nforce == md_nstep :
+                        valid_outcars.append(outcar)
+        arg_cvt = " "
+        if len(valid_outcars) == 0:
+            raise RuntimeError("MD dir: %s: find no valid outcar in sys %s, "
+                               "check if your vasp md simulation is correctly done" 
+                               % (path_md, ii)) 
+        for ii in valid_outcars :
+            arg_cvt += re.sub('OUTCAR', '', ii) + " "
+        tmp_cmd_cvt = cmd_cvt + arg_cvt
+        tmp_cmd_cvt += ' 1> cvt.log 2> cvt.log '
+        sp.check_call(tmp_cmd_cvt, shell = True)
+        # create deepmd data
+        if os.path.isdir('deepmd') :
+            shutil.rmtree('deepmd')
+        os.mkdir('deepmd')
+        os.chdir('deepmd')
+        os.mkdir('orig')
+        os.mkdir('shuffled')
+        os.chdir('orig')
+        sp.check_call(cmd_2raw + ' ../../test.configs', shell = True)
+        os.chdir('..')
+        sp.check_call(cmd_shfl + ' orig shuffled ', shell = True)
+        for ii in raw_files:
+            sp.check_call('head -n %d shuffled/%s > %s' % (coll_ndata, ii, ii), shell = True)
+        shutil.copy2(os.path.join('orig', 'type.raw'), 'type.raw')
+        print(cmd_2set + (' %d '%coll_ndata))
+        sp.check_call(cmd_2set + (' %d '%coll_ndata), shell = True)
+        os.chdir(path_md)
+    os.chdir(cwd)
                 
 def _main() :
     parser = argparse.ArgumentParser(
@@ -396,10 +465,12 @@ def _main() :
     parser.add_argument('PARAM', type=str, 
                         help="parameter file, json format")
     parser.add_argument('STAGE', type=int,
-                        help="the stage of init, can be 1, 2 or 3. "
-                        "1: setup vasp jobs for relaxation. "
-                        "2: perturb system. "
-                        "3: setup vasp jobs for MD of perturbed system. ")
+                        help="the stage of init, can be 1, 2, 3 or 4. "
+                        "1: Setup vasp jobs for relaxation. "
+                        "2: Collect vasp relaxed confs (if relax is not skiped). Perturb system. "
+                        "3: Setup vasp jobs for MD of perturbed system. "
+                        "4: Collect vasp md confs, make deepmd data. "
+    )
     args = parser.parse_args()
 
     with open (args.PARAM, 'r') as fp :
@@ -421,24 +492,10 @@ def _main() :
         pert_scaled(jdata)
     elif stage == 3 :
         make_vasp_md(jdata)
+    elif stage == 4 :
+        coll_vasp_md(jdata)
     else :
         raise RuntimeError("unknow stage %d" % stage)
-
-# # 00
-# make_unit_cell(jdata)
-# # 01
-# make_super_cell(jdata)
-# # 02
-# place_element(jdata)
-# make_vasp_relax(jdata)
-# # 03
-# make_scale(jdata)
-# pert_scaled(jdata)
-
-# poscar_shuffle('POSCAR', 'POSCAR.out')
-# poscar_scale ('POSCAR', 'POSCAR.out', 2)
-
-# sp.check_call("./tools/copy.py -n 2 2 2 POSCAR POSCAR.out", shell = True)
     
 if __name__ == "__main__":
     _main()
