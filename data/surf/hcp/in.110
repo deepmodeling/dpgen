@@ -4,7 +4,7 @@ dimension	3
 boundary	p p p
 
 atom_style	atomic
-variable	latparam0	equal 4.5
+variable	latparam0	equal LATT
 variable	latparam1	equal ${latparam0}/sqrt(2)
 variable	d_protct	equal 0.0001
 variable	Nx		equal 1
