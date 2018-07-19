@@ -1,0 +1,22 @@
+For example:
+
+1, $ mkdir mgop.03.52
+
+2, $ cd mgop.03.52
+
+3, $ mkdir cifs
+
+4, prepare inputs
+	copy *.cif to cifs
+	copy *pb to .
+	write a potential.mod
+
+for example: 
+pair_style	deepmd graph.000.pb graph.001.pb graph.002.pb graph.003.pb 10 model_devi.out
+pair_coeff
+
+5, $ ../tools/cvt_conf.sh
+
+6, $ ../tools/compute.sh
+
+

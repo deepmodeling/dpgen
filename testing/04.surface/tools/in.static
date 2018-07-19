@@ -1,0 +1,43 @@
+clear
+units		metal
+dimension	3
+boundary	p p p
+atom_style	atomic
+variable	Epa	equal EPA
+
+box		tilt large
+read_data       conf.lmp
+mass            1 1 
+
+# ----------------------- FORCE FIELDS -----------------------
+neigh_modify	every 1 delay 0 check no
+include		potential.mod
+# ------------------------------------------------------------
+
+velocity        all create 0 1
+fix             1 all nvt temp 1.0 1.0 0.5
+
+compute		mype all pe
+thermo		1
+thermo_style	custom step ke pe pxx pyy pzz lx ly lz c_mype
+dump		1 all custom 100 dump.surf id type xs ys zs fx fy fz
+
+run		0
+variable	tmplx equal lx
+variable	tmply equal ly
+variable	natoms equal count(all)
+variable	Eo equal ${Epa}*${natoms}
+variable	Ef equal "c_mype"
+variable	Cf equal 1.60217657e-16
+variable	A equal (${tmplx}*${tmply})*1e-20*2
+variable	SFE equal ((${Ef}-${Eo})*${Cf})/${A}
+
+print "All done"
+print "Number of atoms = ${natoms}"
+print "Initial energy of atoms = ${Eo} eV"
+print "Final energy of atoms = ${Ef} eV"
+print "Surface_energy = ${SFE} mJ/m^2"
+
+
+
+
