@@ -89,7 +89,8 @@ def _make_lammps_deepmd_model(models) :
 
 def make_lammps_equi(conf, ntypes, models, 
                      etol=1e-12, ftol=1e-6, 
-                     maxiter=5000, maxeval=500000) :
+                     maxiter=5000, maxeval=500000, 
+                     change_box = True) :
     """
     make lammps input for equilibritation
     """
@@ -109,7 +110,8 @@ def make_lammps_equi(conf, ntypes, models,
     ret += "thermo          100\n"
     ret += "thermo_style    custom step pe pxx pyy pzz pxy pxz pyz lx ly lz vol c_mype\n"
     ret += "dump            1 all custom 100 dump.relax id type xs ys zs fx fy fz\n"
-    ret += "fix             1 all box/relax aniso 0.0 \n"
+    if change_box :
+        ret += "fix             1 all box/relax aniso 0.0 \n"
     ret += "min_style       cg\n"
     ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)
     ret += "variable        N equal count(all)\n"
