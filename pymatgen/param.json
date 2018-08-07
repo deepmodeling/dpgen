@@ -1,0 +1,31 @@
+{
+    "_comment": "models",
+    "potcar_map" : {
+	"Al" : "/home/wanghan/Soft/vasp/potcar.unknown/potpaw_PBE/Al/POTCAR",
+	"Mg" : "/home/wanghan/Soft/vasp/potcar.unknown/potpaw_PBE/Mg/POTCAR"
+    },
+    "vasp_params":	{
+	"ecut":		600,
+	"ediff":	1e-6,
+	"kspacing":	0.08,
+	"kgamma":	false,
+	"npar":		1,
+	"kpar":		1,
+	"_comment":	" that's all "
+    },
+    "deepmd_model_dir":	"models",
+    "deepmd_type_map": [
+	"Al", "Mg"
+    ],
+
+    "_comment": "01.eos",
+    "vol_start":	12,
+    "vol_end":		35,
+    "vol_step":		0.5,
+
+    "_comment": "02.elastic",
+    "norm_deform":	2e-3,
+    "shear_deform":	5e-3,
+
+    "_comment":	"that's all"
+}
