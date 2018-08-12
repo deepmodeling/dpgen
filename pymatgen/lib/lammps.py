@@ -110,13 +110,17 @@ def make_lammps_equi(conf, ntypes, models,
     ret += "thermo          100\n"
     ret += "thermo_style    custom step pe pxx pyy pzz pxy pxz pyz lx ly lz vol c_mype\n"
     ret += "dump            1 all custom 100 dump.relax id type xs ys zs fx fy fz\n"
-    if change_box :
-        ret += "fix             1 all box/relax aniso 0.0 \n"
     ret += "min_style       cg\n"
+    if change_box :
+        ret += "fix             1 all box/relax iso 0.0 \n"
+        ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)
+        ret += "fix             1 all box/relax aniso 0.0 \n"
     ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)
     ret += "variable        N equal count(all)\n"
     ret += "variable        V equal vol\n"
     ret += "variable        E equal \"c_mype\"\n"
+    ret += "variable        tmplx equal lx\n"
+    ret += "variable        tmply equal ly\n"
     ret += "variable        Pxx equal pxx\n"
     ret += "variable        Pyy equal pyy\n"
     ret += "variable        Pzz equal pzz\n"
@@ -125,10 +129,12 @@ def make_lammps_equi(conf, ntypes, models,
     ret += "variable        Pyz equal pyz\n"
     ret += "variable        Epa equal ${E}/${N}\n"
     ret += "variable        Vpa equal ${V}/${N}\n"
+    ret += "variable        AA equal (${tmplx}*${tmply})\n"
     ret += "print \"All done\"\n"
     ret += "print \"Total number of atoms = ${N}\"\n"
     ret += "print \"Final energy per atoms = ${Epa}\"\n"
     ret += "print \"Final volume per atoms = ${Vpa}\"\n"
+    ret += "print \"Final Base area = ${AA}\"\n"
     ret += "print \"Final Stress (xx yy zz xy xz yz) = ${Pxx} ${Pyy} ${Pzz} ${Pxy} ${Pxz} ${Pyz}\"\n"
     return ret
 
@@ -205,8 +211,10 @@ def make_lammps_press_relax(conf, ntypes, scale2equi, models,
     ret += "thermo          100\n"
     ret += "thermo_style    custom step pe pxx pyy pzz pxy pxz pyz lx ly lz vol c_mype\n"
     ret += "dump            1 all custom 100 dump.relax id type xs ys zs fx fy fz\n"
-    ret += "fix             1 all box/relax aniso ${Px} \n"
     ret += "min_style       cg\n"
+    ret += "fix             1 all box/relax iso ${Px} \n"
+    ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)
+    ret += "fix             1 all box/relax aniso ${Px} \n"
     ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)
     ret += "variable        N equal count(all)\n"
     ret += "variable        V equal vol\n"
@@ -255,6 +263,16 @@ def get_nev (log) :
     vpa = _get_vpa(lines)
     natoms = _get_natoms(lines)
     return natoms, epa, vpa
+
+def get_base_area (log) :
+    """
+    get base area
+    """
+    with open(log, 'r') as fp:
+        lines = fp.read().split('\n') 
+    for ii in lines:
+        if ("Final Base area" in ii) and (not 'print' in ii):
+            return float(ii.split('=')[1].split()[0])
 
 def get_stress(log) :
     """

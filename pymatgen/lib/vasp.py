@@ -22,6 +22,50 @@ class OutcarItemError(Exception):
 #         dump_file = lmp_dump[0]
 #         lammps.poscar_from_last_dump(dump_file, task_poscar, deepmd_type_map)
 
+def regulate_poscar(poscar_in, poscar_out) :
+    with open(poscar_in, 'r') as fp:
+        lines = fp.read().split('\n')
+    names = lines[5].split()
+    counts = [int(ii) for ii in lines[6].split()]
+    assert(len(names) == len(counts))
+    uniq_name = []
+    for ii in names :
+        if not (ii in uniq_name) :
+            uniq_name.append(ii)
+    uniq_count = np.zeros(len(uniq_name), dtype = int)
+    for nn,cc in zip(names,counts) :
+        uniq_count[uniq_name.index(nn)] += cc
+    natoms = np.sum(uniq_count)
+    posis = lines[8:8+natoms]
+    all_lines = []
+    for ele in uniq_name:
+        ele_lines = []
+        for ii in posis :
+            ele_name = ii.split()[-1]
+            if ele_name == ele :
+                ele_lines.append(ii) 
+        all_lines += ele_lines
+    all_lines.append('')
+    ret = lines[0:5]
+    ret.append(" ".join(uniq_name))
+    ret.append(" ".join([str(ii) for ii in uniq_count]))
+    ret.append("Direct")
+    ret += all_lines
+    with open(poscar_out, 'w') as fp:
+        fp.write("\n".join(ret))
+
+def perturb_xz (poscar_in, poscar_out, pert = 0.01) :
+    with open(poscar_in, 'r') as fp:
+        lines = fp.read().split('\n')
+    zz = lines[4]
+    az = [float(ii) for ii in zz.split()]
+    az[0] += pert
+    zz = [str(ii) for ii in az]
+    zz = " ".join(zz)
+    lines[4] = zz
+    with open(poscar_out, 'w') as fp:
+        fp.write("\n".join(lines))
+
 def reciprocal_box(box) :
     rbox = np.linalg.inv(box)
     rbox = rbox.T
