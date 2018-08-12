@@ -44,6 +44,7 @@ def make_vasp(jdata, conf_dir) :
     vasp_path = os.path.join(equi_path, 'vasp-k%.2f' % kspacing)
     os.makedirs(vasp_path, exist_ok = True)
     os.chdir(vasp_path)
+    print(vasp_path)
     # gen incar
     if is_alloy :
         fc = vasp.make_vasp_relax_incar(ecut, ediff, True,  True, True, npar, kpar, kspacing, kgamma)
@@ -93,6 +94,7 @@ def make_deepmd_lammps (jdata, conf_dir) :
     # lmp path
     lmp_path = os.path.join(equi_path, 'lmp')
     os.makedirs(lmp_path, exist_ok = True)    
+    print(lmp_path)
     # lmp conf
     conf_file = os.path.join(lmp_path, 'conf.lmp')
     lammps.cvt_lammps_conf(to_poscar, os.path.relpath(conf_file))
@@ -125,7 +127,7 @@ def _main() :
     with open (args.PARAM, 'r') as fp :
         jdata = json.load (fp)
 
-    print('generate %s task with conf %s' % (args.TASK, args.CONF))
+#    print('generate %s task with conf %s' % (args.TASK, args.CONF))
     if args.TASK == 'vasp':
         make_vasp(jdata, args.CONF)               
     elif args.TASK == 'lammps' :

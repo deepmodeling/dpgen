@@ -75,6 +75,7 @@ def make_vasp(jdata, conf_dir, norm_def = 2e-3, shear_def = 5e-3) :
     # gen tasks    
     cwd = os.getcwd()
     for ii in range(n_dfm) :
+        # make dir
         dfm_path = os.path.join(task_path, 'dfm-%03d' % ii)
         os.makedirs(dfm_path, exist_ok=True)
         os.chdir(dfm_path)
@@ -142,6 +143,7 @@ def make_deepmd_lammps(jdata, conf_dir) :
         fp.write(fc)
     cwd = os.getcwd()
     for ii in range(n_dfm) :
+        # make dir
         dfm_path = os.path.join(task_path, 'dfm-%03d' % ii)
         os.makedirs(dfm_path, exist_ok=True)
         os.chdir(dfm_path)
