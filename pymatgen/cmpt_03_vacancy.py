@@ -23,6 +23,7 @@ def cmpt_vasp(jdata, conf_dir, supercell) :
     task_path = re.sub('confs', global_task_name, conf_dir)
     task_path = os.path.join(task_path, 'vasp-k%.2f' % kspacing)
     task_path = os.path.abspath(task_path)
+    print("# ", task_path)
 
     equi_natoms, equi_epa, equi_vpa = vasp.get_nev(equi_outcar)
 
@@ -47,6 +48,7 @@ def cmpt_deepmd_lammps(jdata, conf_dir, supercell) :
     task_path = re.sub('confs', global_task_name, conf_dir)
     task_path = os.path.join(task_path, 'lmp')
     task_path = os.path.abspath(task_path)
+    print("# ", task_path)
 
     equi_natoms, equi_epa, equi_vpa = lammps.get_nev(equi_log)
 
@@ -79,7 +81,7 @@ def _main() :
     with open (args.PARAM, 'r') as fp :
         jdata = json.load (fp)
 
-    print('# generate %s task with conf %s' % (args.TASK, args.CONF))
+#    print('# generate %s task with conf %s' % (args.TASK, args.CONF))
     if args.TASK == 'vasp':
         cmpt_vasp(jdata, args.CONF, args.COPY)               
     elif args.TASK == 'lammps' :
