@@ -27,5 +27,11 @@
     "norm_deform":	2e-3,
     "shear_deform":	5e-3,
 
+    "_comment": "05.surface",
+    "min_slab_size":	9,
+    "min_vacuum_size":	11,
+    "_comment": "pert xz to work around vasp bug...",
+    "pert_xz":		0.01,
+
     "_comment":	"that's all"
 }
