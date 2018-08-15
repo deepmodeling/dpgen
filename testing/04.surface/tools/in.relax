@@ -19,7 +19,7 @@ thermo		100
 thermo_style	custom step pe pxx pyy pzz lx ly lz c_mype
 dump		1 all custom 100 dump.surf id type xs ys zs fx fy fz
 
-fix		1 all box/relax aniso 0.0 
+#fix		1 all box/relax aniso 0.0 
 min_style	cg
 minimize	1e-10 1e-10 500 500
 
