@@ -1,6 +1,10 @@
 #!/bin/bash
 
-ovito_cvt=/home/wanghan/study/deep.md/deep.gen/lib/ovito_file_convert.py
+ovito_cvt=/home/wanghan/study/deep.md/deep.gen/generator/lib/ovito_file_convert.py
+if test ! -f $ovito_cvt; then
+    echo no file $ovito_cvt
+    exit
+fi
 
 miller_idx=""
 for ii in cifs/*cif
