@@ -38,7 +38,8 @@ def cmpt_vasp(jdata, conf_dir, supercell) :
         outcar = os.path.join(ii, 'OUTCAR')
         natoms, epa, vpa = vasp.get_nev(outcar)
         evac = epa * natoms - equi_epa * natoms
-        sys.stdout.write ("%s: %7.3f \n" % (structure_dir, evac))    
+        sys.stdout.write ("%s: %7.3f  %7.3f %7.3f \n" % (structure_dir, evac, epa * natoms, equi_epa * natoms))
+        # sys.stdout.write ("%s: %7.3f \n" % (structure_dir, evac))    
 
 def cmpt_deepmd_lammps(jdata, conf_dir, supercell) :
     equi_path = re.sub('confs', global_equi_name, conf_dir)
@@ -63,7 +64,8 @@ def cmpt_deepmd_lammps(jdata, conf_dir, supercell) :
         lmp_log = os.path.join(ii, 'log.lammps')
         natoms, epa, vpa = lammps.get_nev(lmp_log)
         evac = epa * natoms - equi_epa * natoms
-        sys.stdout.write ("%s: %7.3f  %7.3f %7.3f \n" % (structure_dir, evac, epa * natoms, equi_epa * natoms))
+        # sys.stdout.write ("%s: %7.3f  %7.3f %7.3f \n" % (structure_dir, evac, epa * natoms, equi_epa * natoms))
+        sys.stdout.write ("%s: %7.3f\n" % (structure_dir, evac))
 
 def _main() :
     parser = argparse.ArgumentParser(

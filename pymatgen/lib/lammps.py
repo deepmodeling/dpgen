@@ -25,7 +25,7 @@ def apply_type_map(conf_file, deepmd_type_map, ptypes) :
     deepmd_type_map:    deepmd atom type map
     ptypes:             atom types defined in POSCAR
     """
-    natoms = _get_natom(conf_file)
+    natoms = _get_conf_natom(conf_file)
     ntypes = len(deepmd_type_map)
     with open(conf_file, 'r') as fp:
         lines = fp.read().split('\n')
@@ -70,7 +70,7 @@ def _get_ntype(conf) :
             return int(ii.split()[0])
     raise RuntimeError("cannot find line indicate atom types in ", conf)
 
-def _get_natom(conf) :
+def _get_conf_natom(conf) :
     with open(conf, 'r') as fp:
         lines = fp.read().split('\n')
     for ii in lines :

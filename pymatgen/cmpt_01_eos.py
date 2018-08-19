@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 
-import os, glob, argparse, json
+import os, glob, argparse, json, re
 import lib.lammps as lammps
 import lib.vasp as vasp
 
+global_task_name = '01.eos'
+
 def comput_lmp_eos(conf_dir) :
-    conf_path = os.path.abspath(conf_dir)
+    conf_path = re.sub('confs', global_task_name, conf_dir)
+    conf_path = os.path.abspath(conf_path)
     conf_path = os.path.join(conf_path, 'lmp')
     vol_paths = glob.glob(os.path.join(conf_path, 'vol-*'))
     vol_paths.sort()
@@ -16,7 +19,8 @@ def comput_lmp_eos(conf_dir) :
 
 def comput_vasp_eos(jdata, conf_dir) :
     kspacing = jdata['vasp_params']['kspacing']
-    conf_path = os.path.abspath(conf_dir)
+    conf_path = re.sub('confs', global_task_name, conf_dir)
+    conf_path = os.path.abspath(conf_path)
     conf_path = os.path.join(conf_path, 'vasp-k%.2f' % kspacing)
     vol_paths = glob.glob(os.path.join(conf_path, 'vol-*'))
     vol_paths.sort()
