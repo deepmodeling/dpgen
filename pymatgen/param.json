@@ -19,7 +19,7 @@
     ],
 
     "_comment": "01.eos",
-    "vol_start":	12,
+    "vol_start":	10,
     "vol_end":		35,
     "vol_step":		0.5,
 
@@ -28,7 +28,7 @@
     "shear_deform":	5e-3,
 
     "_comment": "05.surface",
-    "min_slab_size":	9,
+    "min_slab_size":	10,
     "min_vacuum_size":	11,
     "_comment": "pert xz to work around vasp bug...",
     "pert_xz":		0.01,
