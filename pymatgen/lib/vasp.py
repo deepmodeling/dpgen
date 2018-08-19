@@ -82,6 +82,7 @@ def make_kspacing_kpoints(poscar, kspacing, kgamma) :
     for ii in range(2,5) :
         box.append([float(jj) for jj in lines[ii].split()[0:3]])
     box = np.array(box)
+    box *= scale
     rbox = reciprocal_box(box)
     kpoints = [(np.ceil(2 * np.pi * np.linalg.norm(ii) / kspacing).astype(int)) for ii in rbox]
     ret = make_vasp_kpoints(kpoints, kgamma)
