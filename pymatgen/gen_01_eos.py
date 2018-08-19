@@ -76,6 +76,7 @@ def make_vasp(jdata, conf_dir) :
         vol_path = os.path.join(vasp_path, 'vol-%.2f' % vol)        
         os.makedirs(vol_path, exist_ok = True)
         os.chdir(vol_path)
+        print(vol_path)
         for ii in ['INCAR', 'POTCAR', 'POSCAR.orig', 'POSCAR'] :
             if os.path.exists(ii) :
                 os.remove(ii)
@@ -140,6 +141,7 @@ def make_deepmd_lammps (jdata, conf_dir) :
         print('# generate %s' % (vol_path))
         os.makedirs(vol_path, exist_ok = True)
         os.chdir(vol_path)
+        print(vol_path)
         for ii in ['conf.lmp', 'conf.lmp'] + deepmd_models_name :
             if os.path.exists(ii) :
                 os.remove(ii)                

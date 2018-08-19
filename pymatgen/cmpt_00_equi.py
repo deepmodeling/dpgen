@@ -51,7 +51,7 @@ def _main():
     if le == None or ve == None or lv == None or vv == None:
         print("%s" % args.CONF)
     else :
-        print("%s\t %.3e %.3e %.3f  %.2f %.2f %.2f" % (args.CONF, ve, le, np.abs(ve-le), vv, lv, np.abs(vv-lv)))
+        print("%s\t %8.4f %8.4f %8.4f  %7.3f %7.3f %7.3f" % (args.CONF, ve, le, (le-ve), vv, lv, (le-ve)))
 
 if __name__ == '__main__' :
     _main()

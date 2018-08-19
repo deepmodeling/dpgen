@@ -12,6 +12,20 @@ from pymatgen.analysis.elasticity.stress import Stress
 global_equi_name = '00.equi'
 global_task_name = '02.elastic'
 
+def print_et (et): 
+    for ii in range(6) :
+        for jj in range(6) :
+            sys.stdout.write ("%7.2f " % (et.voigt[ii][jj] / 1e4))
+        sys.stdout.write('\n')
+    BV = et.k_voigt / 1e4
+    GV = et.g_voigt / 1e4
+    EV = 9*BV*GV/(3*BV+GV)
+    uV = 0.5*(3*BV-2*GV)/(3*BV+GV)
+    print("# Bulk   Modulus BV = %.2f GPa" % (BV))
+    print("# Shear  Modulus GV = %.2f GPa" % (GV))
+    print("# Youngs Modulus EV = %.2f GPa" % (EV))
+    print("# Poission Ratio uV = %.2f " % (uV))
+
 def cmpt_vasp(jdata, conf_dir) :
     fp_params = jdata['vasp_params']
     kspacing = fp_params['kspacing']
@@ -37,10 +51,7 @@ def cmpt_vasp(jdata, conf_dir) :
     # et = ElasticTensor.from_independent_strains(lst_strain, lst_stress, eq_stress = None)
     # bar to GPa
     # et = -et / 1e4 
-    for ii in range(6) :
-        for jj in range(6) :
-            sys.stdout.write ("%7.2f " % (et.voigt[ii][jj] / 1e4))
-        sys.stdout.write('\n')
+    print_et(et)
 
 def cmpt_deepmd_lammps(jdata, conf_dir) :
     deepmd_model_dir = jdata['deepmd_model_dir']
@@ -68,10 +79,7 @@ def cmpt_deepmd_lammps(jdata, conf_dir) :
     # et = ElasticTensor.from_independent_strains(lst_strain, lst_stress, eq_stress = None)
     # bar to GPa
     # et = -et / 1e4 
-    for ii in range(6) :
-        for jj in range(6) :
-            sys.stdout.write ("%7.2f " % (et.voigt[ii][jj] / 1e4))
-        sys.stdout.write('\n')
+    print_et(et)
 
 def _main() :
     parser = argparse.ArgumentParser(
