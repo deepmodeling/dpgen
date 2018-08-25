@@ -109,7 +109,10 @@ def _make_deepmd_lammps(jdata, conf_dir, supercell, insert_ele) :
     task_path = os.path.join(task_path, 'lmp')
     os.makedirs(task_path, exist_ok=True)
     task_poscar = os.path.join(task_path, 'POSCAR')
+    cwd = os.getcwd()
+    os.chdir(task_path)
     lammps.poscar_from_last_dump(equi_dump, task_poscar, deepmd_type_map)
+    os.chdir(cwd)
     # gen structure from equi poscar
     ss = Structure.from_file(task_poscar)
     # gen defects
