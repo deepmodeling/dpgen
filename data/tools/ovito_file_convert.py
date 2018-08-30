@@ -1,1 +1,1 @@
-../../lib/ovito_file_convert.py
+../../generator/lib/ovito_file_convert.py

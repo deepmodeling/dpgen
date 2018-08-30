@@ -5,6 +5,8 @@ import numpy as np
 import subprocess as sp
 import tools.hcp as hcp
 import tools.fcc as fcc
+import tools.diamond as diamond
+import tools.sc as sc
 
 def create_path (path) :
     path += '/'
@@ -59,6 +61,10 @@ def class_cell_type(jdata) :
         cell_type = hcp
     elif ct == "fcc" :
         cell_type = fcc
+    elif ct == "diamond" :
+        cell_type = diamond
+    elif ct == "sc" :
+        cell_type = sc
     else :
         raise RuntimeError("unknow cell type %s" % ct)
     return cell_type
