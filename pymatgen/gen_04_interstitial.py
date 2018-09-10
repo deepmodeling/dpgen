@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os, re, argparse, filecmp, json, glob
+import os, re, argparse, filecmp, json, glob, warnings
 import subprocess as sp
 import numpy as np
 import lib.vasp as vasp
@@ -86,6 +86,87 @@ def _gen_potcar (jdata, task_poscar, filename) :
         for fname in potcar_list:
             with open(fname) as infile:
                 outfile.write(infile.read())
+
+def make_deepmd_reprod_traj(jdata, conf_dir, supercell, insert_ele) : 
+    for ii in insert_ele :
+        _make_deepmd_reprod_traj(jdata, conf_dir, supercell, ii)
+
+def _make_deepmd_reprod_traj(jdata, conf_dir, supercell, insert_ele) : 
+    fp_params = jdata['vasp_params']
+    kspacing = fp_params['kspacing']
+    deepmd_model_dir = jdata['deepmd_model_dir']
+    deepmd_type_map = jdata['deepmd_type_map']
+    ntypes = len(deepmd_type_map)    
+    deepmd_model_dir = os.path.abspath(deepmd_model_dir)
+    deepmd_models = glob.glob(os.path.join(deepmd_model_dir, '*pb'))
+    deepmd_models_name = [os.path.basename(ii) for ii in deepmd_models]
+
+    conf_path = os.path.abspath(conf_dir)
+    task_path = re.sub('confs', global_task_name, conf_path)
+    vasp_path = os.path.join(task_path, 'vasp-k%.2f' % kspacing)
+    lmps_path = os.path.join(task_path, 'reprod-k%.2f' % kspacing)    
+    os.makedirs(lmps_path, exist_ok = True)
+    copy_str = "%sx%sx%s" % (supercell[0], supercell[1], supercell[2])
+    struct_widecard = os.path.join(vasp_path, 'struct-%s-%s-*' % (insert_ele,copy_str))
+    vasp_struct = glob.glob(struct_widecard)
+    vasp_struct.sort()
+    cwd=os.getcwd()
+    
+    # make lammps.in
+    fc = lammps.make_lammps_eval('conf.lmp', ntypes, deepmd_models_name)
+    f_lammps_in = os.path.join(lmps_path, 'lammps.in')
+    with open(f_lammps_in, 'w') as fp :
+        fp.write(fc)
+
+    for vs in vasp_struct :
+        # get vasp energy
+        outcar = os.path.join(vs, 'OUTCAR')
+        energies = vasp.get_energies(outcar)
+        # get xdat
+        xdatcar = os.path.join(vs, 'XDATCAR')
+        struct_basename  = os.path.basename(vs)
+        ls = os.path.join(lmps_path, struct_basename)
+        print(ls)
+        os.makedirs(ls, exist_ok = True)
+        os.chdir(ls)
+        if os.path.exists('XDATCAR') :
+            os.remove('XDATCAR')
+        os.symlink(os.path.relpath(xdatcar), 'XDATCAR')
+        xdat_lines = open('XDATCAR', 'r').read().split('\n')
+        natoms = vasp.poscar_natoms('XDATCAR')
+        xdat_secsize = natoms + 8
+        xdat_nframes = len(xdat_lines) // xdat_secsize
+        if xdat_nframes > len(energies) :
+            warnings.warn('nframes %d in xdat is larger than energy %d, use the last %d frames' % (xdat_nframes, len(energies), len(energies)))
+            xdat_nlines = len(energies) * xdat_secsize
+            xdat_lines = xdat_lines[xdat_nlines:]
+        xdat_nframes = len(xdat_lines) // xdat_secsize
+        print(xdat_nframes, len(energies))
+        # loop over frames
+        for ii in range(xdat_nframes) :
+            frame_path = 'frame.%06d' % ii
+            os.makedirs(frame_path, exist_ok=True)
+            os.chdir(frame_path)
+            # clear dir
+            for jj in ['conf.lmp'] :
+                if os.path.isfile(jj):
+                    os.remove(jj)            
+            for jj in ['lammps.in'] + deepmd_models_name :
+                if os.path.islink(jj):
+                    os.unlink(jj)            
+            # link lammps in
+            os.symlink(os.path.relpath(f_lammps_in), 'lammps.in')
+            # make conf
+            with open('POSCAR', 'w') as fp :
+                fp.write('\n'.join(xdat_lines[ii*xdat_secsize:(ii+1)*xdat_secsize]))
+            lammps.cvt_lammps_conf('POSCAR', 'conf.lmp')
+            ptypes = vasp.get_poscar_types('POSCAR')
+            lammps.apply_type_map('conf.lmp', deepmd_type_map, ptypes)
+            # link models
+            for (kk,ll) in zip(deepmd_models, deepmd_models_name) :
+                os.symlink(os.path.relpath(kk), ll)
+            os.chdir(ls)
+        os.chdir(cwd)
 
 def make_deepmd_lammps(jdata, conf_dir, supercell, insert_ele) :
     for ii in insert_ele:
@@ -175,6 +256,8 @@ def _main() :
         make_vasp(jdata, args.CONF, args.COPY, args.ELEMENT)
     elif args.TASK == 'lammps' :
         make_deepmd_lammps(jdata, args.CONF, args.COPY, args.ELEMENT)
+    elif args.TASK == 'reprod' :
+        make_deepmd_reprod_traj(jdata, args.CONF, args.COPY, args.ELEMENT)
     else :
         raise RuntimeError("unknow task ", args.TASK)
     
