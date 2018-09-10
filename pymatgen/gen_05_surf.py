@@ -10,7 +10,7 @@ from pymatgen.core.surface import generate_all_slabs, Structure
 global_equi_name = '00.equi'
 global_task_name = '05.surf'
 
-def make_vasp(jdata, conf_dir, max_miller = 2, relax_box = False) :
+def make_vasp(jdata, conf_dir, max_miller = 2, relax_box = False, static = False) :
     fp_params = jdata['vasp_params']
     ecut = fp_params['ecut']
     ediff = fp_params['ediff']
@@ -31,7 +31,10 @@ def make_vasp(jdata, conf_dir, max_miller = 2, relax_box = False) :
     equi_contcar = os.path.join(equi_path, 'CONTCAR')
     task_path = re.sub('confs', global_task_name, conf_dir)
     task_path = os.path.abspath(task_path)
-    task_path = os.path.join(task_path, 'vasp-k%.2f' % kspacing)
+    if static:
+        task_path = os.path.join(task_path, 'vasp-static-k%.2f' % kspacing)
+    else :
+        task_path = os.path.join(task_path, 'vasp-k%.2f' % kspacing)
     os.makedirs(task_path, exist_ok=True)
     cwd = os.getcwd()
     os.chdir(task_path)
@@ -40,12 +43,16 @@ def make_vasp(jdata, conf_dir, max_miller = 2, relax_box = False) :
     os.symlink(os.path.relpath(equi_contcar), 'POSCAR')
     os.chdir(cwd)
     task_poscar = os.path.join(task_path, 'POSCAR')
+    ptypes = vasp.get_poscar_types(task_poscar)
     # gen strcture
     ss = Structure.from_file(task_poscar)
     # gen slabs
     all_slabs = generate_all_slabs(ss, max_miller, min_slab_size, min_vacuum_size)
     # gen incar
-    fc = vasp.make_vasp_relax_incar(ecut, ediff, True, relax_box, False, 1, 1, kspacing = kspacing, kgamma = kgamma)
+    if static :
+        fc = vasp.make_vasp_static_incar(ecut, ediff, 1, 1, kspacing = kspacing, kgamma = kgamma)
+    else :
+        fc = vasp.make_vasp_relax_incar(ecut, ediff, True, relax_box, False, 1, 1, kspacing = kspacing, kgamma = kgamma)
     with open(os.path.join(task_path, 'INCAR'), 'w') as fp :
         fp.write(fc)
     # gen potcar
@@ -75,8 +82,9 @@ def make_vasp(jdata, conf_dir, max_miller = 2, relax_box = False) :
                 os.remove(jj)
         print("# %03d generate " % ii, struct_path, " \t %d atoms" % len(slab.sites))
         # make conf
-        slab.to('POSCAR', 'POSCAR')
-        vasp.regulate_poscar('POSCAR', 'POSCAR')
+        slab.to('POSCAR', 'POSCAR.tmp')
+        vasp.regulate_poscar('POSCAR.tmp', 'POSCAR')
+        vasp.sort_poscar('POSCAR', 'POSCAR', ptypes)
         vasp.perturb_xz('POSCAR', 'POSCAR', pert_xz)
         # record miller
         np.savetxt('miller.out', slab.miller_index, fmt='%d')
@@ -85,7 +93,7 @@ def make_vasp(jdata, conf_dir, max_miller = 2, relax_box = False) :
         os.symlink(os.path.relpath(os.path.join(task_path, 'POTCAR')), 'POTCAR')
     cwd = os.getcwd()
 
-def make_deepmd_lammps(jdata, conf_dir, max_miller = 2, relax_box = False) :
+def make_deepmd_lammps(jdata, conf_dir, max_miller = 2, static = False, relax_box = False) :
     fp_params = jdata['vasp_params']
     kspacing = fp_params['kspacing']
     deepmd_model_dir = jdata['deepmd_model_dir']
@@ -106,7 +114,10 @@ def make_deepmd_lammps(jdata, conf_dir, max_miller = 2, relax_box = False) :
     equi_contcar = os.path.join(equi_path, 'CONTCAR')    
     task_path = re.sub('confs', global_task_name, conf_dir)
     task_path = os.path.abspath(task_path)
-    task_path = os.path.join(task_path, 'lmp')
+    if static :
+        task_path = os.path.join(task_path, 'lmp-static')
+    else :
+        task_path = os.path.join(task_path, 'lmp')
     os.makedirs(task_path, exist_ok=True)
     cwd = os.getcwd()
     os.chdir(task_path)
@@ -120,7 +131,10 @@ def make_deepmd_lammps(jdata, conf_dir, max_miller = 2, relax_box = False) :
     # gen slabs
     all_slabs = generate_all_slabs(ss, max_miller, min_slab_size, min_vacuum_size)
     # make lammps.in
-    fc = lammps.make_lammps_equi('conf.lmp', ntypes, deepmd_models_name, change_box = relax_box)
+    if static :
+        fc = lammps.make_lammps_eval('conf.lmp', ntypes, deepmd_models_name)
+    else :
+        fc = lammps.make_lammps_equi('conf.lmp', ntypes, deepmd_models_name, change_box = relax_box)
     f_lammps_in = os.path.join(task_path, 'lammps.in')
     with open(f_lammps_in, 'w') as fp :
         fp.write(fc)
@@ -171,9 +185,13 @@ def _main() :
 
     print('# generate %s task with conf %s' % (args.TASK, args.CONF))
     if args.TASK == 'vasp':
-        make_vasp(jdata, args.CONF, args.MAX_MILLER, args.relax_box)
+        make_vasp(jdata, args.CONF, args.MAX_MILLER, static = False, relax_box = args.relax_box)
+    elif args.TASK == 'vasp-static':
+        make_vasp(jdata, args.CONF, args.MAX_MILLER, static = True, relax_box = args.relax_box)
     elif args.TASK == 'lammps' :
-        make_deepmd_lammps(jdata, args.CONF, args.MAX_MILLER, args.relax_box)
+        make_deepmd_lammps(jdata, args.CONF, args.MAX_MILLER, static = False, relax_box = args.relax_box)
+    elif args.TASK == 'lammps-static' :
+        make_deepmd_lammps(jdata, args.CONF, args.MAX_MILLER, static = True, relax_box = args.relax_box)
     else :
         raise RuntimeError("unknow task ", args.TASK)
     

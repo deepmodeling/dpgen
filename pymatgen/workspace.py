@@ -2,9 +2,12 @@
 
 import glob, os, shutil
 
-def copy(kspacing) :
+def copy(kspacing, static = False) :
     test_dir = os.path.abspath(os.path.dirname(__file__))
-    vasp_name = 'vasp-k%.2f' % kspacing
+    if static :
+        vasp_name = 'vasp-static-k%.2f' % kspacing
+    else :
+        vasp_name = 'vasp-k%.2f' % kspacing    
     confs = glob.glob(os.path.join(test_dir, "confs"))
     params = glob.glob(os.path.join(test_dir, "param.json"))
     cmpts = glob.glob(os.path.join(test_dir, "cmpt_*.py"))
@@ -46,4 +49,5 @@ def copy(kspacing) :
         shutil.copy2(os.path.relpath(ii), fname_ii)
 
 copy(0.08)
+copy(0.08, static = True)
 copy(0.16)

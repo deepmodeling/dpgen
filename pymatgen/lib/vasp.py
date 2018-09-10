@@ -54,6 +54,33 @@ def regulate_poscar(poscar_in, poscar_out) :
     with open(poscar_out, 'w') as fp:
         fp.write("\n".join(ret))
 
+def sort_poscar(poscar_in, poscar_out, new_names) :
+    with open(poscar_in, 'r') as fp:
+        lines = fp.read().split('\n')
+    names = lines[5].split()
+    counts = [int(ii) for ii in lines[6].split()]
+    new_counts = np.zeros(len(counts), dtype = int)
+    for nn,cc in zip(names,counts) :
+        new_counts[new_names.index(nn)] += cc
+    natoms = np.sum(new_counts)
+    posis = lines[8:8+natoms]
+    all_lines = []
+    for ele in new_names:
+        ele_lines = []
+        for ii in posis :
+            ele_name = ii.split()[-1]
+            if ele_name == ele :
+                ele_lines.append(ii) 
+        all_lines += ele_lines
+    all_lines.append('')
+    ret = lines[0:5]
+    ret.append(" ".join(new_names))
+    ret.append(" ".join([str(ii) for ii in new_counts]))
+    ret.append("Direct")
+    ret += all_lines
+    with open(poscar_out, 'w') as fp:
+        fp.write("\n".join(ret))    
+
 def perturb_xz (poscar_in, poscar_out, pert = 0.01) :
     with open(poscar_in, 'r') as fp:
         lines = fp.read().split('\n')
@@ -88,6 +115,28 @@ def make_kspacing_kpoints(poscar, kspacing, kgamma) :
     ret = make_vasp_kpoints(kpoints, kgamma)
     return ret
 
+def get_energies (fname) :
+    if not check_finished(fname):
+        warnings.warn("incomplete outcar: "+fname)
+    with open(fname, 'r') as fp:
+        lines = fp.read().split('\n') 
+    try :
+        ener = _get_energies(lines)
+        return ener
+    except OutcarItemError :
+        return None
+
+def get_boxes (fname) :
+    if not check_finished(fname):
+        warnings.warn("incomplete outcar: "+fname)
+    with open(fname, 'r') as fp:
+        lines = fp.read().split('\n') 
+    try :
+        ener = _get_boxes(lines)
+        return ener
+    except OutcarItemError :
+        return None
+
 def get_nev(fname) :
     if not check_finished(fname):
         warnings.warn("incomplete outcar: "+fname)
@@ -99,7 +148,7 @@ def get_nev(fname) :
         ener = _get_energies(lines)[-1]
         return natoms, ener/natoms, vol/natoms
     except OutcarItemError:
-        return None, None, None
+        return natoms, None, None
     # print(fname, natoms, vol, ener)
 
 def get_stress(fname) :
@@ -133,6 +182,20 @@ def _get_energies(lines) :
     if len(items) == 0:
         raise OutcarItemError("cannot find item 'free  energy   TOTEN'")
     return items
+
+def _split_box_line(line) :
+    return [float(line[0:16]), float(line[16:29]), float(line[29:42])]
+
+def _get_boxes(lines) :
+    items = []
+    for idx,ii in enumerate(lines):
+        tmp_box = []
+        if 'direct lattice vectors' in ii :
+            tmp_box.append(_split_box_line(lines[idx+1]))
+            tmp_box.append(_split_box_line(lines[idx+2]))
+            tmp_box.append(_split_box_line(lines[idx+3]))
+            items.append(tmp_box)
+    return np.array(items)
 
 def _get_volumes(lines) :
     items = []
@@ -174,6 +237,41 @@ def _compute_isif (relax_ions,
     else :
         raise ValueError("unknow relax style")
     return isif
+
+def make_vasp_static_incar (ecut, ediff,
+                            npar, kpar, 
+                            kspacing = 0.5, kgamma = True) :
+    isif = 2
+    ret = ''
+    ret += 'PREC=A\n'
+    ret += 'ENCUT=%d\n' % ecut
+    ret += '# ISYM=0\n'
+    ret += 'ALGO=fast\n'
+    ret += 'EDIFF=%e\n' % ediff
+    ret += 'LREAL=F\n'
+    ret += 'NPAR=%d\n' % npar
+    ret += 'KPAR=%d\n' % kpar
+    ret += "\n"
+    ret += 'ISTART=0\n'
+    ret += 'ICHARG=2\n'
+    ret += 'NELMIN=4\n'
+    ret += 'ISIF=%d\n' % isif
+    ret += 'IBRION=-1\n'
+    ret += "\n"
+    ret += 'NSW=0\n'
+    ret += "\n"
+    ret += 'LWAVE=F\n'
+    ret += 'LCHARG=F\n'
+    ret += 'PSTRESS=0\n'
+    ret += "\n"
+    if kspacing is not None :
+        ret += 'KSPACING=%f\n' % kspacing
+    if kgamma is not None :
+        if kgamma:
+            ret += 'KGAMMA=T\n'
+        else :
+            ret += 'KGAMMA=F\n'
+    return ret
 
 def make_vasp_relax_incar (ecut, ediff, 
                            relax_ion, relax_shape, relax_volume, 

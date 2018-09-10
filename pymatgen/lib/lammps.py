@@ -87,6 +87,49 @@ def _make_lammps_deepmd_model(models) :
     ret += line
     return ret
 
+def make_lammps_eval(conf, ntypes, models) :
+    """
+    make lammps input for equilibritation
+    """
+    ret = ""
+    ret += "clear\n"
+    ret += "units 	metal\n"
+    ret += "dimension	3\n"
+    ret += "boundary	p	p    p\n"
+    ret += "atom_style	atomic\n"
+    ret += "box         tilt large\n"
+    ret += "read_data   %s\n" % conf
+    for ii in range(ntypes) :
+        ret += "mass            %d 1\n" % (ii+1)            
+    ret += "neigh_modify    every 1 delay 0 check no\n"
+    ret += _make_lammps_deepmd_model(models)
+    ret += "compute         mype all pe\n"
+    ret += "thermo          100\n"
+    ret += "thermo_style    custom step pe pxx pyy pzz pxy pxz pyz lx ly lz vol c_mype\n"
+    ret += "run    0\n"
+    ret += "variable        N equal count(all)\n"
+    ret += "variable        V equal vol\n"
+    ret += "variable        E equal \"c_mype\"\n"
+    ret += "variable        tmplx equal lx\n"
+    ret += "variable        tmply equal ly\n"
+    ret += "variable        Pxx equal pxx\n"
+    ret += "variable        Pyy equal pyy\n"
+    ret += "variable        Pzz equal pzz\n"
+    ret += "variable        Pxy equal pxy\n"
+    ret += "variable        Pxz equal pxz\n"
+    ret += "variable        Pyz equal pyz\n"
+    ret += "variable        Epa equal ${E}/${N}\n"
+    ret += "variable        Vpa equal ${V}/${N}\n"
+    ret += "variable        AA equal (${tmplx}*${tmply})\n"
+    ret += "print \"All done\"\n"
+    ret += "print \"Total number of atoms = ${N}\"\n"
+    ret += "print \"Final energy per atoms = ${Epa}\"\n"
+    ret += "print \"Final volume per atoms = ${Vpa}\"\n"
+    ret += "print \"Final Base area = ${AA}\"\n"
+    ret += "print \"Final Stress (xx yy zz xy xz yz) = ${Pxx} ${Pyy} ${Pzz} ${Pxy} ${Pxz} ${Pyz}\"\n"
+    return ret
+
+
 def make_lammps_equi(conf, ntypes, models, 
                      etol=1e-12, ftol=1e-6, 
                      maxiter=5000, maxeval=500000, 
