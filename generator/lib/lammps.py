@@ -32,6 +32,7 @@ def make_lammps_input(ensemble,
     ret+= "neighbor        1.0 bin\n"
     ret+= "neigh_modify    every 10\n"
     ret+= "\n"
+    ret+= "box          tilt large\n"
     ret+= "read_data       %s\n" % conf_file    
     for jj in range(len(mass_map)) :
         ret+= "mass            %d %f\n" %(jj+1, mass_map[jj])
@@ -45,7 +46,7 @@ def make_lammps_input(ensemble,
     ret+= "thermo          ${THERMO_FREQ}\n"
     ret+= "dump            1 all custom ${DUMP_FREQ} traj/*.lammpstrj id type x y z\n"
     ret+= "\n"
-    ret+= "velocity        all create ${TEMP} %d" % random.randrange(max_seed)
+    ret+= "velocity        all create ${TEMP} %d" % (random.randrange(max_seed-1)+1)
     ret+= "\n"
     if ensemble == "npt" :
         assert (pres is not None)

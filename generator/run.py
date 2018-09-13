@@ -37,6 +37,12 @@ import lib.MachineSlurm as MachineSlurm
 import lib.MachinePBS as MachinePBS
 from lib.machine_exec import exec_hosts
 from lib.machine_exec import exec_hosts_batch
+from lib.batch_exec import exec_batch
+from lib.batch_exec import exec_batch_group
+
+global_modules = [ "intel-mkl/2017.4/5/64", "intel/17.0/64/17.0.5.239", "cudatoolkit/9.1", "cudnn/cuda-9.1/7.1.2"]
+global_sources = [ "/home/linfengz/SCR/softwares/tensorflow.gpu.1.6/bin/activate" ]
+global_time_limit = "3:00:00"
 
 template_name = 'template'
 train_name = '00.train'
@@ -102,6 +108,40 @@ def copy_model(numb_model, prv_iter_index, cur_iter_index) :
     with open(os.path.join(cur_train_path, "copied"), 'w') as fp:
         None 
 
+def poscar_natoms(lines) :
+    numb_atoms = 0
+    for ii in lines[6].split() :
+        numb_atoms += int(ii)
+    return numb_atoms
+
+def poscar_shuffle(poscar_in, poscar_out) :
+    with open(poscar_in, 'r') as fin :
+        lines = list(fin)
+    numb_atoms = poscar_natoms(lines)
+    idx = np.arange(8, 8+numb_atoms)
+    np.random.shuffle(idx)
+    out_lines = lines[0:8]
+    for ii in range(numb_atoms) :
+        out_lines.append(lines[idx[ii]])
+    with open(poscar_out, 'w') as fout:
+        fout.write("".join(out_lines))
+
+def expand_idx (in_list) :
+    ret = []
+    for ii in in_list :
+        if type(ii) == int :
+            ret.append(ii)
+        elif type(ii) == str:
+            step_str = ii.split(':')
+            if len(step_str) > 1 :
+                step = int(step_str[1])
+            else :
+                step = 1
+            range_str = step_str[0].split('-')
+            assert(len(range_str)) == 2
+            ret += range(int(range_str[0]), int(range_str[1]), step)
+    return ret
+        
 def make_train (iter_index, 
                jdata) :    
     # load json param
@@ -136,7 +176,9 @@ def make_train (iter_index,
             fp_path = os.path.join(make_iter_name(ii), fp_name)
             fp_data_sys = glob.glob(os.path.join(fp_path, "data.*"))            
             for jj in fp_data_sys :
-                nframes = np.loadtxt(os.path.join(jj, 'box.raw')).shape[0]
+                tmp_box = np.loadtxt(os.path.join(jj, 'box.raw'))
+                tmp_box = np.reshape(tmp_box, [-1,9])
+                nframes = tmp_box.shape[0]
                 if nframes < fp_task_min :
                     log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
                     continue
@@ -205,7 +247,8 @@ def run_train (iter_index,
     #     command += ' --init-model old/model.ckpt '
     command = cmd_append_log (command, 'train.log')
     # train models
-    exec_hosts_batch(exec_machine, command, train_nthreads, all_task, None, verbose = True, mpi = False,gpu = True)
+    # exec_hosts_batch(exec_machine, command, train_nthreads, all_task, None, verbose = True, mpi = False,gpu = True)
+    exec_batch(command, train_nthreads, 1, all_task, time_limit = global_time_limit, modules = global_modules, sources = global_sources)
 
 def post_train (iter_index,
                 jdata) :
@@ -253,8 +296,9 @@ def make_model_devi (iter_index,
     nsteps = cur_job['nsteps']
     trj_freq = cur_job['trj_freq']
     sys_configs = jdata['sys_configs']
+    shuffle_poscar = jdata['shuffle_poscar']
 
-    sys_idx = cur_job['sys_idx']
+    sys_idx = expand_idx(cur_job['sys_idx'])
     if (len(sys_idx) != len(list(set(sys_idx)))) :
         raise RuntimeError("system index should be uniq")
     conf_systems = []
@@ -293,9 +337,15 @@ def make_model_devi (iter_index,
         conf_counter = 0
         for cc in ss :            
             conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter)
+            orig_poscar_name = conf_name + '.orig.poscar'
             poscar_name = conf_name + '.poscar'
             lmp_name = conf_name + '.lmp'
-            os.symlink(cc, os.path.join(conf_path, poscar_name))
+            if shuffle_poscar :
+                os.symlink(cc, os.path.join(conf_path, orig_poscar_name))
+                poscar_shuffle(os.path.join(conf_path, orig_poscar_name),
+                               os.path.join(conf_path, poscar_name))
+            else :
+                os.symlink(cc, os.path.join(conf_path, poscar_name))
             all_task.append(conf_path)
             task_param.append(' ' + poscar_name + ' ' + lmp_name)
             conf_counter += 1
@@ -354,16 +404,18 @@ def run_model_devi (iter_index,
     nframes = nsteps // traj_freq + 1
     
     run_tasks = []
-    for ii in all_task:
-        fres = os.path.join(ii, 'model_devi.out')
-        if os.path.isfile(fres) :
-            nlines = np.loadtxt(fres).shape[0]
-            if nframes != nlines :
-                run_tasks.append(ii)
-        else :
-            run_tasks.append(ii)
+    run_tasks = all_task
+    # for ii in all_task:
+    #     fres = os.path.join(ii, 'model_devi.out')
+    #     if os.path.isfile(fres) :
+    #         nlines = np.loadtxt(fres).shape[0]
+    #         if nframes != nlines :
+    #             run_tasks.append(ii)
+    #     else :
+    #         run_tasks.append(ii)
 
-    exec_hosts_batch(exec_machine, command, model_devi_np, run_tasks, None, verbose = True, gpu = True)
+#    exec_hosts_batch(exec_machine, command, model_devi_np, run_tasks, None, verbose = True, gpu = True)
+    exec_batch_group(command, model_devi_np, 1, run_tasks, group_size = 20, time_limit = global_time_limit, modules = global_modules, sources = global_sources)
 
 def post_model_devi (iter_index, 
                      jdata) :
@@ -455,7 +507,7 @@ def _make_fp_vasp_inner (modd_path,
             cwd = os.getcwd()
             os.chdir(fp_task_path)
             os.symlink(os.path.relpath(conf_name), 'conf.lmp')
-            incar = make_vasp_incar(ecut, ediff, npar, kpar, kspacing = kspacing, kgamma = True)
+            incar = make_vasp_incar(ecut, ediff, npar, kpar, kspacing = kspacing, kgamma = False)
             with open('INCAR', 'w') as fp:
                 fp.write(incar)
             for pair in fp_link_files :
@@ -545,17 +597,19 @@ def run_fp_vasp (iter_index,
         return
 
     fp_run_tasks = []
-    for ii in fp_tasks :
-        if os.path.isfile(os.path.join(ii, 'OUTCAR')) :
-            with open(os.path.join(ii, 'OUTCAR'), 'r') as fp :
-                content = fp.read()
-                count = content.count('TOTAL-FORCE')
-                if count != 1 :
-                    fp_run_tasks.append(ii)
-        else :
-            fp_run_tasks.append(ii)
+    fp_run_tasks = fp_tasks
+    # for ii in fp_tasks :
+    #     if os.path.isfile(os.path.join(ii, 'OUTCAR')) :
+    #         with open(os.path.join(ii, 'OUTCAR'), 'r') as fp :
+    #             content = fp.read()
+    #             count = content.count('TOTAL-FORCE')
+    #             if count != 1 :
+    #                 fp_run_tasks.append(ii)
+    #     else :
+    #         fp_run_tasks.append(ii)
 
-    exec_hosts_batch(exec_machine, fp_command, fp_np, fp_run_tasks, verbose = True, mpi = False, gpu=True)
+#    exec_hosts_batch(exec_machine, fp_command, fp_np, fp_run_tasks, verbose = True, mpi = False, gpu=True)
+    exec_batch_group(fp_command, 1, 1, fp_run_tasks, group_size = 1, time_limit = global_time_limit, modules = global_modules, sources = global_sources)
         
 def run_fp (iter_index,
             jdata,
