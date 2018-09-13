@@ -44,6 +44,8 @@
 	"n_axis_neuron":	12,
 	"n_neuron":		[240, 240, 240],
 	"resnet_dt":		true,
+	"coord_norm":		true,
+	"type_fitting_net":	false,
 
 	"_comment": " traing controls",
 	"systems":		[],

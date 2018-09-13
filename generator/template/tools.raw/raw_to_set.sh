@@ -25,8 +25,8 @@ do
   echo making set $ii ...
   pi=`printf %03d $ii`
   mkdir set.$pi
-  mv box.raw$pi set.$pi/box.raw
-  mv coord.raw$pi set.$pi/coord.raw
+  mv box.raw$pi		set.$pi/box.raw
+  mv coord.raw$pi	set.$pi/coord.raw
   test -f energy.raw$pi && mv energy.raw$pi set.$pi/energy.raw
   test -f force.raw$pi  && mv force.raw$pi  set.$pi/force.raw
   test -f virial.raw$pi && mv virial.raw$pi set.$pi/virial.raw
