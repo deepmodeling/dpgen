@@ -44,24 +44,18 @@ def _cmpt_vasp(jdata, conf_dir, supercell, insert_ele) :
         evac = epa * natoms - equi_epa * natoms
         sys.stdout.write ("%s: %7.3f \n" % (structure_dir, evac))    
 
-def cmpt_deepmd_reprod_traj(jdata, conf_dir, supercell, insert_ele) :
+def cmpt_deepmd_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_name) :
     for ii in insert_ele:
-        _cmpt_deepmd_reprod_traj(jdata, conf_dir, supercell, ii)
+        _cmpt_deepmd_reprod_traj(jdata, conf_dir, supercell, ii, task_name)
 
-def _cmpt_deepmd_reprod_traj(jdata, conf_dir, supercell, insert_ele) :
+def _cmpt_deepmd_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_name) :
     fp_params = jdata['vasp_params']
     kspacing = fp_params['kspacing']
-    deepmd_model_dir = jdata['deepmd_model_dir']
-    deepmd_type_map = jdata['deepmd_type_map']
-    ntypes = len(deepmd_type_map)    
-    deepmd_model_dir = os.path.abspath(deepmd_model_dir)
-    deepmd_models = glob.glob(os.path.join(deepmd_model_dir, '*pb'))
-    deepmd_models_name = [os.path.basename(ii) for ii in deepmd_models]
 
     conf_path = os.path.abspath(conf_dir)
     task_path = re.sub('confs', global_task_name, conf_path)
     vasp_path = os.path.join(task_path, 'vasp-k%.2f' % kspacing)
-    lmps_path = os.path.join(task_path, 'reprod-k%.2f' % kspacing)    
+    lmps_path = os.path.join(task_path, task_name + '-k%.2f' % kspacing)    
     copy_str = "%sx%sx%s" % (supercell[0], supercell[1], supercell[2])
     struct_widecard = os.path.join(vasp_path, 'struct-%s-%s-*' % (insert_ele,copy_str))
     vasp_struct = glob.glob(struct_widecard)
@@ -89,24 +83,25 @@ def _cmpt_deepmd_reprod_traj(jdata, conf_dir, supercell, insert_ele) :
         lmp_ener_file = os.path.join(ls, 'ener.lmp.out')
         vasp_ener = np.reshape(vasp_ener, [-1,1]) / natoms
         error_start = 2
-        np.savetxt(vasp_ener_file, vasp_ener[error_start:])
-        np.savetxt(lmp_ener_file,  lmp_ener[error_start:])
+        lmp_ener -= lmp_ener[-1] - vasp_ener[-1]
         diff = lmp_ener - vasp_ener
         diff = diff[error_start:]
         error = np.linalg.norm(diff) / np.sqrt(np.size(lmp_ener))
+        np.savetxt(vasp_ener_file, vasp_ener[error_start:])
+        np.savetxt(lmp_ener_file,  lmp_ener[error_start:])
         print(ls, error)
 
-def cmpt_deepmd_lammps(jdata, conf_dir, supercell, insert_ele) :
+def cmpt_deepmd_lammps(jdata, conf_dir, supercell, insert_ele, task_name) :
     for ii in insert_ele:
-        _cmpt_deepmd_lammps(jdata, conf_dir, supercell, ii)
+        _cmpt_deepmd_lammps(jdata, conf_dir, supercell, ii, task_name)
 
-def _cmpt_deepmd_lammps(jdata, conf_dir, supercell, insert_ele) :
+def _cmpt_deepmd_lammps(jdata, conf_dir, supercell, insert_ele, task_name) :
     equi_path = re.sub('confs', global_equi_name, conf_dir)
-    equi_path = os.path.join(equi_path, 'lmp')
+    equi_path = os.path.join(equi_path, task_name.split('-')[0])
     equi_path = os.path.abspath(equi_path)
     equi_log = os.path.join(equi_path, 'log.lammps')
     task_path = re.sub('confs', global_task_name, conf_dir)
-    task_path = os.path.join(task_path, 'lmp')
+    task_path = os.path.join(task_path, task_name)
     task_path = os.path.abspath(task_path)
 
     equi_natoms, equi_epa, equi_vpa = lammps.get_nev(equi_log)
@@ -146,10 +141,14 @@ def _main() :
 #    print('# generate %s task with conf %s' % (args.TASK, args.CONF))
     if args.TASK == 'vasp':
         cmpt_vasp(jdata, args.CONF, args.COPY, args.ELEMENT)               
-    elif args.TASK == 'lammps' :
-        cmpt_deepmd_lammps(jdata, args.CONF, args.COPY, args.ELEMENT)
-    elif args.TASK == 'reprod' :
-        cmpt_deepmd_reprod_traj(jdata, args.CONF, args.COPY, args.ELEMENT)
+    elif args.TASK == 'deepmd' :
+        cmpt_deepmd_lammps(jdata, args.CONF, args.COPY, args.ELEMENT, args.TASK)
+    elif args.TASK == 'deepmd-reprod' :
+        cmpt_deepmd_reprod_traj(jdata, args.CONF, args.COPY, args.ELEMENT, args.TASK)
+    elif args.TASK == 'meam' :
+        cmpt_deepmd_lammps(jdata, args.CONF, args.COPY, args.ELEMENT, args.TASK)
+    elif args.TASK == 'meam-reprod' :
+        cmpt_deepmd_reprod_traj(jdata, args.CONF, args.COPY, args.ELEMENT, args.TASK)
     else :
         raise RuntimeError("unknow task ", args.TASK)
     

@@ -78,7 +78,7 @@ def _get_conf_natom(conf) :
             return int(ii.split()[0])
     raise RuntimeError("cannot find line indicate atom types in ", conf)
 
-def _make_lammps_deepmd_model(models) :
+def inter_deepmd(models) :
     ret = ""
     line = "pair_style deepmd "
     for ii in models :
@@ -87,7 +87,20 @@ def _make_lammps_deepmd_model(models) :
     ret += line
     return ret
 
-def make_lammps_eval(conf, ntypes, models) :
+def inter_meam(param) :
+    ret = ""
+    line = "pair_style      meam \n"
+    line+= "pair_coeff      * * %s " % param['meam_potfile'][0]
+    for ii in param['meam_type'] :
+        line += ii + ' '
+    line+= "%s " % param['meam_potfile'][1]
+    for ii in param['meam_type'] :
+        line += ii + ' '
+    line+= '\n'
+    ret += line
+    return ret
+
+def make_lammps_eval(conf, ntypes, interaction, param) :
     """
     make lammps input for equilibritation
     """
@@ -102,7 +115,7 @@ def make_lammps_eval(conf, ntypes, models) :
     for ii in range(ntypes) :
         ret += "mass            %d 1\n" % (ii+1)            
     ret += "neigh_modify    every 1 delay 0 check no\n"
-    ret += _make_lammps_deepmd_model(models)
+    ret += interaction(param)
     ret += "compute         mype all pe\n"
     ret += "thermo          100\n"
     ret += "thermo_style    custom step pe pxx pyy pzz pxy pxz pyz lx ly lz vol c_mype\n"
@@ -130,7 +143,7 @@ def make_lammps_eval(conf, ntypes, models) :
     return ret
 
 
-def make_lammps_equi(conf, ntypes, models, 
+def make_lammps_equi(conf, ntypes, interaction, param, 
                      etol=1e-12, ftol=1e-6, 
                      maxiter=5000, maxeval=500000, 
                      change_box = True) :
@@ -148,7 +161,7 @@ def make_lammps_equi(conf, ntypes, models,
     for ii in range(ntypes) :
         ret += "mass            %d 1\n" % (ii+1)            
     ret += "neigh_modify    every 1 delay 0 check no\n"
-    ret += _make_lammps_deepmd_model(models)
+    ret += interaction(param)
     ret += "compute         mype all pe\n"
     ret += "thermo          100\n"
     ret += "thermo_style    custom step pe pxx pyy pzz pxy pxz pyz lx ly lz vol c_mype\n"
@@ -181,7 +194,7 @@ def make_lammps_equi(conf, ntypes, models,
     ret += "print \"Final Stress (xx yy zz xy xz yz) = ${Pxx} ${Pyy} ${Pzz} ${Pxy} ${Pxz} ${Pyz}\"\n"
     return ret
 
-def make_lammps_elastic(conf, ntypes, models, 
+def make_lammps_elastic(conf, ntypes, interaction, param, 
                         etol=1e-12, ftol=1e-6, 
                         maxiter=5000, maxeval=500000) :
     """
@@ -198,7 +211,7 @@ def make_lammps_elastic(conf, ntypes, models,
     for ii in range(ntypes) :
         ret += "mass            %d 1\n" % (ii+1)            
     ret += "neigh_modify    every 1 delay 0 check no\n"
-    ret += _make_lammps_deepmd_model(models)
+    ret += interaction(param)
     ret += "compute         mype all pe\n"
     ret += "thermo          100\n"
     ret += "thermo_style    custom step pe pxx pyy pzz pxy pxz pyz lx ly lz vol c_mype\n"
@@ -223,7 +236,7 @@ def make_lammps_elastic(conf, ntypes, models,
     ret += "print \"Final Stress (xx yy zz xy xz yz) = ${Pxx} ${Pyy} ${Pzz} ${Pxy} ${Pxz} ${Pyz}\"\n"
     return ret
 
-def make_lammps_press_relax(conf, ntypes, scale2equi, models,
+def make_lammps_press_relax(conf, ntypes, scale2equi, interaction, param,
                             B0 = 70, bp = 0, 
                             etol=1e-12, ftol=1e-6, 
                             maxiter=5000, maxeval=500000) :
@@ -249,7 +262,7 @@ def make_lammps_press_relax(conf, ntypes, scale2equi, models,
     for ii in range(ntypes) :
         ret += "mass            %d 1\n" % (ii+1)            
     ret += "neigh_modify    every 1 delay 0 check no\n"
-    ret += _make_lammps_deepmd_model(models)
+    ret += interaction(param)
     ret += "compute         mype all pe\n"
     ret += "thermo          100\n"
     ret += "thermo_style    custom step pe pxx pyy pzz pxy pxz pyz lx ly lz vol c_mype\n"

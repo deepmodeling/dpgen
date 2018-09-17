@@ -129,7 +129,7 @@ def make_deepmd_lammps (jdata, conf_dir) :
     # structrure
     ss = Structure.from_file(to_poscar)
     # lmp path
-    lmp_path = os.path.join(task_path, 'lmp')
+    lmp_path = os.path.join(task_path, 'deepmd')
     os.makedirs(lmp_path, exist_ok = True)
     # # lmp conf
     # conf_file = os.path.join(lmp_path, 'conf.lmp')
@@ -178,8 +178,8 @@ def make_deepmd_lammps_fixv (jdata, conf_dir) :
     # get equi props
     equi_path = re.sub('confs', global_equi_name, conf_dir)
     task_path = re.sub('confs', global_task_name, conf_dir)
-    equi_path = os.path.join(equi_path, 'lmp')
-    task_path = os.path.join(task_path, 'lmp')
+    equi_path = os.path.join(equi_path, 'deepmd')
+    task_path = os.path.join(task_path, 'deepmd')
     equi_path = os.path.abspath(equi_path)
     task_path = os.path.abspath(task_path)
     equi_log = os.path.join(equi_path, 'log.lammps')
@@ -195,7 +195,11 @@ def make_deepmd_lammps_fixv (jdata, conf_dir) :
     # structrure
     ss = Structure.from_file(task_poscar)
     # make lammps.in
-    fc = lammps.make_lammps_equi('conf.lmp', ntypes, deepmd_models_name, change_box = False)
+    fc = lammps.make_lammps_equi('conf.lmp', 
+                                 ntypes, 
+                                 lammps.inter_deepmd, 
+                                 deepmd_models_name, 
+                                 change_box = False)
     f_lammps_in = os.path.join(task_path, 'lammps.in')
     with open(f_lammps_in, 'w') as fp :
         fp.write(fc)
@@ -223,6 +227,73 @@ def make_deepmd_lammps_fixv (jdata, conf_dir) :
         # make lammps input
         os.chdir(cwd)
 
+def make_meam_lammps_fixv (jdata, conf_dir) :
+    meam_potfile_dir = jdata['meam_potfile_dir']
+    meam_potfile_dir = os.path.abspath(meam_potfile_dir)
+    meam_potfile = jdata['meam_potfile']
+    meam_potfile = [os.path.join(meam_potfile_dir,ii) for ii in meam_potfile]
+    meam_potfile_name = jdata['meam_potfile']
+    type_map = jdata['meam_type_map']
+    ntypes = len(type_map)
+    meam_param = {'meam_potfile' :      jdata['meam_potfile'],
+                  'meam_type':          jdata['meam_param_type']}
+
+    vol_start = jdata['vol_start']
+    vol_end = jdata['vol_end']
+    vol_step = jdata['vol_step']
+
+    # get equi props
+    equi_path = re.sub('confs', global_equi_name, conf_dir)
+    task_path = re.sub('confs', global_task_name, conf_dir)
+    equi_path = os.path.join(equi_path, 'meam')
+    task_path = os.path.join(task_path, 'meam')
+    equi_path = os.path.abspath(equi_path)
+    task_path = os.path.abspath(task_path)
+    equi_log = os.path.join(equi_path, 'log.lammps')
+    equi_dump = os.path.join(equi_path, 'dump.relax')
+    os.makedirs(task_path, exist_ok = True)
+    task_poscar = os.path.join(task_path, 'POSCAR')
+    lammps.poscar_from_last_dump(equi_dump, task_poscar, type_map)
+
+    cwd = os.getcwd()
+    volume = vasp.poscar_vol(task_poscar)
+    natoms = vasp.poscar_natoms(task_poscar)
+    vpa = volume / natoms
+    # structrure
+    ss = Structure.from_file(task_poscar)
+    # make lammps.in
+    fc = lammps.make_lammps_equi('conf.lmp', 
+                                 ntypes, 
+                                 lammps.inter_meam, 
+                                 meam_param, 
+                                 change_box = False)
+    f_lammps_in = os.path.join(task_path, 'lammps.in')
+    with open(f_lammps_in, 'w') as fp :
+        fp.write(fc)
+    # make vols
+    for vol in np.arange(vol_start, vol_end, vol_step) :
+        vol_path = os.path.join(task_path, 'vol-%.2f' % vol)        
+        print('# generate %s' % (vol_path))
+        os.makedirs(vol_path, exist_ok = True)
+        os.chdir(vol_path)
+        for ii in ['conf.lmp', 'conf.lmp', 'lammps.in'] + meam_potfile_name :
+            if os.path.exists(ii) :
+                os.remove(ii)                
+        # make conf
+        scale_ss = ss.copy()
+        scale_ss.scale_lattice(vol * natoms)
+        scale_ss.to('POSCAR', 'POSCAR')
+        lammps.cvt_lammps_conf('POSCAR', 'conf.lmp')
+        ptypes = vasp.get_poscar_types('POSCAR')
+        lammps.apply_type_map('conf.lmp', type_map, ptypes)
+        # link lammps.in
+        os.symlink(os.path.relpath(f_lammps_in), 'lammps.in')
+        # link models
+        for (ii,jj) in zip(meam_potfile, meam_potfile_name) :
+            os.symlink(os.path.relpath(ii), jj)
+        # make lammps input
+        os.chdir(cwd)
+
 def _main() :
     parser = argparse.ArgumentParser(
         description="gen 01.eos")
@@ -242,11 +313,16 @@ def _main() :
     # print('generate %s task with conf %s' % (args.TASK, args.CONF))
     if args.TASK == 'vasp':
         make_vasp(jdata, args.CONF)               
-    elif args.TASK == 'lammps' :
+    elif args.TASK == 'deepmd' :
         if args.fix_shape is not None :
             make_deepmd_lammps_fixv(jdata, args.CONF)
         else :
             make_deepmd_lammps(jdata, args.CONF)        
+    elif args.TASK == 'meam' :
+        if args.fix_shape is not None :
+            make_meam_lammps_fixv(jdata, args.CONF)
+        else :
+            raise RuntimeError("not implemented ", args.TASK)            
     else :
         raise RuntimeError("unknow task ", args.TASK)
     

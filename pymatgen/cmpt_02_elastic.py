@@ -53,7 +53,7 @@ def cmpt_vasp(jdata, conf_dir) :
     # et = -et / 1e4 
     print_et(et)
 
-def cmpt_deepmd_lammps(jdata, conf_dir) :
+def cmpt_deepmd_lammps(jdata, conf_dir, task_name) :
     deepmd_model_dir = jdata['deepmd_model_dir']
     deepmd_type_map = jdata['deepmd_type_map']
     ntypes = len(deepmd_type_map)    
@@ -61,7 +61,7 @@ def cmpt_deepmd_lammps(jdata, conf_dir) :
     conf_path = os.path.abspath(conf_dir)
     conf_poscar = os.path.join(conf_path, 'POSCAR')
     task_path = re.sub('confs', global_task_name, conf_path)
-    task_path = os.path.join(task_path, 'lmp')
+    task_path = os.path.join(task_path, task_name)
     equi_stress = Stress(np.loadtxt(os.path.join(task_path, 'equi.stress.out')))
 
     lst_dfm_path = glob.glob(os.path.join(task_path, 'dfm-*'))
@@ -98,8 +98,10 @@ def _main() :
     print('# generate %s task with conf %s' % (args.TASK, args.CONF))
     if args.TASK == 'vasp':
         cmpt_vasp(jdata, args.CONF)               
-    elif args.TASK == 'lammps' :
-        cmpt_deepmd_lammps(jdata, args.CONF)
+    elif args.TASK == 'deepmd' :
+        cmpt_deepmd_lammps(jdata, args.CONF, args.TASK)
+    elif args.TASK == 'meam' :
+        cmpt_deepmd_lammps(jdata, args.CONF, args.TASK)
     else :
         raise RuntimeError("unknow task ", args.TASK)
     

@@ -45,18 +45,15 @@ def cmpt_vasp(jdata, conf_dir, static = False) :
         AA = np.linalg.norm(np.cross(boxes[0][0], boxes[0][1]))
         Cf = 1.60217657e-16 / (1e-20 * 2) * 0.001
         evac = (epa * natoms - equi_epa * natoms) / AA * Cf
-        sys.stdout.write ("%s: %7.3f   %f\n" % (structure_dir, evac, epa))
+        sys.stdout.write ("%s:\t %7.3f   %8.3f %8.3f\n" % (structure_dir, evac, epa, equi_epa))
 
-def cmpt_deepmd_lammps(jdata, conf_dir, static = False) :
+def cmpt_deepmd_lammps(jdata, conf_dir, task_name, static = False) :
     equi_path = re.sub('confs', global_equi_name, conf_dir)
-    equi_path = os.path.join(equi_path, 'lmp')
+    equi_path = os.path.join(equi_path, task_name.split('-')[0])
     equi_path = os.path.abspath(equi_path)
     equi_log = os.path.join(equi_path, 'log.lammps')
     task_path = re.sub('confs', global_task_name, conf_dir)
-    if static :
-        task_path = os.path.join(task_path, 'lmp-static')
-    else :
-        task_path = os.path.join(task_path, 'lmp')
+    task_path = os.path.join(task_path, task_name)
     task_path = os.path.abspath(task_path)
 
     equi_natoms, equi_epa, equi_vpa = lammps.get_nev(equi_log)
@@ -73,7 +70,7 @@ def cmpt_deepmd_lammps(jdata, conf_dir, static = False) :
         AA = lammps.get_base_area(lmp_log)
         Cf = 1.60217657e-16 / (1e-20 * 2) * 0.001
         evac = (epa * natoms - equi_epa * natoms) / AA * Cf 
-        sys.stdout.write ("%s: \t%7.3f    %f\n" % (structure_dir, evac, epa))
+        sys.stdout.write ("%s: \t%7.3f    %8.3f %8.3f\n" % (structure_dir, evac, epa, equi_epa))
 
 def _main() :
     parser = argparse.ArgumentParser(
@@ -94,10 +91,14 @@ def _main() :
         cmpt_vasp(jdata, args.CONF)               
     elif args.TASK == 'vasp-static':
         cmpt_vasp(jdata, args.CONF, static = True)               
-    elif args.TASK == 'lammps' :
-        cmpt_deepmd_lammps(jdata, args.CONF)
-    elif args.TASK == 'lammps-static' :
-        cmpt_deepmd_lammps(jdata, args.CONF, static = True)
+    elif args.TASK == 'deepmd' :
+        cmpt_deepmd_lammps(jdata, args.CONF, args.TASK)
+    elif args.TASK == 'deepmd-static' :
+        cmpt_deepmd_lammps(jdata, args.CONF, args.TASK, static = True)
+    elif args.TASK == 'meam' :
+        cmpt_deepmd_lammps(jdata, args.CONF, args.TASK)
+    elif args.TASK == 'meam-static' :
+        cmpt_deepmd_lammps(jdata, args.CONF, args.TASK, static = True)
     else :
         raise RuntimeError("unknow task ", args.TASK)
     
