@@ -6,10 +6,10 @@ import lib.vasp as vasp
 
 global_task_name = '01.eos'
 
-def comput_lmp_eos(conf_dir) :
+def comput_lmp_eos(conf_dir, task_name) :
     conf_path = re.sub('confs', global_task_name, conf_dir)
     conf_path = os.path.abspath(conf_path)
-    conf_path = os.path.join(conf_path, 'lmp')
+    conf_path = os.path.join(conf_path, task_name)
     vol_paths = glob.glob(os.path.join(conf_path, 'vol-*'))
     vol_paths.sort()
     for ii in vol_paths :
@@ -45,8 +45,10 @@ def _main():
 
     if args.TASK == 'vasp':
         comput_vasp_eos(jdata, args.CONF)               
-    elif args.TASK == 'lammps' :
-        comput_lmp_eos(args.CONF)
+    elif args.TASK == 'deepmd' :
+        comput_lmp_eos(args.CONF, args.TASK)
+    elif args.TASK == 'meam' :
+        comput_lmp_eos(args.CONF, args.TASK)
     else :
         raise RuntimeError("unknow task ", args.TASK)
 

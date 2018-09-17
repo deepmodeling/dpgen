@@ -315,6 +315,11 @@ def get_poscar_types (fname) :
         lines = fp.read().split('\n')
     return lines[5].split()
 
+def get_poscar_natoms (fname) :
+    with open(fname, 'r') as fp :
+        lines = fp.read().split('\n')
+    return [int(ii) for ii in lines[6].split()]
+
 def _poscar_natoms(lines) :
     numb_atoms = 0
     for ii in lines[6].split() :

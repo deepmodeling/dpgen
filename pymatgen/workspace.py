@@ -8,14 +8,21 @@ def copy(kspacing, static = False) :
         vasp_name = 'vasp-static-k%.2f' % kspacing
     else :
         vasp_name = 'vasp-k%.2f' % kspacing    
+    meam_name = 'meam'
     confs = glob.glob(os.path.join(test_dir, "confs"))
     params = glob.glob(os.path.join(test_dir, "param.json"))
     cmpts = glob.glob(os.path.join(test_dir, "cmpt_*.py"))
     gens = glob.glob(os.path.join(test_dir, "gen_*.py"))
     vasp = glob.glob(os.path.join(test_dir, "0*/*/*/" + vasp_name))
+    meam = glob.glob(os.path.join(test_dir, "0*/*/*/" + meam_name)) + \
+           glob.glob(os.path.join(test_dir, "0*/*/*/" + meam_name + '-static')) + \
+           glob.glob(os.path.join(test_dir, "0*/*/*/" + meam_name + '-reprod-k0.16')) 
     cwd = os.getcwd()
     os.chdir(test_dir)
     vasp_dirs = glob.glob( "0*/*/*/" + vasp_name)
+    meam_dirs = glob.glob( "0*/*/*/" + meam_name) + \
+                glob.glob( "0*/*/*/" + meam_name + '-static') + \
+                glob.glob( "0*/*/*/" + meam_name + '-reprod-k0.16')
     os.chdir(cwd)
     for res,ii in zip(vasp,vasp_dirs) :
         dir_ii = os.path.dirname(ii)
@@ -24,6 +31,16 @@ def copy(kspacing, static = False) :
         if os.path.islink(vasp_name) :
             os.remove(vasp_name)
         os.symlink(os.path.relpath(res), vasp_name)
+        os.chdir(cwd)
+
+    for res,ii in zip(meam,meam_dirs) :
+        dir_ii = os.path.dirname(ii)
+        os.makedirs(dir_ii, exist_ok = True)
+        os.chdir(dir_ii)
+        tmp_name = os.path.basename(res)
+        if os.path.islink(tmp_name) :
+            os.remove(tmp_name)
+        os.symlink(os.path.relpath(res), tmp_name)
         os.chdir(cwd)
 
     os.makedirs('results', exist_ok = True)

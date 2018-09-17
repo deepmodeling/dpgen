@@ -14,13 +14,24 @@
 	"_comment":	" that's all "
     },
     "deepmd_model_dir":	"models",
-    "deepmd_type_map": [
+    "deepmd_type_map":	[
 	"Al", "Mg"
+    ],
+    "meam_potfile_dir":	"meam",
+    "meam_type_map":	[
+	"Al", "Si", "Mg", "Cu", "Fe"
+    ],
+    "meam_potfile":	[
+	"library.meam",
+	"AlSiMgCuFe.meam"
+    ],
+    "meam_param_type":	[
+	"AlS", "SiS", "MgS", "CuS", "FeS"
     ],
 
     "_comment": "01.eos",
     "vol_start":	10,
-    "vol_end":		35,
+    "vol_end":		50,
     "vol_step":		0.5,
 
     "_comment": "02.elastic",
