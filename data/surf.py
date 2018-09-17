@@ -5,6 +5,9 @@ import numpy as np
 import subprocess as sp
 import tools.hcp as hcp
 import tools.fcc as fcc
+import tools.diamond as diamond
+import tools.sc as sc
+from pymatgen.core.surface import SlabGenerator,generate_all_slabs, Structure
 
 def create_path (path) :
     path += '/'
@@ -64,6 +67,10 @@ def class_cell_type(jdata) :
         cell_type = hcp
     elif ct == "fcc" :
         cell_type = fcc
+    elif ct == "diamond" :
+        cell_type = diamond
+    elif ct == "sc" :
+        cell_type = sc
     else :
         raise RuntimeError("unknow cell type %s" % ct)
     return cell_type
@@ -202,6 +209,57 @@ def make_super_cell (jdata) :
                       shell = True)
         sp.check_call(pcpy_cmd + ' -n %d %d %d POSCAR.unit POSCAR ' % (super_cell[0], super_cell[1], nz), 
                       shell = True)
+        os.chdir(path_work)
+    os.chdir(cwd)        
+
+def make_unit_cell (jdata) :
+    latt = jdata['latt']
+    out_dir = jdata['out_dir']
+    path_uc = os.path.join(out_dir, global_dirname_02)
+    cell_type = class_cell_type(jdata)
+
+    cwd = os.getcwd()    
+    # for ii in scale :
+    # path_work = create_path(os.path.join(path_uc, '%.3f' % ii))
+    path_work = create_path(path_uc)    
+    os.chdir(path_work)
+    with open('POSCAR.unit', 'w') as fp:
+        fp.write (cell_type.poscar_unit(latt))
+    os.chdir(cwd)        
+
+def make_super_cell_pymatgen (jdata) :
+    make_unit_cell(jdata)
+
+    out_dir = jdata['out_dir']
+    path_uc = os.path.join(out_dir, global_dirname_02)
+    from_path = path_uc
+    from_file = os.path.join(from_path, 'POSCAR.unit')
+    ss = Structure.from_file(from_file)
+
+    all_millers = jdata['millers']
+    path_sc = os.path.join(out_dir, global_dirname_02)
+    z_min = jdata['z_min']
+    super_cell = jdata['super_cell']
+
+    cwd = os.getcwd()    
+    path_work = (path_sc)    
+    path_work = os.path.abspath(path_work)
+    pcpy_cmd = os.path.join(cwd, 'tools')
+    pcpy_cmd = os.path.join(pcpy_cmd, 'poscar_copy.py')
+    os.chdir(path_work)
+    for miller in all_millers:
+        miller_str=""
+        for ii in miller :
+            miller_str += str(ii)        
+        path_cur_surf = create_path('surf-'+miller_str)
+        os.chdir(path_cur_surf)
+        slabgen = SlabGenerator(ss, miller, z_min, 1e-3)
+        all_slabs = slabgen.get_slabs() 
+        print("Miller %s: The slab has %s termination, use the first one" %(str(miller), len(all_slabs)))
+        all_slabs[0].to('POSCAR', 'POSCAR')
+        if super_cell[0] > 1 or super_cell[1] > 1 :
+            sp.check_call(pcpy_cmd + ' -n %d %d %d POSCAR POSCAR ' % (super_cell[0], super_cell[1], 1), 
+                          shell = True)
         os.chdir(path_work)
     os.chdir(cwd)        
 
@@ -405,13 +463,19 @@ def _main() :
         jdata = json.load (fp)
     out_dir = out_dir_name(jdata)
     jdata['out_dir'] = out_dir
+    pymatgen_surf = False 
+    if 'pymatgen_surf' in jdata:
+        pymatgen_surf = jdata['pymatgen_surf']
     print ("# working dir %s" % out_dir)
 
     stage = args.STAGE
 
     if stage == 1 :
         create_path(out_dir)
-        make_super_cell(jdata)
+        if pymatgen_surf :
+            make_super_cell_pymatgen(jdata)
+        else :
+            make_super_cell(jdata)
         place_element(jdata)
         make_vasp_relax(jdata)
     # elif stage == 0 :
