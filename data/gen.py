@@ -46,14 +46,23 @@ def out_dir_name(jdata) :
     cell_type = jdata['cell_type']
     elements = jdata['elements']
     super_cell = jdata['super_cell']    
+    from_poscar = jdata['from_poscar']
+    from_poscar_path = jdata['from_poscar_path']
 
-    ele_str = ""
-    for ii in elements:
-        ele_str = ele_str + ii.lower()
-    cell_str = "%02d" % (super_cell[0])
-    for ii in range(1,len(super_cell)) :
-        cell_str = cell_str + ("x%02d" % super_cell[ii])
-    return ele_str + '.' + cell_type + '.' + cell_str
+    if from_poscar:
+        poscar_name = os.path.basename(from_poscar_path)
+        cell_str = "%02d" % (super_cell[0])
+        for ii in range(1,len(super_cell)) :
+            cell_str = cell_str + ("x%02d" % super_cell[ii])
+        return poscar_name + '.' + cell_str
+    else :
+        ele_str = ""
+        for ii in elements:
+            ele_str = ele_str + ii.lower()
+        cell_str = "%02d" % (super_cell[0])
+        for ii in range(1,len(super_cell)) :
+            cell_str = cell_str + ("x%02d" % super_cell[ii])
+        return ele_str + '.' + cell_type + '.' + cell_str
 
 def class_cell_type(jdata) :
     ct = jdata['cell_type']
@@ -170,6 +179,40 @@ def make_super_cell (jdata) :
           from_file + " " + \
           to_file
     sp.check_call(cmd, shell = True)
+
+def make_super_cell_poscar(jdata) :
+    out_dir = jdata['out_dir']
+    super_cell = jdata['super_cell']
+    path_sc = os.path.join(out_dir, global_dirname_02)    
+    create_path(path_sc)
+    from_poscar_path = jdata['from_poscar_path']
+    assert(os.path.isfile(from_poscar_path)), "file %s should exists" % from_poscar_path
+    
+    from_file = os.path.join(path_sc, 'POSCAR.copied')
+    shutil.copy2(from_poscar_path, from_file)
+    to_file = os.path.join(path_sc, 'POSCAR')
+    cmd = "./tools/poscar_copy.py -n %d %d %d " % (super_cell[0], super_cell[1], super_cell[2]) + \
+          from_file + " " + \
+          to_file
+    sp.check_call(cmd, shell = True)    
+
+    # make system dir (copy)
+    lines = open(to_file, 'r').read().split('\n')
+    natoms_str = lines[6]
+    natoms_list = [int(ii) for ii in natoms_str.split()]
+    print(natoms_list)
+    comb_name = "sys-"
+    for idx,ii in enumerate(natoms_list) :
+        comb_name += "%04d" % ii
+        if idx != len(natoms_list)-1 :
+            comb_name += "-"
+    path_work = os.path.join(path_sc, comb_name)
+    create_path(path_work)
+    cwd = os.getcwd()
+    to_file = os.path.abspath(to_file)
+    os.chdir(path_work)
+    os.symlink(os.path.relpath(to_file), 'POSCAR')
+    os.chdir(cwd)
 
 def make_combines (dim, natoms) :
     if dim == 1 :
@@ -295,6 +338,7 @@ def pert_scaled(jdata) :
     pert_box = jdata['pert_box']
     pert_atom = jdata['pert_atom']
     pert_numb = jdata['pert_numb']
+    from_poscar = jdata['from_poscar']
     
     cwd = os.getcwd()
     path_sp = os.path.join(out_dir, global_dirname_03)
@@ -321,14 +365,20 @@ def pert_scaled(jdata) :
                 dir_out = '%06d' % (kk+1)
                 create_path(dir_out)
                 pos_out = os.path.join(dir_out, 'POSCAR')
-                poscar_shuffle(pos_in, pos_out)
+                if not from_poscar:
+                    poscar_shuffle(pos_in, pos_out)
+                else :
+                    shutil.copy2(pos_in, pos_out)
                 os.remove(pos_in)
             kk = -1
             pos_in = 'POSCAR'
             dir_out = '%06d' % (kk+1)
             create_path(dir_out)
             pos_out = os.path.join(dir_out, 'POSCAR')
-            poscar_shuffle(pos_in, pos_out)
+            if not from_poscar:
+                poscar_shuffle(pos_in, pos_out)
+            else :
+                shutil.copy2(pos_in, pos_out)
             os.chdir(cwd)
 
 def make_vasp_md(jdata) :
@@ -483,15 +533,19 @@ def _main() :
         jdata = json.load (fp)
     out_dir = out_dir_name(jdata)
     jdata['out_dir'] = out_dir
+    from_poscar = jdata['from_poscar']
     print ("# working dir %s" % out_dir)
 
     stage = args.STAGE
 
     if stage == 1 :
         create_path(out_dir)
-        make_unit_cell(jdata)
-        make_super_cell(jdata)
-        place_element(jdata)
+        if from_poscar :
+            make_super_cell_poscar(jdata)
+        else :
+            make_unit_cell(jdata)
+            make_super_cell(jdata)
+            place_element(jdata)
         make_vasp_relax(jdata)
     elif stage == 2 :
         make_scale(jdata)
