@@ -31,6 +31,8 @@ from lib.utils import log_task
 from lib.lammps import cvt_lammps_conf
 from lib.lammps import make_lammps_input
 from lib.vasp import make_vasp_incar
+from lib.vasp import system_from_poscar
+from lib.pwscf import make_pwscf_input
 import lib.MachineLocal as MachineLocal
 import lib.MachineLocalGPU as MachineLocalGPU
 import lib.MachineSlurm as MachineSlurm
@@ -39,10 +41,6 @@ from lib.machine_exec import exec_hosts
 from lib.machine_exec import exec_hosts_batch
 from lib.batch_exec import exec_batch
 from lib.batch_exec import exec_batch_group
-
-global_modules = [ "intel-mkl/2017.4/5/64", "intel/17.0/64/17.0.5.239", "cudatoolkit/9.1", "cudnn/cuda-9.1/7.1.2"]
-global_sources = [ "/home/linfengz/SCR/softwares/tensorflow.gpu.1.6/bin/activate" ]
-global_time_limit = "3:00:00"
 
 template_name = 'template'
 train_name = '00.train'
@@ -227,8 +225,12 @@ def run_train (iter_index,
     # load json param
     numb_models = jdata['numb_models']
     deepmd_path = jdata['deepmd_path']
-    train_nthreads = jdata['train_nthreads']
     train_param = jdata['train_param']
+    train_nppn = jdata['train_nppn']
+    train_ngpu = jdata['train_ngpu']
+    train_sources = jdata['train_sources']
+    train_modules = jdata['train_modules']
+    train_tlimit = jdata['train_tlimit']
     # paths
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, train_name)
@@ -248,7 +250,15 @@ def run_train (iter_index,
     command = cmd_append_log (command, 'train.log')
     # train models
     # exec_hosts_batch(exec_machine, command, train_nthreads, all_task, None, verbose = True, mpi = False,gpu = True)
-    exec_batch(command, train_nthreads, 1, all_task, time_limit = global_time_limit, modules = global_modules, sources = global_sources)
+
+    exec_batch(command,
+               1,
+               train_nppn,
+               train_ngpu,
+               all_task,
+               time_limit = train_tlimit,
+               modules = train_modules,
+               sources = train_sources)
 
 def post_train (iter_index,
                 jdata) :
@@ -386,8 +396,14 @@ def make_model_devi (iter_index,
 def run_model_devi (iter_index, 
                     jdata, 
                     exec_machine) :
-    model_devi_np = jdata['model_devi_np']
     lmp_exec = jdata['lmp_command']
+    model_devi_nn = jdata['model_devi_nn']
+    model_devi_nppn = jdata['model_devi_nppn']
+    model_devi_ngpu = jdata['model_devi_ngpu']
+    model_devi_group_size = jdata['model_devi_group_size']
+    model_devi_sources = jdata['model_devi_sources']
+    model_devi_modules = jdata['model_devi_modules']
+    model_devi_tlimit = jdata['model_devi_tlimit']
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, model_devi_name)
@@ -414,8 +430,14 @@ def run_model_devi (iter_index,
     #     else :
     #         run_tasks.append(ii)
 
-#    exec_hosts_batch(exec_machine, command, model_devi_np, run_tasks, None, verbose = True, gpu = True)
-    exec_batch_group(command, model_devi_np, 1, run_tasks, group_size = 20, time_limit = global_time_limit, modules = global_modules, sources = global_sources)
+    # exec_hosts_batch(exec_machine, command, model_devi_np, run_tasks, None, verbose = True, gpu = True)
+    exec_batch_group(command,
+                     model_devi_nn, model_devi_nppn, model_devi_ngpu,
+                     run_tasks,
+                     group_size = model_devi_group_size,
+                     time_limit = model_devi_tlimit,
+                     modules = model_devi_modules,
+                     sources = model_devi_sources)
 
 def post_model_devi (iter_index, 
                      jdata) :
@@ -455,11 +477,6 @@ def _make_fp_vasp_inner (modd_path,
     system_index = list(set_tmp)
     system_index.sort()
 
-    ecut = fp_params['ecut']
-    ediff = fp_params['ediff']
-    npar = fp_params['npar']
-    kpar = fp_params['kpar']
-    kspacing = fp_params['kspacing']
     fp_tasks = []
     for ss in system_index :
         fp_candidate = []
@@ -507,9 +524,6 @@ def _make_fp_vasp_inner (modd_path,
             cwd = os.getcwd()
             os.chdir(fp_task_path)
             os.symlink(os.path.relpath(conf_name), 'conf.lmp')
-            incar = make_vasp_incar(ecut, ediff, npar, kpar, kspacing = kspacing, kgamma = False)
-            with open('INCAR', 'w') as fp:
-                fp.write(incar)
             for pair in fp_link_files :
                 os.symlink(pair[0], pair[1])
             os.chdir(cwd)
@@ -529,24 +543,58 @@ def _make_fp_vasp_inner (modd_path,
                 os.chdir(fp_task_path)
                 os.symlink(os.path.relpath(conf_name), 'conf.lmp')
                 shutil.copyfile(os.path.relpath(conf_name), 'conf.lmp.bk')
-                incar = make_vasp_incar(ecut, ediff, npar, kpar, kspacing = kspacing, kgamma = True)
-                with open('INCAR', 'w') as fp:
-                    fp.write(incar)
                 for pair in fp_link_files :
                     os.symlink(pair[0], pair[1])
                 os.chdir(cwd)            
     return fp_tasks
 
-def make_fp_vasp (iter_index, 
-                  jdata) :
+def _link_fp_vasp_incar (iter_index,
+                         jdata,
+                         incar = 'INCAR') :
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)    
+    incar_file = os.path.join(work_path, incar)
+    incar_file = os.path.abspath(incar_file)
+    fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
+    fp_tasks.sort()
+    if len(fp_tasks) == 0 :
+        return
+    cwd = os.getcwd()
+    for ii in fp_tasks:
+        os.chdir(ii)
+        os.symlink(os.path.relpath(incar_file), incar)
+        os.chdir(cwd)
+
+def _link_fp_vasp_pp (iter_index,
+                      jdata) :
+    fp_pp_path = jdata['fp_pp_path']
+    fp_pp_files = jdata['fp_pp_files']
+    assert(os.path.exists(fp_pp_path))
+    fp_pp_path = os.path.abspath(fp_pp_path)
+    
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+
+    fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
+    fp_tasks.sort()
+    if len(fp_tasks) == 0 :
+        return
+    cwd = os.getcwd()
+    for ii in fp_tasks:
+        os.chdir(ii)
+        for jj in fp_pp_files:
+            pp_file = os.path.join(fp_pp_path, jj)
+            os.symlink(pp_file, jj)
+        os.chdir(cwd)
+
+def _make_fp_vasp_configs(iter_index, 
+                          jdata):
     fp_task_max = jdata['fp_task_max']
     fp_params = jdata['fp_params']
-    fp_link_files = jdata['fp_link_files']
     e_trust_lo = jdata['model_devi_e_trust_lo']
     e_trust_hi = jdata['model_devi_e_trust_hi']
     f_trust_lo = jdata['model_devi_f_trust_lo']
     f_trust_hi = jdata['model_devi_f_trust_hi']
-
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
     create_path(work_path)
@@ -555,38 +603,121 @@ def make_fp_vasp (iter_index,
     task_min = -1
     if 'task_min' in cur_job :
         task_min = cur_job['task_min']
-
+    # make configs
     fp_tasks = _make_fp_vasp_inner(modd_path, work_path,
                                    e_trust_lo, e_trust_hi,
                                    f_trust_lo, f_trust_hi,
-                                   task_min, fp_task_max, fp_link_files, fp_params)
-    if len(fp_tasks) == 0 :
-        return
+                                   task_min, fp_task_max,
+                                   [],
+                                   fp_params)
+    return fp_tasks
 
+def _fix_poscar_type (jdata, task_dirs) :
+    type_map = jdata['type_map']
+    for ii in task_dirs :
+        poscar_file = os.path.join(ii, 'POSCAR')
+        for idx,jj in enumerate(type_map):
+            old_str = 'Type_%d' % (idx+1)
+            new_str = jj
+            replace(poscar_file, old_str, new_str)
+    
+def make_fp_vasp (iter_index, 
+                  jdata) :
+    # make config
+    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
+    if len(fp_tasks) == 0 :
+        return        
+    #convert configs
     command = os.path.join(os.getcwd(), "lib/ovito_file_convert.py")
     command += " conf.lmp POSCAR"
     exec_hosts(MachineLocal, command, 1, fp_tasks, verbose = True)
+    _fix_poscar_type(jdata, fp_tasks)
+    # create incar
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    incar = make_vasp_incar(jdata['fp_params'])
+    incar_file = os.path.join(work_path, 'INCAR')
+    incar_file = os.path.abspath(incar_file)
+    open(incar_file, 'w').write(incar)
+    _link_fp_vasp_incar(iter_index, jdata)
+    # create potcar
+    _link_fp_vasp_pp(iter_index, jdata)
+    # clean traj
+    clean_traj = True
+    if 'model_devi_clean_traj' in jdata :
+        clean_traj = jdata['model_devi_clean_traj']
+    if clean_traj:
+        md_trajs = glob.glob(os.path.join(modd_path, 'task*/traj'))
+        for ii in md_trajs :
+            shutil.rmtree(ii)
 
-    md_trajs = glob.glob(os.path.join(modd_path, 'task*/traj'))
-    for ii in md_trajs :
-        shutil.rmtree(ii)
-
+            
+def make_fp_pwscf(iter_index,
+                  jdata) :
+    # make config
+    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
+    if len(fp_tasks) == 0 :
+        return        
+    #convert configs
+    command = os.path.join(os.getcwd(), "lib/ovito_file_convert.py")
+    command += " conf.lmp POSCAR"
+    exec_hosts(MachineLocal, command, 1, fp_tasks, verbose = True)
+    _fix_poscar_type(jdata, fp_tasks)
+    # make pwscf input
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    fp_pp_files = jdata['fp_pp_files']
+    fp_params = jdata['fp_params']
+    ecut = fp_params['ecut']
+    ediff = fp_params['ediff']
+    kspacing = fp_params['kspacing']
+    cwd = os.getcwd()
+    for ii in fp_tasks:
+        os.chdir(ii)
+        sys_data = system_from_poscar('POSCAR')
+        sys_data['atom_masses'] = jdata['mass_map']
+        ret = make_pwscf_input(sys_data, ecut, ediff, fp_pp_files, kspacing)
+        open('input', 'w').write(ret)
+        os.chdir(cwd)
+    # link pp files
+    _link_fp_vasp_pp(iter_index, jdata)
+    # clean traj
+    clean_traj = True
+    if 'model_devi_clean_traj' in jdata :
+        clean_traj = jdata['model_devi_clean_traj']
+    if clean_traj:
+        md_trajs = glob.glob(os.path.join(modd_path, 'task*/traj'))
+        for ii in md_trajs :
+            shutil.rmtree(ii)
+            
 def make_fp (iter_index,
              jdata) :
     fp_style = jdata['fp_style']
 
     if fp_style == "vasp" :
         make_fp_vasp(iter_index, jdata) 
+    elif fp_style == "pwscf" :
+        make_fp_pwscf(iter_index, jdata) 
     else :
         raise RuntimeError ("unsupported fp style")
 
 def run_fp_vasp (iter_index,
                  jdata,
-                 exec_machine) :
+                 exec_machine,
+                 log_file = "log") :
     fp_command = jdata['fp_command']
-    fp_np = jdata['fp_np']
-#    fp_command = ("OMP_NUM_THREADS=1 mpirun -n %d " % fp_np) + fp_command
-    fp_command = cmd_append_log(fp_command, "vasp.log")
+    fp_nn = jdata['fp_nn']
+    fp_nppn = jdata['fp_nppn']
+    fp_ngpu = jdata['fp_ngpu']
+    fp_group_size = jdata['fp_group_size']
+    fp_sources = jdata['fp_sources']
+    fp_modules = jdata['fp_modules']
+    fp_tlimit = jdata['fp_tlimit']
+    # fp_command = ("OMP_NUM_THREADS=1 mpirun -n %d " % fp_np) + fp_command
+    # cpu task in parallel
+    if fp_ngpu == 0:
+        fp_command = "srun " + fp_command
+    fp_command = cmd_append_log(fp_command, log_file)
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -609,7 +740,13 @@ def run_fp_vasp (iter_index,
     #         fp_run_tasks.append(ii)
 
 #    exec_hosts_batch(exec_machine, fp_command, fp_np, fp_run_tasks, verbose = True, mpi = False, gpu=True)
-    exec_batch_group(fp_command, 1, 1, fp_run_tasks, group_size = 1, time_limit = global_time_limit, modules = global_modules, sources = global_sources)
+    exec_batch_group(fp_command,
+                     fp_nn, fp_nppn, fp_ngpu,
+                     fp_run_tasks,
+                     group_size = fp_group_size,
+                     time_limit = fp_tlimit,
+                     modules = fp_modules,
+                     sources = fp_sources)
         
 def run_fp (iter_index,
             jdata,
@@ -618,12 +755,15 @@ def run_fp (iter_index,
 
     if fp_style == "vasp" :
         run_fp_vasp(iter_index, jdata, exec_machine) 
+    elif fp_style == "pwscf" :
+        run_fp_vasp(iter_index, jdata, exec_machine, log_file = 'output') 
     else :
         raise RuntimeError ("unsupported fp style")    
 
 
 def post_fp_vasp (iter_index,
-                  jdata):
+                  jdata,
+                  to_config = 'template/tools.vasp/cessp2force_lin.py'):
     model_devi_jobs = jdata['model_devi_jobs']
     assert (iter_index < len(model_devi_jobs)) 
     cur_job = model_devi_jobs[iter_index]
@@ -646,8 +786,7 @@ def post_fp_vasp (iter_index,
     set_tmp = set(system_index)
     system_index = list(set_tmp)
     system_index.sort()
-
-    to_config = 'template/tools.vasp/cessp2force_lin.py'
+    
     to_config = os.path.abspath(to_config)
     cmd_to_config = to_config + " OUTCAR "
     cmd_to_config = cmd_append_log(cmd_to_config, "to_config.log")
@@ -686,6 +825,9 @@ def post_fp (iter_index,
 
     if fp_style == "vasp" :
         post_fp_vasp(iter_index, jdata) 
+    elif fp_style == "pwscf" :
+        post_fp_vasp(iter_index, jdata,
+                     to_config = 'template/tools.pwscf/pwscf1frame.py') 
     else :
         raise RuntimeError ("unsupported fp style")            
     

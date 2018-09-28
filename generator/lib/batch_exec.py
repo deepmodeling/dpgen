@@ -9,6 +9,7 @@ from lib.BatchJob import BatchJob
 from lib.SlurmJob import SlurmJob
 
 def make_slurm_script (cmd,
+                       numb_node = 1,
                        work_thread = 1,
                        numb_gpu = 0, 
                        task_args = None, 
@@ -19,8 +20,8 @@ def make_slurm_script (cmd,
                        fin_tag = 'tag_finished') :
     ret = ""
     ret += "#!/bin/bash -l\n"
-    ret += "#SBATCH -N 1\n"
-    ret += "#SBATCH -n 1\n"
+    ret += "#SBATCH -N %d\n" % numb_node
+    ret += "#SBATCH --exclude tiger-i23g1\n"
     ret += "#SBATCH -t %s\n" % time_limit
     ret += "#SBATCH --mem %dG \n" % mem_limit
     ret += "#SBATCH --ntasks-per-node %d\n" % work_thread
@@ -45,6 +46,7 @@ def make_slurm_script (cmd,
 
 def make_slurm_script_group (cmd,
                              task_dir,
+                             numb_node = 1,
                              work_thread = 1,
                              numb_gpu = 0,
                              task_args = None, 
@@ -58,8 +60,7 @@ def make_slurm_script_group (cmd,
 
     ret = ""
     ret += "#!/bin/bash -l\n"
-    ret += "#SBATCH -N 1\n"
-    ret += "#SBATCH -n 1\n"
+    ret += "#SBATCH -N %d\n" % numb_node
     ret += "#SBATCH -t %s\n" % time_limit
     ret += "#SBATCH --mem %dG \n" % mem_limit
     ret += "#SBATCH --ntasks-per-node %d\n" % work_thread
@@ -90,7 +91,8 @@ def make_slurm_script_group (cmd,
     ret += "sleep 1\n"
     return ret
 
-def exec_batch (cmd, 
+def exec_batch (cmd,
+                numb_node,
                 work_thread,
                 numb_gpu,
                 task_dirs,
@@ -108,7 +110,14 @@ def exec_batch (cmd,
         if task_args is not None :
             myarg = task_args[ii]
         with open('_sub', 'w') as fp :
-            fp.write(make_slurm_script(cmd, work_thread, numb_gpu, myarg, time_limit, mem_limit, modules, sources, fin_tag))
+            fp.write(make_slurm_script(cmd,
+                                       numb_node, work_thread, numb_gpu,
+                                       myarg,
+                                       time_limit,
+                                       mem_limit,
+                                       modules,
+                                       sources,
+                                       fin_tag))
         job = SlurmJob(os.getcwd(), '_sub', job_finish_tag = fin_tag)
         job_list.append (job)
         os.chdir(cwd)
@@ -133,7 +142,8 @@ def exec_batch (cmd,
         else :
             time.sleep (10)
 
-def exec_batch_group (cmd, 
+def exec_batch_group (cmd,
+                      numb_node,
                       work_thread,
                       numb_gpu,
                       task_dirs_,
@@ -142,7 +152,7 @@ def exec_batch_group (cmd,
                       time_limit = "24:0:0", 
                       mem_limit = 32,
                       modules = None,
-                      sources = None) :
+                      sources = None) :    
     cwd = os.getcwd()
     job_list = []
     fin_tag = 'tag_finished'
@@ -173,7 +183,15 @@ def exec_batch_group (cmd,
             os.mkdir(group_dir)
         os.chdir(group_dir)
         with open('_sub', 'w') as fp:
-            fp.write(make_slurm_script_group(cmd, task_chunks[ii], work_thread, numb_gpu, args_chunks[ii], time_limit, mem_limit, modules, sources, fin_tag))
+            fp.write(make_slurm_script_group(cmd,
+                                             task_chunks[ii],
+                                             numb_node, work_thread, numb_gpu,
+                                             args_chunks[ii],
+                                             time_limit,
+                                             mem_limit,
+                                             modules,
+                                             sources,
+                                             fin_tag))
             job = SlurmJob(os.getcwd(), '_sub', job_finish_tag = fin_tag)
         job_list.append (job)
         os.chdir(working_dir)

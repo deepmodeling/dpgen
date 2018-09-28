@@ -33,7 +33,8 @@ def make_lammps_input(ensemble,
     ret+= "neigh_modify    every 10\n"
     ret+= "\n"
     ret+= "box          tilt large\n"
-    ret+= "read_data       %s\n" % conf_file    
+    ret+= "read_data       %s\n" % conf_file
+    ret+= "change_box   all triclinic\n"
     for jj in range(len(mass_map)) :
         ret+= "mass            %d %f\n" %(jj+1, mass_map[jj])
     graph_list = ""
