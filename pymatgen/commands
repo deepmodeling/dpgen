@@ -8,7 +8,7 @@ for ii in confs/*/mp* confs/*/std*; do ./gen_00_equi.py deepmd param.json $ii; d
 
 # run 00 equi
 cwd=`pwd`; 
-for ii in 00.equi/*/mp*/deepmd 00.equi/*/std*/deepmd; do cd $ii; pwd; lmp_mpi_010 -i lammps.in; cd $cwd; done
+for ii in 00.equi/*/std*/deepmd 00.equi/*/mp*/deepmd; do cd $ii; pwd; lmp_mpi_010 -i lammps.in; cd $cwd; done
 
 # result of 00, print with k0.16
 out=results/00.al.k0.16.out;   rm -f $out; for ii in 00.equi/Al/*;   do ./cmpt_00_equi.py param-k0.16.json $ii >> $out; done
@@ -18,7 +18,6 @@ out=results/00.mgal.k0.16.out; rm -f $out; for ii in 00.equi/MgAl/*; do ./cmpt_0
 # result of 00, print with k0.08
 out=results/00.al.k0.08.out;   rm -f $out; for ii in 00.equi/Al/*;   do ./cmpt_00_equi.py param.json $ii >> $out; done
 out=results/00.mg.k0.08.out;   rm -f $out; for ii in 00.equi/Mg/*;   do ./cmpt_00_equi.py param.json $ii >> $out; done
-out=results/00.mgal.k0.08.out; rm -f $out; for ii in 00.equi/MgAl/*; do ./cmpt_00_equi.py param.json $ii >> $out; done
 
 # record stable info for Al and Mg
 test ! -d stables && mkdir stables
@@ -36,6 +35,10 @@ grep 'std-hcp' $out | awk '{print $3}' > stables/Mg.deepmd.e
 grep 'std-hcp' $out | awk '{print $6}' > stables/Mg.deepmd.v
 grep 'std-hcp' $out | awk '{print $4}' > stables/Mg.meam.e
 grep 'std-hcp' $out | awk '{print $7}' > stables/Mg.meam.v
+
+# result of 00, print with k0.08
+out=results/00.mgal.k0.08.out; rm -f $out; for ii in 00.equi/MgAl/*; do ./cmpt_00_equi.py param.json $ii >> $out; done
+
 
 ##############################
 # 01
@@ -113,6 +116,7 @@ for ss in `cat confs/MgAl/sel.out`; do ii=confs/MgAl/$ss; ./gen_04_interstitial.
 # run 04
 cwd=`pwd`
 for ii in 04.interstitial/*/mp*/deepmd-reprod-k0.16/struct*/frame*; do cd $ii; pwd; lmp_mpi_010 -i lammps.in; cd $cwd; done
+for ii in 04.interstitial/*/mp*/deepmd-reprod-k0.08/struct*/frame*; do cd $ii; pwd; lmp_mpi_010 -i lammps.in; cd $cwd; done
 
 # cmpt 04
 for ss in `cat confs/MgAl/sel.out`; do ii=confs/MgAl/$ss; ./cmpt_04_interstitial.py deepmd-reprod param-k0.16.json $ii `cat $ii/supercell.dfct` Al Mg; done
