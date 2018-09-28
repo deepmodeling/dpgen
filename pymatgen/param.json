@@ -35,8 +35,8 @@
     "vol_step":		0.5,
 
     "_comment": "02.elastic",
-    "norm_deform":	2e-3,
-    "shear_deform":	5e-3,
+    "norm_deform":	2e-2,
+    "shear_deform":	5e-2,
 
     "_comment": "05.surface",
     "min_slab_size":	10,

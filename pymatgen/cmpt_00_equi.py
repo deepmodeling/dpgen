@@ -74,7 +74,7 @@ def _main():
     if le == None or ve == None or lv == None or vv == None:
         print("%s" % args.CONF)
     else :
-        print("%s\t %8.4f %8.4f %8.4f  %7.3f %7.3f %7.3f" % (args.CONF, ve, le, (me), vv, lv, (mv)))
+        print("%s\t %8.4f %8.4f %8.4f  %7.3f %7.3f %7.3f  %8.4f %7.3f" % (args.CONF, ve, le, (me), vv, lv, (mv), (le-ve), (lv-vv)))
 
 if __name__ == '__main__' :
     _main()
