@@ -2,17 +2,14 @@
 
 lmp_cmd=$HOME/local/bin/lmp_mpi_010
 
-if test $# -lt 1; then
+if test $# -ne 3; then
     echo usage
-    echo $0 Eo [TYPE]
+    echo $0 Eo ntypes ele_type
     exit
 fi
 Epa=$1
-if test $# -eq 2; then
-    atom_type=$2
-else 
-    atom_type=0
-fi
+ntype=$2
+atom_type=$3
 atom_type=$(($atom_type+1))
 # -3.74378767003927
 
@@ -24,6 +21,7 @@ fi
 test ! -f lmp; mkdir -p lmp
 cd lmp
 ln -sf ../*pb .
+ln -sf ../*meam .
 ln -sf ../potential.mod .
 cd ..
 
@@ -38,7 +36,7 @@ do
     ln -sf ../confs/$ii.lmp conf.orig.lmp
     rm -f conf.lmp
     cp -L conf.orig.lmp conf.lmp    
-    ../tools/set_type.py conf.lmp $atom_type
+    ../../tools/set_type.py conf.lmp $ntype $atom_type
     sed "s/EPA/$Epa/g" $BASEDIR/in.relax > in.lammps
     ener=`$lmp_cmd -i in.lammps | grep Surface_energy | awk '{print $3}'`
     echo $ii $ener

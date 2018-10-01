@@ -2,7 +2,7 @@
 
 import sys
 
-def set_type (conf_file, type_id) :
+def set_type (conf_file, ntypes, type_id) :
     type_id = int(type_id)
     with open(conf_file, 'r') as fp:
         lines = fp.read().split('\n')
@@ -10,7 +10,6 @@ def set_type (conf_file, type_id) :
         if "atoms" in ii :
             natoms = int(ii.split()[0])
     new_lines = lines
-    ntypes = type_id
     # revise ntypes
     idx_ntypes = -1
     for idx, ii in enumerate(lines) :
@@ -40,10 +39,10 @@ def set_type (conf_file, type_id) :
     # set masses
     new_lines.append("Masses")
     new_lines.append("")
-    for ii in range(type_id) :
+    for ii in range(ntypes) :
         new_lines.append("%d 1" % (ii+1))
     new_lines.append("")
     with open(conf_file, 'w') as fp:
         fp.write("\n".join(new_lines))
 
-set_type(sys.argv[1], sys.argv[2])
+set_type(sys.argv[1], int(sys.argv[2]), int(sys.argv[3]))

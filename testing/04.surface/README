@@ -15,8 +15,8 @@ for example:
 pair_style	deepmd graph.000.pb graph.001.pb graph.002.pb graph.003.pb 10 model_devi.out
 pair_coeff
 
-5, $ ../tools/cvt_conf.sh
+5, $ ../tools/cvt_confs.sh
 
-6, $ ../tools/compute.sh
+6, $ ../tools/compute.sh E0 ntypes type_id
 
 
