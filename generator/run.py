@@ -292,6 +292,7 @@ def post_train (iter_index,
 
 def make_model_devi (iter_index, 
                      jdata) :
+    model_devi_dt = jdata['model_devi_dt']
     model_devi_jobs = jdata['model_devi_jobs']
     assert (iter_index < len(model_devi_jobs))
     cur_job = model_devi_jobs[iter_index]
@@ -382,6 +383,7 @@ def make_model_devi (iter_index,
                                                loc_conf_name,
                                                task_model_list,
                                                nsteps,
+                                               model_devi_dt,
                                                trj_freq,
                                                mass_map,
                                                tt,
@@ -453,6 +455,7 @@ def post_model_devi (iter_index,
 
 def _make_fp_vasp_inner (modd_path,
                          work_path,
+                         model_devi_skip,
                          e_trust_lo,
                          e_trust_hi,
                          f_trust_lo,
@@ -493,7 +496,8 @@ def _make_fp_vasp_inner (modd_path,
                 res_conf = []
                 for ii in range(all_conf.shape[0]) :
                     if (all_conf[ii][1] < e_trust_hi and all_conf[ii][1] > e_trust_lo) or \
-                       (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] > f_trust_lo) :
+                       (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] > f_trust_lo) and \
+                       ii >= model_devi_skip :
                         sel_conf.append(int(all_conf[ii][0]))
                     else :
                         res_conf.append(int(all_conf[ii][0]))
@@ -591,6 +595,7 @@ def _make_fp_vasp_configs(iter_index,
                           jdata):
     fp_task_max = jdata['fp_task_max']
     fp_params = jdata['fp_params']
+    model_devi_skip = jdata['model_devi_skip']
     e_trust_lo = jdata['model_devi_e_trust_lo']
     e_trust_hi = jdata['model_devi_e_trust_hi']
     f_trust_lo = jdata['model_devi_f_trust_lo']
@@ -605,6 +610,7 @@ def _make_fp_vasp_configs(iter_index,
         task_min = cur_job['task_min']
     # make configs
     fp_tasks = _make_fp_vasp_inner(modd_path, work_path,
+                                   model_devi_skip,
                                    e_trust_lo, e_trust_hi,
                                    f_trust_lo, f_trust_hi,
                                    task_min, fp_task_max,
@@ -686,6 +692,7 @@ def make_fp_pwscf(iter_index,
     if 'model_devi_clean_traj' in jdata :
         clean_traj = jdata['model_devi_clean_traj']
     if clean_traj:
+        modd_path = os.path.join(iter_name, model_devi_name)
         md_trajs = glob.glob(os.path.join(modd_path, 'task*/traj'))
         for ii in md_trajs :
             shutil.rmtree(ii)
