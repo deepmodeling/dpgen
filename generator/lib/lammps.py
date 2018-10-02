@@ -13,7 +13,8 @@ def cvt_lammps_conf (fin,
 def make_lammps_input(ensemble, 
                       conf_file,
                       graphs,
-                      nsteps, 
+                      nsteps,
+                      dt,
                       trj_freq, 
                       mass_map,
                       temp, 
@@ -57,7 +58,7 @@ def make_lammps_input(ensemble,
     else :
         raise RuntimeError("unknown emsemble " + ensemble)
     ret+= "\n"
-    ret+= "timestep        0.002\n"
+    ret+= "timestep        %f\n" % dt
     ret+= "run             ${NSTEPS}\n"
     return ret
         
