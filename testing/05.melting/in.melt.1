@@ -34,7 +34,7 @@ include		potential.mod
 dump		phase1 all atom 1000 dump.atom
 timestep	0.002
 thermo_style	custom step temp pe etotal press pxx pyy pzz lx ly lz vol
-thermo		20
+thermo		100
 
 # equilibrium simulation region
 fix		1 all npt temp ${test_temp} ${test_temp} ${temp_damp} aniso ${test_pres} ${test_pres} ${pres_damp}
@@ -45,12 +45,11 @@ unfix		1
 variable	d1 equal ${size_x}*0.225
 variable	d2 equal ${size_x}*0.275
 
-region		del block ${d1} ${d2} -10 ${save_y} -10 ${save_z}
+region		del block ${d1} ${d2} -10 ${save_y} -10 ${save_z} units box
 delete_atoms	region del
-neigh_modify	every 10 delay 0 check no
 
 variable	half_x equal ${size_x}*0.5
-region		liquid block -10 ${half_x} -10 ${save_y} -10 ${save_z}
+region		liquid block -10 ${half_x} -10 ${save_y} -10 ${save_z} units box
 group		liquid region liquid
 
 fix		2 liquid nvt temp ${liquid_temp} ${liquid_temp} ${temp_damp}
