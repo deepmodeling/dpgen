@@ -41,6 +41,7 @@ def _make_vasp(jdata, conf_dir, supercell, insert_ele) :
     os.chdir(cwd)
     task_poscar = os.path.join(task_path, 'POSCAR')
     # gen strcture
+    print("task poscar: ", task_poscar)
     ss = Structure.from_file(task_poscar)
     # gen defects
     vds = InterstitialGenerator(ss, insert_ele)
@@ -287,6 +288,7 @@ def _make_deepmd_lammps(jdata, conf_dir, supercell, insert_ele, task_name) :
     lammps.poscar_from_last_dump(equi_dump, task_poscar, deepmd_type_map)
     os.chdir(cwd)
     # gen structure from equi poscar
+    print("task poscar: ", task_poscar)
     ss = Structure.from_file(task_poscar)
     # gen defects
     vds = InterstitialGenerator(ss, insert_ele)
@@ -296,7 +298,11 @@ def _make_deepmd_lammps(jdata, conf_dir, supercell, insert_ele, task_name) :
     # gen tasks    
     cwd = os.getcwd()
     # make lammps.in, relax at 0 bar (scale = 1)
-    fc = lammps.make_lammps_press_relax('conf.lmp', ntypes, 1, deepmd_models_name)
+    fc = lammps.make_lammps_press_relax('conf.lmp', 
+                                        ntypes, 
+                                        1,
+                                        lammps.inter_deepmd,
+                                        deepmd_models_name)
     f_lammps_in = os.path.join(task_path, 'lammps.in')
     with open(f_lammps_in, 'w') as fp :
         fp.write(fc)
@@ -320,6 +326,78 @@ def _make_deepmd_lammps(jdata, conf_dir, supercell, insert_ele, task_name) :
         os.symlink(os.path.relpath(f_lammps_in), 'lammps.in')
         # link models
         for (ii,jj) in zip(deepmd_models, deepmd_models_name) :
+            os.symlink(os.path.relpath(ii), jj)
+        # save supercell
+        np.savetxt('supercell.out', supercell, fmt='%d')
+    os.chdir(cwd)
+
+def make_meam_lammps(jdata, conf_dir, supercell, insert_ele, task_name) :
+    for ii in insert_ele:
+        _make_meam_lammps(jdata, conf_dir, supercell, ii, task_name)
+
+def _make_meam_lammps(jdata, conf_dir, supercell, insert_ele, task_name) :
+    meam_potfile_dir = jdata['meam_potfile_dir']
+    meam_potfile_dir = os.path.abspath(meam_potfile_dir)
+    meam_potfile = jdata['meam_potfile']
+    meam_potfile = [os.path.join(meam_potfile_dir,ii) for ii in meam_potfile]
+    meam_potfile_name = jdata['meam_potfile']
+    type_map = jdata['meam_type_map']
+    ntypes = len(type_map)
+    meam_param = {'meam_potfile' :      jdata['meam_potfile'],
+                  'meam_type':          jdata['meam_param_type']}
+
+    conf_path = os.path.abspath(conf_dir)
+    conf_poscar = os.path.join(conf_path, 'POSCAR')
+    # get equi poscar
+    equi_path = re.sub('confs', global_equi_name, conf_path)
+    equi_path = os.path.join(equi_path, task_name)
+    equi_dump = os.path.join(equi_path, 'dump.relax')
+    task_path = re.sub('confs', global_task_name, conf_path)
+    task_path = os.path.join(task_path, task_name)
+    os.makedirs(task_path, exist_ok=True)
+    task_poscar = os.path.join(task_path, 'POSCAR')
+    cwd = os.getcwd()
+    os.chdir(task_path)
+    lammps.poscar_from_last_dump(equi_dump, task_poscar, type_map)
+    os.chdir(cwd)
+    # gen structure from equi poscar
+    ss = Structure.from_file(task_poscar)
+    # gen defects
+    vds = InterstitialGenerator(ss, insert_ele)
+    dss = []
+    for jj in vds :
+        dss.append(jj.generate_defect_structure(supercell))
+    # gen tasks    
+    cwd = os.getcwd()
+    # make lammps.in, relax at 0 bar (scale = 1)
+    fc = lammps.make_lammps_press_relax('conf.lmp', 
+                                        ntypes, 
+                                        1, 
+                                        lammps.inter_meam,
+                                        meam_param)
+    f_lammps_in = os.path.join(task_path, 'lammps.in')
+    with open(f_lammps_in, 'w') as fp :
+        fp.write(fc)
+    # gen tasks    
+    copy_str = "%sx%sx%s" % (supercell[0], supercell[1], supercell[2])
+    cwd = os.getcwd()
+    for ii in range(len(dss)) :
+        struct_path = os.path.join(task_path, 'struct-%s-%s-%03d' % (insert_ele,copy_str,ii))
+        print('# generate %s' % (struct_path))
+        os.makedirs(struct_path, exist_ok=True)
+        os.chdir(struct_path)
+        for jj in ['conf.lmp', 'lammps.in'] + meam_potfile_name :
+            if os.path.isfile(jj):
+                os.remove(jj)
+        # make conf
+        dss[ii].to('POSCAR', 'POSCAR')
+        lammps.cvt_lammps_conf('POSCAR', 'conf.lmp')
+        ptypes = vasp.get_poscar_types('POSCAR')
+        lammps.apply_type_map('conf.lmp', type_map, ptypes)    
+        # link lammps.in
+        os.symlink(os.path.relpath(f_lammps_in), 'lammps.in')
+        # link models
+        for (ii,jj) in zip(meam_potfile, meam_potfile_name) :
             os.symlink(os.path.relpath(ii), jj)
         # save supercell
         np.savetxt('supercell.out', supercell, fmt='%d')
@@ -351,7 +429,7 @@ def _main() :
     elif args.TASK == 'deepmd-reprod' :
         make_deepmd_reprod_traj(jdata, args.CONF, args.COPY, args.ELEMENT, args.TASK)
     elif args.TASK == 'meam' :
-        raise RuntimeError("not implemented ", args.TASK)
+        make_meam_lammps(jdata, args.CONF, args.COPY, args.ELEMENT, args.TASK)
     elif args.TASK == 'meam-reprod' :
         make_meam_reprod_traj(jdata, args.CONF, args.COPY, args.ELEMENT, args.TASK)
     else :

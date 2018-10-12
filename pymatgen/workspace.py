@@ -16,7 +16,7 @@ def copy(kspacing, static = False) :
     vasp = glob.glob(os.path.join(test_dir, "0*/*/*/" + vasp_name))
     meam = glob.glob(os.path.join(test_dir, "0*/*/*/" + meam_name)) + \
            glob.glob(os.path.join(test_dir, "0*/*/*/" + meam_name + '-static')) + \
-           glob.glob(os.path.join(test_dir, "0*/*/*/" + meam_name + '-reprod-k0.16')) 
+           glob.glob(os.path.join(test_dir, "0*/*/*/" + meam_name + '-reprod-k0.08')) 
     cwd = os.getcwd()
     os.chdir(test_dir)
     vasp_dirs = glob.glob( "0*/*/*/" + vasp_name)

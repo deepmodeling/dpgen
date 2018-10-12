@@ -81,9 +81,12 @@ def _get_conf_natom(conf) :
 def inter_deepmd(models) :
     ret = ""
     line = "pair_style deepmd "
-    for ii in models :
-        line += ii + ' '
-    line += ' 10 model_devi.out\npair_coeff\n'
+    if len(models) > 1 :
+        for ii in models :
+            line += ii + ' '
+        line += ' 10 model_devi.out\npair_coeff\n'
+    else :
+        line += models[0] + '\npair_coeff\n'
     ret += line
     return ret
 
@@ -294,7 +297,7 @@ def make_lammps_press_relax(conf, ntypes, scale2equi, interaction, param,
 def _get_epa (lines) :
     for ii in lines:
         if ("Final energy per atoms" in ii) and (not 'print' in ii):
-            return float(ii.split('=')[1].split()[0])
+            return float(ii.split('=')[1].split()[0])    
     raise RuntimeError("cannot find key \"Final energy per atoms\" in lines, something wrong")
 
 def _get_vpa (lines) :
