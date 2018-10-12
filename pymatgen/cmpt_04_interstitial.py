@@ -82,7 +82,7 @@ def _cmpt_deepmd_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_name) 
         lmp_ener = np.reshape(lmp_ener,  [-1,1])
         lmp_ener_file = os.path.join(ls, 'ener.lmp.out')
         vasp_ener = np.reshape(vasp_ener, [-1,1]) / natoms
-        error_start = 2
+        error_start = 1
         lmp_ener -= lmp_ener[-1] - vasp_ener[-1]
         diff = lmp_ener - vasp_ener
         diff = diff[error_start:]

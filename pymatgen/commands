@@ -85,6 +85,9 @@ out=results/02.mgal.compk.out; rm -f $out; for ii in confs/MgAl/mp*; do lammps=`
 out=results/02.al.compk.out; rm -f $out; for ii in confs/Al/std* confs/Al/mp*; do lammps=`./cmpt_02_elastic.py vasp param-k0.16.json $ii | grep -v \# | tr '\n' ' '`; vasp=`./cmpt_02_elastic.py vasp param-k0.08.json $ii | grep -v \# | tr '\n' ' '`; echo $ii $vasp $lammps >> $out; echo $ii; done
 out=results/02.mg.compk.out; rm -f $out; for ii in confs/Mg/std* confs/Mg/mp*; do lammps=`./cmpt_02_elastic.py vasp param-k0.16.json $ii | grep -v \# | tr '\n' ' '`; vasp=`./cmpt_02_elastic.py vasp param-k0.08.json $ii | grep -v \# | tr '\n' ' '`; echo $ii $vasp $lammps >> $out; echo $ii; done
 
+out=results/02.mgal.mods.k0.08.out; rm -f $out; for ii in confs/MgAl/mp*; do deepmd=`./cmpt_02_elastic.py deepmd param-k0.08.json $ii | grep \# | grep = | cut -d = -f 2 | tr '\n' ' ' | sed 's/GPa//g'`; vasp=`./cmpt_02_elastic.py vasp param-k0.08.json $ii | grep \# | grep = | cut -d = -f 2 | tr '\n' ' ' | sed 's/GPa//g'`; meam=`./cmpt_02_elastic.py meam param-k0.08.json $ii | grep \# | grep = | cut -d = -f 2 | tr '\n' ' ' | sed 's/GPa//g'`; echo $ii $vasp $deepmd $meam >> $out; echo $ii; done
+
+
 
 ##############################
 # 03
@@ -98,9 +101,20 @@ for ii in 03.vacancy/*/std*/deepmd/struct* 03.vacancy/*/mp*/deepmd/struct*; do c
 
 # cmpt 03
 #out=results/03.mgal.vasp.k0.16.out; rm -f $out; for ii in confs/MgAl/mp*; do ./cmpt_03_vacancy.py vasp param-k0.16.json $ii `cat $ii/supercell.dfct` >> $out ; echo $ii; done
+# almg
 out=results/03.mgal.vasp.k0.08.out; rm -f $out; for ii in confs/MgAl/mp*; do ./cmpt_03_vacancy.py vasp param-k0.08.json $ii `cat $ii/supercell.dfct` >> $out ; echo $ii; done
 out=results/03.mgal.deepmd.out; rm -f $out; for ii in confs/MgAl/mp*; do ./cmpt_03_vacancy.py deepmd param-k0.08.json $ii `cat $ii/supercell.dfct` >> $out ; echo $ii; done
 out=results/03.mgal.meam.out; rm -f $out; for ii in confs/MgAl/mp*; do ./cmpt_03_vacancy.py meam param-k0.08.json $ii `cat $ii/supercell.dfct` >> $out ; echo $ii; done
+
+# al
+out=results/03.al.vasp.k0.08.out; rm -f $out; for ii in confs/Al/std*; do ./cmpt_03_vacancy.py vasp param-k0.08.json $ii `cat $ii/supercell.dfct` >> $out ; echo $ii; done
+out=results/03.al.deepmd.out; rm -f $out; for ii in confs/Al/std*; do ./cmpt_03_vacancy.py deepmd param-k0.08.json $ii `cat $ii/supercell.dfct` >> $out ; echo $ii; done
+out=results/03.al.meam.out; rm -f $out; for ii in confs/Al/std*; do ./cmpt_03_vacancy.py meam param-k0.08.json $ii `cat $ii/supercell.dfct` >> $out ; echo $ii; done
+
+# mg
+out=results/03.mg.vasp.k0.08.out; rm -f $out; for ii in confs/Mg/std*; do ./cmpt_03_vacancy.py vasp param-k0.08.json $ii `cat $ii/supercell.dfct` >> $out ; echo $ii; done
+out=results/03.mg.deepmd.out; rm -f $out; for ii in confs/Mg/std*; do ./cmpt_03_vacancy.py deepmd param-k0.08.json $ii `cat $ii/supercell.dfct` >> $out ; echo $ii; done
+out=results/03.mg.meam.out; rm -f $out; for ii in confs/Mg/std*; do ./cmpt_03_vacancy.py meam param-k0.08.json $ii `cat $ii/supercell.dfct` >> $out ; echo $ii; done
 
 ##############################
 # 04
@@ -120,11 +134,18 @@ for ii in 04.interstitial/*/mp*/deepmd-reprod-k0.08/struct*/frame*; do cd $ii; p
 
 # cmpt 04
 for ss in `cat confs/MgAl/sel.out`; do ii=confs/MgAl/$ss; ./cmpt_04_interstitial.py deepmd-reprod param-k0.16.json $ii `cat $ii/supercell.dfct` Al Mg; done
+for ss in `cat confs/MgAl/sel.out`; do ii=confs/MgAl/$ss; ./cmpt_04_interstitial.py deepmd-reprod param-k0.08.json $ii `cat $ii/supercell.dfct` Al Mg; done
 
 # collect 04
 cat 04.interstitial/MgAl/mp-*/vasp-k0.16/struct-*/ener.vasp.out > results/04.mgal.ener.vasp.k0.16.out
 cat 04.interstitial/MgAl/mp-*/deepmd-reprod-k0.16/struct-*/ener.lmp.out > results/04.mgal.ener.deepmd.k0.16.out
 paste results/04.mgal.ener.vasp.out results/04.mgal.ener.deepmd.out > results/04.mgal.ener.k0.16.out
+
+cat 04.interstitial/MgAl/mp-*/vasp-k0.08/struct-*/ener.vasp.out > results/04.mgal.ener.vasp.k0.08.out
+cat 04.interstitial/MgAl/mp-*/deepmd-reprod-k0.08/struct-*/ener.lmp.out > results/04.mgal.ener.deepmd.k0.08.out
+cat 04.interstitial/MgAl/mp-*/meam-reprod-k0.08/struct-*/ener.lmp.out > results/04.mgal.ener.meam.k0.08.out
+paste results/04.mgal.ener.vasp.k0.08.out results/04.mgal.ener.deepmd.k0.08.out > results/04.mgal.ener.deepmd.k0.08.cmp.out
+paste results/04.mgal.ener.vasp.k0.08.out results/04.mgal.ener.meam.k0.08.out > results/04.mgal.ener.meam.k0.08.cmp.out
 
 ##############################
 # 05

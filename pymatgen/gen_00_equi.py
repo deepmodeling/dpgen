@@ -22,7 +22,7 @@ def make_vasp(jdata, conf_dir) :
     kspacing = fp_params['kspacing']
     kgamma = fp_params['kgamma']
 
-    conf_path = os.path.realpath(conf_dir)
+    conf_path = os.path.abspath(conf_dir)
     equi_path = re.sub('confs', global_task_name, conf_path)
     os.makedirs(equi_path, exist_ok = True)
     cwd = os.getcwd()
