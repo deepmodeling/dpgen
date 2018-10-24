@@ -45,35 +45,51 @@ class SSHSession (object) :
 class RemoteJob (object):
     def __init__ (self,
                   ssh_session,
-                  job_dir
+                  local_root
     ) :
-        self.local_dir = os.path.abspath(job_dir)
+        self.local_root = os.path.abspath(local_root)
         self.job_uuid = str(uuid.uuid4())
         # self.job_uuid = 'a21d0017-c9f1-4d29-9a03-97df06965cef'
-        self.remote_workpath = os.path.join(ssh_session.get_session_root(), self.job_uuid)
+        self.remote_root = os.path.join(ssh_session.get_session_root(), self.job_uuid)
         self.ssh = ssh_session.get_ssh_client()        
         self.sftp = self.ssh.open_sftp()        
-        self.sftp.mkdir(self.remote_workpath)
+        self.sftp.mkdir(self.remote_root)
         open('job_uuid', 'w').write(self.job_uuid)
 
     def upload(self,
+               job_dirs,
                local_up_files) :
-        self._put_files(local_up_files)
+        cwd = os.getcwd()
+        os.chdir(self.local_root) 
+        file_list = []
+        for ii in job_dirs :
+            for jj in local_up_files :
+                file_list.append(os.path.join(ii,jj))        
+        self._put_files(file_list)
+        os.chdir(cwd)
 
     def download(self, 
+                 job_dirs,
                  remote_down_files) :
-        self._get_files(remote_down_files)
+        cwd = os.getcwd()
+        os.chdir(self.local_root) 
+        file_list = []
+        for ii in job_dirs :
+            for jj in remote_down_files :
+                file_list.append(os.path.join(ii,jj))
+        self._get_files(file_list)
+        os.chdir(cwd)
         
     def block_call(self, 
                    cmd) :
-        stdin, stdout, stderr = self.ssh.exec_command(('cd %s ;' % self.remote_workpath) + cmd)
+        stdin, stdout, stderr = self.ssh.exec_command(('cd %s ;' % self.remote_root) + cmd)
         exit_status = stdout.channel.recv_exit_status() 
         if exit_status != 0:
             raise RuntimeError("Get error code %d in calling through ssh with job: %s ", (exit_status, self.job_uuid))
         return stdin, stdout, stderr    
 
     def clean(self) :        
-        self._rmtree(self.remote_workpath)
+        self._rmtree(self.remote_root)
 
     def _rmtree(self, remotepath, level=0, verbose = False):
         sftp = self.sftp
@@ -93,16 +109,16 @@ class RemoteJob (object):
         of = self.job_uuid + '.tgz'
         # local tar
         cwd = os.getcwd()
-        os.chdir(self.local_dir)
+        os.chdir(self.local_root)
         if os.path.isfile(of) :
             os.remove(of)
-        with tarfile.open(of, "w:gz") as tar:
+        with tarfile.open(of, "w:gz", dereference = True) as tar:
             for ii in files :
                 tar.add(ii)
         os.chdir(cwd)
         # trans
-        from_f = os.path.join(self.local_dir, of)
-        to_f = os.path.join(self.remote_workpath, of)
+        from_f = os.path.join(self.local_root, of)
+        to_f = os.path.join(self.remote_root, of)
         self.sftp.put(from_f, to_f)
         # remote extract
         self.block_call('tar xf %s' % of)
@@ -119,14 +135,14 @@ class RemoteJob (object):
         # remote tar
         self.block_call('tar czf %s %s' % (of, flist))
         # trans
-        from_f = os.path.join(self.remote_workpath, of)
-        to_f = os.path.join(self.local_dir, of)
+        from_f = os.path.join(self.remote_root, of)
+        to_f = os.path.join(self.local_root, of)
         if os.path.isfile(to_f) :
             os.remove(to_f)
         self.sftp.get(from_f, to_f)
         # extract
         cwd = os.getcwd()
-        os.chdir(self.local_dir)
+        os.chdir(self.local_root)
         with tarfile.open(of, "r:gz") as tar:
             tar.extractall()
         os.chdir(cwd)        
@@ -136,9 +152,12 @@ class RemoteJob (object):
 
 class CloudMachineJob (RemoteJob) :
     def submit(self, 
-               cmd) :
-        print(self.remote_workpath)
-        self.stdin, self.stdout, self.stderr = self.ssh.exec_command(('cd %s ;' % self.remote_workpath) + cmd)
+               job_dirs,
+               cmd, 
+               args = None) :
+        # print(self.remote_root)
+        script_name = self._make_script(job_dirs, cmd, args)
+        self.stdin, self.stdout, self.stderr = self.ssh.exec_command(('cd %s; bash %s' % (self.remote_root, script_name)))
 
     def check_status(self) :
         if not self._check_finish(self.stdout) :
@@ -154,18 +173,36 @@ class CloudMachineJob (RemoteJob) :
     def _get_exit_status(self, stdout) :
         return stdout.channel.recv_exit_status() 
     
+    def _make_script(self, 
+                     job_dirs,
+                     cmd, 
+                     args = None) :
+        script_name = 'run.sh'
+        if args == None :
+            args = []
+            for ii in job_dirs:
+                args.append('')
+        script = os.path.join(self.remote_root, script_name)
+        with self.sftp.open(script, 'w') as fp :
+            fp.write('#!/bin/bash\n')
+            fp.write('set -euo pipefail\n')
+            for ii,jj in zip(job_dirs, args) :
+                fp.write('\ncd %s\n' % ii)                
+                fp.write('%s %s\n' % (cmd, jj))
+                fp.write('cd %s\n' % self.remote_root)         
+        return script_name
 
 
 
 ssh_session = SSHSession('localhost.json')        
 rjob = CloudMachineJob(ssh_session, '.')
 # can upload dirs and normal files
-rjob.upload(['batch_exec.py', 'test'])
-rjob.block_call('touch a')
-rjob.submit('sleep 2')
+rjob.upload(['job0', 'job1'], ['batch_exec.py', 'test'])
+rjob.submit(['job0', 'job1'], 'touch a; sleep 2')
 while rjob.check_status() == JobStatus.running :
+    print('checked')
     time.sleep(2)
 print(rjob.check_status())
 # can download dirs and normal files
-rjob.download(['a'])
-rjob.clean()
+rjob.download(['job0', 'job1'], ['a'])
+# rjob.clean()
