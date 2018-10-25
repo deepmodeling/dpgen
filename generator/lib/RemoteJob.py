@@ -30,6 +30,7 @@ class SSHSession (object) :
         ssh_client.load_system_host_keys()
         ssh_client.set_missing_host_key_policy(paramiko.WarningPolicy)
         ssh_client.connect(hostname, port=port, username=username, password=password)
+        assert(ssh_client.get_transport().is_active())
         return ssh_client
 
     def get_ssh_client(self) :
@@ -80,13 +81,19 @@ class RemoteJob (object):
         self._get_files(file_list)
         os.chdir(cwd)
         
-    def block_call(self, 
-                   cmd) :
+    def block_checkcall(self, 
+                        cmd) :
         stdin, stdout, stderr = self.ssh.exec_command(('cd %s ;' % self.remote_root) + cmd)
         exit_status = stdout.channel.recv_exit_status() 
         if exit_status != 0:
             raise RuntimeError("Get error code %d in calling through ssh with job: %s ", (exit_status, self.job_uuid))
         return stdin, stdout, stderr    
+
+    def block_call(self, 
+                   cmd) :
+        stdin, stdout, stderr = self.ssh.exec_command(('cd %s ;' % self.remote_root) + cmd)
+        exit_status = stdout.channel.recv_exit_status() 
+        return exit_status, stdin, stdout, stderr
 
     def clean(self) :        
         self._rmtree(self.remote_root)
@@ -121,7 +128,7 @@ class RemoteJob (object):
         to_f = os.path.join(self.remote_root, of)
         self.sftp.put(from_f, to_f)
         # remote extract
-        self.block_call('tar xf %s' % of)
+        self.block_checkcall('tar xf %s' % of)
         # clean up
         os.remove(from_f)
         self.sftp.remove(to_f)
@@ -133,7 +140,7 @@ class RemoteJob (object):
         for ii in files :
             flist += " " + ii
         # remote tar
-        self.block_call('tar czf %s %s' % (of, flist))
+        self.block_checkcall('tar czf %s %s' % (of, flist))
         # trans
         from_f = os.path.join(self.remote_root, of)
         to_f = os.path.join(self.local_root, of)
@@ -155,6 +162,9 @@ class CloudMachineJob (RemoteJob) :
                job_dirs,
                cmd, 
                args = None) :
+        for ii in job_dirs :
+            if not os.path.isdir(ii) :
+                raise RuntimeError("cannot find dir %s" % ii)
         # print(self.remote_root)
         script_name = self._make_script(job_dirs, cmd, args)
         self.stdin, self.stdout, self.stderr = self.ssh.exec_command(('cd %s; bash %s' % (self.remote_root, script_name)))
@@ -190,19 +200,142 @@ class CloudMachineJob (RemoteJob) :
                 fp.write('\ncd %s\n' % ii)                
                 fp.write('%s %s\n' % (cmd, jj))
                 fp.write('cd %s\n' % self.remote_root)         
+            fp.write('\ntouch tag_finished\n' % (cmd, jj))
         return script_name
 
 
+class SlurmJob (RemoteJob) :
+    def submit(self, 
+               resources,
+               job_dirs,
+               cmd,
+               args = None) :
+        script_name = self._make_script(resources, job_dirs, cmd, args)
+        stdin, stdout, stderr = self.block_checkcall(('cd %s; sbatch %s' % (self.remote_root, script_name)))
+        subret = (stdout.readlines())
+        job_id = subret[0].split()[-1]
+        with self.sftp.open(os.path.join(self.remote_root, 'job_id'), 'w') as fp:
+            fp.write(job_id)
 
-ssh_session = SSHSession('localhost.json')        
-rjob = CloudMachineJob(ssh_session, '.')
-# can upload dirs and normal files
-rjob.upload(['job0', 'job1'], ['batch_exec.py', 'test'])
-rjob.submit(['job0', 'job1'], 'touch a; sleep 2')
-while rjob.check_status() == JobStatus.running :
-    print('checked')
-    time.sleep(2)
-print(rjob.check_status())
-# can download dirs and normal files
-rjob.download(['job0', 'job1'], ['a'])
-# rjob.clean()
+    def check_status(self) :
+        job_id = self._get_job_id()
+        if job_id == "" :
+            raise RuntimeError("job %s is has not been submitted" % self.remote_root)
+        ret, stdin, stdout, stderr\
+            = self.block_call ("squeue --job " + job_id)
+        err_str = stderr.read().decode('utf-8')
+        if (ret != 0) :
+            if str("Invalid job id specified") in err_str :
+                if self._check_finish_tag() :
+                    return JobStatus.finished
+                else :
+                    return JobStatus.terminated
+            else :
+                raise RuntimeError\
+                    ("status command squeue fails to execute\nerror message:%s\nreturn code %d\n" % (err_str, ret))
+        status_line = stdout.read().decode('utf-8').split ('\n')[-2]
+        status_word = status_line.split ()[-4]
+        if      status_word in ["PD","CF","S"] :
+            return JobStatus.waiting
+        elif    status_word in ["R","CG"] :
+            return JobStatus.running
+        elif    status_word in ["C","E","K","BF","CA","CD","F","NF","PR","SE","ST","TO"] :
+            if self._check_finish_tag() :
+                return JobStatus.finished
+            else :
+                return JobStatus.terminated
+        else :
+            return JobStatus.unknown
+    
+    def _get_job_id(self) :
+        with self.sftp.open(os.path.join(self.remote_root, 'job_id'), 'r') as fp:
+            return fp.read().decode('utf-8')
+
+    def _check_finish_tag(self) :
+        try:
+            self.sftp.stat(os.path.join(self.remote_root, 'tag_finished')) 
+            return True
+        except IOError:
+            return False
+
+    def _default(self, resources, key, value) :
+        if key not in resources :
+            resources[key] = value
+
+    def _set_default_resource(self, res) :
+        self._default(res, 'numb_node', 1)
+        self._default(res, 'task_per_node', 1)
+        self._default(res, 'numb_gpu', 0)
+        self._default(res, 'time_limit', '1:0:0')
+        self._default(res, 'mem_limit', -1)
+        self._default(res, 'partition', '')
+        self._default(res, 'account', '')
+        self._default(res, 'qos', '')
+        self._default(res, 'constraint_list', [])
+        self._default(res, 'exclude_list', [])
+        self._default(res, 'module_list', [])
+        self._default(res, 'source_list', [])
+
+    def _make_script(self, 
+                     res,
+                     job_dirs,
+                     cmd,
+                     args = None) :
+        self._set_default_resource(res)
+        ret = ''
+        ret += "#!/bin/bash -l\n"
+        ret += "#SBATCH -N %d\n" % res['numb_node']
+        ret += "#SBATCH --ntasks-per-node %d\n" % res['task_per_node']
+        ret += "#SBATCH -t %s\n" % res['time_limit']
+        if res['mem_limit'] > 0 :
+            ret += "#SBATCH --mem %dG \n" % res['mem_limit']
+        if len(res['account']) > 0 :
+            ret += "#SBATCH --account %s \n" % res['account']
+        if len(res['partition']) > 0 :
+            ret += "#SBATCH --partition %s \n" % res['partition']
+        if len(res['qos']) > 0 :
+            ret += "#SBATCH --qos %s \n" % res['qos']
+        if res['numb_gpu'] > 0 :
+            ret += "#SBATCH --gres=gpu:%d\n" % res['numb_gpu']
+        for ii in res['constraint_list'] :
+            ret += '#SBATCH --constraint %s \n' % ii
+        for ii in res['exclude_list'] :
+            ret += '#SBATCH --exclude %s \n' % ii
+        ret += "\n"
+        ret += 'set -euo pipefail\n\n'
+        for ii in res['module_list'] :
+            ret += "module load %s\n" % ii
+        ret += "\n"
+        for ii in res['source_list'] :
+            ret += "source %s\n" %ii
+        ret += "\n"
+
+        if args == None :
+            args = []
+            for ii in job_dirs:
+                args.append('')
+        for ii,jj in zip(job_dirs, args) :
+            ret += 'cd %s\n' % ii
+            ret += '%s %s\n' % (cmd, jj)
+            ret += 'cd %s\n' % self.remote_root
+        ret += '\ntouch tag_finished\n'
+
+        script_name = 'run.sub'
+        script = os.path.join(self.remote_root, script_name)
+        with self.sftp.open(script, 'w') as fp :
+            fp.write(ret)
+
+        return script_name
+
+# ssh_session = SSHSession('localhost.json')        
+# rjob = CloudMachineJob(ssh_session, '.')
+# # can upload dirs and normal files
+# rjob.upload(['job0', 'job1'], ['batch_exec.py', 'test'])
+# rjob.submit(['job0', 'job1'], 'touch a; sleep 2')
+# while rjob.check_status() == JobStatus.running :
+#     print('checked')
+#     time.sleep(2)
+# print(rjob.check_status())
+# # can download dirs and normal files
+# rjob.download(['job0', 'job1'], ['a'])
+# # rjob.clean()
