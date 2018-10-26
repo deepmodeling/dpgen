@@ -18,6 +18,7 @@ import random
 import logging
 import warnings
 import shutil
+import time
 import numpy as np
 import subprocess as sp
 from lib.utils import make_iter_name
@@ -41,6 +42,7 @@ from lib.machine_exec import exec_hosts
 from lib.machine_exec import exec_hosts_batch
 from lib.batch_exec import exec_batch
 from lib.batch_exec import exec_batch_group
+from lib.RemoteJob import SSHSession, JobStatus, SlurmJob
 
 template_name = 'template'
 train_name = '00.train'
@@ -52,6 +54,41 @@ model_devi_task_fmt = data_system_fmt + '.%06d'
 model_devi_conf_fmt = data_system_fmt + '.%04d'
 fp_name = '02.fp'
 fp_task_fmt = data_system_fmt + '.%06d'
+
+
+def _group_submit_jobs(ssh_sess,
+                       resources,
+                       command,
+                       work_path,
+                       tasks,
+                       group_size,
+                       forward_common_files,
+                       forward_task_files,
+                       backward_task_files) :
+    task_chunks = [
+        [os.path.basename(j) for j in tasks[i:i + group_size]] \
+        for i in range(0, len(tasks), group_size)
+    ]
+    job_list = []
+    for chunk in task_chunks :
+        rjob = SlurmJob(ssh_sess, work_path)
+        rjob.upload('.',  forward_common_files)
+        rjob.upload(chunk, forward_task_files)
+        rjob.submit(resources, chunk, command)
+        job_list.append(rjob)
+
+    job_fin = [False for ii in job_list]
+    while not all(job_fin) :
+        for idx,rjob in enumerate(job_list) :
+            if not job_fin[idx] :
+                status = rjob.check_status()
+                if status == JobStatus.terminated :
+                    raise RuntimeError("find unsuccessfully terminated training job in %s" % rjob.get_job_root())
+                elif status == JobStatus.finished :
+                    rjob.download(task_chunks[idx], backward_task_files)
+                    rjob.clean()
+                    job_fin[idx] = True
+        time.sleep(10)
 
 def get_job_names(jdata) :
     jobkeys = []
@@ -221,16 +258,13 @@ def make_train (iter_index,
 
 def run_train (iter_index,
                jdata, 
-               exec_machine) :    
+               ssh_sess) :    
     # load json param
     numb_models = jdata['numb_models']
     deepmd_path = jdata['deepmd_path']
     train_param = jdata['train_param']
-    train_nppn = jdata['train_nppn']
-    train_ngpu = jdata['train_ngpu']
-    train_sources = jdata['train_sources']
-    train_modules = jdata['train_modules']
-    train_tlimit = jdata['train_tlimit']
+    train_resources = jdata['train_resources']
+
     # paths
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, train_name)
@@ -244,21 +278,31 @@ def run_train (iter_index,
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         all_task.append(task_path)
-    command = os.path.join(deepmd_path, 'bin/dp_train') + ' ' + train_param
-    # if iter_index > 0:
-    #     command += ' --init-model old/model.ckpt '
-    command = cmd_append_log (command, 'train.log')
-    # train models
-    # exec_hosts_batch(exec_machine, command, train_nthreads, all_task, None, verbose = True, mpi = False,gpu = True)
+    command =  os.path.join(deepmd_path, 'bin/dp_train')
+    command += ' %s && ' % train_param
+    command += os.path.join(deepmd_path, 'bin/dp_frz')
 
-    exec_batch(command,
-               1,
-               train_nppn,
-               train_ngpu,
-               all_task,
-               time_limit = train_tlimit,
-               modules = train_modules,
-               sources = train_sources)
+    run_tasks = [os.path.basename(ii) for ii in all_task]
+    forward_files = [train_param]
+    backward_files = ['frozen_model.pb', 'lcurve.out']
+    _group_submit_jobs(ssh_sess,
+                       train_resources,
+                       command,
+                       work_path,
+                       run_tasks,
+                       1,
+                       [],
+                       forward_files,
+                       backward_files)
+
+    # exec_batch(command,
+    #            1,
+    #            train_nppn,
+    #            train_ngpu,
+    #            all_task,
+    #            time_limit = train_tlimit,
+    #            modules = train_modules,
+    #            sources = train_sources)
 
 def post_train (iter_index,
                 jdata) :
@@ -281,7 +325,7 @@ def post_train (iter_index,
     command = cmd_append_log(command, 'freeze.log')
     command = 'CUDA_VISIBLE_DEVICES="" ' + command
     # frz models
-    exec_hosts(MachineLocal, command, 1, all_task, None)
+    # exec_hosts(MachineLocal, command, 1, all_task, None)
     # symlink models
     for ii in range(numb_models) :
         task_file = os.path.join(train_task_fmt % ii, 'frozen_model.pb')
@@ -328,7 +372,7 @@ def make_model_devi (iter_index,
     train_path = os.path.join(iter_name, train_name)
     train_path = os.path.abspath(train_path)
     models = glob.glob(os.path.join(train_path, "graph*pb"))    
-    task_model_list = [] 
+    task_model_list = []
     for ii in models: 
         task_model_list.append(os.path.join('..', os.path.basename(ii)))
     work_path = os.path.join(iter_name, model_devi_name)
@@ -397,15 +441,10 @@ def make_model_devi (iter_index,
 
 def run_model_devi (iter_index, 
                     jdata, 
-                    exec_machine) :
+                    ssh_sess) :
     lmp_exec = jdata['lmp_command']
-    model_devi_nn = jdata['model_devi_nn']
-    model_devi_nppn = jdata['model_devi_nppn']
-    model_devi_ngpu = jdata['model_devi_ngpu']
     model_devi_group_size = jdata['model_devi_group_size']
-    model_devi_sources = jdata['model_devi_sources']
-    model_devi_modules = jdata['model_devi_modules']
-    model_devi_tlimit = jdata['model_devi_tlimit']
+    model_devi_resources = jdata['model_devi_resources']
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, model_devi_name)
@@ -421,25 +460,39 @@ def run_model_devi (iter_index,
     nsteps = cur_job['nsteps']
     nframes = nsteps // traj_freq + 1
     
-    run_tasks = []
-    run_tasks = all_task
-    # for ii in all_task:
-    #     fres = os.path.join(ii, 'model_devi.out')
-    #     if os.path.isfile(fres) :
-    #         nlines = np.loadtxt(fres).shape[0]
-    #         if nframes != nlines :
-    #             run_tasks.append(ii)
-    #     else :
-    #         run_tasks.append(ii)
+    run_tasks_ = []
+    for ii in all_task:
+        fres = os.path.join(ii, 'model_devi.out')
+        if os.path.isfile(fres) :
+            nlines = np.loadtxt(fres).shape[0]
+            if nframes != nlines :
+                run_tasks_.append(ii)
+        else :
+            run_tasks_.append(ii)
+
+    run_tasks = [os.path.basename(ii) for ii in run_tasks_]
+    all_models = glob.glob(os.path.join(work_path, 'graph*pb'))
+    model_names = [os.path.basename(ii) for ii in all_models]
+    forward_files = ['conf.lmp', 'input.lammps', 'traj']
+    backward_files = ['model_devi.out', 'model_devi.log', 'traj']
+    _group_submit_jobs(ssh_sess,
+                       model_devi_resources,
+                       command,
+                       work_path,
+                       run_tasks,
+                       model_devi_group_size,
+                       model_names,
+                       forward_files,
+                       backward_files)
 
     # exec_hosts_batch(exec_machine, command, model_devi_np, run_tasks, None, verbose = True, gpu = True)
-    exec_batch_group(command,
-                     model_devi_nn, model_devi_nppn, model_devi_ngpu,
-                     run_tasks,
-                     group_size = model_devi_group_size,
-                     time_limit = model_devi_tlimit,
-                     modules = model_devi_modules,
-                     sources = model_devi_sources)
+    # exec_batch_group(command,
+    #                  model_devi_nn, model_devi_nppn, model_devi_ngpu,
+    #                  run_tasks,
+    #                  group_size = model_devi_group_size,
+    #                  time_limit = model_devi_tlimit,
+    #                  modules = model_devi_modules,
+    #                  sources = model_devi_sources)
 
 def post_model_devi (iter_index, 
                      jdata) :
@@ -708,21 +761,40 @@ def make_fp (iter_index,
     else :
         raise RuntimeError ("unsupported fp style")
 
+def _vasp_check_fin (ii) :
+    if os.path.isfile(os.path.join(ii, 'OUTCAR')) :
+        with open(os.path.join(ii, 'OUTCAR'), 'r') as fp :
+            content = fp.read()
+            count = content.count('Elapse')
+            if count != 1 :
+                return False
+    else :
+        return False
+    return True
+
+def _qe_check_fin(ii) :
+    if os.path.isfile(os.path.join(ii, 'output')) :
+        with open(os.path.join(ii, 'output'), 'r') as fp :
+            content = fp.read()
+            count = content.count('JOB DONE')
+            if count != 1 :
+                return False
+    else :
+        return False
+    return True
+    
+        
 def run_fp_vasp (iter_index,
                  jdata,
-                 exec_machine,
+                 ssh_sess,
+                 check_fin,
                  log_file = "log") :
     fp_command = jdata['fp_command']
-    fp_nn = jdata['fp_nn']
-    fp_nppn = jdata['fp_nppn']
-    fp_ngpu = jdata['fp_ngpu']
     fp_group_size = jdata['fp_group_size']
-    fp_sources = jdata['fp_sources']
-    fp_modules = jdata['fp_modules']
-    fp_tlimit = jdata['fp_tlimit']
+    fp_resources = jdata['fp_resources']
     # fp_command = ("OMP_NUM_THREADS=1 mpirun -n %d " % fp_np) + fp_command
     # cpu task in parallel
-    if fp_ngpu == 0:
+    if ('numb_gpu' not in fp_resources) or (fp_resources['numb_gpu'] == 0):
         fp_command = "srun " + fp_command
     fp_command = cmd_append_log(fp_command, log_file)
 
@@ -735,25 +807,72 @@ def run_fp_vasp (iter_index,
         return
 
     fp_run_tasks = []
-    fp_run_tasks = fp_tasks
-    # for ii in fp_tasks :
-    #     if os.path.isfile(os.path.join(ii, 'OUTCAR')) :
-    #         with open(os.path.join(ii, 'OUTCAR'), 'r') as fp :
-    #             content = fp.read()
-    #             count = content.count('TOTAL-FORCE')
-    #             if count != 1 :
-    #                 fp_run_tasks.append(ii)
-    #     else :
-    #         fp_run_tasks.append(ii)
+    for ii in fp_tasks :
+        if not check_fin(ii) :
+            fp_run_tasks.append(ii)
+
+    run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
+    forward_files = ['POSCAR', 'INCAR', 'POTCAR']
+    backward_files = ['OUTCAR']
+    _group_submit_jobs(ssh_sess,
+                       fp_resources,
+                       fp_command,
+                       work_path,
+                       run_tasks,
+                       fp_group_size,
+                       [],
+                       forward_files,
+                       backward_files)
+
+def run_fp_pwscf (iter_index,
+                 jdata,
+                 ssh_sess,
+                 check_fin,
+                 log_file = "log") :
+    fp_command = jdata['fp_command']
+    fp_group_size = jdata['fp_group_size']
+    fp_resources = jdata['fp_resources']
+    fp_pp_files = jdata['fp_pp_files']
+    # fp_command = ("OMP_NUM_THREADS=1 mpirun -n %d " % fp_np) + fp_command
+    # cpu task in parallel
+    if ('numb_gpu' not in fp_resources) or (fp_resources['numb_gpu'] == 0):
+        fp_command = "srun " + fp_command
+    fp_command = cmd_append_log(fp_command, log_file)
+
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+
+    fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
+    fp_tasks.sort()
+    if len(fp_tasks) == 0 :
+        return
+
+    fp_run_tasks = []
+    for ii in fp_tasks :
+        if not check_fin(ii) :
+            fp_run_tasks.append(ii)
+
+    run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
+    forward_files = ['input'] + fp_pp_files
+    backward_files = ['output']
+    _group_submit_jobs(ssh_sess,
+                       fp_resources,
+                       fp_command,
+                       work_path,
+                       run_tasks,
+                       fp_group_size,
+                       [],
+                       forward_files,
+                       backward_files)
 
 #    exec_hosts_batch(exec_machine, fp_command, fp_np, fp_run_tasks, verbose = True, mpi = False, gpu=True)
-    exec_batch_group(fp_command,
-                     fp_nn, fp_nppn, fp_ngpu,
-                     fp_run_tasks,
-                     group_size = fp_group_size,
-                     time_limit = fp_tlimit,
-                     modules = fp_modules,
-                     sources = fp_sources)
+    # exec_batch_group(fp_command,
+    #                  fp_nn, fp_nppn, fp_ngpu,
+    #                  fp_run_tasks,
+    #                  group_size = fp_group_size,
+    #                  time_limit = fp_tlimit,
+    #                  modules = fp_modules,
+    #                  sources = fp_sources)
         
 def run_fp (iter_index,
             jdata,
@@ -761,11 +880,11 @@ def run_fp (iter_index,
     fp_style = jdata['fp_style']
 
     if fp_style == "vasp" :
-        run_fp_vasp(iter_index, jdata, exec_machine) 
+        run_fp_vasp(iter_index, jdata, exec_machine, _vasp_check_fin) 
     elif fp_style == "pwscf" :
-        run_fp_vasp(iter_index, jdata, exec_machine, log_file = 'output') 
+        run_fp_pwscf(iter_index, jdata, exec_machine, _qe_check_fin, log_file = 'output') 
     else :
-        raise RuntimeError ("unsupported fp style")    
+        raise RuntimeError ("unsupported fp style") 
 
 
 def post_fp_vasp (iter_index,
@@ -846,6 +965,13 @@ def run_iter (json_file, exec_machine) :
     numb_task = 9
     record = "record.dpgen"
 
+    train_machine = jdata['train_machine']    
+    train_ssh_sess = SSHSession(train_machine)
+    model_devi_machine = jdata['model_devi_machine']    
+    model_devi_ssh_sess = SSHSession(model_devi_machine)
+    fp_machine = jdata['fp_machine']    
+    fp_ssh_sess = SSHSession(fp_machine)
+
     iter_rec = [0, -1]
     if os.path.isfile (record) :
         with open (record) as frec :
@@ -862,7 +988,7 @@ def run_iter (json_file, exec_machine) :
                 make_train (ii, jdata) 
             elif jj == 1 :
                 log_iter ("run_train", ii, jj)
-                run_train  (ii, jdata, exec_machine)
+                run_train  (ii, jdata, train_ssh_sess)
             elif jj == 2 :
                 log_iter ("post_train", ii, jj)
                 post_train  (ii, jdata)
@@ -871,7 +997,7 @@ def run_iter (json_file, exec_machine) :
                 make_model_devi  (ii, jdata)
             elif jj == 4 :
                 log_iter ("run_model_devi", ii, jj)
-                run_model_devi  (ii, jdata, exec_machine)
+                run_model_devi  (ii, jdata, model_devi_ssh_sess)
             elif jj == 5 :
                 log_iter ("post_model_devi", ii, jj)
                 post_model_devi  (ii, jdata)
@@ -880,7 +1006,7 @@ def run_iter (json_file, exec_machine) :
                 make_fp (ii, jdata)
             elif jj == 7 :
                 log_iter ("run_fp", ii, jj)
-                run_fp (ii, jdata, exec_machine)
+                run_fp (ii, jdata, fp_ssh_sess)
             elif jj == 8 :
                 log_iter ("post_fp", ii, jj)
                 post_fp (ii, jdata)
@@ -899,6 +1025,8 @@ def _main () :
 
     logging.basicConfig (level=logging.INFO, format='%(asctime)s %(message)s')
     # logging.basicConfig (filename="compute_string.log", filemode="a", level=logging.INFO, format='%(asctime)s %(message)s')
+    logging.getLogger("paramiko").setLevel(logging.WARNING)
+    paramiko.util.log_to_file("<log_file_path>", level = "WARN")
 
     machine_type = "local"    
     gmxrc = None
