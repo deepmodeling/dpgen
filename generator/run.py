@@ -55,6 +55,76 @@ model_devi_conf_fmt = data_system_fmt + '.%04d'
 fp_name = '02.fp'
 fp_task_fmt = data_system_fmt + '.%06d'
 
+import requests
+from hashlib import sha1
+
+def _verfy_ac(private_key, params):
+    items= sorted(params.items())
+    
+    params_data = "";
+    for key, value in items:
+        params_data = params_data + str(key) + str(value)
+    params_data = params_data + private_key
+    sign = sha1()
+    sign.update(params_data.encode())
+    signature = sign.hexdigest()
+    return signature
+
+def _uloud_submit_jobs(machine,
+                       command,
+                       work_path,
+                       tasks,
+                       group_size,
+                       forward_common_files,
+                       forward_task_files,
+                       backward_task_files) :
+    task_chunks = [
+        [os.path.basename(j) for j in tasks[i:i + group_size]] \
+        for i in range(0, len(tasks), group_size)
+    ]
+    assert machine['machine_type'] == 'ucloud'
+    ucloud_start_param = machine['ucloud_param']
+    ucloud_start_param['Action'] = "CreateUHostInstance"
+    ucloud_start_param['Name'] = "train"
+    params['Signature'] = _verfy_ac(machine['Private'], params)
+
+    njob = len(task_chunks)
+    ucloud_machines = []
+    for ii in range(njob) :
+        url = "http://api.ucloud.cn"
+        req = requests.get(url, params)
+        ucloud_machines.append(str(req.json()["IPs"][0]))
+
+    ssh_sess = []
+    ssh_param = {}
+    ssh_param['port'] = 22
+    ssh_param['username'] = 'root'
+    for ii ucloud_machines :
+        ssh_param['hostname'] = ii
+        ssh_sess.append(SSHSession(ssh_param))
+
+    job_list = []
+    for ii in range(njob) :
+        chunk = task_chunks[ii]
+        rjob = CloudMachineJob(ssh_sess[ii], work_path)
+        rjob.upload('.',  forward_common_files)
+        rjob.upload(chunk, forward_task_files)
+        rjob.submit(chunk, command)
+        job_list.append(rjob)
+        
+    job_fin = [False for ii in job_list]
+    while not all(job_fin) :
+        for idx,rjob in enumerate(job_list) :
+            if not job_fin[idx] :
+                status = rjob.check_status()
+                if status == JobStatus.terminated :
+                    raise RuntimeError("find unsuccessfully terminated job on machine" % ucloud_machines[idx])
+                elif status == JobStatus.finished :
+                    rjob.download(task_chunks[idx], backward_task_files)
+                    rjob.clean()
+                    job_fin[idx] = True
+        time.sleep(10)
+
 
 def _group_submit_jobs(ssh_sess,
                        resources,
@@ -83,7 +153,7 @@ def _group_submit_jobs(ssh_sess,
             if not job_fin[idx] :
                 status = rjob.check_status()
                 if status == JobStatus.terminated :
-                    raise RuntimeError("find unsuccessfully terminated training job in %s" % rjob.get_job_root())
+                    raise RuntimeError("find unsuccessfully terminated job in %s" % rjob.get_job_root())
                 elif status == JobStatus.finished :
                     rjob.download(task_chunks[idx], backward_task_files)
                     rjob.clean()
