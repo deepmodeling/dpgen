@@ -105,8 +105,8 @@
 	"limit_pref_e":		2,
 	"start_pref_f":		1000,
 	"limit_pref_f":		1,
-	"start_pref_v":		0.02,
-	"limit_pref_v":		2,
+	"start_pref_v":		0.0,
+	"limit_pref_v":		0.0,
 
 	"_comment": " display and restart",
 	"_comment": " frequencies counted in batch",
@@ -139,7 +139,7 @@
     "model_devi_f_trust_hi":	0.150,
     "model_devi_e_trust_lo":	1e10,
     "model_devi_e_trust_hi":	1e10,
-    "model_devi_clean_traj":	false,
+    "model_devi_clean_traj":	true,
     "_comment":		"model_devi on localhost ",
     "model_devi_machine":	{
 	"hostname" :	"localhost",
