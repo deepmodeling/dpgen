@@ -12,9 +12,10 @@ class JobStatus (Enum) :
     unknow = 100
 
 class SSHSession (object) :
-    def __init__ (self, remote_profile) :
-        with open(remote_profile) as fp :
-            self.remote_profile = json.load(fp)
+    def __init__ (self, jdata) :
+        self.remote_profile = jdata
+        # with open(remote_profile) as fp :
+        #     self.remote_profile = json.load(fp)
         self.remote_host = self.remote_profile['hostname']
         self.remote_port = self.remote_profile['port']
         self.remote_uname = self.remote_profile['username']
@@ -53,20 +54,25 @@ class RemoteJob (object):
         # self.job_uuid = 'a21d0017-c9f1-4d29-9a03-97df06965cef'
         self.remote_root = os.path.join(ssh_session.get_session_root(), self.job_uuid)
         self.ssh = ssh_session.get_ssh_client()        
-        self.sftp = self.ssh.open_sftp()        
-        self.sftp.mkdir(self.remote_root)
-        open('job_uuid', 'w').write(self.job_uuid)
-
+        sftp = self.ssh.open_sftp()        
+        sftp.mkdir(self.remote_root)
+        sftp.close()
+        # open('job_uuid', 'w').write(self.job_uuid)
+        
+    def get_job_root(self) :
+        return self.remote_root
+        
     def upload(self,
                job_dirs,
-               local_up_files) :
+               local_up_files,
+               dereference = True) :
         cwd = os.getcwd()
         os.chdir(self.local_root) 
         file_list = []
         for ii in job_dirs :
             for jj in local_up_files :
                 file_list.append(os.path.join(ii,jj))        
-        self._put_files(file_list)
+        self._put_files(file_list, dereference = dereference)
         os.chdir(cwd)
 
     def download(self, 
@@ -99,7 +105,7 @@ class RemoteJob (object):
         self._rmtree(self.remote_root)
 
     def _rmtree(self, remotepath, level=0, verbose = False):
-        sftp = self.sftp
+        sftp = self.ssh.open_sftp()
         for f in sftp.listdir_attr(remotepath):
             rpath = os.path.join(remotepath, f.filename)
             if stat.S_ISDIR(f.st_mode):
@@ -110,28 +116,32 @@ class RemoteJob (object):
                 sftp.remove(rpath)
         if verbose: print('removing %s%s' % ('    ' * level, remotepath))
         sftp.rmdir(remotepath)
+        sftp.close()
 
     def _put_files(self,
-                   files) :
+                   files,
+                   dereference = True) :
         of = self.job_uuid + '.tgz'
         # local tar
         cwd = os.getcwd()
         os.chdir(self.local_root)
         if os.path.isfile(of) :
             os.remove(of)
-        with tarfile.open(of, "w:gz", dereference = True) as tar:
+        with tarfile.open(of, "w:gz", dereference = dereference) as tar:
             for ii in files :
                 tar.add(ii)
         os.chdir(cwd)
         # trans
         from_f = os.path.join(self.local_root, of)
         to_f = os.path.join(self.remote_root, of)
-        self.sftp.put(from_f, to_f)
+        sftp = self.ssh.open_sftp()
+        sftp.put(from_f, to_f)
         # remote extract
         self.block_checkcall('tar xf %s' % of)
         # clean up
         os.remove(from_f)
-        self.sftp.remove(to_f)
+        sftp.remove(to_f)
+        sftp.close()
 
     def _get_files(self, 
                    files) :
@@ -146,7 +156,8 @@ class RemoteJob (object):
         to_f = os.path.join(self.local_root, of)
         if os.path.isfile(to_f) :
             os.remove(to_f)
-        self.sftp.get(from_f, to_f)
+        sftp = self.ssh.open_sftp()
+        sftp.get(from_f, to_f)
         # extract
         cwd = os.getcwd()
         os.chdir(self.local_root)
@@ -155,7 +166,7 @@ class RemoteJob (object):
         os.chdir(cwd)        
         # cleanup
         os.remove(to_f)
-        self.sftp.remove(from_f)
+        sftp.remove(from_f)
 
 class CloudMachineJob (RemoteJob) :
     def submit(self, 
@@ -193,14 +204,19 @@ class CloudMachineJob (RemoteJob) :
             for ii in job_dirs:
                 args.append('')
         script = os.path.join(self.remote_root, script_name)
-        with self.sftp.open(script, 'w') as fp :
+        sftp = self.ssh.open_sftp()
+        with sftp.open(script, 'w') as fp :
             fp.write('#!/bin/bash\n')
-            fp.write('set -euo pipefail\n')
+            # fp.write('set -euo pipefail\n')
             for ii,jj in zip(job_dirs, args) :
                 fp.write('\ncd %s\n' % ii)                
+                fp.write('test $? -ne 0 && exit\n')
                 fp.write('%s %s\n' % (cmd, jj))
+                fp.write('test $? -ne 0 && exit\n')
                 fp.write('cd %s\n' % self.remote_root)         
+                fp.write('test $? -ne 0 && exit\n')
             fp.write('\ntouch tag_finished\n' % (cmd, jj))
+        sftp.close()
         return script_name
 
 
@@ -214,8 +230,10 @@ class SlurmJob (RemoteJob) :
         stdin, stdout, stderr = self.block_checkcall(('cd %s; sbatch %s' % (self.remote_root, script_name)))
         subret = (stdout.readlines())
         job_id = subret[0].split()[-1]
-        with self.sftp.open(os.path.join(self.remote_root, 'job_id'), 'w') as fp:
+        sftp = self.ssh.open_sftp()
+        with sftp.open(os.path.join(self.remote_root, 'job_id'), 'w') as fp:
             fp.write(job_id)
+        sftp.close()
 
     def check_status(self) :
         job_id = self._get_job_id()
@@ -248,15 +266,21 @@ class SlurmJob (RemoteJob) :
             return JobStatus.unknown
     
     def _get_job_id(self) :
-        with self.sftp.open(os.path.join(self.remote_root, 'job_id'), 'r') as fp:
-            return fp.read().decode('utf-8')
+        sftp = self.ssh.open_sftp()
+        with sftp.open(os.path.join(self.remote_root, 'job_id'), 'r') as fp:            
+            ret = fp.read().decode('utf-8')
+        sftp.close()
+        return ret
 
     def _check_finish_tag(self) :
+        sftp = self.ssh.open_sftp()
         try:
-            self.sftp.stat(os.path.join(self.remote_root, 'tag_finished')) 
-            return True
+            sftp.stat(os.path.join(self.remote_root, 'tag_finished')) 
+            ret =  True
         except IOError:
-            return False
+            ret = False
+        sftp.close()
+        return ret
 
     def _default(self, resources, key, value) :
         if key not in resources :
@@ -302,7 +326,7 @@ class SlurmJob (RemoteJob) :
         for ii in res['exclude_list'] :
             ret += '#SBATCH --exclude %s \n' % ii
         ret += "\n"
-        ret += 'set -euo pipefail\n\n'
+        # ret += 'set -euo pipefail\n\n'
         for ii in res['module_list'] :
             ret += "module load %s\n" % ii
         ret += "\n"
@@ -316,14 +340,19 @@ class SlurmJob (RemoteJob) :
                 args.append('')
         for ii,jj in zip(job_dirs, args) :
             ret += 'cd %s\n' % ii
+            ret += 'test $? -ne 0 && exit\n'
             ret += '%s %s\n' % (cmd, jj)
+            ret += 'test $? -ne 0 && exit\n'
             ret += 'cd %s\n' % self.remote_root
+            ret += 'test $? -ne 0 && exit\n'
         ret += '\ntouch tag_finished\n'
 
         script_name = 'run.sub'
         script = os.path.join(self.remote_root, script_name)
-        with self.sftp.open(script, 'w') as fp :
+        sftp = self.ssh.open_sftp()
+        with sftp.open(script, 'w') as fp :
             fp.write(ret)
+        sftp.close()
 
         return script_name
 
