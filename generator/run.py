@@ -86,13 +86,13 @@ def _uloud_submit_jobs(machine,
     ucloud_start_param = machine['ucloud_param']
     ucloud_start_param['Action'] = "CreateUHostInstance"
     ucloud_start_param['Name'] = "train"
-    params['Signature'] = _verfy_ac(machine['Private'], params)
+    ucloud_start_param['Signature'] = _verfy_ac(machine['Private'], ucloud_start_param)
 
     njob = len(task_chunks)
     ucloud_machines = []
     for ii in range(njob) :
         url = "http://api.ucloud.cn"
-        req = requests.get(url, params)
+        req = requests.get(url, ucloud_start_param)
         ucloud_machines.append(str(req.json()["IPs"][0]))
 
     ssh_sess = []
