@@ -70,19 +70,38 @@ def _verfy_ac(private_key, params):
     signature = sign.hexdigest()
     return signature
 
-def _uloud_submit_jobs(machine,
-                       command,
-                       work_path,
-                       tasks,
-                       group_size,
-                       forward_common_files,
-                       forward_task_files,
-                       backward_task_files) :
+def _ucloud_remove_machine(machine, UHostId):
+    ucloud_url = machine['url']
+    ucloud_stop_param = machine['ucloud_param']
+    ucloud_stop_param['Action'] = "StopUHostInstance"
+    ucloud_stop_param['UHostId'] = UHostId
+    ucloud_stop_param['Signature'] = _verfy_ac(machine['Private'], ucloud_stop_param)
+    req = requests.get(ucloud_url, ucloud_stop_param)
+    if req.json()['RetCode'] != 0 :
+        raise RuntimeError "failed to stop ucloud machine"
+
+    ucloud_delete_param = machine['ucloud_param']
+    ucloud_delete_param['Action'] = "TerminateUHostInstance"
+    ucloud_delete_param['UHostId'] = UHostId
+    ucloud_delete_param['Signature'] = _verfy_ac(machine['Private'], ucloud_delete_param)
+    req = requests.get(ucloud_url, ucloud_delete_param)
+    if req.json()['RetCode'] != 0 :
+        raise RuntimeError "failed to terminate ucloud machine"
+
+def _ucloud_submit_jobs(machine,
+                        command,
+                        work_path,
+                        tasks,
+                        group_size,
+                        forward_common_files,
+                        forward_task_files,
+                        backward_task_files) :
     task_chunks = [
         [os.path.basename(j) for j in tasks[i:i + group_size]] \
         for i in range(0, len(tasks), group_size)
     ]
     assert machine['machine_type'] == 'ucloud'
+    ucloud_url = machine['url']
     ucloud_start_param = machine['ucloud_param']
     ucloud_start_param['Action'] = "CreateUHostInstance"
     ucloud_start_param['Name'] = "train"
@@ -90,10 +109,13 @@ def _uloud_submit_jobs(machine,
 
     njob = len(task_chunks)
     ucloud_machines = []
+    ucloud_hostids = []
     for ii in range(njob) :
-        url = "http://api.ucloud.cn"
-        req = requests.get(url, ucloud_start_param)
+        req = requests.get(ucloud_url, ucloud_start_param)
+        if req.json()['RetCode'] != 0 :
+            raise RuntimeError "failed to start ucloud machine"
         ucloud_machines.append(str(req.json()["IPs"][0]))
+        ucloud_hostids.append(str(req.json()["UHostIds"][0]))
 
     ssh_sess = []
     ssh_param = {}
@@ -122,6 +144,7 @@ def _uloud_submit_jobs(machine,
                 elif status == JobStatus.finished :
                     rjob.download(task_chunks[idx], backward_task_files)
                     rjob.clean()
+                    _ucloud_remove_machine(machine, ucloud_hostids[idx])
                     job_fin[idx] = True
         time.sleep(10)
 
@@ -328,7 +351,7 @@ def make_train (iter_index,
 
 def run_train (iter_index,
                jdata, 
-               ssh_sess) :    
+               absmachine) :    
     # load json param
     numb_models = jdata['numb_models']
     deepmd_path = jdata['deepmd_path']
@@ -355,15 +378,28 @@ def run_train (iter_index,
     run_tasks = [os.path.basename(ii) for ii in all_task]
     forward_files = [train_param]
     backward_files = ['frozen_model.pb', 'lcurve.out']
-    _group_submit_jobs(ssh_sess,
-                       train_resources,
-                       command,
-                       work_path,
-                       run_tasks,
-                       1,
-                       [],
-                       forward_files,
-                       backward_files)
+
+    if (type(absmachine) = dict) and \
+       ('machine_type' is in absmachine) and  \
+       (absmachine['machine_type'] == 'ucloud') :
+        _ucloud_submit_jobs(absmachine,
+                            command, 
+                            work_path
+                            run_tasks,
+                            1,
+                            [],
+                            forward_files,
+                            backward_files)
+    else :
+        _group_submit_jobs(absmachine,
+                           train_resources,
+                           command,
+                           work_path,
+                           run_tasks,
+                           1,
+                           [],
+                           forward_files,
+                           backward_files)
 
     # exec_batch(command,
     #            1,
@@ -511,7 +547,7 @@ def make_model_devi (iter_index,
 
 def run_model_devi (iter_index, 
                     jdata, 
-                    ssh_sess) :
+                    absmachine) :
     lmp_exec = jdata['lmp_command']
     model_devi_group_size = jdata['model_devi_group_size']
     model_devi_resources = jdata['model_devi_resources']
@@ -545,15 +581,28 @@ def run_model_devi (iter_index,
     model_names = [os.path.basename(ii) for ii in all_models]
     forward_files = ['conf.lmp', 'input.lammps', 'traj']
     backward_files = ['model_devi.out', 'model_devi.log', 'traj']
-    _group_submit_jobs(ssh_sess,
-                       model_devi_resources,
-                       command,
-                       work_path,
-                       run_tasks,
-                       model_devi_group_size,
-                       model_names,
-                       forward_files,
-                       backward_files)
+
+    if (type(absmachine) = dict) and \
+       ('machine_type' is in absmachine) and  \
+       (absmachine['machine_type'] == 'ucloud') :
+        _ucloud_submit_jobs(absmachine,
+                            command,
+                            work_path,
+                            run_tasks,
+                            model_devi_group_size,
+                            model_names,
+                            forward_files,
+                            backward_files)
+    else :
+        _group_submit_jobs(absmachine,
+                           model_devi_resources,
+                           command,
+                           work_path,
+                           run_tasks,
+                           model_devi_group_size,
+                           model_names,
+                           forward_files,
+                           backward_files)
 
     # exec_hosts_batch(exec_machine, command, model_devi_np, run_tasks, None, verbose = True, gpu = True)
     # exec_batch_group(command,
@@ -856,7 +905,7 @@ def _qe_check_fin(ii) :
         
 def run_fp_vasp (iter_index,
                  jdata,
-                 ssh_sess,
+                 absmachine,
                  check_fin,
                  log_file = "log") :
     fp_command = jdata['fp_command']
@@ -884,19 +933,32 @@ def run_fp_vasp (iter_index,
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
     forward_files = ['POSCAR', 'INCAR', 'POTCAR']
     backward_files = ['OUTCAR']
-    _group_submit_jobs(ssh_sess,
-                       fp_resources,
-                       fp_command,
-                       work_path,
-                       run_tasks,
-                       fp_group_size,
-                       [],
-                       forward_files,
-                       backward_files)
+
+    if (type(absmachine) = dict) and \
+       ('machine_type' is in absmachine) and  \
+       (absmachine['machine_type'] == 'ucloud') :
+        _ucloud_submit_jobs(absmachine,
+                            fp_command,
+                            work_path,
+                            run_tasks,
+                            fp_group_size,
+                            [],
+                            forward_files,
+                            backward_files)
+    else :
+        _group_submit_jobs(absmachine,
+                           fp_resources,
+                           fp_command,
+                           work_path,
+                           run_tasks,
+                           fp_group_size,
+                           [],
+                           forward_files,
+                           backward_files)
 
 def run_fp_pwscf (iter_index,
                  jdata,
-                 ssh_sess,
+                 absmachine,
                  check_fin,
                  log_file = "log") :
     fp_command = jdata['fp_command']
@@ -925,15 +987,29 @@ def run_fp_pwscf (iter_index,
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
     forward_files = ['input'] + fp_pp_files
     backward_files = ['output']
-    _group_submit_jobs(ssh_sess,
-                       fp_resources,
-                       fp_command,
-                       work_path,
-                       run_tasks,
-                       fp_group_size,
-                       [],
-                       forward_files,
-                       backward_files)
+
+    if (type(absmachine) = dict) and \
+       ('machine_type' is in absmachine) and  \
+       (absmachine['machine_type'] == 'ucloud') :
+        _ucloud_submit_jobs(absmachine,
+                            fp_resources,
+                            fp_command,
+                            work_path,
+                            run_tasks,
+                            fp_group_size,
+                            [],
+                            forward_files,
+                            backward_files)
+    else :
+        _group_submit_jobs(absmachine,
+                           fp_resources,
+                           fp_command,
+                           work_path,
+                           run_tasks,
+                           fp_group_size,
+                           [],
+                           forward_files,
+                           backward_files)
 
 #    exec_hosts_batch(exec_machine, fp_command, fp_np, fp_run_tasks, verbose = True, mpi = False, gpu=True)
     # exec_batch_group(fp_command,
@@ -1036,11 +1112,25 @@ def run_iter (json_file, exec_machine) :
     record = "record.dpgen"
 
     train_machine = jdata['train_machine']    
-    train_ssh_sess = SSHSession(train_machine)
+    if ('machine_type' is in train_machine) and  \
+       (train_machine['machine_type'] == 'ucloud'):
+        train_absmachine = train_machine
+    else :
+        train_absmachine = SSHSession(train_machine)
+
     model_devi_machine = jdata['model_devi_machine']    
-    model_devi_ssh_sess = SSHSession(model_devi_machine)
+    if ('machine_type' is in model_devi_machine) and  \
+       (model_devi_machine['machine_type'] == 'ucloud'):
+        model_devi_absmachine = model_devi_machine
+    else :
+        model_devi_absmachine = SSHSession(model_devi_machine)
+
     fp_machine = jdata['fp_machine']    
-    fp_ssh_sess = SSHSession(fp_machine)
+    if ('machine_type' is in fp_machine) and  \
+       (fp_machine['machine_type'] == 'ucloud'):
+        fp_absmachine = fp_machine
+    else :
+        fp_absmachine = SSHSession(fp_machine)
 
     iter_rec = [0, -1]
     if os.path.isfile (record) :
@@ -1058,7 +1148,7 @@ def run_iter (json_file, exec_machine) :
                 make_train (ii, jdata) 
             elif jj == 1 :
                 log_iter ("run_train", ii, jj)
-                run_train  (ii, jdata, train_ssh_sess)
+                run_train  (ii, jdata, train_absmachine)
             elif jj == 2 :
                 log_iter ("post_train", ii, jj)
                 post_train  (ii, jdata)
@@ -1067,7 +1157,7 @@ def run_iter (json_file, exec_machine) :
                 make_model_devi  (ii, jdata)
             elif jj == 4 :
                 log_iter ("run_model_devi", ii, jj)
-                run_model_devi  (ii, jdata, model_devi_ssh_sess)
+                run_model_devi  (ii, jdata, model_devi_absmachine)
             elif jj == 5 :
                 log_iter ("post_model_devi", ii, jj)
                 post_model_devi  (ii, jdata)
@@ -1076,7 +1166,7 @@ def run_iter (json_file, exec_machine) :
                 make_fp (ii, jdata)
             elif jj == 7 :
                 log_iter ("run_fp", ii, jj)
-                run_fp (ii, jdata, fp_ssh_sess)
+                run_fp (ii, jdata, fp_absmachine)
             elif jj == 8 :
                 log_iter ("post_fp", ii, jj)
                 post_fp (ii, jdata)
