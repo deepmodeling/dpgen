@@ -71,7 +71,7 @@
 	    "PublicKey" : "71RUR4l/3cFVntcHsMaoQk8qZo6uWDflDI7EAwdWqvdev0KvJek//w==" ,
 	    "LoginMode" : "Password",
 	    "Password":	"YW5ndXNlMTk5OA=="
-	}	    
+	},    
 	"_comment" :	"that's all"
     },	
     "_comment":		"do not use distributed training, use multi-threading mode ",
@@ -213,7 +213,7 @@
 	    "PublicKey" : "71RUR4l/3cFVntcHsMaoQk8qZo6uWDflDI7EAwdWqvdev0KvJek//w==" ,
 	    "LoginMode" : "Password",
 	    "Password":	"YW5ndXNlMTk5OA=="
-	}	    
+	},	    
 	"_comment" :	"that's all"
     },	
     "fp_resources":	{
