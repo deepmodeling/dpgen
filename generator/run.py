@@ -42,7 +42,7 @@ from lib.machine_exec import exec_hosts
 from lib.machine_exec import exec_hosts_batch
 from lib.batch_exec import exec_batch
 from lib.batch_exec import exec_batch_group
-from lib.RemoteJob import SSHSession, JobStatus, SlurmJob
+from lib.RemoteJob import SSHSession, JobStatus, SlurmJob, CloudMachineJob
 
 template_name = 'template'
 train_name = '00.train'
@@ -85,6 +85,7 @@ def _ucloud_remove_machine(machine, UHostId):
     ucloud_delete_param['UHostId'] = UHostId
     ucloud_delete_param['Signature'] = _verfy_ac(machine['Private'], ucloud_delete_param)
     req = requests.get(ucloud_url, ucloud_delete_param)
+    
     if req.json()['RetCode'] != 0 :
         raise RuntimeError ("failed to terminate ucloud machine")
 
