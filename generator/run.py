@@ -143,8 +143,7 @@ def _ucloud_submit_jobs(machine,
     ssh_param = {}
     ssh_param['port'] = 22
     ssh_param['username'] = 'root'
-    
-    ssh_param['work_path'] = work_path
+    ssh_param['work_path'] = machine['work_path']
     for ii in ucloud_machines :
         ssh_param['hostname'] = ii
         ssh_sess.append(SSHSession(ssh_param))
@@ -339,8 +338,7 @@ def make_train (iter_index,
                 init_batch_size.append(sys_batch_size[sys_idx])                
     for ii in init_data_sys :
         if not os.path.isdir(ii) :
-            print(os.getcwd())
-            raise RuntimeError ("data sys %s does not exists" % ii)
+            raise RuntimeError ("data sys %s does not exists, cwd is %s" % (ii, os.getcwd()))
     # establish work path
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, train_name)
