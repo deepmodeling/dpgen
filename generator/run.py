@@ -78,7 +78,7 @@ def _ucloud_remove_machine(machine, UHostId):
     ucloud_stop_param['Signature'] = _verfy_ac(machine['Private'], ucloud_stop_param)
     req = requests.get(ucloud_url, ucloud_stop_param)
     if req.json()['RetCode'] != 0 :
-        raise RuntimeError "failed to stop ucloud machine"
+        raise RuntimeError ("failed to stop ucloud machine")
 
     ucloud_delete_param = machine['ucloud_param']
     ucloud_delete_param['Action'] = "TerminateUHostInstance"
@@ -86,7 +86,7 @@ def _ucloud_remove_machine(machine, UHostId):
     ucloud_delete_param['Signature'] = _verfy_ac(machine['Private'], ucloud_delete_param)
     req = requests.get(ucloud_url, ucloud_delete_param)
     if req.json()['RetCode'] != 0 :
-        raise RuntimeError "failed to terminate ucloud machine"
+        raise RuntimeError ("failed to terminate ucloud machine")
 
 def _ucloud_submit_jobs(machine,
                         command,
@@ -113,7 +113,8 @@ def _ucloud_submit_jobs(machine,
     for ii in range(njob) :
         req = requests.get(ucloud_url, ucloud_start_param)
         if req.json()['RetCode'] != 0 :
-            raise RuntimeError "failed to start ucloud machine"
+            print(json.dumps(req.json(),indent=2, sort_keys=True))
+            raise RuntimeError ("failed to start ucloud machine")
         ucloud_machines.append(str(req.json()["IPs"][0]))
         ucloud_hostids.append(str(req.json()["UHostIds"][0]))
 
@@ -121,6 +122,8 @@ def _ucloud_submit_jobs(machine,
     ssh_param = {}
     ssh_param['port'] = 22
     ssh_param['username'] = 'root'
+
+    ssh_param['work_path'] = work_path
     for ii in ucloud_machines :
         ssh_param['hostname'] = ii
         ssh_sess.append(SSHSession(ssh_param))
@@ -315,6 +318,7 @@ def make_train (iter_index,
                 init_batch_size.append(sys_batch_size[sys_idx])                
     for ii in init_data_sys :
         if not os.path.isdir(ii) :
+            print(os.getcwd())
             raise RuntimeError ("data sys %s does not exists" % ii)
     # establish work path
     iter_name = make_iter_name(iter_index)
@@ -379,12 +383,12 @@ def run_train (iter_index,
     forward_files = [train_param]
     backward_files = ['frozen_model.pb', 'lcurve.out']
 
-    if (type(absmachine) = dict) and \
-       ('machine_type' is in absmachine) and  \
+    if (type(absmachine) == dict) and \
+       ('machine_type' in absmachine) and  \
        (absmachine['machine_type'] == 'ucloud') :
         _ucloud_submit_jobs(absmachine,
                             command, 
-                            work_path
+                            work_path,
                             run_tasks,
                             1,
                             [],
@@ -582,8 +586,8 @@ def run_model_devi (iter_index,
     forward_files = ['conf.lmp', 'input.lammps', 'traj']
     backward_files = ['model_devi.out', 'model_devi.log', 'traj']
 
-    if (type(absmachine) = dict) and \
-       ('machine_type' is in absmachine) and  \
+    if (type(absmachine) == dict) and \
+       ('machine_type' in absmachine) and  \
        (absmachine['machine_type'] == 'ucloud') :
         _ucloud_submit_jobs(absmachine,
                             command,
@@ -934,8 +938,8 @@ def run_fp_vasp (iter_index,
     forward_files = ['POSCAR', 'INCAR', 'POTCAR']
     backward_files = ['OUTCAR']
 
-    if (type(absmachine) = dict) and \
-       ('machine_type' is in absmachine) and  \
+    if (type(absmachine) == dict) and \
+       ('machine_type' in absmachine) and  \
        (absmachine['machine_type'] == 'ucloud') :
         _ucloud_submit_jobs(absmachine,
                             fp_command,
@@ -988,8 +992,8 @@ def run_fp_pwscf (iter_index,
     forward_files = ['input'] + fp_pp_files
     backward_files = ['output']
 
-    if (type(absmachine) = dict) and \
-       ('machine_type' is in absmachine) and  \
+    if (type(absmachine) == dict) and \
+       ('machine_type' in absmachine) and  \
        (absmachine['machine_type'] == 'ucloud') :
         _ucloud_submit_jobs(absmachine,
                             fp_resources,
@@ -1112,21 +1116,21 @@ def run_iter (json_file, exec_machine) :
     record = "record.dpgen"
 
     train_machine = jdata['train_machine']    
-    if ('machine_type' is in train_machine) and  \
+    if ('machine_type' in train_machine) and  \
        (train_machine['machine_type'] == 'ucloud'):
         train_absmachine = train_machine
     else :
         train_absmachine = SSHSession(train_machine)
 
     model_devi_machine = jdata['model_devi_machine']    
-    if ('machine_type' is in model_devi_machine) and  \
+    if ('machine_type' in model_devi_machine) and  \
        (model_devi_machine['machine_type'] == 'ucloud'):
         model_devi_absmachine = model_devi_machine
     else :
         model_devi_absmachine = SSHSession(model_devi_machine)
 
     fp_machine = jdata['fp_machine']    
-    if ('machine_type' is in fp_machine) and  \
+    if ('machine_type' in fp_machine) and  \
        (fp_machine['machine_type'] == 'ucloud'):
         fp_absmachine = fp_machine
     else :
@@ -1220,3 +1224,4 @@ if __name__ == '__main__':
     logging.basicConfig (level=logging.INFO, format='%(asctime)s %(message)s')
     run_iter('param.json', MachineLocalGPU)
     # run_iter('param.json', MachineLocal)
+
