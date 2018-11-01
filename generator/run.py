@@ -126,9 +126,9 @@ def _ucloud_submit_jobs(machine,
             if not machine_fin[idx]:
                 ucloud_check_param = {}
                 ucloud_check_param['Action'] = "GetUHostInstanceVncInfo"
-                ucloud_check_param['Region'] = "cn-bj2"
+                ucloud_check_param['Region'] = machine['ucloud_param']['Region']
                 ucloud_check_param['UHostId'] = ucloud_hostids[idx]
-                ucloud_check_param['PublicKey'] = "71RUR4l/3cFVntcHsMaoQk8qZo6uWDflDI7EAwdWqvdev0KvJek//w=="
+                ucloud_check_param['PublicKey'] = machine['ucloud_param']['PublicKey']
                 ucloud_check_param['Signature'] = _verfy_ac(machine['Private'], ucloud_check_param)
                 req = requests.get(ucloud_url, ucloud_check_param)
                 print("the UHostId is", ucloud_hostids[idx])
