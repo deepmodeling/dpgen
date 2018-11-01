@@ -122,8 +122,7 @@ def _ucloud_submit_jobs(machine,
     ssh_param = {}
     ssh_param['port'] = 22
     ssh_param['username'] = 'root'
-
-    ssh_param['work_path'] = work_path
+    ssh_param['work_path'] = machine['work_path']
     for ii in ucloud_machines :
         ssh_param['hostname'] = ii
         ssh_sess.append(SSHSession(ssh_param))
