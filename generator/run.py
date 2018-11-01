@@ -118,11 +118,33 @@ def _ucloud_submit_jobs(machine,
         ucloud_machines.append(str(req.json()["IPs"][0]))
         ucloud_hostids.append(str(req.json()["UHostIds"][0]))
 
+    machine_fin = [False for ii in ucloud_machines]
+    total_machine_num = len(ucloud_machines)
+    fin_machine_num = 0
+    while not all(machine_fin):
+        for idx,mac in enumerate(ucloud_machines):
+            if not machine_fin[idx]:
+                ucloud_check_param = {}
+                ucloud_check_param['Action'] = "GetUHostInstanceVncInfo"
+                ucloud_check_param['Region'] = "cn-bj2"
+                ucloud_check_param['UHostId'] = ucloud_hostids[idx]
+                ucloud_check_param['PublicKey'] = "71RUR4l/3cFVntcHsMaoQk8qZo6uWDflDI7EAwdWqvdev0KvJek//w=="
+                ucloud_check_param['Signature'] = _verfy_ac(machine['Private'], ucloud_check_param)
+                req = requests.get(ucloud_url, ucloud_check_param)
+                print("the UHostId is", ucloud_hostids[idx])
+                print(json.dumps(req.json(),indent=2, sort_keys=True))
+                if req.json()['RetCode'] == 0 :
+                    machine_fin[idx] = True
+                    fin_machine_num = fin_machine_num + 1
+        print("Current finish",fin_machine_num,"/", total_machine_num)
+        time.sleep(10)
+    
     ssh_sess = []
     ssh_param = {}
     ssh_param['port'] = 22
     ssh_param['username'] = 'root'
-    ssh_param['work_path'] = machine['work_path']
+    
+    ssh_param['work_path'] = work_path
     for ii in ucloud_machines :
         ssh_param['hostname'] = ii
         ssh_sess.append(SSHSession(ssh_param))
@@ -135,7 +157,7 @@ def _ucloud_submit_jobs(machine,
         rjob.upload(chunk, forward_task_files)
         rjob.submit(chunk, command)
         job_list.append(rjob)
-        
+    
     job_fin = [False for ii in job_list]
     while not all(job_fin) :
         for idx,rjob in enumerate(job_list) :
@@ -1223,4 +1245,3 @@ if __name__ == '__main__':
     logging.basicConfig (level=logging.INFO, format='%(asctime)s %(message)s')
     run_iter('param.json', MachineLocalGPU)
     # run_iter('param.json', MachineLocal)
-
