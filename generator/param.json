@@ -61,7 +61,7 @@
     "train_machine":	{
 	"machine_type":	"ucloud",
 	"url":		"http://api.ucloud.cn",
-	"work_path" :	"/root/tmp/",
+	"work_path" :	"/root/",
 	"Private": "g5GGyzJM3TdVPK338tkXhcUZ4GuyChs2VONcug9kcYohwLAaWWQAWYMwYtMHrPm2",
 	"ucloud_param":	{
 	    "Region" :	"cn-bj2",
@@ -155,7 +155,7 @@
     "model_devi_machine":	{
 	"machine_type":	"ucloud",
 	"url":		"api.ucloud.cn",
-	"work_path" :	"/root/tmp/",
+	"work_path" :	"/root/",
 	"Private": "g5GGyzJM3TdVPK338tkXhcUZ4GuyChs2VONcug9kcYohwLAaWWQAWYMwYtMHrPm2",
 	"ucloud_param":	{
 	    "Region" :	"cn-bj2",
@@ -205,7 +205,7 @@
     "fp_machine":	{
 	"machine_type":	"ucloud",
 	"url":		"api.ucloud.cn",
-	"work_path" :	"/root/tmp/",
+	"work_path" :	"/root/",
 	"Private": "g5GGyzJM3TdVPK338tkXhcUZ4GuyChs2VONcug9kcYohwLAaWWQAWYMwYtMHrPm2",
 	"ucloud_param":	{
 	    "Region" :	"cn-bj2",
