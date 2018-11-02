@@ -107,7 +107,7 @@ def _ucloud_submit_jobs(machine,
     ucloud_start_param['Action'] = "CreateUHostInstance"
     ucloud_start_param['Name'] = "train"
     ucloud_start_param['Signature'] = _verfy_ac(machine['Private'], ucloud_start_param)
-
+    ’‘’
     njob = len(task_chunks)
     ucloud_machines = []
     ucloud_hostids = []
@@ -152,6 +152,7 @@ def _ucloud_submit_jobs(machine,
     job_list = []
     for ii in range(njob) :
         chunk = task_chunks[ii]
+        print("Current machine is", ucloud_machines[ii])
         rjob = CloudMachineJob(ssh_sess[ii], work_path)
         rjob.upload('.',  forward_common_files)
         rjob.upload(chunk, forward_task_files)

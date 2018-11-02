@@ -49,10 +49,13 @@ class RemoteJob (object):
                   ssh_session,
                   local_root
     ) :
+        
         self.local_root = os.path.abspath(local_root)
         self.job_uuid = str(uuid.uuid4())
         # self.job_uuid = 'a21d0017-c9f1-4d29-9a03-97df06965cef'
         self.remote_root = os.path.join(ssh_session.get_session_root(), self.job_uuid)
+        print("local_root is ", local_root)
+        print("remote_root is", self.remote_root)
         self.ssh = ssh_session.get_ssh_client()        
         sftp = self.ssh.open_sftp()        
         sftp.mkdir(self.remote_root)
@@ -173,9 +176,12 @@ class CloudMachineJob (RemoteJob) :
                job_dirs,
                cmd, 
                args = None) :
-        for ii in job_dirs :
-            if not os.path.isdir(ii) :
-                raise RuntimeError("cannot find dir %s" % ii)
+        
+        #print("Current path is",os.getcwd())
+
+        #for ii in job_dirs :
+        #    if not os.path.isdir(ii) :
+        #        raise RuntimeError("cannot find dir %s" % ii)
         # print(self.remote_root)
         script_name = self._make_script(job_dirs, cmd, args)
         self.stdin, self.stdout, self.stderr = self.ssh.exec_command(('cd %s; bash %s' % (self.remote_root, script_name)))
@@ -214,8 +220,8 @@ class CloudMachineJob (RemoteJob) :
                 fp.write('%s %s\n' % (cmd, jj))
                 fp.write('test $? -ne 0 && exit\n')
                 fp.write('cd %s\n' % self.remote_root)         
-                fp.write('test $? -ne 0 && exit\n')
-            fp.write('\ntouch tag_finished\n' % (cmd, jj))
+                fp.write('test $? -ne 0 && exit\n')  
+            fp.write('\ntouch tag_finished\n')
         sftp.close()
         return script_name
 
