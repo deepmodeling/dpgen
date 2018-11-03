@@ -107,7 +107,7 @@ def _ucloud_submit_jobs(machine,
     ucloud_start_param['Action'] = "CreateUHostInstance"
     ucloud_start_param['Name'] = "train"
     ucloud_start_param['Signature'] = _verfy_ac(machine['Private'], ucloud_start_param)
-    ’‘’
+
     njob = len(task_chunks)
     ucloud_machines = []
     ucloud_hostids = []
@@ -305,6 +305,7 @@ def make_train (iter_index,
         decay_steps = jdata['res_decay_steps']
         decay_rate = jdata['res_decay_rate']
     numb_models = jdata['numb_models']
+    init_data_prefix = jdata['init_data_prefix']    
     init_data_sys_ = jdata['init_data_sys']    
     fp_task_min = jdata['fp_task_min']    
     
@@ -319,11 +320,26 @@ def make_train (iter_index,
         if os.path.isfile(copy_flag) :
             os.remove(copy_flag)
 
+    # establish work path
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, train_name)
+    create_path(work_path)
+    # link init data
+    cwd = os.getcwd()
+    os.chdir(work_path)
+    os.symlink(os.path.abspath(init_data_prefix), 'data.init')
+    # link iter data
+    os.mkdir('data.iters')
+    os.chdir('data.iters')
+    for ii in range(iter_index) :
+        os.symlink(os.path.relpath(os.path.join(cwd, make_iter_name(ii))), make_iter_name(ii))
+    os.chdir(cwd)
+
     init_data_sys = []
     init_batch_size = list(jdata['init_batch_size'])
     sys_batch_size = jdata['sys_batch_size']
     for ii in init_data_sys_ :
-        init_data_sys.append(os.path.abspath(ii))
+        init_data_sys.append(os.path.join('..', 'data.init', ii))
     if iter_index > 0 :
         for ii in range(iter_index) :
             fp_path = os.path.join(make_iter_name(ii), fp_name)
@@ -335,16 +351,9 @@ def make_train (iter_index,
                 if nframes < fp_task_min :
                     log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
                     continue
-                init_data_sys.append(os.path.abspath(jj))
+                init_data_sys.append(os.path.join('..', 'data.iters', jj))
                 sys_idx = int(jj.split('.')[-1])
                 init_batch_size.append(sys_batch_size[sys_idx])                
-    for ii in init_data_sys :
-        if not os.path.isdir(ii) :
-            raise RuntimeError ("data sys %s does not exists, cwd is %s" % (ii, os.getcwd()))
-    # establish work path
-    iter_name = make_iter_name(iter_index)
-    work_path = os.path.join(iter_name, train_name)
-    create_path(work_path)
     # establish tasks
     jinput = jdata['default_training_param']
     jinput['systems'] = init_data_sys    
@@ -352,9 +361,15 @@ def make_train (iter_index,
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         create_path(task_path)
+        os.chdir(task_path)
+        for ii in init_data_sys :
+            if not os.path.isdir(ii) :
+                raise RuntimeError ("data sys %s does not exists, cwd is %s" % (ii, os.getcwd()))
+        os.chdir(cwd)
         jinput['seed'] = random.randrange(sys.maxsize)
         with open(os.path.join(task_path, train_param), 'w') as outfile:
             json.dump(jinput, outfile, indent = 4)
+
     # link old models
     if iter_index > 0 :
         prev_iter_name = make_iter_name(iter_index-1)
@@ -403,6 +418,15 @@ def run_train (iter_index,
     run_tasks = [os.path.basename(ii) for ii in all_task]
     forward_files = [train_param]
     backward_files = ['frozen_model.pb', 'lcurve.out']
+    init_data_sys_ = jdata['init_data_sys']
+    init_data_sys = []
+    for ii in init_data_sys_ :
+        init_data_sys.append(os.path.join('data.init', ii))
+    fp_data_ = glob.glob(os.path.join('iter.*', '02.fp', 'data.*'))
+    fp_data = []
+    for ii in fp_data_:
+        fp_data.append(os.path.join('data.iters', ii))
+    init_data_sys += fp_data
 
     if (type(absmachine) == dict) and \
        ('machine_type' in absmachine) and  \
@@ -412,7 +436,7 @@ def run_train (iter_index,
                             work_path,
                             run_tasks,
                             1,
-                            [],
+                            init_data_sys,
                             forward_files,
                             backward_files)
     else :
@@ -422,7 +446,7 @@ def run_train (iter_index,
                            work_path,
                            run_tasks,
                            1,
-                           [],
+                           init_data_sys,
                            forward_files,
                            backward_files)
 
@@ -850,6 +874,8 @@ def make_fp_vasp (iter_index,
     if 'model_devi_clean_traj' in jdata :
         clean_traj = jdata['model_devi_clean_traj']
     if clean_traj:
+        iter_name = make_iter_name(iter_index)
+        modd_path = os.path.join(iter_name, model_devi_name)
         md_trajs = glob.glob(os.path.join(modd_path, 'task*/traj'))
         for ii in md_trajs :
             shutil.rmtree(ii)

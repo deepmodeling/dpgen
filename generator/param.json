@@ -4,9 +4,10 @@
     "type_map":		["Mg"],
     "mass_map":		[24],
 
-    "init_data_sys":	["/data/mgop/mg.fcc.01x01x01/02.md/sys-0004/deepmd",
-			 "/data/mgop/mg.hcp.01x01x01/02.md/sys-0002/deepmd",
-			 "/data/mgop/mg.diamond.01x01x01/02.md/sys-0002/deepmd"
+    "init_data_prefix":	"/data/mgop",
+    "init_data_sys":	["mg.fcc.01x01x01/02.md/sys-0004/deepmd",
+			 "mg.hcp.01x01x01/02.md/sys-0002/deepmd",
+			 "mg.diamond.01x01x01/02.md/sys-0002/deepmd"
 			],
     "init_batch_size":	[8, 16, 16],
     "sys_configs":	[

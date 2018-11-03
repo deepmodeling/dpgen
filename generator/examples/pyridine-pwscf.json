@@ -3,9 +3,10 @@
 
     "type_map":		["C", "H", "N"],
     "mass_map":		[16, 2, 14],
-
-    "init_data_sys":	["/home/linfengz/SCR/wanghan/deepgen.pyridine/init/Pyridine-I",
-			 "/home/linfengz/SCR/wanghan/deepgen.pyridine/init/Pyridine-II"
+    
+    "init_data_prefix":	"/home/linfengz/SCR/wanghan/deepgen.pyridine/init",
+    "init_data_sys":	["Pyridine-I",
+			 "Pyridine-II"
 			],
     "init_batch_size":	[1, 1],
     "sys_configs":	[
