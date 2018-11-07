@@ -653,6 +653,7 @@ def make_fp_vasp (iter_index,
     if 'model_devi_clean_traj' in jdata :
         clean_traj = jdata['model_devi_clean_traj']
     if clean_traj:
+        modd_path = os.path.join(iter_name, model_devi_name)
         md_trajs = glob.glob(os.path.join(modd_path, 'task*/traj'))
         for ii in md_trajs :
             shutil.rmtree(ii)
