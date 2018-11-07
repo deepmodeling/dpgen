@@ -46,8 +46,10 @@ def out_dir_name(jdata) :
     cell_type = jdata['cell_type']
     elements = jdata['elements']
     super_cell = jdata['super_cell']    
-    from_poscar = jdata['from_poscar']
-    from_poscar_path = jdata['from_poscar_path']
+    from_poscar = False
+    if 'from_poscar' in jdata :
+        from_poscar = jdata['from_poscar']
+        from_poscar_path = jdata['from_poscar_path']
 
     if from_poscar:
         poscar_name = os.path.basename(from_poscar_path)
@@ -533,7 +535,9 @@ def _main() :
         jdata = json.load (fp)
     out_dir = out_dir_name(jdata)
     jdata['out_dir'] = out_dir
-    from_poscar = jdata['from_poscar']
+    from_poscar = False 
+    if 'from_poscar' in jdata :
+        from_poscar = jdata['from_poscar']
     print ("# working dir %s" % out_dir)
 
     stage = args.STAGE
