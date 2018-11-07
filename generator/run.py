@@ -72,22 +72,35 @@ def _verfy_ac(private_key, params):
 
 def _ucloud_remove_machine(machine, UHostId):
     ucloud_url = machine['url']
-    ucloud_stop_param = machine['ucloud_param']
+    ucloud_stop_param = {}
     ucloud_stop_param['Action'] = "StopUHostInstance"
+    ucloud_stop_param['Region'] = machine['ucloud_param']['Region']
     ucloud_stop_param['UHostId'] = UHostId
+    ucloud_stop_param['PublicKey'] = machine['ucloud_param']['PublicKey']
     ucloud_stop_param['Signature'] = _verfy_ac(machine['Private'], ucloud_stop_param)
+
+    
     req = requests.get(ucloud_url, ucloud_stop_param)
     if req.json()['RetCode'] != 0 :
         raise RuntimeError ("failed to stop ucloud machine")
 
-    ucloud_delete_param = machine['ucloud_param']
-    ucloud_delete_param['Action'] = "TerminateUHostInstance"
-    ucloud_delete_param['UHostId'] = UHostId
-    ucloud_delete_param['Signature'] = _verfy_ac(machine['Private'], ucloud_delete_param)
-    req = requests.get(ucloud_url, ucloud_delete_param)
-    
-    if req.json()['RetCode'] != 0 :
-        raise RuntimeError ("failed to terminate ucloud machine")
+    terminate_fin = False
+    try_time = 0 
+    while not terminate_fin:
+        ucloud_delete_param = {}
+        ucloud_delete_param['Action'] = "TerminateUHostInstance"
+        ucloud_delete_param['Region'] = machine['ucloud_param']['Region']
+        ucloud_delete_param['UHostId'] = UHostId
+        ucloud_delete_param['PublicKey'] = machine['ucloud_param']['PublicKey']
+        ucloud_delete_param['Signature'] = _verfy_ac(machine['Private'], ucloud_delete_param)    
+        req = requests.get(ucloud_url, ucloud_delete_param)
+        if req.json()['RetCode'] == 0 :
+            terminate_fin = True
+        try_time = try_time + 1
+        if try_time >= 200:
+            raise RuntimeError ("failed to terminate ucloud machine")
+        time.sleep(10)
+    print("Machine ",UHostId,"has been successfully terminated!")   
 
 def _ucloud_submit_jobs(machine,
                         command,
@@ -109,6 +122,7 @@ def _ucloud_submit_jobs(machine,
     ucloud_start_param['Signature'] = _verfy_ac(machine['Private'], ucloud_start_param)
 
     njob = len(task_chunks)
+    #print("njob is ",njob)
     ucloud_machines = []
     ucloud_hostids = []
     for ii in range(njob) :
@@ -597,6 +611,7 @@ def make_model_devi (iter_index,
 def run_model_devi (iter_index, 
                     jdata, 
                     absmachine) :
+    #rmprint("This module has been run !")
     lmp_exec = jdata['lmp_command']
     model_devi_group_size = jdata['model_devi_group_size']
     model_devi_resources = jdata['model_devi_resources']
@@ -604,6 +619,7 @@ def run_model_devi (iter_index,
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, model_devi_name)
     assert(os.path.isdir(work_path))
+
     all_task = glob.glob(os.path.join(work_path, "task.*"))
     all_task.sort()
     command = lmp_exec + " -i input.lammps"
@@ -626,14 +642,19 @@ def run_model_devi (iter_index,
             run_tasks_.append(ii)
 
     run_tasks = [os.path.basename(ii) for ii in run_tasks_]
+    #print("all_task is ", all_task)
+    #print("run_tasks in run_model_deviation",run_tasks_)
     all_models = glob.glob(os.path.join(work_path, 'graph*pb'))
     model_names = [os.path.basename(ii) for ii in all_models]
     forward_files = ['conf.lmp', 'input.lammps', 'traj']
     backward_files = ['model_devi.out', 'model_devi.log', 'traj']
 
+
+    print("group_size",model_devi_group_size)
     if (type(absmachine) == dict) and \
        ('machine_type' in absmachine) and  \
        (absmachine['machine_type'] == 'ucloud') :
+        print("The first situation!")
         _ucloud_submit_jobs(absmachine,
                             command,
                             work_path,
@@ -643,6 +664,7 @@ def run_model_devi (iter_index,
                             forward_files,
                             backward_files)
     else :
+        print("The second situation!")
         _group_submit_jobs(absmachine,
                            model_devi_resources,
                            command,
