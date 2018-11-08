@@ -222,6 +222,41 @@ def _group_slurm_jobs(ssh_sess,
                     job_fin[idx] = True
         time.sleep(10)
 
+def _group_local_jobs(ssh_sess,
+                      resources,
+                      command,
+                      work_path,
+                      tasks,
+                      group_size,
+                      forward_common_files,
+                      forward_task_files,
+                      backward_task_files) :
+    task_chunks = [
+        [os.path.basename(j) for j in tasks[i:i + group_size]] \
+        for i in range(0, len(tasks), group_size)
+    ]
+    job_list = []
+    for chunk in task_chunks :
+        rjob = CloudMachineJob(ssh_sess, work_path)
+        rjob.upload('.',  forward_common_files)
+        rjob.upload(chunk, forward_task_files)
+        rjob.submit(resources, chunk, command)
+        job_list.append(rjob)
+
+    job_fin = [False for ii in job_list]
+    while not all(job_fin) :
+        for idx,rjob in enumerate(job_list) :
+            if not job_fin[idx] :
+                status = rjob.check_status()
+                if status == JobStatus.terminated :
+                    raise RuntimeError("find unsuccessfully terminated job in %s" % rjob.get_job_root())
+                elif status == JobStatus.finished :
+                    rjob.download(task_chunks[idx], backward_task_files)
+                    rjob.clean()
+                    job_fin[idx] = True
+        time.sleep(10)
+
+
 def get_job_names(jdata) :
     jobkeys = []
     for ii in jdata.keys() :
@@ -310,7 +345,8 @@ def expand_idx (in_list) :
     return ret
         
 def make_train (iter_index, 
-               jdata) :    
+                jdata, 
+                mdata) :    
     # load json param
     train_param = jdata['train_param']
     numb_models = jdata['numb_models']
@@ -400,12 +436,14 @@ def make_train (iter_index,
 
 def run_train (iter_index,
                jdata, 
-               absmachine) :    
+               mdata, 
+               ssh_sess) :
     # load json param
     numb_models = jdata['numb_models']
-    deepmd_path = jdata['deepmd_path']
     train_param = jdata['train_param']
-    train_resources = jdata['train_resources']
+    deepmd_path = mdata['deepmd_path']
+    train_resources = mdata['train_resources']
+    machine_type = mdata['machine_type']
 
     # paths
     iter_name = make_iter_name(iter_index)
@@ -437,10 +475,8 @@ def run_train (iter_index,
         fp_data.append(os.path.join('data.iters', ii))
     init_data_sys += fp_data
 
-    if (type(absmachine) == dict) and \
-       ('machine_type' in absmachine) and  \
-       (absmachine['machine_type'] == 'ucloud') :
-        _ucloud_submit_jobs(absmachine,
+    if ssh == None and machine_type == 'ucloud':
+        _ucloud_submit_jobs(ssh_sess,
                             command, 
                             work_path,
                             run_tasks,
@@ -448,8 +484,8 @@ def run_train (iter_index,
                             init_data_sys,
                             forward_files,
                             backward_files)
-    else :
-        _group_slurm_jobs(absmachine,
+    elif machine_type == 'slurm' :        
+        _group_slurm_jobs(ssh_sess,
                            train_resources,
                            command,
                            work_path,
@@ -458,6 +494,8 @@ def run_train (iter_index,
                            init_data_sys,
                            forward_files,
                            backward_files)
+    else :
+        raise RuntimeError("unknow machine type")
 
     # exec_batch(command,
     #            1,
@@ -469,10 +507,11 @@ def run_train (iter_index,
     #            sources = train_sources)
 
 def post_train (iter_index,
-                jdata) :
+                jdata,
+                mdata) :
     # load json param
     numb_models = jdata['numb_models']
-    deepmd_path = jdata['deepmd_path']
+    deepmd_path = mdata['deepmd_path']
     # paths
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, train_name)
@@ -499,7 +538,8 @@ def post_train (iter_index,
         os.symlink(task_file, ofile)    
 
 def make_model_devi (iter_index, 
-                     jdata) :
+                     jdata, 
+                     mdata) :
     model_devi_dt = jdata['model_devi_dt']
     model_devi_jobs = jdata['model_devi_jobs']
     if (iter_index >= len(model_devi_jobs)) :
@@ -607,12 +647,14 @@ def make_model_devi (iter_index,
     return True
 
 def run_model_devi (iter_index, 
-                    jdata, 
-                    absmachine) :
+                    jdata,
+                    mdata,
+                    ssh_sess) :
     #rmprint("This module has been run !")
-    lmp_exec = jdata['lmp_command']
-    model_devi_group_size = jdata['model_devi_group_size']
-    model_devi_resources = jdata['model_devi_resources']
+    lmp_exec = mdata['lmp_command']
+    model_devi_group_size = mdata['model_devi_group_size']
+    model_devi_resources = mdata['model_devi_resources']
+    machine_type = mdata['machine_type']
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, model_devi_name)
@@ -647,13 +689,10 @@ def run_model_devi (iter_index,
     forward_files = ['conf.lmp', 'input.lammps', 'traj']
     backward_files = ['model_devi.out', 'model_devi.log', 'traj']
 
-
     print("group_size",model_devi_group_size)
-    if (type(absmachine) == dict) and \
-       ('machine_type' in absmachine) and  \
-       (absmachine['machine_type'] == 'ucloud') :
+    if ssh == None and machine_type == 'ucloud':
         print("The first situation!")
-        _ucloud_submit_jobs(absmachine,
+        _ucloud_submit_jobs(ssh_sess,
                             command,
                             work_path,
                             run_tasks,
@@ -661,9 +700,9 @@ def run_model_devi (iter_index,
                             model_names,
                             forward_files,
                             backward_files)
-    else :
+    elif machine_type == 'slurm' :        
         print("The second situation!")
-        _group_slurm_jobs(absmachine,
+        _group_slurm_jobs(ssh_sess,
                            model_devi_resources,
                            command,
                            work_path,
@@ -672,6 +711,8 @@ def run_model_devi (iter_index,
                            model_names,
                            forward_files,
                            backward_files)
+    else :
+        raise RuntimeError("unknow machine type")
 
     # exec_hosts_batch(exec_machine, command, model_devi_np, run_tasks, None, verbose = True, gpu = True)
     # exec_batch_group(command,
@@ -683,7 +724,8 @@ def run_model_devi (iter_index,
     #                  sources = model_devi_sources)
 
 def post_model_devi (iter_index, 
-                     jdata) :
+                     jdata, 
+                     mdata) :
     model_devi_trust = jdata['model_devi_trust']
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, model_devi_name)
@@ -794,7 +836,7 @@ def _make_fp_vasp_inner (modd_path,
     return fp_tasks
 
 def _link_fp_vasp_incar (iter_index,
-                         jdata,
+                         jdata,                         
                          incar = 'INCAR') :
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)    
@@ -940,7 +982,8 @@ def make_fp_pwscf(iter_index,
             shutil.rmtree(ii)
             
 def make_fp (iter_index,
-             jdata) :
+             jdata, 
+             mdata) :
     fp_style = jdata['fp_style']
 
     if fp_style == "vasp" :
@@ -975,18 +1018,20 @@ def _qe_check_fin(ii) :
         
 def run_fp_inner (iter_index,
                   jdata,
-                  absmachine,
+                  mdata,
+                  ssh_sess,
                   forward_files,
                   backward_files,
                   check_fin,
                   log_file = "log") :
-    fp_command = jdata['fp_command']
-    fp_group_size = jdata['fp_group_size']
-    fp_resources = jdata['fp_resources']
+    fp_command = mdata['fp_command']
+    fp_group_size = mdata['fp_group_size']
+    fp_resources = mdata['fp_resources']
+    machine_type = mdata['machine_type']
     # fp_command = ("OMP_NUM_THREADS=1 mpirun -n %d " % fp_np) + fp_command
     # cpu task in parallel
-    if ('numb_gpu' not in fp_resources) or (fp_resources['numb_gpu'] == 0):
-        fp_command = "srun " + fp_command
+    if ('numb_gpu' not in fp_resources) or (fp_resources['numb_gpu'] == 0) and machine_type == 'slurm':
+        fp_command = 'srun ' + fp_command
     fp_command = cmd_append_log(fp_command, log_file)
 
     iter_name = make_iter_name(iter_index)
@@ -1004,10 +1049,8 @@ def run_fp_inner (iter_index,
 
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
 
-    if (type(absmachine) == dict) and \
-       ('machine_type' in absmachine) and  \
-       (absmachine['machine_type'] == 'ucloud') :
-        _ucloud_submit_jobs(absmachine,
+    if ssh == None and machine_type == 'ucloud':
+        _ucloud_submit_jobs(ssh_sess,
                             fp_command,
                             work_path,
                             run_tasks,
@@ -1015,8 +1058,8 @@ def run_fp_inner (iter_index,
                             [],
                             forward_files,
                             backward_files)
-    else :
-        _group_slurm_jobs(absmachine,
+    elif machine_type == 'slurm' :        
+        _group_slurm_jobs(ssh_sess,
                            fp_resources,
                            fp_command,
                            work_path,
@@ -1025,6 +1068,8 @@ def run_fp_inner (iter_index,
                            [],
                            forward_files,
                            backward_files)
+    else :
+        raise RuntimeError("unknow machine type")
 
 #    exec_hosts_batch(exec_machine, fp_command, fp_np, fp_run_tasks, verbose = True, mpi = False, gpu=True)
     # exec_batch_group(fp_command,
@@ -1037,18 +1082,19 @@ def run_fp_inner (iter_index,
         
 def run_fp (iter_index,
             jdata,
-            exec_machine) :
+            mdata,
+            ssh_sess) :
     fp_style = jdata['fp_style']
     fp_pp_files = jdata['fp_pp_files']
 
     if fp_style == "vasp" :
         forward_files = ['POSCAR', 'INCAR'] + fp_pp_files
         backward_files = ['OUTCAR']
-        run_fp_inner(iter_index, jdata, exec_machine, forward_files, backward_files, _vasp_check_fin) 
+        run_fp_inner(iter_index, jdata, ssh_sess, forward_files, backward_files, _vasp_check_fin) 
     elif fp_style == "pwscf" :
         forward_files = ['input'] + fp_pp_files
         backward_files = ['output']
-        run_fp_inner(iter_index, jdata, exec_machine, forward_files, backward_files, _qe_check_fin, log_file = 'output') 
+        run_fp_inner(iter_index, jdata, ssh_sess, forward_files, backward_files, _qe_check_fin, log_file = 'output') 
     else :
         raise RuntimeError ("unsupported fp style") 
 
@@ -1112,7 +1158,8 @@ def post_fp_vasp (iter_index,
         os.chdir(cwd)
 
 def post_fp (iter_index,
-             jdata) :
+             jdata, 
+             mdata) :
     fp_style = jdata['fp_style']
 
     if fp_style == "vasp" :
@@ -1123,34 +1170,36 @@ def post_fp (iter_index,
     else :
         raise RuntimeError ("unsupported fp style")            
     
-def run_iter (json_file) :
-    fp = open (json_file, 'r')
-    jdata = json.load (fp)
-    numb_iter = jdata["numb_iter"]
+def run_iter (json_file, machine_file) :
+    with open (json_file, 'r') as fp :
+        jdata = json.load (fp)
+    with open (machine_file, 'r') as fp:
+        mdata = json.load (fp)
+
     max_tasks = 10000
     numb_task = 9
     record = "record.dpgen"
 
-    train_machine = jdata['train_machine']    
+    train_machine = mdata['train_machine']    
     if ('machine_type' in train_machine) and  \
        (train_machine['machine_type'] == 'ucloud'):
-        train_absmachine = train_machine
+        train_ssh_sess = None
     else :
-        train_absmachine = SSHSession(train_machine)
+        train_ssh_sess = SSHSession(train_machine)
 
-    model_devi_machine = jdata['model_devi_machine']    
+    model_devi_machine = mdata['model_devi_machine']    
     if ('machine_type' in model_devi_machine) and  \
        (model_devi_machine['machine_type'] == 'ucloud'):
-        model_devi_absmachine = model_devi_machine
+        model_devi_ssh_sess = None
     else :
-        model_devi_absmachine = SSHSession(model_devi_machine)
+        model_devi_ssh_sess = SSHSession(model_devi_machine)
 
-    fp_machine = jdata['fp_machine']    
+    fp_machine = mdata['fp_machine']    
     if ('machine_type' in fp_machine) and  \
        (fp_machine['machine_type'] == 'ucloud'):
-        fp_absmachine = fp_machine
+        fp_ssh_sess = None
     else :
-        fp_absmachine = SSHSession(fp_machine)
+        fp_ssh_sess = SSHSession(fp_machine)
 
     iter_rec = [0, -1]
     if os.path.isfile (record) :
@@ -1166,33 +1215,33 @@ def run_iter (json_file) :
                 continue
             if   jj == 0 :
                 log_iter ("make_train", ii, jj)
-                make_train (ii, jdata) 
+                make_train (ii, jdata, mdata) 
             elif jj == 1 :
                 log_iter ("run_train", ii, jj)
-                run_train  (ii, jdata, train_absmachine)
+                run_train  (ii, jdata, mdata, train_ssh_sess)
             elif jj == 2 :
                 log_iter ("post_train", ii, jj)
-                post_train  (ii, jdata)
+                post_train (ii, jdata, mdata)
             elif jj == 3 :
                 log_iter ("make_model_devi", ii, jj)
-                cont = make_model_devi  (ii, jdata)
+                cont = make_model_devi (ii, jdata, mdata)
                 if not cont :
                     break
             elif jj == 4 :
                 log_iter ("run_model_devi", ii, jj)
-                run_model_devi  (ii, jdata, model_devi_absmachine)
+                run_model_devi (ii, jdata, mdata, model_devi_ssh_sess)
             elif jj == 5 :
                 log_iter ("post_model_devi", ii, jj)
-                post_model_devi  (ii, jdata)
+                post_model_devi (ii, jdata, mdata)
             elif jj == 6 :
                 log_iter ("make_fp", ii, jj)
-                make_fp (ii, jdata)
+                make_fp (ii, jdata, mdata)
             elif jj == 7 :
                 log_iter ("run_fp", ii, jj)
-                run_fp (ii, jdata, fp_absmachine)
+                run_fp (ii, jdata, mdata, fp_ssh_sess)
             elif jj == 8 :
                 log_iter ("post_fp", ii, jj)
-                post_fp (ii, jdata)
+                post_fp (ii, jdata, mdata)
             else :
                 raise RuntimeError ("unknow task %d, something wrong" % jj)
             record_iter (record, ii, jj)
@@ -1200,8 +1249,10 @@ def run_iter (json_file) :
 
 def _main () :
     parser = argparse.ArgumentParser()
-    parser.add_argument("JSON", type=str, 
-                        help="The json parameter")
+    parser.add_argument("PARAM", type=str, 
+                        help="The parameters of the generator")
+    parser.add_argument("MACHINE", type=str, 
+                        help="The settings of the machine running the generator")
     args = parser.parse_args()
 
     logging.basicConfig (level=logging.INFO, format='%(asctime)s %(message)s')
@@ -1209,7 +1260,7 @@ def _main () :
     logging.getLogger("paramiko").setLevel(logging.WARNING)
 
     logging.info ("start running")
-    run_iter (args.JSON)
+    run_iter (args.PARAM, args.MACHINE)
     logging.info ("finished!")
 
 if __name__ == '__main__':

@@ -1,0 +1,77 @@
+{
+    "deepmd_path":	"/home/ubuntu/software/deepmd_float_root/",
+    "_comment":		"training on ucloud ",
+    "train_machine":	{
+	"machine_type":		"ucloud",
+	"url":			"http://api.ucloud.cn",
+	"work_path" :		"/root/",
+	"Private":		"g5GGyzJM3TdVPK338tkXhcUZ4GuyChs2VONcug9kcYohwLAaWWQAWYMwYtMHrPm2",
+	"ucloud_param":	{
+	    "Region" :		"cn-bj2",
+	    "Zone" :		"cn-bj2-05",
+	    "ImageId" :		"uimage-pdhe3v",
+	    "ChargeType":	"Month",
+	    "GPU" :		"1",
+	    "Name" :		"train",
+	    "UHostType" :	"I2",
+	    "PublicKey" :	"71RUR4l/3cFVntcHsMaoQk8qZo6uWDflDI7EAwdWqvdev0KvJek//w==" ,
+	    "LoginMode" :	"Password",
+	    "Password":		"YW5ndXNlMTk5OA=="
+	},	    
+	"_comment" :	"that's all"
+    },	
+    "train_resources":	{
+	"_comment":	"that's all"
+    },    
+
+
+    "lmp_command":		"/usr/bin/lmp_mpi",
+    "model_devi_group_size":	20,
+    "model_devi_machine":	{
+	"machine_type":		"ucloud",
+	"url":			"http://api.ucloud.cn",
+	"work_path" :		"/root/",
+	"Private":		"g5GGyzJM3TdVPK338tkXhcUZ4GuyChs2VONcug9kcYohwLAaWWQAWYMwYtMHrPm2",
+	"ucloud_param":	{
+	    "Region" :		"cn-bj2",
+	    "Zone" :		"cn-bj2-05",
+	    "ImageId":		"uimage-0wfw3v",
+	    "ChargeType" :	"Month",
+	    "Name" :		"model",
+	    "PublicKey" :	"71RUR4l/3cFVntcHsMaoQk8qZo6uWDflDI7EAwdWqvdev0KvJek//w==" ,
+	    "LoginMode" :	"Password",
+	    "Password":		"YW5ndXNlMTk5OA=="
+	},	    
+	"_comment" :	"that's all"
+    },	
+    "model_devi_resources":	{
+	"_comment":	"that's all"
+    },
+    
+
+    "_comment":		"fp on localhost ",
+    "fp_command":		"/usr/bin/vasp_std",
+    "fp_group_size":		5,
+    "fp_machine":	{
+	"machine_type":		"ucloud",
+	"url":			"http://api.ucloud.cn",
+	"work_path" :		"/root/",
+	"Private":		"g5GGyzJM3TdVPK338tkXhcUZ4GuyChs2VONcug9kcYohwLAaWWQAWYMwYtMHrPm2",
+	"ucloud_param":	{
+	    "Region" :		"cn-bj2",
+	    "Zone" :		"cn-bj2-05",
+	    "Name":		"fp",
+	    "ImageId":		"uimage-0wfw3v",
+	    "ChargeType" :	"Month",
+	    "PublicKey" :	"71RUR4l/3cFVntcHsMaoQk8qZo6uWDflDI7EAwdWqvdev0KvJek//w==" ,
+	    "LoginMode" :	"Password",
+	    "Password":		"YW5ndXNlMTk5OA=="
+	},	    
+	"_comment" :	"that's all"
+    },	
+    "fp_resources":	{
+	"_comment":	"that's all"
+    },
+
+    "_comment":		" that's all "
+}
