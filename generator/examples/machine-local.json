@@ -1,0 +1,48 @@
+{
+    "_comment":		"training on localhost ",
+    "deepmd_path":	"/home/wanghan/local/deepmd/0.10.1/",
+    "train_machine":	{
+	"machine_type":	"local",
+	"hostname" :	"localhost",
+	"port" :	22,
+	"username":	"wanghan",
+	"work_path" :	"/home/wanghan/tmp/subs/",
+	"_comment" :	"that's all"
+    },	
+    "train_resources":	{
+	"_comment":	"that's all"
+    },    
+
+
+    "_comment":		"model_devi on localhost ",
+    "lmp_command":	"/home/wanghan/local/bin/lmp_mpi_010",
+    "model_devi_group_size": 5,
+    "model_devi_machine":	{
+	"machine_type":	"local",
+	"hostname" :	"localhost",
+	"port" :	22,
+	"username":	"wanghan",
+	"work_path" :	"/home/wanghan/tmp/subs/",
+	"_comment" :	"that's all"
+    },	
+    "model_devi_resources":	{
+	"_comment":	"that's all"
+    },    
+
+    "_comment":		"fp on localhost ",
+    "fp_command":	"/home/wanghan/local/bin/vasp_std",
+    "fp_group_size":	2,
+    "fp_machine":	{
+	"machine_type":	"local",
+	"hostname" :	"localhost",
+	"port" :	22,
+	"username":	"wanghan",
+	"work_path" :	"/home/wanghan/tmp/subs/",
+	"_comment" :	"that's all"
+    },	
+    "fp_resources":	{
+	"_comment":	"that's all"
+    },
+
+    "_comment":		" that's all "
+}
