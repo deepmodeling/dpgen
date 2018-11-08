@@ -109,7 +109,7 @@ class RemoteJob (object):
         self._rmtree(sftp, self.remote_root)
         sftp.close()
 
-    def _rmtree(self, sftp, remotepath, level=0, verbose = True):
+    def _rmtree(self, sftp, remotepath, level=0, verbose = False):
         for f in sftp.listdir_attr(remotepath):
             rpath = os.path.join(remotepath, f.filename)
             if stat.S_ISDIR(f.st_mode):
@@ -239,7 +239,7 @@ class SlurmJob (RemoteJob) :
                cmd,
                args = None, 
                resources = None) :
-        script_name = self._make_script(resources, job_dirs, cmd, args)
+        script_name = self._make_script(job_dirs, cmd, args, res = resources)
         stdin, stdout, stderr = self.block_checkcall(('cd %s; sbatch %s' % (self.remote_root, script_name)))
         subret = (stdout.readlines())
         job_id = subret[0].split()[-1]

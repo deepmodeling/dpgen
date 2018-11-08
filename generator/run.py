@@ -248,7 +248,7 @@ def _group_local_jobs(ssh_sess,
             if status == JobStatus.terminated :
                 raise RuntimeError("find unsuccessfully terminated job in %s" % rjob.get_job_root())
             elif status == JobStatus.finished :
-                rjob.download(task_chunks[idx], backward_task_files)
+                rjob.download(chunk, backward_task_files)
                 rjob.clean()
                 job_fin = True
             time.sleep(10)
@@ -1116,11 +1116,11 @@ def run_fp (iter_index,
     if fp_style == "vasp" :
         forward_files = ['POSCAR', 'INCAR'] + fp_pp_files
         backward_files = ['OUTCAR']
-        run_fp_inner(iter_index, jdata, ssh_sess, forward_files, backward_files, _vasp_check_fin) 
+        run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _vasp_check_fin) 
     elif fp_style == "pwscf" :
         forward_files = ['input'] + fp_pp_files
         backward_files = ['output']
-        run_fp_inner(iter_index, jdata, ssh_sess, forward_files, backward_files, _qe_check_fin, log_file = 'output') 
+        run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _qe_check_fin, log_file = 'output') 
     else :
         raise RuntimeError ("unsupported fp style") 
 
