@@ -55,38 +55,6 @@
 
     "_comment":		" 00.train ",
     "numb_models":	4,
-    "deepmd_path":	"/home/ubuntu/software/deepmd_float_root/",
-    "_comment":		"training on ucloud ",
-    "train_machine":	{
-	"machine_type":	"ucloud",
-	"url":		"http://api.ucloud.cn",
-	"work_path" :	"/root/",
-	"Private": "g5GGyzJM3TdVPK338tkXhcUZ4GuyChs2VONcug9kcYohwLAaWWQAWYMwYtMHrPm2",
-	"ucloud_param":	{
-	    "Region" :	"cn-bj2",
-	    "Zone" :	"cn-bj2-05",
-	    "ImageId" : "uimage-pdhe3v",
-		"ChargeType" : "Month",
-		"GPU" : "1",
-		"Name" : "train",
-		"UHostType" : "I2",
-	    "PublicKey" : "71RUR4l/3cFVntcHsMaoQk8qZo6uWDflDI7EAwdWqvdev0KvJek//w==" ,
-	    "LoginMode" : "Password",
-	    "Password":	"YW5ndXNlMTk5OA=="
-	},    
-	"_comment" :	"that's all"
-    },	
-    "_comment":		"do not use distributed training, use multi-threading mode ",
-    "train_resources":	{
-	"numb_node":	1,
-	"numb_gpu":	1,
-	"task_per_node":7,
-	"source_list":	[ ],
-	"module_list":	[ ],
-	"time_limit":	"6:0:0",
-	"mem_limit":	32,
-	"_comment":	"that's all"
-    },
     "train_param":	"input.json",
     "default_training_param" : {
 	"_comment": " model parameters",
@@ -141,7 +109,6 @@
     "res_decay_rate":	0.95,
 
     "_comment":		" 01.model_devi ",
-    "lmp_command":	"/usr/bin/lmp_mpi",
     "_comment": "model_devi_skip: the first x of the recorded frames",
     "model_devi_dt":		0.002,
     "model_devi_skip":		0,
@@ -151,37 +118,6 @@
     "model_devi_e_trust_lo":	1e10,
     "model_devi_e_trust_hi":	1e10,
     "model_devi_clean_traj":	true,
-    "_comment":		"model_devi on ucloud ",
-    "model_devi_machine":	{
-	"machine_type":	"ucloud",
-	"url":		"http://api.ucloud.cn",
-	"work_path" :	"/root/",
-	"Private": "g5GGyzJM3TdVPK338tkXhcUZ4GuyChs2VONcug9kcYohwLAaWWQAWYMwYtMHrPm2",
-	"ucloud_param":	{
-	    "Region" :	"cn-bj2",
-	    "Zone" :	"cn-bj2-05",
-	    "ImageId":	"uimage-0wfw3v",
-	    "ChargeType" : "Month",
-	    "Name" : "model",
-	    "PublicKey" : "71RUR4l/3cFVntcHsMaoQk8qZo6uWDflDI7EAwdWqvdev0KvJek//w==" ,
-	    "LoginMode" : "Password",
-	    "Password":	"YW5ndXNlMTk5OA=="
-	},	    
-	"_comment" :	"that's all"
-    },	
-    "_comment": " if use GPU, numb_nodes(nn) should always be 1 ",
-    "_comment": " if numb_nodes(nn) = 1 multi-threading rather than mpi is assumed",
-    "model_devi_resources":	{
-	"numb_node":	1,
-	"numb_gpu":	1,
-	"task_per_node":7,
-	"source_list":	[ ],
-	"module_list":	[ ],
-	"time_limit":	"2:0:0",
-	"mem_limit":	32,
-	"_comment":	"that's all"
-    },
-    "model_devi_group_size":	20,
 
     "model_devi_jobs":	[
 	{"sys_idx": [0,4,26,30], "temps": [  50], "press": [1.0], "trj_freq": 10, "nsteps": 1000, "ensemble": "nvt", "_idx": "00"},
@@ -200,36 +136,8 @@
 
     "_comment":		" 02.fp ",
     "fp_style":		"vasp",
-    "fp_command":	"/usr/bin/vasp_std",
     "shuffle_poscar":	false,
     "_comment":		"fp on localhost ",
-    "fp_machine":	{
-	"machine_type":	"ucloud",
-	"url":		"http://api.ucloud.cn",
-	"work_path" :	"/root/",
-	"Private": "g5GGyzJM3TdVPK338tkXhcUZ4GuyChs2VONcug9kcYohwLAaWWQAWYMwYtMHrPm2",
-	"ucloud_param":	{
-	    "Region" :	"cn-bj2",
-	    "Zone" :	"cn-bj2-05",
-	    "Name": "fp",
-	    "ImageId":	"uimage-0wfw3v",
-	    "ChargeType" : "Month",
-	    "PublicKey" : "71RUR4l/3cFVntcHsMaoQk8qZo6uWDflDI7EAwdWqvdev0KvJek//w==" ,
-	    "LoginMode" : "Password",
-	    "Password":	"YW5ndXNlMTk5OA=="
-	},	    
-	"_comment" :	"that's all"
-    },	
-    "fp_resources":	{
-	"numb_node":	1,
-	"task_per_node":1,
-	"numb_gpu":	1,
-	"source_list":	[ ],
-	"module_list":	[ ],
-	"time_limit":	"2:0:0",
-	"_comment":	"that's all"
-    },
-    "fp_group_size":	5,
     "fp_task_max":	100,
     "fp_task_min":	10,
     "fp_pp_path":	"/data/mgop/",
