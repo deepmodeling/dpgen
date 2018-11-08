@@ -206,7 +206,7 @@ def _group_slurm_jobs(ssh_sess,
         rjob = SlurmJob(ssh_sess, work_path)
         rjob.upload('.',  forward_common_files)
         rjob.upload(chunk, forward_task_files)
-        rjob.submit(resources, chunk, command)
+        rjob.submit(chunk, command, resources = resources)
         job_list.append(rjob)
 
     job_fin = [False for ii in job_list]
@@ -240,22 +240,18 @@ def _group_local_jobs(ssh_sess,
         rjob = CloudMachineJob(ssh_sess, work_path)
         rjob.upload('.',  forward_common_files)
         rjob.upload(chunk, forward_task_files)
-        rjob.submit(resources, chunk, command)
+        rjob.submit(chunk, command, envs = resources['envs'])
         job_list.append(rjob)
-
-    job_fin = [False for ii in job_list]
-    while not all(job_fin) :
-        for idx,rjob in enumerate(job_list) :
-            if not job_fin[idx] :
-                status = rjob.check_status()
-                if status == JobStatus.terminated :
-                    raise RuntimeError("find unsuccessfully terminated job in %s" % rjob.get_job_root())
-                elif status == JobStatus.finished :
-                    rjob.download(task_chunks[idx], backward_task_files)
-                    rjob.clean()
-                    job_fin[idx] = True
-        time.sleep(10)
-
+        job_fin = False
+        while not job_fin :
+            status = rjob.check_status()
+            if status == JobStatus.terminated :
+                raise RuntimeError("find unsuccessfully terminated job in %s" % rjob.get_job_root())
+            elif status == JobStatus.finished :
+                rjob.download(task_chunks[idx], backward_task_files)
+                rjob.clean()
+                job_fin = True
+            time.sleep(10)
 
 def get_job_names(jdata) :
     jobkeys = []
@@ -443,7 +439,7 @@ def run_train (iter_index,
     train_param = jdata['train_param']
     deepmd_path = mdata['deepmd_path']
     train_resources = mdata['train_resources']
-    machine_type = mdata['machine_type']
+    machine_type = mdata['train_machine']['machine_type']
 
     # paths
     iter_name = make_iter_name(iter_index)
@@ -475,7 +471,7 @@ def run_train (iter_index,
         fp_data.append(os.path.join('data.iters', ii))
     init_data_sys += fp_data
 
-    if ssh == None and machine_type == 'ucloud':
+    if ssh_sess == None and machine_type == 'ucloud':
         _ucloud_submit_jobs(ssh_sess,
                             command, 
                             work_path,
@@ -486,6 +482,16 @@ def run_train (iter_index,
                             backward_files)
     elif machine_type == 'slurm' :        
         _group_slurm_jobs(ssh_sess,
+                           train_resources,
+                           command,
+                           work_path,
+                           run_tasks,
+                           1,
+                           init_data_sys,
+                           forward_files,
+                           backward_files)
+    elif machine_type == 'local' :
+        _group_local_jobs(ssh_sess,
                            train_resources,
                            command,
                            work_path,
@@ -654,7 +660,7 @@ def run_model_devi (iter_index,
     lmp_exec = mdata['lmp_command']
     model_devi_group_size = mdata['model_devi_group_size']
     model_devi_resources = mdata['model_devi_resources']
-    machine_type = mdata['machine_type']
+    machine_type = mdata['model_devi_machine']['machine_type']
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, model_devi_name)
@@ -690,7 +696,7 @@ def run_model_devi (iter_index,
     backward_files = ['model_devi.out', 'model_devi.log', 'traj']
 
     print("group_size",model_devi_group_size)
-    if ssh == None and machine_type == 'ucloud':
+    if ssh_sess == None and machine_type == 'ucloud':
         print("The first situation!")
         _ucloud_submit_jobs(ssh_sess,
                             command,
@@ -703,6 +709,16 @@ def run_model_devi (iter_index,
     elif machine_type == 'slurm' :        
         print("The second situation!")
         _group_slurm_jobs(ssh_sess,
+                           model_devi_resources,
+                           command,
+                           work_path,
+                           run_tasks,
+                           model_devi_group_size,
+                           model_names,
+                           forward_files,
+                           backward_files)
+    elif machine_type == 'local' :        
+        _group_local_jobs(ssh_sess,
                            model_devi_resources,
                            command,
                            work_path,
@@ -1027,7 +1043,7 @@ def run_fp_inner (iter_index,
     fp_command = mdata['fp_command']
     fp_group_size = mdata['fp_group_size']
     fp_resources = mdata['fp_resources']
-    machine_type = mdata['machine_type']
+    machine_type = mdata['fp_machine']['machine_type']
     # fp_command = ("OMP_NUM_THREADS=1 mpirun -n %d " % fp_np) + fp_command
     # cpu task in parallel
     if ('numb_gpu' not in fp_resources) or (fp_resources['numb_gpu'] == 0) and machine_type == 'slurm':
@@ -1049,7 +1065,7 @@ def run_fp_inner (iter_index,
 
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
 
-    if ssh == None and machine_type == 'ucloud':
+    if ssh_sess == None and machine_type == 'ucloud':
         _ucloud_submit_jobs(ssh_sess,
                             fp_command,
                             work_path,
@@ -1060,6 +1076,16 @@ def run_fp_inner (iter_index,
                             backward_files)
     elif machine_type == 'slurm' :        
         _group_slurm_jobs(ssh_sess,
+                           fp_resources,
+                           fp_command,
+                           work_path,
+                           run_tasks,
+                           fp_group_size,
+                           [],
+                           forward_files,
+                           backward_files)
+    elif machine_type == 'local' :        
+        _group_local_jobs(ssh_sess,
                            fp_resources,
                            fp_command,
                            work_path,
@@ -1209,7 +1235,9 @@ def run_iter (json_file, machine_file) :
         logging.info ("continue from iter %03d task %02d" % (iter_rec[0], iter_rec[1]))
 
     cont = True
+    ii = -1
     while cont:
+        ii += 1
         for jj in range (numb_task) :
             if ii * max_tasks + jj <= iter_rec[0] * max_tasks + iter_rec[1] : 
                 continue
