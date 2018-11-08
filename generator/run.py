@@ -313,11 +313,6 @@ def make_train (iter_index,
                jdata) :    
     # load json param
     train_param = jdata['train_param']
-    if iter_index > 0 :
-        stop_batch = jdata['res_stop_batch']
-        start_lr = jdata['res_start_lr']
-        decay_steps = jdata['res_decay_steps']
-        decay_rate = jdata['res_decay_rate']
     numb_models = jdata['numb_models']
     init_data_prefix = jdata['init_data_prefix']    
     init_data_sys_ = jdata['init_data_sys']    
@@ -978,11 +973,13 @@ def _qe_check_fin(ii) :
     return True
     
         
-def run_fp_vasp (iter_index,
-                 jdata,
-                 absmachine,
-                 check_fin,
-                 log_file = "log") :
+def run_fp_inner (iter_index,
+                  jdata,
+                  absmachine,
+                  forward_files,
+                  backward_files,
+                  check_fin,
+                  log_file = "log") :
     fp_command = jdata['fp_command']
     fp_group_size = jdata['fp_group_size']
     fp_resources = jdata['fp_resources']
@@ -1006,68 +1003,11 @@ def run_fp_vasp (iter_index,
             fp_run_tasks.append(ii)
 
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
-    forward_files = ['POSCAR', 'INCAR', 'POTCAR']
-    backward_files = ['OUTCAR']
 
     if (type(absmachine) == dict) and \
        ('machine_type' in absmachine) and  \
        (absmachine['machine_type'] == 'ucloud') :
         _ucloud_submit_jobs(absmachine,
-                            fp_command,
-                            work_path,
-                            run_tasks,
-                            fp_group_size,
-                            [],
-                            forward_files,
-                            backward_files)
-    else :
-        _group_slurm_jobs(absmachine,
-                           fp_resources,
-                           fp_command,
-                           work_path,
-                           run_tasks,
-                           fp_group_size,
-                           [],
-                           forward_files,
-                           backward_files)
-
-def run_fp_pwscf (iter_index,
-                 jdata,
-                 absmachine,
-                 check_fin,
-                 log_file = "log") :
-    fp_command = jdata['fp_command']
-    fp_group_size = jdata['fp_group_size']
-    fp_resources = jdata['fp_resources']
-    fp_pp_files = jdata['fp_pp_files']
-    # fp_command = ("OMP_NUM_THREADS=1 mpirun -n %d " % fp_np) + fp_command
-    # cpu task in parallel
-    if ('numb_gpu' not in fp_resources) or (fp_resources['numb_gpu'] == 0):
-        fp_command = "srun " + fp_command
-    fp_command = cmd_append_log(fp_command, log_file)
-
-    iter_name = make_iter_name(iter_index)
-    work_path = os.path.join(iter_name, fp_name)
-
-    fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
-    fp_tasks.sort()
-    if len(fp_tasks) == 0 :
-        return
-
-    fp_run_tasks = []
-    for ii in fp_tasks :
-        if not check_fin(ii) :
-            fp_run_tasks.append(ii)
-
-    run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
-    forward_files = ['input'] + fp_pp_files
-    backward_files = ['output']
-
-    if (type(absmachine) == dict) and \
-       ('machine_type' in absmachine) and  \
-       (absmachine['machine_type'] == 'ucloud') :
-        _ucloud_submit_jobs(absmachine,
-                            fp_resources,
                             fp_command,
                             work_path,
                             run_tasks,
@@ -1099,11 +1039,16 @@ def run_fp (iter_index,
             jdata,
             exec_machine) :
     fp_style = jdata['fp_style']
+    fp_pp_files = jdata['fp_pp_files']
 
     if fp_style == "vasp" :
-        run_fp_vasp(iter_index, jdata, exec_machine, _vasp_check_fin) 
+        forward_files = ['POSCAR', 'INCAR'] + fp_pp_files
+        backward_files = ['OUTCAR']
+        run_fp_inner(iter_index, jdata, exec_machine, forward_files, backward_files, _vasp_check_fin) 
     elif fp_style == "pwscf" :
-        run_fp_pwscf(iter_index, jdata, exec_machine, _qe_check_fin, log_file = 'output') 
+        forward_files = ['input'] + fp_pp_files
+        backward_files = ['output']
+        run_fp_inner(iter_index, jdata, exec_machine, forward_files, backward_files, _qe_check_fin, log_file = 'output') 
     else :
         raise RuntimeError ("unsupported fp style") 
 
