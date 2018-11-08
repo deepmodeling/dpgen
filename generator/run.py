@@ -188,7 +188,7 @@ def _ucloud_submit_jobs(machine,
         time.sleep(10)
 
 
-def _group_submit_jobs(ssh_sess,
+def _group_slurm_jobs(ssh_sess,
                        resources,
                        command,
                        work_path,
@@ -454,7 +454,7 @@ def run_train (iter_index,
                             forward_files,
                             backward_files)
     else :
-        _group_submit_jobs(absmachine,
+        _group_slurm_jobs(absmachine,
                            train_resources,
                            command,
                            work_path,
@@ -507,7 +507,8 @@ def make_model_devi (iter_index,
                      jdata) :
     model_devi_dt = jdata['model_devi_dt']
     model_devi_jobs = jdata['model_devi_jobs']
-    assert (iter_index < len(model_devi_jobs))
+    if (iter_index >= len(model_devi_jobs)) :
+        return False
     cur_job = model_devi_jobs[iter_index]
     # ensemble = model_devi_jobs['ensemble']
     # nsteps = model_devi_jobs['nsteps']
@@ -608,6 +609,8 @@ def make_model_devi (iter_index,
             conf_counter += 1
         sys_counter += 1
 
+    return True
+
 def run_model_devi (iter_index, 
                     jdata, 
                     absmachine) :
@@ -665,7 +668,7 @@ def run_model_devi (iter_index,
                             backward_files)
     else :
         print("The second situation!")
-        _group_submit_jobs(absmachine,
+        _group_slurm_jobs(absmachine,
                            model_devi_resources,
                            command,
                            work_path,
@@ -1018,7 +1021,7 @@ def run_fp_vasp (iter_index,
                             forward_files,
                             backward_files)
     else :
-        _group_submit_jobs(absmachine,
+        _group_slurm_jobs(absmachine,
                            fp_resources,
                            fp_command,
                            work_path,
@@ -1073,7 +1076,7 @@ def run_fp_pwscf (iter_index,
                             forward_files,
                             backward_files)
     else :
-        _group_submit_jobs(absmachine,
+        _group_slurm_jobs(absmachine,
                            fp_resources,
                            fp_command,
                            work_path,
@@ -1175,7 +1178,7 @@ def post_fp (iter_index,
     else :
         raise RuntimeError ("unsupported fp style")            
     
-def run_iter (json_file, exec_machine) :
+def run_iter (json_file) :
     fp = open (json_file, 'r')
     jdata = json.load (fp)
     numb_iter = jdata["numb_iter"]
@@ -1211,7 +1214,8 @@ def run_iter (json_file, exec_machine) :
                 iter_rec = [int(x) for x in line.split()]
         logging.info ("continue from iter %03d task %02d" % (iter_rec[0], iter_rec[1]))
 
-    for ii in range (numb_iter) :
+    cont = True
+    while cont:
         for jj in range (numb_task) :
             if ii * max_tasks + jj <= iter_rec[0] * max_tasks + iter_rec[1] : 
                 continue
@@ -1226,7 +1230,9 @@ def run_iter (json_file, exec_machine) :
                 post_train  (ii, jdata)
             elif jj == 3 :
                 log_iter ("make_model_devi", ii, jj)
-                make_model_devi  (ii, jdata)
+                cont = make_model_devi  (ii, jdata)
+                if not cont :
+                    break
             elif jj == 4 :
                 log_iter ("run_model_devi", ii, jj)
                 run_model_devi  (ii, jdata, model_devi_absmachine)
@@ -1251,44 +1257,15 @@ def _main () :
     parser = argparse.ArgumentParser()
     parser.add_argument("JSON", type=str, 
                         help="The json parameter")
-    parser.add_argument("--machine", type=str, 
-                        help="The machine settings")        
     args = parser.parse_args()
 
     logging.basicConfig (level=logging.INFO, format='%(asctime)s %(message)s')
     # logging.basicConfig (filename="compute_string.log", filemode="a", level=logging.INFO, format='%(asctime)s %(message)s')
     logging.getLogger("paramiko").setLevel(logging.WARNING)
-    paramiko.util.log_to_file("<log_file_path>", level = "WARN")
-
-    machine_type = "local"    
-    gmxrc = None
-    vcores = None
-    if args.machine != None :
-        fp = open (args.machine, 'r')
-        jdata = json.load (fp)
-        machine_type = jdata["machine_type"]
-        gmxrc = jdata["gmxrc"]
-        vcores = jdata["virtual_cores"]
-
-    if   machine_type == "local" :
-        exec_machine = MachineLocal
-    elif machine_type == "slurm" :
-        exec_machine = MachineSlurm
-
-    if vcores != None:
-        exec_machine.has_virtual_cores(vcores)
-    if gmxrc != None:
-        exec_machine.add_source_file(gmxrc)
 
     logging.info ("start running")
-    run_iter (args.JSON, exec_machine)
+    run_iter (args.JSON)
     logging.info ("finished!")
 
 if __name__ == '__main__':
-    # _main()
-    fp = open ('param.json', 'r')
-    jdata = json.load (fp)
-    # post_train(0, jdata)
-    logging.basicConfig (level=logging.INFO, format='%(asctime)s %(message)s')
-    run_iter('param.json', MachineLocalGPU)
-    # run_iter('param.json', MachineLocal)
+    _main()
