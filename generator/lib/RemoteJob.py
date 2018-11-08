@@ -105,21 +105,21 @@ class RemoteJob (object):
         return exit_status, stdin, stdout, stderr
 
     def clean(self) :        
-        self._rmtree(self.remote_root)
+        sftp = self.ssh.open_sftp()        
+        self._rmtree(sftp, self.remote_root)
+        sftp.close()
 
-    def _rmtree(self, remotepath, level=0, verbose = False):
-        sftp = self.ssh.open_sftp()
+    def _rmtree(self, sftp, remotepath, level=0, verbose = True):
         for f in sftp.listdir_attr(remotepath):
             rpath = os.path.join(remotepath, f.filename)
             if stat.S_ISDIR(f.st_mode):
-                self._rmtree(rpath, level=(level + 1))
+                self._rmtree(sftp, rpath, level=(level + 1))
             else:
                 rpath = os.path.join(remotepath, f.filename)
                 if verbose: print('removing %s%s' % ('    ' * level, rpath))
                 sftp.remove(rpath)
         if verbose: print('removing %s%s' % ('    ' * level, remotepath))
         sftp.rmdir(remotepath)
-        sftp.close()
 
     def _put_files(self,
                    files,
@@ -175,7 +175,8 @@ class CloudMachineJob (RemoteJob) :
     def submit(self, 
                job_dirs,
                cmd, 
-               args = None) :
+               args = None, 
+               envs = None) :
         
         #print("Current path is",os.getcwd())
 
@@ -183,8 +184,10 @@ class CloudMachineJob (RemoteJob) :
         #    if not os.path.isdir(ii) :
         #        raise RuntimeError("cannot find dir %s" % ii)
         # print(self.remote_root)
-        script_name = self._make_script(job_dirs, cmd, args)
+        script_name = self._make_script(job_dirs, cmd, args, envs)
         self.stdin, self.stdout, self.stderr = self.ssh.exec_command(('cd %s; bash %s' % (self.remote_root, script_name)))
+        # print(self.stderr.read().decode('utf-8'))
+        # print(self.stdout.read().decode('utf-8'))
 
     def check_status(self) :
         if not self._check_finish(self.stdout) :
@@ -203,7 +206,8 @@ class CloudMachineJob (RemoteJob) :
     def _make_script(self, 
                      job_dirs,
                      cmd, 
-                     args = None) :
+                     args = None, 
+                     envs = None) :
         script_name = 'run.sh'
         if args == None :
             args = []
@@ -214,6 +218,9 @@ class CloudMachineJob (RemoteJob) :
         with sftp.open(script, 'w') as fp :
             fp.write('#!/bin/bash\n')
             # fp.write('set -euo pipefail\n')
+            if envs != None :
+                for key in envs.keys() :
+                    fp.write('export %s=%s\n' % (key, envs[key]))
             for ii,jj in zip(job_dirs, args) :
                 fp.write('\ncd %s\n' % ii)                
                 fp.write('test $? -ne 0 && exit\n')
@@ -228,10 +235,10 @@ class CloudMachineJob (RemoteJob) :
 
 class SlurmJob (RemoteJob) :
     def submit(self, 
-               resources,
                job_dirs,
                cmd,
-               args = None) :
+               args = None, 
+               resources = None) :
         script_name = self._make_script(resources, job_dirs, cmd, args)
         stdin, stdout, stderr = self.block_checkcall(('cd %s; sbatch %s' % (self.remote_root, script_name)))
         subret = (stdout.readlines())
@@ -293,6 +300,8 @@ class SlurmJob (RemoteJob) :
             resources[key] = value
 
     def _set_default_resource(self, res) :
+        if res == None :
+            res = {}
         self._default(res, 'numb_node', 1)
         self._default(res, 'task_per_node', 1)
         self._default(res, 'numb_gpu', 0)
@@ -307,10 +316,10 @@ class SlurmJob (RemoteJob) :
         self._default(res, 'source_list', [])
 
     def _make_script(self, 
-                     res,
                      job_dirs,
                      cmd,
-                     args = None) :
+                     args = None, 
+                     res = None) :
         self._set_default_resource(res)
         ret = ''
         ret += "#!/bin/bash -l\n"
