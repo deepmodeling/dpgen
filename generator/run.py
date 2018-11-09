@@ -469,7 +469,16 @@ def run_train (iter_index,
     fp_data = []
     for ii in fp_data_:
         fp_data.append(os.path.join('data.iters', ii))
-    init_data_sys += fp_data
+    trans_comm_data = []
+    cwd = os.getcwd()
+    os.chdir(work_path)
+    for ii in init_data_sys :
+        trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
+        trans_comm_data += glob.glob(os.path.join(ii, 'type.raw'))
+    for ii in fp_data :
+        trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
+        trans_comm_data += glob.glob(os.path.join(ii, 'type.raw'))
+    os.chdir(cwd)
 
     if ssh_sess == None and machine_type == 'ucloud':
         _ucloud_submit_jobs(ssh_sess,
@@ -477,7 +486,7 @@ def run_train (iter_index,
                             work_path,
                             run_tasks,
                             1,
-                            init_data_sys,
+                            trans_comm_data,
                             forward_files,
                             backward_files)
     elif machine_type == 'slurm' :        
@@ -487,7 +496,7 @@ def run_train (iter_index,
                            work_path,
                            run_tasks,
                            1,
-                           init_data_sys,
+                           trans_comm_data,
                            forward_files,
                            backward_files)
     elif machine_type == 'local' :
@@ -497,7 +506,7 @@ def run_train (iter_index,
                            work_path,
                            run_tasks,
                            1,
-                           init_data_sys,
+                           trans_comm_data,
                            forward_files,
                            backward_files)
     else :
