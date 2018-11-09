@@ -107,7 +107,6 @@
     "_comment": "model_devi_skip: the first x of the recorded frames",
     "model_devi_dt":		0.002,
     "model_devi_skip":		0,
-    "model_devi_trust":		0.050,
     "model_devi_f_trust_lo":	0.050,
     "model_devi_f_trust_hi":	0.150,
     "model_devi_e_trust_lo":	1e10,
