@@ -45,18 +45,18 @@
 
 
     "_comment":		"fp on localhost ",
-    "fp_command":	"/home/linfengz/SCR/wanghan/deepgen.pyridine/pwscf/pw.x < input",
-    "fp_group_size":	5,
+    "fp_command":	"/home/linfengz/local/bin/pw.x < input",
+    "fp_group_size":	2,
     "fp_machine":	{
 	"machine_type":	"slurm",
-	"hostname" :	"localhost",
+	"hostname" :	"della.princeton.edu",
 	"port" :	22,
 	"username":	"linfengz",
-	"work_path" :	"/home/linfengz/SCR/tmp/",
+	"work_path" :	"/home/linfengz/data.gpfs/remote.subs",
 	"_comment" :	"that's all"
     },	
     "fp_resources":	{
-	"numb_node":	2,
+	"numb_node":	1,
 	"task_per_node":4,
 	"source_list":	[ ],
 	"module_list":	[ "fftw", "intel", "openmpi" ],
