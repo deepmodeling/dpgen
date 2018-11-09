@@ -742,15 +742,7 @@ def run_model_devi (iter_index,
 def post_model_devi (iter_index, 
                      jdata, 
                      mdata) :
-    model_devi_trust = jdata['model_devi_trust']
-    iter_name = make_iter_name(iter_index)
-    work_path = os.path.join(iter_name, model_devi_name)
-    assert(os.path.isdir(work_path))
-    all_task = glob.glob(os.path.join(work_path, "task.*"))
-    all_task.sort()
-    command = "awk '{if ($2 > %e) {print $1,$2}}' model_devi.out > sel.out" % model_devi_trust
-
-    exec_hosts (MachineLocal, command, 1, all_task)
+    pass
 
 def _make_fp_vasp_inner (modd_path,
                          work_path,
