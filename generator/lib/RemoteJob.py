@@ -176,7 +176,7 @@ class CloudMachineJob (RemoteJob) :
                job_dirs,
                cmd, 
                args = None, 
-               envs = None) :
+               resources = None) :
         
         #print("Current path is",os.getcwd())
 
@@ -184,7 +184,7 @@ class CloudMachineJob (RemoteJob) :
         #    if not os.path.isdir(ii) :
         #        raise RuntimeError("cannot find dir %s" % ii)
         # print(self.remote_root)
-        script_name = self._make_script(job_dirs, cmd, args, envs)
+        script_name = self._make_script(job_dirs, cmd, args, resources)
         self.stdin, self.stdout, self.stderr = self.ssh.exec_command(('cd %s; bash %s' % (self.remote_root, script_name)))
         # print(self.stderr.read().decode('utf-8'))
         # print(self.stdout.read().decode('utf-8'))
@@ -207,7 +207,15 @@ class CloudMachineJob (RemoteJob) :
                      job_dirs,
                      cmd, 
                      args = None, 
-                     envs = None) :
+                     resources = None) :
+        envs = None
+        module_list = None
+        if resources is not None :
+            if 'envs' in resources :
+                envs = resources['envs']
+            if 'module_list' in resources: 
+                module_list = resources['module_list']
+
         script_name = 'run.sh'
         if args == None :
             args = []
@@ -216,11 +224,15 @@ class CloudMachineJob (RemoteJob) :
         script = os.path.join(self.remote_root, script_name)
         sftp = self.ssh.open_sftp()
         with sftp.open(script, 'w') as fp :
-            fp.write('#!/bin/bash\n')
+            fp.write('#!/bin/bash\n\n')
             # fp.write('set -euo pipefail\n')
             if envs != None :
                 for key in envs.keys() :
                     fp.write('export %s=%s\n' % (key, envs[key]))
+            if module_list is not None :
+                fp.write('\n')
+                for ii in module_list :
+                    fp.write('module load %s\n' % ii)
             for ii,jj in zip(job_dirs, args) :
                 fp.write('\ncd %s\n' % ii)                
                 fp.write('test $? -ne 0 && exit\n')

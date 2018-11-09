@@ -240,7 +240,7 @@ def _group_local_jobs(ssh_sess,
         rjob = CloudMachineJob(ssh_sess, work_path)
         rjob.upload('.',  forward_common_files)
         rjob.upload(chunk, forward_task_files)
-        rjob.submit(chunk, command, envs = resources['envs'])
+        rjob.submit(chunk, command, resources = resources)
         job_list.append(rjob)
         job_fin = False
         while not job_fin :
@@ -1046,7 +1046,7 @@ def run_fp_inner (iter_index,
     machine_type = mdata['fp_machine']['machine_type']
     # fp_command = ("OMP_NUM_THREADS=1 mpirun -n %d " % fp_np) + fp_command
     # cpu task in parallel
-    if ('numb_gpu' not in fp_resources) or (fp_resources['numb_gpu'] == 0) and machine_type == 'slurm':
+    if (('numb_gpu' not in fp_resources) or (fp_resources['numb_gpu'] == 0)) and (machine_type == 'slurm'):
         fp_command = 'srun ' + fp_command
     fp_command = cmd_append_log(fp_command, log_file)
 

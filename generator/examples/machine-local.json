@@ -29,14 +29,11 @@
 	"_comment" :	"that's all"
     },	
     "model_devi_resources":	{
-	"envs":		{
-	    "PYTHONPATH" : "/home/wanghan/local/tensorflow/1.8.py/lib/python3.6/site-packages/"
-	},
 	"_comment":	"that's all"
     },    
 
     "_comment":		"fp on localhost ",
-    "fp_command":	"/home/wanghan/local/bin/vasp_std",
+    "fp_command":	"mpirun -n 4 /home/wanghan/local/bin/vasp_std",
     "fp_group_size":	2,
     "fp_machine":	{
 	"machine_type":	"local",
@@ -47,9 +44,7 @@
 	"_comment" :	"that's all"
     },	
     "fp_resources":	{
-	"envs":		{
-	    "PYTHONPATH" : "/home/wanghan/local/tensorflow/1.8.py/lib/python3.6/site-packages/"
-	},
+	"module_list":  ["mpi"],
 	"_comment":	"that's all"
     },
 
