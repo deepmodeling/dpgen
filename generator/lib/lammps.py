@@ -15,23 +15,29 @@ def make_lammps_input(ensemble,
                       graphs,
                       nsteps,
                       dt,
+                      neidelay,
                       trj_freq, 
                       mass_map,
                       temp, 
-                      pres = None, 
+                      tau_t = 0.1,
+                      pres = None,
+                      tau_p = 0.5,
                       max_seed = 1000000) :
     ret = "variable        NSTEPS          equal %d\n" % nsteps
     ret+= "variable        THERMO_FREQ     equal %d\n" % trj_freq
     ret+= "variable        DUMP_FREQ       equal %d\n" % trj_freq
     ret+= "variable        TEMP            equal %f\n" % temp
     ret+= "variable        PRES            equal %f\n" % pres
+    ret+= "variable        TAU_T           equal %f\n" % tau_t
+    ret+= "variable        TAU_P           equal %f\n" % tau_p
     ret+= "\n"
     ret+= "units           metal\n"
     ret+= "boundary        p p p\n"
     ret+= "atom_style      atomic\n"
     ret+= "\n"
     ret+= "neighbor        1.0 bin\n"
-    ret+= "neigh_modify    every 10\n"
+    if neidelay is not None :
+        ret+= "neigh_modify    delay %d\n" % neidelay
     ret+= "\n"
     ret+= "box          tilt large\n"
     ret+= "read_data       %s\n" % conf_file
@@ -50,11 +56,16 @@ def make_lammps_input(ensemble,
     ret+= "\n"
     ret+= "velocity        all create ${TEMP} %d" % (random.randrange(max_seed-1)+1)
     ret+= "\n"
-    if ensemble == "npt" :
+    if ensemble.split('-')[0] == 'npt' :
         assert (pres is not None)
-        ret+= "fix             1 all npt temp ${TEMP} ${TEMP} 0.5 tri ${PRES} ${PRES} 3.0\n"
+    if ensemble == "npt" or ensemble == "npt-i" or ensemble == "npt-iso" :
+        ret+= "fix             1 all npt temp ${TEMP} ${TEMP} ${TAU_T} iso ${PRES} ${PRES} ${TAU_P}\n"
+    elif ensemble == 'npt-a' or ensemble == 'npt-aniso' : 
+        ret+= "fix             1 all npt temp ${TEMP} ${TEMP} ${TAU_T} aniso ${PRES} ${PRES} ${TAU_P}\n"
+    elif ensemble == 'npt-t' or ensemble == 'npt-tri' : 
+        ret+= "fix             1 all npt temp ${TEMP} ${TEMP} ${TAU_T} tri ${PRES} ${PRES} ${TAU_P}\n"
     elif ensemble == "nvt" :
-        ret+= "fix             1 all nvt temp ${TEMP} ${TEMP} 0.5\n"
+        ret+= "fix             1 all nvt temp ${TEMP} ${TEMP} ${TAU_T}\n"
     else :
         raise RuntimeError("unknown emsemble " + ensemble)
     ret+= "\n"
