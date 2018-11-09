@@ -139,6 +139,11 @@
 	"ecut":		600,
 	"ediff":	1e-6,
 	"kspacing":	0.16,
+	"_comment": "gauss, mp:N(methfessel-paxton:order by default order=1), fd(Fermi-Dirac)",
+	"smearing":	"mp",
+	"sigma":	0.25,
+	"_comment": "only for vasp, can be NONE, SCAN, TPSS, RTPSS, M06L or MBJ",
+	"metagga":	"NONE",
 	"npar":		1,
 	"kpar":		1,
 	"_comment":	" that's all "

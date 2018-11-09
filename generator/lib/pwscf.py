@@ -3,7 +3,7 @@
 import numpy as np
 # from lib.vasp import system_from_poscar
 
-def _make_pwscf_01_runctrl(sys_data, ecut, ediff) :
+def _make_pwscf_01_runctrl(sys_data, ecut, ediff, smearing, degauss) :
     tot_natoms = sum(sys_data['atom_numbs'])
     ntypes = len(sys_data['atom_names'])
     ret = ""
@@ -24,6 +24,10 @@ def _make_pwscf_01_runctrl(sys_data, ecut, ediff) :
     ret += "ecutwfc = %f,\n" % ecut
     ret += "ts_vdw_econv_thr=%e,\n" % ediff
     ret += "nosym = .TRUE.,\n"
+    if degauss is not None :
+        ret += 'degauss = %f,\n' % degauss
+    if smearing is not None :
+        ret += 'smearing = \'%s\',\n' % (smearing.lower())
     ret += "/\n"
     ret += "&electrons\n"
     ret += "conv_thr = %e,\n" % ediff
@@ -93,9 +97,26 @@ def _make_pwscf_04_kpoints(sys_data, kspacing):
     ret += "\n"
     return ret
 
-def make_pwscf_input(sys_data, ecut, ediff, fp_pp_files, kspacing) :
+def _make_smearing(fp_params) :
+    smearing = None
+    degauss = None 
+    if 'smearing' in fp_params :
+        smearing = (fp_params['smearing']).lower()        
+    if 'sigma' in fp_params :
+        degauss = fp_params['sigma']
+    if (smearing is not None) and (smearing.split(':')[0] == 'mp') :
+        smearing = 'mp'
+    if not (smearing in [None, 'gauss', 'mp', 'fd']) :
+        raise RuntimeError("unknow smearing method " + smearing)
+    return smearing, degauss
+
+def make_pwscf_input(sys_data, fp_pp_files, fp_params) :
+    ecut = fp_params['ecut']
+    ediff = fp_params['ediff']
+    kspacing = fp_params['kspacing']
+    smearing, degauss = _make_smearing(fp_params)
     ret = ""
-    ret += _make_pwscf_01_runctrl(sys_data, ecut, ediff)
+    ret += _make_pwscf_01_runctrl(sys_data, ecut, ediff, smearing, degauss)
     ret += "\n"
     ret += _make_pwscf_02_species(sys_data, fp_pp_files)
     ret += "\n"

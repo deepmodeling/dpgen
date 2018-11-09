@@ -966,15 +966,12 @@ def make_fp_pwscf(iter_index,
     work_path = os.path.join(iter_name, fp_name)
     fp_pp_files = jdata['fp_pp_files']
     fp_params = jdata['fp_params']
-    ecut = fp_params['ecut']
-    ediff = fp_params['ediff']
-    kspacing = fp_params['kspacing']
     cwd = os.getcwd()
     for ii in fp_tasks:
         os.chdir(ii)
         sys_data = system_from_poscar('POSCAR')
         sys_data['atom_masses'] = jdata['mass_map']
-        ret = make_pwscf_input(sys_data, ecut, ediff, fp_pp_files, kspacing)
+        ret = make_pwscf_input(sys_data, fp_pp_files, fp_params)
         open('input', 'w').write(ret)
         os.chdir(cwd)
     # link pp files
