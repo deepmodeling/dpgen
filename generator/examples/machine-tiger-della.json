@@ -61,6 +61,7 @@
 	"source_list":	[ ],
 	"module_list":	[ "fftw", "intel", "openmpi" ],
 	"time_limit":	"5:0:0",
+	"mem_limit":	32,
 	"_comment":	"that's all"
     },
     
