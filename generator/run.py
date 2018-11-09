@@ -552,10 +552,34 @@ def post_train (iter_index,
             os.remove(ofile)
         os.symlink(task_file, ofile)    
 
+def _get_param_alias(jdata, 
+                     names) :
+    for ii in names :
+        if ii in jdata :
+            return jdata[ii]
+    raise ValueError("one of the keys %s should be in jdata %s" % (str(names), (jdata.dumps(indent=4))))
+
+def _parse_cur_job(cur_job) :
+    ensemble = _get_param_alias(cur_job, ['ens', 'ensemble'])
+    nsteps = _get_param_alias(cur_job, ['nsteps'])
+    trj_freq = _get_param_alias(cur_job, ['t_freq', 'trj_freq','traj_freq'])
+    temps = _get_param_alias(cur_job, ['Ts','temps'])
+    press = _get_param_alias(cur_job, ['Ps','press'])
+    return ensemble, nsteps, trj_freq, temps, press
+
 def make_model_devi (iter_index, 
                      jdata, 
                      mdata) :
     model_devi_dt = jdata['model_devi_dt']
+    model_devi_neidelay = None
+    if 'model_devi_neidelay' in jdata :
+        model_devi_neidelay = jdata['model_devi_neidelay']
+    model_devi_taut = 0.1
+    if 'model_devi_taut' in jdata :
+        model_devi_taut = jdata['model_devi_taut']
+    model_devi_taup = 0.5
+    if 'model_devi_taup' in jdata :
+        model_devi_taup = jdata['model_devi_taup']
     model_devi_jobs = jdata['model_devi_jobs']
     if (iter_index >= len(model_devi_jobs)) :
         return False
@@ -567,9 +591,7 @@ def make_model_devi (iter_index,
     # assert (iter_index < len(job_names)) 
     # cur_job_name = job_names[iter_index]    
     # cur_job = model_devi_jobs[cur_job_name]
-    ensemble = cur_job['ensemble']
-    nsteps = cur_job['nsteps']
-    trj_freq = cur_job['trj_freq']
+    ensemble, nsteps, trj_freq, temps, press = _parse_cur_job(cur_job)
     sys_configs = jdata['sys_configs']
     shuffle_poscar = jdata['shuffle_poscar']
 
@@ -585,8 +607,6 @@ def make_model_devi (iter_index,
         cur_systems.sort()
         conf_systems.append (cur_systems)
     mass_map = jdata['mass_map']
-    temps = cur_job['temps']
-    press = cur_job['press']
 
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
@@ -648,10 +668,13 @@ def make_model_devi (iter_index,
                                                task_model_list,
                                                nsteps,
                                                model_devi_dt,
+                                               model_devi_neidelay,                                               
                                                trj_freq,
                                                mass_map,
                                                tt,
-                                               pres = pp)
+                                               tau_t = model_devi_taut,
+                                               pres = pp, 
+                                               tau_p = model_devi_taup)
                     with open(os.path.join(task_path, 'input.lammps'), 'w') as fp :
                         fp.write(file_c)
                     # cvt_lammps_conf(cc, 'conf.lmp')
@@ -682,9 +705,8 @@ def run_model_devi (iter_index,
 
     fp = open (os.path.join(work_path, 'cur_job.json'), 'r')
     cur_job = json.load (fp)
-    traj_freq = cur_job['trj_freq']
-    nsteps = cur_job['nsteps']
-    nframes = nsteps // traj_freq + 1
+    ensemble, nsteps, trj_freq, temps, press = _parse_cur_job(cur_job)
+    nframes = nsteps // trj_freq + 1
     
     run_tasks_ = []
     for ii in all_task:
@@ -1128,11 +1150,6 @@ def post_fp_vasp (iter_index,
                   to_config = 'template/tools.vasp/cessp2force_lin.py'):
     model_devi_jobs = jdata['model_devi_jobs']
     assert (iter_index < len(model_devi_jobs)) 
-    cur_job = model_devi_jobs[iter_index]
-    # job_names = get_job_names (model_devi_jobs)
-    # assert (iter_index < len(job_names)) 
-    # cur_job_name = job_names[iter_index]    
-    # cur_job = model_devi_jobs[cur_job_name]
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
