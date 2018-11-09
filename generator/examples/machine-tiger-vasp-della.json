@@ -1,0 +1,68 @@
+{
+    "deepmd_path":	"/home/linfengz/SCR/wanghan/local/deeppot/0.11.0-gpu/",
+    "train_machine":	{
+	"machine_type":	"slurm",
+	"hostname" :	"localhost",
+	"port" :	22,
+	"username":	"yixiaoc",
+	"work_path" :	"/home/yixiaoc/SCR/tmp/",
+	"_comment" :	"that's all"
+    },	
+    "train_resources":	{
+	"numb_node":	1,
+	"numb_gpu":	1,
+	"task_per_node":7,
+	"source_list":	[ "/home/linfengz/SCR/softwares/tensorflow.gpu.1.6/bin/activate" ],
+	"module_list":	[ "cudatoolkit/9.2", "cudnn/cuda-9.2/7.1.4"],
+	"time_limit":	"12:0:0",
+	"mem_limit":	32,
+	"_comment":	"that's all"
+    },
+
+    "lmp_command":	"/home/linfengz/SCR/wanghan/local/bin/lmp_serial_0110_gpu",
+    "model_devi_group_size":	10,
+    "_comment":		"model_devi on localhost ",
+    "model_devi_machine":	{
+	"machine_type":	"slurm",
+	"hostname" :	"localhost",
+	"port" :	22,
+	"username":	"yixiaoc",
+	"work_path" :	"/home/yixiaoc/SCR/tmp/",
+	"_comment" :	"that's all"
+    },	
+    "_comment": " if use GPU, numb_nodes(nn) should always be 1 ",
+    "_comment": " if numb_nodes(nn) = 1 multi-threading rather than mpi is assumed",
+    "model_devi_resources":	{
+	"numb_node":	1,
+	"numb_gpu":	1,
+	"task_per_node":7,
+	"source_list":	[ ],
+	"module_list":	[ "cudatoolkit/9.2", "cudnn/cuda-9.2/7.1.4"],
+	"time_limit":	"4:0:0",
+	"mem_limit":	32,
+	"_comment":	"that's all"
+    },
+
+
+    "_comment":		"fp on localhost ",
+    "fp_command":	"/home/linfengz/local/bin/vasp_cpu_kpt_ptch",
+    "fp_group_size":	1,
+    "fp_machine":	{
+	"machine_type":	"slurm",
+	"hostname" :	"della.princeton.edu",
+	"port" :	22,
+	"username":	"linfengz",
+	"work_path" :	"/home/linfengz/data.gpfs/remote.subs",
+	"_comment" :	"that's all"
+    },	
+    "fp_resources":	{
+	"numb_node":	1,
+	"task_per_node":16,
+	"source_list":	[ ],
+	"module_list":	[ "intel/17.0/64/17.0.5.239", "intel-mpi/intel/2017.5/64", "intel-mkl/2017.4/5/64" ],
+	"time_limit":	"6:0:0",
+	"_comment":	"that's all"
+    },
+    
+    "_comment":		" that's all "
+}
