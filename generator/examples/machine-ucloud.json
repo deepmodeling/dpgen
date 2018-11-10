@@ -9,7 +9,7 @@
 	"ucloud_param":	{
 	    "Region" :		"cn-bj2",
 	    "Zone" :		"cn-bj2-05",
-	    "ImageId" :		"uimage-pdhe3v",
+	    "ImageId" :		"uimage-513pxh",
 	    "ChargeType":	"Month",
 	    "GPU" :		"1",
 	    "Name" :		"train",
@@ -35,7 +35,7 @@
 	"ucloud_param":	{
 	    "Region" :		"cn-bj2",
 	    "Zone" :		"cn-bj2-05",
-	    "ImageId":		"uimage-0wfw3v",
+	    "ImageId":		"uimage-pc5lfb",
 	    "ChargeType" :	"Month",
 	    "Name" :		"model",
 	    "PublicKey" :	"71RUR4l/3cFVntcHsMaoQk8qZo6uWDflDI7EAwdWqvdev0KvJek//w==" ,
@@ -61,7 +61,7 @@
 	    "Region" :		"cn-bj2",
 	    "Zone" :		"cn-bj2-05",
 	    "Name":		"fp",
-	    "ImageId":		"uimage-0wfw3v",
+	    "ImageId":		"uimage-pc5lfb",
 	    "ChargeType" :	"Month",
 	    "PublicKey" :	"71RUR4l/3cFVntcHsMaoQk8qZo6uWDflDI7EAwdWqvdev0KvJek//w==" ,
 	    "LoginMode" :	"Password",
