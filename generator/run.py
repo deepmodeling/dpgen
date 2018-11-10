@@ -280,7 +280,7 @@ def get_sys_index(task) :
     system_index.sort()
     return system_index
     
-def check_empty_iter(iter_index, max_v = 0) :
+def _check_empty_iter(iter_index, max_v = 0) :
     fp_path = os.path.join(make_iter_name(iter_index), fp_name)
     fp_tasks = glob.glob(os.path.join(fp_path, "task.*"))
     sys_index = get_sys_index(fp_tasks)
@@ -339,6 +339,13 @@ def expand_idx (in_list) :
             assert(len(range_str)) == 2
             ret += range(int(range_str[0]), int(range_str[1]), step)
     return ret
+
+def _check_skip_train(job) :
+    try :
+        skip = _get_param_alias(job, ['s_t', 'sk_tr', 'skip_train', 'skip_training']) 
+    except ValueError :
+        skip = False
+    return skip
         
 def make_train (iter_index, 
                 jdata, 
@@ -349,9 +356,14 @@ def make_train (iter_index,
     init_data_prefix = jdata['init_data_prefix']    
     init_data_sys_ = jdata['init_data_sys']    
     fp_task_min = jdata['fp_task_min']    
+    model_devi_jobs = jdata['model_devi_jobs']
     
-    if iter_index > 0 and check_empty_iter(iter_index-1, fp_task_min) :
+    if iter_index > 0 and _check_empty_iter(iter_index-1, fp_task_min) :
         log_task('prev data is empty, copy prev model')
+        copy_model(numb_models, iter_index-1, iter_index)
+        return
+    elif iter_index > 0 and _check_skip_train(model_devi_jobs[iter_index-1]):
+        log_task('skip training at step %d ' % (iter_index-1))
         copy_model(numb_models, iter_index-1, iter_index)
         return
     else :
@@ -557,7 +569,7 @@ def _get_param_alias(jdata,
     for ii in names :
         if ii in jdata :
             return jdata[ii]
-    raise ValueError("one of the keys %s should be in jdata %s" % (str(names), (jdata.dumps(indent=4))))
+    raise ValueError("one of the keys %s should be in jdata %s" % (str(names), (json.dumps(jdata, indent=4))))
 
 def _parse_cur_job(cur_job) :
     ensemble = _get_param_alias(cur_job, ['ens', 'ensemble'])
