@@ -493,7 +493,7 @@ def run_train (iter_index,
     os.chdir(cwd)
 
     if ssh_sess == None and machine_type == 'ucloud':
-        _ucloud_submit_jobs(ssh_sess,
+        _ucloud_submit_jobs(mdata['train_machine'],
                             command, 
                             work_path,
                             run_tasks,
@@ -741,7 +741,7 @@ def run_model_devi (iter_index,
     print("group_size",model_devi_group_size)
     if ssh_sess == None and machine_type == 'ucloud':
         print("The first situation!")
-        _ucloud_submit_jobs(ssh_sess,
+        _ucloud_submit_jobs(mdata['model_devi_machine'],
                             command,
                             work_path,
                             run_tasks,
@@ -1098,7 +1098,7 @@ def run_fp_inner (iter_index,
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
 
     if ssh_sess == None and machine_type == 'ucloud':
-        _ucloud_submit_jobs(ssh_sess,
+        _ucloud_submit_jobs(mdata['fp_machine'],
                             fp_command,
                             work_path,
                             run_tasks,
