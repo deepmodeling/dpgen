@@ -103,6 +103,7 @@ def _ucloud_remove_machine(machine, UHostId):
     print("Machine ",UHostId,"has been successfully terminated!")   
 
 def _ucloud_submit_jobs(machine,
+                        resources,
                         command,
                         work_path,
                         tasks,
@@ -170,7 +171,7 @@ def _ucloud_submit_jobs(machine,
         rjob = CloudMachineJob(ssh_sess[ii], work_path)
         rjob.upload('.',  forward_common_files)
         rjob.upload(chunk, forward_task_files)
-        rjob.submit(chunk, command)
+        rjob.submit(chunk, command, resources = resources)
         job_list.append(rjob)
     
     job_fin = [False for ii in job_list]
@@ -494,6 +495,7 @@ def run_train (iter_index,
 
     if ssh_sess == None and machine_type == 'ucloud':
         _ucloud_submit_jobs(mdata['train_machine'],
+                            mdata['train_resources'],
                             command, 
                             work_path,
                             run_tasks,
@@ -742,6 +744,7 @@ def run_model_devi (iter_index,
     if ssh_sess == None and machine_type == 'ucloud':
         print("The first situation!")
         _ucloud_submit_jobs(mdata['model_devi_machine'],
+                            mdata['model_devi_resources'],
                             command,
                             work_path,
                             run_tasks,
@@ -1099,6 +1102,7 @@ def run_fp_inner (iter_index,
 
     if ssh_sess == None and machine_type == 'ucloud':
         _ucloud_submit_jobs(mdata['fp_machine'],
+                            mdata['fp_resources'],
                             fp_command,
                             work_path,
                             run_tasks,
