@@ -98,10 +98,10 @@ def _make_metagga(fp_params) :
     metagga = None
     if 'metagga' in fp_params :
         metagga = fp_params['metagga']
-    if metagga == 'NONE' :
+    if metagga == 'NONE':
         metagga = None
-    elif metagga not in ['SCAN', 'TPSS', 'RTPSS', 'M06L', 'MBJ'] :
-        raise RuntimeError ("unknow metagga method " + metagga) 
+    elif metagga not in [None,'SCAN', 'TPSS', 'RTPSS', 'M06L', 'MBJ'] :
+        raise RuntimeError ("unknown metagga method " + metagga) 
     return metagga
 
 def make_vasp_incar(fp_params) :

@@ -115,24 +115,43 @@ def _ucloud_submit_jobs(machine,
         [os.path.basename(j) for j in tasks[i:i + group_size]] \
         for i in range(0, len(tasks), group_size)
     ]
-    assert machine['machine_type'] == 'ucloud'
-    ucloud_url = machine['url']
-    ucloud_start_param = machine['ucloud_param']
-    ucloud_start_param['Action'] = "CreateUHostInstance"
-    ucloud_start_param['Name'] = "train"
-    ucloud_start_param['Signature'] = _verfy_ac(machine['Private'], ucloud_start_param)
-
     njob = len(task_chunks)
-    #print("njob is ",njob)
-    ucloud_machines = []
-    ucloud_hostids = []
-    for ii in range(njob) :
-        req = requests.get(ucloud_url, ucloud_start_param)
-        if req.json()['RetCode'] != 0 :
-            print(json.dumps(req.json(),indent=2, sort_keys=True))
-            raise RuntimeError ("failed to start ucloud machine")
-        ucloud_machines.append(str(req.json()["IPs"][0]))
-        ucloud_hostids.append(str(req.json()["UHostIds"][0]))
+    continue_status = False
+    if os.path.isfile("record.machine"):
+        with open ("record.machine", "r") as fr:
+            record_machine = json.load(fr)
+            if record_machine["purpose"] == machine["purpose"] and record_machine["njob"] == njob:
+                continue_status = True
+                ucloud_machines = record_machine["ucloud_machines"]
+                ucloud_hostids = record_machine["ucloud_hostids"]
+        fr.close()
+    ucloud_url = machine['url']
+    if continue_status == False:
+        assert machine['machine_type'] == 'ucloud'
+        ucloud_start_param = machine['ucloud_param']
+        ucloud_start_param['Action'] = "CreateUHostInstance"
+        ucloud_start_param['Name'] = "train"
+        ucloud_start_param['Signature'] = _verfy_ac(machine['Private'], ucloud_start_param)
+
+        
+        ucloud_machines = []
+        ucloud_hostids = []
+        for ii in range(njob) :
+            req = requests.get(ucloud_url, ucloud_start_param)
+            if req.json()['RetCode'] != 0 :
+                print(json.dumps(req.json(),indent=2, sort_keys=True))
+                raise RuntimeError ("failed to start ucloud machine")
+            ucloud_machines.append(str(req.json()["IPs"][0]))
+            ucloud_hostids.append(str(req.json()["UHostIds"][0]))
+
+        new_record_machine = {}
+        new_record_machine["purpose"] = machine["purpose"]
+        new_record_machine["njob"] = njob
+        new_record_machine["ucloud_machines"] = ucloud_machines
+        new_record_machine["ucloud_hostids"] = ucloud_hostids
+        with open ("record.machine", "w") as fw:
+            json.dump(new_record_machine, fw)
+        fw.close()
 
     machine_fin = [False for ii in ucloud_machines]
     total_machine_num = len(ucloud_machines)
@@ -153,8 +172,24 @@ def _ucloud_submit_jobs(machine,
                     machine_fin[idx] = True
                     fin_machine_num = fin_machine_num + 1
         print("Current finish",fin_machine_num,"/", total_machine_num)
+
+        
+        ucloud_check_param1 = {}
+        ucloud_check_param1['Action'] = "DescribeUHostInstance"
+        ucloud_check_param1['Region'] = machine['ucloud_param']['Region']
+        ucloud_check_param1["Limit"] = 100
+        ucloud_check_param1['PublicKey'] = machine['ucloud_param']['PublicKey']
+        ucloud_check_param1['Signature'] = _verfy_ac(machine['Private'], ucloud_check_param1)
+        req1 = requests.get(ucloud_url, ucloud_check_param1).json()
+        
+        machine_all_fin = True
+        for idx1 in range(int(req1["TotalCount"])):
+            if req1["UHostSet"][idx1]["State"] != "Running":
+                machine_all_fin = False
+                break
+        if machine_all_fin == True:
+            machine_fin = [True for i in machine_fin]
         time.sleep(10)
-    
     ssh_sess = []
     ssh_param = {}
     ssh_param['port'] = 22
@@ -187,6 +222,8 @@ def _ucloud_submit_jobs(machine,
                     _ucloud_remove_machine(machine, ucloud_hostids[idx])
                     job_fin[idx] = True
         time.sleep(10)
+    os.remove("record.machine")
+
 
 
 def _group_slurm_jobs(ssh_sess,

@@ -1,5 +1,5 @@
 {
-    "deepmd_path":	"/home/ubuntu/software/deepmd_float_root/",
+    "deepmd_path":	"/home/ubuntu/software/deepmd_float/",
     "_comment":		"training on ucloud ",
     "train_machine":	{
 	"machine_type":		"ucloud",
@@ -8,19 +8,24 @@
 	"Private":		"g5GGyzJM3TdVPK338tkXhcUZ4GuyChs2VONcug9kcYohwLAaWWQAWYMwYtMHrPm2",
 	"ucloud_param":	{
 	    "Region" :		"cn-bj2",
-	    "Zone" :		"cn-bj2-05",
-	    "ImageId" :		"uimage-513pxh",
+	    "Zone" :		"cn-bj2-04",
+	    "ImageId" :		"uimage-z2tlg4",
 	    "ChargeType":	"Month",
 	    "GPU" :		"1",
 	    "Name" :		"train",
-	    "UHostType" :	"I2",
+	    "UHostType" :	"G2",
 	    "PublicKey" :	"71RUR4l/3cFVntcHsMaoQk8qZo6uWDflDI7EAwdWqvdev0KvJek//w==" ,
 	    "LoginMode" :	"Password",
 	    "Password":		"YW5ndXNlMTk5OA=="
-	},	    
+	},
+	"purpose" : "train"	,	    
 	"_comment" :	"that's all"
     },	
     "train_resources":	{
+    	"envs":		{
+	    "PATH" : "/usr/local/cuda-9.0/bin:$PATH",
+	    "LD_LIBRARY_PATH" : "/usr/local/cuda-9.0/lib64:$LD_LIBRARY_PATH"
+	},
 	"_comment":	"that's all"
     },    
 
@@ -35,16 +40,20 @@
 	"ucloud_param":	{
 	    "Region" :		"cn-bj2",
 	    "Zone" :		"cn-bj2-05",
-	    "ImageId":		"uimage-pc5lfb",
+	    "ImageId":		"uimage-tnj2gb",
 	    "ChargeType" :	"Month",
 	    "Name" :		"model",
 	    "PublicKey" :	"71RUR4l/3cFVntcHsMaoQk8qZo6uWDflDI7EAwdWqvdev0KvJek//w==" ,
 	    "LoginMode" :	"Password",
 	    "Password":		"YW5ndXNlMTk5OA=="
-	},	    
+	},	
+	"purpose" : "model"	,    
 	"_comment" :	"that's all"
     },	
     "model_devi_resources":	{
+    	"envs":		{
+	    "LD_LIBRARY_PATH" : "/home/ubuntu/software/deepmd_float/lib:$LD_LIBRARY_PATH"
+	},
 	"_comment":	"that's all"
     },
     
@@ -61,15 +70,19 @@
 	    "Region" :		"cn-bj2",
 	    "Zone" :		"cn-bj2-05",
 	    "Name":		"fp",
-	    "ImageId":		"uimage-pc5lfb",
+	    "ImageId":		"uimage-tnj2gb",
 	    "ChargeType" :	"Month",
 	    "PublicKey" :	"71RUR4l/3cFVntcHsMaoQk8qZo6uWDflDI7EAwdWqvdev0KvJek//w==" ,
 	    "LoginMode" :	"Password",
 	    "Password":		"YW5ndXNlMTk5OA=="
 	},	    
+	"purpose" : "fp"	,
 	"_comment" :	"that's all"
     },	
     "fp_resources":	{
+    	"envs":		{
+	    "LD_LIBRARY_PATH" : "/home/ubuntu/software/deepmd_float/lib:$LD_LIBRARY_PATH"
+	},
 	"_comment":	"that's all"
     },
 
