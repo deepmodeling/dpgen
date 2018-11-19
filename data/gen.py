@@ -5,6 +5,7 @@ import numpy as np
 import subprocess as sp
 import tools.hcp as hcp
 import tools.fcc as fcc
+import tools.bcc as bcc
 import tools.diamond as diamond
 import tools.sc as sc
 
@@ -76,6 +77,8 @@ def class_cell_type(jdata) :
         cell_type = diamond
     elif ct == "sc" :
         cell_type = sc
+    elif ct == "bcc" :
+        cell_type = bcc
     else :
         raise RuntimeError("unknow cell type %s" % ct)
     return cell_type
@@ -340,7 +343,9 @@ def pert_scaled(jdata) :
     pert_box = jdata['pert_box']
     pert_atom = jdata['pert_atom']
     pert_numb = jdata['pert_numb']
-    from_poscar = jdata['from_poscar']
+    from_poscar = False 
+    if 'from_poscar' in jdata :
+        from_poscar = jdata['from_poscar']
     
     cwd = os.getcwd()
     path_sp = os.path.join(out_dir, global_dirname_03)
