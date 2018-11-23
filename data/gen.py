@@ -269,6 +269,12 @@ def make_vasp_relax (jdata) :
     encut = jdata['encut']
     kspacing = jdata['kspacing_relax']
     kgamma = jdata['kgamma']
+    ismear = 1
+    if 'ismear' in jdata :
+        ismear = jdata['ismear']
+    sigma = 0.2
+    if 'sigma' in jdata :
+        sigma = jdata['sigma']
     cwd = os.getcwd()
     vasp_dir = os.path.join(cwd, 'vasp.in')
 
@@ -295,6 +301,8 @@ def make_vasp_relax (jdata) :
         replace('INCAR', 'KGAMMA=.*', 'KGAMMA=T')
     else :
         replace('INCAR', 'KGAMMA=.*', 'KGAMMA=F')
+    replace('INCAR', 'ISMEAR=.*', 'ISMEAR=%d' % ismear)
+    replace('INCAR', 'SIGMA=.*', 'SIGMA=%f' % sigma)
     
     sys_list = glob.glob('sys-*')
     for ss in sys_list:
@@ -398,6 +406,12 @@ def make_vasp_md(jdata) :
     pert_numb = jdata['pert_numb']
     md_temp = jdata['md_temp']
     md_nstep = jdata['md_nstep']
+    ismear = 1
+    if 'ismear' in jdata :
+        ismear = jdata['ismear']
+    sigma = 0.2
+    if 'sigma' in jdata :
+        sigma = jdata['sigma']
 
     cwd = os.getcwd()
     vasp_dir = os.path.join(cwd, 'vasp.in')
@@ -430,6 +444,8 @@ def make_vasp_md(jdata) :
     replace('INCAR', 'NSW=.*', 'NSW=%d' % md_nstep)
     replace('INCAR', 'TEBEG=.*', 'TEBEG=%d' % md_temp)
     replace('INCAR', 'TEEND=.*', 'TEEND=%d' % md_temp)
+    replace('INCAR', 'ISMEAR=.*', 'ISMEAR=%d' % ismear)
+    replace('INCAR', 'SIGMA=.*', 'SIGMA=%f' % sigma)
     os.chdir(cwd)    
 
     for ii in sys_ps :
