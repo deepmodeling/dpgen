@@ -33,7 +33,7 @@
     },    
 
     "_comment":		"fp on localhost ",
-    "fp_command":	"mpirun -n 4 /home/wanghan/local/bin/vasp_std",
+    "fp_command":	"/home/wanghan/local/bin/vasp_std",
     "fp_group_size":	2,
     "fp_machine":	{
 	"machine_type":	"local",
@@ -45,6 +45,8 @@
     },	
     "fp_resources":	{
 	"module_list":  ["mpi"],
+	"task_per_node":4,
+	"with_mpi":	true,
 	"_comment":	"that's all"
     },
 

@@ -80,6 +80,8 @@
 	"_comment" :	"that's all"
     },	
     "fp_resources":	{
+	"task_per_node":8,
+	"with_mpi":	true,
     	"envs":		{
 	    "LD_LIBRARY_PATH" : "/home/ubuntu/software/deepmd_float/lib:$LD_LIBRARY_PATH"
 	},
