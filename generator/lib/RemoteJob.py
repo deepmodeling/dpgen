@@ -230,13 +230,12 @@ class CloudMachineJob (RemoteJob) :
                      cmd, 
                      args = None, 
                      resources = None) :
+        _set_default_resource(resources)
         envs = None
-        module_list = None
-        if resources is not None :
-            if 'envs' in resources :
-                envs = resources['envs']
-            if 'module_list' in resources: 
-                module_list = resources['module_list']
+        if 'envs' in resources :
+            envs = resources['envs']
+        module_list = resources['module_list']
+        task_per_node = resources['task_per_node']
 
         script_name = 'run.sh'
         if args == None :
@@ -258,7 +257,11 @@ class CloudMachineJob (RemoteJob) :
             for ii,jj in zip(job_dirs, args) :
                 fp.write('\ncd %s\n' % ii)                
                 fp.write('test $? -ne 0 && exit\n')
-                fp.write('%s %s\n' % (cmd, jj))
+                if resources['with_mpi'] == True :
+                    fp.write('mpirun -n %d %s %s\n' 
+                             % (task_per_node, cmd, jj))
+                else :
+                    fp.write('%s %s\n' % (cmd, jj))
                 fp.write('test $? -ne 0 && exit\n')
                 fp.write('cd %s\n' % self.remote_root)         
                 fp.write('test $? -ne 0 && exit\n')  
