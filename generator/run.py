@@ -42,7 +42,7 @@ from lib.machine_exec import exec_hosts
 from lib.machine_exec import exec_hosts_batch
 from lib.batch_exec import exec_batch
 from lib.batch_exec import exec_batch_group
-from lib.RemoteJob import SSHSession, JobStatus, SlurmJob, CloudMachineJob
+from lib.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
 
 template_name = 'template'
 train_name = '00.train'
@@ -225,23 +225,23 @@ def _ucloud_submit_jobs(machine,
     os.remove("record.machine")
 
 
-
 def _group_slurm_jobs(ssh_sess,
-                       resources,
-                       command,
-                       work_path,
-                       tasks,
-                       group_size,
-                       forward_common_files,
-                       forward_task_files,
-                       backward_task_files) :
+                      resources,
+                      command,
+                      work_path,
+                      tasks,
+                      group_size,
+                      forward_common_files,
+                      forward_task_files,
+                      backward_task_files,
+                      remote_job = SlurmJob) :
     task_chunks = [
         [os.path.basename(j) for j in tasks[i:i + group_size]] \
         for i in range(0, len(tasks), group_size)
     ]
     job_list = []
     for chunk in task_chunks :
-        rjob = SlurmJob(ssh_sess, work_path)
+        rjob = remote_job(ssh_sess, work_path)
         rjob.upload('.',  forward_common_files)
         rjob.upload(chunk, forward_task_files)
         rjob.submit(chunk, command, resources = resources)
@@ -550,6 +550,17 @@ def run_train (iter_index,
                            trans_comm_data,
                            forward_files,
                            backward_files)
+    elif machine_type == 'pbs' :        
+        _group_slurm_jobs(ssh_sess,
+                           train_resources,
+                           command,
+                           work_path,
+                           run_tasks,
+                           1,
+                           trans_comm_data,
+                           forward_files,
+                           backward_files,
+                          remote_job = PBSJob)
     elif machine_type == 'local' :
         _group_local_jobs(ssh_sess,
                            train_resources,
@@ -800,6 +811,17 @@ def run_model_devi (iter_index,
                            model_names,
                            forward_files,
                            backward_files)
+    elif machine_type == 'pbs' :        
+        _group_slurm_jobs(ssh_sess,
+                           model_devi_resources,
+                           command,
+                           work_path,
+                           run_tasks,
+                           model_devi_group_size,
+                           model_names,
+                           forward_files,
+                           backward_files,
+                          remote_job = PBSJob)
     elif machine_type == 'local' :        
         _group_local_jobs(ssh_sess,
                            model_devi_resources,
@@ -1118,8 +1140,10 @@ def run_fp_inner (iter_index,
     machine_type = mdata['fp_machine']['machine_type']
     # fp_command = ("OMP_NUM_THREADS=1 mpirun -n %d " % fp_np) + fp_command
     # cpu task in parallel
-    if (('numb_gpu' not in fp_resources) or (fp_resources['numb_gpu'] == 0)) and (machine_type == 'slurm'):
-        fp_command = 'srun ' + fp_command
+    # if (('numb_gpu' not in fp_resources) or (fp_resources['numb_gpu'] == 0)) and (machine_type == 'slurm'):
+    #     fp_command = 'srun ' + fp_command
+    # if (('numb_gpu' not in fp_resources) or (fp_resources['numb_gpu'] == 0)) and (machine_type == 'pbs'):
+    #     fp_command = 'mpirun  ' + fp_command
     fp_command = cmd_append_log(fp_command, log_file)
 
     iter_name = make_iter_name(iter_index)
@@ -1157,6 +1181,17 @@ def run_fp_inner (iter_index,
                            [],
                            forward_files,
                            backward_files)
+    elif machine_type == 'pbs' :        
+        _group_slurm_jobs(ssh_sess,
+                           fp_resources,
+                           fp_command,
+                           work_path,
+                           run_tasks,
+                           fp_group_size,
+                           [],
+                           forward_files,
+                           backward_files,
+                          remote_job = PBSJob)
     elif machine_type == 'local' :        
         _group_local_jobs(ssh_sess,
                            fp_resources,

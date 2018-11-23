@@ -58,6 +58,7 @@
     "fp_resources":	{
 	"numb_node":	1,
 	"task_per_node":4,
+	"with_mpi":	true,
 	"source_list":	[ ],
 	"module_list":	[ "fftw", "intel", "openmpi" ],
 	"time_limit":	"5:0:0",
