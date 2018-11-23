@@ -11,6 +11,28 @@ class JobStatus (Enum) :
     finished = 5
     unknow = 100
 
+def _default_item(resources, key, value) :
+    if key not in resources :
+        resources[key] = value
+
+def _set_default_resource(res) :
+    if res == None :
+        res = {}
+    _default_item(res, 'numb_node', 1)
+    _default_item(res, 'task_per_node', 1)
+    _default_item(res, 'numb_gpu', 0)
+    _default_item(res, 'time_limit', '1:0:0')
+    _default_item(res, 'mem_limit', -1)
+    _default_item(res, 'partition', '')
+    _default_item(res, 'account', '')
+    _default_item(res, 'qos', '')
+    _default_item(res, 'constraint_list', [])
+    _default_item(res, 'exclude_list', [])
+    _default_item(res, 'module_list', [])
+    _default_item(res, 'source_list', [])
+    _default_item(res, 'with_mpi', False)
+
+
 class SSHSession (object) :
     def __init__ (self, jdata) :
         self.remote_profile = jdata
@@ -307,32 +329,12 @@ class SlurmJob (RemoteJob) :
         sftp.close()
         return ret
 
-    def _default(self, resources, key, value) :
-        if key not in resources :
-            resources[key] = value
-
-    def _set_default_resource(self, res) :
-        if res == None :
-            res = {}
-        self._default(res, 'numb_node', 1)
-        self._default(res, 'task_per_node', 1)
-        self._default(res, 'numb_gpu', 0)
-        self._default(res, 'time_limit', '1:0:0')
-        self._default(res, 'mem_limit', -1)
-        self._default(res, 'partition', '')
-        self._default(res, 'account', '')
-        self._default(res, 'qos', '')
-        self._default(res, 'constraint_list', [])
-        self._default(res, 'exclude_list', [])
-        self._default(res, 'module_list', [])
-        self._default(res, 'source_list', [])
-
     def _make_script(self, 
                      job_dirs,
                      cmd,
                      args = None, 
                      res = None) :
-        self._set_default_resource(res)
+        _set_default_resource(res)
         ret = ''
         ret += "#!/bin/bash -l\n"
         ret += "#SBATCH -N %d\n" % res['numb_node']
@@ -365,10 +367,20 @@ class SlurmJob (RemoteJob) :
             args = []
             for ii in job_dirs:
                 args.append('')
+        envs = None
+        if 'envs' in res :
+            envs = res['envs']
         for ii,jj in zip(job_dirs, args) :
+            if envs != None :
+                for key in envs.keys() :
+                    ret += 'export %s=%s\n' % (key, envs[key])
+                ret += '\n'
             ret += 'cd %s\n' % ii
             ret += 'test $? -ne 0 && exit\n'
-            ret += '%s %s\n' % (cmd, jj)
+            if res['with_mpi'] == True :
+                ret += 'srun %s %s\n' % (cmd, jj)
+            else :
+                ret += '%s %s\n' % (cmd, jj)
             ret += 'test $? -ne 0 && exit\n'
             ret += 'cd %s\n' % self.remote_root
             ret += 'test $? -ne 0 && exit\n'
@@ -382,6 +394,129 @@ class SlurmJob (RemoteJob) :
         sftp.close()
 
         return script_name
+
+
+class PBSJob (RemoteJob) :
+    def submit(self, 
+               job_dirs,
+               cmd,
+               args = None, 
+               resources = None) :
+        script_name = self._make_script(job_dirs, cmd, args, res = resources)
+        stdin, stdout, stderr = self.block_checkcall(('cd %s; qsub %s' % (self.remote_root, script_name)))
+        subret = (stdout.readlines())
+        job_id = subret[0].split()[0]
+        sftp = self.ssh.open_sftp()
+        with sftp.open(os.path.join(self.remote_root, 'job_id'), 'w') as fp:
+            fp.write(job_id)
+        sftp.close()
+
+    def check_status(self) :
+        job_id = self._get_job_id()
+        if job_id == "" :
+            raise RuntimeError("job %s is has not been submitted" % self.remote_root)
+        ret, stdin, stdout, stderr\
+            = self.block_call ("qstat " + job_id)
+        err_str = stderr.read().decode('utf-8')
+        if (ret != 0) :
+            if str("qstat: Unknown Job Id") in err_str :
+                if _check_finish_tag() :
+                    return JobStatus.finished
+                else :
+                    return JobStatus.terminated
+            else :
+                raise RuntimeError ("status command qstat fails to execute. erro info: %s return code %d"
+                                    % (err_str, ret))
+        status_line = stdout.read().decode('utf-8').split ('\n')[-2]
+        status_word = status_line.split ()[-2]        
+#        print (status_word)
+        if      status_word in ["Q","H"] :
+            return JobStatus.waiting
+        elif    status_word in ["R"] :
+            return JobStatus.running
+        elif    status_word in ["C","E","K"] :
+            if self._check_finish_tag() :
+                return JobStatus.finished
+            else :
+                return JobStatus.terminated
+        else :
+            return JobStatus.unknown
+    
+    def _get_job_id(self) :
+        sftp = self.ssh.open_sftp()
+        with sftp.open(os.path.join(self.remote_root, 'job_id'), 'r') as fp:
+            ret = fp.read().decode('utf-8')
+        sftp.close()
+        return ret
+
+    def _check_finish_tag(self) :
+        sftp = self.ssh.open_sftp()
+        try:
+            sftp.stat(os.path.join(self.remote_root, 'tag_finished')) 
+            ret =  True
+        except IOError:
+            ret = False
+        sftp.close()
+        return ret
+
+    def _make_script(self, 
+                     job_dirs,
+                     cmd,
+                     args = None, 
+                     res = None) :
+        _set_default_resource(res)
+        ret = ''
+        ret += "#!/bin/bash -l\n"
+        if res['numb_gpu'] == 0:
+            ret += '#PBS -l nodes=%d:ppn=%d\n' % (res['numb_node'], res['task_per_node'])
+        else :
+            ret += '#PBS -l nodes=%d:ppn=%d:gpus=%d\n' % (res['numb_node'], res['task_per_node'], res['numb_gpu'])
+        ret += '#PBS -l walltime=%s\n' % (res['time_limit'])
+        if res['mem_limit'] > 0 :
+            ret += "#PBS -l mem=%dG \n" % res['mem_limit']
+        ret += '#PBS -j oe\n'
+        if len(res['partition']) > 0 :
+            ret += '#PBS -q %s\n' % res['partition']
+        ret += "\n"
+        for ii in res['module_list'] :
+            ret += "module load %s\n" % ii
+        ret += "\n"
+        for ii in res['source_list'] :
+            ret += "source %s\n" %ii
+        ret += "\n"
+        ret += 'cd $PBS_O_WORKDIR\n\n'
+        if args == None :
+            args = []
+            for ii in job_dirs:
+                args.append('')
+        envs = None
+        if 'envs' in res :
+            envs = res['envs']
+        for ii,jj in zip(job_dirs, args) :
+            if envs != None :
+                for key in envs.keys() :
+                    ret += 'export %s=%s\n' % (key, envs[key])
+                ret += '\n'
+            ret += 'cd %s\n' % ii
+            ret += 'test $? -ne 0 && exit\n'
+            if res['with_mpi'] == True :
+                ret += 'mpirun -machinefile $PBS_NODEFILE -n %d %s %s\n' % (res['numb_node'] * res['task_per_node'], cmd, jj)
+            else :
+                ret += '%s %s\n' % (cmd, jj)                
+            ret += 'test $? -ne 0 && exit\n'
+            ret += 'cd %s\n' % self.remote_root
+            ret += 'test $? -ne 0 && exit\n'
+        ret += '\ntouch tag_finished\n'
+
+        script_name = 'run.sub'
+        script = os.path.join(self.remote_root, script_name)
+        sftp = self.ssh.open_sftp()
+        with sftp.open(script, 'w') as fp :
+            fp.write(ret)
+        sftp.close()
+
+        return script_name
+
 
 # ssh_session = SSHSession('localhost.json')        
 # rjob = CloudMachineJob(ssh_session, '.')

@@ -58,6 +58,7 @@
     "fp_resources":	{
 	"numb_node":	1,
 	"task_per_node":16,
+	"with_mpi":	true,
 	"source_list":	[ ],
 	"module_list":	[ "intel/17.0/64/17.0.5.239", "intel-mpi/intel/2017.5/64", "intel-mkl/2017.4/5/64" ],
 	"time_limit":	"6:0:0",
