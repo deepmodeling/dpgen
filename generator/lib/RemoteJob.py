@@ -30,6 +30,7 @@ def _set_default_resource(res) :
     _default_item(res, 'exclude_list', [])
     _default_item(res, 'module_list', [])
     _default_item(res, 'source_list', [])
+    _default_item(res, 'envs', None)
     _default_item(res, 'with_mpi', False)
 
 
@@ -231,9 +232,7 @@ class CloudMachineJob (RemoteJob) :
                      args = None, 
                      resources = None) :
         _set_default_resource(resources)
-        envs = None
-        if 'envs' in resources :
-            envs = resources['envs']
+        envs = resources['envs']
         module_list = resources['module_list']
         task_per_node = resources['task_per_node']
 
@@ -250,12 +249,13 @@ class CloudMachineJob (RemoteJob) :
             if envs != None :
                 for key in envs.keys() :
                     fp.write('export %s=%s\n' % (key, envs[key]))
-            if module_list is not None :
                 fp.write('\n')
+            if module_list is not None :
                 for ii in module_list :
                     fp.write('module load %s\n' % ii)
+                fp.write('\n')
             for ii,jj in zip(job_dirs, args) :
-                fp.write('\ncd %s\n' % ii)                
+                fp.write('cd %s\n' % ii)                
                 fp.write('test $? -ne 0 && exit\n')
                 if resources['with_mpi'] == True :
                     fp.write('mpirun -n %d %s %s\n' 
@@ -365,19 +365,17 @@ class SlurmJob (RemoteJob) :
         for ii in res['source_list'] :
             ret += "source %s\n" %ii
         ret += "\n"
+        envs = res['envs']
+        if envs != None :
+            for key in envs.keys() :
+                ret += 'export %s=%s\n' % (key, envs[key])
+            ret += '\n'
 
         if args == None :
             args = []
             for ii in job_dirs:
                 args.append('')
-        envs = None
-        if 'envs' in res :
-            envs = res['envs']
         for ii,jj in zip(job_dirs, args) :
-            if envs != None :
-                for key in envs.keys() :
-                    ret += 'export %s=%s\n' % (key, envs[key])
-                ret += '\n'
             ret += 'cd %s\n' % ii
             ret += 'test $? -ne 0 && exit\n'
             if res['with_mpi'] == True :
@@ -487,19 +485,18 @@ class PBSJob (RemoteJob) :
         for ii in res['source_list'] :
             ret += "source %s\n" %ii
         ret += "\n"
+        envs = res['envs']
+        if envs != None :
+            for key in envs.keys() :
+                ret += 'export %s=%s\n' % (key, envs[key])
+            ret += '\n'
         ret += 'cd $PBS_O_WORKDIR\n\n'
+
         if args == None :
             args = []
             for ii in job_dirs:
                 args.append('')
-        envs = None
-        if 'envs' in res :
-            envs = res['envs']
         for ii,jj in zip(job_dirs, args) :
-            if envs != None :
-                for key in envs.keys() :
-                    ret += 'export %s=%s\n' % (key, envs[key])
-                ret += '\n'
             ret += 'cd %s\n' % ii
             ret += 'test $? -ne 0 && exit\n'
             if res['with_mpi'] == True :
