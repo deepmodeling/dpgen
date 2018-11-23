@@ -9,6 +9,8 @@
     "kspacing_relax":	0.16,
     "kspacing_md":	0.08,
     "kgamma":		false,
+    "ismear":		1,
+    "sigma":		0.5,
     "scale":		[0.96, 0.98, 1.00, 1.02, 1.04, 1.06],
     "skip_relax":	false,
     "pert_numb":	100,
