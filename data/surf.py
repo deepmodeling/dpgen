@@ -7,6 +7,7 @@ import tools.hcp as hcp
 import tools.fcc as fcc
 import tools.diamond as diamond
 import tools.sc as sc
+import tools.bcc as bcc
 from pymatgen.core.surface import SlabGenerator,generate_all_slabs, Structure
 
 def create_path (path) :
@@ -71,6 +72,8 @@ def class_cell_type(jdata) :
         cell_type = diamond
     elif ct == "sc" :
         cell_type = sc
+    elif ct == "bcc" :
+        cell_type = bcc
     else :
         raise RuntimeError("unknow cell type %s" % ct)
     return cell_type
@@ -140,9 +143,9 @@ def poscar_scale_cartesian (str_in, scale) :
 def poscar_scale (poscar_in, poscar_out, scale) :
     with open(poscar_in, 'r') as fin :
         lines = list(fin)
-    if 'Direct' in lines[7] : 
+    if 'D' == lines[7][0] or 'd' == lines[7][0]: 
         lines = poscar_scale_direct(lines, scale)
-    elif 'Cartesian' in lines[7] :
+    elif 'C' == lines[7][0] or 'c' == lines[7][0] :
         lines = poscar_scale_cartesian(lines, scale)
     else :
         raise RuntimeError("Unknow poscar style at line 7: %s" % lines[7])
@@ -379,14 +382,14 @@ def make_scale(jdata):
     for ii in init_sys :
         for jj in scale :
             pos_cont = os.path.join(os.path.join(init_path, ii), 'CONTCAR')
-            pos_src = os.path.join(os.path.join(init_path, ii), 'POSCAR.rlxed')
-            sp.check_call(cvt_cmd + ' ' + pos_cont + ' ' + pos_src, shell = True)
-            if not os.path.isfile(pos_src):
+            if not os.path.isfile(pos_cont):
                 if skip_relax :
-                    pos_src = os.path.join(os.path.join(init_path, ii), 'POSCAR')
-                    assert(os.path.isfile(pos_src))
+                    pos_cont = os.path.join(os.path.join(init_path, ii), 'POSCAR')
+                    assert(os.path.isfile(pos_cont))
                 else :
                     raise RuntimeError("not file %s, vasp relaxation should be run before scale poscar")
+            pos_src = os.path.join(os.path.join(init_path, ii), 'POSCAR.rlxed')
+            sp.check_call(cvt_cmd + ' ' + pos_cont + ' ' + pos_src, shell = True)
             scale_path = os.path.join(work_path, ii)
             scale_path = os.path.join(scale_path, "scale-%.3f" % jj)
             create_path(scale_path)
