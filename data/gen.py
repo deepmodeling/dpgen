@@ -143,9 +143,9 @@ def poscar_scale_cartesian (str_in, scale) :
 def poscar_scale (poscar_in, poscar_out, scale) :
     with open(poscar_in, 'r') as fin :
         lines = list(fin)
-    if 'Direct' in lines[7] : 
+    if 'D' == lines[7][0] or 'd' == lines[7][0]: 
         lines = poscar_scale_direct(lines, scale)
-    elif 'Cartesian' in lines[7] :
+    elif 'C' == lines[7][0] or 'c' == lines[7][0] :
         lines = poscar_scale_cartesian(lines, scale)
     else :
         raise RuntimeError("Unknow poscar style at line 7: %s" % lines[7])
