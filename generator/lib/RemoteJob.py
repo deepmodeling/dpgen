@@ -421,7 +421,7 @@ class PBSJob (RemoteJob) :
         err_str = stderr.read().decode('utf-8')
         if (ret != 0) :
             if str("qstat: Unknown Job Id") in err_str :
-                if _check_finish_tag() :
+                if self._check_finish_tag() :
                     return JobStatus.finished
                 else :
                     return JobStatus.terminated
