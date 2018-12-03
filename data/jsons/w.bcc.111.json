@@ -1,6 +1,6 @@
 {
     "cell_type":	"bcc",
-    "latt":		4.04,
+    "latt":		3.2,
     "super_cell":	[1, 1, 1],
     "elements":		["W"],
     "potcars":		["/home/wanghan/Soft/vasp/potcar.unknown/potpaw_PBE/W/POTCAR"
@@ -10,11 +10,11 @@
     "kspacing_md":	0.08,
     "kgamma":		false,
     "ismear":		1,
-    "sigma":		0.5,
+    "sigma":		0.2,
     "scale":		[0.96, 0.98, 1.00, 1.02, 1.04, 1.06],
     "skip_relax":	false,
-    "pert_numb":	100,
-    "pert_box":		0.03,
+    "pert_numb":	30,
+    "pert_box":		0.005,
     "pert_atom":	0.01,
     "md_temp":		100,
     "md_nstep":		10,
