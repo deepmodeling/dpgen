@@ -240,7 +240,8 @@ def _compute_isif (relax_ions,
 
 def make_vasp_static_incar (ecut, ediff,
                             npar, kpar, 
-                            kspacing = 0.5, kgamma = True) :
+                            kspacing = 0.5, kgamma = True, 
+                            ismear = 1, sigma = 0.2) :
     isif = 2
     ret = ''
     ret += 'PREC=A\n'
@@ -251,6 +252,9 @@ def make_vasp_static_incar (ecut, ediff,
     ret += 'LREAL=F\n'
     ret += 'NPAR=%d\n' % npar
     ret += 'KPAR=%d\n' % kpar
+    ret += "\n"
+    ret += 'ISMEAR=%d\n' % ismear
+    ret += 'SIGMA=%d\n' % sigma
     ret += "\n"
     ret += 'ISTART=0\n'
     ret += 'ICHARG=2\n'
@@ -276,7 +280,8 @@ def make_vasp_static_incar (ecut, ediff,
 def make_vasp_relax_incar (ecut, ediff, 
                            relax_ion, relax_shape, relax_volume, 
                            npar, kpar, 
-                           kspacing = 0.5, kgamma = True) :
+                           kspacing = 0.5, kgamma = True, 
+                           ismear = 1, sigma = 0.2) :
     isif = _compute_isif(relax_ion, relax_shape, relax_volume)
     ret = ''
     ret += 'PREC=A\n'
@@ -287,6 +292,9 @@ def make_vasp_relax_incar (ecut, ediff,
     ret += 'LREAL=F\n'
     ret += 'NPAR=%d\n' % npar
     ret += 'KPAR=%d\n' % kpar
+    ret += "\n"
+    ret += 'ISMEAR=%d\n' % ismear
+    ret += 'SIGMA=%d\n' % sigma
     ret += "\n"
     ret += 'ISTART=0\n'
     ret += 'ICHARG=2\n'
