@@ -27,7 +27,9 @@ def _set_default_resource(res) :
     _default_item(res, 'account', '')
     _default_item(res, 'qos', '')
     _default_item(res, 'constraint_list', [])
+    _default_item(res, 'license_list', [])
     _default_item(res, 'exclude_list', [])
+    _default_item(res, 'module_unload_list', [])
     _default_item(res, 'module_list', [])
     _default_item(res, 'source_list', [])
     _default_item(res, 'envs', None)
@@ -250,6 +252,10 @@ class CloudMachineJob (RemoteJob) :
                 for key in envs.keys() :
                     fp.write('export %s=%s\n' % (key, envs[key]))
                 fp.write('\n')
+            if module_unload_list is not None :
+                for ii in module_unload_list :
+                    fp.write('module unload %s\n' % ii)
+                fp.write('\n')
             if module_list is not None :
                 for ii in module_list :
                     fp.write('module load %s\n' % ii)
@@ -354,11 +360,15 @@ class SlurmJob (RemoteJob) :
         if res['numb_gpu'] > 0 :
             ret += "#SBATCH --gres=gpu:%d\n" % res['numb_gpu']
         for ii in res['constraint_list'] :
-            ret += '#SBATCH --constraint %s \n' % ii
+            ret += '#SBATCH -C %s \n' % ii
+        for ii in res['license_list'] :
+            ret += '#SBATCH -L %s \n' % ii
         for ii in res['exclude_list'] :
             ret += '#SBATCH --exclude %s \n' % ii
         ret += "\n"
         # ret += 'set -euo pipefail\n\n'
+        for ii in res['module_unload_list'] :
+            ret += "module unload %s\n" % ii
         for ii in res['module_list'] :
             ret += "module load %s\n" % ii
         ret += "\n"
@@ -378,7 +388,7 @@ class SlurmJob (RemoteJob) :
         for ii,jj in zip(job_dirs, args) :
             ret += 'cd %s\n' % ii
             ret += 'test $? -ne 0 && exit\n'
-            if res['with_mpi'] == True :
+            if res['with_mpi'] :
                 ret += 'srun %s %s\n' % (cmd, jj)
             else :
                 ret += '%s %s\n' % (cmd, jj)
@@ -479,6 +489,8 @@ class PBSJob (RemoteJob) :
         if len(res['partition']) > 0 :
             ret += '#PBS -q %s\n' % res['partition']
         ret += "\n"
+        for ii in res['module_unload_list'] :
+            ret += "module unload %s\n" % ii
         for ii in res['module_list'] :
             ret += "module load %s\n" % ii
         ret += "\n"
@@ -499,7 +511,7 @@ class PBSJob (RemoteJob) :
         for ii,jj in zip(job_dirs, args) :
             ret += 'cd %s\n' % ii
             ret += 'test $? -ne 0 && exit\n'
-            if res['with_mpi'] == True :
+            if res['with_mpi'] :
                 ret += 'mpirun -machinefile $PBS_NODEFILE -n %d %s %s\n' % (res['numb_node'] * res['task_per_node'], cmd, jj)
             else :
                 ret += '%s %s\n' % (cmd, jj)                
