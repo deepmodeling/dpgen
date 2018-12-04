@@ -33,6 +33,7 @@ def _main():
     parser = argparse.ArgumentParser(
         description="cmpt 01.eos")
     parser.add_argument('TASK', type=str,
+                        choices = ['vasp', 'deepmd', 'meam'], 
                         help='the task of generation, vasp or lammps')
     parser.add_argument('PARAM', type=str,
                         help='json parameter file')
