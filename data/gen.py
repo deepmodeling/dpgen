@@ -565,6 +565,7 @@ def _main() :
 
     if stage == 1 :
         create_path(out_dir)
+        shutil.copy2(args.PARAM, os.path.join(out_dir, 'param.json'))
         if from_poscar :
             make_super_cell_poscar(jdata)
         else :
