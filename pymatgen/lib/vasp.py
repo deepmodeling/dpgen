@@ -254,7 +254,7 @@ def make_vasp_static_incar (ecut, ediff,
     ret += 'KPAR=%d\n' % kpar
     ret += "\n"
     ret += 'ISMEAR=%d\n' % ismear
-    ret += 'SIGMA=%d\n' % sigma
+    ret += 'SIGMA=%f\n' % sigma
     ret += "\n"
     ret += 'ISTART=0\n'
     ret += 'ICHARG=2\n'
@@ -294,7 +294,7 @@ def make_vasp_relax_incar (ecut, ediff,
     ret += 'KPAR=%d\n' % kpar
     ret += "\n"
     ret += 'ISMEAR=%d\n' % ismear
-    ret += 'SIGMA=%d\n' % sigma
+    ret += 'SIGMA=%f\n' % sigma
     ret += "\n"
     ret += 'ISTART=0\n'
     ret += 'ICHARG=2\n'
