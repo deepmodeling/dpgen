@@ -623,11 +623,24 @@ def _get_param_alias(jdata,
 
 def _parse_cur_job(cur_job) :
     ensemble = _get_param_alias(cur_job, ['ens', 'ensemble'])
+    temps = [-1]
+    press = [-1]
+    if 'npt' in ensemble :
+        temps = _get_param_alias(cur_job, ['Ts','temps'])
+        press = _get_param_alias(cur_job, ['Ps','press'])
+    elif 'nvt' == ensemble :
+        temps = _get_param_alias(cur_job, ['Ts','temps'])
     nsteps = _get_param_alias(cur_job, ['nsteps'])
     trj_freq = _get_param_alias(cur_job, ['t_freq', 'trj_freq','traj_freq'])
-    temps = _get_param_alias(cur_job, ['Ts','temps'])
-    press = _get_param_alias(cur_job, ['Ps','press'])
-    return ensemble, nsteps, trj_freq, temps, press
+    if 'pka_e' in cur_job :
+        pka_e = _get_param_alias(cur_job, ['pka_e'])
+    else :
+        pka_e = None
+    if 'dt' in cur_job :
+        dt = _get_param_alias(cur_job, ['dt'])
+    else :
+        dt = None
+    return ensemble, nsteps, trj_freq, temps, press, pka_e, dt
 
 def make_model_devi (iter_index, 
                      jdata, 
@@ -653,7 +666,9 @@ def make_model_devi (iter_index,
     # assert (iter_index < len(job_names)) 
     # cur_job_name = job_names[iter_index]    
     # cur_job = model_devi_jobs[cur_job_name]
-    ensemble, nsteps, trj_freq, temps, press = _parse_cur_job(cur_job)
+    ensemble, nsteps, trj_freq, temps, press, pka_e, dt = _parse_cur_job(cur_job)
+    if dt is not None :
+        model_devi_dt = dt
     sys_configs = jdata['sys_configs']
     shuffle_poscar = jdata['shuffle_poscar']
 
@@ -725,6 +740,8 @@ def make_model_devi (iter_index,
                     loc_conf_name = 'conf.lmp'
                     os.symlink(os.path.join(os.path.join('..','confs'), conf_name), 
                                os.path.join(task_path, loc_conf_name) )
+                    cwd_ = os.getcwd()
+                    os.chdir(task_path)
                     file_c = make_lammps_input(ensemble,
                                                loc_conf_name,
                                                task_model_list,
@@ -736,7 +753,9 @@ def make_model_devi (iter_index,
                                                tt,
                                                tau_t = model_devi_taut,
                                                pres = pp, 
-                                               tau_p = model_devi_taup)
+                                               tau_p = model_devi_taup, 
+                                               pka_e = pka_e)
+                    os.chdir(cwd_)
                     with open(os.path.join(task_path, 'input.lammps'), 'w') as fp :
                         fp.write(file_c)
                     # cvt_lammps_conf(cc, 'conf.lmp')
@@ -767,7 +786,7 @@ def run_model_devi (iter_index,
 
     fp = open (os.path.join(work_path, 'cur_job.json'), 'r')
     cur_job = json.load (fp)
-    ensemble, nsteps, trj_freq, temps, press = _parse_cur_job(cur_job)
+    ensemble, nsteps, trj_freq, temps, press, pka_e, dt = _parse_cur_job(cur_job)
     nframes = nsteps // trj_freq + 1
     
     run_tasks_ = []

@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
 import random, os, sys
+import numpy as np
 import subprocess as sp
+import scipy.constants as pc
+from lib.lmp import system_data
 
 def cvt_lammps_conf (fin, 
                      fout) :
@@ -9,6 +12,15 @@ def cvt_lammps_conf (fin,
     thisdir = os.path.dirname(thisfile)
     cmd = os.path.join(thisdir, 'ovito_file_convert.py')
     sp.check_call([cmd, fin, fout])    
+
+
+def _sample_sphere() :
+    while True:
+        vv = np.array([np.random.normal(), np.random.normal(), np.random.normal()])
+        vn = np.linalg.norm(vv)
+        if vn < 0.2 :
+            continue
+        return vv / vn
 
 def make_lammps_input(ensemble, 
                       conf_file,
@@ -22,6 +34,7 @@ def make_lammps_input(ensemble,
                       tau_t = 0.1,
                       pres = None,
                       tau_p = 0.5,
+                      pka_e = None,
                       max_seed = 1000000) :
     ret = "variable        NSTEPS          equal %d\n" % nsteps
     ret+= "variable        THERMO_FREQ     equal %d\n" % trj_freq
@@ -54,7 +67,20 @@ def make_lammps_input(ensemble,
     ret+= "thermo          ${THERMO_FREQ}\n"
     ret+= "dump            1 all custom ${DUMP_FREQ} traj/*.lammpstrj id type x y z\n"
     ret+= "\n"
-    ret+= "velocity        all create ${TEMP} %d" % (random.randrange(max_seed-1)+1)
+    if pka_e is None :
+        ret+= "velocity        all create ${TEMP} %d" % (random.randrange(max_seed-1)+1)
+    else :
+        sys_data = system_data(open(conf_file).read().split('\n'))
+        pka_mass = mass_map[sys_data['atom_types'][0] - 1]
+        pka_vn = pka_e * pc.electron_volt / \
+                 (0.5 * pka_mass * 1e-3 / pc.Avogadro * (pc.angstrom / pc.pico) ** 2)
+        pka_vn = np.sqrt(pka_vn)
+        print(pka_vn)
+        pka_vec = _sample_sphere()
+        pka_vec *= pka_vn
+        ret+= 'group           first id 1\n'
+        ret+= 'velocity        first set %f %f %f\n' % (pka_vec[0], pka_vec[1], pka_vec[2])
+        ret+= 'fix	       2 all momentum 1 linear 1 1 1\n'
     ret+= "\n"
     if ensemble.split('-')[0] == 'npt' :
         assert (pres is not None)
@@ -66,6 +92,8 @@ def make_lammps_input(ensemble,
         ret+= "fix             1 all npt temp ${TEMP} ${TEMP} ${TAU_T} tri ${PRES} ${PRES} ${TAU_P}\n"
     elif ensemble == "nvt" :
         ret+= "fix             1 all nvt temp ${TEMP} ${TEMP} ${TAU_T}\n"
+    elif ensemble == 'nve' :
+        ret+= "fix             1 all nve\n"
     else :
         raise RuntimeError("unknown emsemble " + ensemble)
     ret+= "\n"
