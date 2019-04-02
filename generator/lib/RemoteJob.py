@@ -236,6 +236,7 @@ class CloudMachineJob (RemoteJob) :
         _set_default_resource(resources)
         envs = resources['envs']
         module_list = resources['module_list']
+        module_unload_list = resources['module_unload_list']
         task_per_node = resources['task_per_node']
 
         script_name = 'run.sh'
