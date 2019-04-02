@@ -75,7 +75,7 @@ def _main () :
     mytype = mytype[0]
 
     idx = np.arange (box.shape[0])
-    np.random.shuffle(idx)
+    # np.random.shuffle(idx)
     # print idx
     
     np.savetxt ('box.raw', box[idx])
