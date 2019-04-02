@@ -28,7 +28,8 @@ class SlurmJob (BatchJob) :
                 Logger.error ("return code: " + str(ret.returncode))
                 sys.exit ()
         status_line = str(stdout, encoding='ascii').split ('\n')[-2]
-        status_word = status_line.split ()[-4]
+        status_word = status_line.split ()[4]
+#        status_word = status_line.split ()[-4]
 #        print ("status line: " + status_line)
 #        print ("status word: " + status_word)
 #        print (status_word)
