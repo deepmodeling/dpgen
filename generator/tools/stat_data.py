@@ -80,3 +80,7 @@ def _main()   :
     args = parser.parse_args()
     
     stat_tasks(args.JOB_DIR, args.parameter, args.verbose)
+
+
+if __name__ == '__main__':
+    _main()
