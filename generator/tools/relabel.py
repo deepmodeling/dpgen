@@ -29,7 +29,6 @@ def link_pp_files(tdir, fp_pp_path, fp_pp_files) :
     cwd = os.getcwd()
     os.chdir(tdir)
     for ii in fp_pp_files :
-        print(cwd, tdir, ii)
         if os.path.lexists(ii) :
             os.remove(ii)
         os.symlink(os.path.join(fp_pp_path, ii), ii)    
@@ -156,7 +155,7 @@ def _main()   :
     parser.add_argument('-p',"--parameter", type=str, default = 'param.json',
                         help="the json file provides DP-GEN paramters, should be located in JOB_DIR")
     parser.add_argument('-v',"--verbose", action = 'store_true',
-                        help="print number of data in each system")
+                        help="being loud")
     args = parser.parse_args()
             
     create_tasks(args.JOB_DIR, args.parameter, args.OUTPUT, args.PARAM)
