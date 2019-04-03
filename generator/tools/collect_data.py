@@ -12,7 +12,7 @@ def file_len(fname):
 
 def collect_data(target_folder, param_file, output, verbose = True) :
     target_folder = os.path.abspath(target_folder)
-    ouput = os.path.abspath(output)
+    output = os.path.abspath(output)
     tool_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'template')    
     command_cvt_2_raw = os.path.join(tool_path, 'tools.vasp', 'convert2raw.py')
     command_cvt_2_raw += ' data.configs'
@@ -32,7 +32,7 @@ def collect_data(target_folder, param_file, output, verbose = True) :
     iters = glob.glob('iter.[0-9]*[0-9]')
     iters.sort()    
     for ii in iters :
-        iter_data = glob.glob(os.path.join(ii, '02.fp', 'data.*'))
+        iter_data = glob.glob(os.path.join(ii, '02.fp', 'data.[0-9]*[0-9]'))
         iter_data.sort()
         for jj in iter_data :
             sys_idx = int(os.path.basename(jj).split('.')[-1])
