@@ -8,6 +8,12 @@ from lib.vasp import make_vasp_incar
 from lib.vasp import system_from_poscar
 from relabel import get_lmp_info
 
+def ascii_hist(count) :
+    np = (count-1) // 5 + 1
+    ret = " |"
+    for ii in range(np):
+        ret += '='
+    return ret    
 
 def stat_tasks(target_folder, param_file, verbose = True) :
     target_folder = os.path.abspath(target_folder)
@@ -54,8 +60,8 @@ def stat_tasks(target_folder, param_file, verbose = True) :
     for ii in sys_tasks_all:
         ii.sort()
     max_str_len = max([len(str(ii)) for ii in sys])
-    sys_fmt = '%%%ds   %%6d' % (max_str_len+5)
-    blank = max_str_len - 46
+    sys_fmt = '%%%ds   %%6d' % (max_str_len+1)
+    blank = max_str_len - 50
     str_blk = ""
     for ii in range(blank):
         str_blk += " "
@@ -63,11 +69,12 @@ def stat_tasks(target_folder, param_file, verbose = True) :
     for ii in range(numb_sys):
         print(sys_fmt % (str(sys[ii]), sys_tasks_count[ii]))
         for jj in range(len(sys_tasks_all[ii])):
-            print(trait_fmt % (sys_tasks_all[ii][jj][0],
-                               sys_tasks_all[ii][jj][1],
-                               sys_tasks_all[ii][jj][2],
-                               sys_tasks_all[ii][jj][3]))
-                               
+            hist_str = ascii_hist(sys_tasks_all[ii][jj][3])
+            print((trait_fmt + hist_str) % (sys_tasks_all[ii][jj][0],
+                                            sys_tasks_all[ii][jj][1],
+                                            sys_tasks_all[ii][jj][2],
+                                            sys_tasks_all[ii][jj][3]))
+            
 
 def _main()   :
     parser = argparse.ArgumentParser(description='Some data statistics of DP-GEN iterations')
