@@ -94,6 +94,7 @@ def gen_alloy(eles) :
         return
     
     alloy_file = make_path_mp(data[0])
+    os.makedirs(alloy_file, exist_ok = True)
     alloy_file = os.path.join(alloy_file, '..')
     alloy_file = os.path.join(alloy_file, 'alloy')
     with open(alloy_file, 'w') as fp :
