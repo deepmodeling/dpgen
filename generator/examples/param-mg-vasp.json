@@ -146,6 +146,9 @@
 	"metagga":	"NONE",
 	"npar":		1,
 	"kpar":		1,
+	"user_vasp_params": {
+	    "EDIFF" :	1e-5,
+	},
 	"_comment":	" that's all "
     },
 
