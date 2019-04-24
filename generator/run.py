@@ -32,6 +32,7 @@ from lib.utils import log_task
 from lib.lammps import cvt_lammps_conf
 from lib.lammps import make_lammps_input
 from lib.vasp import make_vasp_incar
+from lib.vasp import make_vasp_incar_user_dict
 from lib.vasp import system_from_poscar
 from lib.pwscf import make_pwscf_input
 import lib.MachineLocal as MachineLocal
@@ -1056,7 +1057,7 @@ def make_fp_vasp (iter_index,
     # create incar
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
-    incar = make_vasp_incar(jdata['fp_params'])
+    incar = make_vasp_incar_user_dict(jdata['fp_params'])
     incar_file = os.path.join(work_path, 'INCAR')
     incar_file = os.path.abspath(incar_file)
     open(incar_file, 'w').write(incar)

@@ -72,6 +72,58 @@ def _make_vasp_incar (ecut, ediff, npar, kpar,
         ret += 'METAGGA=%s\n' % metagga
     return ret
 
+
+def _make_vasp_incar_dict (ecut, ediff, npar, kpar, 
+                           kspacing = 0.5, kgamma = True, 
+                           smearing = None, sigma = None, 
+                           metagga = None) :
+    incar_dict = {}
+    incar_dict['PREC'] = 'A'
+    incar_dict['ENCUT'] = ecut
+    incar_dict['ISYM'] = 0
+    incar_dict['ALGO'] = 'fast'
+    incar_dict['EDIFF'] = ediff
+    incar_dict['LREAL'] = 'A'
+    incar_dict['NPAR'] = npar
+    incar_dict['KPAR'] = kpar
+    incar_dict['NELMIN'] = 4
+    incar_dict['ISIF'] = 2
+    if smearing is not None :
+        incar_dict['ISMEAR'] = smearing        
+    if sigma is not None :
+        incar_dict['SIGMA'] = sigma
+    incar_dict['IBRION'] = -1
+    incar_dict['NSW'] = 0
+    incar_dict['LWAVE'] = 'F'
+    incar_dict['LCHARG'] = 'F'
+    incar_dict['PSTRESS'] = 0
+    incar_dict['KSPACING'] = kspacing
+    if kgamma:
+        incar_dict['KGAMMA'] = 'T'
+    else :
+        incar_dict['KGAMMA'] = 'F'
+    if metagga is not None :
+        incar_dict['LASPH'] = 'T'
+        incar_dict['METAGGA'] = metagga
+    return incar_dict
+
+
+def _update_incar_dict(incar_dict_, user_dict) :
+    if user_dict is None:
+        return incar_dict_
+    incar_dict = incar_dict_
+    for ii in user_dict :
+        ci = ii.upper()
+        incar_dict[ci] = user_dict[ii]
+    return incar_dict
+
+def _write_incar_dict(incar_dict) :
+    lines = []
+    for key in incar_dict:
+        lines.append('%s=%s' % (key, incar_dict[key]))
+    return '\n'.join(lines)
+
+
 def _make_smearing(fp_params) :
     smearing = None
     sigma = None
@@ -119,6 +171,27 @@ def make_vasp_incar(fp_params) :
     )
     return incar    
     
+def make_vasp_incar_user_dict(fp_params) :
+    ecut = fp_params['ecut']
+    ediff = fp_params['ediff']
+    npar = fp_params['npar']
+    kpar = fp_params['kpar']
+    kspacing = fp_params['kspacing']
+    if 'user_vasp_params' in fp_params :
+        user_dict = fp_params['user_vasp_params']
+    else :
+        user_dict = None
+    smearing, sigma = _make_smearing(fp_params)
+    metagga = _make_metagga(fp_params)
+    incar_dict = _make_vasp_incar_dict(ecut, ediff, npar, kpar, 
+                                       kspacing = kspacing, kgamma = False, 
+                                       smearing = smearing, sigma = sigma, 
+                                       metagga = metagga
+    )
+    incar_dict = _update_incar_dict(incar_dict, user_dict)
+    incar = _write_incar_dict(incar_dict)
+    return incar    
+    
 def make_vasp_kpoints_gamma (kpoints) :
     ret = ''
     ret += 'Automatic mesh\n'
@@ -130,3 +203,15 @@ def make_vasp_kpoints_gamma (kpoints) :
 
 def make_vasp_kpoints (kpoints) :
     return make_vasp_kpoints_gamma(kpoints)
+
+
+if __name__ == '__main__' :
+    import json
+    jdata = json.load(open('param.json'))
+    incar_1 = make_vasp_incar(jdata['fp_params'])
+    incar_2 = make_vasp_incar_user_dict(jdata['fp_params'])
+    with open('tmp1.out', 'w') as fp:
+        fp.write(incar_1)
+    with open('tmp2.out', 'w') as fp:
+        fp.write(incar_2)
+
