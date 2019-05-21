@@ -6,7 +6,7 @@ import subprocess as sp
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 from lib.vasp import make_vasp_incar
 from lib.vasp import system_from_poscar
-
+import dpdata
 
 def get_lmp_info(input_file) :
     lines = [line.rstrip('\n') for line in open(input_file)]
@@ -52,6 +52,49 @@ def make_pwscf(tdir, fp_params, mass_map, fp_pp_path, fp_pp_files) :
     ret = make_pwscf_input(sys_data, fp_pp_files, fp_params)
     open('input', 'w').write(ret)        
     os.chdir(cwd)
+
+
+def create_init_tasks(target_folder, param_file, output, fp_json, verbose = True) :
+    target_folder = os.path.abspath(target_folder)
+    output = os.path.abspath(output)
+    tool_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'template')    
+    jdata = json.load(open(os.path.join(target_folder, param_file)))
+    fp_jdata = json.load(open(fp_json))
+    # fp settings
+    mass_map = jdata['mass_map']
+    type_map = jdata['type_map']
+    fp_style = fp_jdata['fp_style']
+    fp_pp_path = fp_jdata['fp_pp_path']
+    fp_pp_files = fp_jdata['fp_pp_files']
+    fp_params = fp_jdata['fp_params']
+    # init data sys
+    init_data_prefix = jdata['init_data_prefix']
+    init_data_sys = jdata['init_data_sys']
+    for idx,ii in enumerate(init_data_sys):        
+        sys = dpdata.LabeledSystem(os.path.join(init_data_prefix, ii), fmt = 'deepmd/npy', type_map = type_map)
+        nframes = sys.get_nframes()
+        sys_dir = os.path.join(output, 'init_system.%03d' % idx)
+        os.makedirs(sys_dir, exist_ok = True)
+        if verbose :
+            print('# working on ' + sys_dir)
+        for ff in range(nframes) :
+            task_dir = os.path.join(sys_dir, 'task.%06d' % ff)
+            os.makedirs(task_dir, exist_ok = True)
+            sys.to_vasp_poscar(os.path.join(task_dir, 'POSCAR'))
+            # make fp
+            cwd_ = os.getcwd()
+            os.chdir(task_dir)
+            for pp in fp_pp_files :
+                if os.path.lexists(pp) :
+                    os.remove(pp)
+                os.symlink(os.path.relpath(os.path.join(output, pp)), pp)
+            if fp_style == 'vasp':
+                if os.path.lexists('INCAR') :
+                    os.remove('INCAR')
+                os.symlink(os.path.relpath(os.path.join(output, 'INCAR')), 'INCAR')
+            elif fp_style == 'pwscf':
+                make_pwscf('.', fp_params, mass_map, fp_pp_files, fp_pp_files)
+            os.chdir(cwd_)            
     
 
 def create_tasks(target_folder, param_file, output, fp_json, verbose = True) :
@@ -112,11 +155,13 @@ def create_tasks(target_folder, param_file, output, fp_json, verbose = True) :
         make_vasp(output, fp_params)
     for si in range(numb_sys) :
         sys_dir = os.path.join(output, 'system.%03d' % si)
+        if verbose :
+            print('# working on ' + sys_dir)
         for tt,rr in zip(sys_tasks[si], sys_tasks_record[si]) :            
             # copy poscar
             source_path = os.path.join(('iter.%s/02.fp' % rr.split()[1]), rr.split()[9])
             source_file = os.path.join(source_path, 'POSCAR')
-            target_path = os.path.join(sys_dir, '%06d'%sys_tasks_cc[si])
+            target_path = os.path.join(sys_dir, 'task.%06d'%sys_tasks_cc[si])
             sys_tasks_cc[si] += 1
             os.makedirs(target_path, exist_ok = True)
             target_file = os.path.join(target_path, 'POSCAR')
@@ -142,6 +187,7 @@ def create_tasks(target_folder, param_file, output, fp_json, verbose = True) :
             elif fp_style == 'pwscf':
                 make_pwscf('.', fp_params, mass_map, fp_pp_files, fp_pp_files)
             os.chdir(cwd_)
+    os.chdir(cwd)
 
 
 def _main()   :
@@ -158,7 +204,8 @@ def _main()   :
                         help="being loud")
     args = parser.parse_args()
             
-    create_tasks(args.JOB_DIR, args.parameter, args.OUTPUT, args.PARAM)
+    create_tasks(args.JOB_DIR, args.parameter, args.OUTPUT, args.PARAM, verbose = args.verbose)
+    create_init_tasks(args.JOB_DIR, args.parameter, args.OUTPUT, args.PARAM, verbose = args.verbose)
 
 if __name__ == '__main__':
     _main()
