@@ -4,6 +4,7 @@ import os,sys,json,glob,argparse,shutil
 import numpy as np
 import subprocess as sp
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
+from lib.pwscf import make_pwscf_input
 from lib.vasp import make_vasp_incar
 from lib.vasp import system_from_poscar
 import dpdata
@@ -34,6 +35,18 @@ def link_pp_files(tdir, fp_pp_path, fp_pp_files) :
         os.symlink(os.path.join(fp_pp_path, ii), ii)    
     os.chdir(cwd)
 
+
+def copy_pp_files(tdir, fp_pp_path, fp_pp_files) :
+    cwd = os.getcwd()
+    os.chdir(tdir)
+    for ii in fp_pp_files :
+        if os.path.lexists(ii) :
+            os.remove(ii)
+        if os.path.exists(ii) :
+            os.remove(ii)
+        shutil.copyfile(os.path.join(fp_pp_path, ii), ii)    
+    os.chdir(cwd)
+    
         
 def make_vasp(tdir, fp_params) :
     cwd = os.getcwd()
@@ -48,7 +61,7 @@ def make_pwscf(tdir, fp_params, mass_map, fp_pp_path, fp_pp_files) :
     cwd = os.getcwd()
     os.chdir(tdir)
     sys_data = system_from_poscar('POSCAR')
-    sys_data['atom_masses'] = jdata['mass_map']
+    sys_data['atom_masses'] = mass_map
     ret = make_pwscf_input(sys_data, fp_pp_files, fp_params)
     open('input', 'w').write(ret)        
     os.chdir(cwd)
@@ -77,6 +90,8 @@ def create_init_tasks(target_folder, param_file, output, fp_json, verbose = True
         os.makedirs(sys_dir, exist_ok = True)
         if verbose :
             print('# working on ' + sys_dir)
+        with open(os.path.join(sys_dir,'record'), 'w') as fp:
+            fp.write(os.path.join(init_data_prefix, ii) + '\n')
         for ff in range(nframes) :
             task_dir = os.path.join(sys_dir, 'task.%06d' % ff)
             os.makedirs(task_dir, exist_ok = True)
@@ -151,8 +166,10 @@ def create_tasks(target_folder, param_file, output, fp_json, verbose = True) :
     # mk output
     os.makedirs(output, exist_ok = True)
     if fp_style == 'vasp':
-        link_pp_files(output, fp_pp_path, fp_pp_files)
+        copy_pp_files(output, fp_pp_path, fp_pp_files)
         make_vasp(output, fp_params)
+    if fp_style == 'pwscf' :
+        copy_pp_files(output, fp_pp_path, fp_pp_files)        
     for si in range(numb_sys) :
         sys_dir = os.path.join(output, 'system.%03d' % si)
         if verbose :
