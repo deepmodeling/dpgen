@@ -623,7 +623,7 @@ def _get_param_alias(jdata,
             return jdata[ii]
     raise ValueError("one of the keys %s should be in jdata %s" % (str(names), (json.dumps(jdata, indent=4))))
 
-def _parse_cur_job(cur_job) :
+def parse_cur_job(cur_job) :
     ensemble = _get_param_alias(cur_job, ['ens', 'ensemble'])
     temps = [-1]
     press = [-1]
@@ -668,7 +668,7 @@ def make_model_devi (iter_index,
     # assert (iter_index < len(job_names)) 
     # cur_job_name = job_names[iter_index]    
     # cur_job = model_devi_jobs[cur_job_name]
-    ensemble, nsteps, trj_freq, temps, press, pka_e, dt = _parse_cur_job(cur_job)
+    ensemble, nsteps, trj_freq, temps, press, pka_e, dt = parse_cur_job(cur_job)
     if dt is not None :
         model_devi_dt = dt
     sys_configs = jdata['sys_configs']
@@ -684,6 +684,7 @@ def make_model_devi (iter_index,
         for ii in ss :
             cur_systems += glob.glob(ii)
         cur_systems.sort()
+        cur_systems = [os.path.abspath(ii) for ii in cur_systems]
         conf_systems.append (cur_systems)
     mass_map = jdata['mass_map']
 
@@ -788,7 +789,7 @@ def run_model_devi (iter_index,
 
     fp = open (os.path.join(work_path, 'cur_job.json'), 'r')
     cur_job = json.load (fp)
-    ensemble, nsteps, trj_freq, temps, press, pka_e, dt = _parse_cur_job(cur_job)
+    ensemble, nsteps, trj_freq, temps, press, pka_e, dt = parse_cur_job(cur_job)
     nframes = nsteps // trj_freq + 1
     
     run_tasks_ = []
