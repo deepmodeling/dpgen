@@ -148,6 +148,7 @@ class TestMakeModelDevi(unittest.TestCase):
         _check_confs(self, 0, jdata)
         _check_traj_dir(self, 0)
         _check_pt(self, 0, jdata)
+        shutil.rmtree('iter.000000')
 
 
 if __name__ == '__main__':
