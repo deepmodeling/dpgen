@@ -7,14 +7,12 @@
 			],
     "init_batch_size":	[16],
     "sys_configs":	[
-	["data/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale*/000009/POSCAR"],
-	["data/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale*/00000[7-8]/POSCAR"],
-	["data/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale*/00000[5-6]/POSCAR"],
-	["data/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale*/00000[1-4]/POSCAR"]
+	["data/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale*/000010/POSCAR"],
+	["data/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale*/00000[8-9]/POSCAR"]
     ],
     "_comment":		"0  1  2  3",
     "_comment":		"4  5  6  7",
-    "sys_batch_size":	[1, 1, 1, 1
+    "sys_batch_size":	[1, 1
 			],
 
     "_comment":		" 00.train ",
@@ -77,18 +75,7 @@
     "model_devi_e_trust_hi":	1e10,
     "model_devi_clean_traj":	true,
     "model_devi_jobs":	[
-	{"sys_idx": [0,4,26,30], "temps": [  50], "press": [1.0], "trj_freq": 10, "nsteps": 1000, "ensemble": "nvt", "_idx": "00"},
-	{"sys_idx": [1,5,27,31], "temps": [  50], "press": [1.0], "trj_freq": 10, "nsteps": 3000, "ensemble": "nvt", "_idx": "01"},
-	{"sys_idx": [2,6,28,32], "temps": [  50], "press": [1.0], "trj_freq": 10, "nsteps": 3000, "ensemble": "nvt", "_idx": "02"},
-	{"sys_idx": [3,7,29,33], "temps": [  50], "press": [1.0], "trj_freq": 10, "nsteps": 3000, "ensemble": "nvt", "_idx": "03"},
-	{"sys_idx": [0,4,26,30], "temps": [ 100], "press": [1.0], "trj_freq": 10, "nsteps": 1000, "ensemble": "nvt", "_idx": "04"},
-	{"sys_idx": [1,5,27,31], "temps": [ 100], "press": [1.0], "trj_freq": 10, "nsteps": 3000, "ensemble": "nvt", "_idx": "05"},
-	{"sys_idx": [2,6,28,32], "temps": [ 100], "press": [1.0], "trj_freq": 10, "nsteps": 3000, "ensemble": "nvt", "_idx": "06"},
-	{"sys_idx": [3,7,29,33], "temps": [ 100], "press": [1.0], "trj_freq": 10, "nsteps": 3000, "ensemble": "nvt", "_idx": "07"},
-	{"sys_idx": [0,4,26,30], "temps": [ 300], "press": [1.0], "trj_freq": 10, "nsteps": 1000, "ensemble": "nvt", "_idx": "08"},
-	{"sys_idx": [1,5,27,31], "temps": [ 300], "press": [1.0], "trj_freq": 10, "nsteps": 3000, "ensemble": "nvt", "_idx": "09"},
-	{"sys_idx": [2,6,28,32], "temps": [ 300], "press": [1.0], "trj_freq": 10, "nsteps": 3000, "ensemble": "nvt", "_idx": "10"},
-	{"sys_idx": [3,7,29,33], "temps": [ 300], "press": [1.0], "trj_freq": 10, "nsteps": 3000, "ensemble": "nvt", "_idx": "11"}
+	{"sys_idx": [0,1], "temps": [50,100], "press": [1.0,2.0], "trj_freq": 10, "nsteps": 1000, "ensemble": "npt", "_idx": "00"}
     ],
 
     "_comment":		" 02.fp ",
