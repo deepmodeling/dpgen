@@ -1,0 +1,3 @@
+make_lammps_input not tested
+make_vasp_incar not tested
+make_pwscf_incar not tested
