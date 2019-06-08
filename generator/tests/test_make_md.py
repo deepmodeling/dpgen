@@ -23,6 +23,12 @@ def _make_fake_models(idx, numb_models) :
                        'graph.%03d.pb' % ii)
     os.chdir(pwd)
 
+def _test_atom_types(testCase, system_1, system_2):
+    testCase.assertEqual(system_1.data['atom_types'][0], 
+                         system_2.data['atom_types'][0])
+    testCase.assertEqual(system_1.data['atom_types'][1],
+                         system_2.data['atom_types'][1])
+
 def _test_cell(testCase, system_1, system_2, places = 5):
     testCase.assertEqual(system_1.get_nframes(),
                          system_2.get_nframes())        
@@ -71,6 +77,7 @@ def _check_confs(testCase, idx, jdata) :
         poscar_file = poscars[int(l_conf_file.split('.')[0])][int(l_conf_file.split('.')[1])]
         sys_0 = dpdata.System(conf_file)
         sys_1 = dpdata.System(poscar_file)
+        _test_atom_types(testCase, sys_0, sys_1)
         _test_cell(testCase, sys_0, sys_1)
         _test_coord(testCase, sys_0, sys_1)
         
@@ -145,6 +152,7 @@ class TestMakeModelDevi(unittest.TestCase):
             mdata = json.load (fp)
         _make_fake_models(0, jdata['numb_models'])
         make_model_devi(0, jdata, mdata)
+        _check_pb(self, 0)
         _check_confs(self, 0, jdata)
         _check_traj_dir(self, 0)
         _check_pt(self, 0, jdata)
