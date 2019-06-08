@@ -7,6 +7,10 @@ from context import make_model_devi
 from context import parse_cur_job
 from context import param_file
 from context import machine_file
+from comp_sys import test_atom_names
+from comp_sys import test_atom_types
+from comp_sys import test_coord
+from comp_sys import test_cell
 
 def _make_fake_models(idx, numb_models) :
     train_dir = os.path.join('iter.%06d' % idx, 
@@ -23,37 +27,6 @@ def _make_fake_models(idx, numb_models) :
                        'graph.%03d.pb' % ii)
     os.chdir(pwd)
 
-def _test_atom_types(testCase, system_1, system_2):
-    testCase.assertEqual(system_1.data['atom_types'][0], 
-                         system_2.data['atom_types'][0])
-    testCase.assertEqual(system_1.data['atom_types'][1],
-                         system_2.data['atom_types'][1])
-
-def _test_cell(testCase, system_1, system_2, places = 5):
-    testCase.assertEqual(system_1.get_nframes(),
-                         system_2.get_nframes())        
-    for ff in range(system_1.get_nframes()) :
-        for ii in range(3) :
-            for jj in range(3) :
-                testCase.assertAlmostEqual(system_1.data['cells'][ff][ii][jj], 
-                                           system_2.data['cells'][ff][ii][jj], 
-                                           places = places,
-                                           msg = 'cell[%d][%d][%d] failed' % (ff,ii,jj))
-
-def _test_coord(testCase, system_1, system_2, places = 5): 
-    testCase.assertEqual(system_1.get_nframes(),
-                         system_2.get_nframes())
-    # think about direct coord
-    tmp_cell = system_1.data['cells']
-    tmp_cell = np.reshape(tmp_cell, [-1, 3])
-    tmp_cell_norm = np.reshape(np.linalg.norm(tmp_cell, axis = 1), [-1, 3])
-    for ff in range(system_1.get_nframes()) :
-        for ii in range(sum(system_1.data['atom_numbs'])) :
-            for jj in range(3) :
-                testCase.assertAlmostEqual(system_1.data['coords'][ff][ii][jj] / tmp_cell_norm[ff][jj], 
-                                           system_2.data['coords'][ff][ii][jj] / tmp_cell_norm[ff][jj], 
-                                           places = places,
-                                           msg = 'coord[%d][%d][%d] failed' % (ff,ii,jj))
 
 def _check_confs(testCase, idx, jdata) :
     md_dir = os.path.join('iter.%06d' % idx, 
@@ -75,11 +48,12 @@ def _check_confs(testCase, idx, jdata) :
         conf_file = os.path.join(ii, 'conf.lmp')
         l_conf_file = os.path.basename(os.readlink(conf_file))
         poscar_file = poscars[int(l_conf_file.split('.')[0])][int(l_conf_file.split('.')[1])]
-        sys_0 = dpdata.System(conf_file)
+        sys_0 = dpdata.System(conf_file, type_map = jdata['type_map'])
         sys_1 = dpdata.System(poscar_file)
-        _test_atom_types(testCase, sys_0, sys_1)
-        _test_cell(testCase, sys_0, sys_1)
-        _test_coord(testCase, sys_0, sys_1)
+        test_atom_names(testCase, sys_0, sys_1)
+        test_atom_types(testCase, sys_0, sys_1)
+        test_cell(testCase, sys_0, sys_1)
+        test_coord(testCase, sys_0, sys_1)
         
 
 def _check_pb(testCase, idx) :
@@ -146,6 +120,8 @@ def _check_pt(testCase, idx, jdata) :
 
 class TestMakeModelDevi(unittest.TestCase):
     def test_make_model_devi (self) :        
+        if os.path.isdir('iter.000000') :
+            shutil.rmtree('iter.000000')
         with open (param_file, 'r') as fp :
             jdata = json.load (fp)
         with open (machine_file, 'r') as fp:

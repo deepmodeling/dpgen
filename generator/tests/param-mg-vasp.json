@@ -1,6 +1,6 @@
 {    
-    "type_map":		["Mg"],
-    "mass_map":		[24],
+    "type_map":		["Mg", "Al"],
+    "mass_map":		[24, 27],
 
     "init_data_prefix":	"data",
     "init_data_sys":	["deepmd"
@@ -73,7 +73,7 @@
     "model_devi_f_trust_hi":	0.150,
     "model_devi_e_trust_lo":	1e10,
     "model_devi_e_trust_hi":	1e10,
-    "model_devi_clean_traj":	true,
+    "model_devi_clean_traj":	false,
     "model_devi_jobs":	[
 	{"sys_idx": [0,1], "temps": [50,100], "press": [1.0,2.0], "trj_freq": 10, "nsteps": 1000, "ensemble": "npt", "_idx": "00"}
     ],
@@ -83,7 +83,7 @@
     "shuffle_poscar":	false,
     "fp_task_max":	100,
     "fp_task_min":	10,
-    "fp_pp_path":	"/home/linfengz/SCR/wanghan/data/mgop/",
+    "fp_pp_path":	".",
     "fp_pp_files":	["POTCAR"],
     "fp_params":	{
 	"_comment": "given in unit depending on the fp method",
