@@ -1022,10 +1022,11 @@ def _make_fp_vasp_configs(iter_index,
     work_path = os.path.join(iter_name, fp_name)
     create_path(work_path)
     modd_path = os.path.join(iter_name, model_devi_name)
-    cur_job = json.load(open(os.path.join(modd_path, 'cur_job.json'), 'r'))
     task_min = -1
-    if 'task_min' in cur_job :
-        task_min = cur_job['task_min']
+    if os.path.isfile(os.path.join(modd_path, 'cur_job.json')) :
+        cur_job = json.load(open(os.path.join(modd_path, 'cur_job.json'), 'r'))
+        if 'task_min' in cur_job :
+            task_min = cur_job['task_min']
     # make configs
     fp_tasks = _make_fp_vasp_inner(modd_path, work_path,
                                    model_devi_skip,
@@ -1062,7 +1063,8 @@ def make_fp_vasp (iter_index,
     incar = make_vasp_incar_user_dict(jdata['fp_params'])
     incar_file = os.path.join(work_path, 'INCAR')
     incar_file = os.path.abspath(incar_file)
-    open(incar_file, 'w').write(incar)
+    with open(incar_file, 'w') as fp:
+        fp.write(incar)
     _link_fp_vasp_incar(iter_index, jdata)
     # create potcar
     _link_fp_vasp_pp(iter_index, jdata)
