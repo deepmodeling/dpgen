@@ -393,8 +393,8 @@ def poscar_to_conf(poscar, conf):
     sys.to_lammps_lmp(conf)
 
 
-def dump_to_poscar(dump, poscar) :
-    sys = dpdata.System(dump, fmt = 'lammps/dump')
+def dump_to_poscar(dump, poscar, type_map) :
+    sys = dpdata.System(dump, fmt = 'lammps/dump', type_map = type_map)
     sys.to_vasp_poscar(poscar)
 
         
@@ -890,7 +890,8 @@ def _make_fp_vasp_inner (modd_path,
                          fp_task_min,
                          fp_task_max,
                          fp_link_files,
-                         fp_params):
+                         fp_params, 
+                         type_map):
     """
     modd_path           string          path of model devi
     work_path           string          path of fp
@@ -977,7 +978,13 @@ def _make_fp_vasp_inner (modd_path,
                 for pair in fp_link_files :
                     os.symlink(pair[0], pair[1])
                 os.chdir(cwd)            
+    cwd = os.getcwd()
+    for ii in fp_tasks:
+        os.chdir(ii)
+        dump_to_poscar('conf.lmp', 'POSCAR', type_map)
+        os.chdir(cwd)
     return fp_tasks
+
 
 def _link_fp_vasp_incar (iter_index,
                          jdata,                         
@@ -1027,6 +1034,7 @@ def _make_fp_vasp_configs(iter_index,
     e_trust_hi = jdata['model_devi_e_trust_hi']
     f_trust_lo = jdata['model_devi_f_trust_lo']
     f_trust_hi = jdata['model_devi_f_trust_hi']
+    type_map = jdata['type_map']
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
     create_path(work_path)
@@ -1043,7 +1051,8 @@ def _make_fp_vasp_configs(iter_index,
                                    f_trust_lo, f_trust_hi,
                                    task_min, fp_task_max,
                                    [],
-                                   fp_params)
+                                   fp_params,
+                                   type_map)
     return fp_tasks
 
 def _fix_poscar_type (jdata, task_dirs) :
@@ -1061,11 +1070,6 @@ def make_fp_vasp (iter_index,
     fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
     if len(fp_tasks) == 0 :
         return        
-    #convert configs
-    command = os.path.join(os.getcwd(), "lib/ovito_file_convert.py")
-    command += " conf.lmp POSCAR"
-    exec_hosts(MachineLocal, command, 1, fp_tasks, verbose = True)
-    _fix_poscar_type(jdata, fp_tasks)
     # create incar
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -1094,11 +1098,6 @@ def make_fp_pwscf(iter_index,
     fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
     if len(fp_tasks) == 0 :
         return        
-    #convert configs
-    command = os.path.join(os.getcwd(), "lib/ovito_file_convert.py")
-    command += " conf.lmp POSCAR"
-    exec_hosts(MachineLocal, command, 1, fp_tasks, verbose = True)
-    _fix_poscar_type(jdata, fp_tasks)
     # make pwscf input
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
