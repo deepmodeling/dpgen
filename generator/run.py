@@ -19,6 +19,7 @@ import logging
 import warnings
 import shutil
 import time
+import dpdata
 import numpy as np
 import subprocess as sp
 from lib.utils import make_iter_name
@@ -385,6 +386,17 @@ def _check_skip_train(job) :
     except ValueError :
         skip = False
     return skip
+
+
+def poscar_to_conf(poscar, conf):
+    sys = dpdata.System(poscar, fmt = 'vasp/poscar')
+    sys.to_lammps_lmp(conf)
+
+
+def dump_to_poscar(dump, poscar) :
+    sys = dpdata.System(dump, fmt = 'lammps/dump')
+    sys.to_vasp_poscar(poscar)
+
         
 def make_train (iter_index, 
                 jdata, 
@@ -703,8 +715,6 @@ def make_model_devi (iter_index,
     with open(os.path.join(work_path, 'cur_job.json'), 'w') as outfile:
         json.dump(cur_job, outfile, indent = 4)
 
-    all_task = []
-    task_param = []
     conf_path = os.path.join(work_path, 'confs')
     create_path(conf_path)
     sys_counter = 0
@@ -721,11 +731,10 @@ def make_model_devi (iter_index,
                                os.path.join(conf_path, poscar_name))
             else :
                 os.symlink(cc, os.path.join(conf_path, poscar_name))
-            all_task.append(conf_path)
-            task_param.append(' ' + poscar_name + ' ' + lmp_name)
+            poscar_to_conf(os.path.join(conf_path, poscar_name),
+                           os.path.join(conf_path, lmp_name))
             conf_counter += 1
         sys_counter += 1
-    exec_hosts(MachineLocal, os.path.join(os.getcwd(), "lib/ovito_file_convert.py"), 1, all_task, task_param)
 
     sys_counter = 0
     for ss in conf_systems:
