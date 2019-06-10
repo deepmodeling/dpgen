@@ -955,7 +955,7 @@ def _make_fp_vasp_inner (modd_path,
             fp_tasks.append(fp_task_path)
             cwd = os.getcwd()
             os.chdir(fp_task_path)
-            os.symlink(os.path.relpath(conf_name), 'conf.lmp')
+            os.symlink(os.path.relpath(conf_name), 'conf.dump')
             for pair in fp_link_files :
                 os.symlink(pair[0], pair[1])
             os.chdir(cwd)
@@ -973,15 +973,15 @@ def _make_fp_vasp_inner (modd_path,
                 fp_tasks.append(fp_task_path)
                 cwd = os.getcwd()
                 os.chdir(fp_task_path)
-                os.symlink(os.path.relpath(conf_name), 'conf.lmp')
-                shutil.copyfile(os.path.relpath(conf_name), 'conf.lmp.bk')
+                os.symlink(os.path.relpath(conf_name), 'conf.dump')
+                shutil.copyfile(os.path.relpath(conf_name), 'conf.dump.bk')
                 for pair in fp_link_files :
                     os.symlink(pair[0], pair[1])
                 os.chdir(cwd)            
     cwd = os.getcwd()
     for ii in fp_tasks:
         os.chdir(ii)
-        dump_to_poscar('conf.lmp', 'POSCAR', type_map)
+        dump_to_poscar('conf.dump', 'POSCAR', type_map)
         os.chdir(cwd)
     return fp_tasks
 
