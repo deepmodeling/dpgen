@@ -13,6 +13,55 @@ from comp_sys import test_atom_types
 from comp_sys import test_coord
 from comp_sys import test_cell
 
+def _box2lmpbox(orig, box) :
+    lohi = np.zeros([3,2])
+    for dd in range(3) :
+        lohi[dd][0] = orig[dd]
+    tilt = np.zeros(3)
+    tilt[0] = box[1][0]
+    tilt[1] = box[2][0]
+    tilt[2] = box[2][1]
+    lens = np.zeros(3)
+    lens[0] = box[0][0]
+    lens[1] = box[1][1]
+    lens[2] = box[2][2]
+    for dd in range(3) :
+        lohi[dd][1] = lohi[dd][0] + lens[dd]
+    return lohi, tilt
+
+def _box2dumpbox(orig, box) :
+    lohi, tilt = _box2lmpbox(orig, box)
+    xy = tilt[0]
+    xz = tilt[1]
+    yz = tilt[2]
+    bounds = np.zeros([3,2])
+    bounds[0][0] = lohi[0][0] + min(0.0,xy,xz,xy+xz)
+    bounds[0][1] = lohi[0][1] + max(0.0,xy,xz,xy+xz)
+    bounds[1][0] = lohi[1][0] + min(0.0,yz)
+    bounds[1][1] = lohi[1][1] + max(0.0,yz)
+    bounds[2][0] = lohi[2][0]
+    bounds[2][1] = lohi[2][1]
+    return bounds, tilt
+
+
+def _write_lammps_dump(sys, dump_file, f_idx = 0) :
+    cell = sys['cells'][f_idx].reshape([3,3])
+    coord = sys['coords'][f_idx].reshape([-1,3])
+    bd, tilt = _box2dumpbox(np.zeros(3), cell)
+    atype = sys['atom_types']
+    natoms = len(sys['atom_types'])
+    with open(dump_file, 'w') as fp:
+        fp.write('ITEM: TIMESTEP\n')
+        fp.write('0\n')
+        fp.write('ITEM: NUMBER OF ATOMS\n')
+        fp.write(str(natoms) + '\n')
+        fp.write('ITEM: BOX BOUNDS xy xz yz pp pp pp\n')
+        for ii in range(3):
+            fp.write('%f %f %f\n' % (bd[ii][0], bd[ii][1], tilt[ii]))
+        fp.write('ITEM: ATOMS id type x y z\n')
+        for ii in range(natoms) :
+            fp.write('%d %d %f %f %f\n' % (ii+1, atype[ii]+1, coord[ii][0], coord[ii][1], coord[ii][2]))
+    
 
 def _make_fake_md(idx, md_descript, atom_types, type_map) :
     """
@@ -39,9 +88,10 @@ def _make_fake_md(idx, md_descript, atom_types, type_map) :
                                     'task.%03d.%06d' % (sidx, midx))
             os.makedirs(os.path.join(task_dir, 'traj'), exist_ok = True)
             for ii in range(nframes) :
-                sys.to_lammps_lmp(os.path.join(task_dir,
-                                               'traj', 
-                                               '%d.lammpstrj' % ii))
+                _write_lammps_dump(sys, 
+                                   os.path.join(task_dir,
+                                                'traj', 
+                                                '%d.lammpstrj' % ii))
             md_out = np.zeros([nframes, 7])
             md_out[:,0] = np.arange(nframes)
             md_out[:,4] = mm
@@ -69,7 +119,7 @@ def _check_poscars(testCase, idx, fp_task_max, type_map) :
                                        'task.%03d.%06d' % (int(sidx), cc), 
                                        'POSCAR')
             cc += 1
-            sys0 = dpdata.System(traj_file, fmt = 'lammps/lmp', type_map = type_map)
+            sys0 = dpdata.System(traj_file, fmt = 'lammps/dump', type_map = type_map)
             sys1 = dpdata.System(poscar_file, fmt = 'vasp/poscar')
             test_atom_names(testCase, sys0, sys1)
             
