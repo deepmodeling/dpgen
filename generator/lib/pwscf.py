@@ -3,6 +3,44 @@
 import numpy as np
 # from lib.vasp import system_from_poscar
 
+def _convert_dict(idict) :
+    lines = []
+    for key in idict.keys() :
+        if type(idict[key]) == bool:
+            if idict[key] :
+                ws = '.TRUE.'
+            else:
+                ws = '.FALSE.'
+        elif type(idict[key]) == str:
+            ws = '\'' + idict[key] + '\''
+        else :
+            ws = idict[key]
+        lines.append('%s=%s,' % (key, ws))
+    return lines
+
+
+def make_pwscf_01_runctrl_dict(sys_data, idict) :
+    tot_natoms = sum(sys_data['atom_numbs'])
+    ntypes = len(sys_data['atom_names'])
+    lines = []
+    lines.append('&control')
+    lines += _convert_dict(idict['control'])
+    lines.append('pseudo_dir=\'./\',')
+    lines.append('/')
+    lines.append('&system')
+    lines += _convert_dict(idict['system'])
+    lines.append('ibrav=0,')
+    lines.append('nat=%d,' % tot_natoms)
+    lines.append('ntyp=%d,' % ntypes)
+    lines.append('/')
+    if 'electrons' in idict :
+        lines.append('&electrons')
+        lines += _convert_dict(idict['electrons'])
+    lines.append('/')
+    lines.append('')
+    return '\n'.join(lines)
+    
+
 def _make_pwscf_01_runctrl(sys_data, ecut, ediff, smearing, degauss) :
     tot_natoms = sum(sys_data['atom_numbs'])
     ntypes = len(sys_data['atom_names'])
@@ -51,9 +89,9 @@ def _make_pwscf_02_species(sys_data, pps) :
     return ret
         
 def _make_pwscf_03_config(sys_data) :
-    cell = sys_data['cell']
+    cell = sys_data['cells'][0]
     cell = np.reshape(cell, [3,3])
-    coordinates = sys_data['coordinates']
+    coordinates = sys_data['coords'][0]
     atom_names = (sys_data['atom_names'])
     atom_numbs = (sys_data['atom_numbs'])
     ntypes = len(atom_names)
@@ -82,7 +120,7 @@ def _kshift(nkpt) :
         return 0
             
 def _make_pwscf_04_kpoints(sys_data, kspacing):
-    cell = sys_data['cell']
+    cell = sys_data['cells'][0]
     cell = np.reshape(cell, [3,3])
     rcell = np.linalg.inv(cell)
     rcell = rcell.T
@@ -111,12 +149,12 @@ def _make_smearing(fp_params) :
     return smearing, degauss
 
 def make_pwscf_input(sys_data, fp_pp_files, fp_params) :
-    ecut = fp_params['ecut']
-    ediff = fp_params['ediff']
+    # ecut = fp_params['ecut']
+    # ediff = fp_params['ediff']
+    # smearing, degauss = _make_smearing(fp_params)
     kspacing = fp_params['kspacing']
-    smearing, degauss = _make_smearing(fp_params)
     ret = ""
-    ret += _make_pwscf_01_runctrl(sys_data, ecut, ediff, smearing, degauss)
+    ret += make_pwscf_01_runctrl_dict(sys_data, fp_params)
     ret += "\n"
     ret += _make_pwscf_02_species(sys_data, fp_pp_files)
     ret += "\n"
@@ -125,6 +163,7 @@ def make_pwscf_input(sys_data, fp_pp_files, fp_params) :
     ret += _make_pwscf_04_kpoints(sys_data, kspacing)
     ret += "\n"
     return ret
+
     
 
 # sys_data = system_from_poscar('POSCAR')

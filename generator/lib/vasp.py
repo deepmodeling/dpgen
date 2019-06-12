@@ -117,10 +117,17 @@ def _update_incar_dict(incar_dict_, user_dict) :
         incar_dict[ci] = user_dict[ii]
     return incar_dict
 
-def _write_incar_dict(incar_dict) :
+def write_incar_dict(incar_dict) :
     lines = []
     for key in incar_dict:
-        lines.append('%s=%s' % (key, incar_dict[key]))
+        if (type(incar_dict[key]) == bool):
+            if incar_dict[key]:
+                rs = 'T'
+            else :
+                rs = 'F'
+        else :
+            rs = str(incar_dict[key])
+        lines.append('%s=%s' % (key, rs))
     return '\n'.join(lines)
 
 
@@ -189,8 +196,8 @@ def make_vasp_incar_user_dict(fp_params) :
                                        metagga = metagga
     )
     incar_dict = _update_incar_dict(incar_dict, user_dict)
-    incar = _write_incar_dict(incar_dict)
-    return incar    
+    incar = write_incar_dict(incar_dict)
+    return incar
     
 def make_vasp_kpoints_gamma (kpoints) :
     ret = ''
