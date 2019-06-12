@@ -7,11 +7,55 @@ from context import make_fp_vasp
 from context import make_fp_pwscf
 from context import parse_cur_job
 from context import param_file
+from context import param_pwscf_file
 from context import machine_file
 from comp_sys import test_atom_names
 from comp_sys import test_atom_types
 from comp_sys import test_coord
 from comp_sys import test_cell
+
+vasp_incar_ref = "PREC=A\n\
+ENCUT=600\n\
+ISYM=0\n\
+ALGO=fast\n\
+EDIFF=1e-05\n\
+LREAL=A\n\
+NPAR=1\n\
+KPAR=1\n\
+NELMIN=4\n\
+ISIF=2\n\
+ISMEAR=1\n\
+SIGMA=0.25\n\
+IBRION=-1\n\
+NSW=0\n\
+LWAVE=F\n\
+LCHARG=F\n\
+PSTRESS=0\n\
+KSPACING=0.16\n\
+KGAMMA=F\n";
+
+pwscf_input_ref="&control\n\
+calculation='scf',\n\
+restart_mode='from_scratch',\n\
+outdir='./OUT',\n\
+tprnfor=.TRUE.,\n\
+tstress=.TRUE.,\n\
+disk_io='none',\n\
+pseudo_dir='./',\n\
+/\n\
+&system\n\
+vdw_corr='TS',\n\
+ecutwfc=110,\n\
+ts_vdw_econv_thr=1e-08,\n\
+nosym=.TRUE.,\n\
+ibrav=0,\n\
+nat=6,\n\
+ntyp=3,\n\
+/\n\
+&electrons\n\
+conv_thr=1e-08,\n\
+/\n"
+
 
 def _box2lmpbox(orig, box) :
     lohi = np.zeros([3,2])
@@ -124,7 +168,7 @@ def _check_poscars(testCase, idx, fp_task_max, type_map) :
             test_atom_names(testCase, sys0, sys1)
             
 
-def _check_incar(testCase, idx) :
+def _check_incar_exists(testCase, idx) :
     fp_path = os.path.join('iter.%06d' % idx, '02.fp')
     testCase.assertTrue(os.path.isfile(os.path.join(fp_path, 'INCAR')))
     tasks = glob.glob(os.path.join(fp_path, 'task.*'))
@@ -135,14 +179,16 @@ def _check_incar(testCase, idx) :
     
 
 def _check_potcar(testCase, idx, fp_pp_path, fp_pp_files) :
-    testCase.assertEqual(len(fp_pp_files), 1)
+    nfile = len(fp_pp_files)
     fp_path = os.path.join('iter.%06d' % idx, '02.fp')
-    testCase.assertTrue(os.path.isfile(os.path.join(fp_pp_path, fp_pp_files[0])))
+    for ii in range(nfile):
+        testCase.assertTrue(os.path.isfile(os.path.join(fp_pp_path, fp_pp_files[ii])))
     tasks = glob.glob(os.path.join(fp_path, 'task.*'))
     for ii in tasks :
-        testCase.assertTrue(filecmp.cmp(
-            os.path.join(fp_pp_path, fp_pp_files[0]), 
-            os.path.join(ii, fp_pp_files[0])))
+        for jj in range(nfile):
+            testCase.assertTrue(filecmp.cmp(
+                os.path.join(fp_pp_path, fp_pp_files[jj]), 
+                os.path.join(ii, fp_pp_files[jj])))
     
 
 def _check_sel(testCase, idx, fp_task_max, flo, fhi):
@@ -164,7 +210,57 @@ def _check_sel(testCase, idx, fp_task_max, flo, fhi):
             fvalue = md_value[int(ff)][4]
             testCase.assertTrue(fvalue >= flo)
             testCase.assertTrue(fvalue <  fhi)
-        
+
+
+def _check_incar(testCase, idx):
+    fp_path = os.path.join('iter.%06d' % idx, '02.fp')
+    with open(os.path.join(fp_path, 'INCAR')) as fp:
+        incar = fp.read()
+    testCase.assertEqual(incar.strip(), vasp_incar_ref.strip())
+
+
+def _check_pwscf_input_head(testCase, idx) :
+    fp_path = os.path.join('iter.%06d' % idx, '02.fp')
+    tasks = glob.glob(os.path.join(fp_path, 'task.*'))
+    for ii in tasks :
+        ifile = os.path.join(ii, 'input')
+        testCase.assertTrue(os.path.isfile(ifile))
+        with open(ifile) as fp:
+            lines = fp.read().split('\n')
+        for idx, jj in enumerate(lines) :
+            if 'ATOMIC_SPECIES' in jj :
+                break
+        lines = lines[:idx]
+        testCase.assertEqual(('\n'.join(lines)).strip(), pwscf_input_ref.strip())
+
+
+class TestMakeFPPwscf(unittest.TestCase):
+    def test_make_fp_pwscf(self):
+        if os.path.isdir('iter.000000') :
+            shutil.rmtree('iter.000000')
+        with open (param_pwscf_file, 'r') as fp :
+            jdata = json.load (fp)
+        with open (machine_file, 'r') as fp:
+            mdata = json.load (fp)
+        md_descript = []
+        nsys = 2
+        nmd = 3
+        n_frame = 10
+        for ii in range(nsys) :
+            tmp = []
+            for jj in range(nmd) :
+                tmp.append(np.arange(0, 0.29, 0.29/10))
+            md_descript.append(tmp)
+        atom_types = [0, 1, 2, 2, 0, 1]
+        type_map = jdata['type_map']
+        _make_fake_md(0, md_descript, atom_types, type_map)
+        make_fp_pwscf(0, jdata)
+        _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
+        _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
+        _check_pwscf_input_head(self, 0)
+        _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
+        shutil.rmtree('iter.000000')
+
 
 class TestMakeFPVasp(unittest.TestCase):
     def test_make_fp_vasp(self):
@@ -189,9 +285,38 @@ class TestMakeFPVasp(unittest.TestCase):
         make_fp_vasp(0, jdata)
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
+        _check_incar_exists(self, 0)
         _check_incar(self, 0)
         _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
+
+    def test_make_fp_vasp_less_sel(self):
+        if os.path.isdir('iter.000000') :
+            shutil.rmtree('iter.000000')
+        with open (param_file, 'r') as fp :
+            jdata = json.load (fp)
+        with open (machine_file, 'r') as fp:
+            mdata = json.load (fp)
+        md_descript = []
+        nsys = 1
+        nmd = 1
+        n_frame = 8
+        for ii in range(nsys) :
+            tmp = []
+            for jj in range(nmd) :
+                tmp.append(np.arange(0, 0.29, 0.29/10))
+            md_descript.append(tmp)
+        atom_types = [0, 1, 0, 1]
+        type_map = jdata['type_map']
+        _make_fake_md(0, md_descript, atom_types, type_map)
+        make_fp_vasp(0, jdata)
+        _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
+        _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
+        _check_incar_exists(self, 0)
+        _check_incar(self, 0)
+        _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
+        shutil.rmtree('iter.000000')
+
 
 if __name__ == '__main__':
     unittest.main()

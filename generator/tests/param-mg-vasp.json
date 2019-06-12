@@ -85,23 +85,27 @@
     "fp_task_min":	10,
     "fp_pp_path":	".",
     "fp_pp_files":	["POTCAR"],
-    "fp_params":	{
-	"_comment": "given in unit depending on the fp method",
-	"ecut":		600,
-	"ediff":	1e-6,
-	"kspacing":	0.16,
-	"_comment": "gauss, mp:N(methfessel-paxton:order by default order=1), fd(Fermi-Dirac)",
-	"smearing":	"mp",
-	"sigma":	0.25,
-	"_comment": "only for vasp, can be NONE, SCAN, TPSS, RTPSS, M06L or MBJ",
-	"metagga":	"NONE",
-	"npar":		1,
-	"kpar":		1,
-	"user_vasp_params": {
-	    "EDIFF" :	1e-5
-	},
-	"_comment":	" that's all "
+    "_comment":		" user provided vasp script ",
+    "user_fp_params": {
+	"PREC":		"A",
+	"ENCUT":	600,
+	"ISYM":		0,
+	"ALGO":		"fast",
+	"EDIFF":	1e-05,
+	"LREAL":	"A",
+	"NPAR":		1,
+	"KPAR":		1,
+	"NELMIN":	4,
+	"ISIF":		2,
+	"ISMEAR":	1,
+	"SIGMA":	0.25,
+	"IBRION":	-1,
+	"NSW":		0,
+	"LWAVE":	false,
+	"LCHARG":	false,
+	"PSTRESS":	0,
+	"KSPACING":	0.16,
+	"KGAMMA":	false
     },
-
     "_comment":		" that's all "
 }

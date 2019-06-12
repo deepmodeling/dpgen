@@ -32,9 +32,7 @@ from lib.utils import record_iter
 from lib.utils import log_task
 from lib.lammps import cvt_lammps_conf
 from lib.lammps import make_lammps_input
-from lib.vasp import make_vasp_incar
-from lib.vasp import make_vasp_incar_user_dict
-from lib.vasp import system_from_poscar
+from lib.vasp import write_incar_dict
 from lib.pwscf import make_pwscf_input
 import lib.MachineLocal as MachineLocal
 import lib.MachineLocalGPU as MachineLocalGPU
@@ -890,7 +888,6 @@ def _make_fp_vasp_inner (modd_path,
                          fp_task_min,
                          fp_task_max,
                          fp_link_files,
-                         fp_params, 
                          type_map):
     """
     modd_path           string          path of model devi
@@ -1028,7 +1025,6 @@ def _link_fp_vasp_pp (iter_index,
 def _make_fp_vasp_configs(iter_index, 
                           jdata):
     fp_task_max = jdata['fp_task_max']
-    fp_params = jdata['fp_params']
     model_devi_skip = jdata['model_devi_skip']
     e_trust_lo = jdata['model_devi_e_trust_lo']
     e_trust_hi = jdata['model_devi_e_trust_hi']
@@ -1051,7 +1047,6 @@ def _make_fp_vasp_configs(iter_index,
                                    f_trust_lo, f_trust_hi,
                                    task_min, fp_task_max,
                                    [],
-                                   fp_params,
                                    type_map)
     return fp_tasks
 
@@ -1073,7 +1068,7 @@ def make_fp_vasp (iter_index,
     # create incar
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
-    incar = make_vasp_incar_user_dict(jdata['fp_params'])
+    incar = write_incar_dict(jdata['user_fp_params'])
     incar_file = os.path.join(work_path, 'INCAR')
     incar_file = os.path.abspath(incar_file)
     with open(incar_file, 'w') as fp:
@@ -1102,14 +1097,15 @@ def make_fp_pwscf(iter_index,
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
     fp_pp_files = jdata['fp_pp_files']
-    fp_params = jdata['fp_params']
+    fp_params = jdata['user_fp_params']
     cwd = os.getcwd()
     for ii in fp_tasks:
         os.chdir(ii)
-        sys_data = system_from_poscar('POSCAR')
+        sys_data = dpdata.System('POSCAR').data
         sys_data['atom_masses'] = jdata['mass_map']
         ret = make_pwscf_input(sys_data, fp_pp_files, fp_params)
-        open('input', 'w').write(ret)
+        with open('input', 'w') as fp:
+            fp.write(ret)
         os.chdir(cwd)
     # link pp files
     _link_fp_vasp_pp(iter_index, jdata)
