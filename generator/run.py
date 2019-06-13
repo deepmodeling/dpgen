@@ -1097,13 +1097,18 @@ def make_fp_pwscf(iter_index,
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
     fp_pp_files = jdata['fp_pp_files']
-    fp_params = jdata['user_fp_params']
+    if 'user_fp_params' in jdata.keys() :        
+        fp_params = jdata['user_fp_params']
+        user_input = True
+    else:
+        fp_params = jdata['fp_params']
+        user_input = False        
     cwd = os.getcwd()
     for ii in fp_tasks:
         os.chdir(ii)
         sys_data = dpdata.System('POSCAR').data
         sys_data['atom_masses'] = jdata['mass_map']
-        ret = make_pwscf_input(sys_data, fp_pp_files, fp_params)
+        ret = make_pwscf_input(sys_data, fp_pp_files, fp_params, user_input = user_input)
         with open('input', 'w') as fp:
             fp.write(ret)
         os.chdir(cwd)

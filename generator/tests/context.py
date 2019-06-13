@@ -4,5 +4,6 @@ from run import *
 
 param_file = 'param-mg-vasp.json'
 param_pwscf_file = 'param-pyridine-pwscf.json'
+param_pwscf_old_file = 'param-pyridine-pwscf-old.json'
 machine_file = 'machine-local.json'
 
