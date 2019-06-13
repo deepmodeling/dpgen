@@ -1,0 +1,106 @@
+{    
+    "type_map":		["Mg", "Al"],
+    "mass_map":		[24, 27],
+
+    "init_data_prefix":	"data",
+    "init_data_sys":	["deepmd"
+			],
+    "init_batch_size":	[16],
+    "sys_configs":	[
+	["data/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale*/000010/POSCAR"],
+	["data/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale*/00000[8-9]/POSCAR"]
+    ],
+    "_comment":		"0  1  2  3",
+    "_comment":		"4  5  6  7",
+    "sys_batch_size":	[1, 1
+			],
+
+    "_comment":		" 00.train ",
+    "numb_models":	4,
+    "train_param":	"input.json",
+    "default_training_param" : {
+	"_comment": " model parameters",
+	"use_smooth":		true,
+	"sel_a":		[90],
+	"rcut_smth":		2.00,
+	"rcut":			6.00,
+	"filter_neuron":	[25, 50, 100],
+	"filter_resnet_dt":	false,
+	"n_axis_neuron":	12,
+	"n_neuron":		[240, 240, 240],
+	"resnet_dt":		true,
+	"coord_norm":		true,
+	"type_fitting_net":	false,
+
+	"_comment": " traing controls",
+	"systems":		[],
+	"set_prefix":		"set",    
+	"stop_batch":		400000,
+	"batch_size":		1,
+	"start_lr":		0.002,
+	"decay_steps":		2000,
+	"decay_rate":		0.95,
+	"seed":			0,
+
+	"start_pref_e":		0.02,
+	"limit_pref_e":		2,
+	"start_pref_f":		1000,
+	"limit_pref_f":		1,
+	"start_pref_v":		0.0,
+	"limit_pref_v":		0.0,
+
+	"_comment": " display and restart",
+	"_comment": " frequencies counted in batch",
+	"disp_file":		"lcurve.out",
+	"disp_freq":		2000,
+	"numb_test":		10,
+	"save_freq":		20000,
+	"save_ckpt":		"model.ckpt",
+	"load_ckpt":		"model.ckpt",
+	"disp_training":	true,
+	"time_training":	true,
+	"profiling":		false,
+	"profiling_file":	"timeline.json",
+
+	"_comment":		"that's all"
+    },
+
+    "_comment":		" 01.model_devi ",
+    "_comment": "model_devi_skip: the first x of the recorded frames",
+    "model_devi_dt":		0.002,
+    "model_devi_skip":		0,
+    "model_devi_f_trust_lo":	0.050,
+    "model_devi_f_trust_hi":	0.150,
+    "model_devi_e_trust_lo":	1e10,
+    "model_devi_e_trust_hi":	1e10,
+    "model_devi_clean_traj":	false,
+    "model_devi_jobs":	[
+	{"sys_idx": [0,1], "temps": [50,100], "press": [1.0,2.0], "trj_freq": 10, "nsteps": 1000, "ensemble": "npt", "_idx": "00"}
+    ],
+
+    "_comment":		" 02.fp ",
+    "fp_style":		"vasp",
+    "shuffle_poscar":	false,
+    "fp_task_max":	100,
+    "fp_task_min":	10,
+    "fp_pp_path":	".",
+    "fp_pp_files":	["POTCAR"],
+    "fp_params":	{
+	"_comment": "given in unit depending on the fp method",
+	"ecut":		600,
+	"ediff":	1e-6,
+	"kspacing":	0.16,
+	"_comment": "gauss, mp:N(methfessel-paxton:order by default order=1), fd(Fermi-Dirac)",
+	"smearing":	"mp",
+	"sigma":	0.25,
+	"_comment": "only for vasp, can be NONE, SCAN, TPSS, RTPSS, M06L or MBJ",
+	"metagga":	"NONE",
+	"npar":		1,
+	"kpar":		1,
+	"user_vasp_params": {
+	    "EDIFF" :	1e-5
+	},
+	"_comment":	" that's all "
+    },
+    "_comment":		" that's all "
+}
