@@ -14,7 +14,7 @@ def _convert_dict(idict) :
         elif type(idict[key]) == str:
             ws = '\'' + idict[key] + '\''
         else :
-            ws = idict[key]
+            ws = str(idict[key])
         lines.append('%s=%s,' % (key, ws))
     return lines
 
@@ -48,27 +48,27 @@ def _make_pwscf_01_runctrl(sys_data, ecut, ediff, smearing, degauss) :
     ret += '&control\n'
     ret += "calculation='scf',\n"
     ret += "restart_mode='from_scratch',\n"
-    ret += "pseudo_dir='./',\n"
     ret += "outdir='./OUT',\n"
-    ret += "tprnfor = .TRUE.,\n"
-    ret += "tstress = .TRUE.,\n"
-    ret += "disk_io = 'none',\n"
+    ret += "tprnfor=.TRUE.,\n"
+    ret += "tstress=.TRUE.,\n"
+    ret += "disk_io='none',\n"
+    ret += "pseudo_dir='./',\n"
     ret += "/\n"
     ret += "&system\n"
-    ret += "ibrav= 0,\n"
-    ret += "nat  = %d,\n" % tot_natoms
-    ret += "ntyp = %d,\n" % ntypes
-    ret += "vdw_corr = 'TS',\n"
-    ret += "ecutwfc = %f,\n" % ecut
-    ret += "ts_vdw_econv_thr=%e,\n" % ediff
-    ret += "nosym = .TRUE.,\n"
+    ret += "vdw_corr='TS',\n"
+    ret += "ecutwfc=%s,\n" % str(ecut)
+    ret += "ts_vdw_econv_thr=%s,\n" % str(ediff)
+    ret += "nosym=.TRUE.,\n"
+    ret += "ibrav=0,\n"
+    ret += "nat=%d,\n" % tot_natoms
+    ret += "ntyp=%d,\n" % ntypes
     if degauss is not None :
-        ret += 'degauss = %f,\n' % degauss
+        ret += 'degauss=%f,\n' % degauss
     if smearing is not None :
-        ret += 'smearing = \'%s\',\n' % (smearing.lower())
+        ret += 'smearing=\'%s\',\n' % (smearing.lower())
     ret += "/\n"
     ret += "&electrons\n"
-    ret += "conv_thr = %e,\n" % ediff
+    ret += "conv_thr=%s,\n" % str(ediff)
     ret += "/\n"
     return ret
 
@@ -148,13 +148,17 @@ def _make_smearing(fp_params) :
         raise RuntimeError("unknow smearing method " + smearing)
     return smearing, degauss
 
-def make_pwscf_input(sys_data, fp_pp_files, fp_params) :
-    # ecut = fp_params['ecut']
-    # ediff = fp_params['ediff']
-    # smearing, degauss = _make_smearing(fp_params)
+def make_pwscf_input(sys_data, fp_pp_files, fp_params, user_input = True) :
+    if not user_input :
+        ecut = fp_params['ecut']
+        ediff = fp_params['ediff']
+        smearing, degauss = _make_smearing(fp_params)
     kspacing = fp_params['kspacing']
     ret = ""
-    ret += make_pwscf_01_runctrl_dict(sys_data, fp_params)
+    if not user_input:
+        ret += _make_pwscf_01_runctrl(sys_data, ecut, ediff, smearing, degauss)
+    else :
+        ret += make_pwscf_01_runctrl_dict(sys_data, fp_params)
     ret += "\n"
     ret += _make_pwscf_02_species(sys_data, fp_pp_files)
     ret += "\n"
