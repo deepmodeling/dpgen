@@ -4,7 +4,7 @@ import os, re, shutil, logging
 
 iter_format = "%s"
 task_format = "%s"
-log_iter_head = "task type: " + iter_format + " task: " + task_format + "process: "
+log_iter_head = "task type: " + iter_format + " task: " + task_format + " process: "
 
 def make_iter_name (iter_index) :
     return "task type:" + (iter_format)
