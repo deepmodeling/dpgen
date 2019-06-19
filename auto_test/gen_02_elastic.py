@@ -250,7 +250,7 @@ def make_meam_lammps(jdata, conf_dir) :
     
 def _main() :
     parser = argparse.ArgumentParser(
-        description="gen 01.eos")
+        description="gen 02.elastic")
     parser.add_argument('TASK', type=str,
                         help='the task of generation, vasp or lammps')
     parser.add_argument('PARAM', type=str,
