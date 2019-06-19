@@ -68,9 +68,7 @@ def cmpt_deepmd_lammps(jdata, conf_dir, task_name) :
     lst_strain = []
     lst_stress = []
     for ii in lst_dfm_path :
-        #print(ii)
         strain = np.loadtxt(os.path.join(ii, 'strain.out'))
-        #print(os.path.join(ii, 'log.lammps'))
         stress = lammps.get_stress(os.path.join(ii, 'log.lammps'))
         # convert from pressure to stress
         stress = -stress
