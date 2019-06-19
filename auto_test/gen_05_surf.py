@@ -110,6 +110,7 @@ def make_deepmd_lammps(jdata, conf_dir, max_miller = 2, static = False, relax_bo
     # conf_path = os.path.abspath(conf_dir)
     # conf_poscar = os.path.join(conf_path, 'POSCAR')
     equi_path = re.sub('confs', global_equi_name, conf_dir)
+    #equi_path = os.path.join(equi_path, task_name.split('-')[0])
     equi_path = os.path.join(equi_path, 'vasp-k%.2f' % kspacing)
     equi_path = os.path.abspath(equi_path)    
     equi_contcar = os.path.join(equi_path, 'CONTCAR')    
@@ -253,7 +254,7 @@ def make_meam_lammps(jdata, conf_dir, max_miller = 2, static = False, relax_box 
     
 def _main() :
     parser = argparse.ArgumentParser(
-        description="gen 01.eos")
+        description="gen 05.surf")
     parser.add_argument('TASK', type=str,
                         help='the task of generation, vasp or lammps')
     parser.add_argument('PARAM', type=str,

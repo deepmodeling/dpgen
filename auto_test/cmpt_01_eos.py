@@ -12,6 +12,8 @@ def comput_lmp_eos(conf_dir, task_name) :
     conf_path = os.path.join(conf_path, task_name)
     vol_paths = glob.glob(os.path.join(conf_path, 'vol-*'))
     vol_paths.sort()
+    #print(vol_paths)
+    #print(conf_path)
     for ii in vol_paths :
         log_lammps = os.path.join(ii, 'log.lammps')
         natoms, epa, vpa = lammps.get_nev(log_lammps)
