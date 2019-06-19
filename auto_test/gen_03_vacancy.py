@@ -234,7 +234,7 @@ def make_meam_lammps(jdata, conf_dir, supercell) :
     
 def _main() :
     parser = argparse.ArgumentParser(
-        description="gen 01.eos")
+        description="gen 03.vacancy")
     parser.add_argument('TASK', type=str,
                         help='the task of generation, vasp or lammps')
     parser.add_argument('PARAM', type=str,

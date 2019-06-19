@@ -141,7 +141,7 @@ def make_deepmd_lammps (jdata, conf_dir) :
         print('# generate %s' % (vol_path))
         os.makedirs(vol_path, exist_ok = True)
         os.chdir(vol_path)
-        print(vol_path)
+        #print(vol_path)
         for ii in ['conf.lmp', 'conf.lmp'] + deepmd_models_name :
             if os.path.exists(ii) :
                 os.remove(ii)                
@@ -159,7 +159,7 @@ def make_deepmd_lammps (jdata, conf_dir) :
             os.symlink(os.path.relpath(ii), jj)
         # make lammps input
         scale = (vol / vpa) ** (1./3.)
-        fc = lammps.make_lammps_press_relax('conf.lmp', ntypes, scale, deepmd_models_name)
+        fc = lammps.make_lammps_press_relax('conf.lmp', ntypes, scale,lammps.inter_deepmd, deepmd_models_name)
         with open(os.path.join(vol_path, 'lammps.in'), 'w') as fp :
             fp.write(fc)
         os.chdir(cwd)
@@ -314,12 +314,12 @@ def _main() :
     if args.TASK == 'vasp':
         make_vasp(jdata, args.CONF)               
     elif args.TASK == 'deepmd' :
-        if args.fix_shape is not None :
+        if args.fix_shape :
             make_deepmd_lammps_fixv(jdata, args.CONF)
         else :
             make_deepmd_lammps(jdata, args.CONF)        
     elif args.TASK == 'meam' :
-        if args.fix_shape is not None :
+        if args.fix_shape:
             make_meam_lammps_fixv(jdata, args.CONF)
         else :
             raise RuntimeError("not implemented ", args.TASK)            
