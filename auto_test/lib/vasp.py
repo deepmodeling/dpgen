@@ -254,7 +254,7 @@ def make_vasp_static_incar (ecut, ediff,
     ret += 'KPAR=%d\n' % kpar
     ret += "\n"
     ret += 'ISMEAR=%d\n' % ismear
-    ret += 'SIGMA=%f\n' % sigma
+    ret += 'SIGMA=%d\n' % sigma
     ret += "\n"
     ret += 'ISTART=0\n'
     ret += 'ICHARG=2\n'
@@ -294,7 +294,7 @@ def make_vasp_relax_incar (ecut, ediff,
     ret += 'KPAR=%d\n' % kpar
     ret += "\n"
     ret += 'ISMEAR=%d\n' % ismear
-    ret += 'SIGMA=%f\n' % sigma
+    ret += 'SIGMA=%d\n' % sigma
     ret += "\n"
     ret += 'ISTART=0\n'
     ret += 'ICHARG=2\n'
@@ -317,6 +317,44 @@ def make_vasp_relax_incar (ecut, ediff,
             ret += 'KGAMMA=F\n'
     return ret
 
+def make_vasp_phonon_incar (ecut, ediff,
+                            npar, kpar, 
+                            kspacing = 0.5, kgamma = True, 
+                            ismear = 1, sigma = 0.2) :
+    isif = 2
+    ret = ''
+    ret += 'PREC=A\n'
+    ret += 'ENCUT=%d\n' % ecut
+    ret += '# ISYM=0\n'
+    ret += 'ALGO=fast\n'
+    ret += 'EDIFF=%e\n' % ediff
+    ret += 'LREAL=F\n'
+    ret += 'NPAR=%d\n' % npar
+    ret += 'KPAR=%d\n' % kpar
+    ret += "\n"
+    ret += 'ISMEAR=%d\n' % ismear
+    ret += 'SIGMA=%d\n' % sigma
+    ret += "\n"
+    ret += 'ISTART=0\n'
+    ret += 'ICHARG=2\n'
+    ret += 'NELMIN=4\n'
+    ret += 'ISIF=%d\n' % isif
+    ret += 'IBRION=8\n'
+    ret += "\n"
+    ret += 'NSW=1\n'
+    ret += "\n"
+    ret += 'LWAVE=F\n'
+    ret += 'LCHARG=F\n'
+    ret += 'PSTRESS=0\n'
+    ret += "\n"
+    if kspacing is not None :
+        ret += 'KSPACING=%f\n' % kspacing
+    if kgamma is not None :
+        if kgamma:
+            ret += 'KGAMMA=T\n'
+        else :
+            ret += 'KGAMMA=F\n'
+    return ret
 
 def get_poscar_types (fname) :
     with open(fname, 'r') as fp :
