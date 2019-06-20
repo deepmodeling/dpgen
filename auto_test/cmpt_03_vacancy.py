@@ -90,7 +90,7 @@ def cmpt_deepmd_lammps(jdata, conf_dir, supercell, task_name) :
 
 def _main() :
     parser = argparse.ArgumentParser(
-        description="gen 01.eos")
+        description="cmpt 03.vacancy")
     parser.add_argument('TASK', type=str,
                         help='the task of generation, vasp or lammps')
     parser.add_argument('PARAM', type=str,
