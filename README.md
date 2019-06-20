@@ -7,6 +7,7 @@
 - [auto_test](#auto_test)
   - [How to write `param.json`](##How-to-write-`param.json`)
   - [How to write `machine.json`](##How-to-write-`machine.json`)
+- [Troubleshooting](#Troubleshooting)
 # About dpgen
 The deep potential generator
 # generator
@@ -19,3 +20,5 @@ python run.py param.json machine.json
 ## How to write `param.json`
 
 ## How to write `machine.json`
+
+# Troubleshooting
