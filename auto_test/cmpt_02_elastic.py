@@ -68,7 +68,6 @@ def cmpt_deepmd_lammps(jdata, conf_dir, task_name) :
     lst_strain = []
     lst_stress = []
     for ii in lst_dfm_path :
-#        print(ii)
         strain = np.loadtxt(os.path.join(ii, 'strain.out'))
         stress = lammps.get_stress(os.path.join(ii, 'log.lammps'))
         # convert from pressure to stress
@@ -83,7 +82,7 @@ def cmpt_deepmd_lammps(jdata, conf_dir, task_name) :
 
 def _main() :
     parser = argparse.ArgumentParser(
-        description="gen 01.eos")
+        description="cmpt 02.elastic")
     parser.add_argument('TASK', type=str,
                         help='the task of generation, vasp or lammps')
     parser.add_argument('PARAM', type=str,

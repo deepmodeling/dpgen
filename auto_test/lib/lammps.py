@@ -294,6 +294,27 @@ def make_lammps_press_relax(conf, ntypes, scale2equi, interaction, param,
     ret += "print \"Final Stress (xx yy zz xy xz yz) = ${Pxx} ${Pyy} ${Pzz} ${Pxy} ${Pxz} ${Pyz}\"\n"
     return ret
 
+def make_lammps_phonon(conf, masses, interaction, param, 
+                        etol=1e-12, ftol=1e-6, 
+                        maxiter=5000, maxeval=500000):
+    """
+    make lammps input for elastic calculation
+    """
+    ret = ""
+    ret += "clear\n"
+    ret += "units 	metal\n"
+    ret += "dimension	3\n"
+    ret += "boundary	p	p    p\n"
+    ret += "atom_style	atomic\n"
+    ret += "box         tilt large\n"
+    ret += "read_data   %s\n" % conf            
+    ntypes=len(masses)
+    for ii in range(ntypes) :
+        ret += "mass            %d %f\n" % (ii+1,masses[ii])  
+    ret += "neigh_modify    every 1 delay 0 check no\n"
+    ret += interaction(param)
+    return ret
+
 def _get_epa (lines) :
     for ii in lines:
         if ("Final energy per atoms" in ii) and (not 'print' in ii):
