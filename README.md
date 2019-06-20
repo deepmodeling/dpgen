@@ -25,14 +25,18 @@ The first part is the fundamental setting for particular alloy system.
     "_comment": "models",
     "potcar_map" : {
 	"Cu" : "/somewhere/POTCAR",
-        "Mg" : "/elsewhere/POTCAR"
+        "Zr" : "/elsewhere/POTCAR"
     },
     "conf_dir":"the folder of configuration",
     "task_type":"deepmd",
     "task":"eos",
 ```
 You need to add the specified paths of necessary `POTCAR` files in "potcar_map". The different `POTCAR` paths are separated by commas.
-
+Then you also need to add the folder path of particular configuration, which contains `POSCAR` file. For your convenience, we recommend that you use `gen_confs.py` to generate configurations by the following command.
+```
+python gen_confs.py Cu
+```
+It will store the various configurations of the given element or alloy in **confs** folder.
 ## How to write `machine.json`
 
 # Troubleshooting
