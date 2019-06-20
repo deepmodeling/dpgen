@@ -18,6 +18,7 @@ Then you only need one command to achieve automatic testing of physical properti
 python run.py param.json machine.json
 ```
 ## How to write `param.json`
+We take Cu as an example to show the parameter settings of `param.json`.
 
 ## How to write `machine.json`
 
