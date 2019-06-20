@@ -5,7 +5,7 @@
 	"hostname" :	"localhost",
 	"port" :	22,
 	"username":	"username",
-    "password":     "password",
+    	"password":     "password",
 	"work_path" :	"the path of workplace",
 	"_comment" :	"that's all"
     },
@@ -28,7 +28,7 @@
 	"hostname" :	"localhost",
 	"port" :	22,
 	"username":	"username",
-    "password":     "password",
+    	"password":     "password",
 	"work_path" :	"the path of workplace",
 	"_comment" :	"that's all"
     },
