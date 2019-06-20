@@ -20,6 +20,19 @@ python run.py param.json machine.json
 ## How to write `param.json`
 We take Cu as an example to show the parameter settings of `param.json`.
 
+The first part is the fundamental setting for particular alloy system. 
+```
+    "_comment": "models",
+    "potcar_map" : {
+	"Cu" : "/somewhere/POTCAR",
+        "Mg" : "/elsewhere/POTCAR"
+    },
+    "conf_dir":"the folder of configuration",
+    "task_type":"deepmd",
+    "task":"eos",
+```
+You need to add the specified paths of necessary `POTCAR` files in "potcar_map". The different `POTCAR` paths are separated by commas.
+
 ## How to write `machine.json`
 
 # Troubleshooting
