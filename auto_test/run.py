@@ -1122,6 +1122,7 @@ def run_task (json_file, machine_file) :
     else :
         fp_ssh_sess = SSHSession(fp_machine)
     
+    confs = jdata['conf_dir']
     ii = jdata['task_type']
     jj=jdata['task']
     #default task
@@ -1168,7 +1169,7 @@ def run_task (json_file, machine_file) :
         cmpt_surf (ii, jdata, mdata)
     elif jj!="equi" :
         raise RuntimeError ("unknow task %s, something wrong" % jj)
-    record_iter (record, ii, jj)
+    record_iter (record, confs, ii, jj)
 
 def _main () :
     parser = argparse.ArgumentParser()
