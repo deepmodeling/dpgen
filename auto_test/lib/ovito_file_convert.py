@@ -46,4 +46,3 @@ if columns is not None :
     export_file(node, fout, ofmt, columns = columns)
 else :
     export_file(node, fout, ofmt)
-    

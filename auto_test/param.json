@@ -4,8 +4,8 @@
 	"Cu" : "/somewhere/POTCAR" 
     },
     "conf_dir":"the folder of configuration",
-    "task_type":1,
-    "task":2,
+    "task_type":"deepmd",
+    "task":"eos",
 
     "vasp_params":	{
 	"ecut":		520,
