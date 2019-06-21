@@ -179,7 +179,6 @@ class RemoteJob (object):
         for ii in files :
             flist += " " + ii
         # remote tar
-        os.chdir(self.remote_root)
         self.block_checkcall('tar czf %s %s' % (of, flist))
         # trans
         from_f = os.path.join(self.remote_root, of)
