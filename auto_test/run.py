@@ -1125,6 +1125,7 @@ def run_task (json_file, machine_file) :
     confs = jdata['conf_dir']
     ii = jdata['task_type']
     jj=jdata['task']
+    task_list=['equi','eos','elastic','vacancy','interstitial','surf','all']
     #default task
     log_iter ("gen_equi", ii, "equi")
     gen_equi (ii, jdata, mdata) 
@@ -1139,35 +1140,35 @@ def run_task (json_file, machine_file) :
         run_eos  (ii, jdata, mdata,model_devi_ssh_sess)
         log_iter ("cmpt_eos", ii, "eos")
         cmpt_eos (ii, jdata, mdata)
-    elif jj=="elastic" or jj=="all":
+    if jj=="elastic" or jj=="all":
         log_iter ("gen_elastic", ii, "elastic")
         gen_elastic (ii, jdata, mdata) 
         log_iter ("run_elastic", ii, "elastic")
         run_elastic  (ii, jdata, mdata,model_devi_ssh_sess)
         log_iter ("cmpt_elastic", ii, "elastic")
         cmpt_elastic (ii, jdata, mdata)
-    elif jj=="vacancy" or jj=="all":
+    if jj=="vacancy" or jj=="all":
         log_iter ("gen_vacancy", ii, "vacancy")
         gen_vacancy (ii, jdata, mdata) 
         log_iter ("run_vacancy", ii, "vacancy")
         run_vacancy  (ii, jdata, mdata,model_devi_ssh_sess)
         log_iter ("cmpt_vacancy", ii, "vacancy")
         cmpt_vacancy (ii, jdata, mdata)
-    elif jj=="interstitial" or jj=="all":
+    if jj=="interstitial" or jj=="all":
         log_iter ("gen_interstitial", ii, "interstitial")
         gen_interstitial (ii, jdata, mdata) 
         log_iter ("run_interstitial", ii, "interstitial")
         run_interstitial  (ii, jdata, mdata,model_devi_ssh_sess)
         log_iter ("cmpt_interstitial", ii, "interstitial")
         cmpt_interstitial (ii, jdata, mdata)
-    elif jj=="surf" or jj=="all":
+    if jj=="surf" or jj=="all":
         log_iter ("gen_surf", ii, "surf")
         gen_surf (ii, jdata, mdata) 
         log_iter ("run_surf", ii, "surf")
         run_surf  (ii, jdata, mdata,model_devi_ssh_sess)
         log_iter ("cmpt_surf", ii, "surf")
         cmpt_surf (ii, jdata, mdata)
-    elif jj!="equi" :
+    if jj not in task_list :
         raise RuntimeError ("unknow task %s, something wrong" % jj)
     record_iter (record, confs, ii, jj)
 
