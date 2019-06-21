@@ -49,7 +49,7 @@
     "supercell":[2,2,2],
 
     "_comment":"04.interstitial",
-    "insert_ele":"Zr",
+    "insert_ele":["Zr"],
     "reprod-opt":false,
 
     "_comment": "05.surface",
