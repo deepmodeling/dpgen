@@ -58,6 +58,6 @@ def log_task (message) :
     header = repeat_to_length (" ", len(log_iter_head % (0, 0)))
     logging.info (header + message)
 
-def record_iter (record, ii, jj) :
+def record_iter (record, confs, ii, jj) :
     with open (record, "a") as frec :
-        frec.write ("%s %s\n" % (ii, jj)) 
+        frec.write ("%s %s %s\n" % (confs, ii, jj)) 
