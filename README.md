@@ -37,6 +37,23 @@ Then you also need to add the folder path of particular configuration, which con
 python gen_confs.py Cu
 ```
 It will store the various configurations of the given element or alloy in **confs** folder.
+
+So far, "task_type" has 3 test types,(i.e. "vasp", "deepmd" and "meam") and "task" includes 7 test items as follows.
+
+00.**equi**:(default task) the equilibrium state, return energy and volume per atom
+
+>01.**eos**: the equation of state
+
+>02.**elastic**: the elasticity like Young's module
+
+>03.**vacancy**: the vacancy defect 
+
+>04.**interstitial**: the interstitial defect
+
+>05.**surf**: the surface energy
+
+>06.**phonon**:(beta version) the phonon specturm
+
 ## How to write `machine.json`
 
 # Troubleshooting
