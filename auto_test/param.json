@@ -59,7 +59,7 @@
     "pert_xz":		0.01,
     "max_miller": 2,
     "static-opt":false,
-    "store_relax":false,    
+    "relax_box":false,    
 
     "_comment":"06.phonon",
     "supercell_matrix":[2,2,2],
