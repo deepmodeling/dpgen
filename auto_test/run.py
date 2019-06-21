@@ -469,7 +469,7 @@ def cmpt_equi(task_type,jdata,mdata):
 
 def gen_eos(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
-    fix_shape=jdata['store_fix']
+    fix_shape=jdata['fix_shape']
     cwd=os.getcwd()
     #vasp
     if task_type == "vasp":
