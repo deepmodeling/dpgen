@@ -39,7 +39,7 @@
     "vol_start":	6,
     "vol_end":		16,
     "vol_step":		0.5,
-    "store_fix":false,
+    "fix_shape":true,
 
     "_comment": "02.elastic",
     "norm_deform":	2e-2,
