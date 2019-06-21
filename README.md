@@ -122,5 +122,29 @@ The last part is the optional settings for various tasks mentioned above. You ca
 ```
 
 ## How to write `machine.json`
-
+(Same as generator)
+You need to set up your working environment through this file, which is divided into three parts, **deepmd**, **lammps** and **vasp**.
+Taking **deepmd** as an example, you need to add the folder path of **deepmd** and supply the settings of train_machine and train_resource. The settings of **lammps** and **vasp** are similar to it.
+```
+    "deepmd_path":	"the folder of deepmd",
+    "train_machine":	{
+	"machine_type":	"slurm",
+	"hostname" :	"localhost",
+	"port" :	22,
+	"username":	"username",
+    	"password":     "password",
+	"work_path" :	"the path of workplace",
+	"_comment" :	"that's all"
+    },
+    "train_resources":	{
+	"numb_node":	1,
+	"numb_gpu":	1,
+	"task_per_node":7,
+	"source_list":	[ "the path of deepmd source" ],
+	"module_list":	[ ],
+	"time_limit":	"23:0:0",
+	"mem_limit":	32,
+	"_comment":	"that's all"
+    },
+```
 # Troubleshooting
