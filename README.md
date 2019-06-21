@@ -102,7 +102,7 @@ The last part is the optional settings for various tasks mentioned above. You ca
     "supercell":[2,2,2],
 
     "_comment":"04.interstitial",
-    "insert_ele":"Zr",
+    "insert_ele":["Cu"],
     "reprod-opt":false,
 
     "_comment": "05.surface",
