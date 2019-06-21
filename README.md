@@ -54,6 +54,73 @@ So far, there are  3 test types for "task_type" (i.e. "vasp", "deepmd" and "meam
 
 >06.**phonon**:(beta version) the phonon specturm
 
+If you want to test all items, you can choose "all".
+
+The second part is the computational settings for vasp and lammps. The most important setting is to add the folder path of deepmd model and supply the corresponding element type map.
+```
+"vasp_params":	{
+	"ecut":		520,
+	"ediff":	1e-6,
+	"kspacing":	0.32,
+	"kgamma":	false,
+	"npar":		1,
+	"kpar":		1,
+	"_comment":	" that's all "
+    },
+    "deepmd_model_dir":	"the folder of deepmd model",
+    "deepmd_type_map":	[
+	"Cu"
+    ],
+    "meam_potfile_dir":	"meam",
+    "meam_type_map":	[
+	"Al", "Si", "Mg", "Cu", "Fe"
+    ],
+    "meam_potfile":	[
+	"library.meam",
+	"AlSiMgCuFe.meam"
+    ],
+    "meam_param_type":	[
+	"AlS", "SiS", "MgS", "CuS", "FeS"
+    ],
+```
+The last part is the optional settings for various tasks mentioned above. You can change the parameters according to actual needs.
+```
+    "_comment":"00.equi",
+    "store_stable":true,
+
+    "_comment": "01.eos",
+    "vol_start":	6,
+    "vol_end":		16,
+    "vol_step":		0.5,
+    "store_fix":false,
+
+    "_comment": "02.elastic",
+    "norm_deform":	2e-2,
+    "shear_deform":	5e-2,
+    
+    "_comment":"03.vacancy",
+    "supercell":[2,2,2],
+
+    "_comment":"04.interstitial",
+    "insert_ele":"Zr",
+    "reprod-opt":false,
+
+    "_comment": "05.surface",
+    "min_slab_size":	10,
+    "min_vacuum_size":	11,
+    "_comment": "pert xz to work around vasp bug...",
+    "pert_xz":		0.01,
+    "max_miller": 2,
+    "static-opt":false,
+    "store_relax":false,    
+
+    "_comment":"06.phonon",
+    "supercell_matrix":[2,2,2],
+    "band":"0 1 0  0.5 1 0.5  0.375 0.75 0.375  0  0  0  0.5 0.5 0.5",
+
+    "_comment":	"that's all"
+```
+
 ## How to write `machine.json`
 
 # Troubleshooting
