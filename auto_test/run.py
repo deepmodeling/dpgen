@@ -864,7 +864,7 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
     deepmd_model_dir = os.path.abspath(deepmd_model_dir)
 
     conf_path = os.path.abspath(conf_dir)
-    task_path = re.sub('confs', '04.intersitial', conf_path)
+    task_path = re.sub('confs', '04.interstitial', conf_path)
     if task_type == "vasp":
         work_path=os.path.join(task_path, 'vasp-k%.2f' % kspacing)
     elif task_type == "deepmd":
