@@ -972,18 +972,18 @@ def cmpt_interstitial(task_type,jdata,mdata):
 def gen_surf(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
     max_miller=jdata['max_miller']
-    relax=jdata['store_relax']
+    relax_box=jdata['relax_box']
     static_opt=jdata['static-opt']
     cwd=os.getcwd()
     #vasp
     if task_type == "vasp":
-        gen_05_surf.make_vasp(jdata, conf_dir, max_miller, static = static_opt, relax_box = relax)
+        gen_05_surf.make_vasp(jdata, conf_dir, max_miller, static = static_opt, relax_box = relax_box)
     #deepmd
     elif task_type == "deepmd" :
-        gen_05_surf.make_deepmd_lammps(jdata, conf_dir, max_miller, static = static_opt, relax_box = relax, task_name = 'deepmd')
+        gen_05_surf.make_deepmd_lammps(jdata, conf_dir, max_miller, static = static_opt, relax_box = relax_box, task_name = 'deepmd')
     #meam
     elif task_type == "meam" :
-        gen_05_surf.make_meam_lammps(jdata, conf_dir, max_miller, static = static_opt, relax_box = relax, task_name = 'meam')
+        gen_05_surf.make_meam_lammps(jdata, conf_dir, max_miller, static = static_opt, relax_box = relax_box, task_name = 'meam')
     else :
         raise RuntimeError("unknow task ", task_type)
     os.chdir(cwd)
