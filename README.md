@@ -38,9 +38,9 @@ python gen_confs.py Cu
 ```
 It will store the various configurations of the given element or alloy in **confs** folder.
 
-So far, "task_type" has 3 test types,(i.e. "vasp", "deepmd" and "meam") and "task" includes 7 test items as follows.
+So far, there are  3 test types for "task_type" (i.e. "vasp", "deepmd" and "meam") and 7 test items for "task" as follows.
 
-00.**equi**:(default task) the equilibrium state, return energy and volume per atom
+>00.**equi**:(default task) the equilibrium state, return energy and volume per atom
 
 >01.**eos**: the equation of state
 
