@@ -1,15 +1,27 @@
----
-title: 'Project documentation template'
-disqus: hackmd
----
-
 Workflow for DP-GEN
 ===
 
 
 ## Table of Contents
 
-[TOC]
+- [Workflow for DP-GEN](#workflow-for-dp-gen)
+  * [Table of Contents](#table-of-contents)
+  * [Basic structure of DPGEN](#basic-structure-of-dpgen)
+  * [User flows](#user-flows)
+  * [Preparing Data](#preparing-data)
+    + [param.json](#paramjson)
+  * [Main Process of Generator](#main-process-of-generator)
+    + [Basics](#basics)
+    + [machine.json](#machinejson)
+    + [param.json](#paramjson-1)
+    + [Test case : Methane](#test-case---methane)
+  * [Doing Auto_test](#doing-auto-test)
+    + [param.json](#paramjson-2)
+  * [Appendix and FAQ](#appendix-and-faq)
+          + [tags: `Templates` `Documentation`](#tags---templates---documentation-)
+
+
+
 
 ## Basic structure of DPGEN
 
@@ -28,13 +40,6 @@ data		generator	auto_test
 
 It's necessary to mention that, the various and specific configurations for the implementation of DPGEN is realised by modifying some jsons file. After that, all work can be automatically done by DPGEN! We wil give an explicit illustration for the parameters needed in the following part.
 
-User flows
----
-```sequence
-data->generator :
-Note over generator : train & model_devi & fp
-generator->auto_test: 
-```
 ## Preparing Data
 The main code of this part is `gen.py`.
 You may get the instructions of the codes, by:
@@ -485,5 +490,3 @@ The last part is the optional settings for various tasks mentioned above. You ca
 :::info
 **Find this document incomplete?** Leave a comment!
 :::
-
-###### tags: `Templates` `Documentation`
