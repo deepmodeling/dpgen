@@ -8,6 +8,7 @@ import tools.fcc as fcc
 import tools.bcc as bcc
 import tools.diamond as diamond
 import tools.sc as sc
+from pymatgen import Structure
 
 def create_path (path) :
     path += '/'
@@ -180,10 +181,11 @@ def make_super_cell (jdata) :
     from_file = os.path.join(from_path, 'POSCAR.unit')
     to_path = path_sc
     to_file = os.path.join(to_path, 'POSCAR')
-    cmd = "./tools/poscar_copy.py -n %d %d %d " % (super_cell[0], super_cell[1], super_cell[2]) + \
-          from_file + " " + \
-          to_file
-    sp.check_call(cmd, shell = True)
+
+    #minor bug for element symbol behind the coordinates
+    from_struct=Structure.from_file(from_file)
+    from_struct.make_supercell(super_cell)
+    from_struct.to('poscar',to_file)
 
 def make_super_cell_poscar(jdata) :
     out_dir = jdata['out_dir']
@@ -195,11 +197,11 @@ def make_super_cell_poscar(jdata) :
     
     from_file = os.path.join(path_sc, 'POSCAR.copied')
     shutil.copy2(from_poscar_path, from_file)
-    to_file = os.path.join(path_sc, 'POSCAR')
-    cmd = "./tools/poscar_copy.py -n %d %d %d " % (super_cell[0], super_cell[1], super_cell[2]) + \
-          from_file + " " + \
-          to_file
-    sp.check_call(cmd, shell = True)    
+  
+    #minor bug for element symbol behind the coordinates
+    from_struct=Structure.from_file(from_file)
+    from_struct.make_supercell(super_cell)
+    from_struct.to('poscar',to_file)  
 
     # make system dir (copy)
     lines = open(to_file, 'r').read().split('\n')
