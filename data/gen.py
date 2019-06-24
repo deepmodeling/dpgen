@@ -8,7 +8,6 @@ import tools.fcc as fcc
 import tools.bcc as bcc
 import tools.diamond as diamond
 import tools.sc as sc
-from pymatgen import Structure
 
 def create_path (path) :
     path += '/'
@@ -181,11 +180,10 @@ def make_super_cell (jdata) :
     from_file = os.path.join(from_path, 'POSCAR.unit')
     to_path = path_sc
     to_file = os.path.join(to_path, 'POSCAR')
-
-    #minor bug for element symbol behind the coordinates
-    from_struct=Structure.from_file(from_file)
-    from_struct.make_supercell(super_cell)
-    from_struct.to('poscar',to_file)
+    cmd = "./tools/poscar_copy.py -n %d %d %d " % (super_cell[0], super_cell[1], super_cell[2]) + \
+          from_file + " " + \
+          to_file
+    sp.check_call(cmd, shell = True)
 
 def make_super_cell_poscar(jdata) :
     out_dir = jdata['out_dir']
@@ -197,11 +195,11 @@ def make_super_cell_poscar(jdata) :
     
     from_file = os.path.join(path_sc, 'POSCAR.copied')
     shutil.copy2(from_poscar_path, from_file)
-  
-    #minor bug for element symbol behind the coordinates
-    from_struct=Structure.from_file(from_file)
-    from_struct.make_supercell(super_cell)
-    from_struct.to('poscar',to_file)  
+    to_file = os.path.join(path_sc, 'POSCAR')
+    cmd = "./tools/poscar_copy.py -n %d %d %d " % (super_cell[0], super_cell[1], super_cell[2]) + \
+          from_file + " " + \
+          to_file
+    sp.check_call(cmd, shell = True)    
 
     # make system dir (copy)
     lines = open(to_file, 'r').read().split('\n')
@@ -268,17 +266,18 @@ def place_element (jdata) :
 def make_vasp_relax (jdata) :
     out_dir = jdata['out_dir']
     potcars = jdata['potcars']
-    encut = jdata['encut']
-    kspacing = jdata['kspacing_relax']
-    kgamma = jdata['kgamma']
-    ismear = 1
-    if 'ismear' in jdata :
-        ismear = jdata['ismear']
-    sigma = 0.2
-    if 'sigma' in jdata :
-        sigma = jdata['sigma']
+    #encut = jdata['encut']
+    #kspacing = jdata['kspacing_relax']
+    #kgamma = jdata['kgamma']
+    #ismear = 1
+    #if 'ismear' in jdata :
+    #    ismear = jdata['ismear']
+    #sigma = 0.2
+    #if 'sigma' in jdata :
+    #    sigma = jdata['sigma']
     cwd = os.getcwd()
-    vasp_dir = os.path.join(cwd, 'vasp.in')
+
+    #vasp_dir = os.path.join(cwd, 'vasp.in')
 
     work_dir = os.path.join(out_dir, global_dirname_02)
     assert (os.path.isdir(work_dir))
@@ -287,7 +286,7 @@ def make_vasp_relax (jdata) :
         os.remove(os.path.join(work_dir, 'INCAR' ))
     if os.path.isfile(os.path.join(work_dir, 'POTCAR')) :
         os.remove(os.path.join(work_dir, 'POTCAR'))
-    shutil.copy2(os.path.join(vasp_dir, 'INCAR.rlx' ), 
+    shutil.copy2( jdata['relax_incar'], 
                  os.path.join(work_dir, 'INCAR'))
     out_potcar = os.path.join(work_dir, 'POTCAR')
     with open(out_potcar, 'w') as outfile:
@@ -296,15 +295,15 @@ def make_vasp_relax (jdata) :
                 outfile.write(infile.read())
     
     os.chdir(work_dir)
-    replace('INCAR', 'ENCUT=.*', 'ENCUT=%f' % encut)
-    replace('INCAR', 'ISIF=.*', 'ISIF=3')
-    replace('INCAR', 'KSPACING=.*', 'KSPACING=%f' % kspacing)
-    if kgamma :
-        replace('INCAR', 'KGAMMA=.*', 'KGAMMA=T')
-    else :
-        replace('INCAR', 'KGAMMA=.*', 'KGAMMA=F')
-    replace('INCAR', 'ISMEAR=.*', 'ISMEAR=%d' % ismear)
-    replace('INCAR', 'SIGMA=.*', 'SIGMA=%f' % sigma)
+    #replace('INCAR', 'ENCUT=.*', 'ENCUT=%f' % encut)
+    #replace('INCAR', 'ISIF=.*', 'ISIF=3')
+    #replace('INCAR', 'KSPACING=.*', 'KSPACING=%f' % kspacing)
+    #if kgamma :
+    #    replace('INCAR', 'KGAMMA=.*', 'KGAMMA=T')
+    #else :
+    #    replace('INCAR', 'KGAMMA=.*', 'KGAMMA=F')
+    #replace('INCAR', 'ISMEAR=.*', 'ISMEAR=%d' % ismear)
+    #replace('INCAR', 'SIGMA=.*', 'SIGMA=%f' % sigma)
     
     sys_list = glob.glob('sys-*')
     for ss in sys_list:
@@ -401,23 +400,23 @@ def pert_scaled(jdata) :
 def make_vasp_md(jdata) :
     out_dir = jdata['out_dir']
     potcars = jdata['potcars']
-    scale = jdata['scale']    
-    encut = jdata['encut']
-    kspacing = jdata['kspacing_md']
-    kgamma = jdata['kgamma']
-    pert_numb = jdata['pert_numb']
-    md_temp = jdata['md_temp']
+    scale = jdata['scale']   
+    pert_numb = jdata['pert_numb'] 
     md_nstep = jdata['md_nstep']
-    ismear = 1
-    if 'ismear' in jdata :
-        ismear = jdata['ismear']
-    sigma = 0.2
-    if 'sigma' in jdata :
-        sigma = jdata['sigma']
+    #encut = jdata['encut']
+    #kspacing = jdata['kspacing_md']
+    #kgamma = jdata['kgamma']
+    #md_temp = jdata['md_temp']
+    #ismear = 1
+    #f 'ismear' in jdata :
+    #    ismear = jdata['ismear']
+    #sigma = 0.2
+    #if 'sigma' in jdata :
+    #    sigma = jdata['sigma']
 
     cwd = os.getcwd()
-    vasp_dir = os.path.join(cwd, 'vasp.in')
-    vasp_dir = os.path.join(cwd, vasp_dir)
+    #vasp_dir = os.path.join(cwd, 'vasp.in')
+    #vasp_dir = os.path.join(cwd, vasp_dir)
     path_ps = os.path.join(out_dir, global_dirname_03)
     path_ps = os.path.abspath(path_ps)
     assert(os.path.isdir(path_ps))
@@ -428,7 +427,7 @@ def make_vasp_md(jdata) :
     path_md = os.path.join(out_dir, global_dirname_04)
     path_md = os.path.abspath(path_md)
     create_path(path_md)
-    shutil.copy2(os.path.join(vasp_dir, 'INCAR.md'), 
+    shutil.copy2(jdata['md_incar'], 
                  os.path.join(path_md, 'INCAR'))
     out_potcar = os.path.join(path_md, 'POTCAR')
     with open(out_potcar, 'w') as outfile:
@@ -436,18 +435,18 @@ def make_vasp_md(jdata) :
             with open(fname) as infile:
                 outfile.write(infile.read())
     os.chdir(path_md)
-    replace('INCAR', 'ENCUT=.*', 'ENCUT=%f' % encut)
-    replace('INCAR', 'ISIF=.*', 'ISIF=2')
-    replace('INCAR', 'KSPACING=.*', 'KSPACING=%f' % kspacing)
-    if kgamma :
-        replace('INCAR', 'KGAMMA=.*', 'KGAMMA=T')
-    else :
-        replace('INCAR', 'KGAMMA=.*', 'KGAMMA=F')    
-    replace('INCAR', 'NSW=.*', 'NSW=%d' % md_nstep)
-    replace('INCAR', 'TEBEG=.*', 'TEBEG=%d' % md_temp)
-    replace('INCAR', 'TEEND=.*', 'TEEND=%d' % md_temp)
-    replace('INCAR', 'ISMEAR=.*', 'ISMEAR=%d' % ismear)
-    replace('INCAR', 'SIGMA=.*', 'SIGMA=%f' % sigma)
+    #replace('INCAR', 'ENCUT=.*', 'ENCUT=%f' % encut)
+    #replace('INCAR', 'ISIF=.*', 'ISIF=2')
+    #replace('INCAR', 'KSPACING=.*', 'KSPACING=%f' % kspacing)
+    #if kgamma :
+    #    replace('INCAR', 'KGAMMA=.*', 'KGAMMA=T')
+    #else :
+    #    replace('INCAR', 'KGAMMA=.*', 'KGAMMA=F')    
+    #replace('INCAR', 'NSW=.*', 'NSW=%d' % md_nstep)
+    #replace('INCAR', 'TEBEG=.*', 'TEBEG=%d' % md_temp)
+    #replace('INCAR', 'TEEND=.*', 'TEEND=%d' % md_temp)
+    #replace('INCAR', 'ISMEAR=.*', 'ISMEAR=%d' % ismear)
+    #replace('INCAR', 'SIGMA=.*', 'SIGMA=%f' % sigma)
     os.chdir(cwd)    
 
     for ii in sys_ps :

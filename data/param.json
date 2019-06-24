@@ -7,8 +7,7 @@
 			 "/home/wanghan/Soft/vasp/potcar.54/potpaw_PBE.54/Mg/POTCAR"
 			],
     "encut":		600,
-    "kspacing_relax":	0.06,
-    "kspacing_md":	0.06,
+    "kspacing":		0.06,
     "kgamma":		false,
     "scale":		[0.96, 0.98, 1.00, 1.02, 1.04, 1.06],
     "skip_relax":	false,
