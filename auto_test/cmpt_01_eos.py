@@ -12,6 +12,7 @@ def comput_lmp_eos(conf_dir, task_name) :
     conf_path = os.path.join(conf_path, task_name)
     vol_paths = glob.glob(os.path.join(conf_path, 'vol-*'))
     vol_paths.sort()
+    print('Vpa(A^3)\tEpA(eV)')
     for ii in vol_paths :
         log_lammps = os.path.join(ii, 'log.lammps')
         natoms, epa, vpa = lammps.get_nev(log_lammps)
@@ -24,6 +25,7 @@ def comput_vasp_eos(jdata, conf_dir) :
     conf_path = os.path.join(conf_path, 'vasp-k%.2f' % kspacing)
     vol_paths = glob.glob(os.path.join(conf_path, 'vol-*'))
     vol_paths.sort()
+    print('Vpa(A^3)\tEpA(eV)')
     for ii in vol_paths :
         outcar = os.path.join(ii, 'OUTCAR')
         natoms, epa, vpa = vasp.get_nev(outcar)
