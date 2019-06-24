@@ -1,0 +1,19 @@
+{
+    "cell_type":	"diamond",
+    "super_cell":	[1, 1, 1],
+    "elements":		["H","C"],
+    "from_poscar":	true,
+    "from_poscar_path":	"/sharedext4/generator/example/deep.gen/data/ch4/CH4.POSCAR",
+    "potcars":		["/sharedext4/generator/example/deep.gen/data/ch4/POTCAR"
+			],
+    "relax_incar": "/sharedext4/generator/example/deep.gen/data/vasp.in/rlx",
+    "md_incar" : "/sharedext4/generator/example/deep.gen/data/vasp.in/md",
+    "scale":		[1.00],
+    "skip_relax":	false,
+    "pert_numb":	5,
+    "pert_box":		0.03,
+    "pert_atom":	0.01,
+    "deepgen_templ":	"../generator/template/",
+    "coll_ndata":	5000,
+    "_comment":		"that's all"
+}
