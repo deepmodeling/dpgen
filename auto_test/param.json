@@ -1,11 +1,11 @@
 {
     "_comment": "models",
     "potcar_map" : {
-	"Cu" : "/somewhere/POTCAR" 
+	"Cu" : "/somewhere/example/POTCAR" 
     },
-    "conf_dir":"the folder of configuration",
+    "conf_dir":"confs/Cu/mp-30",
     "task_type":"deepmd",
-    "task":"eos",
+    "task":"all",
 
     "vasp_params":	{
 	"ecut":		520,
@@ -16,7 +16,7 @@
 	"kpar":		1,
 	"_comment":	" that's all "
     },
-    "deepmd_model_dir":	"the folder of deepmd model",
+    "deepmd_model_dir":	"somewhere/example/Cu_pb",
     "deepmd_type_map":	[
 	"Cu"
     ],

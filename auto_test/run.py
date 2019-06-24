@@ -455,14 +455,17 @@ def cmpt_equi(task_type,jdata,mdata):
     #vasp
     if task_type=="vasp":
         vn, ve, vv = cmpt_00_equi.comput_vasp_nev(jdata, conf_dir, stable)
+        print('conf_dir:\t EpA(eV)  VpA(A^3)')
         print("%s\t %8.4f  %7.3f " % (conf_dir, ve, vv))
     #deepmd
     elif task_type=="deepmd":
         ln, le, lv = cmpt_00_equi.comput_lmp_nev(conf_dir, 'deepmd', stable)
+        print('conf_dir:\t EpA(eV)  VpA(A^3)')
         print("%s\t %8.4f  %7.3f " % (conf_dir, le, lv))
     #meam
     elif task_type=="meam":
         ln, le, lv = cmpt_00_equi.comput_lmp_nev(conf_dir, 'meam', stable)
+        print('conf_dir:\t EpA(eV)  VpA(A^3)')
         print("%s\t %8.4f  %7.3f " % (conf_dir, le, lv))
     else :
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
