@@ -34,6 +34,7 @@ def cmpt_vasp(jdata, conf_dir, static = False) :
     struct_path_list.sort()
     if len(struct_path_list) == 0:
         print("# cannot find results for conf %s supercell %s" % (conf_dir, supercell))
+    sys.stdout.write ("Miller_Indices: \tSurf_E(J/m^2) EpA(eV) equi_EpA(eV)\n")
     for ii in struct_path_list :
         structure_dir = os.path.basename(ii)
         outcar = os.path.join(ii, 'OUTCAR')
