@@ -1,9 +1,4 @@
-<<<<<<< HEAD
-=======
-
->>>>>>> caf9c47729eaf0d46ef30c4122c7c56447f556c1
-Workflow for DP-GEN
-===
+# Workflow for DP-GEN
 
 
 ## Table of Contents
