@@ -39,7 +39,7 @@
     "vol_start":	6,
     "vol_end":		16,
     "vol_step":		0.5,
-    "store_fix":false,
+    "fix_shape":true,
 
     "_comment": "02.elastic",
     "norm_deform":	2e-2,
@@ -49,7 +49,7 @@
     "supercell":[2,2,2],
 
     "_comment":"04.interstitial",
-    "insert_ele":"Zr",
+    "insert_ele":["Cu"],
     "reprod-opt":false,
 
     "_comment": "05.surface",
@@ -59,7 +59,7 @@
     "pert_xz":		0.01,
     "max_miller": 2,
     "static-opt":false,
-    "store_relax":false,    
+    "relax_box":false,    
 
     "_comment":"06.phonon",
     "supercell_matrix":[2,2,2],
