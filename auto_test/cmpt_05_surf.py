@@ -64,6 +64,7 @@ def cmpt_deepmd_lammps(jdata, conf_dir, task_name, static = False) :
     struct_path_list.sort()
     if len(struct_path_list) == 0:
         print("# cannot find results for conf %s" % (conf_dir))
+    sys.stdout.write ("Miller_Indices: \tSurf_E(J/m^2) EpA(eV) equi_EpA(eV)\n")
     for ii in struct_path_list :
         structure_dir = os.path.basename(ii)
         lmp_log = os.path.join(ii, 'log.lammps')
