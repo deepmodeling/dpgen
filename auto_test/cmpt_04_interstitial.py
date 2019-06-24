@@ -37,6 +37,7 @@ def _cmpt_vasp(jdata, conf_dir, supercell, insert_ele) :
     struct_path_list.sort()
     if len(struct_path_list) == 0:
         print("# cannot find results for conf %s supercell %s" % (conf_dir, supercell))
+    sys.stdout.write ("Insert_ele-Struct: Inter_E(eV)\n")
     for ii in struct_path_list :
         structure_dir = os.path.basename(ii)
         outcar = os.path.join(ii, 'OUTCAR')
@@ -113,6 +114,7 @@ def _cmpt_deepmd_lammps(jdata, conf_dir, supercell, insert_ele, task_name) :
     struct_path_list.sort()
     if len(struct_path_list) == 0:
         print("# cannot find results for conf %s supercell %s" % (conf_dir, supercell))
+    sys.stdout.write ("Insert_ele-Struct: Inter_E(eV)  E(eV) equi_E(eV)\n")
     for ii in struct_path_list :
         structure_dir = os.path.basename(ii)
         lmp_log = os.path.join(ii, 'log.lammps')
