@@ -42,10 +42,10 @@
 	"_comment": " traing controls",
 	"systems":		[],
 	"set_prefix":		"set",
-	"stop_batch":		20000,
+	"stop_batch":		30000,
 	"batch_size":		1,
 	"start_lr":		0.001,
-	"decay_steps":		100,
+	"decay_steps":		150,
 	"decay_rate":		0.95,
 	"seed":			0,
 

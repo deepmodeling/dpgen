@@ -65,7 +65,7 @@
         "source_list":  ["/sharedext4/softwares/source/vasp_cpu.activate" ],
         "module_list":  [],
 	"with_mpi" : 1,
-	"time_limit":   "0:10:0",
+	"time_limit":   "1:0:0",
 	"partition" : "GPU-All",
         "_comment":     "that's all"
     },
