@@ -46,6 +46,7 @@ def cmpt_vasp(jdata, conf_dir, supercell) :
     struct_path_list.sort()
     if len(struct_path_list) == 0:
         print("# cannot find results for conf %s supercell %s" % (conf_dir, supercell))
+    sys.stdout.write ("Structure: \tVac_E(eV)  E(eV) equi_E(eV)\n")
     for ii in struct_path_list :
         struct_poscar = os.path.join(ii, 'POSCAR')
         energy_shift = comput_e_shift(struct_poscar, 'vasp-k%.2f' % kspacing)
@@ -76,6 +77,7 @@ def cmpt_deepmd_lammps(jdata, conf_dir, supercell, task_name) :
     struct_path_list.sort()
     if len(struct_path_list) == 0:
         print("# cannot find results for conf %s supercell %s" % (conf_dir, supercell))
+    sys.stdout.write ("Structure: \tVac_E(eV)  E(eV) equi_E(eV)\n")
     for ii in struct_path_list :
         struct_poscar = os.path.join(ii, 'POSCAR')
         energy_shift = comput_e_shift(struct_poscar, task_name)
