@@ -39,25 +39,6 @@ data		generator	auto_test
 
 It's necessary to mention that, the various and specific configurations for the implementation of DPGEN is realised by modifying some jsons file. After that, all work can be automatically done by DPGEN! We wil give an explicit illustration for the parameters needed in the following part.
 
-<<<<<<< HEAD
-=======
-User flows
----
-```flow
-st=>start: Start
-e=>end: End
-op1=>operation: My Operation
-sub1=>subroutine: My Subroutine
-cond=>condition: Yes or No?
-io=>inputoutput: catch something...
-```
----
-```sequence
-data->generator :
-Note over generator : train & model_devi & fp
-generator->auto_test: 
-```
->>>>>>> caf9c47729eaf0d46ef30c4122c7c56447f556c1
 ## Preparing Data
 The main code of this part is `gen.py`.
 You may get the instructions of the codes, by:
