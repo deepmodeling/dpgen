@@ -1,0 +1,15 @@
+{
+    "sys_idx": [
+        1
+    ],
+    "temps": [
+        100
+    ],
+    "press": [
+        1.0
+    ],
+    "trj_freq": 10,
+    "nsteps": 1000,
+    "ensemble": "npt",
+    "_idx": "01"
+}

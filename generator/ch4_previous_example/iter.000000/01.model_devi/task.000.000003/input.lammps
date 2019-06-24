@@ -1,0 +1,31 @@
+variable        NSTEPS          equal 300
+variable        THERMO_FREQ     equal 10
+variable        DUMP_FREQ       equal 10
+variable        TEMP            equal 100.000000
+variable        PRES            equal 1.000000
+variable        TAU_T           equal 0.100000
+variable        TAU_P           equal 0.500000
+
+units           metal
+boundary        p p p
+atom_style      atomic
+
+neighbor        1.0 bin
+
+box          tilt large
+read_data       conf.lmp
+change_box   all triclinic
+mass            1 1.000000
+mass            2 12.000000
+pair_style      deepmd ../graph.002.pb ../graph.003.pb ../graph.000.pb ../graph.001.pb  ${THERMO_FREQ} model_devi.out
+pair_coeff      
+
+thermo_style    custom step temp pe ke etotal press vol lx ly lz xy xz yz
+thermo          ${THERMO_FREQ}
+dump            1 all custom ${DUMP_FREQ} traj/*.lammpstrj id type x y z
+
+velocity        all create ${TEMP} 522925
+fix             1 all npt temp ${TEMP} ${TEMP} ${TAU_T} iso ${PRES} ${PRES} ${TAU_P}
+
+timestep        0.002000
+run             ${NSTEPS}

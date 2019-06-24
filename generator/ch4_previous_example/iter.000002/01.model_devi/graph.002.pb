@@ -1,0 +1,1 @@
+/sharedext4/generator/example/deep.gen/generator/iter.000002/00.train/graph.002.pb

@@ -1,0 +1,53 @@
+{
+    "_comment": "that's all",
+    "use_smooth": true,
+    "sel_a": [
+        16,
+        4
+    ],
+    "rcut_smth": 0.5,
+    "rcut": 5,
+    "filter_neuron": [
+        10,
+        20,
+        40
+    ],
+    "filter_resnet_dt": false,
+    "n_axis_neuron": 12,
+    "n_neuron": [
+        120,
+        120,
+        120
+    ],
+    "resnet_dt": true,
+    "coord_norm": true,
+    "type_fitting_net": false,
+    "systems": [
+        "/sharedext4/generator/example/deep.gen/data/CH4.POSCAR.01x01x01/02.md/sys-0004-0001/deepmd"
+    ],
+    "set_prefix": "set",
+    "stop_batch": 20000,
+    "batch_size": [
+        8
+    ],
+    "start_lr": 0.001,
+    "decay_steps": 100,
+    "decay_rate": 0.95,
+    "seed": 5201587481161637624,
+    "start_pref_e": 0.02,
+    "limit_pref_e": 2,
+    "start_pref_f": 1000,
+    "limit_pref_f": 1,
+    "start_pref_v": 0.0,
+    "limit_pref_v": 0.0,
+    "disp_file": "lcurve.out",
+    "disp_freq": 1000,
+    "numb_test": 4,
+    "save_freq": 1000,
+    "save_ckpt": "model.ckpt",
+    "load_ckpt": "model.ckpt",
+    "disp_training": true,
+    "time_training": true,
+    "profiling": false,
+    "profiling_file": "timeline.json"
+}
