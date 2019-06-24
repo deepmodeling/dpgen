@@ -1,7 +1,3 @@
----
-title: 'Project documentation template'
-disqus: hackmd
----
 
 Workflow for DP-GEN
 ===
@@ -29,6 +25,15 @@ data		generator	auto_test
 It's necessary to mention that, the various and specific configurations for the implementation of DPGEN is realised by modifying some jsons file. After that, all work can be automatically done by DPGEN! We wil give an explicit illustration for the parameters needed in the following part.
 
 User flows
+---
+```flow
+st=>start: Start
+e=>end: End
+op1=>operation: My Operation
+sub1=>subroutine: My Subroutine
+cond=>condition: Yes or No?
+io=>inputoutput: catch something...
+```
 ---
 ```sequence
 data->generator :
