@@ -17,7 +17,6 @@
   * [Doing Auto_test](#doing-auto-test)
     + [param.json](#paramjson-2)
   * [Appendix and FAQ](#appendix-and-faq)
-          + [tags: `Templates` `Documentation`](#tags---templates---documentation-)
 
 
 
@@ -480,7 +479,6 @@ The last part is the optional settings for various tasks mentioned above. You ca
 + `relax_box`:(boolean) set true if the box is relaxed, otherwise only relax atom positions.
 + `supercell_matrix`:(list of integer) the supercell size used to compute phonon specturm.
 + `band` gives sampling band paths. The reciprocal points are specified in reduced coordinates. The given points are connected for defining band paths. When comma `,` is inserted between the points, the paths are disconnected.
-
 
 
 
