@@ -469,7 +469,7 @@ def cmpt_equi(task_type,jdata,mdata):
 
 def gen_eos(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
-    fix_shape=jdata['store_fix']
+    fix_shape=jdata['fix_shape']
     cwd=os.getcwd()
     #vasp
     if task_type == "vasp":
@@ -864,7 +864,7 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
     deepmd_model_dir = os.path.abspath(deepmd_model_dir)
 
     conf_path = os.path.abspath(conf_dir)
-    task_path = re.sub('confs', '04.intersitial', conf_path)
+    task_path = re.sub('confs', '04.interstitial', conf_path)
     if task_type == "vasp":
         work_path=os.path.join(task_path, 'vasp-k%.2f' % kspacing)
     elif task_type == "deepmd":
@@ -972,18 +972,18 @@ def cmpt_interstitial(task_type,jdata,mdata):
 def gen_surf(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
     max_miller=jdata['max_miller']
-    relax=jdata['store_relax']
+    relax_box=jdata['relax_box']
     static_opt=jdata['static-opt']
     cwd=os.getcwd()
     #vasp
     if task_type == "vasp":
-        gen_05_surf.make_vasp(jdata, conf_dir, max_miller, static = static_opt, relax_box = relax)
+        gen_05_surf.make_vasp(jdata, conf_dir, max_miller, static = static_opt, relax_box = relax_box)
     #deepmd
     elif task_type == "deepmd" :
-        gen_05_surf.make_deepmd_lammps(jdata, conf_dir, max_miller, static = static_opt, relax_box = relax, task_name = 'deepmd')
+        gen_05_surf.make_deepmd_lammps(jdata, conf_dir, max_miller, static = static_opt, relax_box = relax_box, task_name = 'deepmd')
     #meam
     elif task_type == "meam" :
-        gen_05_surf.make_meam_lammps(jdata, conf_dir, max_miller, static = static_opt, relax_box = relax, task_name = 'meam')
+        gen_05_surf.make_meam_lammps(jdata, conf_dir, max_miller, static = static_opt, relax_box = relax_box, task_name = 'meam')
     else :
         raise RuntimeError("unknow task ", task_type)
     os.chdir(cwd)
@@ -1122,8 +1122,10 @@ def run_task (json_file, machine_file) :
     else :
         fp_ssh_sess = SSHSession(fp_machine)
     
+    confs = jdata['conf_dir']
     ii = jdata['task_type']
     jj=jdata['task']
+    task_list=['equi','eos','elastic','vacancy','interstitial','surf','all']
     #default task
     log_iter ("gen_equi", ii, "equi")
     gen_equi (ii, jdata, mdata) 
@@ -1138,37 +1140,37 @@ def run_task (json_file, machine_file) :
         run_eos  (ii, jdata, mdata,model_devi_ssh_sess)
         log_iter ("cmpt_eos", ii, "eos")
         cmpt_eos (ii, jdata, mdata)
-    elif jj=="elastic" or jj=="all":
+    if jj=="elastic" or jj=="all":
         log_iter ("gen_elastic", ii, "elastic")
         gen_elastic (ii, jdata, mdata) 
         log_iter ("run_elastic", ii, "elastic")
         run_elastic  (ii, jdata, mdata,model_devi_ssh_sess)
         log_iter ("cmpt_elastic", ii, "elastic")
         cmpt_elastic (ii, jdata, mdata)
-    elif jj=="vacancy" or jj=="all":
+    if jj=="vacancy" or jj=="all":
         log_iter ("gen_vacancy", ii, "vacancy")
         gen_vacancy (ii, jdata, mdata) 
         log_iter ("run_vacancy", ii, "vacancy")
         run_vacancy  (ii, jdata, mdata,model_devi_ssh_sess)
         log_iter ("cmpt_vacancy", ii, "vacancy")
         cmpt_vacancy (ii, jdata, mdata)
-    elif jj=="interstitial" or jj=="all":
+    if jj=="interstitial" or jj=="all":
         log_iter ("gen_interstitial", ii, "interstitial")
         gen_interstitial (ii, jdata, mdata) 
         log_iter ("run_interstitial", ii, "interstitial")
         run_interstitial  (ii, jdata, mdata,model_devi_ssh_sess)
         log_iter ("cmpt_interstitial", ii, "interstitial")
         cmpt_interstitial (ii, jdata, mdata)
-    elif jj=="surf" or jj=="all":
+    if jj=="surf" or jj=="all":
         log_iter ("gen_surf", ii, "surf")
         gen_surf (ii, jdata, mdata) 
         log_iter ("run_surf", ii, "surf")
         run_surf  (ii, jdata, mdata,model_devi_ssh_sess)
         log_iter ("cmpt_surf", ii, "surf")
         cmpt_surf (ii, jdata, mdata)
-    elif jj!="equi" :
+    if jj not in task_list :
         raise RuntimeError ("unknow task %s, something wrong" % jj)
-    record_iter (record, ii, jj)
+    record_iter (record, confs, ii, jj)
 
 def _main () :
     parser = argparse.ArgumentParser()
