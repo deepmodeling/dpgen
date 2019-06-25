@@ -22,20 +22,21 @@ import time
 import dpdata
 import numpy as np
 import subprocess as sp
-from lib.utils import make_iter_name
-from lib.utils import create_path
-from lib.utils import copy_file_list
-from lib.utils import replace
-from lib.utils import cmd_append_log
-from lib.utils import log_iter
-from lib.utils import record_iter
-from lib.utils import log_task
-from lib.lammps import make_lammps_input
-from lib.vasp import write_incar_dict
-from lib.vasp import make_vasp_incar_user_dict
-from lib.pwscf import make_pwscf_input
-from lib.pwscf import cvt_1frame
-from lib.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
+from dpgen import dlog
+from dpgen.lib.utils import make_iter_name
+from dpgen.lib.utils import create_path
+from dpgen.lib.utils import copy_file_list
+from dpgen.lib.utils import replace
+from dpgen.lib.utils import cmd_append_log
+from dpgen.lib.utils import log_iter
+from dpgen.lib.utils import record_iter
+from dpgen.lib.utils import log_task
+from dpgen.lib.lammps import make_lammps_input
+from dpgen.lib.vasp import write_incar_dict
+from dpgen.lib.vasp import make_vasp_incar_user_dict
+from dpgen.lib.pwscf import make_pwscf_input
+from dpgen.lib.pwscf import cvt_1frame
+from dpgen.lib.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
 
 template_name = 'template'
 train_name = '00.train'
@@ -1425,6 +1426,13 @@ def run_iter (json_file, machine_file) :
             else :
                 raise RuntimeError ("unknow task %d, something wrong" % jj)
             record_iter (record, ii, jj)
+
+
+def gen_run(args) :
+    if args.PARAM and args.MACHINE:
+       dlog.info ("start running")
+       run_iter (args.PARAM, args.MACHINE)
+       dlog.info ("finished")    
 
 
 def _main () :

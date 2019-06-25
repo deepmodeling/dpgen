@@ -540,6 +540,14 @@ def coll_vasp_md(jdata) :
         sp.check_call(cmd_2set + (' %d '%coll_ndata), shell = True)
         os.chdir(path_md)
     os.chdir(cwd)
+
+
+def gen_run(args) :
+    if args.param and args.machine:
+       dlog.info ("start running")
+       run_iter (args.param, args.machine)
+       dlog.info ("finished")    
+
                 
 def _main() :
     parser = argparse.ArgumentParser(
