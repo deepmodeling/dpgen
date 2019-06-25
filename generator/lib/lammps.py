@@ -1,18 +1,9 @@
 #!/usr/bin/env python3
 
-import random, os, sys
+import random, os, sys, dpdata
 import numpy as np
 import subprocess as sp
 import scipy.constants as pc
-from lib.lmp import system_data
-
-def cvt_lammps_conf (fin, 
-                     fout) :
-    thisfile = os.path.abspath(__file__)
-    thisdir = os.path.dirname(thisfile)
-    cmd = os.path.join(thisdir, 'ovito_file_convert.py')
-    sp.check_call([cmd, fin, fout])    
-
 
 def _sample_sphere() :
     while True:
@@ -70,7 +61,8 @@ def make_lammps_input(ensemble,
     if pka_e is None :
         ret+= "velocity        all create ${TEMP} %d" % (random.randrange(max_seed-1)+1)
     else :
-        sys_data = system_data(open(conf_file).read().split('\n'))
+        sys = dpdata.System(conf_file, fmt = 'lammps/lmp')
+        sys_data = sys.data
         pka_mass = mass_map[sys_data['atom_types'][0] - 1]
         pka_vn = pka_e * pc.electron_volt / \
                  (0.5 * pka_mass * 1e-3 / pc.Avogadro * (pc.angstrom / pc.pico) ** 2)
