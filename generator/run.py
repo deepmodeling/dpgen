@@ -30,19 +30,11 @@ from lib.utils import cmd_append_log
 from lib.utils import log_iter
 from lib.utils import record_iter
 from lib.utils import log_task
-from lib.lammps import cvt_lammps_conf
 from lib.lammps import make_lammps_input
 from lib.vasp import write_incar_dict
 from lib.vasp import make_vasp_incar_user_dict
 from lib.pwscf import make_pwscf_input
-import lib.MachineLocal as MachineLocal
-import lib.MachineLocalGPU as MachineLocalGPU
-import lib.MachineSlurm as MachineSlurm
-import lib.MachinePBS as MachinePBS
-from lib.machine_exec import exec_hosts
-from lib.machine_exec import exec_hosts_batch
-from lib.batch_exec import exec_batch
-from lib.batch_exec import exec_batch_group
+from lib.pwscf import cvt_1frame
 from lib.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
 
 template_name = 'template'
@@ -769,7 +761,6 @@ def make_model_devi (iter_index,
                     os.chdir(cwd_)
                     with open(os.path.join(task_path, 'input.lammps'), 'w') as fp :
                         fp.write(file_c)
-                    # cvt_lammps_conf(cc, 'conf.lmp')
                     task_counter += 1
             conf_counter += 1
         sys_counter += 1
@@ -1271,8 +1262,7 @@ def run_fp (iter_index,
 
 
 def post_fp_vasp (iter_index,
-                  jdata,
-                  to_config = 'template/tools.vasp/cessp2force_lin.py'):
+                  jdata):
     model_devi_jobs = jdata['model_devi_jobs']
     assert (iter_index < len(model_devi_jobs)) 
 
@@ -1291,48 +1281,70 @@ def post_fp_vasp (iter_index,
     system_index = list(set_tmp)
     system_index.sort()
     
-    to_config = os.path.abspath(to_config)
-    cmd_to_config = to_config + " OUTCAR "
-    cmd_to_config = cmd_append_log(cmd_to_config, "to_config.log")
-    exec_hosts(MachineLocal, cmd_to_config, 1, fp_tasks)
-
-    convert_to_raw = 'template/tools.vasp/convert2raw.py'
-    shuffle_raw = 'template/tools.raw/shuffle_raw.py'
-    copy_raw = 'template/tools.raw/copy_raw.py'
-    raw_to_set = 'template/tools.raw/raw_to_set.sh'
-    convert_to_raw = os.path.abspath(convert_to_raw)
-    shuffle_raw = os.path.abspath(shuffle_raw)
-    copy_raw = os.path.abspath(copy_raw)
-    raw_to_set = os.path.abspath(raw_to_set)
     cwd = os.getcwd()
     for ss in system_index :
-        sys_config_data = glob.glob(os.path.join(work_path, "task.%s.*/test.configs"%ss))
-        sys_data_path = os.path.join(work_path, 'data.%s/orig'%ss)
-        create_path(sys_data_path)
-        with open(os.path.join(sys_data_path, 'data.configs'), 'wb') as wfd:
-            for f in sys_config_data :
-                with open(f, 'rb') as fd:
-                    shutil.copyfileobj(fd, wfd, 1024*1024*10)
-        os.chdir(sys_data_path)
-        sp.check_call(convert_to_raw + ' data.configs', shell = True)
-        os.chdir('..')
-        sp.check_call(shuffle_raw + ' orig/ .', shell = True)
-        if os.path.isfile('type.raw') :
-            os.remove('type.raw')
-        os.symlink('orig/type.raw', 'type.raw')
-        sp.check_call(raw_to_set, shell = True)
-        os.chdir(cwd)
+        sys_outcars = glob.glob(os.path.join(work_path, "task.%s.*/OUTCAR"%ss))
+        sys_outcars.sort()                
+        for idx,oo in enumerate(sys_outcars) :
+            if idx == 0:
+                all_sys = dpdata.LabeledSystem(oo) 
+            else:
+                sys = dpdata.LabeledSystem(oo) 
+                all_sys.append(sys)
+        sys_data_path = os.path.join(work_path, 'data.%s'%ss)
+        all_sys.to_deepmd_raw(sys_data_path)
+        all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_outcars))
+
+
+def post_fp_pwscf (iter_index,
+                   jdata):
+    model_devi_jobs = jdata['model_devi_jobs']
+    assert (iter_index < len(model_devi_jobs)) 
+
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
+    fp_tasks.sort()
+    if len(fp_tasks) == 0 :
+        return
+
+    system_index = []
+    for ii in fp_tasks :        
+        system_index.append(os.path.basename(ii).split('.')[1])
+    system_index.sort()
+    set_tmp = set(system_index)
+    system_index = list(set_tmp)
+    system_index.sort()
+    
+    cwd = os.getcwd()
+    for ss in system_index :
+        sys_output = glob.glob(os.path.join(work_path, "task.%s.*/output"%ss))
+        sys_input = glob.glob(os.path.join(work_path, "task.%s.*/input"%ss))
+        sys_output.sort()
+        sys_input.sort()
+        cc = 0
+        for ii,oo in zip(sys_input, sys_output) :
+            if cc == 0:
+                all_sys = dpdata.LabeledSystem()
+                all_sys.data = cvt_1frame(ii,oo)
+            else:
+                sys = dpdata.LabeledSystem() 
+                sys.data = cvt_1frame(ii,oo)
+                all_sys.append(sys)
+            cc += 1
+        sys_data_path = os.path.join(work_path, 'data.%s'%ss)
+        all_sys.to_deepmd_raw(sys_data_path)
+        all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
+
 
 def post_fp (iter_index,
-             jdata, 
-             mdata) :
+             jdata) :
     fp_style = jdata['fp_style']
 
     if fp_style == "vasp" :
         post_fp_vasp(iter_index, jdata) 
     elif fp_style == "pwscf" :
-        post_fp_vasp(iter_index, jdata,
-                     to_config = 'template/tools.pwscf/pwscf1frame.py') 
+        post_fp_pwscf(iter_index, jdata) 
     else :
         raise RuntimeError ("unsupported fp style")            
     
@@ -1409,7 +1421,7 @@ def run_iter (json_file, machine_file) :
                 run_fp (ii, jdata, mdata, fp_ssh_sess)
             elif jj == 8 :
                 log_iter ("post_fp", ii, jj)
-                post_fp (ii, jdata, mdata)
+                post_fp (ii, jdata)
             else :
                 raise RuntimeError ("unknow task %d, something wrong" % jj)
             record_iter (record, ii, jj)

@@ -168,17 +168,112 @@ def make_pwscf_input(sys_data, fp_pp_files, fp_params, user_input = True) :
     ret += "\n"
     return ret
 
+ry2ev = 13.605693009
+bohr2ang = 0.52917721067
+kbar2evperang3 = 1
+
+def get_block (lines, keyword, skip = 0) :
+    ret = []
+    for idx,ii in enumerate(lines) :
+        if keyword in ii :
+            blk_idx = idx + 1 + skip
+            while len(lines[blk_idx]) != 0 and blk_idx != len(lines):
+                ret.append(lines[blk_idx])
+                blk_idx += 1
+            break
+    return ret
+
+def get_types (lines) :
+    ret = []
+    blk = get_block(lines, 'ATOMIC_SPECIES')
+    for ii in blk:
+        ret.append(ii.split()[0])
+    return ret
+
+def get_cell (lines) :
+    ret = []
+    blk = get_block(lines, 'CELL_PARAMETERS')
+    for ii in blk:
+        ret.append([float(jj) for jj in ii.split()[0:3]])
+    ret = np.array([ret])
+    return ret
+
+def get_coords (lines) :
+    ret = []
+    blk = get_block(lines, 'ATOMIC_POSITIONS')
+    for ii in blk:
+        ret.append([float(jj) for jj in ii.split()[1:4]])
+    ret = np.array([ret])
+    return ret
+
+def get_natoms (lines) :
+    types = get_types (lines)
+    names = []
+    blk = get_block(lines, 'ATOMIC_POSITIONS')
+    for ii in blk:
+        names.append(ii.split()[0])
+    natoms = []
+    for ii in types :
+        natoms.append(names.count(ii))
+    # return np.array(natoms, dtype = int)
+    return natoms
+
+def get_atom_types(lines) :
+    types = get_types (lines)
+    names = []
+    blk = get_block(lines, 'ATOMIC_POSITIONS')
+    for ii in blk:
+        names.append(ii.split()[0])
+    ret = []
+    for ii in names:
+        ret.append(types.index(ii))
+    return np.array(ret, dtype = int)
+
+def get_energy (lines) :
+    for ii in lines :
+        if '!    total energy' in ii :
+            return np.array([ry2ev * float(ii.split('=')[1].split()[0])])
+    return None
+
+def get_force (lines) :
+    blk = get_block(lines, 'Forces acting on atoms', skip = 1)
+    ret = []
+    for ii in blk:
+        ret.append([float(jj) for jj in ii.split('=')[1].split()])
+    ret = np.array([ret])
+    ret *= (ry2ev / bohr2ang)
+    return ret
+
+def get_stress (lines, cells) :
+    vols = []
+    for ii in cells:
+        vols.append(np.linalg.det(ii.reshape([3,3])))
+    blk = get_block(lines, 'total   stress')
+    ret = []
+    for ii in blk:
+        ret.append([float(jj) for jj in ii.split()[3:6]])
+    ret = np.array([ret])
+    for idx,ii in enumerate(ret):
+        ii *= vols[idx] * 1e3 / 1.602176621e6
+    return ret
     
 
-# sys_data = system_from_poscar('POSCAR')
-# ret = ""
-# ret += _make_pwscf_01_runctrl(sys_data, 20, 1e-8)
-# ret += "\n"
-# ret += _make_pwscf_02_species(sys_data, ['../pp/C_HSCV_PBE-1.0.UPF', '../H_HSCV_PBE-1.0.UPF', '../N_HSCV_PBE-1.0.UPF'])
-# ret += "\n"
-# ret += _make_pwscf_03_config(sys_data)
-# ret += "\n"
-# ret += _make_pwscf_04_kpoints(sys_data, 0.6)
-# ret += "\n"
+def cvt_1frame (fin, fout):
+    with open(fout) as fp:
+        outlines = fp.read().split('\n')
+    with open(fin) as fp:
+        inlines = fp.read().split('\n')
+    # outlines = open(fout, 'r').read().split('\n')
+    # inlines = open(fin, 'r').read().split('\n')
+    data = {}
+    data['orig'] = [0,0,0]
+    data['atom_names'] = (get_types (inlines))
+    data['atom_numbs'] = (get_natoms(inlines))
+    data['atom_types'] = (get_atom_types(inlines))
+    data['coords'] = (get_coords(inlines))
+    data['cells'] = (get_cell  (inlines))
+    data['energies'] = (get_energy(outlines))
+    data['forces'] = (get_force (outlines))
+    data['virials'] = (get_stress(outlines, data['cells']))
+    return data
 
-# open('input', 'w').write(ret)
