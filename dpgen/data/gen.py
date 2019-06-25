@@ -1,13 +1,13 @@
 #!/usr/bin/env python3 
 
-import os,json,shutil,re,glob,argparse
+import os,json,shutil,re,glob,argparse,dpdata
 import numpy as np
 import subprocess as sp
-import tools.hcp as hcp
-import tools.fcc as fcc
-import tools.bcc as bcc
-import tools.diamond as diamond
-import tools.sc as sc
+import dpgen.data.tools.hcp as hcp
+import dpgen.data.tools.fcc as fcc
+import dpgen.data.tools.bcc as bcc
+import dpgen.data.tools.diamond as diamond
+import dpgen.data.tools.sc as sc
 from pymatgen import Structure
 
 def create_path (path) :
@@ -197,6 +197,8 @@ def make_super_cell_poscar(jdata) :
     
     from_file = os.path.join(path_sc, 'POSCAR.copied')
     shutil.copy2(from_poscar_path, from_file)
+    to_path = path_sc
+    to_file = os.path.join(to_path, 'POSCAR')
   
     #minor bug for element symbol behind the coordinates
     from_struct=Structure.from_file(from_file)
@@ -477,19 +479,7 @@ def coll_vasp_md(jdata) :
     md_nstep = jdata['md_nstep']
     scale = jdata['scale']    
     pert_numb = jdata['pert_numb']
-    deepgen_templ = jdata['deepgen_templ']
     coll_ndata = jdata['coll_ndata']
-    raw_files = ['box.raw', 'coord.raw', 'energy.raw', 'force.raw', 'virial.raw']
-
-    deepgen_templ = os.path.abspath(deepgen_templ)
-    cmd_cvt = os.path.join(deepgen_templ, 'tools.vasp')
-    cmd_cvt = os.path.join(cmd_cvt, 'cessp2force_lin.py')
-    cmd_2raw = os.path.join(deepgen_templ, 'tools.vasp')
-    cmd_2raw = os.path.join(cmd_2raw, 'convert2raw.py')
-    cmd_shfl = os.path.join(deepgen_templ, 'tools.raw')
-    cmd_shfl = os.path.join(cmd_shfl, 'shuffle_raw.py')
-    cmd_2set = os.path.join(deepgen_templ, 'tools.raw')
-    cmd_2set = os.path.join(cmd_2set, 'raw_to_set.sh')
 
     cwd = os.getcwd()
     path_md = os.path.join(out_dir, global_dirname_04)
@@ -517,36 +507,54 @@ def coll_vasp_md(jdata) :
             raise RuntimeError("MD dir: %s: find no valid outcar in sys %s, "
                                "check if your vasp md simulation is correctly done" 
                                % (path_md, ii)) 
-        for ii in valid_outcars :
-            arg_cvt += re.sub('OUTCAR', '', ii) + " "
-        tmp_cmd_cvt = cmd_cvt + arg_cvt
-        tmp_cmd_cvt += ' 1> cvt.log 2> cvt.log '
-        sp.check_call(tmp_cmd_cvt, shell = True)
+        cc = 0
+        for ii in valid_outcars:
+            if cc == 0:
+                all_sys = dpdata.LabeledSystem(ii)
+            else :
+                sys = dpdata.LabeledSystem(ii)
+                all_sys.append(sys)
+            cc += 1
         # create deepmd data
-        if os.path.isdir('deepmd') :
-            shutil.rmtree('deepmd')
-        os.mkdir('deepmd')
-        os.chdir('deepmd')
-        os.mkdir('orig')
-        os.mkdir('shuffled')
-        os.chdir('orig')
-        sp.check_call(cmd_2raw + ' ../../test.configs', shell = True)
-        os.chdir('..')
-        sp.check_call(cmd_shfl + ' orig shuffled ', shell = True)
-        for ii in raw_files:
-            sp.check_call('head -n %d shuffled/%s > %s' % (coll_ndata, ii, ii), shell = True)
-        shutil.copy2(os.path.join('orig', 'type.raw'), 'type.raw')
-        print(cmd_2set + (' %d '%coll_ndata))
-        sp.check_call(cmd_2set + (' %d '%coll_ndata), shell = True)
+        if all_sys.get_nframes() >= coll_ndata :
+            all_sys = all_sys.sub_system(np.arange(coll_ndata))
+        all_sys.to_deepmd_raw('deepmd')
+        all_sys.to_deepmd_npy('deepmd', set_size = all_sys.get_nframes())
         os.chdir(path_md)
     os.chdir(cwd)
 
 
-def gen_run(args) :
-    if args.param and args.machine:
-       dlog.info ("start running")
-       run_iter (args.param, args.machine)
-       dlog.info ("finished")    
+def gen_init(args) :
+    with open (args.PARAM, 'r') as fp :
+        jdata = json.load (fp)
+    out_dir = out_dir_name(jdata)
+    jdata['out_dir'] = out_dir
+    from_poscar = False 
+    if 'from_poscar' in jdata :
+        from_poscar = jdata['from_poscar']
+    print ("# working dir %s" % out_dir)
+
+    stage = args.STAGE
+
+    if stage == 1 :
+        create_path(out_dir)
+        shutil.copy2(args.PARAM, os.path.join(out_dir, 'param.json'))
+        if from_poscar :
+            make_super_cell_poscar(jdata)
+        else :
+            make_unit_cell(jdata)
+            make_super_cell(jdata)
+            place_element(jdata)
+        make_vasp_relax(jdata)
+    elif stage == 2 :
+        make_scale(jdata)
+        pert_scaled(jdata)
+    elif stage == 3 :
+        make_vasp_md(jdata)
+    elif stage == 4 :
+        coll_vasp_md(jdata)
+    else :
+        raise RuntimeError("unknow stage %d" % stage)
 
                 
 def _main() :

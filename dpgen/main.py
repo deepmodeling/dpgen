@@ -7,6 +7,7 @@ import argparse
 import sys
 import itertools
 from dpgen.generator.run import gen_run
+from dpgen.data.gen import gen_init
 from dpgen import info
 
 
@@ -36,9 +37,19 @@ def main():
 
     subparsers = parser.add_subparsers()
     
-    # # init model
-    # parser_init = subparsers.add_parser(
-    #     "init", help="dpgen initial data preparation tools.")
+    # init model
+    parser_init = subparsers.add_parser(
+        "init", help="dpgen initial data preparation tools.")
+    parser_init.add_argument('PARAM', type=str, 
+                             help="parameter file, json format")
+    parser_init.add_argument('STAGE', type=int,
+                             help="the stage of init, can be 1, 2, 3 or 4. "
+                             "1: Setup vasp jobs for relaxation. "
+                             "2: Collect vasp relaxed confs (if relax is not skiped). Perturb system. "
+                             "3: Setup vasp jobs for MD of perturbed system. "
+                             "4: Collect vasp md confs, make deepmd data. "
+    )
+    parser_init.set_defaults(func=gen_init)
     # parser_init.add_argument("-p",'--parameter', type=str, dest='param',
     #                     help="parameter file, json format")
     # parser_init.add_argument("-s","--stage", type=int, dest='stage',

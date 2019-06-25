@@ -31,6 +31,7 @@ setuptools.setup(
               'dpgen/generator',
               'dpgen/auto_test',
               'dpgen/data',
+              'dpgen/data/tools',
               'dpgen/lib'
     ],
     # package_data={'example':['*.json']},
