@@ -4,8 +4,8 @@ import os
 import sys
 from enum               import Enum
 from subprocess         import Popen, PIPE
-from lib.BatchJob import BatchJob
-from lib.BatchJob import JobStatus
+from dpgen.auto_test.lib.BatchJob import BatchJob
+from dpgen.auto_test.lib.BatchJob import JobStatus
         
 class SlurmJob (BatchJob) :
     def submit_command (self):

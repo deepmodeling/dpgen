@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import os, glob, argparse, json, re
-import lib.lammps as lammps
-import lib.vasp as vasp
+import dpgen.auto_test.lib.lammps as lammps
+import dpgen.auto_test.lib.vasp as vasp
 
 global_task_name = '01.eos'
 

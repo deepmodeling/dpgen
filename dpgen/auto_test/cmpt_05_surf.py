@@ -3,8 +3,8 @@
 import os, re, argparse, filecmp, json, glob, sys
 import subprocess as sp
 import numpy as np
-import lib.vasp as vasp
-import lib.lammps as lammps
+import dpgen.auto_test.lib.vasp as vasp
+import dpgen.auto_test.lib.lammps as lammps
 from pymatgen.analysis.elasticity.elastic import ElasticTensor
 from pymatgen.analysis.elasticity.strain import Strain
 from pymatgen.analysis.elasticity.stress import Stress

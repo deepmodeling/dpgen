@@ -5,7 +5,7 @@ import os
 # from . import lib
 
 NAME="dpgen"
-SHORT_CMD="dpm"
+SHORT_CMD="dpgen"
 dlog = logging.getLogger(__name__)
 dlog.setLevel(logging.DEBUG)
 dlogf = logging.FileHandler(os.getcwd()+os.sep+SHORT_CMD+'.log')

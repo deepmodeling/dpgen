@@ -30,6 +30,7 @@ setuptools.setup(
     packages=['dpgen', 
               'dpgen/generator',
               'dpgen/auto_test',
+              'dpgen/auto_test/lib',
               'dpgen/data',
               'dpgen/data/tools',
               'dpgen/lib'

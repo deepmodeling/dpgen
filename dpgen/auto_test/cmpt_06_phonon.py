@@ -3,8 +3,8 @@
 import os, re, argparse, filecmp, json, glob
 import subprocess as sp
 import numpy as np
-import lib.vasp as vasp
-import lib.lammps as lammps
+import dpgen.auto_test.lib.vasp as vasp
+import dpgen.auto_test.lib.lammps as lammps
 from phonopy import Phonopy
 from phonopy.structure.atoms import PhonopyAtoms
 import yaml

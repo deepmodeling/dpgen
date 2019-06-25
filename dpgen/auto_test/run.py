@@ -15,8 +15,8 @@ task:
 
 import sys
 import os, re, argparse, filecmp, json, glob
-import lib.vasp as vasp
-import lib.lammps as lammps
+import dpgen.auto_test.lib.vasp as vasp
+import dpgen.auto_test.lib.lammps as lammps
 import random
 import logging
 import warnings
@@ -24,30 +24,22 @@ import shutil
 import time
 import numpy as np
 import subprocess as sp
-from lib.utils import make_iter_name
-from lib.utils import create_path
-from lib.utils import copy_file_list
-from lib.utils import replace
-from lib.utils import cmd_append_log
-from lib.utils import log_iter
-from lib.utils import record_iter
-from lib.utils import log_iter
-from lib.pwscf import make_pwscf_input
-import lib.MachineLocal as MachineLocal
-import lib.MachineLocalGPU as MachineLocalGPU
-import lib.MachineSlurm as MachineSlurm
-import lib.MachinePBS as MachinePBS
-from lib.machine_exec import exec_hosts
-from lib.machine_exec import exec_hosts_batch
-from lib.batch_exec import exec_batch
-from lib.batch_exec import exec_batch_group
-from lib.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
-import gen_00_equi,cmpt_00_equi
-import gen_01_eos,cmpt_01_eos
-import gen_02_elastic,cmpt_02_elastic
-import gen_03_vacancy,cmpt_03_vacancy
-import gen_04_interstitial,cmpt_04_interstitial
-import gen_05_surf,cmpt_05_surf
+from dpgen.auto_test.lib.utils import make_iter_name
+from dpgen.auto_test.lib.utils import create_path
+from dpgen.auto_test.lib.utils import copy_file_list
+from dpgen.auto_test.lib.utils import replace
+from dpgen.auto_test.lib.utils import cmd_append_log
+from dpgen.auto_test.lib.utils import log_iter
+from dpgen.auto_test.lib.utils import record_iter
+from dpgen.auto_test.lib.utils import log_iter
+from dpgen.auto_test.lib.pwscf import make_pwscf_input
+from dpgen.auto_test.lib.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
+import dpgen.auto_test.gen_00_equi,dpgen.auto_test.cmpt_00_equi
+import dpgen.auto_test.gen_01_eos,dpgen.auto_test.cmpt_01_eos
+import dpgen.auto_test.gen_02_elastic,dpgen.auto_test.cmpt_02_elastic
+import dpgen.auto_test.gen_03_vacancy,dpgen.auto_test.cmpt_03_vacancy
+import dpgen.auto_test.gen_04_interstitial,dpgen.auto_test.cmpt_04_interstitial
+import dpgen.auto_test.gen_05_surf,dpgen.auto_test.cmpt_05_surf
 import requests
 from hashlib import sha1
 
@@ -1174,6 +1166,12 @@ def run_task (json_file, machine_file) :
     if jj not in task_list :
         raise RuntimeError ("unknow task %s, something wrong" % jj)
     record_iter (record, confs, ii, jj)
+
+def gen_test(args):
+    logging.info ("start auto-testing")
+    run_task (args.PARAM, args.MACHINE)
+    logging.info ("finished!")
+
 
 def _main () :
     parser = argparse.ArgumentParser()

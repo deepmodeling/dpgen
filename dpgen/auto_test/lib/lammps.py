@@ -2,7 +2,7 @@
 
 import random, os, sys
 import subprocess as sp
-import lib.util as util
+import dpgen.auto_test.lib.util as util
 
 def cvt_lammps_conf (fin, 
                      fout, 

@@ -2,8 +2,8 @@
 
 import warnings
 import numpy as np
-import lib.lammps as lammps
-import lib.util as util
+import dpgen.auto_test.lib.lammps as lammps
+import dpgen.auto_test.lib.util as util
 
 class OutcarItemError(Exception):
     pass

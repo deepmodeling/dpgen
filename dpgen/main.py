@@ -8,6 +8,7 @@ import sys
 import itertools
 from dpgen.generator.run import gen_run
 from dpgen.data.gen import gen_init
+from dpgen.auto_test.run import gen_test
 from dpgen import info
 
 
@@ -73,13 +74,13 @@ def main():
                         help="machine file, json format")
     parser_run.set_defaults(func=gen_run)
 
-    # # test model
-    # parser_test = subparsers.add_parser("test", help="auto test for deep potential.")
-    # parser_test.add_argument("-p",'--parameter', type=str, dest='param',
-    #                     help="parameter file, json format")
-    # parser_test.add_argument("-m",'--machine', type=str, dest='machine',
-    #                     help="machine file, json format")
-    # parser_test.set_defaults(func=gen_test)
+    # test model
+    parser_test = subparsers.add_parser("test", help="auto test for deep potential.")
+    parser_test.add_argument('PARAM', type=str,
+                        help="parameter file, json format")
+    parser_test.add_argument('MACHINE', type=str,
+                        help="machine file, json format")
+    parser_test.set_defaults(func=gen_test)
 
     # # convert  model
     # parser_structure = subparsers.add_parser(

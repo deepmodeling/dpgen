@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import os, re, argparse
-import lib.crys as crys
+import dpgen.auto_test.lib.crys as crys
 from pymatgen.ext.matproj import MPRester, Composition
 from pymatgen.analysis.structure_matcher import StructureMatcher
 
