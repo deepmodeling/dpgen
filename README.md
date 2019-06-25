@@ -19,6 +19,52 @@
   * [Appendix and FAQ](#appendix-and-faq)
 
 
+## Installation
+One can download the source code of dpgen by 
+```bash
+git clone https://github.com/deepmodeling/dpgen.git 
+```
+then use `setup.py` to install the module
+```bash
+cd dpgen
+python setup.py install --user
+```
+With this command, the dpgen executable is install to `$HOME/.local/bin/dpgen`. You may want to export the `PATH` by
+```bash
+export PATH=$HOME/.local/bin/dpgen:$PATH
+```
+To test if the installation is successful, you may execute
+```bash
+dpgen -h
+```
+and if everything works, it gives
+```
+DeepModeling
+------------
+
+Version: 0.1.0
+Path:    /home/wanghan/.local/lib/python3.6/site-packages/dpgen-0.1.0-py3.6.egg/dpgen
+Date:    Jun 27, 2019
+
+usage: dpgen [-h] {init,run,test} ...
+
+dpgen is a convenient script that uses DeepGenerator to prepare initial data,
+drive DeepMDkit and analyze results. This script works based on several sub-
+commands with their own options. To see the options for the sub-commands, type
+"dpgen sub-command -h".
+
+positional arguments:
+  {init,run,test}
+    init           dpgen initial data preparation tools.
+    run            Runing DeepMD with generator model.
+    test           auto test for deep potential.
+
+optional arguments:
+  -h, --help       show this help message and exit
+
+Author: DeepGenTeam Version: 0.1.0 Last updated: 2019.06.26
+```
+
 
 
 ## Basic structure of DPGEN
