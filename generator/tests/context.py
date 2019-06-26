@@ -6,5 +6,6 @@ param_file = 'param-mg-vasp.json'
 param_old_file = 'param-mg-vasp-old.json'
 param_pwscf_file = 'param-pyridine-pwscf.json'
 param_pwscf_old_file = 'param-pyridine-pwscf-old.json'
+param_gaussian_file = 'param-pyridine-gaussian.json'
 machine_file = 'machine-local.json'
 

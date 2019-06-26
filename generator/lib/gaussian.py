@@ -6,7 +6,7 @@ def make_gaussian_input(sys_data, fp_params):
     keywords = fp_params['keywords']
     nproc = fp_params['nproc']
     # assume charge is zero and spin multiplicity is 1
-    buff = ['%{:d}'.format(nproc), '#force {}'.format(
+    buff = ['%nproc={:d}'.format(nproc), '#force {}'.format(
         keywords), '', 'dpgen', '', '0 1']
     coordinates = sys_data['coords'][0]
     atom_names = (sys_data['atom_names'])
