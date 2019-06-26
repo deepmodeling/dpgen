@@ -35,6 +35,7 @@ from lib.vasp import write_incar_dict
 from lib.vasp import make_vasp_incar_user_dict
 from lib.pwscf import make_pwscf_input
 from lib.pwscf import cvt_1frame
+from lib.gaussian import make_gaussian_input
 from lib.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
 
 template_name = 'template'
@@ -1118,6 +1119,40 @@ def make_fp_pwscf(iter_index,
         md_trajs = glob.glob(os.path.join(modd_path, 'task*/traj'))
         for ii in md_trajs :
             shutil.rmtree(ii)
+
+
+def make_fp_gaussian(iter_index,
+                     jdata):
+    # make config
+    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
+    if len(fp_tasks) == 0 :
+        return        
+    # make gaussian gjf file
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    if 'user_fp_params' in jdata.keys() :        
+        fp_params = jdata['user_fp_params']
+    else:
+        fp_params = jdata['fp_params']
+    cwd = os.getcwd()
+    for ii in fp_tasks:
+        os.chdir(ii)
+        sys_data = dpdata.System('POSCAR').data
+        ret = make_gaussian_input(sys_data, fp_params)
+        with open('input', 'w') as fp:
+            fp.write(ret)
+        os.chdir(cwd)
+    # link pp files
+    _link_fp_vasp_pp(iter_index, jdata)
+    # clean traj
+    clean_traj = True
+    if 'model_devi_clean_traj' in jdata :
+        clean_traj = jdata['model_devi_clean_traj']
+    if clean_traj:
+        modd_path = os.path.join(iter_name, model_devi_name)
+        md_trajs = glob.glob(os.path.join(modd_path, 'task*/traj'))
+        for ii in md_trajs :
+            shutil.rmtree(ii)
             
 def make_fp (iter_index,
              jdata, 
@@ -1128,6 +1163,8 @@ def make_fp (iter_index,
         make_fp_vasp(iter_index, jdata) 
     elif fp_style == "pwscf" :
         make_fp_pwscf(iter_index, jdata) 
+    elif fp_style == "gaussian" :
+        make_fp_gaussian(iter_index, jdata)
     else :
         raise RuntimeError ("unsupported fp style")
 
@@ -1147,6 +1184,17 @@ def _qe_check_fin(ii) :
         with open(os.path.join(ii, 'output'), 'r') as fp :
             content = fp.read()
             count = content.count('JOB DONE')
+            if count != 1 :
+                return False
+    else :
+        return False
+    return True
+
+def _gaussian_check_fin(ii):
+    if os.path.isfile(os.path.join(ii, 'output')) :
+        with open(os.path.join(ii, 'output'), 'r') as fp :
+            content = fp.read()
+            count = content.count('Normal termination of Gaussian')
             if count != 1 :
                 return False
     else :
@@ -1257,6 +1305,10 @@ def run_fp (iter_index,
         forward_files = ['input'] + fp_pp_files
         backward_files = ['output']
         run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _qe_check_fin, log_file = 'output') 
+    elif fp_style == "gaussian":
+        forward_files = ['input']
+        backward_files = ['output']
+        run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _gaussian_check_fin, log_file = 'output') 
     else :
         raise RuntimeError ("unsupported fp style") 
 
@@ -1337,6 +1389,41 @@ def post_fp_pwscf (iter_index,
         all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
 
 
+def post_fp_gaussian (iter_index,
+                      jdata):
+    model_devi_jobs = jdata['model_devi_jobs']
+    assert (iter_index < len(model_devi_jobs)) 
+
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
+    fp_tasks.sort()
+    if len(fp_tasks) == 0 :
+        return
+
+    system_index = []
+    for ii in fp_tasks :        
+        system_index.append(os.path.basename(ii).split('.')[1])
+    system_index.sort()
+    set_tmp = set(system_index)
+    system_index = list(set_tmp)
+    system_index.sort()
+    
+    cwd = os.getcwd()
+    for ss in system_index :
+        sys_output = glob.glob(os.path.join(work_path, "task.%s.*/output"%ss))
+        sys_output.sort()
+        for idx,oo in enumerate(sys_output) :
+            if idx == 0:
+                all_sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log') 
+            else:
+                sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log') 
+                all_sys.append(sys)
+        sys_data_path = os.path.join(work_path, 'data.%s'%ss)
+        all_sys.to_deepmd_raw(sys_data_path)
+        all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
+
+
 def post_fp (iter_index,
              jdata) :
     fp_style = jdata['fp_style']
@@ -1345,6 +1432,8 @@ def post_fp (iter_index,
         post_fp_vasp(iter_index, jdata) 
     elif fp_style == "pwscf" :
         post_fp_pwscf(iter_index, jdata) 
+    elif fp_style == 'gaussian' :
+        post_fp_gaussian(iter_index, jdata)
     else :
         raise RuntimeError ("unsupported fp style")            
     
