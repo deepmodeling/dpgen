@@ -23,20 +23,20 @@ import dpdata
 import numpy as np
 import subprocess as sp
 from dpgen import dlog
-from dpgen.lib.utils import make_iter_name
-from dpgen.lib.utils import create_path
-from dpgen.lib.utils import copy_file_list
-from dpgen.lib.utils import replace
-from dpgen.lib.utils import cmd_append_log
-from dpgen.lib.utils import log_iter
-from dpgen.lib.utils import record_iter
-from dpgen.lib.utils import log_task
-from dpgen.lib.lammps import make_lammps_input
-from dpgen.lib.vasp import write_incar_dict
-from dpgen.lib.vasp import make_vasp_incar_user_dict
-from dpgen.lib.pwscf import make_pwscf_input
-from dpgen.lib.pwscf import cvt_1frame
-from dpgen.lib.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
+from dpgen.generator.lib.utils import make_iter_name
+from dpgen.generator.lib.utils import create_path
+from dpgen.generator.lib.utils import copy_file_list
+from dpgen.generator.lib.utils import replace
+from dpgen.generator.lib.utils import cmd_append_log
+from dpgen.generator.lib.utils import log_iter
+from dpgen.generator.lib.utils import record_iter
+from dpgen.generator.lib.utils import log_task
+from dpgen.generator.lib.lammps import make_lammps_input
+from dpgen.generator.lib.vasp import write_incar_dict
+from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
+from dpgen.generator.lib.pwscf import make_pwscf_input
+from dpgen.generator.lib.pwscf import cvt_1frame
+from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
 
 template_name = 'template'
 train_name = '00.train'

@@ -44,8 +44,11 @@ class SSHSession (object) :
         self.remote_host = self.remote_profile['hostname']
         self.remote_port = self.remote_profile['port']
         self.remote_uname = self.remote_profile['username']
+        self.remote_password = None
+        if 'password' in self.remote_profile :
+            self.remote_password = self.remote_profile['password']
         self.remote_workpath = self.remote_profile['work_path']
-        self.ssh = self._setup_ssh(self.remote_host, self.remote_port, username = self.remote_uname)
+        self.ssh = self._setup_ssh(self.remote_host, self.remote_port, username = self.remote_uname,password=self.remote_password)
         
     def _setup_ssh(self,
                    hostname,

@@ -29,11 +29,12 @@ setuptools.setup(
     url="https://github.com/deepmodeling/dpgen",
     packages=['dpgen', 
               'dpgen/generator',
+              'dpgen/generator/lib',
               'dpgen/auto_test',
               'dpgen/auto_test/lib',
               'dpgen/data',
               'dpgen/data/tools',
-              'dpgen/lib'
+              'dpgen/remote'
     ],
     # package_data={'example':['*.json']},
     classifiers=[

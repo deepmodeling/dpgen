@@ -33,7 +33,7 @@ from dpgen.auto_test.lib.utils import log_iter
 from dpgen.auto_test.lib.utils import record_iter
 from dpgen.auto_test.lib.utils import log_iter
 from dpgen.auto_test.lib.pwscf import make_pwscf_input
-from dpgen.auto_test.lib.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
+from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
 import dpgen.auto_test.gen_00_equi,dpgen.auto_test.cmpt_00_equi
 import dpgen.auto_test.gen_01_eos,dpgen.auto_test.cmpt_01_eos
 import dpgen.auto_test.gen_02_elastic,dpgen.auto_test.cmpt_02_elastic
