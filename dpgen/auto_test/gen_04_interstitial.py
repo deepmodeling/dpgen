@@ -122,14 +122,13 @@ def _make_deepmd_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_name) 
     with open(f_lammps_in, 'w') as fp :
         fp.write(fc)
 
-    #os.chdir(lmps_path)
-    #for ii in deepmd_models_name :
-    #    if os.path.exists(ii) :
-    #        os.remove(ii)
-    #for (ii,jj) in zip(deepmd_models, deepmd_models_name) :
-    #        os.symlink(os.path.relpath(ii), jj)
-    #share_models = glob.glob(os.path.join(lmps_path, '*pb'))
-
+    os.chdir(lmps_path)
+    for ii in deepmd_models_name :
+        if os.path.exists(ii) :
+            os.remove(ii)
+    for (ii,jj) in zip(deepmd_models, deepmd_models_name) :
+            os.symlink(os.path.relpath(ii), jj)
+    share_models = glob.glob(os.path.join(lmps_path, '*pb'))
 
     for vs in vasp_struct :
         # get vasp energy
@@ -176,7 +175,7 @@ def _make_deepmd_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_name) 
             ptypes = vasp.get_poscar_types('POSCAR')
             lammps.apply_type_map('conf.lmp', deepmd_type_map, ptypes)
             # link models
-            for (kk,ll) in zip(deepmd_models, deepmd_models_name) :
+            for (kk,ll) in zip(share_models, deepmd_models_name) :
                 os.symlink(os.path.relpath(kk), ll)
             os.chdir(ls)
         os.chdir(cwd)
