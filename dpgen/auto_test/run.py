@@ -35,12 +35,12 @@ from dpgen.auto_test.lib.utils import log_iter
 from dpgen.auto_test.lib.pwscf import make_pwscf_input
 from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
 from dpgen.remote.group_jobs import *
-import dpgen.auto_test.gen_00_equi,dpgen.auto_test.cmpt_00_equi
-import dpgen.auto_test.gen_01_eos,dpgen.auto_test.cmpt_01_eos
-import dpgen.auto_test.gen_02_elastic,dpgen.auto_test.cmpt_02_elastic
-import dpgen.auto_test.gen_03_vacancy,dpgen.auto_test.cmpt_03_vacancy
-import dpgen.auto_test.gen_04_interstitial,dpgen.auto_test.cmpt_04_interstitial
-import dpgen.auto_test.gen_05_surf,dpgen.auto_test.cmpt_05_surf
+from dpgen.auto_test import gen_00_equi,cmpt_00_equi
+from dpgen.auto_test import gen_01_eos,cmpt_01_eos
+from dpgen.auto_test import gen_02_elastic,cmpt_02_elastic
+from dpgen.auto_test import gen_03_vacancy,cmpt_03_vacancy
+from dpgen.auto_test import gen_04_interstitial,cmpt_04_interstitial
+from dpgen.auto_test import gen_05_surf,cmpt_05_surf
 import requests
 from hashlib import sha1
 
