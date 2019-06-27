@@ -1,7 +1,7 @@
-import os,sys,glob
+import os,sys,glob,time
 import numpy as np
 import subprocess as sp
-from dpgen.remote.RemoteJob import SlurmJob
+from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
 
 import requests
 from hashlib import sha1
