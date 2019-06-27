@@ -145,6 +145,14 @@ def make_deepmd_lammps(jdata, conf_dir) :
     with open(f_lammps_in, 'w') as fp :
         fp.write(fc)
     cwd = os.getcwd()
+    os.chdir(task_path)
+    for ii in deepmd_models_name :
+        if os.path.exists(ii) :
+            os.remove(ii)
+    for (ii,jj) in zip(deepmd_models, deepmd_models_name) :
+            os.symlink(os.path.relpath(ii), jj)
+    share_models = glob.glob(os.path.join(task_path, '*pb'))
+
     for ii in range(n_dfm) :
         # make dir
         dfm_path = os.path.join(task_path, 'dfm-%03d' % ii)
@@ -164,7 +172,7 @@ def make_deepmd_lammps(jdata, conf_dir) :
         # link lammps.in
         os.symlink(os.path.relpath(f_lammps_in), 'lammps.in')
         # link models
-        for (ii,jj) in zip(deepmd_models, deepmd_models_name) :
+        for (ii,jj) in zip(share_models, deepmd_models_name) :
             os.symlink(os.path.relpath(ii), jj)
     cwd = os.getcwd()
 

@@ -34,248 +34,16 @@ from dpgen.auto_test.lib.utils import record_iter
 from dpgen.auto_test.lib.utils import log_iter
 from dpgen.auto_test.lib.pwscf import make_pwscf_input
 from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
-import dpgen.auto_test.gen_00_equi,dpgen.auto_test.cmpt_00_equi
-import dpgen.auto_test.gen_01_eos,dpgen.auto_test.cmpt_01_eos
-import dpgen.auto_test.gen_02_elastic,dpgen.auto_test.cmpt_02_elastic
-import dpgen.auto_test.gen_03_vacancy,dpgen.auto_test.cmpt_03_vacancy
-import dpgen.auto_test.gen_04_interstitial,dpgen.auto_test.cmpt_04_interstitial
-import dpgen.auto_test.gen_05_surf,dpgen.auto_test.cmpt_05_surf
+from dpgen.remote.group_jobs import *
+from dpgen.auto_test import gen_00_equi,cmpt_00_equi
+from dpgen.auto_test import gen_01_eos,cmpt_01_eos
+from dpgen.auto_test import gen_02_elastic,cmpt_02_elastic
+from dpgen.auto_test import gen_03_vacancy,cmpt_03_vacancy
+from dpgen.auto_test import gen_04_interstitial,cmpt_04_interstitial
+from dpgen.auto_test import gen_05_surf,cmpt_05_surf
 import requests
 from hashlib import sha1
 
-def _verfy_ac(private_key, params):
-    items= sorted(params.items())
-    
-    params_data = ""
-    for key, value in items:
-        params_data = params_data + str(key) + str(value)
-    params_data = params_data + private_key
-    sign = sha1()
-    sign.update(params_data.encode())
-    signature = sign.hexdigest()
-    return signature
-
-def _ucloud_remove_machine(machine, UHostId):
-    ucloud_url = machine['url']
-    ucloud_stop_param = {}
-    ucloud_stop_param['Action'] = "StopUHostInstance"
-    ucloud_stop_param['Region'] = machine['ucloud_param']['Region']
-    ucloud_stop_param['UHostId'] = UHostId
-    ucloud_stop_param['PublicKey'] = machine['ucloud_param']['PublicKey']
-    ucloud_stop_param['Signature'] = _verfy_ac(machine['Private'], ucloud_stop_param)
-
-    
-    req = requests.get(ucloud_url, ucloud_stop_param)
-    if req.json()['RetCode'] != 0 :
-        raise RuntimeError ("failed to stop ucloud machine")
-
-    terminate_fin = False
-    try_time = 0 
-    while not terminate_fin:
-        ucloud_delete_param = {}
-        ucloud_delete_param['Action'] = "TerminateUHostInstance"
-        ucloud_delete_param['Region'] = machine['ucloud_param']['Region']
-        ucloud_delete_param['UHostId'] = UHostId
-        ucloud_delete_param['PublicKey'] = machine['ucloud_param']['PublicKey']
-        ucloud_delete_param['Signature'] = _verfy_ac(machine['Private'], ucloud_delete_param)    
-        req = requests.get(ucloud_url, ucloud_delete_param)
-        if req.json()['RetCode'] == 0 :
-            terminate_fin = True
-        try_time = try_time + 1
-        if try_time >= 200:
-            raise RuntimeError ("failed to terminate ucloud machine")
-        time.sleep(10)
-    print("Machine ",UHostId,"has been successfully terminated!")   
-
-def _ucloud_submit_jobs(machine,
-                        resources,
-                        command,
-                        work_path,
-                        tasks,
-                        group_size,
-                        forward_common_files,
-                        forward_task_files,
-                        backward_task_files) :
-    task_chunks = [
-        [os.path.basename(j) for j in tasks[i:i + group_size]] \
-        for i in range(0, len(tasks), group_size)
-    ]
-    njob = len(task_chunks)
-    continue_status = False
-    if os.path.isfile("record.machine"):
-        with open ("record.machine", "r") as fr:
-            record_machine = json.load(fr)
-            if record_machine["purpose"] == machine["purpose"] and record_machine["njob"] == njob:
-                continue_status = True
-                ucloud_machines = record_machine["ucloud_machines"]
-                ucloud_hostids = record_machine["ucloud_hostids"]
-        fr.close()
-    ucloud_url = machine['url']
-    if continue_status == False:
-        assert machine['machine_type'] == 'ucloud'
-        ucloud_start_param = machine['ucloud_param']
-        ucloud_start_param['Action'] = "CreateUHostInstance"
-        ucloud_start_param['Name'] = "train"
-        ucloud_start_param['Signature'] = _verfy_ac(machine['Private'], ucloud_start_param)
-
-        
-        ucloud_machines = []
-        ucloud_hostids = []
-        for ii in range(njob) :
-            req = requests.get(ucloud_url, ucloud_start_param)
-            if req.json()['RetCode'] != 0 :
-                print(json.dumps(req.json(),indent=2, sort_keys=True))
-                raise RuntimeError ("failed to start ucloud machine")
-            ucloud_machines.append(str(req.json()["IPs"][0]))
-            ucloud_hostids.append(str(req.json()["UHostIds"][0]))
-
-        new_record_machine = {}
-        new_record_machine["purpose"] = machine["purpose"]
-        new_record_machine["njob"] = njob
-        new_record_machine["ucloud_machines"] = ucloud_machines
-        new_record_machine["ucloud_hostids"] = ucloud_hostids
-        with open ("record.machine", "w") as fw:
-            json.dump(new_record_machine, fw)
-        fw.close()
-
-    machine_fin = [False for ii in ucloud_machines]
-    total_machine_num = len(ucloud_machines)
-    fin_machine_num = 0
-    while not all(machine_fin):
-        for idx,mac in enumerate(ucloud_machines):
-            if not machine_fin[idx]:
-                ucloud_check_param = {}
-                ucloud_check_param['Action'] = "GetUHostInstanceVncInfo"
-                ucloud_check_param['Region'] = machine['ucloud_param']['Region']
-                ucloud_check_param['UHostId'] = ucloud_hostids[idx]
-                ucloud_check_param['PublicKey'] = machine['ucloud_param']['PublicKey']
-                ucloud_check_param['Signature'] = _verfy_ac(machine['Private'], ucloud_check_param)
-                req = requests.get(ucloud_url, ucloud_check_param)
-                print("the UHostId is", ucloud_hostids[idx])
-                print(json.dumps(req.json(),indent=2, sort_keys=True))
-                if req.json()['RetCode'] == 0 :
-                    machine_fin[idx] = True
-                    fin_machine_num = fin_machine_num + 1
-        print("Current finish",fin_machine_num,"/", total_machine_num)
-
-        
-        ucloud_check_param1 = {}
-        ucloud_check_param1['Action'] = "DescribeUHostInstance"
-        ucloud_check_param1['Region'] = machine['ucloud_param']['Region']
-        ucloud_check_param1["Limit"] = 100
-        ucloud_check_param1['PublicKey'] = machine['ucloud_param']['PublicKey']
-        ucloud_check_param1['Signature'] = _verfy_ac(machine['Private'], ucloud_check_param1)
-        req1 = requests.get(ucloud_url, ucloud_check_param1).json()
-        
-        machine_all_fin = True
-        for idx1 in range(int(req1["TotalCount"])):
-            if req1["UHostSet"][idx1]["State"] != "Running":
-                machine_all_fin = False
-                break
-        if machine_all_fin == True:
-            machine_fin = [True for i in machine_fin]
-        time.sleep(10)
-    ssh_sess = []
-    ssh_param = {}
-    ssh_param['port'] = 22
-    ssh_param['username'] = 'root'
-    ssh_param['work_path'] = machine['work_path']
-    for ii in ucloud_machines :
-        ssh_param['hostname'] = ii
-        ssh_sess.append(SSHSession(ssh_param))
-
-    job_list = []
-    for ii in range(njob) :
-        chunk = task_chunks[ii]
-        print("Current machine is", ucloud_machines[ii])
-        rjob = CloudMachineJob(ssh_sess[ii], work_path)
-        rjob.upload('.',  forward_common_files)
-        rjob.upload(chunk, forward_task_files)
-        rjob.submit(chunk, command, resources = resources)
-        job_list.append(rjob)
-    
-    job_fin = [False for ii in job_list]
-    while not all(job_fin) :
-        for idx,rjob in enumerate(job_list) :
-            if not job_fin[idx] :
-                status = rjob.check_status()
-                if status == JobStatus.terminated :
-                    raise RuntimeError("find unsuccessfully terminated job on machine" % ucloud_machines[idx])
-                elif status == JobStatus.finished :
-                    rjob.download(task_chunks[idx], backward_task_files)
-                    rjob.clean()
-                    _ucloud_remove_machine(machine, ucloud_hostids[idx])
-                    job_fin[idx] = True
-        time.sleep(10)
-    os.remove("record.machine")
-
-def _group_slurm_jobs(ssh_sess,
-                      resources,
-                      command,
-                      work_path,
-                      tasks,
-                      group_size,
-                      forward_common_files,
-                      forward_task_files,
-                      backward_task_files,
-                      remote_job = SlurmJob) :
-    task_chunks = [
-        [os.path.basename(j) for j in tasks[i:i + group_size]] \
-        for i in range(0, len(tasks), group_size)
-    ]
-    job_list = []
-    for chunk in task_chunks :
-        rjob = remote_job(ssh_sess, work_path)
-        cwd=[os.path.basename(ii) for ii in chunk]
-        rjob.upload(cwd,forward_common_files)
-        rjob.upload(chunk, forward_task_files)
-        rjob.submit(chunk, command, resources = resources)
-        job_list.append(rjob)
-
-    job_fin = [False for ii in job_list]
-    while not all(job_fin) :
-        for idx,rjob in enumerate(job_list) :
-            if not job_fin[idx] :
-                status = rjob.check_status()
-                if status == JobStatus.terminated :
-                    raise RuntimeError("find unsuccessfully terminated job in %s" % rjob.get_job_root())
-                elif status == JobStatus.finished :
-                    rjob.download(task_chunks[idx], backward_task_files)
-                    rjob.clean()
-                    job_fin[idx] = True
-        time.sleep(10)
-
-def _group_local_jobs(ssh_sess,
-                      resources,
-                      command,
-                      work_path,
-                      tasks,
-                      group_size,
-                      forward_common_files,
-                      forward_task_files,
-                      backward_task_files) :
-    task_chunks = [
-        [os.path.basename(j) for j in tasks[i:i + group_size]] \
-        for i in range(0, len(tasks), group_size)
-    ]
-    job_list = []
-    for chunk in task_chunks :
-        rjob = CloudMachineJob(ssh_sess, work_path)
-        cwd=[os.path.basename(ii) for ii in chunk]
-        rjob.upload(cwd,forward_common_files)
-        rjob.upload(chunk, forward_task_files)
-        rjob.submit(chunk, command, resources = resources)
-        job_list.append(rjob)
-        job_fin = False
-        while not job_fin :
-            status = rjob.check_status()
-            if status == JobStatus.terminated :
-                raise RuntimeError("find unsuccessfully terminated job in %s" % rjob.get_job_root())
-            elif status == JobStatus.finished :
-                rjob.download(chunk, backward_task_files)
-                rjob.clean()
-                job_fin = True
-            time.sleep(10)
 
 def _run(machine,
          machine_type,
@@ -285,52 +53,54 @@ def _run(machine,
          work_path,
          run_tasks,
          group_size,
-         model_names,
+         common_files,
          forward_files,
          backward_files):
 
     print("group_size",group_size)
     if ssh_sess == None and machine_type == 'ucloud':
         print("The first situation!")
-        _ucloud_submit_jobs(machine,
+        ucloud_submit_jobs(machine,
                             resources,
                             command,
                             work_path,
                             run_tasks,
                             group_size,
-                            model_names,
+                            common_files,
                             forward_files,
                             backward_files)
     elif machine_type == 'slurm' :        
         print("The second situation!")
-        _group_slurm_jobs(ssh_sess,
+        group_slurm_jobs(ssh_sess,
                            resources,
                            command,
                            work_path,
                            run_tasks,
                            group_size,
-                           model_names,
-                           forward_files,
-                           backward_files)
-    elif machine_type == 'pbs' :        
-        _group_slurm_jobs(ssh_sess,
-                           resources,
-                           command,
-                           work_path,
-                           run_tasks,
-                           group_size,
-                           model_names,
+                           common_files,
                            forward_files,
                            backward_files,
-                          remote_job = PBSJob)
-    elif machine_type == 'local' :        
-        _group_local_jobs(ssh_sess,
+                           forward_task_deference =False)
+    elif machine_type == 'pbs' :        
+        group_slurm_jobs(ssh_sess,
                            resources,
                            command,
                            work_path,
                            run_tasks,
                            group_size,
-                           model_names,
+                           common_files,
+                           forward_files,
+                           backward_files,
+                          remote_job = PBSJob,
+                          forward_task_deference =False)
+    elif machine_type == 'local' :        
+        group_local_jobs(ssh_sess,
+                           resources,
+                           command,
+                           work_path,
+                           run_tasks,
+                           group_size,
+                           common_files,
                            forward_files,
                            backward_files)
     else :
@@ -528,7 +298,7 @@ def run_eos(task_type,jdata,mdata,ssh_sess):
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
         forward_files = ['INCAR', 'POSCAR','POTCAR']
         backward_files = ['OUTCAR']
-        model_names=[]
+        common_files=[]
 
     #lammps
     elif task_type=="deepmd" or task_type=="meam":
@@ -556,10 +326,11 @@ def run_eos(task_type,jdata,mdata,ssh_sess):
                 run_tasks_.append(ii)
 
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
-        forward_files = ['conf.lmp', 'lammps.in']
-        backward_files = ['log.lammps','model_devi.out', 'model_devi.log']
         all_models = glob.glob(os.path.join(deepmd_model_dir, '*.pb'))
         model_names = [os.path.basename(ii) for ii in all_models]
+        forward_files = ['conf.lmp', 'lammps.in']+model_names
+        backward_files = ['log.lammps','model_devi.out', 'model_devi.log']
+        common_files=['lammps.in']+model_names
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
@@ -571,7 +342,7 @@ def run_eos(task_type,jdata,mdata,ssh_sess):
          work_path,
          run_tasks,
          group_size,
-         model_names,
+         common_files,
          forward_files,
          backward_files)
 
@@ -648,7 +419,7 @@ def run_elastic(task_type,jdata,mdata,ssh_sess):
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
         forward_files = ['INCAR', 'POSCAR','POTCAR','KPOINTS']
         backward_files = ['OUTCAR','CONTCAR']
-        model_names=[]
+        common_files=[]
 
     #lammps
     elif task_type == "deepmd" or task_type == "meam":
@@ -676,10 +447,11 @@ def run_elastic(task_type,jdata,mdata,ssh_sess):
                 run_tasks_.append(ii)
 
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
-        forward_files = ['conf.lmp', 'lammps.in','strain.out']
-        backward_files = ['log.lammps','model_devi.out', 'model_devi.log']
         all_models = glob.glob(os.path.join(deepmd_model_dir, '*.pb'))
         model_names = [os.path.basename(ii) for ii in all_models]
+        forward_files = ['conf.lmp', 'lammps.in','strain.out']+model_names
+        backward_files = ['log.lammps','model_devi.out', 'model_devi.log']
+        common_files=['lammps.in']+model_names
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
@@ -691,7 +463,7 @@ def run_elastic(task_type,jdata,mdata,ssh_sess):
          work_path,
          run_tasks,
          group_size,
-         model_names,
+         common_files,
          forward_files,
          backward_files)
     
@@ -764,7 +536,7 @@ def run_vacancy(task_type,jdata,mdata,ssh_sess):
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
         forward_files = ['INCAR', 'POSCAR','POTCAR']
         backward_files = ['OUTCAR']
-        model_names=[]
+        common_files=[]
 
     #lammps
     elif task_type == "deepmd" or task_type == "meam":
@@ -792,10 +564,11 @@ def run_vacancy(task_type,jdata,mdata,ssh_sess):
                 run_tasks_.append(ii)
 
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
-        forward_files = ['conf.lmp', 'lammps.in']
-        backward_files = ['log.lammps','model_devi.out', 'model_devi.log']
         all_models = glob.glob(os.path.join(deepmd_model_dir, '*.pb'))
         model_names = [os.path.basename(ii) for ii in all_models]
+        forward_files = ['conf.lmp', 'lammps.in']+model_names
+        backward_files = ['log.lammps','model_devi.out', 'model_devi.log']
+        common_files=['lammps.in']+model_names
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
@@ -807,7 +580,7 @@ def run_vacancy(task_type,jdata,mdata,ssh_sess):
          work_path,
          run_tasks,
          group_size,
-         model_names,
+         common_files,
          forward_files,
          backward_files)
 
@@ -857,15 +630,20 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
     kspacing = fp_params['kspacing']
     deepmd_model_dir = jdata['deepmd_model_dir']
     deepmd_model_dir = os.path.abspath(deepmd_model_dir)
-
+    reprod_opt=jdata['reprod-opt']
+        
     conf_path = os.path.abspath(conf_dir)
     task_path = re.sub('confs', '04.interstitial', conf_path)
     if task_type == "vasp":
         work_path=os.path.join(task_path, 'vasp-k%.2f' % kspacing)
     elif task_type == "deepmd":
         work_path=os.path.join(task_path, 'deepmd')
+        if reprod_opt:
+            work_path=os.path.join(task_path, 'deepmd-k%.2f'%kspacing)
     elif task_type == "meam":
         work_path=os.path.join(task_path, 'meam')
+        if reprod_opt:
+            work_path=os.path.join(task_path, 'meam-k%.2f'%kspacing)
     assert(os.path.isdir(work_path))
     
     all_task = glob.glob(os.path.join(work_path,'struct-*'))
@@ -892,7 +670,7 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
         forward_files = ['INCAR', 'POSCAR','POTCAR']
         backward_files = ['OUTCAR','XDATCAR']
-        model_names=[]
+        common_files=[]
 
     #lammps
     elif task_type == "deepmd" or task_type == "meam":
@@ -920,10 +698,11 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
                 run_tasks_.append(ii)
 
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
-        forward_files = ['conf.lmp', 'lammps.in']
-        backward_files = ['log.lammps','model_devi.out', 'model_devi.log']
         all_models = glob.glob(os.path.join(deepmd_model_dir, '*.pb'))
         model_names = [os.path.basename(ii) for ii in all_models]
+        forward_files = ['conf.lmp', 'lammps.in']+model_names
+        backward_files = ['log.lammps','model_devi.out', 'model_devi.log']
+        common_files=['lammps.in']+model_names
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
@@ -935,7 +714,7 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
          work_path,
          run_tasks,
          group_size,
-         model_names,
+         common_files,
          forward_files,
          backward_files)
 
@@ -1024,7 +803,7 @@ def run_surf(task_type,jdata,mdata,ssh_sess):
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
         forward_files = ['INCAR', 'POSCAR','POTCAR']
         backward_files = ['OUTCAR']
-        model_names=[]
+        common_files=[]
 
     #lammps
     elif task_type == "deepmd" or task_type == "meam":
@@ -1052,10 +831,11 @@ def run_surf(task_type,jdata,mdata,ssh_sess):
                 run_tasks_.append(ii)
 
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
-        forward_files = ['conf.lmp', 'lammps.in']
-        backward_files = ['log.lammps','model_devi.out', 'model_devi.log']
         all_models = glob.glob(os.path.join(deepmd_model_dir, '*.pb'))
         model_names = [os.path.basename(ii) for ii in all_models]
+        forward_files = ['conf.lmp', 'lammps.in']+model_names
+        backward_files = ['log.lammps','model_devi.out', 'model_devi.log']
+        common_files=['lammps.in']+model_names
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
@@ -1067,7 +847,7 @@ def run_surf(task_type,jdata,mdata,ssh_sess):
          work_path,
          run_tasks,
          group_size,
-         model_names,
+         common_files,
          forward_files,
          backward_files)
 

@@ -136,6 +136,14 @@ def make_deepmd_lammps (jdata, conf_dir) :
     # lammps.cvt_lammps_conf(to_poscar, conf_file)
     # ptypes = vasp.get_poscar_types(to_poscar)
     # lammps.apply_type_map(conf_file, deepmd_type_map, ptypes)
+    os.chdir(lmp_path)
+    for ii in deepmd_models_name :
+        if os.path.exists(ii) :
+            os.remove(ii)
+    for (ii,jj) in zip(deepmd_models, deepmd_models_name) :
+            os.symlink(os.path.relpath(ii), jj)
+    share_models = glob.glob(os.path.join(lmp_path, '*pb'))
+
     for vol in np.arange(vol_start, vol_end, vol_step) :
         vol_path = os.path.join(lmp_path, 'vol-%.2f' % vol)        
         print('# generate %s' % (vol_path))
@@ -155,7 +163,7 @@ def make_deepmd_lammps (jdata, conf_dir) :
         ptypes = vasp.get_poscar_types('POSCAR')
         lammps.apply_type_map('conf.lmp', deepmd_type_map, ptypes)
         # link models
-        for (ii,jj) in zip(deepmd_models, deepmd_models_name) :
+        for (ii,jj) in zip(share_models, deepmd_models_name) :
             os.symlink(os.path.relpath(ii), jj)
         # make lammps input
         scale = (vol / vpa) ** (1./3.)
@@ -203,6 +211,15 @@ def make_deepmd_lammps_fixv (jdata, conf_dir) :
     f_lammps_in = os.path.join(task_path, 'lammps.in')
     with open(f_lammps_in, 'w') as fp :
         fp.write(fc)
+        
+    os.chdir(task_path)
+    for ii in deepmd_models_name :
+        if os.path.exists(ii) :
+            os.remove(ii)
+    for (ii,jj) in zip(share_models, deepmd_models_name) :
+            os.symlink(os.path.relpath(ii), jj)
+    share_models = glob.glob(os.path.join(task_path, '*pb'))
+
     # make vols
     for vol in np.arange(vol_start, vol_end, vol_step) :
         vol_path = os.path.join(task_path, 'vol-%.2f' % vol)        
@@ -222,7 +239,7 @@ def make_deepmd_lammps_fixv (jdata, conf_dir) :
         # link lammps.in
         os.symlink(os.path.relpath(f_lammps_in), 'lammps.in')
         # link models
-        for (ii,jj) in zip(deepmd_models, deepmd_models_name) :
+        for (ii,jj) in zip(share_models, deepmd_models_name) :
             os.symlink(os.path.relpath(ii), jj)
         # make lammps input
         os.chdir(cwd)

@@ -144,6 +144,13 @@ def make_deepmd_lammps(jdata, conf_dir, max_miller = 2, static = False, relax_bo
     with open(f_lammps_in, 'w') as fp :
         fp.write(fc)
     cwd = os.getcwd()
+    os.chdir(task_path)
+    for ii in deepmd_models_name :
+        if os.path.exists(ii) :
+            os.remove(ii)
+    for (ii,jj) in zip(deepmd_models, deepmd_models_name) :
+            os.symlink(os.path.relpath(ii), jj)
+    share_models = glob.glob(os.path.join(task_path, '*pb'))
     for ii in range(len(all_slabs)) :
         slab = all_slabs[ii]
         miller_str = "m%d.%d.%dm" % (slab.miller_index[0], slab.miller_index[1], slab.miller_index[2])
@@ -166,7 +173,7 @@ def make_deepmd_lammps(jdata, conf_dir, max_miller = 2, static = False, relax_bo
         # link lammps.in
         os.symlink(os.path.relpath(f_lammps_in), 'lammps.in')
         # link models
-        for (ii,jj) in zip(deepmd_models, deepmd_models_name) :
+        for (ii,jj) in zip(share_models, deepmd_models_name) :
             os.symlink(os.path.relpath(ii), jj)
     cwd = os.getcwd()
 
