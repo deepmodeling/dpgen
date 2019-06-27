@@ -3,8 +3,8 @@
 import os, re, argparse, filecmp, json, glob, warnings
 import subprocess as sp
 import numpy as np
-import lib.vasp as vasp
-import lib.lammps as lammps
+import dpgen.auto_test.lib.vasp as vasp
+import dpgen.auto_test.lib.lammps as lammps
 from pymatgen.core.structure import Structure
 from pymatgen.analysis.defects.core import Interstitial
 from pymatgen.analysis.defects.generators import InterstitialGenerator
