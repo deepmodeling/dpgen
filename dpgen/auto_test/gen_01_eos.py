@@ -239,7 +239,7 @@ def make_deepmd_lammps_fixv (jdata, conf_dir) :
         # link lammps.in
         os.symlink(os.path.relpath(f_lammps_in), 'lammps.in')
         # link models
-        for (ii,jj) in zip(deepmd_models, deepmd_models_name) :
+        for (ii,jj) in zip(share_models, deepmd_models_name) :
             os.symlink(os.path.relpath(ii), jj)
         # make lammps input
         os.chdir(cwd)
