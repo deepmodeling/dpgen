@@ -60,7 +60,7 @@ def _run(machine,
     print("group_size",group_size)
     if ssh_sess == None and machine_type == 'ucloud':
         print("The first situation!")
-        _ucloud_submit_jobs(machine,
+        ucloud_submit_jobs(machine,
                             resources,
                             command,
                             work_path,
@@ -71,7 +71,7 @@ def _run(machine,
                             backward_files)
     elif machine_type == 'slurm' :        
         print("The second situation!")
-        _group_slurm_jobs(ssh_sess,
+        group_slurm_jobs(ssh_sess,
                            resources,
                            command,
                            work_path,
@@ -82,7 +82,7 @@ def _run(machine,
                            backward_files,
                            forward_task_deference =False)
     elif machine_type == 'pbs' :        
-        _group_slurm_jobs(ssh_sess,
+        group_slurm_jobs(ssh_sess,
                            resources,
                            command,
                            work_path,
@@ -94,7 +94,7 @@ def _run(machine,
                           remote_job = PBSJob,
                           forward_task_deference =False)
     elif machine_type == 'local' :        
-        _group_local_jobs(ssh_sess,
+        group_local_jobs(ssh_sess,
                            resources,
                            command,
                            work_path,
