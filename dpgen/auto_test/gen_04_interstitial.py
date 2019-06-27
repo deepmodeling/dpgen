@@ -3,8 +3,8 @@
 import os, re, argparse, filecmp, json, glob, warnings
 import subprocess as sp
 import numpy as np
-import dpgen.auto_test.lib.vasp as vasp
-import dpgen.auto_test.lib.lammps as lammps
+import lib.vasp as vasp
+import lib.lammps as lammps
 from pymatgen.core.structure import Structure
 from pymatgen.analysis.defects.core import Interstitial
 from pymatgen.analysis.defects.generators import InterstitialGenerator
@@ -121,6 +121,15 @@ def _make_deepmd_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_name) 
     f_lammps_in = os.path.join(lmps_path, 'lammps.in')
     with open(f_lammps_in, 'w') as fp :
         fp.write(fc)
+
+    #os.chdir(lmps_path)
+    #for ii in deepmd_models_name :
+    #    if os.path.exists(ii) :
+    #        os.remove(ii)
+    #for (ii,jj) in zip(deepmd_models, deepmd_models_name) :
+    #        os.symlink(os.path.relpath(ii), jj)
+    #share_models = glob.glob(os.path.join(lmps_path, '*pb'))
+
 
     for vs in vasp_struct :
         # get vasp energy
@@ -309,6 +318,16 @@ def _make_deepmd_lammps(jdata, conf_dir, supercell, insert_ele, task_name) :
     # gen tasks    
     copy_str = "%sx%sx%s" % (supercell[0], supercell[1], supercell[2])
     cwd = os.getcwd()
+
+    os.chdir(task_path)
+    for ii in deepmd_models_name :
+        if os.path.exists(ii) :
+            os.remove(ii)
+    for (ii,jj) in zip(deepmd_models, deepmd_models_name) :
+            os.symlink(os.path.relpath(ii), jj)
+    share_models = glob.glob(os.path.join(task_path, '*pb'))
+
+
     for ii in range(len(dss)) :
         struct_path = os.path.join(task_path, 'struct-%s-%s-%03d' % (insert_ele,copy_str,ii))
         print('# generate %s' % (struct_path))
@@ -325,7 +344,7 @@ def _make_deepmd_lammps(jdata, conf_dir, supercell, insert_ele, task_name) :
         # link lammps.in
         os.symlink(os.path.relpath(f_lammps_in), 'lammps.in')
         # link models
-        for (ii,jj) in zip(deepmd_models, deepmd_models_name) :
+        for (ii,jj) in zip(share_models, deepmd_models_name) :
             os.symlink(os.path.relpath(ii), jj)
         # save supercell
         np.savetxt('supercell.out', supercell, fmt='%d')
