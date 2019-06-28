@@ -2,7 +2,7 @@ import os,sys,glob,time
 import numpy as np
 import subprocess as sp
 #from monty.serialization import dumpfn,loadfn
-from dpgen.remote.RemoteJob import SlurmJob, JobStatus
+from dpgen.remote.RemoteJob import  SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
 
 import requests
 from hashlib import sha1
