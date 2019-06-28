@@ -581,7 +581,7 @@ def run_model_devi (iter_index,
     print("group_size",model_devi_group_size)
     if ssh_sess == None and machine_type == 'ucloud':
         print("The first situation!")
-        _ucloud_submit_jobs(mdata['model_devi_machine'],
+        ucloud_submit_jobs(mdata['model_devi_machine'],
                             mdata['model_devi_resources'],
                             command,
                             work_path,
@@ -592,7 +592,7 @@ def run_model_devi (iter_index,
                             backward_files)
     elif machine_type == 'slurm' :        
         print("The second situation!")
-        _group_slurm_jobs(ssh_sess,
+        group_slurm_jobs(ssh_sess,
                            model_devi_resources,
                            command,
                            work_path,
@@ -602,7 +602,7 @@ def run_model_devi (iter_index,
                            forward_files,
                            backward_files)
     elif machine_type == 'pbs' :        
-        _group_slurm_jobs(ssh_sess,
+        group_slurm_jobs(ssh_sess,
                            model_devi_resources,
                            command,
                            work_path,
@@ -613,7 +613,7 @@ def run_model_devi (iter_index,
                            backward_files,
                           remote_job = PBSJob)
     elif machine_type == 'local' :        
-        _group_local_jobs(ssh_sess,
+        group_local_jobs(ssh_sess,
                            model_devi_resources,
                            command,
                            work_path,
@@ -969,7 +969,7 @@ def run_fp_inner (iter_index,
                             forward_files,
                             backward_files)
     elif machine_type == 'slurm' :        
-        _group_slurm_jobs(ssh_sess,
+        group_slurm_jobs(ssh_sess,
                            fp_resources,
                            fp_command,
                            work_path,
@@ -979,7 +979,7 @@ def run_fp_inner (iter_index,
                            forward_files,
                            backward_files)
     elif machine_type == 'pbs' :        
-        _group_slurm_jobs(ssh_sess,
+        group_slurm_jobs(ssh_sess,
                            fp_resources,
                            fp_command,
                            work_path,
@@ -990,7 +990,7 @@ def run_fp_inner (iter_index,
                            backward_files,
                           remote_job = PBSJob)
     elif machine_type == 'local' :        
-        _group_local_jobs(ssh_sess,
+        group_local_jobs(ssh_sess,
                            fp_resources,
                            fp_command,
                            work_path,

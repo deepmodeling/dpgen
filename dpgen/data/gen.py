@@ -524,7 +524,7 @@ def coll_vasp_md(jdata) :
     os.chdir(cwd)
 
 
-def gen_init(args) :
+def gen_init_bulk(args) :
     with open (args.PARAM, 'r') as fp :
         jdata = json.load (fp)
     out_dir = out_dir_name(jdata)

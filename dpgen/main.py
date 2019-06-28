@@ -7,7 +7,8 @@ import argparse
 import sys
 import itertools
 from dpgen.generator.run import gen_run
-from dpgen.data.gen import gen_init
+from dpgen.data.gen import gen_init_bulk
+from dpgen.data.surf import gen_init_surf
 from dpgen.auto_test.run import gen_test
 from dpgen import info
 
@@ -37,20 +38,31 @@ def main():
     Last updated: {}""".format(__version__, __date__))
 
     subparsers = parser.add_subparsers()
-    
-    # init model
-    parser_init = subparsers.add_parser(
-        "init", help="dpgen initial data preparation tools.")
-    parser_init.add_argument('PARAM', type=str, 
+
+    # init surf model
+    parser_init_surf = subparsers.add_parser(
+        "init_surf", help="dpgen initial data preparation tools for surface systems.")
+    parser_init_surf.add_argument('PARAM', type=str, 
                              help="parameter file, json format")
-    parser_init.add_argument('STAGE', type=int,
+    parser_init_surf.add_argument('STAGE', type=int,
+                        help="the stage of init, can be 1 or 2 "
+                        "1: Setup vasp jobs for relaxation. "
+                        "2: Collect vasp relaxed confs (if relax is not skiped). Perturb system.")
+    parser_init_surf.set_defaults(func=gen_init_surf)
+    
+    # init bulk model
+    parser_init_bulk = subparsers.add_parser(
+        "init_bulk", help="dpgen initial data preparation tools for bulk systems.")
+    parser_init_bulk.add_argument('PARAM', type=str, 
+                             help="parameter file, json format")
+    parser_init_bulk.add_argument('STAGE', type=int,
                              help="the stage of init, can be 1, 2, 3 or 4. "
                              "1: Setup vasp jobs for relaxation. "
                              "2: Collect vasp relaxed confs (if relax is not skiped). Perturb system. "
                              "3: Setup vasp jobs for MD of perturbed system. "
                              "4: Collect vasp md confs, make deepmd data. "
     )
-    parser_init.set_defaults(func=gen_init)
+    parser_init_bulk.set_defaults(func=gen_init_bulk)
     # parser_init.add_argument("-p",'--parameter', type=str, dest='param',
     #                     help="parameter file, json format")
     # parser_init.add_argument("-s","--stage", type=int, dest='stage',
@@ -64,7 +76,7 @@ def main():
     #                             help="directory to process (default to .)")
     # parser_init.set_defaults(func=gen_data)
 
-    # run model
+    # run 
     parser_run = subparsers.add_parser(
         "run",
         help="Runing DeepMD with generator model.")
@@ -74,7 +86,7 @@ def main():
                         help="machine file, json format")
     parser_run.set_defaults(func=gen_run)
 
-    # test model
+    # test 
     parser_test = subparsers.add_parser("test", help="auto test for deep potential.")
     parser_test.add_argument('PARAM', type=str,
                         help="parameter file, json format")

@@ -3,11 +3,11 @@
 import os,json,shutil,re,glob,argparse
 import numpy as np
 import subprocess as sp
-import tools.hcp as hcp
-import tools.fcc as fcc
-import tools.diamond as diamond
-import tools.sc as sc
-import tools.bcc as bcc
+import dpgen.data.tools.hcp as hcp
+import dpgen.data.tools.fcc as fcc
+import dpgen.data.tools.diamond as diamond
+import dpgen.data.tools.sc as sc
+import dpgen.data.tools.bcc as bcc
 from pymatgen.core.surface import SlabGenerator,generate_all_slabs, Structure
 
 def create_path (path) :
@@ -450,6 +450,41 @@ def pert_scaled(jdata) :
                 poscar_shuffle(pos_in, pos_out)
                 os.chdir(cwd)
                 
+def gen_init_surf(args):
+    with open (args.PARAM, 'r') as fp :
+        jdata = json.load (fp)
+    out_dir = out_dir_name(jdata)
+    jdata['out_dir'] = out_dir
+    pymatgen_surf = False 
+    if 'pymatgen_surf' in jdata:
+        pymatgen_surf = jdata['pymatgen_surf']
+    print ("# working dir %s" % out_dir)
+
+    stage = args.STAGE
+
+    if stage == 1 :
+        create_path(out_dir)
+        if pymatgen_surf :
+            make_super_cell_pymatgen(jdata)
+        else :
+            make_super_cell(jdata)
+        place_element(jdata)
+        make_vasp_relax(jdata)
+    # elif stage == 0 :
+    #     # create_path(out_dir)
+    #     # make_super_cell(jdata)
+    #     # place_element(jdata)
+    #     # make_vasp_relax(jdata)
+    #     # make_scale(jdata)
+    #     # pert_scaled(jdata)
+    #     # poscar_elong('POSCAR', 'POSCAR.out', 3)
+    #     pert_scaled(jdata)
+    elif stage == 2 :
+        make_scale(jdata)
+        pert_scaled(jdata)
+    else :
+        raise RuntimeError("unknow stage %d" % stage)
+    
 def _main() :
     parser = argparse.ArgumentParser(
         description="gen init confs")

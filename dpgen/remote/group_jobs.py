@@ -1,7 +1,8 @@
 import os,sys,glob,time
 import numpy as np
 import subprocess as sp
-from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
+#from monty.serialization import dumpfn,loadfn
+from dpgen.remote.RemoteJob import  SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
 
 import requests
 from hashlib import sha1
