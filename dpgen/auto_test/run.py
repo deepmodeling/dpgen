@@ -900,6 +900,7 @@ def run_task (json_file, machine_file) :
     
     confs = jdata['conf_dir']
     ele_list=[key for key in jdata['potcar_map'].keys()]
+    key_id = jdata['key_id']
     ii = jdata['task_type']
     jj=jdata['task']
     task_list=['equi','eos','elastic','vacancy','interstitial','surf','all']
@@ -907,9 +908,9 @@ def run_task (json_file, machine_file) :
     if confs.find('confs') and not os.path.exists(confs+'POSCAR') :
         print('generate %s' % (ele_list))
         if len(ele_list) == 1 :
-                gen_confs.gen_element(ele_list[0])
+                gen_confs.gen_element(ele_list[0],key_id)
         else :
-                gen_confs.gen_alloy(ele_list)
+                gen_confs.gen_alloy(ele_list,key_id)
     #default task
     log_iter ("gen_equi", ii, "equi")
     gen_equi (ii, jdata, mdata) 
