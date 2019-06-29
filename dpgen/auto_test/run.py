@@ -899,14 +899,14 @@ def run_task (json_file, machine_file) :
         fp_ssh_sess = SSHSession(fp_machine)
     
     confs = jdata['conf_dir']
-    ele_list=jdata['potcar_map'].keys()
+    ele_list=[key for key in jdata['potcar_map'].keys()]
     ii = jdata['task_type']
     jj=jdata['task']
     task_list=['equi','eos','elastic','vacancy','interstitial','surf','all']
     #gen_configuration
     if confs.find('confs') and not os.path.exists(confs+'POSCAR') :
         print('generate %s' % (ele_list))
-        if len(args.elements) == 1 :
+        if len(ele_list) == 1 :
                 gen_confs.gen_element(ele_list[0])
         else :
                 gen_confs.gen_alloy(ele_list)
