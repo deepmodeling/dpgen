@@ -41,6 +41,7 @@ from dpgen.auto_test import gen_02_elastic,cmpt_02_elastic
 from dpgen.auto_test import gen_03_vacancy,cmpt_03_vacancy
 from dpgen.auto_test import gen_04_interstitial,cmpt_04_interstitial
 from dpgen.auto_test import gen_05_surf,cmpt_05_surf
+from dpgen.auto_test import gen_confs
 import requests
 from hashlib import sha1
 
@@ -670,7 +671,7 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
         forward_files = ['INCAR', 'POSCAR','POTCAR']
         backward_files = ['OUTCAR','XDATCAR']
-        common_files=['INCAR','POTCAR']
+        common_files=['INCAR']
 
     #lammps
     elif task_type == "deepmd" or task_type == "meam":
@@ -898,9 +899,17 @@ def run_task (json_file, machine_file) :
         fp_ssh_sess = SSHSession(fp_machine)
     
     confs = jdata['conf_dir']
+    ele_list=jdata['potcar_map'].keys()
     ii = jdata['task_type']
     jj=jdata['task']
     task_list=['equi','eos','elastic','vacancy','interstitial','surf','all']
+    #gen_configuration
+    if confs.find('confs') and not os.path.exists(confs+'POSCAR') :
+        print('generate %s' % (ele_list))
+        if len(args.elements) == 1 :
+                gen_confs.gen_element(ele_list[0])
+        else :
+                gen_confs.gen_alloy(ele_list)
     #default task
     log_iter ("gen_equi", ii, "equi")
     gen_equi (ii, jdata, mdata) 
