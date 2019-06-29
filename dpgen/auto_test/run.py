@@ -905,7 +905,7 @@ def run_task (json_file, machine_file) :
     jj=jdata['task']
     task_list=['equi','eos','elastic','vacancy','interstitial','surf','all']
     #gen_configuration
-    if confs.find('confs') and not os.path.exists(confs+'POSCAR') :
+    if confs.find('confs') and not os.path.exists(confs+'/POSCAR') :
         print('generate %s' % (ele_list))
         if len(ele_list) == 1 :
                 gen_confs.gen_element(ele_list[0],key_id)
