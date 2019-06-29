@@ -163,9 +163,9 @@ def run_equi(task_type,jdata,mdata,ssh_sess):
                 run_tasks_.append(ii)
 
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
-        forward_files = ['INCAR', 'POSCAR','POTCAR']
+        forward_files = ['INCAR', 'POTCAR']
         backward_files = ['OUTCAR','CONTCAR']
-        model_names=[]
+        common_files=['POSCAR']
 
     #lammps
     elif task_type=="deepmd" or task_type=="meam":
@@ -195,7 +195,7 @@ def run_equi(task_type,jdata,mdata,ssh_sess):
         forward_files = ['conf.lmp', 'lammps.in']
         backward_files = ['dump.relax','log.lammps','model_devi.out', 'model_devi.log']
         all_models = glob.glob(os.path.join(deepmd_model_dir, '*.pb'))
-        model_names = [os.path.basename(ii) for ii in all_models]
+        common_files = [os.path.basename(ii) for ii in all_models]
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
     
@@ -207,7 +207,7 @@ def run_equi(task_type,jdata,mdata,ssh_sess):
          work_path,
          run_tasks,
          group_size,
-         model_names,
+         common_files,
          forward_files,
          backward_files)
 
@@ -298,7 +298,7 @@ def run_eos(task_type,jdata,mdata,ssh_sess):
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
         forward_files = ['INCAR', 'POSCAR','POTCAR']
         backward_files = ['OUTCAR']
-        common_files=[]
+        common_files=['INCAR','POTCAR']
 
     #lammps
     elif task_type=="deepmd" or task_type=="meam":
@@ -419,7 +419,7 @@ def run_elastic(task_type,jdata,mdata,ssh_sess):
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
         forward_files = ['INCAR', 'POSCAR','POTCAR','KPOINTS']
         backward_files = ['OUTCAR','CONTCAR']
-        common_files=[]
+        common_files=['INCAR','POTCAR','KPOINTS']
 
     #lammps
     elif task_type == "deepmd" or task_type == "meam":
@@ -536,7 +536,7 @@ def run_vacancy(task_type,jdata,mdata,ssh_sess):
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
         forward_files = ['INCAR', 'POSCAR','POTCAR']
         backward_files = ['OUTCAR']
-        common_files=[]
+        common_files=['INCAR','POTCAR']
 
     #lammps
     elif task_type == "deepmd" or task_type == "meam":
@@ -670,7 +670,7 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
         forward_files = ['INCAR', 'POSCAR','POTCAR']
         backward_files = ['OUTCAR','XDATCAR']
-        common_files=[]
+        common_files=['INCAR','POTCAR']
 
     #lammps
     elif task_type == "deepmd" or task_type == "meam":
@@ -803,7 +803,7 @@ def run_surf(task_type,jdata,mdata,ssh_sess):
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
         forward_files = ['INCAR', 'POSCAR','POTCAR']
         backward_files = ['OUTCAR']
-        common_files=[]
+        common_files=['INCAR','POTCAR']
 
     #lammps
     elif task_type == "deepmd" or task_type == "meam":
