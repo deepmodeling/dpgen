@@ -2,8 +2,8 @@ from   __future__ import unicode_literals, print_function
 import logging
 import os
 
-# from . import lib
 
+ROOT_PATH=__path__[0]
 NAME="dpgen"
 SHORT_CMD="dpgen"
 dlog = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ def info():
 
     print('DeepModeling\n------------\n')
     print('Version: ' + __version__)
-    print('Path:    ' + __path__[0])
+    print('Path:    ' + ROOT_PATH)
     print('Date:    ' + __date__)
     print()
 

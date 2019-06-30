@@ -40,6 +40,8 @@ from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, Clou
 from dpgen.remote.group_jobs import ucloud_submit_jobs
 from dpgen.remote.group_jobs import group_slurm_jobs
 from dpgen.remote.group_jobs import group_local_jobs
+from dpgen.util import sepline
+from dpgen import ROOT_PATH
 
 template_name = 'template'
 train_name = '00.train'
@@ -51,7 +53,8 @@ model_devi_task_fmt = data_system_fmt + '.%06d'
 model_devi_conf_fmt = data_system_fmt + '.%04d'
 fp_name = '02.fp'
 fp_task_fmt = data_system_fmt + '.%06d'
-
+cvasp_file=os.path.join(ROOT_PATH,'generator/lib/cvasp.py')
+#cvasp_file="/sharedext4/haiid/crazy/dpgen/dpgen/generator/lib/cvasp.py"
 
 def get_job_names(jdata) :
     jobkeys = []
@@ -578,9 +581,9 @@ def run_model_devi (iter_index,
     forward_files = ['conf.lmp', 'input.lammps', 'traj']
     backward_files = ['model_devi.out', 'model_devi.log', 'traj']
 
-    print("group_size",model_devi_group_size)
+    dlog.info("group_size %d"%model_devi_group_size)
     if ssh_sess == None and machine_type == 'ucloud':
-        print("The first situation!")
+        dlog.info("The first situation!")
         ucloud_submit_jobs(mdata['model_devi_machine'],
                             mdata['model_devi_resources'],
                             command,
@@ -591,7 +594,7 @@ def run_model_devi (iter_index,
                             forward_files,
                             backward_files)
     elif machine_type == 'slurm' :        
-        print("The second situation!")
+        dlog.info("The second situation!")
         group_slurm_jobs(ssh_sess,
                            model_devi_resources,
                            command,
@@ -795,6 +798,10 @@ def _make_fp_vasp_configs(iter_index,
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
     create_path(work_path)
+
+    #copy cvasp.py 
+    shutil.copyfile(cvasp_file, os.path.join(work_path,'cvasp.py')) 
+
     modd_path = os.path.join(iter_name, model_devi_name)
     task_min = -1
     if os.path.isfile(os.path.join(modd_path, 'cur_job.json')) :
@@ -930,7 +937,8 @@ def run_fp_inner (iter_index,
                   forward_files,
                   backward_files,
                   check_fin,
-                  log_file = "log") :
+                  log_file = "log",
+                  forward_common_files=[]) :
     fp_command = mdata['fp_command']
     fp_group_size = mdata['fp_group_size']
     fp_resources = mdata['fp_resources']
@@ -941,6 +949,22 @@ def run_fp_inner (iter_index,
     #     fp_command = 'srun ' + fp_command
     # if (('numb_gpu' not in fp_resources) or (fp_resources['numb_gpu'] == 0)) and (machine_type == 'pbs'):
     #     fp_command = 'mpirun  ' + fp_command
+
+    # cvasp can only work for vasp 
+    # trick for solving  "srun python cvasp.py vasp_std 3" problem
+    fp_style = jdata['fp_style']
+    if fp_style == "vasp" :
+       with_mpi=fp_resources['with_mpi']
+       dlog.debug('with_mpi ')
+       dlog.debug(with_mpi)
+       if with_mpi:
+          fp_command="srun "+fp_command
+          fp_resources['with_mpi']=False
+       try:
+          fp_max_errors = mdata['fp_max_errors']
+       except:
+          fp_max_errors = 3
+       fp_command='python ../cvasp.py "'+fp_command+'" '+str(fp_max_errors)
     fp_command = cmd_append_log(fp_command, log_file)
 
     iter_name = make_iter_name(iter_index)
@@ -975,7 +999,7 @@ def run_fp_inner (iter_index,
                            work_path,
                            run_tasks,
                            fp_group_size,
-                           [],
+                           forward_common_files,
                            forward_files,
                            backward_files)
     elif machine_type == 'pbs' :        
@@ -1019,9 +1043,11 @@ def run_fp (iter_index,
     fp_pp_files = jdata['fp_pp_files']
 
     if fp_style == "vasp" :
-        forward_files = ['POSCAR', 'INCAR'] + fp_pp_files
+        forward_files = ['POSCAR', 'INCAR'] + fp_pp_files 
         backward_files = ['OUTCAR']
-        run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _vasp_check_fin) 
+        forward_common_files=['cvasp.py']
+        run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _vasp_check_fin,
+                     forward_common_files=forward_common_files) 
     elif fp_style == "pwscf" :
         forward_files = ['input'] + fp_pp_files
         backward_files = ['output']
@@ -1153,15 +1179,19 @@ def run_iter (json_file, machine_file) :
         with open (record) as frec :
             for line in frec : 
                 iter_rec = [int(x) for x in line.split()]
-        logging.info ("continue from iter %03d task %02d" % (iter_rec[0], iter_rec[1]))
+        dlog.info ("continue from iter %03d task %02d" % (iter_rec[0], iter_rec[1]))
 
     cont = True
     ii = -1
     while cont:
         ii += 1
+        iter_name=make_iter_name(ii)
+        sepline(iter_name,'=')
         for jj in range (numb_task) :
             if ii * max_tasks + jj <= iter_rec[0] * max_tasks + iter_rec[1] : 
                 continue
+            task_name="task %02d"%jj
+            sepline(task_name,'-')
             if   jj == 0 :
                 log_iter ("make_train", ii, jj)
                 make_train (ii, jdata, mdata) 
@@ -1194,14 +1224,11 @@ def run_iter (json_file, machine_file) :
             else :
                 raise RuntimeError ("unknow task %d, something wrong" % jj)
             record_iter (record, ii, jj)
-
-
 def gen_run(args) :
     if args.PARAM and args.MACHINE:
        dlog.info ("start running")
        run_iter (args.PARAM, args.MACHINE)
        dlog.info ("finished")    
-
 
 def _main () :
     parser = argparse.ArgumentParser()

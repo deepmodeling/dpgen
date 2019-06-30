@@ -1,8 +1,12 @@
+#!/usr/bin/env python
+# coding: utf-8
+
 import os,sys,glob,time
 import numpy as np
 import subprocess as sp
-#from monty.serialization import dumpfn,loadfn
-from dpgen.remote.RemoteJob import  SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
+from monty.serialization import dumpfn,loadfn
+from dpgen.remote.RemoteJob import SlurmJob, PBSJob, CloudMachineJob, JobStatus
+from dpgen import dlog
 
 import requests
 from hashlib import sha1
@@ -191,27 +195,67 @@ def group_slurm_jobs(ssh_sess,
         [os.path.basename(j) for j in tasks[i:i + group_size]] \
         for i in range(0, len(tasks), group_size)
     ]
+    cwd=os.getcwd()
+    _pmap=PMap(cwd)
+    path_map=_pmap.load()
+    dlog.debug("work_path: %s"% work_path)
+    dlog.debug("curr_path: %s"% cwd)
+
     job_list = []
-    for chunk in task_chunks :
-        rjob = remote_job(ssh_sess, work_path)
+    task_chunks_=['+'.join(ii) for ii in task_chunks]
+    for ii in task_chunks_:
+        dlog.debug("task_chunk %s" % ii)
+
+    #dlog.debug(path_map)
+    for ii,chunk in enumerate(task_chunks) :
+       
+        # map chunk info. to uniq id    
+        chunk_uni=task_chunks_[ii].encode('utf-8')
+        chunk_sha1=sha1(chunk_uni).hexdigest() 
+
+        if chunk_sha1 in path_map:
+           job_uuid=path_map[chunk_sha1][1].split('/')[-1]
+           dlog.debug("load uuid %s" % job_uuid)
+        else:
+           job_uuid=None
+
+        rjob = remote_job(ssh_sess, work_path, job_uuid)
+        dlog.debug('uuid %s'%job_uuid)
         rjob.upload('.',  forward_common_files)
         rjob.upload(chunk, forward_task_files, 
-                    dereference = forward_task_deference)
-        rjob.submit(chunk, command, resources = resources)
+                   dereference = forward_task_deference)
+        if job_uuid:
+           rjob.submit(chunk, command, resources = resources,restart=True)
+        else:
+           rjob.submit(chunk, command, resources = resources)
         job_list.append(rjob)
-
+        path_map[chunk_sha1]=[rjob.local_root,rjob.remote_root]        
+    _pmap.dump(path_map)
+    
     job_fin = [False for ii in job_list]
+    lcount=[0]*len(job_list)
     while not all(job_fin) :
         for idx,rjob in enumerate(job_list) :
             if not job_fin[idx] :
                 status = rjob.check_status()
                 if status == JobStatus.terminated :
-                    raise RuntimeError("find unsuccessfully terminated job in %s" % rjob.get_job_root())
+                    lcount[idx]+=1
+                    _job_uuid=rjob.remote_root.split('/')[-1]
+                    dlog.info('Job at %s  terminated, submit again'% _job_uuid)
+                    dlog.debug('try %s times for %s'% (lcount[idx], _job_uuid))
+                    rjob.submit(task_chunks[idx], command, resources = resources,restart=True)
+                    if lcount[idx]>3:
+                       dlog.info('program has to exit due to too many errors ! ')
+                       raise RuntimeError("find unsuccessfully terminated job in %s" % rjob.get_job_root())
                 elif status == JobStatus.finished :
                     rjob.download(task_chunks[idx], backward_task_files)
                     rjob.clean()
                     job_fin[idx] = True
         time.sleep(10)
+    dlog.debug('error count') 
+    dlog.debug(lcount)
+    # delete path map file when job finish
+    _pmap.delete()
 
 def group_local_jobs(ssh_sess,
                      resources,
@@ -245,3 +289,30 @@ def group_local_jobs(ssh_sess,
                 rjob.clean()
                 job_fin = True
             time.sleep(10)
+
+class PMap(object):
+   '''
+   Path map class to operate {read,write,delte} the pmap.json file
+   '''
+
+   def __init__(self,path,fname="pmap.json"):
+       self.f_path_map=os.path.join(path,fname)
+
+   def load(self):
+      f_path_map=self.f_path_map
+      if os.path.isfile(f_path_map):
+         path_map=loadfn(f_path_map)
+      else:
+         path_map={}
+      return path_map
+
+   def dump(self,pmap,indent=4):
+      f_path_map=self.f_path_map
+      dumpfn(pmap,f_path_map,indent=indent)
+
+   def delete(self):
+      f_path_map=self.f_path_map
+      try:
+         os.remove(f_path_map)
+      except:
+         pass
