@@ -1,7 +1,9 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
+# coding: utf-8
 
 import os, sys, paramiko, json, uuid, tarfile, time, stat
 from enum import Enum
+from dpgen import dlog
 
 class JobStatus (Enum) :
     unsubmitted = 1
@@ -75,21 +77,27 @@ class SSHSession (object) :
 class RemoteJob (object):
     def __init__ (self,
                   ssh_session,
-                  local_root
+                  local_root,
+                  job_uuid=None,
     ) :
-        
         self.local_root = os.path.abspath(local_root)
-        self.job_uuid = str(uuid.uuid4())
-        # self.job_uuid = 'a21d0017-c9f1-4d29-9a03-97df06965cef'
+        if job_uuid:
+           self.job_uuid=job_uuid
+        else:
+           self.job_uuid = str(uuid.uuid4())
+
         self.remote_root = os.path.join(ssh_session.get_session_root(), self.job_uuid)
-        print("local_root is ", local_root)
-        print("remote_root is", self.remote_root)
+        dlog.info("local_root is %s"% local_root)
+        dlog.info("remote_root is %s"% self.remote_root)
         self.ssh = ssh_session.get_ssh_client()        
-        sftp = self.ssh.open_sftp()        
-        sftp.mkdir(self.remote_root)
-        sftp.close()
+        try:
+           sftp = self.ssh.open_sftp()        
+           sftp.mkdir(self.remote_root)
+           sftp.close()
+        except: 
+           pass
         # open('job_uuid', 'w').write(self.job_uuid)
-        
+
     def get_job_root(self) :
         return self.remote_root
         
@@ -285,16 +293,42 @@ class SlurmJob (RemoteJob) :
                job_dirs,
                cmd,
                args = None, 
-               resources = None) :
-        script_name = self._make_script(job_dirs, cmd, args, res = resources)
-        stdin, stdout, stderr = self.block_checkcall(('cd %s; sbatch %s' % (self.remote_root, script_name)))
-        subret = (stdout.readlines())
-        job_id = subret[0].split()[-1]
-        sftp = self.ssh.open_sftp()
-        with sftp.open(os.path.join(self.remote_root, 'job_id'), 'w') as fp:
-            fp.write(job_id)
-        sftp.close()
+               resources = None,
+               restart=False) :
 
+        def _submit():
+           script_name = self._make_script(job_dirs, cmd, args, res = resources)
+           stdin, stdout, stderr = self.block_checkcall(('cd %s; sbatch %s' % (self.remote_root, script_name)))
+           subret = (stdout.readlines())
+           job_id = subret[0].split()[-1]
+           sftp = self.ssh.open_sftp()
+        
+           with sftp.open(os.path.join(self.remote_root, 'job_id'), 'w') as fp:
+             fp.write(job_id)
+           sftp.close()
+
+        dlog.debug(restart)
+        if restart:
+           try:
+               status = self.check_status()
+               if status in [  JobStatus.unsubmitted, JobStatus.unknow, JobStatus.terminated ]:
+                  dlog.debug('task restart point !!!')
+                  _submit()    
+               elif status==JobStatus.waiting:
+                  dlog.debug('task is waiting')
+               elif status==JobStatus.running:
+                  dlog.debug('task is running')
+               else:
+                  dlog.debug('task is finished')
+                 
+           except:
+               dlog.debug('no job_id file')
+               dlog.debug('task restart point !!!')
+               _submit()
+        else:
+           dlog.debug('new task!!!')
+           _submit()
+   
     def check_status(self) :
         job_id = self._get_job_id()
         if job_id == "" :
@@ -391,11 +425,22 @@ class SlurmJob (RemoteJob) :
                 args.append('')
         for ii,jj in zip(job_dirs, args) :
             ret += 'cd %s\n' % ii
-            ret += 'test $? -ne 0 && exit\n'
+            ret += 'test $? -ne 0 && exit\n\n'
             if res['with_mpi'] :
-                ret += 'srun %s %s\n' % (cmd, jj)
+                ret += 'if [ -f tag_finished ] ;then\n'
+                ret += '  echo gogogo \n'
+                ret += 'else\n'
+                ret += '  srun %s %s\n' % (cmd, jj)
+                ret += '  touch tag_finished\n'
+                ret += 'fi\n\n'
             else :
-                ret += '%s %s\n' % (cmd, jj)
+                ret += 'if [ -f tag_finished ] ;then\n'
+                ret += '  echo gogogo \n'
+                ret += 'else\n'
+                ret += '  %s %s\n' % (cmd, jj)
+                ret += '  touch tag_finished\n'
+                ret += 'fi\n\n'
+
             ret += 'test $? -ne 0 && exit\n'
             ret += 'cd %s\n' % self.remote_root
             ret += 'test $? -ne 0 && exit\n'
