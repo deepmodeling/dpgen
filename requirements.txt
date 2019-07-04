@@ -1,2 +1,5 @@
-
+pymatgen==2019.6.5
+monty==2.0.4
+ase==3.17.0
+paramiko==2.6.0
 

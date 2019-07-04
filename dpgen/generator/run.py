@@ -1080,12 +1080,21 @@ def post_fp_vasp (iter_index,
     for ss in system_index :
         sys_outcars = glob.glob(os.path.join(work_path, "task.%s.*/OUTCAR"%ss))
         sys_outcars.sort()                
-        for idx,oo in enumerate(sys_outcars) :
-            if idx == 0:
-                all_sys = dpdata.LabeledSystem(oo) 
+
+        flag=True
+        for oo in sys_outcars :
+            if flag:
+                _sys = dpdata.LabeledSystem(oo)
+                if len(_sys)>0:
+                   all_sys=_sys
+                   flag=False
+                else:
+                   pass
             else:
-                sys = dpdata.LabeledSystem(oo) 
-                all_sys.append(sys)
+                _sys = dpdata.LabeledSystem(oo)
+                if len(_sys)>0:
+                   all_sys.append(_sys)
+
         sys_data_path = os.path.join(work_path, 'data.%s'%ss)
         all_sys.to_deepmd_raw(sys_data_path)
         all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_outcars))
@@ -1117,16 +1126,23 @@ def post_fp_pwscf (iter_index,
         sys_input = glob.glob(os.path.join(work_path, "task.%s.*/input"%ss))
         sys_output.sort()
         sys_input.sort()
-        cc = 0
-        for ii,oo in zip(sys_input, sys_output) :
-            if cc == 0:
-                all_sys = dpdata.LabeledSystem()
-                all_sys.data = cvt_1frame(ii,oo)
+
+        flag=True
+        for ii,oo in zip(sys_input,sys_output) :
+            if flag:
+                _sys = dpdata.LabeledSystem(oo)
+                _sys.data=cvt_1frame(ii,oo)
+                if len(_sys)>0:
+                   all_sys=_sys
+                   flag=False
+                else:
+                   pass
             else:
-                sys = dpdata.LabeledSystem() 
-                sys.data = cvt_1frame(ii,oo)
-                all_sys.append(sys)
-            cc += 1
+                _sys = dpdata.LabeledSystem(oo)
+                _sys.data = cvt_1frame(ii,oo)
+                if len(_sys)>0:
+                   all_sys.append(_sys)
+
         sys_data_path = os.path.join(work_path, 'data.%s'%ss)
         all_sys.to_deepmd_raw(sys_data_path)
         all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))

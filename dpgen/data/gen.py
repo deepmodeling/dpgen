@@ -507,14 +507,20 @@ def coll_vasp_md(jdata) :
             raise RuntimeError("MD dir: %s: find no valid outcar in sys %s, "
                                "check if your vasp md simulation is correctly done" 
                                % (path_md, ii)) 
-        cc = 0
-        for ii in valid_outcars:
-            if cc == 0:
-                all_sys = dpdata.LabeledSystem(ii)
-            else :
-                sys = dpdata.LabeledSystem(ii)
-                all_sys.append(sys)
-            cc += 1
+
+        flag=True
+        for oo in valid_outcars :
+            if flag:
+                _sys = dpdata.LabeledSystem(oo)
+                if len(_sys)>0:
+                   all_sys=_sys
+                   flag=False
+                else:
+                   pass
+            else:
+                _sys = dpdata.LabeledSystem(oo)
+                if len(_sys)>0:
+                   all_sys.append(_sys)
         # create deepmd data
         if all_sys.get_nframes() >= coll_ndata :
             all_sys = all_sys.sub_system(np.arange(coll_ndata))
