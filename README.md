@@ -403,7 +403,11 @@ Once the jsons have been set correctly, you may simply run DP-GEN by `python run
 ## Doing Auto_test
 At this step, we assume that you have prepared some graph files like `graph.*.pb` and the particular pseudopotential `POTCAR`.
 
-The main code of this step is `dpgen test PARAM MACHINE`, where `PARAM` and `MACHINE` are both json files. `MACHINE` is the same as above.
+The main code of this step is 
+```
+dpgen test PARAM MACHINE
+```
+where `PARAM` and `MACHINE` are both json files. `MACHINE` is the same as above.
 
 The whole program contains a series of tasks shown as follows.
 + `00.equi`:(default task) the equilibrium state, return energy and volume per atom
