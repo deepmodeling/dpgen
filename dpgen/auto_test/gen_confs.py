@@ -41,9 +41,9 @@ def gen_ele_std(ele_name, ctype):
     struct.to('poscar', fposcar)    
     return struct
 
-def gen_element(ele_name) :
+def gen_element(ele_name,key) :
     assert(type(ele_name) == str)
-    mpr = MPRester("y2NcRCEbwr9Uhp0n")
+    mpr = MPRester(key)
     data = mpr.query({'elements':[ele_name], 'nelements':1}, 
                      properties=["task_id", 
                                  "pretty_formula", 
@@ -78,9 +78,9 @@ def gen_element_std(ele_name) :
     for ii in global_std_crystal.keys() :
         ss = gen_ele_std(ele_name, ii)
 
-def gen_alloy(eles) :
+def gen_alloy(eles,key) :
     
-    mpr = MPRester("y2NcRCEbwr9Uhp0n")
+    mpr = MPRester(key)
 
     data = mpr.query({'elements':{'$all': eles}, 'nelements':len(eles)}, 
                      properties=["task_id", 
@@ -111,6 +111,8 @@ def gen_alloy(eles) :
 def _main() :
     parser = argparse.ArgumentParser(
         description="gen structures")
+    parser.add_argument('key', type=str,
+                        help='key id of material project')
     parser.add_argument('elements', 
                         type=str,
                         nargs = '+',
@@ -119,10 +121,10 @@ def _main() :
 
     print('generate %s' % (args.elements))
     if len(args.elements) == 1 :
-        gen_element(args.elements[0])
+        gen_element(args.elements[0],key)
         # gen_element_std(args.elements[0])
     else :
-        gen_alloy(args.elements)
+        gen_alloy(args.elements,key)
 
 if __name__ == '__main__' :
     _main()

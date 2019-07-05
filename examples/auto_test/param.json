@@ -4,6 +4,7 @@
 	"Cu" : "/somewhere/example/POTCAR" 
     },
     "conf_dir":"confs/Cu/mp-30",
+    "key_id":"key id of Material project",
     "task_type":"deepmd",
     "task":"all",
 
