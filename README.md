@@ -403,9 +403,11 @@ Once the jsons have been set correctly, you may simply run DP-GEN by `python run
 ## Doing Auto_test
 At this step, we assume that you have prepared some graph files like `graph.*.pb` and the particular pseudopotential `POTCAR`.
 
-The main code of this step is `run.py`
-
-The command is also simply `python run.py PARAM MACHINE`, where `PARAM` and `MACHINE` are both json files. `MACHINE` is the same as above.
+The main code of this step is 
+```
+dpgen test PARAM MACHINE
+```
+where `PARAM` and `MACHINE` are both json files. `MACHINE` is the same as above.
 
 The whole program contains a series of tasks shown as follows.
 + `00.equi`:(default task) the equilibrium state, return energy and volume per atom
@@ -434,15 +436,14 @@ The first part is the fundamental setting for particular alloy system.
         "Zr" : "/elsewhere/POTCAR"
     },
     "conf_dir":"confs/Cu/std-fcc",
+    "key_id":"key id of Material project",
     "task_type":"deepmd",
     "task":"eos",
 ```
 You need to add the specified paths of necessary `POTCAR` files in "potcar_map". The different `POTCAR` paths are separated by commas.
-Then you also need to add the folder path of particular configuration, which contains `POSCAR` file. For your convenience, we recommend that you use `gen_confs.py` to generate configurations by the following command.
-```
-python gen_confs.py Cu
-```
-It will store the various configurations of the given element or alloy in **confs** folder.
+Then you also need to add the folder path of particular configuration, which contains `POSCAR` file. For your convenience, we recommend that you use `gen_confs.py` to generate configurations , which needs the key id of Material project.
+
+If you add the path of `POSCAR` with `confs`, it will download and store the various configurations of the given element or alloy in **confs** folder.
 + `task_type` contains 3 optional types for testing, i.e. **vasp**, **deepmd** and **meam**.
 + `task` contains 7 options, **equi**, **eos**, **elastic**, **vacancy**, **interstitial**, **surf** and **all**. The option **all** can do all the tasks. 
 

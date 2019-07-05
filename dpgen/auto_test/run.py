@@ -41,6 +41,7 @@ from dpgen.auto_test import gen_02_elastic,cmpt_02_elastic
 from dpgen.auto_test import gen_03_vacancy,cmpt_03_vacancy
 from dpgen.auto_test import gen_04_interstitial,cmpt_04_interstitial
 from dpgen.auto_test import gen_05_surf,cmpt_05_surf
+from dpgen.auto_test import gen_confs
 import requests
 from hashlib import sha1
 
@@ -163,9 +164,9 @@ def run_equi(task_type,jdata,mdata,ssh_sess):
                 run_tasks_.append(ii)
 
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
-        forward_files = ['INCAR', 'POSCAR','POTCAR']
+        forward_files = ['INCAR', 'POTCAR']
         backward_files = ['OUTCAR','CONTCAR']
-        model_names=[]
+        common_files=['POSCAR']
 
     #lammps
     elif task_type=="deepmd" or task_type=="meam":
@@ -195,7 +196,7 @@ def run_equi(task_type,jdata,mdata,ssh_sess):
         forward_files = ['conf.lmp', 'lammps.in']
         backward_files = ['dump.relax','log.lammps','model_devi.out', 'model_devi.log']
         all_models = glob.glob(os.path.join(deepmd_model_dir, '*.pb'))
-        model_names = [os.path.basename(ii) for ii in all_models]
+        common_files = [os.path.basename(ii) for ii in all_models]
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
     
@@ -207,7 +208,7 @@ def run_equi(task_type,jdata,mdata,ssh_sess):
          work_path,
          run_tasks,
          group_size,
-         model_names,
+         common_files,
          forward_files,
          backward_files)
 
@@ -298,7 +299,7 @@ def run_eos(task_type,jdata,mdata,ssh_sess):
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
         forward_files = ['INCAR', 'POSCAR','POTCAR']
         backward_files = ['OUTCAR']
-        common_files=[]
+        common_files=['INCAR','POTCAR']
 
     #lammps
     elif task_type=="deepmd" or task_type=="meam":
@@ -419,7 +420,7 @@ def run_elastic(task_type,jdata,mdata,ssh_sess):
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
         forward_files = ['INCAR', 'POSCAR','POTCAR','KPOINTS']
         backward_files = ['OUTCAR','CONTCAR']
-        common_files=[]
+        common_files=['INCAR','POTCAR','KPOINTS']
 
     #lammps
     elif task_type == "deepmd" or task_type == "meam":
@@ -536,7 +537,7 @@ def run_vacancy(task_type,jdata,mdata,ssh_sess):
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
         forward_files = ['INCAR', 'POSCAR','POTCAR']
         backward_files = ['OUTCAR']
-        common_files=[]
+        common_files=['INCAR','POTCAR']
 
     #lammps
     elif task_type == "deepmd" or task_type == "meam":
@@ -670,7 +671,7 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
         forward_files = ['INCAR', 'POSCAR','POTCAR']
         backward_files = ['OUTCAR','XDATCAR']
-        common_files=[]
+        common_files=['INCAR']
 
     #lammps
     elif task_type == "deepmd" or task_type == "meam":
@@ -803,7 +804,7 @@ def run_surf(task_type,jdata,mdata,ssh_sess):
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
         forward_files = ['INCAR', 'POSCAR','POTCAR']
         backward_files = ['OUTCAR']
-        common_files=[]
+        common_files=['INCAR','POTCAR']
 
     #lammps
     elif task_type == "deepmd" or task_type == "meam":
@@ -898,9 +899,18 @@ def run_task (json_file, machine_file) :
         fp_ssh_sess = SSHSession(fp_machine)
     
     confs = jdata['conf_dir']
+    ele_list=[key for key in jdata['potcar_map'].keys()]
+    key_id = jdata['key_id']
     ii = jdata['task_type']
     jj=jdata['task']
     task_list=['equi','eos','elastic','vacancy','interstitial','surf','all']
+    #gen_configuration
+    if 'confs' in confs and (not os.path.exists(confs+'/POSCAR')) :
+        print('generate %s' % (ele_list))
+        if len(ele_list) == 1 :
+                gen_confs.gen_element(ele_list[0],key_id)
+        else :
+                gen_confs.gen_alloy(ele_list,key_id)
     #default task
     log_iter ("gen_equi", ii, "equi")
     gen_equi (ii, jdata, mdata) 
