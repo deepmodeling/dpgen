@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 from custodian.vasp.jobs import VaspJob as cvj
 from custodian.vasp.validators import VaspFilesValidator,VasprunXMLValidator
-from custodian.vasp.handlers import VaspErrorHandler,UnconvergedErrorHandler,MaxForceErrorHandler,\
-        NonConvergingErrorHandler,CheckpointHandler,PotimErrorHandler,AliasingErrorHandler, \
-        MeshSymmetryErrorHandler,MaxForceErrorHandler,FrozenJobErrorHandler,StdErrHandler,\
+from custodian.vasp.handlers import VaspErrorHandler,UnconvergedErrorHandler, \
+        NonConvergingErrorHandler,FrozenJobErrorHandler,StdErrHandler,\
         WalltimeHandler,PositiveEnergyErrorHandler
 from custodian import Custodian
-from dpgen import dlog
 import argparse
 
-handlers=[VaspErrorHandler(),FrozenJobErrorHandler(),StdErrHandler(),MeshSymmetryErrorHandler(),CheckpointHandler(),NonConvergingErrorHandler(),WalltimeHandler()]
+handlers=[VaspErrorHandler(),FrozenJobErrorHandler(),StdErrHandler(),NonConvergingErrorHandler(),
+           WalltimeHandler(),PositiveEnergyErrorHandler(),UnconvergedErrorHandler()]
 validators=[VaspFilesValidator(),VasprunXMLValidator()]
 
 def runvasp(cmd,opt=False,max_errors=3,backup=False,auto_gamma=False,auto_npar=True,ediffg=-.05):
