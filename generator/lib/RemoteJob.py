@@ -120,7 +120,7 @@ class RemoteJob (object):
         stdin, stdout, stderr = self.ssh.exec_command(('cd %s ;' % self.remote_root) + cmd)
         exit_status = stdout.channel.recv_exit_status() 
         if exit_status != 0:
-            raise RuntimeError("Get error code %d in calling through ssh with job: %s ", (exit_status, self.job_uuid))
+            raise RuntimeError("Get error code %d in calling %s through ssh with job: %s ", (exit_status, cmd, self.job_uuid))
         return stdin, stdout, stderr    
 
     def block_call(self, 
@@ -269,7 +269,8 @@ class CloudMachineJob (RemoteJob) :
                              % (task_per_node, cmd, jj))
                 else :
                     fp.write('%s %s\n' % (cmd, jj))
-                fp.write('test $? -ne 0 && exit\n')
+                if 'allow_failure' not in resources or resources['allow_failure'] is False:
+                    fp.write('test $? -ne 0 && exit\n')
                 fp.write('cd %s\n' % self.remote_root)         
                 fp.write('test $? -ne 0 && exit\n')  
             fp.write('\ntouch tag_finished\n')
@@ -393,7 +394,8 @@ class SlurmJob (RemoteJob) :
                 ret += 'srun %s %s\n' % (cmd, jj)
             else :
                 ret += '%s %s\n' % (cmd, jj)
-            ret += 'test $? -ne 0 && exit\n'
+            if 'allow_failure' not in resources or resources['allow_failure'] is not False:
+                ret += 'test $? -ne 0 && exit\n'
             ret += 'cd %s\n' % self.remote_root
             ret += 'test $? -ne 0 && exit\n'
         ret += '\ntouch tag_finished\n'
@@ -516,7 +518,8 @@ class PBSJob (RemoteJob) :
                 ret += 'mpirun -machinefile $PBS_NODEFILE -n %d %s %s\n' % (res['numb_node'] * res['task_per_node'], cmd, jj)
             else :
                 ret += '%s %s\n' % (cmd, jj)                
-            ret += 'test $? -ne 0 && exit\n'
+            if 'allow_failure' not in resources or resources['allow_failure'] is not False:
+                ret += 'test $? -ne 0 && exit\n'
             ret += 'cd %s\n' % self.remote_root
             ret += 'test $? -ne 0 && exit\n'
         ret += '\ntouch tag_finished\n'
