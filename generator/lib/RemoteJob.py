@@ -618,7 +618,7 @@ class LSFJob (RemoteJob) :
                      res = None) :
         _set_default_resource(res)
         ret = ''
-        ret += "#!/bin/bash -l\n#BSUB -e %J.err#BSUB -o %J.out"
+        ret += "#!/bin/bash -l\n#BSUB -e %J.err\n#BSUB -o %J.out\n"
         if res['numb_gpu'] == 0:
             ret += '#BSUB -R span[ptile=%d]\n#BSUB -n %d\n' % (res['node_cpu'], res['numb_node'] * res['task_per_node'])
         else :
