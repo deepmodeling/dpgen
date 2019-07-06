@@ -42,6 +42,8 @@ from dpgen.remote.group_jobs import group_slurm_jobs
 from dpgen.remote.group_jobs import group_local_jobs
 from dpgen.util import sepline
 from dpgen import ROOT_PATH
+from pymatgen.io.vasp import Incar,Kpoints,Potcar
+from dpgen.auto_test.lib.vasp import make_kspacing_kpoints
 
 template_name = 'template'
 train_name = '00.train'
@@ -660,6 +662,7 @@ def _make_fp_vasp_inner (modd_path,
     fp_link_files       [string]        linked files for fp, POTCAR for example
     fp_params           map             parameters for fp
     """
+    
     modd_task = glob.glob(os.path.join(modd_path, "task.*"))
     modd_task.sort()
     system_index = []
@@ -764,8 +767,43 @@ def _link_fp_vasp_incar (iter_index,
         os.symlink(os.path.relpath(incar_file), incar)
         os.chdir(cwd)
 
+def _make_fp_vasp_kp (iter_index,jdata):
+    fp_params=jdata["fp_params"]
+    try:
+       kspacing = fp_params['kspacing'] 
+    except:
+       dlog.warning("set kspacing to be 0.1")
+       kspacing =  0.1
+
+    try:
+       gamma = fp_params['gamma'] 
+    except:
+       gamma =  False
+
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+
+    fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
+    fp_tasks.sort()
+    if len(fp_tasks) == 0 :
+        return
+    cwd = os.getcwd()
+    for ii in fp_tasks:
+        os.chdir(ii)
+        assert(os.path.exists('POSCAR'))
+        ret=make_kspacing_kpoints('POSCAR', kspacing, gamma)
+        kp=Kpoints.from_string(ret)
+        kp.write_file("KPOINTS")
+        os.chdir(cwd)
+
 def _link_fp_vasp_pp (iter_index,
                       jdata) :
+    #if 'fp_pp_map' in jdata.keys() and 'fp_pp_func' in jdata.keys():
+    #    fp_pp_list=jdata['fp_pp_map']
+    #    functional=jdata['fp_pp_func']
+    #    symbols=[list(ii.values())[0] for ii in fp_pp_list]
+    #    Potcar(symbols=symbols, functional=functional)
+
     fp_pp_path = jdata['fp_pp_path']
     fp_pp_files = jdata['fp_pp_files']
     assert(os.path.exists(fp_pp_path))
@@ -836,17 +874,22 @@ def make_fp_vasp (iter_index,
     # create incar
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
-    if 'user_fp_params' in jdata.keys() :
-        incar = write_incar_dict(jdata['user_fp_params'])
+    fp_params=jdata["fp_params"]
+    if 'fp_incar' in fp_params.keys() :
+        incar= Incar.from_file(fp_params['fp_incar'])
     else:
-        incar = make_vasp_incar_user_dict(jdata['fp_params'])
+        incar  = Incar.from_dict(fp_params["user_vasp_params"])
     incar_file = os.path.join(work_path, 'INCAR')
     incar_file = os.path.abspath(incar_file)
-    with open(incar_file, 'w') as fp:
-        fp.write(incar)
+
+    #with open(incar_file, 'w') as fp:
+    #    fp.write(incar)
+    incar.write_file(incar_file)
     _link_fp_vasp_incar(iter_index, jdata)
     # create potcar
     _link_fp_vasp_pp(iter_index, jdata)
+    # create kpoints
+    _make_fp_vasp_kp(iter_index, jdata)
     # clean traj
     clean_traj = True
     if 'model_devi_clean_traj' in jdata :
@@ -1043,7 +1086,7 @@ def run_fp (iter_index,
     fp_pp_files = jdata['fp_pp_files']
 
     if fp_style == "vasp" :
-        forward_files = ['POSCAR', 'INCAR'] + fp_pp_files 
+        forward_files = ['POSCAR', 'INCAR', 'KPOINTS'] + fp_pp_files 
         backward_files = ['OUTCAR']
         forward_common_files=['cvasp.py']
         run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _vasp_check_fin,
