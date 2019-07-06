@@ -36,7 +36,7 @@ from lib.vasp import make_vasp_incar_user_dict
 from lib.pwscf import make_pwscf_input
 from lib.pwscf import cvt_1frame
 from lib.gaussian import make_gaussian_input
-from lib.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
+from lib.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, LSFJob, CloudMachineJob
 
 template_name = 'template'
 train_name = '00.train'
@@ -556,7 +556,7 @@ def run_train (iter_index,
                            trans_comm_data,
                            forward_files,
                            backward_files)
-    elif machine_type == 'pbs' :        
+    elif machine_type == 'pbs':        
         _group_slurm_jobs(ssh_sess,
                            train_resources,
                            command,
@@ -567,6 +567,17 @@ def run_train (iter_index,
                            forward_files,
                            backward_files,
                           remote_job = PBSJob)
+    elif machine_type == 'lsf':        
+        _group_slurm_jobs(ssh_sess,
+                           train_resources,
+                           command,
+                           work_path,
+                           run_tasks,
+                           1,
+                           trans_comm_data,
+                           forward_files,
+                           backward_files,
+                          remote_job = LSFJob)
     elif machine_type == 'local' :
         _group_local_jobs(ssh_sess,
                            train_resources,
@@ -844,6 +855,17 @@ def run_model_devi (iter_index,
                            forward_files,
                            backward_files,
                           remote_job = PBSJob)
+    elif machine_type == 'lsf' :        
+        _group_slurm_jobs(ssh_sess,
+                           model_devi_resources,
+                           command,
+                           work_path,
+                           run_tasks,
+                           model_devi_group_size,
+                           model_names,
+                           forward_files,
+                           backward_files,
+                          remote_job = LSFJob)
     elif machine_type == 'local' :        
         _group_local_jobs(ssh_sess,
                            model_devi_resources,
@@ -1268,6 +1290,17 @@ def run_fp_inner (iter_index,
                            forward_files,
                            backward_files,
                           remote_job = PBSJob)
+    elif machine_type == 'lsf' :        
+        _group_slurm_jobs(ssh_sess,
+                           fp_resources,
+                           fp_command,
+                           work_path,
+                           run_tasks,
+                           fp_group_size,
+                           [],
+                           forward_files,
+                           backward_files,
+                          remote_job = LSFJob)
     elif machine_type == 'local' :        
         _group_local_jobs(ssh_sess,
                            fp_resources,
