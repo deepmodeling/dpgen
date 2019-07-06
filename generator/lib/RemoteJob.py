@@ -394,7 +394,7 @@ class SlurmJob (RemoteJob) :
                 ret += 'srun %s %s\n' % (cmd, jj)
             else :
                 ret += '%s %s\n' % (cmd, jj)
-            if 'allow_failure' not in res or res['allow_failure'] is not False:
+            if 'allow_failure' not in res or res['allow_failure'] is False:
                 ret += 'test $? -ne 0 && exit\n'
             ret += 'cd %s\n' % self.remote_root
             ret += 'test $? -ne 0 && exit\n'
@@ -518,7 +518,7 @@ class PBSJob (RemoteJob) :
                 ret += 'mpirun -machinefile $PBS_NODEFILE -n %d %s %s\n' % (res['numb_node'] * res['task_per_node'], cmd, jj)
             else :
                 ret += '%s %s\n' % (cmd, jj)                
-            if 'allow_failure' not in res or res['allow_failure'] is not False:
+            if 'allow_failure' not in res or res['allow_failure'] is False:
                 ret += 'test $? -ne 0 && exit\n'
             ret += 'cd %s\n' % self.remote_root
             ret += 'test $? -ne 0 && exit\n'
@@ -656,7 +656,7 @@ class LSFJob (RemoteJob) :
                 ret += 'mpirun -machinefile $LSB_DJOB_HOSTFILE -n %d %s %s\n' % (res['numb_node'] * res['task_per_node'], cmd, jj)
             else :
                 ret += '%s %s\n' % (cmd, jj)                
-            if 'allow_failure' not in res or res['allow_failure'] is not False:
+            if 'allow_failure' not in res or res['allow_failure'] is False:
                 ret += 'test $? -ne 0 && exit\n'
             ret += 'cd %s\n' % self.remote_root
             ret += 'test $? -ne 0 && exit\n'
