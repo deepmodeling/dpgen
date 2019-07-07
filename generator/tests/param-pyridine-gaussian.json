@@ -102,7 +102,7 @@
     "fp_pp_files":	[],
     "user_fp_params":	{
 	"nproc": 14,
-	"keywords":	"b3lyp/6-31g*"
+	"keywords":	"force b3lyp/6-31g*"
     },
     "_comment":		" that's all "
 }
