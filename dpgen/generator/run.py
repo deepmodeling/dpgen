@@ -1173,7 +1173,7 @@ def post_fp_pwscf (iter_index,
         flag=True
         for ii,oo in zip(sys_input,sys_output) :
             if flag:
-                _sys = dpdata.LabeledSystem(oo)
+                _sys = dpdata.LabeledSystem()
                 _sys.data=cvt_1frame(ii,oo)
                 if len(_sys)>0:
                    all_sys=_sys
@@ -1181,7 +1181,7 @@ def post_fp_pwscf (iter_index,
                 else:
                    pass
             else:
-                _sys = dpdata.LabeledSystem(oo)
+                _sys = dpdata.LabeledSystem()
                 _sys.data = cvt_1frame(ii,oo)
                 if len(_sys)>0:
                    all_sys.append(_sys)
