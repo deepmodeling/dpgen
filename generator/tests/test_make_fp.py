@@ -63,7 +63,7 @@ conv_thr=1e-08,\n\
 gaussian_input_ref="""%nproc=14
 #force b3lyp/6-31g*
 
-dpgen
+DPGEN
 """
 
 def _box2lmpbox(orig, box) :
