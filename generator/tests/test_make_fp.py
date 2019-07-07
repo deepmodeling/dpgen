@@ -6,6 +6,7 @@ import unittest
 from context import make_fp_vasp
 from context import make_fp_pwscf
 from context import make_fp_gaussian
+from context import detect_multiplicity
 from context import parse_cur_job
 from context import param_file
 from context import param_old_file
@@ -420,6 +421,21 @@ class TestMakeFPGaussian(unittest.TestCase):
         _check_gaussian_input_head(self, 0)
         _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
+    
+    def test_detect_multiplicity(self):
+        # oxygen O2 3
+        self._check_multiplicity(['O', 'O'], 3)
+        # methane CH4 1
+        self._check_multiplicity(['C', 'H', 'H', 'H', 'H'], 1)
+        # CH3 2
+        self._check_multiplicity(['C', 'H', 'H', 'H'], 2)
+        # CH2 1
+        self._check_multiplicity(['C', 'H', 'H'], 1)
+        # CH 2
+        self._check_multiplicity(['C', 'H'], 2)
+
+    def _check_multiplicity(self, symbols, multiplicity):
+        self.assertEqual(detect_multiplicity(np.array(symbols)), multiplicity)
 
 
 if __name__ == '__main__':
