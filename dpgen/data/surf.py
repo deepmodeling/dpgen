@@ -164,56 +164,7 @@ def poscar_elong (poscar_in, poscar_out, elong) :
     boxz = boxz * (1. + elong_ratio)
     lines[4] = '%.16e %.16e %.16e\n' % (boxz[0],boxz[1],boxz[2])
     with open(poscar_out, 'w') as fout:
-        fout.write("".join(lines))        
-
-def make_super_cell (jdata) :
-    latt = jdata['latt']
-    out_dir = jdata['out_dir']
-    lmp_cmd = jdata['lmp_cmd']
-    path_sc = os.path.join(out_dir, global_dirname_02)
-    cell_type = jdata['cell_type']
-    z_min = jdata['z_min']
-    super_cell = jdata['super_cell']
-
-    cwd = os.getcwd()    
-    path_surf = os.path.join(cwd, 'surf')
-    path_surf = os.path.join(path_surf, cell_type)
-    lmp_input = glob.glob(os.path.join(path_surf, "in.*[0-9]"))
-    pcpy_cmd = os.path.join(cwd, 'tools')
-    pcpy_cmd = os.path.join(pcpy_cmd, 'poscar_copy.py')
-    cvt_cmd = os.path.join(cwd, 'tools')
-    cvt_cmd = os.path.join(cvt_cmd, 'ovito_file_convert.py')
-    
-    path_work = create_path(path_sc)    
-    path_work = os.path.abspath(path_work)
-    os.chdir(path_work)
-    for ii in lmp_input:
-        surf_idx = ii.split('.')[-1]
-        path_cur_surf = create_path('surf-'+surf_idx)
-        os.chdir(path_cur_surf)
-        if os.path.isfile('in.lmp') :
-            os.remove('in.lmp')
-        shutil.copy2(ii, 'in.lmp')
-        replace('in.lmp', 'LATT', str(latt))
-        tmp_cmd = lmp_cmd + " -i in.lmp" 
-        proc = sp.Popen(tmp_cmd, shell = True,
-                        stdout=sp.PIPE, 
-                        stderr=sp.PIPE) 
-        stdout, stderr = proc.communicate()
-        stdout = stdout.decode('utf-8')
-        for jj in stdout.split('\n'): 
-            if "atom z-dim" in jj:
-                z_dim = float(jj.split(' ')[2])
-        nz = 1
-        while z_dim * nz < z_min:
-            nz += 1        
-        # print(nz, z_dim, nz * z_dim)
-        sp.check_call(cvt_cmd + ' -m vasp dump.atom POSCAR.unit', 
-                      shell = True)
-        sp.check_call(pcpy_cmd + ' -n %d %d %d POSCAR.unit POSCAR ' % (super_cell[0], super_cell[1], nz), 
-                      shell = True)
-        os.chdir(path_work)
-    os.chdir(cwd)        
+        fout.write("".join(lines))
 
 def make_unit_cell (jdata) :
     latt = jdata['latt']
@@ -455,19 +406,13 @@ def gen_init_surf(args):
         jdata = json.load (fp)
     out_dir = out_dir_name(jdata)
     jdata['out_dir'] = out_dir
-    pymatgen_surf = False 
-    if 'pymatgen_surf' in jdata:
-        pymatgen_surf = jdata['pymatgen_surf']
     print ("# working dir %s" % out_dir)
 
     stage = args.STAGE
 
     if stage == 1 :
         create_path(out_dir)
-        if pymatgen_surf :
-            make_super_cell_pymatgen(jdata)
-        else :
-            make_super_cell(jdata)
+        make_super_cell_pymatgen(jdata)
         place_element(jdata)
         make_vasp_relax(jdata)
     # elif stage == 0 :
@@ -501,19 +446,13 @@ def _main() :
         jdata = json.load (fp)
     out_dir = out_dir_name(jdata)
     jdata['out_dir'] = out_dir
-    pymatgen_surf = False 
-    if 'pymatgen_surf' in jdata:
-        pymatgen_surf = jdata['pymatgen_surf']
     print ("# working dir %s" % out_dir)
 
     stage = args.STAGE
 
     if stage == 1 :
         create_path(out_dir)
-        if pymatgen_surf :
-            make_super_cell_pymatgen(jdata)
-        else :
-            make_super_cell(jdata)
+        make_super_cell_pymatgen(jdata)
         place_element(jdata)
         make_vasp_relax(jdata)
     # elif stage == 0 :
