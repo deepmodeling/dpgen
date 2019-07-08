@@ -34,7 +34,7 @@ def _crd2frag(symbols, crds):
                     l = 12 if s[3] == 'ar' else int(s[3])
                     a, b = int(s[1])-1, int(s[2])-1
                     bonds.append([a, b, l])
-    bonds = np.array(bonds)
+    bonds = np.array(bonds, ndmin=2).reshape((-1, 3))
     graph = csr_matrix(
         (bonds[:, 2], (bonds[:, 0], bonds[:, 1])), shape=(atomnumber, atomnumber))
     frag_numb, frag_index = connected_components(graph, 0)
