@@ -874,22 +874,32 @@ def make_fp_vasp (iter_index,
     # create incar
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
-    fp_params=jdata["fp_params"]
-    if 'fp_incar' in fp_params.keys() :
-        incar= Incar.from_file(fp_params['fp_incar'])
+    
+   #fp_params=jdata["fp_params"]
+
+    if 'fp_incar' in jdata.keys() :
+        fp_incar_path = jdata['fp_incar']
+        assert(os.path.exists(fp_incar_path))
+        fp_incar_path = os.path.abspath(fp_incar_path)
+        fr = open(fp_incar_path)
+        incar = fr.read()
+        fr.close()
+        #incar= open(fp_incar_path).read()
+    elif 'user_fp_params' in jdata.keys() :
+        incar = write_incar_dict(jdata['user_fp_params'])
     else:
-        incar  = Incar.from_dict(fp_params["user_vasp_params"])
+        incar = make_vasp_incar_user_dict(jdata['fp_params'])
     incar_file = os.path.join(work_path, 'INCAR')
     incar_file = os.path.abspath(incar_file)
 
-    #with open(incar_file, 'w') as fp:
-    #    fp.write(incar)
-    incar.write_file(incar_file)
+    with open(incar_file, 'w') as fp:
+        fp.write(incar)
+    fp.close()
     _link_fp_vasp_incar(iter_index, jdata)
     # create potcar
     _link_fp_vasp_pp(iter_index, jdata)
     # create kpoints
-    _make_fp_vasp_kp(iter_index, jdata)
+    #_make_fp_vasp_kp(iter_index, jdata)
     # clean traj
     clean_traj = True
     if 'model_devi_clean_traj' in jdata :
@@ -1173,7 +1183,7 @@ def post_fp_pwscf (iter_index,
         flag=True
         for ii,oo in zip(sys_input,sys_output) :
             if flag:
-                _sys = dpdata.LabeledSystem(oo)
+                _sys = dpdata.LabeledSystem()
                 _sys.data=cvt_1frame(ii,oo)
                 if len(_sys)>0:
                    all_sys=_sys
@@ -1181,7 +1191,7 @@ def post_fp_pwscf (iter_index,
                 else:
                    pass
             else:
-                _sys = dpdata.LabeledSystem(oo)
+                _sys = dpdata.LabeledSystem()
                 _sys.data = cvt_1frame(ii,oo)
                 if len(_sys)>0:
                    all_sys.append(_sys)

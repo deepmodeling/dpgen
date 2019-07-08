@@ -266,7 +266,7 @@ def cvt_1frame (fin, fout):
     # outlines = open(fout, 'r').read().split('\n')
     # inlines = open(fin, 'r').read().split('\n')
     data = {}
-    data['orig'] = [0,0,0]
+    data['orig'] = np.array([0,0,0])
     data['atom_names'] = (get_types (inlines))
     data['atom_numbs'] = (get_natoms(inlines))
     data['atom_types'] = (get_atom_types(inlines))
