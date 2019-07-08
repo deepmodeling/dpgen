@@ -11,6 +11,7 @@ from context import param_old_file
 from context import param_pwscf_file
 from context import param_pwscf_old_file
 from context import machine_file
+from context import param_diy_file
 from comp_sys import test_atom_names
 from comp_sys import test_atom_types
 from comp_sys import test_coord
@@ -372,6 +373,36 @@ class TestMakeFPVasp(unittest.TestCase):
         _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
 
+
+    def test_make_fp_vasp_from_incar(self):
+        ## Verify if user chooses to diy VASP INCAR totally.
+        if os.path.isdir('iter.000000') :
+            shutil.rmtree('iter.000000')
+        with open (param_diy_file, 'r') as fp :
+            jdata = json.load (fp)
+        fp.close()
+        with open (machine_file, 'r') as fp:
+            mdata = json.load (fp)
+        fp.close()
+        md_descript = []
+        nsys = 2
+        nmd = 3
+        n_frame = 10
+        for ii in range(nsys) :
+            tmp = []
+            for jj in range(nmd) :
+                tmp.append(np.arange(0, 0.29, 0.29/10))
+            md_descript.append(tmp)
+        atom_types = [0, 1, 0, 1]
+        type_map = jdata['type_map']
+        _make_fake_md(0, md_descript, atom_types, type_map)
+        make_fp_vasp(0, jdata)
+        _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
+        _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
+        _check_incar_exists(self, 0)
+        _check_incar(self, 0)
+        _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
+        shutil.rmtree('iter.000000')
 
 if __name__ == '__main__':
     unittest.main()
