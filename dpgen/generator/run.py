@@ -767,18 +767,24 @@ def _link_fp_vasp_incar (iter_index,
         os.symlink(os.path.relpath(incar_file), incar)
         os.chdir(cwd)
 
-def _make_fp_vasp_kp (iter_index,jdata):
-    fp_params=jdata["fp_params"]
+def _make_fp_vasp_kp (iter_index,jdata, incar):
+    dincar=Incar.from_string(incar)
+    standard_incar={}
+    for key,val in dincar.items():
+        standard_incar[key.upper()]=val
+      
     try:
-       kspacing = fp_params['kspacing'] 
+       kspacing = standard_incar['KSPACING'] 
     except:
-       dlog.warning("set kspacing to be 0.1")
-       kspacing =  0.1
-
+       raise RuntimeError ("KSPACING must be given in INCAR")
     try:
-       gamma = fp_params['gamma'] 
+       gamma = standard_incar['KGAMMA'] 
+       if gamma[0].upper()=="T":
+          gamma=True
+       else:
+          gamma=False
     except:
-       gamma =  False
+       raise RuntimeError ("KGAMMA must be given in INCAR")
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -899,7 +905,7 @@ def make_fp_vasp (iter_index,
     # create potcar
     _link_fp_vasp_pp(iter_index, jdata)
     # create kpoints
-    #_make_fp_vasp_kp(iter_index, jdata)
+    _make_fp_vasp_kp(iter_index, jdata, incar)
     # clean traj
     clean_traj = True
     if 'model_devi_clean_traj' in jdata :
