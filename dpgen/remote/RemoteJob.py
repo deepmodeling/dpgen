@@ -445,14 +445,24 @@ class SlurmJob (RemoteJob) :
                     ret += '  echo gogogo \n'
                     ret += 'else\n'
                     ret += '  python ../cvasp.py "srun %s" %s %s 1>log 2>log\n' % (cmd, fp_max_errors, jj)
-                    ret += '  touch tag_finished\n'
+                    ret += '  if test $? -ne 0 \n'
+                    ret += '  then\n'
+                    ret += '     exit\n'
+                    ret += '  else\n'
+                    ret += '     touch tag_finished\n'
+                    ret += '  fi\n'
                     ret += 'fi\n\n'
                 else :
                     ret += 'if [ -f tag_finished ] ;then\n'
                     ret += '  echo gogogo \n'
                     ret += 'else\n'
                     ret += '  python ../cvasp.py "%s" %s %s 1>log 2>log\n' % (cmd, fp_max_errors, jj)
-                    ret += '  touch tag_finished\n'
+                    ret += '  if test $? -ne 0 \n'
+                    ret += '  then\n'
+                    ret += '     exit\n'
+                    ret += '  else\n'
+                    ret += '     touch tag_finished\n'
+                    ret += '  fi\n'
                     ret += 'fi\n\n'
             else:
                 if res['with_mpi'] :
@@ -460,14 +470,24 @@ class SlurmJob (RemoteJob) :
                     ret += '  echo gogogo \n'
                     ret += 'else\n'
                     ret += '  srun %s %s\n' % (cmd, jj)
-                    ret += '  touch tag_finished\n'
+                    ret += '  if test $? -ne 0 \n'
+                    ret += '  then\n'
+                    ret += '     exit\n'
+                    ret += '  else\n'
+                    ret += '     touch tag_finished\n'
+                    ret += '  fi\n'
                     ret += 'fi\n\n'
                 else :
                     ret += 'if [ -f tag_finished ] ;then\n'
                     ret += '  echo gogogo \n'
                     ret += 'else\n'
                     ret += '  %s %s\n' % (cmd, jj)
-                    ret += '  touch tag_finished\n'
+                    ret += '  if test $? -ne 0 \n'
+                    ret += '  then\n'
+                    ret += '     exit\n'
+                    ret += '  else\n'
+                    ret += '     touch tag_finished\n'
+                    ret += '  fi\n'
                     ret += 'fi\n\n'
             if 'allow_failure' not in res or res['allow_failure'] is False:
                 ret += 'test $? -ne 0 && exit\n'
