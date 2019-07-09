@@ -691,7 +691,8 @@ def _make_fp_vasp_inner (modd_path,
                          fp_task_min,
                          fp_task_max,
                          fp_link_files,
-                         type_map):
+                         type_map,
+                         cluster_cutoff = None):
     """
     modd_path           string          path of model devi
     work_path           string          path of fp
@@ -726,33 +727,38 @@ def _make_fp_vasp_inner (modd_path,
                 res_failed_conf = []
                 res_accurate_conf = []
                 for ii in range(all_conf.shape[0]) :
-                    if (all_conf[ii][1] < e_trust_hi and all_conf[ii][1] > e_trust_lo) or \
-                       (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] > f_trust_lo) and \
-                       ii >= model_devi_skip :
-                        sel_conf.append(int(all_conf[ii][0]))
-                    elif (all_conf[ii][1] > e_trust_hi ) or (all_conf[ii][4] > f_trust_hi ):
-                        res_failed_conf.append(int(all_conf[ii][0]))
-                    elif (all_conf[ii][1] < e_trust_lo and all_conf[ii][4] < f_trust_lo ):
-                        res_accurate_conf.append(int(all_conf[ii][0]))
-
-                for ii in sel_conf:
-                    fp_candidate.append([tt, ii])
-                for ii in res_accurate_conf:
-                    fp_rest_accurate.append([tt, ii])
-                for ii in res_failed_conf:
-                    fp_rest_failed.append([tt, ii])
+                    cc = int(all_conf[ii][0])
+                    if cluster_cutoff is None:
+                        if (all_conf[ii][1] < e_trust_hi and all_conf[ii][1] > e_trust_lo) or \
+                        (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] > f_trust_lo) and \
+                        ii >= model_devi_skip :
+                            fp_candidate.append([tt, cc])
+                        elif (all_conf[ii][1] > e_trust_hi ) or (all_conf[ii][4] > f_trust_hi ):
+                            fp_rest_accurate.append([tt, cc])
+                        elif (all_conf[ii][1] < e_trust_lo and all_conf[ii][4] < f_trust_lo ):
+                            fp_rest_failed.append([tt, cc])
+                    else:
+                        idx_candidate = np.where(np.logical_and(all_conf[ii][7:] < f_trust_hi, all_conf[ii][7:] > f_trust_lo))[0]
+                        idx_rest_failed = np.where(all_conf[ii][7:] > f_trust_lo)[0]
+                        idx_rest_accurate = np.where(all_conf[ii][7:] < f_trust_hi)[0]
+                        for jj in idx_candidate:
+                            fp_candidate.append([tt, cc, jj])
+                        for jj in idx_rest_accurate:
+                            fp_rest_accurate.append([tt, cc, jj])
+                        for jj in idx_rest_failed:
+                            fp_rest_failed.append([tt, cc, jj])
         random.shuffle(fp_candidate)
         random.shuffle(fp_rest_failed)
         random.shuffle(fp_rest_accurate)
         with open(os.path.join(work_path,'candidate.shuffled.%s.out'%ss), 'w') as fp:
             for ii in fp_candidate:
-                fp.write(str(ii[0]) + " " + str(ii[1]) + "\n")
+                fp.write(" ".join([str(nn) for nn in ii]) + "\n")
         with open(os.path.join(work_path,'rest_accurate.shuffled.%s.out'%ss), 'w') as fp:
             for ii in fp_rest_accurate:
-                fp.write(str(ii[0]) + " " + str(ii[1]) + "\n")
+                fp.write(" ".join([str(nn) for nn in ii]) + "\n")
         with open(os.path.join(work_path,'rest_failed.shuffled.%s.out'%ss), 'w') as fp:
             for ii in fp_rest_failed:
-                fp.write(str(ii[0]) + " " + str(ii[1]) + "\n")
+                fp.write(" ".join([str(nn) for nn in ii]) + "\n")
         numb_task = min(fp_task_max, len(fp_candidate))
         for cc in range(numb_task) :
             tt = fp_candidate[cc][0]
@@ -761,6 +767,12 @@ def _make_fp_vasp_inner (modd_path,
             conf_name = os.path.join(tt, "traj")
             conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
             conf_name = os.path.abspath(conf_name)
+            if cluster_cutoff is not None:
+                # take clusters
+                jj = fp_candidate[cc][2]
+                new_conf_name = conf_name+'.cluster'
+                take_cluster(conf_name, new_conf_name, type_map, jj, cluster_cutoff)
+                conf_name = new_conf_name
             fp_task_name = make_fp_task_name(int(ss), cc)
             fp_task_path = os.path.join(work_path, fp_task_name)
             create_path(fp_task_path)
@@ -775,112 +787,6 @@ def _make_fp_vasp_inner (modd_path,
     for ii in fp_tasks:
         os.chdir(ii)
         dump_to_poscar('conf.dump', 'POSCAR', type_map)
-        os.chdir(cwd)
-    return fp_tasks
-
-def _make_fp_cluster_inner (modd_path,
-                         work_path,
-                         model_devi_skip,
-                         e_trust_lo,
-                         e_trust_hi,
-                         f_trust_lo,
-                         f_trust_hi,
-                         fp_task_min,
-                         fp_task_max,
-                         fp_link_files,
-                         type_map,
-                         cluster_cutoff):
-    """
-    Take clusters
-    """
-    
-    modd_task = glob.glob(os.path.join(modd_path, "task.*"))
-    modd_task.sort()
-    system_index = []
-    for ii in modd_task :
-        system_index.append(os.path.basename(ii).split('.')[1])
-    set_tmp = set(system_index)
-    system_index = list(set_tmp)
-    system_index.sort()
-
-    fp_tasks = []
-    for ss in system_index :
-        fp_candidate = []
-        fp_rest = []
-        modd_system_glob = os.path.join(modd_path, 'task.' + ss + '.*')
-        modd_system_task = glob.glob(modd_system_glob)
-        modd_system_task.sort()
-        cc = 0
-        for tt in modd_system_task :
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                all_conf = np.loadtxt(os.path.join(tt, 'model_devi.out'))
-                #sel_conf = []
-                #res_conf = []
-                for ii in range(all_conf.shape[0]) :
-                    check_trust = np.logical_and(all_conf[ii][7:] < f_trust_hi, all_conf[ii][7:] > f_trust_lo)
-                    idx_candidate = np.where(check_trust)[0]
-                    idx_rest = np.where(~check_trust)[0]
-                    for jj in idx_candidate:
-                        fp_candidate.append([tt, ii, jj])
-                    for jj in idx_rest:
-                        fp_rest.append([tt, ii, jj])
-        random.shuffle(fp_candidate)
-        with open(os.path.join(work_path,'candidate.shuffled.%s.out'%ss), 'w') as fp:
-            for ii in fp_candidate:
-                fp.write(str(ii[0]) + " " + str(ii[1]) + "\n")
-        random.shuffle(fp_rest)
-        with open(os.path.join(work_path,'rest.shuffled.%s.out'%ss), 'w') as fp:
-            for ii in fp_rest:
-                fp.write(str(ii[0]) + " " + str(ii[1]) + "\n")
-        numb_task = min(fp_task_max, len(fp_candidate))
-        for cc in range(numb_task) :
-            tt = fp_candidate[cc][0]
-            ii = fp_candidate[cc][1]
-            jj = fp_candidate[cc][2]
-            ss = os.path.basename(tt).split('.')[1]
-            conf_name = os.path.join(tt, "traj")
-            conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
-            conf_name = os.path.abspath(conf_name)
-            # take clusters
-            take_cluster(conf_name, conf_name+'.cluster', type_map, jj, cluster_cutoff)
-            conf_name += '.cluster'
-            fp_task_name = make_fp_task_name(int(ss), cc)
-            fp_task_path = os.path.join(work_path, fp_task_name)
-            create_path(fp_task_path)
-            fp_tasks.append(fp_task_path)
-            cwd = os.getcwd()
-            os.chdir(fp_task_path)
-            os.symlink(os.path.relpath(conf_name), 'conf.dump.cluster')
-            for pair in fp_link_files :
-                os.symlink(pair[0], pair[1])
-            os.chdir(cwd)
-        if numb_task < fp_task_min:
-            for cc in range(fp_task_min - numb_task) :
-                tt = fp_rest[cc][0]
-                ii = fp_rest[cc][1]
-                jj = fp_rest[cc][2]
-                ss = os.path.basename(tt).split('.')[1]
-                conf_name = os.path.join(tt, "traj")
-                conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
-                conf_name = os.path.abspath(conf_name)
-                take_cluster(conf_name, conf_name+'.cluster', type_map, jj, cluster_cutoff)
-                conf_name += '.cluster'
-                fp_task_name = make_fp_task_name(int(ss), cc + numb_task)
-                fp_task_path = os.path.join(work_path, fp_task_name)
-                create_path(fp_task_path)
-                fp_tasks.append(fp_task_path)
-                cwd = os.getcwd()
-                os.chdir(fp_task_path)
-                os.symlink(os.path.relpath(conf_name), 'conf.dump.cluster')
-                shutil.copyfile(os.path.relpath(conf_name), 'conf.dump.cluster.bk')
-                for pair in fp_link_files :
-                    os.symlink(pair[0], pair[1])
-                os.chdir(cwd)            
-    cwd = os.getcwd()
-    for ii in fp_tasks:
-        os.chdir(ii)
-        dump_to_poscar('conf.dump.cluster', 'POSCAR', type_map)
         os.chdir(cwd)
     return fp_tasks
 
@@ -984,23 +890,15 @@ def _make_fp_vasp_configs(iter_index,
         if 'task_min' in cur_job :
             task_min = cur_job['task_min']
     # make configs
-    if 'use_clusters' in jdata and jdata['use_clusters']:
-        fp_tasks = _make_fp_cluster_inner(modd_path, work_path,
-                                        model_devi_skip,
-                                        e_trust_lo, e_trust_hi,
-                                        f_trust_lo, f_trust_hi,
-                                        task_min, fp_task_max,
-                                        [],
-                                        type_map,
-                                        jdata['cluster_cutoff'])
-    else:
-        fp_tasks = _make_fp_vasp_inner(modd_path, work_path,
-                                    model_devi_skip,
-                                    e_trust_lo, e_trust_hi,
-                                    f_trust_lo, f_trust_hi,
-                                    task_min, fp_task_max,
-                                    [],
-                                    type_map)
+    cluster_cutoff = jdata['cluster_cutoff'] if 'use_clusters' in jdata and jdata['use_clusters'] else None
+    fp_tasks = _make_fp_vasp_inner(modd_path, work_path,
+                                model_devi_skip,
+                                e_trust_lo, e_trust_hi,
+                                f_trust_lo, f_trust_hi,
+                                task_min, fp_task_max,
+                                [],
+                                type_map,
+                                cluster_cutoff)
     return fp_tasks
 
 def _fix_poscar_type (jdata, task_dirs) :
