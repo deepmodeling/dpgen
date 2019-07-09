@@ -12,10 +12,12 @@ from context import param_pwscf_file
 from context import param_pwscf_old_file
 from context import machine_file
 from context import param_diy_file
+from context import make_kspacing_kpoints
 from comp_sys import test_atom_names
 from comp_sys import test_atom_types
 from comp_sys import test_coord
 from comp_sys import test_cell
+from pymatgen.io.vasp import Kpoints,Incar
 
 vasp_incar_ref = "PREC=A\n\
 ENCUT=600\n\
@@ -170,6 +172,31 @@ def _check_poscars(testCase, idx, fp_task_max, type_map) :
             sys1 = dpdata.System(poscar_file, fmt = 'vasp/poscar')
             test_atom_names(testCase, sys0, sys1)
             
+def _check_kpoints_exists(testCase, idx) :
+    fp_path = os.path.join('iter.%06d' % idx, '02.fp')
+    tasks = glob.glob(os.path.join(fp_path, 'task.*'))
+    for ii in tasks :
+        testCase.assertTrue(os.path.isfile(os.path.join(ii, 'KPOINTS')))
+
+def _check_kpoints(testCase, idx) :
+    fp_path = os.path.join('iter.%06d' % idx, '02.fp')
+    tasks = glob.glob(os.path.join(fp_path, 'task.*'))
+    for ii in tasks :
+        kpoints=Kpoints.from_file(os.path.join(os.path.join(ii, 'KPOINTS')))
+        incar=Incar.from_file(os.path.join(os.path.join(ii, 'INCAR')))
+        kspacing = incar['KSPACING']
+        gamma = incar['KGAMMA']
+        if isinstance(gamma,bool):
+           pass
+        else:
+           if gamma[0].upper()=="T":
+              gamma=True
+           else:
+              gamma=False
+        ret=make_kspacing_kpoints(os.path.join(os.path.join(ii, 'POSCAR')), kspacing, gamma)
+        kpoints_ref=Kpoints.from_string(ret) 
+        testCase.assertEqual(repr(kpoints), repr(kpoints_ref))
+       
 
 def _check_incar_exists(testCase, idx) :
     fp_path = os.path.join('iter.%06d' % idx, '02.fp')
@@ -316,6 +343,8 @@ class TestMakeFPVasp(unittest.TestCase):
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
         _check_incar_exists(self, 0)
         _check_incar(self, 0)
+        _check_kpoints_exists(self, 0) 
+        _check_kpoints(self,0)
         _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
 
@@ -343,6 +372,8 @@ class TestMakeFPVasp(unittest.TestCase):
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
         _check_incar_exists(self, 0)
         _check_incar(self, 0)
+        _check_kpoints_exists(self, 0) 
+        _check_kpoints(self,0)
         _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
 
@@ -370,6 +401,8 @@ class TestMakeFPVasp(unittest.TestCase):
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
         _check_incar_exists(self, 0)
         _check_incar(self, 0)
+        _check_kpoints_exists(self, 0) 
+        _check_kpoints(self,0)
         _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
 
@@ -401,6 +434,8 @@ class TestMakeFPVasp(unittest.TestCase):
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
         _check_incar_exists(self, 0)
         _check_incar(self, 0)
+        _check_kpoints_exists(self, 0) 
+        _check_kpoints(self,0)
         _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
 
