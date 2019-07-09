@@ -630,7 +630,7 @@ def run_model_devi (iter_index,
                            backward_files,
                           remote_job = PBSJob)
     elif machine_type == 'lsf' :        
-        _group_slurm_jobs(ssh_sess,
+        group_slurm_jobs(ssh_sess,
                            model_devi_resources,
                            command,
                            work_path,
@@ -1109,7 +1109,7 @@ def run_fp_inner (iter_index,
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
 
     if ssh_sess == None and machine_type == 'ucloud':
-        _ucloud_submit_jobs(mdata['fp_machine'],
+        ucloud_submit_jobs(mdata['fp_machine'],
                             mdata['fp_resources'],
                             fp_command,
                             work_path,
@@ -1140,7 +1140,7 @@ def run_fp_inner (iter_index,
                            backward_files,
                           remote_job = PBSJob)
     elif machine_type == 'lsf' :        
-        _group_slurm_jobs(ssh_sess,
+        group_slurm_jobs(ssh_sess,
                            fp_resources,
                            fp_command,
                            work_path,
