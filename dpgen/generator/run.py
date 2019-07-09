@@ -779,10 +779,13 @@ def _make_fp_vasp_kp (iter_index,jdata, incar):
        raise RuntimeError ("KSPACING must be given in INCAR")
     try:
        gamma = standard_incar['KGAMMA'] 
-       if gamma[0].upper()=="T":
-          gamma=True
+       if isinstance(gamma,bool):
+          pass
        else:
-          gamma=False
+          if gamma[0].upper()=="T":
+             gamma=True
+          else:
+             gamma=False
     except:
        raise RuntimeError ("KGAMMA must be given in INCAR")
 
@@ -804,12 +807,6 @@ def _make_fp_vasp_kp (iter_index,jdata, incar):
 
 def _link_fp_vasp_pp (iter_index,
                       jdata) :
-    #if 'fp_pp_map' in jdata.keys() and 'fp_pp_func' in jdata.keys():
-    #    fp_pp_list=jdata['fp_pp_map']
-    #    functional=jdata['fp_pp_func']
-    #    symbols=[list(ii.values())[0] for ii in fp_pp_list]
-    #    Potcar(symbols=symbols, functional=functional)
-
     fp_pp_path = jdata['fp_pp_path']
     fp_pp_files = jdata['fp_pp_files']
     assert(os.path.exists(fp_pp_path))

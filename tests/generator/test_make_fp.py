@@ -186,10 +186,13 @@ def _check_kpoints(testCase, idx) :
         incar=Incar.from_file(os.path.join(os.path.join(ii, 'INCAR')))
         kspacing = incar['KSPACING']
         gamma = incar['KGAMMA']
-        if gamma[0].upper()=="T":
-           gamma=True
+        if isinstance(gamma,bool):
+           pass
         else:
-           gamma=False
+           if gamma[0].upper()=="T":
+              gamma=True
+           else:
+              gamma=False
         ret=make_kspacing_kpoints(os.path.join(os.path.join(ii, 'POSCAR')), kspacing, gamma)
         kpoints_ref=Kpoints.from_string(ret) 
         testCase.assertEqual(repr(kpoints), repr(kpoints_ref))
