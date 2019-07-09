@@ -57,7 +57,6 @@ model_devi_conf_fmt = data_system_fmt + '.%04d'
 fp_name = '02.fp'
 fp_task_fmt = data_system_fmt + '.%06d'
 cvasp_file=os.path.join(ROOT_PATH,'generator/lib/cvasp.py')
-#cvasp_file="/sharedext4/haiid/crazy/dpgen/dpgen/generator/lib/cvasp.py"
 
 def get_job_names(jdata) :
     jobkeys = []
@@ -1076,21 +1075,6 @@ def run_fp_inner (iter_index,
     # if (('numb_gpu' not in fp_resources) or (fp_resources['numb_gpu'] == 0)) and (machine_type == 'pbs'):
     #     fp_command = 'mpirun  ' + fp_command
 
-    # cvasp can only work for vasp 
-    # trick for solving  "srun python cvasp.py vasp_std 3" problem
-    fp_style = jdata['fp_style']
-    if fp_style == "vasp" :
-       with_mpi=fp_resources['with_mpi']
-       dlog.debug('with_mpi ')
-       dlog.debug(with_mpi)
-       if with_mpi:
-          fp_command="srun "+fp_command
-          fp_resources['with_mpi']=False
-       try:
-          fp_max_errors = mdata['fp_max_errors']
-       except:
-          fp_max_errors = 3
-       fp_command='python ../cvasp.py "'+fp_command+'" '+str(fp_max_errors)
     fp_command = cmd_append_log(fp_command, log_file)
 
     iter_name = make_iter_name(iter_index)
