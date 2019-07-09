@@ -36,7 +36,7 @@ from dpgen.generator.lib.vasp import write_incar_dict
 from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
 from dpgen.generator.lib.pwscf import make_pwscf_input
 from dpgen.generator.lib.pwscf import cvt_1frame
-from dpgen.generator.lib.gaussian import make_gaussian_input
+from dpgen.generator.lib.gaussian import make_gaussian_input, take_cluster
 from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, LSFJob, CloudMachineJob
 from dpgen.remote.group_jobs import ucloud_submit_jobs
 from dpgen.remote.group_jobs import group_slurm_jobs
@@ -207,10 +207,16 @@ def make_train (iter_index,
     os.chdir(cwd)
 
     init_data_sys = []
-    init_batch_size = list(jdata['init_batch_size'])
+    init_batch_size = []
     sys_batch_size = jdata['sys_batch_size']
     for ii in init_data_sys_ :
-        init_data_sys.append(os.path.join('..', 'data.init', ii))
+        if 'init_multi_systems' in jdata and jdata['init_multi_systems']:
+            for sys in os.listdir(os.path.join('..', 'data.init', ii)):
+                init_data_sys.append(os.path.join('..', 'data.init', ii, sys))
+                init_batch_size.append(jdata['init_batch_size'])
+        else:
+            init_data_sys.append(os.path.join('..', 'data.init', ii))
+            init_batch_size.append(jdata['init_batch_size'])
     if iter_index > 0 :
         for ii in range(iter_index) :
             fp_path = os.path.join(make_iter_name(ii), fp_name)
@@ -222,9 +228,14 @@ def make_train (iter_index,
                 if nframes < fp_task_min :
                     log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
                     continue
-                init_data_sys.append(os.path.join('..', 'data.iters', jj))
                 sys_idx = int(jj.split('.')[-1])
-                init_batch_size.append(sys_batch_size[sys_idx])                
+                if 'use_clusters' in jdata and jdata['use_clusters']:
+                    for sys in os.listdir(os.path.join('..', 'data.iters', jj)):
+                        init_data_sys.append(os.path.join('..', 'data.iters', jj, sys))
+                        init_batch_size.append(sys_batch_size[sys_idx])
+                else:
+                    init_data_sys.append(os.path.join('..', 'data.iters', jj))
+                    init_batch_size.append(sys_batch_size[sys_idx])                
     # establish tasks
     jinput = jdata['default_training_param']
     jinput['systems'] = init_data_sys    
@@ -508,8 +519,12 @@ def make_model_devi (iter_index,
                                os.path.join(conf_path, poscar_name))
             else :
                 os.symlink(cc, os.path.join(conf_path, poscar_name))
-            poscar_to_conf(os.path.join(conf_path, poscar_name),
-                           os.path.join(conf_path, lmp_name))
+            if 'sys_format' in jdata:
+                fmt = jdata['sys_format']
+            else:
+                fmt = 'vasp/poscar'
+            sys = dpdata.System(os.path.join(conf_path, poscar_name), fmt = fmt)
+            sys.to_lammps_lmp(os.path.join(conf_path, lmp_name))
             conf_counter += 1
         sys_counter += 1
 
@@ -772,6 +787,111 @@ def _make_fp_vasp_inner (modd_path,
         os.chdir(cwd)
     return fp_tasks
 
+def _make_fp_cluster_inner (modd_path,
+                         work_path,
+                         model_devi_skip,
+                         e_trust_lo,
+                         e_trust_hi,
+                         f_trust_lo,
+                         f_trust_hi,
+                         fp_task_min,
+                         fp_task_max,
+                         fp_link_files,
+                         type_map,
+                         cluster_cutoff):
+    """
+    Take clusters
+    """
+    
+    modd_task = glob.glob(os.path.join(modd_path, "task.*"))
+    modd_task.sort()
+    system_index = []
+    for ii in modd_task :
+        system_index.append(os.path.basename(ii).split('.')[1])
+    set_tmp = set(system_index)
+    system_index = list(set_tmp)
+    system_index.sort()
+
+    fp_tasks = []
+    for ss in system_index :
+        fp_candidate = []
+        fp_rest = []
+        modd_system_glob = os.path.join(modd_path, 'task.' + ss + '.*')
+        modd_system_task = glob.glob(modd_system_glob)
+        modd_system_task.sort()
+        cc = 0
+        for tt in modd_system_task :
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                all_conf = np.loadtxt(os.path.join(tt, 'model_devi.out'))
+                #sel_conf = []
+                #res_conf = []
+                for ii in range(all_conf.shape[0]) :
+                    check_trust = np.logical_and(all_conf[ii][7:] < f_trust_hi, all_conf[ii][7:] > f_trust_lo)
+                    idx_candidate = np.where(check_trust)[0]
+                    idx_rest = np.where(~check_trust)[0]
+                    for jj in idx_candidate:
+                        fp_candidate.append([tt, ii, jj])
+                    for jj in idx_rest:
+                        fp_rest.append([tt, ii, jj])
+        random.shuffle(fp_candidate)
+        with open(os.path.join(work_path,'candidate.shuffled.%s.out'%ss), 'w') as fp:
+            for ii in fp_candidate:
+                fp.write(str(ii[0]) + " " + str(ii[1]) + "\n")
+        random.shuffle(fp_rest)
+        with open(os.path.join(work_path,'rest.shuffled.%s.out'%ss), 'w') as fp:
+            for ii in fp_rest:
+                fp.write(str(ii[0]) + " " + str(ii[1]) + "\n")
+        numb_task = min(fp_task_max, len(fp_candidate))
+        for cc in range(numb_task) :
+            tt = fp_candidate[cc][0]
+            ii = fp_candidate[cc][1]
+            jj = fp_candidate[cc][2]
+            ss = os.path.basename(tt).split('.')[1]
+            conf_name = os.path.join(tt, "traj")
+            conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
+            conf_name = os.path.abspath(conf_name)
+            # take clusters
+            take_cluster(conf_name, conf_name+'.cluster', type_map, jj, cluster_cutoff)
+            conf_name += '.cluster'
+            fp_task_name = make_fp_task_name(int(ss), cc)
+            fp_task_path = os.path.join(work_path, fp_task_name)
+            create_path(fp_task_path)
+            fp_tasks.append(fp_task_path)
+            cwd = os.getcwd()
+            os.chdir(fp_task_path)
+            os.symlink(os.path.relpath(conf_name), 'conf.dump.cluster')
+            for pair in fp_link_files :
+                os.symlink(pair[0], pair[1])
+            os.chdir(cwd)
+        if numb_task < fp_task_min:
+            for cc in range(fp_task_min - numb_task) :
+                tt = fp_rest[cc][0]
+                ii = fp_rest[cc][1]
+                jj = fp_rest[cc][2]
+                ss = os.path.basename(tt).split('.')[1]
+                conf_name = os.path.join(tt, "traj")
+                conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
+                conf_name = os.path.abspath(conf_name)
+                take_cluster(conf_name, conf_name+'.cluster', type_map, jj, cluster_cutoff)
+                conf_name += '.cluster'
+                fp_task_name = make_fp_task_name(int(ss), cc + numb_task)
+                fp_task_path = os.path.join(work_path, fp_task_name)
+                create_path(fp_task_path)
+                fp_tasks.append(fp_task_path)
+                cwd = os.getcwd()
+                os.chdir(fp_task_path)
+                os.symlink(os.path.relpath(conf_name), 'conf.dump.cluster')
+                shutil.copyfile(os.path.relpath(conf_name), 'conf.dump.cluster.bk')
+                for pair in fp_link_files :
+                    os.symlink(pair[0], pair[1])
+                os.chdir(cwd)            
+    cwd = os.getcwd()
+    for ii in fp_tasks:
+        os.chdir(ii)
+        dump_to_poscar('conf.dump.cluster', 'POSCAR', type_map)
+        os.chdir(cwd)
+    return fp_tasks
 
 def _link_fp_vasp_incar (iter_index,
                          jdata,                         
@@ -873,13 +993,23 @@ def _make_fp_vasp_configs(iter_index,
         if 'task_min' in cur_job :
             task_min = cur_job['task_min']
     # make configs
-    fp_tasks = _make_fp_vasp_inner(modd_path, work_path,
-                                   model_devi_skip,
-                                   e_trust_lo, e_trust_hi,
-                                   f_trust_lo, f_trust_hi,
-                                   task_min, fp_task_max,
-                                   [],
-                                   type_map)
+    if 'use_clusters' in jdata and jdata['use_clusters']:
+        fp_tasks = _make_fp_cluster_inner(modd_path, work_path,
+                                        model_devi_skip,
+                                        e_trust_lo, e_trust_hi,
+                                        f_trust_lo, f_trust_hi,
+                                        task_min, fp_task_max,
+                                        [],
+                                        type_map,
+                                        jdata['cluster_cutoff'])
+    else:
+        fp_tasks = _make_fp_vasp_inner(modd_path, work_path,
+                                    model_devi_skip,
+                                    e_trust_lo, e_trust_hi,
+                                    f_trust_lo, f_trust_hi,
+                                    task_min, fp_task_max,
+                                    [],
+                                    type_map)
     return fp_tasks
 
 def _fix_poscar_type (jdata, task_dirs) :
@@ -1314,10 +1444,12 @@ def post_fp_gaussian (iter_index,
         sys_output = glob.glob(os.path.join(work_path, "task.%s.*/output"%ss))
         sys_output.sort()
         for idx,oo in enumerate(sys_output) :
+            sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log') 
             if idx == 0:
-                all_sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log') 
+                if 'use_clusters' in jdata and jdata['use_clusters']:
+                    all_sys = dpdata.MultiSystems(sys)
+                all_sys = sys
             else:
-                sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log') 
                 all_sys.append(sys)
         sys_data_path = os.path.join(work_path, 'data.%s'%ss)
         all_sys.to_deepmd_raw(sys_data_path)
