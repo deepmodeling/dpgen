@@ -9,7 +9,7 @@ class JobStatus (Enum) :
     running = 3
     terminated = 4
     finished = 5
-    unknow = 100
+    unknown = 100
 
 def _default_item(resources, key, value) :
     if key not in resources :
@@ -120,7 +120,7 @@ class RemoteJob (object):
         stdin, stdout, stderr = self.ssh.exec_command(('cd %s ;' % self.remote_root) + cmd)
         exit_status = stdout.channel.recv_exit_status() 
         if exit_status != 0:
-            raise RuntimeError("Get error code %d in calling through ssh with job: %s ", (exit_status, self.job_uuid))
+            raise RuntimeError("Get error code %d in calling %s through ssh with job: %s ", (exit_status, cmd, self.job_uuid))
         return stdin, stdout, stderr    
 
     def block_call(self, 
@@ -269,7 +269,8 @@ class CloudMachineJob (RemoteJob) :
                              % (task_per_node, cmd, jj))
                 else :
                     fp.write('%s %s\n' % (cmd, jj))
-                fp.write('test $? -ne 0 && exit\n')
+                if 'allow_failure' not in resources or resources['allow_failure'] is False:
+                    fp.write('test $? -ne 0 && exit\n')
                 fp.write('cd %s\n' % self.remote_root)         
                 fp.write('test $? -ne 0 && exit\n')  
             fp.write('\ntouch tag_finished\n')
@@ -393,7 +394,8 @@ class SlurmJob (RemoteJob) :
                 ret += 'srun %s %s\n' % (cmd, jj)
             else :
                 ret += '%s %s\n' % (cmd, jj)
-            ret += 'test $? -ne 0 && exit\n'
+            if 'allow_failure' not in res or res['allow_failure'] is False:
+                ret += 'test $? -ne 0 && exit\n'
             ret += 'cd %s\n' % self.remote_root
             ret += 'test $? -ne 0 && exit\n'
         ret += '\ntouch tag_finished\n'
@@ -516,7 +518,8 @@ class PBSJob (RemoteJob) :
                 ret += 'mpirun -machinefile $PBS_NODEFILE -n %d %s %s\n' % (res['numb_node'] * res['task_per_node'], cmd, jj)
             else :
                 ret += '%s %s\n' % (cmd, jj)                
-            ret += 'test $? -ne 0 && exit\n'
+            if 'allow_failure' not in res or res['allow_failure'] is False:
+                ret += 'test $? -ne 0 && exit\n'
             ret += 'cd %s\n' % self.remote_root
             ret += 'test $? -ne 0 && exit\n'
         ret += '\ntouch tag_finished\n'
@@ -543,3 +546,127 @@ class PBSJob (RemoteJob) :
 # # can download dirs and normal files
 # rjob.download(['job0', 'job1'], ['a'])
 # # rjob.clean()
+
+
+class LSFJob (RemoteJob) :
+    def submit(self, 
+               job_dirs,
+               cmd,
+               args = None, 
+               resources = None) :
+        script_name = self._make_script(job_dirs, cmd, args, res = resources)
+        stdin, stdout, stderr = self.block_checkcall(('cd %s; bsub < %s' % (self.remote_root, script_name)))
+        subret = (stdout.readlines())
+        job_id = subret[0].split()[1][1:-1]
+        sftp = self.ssh.open_sftp()
+        with sftp.open(os.path.join(self.remote_root, 'job_id'), 'w') as fp:
+            fp.write(job_id)
+        sftp.close()
+
+    def check_status(self) :
+        job_id = self._get_job_id()
+        if job_id == "" :
+            raise RuntimeError("job %s is has not been submitted" % self.remote_root)
+        ret, stdin, stdout, stderr\
+            = self.block_call ("bjobs " + job_id)
+        err_str = stderr.read().decode('utf-8')
+        if (ret != 0) :
+            if ("Job <%s> is not found" % job_id) in err_str :
+                if self._check_finish_tag() :
+                    return JobStatus.finished
+                else :
+                    return JobStatus.terminated
+            else :
+                raise RuntimeError ("status command qstat fails to execute. erro info: %s return code %d"
+                                    % (err_str, ret))
+        status_line = stdout.read().decode('utf-8').split ('\n')[-2]
+        status_word = status_line.split ()[2]
+        # ref: https://www.ibm.com/support/knowledgecenter/en/SSETD4_9.1.2/lsf_command_ref/bjobs.1.html
+        if      status_word in ["PEND", "WAIT"] :
+            return JobStatus.waiting
+        elif    status_word in ["RUN"] :
+            return JobStatus.running
+        elif    status_word in ["DONE","EXIT"] :
+            if self._check_finish_tag() :
+                return JobStatus.finished
+            else :
+                return JobStatus.terminated
+        else :
+            return JobStatus.unknown
+    
+    def _get_job_id(self) :
+        sftp = self.ssh.open_sftp()
+        with sftp.open(os.path.join(self.remote_root, 'job_id'), 'r') as fp:
+            ret = fp.read().decode('utf-8')
+        sftp.close()
+        return ret
+
+    def _check_finish_tag(self) :
+        sftp = self.ssh.open_sftp()
+        try:
+            sftp.stat(os.path.join(self.remote_root, 'tag_finished')) 
+            ret =  True
+        except IOError:
+            ret = False
+        sftp.close()
+        return ret
+
+    def _make_script(self, 
+                     job_dirs,
+                     cmd,
+                     args = None, 
+                     res = None) :
+        _set_default_resource(res)
+        ret = ''
+        ret += "#!/bin/bash -l\n#BSUB -e %J.err\n#BSUB -o %J.out\n"
+        if res['numb_gpu'] == 0:
+            ret += '#BSUB -R span[ptile=%d]\n#BSUB -n %d\n' % (res['node_cpu'], res['numb_node'] * res['task_per_node'])
+        else :
+            ret += '#BSUB -R "select[ngpus >0] rusage[ngpus_excl_p=1]"\n#BSUB -n %d\n' % (res['numb_gpu'])
+        #ret += '#BSUB -l walltime=%s\n' % (res['time_limit'])
+        #if res['mem_limit'] > 0 :
+        #    ret += "#BSUB -l mem=%dG \n" % res['mem_limit']
+        ret += '#BSUB -J %s\n' % (res['job_name'] if 'job_name' in res else 'dpgen')
+        if len(res['partition']) > 0 :
+            ret += '#BSUB -q %s\n' % res['partition']
+        ret += "\n"
+        for ii in res['module_unload_list'] :
+            ret += "module unload %s\n" % ii
+        for ii in res['module_list'] :
+            ret += "module load %s\n" % ii
+        ret += "\n"
+        for ii in res['source_list'] :
+            ret += "source %s\n" %ii
+        ret += "\n"
+        envs = res['envs']
+        if envs != None :
+            for key in envs.keys() :
+                ret += 'export %s=%s\n' % (key, envs[key])
+            ret += '\n'
+        #ret += 'cd $PBS_O_WORKDIR\n\n'
+
+        if args == None :
+            args = []
+            for ii in job_dirs:
+                args.append('')
+        for ii,jj in zip(job_dirs, args) :
+            ret += 'cd %s\n' % ii
+            ret += 'test $? -ne 0 && exit\n'
+            if res['with_mpi'] :
+                ret += 'mpirun -machinefile $LSB_DJOB_HOSTFILE -n %d %s %s\n' % (res['numb_node'] * res['task_per_node'], cmd, jj)
+            else :
+                ret += '%s %s\n' % (cmd, jj)                
+            if 'allow_failure' not in res or res['allow_failure'] is False:
+                ret += 'test $? -ne 0 && exit\n'
+            ret += 'cd %s\n' % self.remote_root
+            ret += 'test $? -ne 0 && exit\n'
+        ret += '\ntouch tag_finished\n'
+
+        script_name = 'run.sub'
+        script = os.path.join(self.remote_root, script_name)
+        sftp = self.ssh.open_sftp()
+        with sftp.open(script, 'w') as fp :
+            fp.write(ret)
+        sftp.close()
+
+        return script_name

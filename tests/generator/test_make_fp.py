@@ -5,11 +5,14 @@ import unittest
 
 from context import make_fp_vasp
 from context import make_fp_pwscf
+from context import make_fp_gaussian
+from context import detect_multiplicity
 from context import parse_cur_job
 from context import param_file
 from context import param_old_file
 from context import param_pwscf_file
 from context import param_pwscf_old_file
+from context import param_gaussian_file
 from context import machine_file
 from context import param_diy_file
 from context import make_kspacing_kpoints
@@ -61,6 +64,11 @@ ntyp=3,\n\
 conv_thr=1e-08,\n\
 /\n"
 
+gaussian_input_ref="""%nproc=14
+#force b3lyp/6-31g*
+
+DPGEN
+"""
 
 def _box2lmpbox(orig, box) :
     lohi = np.zeros([3,2])
@@ -263,6 +271,20 @@ def _check_pwscf_input_head(testCase, idx) :
         lines = lines[:idx]
         testCase.assertEqual(('\n'.join(lines)).strip(), pwscf_input_ref.strip())
 
+def _check_gaussian_input_head(testCase, idx) :
+    fp_path = os.path.join('iter.%06d' % idx, '02.fp')
+    tasks = glob.glob(os.path.join(fp_path, 'task.*'))
+    for ii in tasks :
+        ifile = os.path.join(ii, 'input')
+        testCase.assertTrue(os.path.isfile(ifile))
+        with open(ifile) as fp:
+            lines = fp.read().split('\n')
+        for idx, jj in enumerate(lines) :
+            if '0 1' in jj :
+                break
+        lines = lines[:idx]
+        testCase.assertEqual(('\n'.join(lines)).strip(), gaussian_input_ref.strip())
+
 
 class TestMakeFPPwscf(unittest.TestCase):
     def test_make_fp_pwscf(self):
@@ -438,6 +460,50 @@ class TestMakeFPVasp(unittest.TestCase):
         _check_kpoints(self,0)
         _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
+
+
+class TestMakeFPGaussian(unittest.TestCase):
+    def test_make_fp_gaussian(self):
+        if os.path.isdir('iter.000000') :
+            shutil.rmtree('iter.000000')
+        with open (param_gaussian_file, 'r') as fp :
+            jdata = json.load (fp)
+        with open (machine_file, 'r') as fp:
+            mdata = json.load (fp)
+        md_descript = []
+        nsys = 2
+        nmd = 3
+        n_frame = 10
+        for ii in range(nsys) :
+            tmp = []
+            for jj in range(nmd) :
+                tmp.append(np.arange(0, 0.29, 0.29/10))
+            md_descript.append(tmp)
+        atom_types = [0, 1, 2, 2, 0, 1]
+        type_map = jdata['type_map']
+        _make_fake_md(0, md_descript, atom_types, type_map)
+        make_fp_gaussian(0, jdata)
+        _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
+        _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
+        _check_gaussian_input_head(self, 0)
+        _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
+        shutil.rmtree('iter.000000')
+    
+    def test_detect_multiplicity(self):
+        # oxygen O2 3
+        self._check_multiplicity(['O', 'O'], 3)
+        # methane CH4 1
+        self._check_multiplicity(['C', 'H', 'H', 'H', 'H'], 1)
+        # CH3 2
+        self._check_multiplicity(['C', 'H', 'H', 'H'], 2)
+        # CH2 1
+        self._check_multiplicity(['C', 'H', 'H'], 1)
+        # CH 2
+        self._check_multiplicity(['C', 'H'], 2)
+
+    def _check_multiplicity(self, symbols, multiplicity):
+        self.assertEqual(detect_multiplicity(np.array(symbols)), multiplicity)
+
 
 if __name__ == '__main__':
     unittest.main()

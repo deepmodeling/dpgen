@@ -6,10 +6,12 @@ import unittest
 from context import post_fp
 from context import post_fp_pwscf
 from context import post_fp_vasp
+from context import post_fp_gaussian
 from context import param_file
 from context import param_old_file
 from context import param_pwscf_file
 from context import param_pwscf_old_file
+from context import param_gaussian_file
 from context import machine_file
 from comp_sys import test_atom_names
 from comp_sys import test_atom_types
@@ -144,6 +146,23 @@ class TestPostFPPWSCF(unittest.TestCase, CompLabeledSys):
         post_fp(0, jdata)
         self.system_1 = dpdata.LabeledSystem('iter.000000/orig', fmt = 'deepmd/raw')
         self.system_2 = dpdata.LabeledSystem('iter.000000/02.fp/data.000', fmt = 'deepmd/raw')
-        
+
+class TestPostGaussian(unittest.TestCase, CompLabeledSys):
+    def setUp(self):
+        self.places = 5
+        self.e_places = 5
+        self.f_places = 5
+        self.v_places = 5
+        assert os.path.isdir('out_data_post_fp_gaussian'), 'out data for post fp gaussian should exist'
+        if os.path.isdir('iter.000000') :
+            shutil.rmtree('iter.000000')
+        shutil.copytree('out_data_post_fp_gaussian', 'iter.000000')
+        with open (param_gaussian_file, 'r') as fp :
+            jdata = json.load (fp)
+        post_fp(0, jdata)
+        self.system_1 = dpdata.LabeledSystem('iter.000000/orig', fmt = 'deepmd/raw')
+        self.system_2 = dpdata.LabeledSystem('iter.000000/02.fp/data.000', fmt = 'deepmd/raw')
 
     
+if __name__ == '__main__':
+    unittest.main()
