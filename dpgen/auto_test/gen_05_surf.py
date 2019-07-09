@@ -50,9 +50,9 @@ def make_vasp(jdata, conf_dir, max_miller = 2, relax_box = False, static = False
     all_slabs = generate_all_slabs(ss, max_miller, min_slab_size, min_vacuum_size)
     # gen incar
     if static :
-        fc = vasp.make_vasp_static_incar(ecut, ediff, 1, 1, kspacing = kspacing, kgamma = kgamma)
+        fc = vasp.make_vasp_static_incar(ecut, ediff, npar=npar,kpar=kpar, kspacing = kspacing, kgamma = kgamma)
     else :
-        fc = vasp.make_vasp_relax_incar(ecut, ediff, True, relax_box, False, 1, 1, kspacing = kspacing, kgamma = kgamma)
+        fc = vasp.make_vasp_relax_incar(ecut, ediff, True, relax_box, False, npar=npar,kpar=kpar, kspacing = kspacing, kgamma = kgamma)
     with open(os.path.join(task_path, 'INCAR'), 'w') as fp :
         fp.write(fc)
     # gen potcar
