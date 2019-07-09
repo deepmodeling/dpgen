@@ -29,3 +29,8 @@ log.lammps
 restart.*
 dump.*
 *.out
+build
+dist
+dpgen.egg-info
+*/*.pyc
+*/__pycache__
