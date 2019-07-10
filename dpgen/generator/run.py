@@ -915,13 +915,13 @@ def _make_fp_vasp_configs(iter_index,
     # make configs
     cluster_cutoff = jdata['cluster_cutoff'] if 'use_clusters' in jdata and jdata['use_clusters'] else None
     fp_tasks = _make_fp_vasp_inner(modd_path, work_path,
-                                model_devi_skip,
-                                e_trust_lo, e_trust_hi,
-                                f_trust_lo, f_trust_hi,
-                                task_min, fp_task_max,
-                                [],
-                                type_map,
-                                cluster_cutoff)
+                                   model_devi_skip,
+                                   e_trust_lo, e_trust_hi,
+                                   f_trust_lo, f_trust_hi,
+                                   task_min, fp_task_max,
+                                   [],
+                                   type_map,
+                                   cluster_cutoff)
     return fp_tasks
 
 def _fix_poscar_type (jdata, task_dirs) :
