@@ -57,7 +57,6 @@ model_devi_conf_fmt = data_system_fmt + '.%04d'
 fp_name = '02.fp'
 fp_task_fmt = data_system_fmt + '.%06d'
 cvasp_file=os.path.join(ROOT_PATH,'generator/lib/cvasp.py')
-#cvasp_file="/sharedext4/haiid/crazy/dpgen/dpgen/generator/lib/cvasp.py"
 
 def get_job_names(jdata) :
     jobkeys = []
@@ -713,7 +712,8 @@ def _make_fp_vasp_inner (modd_path,
     fp_tasks = []
     for ss in system_index :
         fp_candidate = []
-        fp_rest = []
+        fp_rest_accurate = []
+        fp_rest_failed = []
         modd_system_glob = os.path.join(modd_path, 'task.' + ss + '.*')
         modd_system_task = glob.glob(modd_system_glob)
         modd_system_task.sort()
@@ -723,25 +723,35 @@ def _make_fp_vasp_inner (modd_path,
                 warnings.simplefilter("ignore")
                 all_conf = np.loadtxt(os.path.join(tt, 'model_devi.out'))
                 sel_conf = []
-                res_conf = []
+                res_failed_conf = []
+                res_accurate_conf = []
                 for ii in range(all_conf.shape[0]) :
                     if (all_conf[ii][1] < e_trust_hi and all_conf[ii][1] > e_trust_lo) or \
                        (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] > f_trust_lo) and \
                        ii >= model_devi_skip :
                         sel_conf.append(int(all_conf[ii][0]))
-                    else :
-                        res_conf.append(int(all_conf[ii][0]))
+                    elif (all_conf[ii][1] > e_trust_hi ) or (all_conf[ii][4] > f_trust_hi ):
+                        res_failed_conf.append(int(all_conf[ii][0]))
+                    elif (all_conf[ii][1] < e_trust_lo and all_conf[ii][4] < f_trust_lo ):
+                        res_accurate_conf.append(int(all_conf[ii][0]))
+
                 for ii in sel_conf:
                     fp_candidate.append([tt, ii])
-                for ii in res_conf:
-                    fp_rest.append([tt, ii])
+                for ii in res_accurate_conf:
+                    fp_rest_accurate.append([tt, ii])
+                for ii in res_failed_conf:
+                    fp_rest_failed.append([tt, ii])
         random.shuffle(fp_candidate)
+        random.shuffle(fp_rest_failed)
+        random.shuffle(fp_rest_accurate)
         with open(os.path.join(work_path,'candidate.shuffled.%s.out'%ss), 'w') as fp:
             for ii in fp_candidate:
                 fp.write(str(ii[0]) + " " + str(ii[1]) + "\n")
-        random.shuffle(fp_rest)
-        with open(os.path.join(work_path,'rest.shuffled.%s.out'%ss), 'w') as fp:
-            for ii in fp_rest:
+        with open(os.path.join(work_path,'rest_accurate.shuffled.%s.out'%ss), 'w') as fp:
+            for ii in fp_rest_accurate:
+                fp.write(str(ii[0]) + " " + str(ii[1]) + "\n")
+        with open(os.path.join(work_path,'rest_failed.shuffled.%s.out'%ss), 'w') as fp:
+            for ii in fp_rest_failed:
                 fp.write(str(ii[0]) + " " + str(ii[1]) + "\n")
         numb_task = min(fp_task_max, len(fp_candidate))
         for cc in range(numb_task) :
@@ -761,25 +771,6 @@ def _make_fp_vasp_inner (modd_path,
             for pair in fp_link_files :
                 os.symlink(pair[0], pair[1])
             os.chdir(cwd)
-        if numb_task < fp_task_min:
-            for cc in range(fp_task_min - numb_task) :
-                tt = fp_rest[cc][0]
-                ii = fp_rest[cc][1]
-                ss = os.path.basename(tt).split('.')[1]
-                conf_name = os.path.join(tt, "traj")
-                conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
-                conf_name = os.path.abspath(conf_name)
-                fp_task_name = make_fp_task_name(int(ss), cc + numb_task)
-                fp_task_path = os.path.join(work_path, fp_task_name)
-                create_path(fp_task_path)
-                fp_tasks.append(fp_task_path)
-                cwd = os.getcwd()
-                os.chdir(fp_task_path)
-                os.symlink(os.path.relpath(conf_name), 'conf.dump')
-                shutil.copyfile(os.path.relpath(conf_name), 'conf.dump.bk')
-                for pair in fp_link_files :
-                    os.symlink(pair[0], pair[1])
-                os.chdir(cwd)            
     cwd = os.getcwd()
     for ii in fp_tasks:
         os.chdir(ii)
@@ -1206,21 +1197,6 @@ def run_fp_inner (iter_index,
     # if (('numb_gpu' not in fp_resources) or (fp_resources['numb_gpu'] == 0)) and (machine_type == 'pbs'):
     #     fp_command = 'mpirun  ' + fp_command
 
-    # cvasp can only work for vasp 
-    # trick for solving  "srun python cvasp.py vasp_std 3" problem
-    fp_style = jdata['fp_style']
-    if fp_style == "vasp" :
-       with_mpi=fp_resources['with_mpi']
-       dlog.debug('with_mpi ')
-       dlog.debug(with_mpi)
-       if with_mpi:
-          fp_command="srun "+fp_command
-          fp_resources['with_mpi']=False
-       try:
-          fp_max_errors = mdata['fp_max_errors']
-       except:
-          fp_max_errors = 3
-       fp_command='python ../cvasp.py "'+fp_command+'" '+str(fp_max_errors)
     fp_command = cmd_append_log(fp_command, log_file)
 
     iter_name = make_iter_name(iter_index)

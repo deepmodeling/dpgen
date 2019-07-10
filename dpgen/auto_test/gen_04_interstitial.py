@@ -49,7 +49,7 @@ def _make_vasp(jdata, conf_dir, supercell, insert_ele) :
     for jj in vds :
         dss.append(jj.generate_defect_structure(supercell))
     # gen incar
-    fc = vasp.make_vasp_relax_incar(ecut, ediff, True, True, True, 1, 1, kspacing = kspacing, kgamma = kgamma)
+    fc = vasp.make_vasp_relax_incar(ecut, ediff, True, True, True, npar=npar,kpar=kpar, kspacing = kspacing, kgamma = kgamma)
     with open(os.path.join(task_path, 'INCAR'), 'w') as fp :
         fp.write(fc)
     # gen tasks    
