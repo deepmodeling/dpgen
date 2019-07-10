@@ -226,7 +226,7 @@ def make_train (iter_index,
                 if 'use_clusters' in jdata and jdata['use_clusters']:
                     nframes = 0
                     for sys_single in os.listdir(jj):
-                        tmp_box = np.loadtxt(os.path.join(jj, 'box.raw'))
+                        tmp_box = np.loadtxt(os.path.join(jj, sys_single, 'box.raw'))
                         tmp_box = np.reshape(tmp_box, [-1,9])
                         nframes += tmp_box.shape[0]
                     if nframes < fp_task_min :
@@ -789,24 +789,28 @@ def _make_fp_vasp_inner (modd_path,
             if cluster_cutoff is not None:
                 # take clusters
                 jj = fp_candidate[cc][2]
-                new_conf_name = conf_name+'.cluster'
-                take_cluster(conf_name, new_conf_name, type_map, jj, cluster_cutoff)
-                conf_name = new_conf_name
+                poscar_name = '{}.cluster.{}.POSCAR'.format(conf_name, jj)
+                new_system = take_cluster(conf_name, type_map, jj, cluster_cutoff)
+                new_system.to_vasp_poscar(poscar_name)
             fp_task_name = make_fp_task_name(int(ss), cc)
             fp_task_path = os.path.join(work_path, fp_task_name)
             create_path(fp_task_path)
             fp_tasks.append(fp_task_path)
             cwd = os.getcwd()
             os.chdir(fp_task_path)
-            os.symlink(os.path.relpath(conf_name), 'conf.dump')
+            if cluster_cutoff is None:
+                os.symlink(os.path.relpath(conf_name), 'conf.dump')
+            else:
+                os.symlink(os.path.relpath(poscar_name), 'POSCAR')
             for pair in fp_link_files :
                 os.symlink(pair[0], pair[1])
             os.chdir(cwd)
-    cwd = os.getcwd()
-    for ii in fp_tasks:
-        os.chdir(ii)
-        dump_to_poscar('conf.dump', 'POSCAR', type_map)
-        os.chdir(cwd)
+    if cluster_cutoff is None:
+        cwd = os.getcwd()
+        for ii in fp_tasks:
+            os.chdir(ii)
+            dump_to_poscar('conf.dump', 'POSCAR', type_map)
+            os.chdir(cwd)
     return fp_tasks
 
 def _link_fp_vasp_incar (iter_index,
@@ -1341,7 +1345,8 @@ def post_fp_gaussian (iter_index,
             if idx == 0:
                 if 'use_clusters' in jdata and jdata['use_clusters']:
                     all_sys = dpdata.MultiSystems(sys)
-                all_sys = sys
+                else:
+                    all_sys = sys
             else:
                 all_sys.append(sys)
         sys_data_path = os.path.join(work_path, 'data.%s'%ss)

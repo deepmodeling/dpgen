@@ -151,11 +151,11 @@ def make_gaussian_input(sys_data, fp_params):
     buff.append('\n')
     return '\n'.join(buff)
 
-def take_cluster(old_conf_name, new_conf_name, type_map, idx, cutoff):
+def take_cluster(old_conf_name, type_map, idx, cutoff):
     sys = dpdata.System(old_conf_name, fmt = 'lammps/dump', type_map = type_map)
     atom_names = sys['atom_names']
     atom_types = sys['atom_types']
-    cell = sys['cell'][0]
+    cell = sys['cells'][0]
     coords = sys['coords'][0]
     symbols = [atom_names[atom_type] for atom_type in atom_types]
     # detect fragment 
@@ -166,9 +166,10 @@ def take_cluster(old_conf_name, new_conf_name, type_map, idx, cutoff):
     cutoff_atoms_idx = np.where(distances < cutoff)[0]
     # make cutoff atoms in molecules
     taken_atoms_idx = []
-    for mol_atom_idx in frag_index:
-        if np.any(np.isin(mol_atom_idx, cutoff_atoms_idx)):
-            taken_atoms_idx.append(mol_atom_idx)
+    for ii in range(frag_numb):
+        frag_atoms_idx = np.where(frag_index == ii)[0]
+        if np.any(np.isin(frag_atoms_idx, cutoff_atoms_idx)):
+            taken_atoms_idx.append(frag_atoms_idx)
     all_taken_atoms_idx = np.concatenate(taken_atoms_idx)
     # wrap
     cutoff_atoms = all_atoms[all_taken_atoms_idx]
@@ -177,8 +178,8 @@ def take_cluster(old_conf_name, new_conf_name, type_map, idx, cutoff):
         cutoff_atoms.get_cell_lengths_and_angles()[0: 3],
         pbc=True)
     coords = cutoff_atoms.get_positions()
-    sys.data['coords'] = np.array([coords[idx]])
-    sys.data['atom_types'] = atom_types[idx]
+    sys.data['coords'] = np.array([coords])
+    sys.data['atom_types'] = atom_types[all_taken_atoms_idx]
     for ii, _ in enumerate(atom_names):
         sys.data['atom_numbs'][ii] = np.count_nonzero(sys.data['atom_types']==ii)
-    sys.to_lammps_lmp(new_conf_name)
+    return sys
