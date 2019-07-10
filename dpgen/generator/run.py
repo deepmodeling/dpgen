@@ -207,34 +207,43 @@ def make_train (iter_index,
 
     init_data_sys = []
     init_batch_size = []
+    init_batch_size_ = list(jdata['init_batch_size'])
     sys_batch_size = jdata['sys_batch_size']
     for ii in init_data_sys_ :
         if 'init_multi_systems' in jdata and jdata['init_multi_systems']:
-            for sys in os.listdir(os.path.join('..', 'data.init', ii)):
-                init_data_sys.append(os.path.join('..', 'data.init', ii, sys))
-                init_batch_size.append(jdata['init_batch_size'])
+            for single_sys in os.listdir(os.path.join(work_path, 'data.init', ii)):
+                init_data_sys.append(os.path.join('..', 'data.init', ii, single_sys))
+                init_batch_size.append(init_batch_size_[ii])
         else:
             init_data_sys.append(os.path.join('..', 'data.init', ii))
-            init_batch_size.append(jdata['init_batch_size'])
+            init_batch_size.append(init_batch_size_[ii])
     if iter_index > 0 :
         for ii in range(iter_index) :
             fp_path = os.path.join(make_iter_name(ii), fp_name)
             fp_data_sys = glob.glob(os.path.join(fp_path, "data.*"))            
             for jj in fp_data_sys :
-                tmp_box = np.loadtxt(os.path.join(jj, 'box.raw'))
-                tmp_box = np.reshape(tmp_box, [-1,9])
-                nframes = tmp_box.shape[0]
-                if nframes < fp_task_min :
-                    log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
-                    continue
                 sys_idx = int(jj.split('.')[-1])
                 if 'use_clusters' in jdata and jdata['use_clusters']:
-                    for sys in os.listdir(os.path.join('..', 'data.iters', jj)):
-                        init_data_sys.append(os.path.join('..', 'data.iters', jj, sys))
+                    nframes = 0
+                    for sys_single in os.listdir(jj):
+                        tmp_box = np.loadtxt(os.path.join(jj, 'box.raw'))
+                        tmp_box = np.reshape(tmp_box, [-1,9])
+                        nframes += tmp_box.shape[0]
+                    if nframes < fp_task_min :
+                        log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
+                        continue
+                    for sys_single in os.listdir(os.path.join(jj)):
+                        init_data_sys.append(os.path.join('..', 'data.iters', jj, sys_single))
                         init_batch_size.append(sys_batch_size[sys_idx])
                 else:
+                    tmp_box = np.loadtxt(os.path.join(jj, 'box.raw'))
+                    tmp_box = np.reshape(tmp_box, [-1,9])
+                    nframes = tmp_box.shape[0]
+                    if nframes < fp_task_min :
+                        log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
+                        continue
                     init_data_sys.append(os.path.join('..', 'data.iters', jj))
-                    init_batch_size.append(sys_batch_size[sys_idx])                
+                    init_batch_size.append(sys_batch_size[sys_idx])
     # establish tasks
     jinput = jdata['default_training_param']
     jinput['systems'] = init_data_sys    
@@ -313,11 +322,21 @@ def run_train (iter_index,
     cwd = os.getcwd()
     os.chdir(work_path)
     for ii in init_data_sys :
-        trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
-        trans_comm_data += glob.glob(os.path.join(ii, 'type.raw'))
+        if 'init_multi_systems' in jdata and jdata['init_multi_systems']:
+            for single_sys in os.listdir(os.path.join(ii)):
+                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'set.*'))
+                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type.raw'))
+        else:
+            trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
+            trans_comm_data += glob.glob(os.path.join(ii, 'type.raw'))
     for ii in fp_data :
-        trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
-        trans_comm_data += glob.glob(os.path.join(ii, 'type.raw'))
+        if 'use_clusters' in jdata and jdata['use_clusters']:
+            for single_sys in os.listdir(os.path.join(ii)):
+                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'set.*'))
+                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type.raw'))
+        else:
+            trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
+            trans_comm_data += glob.glob(os.path.join(ii, 'type.raw'))
     os.chdir(cwd)
 
     if ssh_sess == None and machine_type == 'ucloud':
@@ -522,8 +541,8 @@ def make_model_devi (iter_index,
                 fmt = jdata['sys_format']
             else:
                 fmt = 'vasp/poscar'
-            sys = dpdata.System(os.path.join(conf_path, poscar_name), fmt = fmt)
-            sys.to_lammps_lmp(os.path.join(conf_path, lmp_name))
+            system = dpdata.System(os.path.join(conf_path, poscar_name), fmt = fmt)
+            system.to_lammps_lmp(os.path.join(conf_path, lmp_name))
             conf_counter += 1
         sys_counter += 1
 
