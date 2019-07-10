@@ -1,22 +1,33 @@
 #!/usr/bin/env python3
 
 import random, os, sys
+import dpdata
 import subprocess as sp
 import dpgen.auto_test.lib.util as util
 
-def cvt_lammps_conf (fin, 
-                     fout, 
-                     ofmt = 'lammps_data') :
+def cvt_lammps_conf(fin, fout, ofmt = 'lammps/data'):
     """
     Format convert from fin to fout, specify the output format by ofmt
+    Imcomplete situation
     """
-    thisfile = os.path.abspath(__file__)
-    thisdir = os.path.dirname(thisfile)
-    cmd = os.path.join(thisdir, 'ovito_file_convert.py')
-    cmd_opt = '-m '+ofmt
-    cmd_line = cmd + ' ' + cmd_opt + ' ' + fin + ' ' + fout
-    sp.check_call(cmd_line, shell = True)    
-    # sp.check_call([cmd, cmd_opt, fin, fout])
+    supp_ofmt = ['lammps/dump', 'lammps/data', 'vasp/poscar']
+    supp_exts = ['dump', 'lmp', 'poscar/POSCAR']
+
+    if 'dump' in fout :
+        ofmt = 'lammps/dump'
+    elif 'lmp' in fout :
+        ofmt = 'lammps/data'
+    elif 'poscar' in fout or 'POSCAR' in fout :
+        ofmt = 'vasp/poscar'
+    if not ofmt in supp_ofmt :
+        raise RuntimeError ("output format " + ofmt + " is not supported. use one of " + str(supp_ofmt))
+
+    if 'lmp' in fout :
+        d_poscar=dpdata.System(fin, fmt = 'vasp/poscar')
+        d_poscar.to_lammps_lmp(fout, frame_idx=0)
+    elif 'poscar' in fout or 'POSCAR' in fout:
+        d_dump=dpdata.System(fin, fmt = 'lammps/dump')
+        d_dump.to_vasp_poscar(fout, frame_idx=-1)
 
 def apply_type_map(conf_file, deepmd_type_map, ptypes) :
     """
