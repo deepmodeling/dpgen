@@ -14,7 +14,6 @@ except ImportError:
     pass
 try:
     from ase import Atoms
-    from ase.geometry import get_distances
 except ImportError:
     pass
 
