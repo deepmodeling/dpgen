@@ -14,7 +14,7 @@ except ImportError:
         readme = f.read()
 
 # install_requires = ['xml']
-install_requires=['dpdata', 'pymatgen', 'ase', 'monty', 'paramiko', 'custodian']
+install_requires=['numpy>=1.14.3', 'dpdata>=0.1.0', 'pymatgen', 'ase', 'monty', 'paramiko', 'custodian']
 
 setuptools.setup(
     name=NAME,
