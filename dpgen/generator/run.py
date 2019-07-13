@@ -753,9 +753,9 @@ def _make_fp_vasp_inner (modd_path,
                         ii >= model_devi_skip :
                             fp_candidate.append([tt, cc])
                         elif (all_conf[ii][1] > e_trust_hi ) or (all_conf[ii][4] > f_trust_hi ):
-                            fp_rest_accurate.append([tt, cc])
-                        elif (all_conf[ii][1] < e_trust_lo and all_conf[ii][4] < f_trust_lo ):
                             fp_rest_failed.append([tt, cc])
+                        elif (all_conf[ii][1] < e_trust_lo and all_conf[ii][4] < f_trust_lo ):
+                            fp_rest_accurate.append([tt, cc])
                     else:
                         idx_candidate = np.where(np.logical_and(all_conf[ii][7:] < f_trust_hi, all_conf[ii][7:] > f_trust_lo))[0]
                         idx_rest_failed = np.where(all_conf[ii][7:] > f_trust_lo)[0]
