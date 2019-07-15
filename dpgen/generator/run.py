@@ -256,9 +256,9 @@ def make_train (iter_index,
             if not os.path.isdir(ii) :
                 raise RuntimeError ("data sys %s does not exists, cwd is %s" % (ii, os.getcwd()))
         os.chdir(cwd)
-        jinput['model']['descriptor']['seed'] = random.randrange(sys.maxsize)
-        jinput['model']['fitting_net']['seed'] = random.randrange(sys.maxsize)
-        jinput['training']['seed'] = random.randrange(sys.maxsize)
+        jinput['model']['descriptor']['seed'] = random.randrange(sys.maxsize) % (2**32)
+        jinput['model']['fitting_net']['seed'] = random.randrange(sys.maxsize) % (2**32)
+        jinput['training']['seed'] = random.randrange(sys.maxsize) % (2**32)
         with open(os.path.join(task_path, train_param), 'w') as outfile:
             json.dump(jinput, outfile, indent = 4)
 
@@ -305,9 +305,9 @@ def run_train (iter_index,
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         all_task.append(task_path)
-    command =  os.path.join(python_path, ' -m deepmd train')
+    command =  '%s -m deepmd train' % python_path
     command += ' %s && ' % train_param
-    command += os.path.join(python_path, ' -m deepmd freeze')
+    command += '%s -m deepmd freeze' % python_path
 
     run_tasks = [os.path.basename(ii) for ii in all_task]
     forward_files = [train_param]
