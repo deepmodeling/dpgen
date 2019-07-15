@@ -28,7 +28,7 @@ def info():
         Show basic information about """+NAME+""", its location and version.
     """
 
-    print('DeepModeling\n------------\n')
+    print('DeepGenerator\n-------------\n')
     print('Version: ' + __version__)
     print('Path:    ' + ROOT_PATH)
     print('Date:    ' + __date__)
