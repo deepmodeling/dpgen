@@ -256,6 +256,8 @@ def make_train (iter_index,
             if not os.path.isdir(ii) :
                 raise RuntimeError ("data sys %s does not exists, cwd is %s" % (ii, os.getcwd()))
         os.chdir(cwd)
+        jinput['model']['descriptor']['seed'] = random.randrange(sys.maxsize)
+        jinput['model']['fitting_net']['seed'] = random.randrange(sys.maxsize)
         jinput['training']['seed'] = random.randrange(sys.maxsize)
         with open(os.path.join(task_path, train_param), 'w') as outfile:
             json.dump(jinput, outfile, indent = 4)
