@@ -161,6 +161,7 @@ def take_cluster(old_conf_name, type_map, idx, cutoff):
     frag_numb, frag_index = _crd2frag(symbols, coords, True, cell)
     # get_distances
     all_atoms = Atoms(symbols = symbols, positions = coords, pbc=True, cell=cell)
+    all_atoms[idx].tag = 1
     distances = all_atoms.get_distances(idx, range(len(all_atoms)), mic=True)
     cutoff_atoms_idx = np.where(distances < cutoff)[0]
     # make cutoff atoms in molecules
@@ -179,6 +180,7 @@ def take_cluster(old_conf_name, type_map, idx, cutoff):
     coords = cutoff_atoms.get_positions()
     sys.data['coords'] = np.array([coords])
     sys.data['atom_types'] = atom_types[all_taken_atoms_idx]
+    sys.data['atom_pref'] = np.array([cutoff_atoms.get_tags()])
     for ii, _ in enumerate(atom_names):
         sys.data['atom_numbs'][ii] = np.count_nonzero(sys.data['atom_types']==ii)
     return sys

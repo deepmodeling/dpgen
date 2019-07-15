@@ -246,8 +246,8 @@ def make_train (iter_index,
                     init_batch_size.append(sys_batch_size[sys_idx])
     # establish tasks
     jinput = jdata['default_training_param']
-    jinput['systems'] = init_data_sys    
-    jinput['batch_size'] = init_batch_size
+    jinput['training']['systems'] = init_data_sys    
+    jinput['training']['batch_size'] = init_batch_size
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         create_path(task_path)
@@ -256,7 +256,7 @@ def make_train (iter_index,
             if not os.path.isdir(ii) :
                 raise RuntimeError ("data sys %s does not exists, cwd is %s" % (ii, os.getcwd()))
         os.chdir(cwd)
-        jinput['seed'] = random.randrange(sys.maxsize)
+        jinput['training']['seed'] = random.randrange(sys.maxsize)
         with open(os.path.join(task_path, train_param), 'w') as outfile:
             json.dump(jinput, outfile, indent = 4)
 
@@ -286,7 +286,7 @@ def run_train (iter_index,
     # load json param
     numb_models = jdata['numb_models']
     train_param = jdata['train_param']
-    deepmd_path = mdata['deepmd_path']
+    python_path = mdata['python_path']
     train_resources = mdata['train_resources']
     machine_type = mdata['train_machine']['machine_type']
 
@@ -303,9 +303,9 @@ def run_train (iter_index,
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         all_task.append(task_path)
-    command =  os.path.join(deepmd_path, 'bin/dp_train')
+    command =  os.path.join(python_path, ' -m deepmd train')
     command += ' %s && ' % train_param
-    command += os.path.join(deepmd_path, 'bin/dp_frz')
+    command += os.path.join(python_path, ' -m deepmd freeze')
 
     run_tasks = [os.path.basename(ii) for ii in all_task]
     forward_files = [train_param]
@@ -799,6 +799,7 @@ def _make_fp_vasp_inner (modd_path,
                 poscar_name = '{}.cluster.{}.POSCAR'.format(conf_name, jj)
                 new_system = take_cluster(conf_name, type_map, jj, cluster_cutoff)
                 new_system.to_vasp_poscar(poscar_name)
+                np.save("atom_pref", new_system.data["atom_pref"])
             fp_task_name = make_fp_task_name(int(ss), cc)
             fp_task_path = os.path.join(work_path, fp_task_name)
             create_path(fp_task_path)
@@ -1349,6 +1350,8 @@ def post_fp_gaussian (iter_index,
         sys_output.sort()
         for idx,oo in enumerate(sys_output) :
             sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log') 
+            if 'use_atom_pref' in jdata and jdata['use_atom_pref']:
+                sys.data['atom_pref'] = np.load("atom_pref.npy")
             if idx == 0:
                 if 'use_clusters' in jdata and jdata['use_clusters']:
                     all_sys = dpdata.MultiSystems(sys)
