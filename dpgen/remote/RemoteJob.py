@@ -424,23 +424,71 @@ class SlurmJob (RemoteJob) :
             args = []
             for ii in job_dirs:
                 args.append('')
+
+        try:
+           cvasp=res['cvasp']
+           try:
+              fp_max_errors = res['fp_max_errors']
+           except:
+              fp_max_errors = 3
+        except:
+           cvasp=False
+
         for ii,jj in zip(job_dirs, args) :
             ret += 'cd %s\n' % ii
             ret += 'test $? -ne 0 && exit\n\n'
-            if res['with_mpi'] :
-                ret += 'if [ -f tag_finished ] ;then\n'
-                ret += '  echo gogogo \n'
-                ret += 'else\n'
-                ret += '  srun %s %s\n' % (cmd, jj)
-                ret += '  touch tag_finished\n'
-                ret += 'fi\n\n'
-            else :
-                ret += 'if [ -f tag_finished ] ;then\n'
-                ret += '  echo gogogo \n'
-                ret += 'else\n'
-                ret += '  %s %s\n' % (cmd, jj)
-                ret += '  touch tag_finished\n'
-                ret += 'fi\n\n'
+
+            if cvasp:
+                cmd=cmd.split('1')[0].strip()
+                if res['with_mpi'] :
+                    ret += 'if [ -f tag_finished ] ;then\n'
+                    ret += '  echo gogogo \n'
+                    ret += 'else\n'
+                    ret += '  python ../cvasp.py "srun %s" %s %s 1>log 2>log\n' % (cmd, fp_max_errors, jj)
+                    ret += '  if test $? -ne 0 \n'
+                    ret += '  then\n'
+                    ret += '     exit\n'
+                    ret += '  else\n'
+                    ret += '     touch tag_finished\n'
+                    ret += '  fi\n'
+                    ret += 'fi\n\n'
+                else :
+                    ret += 'if [ -f tag_finished ] ;then\n'
+                    ret += '  echo gogogo \n'
+                    ret += 'else\n'
+                    ret += '  python ../cvasp.py "%s" %s %s 1>log 2>log\n' % (cmd, fp_max_errors, jj)
+                    ret += '  if test $? -ne 0 \n'
+                    ret += '  then\n'
+                    ret += '     exit\n'
+                    ret += '  else\n'
+                    ret += '     touch tag_finished\n'
+                    ret += '  fi\n'
+                    ret += 'fi\n\n'
+            else:
+                if res['with_mpi'] :
+                    ret += 'if [ -f tag_finished ] ;then\n'
+                    ret += '  echo gogogo \n'
+                    ret += 'else\n'
+                    ret += '  srun %s %s\n' % (cmd, jj)
+                    ret += '  if test $? -ne 0 \n'
+                    ret += '  then\n'
+                    ret += '     exit\n'
+                    ret += '  else\n'
+                    ret += '     touch tag_finished\n'
+                    ret += '  fi\n'
+                    ret += 'fi\n\n'
+                else :
+                    ret += 'if [ -f tag_finished ] ;then\n'
+                    ret += '  echo gogogo \n'
+                    ret += 'else\n'
+                    ret += '  %s %s\n' % (cmd, jj)
+                    ret += '  if test $? -ne 0 \n'
+                    ret += '  then\n'
+                    ret += '     exit\n'
+                    ret += '  else\n'
+                    ret += '     touch tag_finished\n'
+                    ret += '  fi\n'
+                    ret += 'fi\n\n'
             if 'allow_failure' not in res or res['allow_failure'] is False:
                 ret += 'test $? -ne 0 && exit\n'
             ret += 'cd %s\n' % self.remote_root
@@ -596,7 +644,35 @@ class PBSJob (RemoteJob) :
 
 
 class LSFJob (RemoteJob) :
-    def submit(self, 
+    def submit(self,
+               job_dirs,
+               cmd,
+               args = None,
+               resources = None,
+               restart = False):
+        dlog.debug(restart)
+        if restart:
+           try:
+               status = self.check_status()
+               if status in [  JobStatus.unsubmitted, JobStatus.unknow, JobStatus.terminated ]:
+                  dlog.debug('task restart point !!!')
+                  self._submit(job_dirs, cmd, args, resources)
+               elif status==JobStatus.waiting:
+                  dlog.debug('task is waiting')
+               elif status==JobStatus.running:
+                  dlog.debug('task is running')
+               else:
+                  dlog.debug('task is finished')
+
+           except:
+               dlog.debug('no job_id file')
+               dlog.debug('task restart point !!!')
+               self._submit(job_dirs, cmd, args, resources)
+        else:
+           dlog.debug('new task!!!')
+           self._submit(job_dirs, cmd, args, resources)
+
+    def _submit(self, 
                job_dirs,
                cmd,
                args = None, 

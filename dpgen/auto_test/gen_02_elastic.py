@@ -52,7 +52,7 @@ def make_vasp(jdata, conf_dir, norm_def = 2e-3, shear_def = 5e-3) :
                                   shear_strains = shear_strains)
     n_dfm = len(dfm_ss)
     # gen incar
-    fc = vasp.make_vasp_relax_incar(ecut, ediff, True, False, False, 1, 1, kspacing = None, kgamma = None)
+    fc = vasp.make_vasp_relax_incar(ecut, ediff, True, False, False, npar=npar,kpar=kpar, kspacing = None, kgamma = None)
     with open(os.path.join(task_path, 'INCAR'), 'w') as fp :
         fp.write(fc)
     # gen potcar
