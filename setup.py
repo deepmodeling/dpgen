@@ -13,13 +13,11 @@ except ImportError:
     with open(readme_file) as f:
         readme = f.read()
 
-# install_requires = ['xml']
-install_requires=[]
+install_requires=['numpy>=1.14.3,<1.17', 'dpdata>=0.1.0', 'pymatgen', 'ase', 'monty', 'paramiko', 'custodian']
 
 setuptools.setup(
     name=NAME,
     version_format='{tag}.dev{commitcount}+{gitsha}',
-    #setup_requires=['setuptools-git-version'],
     version="0.1.0",
     author="Han Wang",
     author_email="wang_han@iapcm.ac.cn",

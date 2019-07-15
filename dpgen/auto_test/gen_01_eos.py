@@ -216,7 +216,7 @@ def make_deepmd_lammps_fixv (jdata, conf_dir) :
     for ii in deepmd_models_name :
         if os.path.exists(ii) :
             os.remove(ii)
-    for (ii,jj) in zip(share_models, deepmd_models_name) :
+    for (ii,jj) in zip(deepmd_models, deepmd_models_name) :
             os.symlink(os.path.relpath(ii), jj)
     share_models = glob.glob(os.path.join(task_path, '*pb'))
 

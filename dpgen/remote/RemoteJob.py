@@ -644,7 +644,35 @@ class PBSJob (RemoteJob) :
 
 
 class LSFJob (RemoteJob) :
-    def submit(self, 
+    def submit(self,
+               job_dirs,
+               cmd,
+               args = None,
+               resources = None,
+               restart = False):
+        dlog.debug(restart)
+        if restart:
+           try:
+               status = self.check_status()
+               if status in [  JobStatus.unsubmitted, JobStatus.unknow, JobStatus.terminated ]:
+                  dlog.debug('task restart point !!!')
+                  self._submit(job_dirs, cmd, args, resources)
+               elif status==JobStatus.waiting:
+                  dlog.debug('task is waiting')
+               elif status==JobStatus.running:
+                  dlog.debug('task is running')
+               else:
+                  dlog.debug('task is finished')
+
+           except:
+               dlog.debug('no job_id file')
+               dlog.debug('task restart point !!!')
+               self._submit(job_dirs, cmd, args, resources)
+        else:
+           dlog.debug('new task!!!')
+           self._submit(job_dirs, cmd, args, resources)
+
+    def _submit(self, 
                job_dirs,
                cmd,
                args = None, 
