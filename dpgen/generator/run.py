@@ -1355,7 +1355,7 @@ def post_fp_gaussian (iter_index,
         for idx,oo in enumerate(sys_output) :
             sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log') 
             if 'use_atom_pref' in jdata and jdata['use_atom_pref']:
-                sys.data['atom_pref'] = np.load("atom_pref.npy")
+                sys.data['atom_pref'] = np.load(os.path.join(os.path.dirname(oo), "atom_pref.npy"))
             if idx == 0:
                 if 'use_clusters' in jdata and jdata['use_clusters']:
                     all_sys = dpdata.MultiSystems(sys)
