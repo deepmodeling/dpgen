@@ -1215,8 +1215,11 @@ def run_fp (iter_index,
 
     if fp_style == "vasp" :
         forward_files = ['POSCAR', 'INCAR', 'KPOINTS'] + fp_pp_files 
-        backward_files = ['OUTCAR']
-        forward_common_files=['cvasp.py']
+        backward_files = ['OUTCAR','vasprun.xml']
+        if mdata["fp_resources"]['cvasp']:
+           forward_common_files=['cvasp.py']
+        else:
+           forward_common_files=[]
         run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _vasp_check_fin,
                      forward_common_files=forward_common_files) 
     elif fp_style == "pwscf" :
@@ -1259,14 +1262,27 @@ def post_fp_vasp (iter_index,
         flag=True
         for oo in sys_outcars :
             if flag:
-                _sys = dpdata.LabeledSystem(oo)
+                try:
+                    _sys = dpdata.LabeledSystem(oo)
+                except:
+                    try:
+                       _sys = dpdata.LabeledSystem(oo.replace('OUTCAR','vasprun.xml'))
+                    except:
+                       _sys = dpdata.LabeledSystem()
+                
                 if len(_sys)>0:
                    all_sys=_sys
                    flag=False
                 else:
                    pass
             else:
-                _sys = dpdata.LabeledSystem(oo)
+                try:
+                    _sys = dpdata.LabeledSystem(oo)
+                except:
+                    try:
+                       _sys = dpdata.LabeledSystem(oo.replace('OUTCAR','vasprun.xml'))
+                    except:
+                       _sys = dpdata.LabeledSystem()
                 if len(_sys)>0:
                    all_sys.append(_sys)
 
