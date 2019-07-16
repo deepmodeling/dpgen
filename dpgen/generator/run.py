@@ -410,7 +410,7 @@ def post_train (iter_index,
                 mdata) :
     # load json param
     numb_models = jdata['numb_models']
-    deepmd_path = mdata['deepmd_path']
+    python_path = mdata['python_path']
     # paths
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, train_name)
@@ -423,7 +423,7 @@ def post_train (iter_index,
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         all_task.append(task_path)
-    command = os.path.join(deepmd_path, 'bin/dp_frz')
+    command = python_path + ' -m deepmd freeze'
     command = cmd_append_log(command, 'freeze.log')
     command = 'CUDA_VISIBLE_DEVICES="" ' + command
     # frz models
