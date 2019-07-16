@@ -556,6 +556,7 @@ def make_model_devi (iter_index,
         sys_counter += 1
 
     sys_counter = 0
+    is_use_clusters = True if 'use_clusters' in jdata and jdata['use_clusters'] else False
     for ss in conf_systems:
         conf_counter = 0
         task_counter = 0
@@ -585,7 +586,8 @@ def make_model_devi (iter_index,
                                                tau_t = model_devi_taut,
                                                pres = pp, 
                                                tau_p = model_devi_taup, 
-                                               pka_e = pka_e)
+                                               pka_e = pka_e,
+                                               is_use_clusters = is_use_clusters)
                     os.chdir(cwd_)
                     with open(os.path.join(task_path, 'input.lammps'), 'w') as fp :
                         fp.write(file_c)
@@ -801,7 +803,6 @@ def _make_fp_vasp_inner (modd_path,
                 poscar_name = '{}.cluster.{}.POSCAR'.format(conf_name, jj)
                 new_system = take_cluster(conf_name, type_map, jj, cluster_cutoff)
                 new_system.to_vasp_poscar(poscar_name)
-                np.save("atom_pref", new_system.data["atom_pref"])
             fp_task_name = make_fp_task_name(int(ss), cc)
             fp_task_path = os.path.join(work_path, fp_task_name)
             create_path(fp_task_path)
@@ -812,6 +813,7 @@ def _make_fp_vasp_inner (modd_path,
                 os.symlink(os.path.relpath(conf_name), 'conf.dump')
             else:
                 os.symlink(os.path.relpath(poscar_name), 'POSCAR')
+                np.save("atom_pref", new_system.data["atom_pref"])
             for pair in fp_link_files :
                 os.symlink(pair[0], pair[1])
             os.chdir(cwd)
