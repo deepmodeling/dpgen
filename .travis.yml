@@ -1,10 +1,10 @@
 language: python
 python:
-  - "3.6"
+  - "3.6.3"
   - "3.6-dev"  # 3.6 development branch
 # command to install dependencies
 install:
-  - python setup.py install
+  - pip install .
 # command to run tests
 script:
   - cd tests && cd auto_test && python -m unittest && cd ../data &&  python -m unittest && cd ../generator && python -m unittest && cd ../..
