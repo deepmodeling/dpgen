@@ -584,6 +584,13 @@ def make_model_devi (iter_index,
                                                pres = pp, 
                                                tau_p = model_devi_taup, 
                                                pka_e = pka_e)
+                    job = {}
+                    job["ensemble"] = ensemble
+                    job["press"] = pp
+                    job["temps"] = tt
+                    with open('job.json', 'w') as _outfile:
+                        json.dump(job, _outfile, indent = 4)
+
                     os.chdir(cwd_)
                     with open(os.path.join(task_path, 'input.lammps'), 'w') as fp :
                         fp.write(file_c)
@@ -793,6 +800,11 @@ def _make_fp_vasp_inner (modd_path,
             conf_name = os.path.join(tt, "traj")
             conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
             conf_name = os.path.abspath(conf_name)
+
+            # link job.json
+            job_name = os.path.join(tt, "job.json")
+            job_name = os.path.abspath(job_name)
+
             if cluster_cutoff is not None:
                 # take clusters
                 jj = fp_candidate[cc][2]
@@ -807,6 +819,7 @@ def _make_fp_vasp_inner (modd_path,
             os.chdir(fp_task_path)
             if cluster_cutoff is None:
                 os.symlink(os.path.relpath(conf_name), 'conf.dump')
+                os.symlink(os.path.relpath(job_name), 'job.json')
             else:
                 os.symlink(os.path.relpath(poscar_name), 'POSCAR')
             for pair in fp_link_files :
