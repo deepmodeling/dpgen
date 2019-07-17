@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import os, sys, paramiko, json, uuid, tarfile, time, stat
+import os, sys, paramiko, json, uuid, tarfile, time, stat, shutil
 from enum import Enum
 from dpgen import dlog
 
@@ -12,6 +12,63 @@ class JobStatus (Enum) :
     terminated = 4
     finished = 5
     unknown = 100
+
+class awsMachineJob(object):
+    def __init__ (self,
+                  remote_root,
+                  work_path,
+                  job_uuid=None,
+    ) :
+        self.remote_root=os.path.join(remote_root,work_path)
+        self.local_root = os.path.abspath(work_path)
+        if job_uuid:
+            self.job_uuid=job_uuid
+        else:
+            self.job_uuid = str(uuid.uuid4())
+        
+        dlog.info("local_root is %s"% self.local_root)
+        dlog.info("remote_root is %s"% self.remote_root)
+        
+    def upload(self,
+               job_dir,
+               local_up_files,
+               dereference = True) :
+        cwd = os.getcwd()
+        print('cwd=',cwd)
+        os.chdir(self.local_root)       
+        for ii in local_up_files :
+            print('self.local_root=',self.local_root,'remote_root=',self.remote_root,'job_dir=',job_dir,'ii=',ii)
+            if os.path.isfile(os.path.join(job_dir,ii)):
+                if not os.path.exists(os.path.join(self.remote_root,job_dir)):
+                    os.makedirs(os.path.join(self.remote_root,job_dir))
+                shutil.copyfile(os.path.join(job_dir,ii),os.path.join(self.remote_root,job_dir,ii))
+            elif os.path.isdir(os.path.join(job_dir,ii)):
+                shutil.copytree(os.path.join(job_dir,ii),os.path.join(self.remote_root,job_dir,ii))
+            else:
+                print('unknownfile','local_root=',self.local_root,'job_dir=',job_dir,'filename=',ii)
+        os.chdir(cwd)
+    def download(self,
+               job_dir,
+               remote_down_files,
+               dereference = True) :
+        for ii in remote_down_files:
+         #   print('self.local_root=',self.local_root,'remote_root=',self.remote_root,'job_dir=',job_dir,'ii=',ii)
+            file_succ_copy_flag=False
+            while not file_succ_copy_flag:
+                if os.path.isfile(os.path.join(self.remote_root,job_dir,ii)):
+                    shutil.copyfile(os.path.join(self.remote_root,job_dir,ii),os.path.join(self.local_root,job_dir,ii))
+                    file_succ_copy_flag=True
+                elif os.path.isdir(os.path.join(self.remote_root,job_dir,ii)):
+                    try:
+                        os.rmdir(os.path.join(self.local_root,job_dir,ii))
+                    except:
+                        print('dir is not empty   '+str(os.path.join(self.local_root,job_dir,ii)))
+                    else:
+                        shutil.copytree(os.path.join(self.remote_root,job_dir,ii),os.path.join(self.local_root,job_dir,ii))
+                        file_succ_copy_flag=True
+                else:
+                    print('unknownfile,maybe need for waiting for a while','local_root=',self.local_root,'job_dir=',job_dir,'filename=',ii)
+                    time.sleep(5)
 
 def _default_item(resources, key, value) :
     if key not in resources :
