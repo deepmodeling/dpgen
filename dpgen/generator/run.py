@@ -1217,9 +1217,9 @@ def run_fp (iter_index,
         forward_files = ['POSCAR', 'INCAR', 'KPOINTS'] + fp_pp_files 
         backward_files = ['OUTCAR','vasprun.xml']
         if mdata["fp_resources"]['cvasp']:
-           forward_common_files=['cvasp.py']
+            forward_common_files=['cvasp.py']
         else:
-           forward_common_files=[]
+            forward_common_files=[]
         run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _vasp_check_fin,
                      forward_common_files=forward_common_files) 
     elif fp_style == "pwscf" :
@@ -1269,12 +1269,15 @@ def post_fp_vasp (iter_index,
                        _sys = dpdata.LabeledSystem(oo.replace('OUTCAR','vasprun.xml'))
                     except:
                        _sys = dpdata.LabeledSystem()
-                
-                if len(_sys)>0:
-                   all_sys=_sys
-                   flag=False
+                if len(_sys)>1:
+                    dlog.info(oo + "has more than one systems in OUTCAR")
+                    all_sys = _sys.sub_system([0])
+                    flag = False
+                elif len(_sys) == 1:
+                    all_sys = _sys
+                    flag = False
                 else:
-                   pass
+                    pass
             else:
                 try:
                     _sys = dpdata.LabeledSystem(oo)
@@ -1283,9 +1286,13 @@ def post_fp_vasp (iter_index,
                        _sys = dpdata.LabeledSystem(oo.replace('OUTCAR','vasprun.xml'))
                     except:
                        _sys = dpdata.LabeledSystem()
-                if len(_sys)>0:
-                   all_sys.append(_sys)
+                if len(_sys)>1:
+                    dlog.info(oo + "has more than one systems in OUTCAR")
+                    all_sys.append(_sys.sub_system([0])) 
+                elif len(_sys) == 1:
+                    all_sys.append(_sys)
 
+        #print("len(all_sys)",len(all_sys))
         sys_data_path = os.path.join(work_path, 'data.%s'%ss)
         all_sys.to_deepmd_raw(sys_data_path)
         all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_outcars))
