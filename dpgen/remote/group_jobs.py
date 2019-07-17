@@ -7,7 +7,7 @@ import subprocess as sp
 from monty.serialization import dumpfn,loadfn
 from dpgen.remote.RemoteJob import SlurmJob, PBSJob, CloudMachineJob, JobStatus, awsMachineJob
 from dpgen import dlog
-import boto3
+
 import requests
 from hashlib import sha1
 
@@ -281,7 +281,6 @@ def ucloud_submit_jobs(machine,
                     job_fin[idx] = True
         time.sleep(10)
     os.remove("record.machine")
-
 
 def group_slurm_jobs(ssh_sess,
                      resources,
