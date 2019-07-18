@@ -1422,13 +1422,11 @@ def run_iter (json_file, machine_file) :
     record = "record.dpgen"
 
     train_machine = mdata['train_machine']    
-    assert isinstance(mdata["train_resources"], dict)
     if ('machine_type' in train_machine) and  \
        (train_machine['machine_type'] == 'ucloud'):
         train_ssh_sess = None
     else :
         train_ssh_sess = SSHSession(train_machine)
-        
     model_devi_machine = mdata['model_devi_machine']    
     if ('machine_type' in model_devi_machine) and  \
        (model_devi_machine['machine_type'] == 'ucloud'):
