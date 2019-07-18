@@ -5,11 +5,111 @@ import os,sys,glob,time
 import numpy as np
 import subprocess as sp
 from monty.serialization import dumpfn,loadfn
-from dpgen.remote.RemoteJob import SlurmJob, PBSJob, CloudMachineJob, JobStatus, SSHSession
+from dpgen.remote.RemoteJob import SlurmJob, PBSJob, CloudMachineJob, JobStatus, awsMachineJob,SSHSession
 from dpgen import dlog
 
 import requests
 from hashlib import sha1
+
+def aws_submit_jobs(machine,
+                    resources,
+                    command,
+                    work_path,
+                    tasks,
+                    group_size,
+                    forward_common_files,
+                    forward_task_files,
+                    backward_task_files, 
+                    forward_task_deference = True):
+    import boto3
+    task_chunks = [
+        [os.path.basename(j) for j in tasks[i:i + group_size]] \
+        for i in range(0, len(tasks), group_size)
+    ]
+    task_chunks = (str(task_chunks).translate((str.maketrans('','',' \'"[]'))).split(',')) 
+    # flatten the task_chunks
+    print('task_chunks=',task_chunks)
+    njob = len(task_chunks)    
+    print('njob=',njob)
+    continue_status = False
+    ecs=boto3.client('ecs')
+    ec2=boto3.client('ec2')
+    status_list=[]    
+    containerInstanceArns=ecs.list_container_instances(cluster="tensorflow")    
+    if  containerInstanceArns['containerInstanceArns']:
+        containerInstances=ecs.describe_container_instances(cluster="tensorflow", \
+                                                    containerInstances=containerInstanceArns['containerInstanceArns'])['containerInstances']
+        status_list=[container['status'] for container in containerInstances]
+    
+    need_apply_num=group_size-len(status_list)
+    print('need_apply_num=',need_apply_num)
+    if need_apply_num>0:
+        for ii in range(need_apply_num) :   #apply for machines,
+            ec2.run_instances(**machine['run_instances'])      
+    machine_fin = False    
+    status_list=[]
+    while not len(status_list)>=group_size:
+        containerInstanceArns=ecs.list_container_instances(cluster="tensorflow")
+        if  containerInstanceArns['containerInstanceArns']:
+            containerInstances=ecs.describe_container_instances(cluster="tensorflow", \
+                                                        containerInstances=containerInstanceArns['containerInstanceArns'])['containerInstances']
+            status_list=[container['status'] for container in containerInstances]            
+        if len(status_list)>=group_size:
+            break
+        else:
+            time.sleep(20)
+    print('current available containers status_list=',status_list)       
+    print('remote_root=',machine['remote_root'])   
+    rjob = awsMachineJob(machine['remote_root'],work_path)
+    taskARNs=[]
+    taskstatus=[]
+    running_job_num=0
+    rjob.upload('.',  forward_common_files)
+    for ijob in range(njob) :   #uplaod && submit job
+        containerInstanceArns=ecs.list_container_instances(cluster="tensorflow")
+        containerInstances=ecs.describe_container_instances(cluster="tensorflow", \
+                                                    containerInstances=containerInstanceArns['containerInstanceArns'])['containerInstances']
+        status_list=[container['status'] for container in containerInstances]
+        print('current available containers status_list=',status_list)      
+        while  running_job_num>=group_size:
+            taskstatus=[task['lastStatus'] for task in ecs.describe_tasks(cluster='tensorflow',tasks=taskARNs)['tasks']]
+            running_job_num=len(list(filter(lambda str:(str=='PENDING' or str =='RUNNING'),taskstatus)))
+            print('waiting for running job finished, taskstatus=',taskstatus,'running_job_num=',running_job_num)
+            time.sleep(10)         
+        chunk = str(task_chunks[ijob])
+        print('current task chunk=',chunk)
+        task_definition=command['task_definition']
+        concrete_command=(command['concrete_command'] %(work_path,chunk))
+        command_override=command['command_override']
+        command_override['containerOverrides'][0]['command'][0]=concrete_command
+        print('concrete_command=',concrete_command)
+        rjob.upload(chunk, forward_task_files, 
+                    dereference = forward_task_deference)
+        taskres=ecs.run_task(cluster='tensorflow',\
+                     taskDefinition=task_definition,overrides=command_override)
+        while not taskres['tasks'][0]:
+            print('task submit failed,taskres=',taskres,'trying to re-submit'+str(chunk),)
+            time.sleep(10)
+            taskres=ecs.run_task(cluster='tensorflow',\
+                     taskDefinition=task_definition,overrides=command_override)
+        
+        taskARNs.append(taskres['tasks'][0]['taskArn'])
+        taskstatus=[task['lastStatus'] for task in ecs.describe_tasks(cluster='tensorflow',tasks=taskARNs)['tasks']]
+        running_job_num=len(list(filter(lambda str:(str=='PENDING' or str =='RUNNING'),taskstatus)))
+        print('have submitted %s/%s,taskstatus=' %(work_path,chunk) ,taskstatus,'running_job_num=',running_job_num )       
+    task_fin_flag=False    
+    while not task_fin_flag:       
+        taskstatus=[task['lastStatus'] for task in ecs.describe_tasks(cluster='tensorflow',tasks=taskARNs)['tasks']]
+        task_fin_flag=all([status=='STOPPED' for status in taskstatus])
+        if task_fin_flag:
+            print('task finished,next step:copy files to local && taskstatus=',taskstatus)
+        else:
+            print('all tasks submitted,task running && taskstatus=',taskstatus)
+            time.sleep(20)    
+    for ii in range(njob):
+        chunk = task_chunks[ii]
+        print('downloading '+str(chunk),backward_task_files)
+        rjob.download(chunk,backward_task_files)
 
 def _verfy_ac(private_key, params):
     items= sorted(params.items())
@@ -53,7 +153,10 @@ def _ucloud_remove_machine(machine, UHostId):
         if try_time >= 200:
             raise RuntimeError ("failed to terminate ucloud machine")
         time.sleep(10)
-    print("Machine ",UHostId,"has been successfully terminated!")   
+    print("Machine ",UHostId,"has been successfully terminated!")
+    
+    
+
 
 def ucloud_submit_jobs(machine,
                        resources,
@@ -178,7 +281,6 @@ def ucloud_submit_jobs(machine,
                     job_fin[idx] = True
         time.sleep(10)
     os.remove("record.machine")
-
 
 def group_slurm_jobs(ssh_sess,
                      resources,
