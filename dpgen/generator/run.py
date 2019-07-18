@@ -37,8 +37,8 @@ from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
 from dpgen.generator.lib.pwscf import make_pwscf_input
 from dpgen.generator.lib.pwscf import cvt_1frame
 from dpgen.generator.lib.gaussian import make_gaussian_input, take_cluster
-from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, LSFJob, CloudMachineJob
-from dpgen.remote.group_jobs import ucloud_submit_jobs
+from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, LSFJob, CloudMachineJob, awsMachineJob
+from dpgen.remote.group_jobs import ucloud_submit_jobs, aws_submit_jobs
 from dpgen.remote.group_jobs import group_slurm_jobs
 from dpgen.remote.group_jobs import group_local_jobs
 from dpgen.util import sepline
@@ -349,6 +349,16 @@ def run_train (iter_index,
                            trans_comm_data,
                            forward_files,
                            backward_files)
+    elif ssh_sess == None and machine_type == 'aws':
+        aws_submit_jobs(mdata['train_machine'],
+                        mdata['train_resources'],
+                        mdata['run_train_task_definition'], 
+                        work_path,
+                        run_tasks,
+                        5,
+                        trans_comm_data,
+                        forward_files,
+                        backward_files)
     elif machine_type == 'slurm' :        
         group_slurm_jobs(ssh_sess,
                          train_resources,
@@ -584,6 +594,13 @@ def make_model_devi (iter_index,
                                                pres = pp, 
                                                tau_p = model_devi_taup, 
                                                pka_e = pka_e)
+                    job = {}
+                    job["ensemble"] = ensemble
+                    job["press"] = pp
+                    job["temps"] = tt
+                    with open('job.json', 'w') as _outfile:
+                        json.dump(job, _outfile, indent = 4)
+
                     os.chdir(cwd_)
                     with open(os.path.join(task_path, 'input.lammps'), 'w') as fp :
                         fp.write(file_c)
@@ -647,6 +664,16 @@ def run_model_devi (iter_index,
                             model_names,
                             forward_files,
                             backward_files)
+    elif ssh_sess == None and machine_type == 'aws':
+        aws_submit_jobs(mdata['model_devi_machine'],
+                        mdata['model_devi_resources'],
+                        mdata['model_devi_task_definition'], 
+                        work_path,
+                        run_tasks,
+                        model_devi_group_size,
+                        model_names,
+                        forward_files,
+                        backward_files)
     elif machine_type == 'slurm' :        
         dlog.info("The second situation!")
         group_slurm_jobs(ssh_sess,
@@ -793,6 +820,11 @@ def _make_fp_vasp_inner (modd_path,
             conf_name = os.path.join(tt, "traj")
             conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
             conf_name = os.path.abspath(conf_name)
+
+            # link job.json
+            job_name = os.path.join(tt, "job.json")
+            job_name = os.path.abspath(job_name)
+
             if cluster_cutoff is not None:
                 # take clusters
                 jj = fp_candidate[cc][2]
@@ -807,6 +839,7 @@ def _make_fp_vasp_inner (modd_path,
             os.chdir(fp_task_path)
             if cluster_cutoff is None:
                 os.symlink(os.path.relpath(conf_name), 'conf.dump')
+                os.symlink(os.path.relpath(job_name), 'job.json')
             else:
                 os.symlink(os.path.relpath(poscar_name), 'POSCAR')
             for pair in fp_link_files :
@@ -1152,6 +1185,16 @@ def run_fp_inner (iter_index,
                             [],
                             forward_files,
                             backward_files)
+    elif ssh_sess == None and machine_type == 'aws':
+        aws_submit_jobs(mdata['fp_machine'],
+                            mdata['fp_resources'],
+                            mdata['fp_task_definition'],
+                            work_path,
+                            run_tasks,
+                            fp_group_size,
+                            [],
+                            forward_files,
+                            backward_files)
     elif machine_type == 'slurm' :        
         group_slurm_jobs(ssh_sess,
                            fp_resources,
@@ -1216,7 +1259,7 @@ def run_fp (iter_index,
     if fp_style == "vasp" :
         forward_files = ['POSCAR', 'INCAR', 'KPOINTS'] + fp_pp_files 
         backward_files = ['OUTCAR','vasprun.xml']
-        if mdata["fp_resources"]['cvasp']:
+        if 'cvasp' in  mdata["fp_resources"] and mdata["fp_resources"]["cvasp"]==True:
             forward_common_files=['cvasp.py']
         else:
             forward_common_files=[]
@@ -1409,21 +1452,21 @@ def run_iter (json_file, machine_file) :
 
     train_machine = mdata['train_machine']    
     if ('machine_type' in train_machine) and  \
-       (train_machine['machine_type'] == 'ucloud'):
+       ((train_machine['machine_type'] == 'ucloud') or (train_machine['machine_type'] == 'aws')):
         train_ssh_sess = None
     else :
         train_ssh_sess = SSHSession(train_machine)
 
     model_devi_machine = mdata['model_devi_machine']    
     if ('machine_type' in model_devi_machine) and  \
-       (model_devi_machine['machine_type'] == 'ucloud'):
+       ((model_devi_machine['machine_type'] == 'ucloud') or (model_devi_machine['machine_type'] == 'aws')):
         model_devi_ssh_sess = None
     else :
         model_devi_ssh_sess = SSHSession(model_devi_machine)
 
     fp_machine = mdata['fp_machine']    
     if ('machine_type' in fp_machine) and  \
-       (fp_machine['machine_type'] == 'ucloud'):
+       ((fp_machine['machine_type'] == 'ucloud') or (fp_machine['machine_type'] == 'aws')):
         fp_ssh_sess = None
     else :
         fp_ssh_sess = SSHSession(fp_machine)
