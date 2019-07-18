@@ -5,7 +5,7 @@ import os,sys,glob,time
 import numpy as np
 import subprocess as sp
 from monty.serialization import dumpfn,loadfn
-from dpgen.remote.RemoteJob import SlurmJob, PBSJob, CloudMachineJob, JobStatus
+from dpgen.remote.RemoteJob import SlurmJob, PBSJob, CloudMachineJob, JobStatus, SSHSession
 from dpgen import dlog
 
 import requests
@@ -191,6 +191,7 @@ def group_slurm_jobs(ssh_sess,
                      backward_task_files,
                      remote_job = SlurmJob, 
                      forward_task_deference = True) :
+
     task_chunks = [
         [os.path.basename(j) for j in tasks[i:i + group_size]] \
         for i in range(0, len(tasks), group_size)
@@ -234,10 +235,19 @@ def group_slurm_jobs(ssh_sess,
     
     job_fin = [False for ii in job_list]
     lcount=[0]*len(job_list)
+    count_fail = 0
     while not all(job_fin) :
         for idx,rjob in enumerate(job_list) :
             if not job_fin[idx] :
-                status = rjob.check_status()
+                try:
+                  status = rjob.check_status()
+                except:
+                  ssh_sess = SSHSession(ssh_sess.remote_profile)
+                  for _idx,_rjob in enumerate(job_list):
+                    job_list[_idx] = SlurmJob(ssh_sess, work_path, _rjob.job_uuid)
+                  count_fail = count_fail +1
+                  dlog.info("ssh_sess failed for %d times"%count_fail)
+                  break;
                 if status == JobStatus.terminated :
                     lcount[idx]+=1
                     _job_uuid=rjob.remote_root.split('/')[-1]

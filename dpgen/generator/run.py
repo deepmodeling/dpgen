@@ -588,6 +588,7 @@ def make_model_devi (iter_index,
                     job["ensemble"] = ensemble
                     job["press"] = pp
                     job["temps"] = tt
+                    job["model_devi_dt"] =  model_devi_dt
                     with open('job.json', 'w') as _outfile:
                         json.dump(job, _outfile, indent = 4)
 
@@ -1421,12 +1422,13 @@ def run_iter (json_file, machine_file) :
     record = "record.dpgen"
 
     train_machine = mdata['train_machine']    
+    assert isinstance(mdata["train_resources"], dict)
     if ('machine_type' in train_machine) and  \
        (train_machine['machine_type'] == 'ucloud'):
         train_ssh_sess = None
     else :
         train_ssh_sess = SSHSession(train_machine)
-
+        
     model_devi_machine = mdata['model_devi_machine']    
     if ('machine_type' in model_devi_machine) and  \
        (model_devi_machine['machine_type'] == 'ucloud'):
