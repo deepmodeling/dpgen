@@ -402,8 +402,15 @@ def pert_scaled(jdata) :
                 os.chdir(cwd)
                 
 def gen_init_surf(args):
-    with open (args.PARAM, 'r') as fp :
-        jdata = json.load (fp)
+    try:
+       import ruamel
+       from monty.serialization import loadfn,dumpfn
+       warnings.simplefilter('ignore', ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
+       jdata=loadfn(args.PARAM)
+    except:
+       with open (args.PARAM, 'r') as fp :
+           jdata = json.load (fp)
+
     out_dir = out_dir_name(jdata)
     jdata['out_dir'] = out_dir
     print ("# working dir %s" % out_dir)
@@ -434,16 +441,22 @@ def _main() :
     parser = argparse.ArgumentParser(
         description="gen init confs")
     parser.add_argument('PARAM', type=str, 
-                        help="parameter file, json format")
+                        help="parameter file, json/yaml format")
     parser.add_argument('STAGE', type=int,
                         help="the stage of init, can be 1 or 2 "
                         "1: Setup vasp jobs for relaxation. "
                         "2: Collect vasp relaxed confs (if relax is not skiped). Perturb system. "
     )
     args = parser.parse_args()
+    try:
+       import ruamel
+       from monty.serialization import loadfn,dumpfn
+       warnings.simplefilter('ignore', ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
+       jdata=loadfn(args.PARAM)
+    except:
+       with open (args.PARAM, 'r') as fp :
+           jdata = json.load (fp)
 
-    with open (args.PARAM, 'r') as fp :
-        jdata = json.load (fp)
     out_dir = out_dir_name(jdata)
     jdata['out_dir'] = out_dir
     print ("# working dir %s" % out_dir)

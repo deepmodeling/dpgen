@@ -8,6 +8,7 @@ import dpgen.data.tools.fcc as fcc
 import dpgen.data.tools.bcc as bcc
 import dpgen.data.tools.diamond as diamond
 import dpgen.data.tools.sc as sc
+from dpgen import dlog
 from pymatgen import Structure
 
 def create_path (path) :
@@ -531,8 +532,15 @@ def coll_vasp_md(jdata) :
 
 
 def gen_init_bulk(args) :
-    with open (args.PARAM, 'r') as fp :
-        jdata = json.load (fp)
+    try:
+       import ruamel
+       from monty.serialization import loadfn,dumpfn
+       warnings.simplefilter('ignore', ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
+       jdata=loadfn(args.PARAM)
+    except:
+        with open (args.PARAM, 'r') as fp :
+            jdata = json.load (fp)
+
     out_dir = out_dir_name(jdata)
     jdata['out_dir'] = out_dir
     from_poscar = False 
@@ -544,7 +552,7 @@ def gen_init_bulk(args) :
 
     if stage == 1 :
         create_path(out_dir)
-        shutil.copy2(args.PARAM, os.path.join(out_dir, 'param.json'))
+        shutil.copy2(args.PARAM, os.path.join(out_dir, 'param.'+args.PARAM.split('.')[-1]))
         if from_poscar :
             make_super_cell_poscar(jdata)
         else :
@@ -567,7 +575,7 @@ def _main() :
     parser = argparse.ArgumentParser(
         description="gen init confs")
     parser.add_argument('PARAM', type=str, 
-                        help="parameter file, json format")
+                        help="parameter file, json/yaml format")
     parser.add_argument('STAGE', type=int,
                         help="the stage of init, can be 1, 2, 3 or 4. "
                         "1: Setup vasp jobs for relaxation. "
@@ -577,8 +585,14 @@ def _main() :
     )
     args = parser.parse_args()
 
-    with open (args.PARAM, 'r') as fp :
-        jdata = json.load (fp)
+    try:
+       import ruamel
+       from monty.serialization import loadfn,dumpfn
+       warnings.simplefilter('ignore', ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
+       jdata=loadfn(args.PARAM)
+    except:
+       with open (args.PARAM, 'r') as fp :
+           jdata = json.load (fp)
     out_dir = out_dir_name(jdata)
     jdata['out_dir'] = out_dir
     from_poscar = False 
