@@ -497,7 +497,7 @@ class SlurmJob (RemoteJob) :
             ret += 'test $? -ne 0 && exit\n\n'
 
             if cvasp:
-                cmd=cmd.split('1')[0].strip()
+                cmd=cmd.split('1>')[0].strip()
                 if res['with_mpi'] :
                     ret += 'if [ -f tag_finished ] ;then\n'
                     ret += '  echo gogogo \n'
