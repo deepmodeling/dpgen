@@ -213,10 +213,10 @@ def make_train (iter_index,
         if 'init_multi_systems' in jdata and jdata['init_multi_systems']:
             for single_sys in os.listdir(os.path.join(work_path, 'data.init', ii)):
                 init_data_sys.append(os.path.join('..', 'data.init', ii, single_sys))
-                init_batch_size.append(ss)
+                init_batch_size.append(detect_batch_size(ss, os.path.join(work_path, 'data.init', ii, single_sys)))
         else:
             init_data_sys.append(os.path.join('..', 'data.init', ii))
-            init_batch_size.append(ss)
+            init_batch_size.append(detect_batch_size(ss, os.path.join(work_path, 'data.init', ii)))
     if iter_index > 0 :
         for ii in range(iter_index) :
             fp_path = os.path.join(make_iter_name(ii), fp_name)
@@ -232,9 +232,9 @@ def make_train (iter_index,
                     if nframes < fp_task_min :
                         log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
                         continue
-                    for sys_single in os.listdir(os.path.join(jj)):
+                    for sys_single in os.listdir(jj):
                         init_data_sys.append(os.path.join('..', 'data.iters', jj, sys_single))
-                        init_batch_size.append(sys_batch_size[sys_idx])
+                        init_batch_size.append(detect_batch_size(sys_batch_size[sys_idx], os.path.join(jj, single_sys)))
                 else:
                     tmp_box = np.loadtxt(os.path.join(jj, 'box.raw'))
                     tmp_box = np.reshape(tmp_box, [-1,9])
@@ -243,7 +243,7 @@ def make_train (iter_index,
                         log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
                         continue
                     init_data_sys.append(os.path.join('..', 'data.iters', jj))
-                    init_batch_size.append(sys_batch_size[sys_idx])
+                    init_batch_size.append(detect_batch_size(sys_batch_size[sys_idx], jj))
     # establish tasks
     jinput = jdata['default_training_param']
     jinput['training']['systems'] = init_data_sys    
@@ -256,8 +256,8 @@ def make_train (iter_index,
             if not os.path.isdir(ii) :
                 raise RuntimeError ("data sys %s does not exists, cwd is %s" % (ii, os.getcwd()))
         os.chdir(cwd)
-        jinput['model']['descriptor']['seed'] = random.randrange(sys.maxsize)
-        jinput['model']['fitting_net']['seed'] = random.randrange(sys.maxsize)
+        jinput['descriptor']['seed'] = random.randrange(sys.maxsize)
+        jinput['fitting_net']['seed'] = random.randrange(sys.maxsize)
         jinput['training']['seed'] = random.randrange(sys.maxsize)
         with open(os.path.join(task_path, train_param), 'w') as outfile:
             json.dump(jinput, outfile, indent = 4)
@@ -280,6 +280,16 @@ def make_train (iter_index,
                 os.chdir(task_old_path)
                 os.symlink(os.path.relpath(absjj), basejj)
                 os.chdir(cwd)            
+
+def detect_batch_size(batch_size, system=None):
+    if type(batch_size) == int:
+        return batch_size
+    elif batch_size == "auto":
+        # automaticcaly set batch size, batch_size = 32 // atom_numb (>=1, <=fram_numb)
+        s = dpdata.LabeledSystem(system, fmt='deepmd/npy')
+        return min(max(32//(system["coords"].shape[1]), 1), system["coords"].shape[0])
+    else:
+        raise RuntimeError("Unsupported batch size")
 
 def run_train (iter_index,
                jdata, 
