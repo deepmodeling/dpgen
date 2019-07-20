@@ -256,9 +256,9 @@ def make_train (iter_index,
             if not os.path.isdir(ii) :
                 raise RuntimeError ("data sys %s does not exists, cwd is %s" % (ii, os.getcwd()))
         os.chdir(cwd)
-        jinput['descriptor']['seed'] = random.randrange(sys.maxsize)
-        jinput['fitting_net']['seed'] = random.randrange(sys.maxsize)
-        jinput['training']['seed'] = random.randrange(sys.maxsize)
+        jinput['model']['descriptor']['seed'] = random.randrange(sys.maxsize) % (2**32)
+        jinput['model']['fitting_net']['seed'] = random.randrange(sys.maxsize) % (2**32)
+        jinput['training']['seed'] = random.randrange(sys.maxsize) % (2**32)
         with open(os.path.join(task_path, train_param), 'w') as outfile:
             json.dump(jinput, outfile, indent = 4)
 
@@ -315,9 +315,9 @@ def run_train (iter_index,
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         all_task.append(task_path)
-    command =  os.path.join(python_path, ' -m deepmd train')
+    command =  '%s -m deepmd train' % python_path
     command += ' %s && ' % train_param
-    command += os.path.join(python_path, ' -m deepmd freeze')
+    command += '%s -m deepmd freeze' % python_path
 
     run_tasks = [os.path.basename(ii) for ii in all_task]
     forward_files = [train_param]
@@ -420,7 +420,7 @@ def post_train (iter_index,
                 mdata) :
     # load json param
     numb_models = jdata['numb_models']
-    deepmd_path = mdata['deepmd_path']
+    python_path = mdata['python_path']
     # paths
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, train_name)
@@ -433,7 +433,7 @@ def post_train (iter_index,
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         all_task.append(task_path)
-    command = os.path.join(deepmd_path, 'bin/dp_frz')
+    command = python_path + ' -m deepmd freeze'
     command = cmd_append_log(command, 'freeze.log')
     command = 'CUDA_VISIBLE_DEVICES="" ' + command
     # frz models
@@ -566,6 +566,7 @@ def make_model_devi (iter_index,
         sys_counter += 1
 
     sys_counter = 0
+    is_use_clusters = True if 'use_clusters' in jdata and jdata['use_clusters'] else False
     for ss in conf_systems:
         conf_counter = 0
         task_counter = 0
@@ -595,7 +596,8 @@ def make_model_devi (iter_index,
                                                tau_t = model_devi_taut,
                                                pres = pp, 
                                                tau_p = model_devi_taup, 
-                                               pka_e = pka_e)
+                                               pka_e = pka_e,
+                                               is_use_clusters = is_use_clusters)
                     os.chdir(cwd_)
                     with open(os.path.join(task_path, 'input.lammps'), 'w') as fp :
                         fp.write(file_c)
@@ -811,7 +813,6 @@ def _make_fp_vasp_inner (modd_path,
                 poscar_name = '{}.cluster.{}.POSCAR'.format(conf_name, jj)
                 new_system = take_cluster(conf_name, type_map, jj, cluster_cutoff)
                 new_system.to_vasp_poscar(poscar_name)
-                np.save("atom_pref", new_system.data["atom_pref"])
             fp_task_name = make_fp_task_name(int(ss), cc)
             fp_task_path = os.path.join(work_path, fp_task_name)
             create_path(fp_task_path)
@@ -822,6 +823,7 @@ def _make_fp_vasp_inner (modd_path,
                 os.symlink(os.path.relpath(conf_name), 'conf.dump')
             else:
                 os.symlink(os.path.relpath(poscar_name), 'POSCAR')
+                np.save("atom_pref", new_system.data["atom_pref"])
             for pair in fp_link_files :
                 os.symlink(pair[0], pair[1])
             os.chdir(cwd)
@@ -1363,7 +1365,7 @@ def post_fp_gaussian (iter_index,
         for idx,oo in enumerate(sys_output) :
             sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log') 
             if 'use_atom_pref' in jdata and jdata['use_atom_pref']:
-                sys.data['atom_pref'] = np.load("atom_pref.npy")
+                sys.data['atom_pref'] = np.load(os.path.join(os.path.dirname(oo), "atom_pref.npy"))
             if idx == 0:
                 if 'use_clusters' in jdata and jdata['use_clusters']:
                     all_sys = dpdata.MultiSystems(sys)
