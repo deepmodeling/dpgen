@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import os, sys, paramiko, json, uuid, tarfile, time, stat, shutil
+import os, sys, paramiko, json, uuid, tarfile, time, stat
 from enum import Enum
 from dpgen import dlog
+
 
 class JobStatus (Enum) :
     unsubmitted = 1
@@ -435,6 +436,13 @@ class SlurmJob (RemoteJob) :
         sftp.close()
         return ret
 
+    def _make_squeue(self,mdata1, res):
+        ret = ''
+        ret += 'squeue -u %s ' % mdata1['username']
+        ret += '-p %s ' % res['partition']
+        ret += '| grep PD'
+        return ret
+
     def _make_script(self, 
                      job_dirs,
                      cmd,
@@ -460,8 +468,13 @@ class SlurmJob (RemoteJob) :
             ret += '#SBATCH -C %s \n' % ii
         for ii in res['license_list'] :
             ret += '#SBATCH -L %s \n' % ii
-        for ii in res['exclude_list'] :
-            ret += '#SBATCH --exclude %s \n' % ii
+        if len(res['exclude_list']) >0:
+            temp_exclude = ""
+            for ii in res['exclude_list'] :
+                temp_exclude += ii
+                temp_exclude += ","
+            temp_exclude = temp_exclude[:-1]
+            ret += '#SBATCH --exclude %s \n' % temp_exclude
         ret += "\n"
         # ret += 'set -euo pipefail\n\n'
         for ii in res['module_unload_list'] :
@@ -497,7 +510,7 @@ class SlurmJob (RemoteJob) :
             ret += 'test $? -ne 0 && exit\n\n'
 
             if cvasp:
-                cmd=cmd.split('1')[0].strip()
+                cmd=cmd.split('1>')[0].strip()
                 if res['with_mpi'] :
                     ret += 'if [ -f tag_finished ] ;then\n'
                     ret += '  echo gogogo \n'
