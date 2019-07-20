@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import os, sys, paramiko, json, uuid, tarfile, time, stat
+import os, sys, paramiko, json, uuid, tarfile, time, stat, shutil
 from enum import Enum
 from dpgen import dlog
 

@@ -37,8 +37,8 @@ from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
 from dpgen.generator.lib.pwscf import make_pwscf_input
 from dpgen.generator.lib.pwscf import cvt_1frame
 from dpgen.generator.lib.gaussian import make_gaussian_input, take_cluster
-from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, LSFJob, CloudMachineJob
-from dpgen.remote.group_jobs import ucloud_submit_jobs
+from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, LSFJob, CloudMachineJob, awsMachineJob
+from dpgen.remote.group_jobs import ucloud_submit_jobs, aws_submit_jobs
 from dpgen.remote.group_jobs import group_slurm_jobs
 from dpgen.remote.group_jobs import group_local_jobs
 from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
@@ -402,6 +402,16 @@ def run_train (iter_index,
                          trans_comm_data,
                          forward_files,
                          backward_files)
+    elif ssh_sess == None and machine_type == 'aws':
+        aws_submit_jobs(mdata['train_machine'],
+                        mdata['train_resources'],
+                        mdata['run_train_task_definition'], 
+                        work_path,
+                        run_tasks,
+                        5,
+                        trans_comm_data,
+                        forward_files,
+                        backward_files)
     else :
         raise RuntimeError("unknow machine type")
 
@@ -708,6 +718,16 @@ def run_model_devi (iter_index,
                            model_names,
                            forward_files,
                            backward_files)
+    elif ssh_sess == None and machine_type == 'aws':
+        aws_submit_jobs(mdata['model_devi_machine'],
+                        mdata['model_devi_resources'],
+                        mdata['model_devi_task_definition'], 
+                        work_path,
+                        run_tasks,
+                        model_devi_group_size,
+                        model_names,
+                        forward_files,
+                        backward_files)
     else :
         raise RuntimeError("unknow machine type")
 
@@ -1218,6 +1238,16 @@ def run_fp_inner (iter_index,
                            [],
                            forward_files,
                            backward_files)
+    elif ssh_sess == None and machine_type == 'aws':
+        aws_submit_jobs(mdata['fp_machine'],
+                            mdata['fp_resources'],
+                            mdata['fp_task_definition'],
+                            work_path,
+                            run_tasks,
+                            fp_group_size,
+                            [],
+                            forward_files,
+                            backward_files)
     else :
         raise RuntimeError("unknow machine type")
 
@@ -1240,7 +1270,7 @@ def run_fp (iter_index,
     if fp_style == "vasp" :
         forward_files = ['POSCAR', 'INCAR', 'KPOINTS'] + fp_pp_files 
         backward_files = ['OUTCAR','vasprun.xml']
-        if mdata["fp_resources"]['cvasp']:
+        if 'cvasp' in  mdata["fp_resources"] and mdata["fp_resources"]["cvasp"]==True:
             forward_common_files=['cvasp.py']
         else:
             forward_common_files=[]
@@ -1456,7 +1486,7 @@ def run_iter (json_file, machine_file) :
                 mdata  = decide_train_machine(mdata)
                 train_machine = mdata['train_machine'] 
                 if ('machine_type' in train_machine) and  \
-                   (train_machine['machine_type'] == 'ucloud'):
+                   ((train_machine['machine_type'] == 'ucloud') or (train_machine['machine_type'] == 'aws')):
                     train_ssh_sess = None
                 else :
                     train_ssh_sess = SSHSession(train_machine)
@@ -1474,7 +1504,7 @@ def run_iter (json_file, machine_file) :
                 mdata = decide_model_devi_machine(mdata)
                 model_devi_machine = mdata['model_devi_machine']    
                 if ('machine_type' in model_devi_machine) and  \
-                   (model_devi_machine['machine_type'] == 'ucloud'):
+                   ((model_devi_machine['machine_type'] == 'ucloud') or (model_devi_machine['machine_type'] == 'aws')):
                     model_devi_ssh_sess = None
                 else :
                     model_devi_ssh_sess = SSHSession(model_devi_machine)
@@ -1491,7 +1521,7 @@ def run_iter (json_file, machine_file) :
                 mdata = decide_fp_machine(mdata)
                 fp_machine = mdata['fp_machine']  
                 if ('machine_type' in fp_machine) and  \
-                   (fp_machine['machine_type'] == 'ucloud'):
+                   ((fp_machine['machine_type'] == 'ucloud') or (fp_machine['machine_type'] == 'aws')):
                     fp_ssh_sess = None
                 else :
                     fp_ssh_sess = SSHSession(fp_machine)
