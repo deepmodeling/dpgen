@@ -11,6 +11,18 @@ from dpgen import dlog
 import requests
 from hashlib import sha1
 
+def _verfy_ac(private_key, params):
+    items= sorted(params.items())
+    
+    params_data = "";
+    for key, value in items:
+        params_data = params_data + str(key) + str(value)
+    params_data = params_data + private_key
+    sign = sha1()
+    sign.update(params_data.encode())
+    signature = sign.hexdigest()
+    return signature
+
 def aws_submit_jobs(machine,
                     resources,
                     command,
@@ -40,7 +52,7 @@ def aws_submit_jobs(machine,
         containerInstances=ecs.describe_container_instances(cluster="tensorflow", \
                                                     containerInstances=containerInstanceArns['containerInstanceArns'])['containerInstances']
         status_list=[container['status'] for container in containerInstances]
-    
+
     need_apply_num=group_size-len(status_list)
     print('need_apply_num=',need_apply_num)
     if need_apply_num>0:
@@ -92,7 +104,7 @@ def aws_submit_jobs(machine,
             time.sleep(10)
             taskres=ecs.run_task(cluster='tensorflow',\
                      taskDefinition=task_definition,overrides=command_override)
-        
+
         taskARNs.append(taskres['tasks'][0]['taskArn'])
         taskstatus=[task['lastStatus'] for task in ecs.describe_tasks(cluster='tensorflow',tasks=taskARNs)['tasks']]
         running_job_num=len(list(filter(lambda str:(str=='PENDING' or str =='RUNNING'),taskstatus)))
@@ -110,18 +122,6 @@ def aws_submit_jobs(machine,
         chunk = task_chunks[ii]
         print('downloading '+str(chunk),backward_task_files)
         rjob.download(chunk,backward_task_files)
-
-def _verfy_ac(private_key, params):
-    items= sorted(params.items())
-    
-    params_data = "";
-    for key, value in items:
-        params_data = params_data + str(key) + str(value)
-    params_data = params_data + private_key
-    sign = sha1()
-    sign.update(params_data.encode())
-    signature = sign.hexdigest()
-    return signature
 
 def _ucloud_remove_machine(machine, UHostId):
     ucloud_url = machine['url']
@@ -153,10 +153,7 @@ def _ucloud_remove_machine(machine, UHostId):
         if try_time >= 200:
             raise RuntimeError ("failed to terminate ucloud machine")
         time.sleep(10)
-    print("Machine ",UHostId,"has been successfully terminated!")
-    
-    
-
+    print("Machine ",UHostId,"has been successfully terminated!")   
 
 def ucloud_submit_jobs(machine,
                        resources,
@@ -281,6 +278,7 @@ def ucloud_submit_jobs(machine,
                     job_fin[idx] = True
         time.sleep(10)
     os.remove("record.machine")
+
 
 def group_slurm_jobs(ssh_sess,
                      resources,
