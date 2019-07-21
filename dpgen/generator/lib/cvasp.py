@@ -13,7 +13,7 @@ handlers=[VaspErrorHandler(),FrozenJobErrorHandler(),StdErrHandler(),NonConvergi
            WalltimeHandler(),PositiveEnergyErrorHandler(),UnconvergedErrorHandler()]
 validators=[VaspFilesValidator(),VasprunXMLValidator()]
 
-def runvasp(cmd,opt=False,max_errors=3,backup=False,auto_gamma=False,auto_npar=True,ediffg=-.05):
+def runvasp(cmd,opt=False,max_errors=3,backup=False,auto_gamma=False,auto_npar=False,ediffg=-.05):
     """
     cmd example:
     cmd=['mpirun', '-np', '32' , '-machinefile', 'hosts','vasp_std']

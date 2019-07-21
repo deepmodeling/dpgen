@@ -13,6 +13,7 @@ from dpgen.auto_test.run import gen_test
 from dpgen import info
 
 
+
 """
 A master convenience script with many tools for driving dpgen.
 """
@@ -55,13 +56,8 @@ def main():
         "init_bulk", help="dpgen initial data preparation tools for bulk systems.")
     parser_init_bulk.add_argument('PARAM', type=str, 
                              help="parameter file, json format")
-    parser_init_bulk.add_argument('STAGE', type=int,
-                             help="the stage of init, can be 1, 2, 3 or 4. "
-                             "1: Setup vasp jobs for relaxation. "
-                             "2: Collect vasp relaxed confs (if relax is not skiped). Perturb system. "
-                             "3: Setup vasp jobs for MD of perturbed system. "
-                             "4: Collect vasp md confs, make deepmd data. "
-    )
+    parser_init_bulk.add_argument('MACHINE', type=str,
+                        help="machine file, json format")
     parser_init_bulk.set_defaults(func=gen_init_bulk)
     # parser_init.add_argument("-p",'--parameter', type=str, dest='param',
     #                     help="parameter file, json format")

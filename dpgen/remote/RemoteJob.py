@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import os, sys, paramiko, json, uuid, tarfile, time, stat
+import os, sys, paramiko, json, uuid, tarfile, time, stat, shutil
 from enum import Enum
 from dpgen import dlog
+
 
 class JobStatus (Enum) :
     unsubmitted = 1
@@ -12,6 +13,63 @@ class JobStatus (Enum) :
     terminated = 4
     finished = 5
     unknown = 100
+
+class awsMachineJob(object):
+    def __init__ (self,
+                  remote_root,
+                  work_path,
+                  job_uuid=None,
+    ) :
+        self.remote_root=os.path.join(remote_root,work_path)
+        self.local_root = os.path.abspath(work_path)
+        if job_uuid:
+            self.job_uuid=job_uuid
+        else:
+            self.job_uuid = str(uuid.uuid4())
+        
+        dlog.info("local_root is %s"% self.local_root)
+        dlog.info("remote_root is %s"% self.remote_root)
+        
+    def upload(self,
+               job_dir,
+               local_up_files,
+               dereference = True) :
+        cwd = os.getcwd()
+        print('cwd=',cwd)
+        os.chdir(self.local_root)       
+        for ii in local_up_files :
+            print('self.local_root=',self.local_root,'remote_root=',self.remote_root,'job_dir=',job_dir,'ii=',ii)
+            if os.path.isfile(os.path.join(job_dir,ii)):
+                if not os.path.exists(os.path.join(self.remote_root,job_dir)):
+                    os.makedirs(os.path.join(self.remote_root,job_dir))
+                shutil.copyfile(os.path.join(job_dir,ii),os.path.join(self.remote_root,job_dir,ii))
+            elif os.path.isdir(os.path.join(job_dir,ii)):
+                shutil.copytree(os.path.join(job_dir,ii),os.path.join(self.remote_root,job_dir,ii))
+            else:
+                print('unknownfile','local_root=',self.local_root,'job_dir=',job_dir,'filename=',ii)
+        os.chdir(cwd)
+    def download(self,
+               job_dir,
+               remote_down_files,
+               dereference = True) :
+        for ii in remote_down_files:
+         #   print('self.local_root=',self.local_root,'remote_root=',self.remote_root,'job_dir=',job_dir,'ii=',ii)
+            file_succ_copy_flag=False
+            while not file_succ_copy_flag:
+                if os.path.isfile(os.path.join(self.remote_root,job_dir,ii)):
+                    shutil.copyfile(os.path.join(self.remote_root,job_dir,ii),os.path.join(self.local_root,job_dir,ii))
+                    file_succ_copy_flag=True
+                elif os.path.isdir(os.path.join(self.remote_root,job_dir,ii)):
+                    try:
+                        os.rmdir(os.path.join(self.local_root,job_dir,ii))
+                    except:
+                        print('dir is not empty   '+str(os.path.join(self.local_root,job_dir,ii)))
+                    else:
+                        shutil.copytree(os.path.join(self.remote_root,job_dir,ii),os.path.join(self.local_root,job_dir,ii))
+                        file_succ_copy_flag=True
+                else:
+                    print('unknownfile,maybe need for waiting for a while','local_root=',self.local_root,'job_dir=',job_dir,'filename=',ii)
+                    time.sleep(5)
 
 def _default_item(resources, key, value) :
     if key not in resources :
@@ -312,7 +370,8 @@ class SlurmJob (RemoteJob) :
         if restart:
            try:
                status = self.check_status()
-               if status in [  JobStatus.unsubmitted, JobStatus.unknow, JobStatus.terminated ]:
+               dlog.debug(status)
+               if status in [  JobStatus.unsubmitted, JobStatus.unknown, JobStatus.terminated ]:
                   dlog.debug('task restart point !!!')
                   _submit()    
                elif status==JobStatus.waiting:
@@ -333,7 +392,7 @@ class SlurmJob (RemoteJob) :
     def check_status(self) :
         job_id = self._get_job_id()
         if job_id == "" :
-            raise RuntimeError("job %s is has not been submitted" % self.remote_root)
+            raise RuntimeError("job %s has not been submitted" % self.remote_root)
         ret, stdin, stdout, stderr\
             = self.block_call ("squeue --job " + job_id)
         err_str = stderr.read().decode('utf-8')
@@ -377,6 +436,13 @@ class SlurmJob (RemoteJob) :
         sftp.close()
         return ret
 
+    def _make_squeue(self,mdata1, res):
+        ret = ''
+        ret += 'squeue -u %s ' % mdata1['username']
+        ret += '-p %s ' % res['partition']
+        ret += '| grep PD'
+        return ret
+
     def _make_script(self, 
                      job_dirs,
                      cmd,
@@ -402,8 +468,13 @@ class SlurmJob (RemoteJob) :
             ret += '#SBATCH -C %s \n' % ii
         for ii in res['license_list'] :
             ret += '#SBATCH -L %s \n' % ii
-        for ii in res['exclude_list'] :
-            ret += '#SBATCH --exclude %s \n' % ii
+        if len(res['exclude_list']) >0:
+            temp_exclude = ""
+            for ii in res['exclude_list'] :
+                temp_exclude += ii
+                temp_exclude += ","
+            temp_exclude = temp_exclude[:-1]
+            ret += '#SBATCH --exclude %s \n' % temp_exclude
         ret += "\n"
         # ret += 'set -euo pipefail\n\n'
         for ii in res['module_unload_list'] :
@@ -439,7 +510,7 @@ class SlurmJob (RemoteJob) :
             ret += 'test $? -ne 0 && exit\n\n'
 
             if cvasp:
-                cmd=cmd.split('1')[0].strip()
+                cmd=cmd.split('1>')[0].strip()
                 if res['with_mpi'] :
                     ret += 'if [ -f tag_finished ] ;then\n'
                     ret += '  echo gogogo \n'
@@ -652,22 +723,22 @@ class LSFJob (RemoteJob) :
                restart = False):
         dlog.debug(restart)
         if restart:
-           try:
-               status = self.check_status()
-               if status in [  JobStatus.unsubmitted, JobStatus.unknow, JobStatus.terminated ]:
-                  dlog.debug('task restart point !!!')
-                  self._submit(job_dirs, cmd, args, resources)
-               elif status==JobStatus.waiting:
-                  dlog.debug('task is waiting')
-               elif status==JobStatus.running:
-                  dlog.debug('task is running')
-               else:
-                  dlog.debug('task is finished')
+            status = self.check_status()
+            if status in [  JobStatus.unsubmitted, JobStatus.unknown, JobStatus.terminated ]:
+                dlog.debug('task restart point !!!')
+                self._submit(job_dirs, cmd, args, resources)
+            elif status==JobStatus.waiting:
+                dlog.debug('task is waiting')
+            elif status==JobStatus.running:
+                dlog.debug('task is running')
+            else:
+                dlog.debug('task is finished')
+               
 
-           except:
-               dlog.debug('no job_id file')
-               dlog.debug('task restart point !!!')
-               self._submit(job_dirs, cmd, args, resources)
+           #except:
+               #dlog.debug('no job_id file')
+               #dlog.debug('task restart point !!!')
+               #self._submit(job_dirs, cmd, args, resources)
         else:
            dlog.debug('new task!!!')
            self._submit(job_dirs, cmd, args, resources)
