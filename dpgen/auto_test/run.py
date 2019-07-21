@@ -870,6 +870,90 @@ def cmpt_surf(task_type,jdata,mdata):
         raise RuntimeError("unknow task ", task_type)
     os.chdir(cwd)
 
+def gen_phonon(task_type,jdata,mdata):
+    conf_dir=jdata['conf_dir']
+    cwd=os.getcwd()
+    #vasp
+    if task_type == "vasp":
+        gen_06_phonon.make_vasp(jdata, conf_dir)
+    #lammps
+    elif task_type == "deepmd" or task_type=="meam":
+        gen_06_phonon.make_lammps(jdata, conf_dir,  task_type)
+    else :
+        raise RuntimeError("unknow task ", task_type)
+    os.chdir(cwd)
+
+def run_phonon(task_type,jdata,mdata,ssh_sess):
+    conf_dir=jdata['conf_dir']
+    fp_params = jdata['vasp_params']
+    kspacing = fp_params['kspacing']
+    deepmd_model_dir = jdata['deepmd_model_dir']
+    deepmd_model_dir = os.path.abspath(deepmd_model_dir)
+
+    conf_path = os.path.abspath(conf_dir)
+    task_path = re.sub('confs', '06.phonon', conf_path)
+    if task_type == "vasp":
+        work_path=os.path.join(task_path, 'vasp-k%.2f' % kspacing)
+    elif task_type == "deepmd":
+        work_path=os.path.join(task_path, 'deepmd')
+    elif task_type == "meam":
+        work_path=os.path.join(task_path, 'meam')
+    assert(os.path.isdir(work_path))
+    
+    all_task = glob.glob(os.path.join(work_path,'.'))
+     
+    #vasp
+    if task_type == "vasp":
+        vasp_exec=mdata['fp_command']
+        group_size = mdata['fp_group_size']
+        resources = mdata['fp_resources']
+        machine=mdata['fp_machine']
+        machine_type = mdata['fp_machine']['machine_type']
+        command = vasp_exec
+        command = cmd_append_log(command, "log")
+
+        run_tasks_ = []
+        for ii in all_task:
+            fres = os.path.join(ii, 'OUTCAR')
+            if os.path.isfile(fres) :
+                if not vasp.check_finished(fres):
+                    run_tasks_.append(ii)
+            else :
+                run_tasks_.append(ii)
+            
+        run_tasks = [os.path.basename(ii) for ii in run_tasks_]
+        forward_files = ['INCAR', 'POSCAR','POTCAR']
+        backward_files = ['OUTCAR','vasprun.xml']
+        common_files=['INCAR','POTCAR']
+
+        _run(machine,
+         machine_type,
+         ssh_sess,
+         resources,
+         command,
+         work_path,
+         run_tasks,
+         group_size,
+         common_files,
+         forward_files,
+         backward_files)
+    #lammps
+    elif task_type == "deepmd" or task_type == "meam":
+        None
+    else:
+        raise RuntimeError ("unknow task %s, something wrong" % task_type)
+
+def cmpt_phonon(task_type,jdata,mdata):
+    conf_dir=jdata['conf_dir']
+    #vasp
+    if task_type == "vasp":
+        cmpt_06_phonon.cmpt_vasp(jdata, conf_dir)   
+    #lammps                
+    elif task_type == "deepmd" or task_type == "meam" :
+        cmpt_06_phonon.cmpt_lammps(jdata,conf_dir, task_type)
+    else :
+        raise RuntimeError("unknow task ", task_type)    
+
 def run_task (json_file, machine_file) :
     with open (json_file, 'r') as fp :
         jdata = json.load (fp)
@@ -904,7 +988,7 @@ def run_task (json_file, machine_file) :
     key_id = jdata['key_id']
     ii = jdata['task_type']
     jj=jdata['task']
-    task_list=['equi','eos','elastic','vacancy','interstitial','surf','all']
+    task_list=['equi','eos','elastic','vacancy','interstitial','surf','phonon','all']
     #gen_configuration
     if 'confs' in confs and (not os.path.exists(confs+'/POSCAR')) :
         print('generate %s' % (ele_list))
@@ -954,6 +1038,13 @@ def run_task (json_file, machine_file) :
         run_surf  (ii, jdata, mdata,model_devi_ssh_sess)
         log_iter ("cmpt_surf", ii, "surf")
         cmpt_surf (ii, jdata, mdata)
+    if jj=="phonon" or jj=="all":
+        log_iter ("gen_phonon", ii, "surf")
+        gen_phonon (ii, jdata, mdata) 
+        log_iter ("run_phonon", ii, "surf")
+        run_phonon  (ii, jdata, mdata,model_devi_ssh_sess)
+        log_iter ("cmpt_phonon", ii, "surf")
+        cmpt_phonon (ii, jdata, mdata)
     if jj not in task_list :
         raise RuntimeError ("unknow task %s, something wrong" % jj)
     record_iter (record, confs, ii, jj)
