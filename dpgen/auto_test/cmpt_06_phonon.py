@@ -64,10 +64,15 @@ def cmpt_vasp(jdata, conf_dir) :
     os.chdir(task_path)
     if os.path.isfile('vasprun.xml'):
         os.system('phonopy --fc vasprun.xml')
-        os.system('phonopy --dim="%d %d %d" -c POSCAR-unitcell band.conf'%(supercell_matrix[0],supercell_matrix[1],supercell_matrix[2]))
-        os.system('phonopy-bandplot --gnuplot band.yaml > band.dat')
+        if os.path.isfile('FORCE_CONSTANTS'):
+            os.system('phonopy --dim="%d %d %d" -c POSCAR-unitcell band.conf'%(supercell_matrix[0],supercell_matrix[1],supercell_matrix[2]))
+            os.system('phonopy-bandplot --gnuplot band.yaml > band.dat')
+            print('band.dat is created')
+        else:
+            print('FORCE_CONSTANTS No such file')
     else:
         print('vasprun.xml No such file')
+
     
     
 def cmpt_deepmd_lammps(jdata, conf_dir) :
