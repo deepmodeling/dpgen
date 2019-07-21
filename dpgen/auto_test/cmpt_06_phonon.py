@@ -7,9 +7,10 @@ import dpgen.auto_test.lib.vasp as vasp
 import dpgen.auto_test.lib.lammps as lammps
 from phonopy import Phonopy
 from phonopy.structure.atoms import PhonopyAtoms
+
 import yaml
 import phonopy
-#from phonolammps import Phonolammps
+
 
 
 
@@ -21,7 +22,32 @@ link poscar
 link potcar
 make incar
 '''
-def cmpt_vasp(jdata, conf_dir,opt) :
+
+def get_force_from_dump(cell):
+    na=len(cell)
+    with open("dump.relax","r") as fp:
+        lines = fp.readlines()
+        flag=False
+        index=[]
+        forces=[]
+        for line in lines:
+            if flag:
+                data=line.split()
+                index.append(data[0])
+                forces.append(data[5:9])
+            if len(forces)==na:
+                break
+            if 'fx fy fz' in line:
+                flag=True
+        index = np.asarray(index, int)
+        indexing = np.argsort(index)
+        if len(forces)==na:
+            forces=np.asarray(np.reshape(forces,(na,3)),float)[indexing, :]
+        else:
+            raise RuntimeError('Incomplete result: dump.relax')
+    return forces
+
+def cmpt_vasp(jdata, conf_dir) :
     fp_params = jdata['vasp_params']
     ecut = fp_params['ecut']
     ediff = fp_params['ediff']
@@ -39,14 +65,12 @@ def cmpt_vasp(jdata, conf_dir,opt) :
     if os.path.isfile('vasprun.xml'):
         os.system('phonopy --fc vasprun.xml')
         os.system('phonopy --dim="%d %d %d" -c POSCAR-unitcell band.conf'%(supercell_matrix[0],supercell_matrix[1],supercell_matrix[2]))
+        os.system('phonopy-bandplot --gnuplot band.yaml > band.dat')
     else:
         print('vasprun.xml No such file')
-    if opt=='Y':
-        ph = phonopy.load(supercell_matrix=supercell_matrix,primitive_matrix='auto',unitcell_filename="POSCAR-unitcell",force_constants_filename='FORCE_CONSTANTS')
-        ph.auto_band_structure(plot=True).show()
     
     
-def cmpt_deepmd_lammps(jdata, conf_dir,opt) :
+def cmpt_deepmd_lammps(jdata, conf_dir) :
     deepmd_model_dir = jdata['deepmd_model_dir']
     deepmd_type_map = jdata['deepmd_type_map']
     ntypes = len(deepmd_type_map)    
@@ -57,15 +81,14 @@ def cmpt_deepmd_lammps(jdata, conf_dir,opt) :
     conf_path = os.path.abspath(conf_dir)
     task_path = re.sub('confs', global_task_name, conf_path)
     task_path = os.path.join(task_path, 'deepmd')
+    task_poscar = os.path.join(task_path, 'POSCAR')
 
     os.chdir(task_path)
     if os.path.isfile('FORCE_CONSTANTS'):
-        os.system('phonopy --dim="%d %d %d" -c POSCAR-unitcell band.conf'%(supercell_matrix[0],supercell_matrix[1],supercell_matrix[2]))
+        os.system('phonopy --dim="%d %d %d" -c POSCAR band.conf'%(supercell_matrix[0],supercell_matrix[1],supercell_matrix[2]))
+        os.system('phonopy-bandplot --gnuplot band.yaml > band.dat')
     else:
         print('FORCE_CONSTANTS No such file')
-    if opt=='Y':
-        ph = phonopy.load(supercell_matrix=supercell_matrix,primitive_matrix='auto',unitcell_filename="POSCAR-unitcell",force_constants_filename='FORCE_CONSTANTS')
-        ph.auto_band_structure(plot=True).show()
 
 
 def _main() :
@@ -77,8 +100,6 @@ def _main() :
                         help='json parameter file')
     parser.add_argument('CONF', type=str,
                         help='the path to conf')
-    parser.add_argument('OPT', type=str,
-                        help='show the band structue or not [Y/N]')
     args = parser.parse_args()
 
     with open (args.PARAM, 'r') as fp :
@@ -86,9 +107,9 @@ def _main() :
 
 #    print('generate %s task with conf %s' % (args.TASK, args.CONF))
     if args.TASK == 'vasp':
-        cmpt_vasp(jdata, args.CONF,args.OPT)               
+        cmpt_vasp(jdata, args.CONF)               
     elif args.TASK == 'deepmd' :
-        cmpt_deepmd_lammps(jdata, args.CONF,args.OPT)
+        cmpt_deepmd_lammps(jdata, args.CONF)
     elif args.TASK == 'meam' :
         cmpt_meam_lammps(jdata, args.CONF)
     else :
