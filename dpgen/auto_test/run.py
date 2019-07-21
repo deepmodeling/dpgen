@@ -41,6 +41,7 @@ from dpgen.auto_test import gen_02_elastic,cmpt_02_elastic
 from dpgen.auto_test import gen_03_vacancy,cmpt_03_vacancy
 from dpgen.auto_test import gen_04_interstitial,cmpt_04_interstitial
 from dpgen.auto_test import gen_05_surf,cmpt_05_surf
+from dpgen.auto_test import gen_06_phonon,cmpt_06_phonon
 from dpgen.auto_test import gen_confs
 import requests
 from hashlib import sha1
