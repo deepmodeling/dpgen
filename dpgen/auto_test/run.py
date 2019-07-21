@@ -1039,11 +1039,11 @@ def run_task (json_file, machine_file) :
         log_iter ("cmpt_surf", ii, "surf")
         cmpt_surf (ii, jdata, mdata)
     if jj=="phonon" or jj=="all":
-        log_iter ("gen_phonon", ii, "surf")
+        log_iter ("gen_phonon", ii, "phonon")
         gen_phonon (ii, jdata, mdata) 
-        log_iter ("run_phonon", ii, "surf")
+        log_iter ("run_phonon", ii, "phonon")
         run_phonon  (ii, jdata, mdata,model_devi_ssh_sess)
-        log_iter ("cmpt_phonon", ii, "surf")
+        log_iter ("cmpt_phonon", ii, "phonon")
         cmpt_phonon (ii, jdata, mdata)
     if jj not in task_list :
         raise RuntimeError ("unknow task %s, something wrong" % jj)
