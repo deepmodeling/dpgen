@@ -9,13 +9,19 @@
     "task":"all",
 
     "vasp_params":	{
-	"ecut":		520,
+	"ecut":		650,
 	"ediff":	1e-6,
-	"kspacing":	0.32,
+	"kspacing":	0.1,
 	"kgamma":	false,
 	"npar":		1,
 	"kpar":		1,
 	"_comment":	" that's all "
+    },
+    "lammps_params":    {
+        "model_dir":"somewhere/example/Cu_pb",
+        "type_map":["Cu"],
+        "model_name":false,
+        "model_param_type":false
     },
     "deepmd_model_dir":	"somewhere/example/Cu_pb",
     "deepmd_type_map":	[
