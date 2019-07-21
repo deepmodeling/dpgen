@@ -214,10 +214,10 @@ def make_train (iter_index,
         if 'init_multi_systems' in jdata and jdata['init_multi_systems']:
             for single_sys in os.listdir(os.path.join(work_path, 'data.init', ii)):
                 init_data_sys.append(os.path.join('..', 'data.init', ii, single_sys))
-                init_batch_size.append(ss)
+                init_batch_size.append(detect_batch_size(ss, os.path.join(work_path, 'data.init', ii, single_sys)))
         else:
             init_data_sys.append(os.path.join('..', 'data.init', ii))
-            init_batch_size.append(ss)
+            init_batch_size.append(detect_batch_size(ss, os.path.join(work_path, 'data.init', ii)))
     if iter_index > 0 :
         for ii in range(iter_index) :
             fp_path = os.path.join(make_iter_name(ii), fp_name)
@@ -233,9 +233,9 @@ def make_train (iter_index,
                     if nframes < fp_task_min :
                         log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
                         continue
-                    for sys_single in os.listdir(os.path.join(jj)):
+                    for sys_single in os.listdir(jj):
                         init_data_sys.append(os.path.join('..', 'data.iters', jj, sys_single))
-                        init_batch_size.append(sys_batch_size[sys_idx])
+                        init_batch_size.append(detect_batch_size(sys_batch_size[sys_idx], os.path.join(jj, single_sys)))
                 else:
                     tmp_box = np.loadtxt(os.path.join(jj, 'box.raw'))
                     tmp_box = np.reshape(tmp_box, [-1,9])
@@ -244,11 +244,11 @@ def make_train (iter_index,
                         log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
                         continue
                     init_data_sys.append(os.path.join('..', 'data.iters', jj))
-                    init_batch_size.append(sys_batch_size[sys_idx])
+                    init_batch_size.append(detect_batch_size(sys_batch_size[sys_idx], jj))
     # establish tasks
     jinput = jdata['default_training_param']
-    jinput['systems'] = init_data_sys    
-    jinput['batch_size'] = init_batch_size
+    jinput['training']['systems'] = init_data_sys    
+    jinput['training']['batch_size'] = init_batch_size
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         create_path(task_path)
@@ -257,7 +257,9 @@ def make_train (iter_index,
             if not os.path.isdir(ii) :
                 raise RuntimeError ("data sys %s does not exists, cwd is %s" % (ii, os.getcwd()))
         os.chdir(cwd)
-        jinput['seed'] = random.randrange(sys.maxsize)
+        jinput['model']['descriptor']['seed'] = random.randrange(sys.maxsize) % (2**32)
+        jinput['model']['fitting_net']['seed'] = random.randrange(sys.maxsize) % (2**32)
+        jinput['training']['seed'] = random.randrange(sys.maxsize) % (2**32)
         with open(os.path.join(task_path, train_param), 'w') as outfile:
             json.dump(jinput, outfile, indent = 4)
 
@@ -280,6 +282,16 @@ def make_train (iter_index,
                 os.symlink(os.path.relpath(absjj), basejj)
                 os.chdir(cwd)            
 
+def detect_batch_size(batch_size, system=None):
+    if type(batch_size) == int:
+        return batch_size
+    elif batch_size == "auto":
+        # automaticcaly set batch size, batch_size = 32 // atom_numb (>=1, <=fram_numb)
+        s = dpdata.LabeledSystem(system, fmt='deepmd/npy')
+        return min(max(32//(system["coords"].shape[1]), 1), system["coords"].shape[0])
+    else:
+        raise RuntimeError("Unsupported batch size")
+
 def run_train (iter_index,
                jdata, 
                mdata, 
@@ -287,7 +299,7 @@ def run_train (iter_index,
     # load json param
     numb_models = jdata['numb_models']
     train_param = jdata['train_param']
-    deepmd_path = mdata['deepmd_path']
+    python_path = mdata['python_path']
     train_resources = mdata['train_resources']
     machine_type = mdata['train_machine']['machine_type']
 
@@ -304,9 +316,9 @@ def run_train (iter_index,
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         all_task.append(task_path)
-    command =  os.path.join(deepmd_path, 'bin/dp_train')
+    command =  '%s -m deepmd train' % python_path
     command += ' %s && ' % train_param
-    command += os.path.join(deepmd_path, 'bin/dp_frz')
+    command += '%s -m deepmd freeze' % python_path
 
     #_tasks = [os.path.basename(ii) for ii in all_task]
 
@@ -429,7 +441,7 @@ def post_train (iter_index,
                 mdata) :
     # load json param
     numb_models = jdata['numb_models']
-    deepmd_path = mdata['deepmd_path']
+    python_path = mdata['python_path']
     # paths
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, train_name)
@@ -442,7 +454,7 @@ def post_train (iter_index,
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         all_task.append(task_path)
-    command = os.path.join(deepmd_path, 'bin/dp_frz')
+    command = python_path + ' -m deepmd freeze'
     command = cmd_append_log(command, 'freeze.log')
     command = 'CUDA_VISIBLE_DEVICES="" ' + command
     # frz models
@@ -569,12 +581,13 @@ def make_model_devi (iter_index,
                 fmt = jdata['sys_format']
             else:
                 fmt = 'vasp/poscar'
-            system = dpdata.System(os.path.join(conf_path, poscar_name), fmt = fmt)
+            system = dpdata.System(os.path.join(conf_path, poscar_name), fmt = fmt, type_map = jdata['type_map'])
             system.to_lammps_lmp(os.path.join(conf_path, lmp_name))
             conf_counter += 1
         sys_counter += 1
 
     sys_counter = 0
+    is_use_clusters = True if 'use_clusters' in jdata and jdata['use_clusters'] else False
     for ss in conf_systems:
         conf_counter = 0
         task_counter = 0
@@ -604,7 +617,8 @@ def make_model_devi (iter_index,
                                                tau_t = model_devi_taut,
                                                pres = pp, 
                                                tau_p = model_devi_taup, 
-                                               pka_e = pka_e)
+                                               pka_e = pka_e,
+                                               is_use_clusters = is_use_clusters)
                     job = {}
                     job["ensemble"] = ensemble
                     job["press"] = pp
@@ -853,6 +867,7 @@ def _make_fp_vasp_inner (modd_path,
                 os.symlink(os.path.relpath(job_name), 'job.json')
             else:
                 os.symlink(os.path.relpath(poscar_name), 'POSCAR')
+                np.save("atom_pref", new_system.data["atom_pref"])
             for pair in fp_link_files :
                 os.symlink(pair[0], pair[1])
             os.chdir(cwd)
@@ -1426,6 +1441,8 @@ def post_fp_gaussian (iter_index,
         sys_output.sort()
         for idx,oo in enumerate(sys_output) :
             sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log') 
+            if 'use_atom_pref' in jdata and jdata['use_atom_pref']:
+                sys.data['atom_pref'] = np.load(os.path.join(os.path.dirname(oo), "atom_pref.npy"))
             if idx == 0:
                 if 'use_clusters' in jdata and jdata['use_clusters']:
                     all_sys = dpdata.MultiSystems(sys)
