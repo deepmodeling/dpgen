@@ -10,6 +10,7 @@ from dpgen.generator.run import gen_run
 from dpgen.data.gen import gen_init_bulk
 from dpgen.data.surf import gen_init_surf
 from dpgen.auto_test.run import gen_test
+from dpgen.database.run import db_run
 from dpgen import info
 
 
@@ -89,6 +90,19 @@ def main():
     parser_test.add_argument('MACHINE', type=str,
                         help="machine file, json/yaml format")
     parser_test.set_defaults(func=gen_test)
+
+    # db 
+    parser_db = subparsers.add_parser(
+        "db",
+        help="data collection from dpgen.")
+    parser_db.add_argument('PATH', type=str,
+                        help="root path for dpgen modeling")
+    parser_db.add_argument('CALCULATOR', type=str,
+                        help="calculator used for labeling: vasp/pwscf/gaussian")
+    parser_db.add_argument('OUTPUT', type=str,
+                        help="output filename : file.json/file.yaml")
+
+    parser_db.set_defaults(func=db_run)
 
     # # convert  model
     # parser_structure = subparsers.add_parser(

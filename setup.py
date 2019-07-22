@@ -32,7 +32,8 @@ setuptools.setup(
               'dpgen/auto_test/lib',
               'dpgen/data',
               'dpgen/data/tools',
-              'dpgen/remote'
+              'dpgen/remote',
+              'dpgen/database'
     ],
     # package_data={'example':['*.json']},
     classifiers=[
