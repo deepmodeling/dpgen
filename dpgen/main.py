@@ -44,7 +44,7 @@ def main():
     parser_init_surf = subparsers.add_parser(
         "init_surf", help="dpgen initial data preparation tools for surface systems.")
     parser_init_surf.add_argument('PARAM', type=str, 
-                             help="parameter file, json format")
+                             help="parameter file, json/yaml format")
     parser_init_surf.add_argument('STAGE', type=int,
                         help="the stage of init, can be 1 or 2 "
                         "1: Setup vasp jobs for relaxation. "
@@ -55,12 +55,12 @@ def main():
     parser_init_bulk = subparsers.add_parser(
         "init_bulk", help="dpgen initial data preparation tools for bulk systems.")
     parser_init_bulk.add_argument('PARAM', type=str, 
-                             help="parameter file, json format")
+                             help="parameter file, json/yaml format")
     parser_init_bulk.add_argument('MACHINE', type=str,
-                        help="machine file, json format")
+                        help="machine file, json/yaml format")
     parser_init_bulk.set_defaults(func=gen_init_bulk)
     # parser_init.add_argument("-p",'--parameter', type=str, dest='param',
-    #                     help="parameter file, json format")
+    #                     help="parameter file, json/yaml format")
     # parser_init.add_argument("-s","--stage", type=int, dest='stage',
     #                     help="the stage of init, can be 1, 2, 3 or 4. "
     #                     "1: Setup vasp jobs for relaxation. "
@@ -77,17 +77,17 @@ def main():
         "run",
         help="Runing DeepMD with generator model.")
     parser_run.add_argument('PARAM', type=str,
-                        help="parameter file, json format")
+                        help="parameter file, json/yaml format")
     parser_run.add_argument('MACHINE', type=str,
-                        help="machine file, json format")
+                        help="machine file, json/yaml format")
     parser_run.set_defaults(func=gen_run)
 
     # test 
     parser_test = subparsers.add_parser("test", help="auto test for deep potential.")
     parser_test.add_argument('PARAM', type=str,
-                        help="parameter file, json format")
+                        help="parameter file, json/yaml format")
     parser_test.add_argument('MACHINE', type=str,
-                        help="machine file, json format")
+                        help="machine file, json/yaml format")
     parser_test.set_defaults(func=gen_test)
 
     # # convert  model
