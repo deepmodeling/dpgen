@@ -288,7 +288,7 @@ def detect_batch_size(batch_size, system=None):
     elif batch_size == "auto":
         # automaticcaly set batch size, batch_size = 32 // atom_numb (>=1, <=fram_numb)
         s = dpdata.LabeledSystem(system, fmt='deepmd/npy')
-        return min(max(32//(system["coords"].shape[1]), 1), system["coords"].shape[0])
+        return min(max(32//(s["coords"].shape[1]), 1), s["coords"].shape[0])
     else:
         raise RuntimeError("Unsupported batch size")
 
