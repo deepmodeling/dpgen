@@ -121,6 +121,7 @@ class Test(unittest.TestCase):
         refd=loadfn(ref)
         refd=sorted(refd,key= lambda x: int(x.entry_id.split('_')[-1]))
         self.assertEqual(len(retd),len(refd)) 
+        assert(filecmp.cmp(ret,ref))
         for i,j in zip(retd,refd):
             self.assertEqual(i.entry_id,j.entry_id)
             self.assertEqual(i.calculator,j.calculator)
@@ -128,7 +129,6 @@ class Test(unittest.TestCase):
             self.assertEqual(i.number_element , j.number_element )
             self.assertEqual(len(i.composition),len(j.composition))
             self.assertEqual(len(i.attribute),len(j.attribute))
-            self.assertEqual(i.to_json(),j.to_json())
         os.remove(os.path.join(self.cwd,'dpgen_db.json'))
            
 
