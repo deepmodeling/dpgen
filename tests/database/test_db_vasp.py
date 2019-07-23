@@ -4,14 +4,17 @@ import numpy as np
 import tarfile
 
 from glob import glob
-from context import Entry
 from context import dpgen
+from context import Entry
 from context import VaspInput,DPPotcar
 from context import parsing_vasp
 from dpdata import System,LabeledSystem
 from monty.shutil import remove 
 from monty.serialization import loadfn,dumpfn
 from pymatgen.io.vasp import Potcar,Poscar,Incar,Kpoints
+
+iter_pat="02.fp/task.007.00000*"
+init_pat="al.bcc.02x02x02/02.md/sys-0016/scale-1.000/00000*"
 
 def tar_file(path,outdir='.'):
     tar = tarfile.open(path)
@@ -20,8 +23,6 @@ def tar_file(path,outdir='.'):
       tar.extract(name,path=outdir)
     tar.close()
 
-iter_pat="02.fp/task.007.00000*"
-init_pat="al.bcc.02x02x02/02.md/sys-0016/scale-1.000/00000*"
 
 class Test(unittest.TestCase):
     def setUp(self):
@@ -121,12 +122,12 @@ class Test(unittest.TestCase):
         refd=loadfn(ref)
         refd=sorted(refd,key= lambda x: int(x.entry_id.split('_')[-1]))
         self.assertEqual(len(retd),len(refd)) 
-        assert(filecmp.cmp(ret,ref))
         for i,j in zip(retd,refd):
             self.assertEqual(i.entry_id,j.entry_id)
             self.assertEqual(i.calculator,j.calculator)
             self.assertEqual(len(i.data),len(j.data))
             self.assertEqual(i.number_element , j.number_element )
+            self.assertEqual(i.entry_id , j.entry_id )
             self.assertEqual(len(i.composition),len(j.composition))
             self.assertEqual(len(i.attribute),len(j.attribute))
         os.remove(os.path.join(self.cwd,'dpgen_db.json'))
