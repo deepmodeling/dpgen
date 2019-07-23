@@ -4,6 +4,7 @@
 
 import os
 import time
+from uuid import uuid4
 from threading import Thread
 from glob import glob
 from dpgen import dlog
@@ -20,20 +21,21 @@ INIT_PAT="init/*/02.md/sys-*/scale-*/*"
 
 def db_run(args):
     dlog.info ("collecting data")
-    _main(args.PATH, args.CALCULATOR, args.OUTPUT)
+    print(args.ID_PREFIX)
+    _main(args.PATH, args.CALCULATOR, args.OUTPUT,args.ID_PREFIX)
     dlog.info ("finished")
 
-def _main(path,calculator,output):
+def _main(path,calculator,output,id_prefix):
     assert calculator.lower() in SUPPORTED_CACULATOR
     dlog.info('data collection from: %s'%path)
     if calculator == "vasp":
-        parsing_vasp(path,output)
+        parsing_vasp(path,output,id_prefix)
     elif calculator == 'gaussian': 
         parsing_gaussian(path,output)
     else:
         parsing_pwscf(path,output)
 
-def parsing_vasp(path,output=OUTPUT):
+def parsing_vasp(path,output=OUTPUT,id_prefix=None):
     
     fp_iters=os.path.join(path,ITERS_PAT) 
     dlog.debug(fp_iters)
@@ -43,14 +45,15 @@ def parsing_vasp(path,output=OUTPUT):
     dlog.debug(fp_init)
     f_fp_init=glob(fp_init)
     dlog.info("len initialization data: %s"%len(f_fp_init))
-    entries=_parsing_vasp(f_fp_init,iters=False)
-    entries.extend(_parsing_vasp(f_fp_iters))
+    entries=_parsing_vasp(f_fp_init,id_prefix,iters=False)
+    entries.extend(_parsing_vasp(f_fp_iters,id_prefix))
     dlog.info("len collected data: %s"%len(entries))
    
     dumpfn(entries,output,indent=4) 
 
-def _parsing_vasp(paths,iters=True):
+def _parsing_vasp(paths,id_prefix,iters=True):
     entries=[]
+    icount=0
     for path in paths:
         f_outcar = os.path.join(path,'OUTCAR')
         f_job = os.path.join(path,'job.json')
@@ -74,8 +77,13 @@ def _parsing_vasp(paths,iters=True):
            ls = LabeledSystem(f_outcar)
            lss=ls.to_list()
            for ls in lss:
-               entry=Entry(comp,'vasp',vi.as_dict(),ls.as_dict(),attribute=attrib)
+               if id_prefix:
+                  eid=id_prefix+"_"+str(icount)
+               else:
+                  eid = str(uuid4())
+               entry=Entry(comp,'vasp',vi.as_dict(),ls.as_dict(),attribute=attrib,entry_id=eid)
                entries.append(entry)
+               icount+=1
         except:
            dlog.info("failed here : %s"%path)
     return entries

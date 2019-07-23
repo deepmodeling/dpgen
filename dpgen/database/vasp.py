@@ -40,6 +40,9 @@ class DPPotcar(MSONable):
            self.functional=functional
            self.hashs = ''
         self.elements = self._get_elements()
+   
+    def __repr__(self):
+        return str(self)
 
     def __str__(self):
         if self.potcars is not None:
@@ -74,8 +77,16 @@ class DPPotcar(MSONable):
 
     @classmethod
     def from_file(cls,filename):
-        potcars=Potcar.from_file(filename)
-        return cls(pp_lists=potcars)
+        try:
+             potcars=Potcar.from_file(filename)
+             return cls(pp_lists=potcars)
+        except:
+             with open(filename,'r') as f:
+                  content=f.readlines()
+             functional=content[0].strip().split(':')[-1].strip()
+             symbols=content[1].strip().split()
+             return cls(symbols=symbols,functional=functional)
+          
 
     def write_file(self,filename):
         with open(filename,'w') as f:
@@ -115,7 +126,7 @@ class VaspInput(dict, MSONable):
             output.append(str(v))
             output.append("")
         return "\n".join(output)
-
+ 
     def as_dict(self):
         d = {k: v.as_dict() for k, v in self.items()}
         d["@module"] = self.__class__.__module__

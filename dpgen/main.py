@@ -101,6 +101,9 @@ def main():
                         help="calculator used for labeling: vasp/pwscf/gaussian")
     parser_db.add_argument('OUTPUT', type=str,
                         help="output filename : file.json/file.yaml")
+    parser_db.add_argument("ID_PREFIX", type=str, default=None,
+                                 nargs="?",
+                                 help="prefix of an  entry id")
 
     parser_db.set_defaults(func=db_run)
 

@@ -50,10 +50,27 @@ class Entry(MSONable):
         self.calculator  = calculator
         self.inputs = inputs
         self.data = data 
-        self.entry_id = entry_id if entry_id else str(uuid4())
+        self.entry_id = entry_id
         self.name = self.composition.reduced_formula
         self.attribute = attribute
         self.tag = tag
+
+    #def __eq__(self,other):
+    #    if not self.composition == other.composition:
+    #       return False
+    #    if not self.calculator == other.calculator:
+    #       return False
+    #    if not self.inputs == other.inputs:
+    #       return False
+    #    if not self.data == other.data:
+    #       return False
+    #    if not self.name == other.name:
+    #       return False
+    #    if not self.attribute  == other.attribute:
+    #       return False
+    #    if not self.tag == other.tag:
+    #       return False
+    #    return True
 
     @property
     def number_element(self):
@@ -92,21 +109,3 @@ class Entry(MSONable):
                 "entry_id": self.entry_id,
                 "attribute": self.attribute,
                 "tag": self.tag}
-def test():
-    from monty.serialization import dumpfn,loadfn
-    from monty.json import MontyDecoder,MontyEncoder 
-    from pymatgen.io.vasp.inputs import PotcarSingle,Potcar
-    vi=VaspInput.from_directory('.')
-    ls=LabeledSystem('OUTCAR',fmt='vasp/outcar')
-    en0=Entry('Al','vasp',inputs=vi.as_dict(),data=ls.as_dict(),entry_id='pku-1')
-    print(en0)
-    fname='pku-1.json'
-    dumpfn(en0.as_dict(),fname,indent=4)
-    en1=loadfn(fname)
-    #vin=VaspInput.from_dict(en1.inputs)
-    #vin.write_input('./new')
-    print(en1)
-    print(en1.as_dict())
-
-if __name__=="__main__":
-   test()

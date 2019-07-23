@@ -1,0 +1,125 @@
+import os,shutil,filecmp
+import unittest
+import numpy as np
+import tarfile
+
+from glob import glob
+from context import Entry
+from context import dpgen
+from context import VaspInput,DPPotcar
+from context import parsing_vasp
+from dpdata import System,LabeledSystem
+from monty.shutil import remove 
+from monty.serialization import loadfn,dumpfn
+from pymatgen.io.vasp import Potcar,Poscar,Incar,Kpoints
+
+def tar_file(path,outdir='.'):
+    tar = tarfile.open(path)
+    names = tar.getnames()
+    for name in names:
+      tar.extract(name,path=outdir)
+    tar.close()
+
+iter_pat="02.fp/task.007.00000*"
+init_pat="al.bcc.02x02x02/02.md/sys-0016/scale-1.000/00000*"
+
+class Test(unittest.TestCase):
+    def setUp(self):
+        self.cwd=os.getcwd()
+        self.r_init_path=os.path.join(self.cwd,'init')
+        self.data=os.path.join(self.cwd,'data')
+        self.r_iter_path=os.path.join(self.cwd,'iter.000000')
+        for path in [self.r_init_path, self.r_iter_path]+[self.data]:
+           if os.path.isdir(path) :
+              shutil.rmtree(path)
+           tar_file(path+'.tar.gz')
+           assert os.path.isdir(path)
+        self.ref_init_input=loadfn(os.path.join(self.cwd,'data/init_input.json'))
+        self.ref_entries=loadfn(os.path.join(self.cwd,'data/entries.json'))
+        self.init_path=glob(os.path.join(self.r_init_path,init_pat))
+        self.iter_path=glob(os.path.join(self.r_iter_path,iter_pat))
+
+    def testDPPotcar(self):
+            
+        refd={'@module': 'dpgen.database.vasp',
+              '@class': 'DPPotcar',
+              'symbols': ['Al'],
+              'elements': ['Al'],
+              'hashs': '',
+              'functional': 'PBE'}
+        try:
+           Potcar(['Al'])
+           #ps  TITEL  = PAW_PBE Al 04Jan2001
+           refd.update({'hashs':['9aafba2c552fad8414179cae2e888e67']})
+        except:
+           pass
+
+        for f in self.init_path+self.iter_path:
+            fpp=os.path.join(f,'POTCAR')
+            pp=DPPotcar.from_file(fpp)
+            self.assertEqual( pp.elements, refd['elements'])
+            self.assertEqual( pp.symbols, refd['symbols'])
+            self.assertEqual( pp.hashs, refd['hashs'])
+            self.assertEqual( pp.functional, refd['functional'])
+            self.assertEqual( pp.as_dict(), refd)
+       
+    def testVaspInput(self):
+        for f in self.init_path:
+            vi=VaspInput.from_directory(f)
+            self.assertEqual(vi['INCAR'],self.ref_init_input['INCAR'])
+            self.assertEqual(str(vi['POTCAR']),str(self.ref_init_input['POTCAR']))
+            self.assertEqual(vi['POSCAR'].structure,self.ref_init_input['POSCAR'].structure)
+
+    def testEntry(self):
+        entries=[]
+        for i,f in enumerate(self.iter_path):
+            vi=VaspInput.from_directory(f)
+            ls=LabeledSystem(os.path.join(f,'OUTCAR'))
+            attrib=loadfn(os.path.join(f,'job.json'))
+            comp=vi['POSCAR'].structure.composition
+            entry=Entry(comp,
+                       'vasp',
+                       vi.as_dict(),
+                       ls.as_dict(),
+                       entry_id='pku-'+str(i),
+                       attribute=attrib)
+            entries.append(entry)
+        self.assertEqual( len(entries), len(self.ref_entries))
+        ret0=entries[0]
+        r0=self.ref_entries[0]
+        self.assertEqual(
+                     Incar.from_dict(ret0.inputs['INCAR']),
+                     Incar.from_dict(r0.inputs['INCAR'])
+                    )
+        self.assertEqual(
+                     str(r0.inputs['KPOINTS']),
+                     str(Kpoints.from_dict(ret0.inputs['KPOINTS']))
+                    )
+
+        self.assertEqual(
+                        ret0.inputs['POTCAR'],
+                        r0.inputs['POTCAR'].as_dict()
+                        )
+        self.assertEqual(
+                        Poscar.from_dict(ret0.inputs['POSCAR']).structure,
+                        r0.inputs['POSCAR'].structure
+                        )
+        self.assertEqual(ret0.entry_id,'pku-0')
+
+    def testParsingVasp(self):
+        parsing_vasp(self.cwd,id_prefix=dpgen.SHORT_CMD)
+        try:
+           Potcar(['Al'])
+           ref=os.path.join(self.cwd,'data/all_data_pp.json')
+        except:
+           ref=os.path.join(self.cwd,'data/all_data.json')
+        ret=os.path.join(self.cwd,'dpgen_db.json')
+        assert(filecmp.cmp(ref,ret))
+        os.remove(os.path.join(self.cwd,'dpgen_db.json'))
+           
+
+    def tearDown(self):
+        for path in [self.r_init_path, self.r_iter_path, self.data]:
+           if os.path.isdir(path) :
+              shutil.rmtree(path)
+        
