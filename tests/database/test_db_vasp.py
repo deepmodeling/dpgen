@@ -36,8 +36,8 @@ class Test(unittest.TestCase):
            assert os.path.isdir(path)
         self.ref_init_input=loadfn(os.path.join(self.cwd,'data/init_input.json'))
         self.ref_entries=loadfn(os.path.join(self.cwd,'data/entries.json'))
-        self.init_path=glob(os.path.join(self.r_init_path,init_pat))
-        self.iter_path=glob(os.path.join(self.r_iter_path,iter_pat))
+        self.init_path=sorted(glob(os.path.join(self.r_init_path,init_pat)))
+        self.iter_path=sorted(glob(os.path.join(self.r_iter_path,iter_pat)))
 
     def testDPPotcar(self):
             
@@ -114,7 +114,21 @@ class Test(unittest.TestCase):
         except:
            ref=os.path.join(self.cwd,'data/all_data.json')
         ret=os.path.join(self.cwd,'dpgen_db.json')
-        assert(filecmp.cmp(ref,ret))
+
+        retd=loadfn(ret)
+        retd=sorted(retd,key= lambda x: int(x.entry_id.split('_')[-1]))
+
+        refd=loadfn(ref)
+        refd=sorted(refd,key= lambda x: int(x.entry_id.split('_')[-1]))
+        self.assertEqual(len(retd),len(refd)) 
+        for i,j in zip(retd,refd):
+            self.assertEqual(i.entry_id,j.entry_id)
+            self.assertEqual(i.calculator,j.calculator)
+            self.assertEqual(len(i.data),len(j.data))
+            self.assertEqual(i.number_element , j.number_element )
+            self.assertEqual(len(i.composition),len(j.composition))
+            self.assertEqual(len(i.attribute),len(j.attribute))
+            self.assertEqual(i.to_json(),j.to_json())
         os.remove(os.path.join(self.cwd,'dpgen_db.json'))
            
 
