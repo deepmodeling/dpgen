@@ -23,6 +23,7 @@ import dpdata
 import numpy as np
 import subprocess as sp
 from dpgen import dlog
+from dpgen import SHORT_CMD
 from dpgen.generator.lib.utils import make_iter_name
 from dpgen.generator.lib.utils import create_path
 from dpgen.generator.lib.utils import copy_file_list
@@ -1451,12 +1452,27 @@ def post_fp (iter_index,
     else :
         raise RuntimeError ("unsupported fp style")            
     
-def run_iter (json_file, machine_file) :
-    with open (json_file, 'r') as fp :
-        jdata = json.load (fp)
-    with open (machine_file, 'r') as fp:
-        mdata = json.load (fp)
+def run_iter (param_file, machine_file) :
+    try:
+       import ruamel
+       from monty.serialization import loadfn,dumpfn
+       warnings.simplefilter('ignore', ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
+       jdata=loadfn(param_file)
+       mdata=loadfn(machine_file)
+    except:
+       with open (json_file, 'r') as fp :
+           jdata = json.load (fp)
+       with open (machine_file, 'r') as fp:
+           mdata = json.load (fp)
 
+    if jdata.get('pretty_print',False):
+       # jdata["pretty_format"] in ['json','yaml']
+       fparam=SHORT_CMD+'_'+param_file.split('.')[0]+'.'+jdata.get('pretty_format','json')
+       dumpfn(jdata,fparam,indent=4)
+       fmachine=SHORT_CMD+'_'+machine_file.split('.')[0]+'.'+jdata.get('pretty_format','json')
+       dumpfn(mdata,fmachine,indent=4)
+
+ 
     max_tasks = 10000
     numb_task = 9
     record = "record.dpgen"
