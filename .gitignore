@@ -33,3 +33,4 @@ dist
 dpgen.egg-info
 */*.pyc
 */__pycache__
+*.swp
