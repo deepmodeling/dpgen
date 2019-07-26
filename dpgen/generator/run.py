@@ -1312,13 +1312,14 @@ def post_fp_vasp (iter_index,
     cwd = os.getcwd()
 
     tcount=0 
+    icount=0 
     for ss in system_index :
         sys_outcars = glob.glob(os.path.join(work_path, "task.%s.*/OUTCAR"%ss))
         sys_outcars.sort()                
 
         flag=True
+        tcount+=len(sys_outcars)
         for oo in sys_outcars :
-            tcount+=1
             if flag:
                 try:
                     _sys = dpdata.LabeledSystem(oo)
@@ -1335,7 +1336,7 @@ def post_fp_vasp (iter_index,
                     all_sys = _sys
                     flag = False
                 else:
-                    pass
+                    icount+=1
             else:
                 try:
                     _sys = dpdata.LabeledSystem(oo)
@@ -1350,18 +1351,20 @@ def post_fp_vasp (iter_index,
                 elif len(_sys) == 1:
                     all_sys.append(_sys)
                 else:
-                    pass
+                    icount+=1
 
-        dlog.info("effective frame number: %s "%len(all_sys))
-        reff=len(all_sys)/tcount*100
-        dlog.info('ratio of effective frame:  {:.2%}'.format(reff))
-
-        if reff<95.0:
-          raise RuntimeError("find unsuccessfully terminated job due to too many failed JOBS")
 
         sys_data_path = os.path.join(work_path, 'data.%s'%ss)
         all_sys.to_deepmd_raw(sys_data_path)
         all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_outcars))
+
+    dlog.info("failed frame number: %s "%icount)
+    dlog.info("total frame number: %s "%tcount)
+    reff=icount/tcount
+    dlog.info('ratio of failed frame:  {:.2%}'.format(reff*100))
+
+    if reff>0.05:
+       raise RuntimeError("find too many unsuccessfully terminated jobs")
 
 
 def post_fp_pwscf (iter_index,
