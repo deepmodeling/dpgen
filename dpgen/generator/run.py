@@ -235,7 +235,7 @@ def make_train (iter_index,
                         continue
                     for sys_single in os.listdir(jj):
                         init_data_sys.append(os.path.join('..', 'data.iters', jj, sys_single))
-                        init_batch_size.append(detect_batch_size(sys_batch_size[sys_idx], os.path.join(jj, single_sys)))
+                        init_batch_size.append(detect_batch_size(sys_batch_size[sys_idx], os.path.join(jj, sys_single)))
                 else:
                     tmp_box = np.loadtxt(os.path.join(jj, 'box.raw'))
                     tmp_box = np.reshape(tmp_box, [-1,9])
