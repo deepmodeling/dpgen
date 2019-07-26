@@ -7,4 +7,4 @@ install:
   - pip install .
 # command to run tests
 script:
-  - cd tests && cd auto_test && python -m unittest && cd ../data &&  python -m unittest && cd ../generator && python -m unittest && cd ../..
+  - cd tests && cd auto_test && python -m unittest && cd ../data &&  python -m unittest && cd ../generator && python -m unittest && cd ../database && python -m unittest  && cd ../..

@@ -5,6 +5,7 @@ import os, sys, paramiko, json, uuid, tarfile, time, stat, shutil
 from enum import Enum
 from dpgen import dlog
 
+
 class JobStatus (Enum) :
     unsubmitted = 1
     waiting = 2
@@ -369,7 +370,8 @@ class SlurmJob (RemoteJob) :
         if restart:
            try:
                status = self.check_status()
-               if status in [  JobStatus.unsubmitted, JobStatus.unknow, JobStatus.terminated ]:
+               dlog.debug(status)
+               if status in [  JobStatus.unsubmitted, JobStatus.unknown, JobStatus.terminated ]:
                   dlog.debug('task restart point !!!')
                   _submit()    
                elif status==JobStatus.waiting:
@@ -390,7 +392,7 @@ class SlurmJob (RemoteJob) :
     def check_status(self) :
         job_id = self._get_job_id()
         if job_id == "" :
-            raise RuntimeError("job %s is has not been submitted" % self.remote_root)
+            raise RuntimeError("job %s has not been submitted" % self.remote_root)
         ret, stdin, stdout, stderr\
             = self.block_call ("squeue --job " + job_id)
         err_str = stderr.read().decode('utf-8')
@@ -434,6 +436,13 @@ class SlurmJob (RemoteJob) :
         sftp.close()
         return ret
 
+    def _make_squeue(self,mdata1, res):
+        ret = ''
+        ret += 'squeue -u %s ' % mdata1['username']
+        ret += '-p %s ' % res['partition']
+        ret += '| grep PD'
+        return ret
+
     def _make_script(self, 
                      job_dirs,
                      cmd,
@@ -459,8 +468,13 @@ class SlurmJob (RemoteJob) :
             ret += '#SBATCH -C %s \n' % ii
         for ii in res['license_list'] :
             ret += '#SBATCH -L %s \n' % ii
-        for ii in res['exclude_list'] :
-            ret += '#SBATCH --exclude %s \n' % ii
+        if len(res['exclude_list']) >0:
+            temp_exclude = ""
+            for ii in res['exclude_list'] :
+                temp_exclude += ii
+                temp_exclude += ","
+            temp_exclude = temp_exclude[:-1]
+            ret += '#SBATCH --exclude %s \n' % temp_exclude
         ret += "\n"
         # ret += 'set -euo pipefail\n\n'
         for ii in res['module_unload_list'] :
@@ -496,7 +510,7 @@ class SlurmJob (RemoteJob) :
             ret += 'test $? -ne 0 && exit\n\n'
 
             if cvasp:
-                cmd=cmd.split('1')[0].strip()
+                cmd=cmd.split('1>')[0].strip()
                 if res['with_mpi'] :
                     ret += 'if [ -f tag_finished ] ;then\n'
                     ret += '  echo gogogo \n'
@@ -709,22 +723,22 @@ class LSFJob (RemoteJob) :
                restart = False):
         dlog.debug(restart)
         if restart:
-           try:
-               status = self.check_status()
-               if status in [  JobStatus.unsubmitted, JobStatus.unknow, JobStatus.terminated ]:
-                  dlog.debug('task restart point !!!')
-                  self._submit(job_dirs, cmd, args, resources)
-               elif status==JobStatus.waiting:
-                  dlog.debug('task is waiting')
-               elif status==JobStatus.running:
-                  dlog.debug('task is running')
-               else:
-                  dlog.debug('task is finished')
+            status = self.check_status()
+            if status in [  JobStatus.unsubmitted, JobStatus.unknown, JobStatus.terminated ]:
+                dlog.debug('task restart point !!!')
+                self._submit(job_dirs, cmd, args, resources)
+            elif status==JobStatus.waiting:
+                dlog.debug('task is waiting')
+            elif status==JobStatus.running:
+                dlog.debug('task is running')
+            else:
+                dlog.debug('task is finished')
+               
 
-           except:
-               dlog.debug('no job_id file')
-               dlog.debug('task restart point !!!')
-               self._submit(job_dirs, cmd, args, resources)
+           #except:
+               #dlog.debug('no job_id file')
+               #dlog.debug('task restart point !!!')
+               #self._submit(job_dirs, cmd, args, resources)
         else:
            dlog.debug('new task!!!')
            self._submit(job_dirs, cmd, args, resources)

@@ -13,7 +13,7 @@ except ImportError:
     with open(readme_file) as f:
         readme = f.read()
 
-install_requires=['numpy>=1.14.3,<1.17', 'dpdata>=0.1.0', 'pymatgen', 'ase', 'monty', 'paramiko', 'custodian']
+install_requires=['numpy>=1.14.3,<1.17', 'dpdata>=0.1.2', 'pymatgen', 'ase', 'monty', 'paramiko', 'custodian']
 
 setuptools.setup(
     name=NAME,
@@ -32,7 +32,8 @@ setuptools.setup(
               'dpgen/auto_test/lib',
               'dpgen/data',
               'dpgen/data/tools',
-              'dpgen/remote'
+              'dpgen/remote',
+              'dpgen/database'
     ],
     # package_data={'example':['*.json']},
     classifiers=[

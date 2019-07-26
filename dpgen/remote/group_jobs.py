@@ -5,11 +5,23 @@ import os,sys,glob,time
 import numpy as np
 import subprocess as sp
 from monty.serialization import dumpfn,loadfn
-from dpgen.remote.RemoteJob import SlurmJob, PBSJob, CloudMachineJob, JobStatus, awsMachineJob
+from dpgen.remote.RemoteJob import SlurmJob, PBSJob, CloudMachineJob, JobStatus, awsMachineJob,SSHSession
 from dpgen import dlog
 
 import requests
 from hashlib import sha1
+
+def _verfy_ac(private_key, params):
+    items= sorted(params.items())
+    
+    params_data = "";
+    for key, value in items:
+        params_data = params_data + str(key) + str(value)
+    params_data = params_data + private_key
+    sign = sha1()
+    sign.update(params_data.encode())
+    signature = sign.hexdigest()
+    return signature
 
 def aws_submit_jobs(machine,
                     resources,
@@ -40,7 +52,7 @@ def aws_submit_jobs(machine,
         containerInstances=ecs.describe_container_instances(cluster="tensorflow", \
                                                     containerInstances=containerInstanceArns['containerInstanceArns'])['containerInstances']
         status_list=[container['status'] for container in containerInstances]
-    
+
     need_apply_num=group_size-len(status_list)
     print('need_apply_num=',need_apply_num)
     if need_apply_num>0:
@@ -92,7 +104,7 @@ def aws_submit_jobs(machine,
             time.sleep(10)
             taskres=ecs.run_task(cluster='tensorflow',\
                      taskDefinition=task_definition,overrides=command_override)
-        
+
         taskARNs.append(taskres['tasks'][0]['taskArn'])
         taskstatus=[task['lastStatus'] for task in ecs.describe_tasks(cluster='tensorflow',tasks=taskARNs)['tasks']]
         running_job_num=len(list(filter(lambda str:(str=='PENDING' or str =='RUNNING'),taskstatus)))
@@ -110,18 +122,6 @@ def aws_submit_jobs(machine,
         chunk = task_chunks[ii]
         print('downloading '+str(chunk),backward_task_files)
         rjob.download(chunk,backward_task_files)
-
-def _verfy_ac(private_key, params):
-    items= sorted(params.items())
-    
-    params_data = "";
-    for key, value in items:
-        params_data = params_data + str(key) + str(value)
-    params_data = params_data + private_key
-    sign = sha1()
-    sign.update(params_data.encode())
-    signature = sign.hexdigest()
-    return signature
 
 def _ucloud_remove_machine(machine, UHostId):
     ucloud_url = machine['url']
@@ -153,10 +153,7 @@ def _ucloud_remove_machine(machine, UHostId):
         if try_time >= 200:
             raise RuntimeError ("failed to terminate ucloud machine")
         time.sleep(10)
-    print("Machine ",UHostId,"has been successfully terminated!")
-    
-    
-
+    print("Machine ",UHostId,"has been successfully terminated!")   
 
 def ucloud_submit_jobs(machine,
                        resources,
@@ -282,6 +279,7 @@ def ucloud_submit_jobs(machine,
         time.sleep(10)
     os.remove("record.machine")
 
+
 def group_slurm_jobs(ssh_sess,
                      resources,
                      command,
@@ -293,6 +291,7 @@ def group_slurm_jobs(ssh_sess,
                      backward_task_files,
                      remote_job = SlurmJob, 
                      forward_task_deference = True) :
+
     task_chunks = [
         [os.path.basename(j) for j in tasks[i:i + group_size]] \
         for i in range(0, len(tasks), group_size)
@@ -336,10 +335,19 @@ def group_slurm_jobs(ssh_sess,
     
     job_fin = [False for ii in job_list]
     lcount=[0]*len(job_list)
+    count_fail = 0
     while not all(job_fin) :
         for idx,rjob in enumerate(job_list) :
             if not job_fin[idx] :
-                status = rjob.check_status()
+                try:
+                  status = rjob.check_status()
+                except:
+                  ssh_sess = SSHSession(ssh_sess.remote_profile)
+                  for _idx,_rjob in enumerate(job_list):
+                    job_list[_idx] = SlurmJob(ssh_sess, work_path, _rjob.job_uuid)
+                  count_fail = count_fail +1
+                  dlog.info("ssh_sess failed for %d times"%count_fail)
+                  break;
                 if status == JobStatus.terminated :
                     lcount[idx]+=1
                     _job_uuid=rjob.remote_root.split('/')[-1]
