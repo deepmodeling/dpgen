@@ -40,9 +40,9 @@ def aws_submit_jobs(machine,
     ]
     task_chunks = (str(task_chunks).translate((str.maketrans('','',' \'"[]'))).split(',')) 
     # flatten the task_chunks
-    dlog.info('task_chunks=',task_chunks)
+    print('task_chunks=',task_chunks)
     njob = len(task_chunks)    
-    dlog.info('njob=',njob)
+    print('njob=',njob)
     continue_status = False
     ecs=boto3.client('ecs')
     ec2=boto3.client('ec2')
@@ -54,7 +54,7 @@ def aws_submit_jobs(machine,
         status_list=[container['status'] for container in containerInstances]
 
     need_apply_num=group_size-len(status_list)
-    dlog.info('need_apply_num=',need_apply_num)
+    print('need_apply_num=',need_apply_num)
     if need_apply_num>0:
         for ii in range(need_apply_num) :   #apply for machines,
             ec2.run_instances(**machine['run_instances'])      
@@ -70,8 +70,8 @@ def aws_submit_jobs(machine,
             break
         else:
             time.sleep(20)
-    dlog.info('current available containers status_list=',status_list)       
-    dlog.info('remote_root=',machine['remote_root'])   
+    print('current available containers status_list=',status_list)       
+    print('remote_root=',machine['remote_root'])   
     rjob = awsMachineJob(machine['remote_root'],work_path)
     taskARNs=[]
     taskstatus=[]
@@ -82,25 +82,25 @@ def aws_submit_jobs(machine,
         containerInstances=ecs.describe_container_instances(cluster="tensorflow", \
                                                     containerInstances=containerInstanceArns['containerInstanceArns'])['containerInstances']
         status_list=[container['status'] for container in containerInstances]
-        dlog.info('current available containers status_list=',status_list)      
+        print('current available containers status_list=',status_list)      
         while  running_job_num>=group_size:
             taskstatus=[task['lastStatus'] for task in ecs.describe_tasks(cluster='tensorflow',tasks=taskARNs)['tasks']]
             running_job_num=len(list(filter(lambda str:(str=='PENDING' or str =='RUNNING'),taskstatus)))
-            dlog.info('waiting for running job finished, taskstatus=',taskstatus,'running_job_num=',running_job_num)
+            print('waiting for running job finished, taskstatus=',taskstatus,'running_job_num=',running_job_num)
             time.sleep(10)         
         chunk = str(task_chunks[ijob])
-        dlog.info('current task chunk=',chunk)
+        print('current task chunk=',chunk)
         task_definition=command['task_definition']
         concrete_command=(command['concrete_command'] %(work_path,chunk))
         command_override=command['command_override']
         command_override['containerOverrides'][0]['command'][0]=concrete_command
-        dlog.info('concrete_command=',concrete_command)
+        print('concrete_command=',concrete_command)
         rjob.upload(chunk, forward_task_files, 
                     dereference = forward_task_deference)
         taskres=ecs.run_task(cluster='tensorflow',\
                      taskDefinition=task_definition,overrides=command_override)
         while not taskres['tasks'][0]:
-            dlog.info('task submit failed,taskres=',taskres,'trying to re-submit'+str(chunk),)
+            print('task submit failed,taskres=',taskres,'trying to re-submit'+str(chunk),)
             time.sleep(10)
             taskres=ecs.run_task(cluster='tensorflow',\
                      taskDefinition=task_definition,overrides=command_override)
@@ -108,19 +108,19 @@ def aws_submit_jobs(machine,
         taskARNs.append(taskres['tasks'][0]['taskArn'])
         taskstatus=[task['lastStatus'] for task in ecs.describe_tasks(cluster='tensorflow',tasks=taskARNs)['tasks']]
         running_job_num=len(list(filter(lambda str:(str=='PENDING' or str =='RUNNING'),taskstatus)))
-        dlog.info('have submitted %s/%s,taskstatus=' %(work_path,chunk) ,taskstatus,'running_job_num=',running_job_num )       
+        print('have submitted %s/%s,taskstatus=' %(work_path,chunk) ,taskstatus,'running_job_num=',running_job_num )       
     task_fin_flag=False    
     while not task_fin_flag:       
         taskstatus=[task['lastStatus'] for task in ecs.describe_tasks(cluster='tensorflow',tasks=taskARNs)['tasks']]
         task_fin_flag=all([status=='STOPPED' for status in taskstatus])
         if task_fin_flag:
-            dlog.info('task finished,next step:copy files to local && taskstatus=',taskstatus)
+            print('task finished,next step:copy files to local && taskstatus=',taskstatus)
         else:
-            dlog.info('all tasks submitted,task running && taskstatus=',taskstatus)
+            print('all tasks submitted,task running && taskstatus=',taskstatus)
             time.sleep(20)    
     for ii in range(njob):
         chunk = task_chunks[ii]
-        dlog.info('downloading '+str(chunk),backward_task_files)
+        print('downloading '+str(chunk),backward_task_files)
         rjob.download(chunk,backward_task_files)
 
 def _ucloud_remove_machine(machine, UHostId):
@@ -153,7 +153,7 @@ def _ucloud_remove_machine(machine, UHostId):
         if try_time >= 200:
             raise RuntimeError ("failed to terminate ucloud machine")
         time.sleep(10)
-    dlog.info("Machine ",UHostId,"has been successfully terminated!")   
+    print("Machine ",UHostId,"has been successfully terminated!")   
 
 def ucloud_submit_jobs(machine,
                        resources,
@@ -193,7 +193,7 @@ def ucloud_submit_jobs(machine,
         for ii in range(njob) :
             req = requests.get(ucloud_url, ucloud_start_param)
             if req.json()['RetCode'] != 0 :
-                dlog.info(json.dumps(req.json(),indent=2, sort_keys=True))
+                print(json.dumps(req.json(),indent=2, sort_keys=True))
                 raise RuntimeError ("failed to start ucloud machine")
             ucloud_machines.append(str(req.json()["IPs"][0]))
             ucloud_hostids.append(str(req.json()["UHostIds"][0]))
@@ -220,12 +220,12 @@ def ucloud_submit_jobs(machine,
                 ucloud_check_param['PublicKey'] = machine['ucloud_param']['PublicKey']
                 ucloud_check_param['Signature'] = _verfy_ac(machine['Private'], ucloud_check_param)
                 req = requests.get(ucloud_url, ucloud_check_param)
-                dlog.info("the UHostId is", ucloud_hostids[idx])
-                dlog.info(json.dumps(req.json(),indent=2, sort_keys=True))
+                print("the UHostId is", ucloud_hostids[idx])
+                print(json.dumps(req.json(),indent=2, sort_keys=True))
                 if req.json()['RetCode'] == 0 :
                     machine_fin[idx] = True
                     fin_machine_num = fin_machine_num + 1
-        dlog.info("Current finish",fin_machine_num,"/", total_machine_num)
+        print("Current finish",fin_machine_num,"/", total_machine_num)
 
         
         ucloud_check_param1 = {}
@@ -256,7 +256,7 @@ def ucloud_submit_jobs(machine,
     job_list = []
     for ii in range(njob) :
         chunk = task_chunks[ii]
-        dlog.info("Current machine is", ucloud_machines[ii])
+        print("Current machine is", ucloud_machines[ii])
         rjob = CloudMachineJob(ssh_sess[ii], work_path)
         rjob.upload('.',  forward_common_files)
         rjob.upload(chunk, forward_task_files, 

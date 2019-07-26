@@ -36,10 +36,10 @@ class awsMachineJob(object):
                local_up_files,
                dereference = True) :
         cwd = os.getcwd()
-        dlog.info('cwd=',cwd)
+        print('cwd=',cwd)
         os.chdir(self.local_root)       
         for ii in local_up_files :
-            dlog.info('self.local_root=',self.local_root,'remote_root=',self.remote_root,'job_dir=',job_dir,'ii=',ii)
+            print('self.local_root=',self.local_root,'remote_root=',self.remote_root,'job_dir=',job_dir,'ii=',ii)
             if os.path.isfile(os.path.join(job_dir,ii)):
                 if not os.path.exists(os.path.join(self.remote_root,job_dir)):
                     os.makedirs(os.path.join(self.remote_root,job_dir))
@@ -47,14 +47,14 @@ class awsMachineJob(object):
             elif os.path.isdir(os.path.join(job_dir,ii)):
                 shutil.copytree(os.path.join(job_dir,ii),os.path.join(self.remote_root,job_dir,ii))
             else:
-                dlog.info('unknownfile','local_root=',self.local_root,'job_dir=',job_dir,'filename=',ii)
+                print('unknownfile','local_root=',self.local_root,'job_dir=',job_dir,'filename=',ii)
         os.chdir(cwd)
     def download(self,
                job_dir,
                remote_down_files,
                dereference = True) :
         for ii in remote_down_files:
-         #   dlog.info('self.local_root=',self.local_root,'remote_root=',self.remote_root,'job_dir=',job_dir,'ii=',ii)
+         #   print('self.local_root=',self.local_root,'remote_root=',self.remote_root,'job_dir=',job_dir,'ii=',ii)
             file_succ_copy_flag=False
             while not file_succ_copy_flag:
                 if os.path.isfile(os.path.join(self.remote_root,job_dir,ii)):
@@ -64,12 +64,12 @@ class awsMachineJob(object):
                     try:
                         os.rmdir(os.path.join(self.local_root,job_dir,ii))
                     except:
-                        dlog.info('dir is not empty   '+str(os.path.join(self.local_root,job_dir,ii)))
+                        print('dir is not empty   '+str(os.path.join(self.local_root,job_dir,ii)))
                     else:
                         shutil.copytree(os.path.join(self.remote_root,job_dir,ii),os.path.join(self.local_root,job_dir,ii))
                         file_succ_copy_flag=True
                 else:
-                    dlog.info('unknownfile,maybe need for waiting for a while','local_root=',self.local_root,'job_dir=',job_dir,'filename=',ii)
+                    print('unknownfile,maybe need for waiting for a while','local_root=',self.local_root,'job_dir=',job_dir,'filename=',ii)
                     time.sleep(5)
 
 def _default_item(resources, key, value) :
