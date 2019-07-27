@@ -294,7 +294,6 @@ class TestMakeFPPwscf(unittest.TestCase):
             jdata = json.load (fp)
         with open (machine_file, 'r') as fp:
             mdata = json.load (fp)
-        mdata = set_version(mdata)
         md_descript = []
         nsys = 2
         nmd = 3
@@ -321,7 +320,6 @@ class TestMakeFPPwscf(unittest.TestCase):
             jdata = json.load (fp)
         with open (machine_file, 'r') as fp:
             mdata = json.load (fp)
-        mdata = set_version(mdata)
         md_descript = []
         nsys = 2
         nmd = 3
@@ -350,7 +348,6 @@ class TestMakeFPVasp(unittest.TestCase):
             jdata = json.load (fp)
         with open (machine_file, 'r') as fp:
             mdata = json.load (fp)
-        mdata = set_version(mdata)
         md_descript = []
         nsys = 2
         nmd = 3
