@@ -7,6 +7,7 @@ from context import make_model_devi
 from context import parse_cur_job
 from context import param_file
 from context import machine_file
+from context import set_version
 from comp_sys import test_atom_names
 from comp_sys import test_atom_types
 from comp_sys import test_coord
@@ -126,6 +127,7 @@ class TestMakeModelDevi(unittest.TestCase):
             jdata = json.load (fp)
         with open (machine_file, 'r') as fp:
             mdata = json.load (fp)
+        mdata = set_version(mdata)
         _make_fake_models(0, jdata['numb_models'])
         make_model_devi(0, jdata, mdata)
         _check_pb(self, 0)

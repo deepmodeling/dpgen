@@ -16,6 +16,7 @@ from context import param_gaussian_file
 from context import machine_file
 from context import param_diy_file
 from context import make_kspacing_kpoints
+from context import set_version
 from comp_sys import test_atom_names
 from comp_sys import test_atom_types
 from comp_sys import test_coord
@@ -294,6 +295,7 @@ class TestMakeFPPwscf(unittest.TestCase):
             jdata = json.load (fp)
         with open (machine_file, 'r') as fp:
             mdata = json.load (fp)
+        mdata = set_version(mdata)
         md_descript = []
         nsys = 2
         nmd = 3
@@ -320,6 +322,7 @@ class TestMakeFPPwscf(unittest.TestCase):
             jdata = json.load (fp)
         with open (machine_file, 'r') as fp:
             mdata = json.load (fp)
+        mdata = set_version(mdata)
         md_descript = []
         nsys = 2
         nmd = 3
@@ -348,6 +351,7 @@ class TestMakeFPVasp(unittest.TestCase):
             jdata = json.load (fp)
         with open (machine_file, 'r') as fp:
             mdata = json.load (fp)
+        mdata = set_version(mdata)
         md_descript = []
         nsys = 2
         nmd = 3
@@ -377,6 +381,7 @@ class TestMakeFPVasp(unittest.TestCase):
             jdata = json.load (fp)
         with open (machine_file, 'r') as fp:
             mdata = json.load (fp)
+        mdata = set_version(mdata)
         md_descript = []
         nsys = 2
         nmd = 3
@@ -406,6 +411,7 @@ class TestMakeFPVasp(unittest.TestCase):
             jdata = json.load (fp)
         with open (machine_file, 'r') as fp:
             mdata = json.load (fp)
+        mdata = set_version(mdata)
         md_descript = []
         nsys = 1
         nmd = 1
@@ -438,6 +444,7 @@ class TestMakeFPVasp(unittest.TestCase):
         fp.close()
         with open (machine_file, 'r') as fp:
             mdata = json.load (fp)
+        mdata = set_version(mdata)
         fp.close()
         md_descript = []
         nsys = 2
@@ -470,6 +477,7 @@ class TestMakeFPGaussian(unittest.TestCase):
             jdata = json.load (fp)
         with open (machine_file, 'r') as fp:
             mdata = json.load (fp)
+        mdata = set_version(mdata)
         md_descript = []
         nsys = 2
         nmd = 3
