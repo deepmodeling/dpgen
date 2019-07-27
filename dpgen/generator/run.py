@@ -1209,7 +1209,7 @@ def _gaussian_check_fin(ii):
     if os.path.isfile(os.path.join(ii, 'output')) :
         with open(os.path.join(ii, 'output'), 'r') as fp :
             content = fp.read()
-            count = content.count('Normal termination of Gaussian')
+            count = content.count('termination')
             if count == 0 :
                 return False
     else :
