@@ -63,6 +63,20 @@ def _crd2frag(symbols, crds, pbc=False, cell=None):
     return frag_numb, frag_index
 
 
+def _crd2mul(symbols, crds):
+    atomnumber = len(symbols)
+    xyzstring = ''.join((f"{atomnumber}\nDPGEN\n", "\n".join(
+        ['{:2s} {:22.15f} {:22.15f} {:22.15f}'.format(s, x, y, z)
+            for s, (x, y, z) in zip(symbols, crds)])))
+    conv = openbabel.OBConversion()
+    conv.SetInAndOutFormats('xyz', 'gjf')
+    mol = openbabel.OBMol()
+    conv.ReadString(mol, xyzstring)
+    gjfstring = conv.WriteString(mol)
+    mul = int(gjfstring.split('\n')[4].split()[1])
+    return mul  
+
+
 def detect_multiplicity(symbols):
     # only support C, H, O at present
     # oxygen -> 3
@@ -80,7 +94,13 @@ def make_gaussian_input(sys_data, fp_params):
     # get atom symbols list
     symbols = [atom_names[atom_type] for atom_type in atom_types]
     nproc = fp_params['nproc']
-    keywords = fp_params['keywords']
+
+    if 'keywords_high_multiplicity' in fp_params and _crd2mul(symbols, coordinates)>=3:
+        # multiplicity >= 3, meaning at least 2 radicals
+        keywords = fp_params['keywords_high_multiplicity']
+    else:
+        keywords = fp_params['keywords']
+
     if type(keywords) == str:
         keywords = [keywords]
     # assume default charge is zero and default spin multiplicity is 1
