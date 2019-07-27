@@ -1290,7 +1290,10 @@ def run_fp (iter_index,
 
 
 def post_fp_vasp (iter_index,
-                  jdata):
+                  jdata,
+                  rfailed=None):
+    
+    ratio_failed =  rfailed if rfailed else jdata.get('ratio_failed',0.05)
     model_devi_jobs = jdata['model_devi_jobs']
     assert (iter_index < len(model_devi_jobs)) 
 
@@ -1316,54 +1319,42 @@ def post_fp_vasp (iter_index,
     for ss in system_index :
         sys_outcars = glob.glob(os.path.join(work_path, "task.%s.*/OUTCAR"%ss))
         sys_outcars.sort()                
-
         flag=True
         tcount+=len(sys_outcars)
         for oo in sys_outcars :
-            if flag:
+            try:
+                _sys = dpdata.LabeledSystem(oo)
+            except:
+                dlog.info('Try to parse from vasprun.xml')
                 try:
-                    _sys = dpdata.LabeledSystem(oo)
+                   _sys = dpdata.LabeledSystem(oo.replace('OUTCAR','vasprun.xml'))
                 except:
-                    try:
-                       _sys = dpdata.LabeledSystem(oo.replace('OUTCAR','vasprun.xml'))
-                    except:
-                       _sys = dpdata.LabeledSystem()
-                if len(_sys)>1:
-                    dlog.info(oo + "has more than one systems in OUTCAR")
-                    all_sys = _sys.sub_system([0])
-                    flag = False
-                elif len(_sys) == 1:
-                    all_sys = _sys
-                    flag = False
-                else:
-                    icount+=1
+                   _sys = dpdata.LabeledSystem()
+                   dlog.info('Failed fp path: %s'%oo.replace('OUTCAR',''))
+
+            if len(_sys) == 1:
+               if flag:
+                  all_sys = _sys
+                  flag = False
+               else:
+                  all_sys.append(_sys)
             else:
-                try:
-                    _sys = dpdata.LabeledSystem(oo)
-                except:
-                    try:
-                       _sys = dpdata.LabeledSystem(oo.replace('OUTCAR','vasprun.xml'))
-                    except:
-                       _sys = dpdata.LabeledSystem()
-                if len(_sys)>1:
-                    dlog.info(oo + "has more than one systems in OUTCAR")
-                    all_sys.append(_sys.sub_system([0])) 
-                elif len(_sys) == 1:
-                    all_sys.append(_sys)
-                else:
-                    icount+=1
+               icount+=1
 
-
-        sys_data_path = os.path.join(work_path, 'data.%s'%ss)
-        all_sys.to_deepmd_raw(sys_data_path)
-        all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_outcars))
+        try:
+           # limitation -->  all_sys not defined
+           sys_data_path = os.path.join(work_path, 'data.%s'%ss)
+           all_sys.to_deepmd_raw(sys_data_path)
+           all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_outcars))
+        except:
+           pass
 
     dlog.info("failed frame number: %s "%icount)
     dlog.info("total frame number: %s "%tcount)
     reff=icount/tcount
-    dlog.info('ratio of failed frame:  {:.2%}'.format(reff*100))
+    dlog.info('ratio of failed frame:  {:.2%}'.format(reff))
 
-    if reff>0.05:
+    if reff>ratio_failed:
        raise RuntimeError("find too many unsuccessfully terminated jobs")
 
 
@@ -1474,7 +1465,7 @@ def run_iter (param_file, machine_file) :
        jdata=loadfn(param_file)
        mdata=loadfn(machine_file)
     except:
-       with open (json_file, 'r') as fp :
+       with open (param_file, 'r') as fp :
            jdata = json.load (fp)
        with open (machine_file, 'r') as fp:
            mdata = json.load (fp)
