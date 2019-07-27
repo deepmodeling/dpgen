@@ -817,8 +817,8 @@ def _make_fp_vasp_inner (modd_path,
                             fp_rest_accurate.append([tt, cc])
                     else:
                         idx_candidate = np.where(np.logical_and(all_conf[ii][7:] < f_trust_hi, all_conf[ii][7:] > f_trust_lo))[0]
-                        idx_rest_failed = np.where(all_conf[ii][7:] > f_trust_lo)[0]
-                        idx_rest_accurate = np.where(all_conf[ii][7:] < f_trust_hi)[0]
+                        idx_rest_failed = np.where(all_conf[ii][7:] > f_trust_hi)[0]
+                        idx_rest_accurate = np.where(all_conf[ii][7:] < f_trust_lo)[0]
                         for jj in idx_candidate:
                             fp_candidate.append([tt, cc, jj])
                         for jj in idx_rest_accurate:
