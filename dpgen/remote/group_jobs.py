@@ -355,8 +355,10 @@ def group_slurm_jobs(ssh_sess,
                     dlog.debug('try %s times for %s'% (lcount[idx], _job_uuid))
                     rjob.submit(task_chunks[idx], command, resources = resources,restart=True)
                     if lcount[idx]>3:
-                       dlog.info('program has to exit due to too many errors ! ')
-                       raise RuntimeError("find unsuccessfully terminated job in %s" % rjob.get_job_root())
+                       dlog.info('Too many errors for ! %s ' % _job_uuid)
+                       rjob.download(task_chunks[idx], backward_task_files,back_error=True)
+                       rjob.clean()
+                       job_fin[idx] = True
                 elif status == JobStatus.finished :
                     rjob.download(task_chunks[idx], backward_task_files)
                     rjob.clean()
