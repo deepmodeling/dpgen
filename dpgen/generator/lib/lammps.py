@@ -4,6 +4,7 @@ import random, os, sys, dpdata
 import numpy as np
 import subprocess as sp
 import scipy.constants as pc
+from distutils.version import LooseVersion
 
 def _sample_sphere() :
     while True:
@@ -27,7 +28,8 @@ def make_lammps_input(ensemble,
                       tau_p = 0.5,
                       pka_e = None,
                       is_use_clusters = False,
-                      max_seed = 1000000) :
+                      max_seed = 1000000,
+                      deepmd_version = '0.1') :
     ret = "variable        NSTEPS          equal %d\n" % nsteps
     ret+= "variable        THERMO_FREQ     equal %d\n" % trj_freq
     ret+= "variable        DUMP_FREQ       equal %d\n" % trj_freq
@@ -52,8 +54,13 @@ def make_lammps_input(ensemble,
     graph_list = ""
     for ii in graphs :
         graph_list += ii + " "
-    out_each_str = "out_each" if is_use_clusters else ""
-    ret+= "pair_style      deepmd %s out_freq ${THERMO_FREQ} out_file model_devi.out %s\n" % (graph_list, out_each_str)
+    if LooseVersion(deepmd_version) < LooseVersion('1.0'):
+        # 0.x
+        ret+= "pair_style      deepmd %s ${THERMO_FREQ} model_devi.out\n" % graph_list
+    else:
+        # 1.x
+        out_each_str = "out_each" if is_use_clusters else ""
+        ret+= "pair_style      deepmd %s out_freq ${THERMO_FREQ} out_file model_devi.out %s\n" % (graph_list, out_each_str)
     ret+= "pair_coeff      \n"
     ret+= "\n"
     ret+= "thermo_style    custom step temp pe ke etotal press vol lx ly lz xy xz yz\n"

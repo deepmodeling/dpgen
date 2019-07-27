@@ -22,6 +22,7 @@ import time
 import dpdata
 import numpy as np
 import subprocess as sp
+from distutils.version import LooseVersion
 from dpgen import dlog
 from dpgen.generator.lib.utils import make_iter_name
 from dpgen.generator.lib.utils import create_path
@@ -247,8 +248,14 @@ def make_train (iter_index,
                     init_batch_size.append(detect_batch_size(sys_batch_size[sys_idx], jj))
     # establish tasks
     jinput = jdata['default_training_param']
-    jinput['training']['systems'] = init_data_sys    
-    jinput['training']['batch_size'] = init_batch_size
+    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1.0'):
+        # 0.x
+        jinput['systems'] = init_data_sys
+        jinput['batch_size'] = init_batch_size
+    else:
+        # 1.x
+        jinput['training']['systems'] = init_data_sys
+        jinput['training']['batch_size'] = init_batch_size
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         create_path(task_path)
@@ -257,9 +264,14 @@ def make_train (iter_index,
             if not os.path.isdir(ii) :
                 raise RuntimeError ("data sys %s does not exists, cwd is %s" % (ii, os.getcwd()))
         os.chdir(cwd)
-        jinput['model']['descriptor']['seed'] = random.randrange(sys.maxsize) % (2**32)
-        jinput['model']['fitting_net']['seed'] = random.randrange(sys.maxsize) % (2**32)
-        jinput['training']['seed'] = random.randrange(sys.maxsize) % (2**32)
+        if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1.0'):
+            # 0.x
+            jinput['seed'] = random.randrange(sys.maxsize) % (2**32)
+        else:
+            # 1.x
+            jinput['model']['descriptor']['seed'] = random.randrange(sys.maxsize) % (2**32)
+            jinput['model']['fitting_net']['seed'] = random.randrange(sys.maxsize) % (2**32)
+            jinput['training']['seed'] = random.randrange(sys.maxsize) % (2**32)
         with open(os.path.join(task_path, train_param), 'w') as outfile:
             json.dump(jinput, outfile, indent = 4)
 
@@ -299,7 +311,12 @@ def run_train (iter_index,
     # load json param
     numb_models = jdata['numb_models']
     train_param = jdata['train_param']
-    python_path = mdata['python_path']
+    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1.0'):
+        # 0.x
+        deepmd_path = mdata['deepmd_path']
+    else:
+        # 1.x
+        python_path = mdata['python_path']
     train_resources = mdata['train_resources']
     machine_type = mdata['train_machine']['machine_type']
 
@@ -316,9 +333,16 @@ def run_train (iter_index,
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         all_task.append(task_path)
-    command =  '%s -m deepmd train' % python_path
-    command += ' %s && ' % train_param
-    command += '%s -m deepmd freeze' % python_path
+    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1.0'):
+        # 0.x
+        command =  os.path.join(deepmd_path, 'bin/dp_train')
+        command += ' %s && ' % train_param
+        command += os.path.join(deepmd_path, 'bin/dp_frz')
+    else:
+        # 1.x
+        command =  '%s -m deepmd train' % python_path
+        command += ' %s && ' % train_param
+        command += '%s -m deepmd freeze' % python_path
 
     #_tasks = [os.path.basename(ii) for ii in all_task]
 
@@ -441,7 +465,12 @@ def post_train (iter_index,
                 mdata) :
     # load json param
     numb_models = jdata['numb_models']
-    python_path = mdata['python_path']
+    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1.0'):
+        # 0.x
+        deepmd_path = mdata['deepmd_path']
+    else:
+        # 1.x
+        python_path = mdata['python_path']
     # paths
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, train_name)
@@ -454,7 +483,12 @@ def post_train (iter_index,
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         all_task.append(task_path)
-    command = python_path + ' -m deepmd freeze'
+    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1.0'):
+        # 0.x
+        command = os.path.join(deepmd_path, 'bin/dp_frz')
+    else:
+        # 1.x
+        command = python_path + ' -m deepmd freeze'
     command = cmd_append_log(command, 'freeze.log')
     command = 'CUDA_VISIBLE_DEVICES="" ' + command
     # frz models
@@ -605,6 +639,7 @@ def make_model_devi (iter_index,
                                os.path.join(task_path, loc_conf_name) )
                     cwd_ = os.getcwd()
                     os.chdir(task_path)
+                    deepmd_version = mdata['deepmd_version']
                     file_c = make_lammps_input(ensemble,
                                                loc_conf_name,
                                                task_model_list,
@@ -618,7 +653,8 @@ def make_model_devi (iter_index,
                                                pres = pp, 
                                                tau_p = model_devi_taup, 
                                                pka_e = pka_e,
-                                               is_use_clusters = is_use_clusters)
+                                               is_use_clusters = is_use_clusters,
+                                               deepmd_version = deepmd_version)
                     job = {}
                     job["ensemble"] = ensemble
                     job["press"] = pp
@@ -1468,11 +1504,28 @@ def post_fp (iter_index,
     else :
         raise RuntimeError ("unsupported fp style")            
     
+def set_version(mdata):
+    if 'deepmd_version' in mdata:
+        deepmd_version = mdata['deepmd_version']
+    elif 'deepmd_path' in mdata['train_machine']:
+        deepmd_version = '0.1'
+    elif 'python_path' in mdata['train_machine']:
+        deepmd_version = '1'
+    else:
+        # default
+        deepmd_version = '0.1'
+    # set
+    mdata['deepmd_version'] = deepmd_version
+    mdata['train_machine']['deepmd_version'] = deepmd_version
+    mdata['model_devi_machine']['deepmd_version'] = deepmd_version
+    return mdata
+
 def run_iter (json_file, machine_file) :
     with open (json_file, 'r') as fp :
         jdata = json.load (fp)
     with open (machine_file, 'r') as fp:
         mdata = json.load (fp)
+    mdata = set_version(mdata)
 
     max_tasks = 10000
     numb_task = 9
