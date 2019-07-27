@@ -7,7 +7,6 @@ import unittest
 from context import make_train
 from context import param_file
 from context import machine_file
-from context import set_version
 
 def _comp_sys_files (sys0, sys1) :
     pwd = os.getcwd()
@@ -105,7 +104,6 @@ class TestMakeTrain(unittest.TestCase):
             jdata = json.load (fp)
         with open (machine_file, 'r') as fp:
             mdata = json.load (fp)
-        mdata = set_version(mdata)
         fp_task_min = jdata['fp_task_min']
         make_train(0, jdata, mdata)
         # comp init data
@@ -124,7 +122,6 @@ class TestMakeTrain(unittest.TestCase):
             jdata = json.load (fp)
         with open (machine_file, 'r') as fp:
             mdata = json.load (fp)
-        mdata = set_version(mdata)
         make_train(0, jdata, mdata)
         # make fake fp results #data == fp_task_min
         _make_fake_fp(0, 0, jdata['fp_task_min'])
@@ -144,7 +141,6 @@ class TestMakeTrain(unittest.TestCase):
             jdata = json.load (fp)
         with open (machine_file, 'r') as fp:
             mdata = json.load (fp)
-        mdata = set_version(mdata)
         make_train(0, jdata, mdata)
         # make fake fp results #data == fp_task_min - 1
         _make_fake_fp(0, 0, jdata['fp_task_min'] - 1)

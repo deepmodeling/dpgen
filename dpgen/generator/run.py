@@ -249,6 +249,10 @@ def make_train (iter_index,
                     init_batch_size.append(detect_batch_size(sys_batch_size[sys_idx], jj))
     # establish tasks
     jinput = jdata['default_training_param']
+    try:
+        mdata["deepmd_version"]
+    except:
+        mdata = set_version(mdata)
     if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1.0'):
         # 0.x
         jinput['systems'] = init_data_sys
@@ -312,6 +316,10 @@ def run_train (iter_index,
     # load json param
     numb_models = jdata['numb_models']
     train_param = jdata['train_param']
+    try:
+        mdata["deepmd_version"]
+    except:
+        mdata = set_version(mdata)
     if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1.0'):
         # 0.x
         deepmd_path = mdata['deepmd_path']
@@ -466,6 +474,10 @@ def post_train (iter_index,
                 mdata) :
     # load json param
     numb_models = jdata['numb_models']
+    try:
+        mdata["deepmd_version"]
+    except:
+        mdata = set_version(mdata)
     if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1.0'):
         # 0.x
         deepmd_path = mdata['deepmd_path']
@@ -640,6 +652,10 @@ def make_model_devi (iter_index,
                                os.path.join(task_path, loc_conf_name) )
                     cwd_ = os.getcwd()
                     os.chdir(task_path)
+                    try:
+                        mdata["deepmd_version"]
+                    except:
+                        mdata = set_version(mdata)
                     deepmd_version = mdata['deepmd_version']
                     file_c = make_lammps_input(ensemble,
                                                loc_conf_name,
@@ -1511,9 +1527,7 @@ def post_fp (iter_index,
         raise RuntimeError ("unsupported fp style")            
     
 def set_version(mdata):
-    if 'deepmd_version' in mdata:
-        deepmd_version = mdata['deepmd_version']
-    elif 'deepmd_path' in mdata['train_machine']:
+    if 'deepmd_path' in mdata['train_machine']:
         deepmd_version = '0.1'
     elif 'python_path' in mdata['train_machine']:
         deepmd_version = '1'
@@ -1522,8 +1536,6 @@ def set_version(mdata):
         deepmd_version = '0.1'
     # set
     mdata['deepmd_version'] = deepmd_version
-    mdata['train_machine']['deepmd_version'] = deepmd_version
-    mdata['model_devi_machine']['deepmd_version'] = deepmd_version
     return mdata
 
 def run_iter (param_file, machine_file) :
