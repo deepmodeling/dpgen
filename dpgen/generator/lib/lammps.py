@@ -54,7 +54,7 @@ def make_lammps_input(ensemble,
     graph_list = ""
     for ii in graphs :
         graph_list += ii + " "
-    if LooseVersion(deepmd_version) < LooseVersion('1.0'):
+    if LooseVersion(deepmd_version) < LooseVersion('1'):
         # 0.x
         ret+= "pair_style      deepmd %s ${THERMO_FREQ} model_devi.out\n" % graph_list
     else:
