@@ -104,11 +104,11 @@ def inter_deepmd(models) :
 def inter_meam(param) :
     ret = ""
     line = "pair_style      meam \n"
-    line+= "pair_coeff      * * %s " % param['meam_potfile'][0]
-    for ii in param['meam_type'] :
+    line+= "pair_coeff      * * %s " % param['model_name'][0]
+    for ii in param['param_type'] :
         line += ii + ' '
-    line+= "%s " % param['meam_potfile'][1]
-    for ii in param['meam_type'] :
+    line+= "%s " % param['model_name'][1]
+    for ii in param['param_type'] :
         line += ii + ' '
     line+= '\n'
     ret += line
