@@ -2,6 +2,7 @@
 # coding: utf-8
 
 import os, sys, paramiko, json, uuid, tarfile, time, stat, shutil
+from glob import glob
 from enum import Enum
 from dpgen import dlog
 
@@ -174,13 +175,17 @@ class RemoteJob (object):
 
     def download(self, 
                  job_dirs,
-                 remote_down_files) :
+                 remote_down_files,
+                 back_error=False) :
         cwd = os.getcwd()
         os.chdir(self.local_root) 
         file_list = []
         for ii in job_dirs :
             for jj in remote_down_files :
                 file_list.append(os.path.join(ii,jj))
+            if back_error:
+               errors=glob(os.path.join(ii,'error*'))
+               file_list.extend(errors)
         self._get_files(file_list)
         os.chdir(cwd)
         
@@ -210,9 +215,9 @@ class RemoteJob (object):
                 self._rmtree(sftp, rpath, level=(level + 1))
             else:
                 rpath = os.path.join(remotepath, f.filename)
-                if verbose: print('removing %s%s' % ('    ' * level, rpath))
+                if verbose: dlog.info('removing %s%s' % ('    ' * level, rpath))
                 sftp.remove(rpath)
-        if verbose: print('removing %s%s' % ('    ' * level, remotepath))
+        if verbose: dlog.info('removing %s%s' % ('    ' * level, remotepath))
         sftp.rmdir(remotepath)
 
     def _put_files(self,
@@ -272,16 +277,16 @@ class CloudMachineJob (RemoteJob) :
                args = None, 
                resources = None) :
         
-        #print("Current path is",os.getcwd())
+        #dlog.info("Current path is",os.getcwd())
 
         #for ii in job_dirs :
         #    if not os.path.isdir(ii) :
         #        raise RuntimeError("cannot find dir %s" % ii)
-        # print(self.remote_root)
+        # dlog.info(self.remote_root)
         script_name = self._make_script(job_dirs, cmd, args, resources)
         self.stdin, self.stdout, self.stderr = self.ssh.exec_command(('cd %s; bash %s' % (self.remote_root, script_name)))
-        # print(self.stderr.read().decode('utf-8'))
-        # print(self.stdout.read().decode('utf-8'))
+        # dlog.info(self.stderr.read().decode('utf-8'))
+        # dlog.info(self.stdout.read().decode('utf-8'))
 
     def check_status(self) :
         if not self._check_finish(self.stdout) :
@@ -609,7 +614,7 @@ class PBSJob (RemoteJob) :
                                     % (err_str, ret))
         status_line = stdout.read().decode('utf-8').split ('\n')[-2]
         status_word = status_line.split ()[-2]        
-#        print (status_word)
+#        dlog.info (status_word)
         if      status_word in ["Q","H"] :
             return JobStatus.waiting
         elif    status_word in ["R"] :
@@ -706,9 +711,9 @@ class PBSJob (RemoteJob) :
 # rjob.upload(['job0', 'job1'], ['batch_exec.py', 'test'])
 # rjob.submit(['job0', 'job1'], 'touch a; sleep 2')
 # while rjob.check_status() == JobStatus.running :
-#     print('checked')
+#     dlog.info('checked')
 #     time.sleep(2)
-# print(rjob.check_status())
+# dlog.info(rjob.check_status())
 # # can download dirs and normal files
 # rjob.download(['job0', 'job1'], ['a'])
 # # rjob.clean()

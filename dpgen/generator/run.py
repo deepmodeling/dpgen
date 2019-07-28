@@ -24,6 +24,7 @@ import numpy as np
 import subprocess as sp
 from distutils.version import LooseVersion
 from dpgen import dlog
+from dpgen import SHORT_CMD
 from dpgen.generator.lib.utils import make_iter_name
 from dpgen.generator.lib.utils import create_path
 from dpgen.generator.lib.utils import copy_file_list
@@ -631,7 +632,7 @@ def make_model_devi (iter_index,
                     task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
                     conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter) + '.lmp'
                     task_path = os.path.join(work_path, task_name)
-                    # print(task_path)
+                    # dlog.info(task_path)
                     create_path(task_path)
                     create_path(os.path.join(task_path, 'traj'))
                     loc_conf_name = 'conf.lmp'
@@ -675,7 +676,7 @@ def run_model_devi (iter_index,
                     jdata,
                     mdata,
                     ssh_sess) :
-    #rmprint("This module has been run !")
+    #rmdlog.info("This module has been run !")
     lmp_exec = mdata['lmp_command']
     model_devi_group_size = mdata['model_devi_group_size']
     model_devi_resources = mdata['model_devi_resources']
@@ -706,8 +707,8 @@ def run_model_devi (iter_index,
             run_tasks_.append(ii)
 
     run_tasks = [os.path.basename(ii) for ii in run_tasks_]
-    #print("all_task is ", all_task)
-    #print("run_tasks in run_model_deviation",run_tasks_)
+    #dlog.info("all_task is ", all_task)
+    #dlog.info("run_tasks in run_model_deviation",run_tasks_)
     all_models = glob.glob(os.path.join(work_path, 'graph*pb'))
     model_names = [os.path.basename(ii) for ii in all_models]
     forward_files = ['conf.lmp', 'input.lammps', 'traj']
@@ -1340,7 +1341,10 @@ def run_fp (iter_index,
 
 
 def post_fp_vasp (iter_index,
-                  jdata):
+                  jdata,
+                  rfailed=None):
+    
+    ratio_failed =  rfailed if rfailed else jdata.get('ratio_failed',0.05)
     model_devi_jobs = jdata['model_devi_jobs']
     assert (iter_index < len(model_devi_jobs)) 
 
@@ -1360,47 +1364,49 @@ def post_fp_vasp (iter_index,
     system_index.sort()
     
     cwd = os.getcwd()
+
+    tcount=0 
+    icount=0 
     for ss in system_index :
         sys_outcars = glob.glob(os.path.join(work_path, "task.%s.*/OUTCAR"%ss))
         sys_outcars.sort()                
-
         flag=True
+        tcount+=len(sys_outcars)
         for oo in sys_outcars :
-            if flag:
+            try:
+                _sys = dpdata.LabeledSystem(oo)
+            except:
+                dlog.info('Try to parse from vasprun.xml')
                 try:
-                    _sys = dpdata.LabeledSystem(oo)
+                   _sys = dpdata.LabeledSystem(oo.replace('OUTCAR','vasprun.xml'))
                 except:
-                    try:
-                       _sys = dpdata.LabeledSystem(oo.replace('OUTCAR','vasprun.xml'))
-                    except:
-                       _sys = dpdata.LabeledSystem()
-                if len(_sys)>1:
-                    dlog.info(oo + "has more than one systems in OUTCAR")
-                    all_sys = _sys.sub_system([0])
-                    flag = False
-                elif len(_sys) == 1:
-                    all_sys = _sys
-                    flag = False
-                else:
-                    pass
-            else:
-                try:
-                    _sys = dpdata.LabeledSystem(oo)
-                except:
-                    try:
-                       _sys = dpdata.LabeledSystem(oo.replace('OUTCAR','vasprun.xml'))
-                    except:
-                       _sys = dpdata.LabeledSystem()
-                if len(_sys)>1:
-                    dlog.info(oo + "has more than one systems in OUTCAR")
-                    all_sys.append(_sys.sub_system([0])) 
-                elif len(_sys) == 1:
-                    all_sys.append(_sys)
+                   _sys = dpdata.LabeledSystem()
+                   dlog.info('Failed fp path: %s'%oo.replace('OUTCAR',''))
 
-        #print("len(all_sys)",len(all_sys))
-        sys_data_path = os.path.join(work_path, 'data.%s'%ss)
-        all_sys.to_deepmd_raw(sys_data_path)
-        all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_outcars))
+            if len(_sys) == 1:
+               if flag:
+                  all_sys = _sys
+                  flag = False
+               else:
+                  all_sys.append(_sys)
+            else:
+               icount+=1
+
+        try:
+           # limitation -->  all_sys not defined
+           sys_data_path = os.path.join(work_path, 'data.%s'%ss)
+           all_sys.to_deepmd_raw(sys_data_path)
+           all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_outcars))
+        except:
+           pass
+
+    dlog.info("failed frame number: %s "%icount)
+    dlog.info("total frame number: %s "%tcount)
+    reff=icount/tcount
+    dlog.info('ratio of failed frame:  {:.2%}'.format(reff))
+
+    if reff>ratio_failed:
+       raise RuntimeError("find too many unsuccessfully terminated jobs")
 
 
 def post_fp_pwscf (iter_index,
@@ -1520,12 +1526,25 @@ def set_version(mdata):
     mdata['model_devi_machine']['deepmd_version'] = deepmd_version
     return mdata
 
-def run_iter (json_file, machine_file) :
-    with open (json_file, 'r') as fp :
-        jdata = json.load (fp)
-    with open (machine_file, 'r') as fp:
-        mdata = json.load (fp)
-    mdata = set_version(mdata)
+def run_iter (param_file, machine_file) :
+    try:
+       import ruamel
+       from monty.serialization import loadfn,dumpfn
+       warnings.simplefilter('ignore', ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
+       jdata=loadfn(param_file)
+       mdata=loadfn(machine_file)
+    except:
+       with open (param_file, 'r') as fp :
+           jdata = json.load (fp)
+       with open (machine_file, 'r') as fp:
+           mdata = json.load (fp)
+
+    if jdata.get('pretty_print',False):
+       #assert(jdata["pretty_format"] in ['json','yaml'])
+       fparam=SHORT_CMD+'_'+param_file.split('.')[0]+'.'+jdata.get('pretty_format','json')
+       dumpfn(jdata,fparam,indent=4)
+       fmachine=SHORT_CMD+'_'+machine_file.split('.')[0]+'.'+jdata.get('pretty_format','json')
+       dumpfn(mdata,fmachine,indent=4)
 
     max_tasks = 10000
     numb_task = 9

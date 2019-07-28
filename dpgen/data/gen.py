@@ -682,11 +682,18 @@ def run_vasp_md(jdata, mdata, ssh_sess):
 
 
 def gen_init_bulk(args) :
-    with open (args.PARAM, 'r') as fp :
-        jdata = json.load (fp)
+    try:
+       import ruamel
+       from monty.serialization import loadfn,dumpfn
+       warnings.simplefilter('ignore', ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
+       jdata=loadfn(args.PARAM)
+       mdata=loadfn(args.MACHINE)
+    except:
+        with open (args.PARAM, 'r') as fp :
+            jdata = json.load (fp)
+        with open (args.MACHINE, "r") as fp:
+            mdata = json.load(fp)
 
-    with open (args.MACHINE, "r") as fp:
-        mdata = json.load(fp)
     out_dir = out_dir_name(jdata)
 
     fp_machine = mdata['fp_machine']    
@@ -733,16 +740,23 @@ def _main() :
     parser = argparse.ArgumentParser(
         description="gen init confs")
     parser.add_argument('PARAM', type=str, 
-                        help="parameter file, json format")
+                        help="parameter file, json/yaml format")
     parser.add_argument("MACHINE", type=str, 
                         help="The settings of the machine running the generator")
     args = parser.parse_args()
 
-    with open (args.PARAM, 'r') as fp :
-        jdata = json.load (fp)
-    with open (args.MACHINE, "r") as fp:
-        mdata = json.load(fp)
-    
+    try:
+       import ruamel
+       from monty.serialization import loadfn,dumpfn
+       warnings.simplefilter('ignore', ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
+       jdata=loadfn(args.PARAM)
+       mdata=loadfn(args.MACHINE)
+    except:
+        with open (args.PARAM, 'r') as fp :
+            jdata = json.load (fp)
+        with open (args.MACHINE, "r") as fp:
+            mdata = json.load(fp)
+
 
     out_dir = out_dir_name(jdata)
     jdata['out_dir'] = out_dir

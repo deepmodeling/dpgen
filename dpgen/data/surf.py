@@ -402,8 +402,15 @@ def pert_scaled(jdata) :
                 os.chdir(cwd)
                 
 def gen_init_surf(args):
-    with open (args.PARAM, 'r') as fp :
-        jdata = json.load (fp)
+    try:
+       import ruamel
+       from monty.serialization import loadfn,dumpfn
+       warnings.simplefilter('ignore', ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
+       jdata=loadfn(args.PARAM)
+    except:
+       with open (args.PARAM, 'r') as fp :
+           jdata = json.load (fp)
+
     out_dir = out_dir_name(jdata)
     jdata['out_dir'] = out_dir
     print ("# working dir %s" % out_dir)
@@ -441,9 +448,15 @@ def _main() :
                         "2: Collect vasp relaxed confs (if relax is not skiped). Perturb system. "
     )
     args = parser.parse_args()
+    try:
+       import ruamel
+       from monty.serialization import loadfn,dumpfn
+       warnings.simplefilter('ignore', ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
+       jdata=loadfn(args.PARAM)
+    except:
+       with open (args.PARAM, 'r') as fp :
+           jdata = json.load (fp)
 
-    with open (args.PARAM, 'r') as fp :
-        jdata = json.load (fp)
     out_dir = out_dir_name(jdata)
     jdata['out_dir'] = out_dir
     print ("# working dir %s" % out_dir)
