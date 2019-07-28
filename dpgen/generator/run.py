@@ -22,6 +22,7 @@ import time
 import dpdata
 import numpy as np
 import subprocess as sp
+from distutils.version import LooseVersion
 from dpgen import dlog
 from dpgen import SHORT_CMD
 from dpgen.generator.lib.utils import make_iter_name
@@ -215,10 +216,10 @@ def make_train (iter_index,
         if 'init_multi_systems' in jdata and jdata['init_multi_systems']:
             for single_sys in os.listdir(os.path.join(work_path, 'data.init', ii)):
                 init_data_sys.append(os.path.join('..', 'data.init', ii, single_sys))
-                init_batch_size.append(ss)
+                init_batch_size.append(detect_batch_size(ss, os.path.join(work_path, 'data.init', ii, single_sys)))
         else:
             init_data_sys.append(os.path.join('..', 'data.init', ii))
-            init_batch_size.append(ss)
+            init_batch_size.append(detect_batch_size(ss, os.path.join(work_path, 'data.init', ii)))
     if iter_index > 0 :
         for ii in range(iter_index) :
             fp_path = os.path.join(make_iter_name(ii), fp_name)
@@ -234,9 +235,9 @@ def make_train (iter_index,
                     if nframes < fp_task_min :
                         log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
                         continue
-                    for sys_single in os.listdir(os.path.join(jj)):
+                    for sys_single in os.listdir(jj):
                         init_data_sys.append(os.path.join('..', 'data.iters', jj, sys_single))
-                        init_batch_size.append(sys_batch_size[sys_idx])
+                        init_batch_size.append(detect_batch_size(sys_batch_size[sys_idx], os.path.join(jj, sys_single)))
                 else:
                     tmp_box = np.loadtxt(os.path.join(jj, 'box.raw'))
                     tmp_box = np.reshape(tmp_box, [-1,9])
@@ -245,11 +246,21 @@ def make_train (iter_index,
                         log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
                         continue
                     init_data_sys.append(os.path.join('..', 'data.iters', jj))
-                    init_batch_size.append(sys_batch_size[sys_idx])
+                    init_batch_size.append(detect_batch_size(sys_batch_size[sys_idx], jj))
     # establish tasks
     jinput = jdata['default_training_param']
-    jinput['systems'] = init_data_sys    
-    jinput['batch_size'] = init_batch_size
+    try:
+        mdata["deepmd_version"]
+    except:
+        mdata = set_version(mdata)
+    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1.0'):
+        # 0.x
+        jinput['systems'] = init_data_sys
+        jinput['batch_size'] = init_batch_size
+    else:
+        # 1.x
+        jinput['training']['systems'] = init_data_sys
+        jinput['training']['batch_size'] = init_batch_size
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         create_path(task_path)
@@ -258,7 +269,14 @@ def make_train (iter_index,
             if not os.path.isdir(ii) :
                 raise RuntimeError ("data sys %s does not exists, cwd is %s" % (ii, os.getcwd()))
         os.chdir(cwd)
-        jinput['seed'] = random.randrange(sys.maxsize)
+        if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1.0'):
+            # 0.x
+            jinput['seed'] = random.randrange(sys.maxsize) % (2**32)
+        else:
+            # 1.x
+            jinput['model']['descriptor']['seed'] = random.randrange(sys.maxsize) % (2**32)
+            jinput['model']['fitting_net']['seed'] = random.randrange(sys.maxsize) % (2**32)
+            jinput['training']['seed'] = random.randrange(sys.maxsize) % (2**32)
         with open(os.path.join(task_path, train_param), 'w') as outfile:
             json.dump(jinput, outfile, indent = 4)
 
@@ -281,6 +299,16 @@ def make_train (iter_index,
                 os.symlink(os.path.relpath(absjj), basejj)
                 os.chdir(cwd)            
 
+def detect_batch_size(batch_size, system=None):
+    if type(batch_size) == int:
+        return batch_size
+    elif batch_size == "auto":
+        # automaticcaly set batch size, batch_size = 32 // atom_numb (>=1, <=fram_numb)
+        s = dpdata.LabeledSystem(system, fmt='deepmd/npy')
+        return min(max(32//(s["coords"].shape[1]), 1), s["coords"].shape[0])
+    else:
+        raise RuntimeError("Unsupported batch size")
+
 def run_train (iter_index,
                jdata, 
                mdata, 
@@ -288,7 +316,16 @@ def run_train (iter_index,
     # load json param
     numb_models = jdata['numb_models']
     train_param = jdata['train_param']
-    deepmd_path = mdata['deepmd_path']
+    try:
+        mdata["deepmd_version"]
+    except:
+        mdata = set_version(mdata)
+    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1.0'):
+        # 0.x
+        deepmd_path = mdata['deepmd_path']
+    else:
+        # 1.x
+        python_path = mdata['python_path']
     train_resources = mdata['train_resources']
     machine_type = mdata['train_machine']['machine_type']
 
@@ -305,9 +342,16 @@ def run_train (iter_index,
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         all_task.append(task_path)
-    command =  os.path.join(deepmd_path, 'bin/dp_train')
-    command += ' %s && ' % train_param
-    command += os.path.join(deepmd_path, 'bin/dp_frz')
+    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1.0'):
+        # 0.x
+        command =  os.path.join(deepmd_path, 'bin/dp_train')
+        command += ' %s && ' % train_param
+        command += os.path.join(deepmd_path, 'bin/dp_frz')
+    else:
+        # 1.x
+        command =  '%s -m deepmd train' % python_path
+        command += ' %s && ' % train_param
+        command += '%s -m deepmd freeze' % python_path
 
     #_tasks = [os.path.basename(ii) for ii in all_task]
 
@@ -430,7 +474,16 @@ def post_train (iter_index,
                 mdata) :
     # load json param
     numb_models = jdata['numb_models']
-    deepmd_path = mdata['deepmd_path']
+    try:
+        mdata["deepmd_version"]
+    except:
+        mdata = set_version(mdata)
+    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1.0'):
+        # 0.x
+        deepmd_path = mdata['deepmd_path']
+    else:
+        # 1.x
+        python_path = mdata['python_path']
     # paths
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, train_name)
@@ -443,7 +496,12 @@ def post_train (iter_index,
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         all_task.append(task_path)
-    command = os.path.join(deepmd_path, 'bin/dp_frz')
+    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1.0'):
+        # 0.x
+        command = os.path.join(deepmd_path, 'bin/dp_frz')
+    else:
+        # 1.x
+        command = python_path + ' -m deepmd freeze'
     command = cmd_append_log(command, 'freeze.log')
     command = 'CUDA_VISIBLE_DEVICES="" ' + command
     # frz models
@@ -570,12 +628,13 @@ def make_model_devi (iter_index,
                 fmt = jdata['sys_format']
             else:
                 fmt = 'vasp/poscar'
-            system = dpdata.System(os.path.join(conf_path, poscar_name), fmt = fmt)
+            system = dpdata.System(os.path.join(conf_path, poscar_name), fmt = fmt, type_map = jdata['type_map'])
             system.to_lammps_lmp(os.path.join(conf_path, lmp_name))
             conf_counter += 1
         sys_counter += 1
 
     sys_counter = 0
+    is_use_clusters = True if 'use_clusters' in jdata and jdata['use_clusters'] else False
     for ss in conf_systems:
         conf_counter = 0
         task_counter = 0
@@ -593,6 +652,11 @@ def make_model_devi (iter_index,
                                os.path.join(task_path, loc_conf_name) )
                     cwd_ = os.getcwd()
                     os.chdir(task_path)
+                    try:
+                        mdata["deepmd_version"]
+                    except:
+                        mdata = set_version(mdata)
+                    deepmd_version = mdata['deepmd_version']
                     file_c = make_lammps_input(ensemble,
                                                loc_conf_name,
                                                task_model_list,
@@ -605,7 +669,9 @@ def make_model_devi (iter_index,
                                                tau_t = model_devi_taut,
                                                pres = pp, 
                                                tau_p = model_devi_taup, 
-                                               pka_e = pka_e)
+                                               pka_e = pka_e,
+                                               is_use_clusters = is_use_clusters,
+                                               deepmd_version = deepmd_version)
                     job = {}
                     job["ensemble"] = ensemble
                     job["press"] = pp
@@ -804,8 +870,8 @@ def _make_fp_vasp_inner (modd_path,
                             fp_rest_accurate.append([tt, cc])
                     else:
                         idx_candidate = np.where(np.logical_and(all_conf[ii][7:] < f_trust_hi, all_conf[ii][7:] > f_trust_lo))[0]
-                        idx_rest_failed = np.where(all_conf[ii][7:] > f_trust_lo)[0]
-                        idx_rest_accurate = np.where(all_conf[ii][7:] < f_trust_hi)[0]
+                        idx_rest_failed = np.where(all_conf[ii][7:] > f_trust_hi)[0]
+                        idx_rest_accurate = np.where(all_conf[ii][7:] < f_trust_lo)[0]
                         for jj in idx_candidate:
                             fp_candidate.append([tt, cc, jj])
                         for jj in idx_rest_accurate:
@@ -854,6 +920,7 @@ def _make_fp_vasp_inner (modd_path,
                 os.symlink(os.path.relpath(job_name), 'job.json')
             else:
                 os.symlink(os.path.relpath(poscar_name), 'POSCAR')
+                np.save("atom_pref", new_system.data["atom_pref"])
             for pair in fp_link_files :
                 os.symlink(pair[0], pair[1])
             os.chdir(cwd)
@@ -1142,8 +1209,8 @@ def _gaussian_check_fin(ii):
     if os.path.isfile(os.path.join(ii, 'output')) :
         with open(os.path.join(ii, 'output'), 'r') as fp :
             content = fp.read()
-            count = content.count('Normal termination of Gaussian')
-            if count != 1 :
+            count = content.count('termination')
+            if count == 0 :
                 return False
     else :
         return False
@@ -1432,6 +1499,8 @@ def post_fp_gaussian (iter_index,
         sys_output.sort()
         for idx,oo in enumerate(sys_output) :
             sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log') 
+            if 'use_atom_pref' in jdata and jdata['use_atom_pref']:
+                sys.data['atom_pref'] = np.load(os.path.join(os.path.dirname(oo), "atom_pref.npy"))
             if idx == 0:
                 if 'use_clusters' in jdata and jdata['use_clusters']:
                     all_sys = dpdata.MultiSystems(sys)
@@ -1457,6 +1526,18 @@ def post_fp (iter_index,
     else :
         raise RuntimeError ("unsupported fp style")            
     
+def set_version(mdata):
+    if 'deepmd_path' in mdata['train_machine']:
+        deepmd_version = '0.1'
+    elif 'python_path' in mdata['train_machine']:
+        deepmd_version = '1'
+    else:
+        # default
+        deepmd_version = '0.1'
+    # set
+    mdata['deepmd_version'] = deepmd_version
+    return mdata
+
 def run_iter (param_file, machine_file) :
     try:
        import ruamel
@@ -1477,7 +1558,6 @@ def run_iter (param_file, machine_file) :
        fmachine=SHORT_CMD+'_'+machine_file.split('.')[0]+'.'+jdata.get('pretty_format','json')
        dumpfn(mdata,fmachine,indent=4)
 
- 
     max_tasks = 10000
     numb_task = 9
     record = "record.dpgen"
