@@ -9,7 +9,6 @@ from phonopy import Phonopy
 from phonopy.structure.atoms import PhonopyAtoms
 import yaml
 import phonopy
-#from phonolammps import Phonolammps
 
 
 global_equi_name = '00.equi'
@@ -19,7 +18,69 @@ global_task_name = '06.phonon'
 link poscar
 link potcar
 make incar
-'''
+''' 
+
+def get_structure_from_poscar(file_name, number_of_dimensions=3):
+    """
+    Read crystal structure from a VASP POSCAR type file
+    :param file_name: POSCAR filename
+    :param number_of_dimensions: number of dimensions of the crystal structure
+    :return: Atoms (phonopy) type object containing the crystal structure
+    """
+    # Check file exists
+    if not os.path.isfile(file_name):
+        print('Structure file does not exist!')
+        exit()
+
+    # Read from VASP POSCAR file
+    poscar_file = open(file_name, 'r')
+    data_lines = poscar_file.read().split('\n')
+    poscar_file.close()
+
+    multiply = float(data_lines[1])
+    direct_cell = np.array([data_lines[i].split()
+                            for i in range(2, 2+number_of_dimensions)], dtype=float)
+    direct_cell *= multiply
+    scaled_positions = None
+    positions = None
+
+    try:
+        number_of_types = np.array(data_lines[3+number_of_dimensions].split(),dtype=int)
+
+        coordinates_type = data_lines[4+number_of_dimensions][0]
+        if coordinates_type == 'D' or coordinates_type == 'd' :
+
+            scaled_positions = np.array([data_lines[8+k].split()[0:3]
+                                         for k in range(np.sum(number_of_types))],dtype=float)
+        else:
+            positions = np.array([data_lines[8+k].split()[0:3]
+                                  for k in range(np.sum(number_of_types))],dtype=float)
+
+        atomic_types = []
+        for i,j in enumerate(data_lines[5].split()):
+            atomic_types.append([j]*number_of_types[i])
+        atomic_types = [item for sublist in atomic_types for item in sublist]
+
+    # Old style POSCAR format
+    except ValueError:
+        number_of_types = np.array(data_lines[5].split(), dtype=int)
+        coordinates_type = data_lines[6][0]
+        if coordinates_type == 'D' or coordinates_type == 'd':
+            scaled_positions = np.array([data_lines[7+k].split()[0:3]
+                                         for k in range(np.sum(number_of_types))], dtype=float)
+        else:
+            positions = np.array([data_lines[7+k].split()[0:3]
+                                  for k in range(np.sum(number_of_types))], dtype=float)
+
+        atomic_types = []
+        for i,j in enumerate(data_lines[0].split()):
+            atomic_types.append([j]*number_of_types[i])
+        atomic_types = [item for sublist in atomic_types for item in sublist]
+
+    return PhonopyAtoms(symbols=atomic_types,
+                        scaled_positions=scaled_positions,
+                        cell=direct_cell)
+
 def make_vasp(jdata, conf_dir) :
     fp_params = jdata['vasp_params']
     ecut = fp_params['ecut']
@@ -50,7 +111,7 @@ def make_vasp(jdata, conf_dir) :
     os.chdir(cwd)
     task_poscar = os.path.join(task_path, 'POSCAR-unitcell')   
     # gen incar
-    fc = vasp.make_vasp_phonon_incar(ecut, ediff, 1, 1, kspacing = None, kgamma = None)
+    fc = vasp.make_vasp_phonon_incar(ecut, ediff, npar, kpar, kspacing = None, kgamma = None)
     with open(os.path.join(task_path, 'INCAR'), 'w') as fp :
         fp.write(fc)
     # gen potcar
@@ -82,41 +143,24 @@ def make_vasp(jdata, conf_dir) :
         fp.write('BAND = %s\n'%band_path)
         fp.write('FORCE_CONSTANTS=READ')
     # gen POSCAR
-    '''
-    phonon = phonopy.load(supercell_matrix=supercell_matrix,
-                      primitive_matrix='auto',
-                      unitcell_filename='POSCAR-unitcell')
-    phonon.save(filename='phonopy_disp.yaml')       
-    with open('phonopy_disp.yaml', 'r') as f:
-        temp = yaml.load(f.read())
-    with open('POSCAR', 'w') as fp:
-        for ii in ele_list:
-            fp.write(ii)
-            fp.write(' ')
-        fp.write('\n')
-        data=open('POSCAR-unitcell', 'r')
-        next(data)
-        fp.write(data.readline())
-        for ii in temp['supercell']['lattice']:
-            fp.write(str(ii).replace(',', '').replace('[', '').replace(']','\n'))
-        for ii in ele_list:
-            fp.write(str(str(temp['supercell']['points']).count(ii)))
-            fp.write(' ')
-        fp.write('\n')
-        fp.write('Direct\n')
-        for ii in temp['supercell']['points']:
-            fp.write(str(ii['coordinates']).replace(',', '').replace('[', '').replace(']', '\n'))
-    '''
     os.system('phonopy -d --dim="%d %d %d" -c POSCAR-unitcell'%(supercell_matrix[0],supercell_matrix[1],supercell_matrix[2]))
-    os.system('cp SPOSCAR POSCAR')
+    os.symlink('SPOSCAR', 'POSCAR')
 
-def make_deepmd_lammps(jdata, conf_dir) :
-    deepmd_model_dir = jdata['deepmd_model_dir']
-    deepmd_type_map = jdata['deepmd_type_map']
-    ntypes = len(deepmd_type_map)    
-    deepmd_model_dir = os.path.abspath(deepmd_model_dir)
-    deepmd_models = glob.glob(os.path.join(deepmd_model_dir, '*pb'))
-    deepmd_models_name = [os.path.basename(ii) for ii in deepmd_models]
+def make_lammps(jdata, conf_dir,task_type) :
+    fp_params = jdata['lammps_params']
+    model_dir = fp_params['model_dir']
+    type_map = fp_params['type_map'] 
+    model_dir = os.path.abspath(model_dir)
+    model_name =fp_params['model_name']
+    if not model_name :
+        models = glob.glob(os.path.join(model_dir, '*pb'))
+        model_name = [os.path.basename(ii) for ii in models]
+    else:
+        models = [os.path.join(model_dir,ii) for ii in model_name]
+
+    model_param = {'model_name' :      fp_params['model_name'],
+                  'param_type':          fp_params['model_param_type']}
+
     supercell_matrix=jdata['supercell_matrix']
     band_path=jdata['band']
 
@@ -124,9 +168,9 @@ def make_deepmd_lammps(jdata, conf_dir) :
     conf_poscar = os.path.join(conf_path, 'POSCAR')
     # get equi poscar
     equi_path = re.sub('confs', global_equi_name, conf_path)
-    equi_path = os.path.join(equi_path, 'deepmd')
+    equi_path = os.path.join(equi_path, task_type)
     task_path = re.sub('confs', global_task_name, conf_path)
-    task_path = os.path.join(task_path, 'deepmd')
+    task_path = os.path.join(task_path, task_type)
     os.makedirs(task_path, exist_ok=True)
     
     task_poscar = os.path.join(task_path, 'POSCAR')
@@ -145,24 +189,30 @@ def make_deepmd_lammps(jdata, conf_dir) :
     conf_file = os.path.join(task_path, 'conf.lmp')
     lammps.cvt_lammps_conf(task_poscar, os.path.relpath(conf_file))
     ptypes = vasp.get_poscar_types(task_poscar)
-    lammps.apply_type_map(conf_file, deepmd_type_map, ptypes) 
+    lammps.apply_type_map(conf_file, type_map, ptypes) 
     # make lammps.in
     ntypes=len(ele_list)
-    unitcell=PhonopyAtoms(symbols=ele_list,cell=(np.eye(3)),scaled_positions=np.zeros((ntypes,3)))
-    fc = lammps.make_lammps_phonon('conf.lmp', 
+    unitcell=get_structure_from_poscar(task_poscar)
+    if task_type=='deepmd':
+        fc = lammps.make_lammps_phonon('conf.lmp', 
                                     unitcell.masses, 
                                     lammps.inter_deepmd,
-                                    deepmd_models_name)        
+                                    model_name)
+    if task_type=='meam':
+        fc = lammps.make_lammps_phonon('conf.lmp', 
+                                    unitcell.masses, 
+                                    lammps.inter_meam,
+                                    model_param)      
     f_lammps_in = os.path.join(task_path, 'lammps.in')
     with open(f_lammps_in, 'w') as fp :
         fp.write(fc)
     cwd = os.getcwd()
     # link models
     os.chdir(task_path)
-    for ii in deepmd_models_name :
+    for ii in model_name :
         if os.path.exists(ii) :
             os.remove(ii)
-    for (ii,jj) in zip(deepmd_models, deepmd_models_name) :
+    for (ii,jj) in zip(models, model_name) :
         os.symlink(os.path.relpath(ii), jj)
     # gen band.conf
     os.chdir(task_path)
@@ -174,34 +224,8 @@ def make_deepmd_lammps(jdata, conf_dir) :
         fp.write('\n')
         fp.write('DIM = %d %d %d\n'%(supercell_matrix[0],supercell_matrix[1],supercell_matrix[2]))
         fp.write('BAND = %s\n'%band_path)
-        fp.write('FORCE_CONSTANTS=READ')
-    # gen task
-    ''' 
-    phlammps = Phonolammps('lammps.in',supercell_matrix=supercell_matrix)
-    unitcell = phlammps.get_unitcell()
-    phonon = Phonopy(unitcell,supercell_matrix)
-    phonon.save(filename='phonopy_disp.yaml')       
-    with open('phonopy_disp.yaml', 'r') as f:
-        temp = yaml.load(f.read())
-    with open('POSCAR-unitcell', 'w') as fp:
-        for ii in ele_list:
-            fp.write(ii)
-            fp.write(' ')
-        fp.write('\n')
-        data=open('POSCAR', 'r')
-        next(data)
-        fp.write(data.readline())
-        for ii in temp['unit_cell']['lattice']:
-            fp.write(str(ii).replace(',', '').replace('[', '').replace(']','\n'))
-        for ii in ele_list:
-            fp.write(str(str(temp['unit_cell']['points']).count(ii)))
-            fp.write(' ')
-        fp.write('\n')
-        fp.write('Direct\n')
-        for ii in temp['unit_cell']['points']:
-            fp.write(str(ii['coordinates']).replace(',', '').replace('[', '').replace(']', '\n'))
-    '''
-    os.system('phonolammps lammps.in --dim %d %d %d -c POSCAR-unitcell'%(supercell_matrix[0],supercell_matrix[1],supercell_matrix[2]))
+        fp.write('FORCE_CONSTANTS=READ\n')
+    os.system('phonolammps lammps.in --dim %d %d %d -c POSCAR'%(supercell_matrix[0],supercell_matrix[1],supercell_matrix[2]))
 
 
 def _main() :
@@ -221,10 +245,8 @@ def _main() :
 #    print('generate %s task with conf %s' % (args.TASK, args.CONF))
     if args.TASK == 'vasp':
         make_vasp(jdata, args.CONF)               
-    elif args.TASK == 'deepmd' :
-        make_deepmd_lammps(jdata, args.CONF)
-    elif args.TASK == 'meam' :
-        make_meam_lammps(jdata, args.CONF)
+    elif args.TASK == 'deepmd' or args.TASK =='meam' :
+        make_lammps(jdata, args.CONF,args.TASK)
     else :
         raise RuntimeError("unknow task ", args.TASK)
     

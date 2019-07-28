@@ -239,8 +239,8 @@ def _compute_isif (relax_ions,
     return isif
 
 def make_vasp_static_incar (ecut, ediff,
-                            npar, kpar, 
-                            kspacing = 0.5, kgamma = True, 
+                            npar, kpar,
+                            kspacing = 0.5, kgamma = True,
                             ismear = 1, sigma = 0.2) :
     isif = 2
     ret = ''
@@ -249,6 +249,7 @@ def make_vasp_static_incar (ecut, ediff,
     ret += '# ISYM=0\n'
     ret += 'ALGO=fast\n'
     ret += 'EDIFF=%e\n' % ediff
+    ret += 'EDIFFG=-0.01\n'
     ret += 'LREAL=F\n'
     ret += 'NPAR=%d\n' % npar
     ret += 'KPAR=%d\n' % kpar
@@ -258,7 +259,7 @@ def make_vasp_static_incar (ecut, ediff,
     ret += "\n"
     ret += 'ISTART=0\n'
     ret += 'ICHARG=2\n'
-    ret += 'NELMIN=4\n'
+    ret += 'NELMIN=6\n'
     ret += 'ISIF=%d\n' % isif
     ret += 'IBRION=-1\n'
     ret += "\n"
@@ -277,11 +278,11 @@ def make_vasp_static_incar (ecut, ediff,
             ret += 'KGAMMA=F\n'
     return ret
 
-def make_vasp_relax_incar (ecut, ediff, 
-                           relax_ion, relax_shape, relax_volume, 
-                           npar, kpar, 
-                           kspacing = 0.5, kgamma = True, 
-                           ismear = 1, sigma = 0.2) :
+def make_vasp_relax_incar (ecut, ediff,
+                           relax_ion, relax_shape, relax_volume,
+                           npar, kpar,
+                           kspacing = 0.5, kgamma = True,
+                           ismear = 1, sigma = 0.22) :
     isif = _compute_isif(relax_ion, relax_shape, relax_volume)
     ret = ''
     ret += 'PREC=A\n'
@@ -289,6 +290,7 @@ def make_vasp_relax_incar (ecut, ediff,
     ret += '# ISYM=0\n'
     ret += 'ALGO=fast\n'
     ret += 'EDIFF=%e\n' % ediff
+    ret += 'EDIFFG=-0.01\n'
     ret += 'LREAL=F\n'
     ret += 'NPAR=%d\n' % npar
     ret += 'KPAR=%d\n' % kpar
@@ -298,11 +300,12 @@ def make_vasp_relax_incar (ecut, ediff,
     ret += "\n"
     ret += 'ISTART=0\n'
     ret += 'ICHARG=2\n'
-    ret += 'NELMIN=4\n'
+    ret += 'NELM=100\n'
+    ret += 'NELMIN=6\n'
     ret += 'ISIF=%d\n' % isif
     ret += 'IBRION=2\n'
     ret += "\n"
-    ret += 'NSW=1000\n'
+    ret += 'NSW=50\n'
     ret += "\n"
     ret += 'LWAVE=F\n'
     ret += 'LCHARG=F\n'
@@ -328,8 +331,9 @@ def make_vasp_phonon_incar (ecut, ediff,
     ret += '# ISYM=0\n'
     ret += 'ALGO=fast\n'
     ret += 'EDIFF=%e\n' % ediff
+    ret += 'EDIFFG=-0.01\n'
     ret += 'LREAL=F\n'
-    ret += 'NPAR=%d\n' % npar
+    #ret += 'NPAR=%d\n' % npar
     ret += 'KPAR=%d\n' % kpar
     ret += "\n"
     ret += 'ISMEAR=%d\n' % ismear

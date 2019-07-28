@@ -1,17 +1,17 @@
-#!/usr/bin/env python3
-
-import os, re, argparse, filecmp, json, glob
+import os, re, argparse, filecmp, json, glob, math
 import subprocess as sp
 import numpy as np
 import dpgen.auto_test.lib.vasp as vasp
 import dpgen.auto_test.lib.lammps as lammps
 from pymatgen.core.structure import Structure
-from pymatgen.analysis.elasticity.strain import Deformation, DeformedStructureSet, Strain
+
 
 global_equi_name = '00.equi'
-global_task_name = '02.elastic'
+global_task_name = '08.dislocation'
 
-def make_vasp(jdata, conf_dir, norm_def = 2e-3, shear_def = 5e-3) :
+task_dict={0:'edge',1:'screw'}
+
+def make_vasp(jdata, conf_dir, supercell = [1,1,1]) :
     fp_params = jdata['vasp_params']
     ecut = fp_params['ecut']
     ediff = fp_params['ediff']
@@ -19,8 +19,7 @@ def make_vasp(jdata, conf_dir, norm_def = 2e-3, shear_def = 5e-3) :
     kpar = fp_params['kpar']
     kspacing = fp_params['kspacing']
     kgamma = fp_params['kgamma']
-    norm_def = jdata['norm_deform']
-    shear_def = jdata['shear_deform']
+    
     conf_path = os.path.abspath(conf_dir)
     conf_poscar = os.path.join(conf_path, 'POSCAR')
     # get equi poscar
@@ -37,22 +36,33 @@ def make_vasp(jdata, conf_dir, norm_def = 2e-3, shear_def = 5e-3) :
     os.symlink(os.path.relpath(equi_contcar), 'POSCAR')
     os.chdir(cwd)
     task_poscar = os.path.join(task_path, 'POSCAR')
-    # stress
-    equi_outcar = os.path.join(equi_path, 'OUTCAR')
-    stress = vasp.get_stress(equi_outcar)
-    np.savetxt(os.path.join(task_path, 'equi.stress.out'), stress)
-    # gen strcture
-    ss = Structure.from_file(task_poscar)
-    # gen defomations
-    norm_strains = [-norm_def, -0.5*norm_def, 0.5*norm_def, norm_def]
-    shear_strains = [-shear_def, -0.5*shear_def, 0.5*shear_def, shear_def]
-    dfm_ss = DeformedStructureSet(ss, 
-                                  symmetry = False, 
-                                  norm_strains = norm_strains,
-                                  shear_strains = shear_strains)
-    n_dfm = len(dfm_ss)
+    # gen structure from equi poscar
+    edge = Structure.from_file(task_poscar)
+    edge.make_supercell([supercell[0],supercell[1],1])
+    center=int(supercell[0]*int(supercell[1]/2)+supercell[0]/2)
+    s=[center+supercell[0]*ii for ii in range(int(supercell[1]/2+1))]    
+    # gen edge dislocation
+    edge.remove_sites(s)
+    edge.make_supercell([1,1,supercell[2]])
+    # gen screw dislocation
+    screw = Structure.from_file(task_poscar)
+    screw.make_supercell([supercell[0], supercell[1], supercell[2]],to_unit_cell=False)
+    c=[]
+    for jj in range(math.ceil(supercell[0]/2)):
+        for ii in range(supercell[2]):
+            c.append(ii+jj*supercell[2])
+    v0 = np.asarray(screw._sites[0].coords, float) - np.asarray(screw._sites[1].coords, float)
+    for kk in range(math.ceil(supercell[1]/2)):
+        dc=[ii+kk*supercell[0]*supercell[2] for ii in c]
+        v=(math.ceil(supercell[1]/2)-kk)/math.ceil(supercell[1]/2)*v0
+        screw.translate_sites(dc, vector=v, frac_coords=False, to_unit_cell=False)
+    dss = []
+    dss.append(edge)
+    dss.append(screw)
+
+
     # gen incar
-    fc = vasp.make_vasp_relax_incar(ecut, ediff, True, False, False, npar=npar,kpar=kpar, kspacing = None, kgamma = None)
+    fc = vasp.make_vasp_relax_incar(ecut, ediff, True, True, True, npar, kpar, kspacing = kspacing, kgamma = kgamma)
     with open(os.path.join(task_path, 'INCAR'), 'w') as fp :
         fp.write(fc)
     # gen potcar
@@ -68,38 +78,36 @@ def make_vasp(jdata, conf_dir, norm_def = 2e-3, shear_def = 5e-3) :
         for fname in potcar_list:
             with open(fname) as infile:
                 outfile.write(infile.read())
-    # gen kpoints
-    fc = vasp.make_kspacing_kpoints(task_poscar, kspacing, kgamma)
-    with open(os.path.join(task_path,'KPOINTS'), 'w') as fp:
-        fp.write(fc)
     # gen tasks    
+    copy_str = "%sx%sx%s" % (supercell[0], supercell[1], supercell[2])
     cwd = os.getcwd()
-    for ii in range(n_dfm) :
-        # make dir
-        dfm_path = os.path.join(task_path, 'dfm-%03d' % ii)
-        os.makedirs(dfm_path, exist_ok=True)
-        os.chdir(dfm_path)
-        for jj in ['POSCAR', 'POTCAR', 'INCAR', 'KPOINTS'] :
+    for ii in range(len(dss)) :
+        struct_path = os.path.join(task_path, 'struct-%s-%s' % (copy_str,task_dict[ii]))
+        print('# generate %s' % (struct_path))
+        os.makedirs(struct_path, exist_ok=True)
+        os.chdir(struct_path)
+        for jj in ['POSCAR', 'POTCAR', 'INCAR'] :
             if os.path.isfile(jj):
                 os.remove(jj)
         # make conf
-        dfm_ss.deformed_structures[ii].to('POSCAR', 'POSCAR')
-        # record strain
-        strain = Strain.from_deformation(dfm_ss.deformations[ii])
-        np.savetxt('strain.out', strain)
+        dss[ii].to('POSCAR', 'POSCAR')
         # link incar, potcar, kpoints
         os.symlink(os.path.relpath(os.path.join(task_path, 'INCAR')), 'INCAR')
         os.symlink(os.path.relpath(os.path.join(task_path, 'POTCAR')), 'POTCAR')
-        os.symlink(os.path.relpath(os.path.join(task_path, 'KPOINTS')), 'KPOINTS')
-    cwd = os.getcwd()
+        # save supercell
+        np.savetxt('supercell.out', supercell, fmt='%d')
+    os.chdir(cwd)
 
-def make_lammps(jdata, conf_dir,task_type) :
+
+def make_lammps(jdata, conf_dir, supercell,task_type) :
+
+    kspacing = jdata['vasp_params']['kspacing']
     fp_params = jdata['lammps_params']
     model_dir = fp_params['model_dir']
     type_map = fp_params['type_map'] 
     model_dir = os.path.abspath(model_dir)
     model_name =fp_params['model_name']
-    if not model_name and task_type =='deepmd':
+    if not model_name :
         models = glob.glob(os.path.join(model_dir, '*pb'))
         model_name = [os.path.basename(ii) for ii in models]
     else:
@@ -107,62 +115,75 @@ def make_lammps(jdata, conf_dir,task_type) :
 
     model_param = {'model_name' :      fp_params['model_name'],
                   'param_type':          fp_params['model_param_type']}
-    
-    ntypes = len(type_map)
 
-    norm_def = jdata['norm_deform']
-    shear_def = jdata['shear_deform']
+    ntypes = len(type_map)
 
     conf_path = os.path.abspath(conf_dir)
     conf_poscar = os.path.join(conf_path, 'POSCAR')
     # get equi poscar
     equi_path = re.sub('confs', global_equi_name, conf_path)
-    equi_path = os.path.join(equi_path, task_type)
-    equi_dump = os.path.join(equi_path, 'dump.relax')
+    equi_path = os.path.join(equi_path, 'vasp-k%.2f' % kspacing)
+    equi_contcar = os.path.join(equi_path, 'CONTCAR')
+    # equi_path = re.sub('confs', global_equi_name, conf_path)
+    # equi_path = os.path.join(equi_path, 'lmp')
+    # equi_dump = os.path.join(equi_path, 'dump.relax')
     task_path = re.sub('confs', global_task_name, conf_path)
     task_path = os.path.join(task_path, task_type)
     os.makedirs(task_path, exist_ok=True)
+    # gen task poscar
     task_poscar = os.path.join(task_path, 'POSCAR')
-    lammps.poscar_from_last_dump(equi_dump, task_poscar, type_map)
-    # get equi stress
-    equi_log = os.path.join(equi_path, 'log.lammps')
-    stress = lammps.get_stress(equi_log)
-    np.savetxt(os.path.join(task_path, 'equi.stress.out'), stress)
-    # gen strcture
-    # ss = Structure.from_file(conf_poscar)
-    # print(ss)
-    # ss = ss.from_file(task_poscar)
-    # print(ss)
-    ss = Structure.from_file(task_poscar)
-    # gen defomations
-    norm_strains = [-norm_def, -0.5*norm_def, 0.5*norm_def, norm_def]
-    shear_strains = [-shear_def, -0.5*shear_def, 0.5*shear_def, shear_def]
-    print('gen with norm '+str(norm_strains))
-    print('gen with shear '+str(shear_strains))
-    dfm_ss = DeformedStructureSet(ss, 
-                                  symmetry = False, 
-                                  norm_strains = norm_strains,
-                                  shear_strains = shear_strains)
-    n_dfm = len(dfm_ss)
+    # lammps.poscar_from_last_dump(equi_dump, task_poscar, deepmd_type_map)
+    cwd = os.getcwd()
+    os.chdir(task_path)
+    if os.path.isfile('POSCAR') :
+        os.remove('POSCAR')
+    os.symlink(os.path.relpath(equi_contcar), 'POSCAR')
+    os.chdir(cwd)
+    # gen structure from equi poscar
+    edge = Structure.from_file(task_poscar)
+    edge.make_supercell([supercell[0],supercell[1],1])
+    center=int(supercell[0]*int(supercell[1]/2)+supercell[0]/2)
+    s=[center+supercell[0]*ii for ii in range(int(supercell[1]/2+1))]
+    # gen edge dislocation
+    edge.remove_sites(s)
+    edge.make_supercell([1,1,supercell[2]])
+    # gen screw dislocation
+    screw = Structure.from_file(task_poscar)
+    screw.make_supercell([supercell[0], supercell[1], supercell[2]],to_unit_cell=False)
+    c=[]
+    for jj in range(math.ceil(supercell[0]/2)):
+        for ii in range(supercell[2]):
+            c.append(ii+jj*supercell[2])
+    v0 = np.asarray(screw._sites[0].coords, float) - np.asarray(screw._sites[1].coords, float)
+    for kk in range(math.ceil(supercell[1]/2)):
+        dc=[ii+kk*supercell[0]*supercell[2] for ii in c]
+        v=(math.ceil(supercell[1]/2)-kk)/math.ceil(supercell[1]/2)*v0
+        screw.translate_sites(dc, vector=v, frac_coords=False, to_unit_cell=False)
+    dss = []
+    dss.append(edge)
+    dss.append(screw)
+
     # gen tasks    
     cwd = os.getcwd()
-    # make lammps.in
+    # make lammps.in, relax at 0 bar (scale = 1)
     if task_type=='deepmd':
         fc = lammps.make_lammps_elastic('conf.lmp', 
                                     ntypes, 
                                     lammps.inter_deepmd,
-                                    model_name)  
-    elif task_type=='meam':
+                                    model_name)
+    elif task_type =='meam':
         fc = lammps.make_lammps_elastic('conf.lmp', 
                                     ntypes, 
                                     lammps.inter_meam,
-                                    model_param)
+                                    model_param) 
+
     f_lammps_in = os.path.join(task_path, 'lammps.in')
     with open(f_lammps_in, 'w') as fp :
         fp.write(fc)
+    # gen tasks    
+    copy_str = "%sx%sx%s" % (supercell[0], supercell[1], supercell[2])
     cwd = os.getcwd()
-    
-    if task_type =='deepmd':    
+    if task_type=='deepmd':
         os.chdir(task_path)
         for ii in model_name :
             if os.path.exists(ii) :
@@ -170,56 +191,56 @@ def make_lammps(jdata, conf_dir,task_type) :
         for (ii,jj) in zip(models, model_name) :
             os.symlink(os.path.relpath(ii), jj)
         share_models = glob.glob(os.path.join(task_path, '*pb'))
-    else:
-        share_models = models
+    else :
+        share_models=models
 
-    for ii in range(n_dfm) :
-        # make dir
-        dfm_path = os.path.join(task_path, 'dfm-%03d' % ii)
-        os.makedirs(dfm_path, exist_ok=True)
-        os.chdir(dfm_path)
+    for ii in range(len(dss)) :
+        struct_path = os.path.join(task_path, 'struct-%s-%s' % (copy_str,task_dict[ii]))
+        print('# generate %s' % (struct_path))
+        os.makedirs(struct_path, exist_ok=True)
+        os.chdir(struct_path)
         for jj in ['conf.lmp', 'lammps.in'] + model_name :
             if os.path.isfile(jj):
                 os.remove(jj)
         # make conf
-        dfm_ss.deformed_structures[ii].to('POSCAR', 'POSCAR')
+        dss[ii].to('POSCAR', 'POSCAR')
         lammps.cvt_lammps_conf('POSCAR', 'conf.lmp')
         ptypes = vasp.get_poscar_types('POSCAR')
         lammps.apply_type_map('conf.lmp', type_map, ptypes)    
-        # record strain
-        strain = Strain.from_deformation(dfm_ss.deformations[ii])
-        np.savetxt('strain.out', strain)
         # link lammps.in
         os.symlink(os.path.relpath(f_lammps_in), 'lammps.in')
         # link models
         for (ii,jj) in zip(share_models, model_name) :
             os.symlink(os.path.relpath(ii), jj)
-    cwd = os.getcwd()
+        # save supercell
+        np.savetxt('supercell.out', supercell, fmt='%d')
+    os.chdir(cwd)
 
-    
 def _main() :
     parser = argparse.ArgumentParser(
-        description="gen 02.elastic")
+        description="gen 08.dislocation")
     parser.add_argument('TASK', type=str,
                         help='the task of generation, vasp or lammps')
     parser.add_argument('PARAM', type=str,
                         help='json parameter file')
     parser.add_argument('CONF', type=str,
                         help='the path to conf')
+    parser.add_argument('COPY', type=int, nargs = 3,
+                        help='the path to conf')
     args = parser.parse_args()
 
     with open (args.PARAM, 'r') as fp :
         jdata = json.load (fp)
 
-    print('generate %s task with conf %s' % (args.TASK, args.CONF))
+#    print('# generate %s task with conf %s' % (args.TASK, args.CONF))
     if args.TASK == 'vasp':
-        make_vasp(jdata, args.CONF)               
-    elif args.TASK == 'deepmd' or args.TASK=='meam':
-        make_lammps(jdata, args.CONF,args.TASK)
+        make_vasp(jdata, args.CONF, args.COPY)
+    elif args.TASK == 'deepmd' or args.TASK == 'meam' :
+        make_lammps(jdata, args.CONF, args.COPY, args.TASK)
+    #elif args.TASK == 'meam' :
+    #    make_meam_lammps(jdata, args.CONF, args.COPY)
     else :
         raise RuntimeError("unknow task ", args.TASK)
     
 if __name__ == '__main__' :
     _main()
-
-    
