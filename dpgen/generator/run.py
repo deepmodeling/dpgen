@@ -1527,9 +1527,9 @@ def post_fp (iter_index,
         raise RuntimeError ("unsupported fp style")            
     
 def set_version(mdata):
-    if 'deepmd_path' in mdata['train_machine']:
+    if 'deepmd_path' in mdata:
         deepmd_version = '0.1'
-    elif 'python_path' in mdata['train_machine']:
+    elif 'python_path' in mdata:
         deepmd_version = '1'
     else:
         # default
