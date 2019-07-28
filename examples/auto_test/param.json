@@ -1,9 +1,9 @@
 {
     "_comment": "models",
     "potcar_map" : {
-	"Cu" : "/somewhere/example/POTCAR" 
+	"Al" : "/somewhere/example/POTCAR" 
     },
-    "conf_dir":"confs/Cu/mp-30",
+    "conf_dir":"confs/Al/std-fcc",
     "key_id":"key id of Material project",
     "task_type":"deepmd",
     "task":"all",
@@ -18,14 +18,14 @@
 	"_comment":	" that's all "
     },
     "lammps_params":    {
-        "model_dir":"somewhere/example/Cu_pb",
-        "type_map":["Cu"],
+        "model_dir":"somewhere/example/Al_model",
+        "type_map":["Al"],
         "model_name":false,
         "model_param_type":false
     },
-    "deepmd_model_dir":	"somewhere/example/Cu_pb",
+    "deepmd_model_dir":	"somewhere/example/Al_model",
     "deepmd_type_map":	[
-	"Cu"
+	"Al"
     ],
     "meam_potfile_dir":	"meam",
     "meam_type_map":	[
@@ -43,8 +43,8 @@
     "store_stable":true,
 
     "_comment": "01.eos",
-    "vol_start":	6,
-    "vol_end":		16,
+    "vol_start":	12,
+    "vol_end":		22,
     "vol_step":		0.5,
     "fix_shape":true,
 
@@ -53,10 +53,10 @@
     "shear_deform":	5e-2,
     
     "_comment":"03.vacancy",
-    "supercell":[2,2,2],
+    "supercell":[3,3,3],
 
     "_comment":"04.interstitial",
-    "insert_ele":["Cu"],
+    "insert_ele":["Al"],
     "reprod-opt":false,
 
     "_comment": "05.surface",
