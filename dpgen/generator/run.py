@@ -253,7 +253,7 @@ def make_train (iter_index,
         mdata["deepmd_version"]
     except:
         mdata = set_version(mdata)
-    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1.0'):
+    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
         # 0.x
         jinput['systems'] = init_data_sys
         jinput['batch_size'] = init_batch_size
@@ -269,7 +269,7 @@ def make_train (iter_index,
             if not os.path.isdir(ii) :
                 raise RuntimeError ("data sys %s does not exists, cwd is %s" % (ii, os.getcwd()))
         os.chdir(cwd)
-        if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1.0'):
+        if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
             # 0.x
             jinput['seed'] = random.randrange(sys.maxsize) % (2**32)
         else:
@@ -320,7 +320,7 @@ def run_train (iter_index,
         mdata["deepmd_version"]
     except:
         mdata = set_version(mdata)
-    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1.0'):
+    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
         # 0.x
         deepmd_path = mdata['deepmd_path']
     else:
@@ -342,7 +342,7 @@ def run_train (iter_index,
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         all_task.append(task_path)
-    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1.0'):
+    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
         # 0.x
         command =  os.path.join(deepmd_path, 'bin/dp_train')
         command += ' %s && ' % train_param
@@ -478,7 +478,7 @@ def post_train (iter_index,
         mdata["deepmd_version"]
     except:
         mdata = set_version(mdata)
-    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1.0'):
+    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
         # 0.x
         deepmd_path = mdata['deepmd_path']
     else:
@@ -496,7 +496,7 @@ def post_train (iter_index,
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         all_task.append(task_path)
-    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1.0'):
+    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
         # 0.x
         command = os.path.join(deepmd_path, 'bin/dp_frz')
     else:
