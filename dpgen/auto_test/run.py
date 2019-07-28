@@ -46,6 +46,7 @@ from dpgen.auto_test import gen_confs
 import requests
 from hashlib import sha1
 
+lammps_task_type=['deepmd','meam','eam']
 
 def _run(machine,
          machine_type,
@@ -114,12 +115,9 @@ def gen_equi(task_type,jdata,mdata):
     #vasp
     if task_type=="vasp":
         gen_00_equi.make_vasp(jdata, conf_dir)
-    #deepmd
-    elif task_type=="deepmd":
-        gen_00_equi.make_deepmd_lammps (jdata, conf_dir)
-    #meam
-    elif task_type=="meam":
-        gen_00_equi.make_meam_lammps (jdata, conf_dir)
+    #lammps
+    elif task_type in lammps_task_type:
+        gen_00_equi.make_lammps (jdata, conf_dir,task_type)
     else :
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
     os.chdir(cwd)
@@ -135,7 +133,7 @@ def run_equi(task_type,jdata,mdata,ssh_sess):
     equi_path = re.sub('confs', '00.equi', conf_path)
     if task_type=="vasp":
         work_path=os.path.join(equi_path, 'vasp-k%.2f' % kspacing)
-    elif task_type=="deepmd" or task_type=="meam":
+    elif task_type in lammps_task_type:
         work_path=os.path.join(equi_path, task_type)
     assert(os.path.isdir(work_path))
     
@@ -166,7 +164,7 @@ def run_equi(task_type,jdata,mdata,ssh_sess):
         common_files=['POSCAR']
 
     #lammps
-    elif task_type=="deepmd" or task_type=="meam":
+    elif task_type in lammps_task_type:
         lmp_exec = mdata['lmp_command']
         group_size = mdata['model_devi_group_size']
         resources = mdata['model_devi_resources']
@@ -225,16 +223,13 @@ def cmpt_equi(task_type,jdata,mdata):
     #vasp
     if task_type=="vasp":
         n, e, v = cmpt_00_equi.comput_vasp_nev(jdata, conf_dir, stable)
-        print('conf_dir:\t EpA(eV)  VpA(A^3)')
-        print("%s\t %8.4f  %7.3f " % (conf_dir, ve, vv))
     #lammps
-    elif task_type=="deepmd" or task_type =='meam':
+    elif task_type in lammps_task_type:
         n, e, v = cmpt_00_equi.comput_lmp_nev(conf_dir, task_type, stable)
     else :
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
-
     print('conf_dir:\t EpA(eV)  VpA(A^3)')
-    print("%s\t %8.4f  %7.3f " % (conf_dir, le, lv))
+    print("%s\t %8.4f  %7.3f " % (conf_dir, e, v))
 
 def gen_eos(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
@@ -243,18 +238,12 @@ def gen_eos(task_type,jdata,mdata):
     #vasp
     if task_type == "vasp":
         gen_01_eos.make_vasp(jdata, conf_dir)  
-    #deepmd             
-    elif task_type == "deepmd" :
+    #lammps             
+    elif task_type in lammps_task_type:
         if fix_shape :
-            gen_01_eos.make_deepmd_lammps_fixv(jdata, conf_dir)
+            gen_01_eos.make_lammps_fixv(jdata, conf_dir,task_type)
         else :
-            gen_01_eos.make_deepmd_lammps(jdata, conf_dir)        
-    #meam
-    elif task_type == "meam" :
-        if fix_shape :
-            gen_01_eos.make_meam_lammps_fixv(jdata, conf_dir)
-        else :
-            raise RuntimeError("not implemented ", 'meam')            
+            gen_01_eos.make_lammps(jdata, conf_dir,task_type)                 
     else :
         raise RuntimeError("unknow task ", task_type)
     os.chdir(cwd)
@@ -268,7 +257,7 @@ def run_eos(task_type,jdata,mdata,ssh_sess):
     task_path = re.sub('confs', '01.eos', conf_path)
     if task_type=="vasp":
         work_path=os.path.join(task_path, 'vasp-k%.2f' % kspacing)
-    elif task_type=="deepmd" or task_type =="meam":
+    elif task_type in lammps_task_type:
         work_path=os.path.join(task_path, task_type)
     assert(os.path.isdir(work_path))
     print(work_path)
@@ -301,7 +290,7 @@ def run_eos(task_type,jdata,mdata,ssh_sess):
         common_files=['INCAR','POTCAR']
 
     #lammps
-    elif task_type=="deepmd" or task_type=="meam":
+    elif task_type in lammps_task_type:
         lmp_exec = mdata['lmp_command']
         group_size = mdata['model_devi_group_size']
         resources = mdata['model_devi_resources']
@@ -359,7 +348,7 @@ def cmpt_eos(task_type,jdata,mdata):
     if task_type == "vasp":
         cmpt_01_eos.comput_vasp_eos(jdata, conf_dir)   
     #lammps             
-    elif task_type == "deepmd" or task_type == "meam":
+    elif task_type in lammps_task_type:
         cmpt_01_eos.comput_lmp_eos(conf_dir, task_type)
     else :
         raise RuntimeError("unknow task ", task_type)
@@ -370,12 +359,9 @@ def gen_elastic(task_type,jdata,mdata):
     #vasp
     if task_type == "vasp":
         gen_02_elastic.make_vasp(jdata, conf_dir)
-    #deepmd
-    elif task_type == "deepmd":
-        gen_02_elastic.make_deepmd_lammps (jdata, conf_dir)
-    #meam
-    elif task_type == "meam":
-        gen_02_elastic.make_meam_lammps (jdata, conf_dir)
+    #lammps
+    elif task_type in lammps_task_type:
+        gen_02_elastic.make_lammps (jdata, conf_dir,task_type)
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
     os.chdir(cwd)
@@ -389,7 +375,7 @@ def run_elastic(task_type,jdata,mdata,ssh_sess):
     task_path = re.sub('confs', '02.elastic', conf_path)
     if task_type == "vasp":
         work_path=os.path.join(task_path, 'vasp-k%.2f' % kspacing)
-    elif task_type == "deepmd" or "meam":
+    elif task_type in lammps_task_type:
         work_path=os.path.join(task_path, task_type)
     assert(os.path.isdir(work_path))
     print(work_path)
@@ -422,7 +408,7 @@ def run_elastic(task_type,jdata,mdata,ssh_sess):
         common_files=['INCAR','POTCAR','KPOINTS']
 
     #lammps
-    elif task_type == "deepmd" or task_type == "meam":
+    elif task_type in lammps_task_type:
         lmp_exec = mdata['lmp_command']
         group_size = mdata['model_devi_group_size']
         resources = mdata['model_devi_resources']
@@ -478,7 +464,7 @@ def cmpt_elastic(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
     if task_type == "vasp":
         cmpt_02_elastic.cmpt_vasp(jdata, conf_dir)               
-    elif task_type == "deepmd" or task_type=="meam":
+    elif task_type in lammps_task_type:
         cmpt_02_elastic.cmpt_deepmd_lammps(jdata, conf_dir, task_type)
     else :
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
@@ -491,11 +477,8 @@ def gen_vacancy(task_type,jdata,mdata):
     if task_type == "vasp":
         gen_03_vacancy.make_vasp(jdata, conf_dir, supercell)
     #deepmd
-    elif task_type == "deepmd":
-        gen_03_vacancy.make_deepmd_lammps(jdata, conf_dir, supercell)
-    #meam
-    elif task_type == "meam":
-        gen_03_vacancy.make_meam_lammps(jdata, conf_dir, supercell)
+    elif task_type in lammps_task_type:
+        gen_03_vacancy.make_lammps(jdata, conf_dir, task_type, supercell)
     else :
         raise RuntimeError("unknow task ", task_type)
     os.chdir(cwd)
@@ -510,7 +493,7 @@ def run_vacancy(task_type,jdata,mdata,ssh_sess):
     task_path = re.sub('confs', '03.vacancy', conf_path)
     if task_type == "vasp":
         work_path=os.path.join(task_path, 'vasp-k%.2f' % kspacing)
-    elif task_type == "deepmd" or task_type=="meam":
+    elif task_type in lammps_task_type:
         work_path=os.path.join(task_path, task_type)
     assert(os.path.isdir(work_path))
     
@@ -541,7 +524,7 @@ def run_vacancy(task_type,jdata,mdata,ssh_sess):
         common_files=['INCAR','POTCAR']
 
     #lammps
-    elif task_type == "deepmd" or task_type == "meam":
+    elif task_type in lammps_task_type:
         lmp_exec = mdata['lmp_command']
         group_size = mdata['model_devi_group_size']
         resources = mdata['model_devi_resources']
@@ -601,7 +584,7 @@ def cmpt_vacancy(task_type,jdata,mdata):
     if task_type == "vasp":
         cmpt_03_vacancy.cmpt_vasp(jdata, conf_dir, supercell)               
     #lammps
-    elif task_type == "deepmd" or task_type =="meam":
+    elif task_type in lammps_task_type:
         cmpt_03_vacancy.cmpt_deepmd_lammps(jdata, conf_dir, supercell, task_type)
     else :
         raise RuntimeError("unknow task ", task_type)
@@ -615,18 +598,12 @@ def gen_interstitial(task_type,jdata,mdata):
     #vasp
     if task_type == "vasp":
         gen_04_interstitial.make_vasp(jdata, conf_dir, supercell, insert_ele)
-    #deepmd
-    elif task_type == "deepmd":
+    #lammps
+    elif task_type in lammps_task_type:
         if not reprod_opt:
-            gen_04_interstitial.make_deepmd_lammps(jdata, conf_dir, supercell, insert_ele, task_type)
+            gen_04_interstitial.make_lammps(jdata, conf_dir, supercell, insert_ele, task_type)
         else :
-            gen_04_interstitial.make_deepmd_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_type)
-    #meam
-    elif task_type == "meam" :
-        if not reprod_opt:
-            gen_04_interstitial.make_meam_lammps(jdata, conf_dir, supercell, insert_ele, task_type)
-        else :
-            gen_04_interstitial.make_meam_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_type)
+            gen_04_interstitial.make_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_type)
     else :
         raise RuntimeError("unknow task ", task_type)
     os.chdir(cwd)
@@ -641,10 +618,10 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
     task_path = re.sub('confs', '04.interstitial', conf_path)
     if task_type == "vasp":
         work_path=os.path.join(task_path, 'vasp-k%.2f' % kspacing)
-    elif task_type == "deepmd" or task_type =="meam":
+    elif task_type in lammps_task_type:
         work_path=os.path.join(task_path, task_type)
         if reprod_opt:
-            work_path=os.path.join(task_path, '%s-k%.2f'%(task_type,kspacing))
+            work_path=os.path.join(task_path, '%s-reprod-k%.2f'%(task_type,kspacing))
     assert(os.path.isdir(work_path))
     
     all_task = glob.glob(os.path.join(work_path,'struct-*'))
@@ -674,7 +651,7 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
         common_files=['INCAR']
 
     #lammps
-    elif task_type == "deepmd" or task_type == "meam":
+    elif task_type in lammps_task_type:
         lmp_exec = mdata['lmp_command']
         group_size = mdata['model_devi_group_size']
         resources = mdata['model_devi_resources']
@@ -735,18 +712,13 @@ def cmpt_interstitial(task_type,jdata,mdata):
     #vasp
     if task_type == "vasp":
         cmpt_04_interstitial.cmpt_vasp(jdata, conf_dir, supercell, insert_ele)
-    #deepmd
-    elif task_type == "deepmd":
+    #lammps
+    elif task_type in lammps_task_type:
         if not reprod_opt:
             cmpt_04_interstitial.cmpt_deepmd_lammps(jdata, conf_dir, supercell, insert_ele, task_type)
         else :
-            cmpt_04_interstitial.cmpt_deepmd_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_type)
-    #meam
-    elif task_type == "meam" :
-        if not reprod_opt:
-            cmpt_04_interstitial.cmpt_meam_lammps(jdata, conf_dir, supercell, insert_ele, task_type)
-        else :
-            cmpt_04_interstitial.cmpt_meam_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_type)
+            task_name=task_type+'-reprod'
+            cmpt_04_interstitial.cmpt_deepmd_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_name)
     else :
         raise RuntimeError("unknow task ", task_type)
     os.chdir(cwd)
@@ -760,12 +732,9 @@ def gen_surf(task_type,jdata,mdata):
     #vasp
     if task_type == "vasp":
         gen_05_surf.make_vasp(jdata, conf_dir, max_miller, static = static_opt, relax_box = relax_box)
-    #deepmd
-    elif task_type == "deepmd" :
-        gen_05_surf.make_deepmd_lammps(jdata, conf_dir, max_miller, static = static_opt, relax_box = relax_box, task_name = task_type)
-    #meam
-    elif task_type == "meam" :
-        gen_05_surf.make_meam_lammps(jdata, conf_dir, max_miller, static = static_opt, relax_box = relax_box, task_name = task_type)
+    #lammps
+    elif task_type in lammps_task_type :
+        gen_05_surf.make_lammps(jdata, conf_dir, max_miller, static = static_opt, relax_box = relax_box, task_type = task_type)
     else :
         raise RuntimeError("unknow task ", task_type)
     os.chdir(cwd)
@@ -774,14 +743,21 @@ def run_surf(task_type,jdata,mdata,ssh_sess):
     conf_dir=jdata['conf_dir']
     fp_params = jdata['vasp_params']
     kspacing = fp_params['kspacing']
-    
+    static = jdata['static-opt']
 
     conf_path = os.path.abspath(conf_dir)
     task_path = re.sub('confs', '05.surf', conf_path)
     if task_type == "vasp":
-        work_path=os.path.join(task_path, 'vasp-k%.2f' % kspacing)
-    elif task_type == "deepmd" or task_type =="meam":
-        work_path=os.path.join(task_path, task_type)
+        if static:
+            work_path=os.path.join(task_path, 'vasp-static-k%.2f' % kspacing)
+        else:
+            work_path=os.path.join(task_path, 'vasp-k%.2f' % kspacing)
+    elif task_type in lammps_task_type:
+        if static:
+            task_name=task_type+'-static'
+        else:
+            task_name=task_type
+        work_path=os.path.join(task_path, task_name)
     assert(os.path.isdir(work_path))
     
     all_task = glob.glob(os.path.join(work_path,'struct-*'))
@@ -811,7 +787,7 @@ def run_surf(task_type,jdata,mdata,ssh_sess):
         common_files=['INCAR','POTCAR']
 
     #lammps
-    elif task_type == "deepmd" or task_type == "meam":
+    elif task_type in lammps_task_type:
         lmp_exec = mdata['lmp_command']
         group_size = mdata['model_devi_group_size']
         resources = mdata['model_devi_resources']
@@ -871,8 +847,12 @@ def cmpt_surf(task_type,jdata,mdata):
     if task_type == "vasp":
         cmpt_05_surf.cmpt_vasp(jdata, conf_dir, static = static_opt) 
     #lammps        
-    elif task_type == "deepmd" or task_type=="meam" :
-        cmpt_05_surf.cmpt_deepmd_lammps(jdata, conf_dir, task_type, static = static_opt)
+    elif task_type in lammps_task_type :
+        if static_opt:
+            task_name =task_type+'-static'
+        else:
+            task_name =task_type
+        cmpt_05_surf.cmpt_deepmd_lammps(jdata, conf_dir, task_name, static = static_opt)
     else :
         raise RuntimeError("unknow task ", task_type)
     os.chdir(cwd)
@@ -884,7 +864,7 @@ def gen_phonon(task_type,jdata,mdata):
     if task_type == "vasp":
         gen_06_phonon.make_vasp(jdata, conf_dir)
     #lammps
-    elif task_type == "deepmd" or task_type=="meam":
+    elif task_type in lammps_task_type:
         gen_06_phonon.make_lammps(jdata, conf_dir,  task_type)
     else :
         raise RuntimeError("unknow task ", task_type)
@@ -895,12 +875,11 @@ def run_phonon(task_type,jdata,mdata,ssh_sess):
     fp_params = jdata['vasp_params']
     kspacing = fp_params['kspacing']
     
-
     conf_path = os.path.abspath(conf_dir)
     task_path = re.sub('confs', '06.phonon', conf_path)
     if task_type == "vasp":
         work_path=os.path.join(task_path, 'vasp-k%.2f' % kspacing)
-    elif task_type == "deepmd" or task_type=="meam":
+    elif task_type in lammps_task_type:
         work_path=os.path.join(task_path, task_type)
     assert(os.path.isdir(work_path))
     
@@ -942,7 +921,7 @@ def run_phonon(task_type,jdata,mdata,ssh_sess):
          forward_files,
          backward_files)
     #lammps
-    elif task_type == "deepmd" or task_type == "meam":
+    elif task_type in lammps_task_type:
         None
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
@@ -954,7 +933,7 @@ def cmpt_phonon(task_type,jdata,mdata):
     if task_type == "vasp":
         cmpt_06_phonon.cmpt_vasp(jdata, conf_dir)   
     #lammps                
-    elif task_type == "deepmd" or task_type == "meam" :
+    elif task_type in lammps_task_type :
         cmpt_06_phonon.cmpt_lammps(jdata,conf_dir, task_type)
     else :
         raise RuntimeError("unknow task ", task_type)
@@ -1044,7 +1023,7 @@ def run_task (json_file, machine_file) :
         run_surf  (ii, jdata, mdata,model_devi_ssh_sess)
         log_iter ("cmpt_surf", ii, "surf")
         cmpt_surf (ii, jdata, mdata)
-    if jj=="phonon" or jj=="all":
+    if jj=="phonon":
         log_iter ("gen_phonon", ii, "phonon")
         gen_phonon (ii, jdata, mdata) 
         log_iter ("run_phonon", ii, "phonon")

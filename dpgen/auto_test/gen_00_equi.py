@@ -71,62 +71,22 @@ def make_vasp(jdata, conf_dir) :
                 outfile.write(infile.read())
     os.chdir(cwd)
 
-def make_deepmd_lammps (jdata, conf_dir) :
-    deepmd_model_dir = jdata['deepmd_model_dir']
-    deepmd_type_map = jdata['deepmd_type_map']
-    ntypes = len(deepmd_type_map)
-    deepmd_model_dir = os.path.abspath(deepmd_model_dir)
-    deepmd_models = glob.glob(os.path.join(deepmd_model_dir, '*pb'))    
-    deepmd_models_name = [os.path.basename(ii) for ii in deepmd_models]
+def make_lammps (jdata, conf_dir,task_type) :
+    fp_params = jdata['lammps_params']
+    model_dir = fp_params['model_dir']
+    type_map = fp_params['type_map'] 
+    model_dir = os.path.abspath(model_dir)
+    model_name =fp_params['model_name']
+    if not model_name and task_type =='deepmd':
+        models = glob.glob(os.path.join(model_dir, '*pb'))
+        model_name = [os.path.basename(ii) for ii in models]
+    else:
+        models = [os.path.join(model_dir,ii) for ii in model_name]
 
-    conf_path = os.path.abspath(conf_dir)
-    equi_path = re.sub('confs', global_task_name, conf_path)
-    os.makedirs(equi_path, exist_ok = True)
-    cwd = os.getcwd()
-    from_poscar = os.path.join(conf_path, 'POSCAR')
-    to_poscar = os.path.join(equi_path, 'POSCAR')
-    if os.path.exists(to_poscar) :
-        assert(filecmp.cmp(from_poscar, to_poscar))
-    else :
-        os.chdir(equi_path)
-        os.symlink(os.path.relpath(from_poscar), 'POSCAR')
-        os.chdir(cwd)
-    # lmp path
-    lmp_path = os.path.join(equi_path, 'deepmd')
-    os.makedirs(lmp_path, exist_ok = True)    
-    print(lmp_path)
-    # lmp conf
-    conf_file = os.path.join(lmp_path, 'conf.lmp')
-    lammps.cvt_lammps_conf(to_poscar, os.path.relpath(conf_file))
-    ptypes = vasp.get_poscar_types(to_poscar)
-    lammps.apply_type_map(conf_file, deepmd_type_map, ptypes)    
-    # lmp input
-    fc = lammps.make_lammps_equi(os.path.basename(conf_file), 
-                                 ntypes, 
-                                 lammps.inter_deepmd, 
-                                 deepmd_models_name)
-    with open(os.path.join(lmp_path, 'lammps.in'), 'w') as fp :
-        fp.write(fc)
-    # link models
-    os.chdir(lmp_path)
-    for ii in deepmd_models_name :
-        if os.path.exists(ii) :
-            os.remove(ii)
-    for (ii,jj) in zip(deepmd_models, deepmd_models_name) :
-        os.symlink(os.path.relpath(ii), jj)
-    os.chdir(cwd)
-
-def make_meam_lammps (jdata, conf_dir) :
-    meam_potfile_dir = jdata['meam_potfile_dir']
-    meam_potfile_dir = os.path.abspath(meam_potfile_dir)
-    meam_potfile = jdata['meam_potfile']
-    meam_potfile = [os.path.join(meam_potfile_dir,ii) for ii in meam_potfile]
-    meam_potfile_name = jdata['meam_potfile']
-    type_map = jdata['meam_type_map']
+    model_param = {'model_name' :      fp_params['model_name'],
+                  'param_type':          fp_params['model_param_type']}
+    
     ntypes = len(type_map)
-    meam_param = {'meam_potfile' :      jdata['meam_potfile'],
-                  'meam_type':          jdata['meam_param_type']}
-
     conf_path = os.path.abspath(conf_dir)
     equi_path = re.sub('confs', global_task_name, conf_path)
     os.makedirs(equi_path, exist_ok = True)
@@ -140,7 +100,7 @@ def make_meam_lammps (jdata, conf_dir) :
         os.symlink(os.path.relpath(from_poscar), 'POSCAR')
         os.chdir(cwd)
     # lmp path
-    lmp_path = os.path.join(equi_path, 'meam')
+    lmp_path = os.path.join(equi_path, task_type)
     os.makedirs(lmp_path, exist_ok = True)    
     print(lmp_path)
     # lmp conf
@@ -149,20 +109,27 @@ def make_meam_lammps (jdata, conf_dir) :
     ptypes = vasp.get_poscar_types(to_poscar)
     lammps.apply_type_map(conf_file, type_map, ptypes)    
     # lmp input
-    fc = lammps.make_lammps_equi(os.path.basename(conf_file), 
+    if task_type=='deepmd':
+        fc = lammps.make_lammps_equi(os.path.basename(conf_file), 
+                                 ntypes, 
+                                 lammps.inter_deepmd, 
+                                 model_name)
+    elif task_type=='meam':
+        fc = lammps.make_lammps_equi(os.path.basename(conf_file), 
                                  ntypes, 
                                  lammps.inter_meam, 
-                                 meam_param)
+                                 model_param)
     with open(os.path.join(lmp_path, 'lammps.in'), 'w') as fp :
         fp.write(fc)
     # link models
     os.chdir(lmp_path)
-    for ii in meam_potfile_name :
+    for ii in model_name :
         if os.path.exists(ii) :
             os.remove(ii)
-    for (ii,jj) in zip(meam_potfile, meam_potfile_name) :
+    for (ii,jj) in zip(models, model_name) :
         os.symlink(os.path.relpath(ii), jj)
     os.chdir(cwd)
+
 
 def _main() :
     parser = argparse.ArgumentParser(
@@ -181,10 +148,8 @@ def _main() :
 #    print('generate %s task with conf %s' % (args.TASK, args.CONF))
     if args.TASK == 'vasp':
         make_vasp(jdata, args.CONF)               
-    elif args.TASK == 'deepmd' :
-        make_deepmd_lammps(jdata, args.CONF)
-    elif args.TASK == 'meam' :
-        make_meam_lammps(jdata, args.CONF)
+    elif args.TASK == 'deepmd' or args.TASK =='meam' :
+        make_lammps(jdata, args.CONF,args.TASK)
     else :
         raise RuntimeError("unknow task ", args.TASK)
     
