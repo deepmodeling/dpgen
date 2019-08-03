@@ -22,7 +22,9 @@ import time
 import dpdata
 import numpy as np
 import subprocess as sp
+from distutils.version import LooseVersion
 from dpgen import dlog
+from dpgen import SHORT_CMD
 from dpgen.generator.lib.utils import make_iter_name
 from dpgen.generator.lib.utils import create_path
 from dpgen.generator.lib.utils import copy_file_list
@@ -36,11 +38,12 @@ from dpgen.generator.lib.vasp import write_incar_dict
 from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
 from dpgen.generator.lib.pwscf import make_pwscf_input
 from dpgen.generator.lib.pwscf import cvt_1frame
-from dpgen.generator.lib.gaussian import make_gaussian_input
-from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, LSFJob, CloudMachineJob
-from dpgen.remote.group_jobs import ucloud_submit_jobs
+from dpgen.generator.lib.gaussian import make_gaussian_input, take_cluster
+from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, LSFJob, CloudMachineJob, awsMachineJob
+from dpgen.remote.group_jobs import ucloud_submit_jobs, aws_submit_jobs
 from dpgen.remote.group_jobs import group_slurm_jobs
 from dpgen.remote.group_jobs import group_local_jobs
+from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
 from dpgen.util import sepline
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar,Kpoints,Potcar
@@ -57,7 +60,6 @@ model_devi_conf_fmt = data_system_fmt + '.%04d'
 fp_name = '02.fp'
 fp_task_fmt = data_system_fmt + '.%06d'
 cvasp_file=os.path.join(ROOT_PATH,'generator/lib/cvasp.py')
-#cvasp_file="/sharedext4/haiid/crazy/dpgen/dpgen/generator/lib/cvasp.py"
 
 def get_job_names(jdata) :
     jobkeys = []
@@ -207,28 +209,58 @@ def make_train (iter_index,
     os.chdir(cwd)
 
     init_data_sys = []
-    init_batch_size = list(jdata['init_batch_size'])
+    init_batch_size = []
+    init_batch_size_ = list(jdata['init_batch_size'])
     sys_batch_size = jdata['sys_batch_size']
-    for ii in init_data_sys_ :
-        init_data_sys.append(os.path.join('..', 'data.init', ii))
+    for ii, ss in zip(init_data_sys_, init_batch_size_) :
+        if 'init_multi_systems' in jdata and jdata['init_multi_systems']:
+            for single_sys in os.listdir(os.path.join(work_path, 'data.init', ii)):
+                init_data_sys.append(os.path.join('..', 'data.init', ii, single_sys))
+                init_batch_size.append(detect_batch_size(ss, os.path.join(work_path, 'data.init', ii, single_sys)))
+        else:
+            init_data_sys.append(os.path.join('..', 'data.init', ii))
+            init_batch_size.append(detect_batch_size(ss, os.path.join(work_path, 'data.init', ii)))
     if iter_index > 0 :
         for ii in range(iter_index) :
             fp_path = os.path.join(make_iter_name(ii), fp_name)
             fp_data_sys = glob.glob(os.path.join(fp_path, "data.*"))            
             for jj in fp_data_sys :
-                tmp_box = np.loadtxt(os.path.join(jj, 'box.raw'))
-                tmp_box = np.reshape(tmp_box, [-1,9])
-                nframes = tmp_box.shape[0]
-                if nframes < fp_task_min :
-                    log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
-                    continue
-                init_data_sys.append(os.path.join('..', 'data.iters', jj))
                 sys_idx = int(jj.split('.')[-1])
-                init_batch_size.append(sys_batch_size[sys_idx])                
+                if 'use_clusters' in jdata and jdata['use_clusters']:
+                    nframes = 0
+                    for sys_single in os.listdir(jj):
+                        tmp_box = np.loadtxt(os.path.join(jj, sys_single, 'box.raw'))
+                        tmp_box = np.reshape(tmp_box, [-1,9])
+                        nframes += tmp_box.shape[0]
+                    if nframes < fp_task_min :
+                        log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
+                        continue
+                    for sys_single in os.listdir(jj):
+                        init_data_sys.append(os.path.join('..', 'data.iters', jj, sys_single))
+                        init_batch_size.append(detect_batch_size(sys_batch_size[sys_idx], os.path.join(jj, sys_single)))
+                else:
+                    tmp_box = np.loadtxt(os.path.join(jj, 'box.raw'))
+                    tmp_box = np.reshape(tmp_box, [-1,9])
+                    nframes = tmp_box.shape[0]
+                    if nframes < fp_task_min :
+                        log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
+                        continue
+                    init_data_sys.append(os.path.join('..', 'data.iters', jj))
+                    init_batch_size.append(detect_batch_size(sys_batch_size[sys_idx], jj))
     # establish tasks
     jinput = jdata['default_training_param']
-    jinput['systems'] = init_data_sys    
-    jinput['batch_size'] = init_batch_size
+    try:
+        mdata["deepmd_version"]
+    except:
+        mdata = set_version(mdata)
+    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
+        # 0.x
+        jinput['systems'] = init_data_sys
+        jinput['batch_size'] = init_batch_size
+    else:
+        # 1.x
+        jinput['training']['systems'] = init_data_sys
+        jinput['training']['batch_size'] = init_batch_size
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         create_path(task_path)
@@ -237,7 +269,14 @@ def make_train (iter_index,
             if not os.path.isdir(ii) :
                 raise RuntimeError ("data sys %s does not exists, cwd is %s" % (ii, os.getcwd()))
         os.chdir(cwd)
-        jinput['seed'] = random.randrange(sys.maxsize)
+        if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
+            # 0.x
+            jinput['seed'] = random.randrange(sys.maxsize) % (2**32)
+        else:
+            # 1.x
+            jinput['model']['descriptor']['seed'] = random.randrange(sys.maxsize) % (2**32)
+            jinput['model']['fitting_net']['seed'] = random.randrange(sys.maxsize) % (2**32)
+            jinput['training']['seed'] = random.randrange(sys.maxsize) % (2**32)
         with open(os.path.join(task_path, train_param), 'w') as outfile:
             json.dump(jinput, outfile, indent = 4)
 
@@ -260,6 +299,16 @@ def make_train (iter_index,
                 os.symlink(os.path.relpath(absjj), basejj)
                 os.chdir(cwd)            
 
+def detect_batch_size(batch_size, system=None):
+    if type(batch_size) == int:
+        return batch_size
+    elif batch_size == "auto":
+        # automaticcaly set batch size, batch_size = 32 // atom_numb (>=1, <=fram_numb)
+        s = dpdata.LabeledSystem(system, fmt='deepmd/npy')
+        return min(max(32//(s["coords"].shape[1]), 1), s["coords"].shape[0])
+    else:
+        raise RuntimeError("Unsupported batch size")
+
 def run_train (iter_index,
                jdata, 
                mdata, 
@@ -267,7 +316,16 @@ def run_train (iter_index,
     # load json param
     numb_models = jdata['numb_models']
     train_param = jdata['train_param']
-    deepmd_path = mdata['deepmd_path']
+    try:
+        mdata["deepmd_version"]
+    except:
+        mdata = set_version(mdata)
+    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
+        # 0.x
+        deepmd_path = mdata['deepmd_path']
+    else:
+        # 1.x
+        python_path = mdata['python_path']
     train_resources = mdata['train_resources']
     machine_type = mdata['train_machine']['machine_type']
 
@@ -284,11 +342,28 @@ def run_train (iter_index,
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         all_task.append(task_path)
-    command =  os.path.join(deepmd_path, 'bin/dp_train')
-    command += ' %s && ' % train_param
-    command += os.path.join(deepmd_path, 'bin/dp_frz')
+    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
+        # 0.x
+        command =  os.path.join(deepmd_path, 'bin/dp_train')
+        command += ' %s && ' % train_param
+        command += os.path.join(deepmd_path, 'bin/dp_frz')
+    else:
+        # 1.x
+        command =  '%s -m deepmd train' % python_path
+        command += ' %s && ' % train_param
+        command += '%s -m deepmd freeze' % python_path
 
-    run_tasks = [os.path.basename(ii) for ii in all_task]
+    #_tasks = [os.path.basename(ii) for ii in all_task]
+
+    run_tasks = []
+    for ii in all_task:
+        check_pb = os.path.join(ii, "frozen_model.pb")
+        check_lcurve = os.path.join(ii, "lcurve.out")
+        if os.path.isfile(check_pb) and os.path.isfile(check_lcurve):
+            pass 
+        else:
+            run_tasks.append(ii)
+
     forward_files = [train_param]
     backward_files = ['frozen_model.pb', 'lcurve.out']
     init_data_sys_ = jdata['init_data_sys']
@@ -303,11 +378,21 @@ def run_train (iter_index,
     cwd = os.getcwd()
     os.chdir(work_path)
     for ii in init_data_sys :
-        trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
-        trans_comm_data += glob.glob(os.path.join(ii, 'type.raw'))
+        if 'init_multi_systems' in jdata and jdata['init_multi_systems']:
+            for single_sys in os.listdir(os.path.join(ii)):
+                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'set.*'))
+                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type.raw'))
+        else:
+            trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
+            trans_comm_data += glob.glob(os.path.join(ii, 'type.raw'))
     for ii in fp_data :
-        trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
-        trans_comm_data += glob.glob(os.path.join(ii, 'type.raw'))
+        if 'use_clusters' in jdata and jdata['use_clusters']:
+            for single_sys in os.listdir(os.path.join(ii)):
+                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'set.*'))
+                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type.raw'))
+        else:
+            trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
+            trans_comm_data += glob.glob(os.path.join(ii, 'type.raw'))
     os.chdir(cwd)
 
     if ssh_sess == None and machine_type == 'ucloud':
@@ -362,6 +447,16 @@ def run_train (iter_index,
                          trans_comm_data,
                          forward_files,
                          backward_files)
+    elif ssh_sess == None and machine_type == 'aws':
+        aws_submit_jobs(mdata['train_machine'],
+                        mdata['train_resources'],
+                        mdata['run_train_task_definition'], 
+                        work_path,
+                        run_tasks,
+                        5,
+                        trans_comm_data,
+                        forward_files,
+                        backward_files)
     else :
         raise RuntimeError("unknow machine type")
 
@@ -379,7 +474,16 @@ def post_train (iter_index,
                 mdata) :
     # load json param
     numb_models = jdata['numb_models']
-    deepmd_path = mdata['deepmd_path']
+    try:
+        mdata["deepmd_version"]
+    except:
+        mdata = set_version(mdata)
+    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
+        # 0.x
+        deepmd_path = mdata['deepmd_path']
+    else:
+        # 1.x
+        python_path = mdata['python_path']
     # paths
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, train_name)
@@ -392,7 +496,12 @@ def post_train (iter_index,
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         all_task.append(task_path)
-    command = os.path.join(deepmd_path, 'bin/dp_frz')
+    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
+        # 0.x
+        command = os.path.join(deepmd_path, 'bin/dp_frz')
+    else:
+        # 1.x
+        command = python_path + ' -m deepmd freeze'
     command = cmd_append_log(command, 'freeze.log')
     command = 'CUDA_VISIBLE_DEVICES="" ' + command
     # frz models
@@ -460,7 +569,14 @@ def make_model_devi (iter_index,
     ensemble, nsteps, trj_freq, temps, press, pka_e, dt = parse_cur_job(cur_job)
     if dt is not None :
         model_devi_dt = dt
-    sys_configs = jdata['sys_configs']
+    if "sys_configs_prefix" in jdata:
+        sys_configs = []
+        for sys_list in jdata["sys_configs"]:
+            #assert (isinstance(sys_list, list) ), "Currently only support type list for sys in 'sys_conifgs' "
+            temp_sys_list = [os.path.join(jdata["sys_configs_prefix"], sys) for sys in sys_list]
+            sys_configs.append(temp_sys_list)
+    else:
+        sys_configs = jdata['sys_configs']
     shuffle_poscar = jdata['shuffle_poscar']
 
     sys_idx = expand_idx(cur_job['sys_idx'])
@@ -508,12 +624,17 @@ def make_model_devi (iter_index,
                                os.path.join(conf_path, poscar_name))
             else :
                 os.symlink(cc, os.path.join(conf_path, poscar_name))
-            poscar_to_conf(os.path.join(conf_path, poscar_name),
-                           os.path.join(conf_path, lmp_name))
+            if 'sys_format' in jdata:
+                fmt = jdata['sys_format']
+            else:
+                fmt = 'vasp/poscar'
+            system = dpdata.System(os.path.join(conf_path, poscar_name), fmt = fmt, type_map = jdata['type_map'])
+            system.to_lammps_lmp(os.path.join(conf_path, lmp_name))
             conf_counter += 1
         sys_counter += 1
 
     sys_counter = 0
+    is_use_clusters = True if 'use_clusters' in jdata and jdata['use_clusters'] else False
     for ss in conf_systems:
         conf_counter = 0
         task_counter = 0
@@ -523,7 +644,7 @@ def make_model_devi (iter_index,
                     task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
                     conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter) + '.lmp'
                     task_path = os.path.join(work_path, task_name)
-                    # print(task_path)
+                    # dlog.info(task_path)
                     create_path(task_path)
                     create_path(os.path.join(task_path, 'traj'))
                     loc_conf_name = 'conf.lmp'
@@ -531,6 +652,11 @@ def make_model_devi (iter_index,
                                os.path.join(task_path, loc_conf_name) )
                     cwd_ = os.getcwd()
                     os.chdir(task_path)
+                    try:
+                        mdata["deepmd_version"]
+                    except:
+                        mdata = set_version(mdata)
+                    deepmd_version = mdata['deepmd_version']
                     file_c = make_lammps_input(ensemble,
                                                loc_conf_name,
                                                task_model_list,
@@ -543,7 +669,16 @@ def make_model_devi (iter_index,
                                                tau_t = model_devi_taut,
                                                pres = pp, 
                                                tau_p = model_devi_taup, 
-                                               pka_e = pka_e)
+                                               pka_e = pka_e,
+                                               is_use_clusters = is_use_clusters,
+                                               deepmd_version = deepmd_version)
+                    job = {}
+                    job["ensemble"] = ensemble
+                    job["press"] = pp
+                    job["temps"] = tt
+                    job["model_devi_dt"] =  model_devi_dt
+                    with open('job.json', 'w') as _outfile:
+                        json.dump(job, _outfile, indent = 4)
                     os.chdir(cwd_)
                     with open(os.path.join(task_path, 'input.lammps'), 'w') as fp :
                         fp.write(file_c)
@@ -557,7 +692,7 @@ def run_model_devi (iter_index,
                     jdata,
                     mdata,
                     ssh_sess) :
-    #rmprint("This module has been run !")
+    #rmdlog.info("This module has been run !")
     lmp_exec = mdata['lmp_command']
     model_devi_group_size = mdata['model_devi_group_size']
     model_devi_resources = mdata['model_devi_resources']
@@ -588,8 +723,8 @@ def run_model_devi (iter_index,
             run_tasks_.append(ii)
 
     run_tasks = [os.path.basename(ii) for ii in run_tasks_]
-    #print("all_task is ", all_task)
-    #print("run_tasks in run_model_deviation",run_tasks_)
+    #dlog.info("all_task is ", all_task)
+    #dlog.info("run_tasks in run_model_deviation",run_tasks_)
     all_models = glob.glob(os.path.join(work_path, 'graph*pb'))
     model_names = [os.path.basename(ii) for ii in all_models]
     forward_files = ['conf.lmp', 'input.lammps', 'traj']
@@ -630,7 +765,7 @@ def run_model_devi (iter_index,
                            backward_files,
                           remote_job = PBSJob)
     elif machine_type == 'lsf' :        
-        _group_slurm_jobs(ssh_sess,
+        group_slurm_jobs(ssh_sess,
                            model_devi_resources,
                            command,
                            work_path,
@@ -650,6 +785,16 @@ def run_model_devi (iter_index,
                            model_names,
                            forward_files,
                            backward_files)
+    elif ssh_sess == None and machine_type == 'aws':
+        aws_submit_jobs(mdata['model_devi_machine'],
+                        mdata['model_devi_resources'],
+                        mdata['model_devi_task_definition'], 
+                        work_path,
+                        run_tasks,
+                        model_devi_group_size,
+                        model_names,
+                        forward_files,
+                        backward_files)
     else :
         raise RuntimeError("unknow machine type")
 
@@ -677,7 +822,8 @@ def _make_fp_vasp_inner (modd_path,
                          fp_task_min,
                          fp_task_max,
                          fp_link_files,
-                         type_map):
+                         type_map,
+                         cluster_cutoff = None):
     """
     modd_path           string          path of model devi
     work_path           string          path of fp
@@ -698,7 +844,8 @@ def _make_fp_vasp_inner (modd_path,
     fp_tasks = []
     for ss in system_index :
         fp_candidate = []
-        fp_rest = []
+        fp_rest_accurate = []
+        fp_rest_failed = []
         modd_system_glob = os.path.join(modd_path, 'task.' + ss + '.*')
         modd_system_task = glob.glob(modd_system_glob)
         modd_system_task.sort()
@@ -708,26 +855,41 @@ def _make_fp_vasp_inner (modd_path,
                 warnings.simplefilter("ignore")
                 all_conf = np.loadtxt(os.path.join(tt, 'model_devi.out'))
                 sel_conf = []
-                res_conf = []
+                res_failed_conf = []
+                res_accurate_conf = []
                 for ii in range(all_conf.shape[0]) :
-                    if (all_conf[ii][1] < e_trust_hi and all_conf[ii][1] > e_trust_lo) or \
-                       (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] > f_trust_lo) and \
-                       ii >= model_devi_skip :
-                        sel_conf.append(int(all_conf[ii][0]))
-                    else :
-                        res_conf.append(int(all_conf[ii][0]))
-                for ii in sel_conf:
-                    fp_candidate.append([tt, ii])
-                for ii in res_conf:
-                    fp_rest.append([tt, ii])
+                    cc = int(all_conf[ii][0])
+                    if cluster_cutoff is None:
+                        if (all_conf[ii][1] < e_trust_hi and all_conf[ii][1] > e_trust_lo) or \
+                        (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] > f_trust_lo) and \
+                        ii >= model_devi_skip :
+                            fp_candidate.append([tt, cc])
+                        elif (all_conf[ii][1] > e_trust_hi ) or (all_conf[ii][4] > f_trust_hi ):
+                            fp_rest_failed.append([tt, cc])
+                        elif (all_conf[ii][1] < e_trust_lo and all_conf[ii][4] < f_trust_lo ):
+                            fp_rest_accurate.append([tt, cc])
+                    else:
+                        idx_candidate = np.where(np.logical_and(all_conf[ii][7:] < f_trust_hi, all_conf[ii][7:] > f_trust_lo))[0]
+                        idx_rest_failed = np.where(all_conf[ii][7:] > f_trust_hi)[0]
+                        idx_rest_accurate = np.where(all_conf[ii][7:] < f_trust_lo)[0]
+                        for jj in idx_candidate:
+                            fp_candidate.append([tt, cc, jj])
+                        for jj in idx_rest_accurate:
+                            fp_rest_accurate.append([tt, cc, jj])
+                        for jj in idx_rest_failed:
+                            fp_rest_failed.append([tt, cc, jj])
         random.shuffle(fp_candidate)
+        random.shuffle(fp_rest_failed)
+        random.shuffle(fp_rest_accurate)
         with open(os.path.join(work_path,'candidate.shuffled.%s.out'%ss), 'w') as fp:
             for ii in fp_candidate:
-                fp.write(str(ii[0]) + " " + str(ii[1]) + "\n")
-        random.shuffle(fp_rest)
-        with open(os.path.join(work_path,'rest.shuffled.%s.out'%ss), 'w') as fp:
-            for ii in fp_rest:
-                fp.write(str(ii[0]) + " " + str(ii[1]) + "\n")
+                fp.write(" ".join([str(nn) for nn in ii]) + "\n")
+        with open(os.path.join(work_path,'rest_accurate.shuffled.%s.out'%ss), 'w') as fp:
+            for ii in fp_rest_accurate:
+                fp.write(" ".join([str(nn) for nn in ii]) + "\n")
+        with open(os.path.join(work_path,'rest_failed.shuffled.%s.out'%ss), 'w') as fp:
+            for ii in fp_rest_failed:
+                fp.write(" ".join([str(nn) for nn in ii]) + "\n")
         numb_task = min(fp_task_max, len(fp_candidate))
         for cc in range(numb_task) :
             tt = fp_candidate[cc][0]
@@ -736,42 +898,39 @@ def _make_fp_vasp_inner (modd_path,
             conf_name = os.path.join(tt, "traj")
             conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
             conf_name = os.path.abspath(conf_name)
+
+            # link job.json
+            job_name = os.path.join(tt, "job.json")
+            job_name = os.path.abspath(job_name)
+
+            if cluster_cutoff is not None:
+                # take clusters
+                jj = fp_candidate[cc][2]
+                poscar_name = '{}.cluster.{}.POSCAR'.format(conf_name, jj)
+                new_system = take_cluster(conf_name, type_map, jj, cluster_cutoff)
+                new_system.to_vasp_poscar(poscar_name)
             fp_task_name = make_fp_task_name(int(ss), cc)
             fp_task_path = os.path.join(work_path, fp_task_name)
             create_path(fp_task_path)
             fp_tasks.append(fp_task_path)
             cwd = os.getcwd()
             os.chdir(fp_task_path)
-            os.symlink(os.path.relpath(conf_name), 'conf.dump')
+            if cluster_cutoff is None:
+                os.symlink(os.path.relpath(conf_name), 'conf.dump')
+                os.symlink(os.path.relpath(job_name), 'job.json')
+            else:
+                os.symlink(os.path.relpath(poscar_name), 'POSCAR')
+                np.save("atom_pref", new_system.data["atom_pref"])
             for pair in fp_link_files :
                 os.symlink(pair[0], pair[1])
             os.chdir(cwd)
-        if numb_task < fp_task_min:
-            for cc in range(fp_task_min - numb_task) :
-                tt = fp_rest[cc][0]
-                ii = fp_rest[cc][1]
-                ss = os.path.basename(tt).split('.')[1]
-                conf_name = os.path.join(tt, "traj")
-                conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
-                conf_name = os.path.abspath(conf_name)
-                fp_task_name = make_fp_task_name(int(ss), cc + numb_task)
-                fp_task_path = os.path.join(work_path, fp_task_name)
-                create_path(fp_task_path)
-                fp_tasks.append(fp_task_path)
-                cwd = os.getcwd()
-                os.chdir(fp_task_path)
-                os.symlink(os.path.relpath(conf_name), 'conf.dump')
-                shutil.copyfile(os.path.relpath(conf_name), 'conf.dump.bk')
-                for pair in fp_link_files :
-                    os.symlink(pair[0], pair[1])
-                os.chdir(cwd)            
-    cwd = os.getcwd()
-    for ii in fp_tasks:
-        os.chdir(ii)
-        dump_to_poscar('conf.dump', 'POSCAR', type_map)
-        os.chdir(cwd)
+    if cluster_cutoff is None:
+        cwd = os.getcwd()
+        for ii in fp_tasks:
+            os.chdir(ii)
+            dump_to_poscar('conf.dump', 'POSCAR', type_map)
+            os.chdir(cwd)
     return fp_tasks
-
 
 def _link_fp_vasp_incar (iter_index,
                          jdata,                         
@@ -873,13 +1032,15 @@ def _make_fp_vasp_configs(iter_index,
         if 'task_min' in cur_job :
             task_min = cur_job['task_min']
     # make configs
+    cluster_cutoff = jdata['cluster_cutoff'] if 'use_clusters' in jdata and jdata['use_clusters'] else None
     fp_tasks = _make_fp_vasp_inner(modd_path, work_path,
                                    model_devi_skip,
                                    e_trust_lo, e_trust_hi,
                                    f_trust_lo, f_trust_hi,
                                    task_min, fp_task_max,
                                    [],
-                                   type_map)
+                                   type_map,
+                                   cluster_cutoff)
     return fp_tasks
 
 def _fix_poscar_type (jdata, task_dirs) :
@@ -1048,8 +1209,8 @@ def _gaussian_check_fin(ii):
     if os.path.isfile(os.path.join(ii, 'output')) :
         with open(os.path.join(ii, 'output'), 'r') as fp :
             content = fp.read()
-            count = content.count('Normal termination of Gaussian')
-            if count != 1 :
+            count = content.count('termination')
+            if count == 0 :
                 return False
     else :
         return False
@@ -1076,21 +1237,6 @@ def run_fp_inner (iter_index,
     # if (('numb_gpu' not in fp_resources) or (fp_resources['numb_gpu'] == 0)) and (machine_type == 'pbs'):
     #     fp_command = 'mpirun  ' + fp_command
 
-    # cvasp can only work for vasp 
-    # trick for solving  "srun python cvasp.py vasp_std 3" problem
-    fp_style = jdata['fp_style']
-    if fp_style == "vasp" :
-       with_mpi=fp_resources['with_mpi']
-       dlog.debug('with_mpi ')
-       dlog.debug(with_mpi)
-       if with_mpi:
-          fp_command="srun "+fp_command
-          fp_resources['with_mpi']=False
-       try:
-          fp_max_errors = mdata['fp_max_errors']
-       except:
-          fp_max_errors = 3
-       fp_command='python ../cvasp.py "'+fp_command+'" '+str(fp_max_errors)
     fp_command = cmd_append_log(fp_command, log_file)
 
     iter_name = make_iter_name(iter_index)
@@ -1109,7 +1255,7 @@ def run_fp_inner (iter_index,
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
 
     if ssh_sess == None and machine_type == 'ucloud':
-        _ucloud_submit_jobs(mdata['fp_machine'],
+        ucloud_submit_jobs(mdata['fp_machine'],
                             mdata['fp_resources'],
                             fp_command,
                             work_path,
@@ -1140,7 +1286,7 @@ def run_fp_inner (iter_index,
                            backward_files,
                           remote_job = PBSJob)
     elif machine_type == 'lsf' :        
-        _group_slurm_jobs(ssh_sess,
+        group_slurm_jobs(ssh_sess,
                            fp_resources,
                            fp_command,
                            work_path,
@@ -1160,6 +1306,16 @@ def run_fp_inner (iter_index,
                            [],
                            forward_files,
                            backward_files)
+    elif ssh_sess == None and machine_type == 'aws':
+        aws_submit_jobs(mdata['fp_machine'],
+                            mdata['fp_resources'],
+                            mdata['fp_task_definition'],
+                            work_path,
+                            run_tasks,
+                            fp_group_size,
+                            [],
+                            forward_files,
+                            backward_files)
     else :
         raise RuntimeError("unknow machine type")
 
@@ -1181,8 +1337,11 @@ def run_fp (iter_index,
 
     if fp_style == "vasp" :
         forward_files = ['POSCAR', 'INCAR', 'KPOINTS'] + fp_pp_files 
-        backward_files = ['OUTCAR']
-        forward_common_files=['cvasp.py']
+        backward_files = ['OUTCAR','vasprun.xml']
+        if 'cvasp' in  mdata["fp_resources"] and mdata["fp_resources"]["cvasp"]==True:
+            forward_common_files=['cvasp.py']
+        else:
+            forward_common_files=[]
         run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _vasp_check_fin,
                      forward_common_files=forward_common_files) 
     elif fp_style == "pwscf" :
@@ -1198,7 +1357,10 @@ def run_fp (iter_index,
 
 
 def post_fp_vasp (iter_index,
-                  jdata):
+                  jdata,
+                  rfailed=None):
+    
+    ratio_failed =  rfailed if rfailed else jdata.get('ratio_failed',0.05)
     model_devi_jobs = jdata['model_devi_jobs']
     assert (iter_index < len(model_devi_jobs)) 
 
@@ -1218,27 +1380,49 @@ def post_fp_vasp (iter_index,
     system_index.sort()
     
     cwd = os.getcwd()
+
+    tcount=0 
+    icount=0 
     for ss in system_index :
         sys_outcars = glob.glob(os.path.join(work_path, "task.%s.*/OUTCAR"%ss))
         sys_outcars.sort()                
-
         flag=True
+        tcount+=len(sys_outcars)
         for oo in sys_outcars :
-            if flag:
+            try:
                 _sys = dpdata.LabeledSystem(oo)
-                if len(_sys)>0:
-                   all_sys=_sys
-                   flag=False
-                else:
-                   pass
-            else:
-                _sys = dpdata.LabeledSystem(oo)
-                if len(_sys)>0:
-                   all_sys.append(_sys)
+            except:
+                dlog.info('Try to parse from vasprun.xml')
+                try:
+                   _sys = dpdata.LabeledSystem(oo.replace('OUTCAR','vasprun.xml'))
+                except:
+                   _sys = dpdata.LabeledSystem()
+                   dlog.info('Failed fp path: %s'%oo.replace('OUTCAR',''))
 
-        sys_data_path = os.path.join(work_path, 'data.%s'%ss)
-        all_sys.to_deepmd_raw(sys_data_path)
-        all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_outcars))
+            if len(_sys) == 1:
+               if flag:
+                  all_sys = _sys
+                  flag = False
+               else:
+                  all_sys.append(_sys)
+            else:
+               icount+=1
+
+        try:
+           # limitation -->  all_sys not defined
+           sys_data_path = os.path.join(work_path, 'data.%s'%ss)
+           all_sys.to_deepmd_raw(sys_data_path)
+           all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_outcars))
+        except:
+           pass
+
+    dlog.info("failed frame number: %s "%icount)
+    dlog.info("total frame number: %s "%tcount)
+    reff=icount/tcount
+    dlog.info('ratio of failed frame:  {:.2%}'.format(reff))
+
+    if reff>ratio_failed:
+       raise RuntimeError("find too many unsuccessfully terminated jobs")
 
 
 def post_fp_pwscf (iter_index,
@@ -1314,10 +1498,15 @@ def post_fp_gaussian (iter_index,
         sys_output = glob.glob(os.path.join(work_path, "task.%s.*/output"%ss))
         sys_output.sort()
         for idx,oo in enumerate(sys_output) :
+            sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log') 
+            if 'use_atom_pref' in jdata and jdata['use_atom_pref']:
+                sys.data['atom_pref'] = np.load(os.path.join(os.path.dirname(oo), "atom_pref.npy"))
             if idx == 0:
-                all_sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log') 
+                if 'use_clusters' in jdata and jdata['use_clusters']:
+                    all_sys = dpdata.MultiSystems(sys)
+                else:
+                    all_sys = sys
             else:
-                sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log') 
                 all_sys.append(sys)
         sys_data_path = os.path.join(work_path, 'data.%s'%ss)
         all_sys.to_deepmd_raw(sys_data_path)
@@ -1337,37 +1526,41 @@ def post_fp (iter_index,
     else :
         raise RuntimeError ("unsupported fp style")            
     
-def run_iter (json_file, machine_file) :
-    with open (json_file, 'r') as fp :
-        jdata = json.load (fp)
-    with open (machine_file, 'r') as fp:
-        mdata = json.load (fp)
+def set_version(mdata):
+    if 'deepmd_path' in mdata:
+        deepmd_version = '0.1'
+    elif 'python_path' in mdata:
+        deepmd_version = '1'
+    else:
+        # default
+        deepmd_version = '0.1'
+    # set
+    mdata['deepmd_version'] = deepmd_version
+    return mdata
+
+def run_iter (param_file, machine_file) :
+    try:
+       import ruamel
+       from monty.serialization import loadfn,dumpfn
+       warnings.simplefilter('ignore', ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
+       jdata=loadfn(param_file)
+       mdata=loadfn(machine_file)
+    except:
+       with open (param_file, 'r') as fp :
+           jdata = json.load (fp)
+       with open (machine_file, 'r') as fp:
+           mdata = json.load (fp)
+
+    if jdata.get('pretty_print',False):
+       #assert(jdata["pretty_format"] in ['json','yaml'])
+       fparam=SHORT_CMD+'_'+param_file.split('.')[0]+'.'+jdata.get('pretty_format','json')
+       dumpfn(jdata,fparam,indent=4)
+       fmachine=SHORT_CMD+'_'+machine_file.split('.')[0]+'.'+jdata.get('pretty_format','json')
+       dumpfn(mdata,fmachine,indent=4)
 
     max_tasks = 10000
     numb_task = 9
     record = "record.dpgen"
-
-    train_machine = mdata['train_machine']    
-    if ('machine_type' in train_machine) and  \
-       (train_machine['machine_type'] == 'ucloud'):
-        train_ssh_sess = None
-    else :
-        train_ssh_sess = SSHSession(train_machine)
-
-    model_devi_machine = mdata['model_devi_machine']    
-    if ('machine_type' in model_devi_machine) and  \
-       (model_devi_machine['machine_type'] == 'ucloud'):
-        model_devi_ssh_sess = None
-    else :
-        model_devi_ssh_sess = SSHSession(model_devi_machine)
-
-    fp_machine = mdata['fp_machine']    
-    if ('machine_type' in fp_machine) and  \
-       (fp_machine['machine_type'] == 'ucloud'):
-        fp_ssh_sess = None
-    else :
-        fp_ssh_sess = SSHSession(fp_machine)
-
     iter_rec = [0, -1]
     if os.path.isfile (record) :
         with open (record) as frec :
@@ -1391,6 +1584,13 @@ def run_iter (json_file, machine_file) :
                 make_train (ii, jdata, mdata) 
             elif jj == 1 :
                 log_iter ("run_train", ii, jj)
+                mdata  = decide_train_machine(mdata)
+                train_machine = mdata['train_machine'] 
+                if ('machine_type' in train_machine) and  \
+                   ((train_machine['machine_type'] == 'ucloud') or (train_machine['machine_type'] == 'aws')):
+                    train_ssh_sess = None
+                else :
+                    train_ssh_sess = SSHSession(train_machine)
                 run_train  (ii, jdata, mdata, train_ssh_sess)
             elif jj == 2 :
                 log_iter ("post_train", ii, jj)
@@ -1402,6 +1602,13 @@ def run_iter (json_file, machine_file) :
                     break
             elif jj == 4 :
                 log_iter ("run_model_devi", ii, jj)
+                mdata = decide_model_devi_machine(mdata)
+                model_devi_machine = mdata['model_devi_machine']    
+                if ('machine_type' in model_devi_machine) and  \
+                   ((model_devi_machine['machine_type'] == 'ucloud') or (model_devi_machine['machine_type'] == 'aws')):
+                    model_devi_ssh_sess = None
+                else :
+                    model_devi_ssh_sess = SSHSession(model_devi_machine)
                 run_model_devi (ii, jdata, mdata, model_devi_ssh_sess)
             elif jj == 5 :
                 log_iter ("post_model_devi", ii, jj)
@@ -1411,12 +1618,20 @@ def run_iter (json_file, machine_file) :
                 make_fp (ii, jdata, mdata)
             elif jj == 7 :
                 log_iter ("run_fp", ii, jj)
+
+                mdata = decide_fp_machine(mdata)
+                fp_machine = mdata['fp_machine']  
+                if ('machine_type' in fp_machine) and  \
+                   ((fp_machine['machine_type'] == 'ucloud') or (fp_machine['machine_type'] == 'aws')):
+                    fp_ssh_sess = None
+                else :
+                    fp_ssh_sess = SSHSession(fp_machine)
                 run_fp (ii, jdata, mdata, fp_ssh_sess)
             elif jj == 8 :
                 log_iter ("post_fp", ii, jj)
                 post_fp (ii, jdata)
             else :
-                raise RuntimeError ("unknow task %d, something wrong" % jj)
+                raise RuntimeError ("unknown task %d, something wrong" % jj)
             record_iter (record, ii, jj)
 def gen_run(args) :
     if args.PARAM and args.MACHINE:

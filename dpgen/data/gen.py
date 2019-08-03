@@ -1,5 +1,17 @@
 #!/usr/bin/env python3 
 
+import os
+import sys
+import argparse
+import glob
+import json
+import random
+import logging
+import warnings
+import shutil
+import time
+import dpdata
+import numpy as np
 import os,json,shutil,re,glob,argparse,dpdata
 import numpy as np
 import subprocess as sp
@@ -9,9 +21,14 @@ import dpgen.data.tools.bcc as bcc
 import dpgen.data.tools.diamond as diamond
 import dpgen.data.tools.sc as sc
 from pymatgen import Structure
+from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
+from dpgen import ROOT_PATH
+
+
 
 def create_path (path) :
-    path += '/'
+    if  path[-1] != "/":
+        path += '/'
     if os.path.isdir(path) : 
         dirname = os.path.dirname(path)        
         counter = 0
@@ -81,7 +98,7 @@ def class_cell_type(jdata) :
     elif ct == "bcc" :
         cell_type = bcc
     else :
-        raise RuntimeError("unknow cell type %s" % ct)
+        raise RuntimeError("unknown cell type %s" % ct)
     return cell_type
 
 def poscar_ele(poscar_in, poscar_out, eles, natoms) :
@@ -197,6 +214,7 @@ def make_super_cell_poscar(jdata) :
     
     from_file = os.path.join(path_sc, 'POSCAR.copied')
     shutil.copy2(from_poscar_path, from_file)
+
     to_path = path_sc
     to_file = os.path.join(to_path, 'POSCAR')
   
@@ -267,7 +285,7 @@ def place_element (jdata) :
         poscar_ele(pos_in, pos_out, elements, ii)
         poscar_shuffle(pos_out, pos_out)
 
-def make_vasp_relax (jdata) :
+def make_vasp_relax (jdata, mdata) :
     out_dir = jdata['out_dir']
     potcars = jdata['potcars']
     #encut = jdata['encut']
@@ -286,12 +304,19 @@ def make_vasp_relax (jdata) :
     work_dir = os.path.join(out_dir, global_dirname_02)
     assert (os.path.isdir(work_dir))
     work_dir = os.path.abspath(work_dir)
+
     if os.path.isfile(os.path.join(work_dir, 'INCAR' )) :
         os.remove(os.path.join(work_dir, 'INCAR' ))
     if os.path.isfile(os.path.join(work_dir, 'POTCAR')) :
         os.remove(os.path.join(work_dir, 'POTCAR'))
     shutil.copy2( jdata['relax_incar'], 
                  os.path.join(work_dir, 'INCAR'))
+    is_cvasp = False
+    if 'cvasp' in mdata['fp_resources'].keys():
+        is_cvasp = mdata['fp_resources']['cvasp']
+    if is_cvasp:
+        cvasp_file=os.path.join(ROOT_PATH,'generator/lib/cvasp.py')
+        shutil.copyfile(cvasp_file, os.path.join(work_dir, 'cvasp.py'))
     out_potcar = os.path.join(work_dir, 'POTCAR')
     with open(out_potcar, 'w') as outfile:
         for fname in potcars:
@@ -407,16 +432,6 @@ def make_vasp_md(jdata) :
     scale = jdata['scale']   
     pert_numb = jdata['pert_numb'] 
     md_nstep = jdata['md_nstep']
-    #encut = jdata['encut']
-    #kspacing = jdata['kspacing_md']
-    #kgamma = jdata['kgamma']
-    #md_temp = jdata['md_temp']
-    #ismear = 1
-    #f 'ismear' in jdata :
-    #    ismear = jdata['ismear']
-    #sigma = 0.2
-    #if 'sigma' in jdata :
-    #    sigma = jdata['sigma']
 
     cwd = os.getcwd()
     #vasp_dir = os.path.join(cwd, 'vasp.in')
@@ -529,56 +544,220 @@ def coll_vasp_md(jdata) :
         os.chdir(path_md)
     os.chdir(cwd)
 
+def _vasp_check_fin (ii) :
+    if os.path.isfile(os.path.join(ii, 'OUTCAR')) :
+        with open(os.path.join(ii, 'OUTCAR'), 'r') as fp :
+            content = fp.read()
+            count = content.count('Elapse')
+            if count != 1 :
+                return False
+    else :
+        return False
+    return True
+def _group_slurm_jobs(ssh_sess,
+                      resources,
+                      command,
+                      work_path,
+                      tasks,
+                      group_size,
+                      forward_common_files,
+                      forward_task_files,
+                      backward_task_files,
+                      remote_job = SlurmJob) :
+    task_chunks = [
+        [j for j in tasks[i:i + group_size]] \
+        for i in range(0, len(tasks), group_size)
+    ]
+    job_list = []
+    for chunk in task_chunks :
+        rjob = remote_job(ssh_sess, work_path)
+        rjob.upload('.',  forward_common_files)
+        rjob.upload(chunk, forward_task_files)
+        rjob.submit(chunk, command, resources = resources)
+        job_list.append(rjob)
+
+    job_fin = [False for ii in job_list]
+    while not all(job_fin) :
+        for idx,rjob in enumerate(job_list) :
+            if not job_fin[idx] :
+                status = rjob.check_status()
+                if status == JobStatus.terminated :
+                    raise RuntimeError("find unsuccessfully terminated job in %s" % rjob.get_job_root())
+                elif status == JobStatus.finished :
+                    rjob.download(task_chunks[idx], backward_task_files)
+                    rjob.clean()
+                    job_fin[idx] = True
+        time.sleep(10)
+
+def run_vasp_relax(jdata, mdata, ssh_sess):
+    fp_command = mdata['fp_command']
+    fp_group_size = mdata['fp_group_size']
+    fp_resources = mdata['fp_resources']
+    machine_type = mdata['fp_machine']['machine_type']
+    work_dir = os.path.join(jdata['out_dir'], global_dirname_02)
+    
+    forward_files = ["POSCAR", "INCAR", "POTCAR"]
+    backward_files = ["OUTCAR","CONTCAR"]
+    forward_common_files = []
+    if 'cvasp' in mdata['fp_resources']:
+        if mdata['fp_resources']['cvasp']:
+            forward_common_files=['cvasp.py']
+    relax_tasks = glob.glob(os.path.join(work_dir, "sys-*"))
+    relax_tasks.sort()
+    print("work_dir",work_dir)
+    print("relax_tasks",relax_tasks)
+    if len(relax_tasks) == 0:
+        return
+
+    relax_run_tasks = []
+    for ii in relax_tasks : 
+        if not _vasp_check_fin(ii):
+            relax_run_tasks.append(ii)
+    run_tasks = [os.path.basename(ii) for ii in relax_run_tasks]
+
+    #print(run_tasks)
+    assert (machine_type == "slurm" or machine_type =="Slurm"), "Currently only support for Slurm!"
+    _group_slurm_jobs(ssh_sess,
+                           fp_resources,
+                           fp_command,
+                           work_dir,
+                           run_tasks,
+                           fp_group_size,
+                           forward_common_files,
+                           forward_files,
+                           backward_files)
+
+def run_vasp_md(jdata, mdata, ssh_sess):
+    fp_command = mdata['fp_command']
+    fp_group_size = mdata['fp_group_size']
+    fp_resources = mdata['fp_resources']
+    machine_type = mdata['fp_machine']['machine_type']
+    work_dir = os.path.join(jdata['out_dir'], global_dirname_04)
+    scale = jdata['scale']   
+    pert_numb = jdata['pert_numb'] 
+    md_nstep = jdata['md_nstep']
+
+    forward_files = ["POSCAR", "INCAR", "POTCAR"]
+    backward_files = ["OUTCAR"]
+    forward_common_files = []
+    if 'cvasp' in mdata['fp_resources']:
+        if mdata['fp_resources']['cvasp']:
+            forward_common_files=['cvasp.py']
+
+    path_md = work_dir
+    path_md = os.path.abspath(path_md)
+    cwd = os.getcwd()
+    assert(os.path.isdir(path_md)), "md path should exists"
+    os.chdir(path_md)
+    md_tasks = glob.glob('sys-*/scale*/00*')
+    md_tasks.sort()
+
+    os.chdir(cwd)
+
+    if len(md_tasks) == 0:
+        return
+
+    md_run_tasks = []
+    for ii in md_tasks : 
+        if not _vasp_check_fin(ii):
+            md_run_tasks.append(ii)
+    run_tasks = [ii for ii in md_run_tasks]
+
+    print("run_tasks",run_tasks)
+    assert (machine_type == "slurm" or machine_type =="Slurm"), "Currently only support for Slurm!"
+    _group_slurm_jobs(ssh_sess,
+                           fp_resources,
+                           fp_command,
+                           work_dir,
+                           run_tasks,
+                           fp_group_size,
+                           forward_common_files,
+                           forward_files,
+                           backward_files)
+    
+
+    
+
+
+
 
 def gen_init_bulk(args) :
-    with open (args.PARAM, 'r') as fp :
-        jdata = json.load (fp)
+    try:
+       import ruamel
+       from monty.serialization import loadfn,dumpfn
+       warnings.simplefilter('ignore', ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
+       jdata=loadfn(args.PARAM)
+       mdata=loadfn(args.MACHINE)
+    except:
+        with open (args.PARAM, 'r') as fp :
+            jdata = json.load (fp)
+        with open (args.MACHINE, "r") as fp:
+            mdata = json.load(fp)
+
     out_dir = out_dir_name(jdata)
+
+    fp_machine = mdata['fp_machine']    
+    fp_ssh_sess = SSHSession(fp_machine)  
     jdata['out_dir'] = out_dir
+    ## correct element name 
+    temp_elements = []
+    for ele in jdata['elements']:
+        temp_elements.append(ele[0].upper() + ele[1:])
+    jdata['elements'] = temp_elements
+
     from_poscar = False 
     if 'from_poscar' in jdata :
         from_poscar = jdata['from_poscar']
     print ("# working dir %s" % out_dir)
 
-    stage = args.STAGE
+    stage_list = [int(i) for i in jdata['stages']]
 
-    if stage == 1 :
-        create_path(out_dir)
-        shutil.copy2(args.PARAM, os.path.join(out_dir, 'param.json'))
-        if from_poscar :
-            make_super_cell_poscar(jdata)
+    
+    for stage in stage_list:
+        if stage == 1 :
+            create_path(out_dir)
+            shutil.copy2(args.PARAM, os.path.join(out_dir, 'param.json'))
+            if from_poscar :
+                make_super_cell_poscar(jdata)
+            else :
+                make_unit_cell(jdata)
+                make_super_cell(jdata)
+                place_element(jdata)
+            make_vasp_relax(jdata, mdata)      
+            run_vasp_relax(jdata, mdata, fp_ssh_sess)
+        elif stage == 2 :
+            make_scale(jdata)
+            pert_scaled(jdata)
+        elif stage == 3 :
+            make_vasp_md(jdata)
+            run_vasp_md(jdata, mdata, fp_ssh_sess)
+        elif stage == 4 :
+            coll_vasp_md(jdata)
         else :
-            make_unit_cell(jdata)
-            make_super_cell(jdata)
-            place_element(jdata)
-        make_vasp_relax(jdata)
-    elif stage == 2 :
-        make_scale(jdata)
-        pert_scaled(jdata)
-    elif stage == 3 :
-        make_vasp_md(jdata)
-    elif stage == 4 :
-        coll_vasp_md(jdata)
-    else :
-        raise RuntimeError("unknow stage %d" % stage)
+            raise RuntimeError("unknown stage %d" % stage)
 
-                
 def _main() :
     parser = argparse.ArgumentParser(
         description="gen init confs")
     parser.add_argument('PARAM', type=str, 
-                        help="parameter file, json format")
-    parser.add_argument('STAGE', type=int,
-                        help="the stage of init, can be 1, 2, 3 or 4. "
-                        "1: Setup vasp jobs for relaxation. "
-                        "2: Collect vasp relaxed confs (if relax is not skiped). Perturb system. "
-                        "3: Setup vasp jobs for MD of perturbed system. "
-                        "4: Collect vasp md confs, make deepmd data. "
-    )
+                        help="parameter file, json/yaml format")
+    parser.add_argument("MACHINE", type=str, 
+                        help="The settings of the machine running the generator")
     args = parser.parse_args()
 
-    with open (args.PARAM, 'r') as fp :
-        jdata = json.load (fp)
+    try:
+       import ruamel
+       from monty.serialization import loadfn,dumpfn
+       warnings.simplefilter('ignore', ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
+       jdata=loadfn(args.PARAM)
+       mdata=loadfn(args.MACHINE)
+    except:
+        with open (args.PARAM, 'r') as fp :
+            jdata = json.load (fp)
+        with open (args.MACHINE, "r") as fp:
+            mdata = json.load(fp)
+
+
     out_dir = out_dir_name(jdata)
     jdata['out_dir'] = out_dir
     from_poscar = False 
@@ -586,27 +765,29 @@ def _main() :
         from_poscar = jdata['from_poscar']
     print ("# working dir %s" % out_dir)
 
-    stage = args.STAGE
+    stage_list = [int(i) for i in jdata['stages']]
 
-    if stage == 1 :
-        create_path(out_dir)
-        shutil.copy2(args.PARAM, os.path.join(out_dir, 'param.json'))
-        if from_poscar :
-            make_super_cell_poscar(jdata)
+    for stage in stage_list:
+        if stage == 1 :
+            create_path(out_dir)
+            shutil.copy2(args.PARAM, os.path.join(out_dir, 'param.json'))
+            if from_poscar :
+                make_super_cell_poscar(jdata)
+            else :
+                make_unit_cell(jdata)
+                make_super_cell(jdata)
+                place_element(jdata)
+            make_vasp_relax(jdata, mdata)
+        elif stage == 2 :
+            make_scale(jdata)
+            pert_scaled(jdata)
+        elif stage == 3 :
+            make_vasp_md(jdata)
+            run_vasp_md(jdata, mdata)
+        elif stage == 4 :
+            coll_vasp_md(jdata)
         else :
-            make_unit_cell(jdata)
-            make_super_cell(jdata)
-            place_element(jdata)
-        make_vasp_relax(jdata)
-    elif stage == 2 :
-        make_scale(jdata)
-        pert_scaled(jdata)
-    elif stage == 3 :
-        make_vasp_md(jdata)
-    elif stage == 4 :
-        coll_vasp_md(jdata)
-    else :
-        raise RuntimeError("unknow stage %d" % stage)
+            raise RuntimeError("unknown stage %d" % stage)
     
 if __name__ == "__main__":
     _main()

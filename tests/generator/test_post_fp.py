@@ -55,7 +55,7 @@ class TestPostFPVasp(unittest.TestCase):
 
         with open (param_file, 'r') as fp :
             jdata = json.load (fp)
-        post_fp_vasp(0, jdata)
+        post_fp_vasp(0, jdata, rfailed=0.3)
         
         sys = dpdata.LabeledSystem('iter.000000/02.fp/data.000/', fmt = 'deepmd/raw')
         self.assertEqual(sys.get_nframes(), 2)
@@ -95,7 +95,7 @@ class TestPostFPVasp(unittest.TestCase):
 
         with open (param_file, 'r') as fp :
             jdata = json.load (fp)
-        post_fp(0, jdata)
+        post_fp_vasp(0, jdata, rfailed=0.3)
         
         sys = dpdata.LabeledSystem('iter.000000/02.fp/data.001/', fmt = 'deepmd/raw')
         self.assertEqual(sys.get_nframes(), 1)
@@ -129,6 +129,12 @@ class TestPostFPVasp(unittest.TestCase):
                                            sys.data['virials'][ff][ii][jj], places = 5)
                     self.assertAlmostEqual(ref_cell[ff][ii][jj], 
                                            sys.data['cells'][ff][ii][jj])
+
+    def test_post_fp_vasp_2(self):
+        with open (param_file, 'r') as fp :
+            jdata = json.load (fp)
+        with self.assertRaises(RuntimeError):
+            post_fp_vasp(0, jdata)
 
 
 class TestPostFPPWSCF(unittest.TestCase, CompLabeledSys):

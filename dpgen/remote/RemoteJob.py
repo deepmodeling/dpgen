@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import os, sys, paramiko, json, uuid, tarfile, time, stat
+import os, sys, paramiko, json, uuid, tarfile, time, stat, shutil
+from glob import glob
 from enum import Enum
 from dpgen import dlog
+
 
 class JobStatus (Enum) :
     unsubmitted = 1
@@ -12,6 +14,63 @@ class JobStatus (Enum) :
     terminated = 4
     finished = 5
     unknown = 100
+
+class awsMachineJob(object):
+    def __init__ (self,
+                  remote_root,
+                  work_path,
+                  job_uuid=None,
+    ) :
+        self.remote_root=os.path.join(remote_root,work_path)
+        self.local_root = os.path.abspath(work_path)
+        if job_uuid:
+            self.job_uuid=job_uuid
+        else:
+            self.job_uuid = str(uuid.uuid4())
+        
+        dlog.info("local_root is %s"% self.local_root)
+        dlog.info("remote_root is %s"% self.remote_root)
+        
+    def upload(self,
+               job_dir,
+               local_up_files,
+               dereference = True) :
+        cwd = os.getcwd()
+        print('cwd=',cwd)
+        os.chdir(self.local_root)       
+        for ii in local_up_files :
+            print('self.local_root=',self.local_root,'remote_root=',self.remote_root,'job_dir=',job_dir,'ii=',ii)
+            if os.path.isfile(os.path.join(job_dir,ii)):
+                if not os.path.exists(os.path.join(self.remote_root,job_dir)):
+                    os.makedirs(os.path.join(self.remote_root,job_dir))
+                shutil.copyfile(os.path.join(job_dir,ii),os.path.join(self.remote_root,job_dir,ii))
+            elif os.path.isdir(os.path.join(job_dir,ii)):
+                shutil.copytree(os.path.join(job_dir,ii),os.path.join(self.remote_root,job_dir,ii))
+            else:
+                print('unknownfile','local_root=',self.local_root,'job_dir=',job_dir,'filename=',ii)
+        os.chdir(cwd)
+    def download(self,
+               job_dir,
+               remote_down_files,
+               dereference = True) :
+        for ii in remote_down_files:
+         #   print('self.local_root=',self.local_root,'remote_root=',self.remote_root,'job_dir=',job_dir,'ii=',ii)
+            file_succ_copy_flag=False
+            while not file_succ_copy_flag:
+                if os.path.isfile(os.path.join(self.remote_root,job_dir,ii)):
+                    shutil.copyfile(os.path.join(self.remote_root,job_dir,ii),os.path.join(self.local_root,job_dir,ii))
+                    file_succ_copy_flag=True
+                elif os.path.isdir(os.path.join(self.remote_root,job_dir,ii)):
+                    try:
+                        os.rmdir(os.path.join(self.local_root,job_dir,ii))
+                    except:
+                        print('dir is not empty   '+str(os.path.join(self.local_root,job_dir,ii)))
+                    else:
+                        shutil.copytree(os.path.join(self.remote_root,job_dir,ii),os.path.join(self.local_root,job_dir,ii))
+                        file_succ_copy_flag=True
+                else:
+                    print('unknownfile,maybe need for waiting for a while','local_root=',self.local_root,'job_dir=',job_dir,'filename=',ii)
+                    time.sleep(5)
 
 def _default_item(resources, key, value) :
     if key not in resources :
@@ -116,13 +175,17 @@ class RemoteJob (object):
 
     def download(self, 
                  job_dirs,
-                 remote_down_files) :
+                 remote_down_files,
+                 back_error=False) :
         cwd = os.getcwd()
         os.chdir(self.local_root) 
         file_list = []
         for ii in job_dirs :
             for jj in remote_down_files :
                 file_list.append(os.path.join(ii,jj))
+            if back_error:
+               errors=glob(os.path.join(ii,'error*'))
+               file_list.extend(errors)
         self._get_files(file_list)
         os.chdir(cwd)
         
@@ -152,9 +215,9 @@ class RemoteJob (object):
                 self._rmtree(sftp, rpath, level=(level + 1))
             else:
                 rpath = os.path.join(remotepath, f.filename)
-                if verbose: print('removing %s%s' % ('    ' * level, rpath))
+                if verbose: dlog.info('removing %s%s' % ('    ' * level, rpath))
                 sftp.remove(rpath)
-        if verbose: print('removing %s%s' % ('    ' * level, remotepath))
+        if verbose: dlog.info('removing %s%s' % ('    ' * level, remotepath))
         sftp.rmdir(remotepath)
 
     def _put_files(self,
@@ -214,16 +277,16 @@ class CloudMachineJob (RemoteJob) :
                args = None, 
                resources = None) :
         
-        #print("Current path is",os.getcwd())
+        #dlog.info("Current path is",os.getcwd())
 
         #for ii in job_dirs :
         #    if not os.path.isdir(ii) :
         #        raise RuntimeError("cannot find dir %s" % ii)
-        # print(self.remote_root)
+        # dlog.info(self.remote_root)
         script_name = self._make_script(job_dirs, cmd, args, resources)
         self.stdin, self.stdout, self.stderr = self.ssh.exec_command(('cd %s; bash %s' % (self.remote_root, script_name)))
-        # print(self.stderr.read().decode('utf-8'))
-        # print(self.stdout.read().decode('utf-8'))
+        # dlog.info(self.stderr.read().decode('utf-8'))
+        # dlog.info(self.stdout.read().decode('utf-8'))
 
     def check_status(self) :
         if not self._check_finish(self.stdout) :
@@ -312,7 +375,8 @@ class SlurmJob (RemoteJob) :
         if restart:
            try:
                status = self.check_status()
-               if status in [  JobStatus.unsubmitted, JobStatus.unknow, JobStatus.terminated ]:
+               dlog.debug(status)
+               if status in [  JobStatus.unsubmitted, JobStatus.unknown, JobStatus.terminated ]:
                   dlog.debug('task restart point !!!')
                   _submit()    
                elif status==JobStatus.waiting:
@@ -333,7 +397,7 @@ class SlurmJob (RemoteJob) :
     def check_status(self) :
         job_id = self._get_job_id()
         if job_id == "" :
-            raise RuntimeError("job %s is has not been submitted" % self.remote_root)
+            raise RuntimeError("job %s has not been submitted" % self.remote_root)
         ret, stdin, stdout, stderr\
             = self.block_call ("squeue --job " + job_id)
         err_str = stderr.read().decode('utf-8')
@@ -377,6 +441,13 @@ class SlurmJob (RemoteJob) :
         sftp.close()
         return ret
 
+    def _make_squeue(self,mdata1, res):
+        ret = ''
+        ret += 'squeue -u %s ' % mdata1['username']
+        ret += '-p %s ' % res['partition']
+        ret += '| grep PD'
+        return ret
+
     def _make_script(self, 
                      job_dirs,
                      cmd,
@@ -402,8 +473,13 @@ class SlurmJob (RemoteJob) :
             ret += '#SBATCH -C %s \n' % ii
         for ii in res['license_list'] :
             ret += '#SBATCH -L %s \n' % ii
-        for ii in res['exclude_list'] :
-            ret += '#SBATCH --exclude %s \n' % ii
+        if len(res['exclude_list']) >0:
+            temp_exclude = ""
+            for ii in res['exclude_list'] :
+                temp_exclude += ii
+                temp_exclude += ","
+            temp_exclude = temp_exclude[:-1]
+            ret += '#SBATCH --exclude %s \n' % temp_exclude
         ret += "\n"
         # ret += 'set -euo pipefail\n\n'
         for ii in res['module_unload_list'] :
@@ -424,23 +500,71 @@ class SlurmJob (RemoteJob) :
             args = []
             for ii in job_dirs:
                 args.append('')
+
+        try:
+           cvasp=res['cvasp']
+           try:
+              fp_max_errors = res['fp_max_errors']
+           except:
+              fp_max_errors = 3
+        except:
+           cvasp=False
+
         for ii,jj in zip(job_dirs, args) :
             ret += 'cd %s\n' % ii
             ret += 'test $? -ne 0 && exit\n\n'
-            if res['with_mpi'] :
-                ret += 'if [ -f tag_finished ] ;then\n'
-                ret += '  echo gogogo \n'
-                ret += 'else\n'
-                ret += '  srun %s %s\n' % (cmd, jj)
-                ret += '  touch tag_finished\n'
-                ret += 'fi\n\n'
-            else :
-                ret += 'if [ -f tag_finished ] ;then\n'
-                ret += '  echo gogogo \n'
-                ret += 'else\n'
-                ret += '  %s %s\n' % (cmd, jj)
-                ret += '  touch tag_finished\n'
-                ret += 'fi\n\n'
+
+            if cvasp:
+                cmd=cmd.split('1>')[0].strip()
+                if res['with_mpi'] :
+                    ret += 'if [ -f tag_finished ] ;then\n'
+                    ret += '  echo gogogo \n'
+                    ret += 'else\n'
+                    ret += '  python ../cvasp.py "srun %s" %s %s 1>log 2>log\n' % (cmd, fp_max_errors, jj)
+                    ret += '  if test $? -ne 0 \n'
+                    ret += '  then\n'
+                    ret += '     exit\n'
+                    ret += '  else\n'
+                    ret += '     touch tag_finished\n'
+                    ret += '  fi\n'
+                    ret += 'fi\n\n'
+                else :
+                    ret += 'if [ -f tag_finished ] ;then\n'
+                    ret += '  echo gogogo \n'
+                    ret += 'else\n'
+                    ret += '  python ../cvasp.py "%s" %s %s 1>log 2>log\n' % (cmd, fp_max_errors, jj)
+                    ret += '  if test $? -ne 0 \n'
+                    ret += '  then\n'
+                    ret += '     exit\n'
+                    ret += '  else\n'
+                    ret += '     touch tag_finished\n'
+                    ret += '  fi\n'
+                    ret += 'fi\n\n'
+            else:
+                if res['with_mpi'] :
+                    ret += 'if [ -f tag_finished ] ;then\n'
+                    ret += '  echo gogogo \n'
+                    ret += 'else\n'
+                    ret += '  srun %s %s\n' % (cmd, jj)
+                    ret += '  if test $? -ne 0 \n'
+                    ret += '  then\n'
+                    ret += '     exit\n'
+                    ret += '  else\n'
+                    ret += '     touch tag_finished\n'
+                    ret += '  fi\n'
+                    ret += 'fi\n\n'
+                else :
+                    ret += 'if [ -f tag_finished ] ;then\n'
+                    ret += '  echo gogogo \n'
+                    ret += 'else\n'
+                    ret += '  %s %s\n' % (cmd, jj)
+                    ret += '  if test $? -ne 0 \n'
+                    ret += '  then\n'
+                    ret += '     exit\n'
+                    ret += '  else\n'
+                    ret += '     touch tag_finished\n'
+                    ret += '  fi\n'
+                    ret += 'fi\n\n'
             if 'allow_failure' not in res or res['allow_failure'] is False:
                 ret += 'test $? -ne 0 && exit\n'
             ret += 'cd %s\n' % self.remote_root
@@ -490,7 +614,7 @@ class PBSJob (RemoteJob) :
                                     % (err_str, ret))
         status_line = stdout.read().decode('utf-8').split ('\n')[-2]
         status_word = status_line.split ()[-2]        
-#        print (status_word)
+#        dlog.info (status_word)
         if      status_word in ["Q","H"] :
             return JobStatus.waiting
         elif    status_word in ["R"] :
@@ -587,16 +711,44 @@ class PBSJob (RemoteJob) :
 # rjob.upload(['job0', 'job1'], ['batch_exec.py', 'test'])
 # rjob.submit(['job0', 'job1'], 'touch a; sleep 2')
 # while rjob.check_status() == JobStatus.running :
-#     print('checked')
+#     dlog.info('checked')
 #     time.sleep(2)
-# print(rjob.check_status())
+# dlog.info(rjob.check_status())
 # # can download dirs and normal files
 # rjob.download(['job0', 'job1'], ['a'])
 # # rjob.clean()
 
 
 class LSFJob (RemoteJob) :
-    def submit(self, 
+    def submit(self,
+               job_dirs,
+               cmd,
+               args = None,
+               resources = None,
+               restart = False):
+        dlog.debug(restart)
+        if restart:
+            status = self.check_status()
+            if status in [  JobStatus.unsubmitted, JobStatus.unknown, JobStatus.terminated ]:
+                dlog.debug('task restart point !!!')
+                self._submit(job_dirs, cmd, args, resources)
+            elif status==JobStatus.waiting:
+                dlog.debug('task is waiting')
+            elif status==JobStatus.running:
+                dlog.debug('task is running')
+            else:
+                dlog.debug('task is finished')
+               
+
+           #except:
+               #dlog.debug('no job_id file')
+               #dlog.debug('task restart point !!!')
+               #self._submit(job_dirs, cmd, args, resources)
+        else:
+           dlog.debug('new task!!!')
+           self._submit(job_dirs, cmd, args, resources)
+
+    def _submit(self, 
                job_dirs,
                cmd,
                args = None, 
