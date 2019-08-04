@@ -34,6 +34,7 @@ from dpgen.auto_test.lib.utils import record_iter
 from dpgen.auto_test.lib.utils import log_iter
 from dpgen.auto_test.lib.pwscf import make_pwscf_input
 from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
+from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
 from dpgen.remote.group_jobs import *
 from dpgen.auto_test import gen_00_equi,cmpt_00_equi
 from dpgen.auto_test import gen_01_eos,cmpt_01_eos
@@ -141,6 +142,7 @@ def run_equi(task_type,jdata,mdata,ssh_sess):
     
     #vasp
     if task_type=="vasp":
+        mdata=decide_fp_machine(mdata)
         vasp_exec=mdata['fp_command']
         group_size = mdata['fp_group_size']
         resources = mdata['fp_resources']
@@ -165,6 +167,7 @@ def run_equi(task_type,jdata,mdata,ssh_sess):
 
     #lammps
     elif task_type in lammps_task_type:
+        mdata = decide_model_devi_machine(mdata)
         lmp_exec = mdata['lmp_command']
         group_size = mdata['model_devi_group_size']
         resources = mdata['model_devi_resources']
@@ -267,6 +270,7 @@ def run_eos(task_type,jdata,mdata,ssh_sess):
     
     #vasp
     if task_type=="vasp":
+        mdata=decide_fp_machine(mdata)
         vasp_exec=mdata['fp_command']
         group_size = mdata['fp_group_size']
         resources = mdata['fp_resources']
@@ -291,6 +295,7 @@ def run_eos(task_type,jdata,mdata,ssh_sess):
 
     #lammps
     elif task_type in lammps_task_type:
+        mdata = decide_model_devi_machine(mdata)
         lmp_exec = mdata['lmp_command']
         group_size = mdata['model_devi_group_size']
         resources = mdata['model_devi_resources']
@@ -385,6 +390,7 @@ def run_elastic(task_type,jdata,mdata,ssh_sess):
     
     #vasp
     if task_type == "vasp":
+        mdata=decide_fp_machine(mdata)
         vasp_exec=mdata['fp_command']
         group_size = mdata['fp_group_size']
         resources = mdata['fp_resources']
@@ -409,6 +415,7 @@ def run_elastic(task_type,jdata,mdata,ssh_sess):
 
     #lammps
     elif task_type in lammps_task_type:
+        mdata = decide_model_devi_machine(mdata)
         lmp_exec = mdata['lmp_command']
         group_size = mdata['model_devi_group_size']
         resources = mdata['model_devi_resources']
@@ -501,6 +508,7 @@ def run_vacancy(task_type,jdata,mdata,ssh_sess):
     
     #vasp
     if task_type == "vasp":
+        mdata=decide_fp_machine(mdata)
         vasp_exec=mdata['fp_command']
         group_size = mdata['fp_group_size']
         resources = mdata['fp_resources']
@@ -525,6 +533,7 @@ def run_vacancy(task_type,jdata,mdata,ssh_sess):
 
     #lammps
     elif task_type in lammps_task_type:
+        mdata = decide_model_devi_machine(mdata)
         lmp_exec = mdata['lmp_command']
         group_size = mdata['model_devi_group_size']
         resources = mdata['model_devi_resources']
@@ -628,6 +637,7 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
     
     #vasp
     if task_type == "vasp":
+        mdata=decide_fp_machine(mdata)
         vasp_exec=mdata['fp_command']
         group_size = mdata['fp_group_size']
         resources = mdata['fp_resources']
@@ -652,6 +662,7 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
 
     #lammps
     elif task_type in lammps_task_type:
+        mdata = decide_model_devi_machine(mdata)
         lmp_exec = mdata['lmp_command']
         group_size = mdata['model_devi_group_size']
         resources = mdata['model_devi_resources']
@@ -764,6 +775,7 @@ def run_surf(task_type,jdata,mdata,ssh_sess):
      
     #vasp
     if task_type == "vasp":
+        mdata=decide_fp_machine(mdata)
         vasp_exec=mdata['fp_command']
         group_size = mdata['fp_group_size']
         resources = mdata['fp_resources']
@@ -788,6 +800,7 @@ def run_surf(task_type,jdata,mdata,ssh_sess):
 
     #lammps
     elif task_type in lammps_task_type:
+        mdata = decide_model_devi_machine(mdata)
         lmp_exec = mdata['lmp_command']
         group_size = mdata['model_devi_group_size']
         resources = mdata['model_devi_resources']
@@ -887,6 +900,7 @@ def run_phonon(task_type,jdata,mdata,ssh_sess):
      
     #vasp
     if task_type == "vasp":
+        mdata=decide_fp_machine(mdata)
         vasp_exec=mdata['fp_command']
         group_size = mdata['fp_group_size']
         resources = mdata['fp_resources']
@@ -946,22 +960,25 @@ def run_task (json_file, machine_file) :
         mdata = json.load (fp)
 
     record = "record.auto_test"
-    
-    train_machine = mdata['train_machine']    
+
+    train_mdata  = decide_train_machine(mdata)
+    train_machine = train_mdata['train_machine']    
     if ('machine_type' in train_machine) and  \
        (train_machine['machine_type'] == 'ucloud'):
         train_ssh_sess = None
     else :
         train_ssh_sess = SSHSession(train_machine)
     
-    model_devi_machine = mdata['model_devi_machine']    
+    model_devi_mdata  = decide_model_devi_machine(mdata)
+    model_devi_machine = model_devi_mdata['model_devi_machine']    
     if ('machine_type' in model_devi_machine) and  \
        (model_devi_machine['machine_type'] == 'ucloud'):
         model_devi_ssh_sess = None
     else :
         model_devi_ssh_sess = SSHSession(model_devi_machine)
     
-    fp_machine = mdata['fp_machine']    
+    fp_mdata=decide_fp_machine(mdata)
+    fp_machine = fp_mdata['fp_machine']    
     if ('machine_type' in fp_machine) and  \
        (fp_machine['machine_type'] == 'ucloud'):
         fp_ssh_sess = None
