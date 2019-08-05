@@ -46,7 +46,6 @@
     "vol_start":	12,
     "vol_end":		22,
     "vol_step":		0.5,
-    "fix_shape":true,
 
     "_comment": "02.elastic",
     "norm_deform":	2e-2,
