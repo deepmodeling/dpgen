@@ -5,10 +5,9 @@ import subprocess as sp
 import numpy as np
 import dpgen.auto_test.lib.vasp as vasp
 import dpgen.auto_test.lib.lammps as lammps
-from phonopy import Phonopy
 from phonopy.structure.atoms import PhonopyAtoms
 import yaml
-import phonopy
+
 
 
 global_equi_name = '00.equi'
