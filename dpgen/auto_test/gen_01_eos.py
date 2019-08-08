@@ -138,9 +138,14 @@ def make_lammps (jdata, conf_dir,task_type) :
     vpa = volume / natoms
     # structrure
     ss = Structure.from_file(to_poscar)
+    
     # lmp path
     lmp_path = os.path.join(task_path, task_type)
     os.makedirs(lmp_path, exist_ok = True)
+    #Null lammps.in
+    f_lammps_in = os.path.join(lmp_path, 'lammps.in')
+    with open(f_lammps_in, 'w') as fp :
+        None
     # # lmp conf
     # conf_file = os.path.join(lmp_path, 'conf.lmp')
     # lammps.cvt_lammps_conf(to_poscar, conf_file)
