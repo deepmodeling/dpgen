@@ -8,7 +8,9 @@ import dpgen.data.tools.fcc as fcc
 import dpgen.data.tools.diamond as diamond
 import dpgen.data.tools.sc as sc
 import dpgen.data.tools.bcc as bcc
+from dpgen import ROOT_PATH
 from pymatgen.core.surface import SlabGenerator,generate_all_slabs, Structure
+from pymatgen.io.vasp import Poscar
 
 def create_path (path) :
     path += '/'
@@ -155,7 +157,7 @@ def poscar_scale (poscar_in, poscar_out, scale) :
 def poscar_elong (poscar_in, poscar_out, elong) :
     with open(poscar_in, 'r') as fin :
         lines = list(fin)
-    if lines[7][0] != 'C' :
+    if lines[7][0].upper() != 'C' :
         raise RuntimeError("only works for Cartesian POSCAR")
     sboxz = lines[4].split()
     boxz = np.array([float(sboxz[0]), float(sboxz[1]), float(sboxz[2])])
@@ -198,8 +200,6 @@ def make_super_cell_pymatgen (jdata) :
     cwd = os.getcwd()    
     path_work = (path_sc)    
     path_work = os.path.abspath(path_work)
-    pcpy_cmd = os.path.join(cwd, 'tools')
-    pcpy_cmd = os.path.join(pcpy_cmd, 'poscar_copy.py')
     os.chdir(path_work)
     for miller in all_millers:
         miller_str=""
@@ -209,11 +209,13 @@ def make_super_cell_pymatgen (jdata) :
         os.chdir(path_cur_surf)
         slabgen = SlabGenerator(ss, miller, z_min, 1e-3)
         all_slabs = slabgen.get_slabs() 
+        print(os.getcwd())
         print("Miller %s: The slab has %s termination, use the first one" %(str(miller), len(all_slabs)))
         all_slabs[0].to('POSCAR', 'POSCAR')
         if super_cell[0] > 1 or super_cell[1] > 1 :
-            sp.check_call(pcpy_cmd + ' -n %d %d %d POSCAR POSCAR ' % (super_cell[0], super_cell[1], 1), 
-                          shell = True)
+            st=Structure.from_file('POSCAR')
+            st.make_supercell([super_cell[0], super_cell[1], 1])
+            st.to('POSCAR','POSCAR')
         os.chdir(path_work)
     os.chdir(cwd)        
 
@@ -313,14 +315,51 @@ def make_vasp_relax (jdata) :
         os.chdir(work_dir)
     os.chdir(cwd)
 
+def poscar_scale_direct (str_in, scale) :
+    lines = str_in.copy()
+    numb_atoms = _poscar_natoms(lines)
+    pscale = float(lines[1])
+    pscale = pscale * scale
+    lines[1] = str(pscale) + "\n"
+    return lines
+
+def poscar_scale_cartesian (str_in, scale) :
+    lines = str_in.copy()
+    numb_atoms = _poscar_natoms(lines)
+    # scale box
+    for ii in range(2,5) :
+        boxl = lines[ii].split()
+        boxv = [float(ii) for ii in boxl]
+        boxv = np.array(boxv) * scale
+        lines[ii] = "%.16e %.16e %.16e\n" % (boxv[0], boxv[1], boxv[2])
+    # scale coord
+    for ii in range(8, 8+numb_atoms) :
+        cl = lines[ii].split()
+        cv = [float(ii) for ii in cl]
+        cv = np.array(cv) * scale
+        lines[ii] = "%.16e %.16e %.16e\n" % (cv[0], cv[1], cv[2])
+    return lines
+
+def poscar_scale (poscar_in, poscar_out, scale) :
+    with open(poscar_in, 'r') as fin :
+        lines = list(fin)
+    if 'D' == lines[7][0] or 'd' == lines[7][0]:
+        lines = poscar_scale_direct(lines, scale)
+    elif 'C' == lines[7][0] or 'c' == lines[7][0] :
+        lines = poscar_scale_cartesian(lines, scale)
+    else :
+        raise RuntimeError("Unknow poscar style at line 7: %s" % lines[7])
+
+    poscar=Poscar.from_string("".join(lines))
+    with open(poscar_out, 'w') as fout:
+        fout.write(poscar.get_string(direct=False))
+
 def make_scale(jdata):
     out_dir = jdata['out_dir']
     scale = jdata['scale']    
     skip_relax = jdata['skip_relax']    
 
     cwd = os.getcwd()
-    cvt_cmd = os.path.join(cwd, 'tools')
-    cvt_cmd = os.path.join(cvt_cmd, 'ovito_file_convert.py -m vasp ')
     init_path = os.path.join(out_dir, global_dirname_02)
     init_path = os.path.abspath(init_path)
     work_path = os.path.join(out_dir, global_dirname_03)
@@ -332,19 +371,17 @@ def make_scale(jdata):
     create_path(work_path)
     for ii in init_sys :
         for jj in scale :
-            pos_cont = os.path.join(os.path.join(init_path, ii), 'CONTCAR')
-            if not os.path.isfile(pos_cont):
+            pos_src = os.path.join(os.path.join(init_path, ii), 'CONTCAR')
+            if not os.path.isfile(pos_src):
                 if skip_relax :
-                    pos_cont = os.path.join(os.path.join(init_path, ii), 'POSCAR')
-                    assert(os.path.isfile(pos_cont))
+                    pos_src = os.path.join(os.path.join(init_path, ii), 'POSCAR')
+                    assert(os.path.isfile(pos_src))
                 else :
                     raise RuntimeError("not file %s, vasp relaxation should be run before scale poscar")
-            pos_src = os.path.join(os.path.join(init_path, ii), 'POSCAR.rlxed')
-            sp.check_call(cvt_cmd + ' ' + pos_cont + ' ' + pos_src, shell = True)
             scale_path = os.path.join(work_path, ii)
             scale_path = os.path.join(scale_path, "scale-%.3f" % jj)
             create_path(scale_path)
-            os.chdir(scale_path) 
+            os.chdir(scale_path)
             poscar_scale(pos_src, 'POSCAR', jj)
             os.chdir(cwd)
 
@@ -354,8 +391,28 @@ def pert_scaled(jdata) :
     pert_box = jdata['pert_box']
     pert_atom = jdata['pert_atom']
     pert_numb = jdata['pert_numb']
-    vacuum_resol = jdata['vacuum_resol']
     vacuum_max = jdata['vacuum_max']
+    vacuum_resol = jdata.get('vacuum_resol',[])
+    if vacuum_resol:
+       if len(vacuum_resol)==1:
+          elongs = np.arange(vacuum_resol[0], vacuum_max, vacuum_resol[0])
+       elif len(vacuum_resol)==2:
+          mid_point = jdata.get('mid_point')
+          head_elongs = np.arange(vacuum_resol[0], mid_point, vacuum_resol[0]).tolist()
+          tail_elongs = np.arange(mid_point, vacuum_max, vacuum_resol[1]).tolist()
+          elongs = np.unique(head_elongs+tail_elongs).tolist()
+       else:
+          raise RuntimeError("the length of vacuum_resol must equal 2")
+          
+    else:         
+       vacuum_num = jdata['vacuum_numb']
+       head_ratio = jdata['head_ratio']
+       mid_point = jdata['mid_point']
+       head_numb  = int(vacuum_num*head_ratio)
+       tail_numb = vacuum_num - head_numb
+       head_elongs = np.linspace(0,mid_point,head_numb).tolist()
+       tail_elongs = np.linspace(mid_point,vacuum_max,tail_numb+1).tolist()
+       elongs = np.unique(head_elongs+tail_elongs).tolist()
     
     cwd = os.getcwd()
     path_sp = os.path.join(out_dir, global_dirname_03)
@@ -366,9 +423,7 @@ def pert_scaled(jdata) :
     sys_pe.sort()
     os.chdir(cwd)    
 
-    pert_cmd = cwd
-    pert_cmd = os.path.join(pert_cmd, 'tools')
-    pert_cmd = os.path.join(pert_cmd, 'create_random_disturb.py')
+    pert_cmd = "python "+os.path.join(ROOT_PATH, 'data/tools/create_random_disturb.py')
     pert_cmd += ' -etmax %f -ofmt vasp POSCAR %d %f > /dev/null' %(pert_box, pert_numb, pert_atom)    
     for ii in sys_pe :
         for jj in scale :
@@ -377,9 +432,10 @@ def pert_scaled(jdata) :
             path_scale = os.path.join(path_scale, 'scale-%.3f' % jj)
             assert(os.path.isdir(path_scale))
             os.chdir(path_scale)
+            print(os.getcwd())
             poscar_in = os.path.join(path_scale, 'POSCAR')
             assert(os.path.isfile(poscar_in))
-            for ll in np.arange(vacuum_resol, vacuum_max, vacuum_resol) :
+            for ll in elongs:
                 path_elong = path_scale
                 path_elong = os.path.join(path_elong, 'elong-%3.3f' % ll) 
                 create_path(path_elong)
