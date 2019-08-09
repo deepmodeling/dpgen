@@ -614,7 +614,7 @@ class PBSJob (RemoteJob) :
                                     % (err_str, ret))
         status_line = stdout.read().decode('utf-8').split ('\n')[-2]
         status_word = status_line.split ()[-2]        
-#        dlog.info (status_word)
+        # dlog.info (status_word)
         if      status_word in ["Q","H"] :
             return JobStatus.waiting
         elif    status_word in ["R"] :
@@ -776,9 +776,9 @@ class LSFJob (RemoteJob) :
                 else :
                     return JobStatus.terminated
             else :
-                raise RuntimeError ("status command qstat fails to execute. erro info: %s return code %d"
+                raise RuntimeError ("status command bjobs fails to execute. erro info: %s return code %d"
                                     % (err_str, ret))
-        status_line = stdout.read().decode('utf-8').split ('\n')[-2]
+        status_line = stdout.read().decode('utf-8').split ('\n')[1]
         status_word = status_line.split ()[2]
         # ref: https://www.ibm.com/support/knowledgecenter/en/SSETD4_9.1.2/lsf_command_ref/bjobs.1.html
         if      status_word in ["PEND", "WAIT"] :
@@ -822,9 +822,11 @@ class LSFJob (RemoteJob) :
             ret += '#BSUB -R span[ptile=%d]\n#BSUB -n %d\n' % (res['node_cpu'], res['numb_node'] * res['task_per_node'])
         else :
             ret += '#BSUB -R "select[ngpus >0] rusage[ngpus_excl_p=1]"\n#BSUB -n %d\n' % (res['numb_gpu'])
-        #ret += '#BSUB -l walltime=%s\n' % (res['time_limit'])
-        #if res['mem_limit'] > 0 :
-        #    ret += "#BSUB -l mem=%dG \n" % res['mem_limit']
+        if res['time_limit']:
+            ret += '#BSUB -W %s\n' % (res['time_limit'].split(':')[
+                0] + ':' + res['time_limit'].split(':')[1])
+        if res['mem_limit'] > 0 :
+            ret += "#BSUB -M %d \n" % (res['mem_limit'] * 1024 * 1024)
         ret += '#BSUB -J %s\n' % (res['job_name'] if 'job_name' in res else 'dpgen')
         if len(res['partition']) > 0 :
             ret += '#BSUB -q %s\n' % res['partition']
