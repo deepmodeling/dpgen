@@ -8,6 +8,7 @@ import dpgen.data.tools.fcc as fcc
 import dpgen.data.tools.diamond as diamond
 import dpgen.data.tools.sc as sc
 import dpgen.data.tools.bcc as bcc
+from dpgen import ROOT_PATH
 from pymatgen.core.surface import SlabGenerator,generate_all_slabs, Structure
 from pymatgen.io.vasp import Poscar
 
@@ -391,9 +392,18 @@ def pert_scaled(jdata) :
     pert_atom = jdata['pert_atom']
     pert_numb = jdata['pert_numb']
     vacuum_max = jdata['vacuum_max']
-    vacuum_resol = jdata.get('vacuum_resol')
+    vacuum_resol = jdata.get('vacuum_resol',[])
     if vacuum_resol:
-       elongs = np.arange(vacuum_resol, vacuum_max, vacuum_resol)
+       if len(vacuum_resol)==1:
+          elongs = np.arange(vacuum_resol[0], vacuum_max, vacuum_resol[0])
+       elif len(vacuum_resol)==2:
+          mid_point = jdata.get('mid_point')
+          head_elongs = np.arange(vacuum_resol[0], mid_point, vacuum_resol[0]).tolist()
+          tail_elongs = np.arange(mid_point, vacuum_max, vacuum_resol[1]).tolist()
+          elongs = np.unique(head_elongs+tail_elongs).tolist()
+       else:
+          raise RuntimeError("the length of vacuum_resol must equal 2")
+          
     else:         
        vacuum_num = jdata['vacuum_numb']
        head_ratio = jdata['head_ratio']
@@ -413,9 +423,7 @@ def pert_scaled(jdata) :
     sys_pe.sort()
     os.chdir(cwd)    
 
-    pert_cmd = cwd
-    pert_cmd = os.path.join(pert_cmd, 'tools')
-    pert_cmd = os.path.join(pert_cmd, 'create_random_disturb.py')
+    pert_cmd = "python "+os.path.join(ROOT_PATH, 'data/tools/create_random_disturb.py')
     pert_cmd += ' -etmax %f -ofmt vasp POSCAR %d %f > /dev/null' %(pert_box, pert_numb, pert_atom)    
     for ii in sys_pe :
         for jj in scale :
