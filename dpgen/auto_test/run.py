@@ -193,7 +193,7 @@ def run_equi(task_type,jdata,mdata,ssh_sess):
                 run_tasks_.append(ii)
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
         forward_files = ['conf.lmp', 'lammps.in']
-        backward_files = ['dump.relax','log.lammps','model_devi.log']
+        backward_files = ['dump.relax','log.lammps', 'model_devi.log']
 
         fp_params = jdata['lammps_params']
         model_dir = fp_params['model_dir']
@@ -208,7 +208,7 @@ def run_equi(task_type,jdata,mdata,ssh_sess):
         
         if len(model_name)>1：
             backward_files = backward_files + ['model_devi.out']
-                
+
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
     
@@ -340,7 +340,7 @@ def run_eos(task_type,jdata,mdata,ssh_sess):
                 
         if len(model_name)>1：
             backward_files = backward_files + ['model_devi.out']
-                
+
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
@@ -464,7 +464,7 @@ def run_elastic(task_type,jdata,mdata,ssh_sess):
                 
         if len(model_name)>1：
             backward_files = backward_files + ['model_devi.out']
-                
+
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
@@ -584,10 +584,10 @@ def run_vacancy(task_type,jdata,mdata,ssh_sess):
         forward_files = ['conf.lmp', 'lammps.in']+model_name
         backward_files = ['log.lammps','model_devi.log']
         common_files=['lammps.in']+model_name
-                
+
         if len(model_name)>1：
             backward_files = backward_files + ['model_devi.out']
-                
+
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
@@ -719,7 +719,7 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
                 
         if len(model_name)>1：
             backward_files = backward_files + ['model_devi.out']
-                
+
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
@@ -861,7 +861,7 @@ def run_surf(task_type,jdata,mdata,ssh_sess):
                 
         if len(model_name)>1：
             backward_files = backward_files + ['model_devi.out']
-                
+
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 

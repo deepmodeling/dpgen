@@ -860,17 +860,17 @@ def _make_fp_vasp_inner (modd_path,
                 for ii in range(all_conf.shape[0]) :
                     cc = int(all_conf[ii][0])
                     if cluster_cutoff is None:
-                        if (all_conf[ii][1] < e_trust_hi and all_conf[ii][1] > e_trust_lo) or \
-                        (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] > f_trust_lo) and \
+                        if (all_conf[ii][1] < e_trust_hi and all_conf[ii][1] >= e_trust_lo) or \
+                        (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] >= f_trust_lo) and \
                         ii >= model_devi_skip :
                             fp_candidate.append([tt, cc])
-                        elif (all_conf[ii][1] > e_trust_hi ) or (all_conf[ii][4] > f_trust_hi ):
+                        elif (all_conf[ii][1] >= e_trust_hi ) or (all_conf[ii][4] >= f_trust_hi ):
                             fp_rest_failed.append([tt, cc])
                         elif (all_conf[ii][1] < e_trust_lo and all_conf[ii][4] < f_trust_lo ):
                             fp_rest_accurate.append([tt, cc])
                     else:
-                        idx_candidate = np.where(np.logical_and(all_conf[ii][7:] < f_trust_hi, all_conf[ii][7:] > f_trust_lo))[0]
-                        idx_rest_failed = np.where(all_conf[ii][7:] > f_trust_hi)[0]
+                        idx_candidate = np.where(np.logical_and(all_conf[ii][7:] < f_trust_hi, all_conf[ii][7:] >= f_trust_lo))[0]
+                        idx_rest_failed = np.where(all_conf[ii][7:] >= f_trust_hi)[0]
                         idx_rest_accurate = np.where(all_conf[ii][7:] < f_trust_lo)[0]
                         for jj in idx_candidate:
                             fp_candidate.append([tt, cc, jj])
