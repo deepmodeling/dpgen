@@ -42,7 +42,7 @@ from dpgen.auto_test import gen_02_elastic,cmpt_02_elastic
 from dpgen.auto_test import gen_03_vacancy,cmpt_03_vacancy
 from dpgen.auto_test import gen_04_interstitial,cmpt_04_interstitial
 from dpgen.auto_test import gen_05_surf,cmpt_05_surf
-from dpgen.auto_test import gen_06_phonon,cmpt_06_phonon
+#from dpgen.auto_test import gen_06_phonon,cmpt_06_phonon
 from dpgen.auto_test import gen_confs
 import requests
 from hashlib import sha1
@@ -206,7 +206,7 @@ def run_equi(task_type,jdata,mdata,ssh_sess):
             models = [os.path.join(model_dir,ii) for ii in model_name]
         common_files = model_name
         
-        if len(model_name)>1：
+        if len(model_name)>1:
             backward_files = backward_files + ['model_devi.out']
 
     else:
@@ -338,7 +338,7 @@ def run_eos(task_type,jdata,mdata,ssh_sess):
         backward_files = ['log.lammps', 'model_devi.log']
         common_files=['lammps.in']+model_name
                 
-        if len(model_name)>1：
+        if len(model_name)>1:
             backward_files = backward_files + ['model_devi.out']
 
     else:
@@ -462,7 +462,7 @@ def run_elastic(task_type,jdata,mdata,ssh_sess):
         backward_files = ['log.lammps', 'model_devi.log']
         common_files=['lammps.in']+model_name
                 
-        if len(model_name)>1：
+        if len(model_name)>1:
             backward_files = backward_files + ['model_devi.out']
 
     else:
@@ -585,7 +585,7 @@ def run_vacancy(task_type,jdata,mdata,ssh_sess):
         backward_files = ['log.lammps','model_devi.log']
         common_files=['lammps.in']+model_name
 
-        if len(model_name)>1：
+        if len(model_name)>1:
             backward_files = backward_files + ['model_devi.out']
 
     else:
@@ -717,7 +717,7 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
         backward_files = ['log.lammps', 'model_devi.log']
         common_files=['lammps.in']+model_name
                 
-        if len(model_name)>1：
+        if len(model_name)>1:
             backward_files = backward_files + ['model_devi.out']
 
     else:
@@ -859,7 +859,7 @@ def run_surf(task_type,jdata,mdata,ssh_sess):
         backward_files = ['log.lammps','model_devi.log']
         common_files=['lammps.in']+model_name
                 
-        if len(model_name)>1：
+        if len(model_name)>1:
             backward_files = backward_files + ['model_devi.out']
 
     else:
@@ -1015,7 +1015,7 @@ def run_task (json_file, machine_file) :
     key_id = jdata['key_id']
     ii = jdata['task_type']
     jj=jdata['task']
-    task_list=['equi','eos','elastic','vacancy','interstitial','surf','phonon','all']
+    task_list=['equi','eos','elastic','vacancy','interstitial','surf','all']
     #gen_configuration
     if 'confs' in confs and (not os.path.exists(confs+'/POSCAR')) :
         print('generate %s' % (ele_list))
@@ -1065,6 +1065,7 @@ def run_task (json_file, machine_file) :
         run_surf  (ii, jdata, mdata,model_devi_ssh_sess)
         log_iter ("cmpt_surf", ii, "surf")
         cmpt_surf (ii, jdata, mdata)
+    '''
     if jj=="phonon":
         log_iter ("gen_phonon", ii, "phonon")
         gen_phonon (ii, jdata, mdata) 
@@ -1072,6 +1073,7 @@ def run_task (json_file, machine_file) :
         run_phonon  (ii, jdata, mdata,model_devi_ssh_sess)
         log_iter ("cmpt_phonon", ii, "phonon")
         cmpt_phonon (ii, jdata, mdata)
+    '''
     if jj not in task_list :
         raise RuntimeError ("unknow task %s, something wrong" % jj)
     record_iter (record, confs, ii, jj)

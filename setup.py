@@ -13,7 +13,7 @@ except ImportError:
     with open(readme_file) as f:
         readme = f.read()
 
-install_requires=['numpy>=1.14.3,<1.17', 'dpdata>=0.1.2', 'pymatgen', 'ase', 'monty', 'paramiko', 'custodian', 'phonopy', 'phonoLAMMPS']
+install_requires=['numpy>=1.14.3,<1.17', 'dpdata>=0.1.2', 'pymatgen', 'ase', 'monty', 'paramiko', 'custodian']
 
 setuptools.setup(
     name=NAME,
