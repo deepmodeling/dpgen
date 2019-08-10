@@ -432,16 +432,24 @@ The first part is the fundamental setting for particular alloy system.
 	"Al" : "/somewhere/POTCAR"
     },
     "conf_dir":"confs/Al/std-fcc",
-    "key_id":"key id of Material project",
+    "key_id":"API key of Material project",
     "task_type":"deepmd",
     "task":"eos",
 ```
 You need to add the specified paths of necessary `POTCAR` files in "potcar_map". The different `POTCAR` paths are separated by commas.
-Then you also need to add the folder path of particular configuration, which contains `POSCAR` file. For your convenience, we recommend that you use `gen_confs.py` to generate configurations , which needs the key id of Material project.
+Then you also need to add the folder path of particular configuration, which contains `POSCAR` file. 
+```
+"confs/[element or alloy]/[std-* or mp-**]"
+std-*: standard structures, * can be fcc, bcc, hcp and so on.
+mp-**: ** means Material id from Material Project.
+```
+Usually, if you add the relative path of POSCAR as the above format,
+`dpgen test` will check the existence of such file and automatically downloads the standard and existed configurations of the given element or alloy from Materials Project and stores them in **confs** folder, which needs the API key of Materials project.
 
-If you add the path of `POSCAR` with `confs`, it will download and store the various configurations of the given element or alloy in **confs** folder.
 + `task_type` contains 3 optional types for testing, i.e. **vasp**, **deepmd** and **meam**.
 + `task` contains 7 options, **equi**, **eos**, **elastic**, **vacancy**, **interstitial**, **surf** and **all**. The option **all** can do all the tasks. 
+
+It is worth noting that the subsequent tasks need to rely on the calculation results of the equilibrium state, so it is necessary to give priority to the calculation of the equilibrium state while testing. And due to the stable consideration, we recommand you to test the equilibrium state of **vasp** before other tests.
 
 The second part is the computational settings for vasp and lammps. The most important setting is to add the folder path `model_dir` of **deepmd** model and supply the corresponding element type map. Besides, `dpgen test` also is able to call common lammps packages, such as **meam**. 
 ```json
