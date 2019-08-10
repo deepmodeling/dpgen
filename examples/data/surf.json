@@ -42,10 +42,7 @@
   "potcars": [
     "./POTCAR"
   ],
-  "encut": 600,
-  "kspacing_relax": 0.16,
-  "kspacing_md": 0.06,
-  "kgamma": false,
+  "relax_incar" : "INCAR_metal_rlx_low",
   "scale": [
     0.98,
     1.0
