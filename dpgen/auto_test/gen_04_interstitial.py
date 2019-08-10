@@ -67,6 +67,22 @@ def _make_vasp(jdata, conf_dir, supercell, insert_ele) :
         # make conf
         dss[ii].to('POSCAR', 'POSCAR')
         # gen potcar
+        with open('POSCAR,'r') as fp :
+            lines = fp.read().split('\n')
+            ele_list = lines[5].split()
+                  
+        os.chdir(cwd)
+        potcar_map = jdata['potcar_map']
+        potcar_list = []
+        for ii in ele_list :
+            assert os.path.exists(os.path.abspath(potcar_map[ii])),"No POTCAR in the potcar_map of %s"%(ii)
+            potcar_list.append(os.path.abspath(potcar_map[ii]))
+        os.chdir(struct_path)
+                  
+        with open('POTCAR', 'w') as outfile:
+            for fname in potcar_list:
+                with open(fname) as infile:
+                    outfile.write(infile.read())
         _gen_potcar(jdata, 'POSCAR', 'POTCAR')
         # link incar
         os.symlink(os.path.relpath(os.path.join(task_path, 'INCAR')), 'INCAR')
@@ -74,20 +90,6 @@ def _make_vasp(jdata, conf_dir, supercell, insert_ele) :
         np.savetxt('supercell.out', supercell, fmt='%d')
     os.chdir(cwd)
 
-def _gen_potcar (jdata, task_poscar, filename) :
-    # gen potcar
-    with open(task_poscar,'r') as fp :
-        lines = fp.read().split('\n')
-        ele_list = lines[5].split()
-    potcar_map = jdata['potcar_map']
-    potcar_list = []
-    for ii in ele_list :
-        assert(os.path.exists(potcar_map[ii]))
-        potcar_list.append(potcar_map[ii])
-    with open(filename, 'w') as outfile:
-        for fname in potcar_list:
-            with open(fname) as infile:
-                outfile.write(infile.read())
 
 def make_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_type) : 
     for ii in insert_ele :
