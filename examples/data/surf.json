@@ -1,4 +1,5 @@
 {
+    "stages" : [1,2],
     "cell_type":	"fcc",
     "latt":		4.1,
     "super_cell":	[1, 1, 1],

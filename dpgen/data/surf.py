@@ -8,7 +8,10 @@ import dpgen.data.tools.fcc as fcc
 import dpgen.data.tools.diamond as diamond
 import dpgen.data.tools.sc as sc
 import dpgen.data.tools.bcc as bcc
+import time
 from dpgen import ROOT_PATH
+from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
+from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
 from pymatgen.core.surface import SlabGenerator,generate_all_slabs, Structure
 from pymatgen.io.vasp import Poscar
 
@@ -275,11 +278,11 @@ def place_element (jdata) :
 def make_vasp_relax (jdata) :
     out_dir = jdata['out_dir']
     potcars = jdata['potcars']
-    encut = jdata['encut']
-    kspacing = jdata['kspacing_relax']
-    kgamma = jdata['kgamma']
+    #encut = jdata['encut']
+    #kspacing = jdata['kspacing_relax']
+    #kgamma = jdata['kgamma']
     cwd = os.getcwd()
-    vasp_dir = os.path.join(cwd, 'vasp.in')
+    #vasp_dir = os.path.join(cwd, 'vasp.in')
 
     work_dir = os.path.join(out_dir, global_dirname_02)
     assert (os.path.isdir(work_dir))
@@ -288,7 +291,7 @@ def make_vasp_relax (jdata) :
         os.remove(os.path.join(work_dir, 'INCAR' ))
     if os.path.isfile(os.path.join(work_dir, 'POTCAR')) :
         os.remove(os.path.join(work_dir, 'POTCAR'))
-    shutil.copy2(os.path.join(vasp_dir, 'INCAR.rlx' ), 
+    shutil.copy2( jdata['relax_incar'], 
                  os.path.join(work_dir, 'INCAR'))
     out_potcar = os.path.join(work_dir, 'POTCAR')
     with open(out_potcar, 'w') as outfile:
@@ -297,13 +300,13 @@ def make_vasp_relax (jdata) :
                 outfile.write(infile.read())
     
     os.chdir(work_dir)
-    replace('INCAR', 'ENCUT=.*', 'ENCUT=%f' % encut)
-    replace('INCAR', 'ISIF=.*', 'ISIF=3')
-    replace('INCAR', 'KSPACING=.*', 'KSPACING=%f' % kspacing)
-    if kgamma :
-        replace('INCAR', 'KGAMMA=.*', 'KGAMMA=T')
-    else :
-        replace('INCAR', 'KGAMMA=.*', 'KGAMMA=F')
+    #replace('INCAR', 'ENCUT=.*', 'ENCUT=%f' % encut)
+    #replace('INCAR', 'ISIF=.*', 'ISIF=3')
+    #replace('INCAR', 'KSPACING=.*', 'KSPACING=%f' % kspacing)
+    #if kgamma :
+    #    replace('INCAR', 'KGAMMA=.*', 'KGAMMA=T')
+    #else :
+    #    replace('INCAR', 'KGAMMA=.*', 'KGAMMA=F')
     
     sys_list = glob.glob(os.path.join('surf-*', 'sys-*'))
     for ss in sys_list:
@@ -456,42 +459,130 @@ def pert_scaled(jdata) :
                 pos_out = os.path.join(dir_out, 'POSCAR')
                 poscar_shuffle(pos_in, pos_out)
                 os.chdir(cwd)
-                
+def _vasp_check_fin (ii) :
+    if os.path.isfile(os.path.join(ii, 'OUTCAR')) :
+        with open(os.path.join(ii, 'OUTCAR'), 'r') as fp :
+            content = fp.read()
+            count = content.count('Elapse')
+            if count != 1 :
+                return False
+    else :
+        return False
+    return True
+def _group_slurm_jobs(ssh_sess,
+                      resources,
+                      command,
+                      work_path,
+                      tasks,
+                      group_size,
+                      forward_common_files,
+                      forward_task_files,
+                      backward_task_files,
+                      remote_job = SlurmJob) :
+    task_chunks = [
+        [j for j in tasks[i:i + group_size]] \
+        for i in range(0, len(tasks), group_size)
+    ]
+    job_list = []
+    for chunk in task_chunks :
+        rjob = remote_job(ssh_sess, work_path)
+        rjob.upload('.',  forward_common_files)
+        rjob.upload(chunk, forward_task_files)
+        rjob.submit(chunk, command, resources = resources)
+        job_list.append(rjob)
+
+    job_fin = [False for ii in job_list]
+    while not all(job_fin) :
+        for idx,rjob in enumerate(job_list) :
+            if not job_fin[idx] :
+                status = rjob.check_status()
+                if status == JobStatus.terminated :
+                    raise RuntimeError("find unsuccessfully terminated job in %s" % rjob.get_job_root())
+                elif status == JobStatus.finished :
+                    rjob.download(task_chunks[idx], backward_task_files)
+                    rjob.clean()
+                    job_fin[idx] = True
+        time.sleep(10)
+def run_vasp_relax(jdata, mdata, ssh_sess):
+    fp_command = mdata['fp_command']
+    fp_group_size = mdata['fp_group_size']
+    fp_resources = mdata['fp_resources']
+    machine_type = mdata['fp_machine']['machine_type']
+    work_dir = os.path.join(jdata['out_dir'], global_dirname_02)
+    
+    forward_files = ["POSCAR", "INCAR", "POTCAR"]
+    backward_files = ["OUTCAR","CONTCAR"]
+    forward_common_files = []
+    #if 'cvasp' in mdata['fp_resources']:
+    #    if mdata['fp_resources']['cvasp']:
+    #        forward_common_files=['cvasp.py']
+    relax_tasks = glob.glob(os.path.join(work_dir, "surf-*/","sys-*"))
+    relax_tasks.sort()
+    #print("work_dir",work_dir)
+    #print("relax_tasks",relax_tasks)
+    if len(relax_tasks) == 0:
+        return
+
+    relax_run_tasks = []
+    for ii in relax_tasks : 
+        if not _vasp_check_fin(ii):
+            relax_run_tasks.append(ii)
+    run_tasks = [ii.replace(work_dir+"/", "") for ii in relax_run_tasks]
+
+    #print(run_tasks)
+    assert (machine_type == "slurm" or machine_type =="Slurm"), "Currently only support for Slurm!"
+    _group_slurm_jobs(ssh_sess,
+                           fp_resources,
+                           fp_command,
+                           work_dir,
+                           run_tasks,
+                           fp_group_size,
+                           forward_common_files,
+                           forward_files,
+                           backward_files)              
 def gen_init_surf(args):
     try:
        import ruamel
        from monty.serialization import loadfn,dumpfn
        warnings.simplefilter('ignore', ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
        jdata=loadfn(args.PARAM)
+       mdata=loadfn(args.MACHINE)
     except:
-       with open (args.PARAM, 'r') as fp :
-           jdata = json.load (fp)
+        with open (args.PARAM, 'r') as fp :
+            jdata = json.load (fp)
+        with open (args.MACHINE, "r") as fp:
+            mdata = json.load(fp)
 
     out_dir = out_dir_name(jdata)
     jdata['out_dir'] = out_dir
     print ("# working dir %s" % out_dir)
-
-    stage = args.STAGE
-
-    if stage == 1 :
-        create_path(out_dir)
-        make_super_cell_pymatgen(jdata)
-        place_element(jdata)
-        make_vasp_relax(jdata)
-    # elif stage == 0 :
-    #     # create_path(out_dir)
-    #     # make_super_cell(jdata)
-    #     # place_element(jdata)
-    #     # make_vasp_relax(jdata)
-    #     # make_scale(jdata)
-    #     # pert_scaled(jdata)
-    #     # poscar_elong('POSCAR', 'POSCAR.out', 3)
-    #     pert_scaled(jdata)
-    elif stage == 2 :
-        make_scale(jdata)
-        pert_scaled(jdata)
-    else :
-        raise RuntimeError("unknow stage %d" % stage)
+    # Decide a proper machine
+    mdata = decide_fp_machine(mdata)
+    fp_machine = mdata['fp_machine']
+    fp_ssh_sess = SSHSession(fp_machine)  
+    #stage = args.STAGE
+    stage_list = [int(i) for i in jdata['stages']]
+    for stage in stage_list:
+        if stage == 1 :
+            create_path(out_dir)
+            make_super_cell_pymatgen(jdata)
+            place_element(jdata)
+            make_vasp_relax(jdata)
+            run_vasp_relax(jdata, mdata, fp_ssh_sess)
+        # elif stage == 0 :
+        #     # create_path(out_dir)
+        #     # make_super_cell(jdata)
+        #     # place_element(jdata)
+        #     # make_vasp_relax(jdata)
+        #     # make_scale(jdata)
+        #     # pert_scaled(jdata)
+        #     # poscar_elong('POSCAR', 'POSCAR.out', 3)
+        #     pert_scaled(jdata)
+        elif stage == 2 :
+            make_scale(jdata)
+            pert_scaled(jdata)
+        else :
+            raise RuntimeError("unknown stage %d" % stage)
     
 def _main() :
     parser = argparse.ArgumentParser(
