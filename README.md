@@ -409,33 +409,29 @@ dpgen test PARAM MACHINE
 ```
 where `PARAM` and `MACHINE` are both json files. `MACHINE` is the same as above.
 
-The whole program contains a series of tasks shown as follows.
-+ `00.equi`:(default task) the equilibrium state, return energy and volume per atom
+The whole program contains a series of tasks shown as follows. In each task, there are three stages of work, generate, run and compute.
++ `00.equi`:(default task) the equilibrium state
 
 + `01.eos`: the equation of state
 
 + `02.elastic`: the elasticity like Young's module
 
-+ `03.vacancy`: the vacancy defect
++ `03.vacancy`: the vacancy formation energy
 
-+ `04.interstitial`: the interstitial defect
++ `04.interstitial`: the interstitial formation energy
 
-+ `05.surf`: the surface energy
++ `05.surf`: the surface formation energy
 
-+ `06.phonon`:(beta version) the phonon specturm
-
-In each task, there are three stages of work, generate, run and compute.
 ### param.json 
 
-We take Cu as an example to show the parameter settings of `param.json`.
+We take Al as an example to show the parameter settings of `param.json`.
 The first part is the fundamental setting for particular alloy system. 
 ```
     "_comment": "models",
     "potcar_map" : {
-	"Cu" : "/somewhere/POTCAR",
-        "Zr" : "/elsewhere/POTCAR"
+	"Al" : "/somewhere/POTCAR"
     },
-    "conf_dir":"confs/Cu/std-fcc",
+    "conf_dir":"confs/Al/std-fcc",
     "key_id":"key id of Material project",
     "task_type":"deepmd",
     "task":"eos",
@@ -447,55 +443,61 @@ If you add the path of `POSCAR` with `confs`, it will download and store the var
 + `task_type` contains 3 optional types for testing, i.e. **vasp**, **deepmd** and **meam**.
 + `task` contains 7 options, **equi**, **eos**, **elastic**, **vacancy**, **interstitial**, **surf** and **all**. The option **all** can do all the tasks. 
 
-The second part is the computational settings for vasp and lammps. The most important setting is to add the folder path of deepmd model and supply the corresponding element type map.
-```
+The second part is the computational settings for vasp and lammps. The most important setting is to add the folder path `model_dir` of **deepmd** model and supply the corresponding element type map. Besides, `dpgen test` also is able to call common lammps packages, such as **meam**. 
+```json
 "vasp_params":	{
-	"ecut":		520,
+	"ecut":		650,
 	"ediff":	1e-6,
-	"kspacing":	0.32,
+	"kspacing":	0.1,
 	"kgamma":	false,
 	"npar":		1,
 	"kpar":		1,
 	"_comment":	" that's all "
     },
-    "deepmd_model_dir":	"the folder of deepmd model",
-    "deepmd_type_map":	[
-	"Cu"
-    ],
-    "meam_potfile_dir":	"meam",
-    "meam_type_map":	[
-	"Al", "Si", "Mg", "Cu", "Fe"
-    ],
-    "meam_potfile":	[
-	"library.meam",
-	"AlSiMgCuFe.meam"
-    ],
-    "meam_param_type":	[
-	"AlS", "SiS", "MgS", "CuS", "FeS"
-    ],
+    "lammps_params":    {
+        "model_dir":"somewhere/example/Al_model",
+        "type_map":["Al"],
+        "model_name":false,
+        "model_param_type":false
+    },
 ```
 The last part is the optional settings for various tasks mentioned above. You can change the parameters according to actual needs.
 ```
     "_comment":"00.equi",
     "store_stable":true,
+```
++ `store_stable`:(boolean) whether to store the stable energy and volume
 
+```
     "_comment": "01.eos",
-    "vol_start":	6,
-    "vol_end":		16,
+    "vol_start":	12,
+    "vol_end":		22,
     "vol_step":		0.5,
-    "store_fix":false,
+```
++ `vol_start`, `vol_end` and `vol_step` determine the volumetric range and accuracy of the **eos**.
 
+```
     "_comment": "02.elastic",
     "norm_deform":	2e-2,
     "shear_deform":	5e-2,
-    
+```
++ `norm_deform` and `shear_deform` are the scales of material deformation. 
+This task uses the stress-strain relationship to calculate the elastic constant.
+
+```
     "_comment":"03.vacancy",
-    "supercell":[2,2,2],
-
+    "supercell":[3,3,3],
+```
++ `supercell`:(list of integer) the supercell size used to generate vacancy defect and interstitial defect
+```
     "_comment":"04.interstitial",
-    "insert_ele":["Cu"],
+    "insert_ele":["Al"],
     "reprod-opt":false,
+```
++ `insert_ele`:(list of string) the elements used to generate point interstitial defect
++ `repord-opt`:(boolean) whether to reproduce trajectories of interstitial defect
 
+```
     "_comment": "05.surface",
     "min_slab_size":	10,
     "min_vacuum_size":	11,
@@ -503,30 +505,13 @@ The last part is the optional settings for various tasks mentioned above. You ca
     "pert_xz":		0.01,
     "max_miller": 2,
     "static-opt":false,
-    "store_relax":false,    
-
-    "_comment":"06.phonon",
-    "supercell_matrix":[2,2,2],
-    "band":"0 1 0  0.5 1 0.5  0.375 0.75 0.375  0  0  0  0.5 0.5 0.5",
-
-    "_comment":	"that's all"
+    "relax_box":false,    
 ```
-
-+ `stora_stable`:(boolean) whether to store the stable energy and volume
-+ `vol_start`, `vol_end` and `vol_step` determine the volume range and accuracy of the **eos**.
-+ `fix_shape`:(boolean) whether to fix the shape of box (volume)
-+ `norm_deform` and `shear_deform` are the scales of material deformation.
-+ `supercell`:(list of integer) the supercell size used to generate vacancy defect and interstitial defect
-+ `insert_ele`:(list of string) the elements used to generate interstitial defect
-+ `repord-opt`:(boolean) whether to reproduce trajectories of interstitial defect
 + `min_slab_size` and `min_vacuum_size` are the minimum size of slab thickness  and  the vacuume width.
 + `pert_xz` is the perturbation through xz direction used to compute surface energy.
 + `max_miller` (integer) is the maximum miller index
-+ `static-opt`:(boolean) whether to use static method to measure surface energy.
++ `static-opt`:(boolean) whether to use atomic relaxation to compute surface energy. if false, the structure will be relaxed.
 + `relax_box`:(boolean) set true if the box is relaxed, otherwise only relax atom positions.
-+ `supercell_matrix`:(list of integer) the supercell size used to compute phonon specturm.
-+ `band` gives sampling band paths. The reciprocal points are specified in reduced coordinates. The given points are connected for defining band paths. When comma `,` is inserted between the points, the paths are disconnected.
-
 
 
 

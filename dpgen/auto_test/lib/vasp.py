@@ -250,7 +250,7 @@ def make_vasp_static_incar (ecut, ediff,
     ret += 'ALGO=fast\n'
     ret += 'EDIFF=%e\n' % ediff
     ret += 'EDIFFG=-0.01\n'
-    ret += 'LREAL=F\n'
+    ret += 'LREAL=A\n'
     ret += 'NPAR=%d\n' % npar
     ret += 'KPAR=%d\n' % kpar
     ret += "\n"
@@ -291,7 +291,7 @@ def make_vasp_relax_incar (ecut, ediff,
     ret += 'ALGO=fast\n'
     ret += 'EDIFF=%e\n' % ediff
     ret += 'EDIFFG=-0.01\n'
-    ret += 'LREAL=F\n'
+    ret += 'LREAL=A\n'
     ret += 'NPAR=%d\n' % npar
     ret += 'KPAR=%d\n' % kpar
     ret += "\n"
@@ -332,7 +332,7 @@ def make_vasp_phonon_incar (ecut, ediff,
     ret += 'ALGO=fast\n'
     ret += 'EDIFF=%e\n' % ediff
     ret += 'EDIFFG=-0.01\n'
-    ret += 'LREAL=F\n'
+    ret += 'LREAL=A\n'
     #ret += 'NPAR=%d\n' % npar
     ret += 'KPAR=%d\n' % kpar
     ret += "\n"
