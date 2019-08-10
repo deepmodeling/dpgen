@@ -48,7 +48,7 @@ def make_vasp(jdata, conf_dir) :
     potcar_map = jdata['potcar_map']
     potcar_list = []
     for ii in ele_list :
-        assert(os.path.exists(os.path.abspath(potcar_map[ii])))
+        assert os.path.exists(os.path.abspath(potcar_map[ii])),"No POTCAR in the potcar_map of %s"%(ii)
         potcar_list.append(os.path.abspath(potcar_map[ii]))
         
     vasp_path = os.path.join(equi_path, 'vasp-k%.2f' % kspacing)
@@ -82,6 +82,7 @@ def make_lammps (jdata, conf_dir,task_type) :
     if not model_name and task_type =='deepmd':
         models = glob.glob(os.path.join(model_dir, '*pb'))
         model_name = [os.path.basename(ii) for ii in models]
+        assert len(model_name)>0,"No deepmd model in the model_dir"
     else:
         models = [os.path.join(model_dir,ii) for ii in model_name]
 
