@@ -83,7 +83,7 @@ def _make_vasp(jdata, conf_dir, supercell, insert_ele) :
             for fname in potcar_list:
                 with open(fname) as infile:
                     outfile.write(infile.read())
-        _gen_potcar(jdata, 'POSCAR', 'POTCAR')
+        
         # link incar
         os.symlink(os.path.relpath(os.path.join(task_path, 'INCAR')), 'INCAR')
         # save supercell
