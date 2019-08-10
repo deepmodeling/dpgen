@@ -731,6 +731,8 @@ class LSFJob (RemoteJob) :
             status = self.check_status()
             if status in [  JobStatus.unsubmitted, JobStatus.unknown, JobStatus.terminated ]:
                 dlog.debug('task restart point !!!')
+                while self.check_limit(task_max=resources['task_max']):
+                    time.sleep(10)
                 self._submit(job_dirs, cmd, args, resources)
             elif status==JobStatus.waiting:
                 dlog.debug('task is waiting')
@@ -738,15 +740,15 @@ class LSFJob (RemoteJob) :
                 dlog.debug('task is running')
             else:
                 dlog.debug('task is finished')
-               
-
-           #except:
+            #except:
                #dlog.debug('no job_id file')
                #dlog.debug('task restart point !!!')
                #self._submit(job_dirs, cmd, args, resources)
         else:
-           dlog.debug('new task!!!')
-           self._submit(job_dirs, cmd, args, resources)
+            dlog.debug('new task!!!')
+            while self.check_limit(task_max=resources['task_max']):
+                time.sleep(10)
+            self._submit(job_dirs, cmd, args, resources)
 
     def _submit(self, 
                job_dirs,
@@ -761,6 +763,16 @@ class LSFJob (RemoteJob) :
         with sftp.open(os.path.join(self.remote_root, 'job_id'), 'w') as fp:
             fp.write(job_id)
         sftp.close()
+
+    def check_limit(self, task_max):
+        stdin_run, stdout_run, stderr_run = self.block_call("bjobs | grep RUN | wc -l")
+        njobs_run = int(stdout.read().decode('utf-8'))
+        stdin_pend, stdout_pend, stderr_pend = self.block_call("bjobs | grep PEND | wc -l")
+        njobs_pend = int(stdout.read().decode('utf-8'))
+        if (njobs_pend + njobs_run) < task_max:
+            return False
+        else:
+            return True
 
     def check_status(self) :
         job_id = self._get_job_id()
