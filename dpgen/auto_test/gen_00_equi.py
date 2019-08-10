@@ -49,7 +49,7 @@ def make_vasp(jdata, conf_dir) :
     potcar_list = []
     for ii in ele_list :
         assert(os.path.exists(os.path.abspath(potcar_map[ii])))
-        potcar_list.append(potcar_map[ii])
+        potcar_list.append(os.path.abspath(potcar_map[ii]))
         
     vasp_path = os.path.join(equi_path, 'vasp-k%.2f' % kspacing)
     os.makedirs(vasp_path, exist_ok = True)
