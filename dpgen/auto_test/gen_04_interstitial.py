@@ -67,7 +67,7 @@ def _make_vasp(jdata, conf_dir, supercell, insert_ele) :
         # make conf
         dss[ii].to('POSCAR', 'POSCAR')
         # gen potcar
-        with open('POSCAR,'r') as fp :
+        with open('POSCAR','r') as fp :
             lines = fp.read().split('\n')
             ele_list = lines[5].split()
                   
