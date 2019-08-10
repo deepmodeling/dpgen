@@ -41,6 +41,16 @@ def make_vasp(jdata, conf_dir) :
                        'alloy'
                    )
                )    
+    # read potcar
+    with open(to_poscar,'r') as fp :
+        lines = fp.read().split('\n')
+        ele_list = lines[5].split()
+    potcar_map = jdata['potcar_map']
+    potcar_list = []
+    for ii in ele_list :
+        assert(os.path.exists(os.path.abspath(potcar_map[ii])))
+        potcar_list.append(potcar_map[ii])
+        
     vasp_path = os.path.join(equi_path, 'vasp-k%.2f' % kspacing)
     os.makedirs(vasp_path, exist_ok = True)
     os.chdir(vasp_path)
@@ -57,14 +67,6 @@ def make_vasp(jdata, conf_dir) :
         os.remove('POSCAR')
     os.symlink(os.path.relpath(to_poscar), 'POSCAR')
     # gen potcar
-    with open('POSCAR','r') as fp :
-        lines = fp.read().split('\n')
-        ele_list = lines[5].split()
-    potcar_map = jdata['potcar_map']
-    potcar_list = []
-    for ii in ele_list :
-        assert(os.path.exists(potcar_map[ii]))
-        potcar_list.append(potcar_map[ii])
     with open('POTCAR', 'w') as outfile:
         for fname in potcar_list:
             with open(fname) as infile:
