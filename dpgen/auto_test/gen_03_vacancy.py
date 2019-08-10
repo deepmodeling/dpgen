@@ -26,6 +26,7 @@ def make_vasp(jdata, conf_dir, supercell = [1,1,1]) :
     equi_path = re.sub('confs', global_equi_name, conf_path)
     equi_path = os.path.join(equi_path, 'vasp-k%.2f' % kspacing)
     equi_contcar = os.path.join(equi_path, 'CONTCAR')
+    assert os.path.exists(equi_contcar),"Please compute the equilibrium state using vasp first"
     task_path = re.sub('confs', global_task_name, conf_path)
     task_path = os.path.join(task_path, 'vasp-k%.2f' % kspacing)
     os.makedirs(task_path, exist_ok=True)
@@ -54,8 +55,8 @@ def make_vasp(jdata, conf_dir, supercell = [1,1,1]) :
     potcar_map = jdata['potcar_map']
     potcar_list = []
     for ii in ele_list :
-        assert(os.path.exists(potcar_map[ii]))
-        potcar_list.append(potcar_map[ii])
+        assert os.path.exists(os.path.abspath(potcar_map[ii])),"No POTCAR in the potcar_map of %s"%(ii)
+        potcar_list.append(os.path.abspath(potcar_map[ii]))
     with open(os.path.join(task_path,'POTCAR'), 'w') as outfile:
         for fname in potcar_list:
             with open(fname) as infile:
@@ -91,6 +92,7 @@ def make_lammps(jdata, conf_dir, task_type, supercell) :
     if not model_name and task_type =='deepmd':
         models = glob.glob(os.path.join(model_dir, '*pb'))
         model_name = [os.path.basename(ii) for ii in models]
+        assert len(model_name)>0,"No deepmd model in the model_dir"
     else:
         models = [os.path.join(model_dir,ii) for ii in model_name]
 
