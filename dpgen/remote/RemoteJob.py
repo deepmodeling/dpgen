@@ -732,7 +732,7 @@ class LSFJob (RemoteJob) :
             if status in [  JobStatus.unsubmitted, JobStatus.unknown, JobStatus.terminated ]:
                 dlog.debug('task restart point !!!')
                 while self.check_limit(task_max=resources['task_max']):
-                    time.sleep(10)
+                    time.sleep(60)
                 self._submit(job_dirs, cmd, args, resources)
             elif status==JobStatus.waiting:
                 dlog.debug('task is waiting')
@@ -747,8 +747,9 @@ class LSFJob (RemoteJob) :
         else:
             dlog.debug('new task!!!')
             while self.check_limit(task_max=resources['task_max']):
-                time.sleep(10)
+                time.sleep(60)
             self._submit(job_dirs, cmd, args, resources)
+        time.sleep(20) # For preventing the crash of the tasks while submitting.
 
     def _submit(self, 
                job_dirs,
@@ -765,10 +766,10 @@ class LSFJob (RemoteJob) :
         sftp.close()
 
     def check_limit(self, task_max):
-        stdin_run, stdout_run, stderr_run = self.block_call("bjobs | grep RUN | wc -l")
-        njobs_run = int(stdout.read().decode('utf-8'))
-        stdin_pend, stdout_pend, stderr_pend = self.block_call("bjobs | grep PEND | wc -l")
-        njobs_pend = int(stdout.read().decode('utf-8'))
+        stdin_run, stdout_run, stderr_run = self.block_checkcall("bjobs | grep RUN | wc -l")
+        njobs_run = int(stdout_run.read().decode('utf-8').split ('\n')[0])
+        stdin_pend, stdout_pend, stderr_pend = self.block_checkcall("bjobs | grep PEND | wc -l")
+        njobs_pend = int(stdout_pend.read().decode('utf-8').split ('\n')[0])
         if (njobs_pend + njobs_run) < task_max:
             return False
         else:
@@ -831,14 +832,17 @@ class LSFJob (RemoteJob) :
         ret = ''
         ret += "#!/bin/bash -l\n#BSUB -e %J.err\n#BSUB -o %J.out\n"
         if res['numb_gpu'] == 0:
-            ret += '#BSUB -R span[ptile=%d]\n#BSUB -n %d\n' % (res['node_cpu'], res['numb_node'] * res['task_per_node'])
-        else :
-            ret += '#BSUB -R "select[ngpus >0] rusage[ngpus_excl_p=1]"\n#BSUB -n %d\n' % (res['numb_gpu'])
+            ret += '#BSUB -R span[ptile=%d]\n#BSUB -n %d\n' % (
+                res['node_cpu'], res['numb_node'] * res['task_per_node'])
+        else:
+            ret += '#BSUB -R span[ptile=%d]\n#BSUB -n %d\n' % (
+                res['numb_node'] * res['task_per_node'], res['numb_node'] * res['task_per_node'])
+            # ret += '#BSUB -R "select[ngpus >0] rusage[ngpus_excl_p=1]"\n#BSUB -n %d\n' % (res['numb_gpu'])
         if res['time_limit']:
             ret += '#BSUB -W %s\n' % (res['time_limit'].split(':')[
                 0] + ':' + res['time_limit'].split(':')[1])
         if res['mem_limit'] > 0 :
-            ret += "#BSUB -M %d \n" % (res['mem_limit'] * 1024 * 1024)
+            ret += "#BSUB -M %d \n" % (res['mem_limit'])
         ret += '#BSUB -J %s\n' % (res['job_name'] if 'job_name' in res else 'dpgen')
         if len(res['partition']) > 0 :
             ret += '#BSUB -q %s\n' % res['partition']
@@ -856,7 +860,6 @@ class LSFJob (RemoteJob) :
             for key in envs.keys() :
                 ret += 'export %s=%s\n' % (key, envs[key])
             ret += '\n'
-        #ret += 'cd $PBS_O_WORKDIR\n\n'
 
         if args == None :
             args = []
