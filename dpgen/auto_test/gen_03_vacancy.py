@@ -107,6 +107,7 @@ def make_lammps(jdata, conf_dir, task_type, supercell) :
     equi_path = re.sub('confs', global_equi_name, conf_path)
     equi_path = os.path.join(equi_path, 'vasp-k%.2f' % kspacing)
     equi_contcar = os.path.join(equi_path, 'CONTCAR')
+    assert os.path.exists(equi_contcar),"Please compute the equilibrium state using vasp first"
     # equi_path = re.sub('confs', global_equi_name, conf_path)
     # equi_path = os.path.join(equi_path, 'lmp')
     # equi_dump = os.path.join(equi_path, 'dump.relax')
