@@ -3,6 +3,20 @@ python:
   - "3.6.3"
   - "3.6-dev"  # 3.6 development branch
 # command to install dependencies
+env:
+  matrix:
+  - PYMATGEN_VERSION=2018.1.19
+  - PYMATGEN_VERSION=2018.2.13
+  - PYMATGEN_VERSION=2018.3.2
+  - PYMATGEN_VERSION=2018.4.6
+  - PYMATGEN_VERSION=2018.5.3
+  - PYMATGEN_VERSION=2018.6.11
+  - PYMATGEN_VERSION=2018.7.15
+  - PYMATGEN_VERSION=2019.1.13
+  - PYMATGEN_VERSION=2019.7.30
+before_install:
+  - pip install --upgrade pip
+  - pip install pymatgen==$PYMATGEN_VERSION
 install:
   - pip install .
 # command to run tests
