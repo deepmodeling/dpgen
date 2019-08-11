@@ -61,7 +61,7 @@ git clone https://github.com/deepmodeling/dpgen.git
 then use `setup.py` to install the module
 ```bash
 cd dpgen
-python setup.py install --user
+pip install --user .
 ```
 With this command, the dpgen executable is install to `$HOME/.local/bin/dpgen`. You may want to export the `PATH` by
 ```bash
@@ -350,10 +350,11 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | *#Data*
  | init_data_prefix | String | "/sharedext4/.../data/" | Prefix of initial data directories 
  | ***init_data_sys*** | List of string|["CH4.POSCAR.01x01x01/.../deepmd"] |Directories of initial data. You may use either absolute or relative path here.
- | **init_batch_size**   | String of integer     | [8]                                                            | Each number is the batch_size of corresponding system  for training in `init_data_sys`. One recommended rule for setting the `sys_batch_size` and `init_batch_size` is that `batch_size` mutiply number of atoms ot the stucture should be larger than 32. |
+ | ***sys_format*** | String | "vasp/poscar" | Format of initial data. It will be `vasp/poscar` if not set.
+ | **init_batch_size**   | String of integer     | [8]                                                            | Each number is the batch_size of corresponding system  for training in `init_data_sys`. One recommended rule for setting the `sys_batch_size` and `init_batch_size` is that `batch_size` mutiply number of atoms ot the stucture should be larger than 32. If set to `auto`, batch size will be 32 divided by number of atoms. |
   | sys_configs_prefix | String | "/sharedext4/.../data/" | Prefix of `sys_configs`
  | **sys_configs**   | List of list of string         | [<br />["/sharedext4/.../POSCAR"], <br />["....../POSCAR"]<br />] | Containing directories of structures to be explored in iterations.Wildcard characters are supported here. |
-| ***sys_batch_size***      | List of integer   | [8, 8]                                                 | Each number  is the batch_size for training of corresponding system in `sys_configs`. |
+| ***sys_batch_size***      | List of integer   | [8, 8]                                                 | Each number  is the batch_size for training of corresponding system in `sys_configs`. If set to `auto`, batch size will be 32 divided by number of atoms. |
 | *#Training*
 | **numb_models**      | Integer      | 4 (recommend)                                                           | Number of models to be trained in `00.train`. |
 | **default_training_param** | Dict | {<br />... <br />"use_smooth": true, <br/>"sel_a": [16, 4], <br/>"rcut_smth": 0.5, <br/>"rcut": 5, <br/>"filter_neuron": [10, 20, 40], <br/>...<br />} | Training parameters for `deepmd-kit` in `00.train`. <br /> You can find instructions from here: (https://github.com/deepmodeling/deepmd-kit)..<br /> We commonly let `stop_batch` = 200 * `decay_steps`. |
@@ -373,12 +374,17 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | **model_devi_jobs["nsteps"]**     | Integer      | 3000                                                         | Running steps of MD.                                  |
 | **model_devi_jobs["ensembles"]** | String             | "nvt"                                    | Determining which ensemble used in MD, **options** include “npt” and “nvt”. |
 | *#Labeling*
+| ***use_clusters*** | Boolean | false | If set to `true`, clusters will be taken instead of the whole system. This option does not work with DeePMD-kit 0.x.
+| ***cluster_cutoff***| Float | 3.5 | The cutoff radius of clusters if `use_clusters` is set to `true`.
 | **fp_style** | string                | "vasp"                                                       | Software for First Principles. **Options** include “vasp”, “pwscf” and “gaussian” up to now. |
 | **fp_task_max** | Integer            | 20                                                           | Maximum of  structures to be calculated in `02.fp` of each iteration. |
 | **fp_task_min**     | Integer        | 5                                                            | Minimum of structures to calculate in `02.fp` of each iteration. |
 | **fp_pp_path**   | String           | "/sharedext4/.../ch4/"                                       | Directory of psuedo-potential file to be used for 02.fp exists. |
 | **fp_pp_files**    | List of string         | ["POTCAR"]                                                   | Psuedo-potential file to be used for 02.fp. Note that the order of elements should correspond to the order in `type_map`. |
 |**fp_incar** | String | "/sharedext4/../ch4/INCAR" | Input file for VASP
+|**keywords** | String or list | "mn15/6-31g** nosymm scf(maxcyc=512)" | Keywords for Gaussian input.
+|**multiplicity**| Integer or String | 1 | Spin multiplicity for Gaussian input. If set to `auto`, the spin multiplicity will be detected automatically. If set to `frag`, the "fragment=N" method will be used.
+|**nproc** | Integer| 4 | The number of processors for Gaussian input.
 
 ## Test: Evaluating performances of model
 At this step, we assume that you have prepared some graph files like `graph.*.pb` and the particular pseudopotential `POTCAR`.
@@ -606,7 +612,8 @@ The following table gives explicit descriptions on keys in param.json.
 
  Key   | Type       | Example                                                  | Discription                                                     |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
-|deepmd_path | String |"/gpfs/share/software/deepmd-kit/0.12.4/gpu/gcc/4.9.0/tf1120-lowprec" | Installed directory of DeepMD-Kit, which should contain `bin lib include`.
+|deepmd_path | String |"/gpfs/share/software/deepmd-kit/0.12.4/gpu/gcc/4.9.0/tf1120-lowprec" | Installed directory of DeepMD-Kit 0.x, which should contain `bin lib include`.
+| python_path | String | "/gpfs/home/tzhu/anaconda3/envs/python3.6/bin/python" | Python path for DeePMD-kit 1.x installed. This option should not be used with `deepmd_path` together.
 | machine | Dict | | Settings of the machine for TASK.
 | resources | Dict | | Resources needed for calculation.
 | # Followings are keys in resources 
@@ -622,6 +629,7 @@ mem_limit | Interger | 16 | Maximal memory permitted to apply for the job.
 | # End of resources
 | command | String | "lmp_serial" | Executable path of software, such as `lmp_serial`, `lmp_mpi` and `vasp_gpu`, `vasp_std`, etc.
 | group_size | Integer | 5 | DP-GEN will put these jobs together in one submitting script.
+| allow_failure | Boolean | false | Allow the command returns a non-zero exit code.
 
 ## Troubleshooting
 
