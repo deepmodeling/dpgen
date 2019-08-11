@@ -5,7 +5,7 @@ python:
 # command to install dependencies
 env:
   matrix:
-  - PYMATGEN_VERSION=2017.8.4
+  - PYMATGEN_VERSION=2017.9.1
   - PYMATGEN_VERSION=2018.1.19
   - PYMATGEN_VERSION=2019.1.13
   - PYMATGEN_VERSION=2019.7.30
