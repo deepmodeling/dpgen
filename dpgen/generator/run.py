@@ -53,6 +53,7 @@ template_name = 'template'
 train_name = '00.train'
 train_task_fmt = '%03d'
 train_tmpl_path = os.path.join(template_name, train_name)
+default_train_input_file = 'input.json'
 data_system_fmt = '%03d'
 model_devi_name = '01.model_devi'
 model_devi_task_fmt = data_system_fmt + '.%06d'
@@ -170,7 +171,8 @@ def make_train (iter_index,
                 jdata, 
                 mdata) :    
     # load json param
-    train_param = jdata['train_param']
+    # train_param = jdata['train_param']
+    train_input_file = default_train_input_file
     numb_models = jdata['numb_models']
     init_data_prefix = jdata['init_data_prefix']    
     init_data_prefix = os.path.abspath(init_data_prefix)
@@ -277,7 +279,7 @@ def make_train (iter_index,
             jinput['model']['descriptor']['seed'] = random.randrange(sys.maxsize) % (2**32)
             jinput['model']['fitting_net']['seed'] = random.randrange(sys.maxsize) % (2**32)
             jinput['training']['seed'] = random.randrange(sys.maxsize) % (2**32)
-        with open(os.path.join(task_path, train_param), 'w') as outfile:
+        with open(os.path.join(task_path, train_input_file), 'w') as outfile:
             json.dump(jinput, outfile, indent = 4)
 
     # link old models
@@ -315,7 +317,8 @@ def run_train (iter_index,
                ssh_sess) :
     # load json param
     numb_models = jdata['numb_models']
-    train_param = jdata['train_param']
+    # train_param = jdata['train_param']
+    train_input_file = default_train_input_file
     try:
         mdata["deepmd_version"]
     except:
@@ -345,12 +348,12 @@ def run_train (iter_index,
     if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
         # 0.x
         command =  os.path.join(deepmd_path, 'bin/dp_train')
-        command += ' %s && ' % train_param
+        command += ' %s && ' % train_input_file
         command += os.path.join(deepmd_path, 'bin/dp_frz')
     else:
         # 1.x
         command =  '%s -m deepmd train' % python_path
-        command += ' %s && ' % train_param
+        command += ' %s && ' % train_input_file
         command += '%s -m deepmd freeze' % python_path
 
     #_tasks = [os.path.basename(ii) for ii in all_task]
@@ -364,7 +367,7 @@ def run_train (iter_index,
         else:
             run_tasks.append(ii)
 
-    forward_files = [train_param]
+    forward_files = [train_input_file]
     backward_files = ['frozen_model.pb', 'lcurve.out']
     init_data_sys_ = jdata['init_data_sys']
     init_data_sys = []
@@ -474,16 +477,6 @@ def post_train (iter_index,
                 mdata) :
     # load json param
     numb_models = jdata['numb_models']
-    try:
-        mdata["deepmd_version"]
-    except:
-        mdata = set_version(mdata)
-    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
-        # 0.x
-        deepmd_path = mdata['deepmd_path']
-    else:
-        # 1.x
-        python_path = mdata['python_path']
     # paths
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, train_name)
@@ -492,27 +485,13 @@ def post_train (iter_index,
     if os.path.isfile(copy_flag) :
         log_task('copied model, do not post train')
         return
-    all_task = []
-    for ii in range(numb_models) :
-        task_path = os.path.join(work_path, train_task_fmt % ii)
-        all_task.append(task_path)
-    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
-        # 0.x
-        command = os.path.join(deepmd_path, 'bin/dp_frz')
-    else:
-        # 1.x
-        command = python_path + ' -m deepmd freeze'
-    command = cmd_append_log(command, 'freeze.log')
-    command = 'CUDA_VISIBLE_DEVICES="" ' + command
-    # frz models
-    # exec_hosts(MachineLocal, command, 1, all_task, None)
     # symlink models
     for ii in range(numb_models) :
         task_file = os.path.join(train_task_fmt % ii, 'frozen_model.pb')
         ofile = os.path.join(work_path, 'graph.%03d.pb' % ii)
         if os.path.isfile(ofile) :
             os.remove(ofile)
-        os.symlink(task_file, ofile)    
+        os.symlink(task_file, ofile)
 
 def _get_param_alias(jdata, 
                      names) :
