@@ -1022,15 +1022,7 @@ def _make_fp_vasp_configs(iter_index,
                                    cluster_cutoff)
     return fp_tasks
 
-def _fix_poscar_type (jdata, task_dirs) :
-    type_map = jdata['type_map']
-    for ii in task_dirs :
-        poscar_file = os.path.join(ii, 'POSCAR')
-        for idx,jj in enumerate(type_map):
-            old_str = 'Type_%d' % (idx+1)
-            new_str = jj
-            replace(poscar_file, old_str, new_str)
-    
+
 def make_fp_vasp (iter_index, 
                   jdata) :
     # make config
