@@ -16,6 +16,7 @@
       * [Test: Evaluating performances of model](#test-evaluating-performances-of-model)
       * [Set up machine](#set-up-machine)
       * [Troubleshooting](#troubleshooting)
+      * [License](#license)
 
 
 ## About DP-GEN
@@ -632,6 +633,10 @@ mem_limit | Interger | 16 | Maximal memory permitted to apply for the job.
 | allow_failure | Boolean | false | Allow the command returns a non-zero exit code.
 
 ## Troubleshooting
+
+## License 
+The project dpgen is licensed under [GNU LGPLv3.0](./LICENSE).
+
 
 
 
