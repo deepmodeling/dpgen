@@ -34,7 +34,7 @@ class TestCollVasp(unittest.TestCase):
         poscars=glob.glob("surf.al.fcc.01x01x01/00.place_ele/surf*/sys*/POSCAR")
         for poscar in poscars:
             surf=poscar.split('/')[-3]
-            st1=Structure.from_file(surf+'.vasp')
+            st1=Structure.from_file(surf+'.POSCAR')
             st2=Structure.from_file(poscar)
             self.assertEqual(st1,st2)
         
