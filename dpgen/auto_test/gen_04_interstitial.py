@@ -30,6 +30,7 @@ def _make_vasp(jdata, conf_dir, supercell, insert_ele) :
     equi_path = re.sub('confs', global_equi_name, conf_path)
     equi_path = os.path.join(equi_path, 'vasp-k%.2f' % kspacing)
     equi_contcar = os.path.join(equi_path, 'CONTCAR')
+    assert os.path.exists(equi_contcar),"Please compute the equilibrium state using vasp first"
     task_path = re.sub('confs', global_task_name, conf_path)
     task_path = os.path.join(task_path, 'vasp-k%.2f' % kspacing)
     os.makedirs(task_path, exist_ok=True)
@@ -66,27 +67,29 @@ def _make_vasp(jdata, conf_dir, supercell, insert_ele) :
         # make conf
         dss[ii].to('POSCAR', 'POSCAR')
         # gen potcar
-        _gen_potcar(jdata, 'POSCAR', 'POTCAR')
+        with open('POSCAR','r') as fp :
+            lines = fp.read().split('\n')
+            ele_list = lines[5].split()
+                  
+        os.chdir(cwd)
+        potcar_map = jdata['potcar_map']
+        potcar_list = []
+        for ii in ele_list :
+            assert os.path.exists(os.path.abspath(potcar_map[ii])),"No POTCAR in the potcar_map of %s"%(ii)
+            potcar_list.append(os.path.abspath(potcar_map[ii]))
+        os.chdir(struct_path)
+                  
+        with open('POTCAR', 'w') as outfile:
+            for fname in potcar_list:
+                with open(fname) as infile:
+                    outfile.write(infile.read())
+        
         # link incar
         os.symlink(os.path.relpath(os.path.join(task_path, 'INCAR')), 'INCAR')
         # save supercell
         np.savetxt('supercell.out', supercell, fmt='%d')
     os.chdir(cwd)
 
-def _gen_potcar (jdata, task_poscar, filename) :
-    # gen potcar
-    with open(task_poscar,'r') as fp :
-        lines = fp.read().split('\n')
-        ele_list = lines[5].split()
-    potcar_map = jdata['potcar_map']
-    potcar_list = []
-    for ii in ele_list :
-        assert(os.path.exists(potcar_map[ii]))
-        potcar_list.append(potcar_map[ii])
-    with open(filename, 'w') as outfile:
-        for fname in potcar_list:
-            with open(fname) as infile:
-                outfile.write(infile.read())
 
 def make_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_type) : 
     for ii in insert_ele :
@@ -102,6 +105,7 @@ def _make_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_type) :
     if not model_name and task_type=='deepmd':
         models = glob.glob(os.path.join(model_dir, '*pb'))
         model_name = [os.path.basename(ii) for ii in models]
+        assert len(model_name)>0,"No deepmd model in the model_dir"
     else:
         models = [os.path.join(model_dir,ii) for ii in model_name]
 
@@ -211,6 +215,7 @@ def _make_lammps(jdata, conf_dir, supercell, insert_ele, task_type) :
     if not model_name and task_type=='deepmd':
         models = glob.glob(os.path.join(model_dir, '*pb'))
         model_name = [os.path.basename(ii) for ii in models]
+        assert len(model_name)>0,"No deepmd model in the model_dir"
     else:
         models = [os.path.join(model_dir,ii) for ii in model_name]
 
@@ -225,6 +230,7 @@ def _make_lammps(jdata, conf_dir, supercell, insert_ele, task_type) :
     equi_path = re.sub('confs', global_equi_name, conf_path)
     equi_path = os.path.join(equi_path, task_type)
     equi_dump = os.path.join(equi_path, 'dump.relax')
+    assert os.path.exists(equi_dump),"Please compute the equilibrium state using vasp first"
     task_path = re.sub('confs', global_task_name, conf_path)
     task_path = os.path.join(task_path, task_type)
     os.makedirs(task_path, exist_ok=True)

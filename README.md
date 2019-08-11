@@ -1,25 +1,59 @@
-# Workflow for DP-GEN
-
+# DP-GEN Manual
 
 ## Table of Contents
 
-- [Workflow for DP-GEN](#workflow-for-dp-gen)
-  * [Table of Contents](#table-of-contents)
-  * [Basic structure of DPGEN](#basic-structure-of-dpgen)
-  * [User flows](#user-flows)
-  * [Preparing Data](#preparing-data)
-    + [param.json](#paramjson)
-  * [Main Process of Generator](#main-process-of-generator)
-    + [Basics](#basics)
-    + [machine.json](#machinejson)
-    + [param.json](#paramjson-1)
-    + [Test case : Methane](#test-case---methane)
-  * [Doing Auto_test](#doing-auto-test)
-    + [param.json](#paramjson-2)
-  * [Appendix and FAQ](#appendix-and-faq)
+ * [DP-GEN Manual](#dp-gen-manual)
+      * [Table of Contents](#table-of-contents)
+      * [About DP-GEN](#about-dp-gen)
+         * [Highlighted features](#highlighted-features)
+         * [Code structure and interface](#code-structure-and-interface)
+         * [License and credits](#license-and-credits)
+      * [Download and Install](#download-and-install)
+      * [Init: Preparing Initial Data](#init-preparing-initial-data)
+         * [Init_bulk](#init_bulk)
+         * [Init_surf](#init_surf)
+      * [Run: Main Process of Generator](#run-main-process-of-generator)
+      * [Test: Evaluating performances of model](#test-evaluating-performances-of-model)
+      * [Set up machine](#set-up-machine)
+      * [Troubleshooting](#troubleshooting)
 
 
-## Installation
+## About DP-GEN
+DP-GEN (Deep Generator)  is a software written in Python, delicately designed to generate a deep learning based model of interatomic potential energy and force field. DP-GEN is depedent on DeepMD-kit (https://github.com/deepmodeling/deepmd-kit/blob/master/README.md). With highly scalable interface with common softwares for molecular simulation, DP-GEN is capable to  automatically prepare scripts and maintain job queues on HPCs (High Performance Cluster) and analyze results
+### Highlighted features
++ **Accurate and efficient**: DP-GEN is capable to sample tens of million structures and select only a few (< 0.01%) for first principles calculation. DP-GEN will finally obtain a uniformly accurate model.
++ **User-friendly and automatic**: Users may install and run DP-GEN easily. Once succusefully running, DP-GEN may dispatch and handle all jobs on HPCs, and thus there's no need for any personal effort. 
++ **Highly scalable**: With modularized code structures, users and developers can easily extend DP-GEN for their most relevant needs. DP-GEN currently supports for HPC systems (Slurm, PBS, LSF and cloud machines ), Deep Potential interface with DeePMD-kit, MD interface with LAMMPS  and *ab-initio* calculation interface with VASP, PWSCF, and Gaussian. We're sincerely welcome and embraced to users' contributions, with more possibilities and cases to use DP-GEN.
+
+### Code structure and interface
++ dpgen:
+    * data: source codes for preparing initial data of bulk and surf systems.
+
+    * generator: source codes for main process of deep generator.
+
+    * auto_test : source code for undertaking materials property analysis.
+    * remote : source code for automatically submiting scripts,maintaining job queues and collecting results. 
+    * database
++ examples : providing example JSON files.
+
++ tests : unittest tools for developers.
+
+One can easily run DP-GEN with :
+```
+dpgen TASK PARAM MACHINE
+```
+
+where TASK is the key word, PARAM and MACHINE are both JSON files.
+
+Options for TASK:
+* `init_bulk` : Generating initial data for bulk systems. 
+* `init_surf` : Generating initial data for bulk systems.
+* `run` : Main process of Generator.
+* `test`: Evaluating the performance of models.
+
+### License and credits
+
+## Download and Install 
 One can download the source code of dpgen by 
 ```bash
 git clone https://github.com/deepmodeling/dpgen.git 
@@ -64,55 +98,96 @@ optional arguments:
 
 Author: DeepGenTeam Version: 0.1.0 Last updated: 2019.06.26
 ```
++ Option `init`: As the first step, you may prepare the initital data here.
+
++ Option `run`: The main exploration process will take place here.
+
++ Option `test` : You can use this module to undertake relevant tests, based on the  model trained in previous process and Pymatgen.
 
 
 
-## Basic structure of DPGEN
 
-One can easily download the code of DPGEN and go into the main folder:
 
-Then you will see three sub-folders, namely
+## Init: Preparing Initial Data
+
+### Init_bulk
+
+You may prepare initial data for bulk systems with VASP by:
+
+```bash
+dpgen init_bulk PARAM MACHINE 
 ```
-data		generator	auto_test
+
+Basically `init_bulk` can be devided into four parts , denoted as `stages` in `PARAM`:
+1. Relax in folder `00.place_ele`
+2. Pertub and scale in folder `01.scale_pert`
+3. Run a shor AIMD in folder `02.md`
+4. Collect data in folder `02.md`.
+ 
+All stages must be **in order**. One doesn't need to run all stages. For example, you may run stage 1 and 2, generating supercells as starting point of exploration in `dpgen run`.
+
+Following is an example for `PARAM`, which generates data from a typical structure hcp.
+```json
+{
+    "stages" : [1,2,3,4],
+    "cell_type":    "hcp",
+    "latt":     4.479,
+    "super_cell":   [2, 2, 2],
+    "elements":     ["Mg"],
+    "potcars":      ["/gpfs/share/home/1600017784/start/data/POTCAR/Mg/POTCAR"],
+    "relax_incar": "/gpfs/share/home/1600017784/start/pku_input_set/INCAR_metal_rlx_low",
+    "md_incar" : "/gpfs/share/home/1600017784/yuzhi/data_test/INCAR_metal_md",
+    "scale":        [1.00],
+    "skip_relax":   false,
+    "pert_numb":    2,
+    "md_nstep" : 5,
+    "pert_box":     0.03,
+    "pert_atom":    0.01,
+    "coll_ndata":   5000,
+    "_comment":     "that's all"
+}
 ```
 
-+ Folder `data`: As the first step, you may prepare the initital data here.
+If you want to specify a structure as starting point for `init_bulk`, you may set in `PARAM` as follows.
 
-+ Folder `generator`: The main exploration process will take place here.
-+ Folder `auto_test` : You can use this module to undertake relevant tests, based on the  model trained in previous process and Pymatgen.
-
-
-It's necessary to mention that, the various and specific configurations for the implementation of DPGEN is realised by modifying some jsons file. After that, all work can be automatically done by DPGEN! We wil give an explicit illustration for the parameters needed in the following part.
-
-## Preparing Data
-The main code of this part is `gen.py`.
-You may get the instructions of the codes, by:
+```json
+"from_poscar":	true,
+"from_poscar_path":	"/gpfs/share/home/1600017784/start/none_metal_element/C_mp-47_conventional.POSCAR",
 ```
-python gen.py -h
-```
-We prepare some successful examples in the sub-folder `jsons`, next we take `jsons/al.fcc.111.json` as an example.
+The following table gives explicit descriptions on keys in `PARAM`. 
 
-1. `python gen.py jsons/al.fcc.111.json 1`
-you will create a foder al.fcc.01x01x01/00.place_ele/sys-0004, go to it and that will be the file for VASP relaxation;
-you may do vasp calculation in that folder, the obtained CONTCAR in that folder is the only necessary one for the next step.
-2. `python gen.py jsons/al.fcc.111.json 2` the code will collect relaxed configurations, perturb the system with 0.03 (3%) for box and 0.01 angstrom for atomic position (may be modified in the json file);
-3. `python gen.py jsons/al.fcc.111.json 3` for perturbed systems, set up vasp jobs and run a 10-step short MD (you may run it in the corresponding al..fcc.01x01x01/02.md/sys-0004 folder);
-and
-4. `python gen.py jsons/al.fcc.111.json 4` collect vasp md confs, make the data prepared for the DeePMD training.
+The bold notation of key (such aas **type_map**) means that it's a necessary key. 
 
-For Al, we prepared data for fcc.111, hcp.111, sc.111, and diamond.111 to kick off the initial training.
-For later DeePMD exploration, we prepared fcc.222, hcp.222, sc.222, and diamond.222, these only serve as initial structures for DeePMD but did not undergo a VASP calculation. Starting from this step, only those picked up from the exploration step are sent to VASP (essentially around 0.003% of the confs explored by DeePMD are sent to VASP).
-### param.json 
+ Key  | Type          | Example                                                      | Discription                                                      |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| **stages** | List of Integer | [1,2,3,4] | Stages for `init_bulk` 
+| **Elements** | List of String | ["Mg"] | Atom types
+|  cell_type | String  | "hcp" | Specifying which typical structure to be generated. **Options** include fcc, hcp, bcc, sc, diamond.
+| latt | Float | 4.479 | Lattice constant for single cell.
+| from_poscar | Boolean | True | Deciding whether to use a given poscar as the beginning of relaxation. If it's true, keys (`cell_type`, `latt`) will be aborted. Otherwise, these two keys are **necessary**.
+| from_poscar_path | String | "....../C_mp-47_conventional.POSCAR" | Path of POSCAR
+| relax_incar | String | "....../INCAR" | Path of INCAR for relaxation in VASP. **Necessary** if `stages` include 1.
+| md_incar | String |  "....../INCAR" | Path of INCAR for MD in VASP. **Necessary** if `stages` include 3.| 
+| **scale** | List of float | [0.980, 1.000, 1.020] | Scales for transforming cells.
+| **skip_relax** | Boolean | False | If it's true, you may directly run stage 2 (pertub and scale) using an unrelaxed POSCAR.
+| **pert_numb** | Integer | 30 | Number of pertubations for each POSCAR. 
+| **md_nstep** | Integer | 10 | Steps of AIMD in stage 3. If it's not equal to settings via `NSW` in `md_incar`, DP-GEN will follow `NSW`.
+| **pert_box** | Float | 0.03 | 
+| **pert_atom** | Float | 0.01 | 
+| **coll_ndata** | Integer | 5000 | 
+### Init_surf
 
-To be finished.
-## Main Process of Generator
 
-### Basics
-The main code of this part is `run.py`
 
-The command is simply `python run.py PARAM MACHINE`, where `PARAM` and `MACHINE` are both json files.
 
-The whole process will contain a series of iterations, sorted by some rules such as heating the system to certain temperature.
+## Run: Main Process of Generator
+
+
+You may call the main process by:
+`dpgen run PARAM MACHINE`.
+
+
+The whole process of generator will contain a series of iterations, succussively undertaken in order such as heating the system to certain temperature.
 
 In each iteration, there are three stages of work, namely, `00.train  01.model_devi  02.fp`.
 
@@ -124,283 +199,190 @@ In each iteration, there are three stages of work, namely, `00.train  01.model_d
 
 DP-GEN identifies the current stage by a record file, `record.dpgen`, which will be created and upgraded by codes.Each line contains two number: the first is index of iteration, and the second ,ranging from 0 to 9 ,records which stage in each iteration is currently running.
 
-0,1,2 correspond to make_train, run_train, post_train. DP-GEN will write scripts in `make_train`, run the task by specific machine in `run_train` and collect result in `post_train`. The record for model_devi and fp stage follows similar rules.
-
-The setting of json files is the most important and time-cosuming issue.If everything is set up correctly, the whole iteration is supposed to automatically done, without any extra work!
+0,1,2 correspond to make_train, run_train, post_train. DP-GEN will write scripts in `make_train`, run the task by specific machine in `run_train` and collect result in `post_train`. The records for model_devi and fp stage follow similar rules.
 
 
+In `PARAM`, you can specialize the task as you expect.
 
-### machine.json
 
-When switching into a new machine, you may modifying the `machine.json`, according to the actual circumstance. Once you have finished, the `machine.json` can be re-used for any DP-GEN tasks without any extra efforts.
-
-An example for `machine.json` is:
-```
+```json
 {
-    "deepmd_path":	"/sharedext4/local/deepmd-kit-0.12.4/",
-    "train_machine":	{
-	"machine_type":	"slurm",
-	"hostname" :	"localhost",
-	"port" :	22,
-	"username":	"root",
-	"work_path" :	"/sharedext4/generator/example/deep.gen/generator/ch4/",
-	"_comment" :	"that's all"
-    },
-    "train_resources":	{
-	"numb_node":	1,
-	"numb_gpu":	1,
-	"task_per_node":8,
-	"partition" : "GPU-H",
-	"exclude_list" : [],
-	"source_list":	[ "/sharedext4/local/deepmd-kit-0.12.4/bin/activate" ],
-	"module_list":	[ ],
-	"time_limit":	"23:0:0",
-	"mem_limit":	32,
-	"_comment":	"that's all"
-    },
-
-    "lmp_command":	"/sharedext4/softwares/lammps/bin/lmp_serial",
-    "model_devi_group_size":	1,
-    "_comment":		"model_devi on localhost",
-    "model_devi_machine":	{
-	"machine_type":	"slurm",
-	"hostname" :	"localhost",
-	"port" :	22,
-	"username":	"root",
-	"work_path" :	"/sharedext4/generator/example/deep.gen/generator/ch4/",
-	"_comment" :	"that's all"
-    },
-    "_comment": " if use GPU, numb_nodes(nn) should always be 1 ",
-    "_comment": " if numb_nodes(nn) = 1 multi-threading rather than mpi is assumed",
-    "model_devi_resources":	{
-	"numb_node":	1,
-	"numb_gpu":	0,
-	"task_per_node":1,
-	"source_list":	["/sharedext4/local/deepmd-kit-0.12.4/bin/lammps.activate" ],
-	"module_list":	[ ],
-	"time_limit":	"19:0:0",
-	"mem_limit":	32,
-	"partition" : "GPU-All",
-	"_comment":	"that's all"
-    },
-
-    "_comment":         "fp on localhost ",
-    "fp_command":       "/sharedext4/vasp/vasp.5.4.4/bin/vasp_std",
-    "fp_group_size":    1,
-    "fp_machine":       {
-        "machine_type": "slurm",
-        "hostname" :    "localhost",
-        "port" :        22,
-        "username":     "root",
-        "work_path" :   "/sharedext4/generator/example/deep.gen/generator/ch4/",
-        "_comment" :    "that's all"
-    },
-    "fp_resources":     {
-        "numb_node":    1,
-        "task_per_node":1,
-        "numb_gpu":     0,
-	"exclude_list" : [],
-        "source_list":  ["/sharedext4/softwares/source/vasp_cpu.activate" ],
-        "module_list":  [],
-	"with_mpi" : 1,
-	"time_limit":   "0:10:0",
-	"partition" : "GPU-All",
-        "_comment":     "that's all"
-    },
-
-
-    "_comment":		" that's all "
-}
-```
-For convenience, we use TASK to represent train or model_devi or fp, for similar parameters in the json file.
-
-+ `deepmd_path` (string), is the installed directory of DeepMD-Kit, which should contain `bin lib include`.
-
-+ `TASK_machine` (dict), modifies the settings of the machine for TASK. 
-
-+ `TASK_resources` (dict), modify the resources needed for calculation. In the dict, `numb_node`(integer) is node count required for the job.`numb_gpu`(integer) specializes whether the job apply for the GPU resources. `task_per_node` (integer) is number of tasks to be launched. `source_list` (list) contains the environment needed for certain job. For example, if "env" is in the list, 'source env' will be written in the script for slurm. `module_list` (list) If "moduleA" is in the list, "module load moduleA" will be written.`time_limit`(string) is the maximum time permitted for the job.`mem_limit`(string) is the maximum memory permitted to apply for.
-
-
-+ `TASK_command` (string), is the command for call TASK.
-
-+ `TASK_group_size` (integer) DP-GEN will put these jobs together in one submitting script.
-
-
-
-### param.json 
-
-In param.json, you can specialize the task as you expect.
-
-
-```
-{
-    "type_map":		["H","C"],
-    "mass_map":		[1, 12],
-
-    "init_data_prefix":	"/sharedext4/generator/example/deep.gen/data/",
-
-    "init_data_sys":	[
-	"/sharedext4/generator/example/deep.gen/data/CH4.POSCAR.01x01x01/02.md/sys-0004-0001/deepmd"
-			],
-    "init_batch_size":	[
-	8
-			],
-    "sys_configs":	[
-    ["/sharedext4/generator/example/deep.gen/data/CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale*/00000[0-4]/POSCAR"],
-    ["/sharedext4/generator/example/deep.gen/data/CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale*/00000[5-9]/POSCAR"],
-    ["/sharedext4/generator/example/deep.gen/data/CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale*/00001*/POSCAR"],
-    ["/sharedext4/generator/example/deep.gen/data/CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale*/00002*/POSCAR"]
-	],
-    "_comment":		"0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25",
-    "sys_batch_size":	[
-	8, 8, 8, 8
+  "type_map": [
+    "H",
+    "C"
+  ],
+  "mass_map": [
+    1,
+    12
+  ],
+  "init_data_prefix": "/gpfs/share/home/1600017784/yuzhi/methane/init/",
+  "init_data_sys": [
+    "CH4.POSCAR.01x01x01/02.md/sys-0004-0001/deepmd"
+  ],
+  "init_batch_size": [
+    8
+  ],
+  "sys_configs_prefix": "/gpfs/share/home/1600017784/yuzhi/methane/init/",
+  "sys_configs": [
+    [
+      "CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale*/00000*/POSCAR"
     ],
-
-
-    "_comment":		" 00.train ",
-    "numb_models":	4,
-    "train_param":	"input.json",
-    "default_training_param" : {
-	"_comment": " model parameters",
-	"use_smooth":		true,
-	"sel_a":		[16,4],
-	"rcut_smth":		0.50,
-	"rcut":			5,
-	"filter_neuron":	[10, 20, 40],
-	"filter_resnet_dt":	false,
-	"n_axis_neuron":	12,
-	"n_neuron":		[120,120,120],
-	"resnet_dt":		true,
-	"coord_norm":		true,
-	"type_fitting_net":	false,
-
-	"_comment": " traing controls",
-	"systems":		[],
-	"set_prefix":		"set",
-	"stop_batch":		20000,
-	"batch_size":		1,
-	"start_lr":		0.001,
-	"decay_steps":		100,
-	"decay_rate":		0.95,
-	"seed":			0,
-
-	"start_pref_e":		0.02,
-	"limit_pref_e":		2,
-	"start_pref_f":		1000,
-	"limit_pref_f":		1,
-	"start_pref_v":		0.0,
-	"limit_pref_v":		0.0,
-
-	"_comment": " display and restart",
-	"_comment": " frequencies counted in batch",
-	"disp_file":		"lcurve.out",
-	"disp_freq":		1000,
-	"numb_test":		4,
-	"save_freq":		1000,
-	"save_ckpt":		"model.ckpt",
-	"load_ckpt":		"model.ckpt",
-	"disp_training":	true,
-	"time_training":	true,
-	"profiling":		false,
-	"profiling_file":	"timeline.json",
-
-	"_comment":		"that's all"
+    [
+      "CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale*/00001*/POSCAR"
+    ]
+  ],
+  "sys_batch_size": [
+    8,
+    8,
+    8,
+    8
+  ],
+  "_comment": " that's all ",
+  "numb_models": 4,
+  "train_param": "input.json",
+  "default_training_param": {
+    "_comment": "that's all",
+    "use_smooth": true,
+    "sel_a": [
+      16,
+      4
+    ],
+    "rcut_smth": 0.5,
+    "rcut": 5,
+    "filter_neuron": [
+      10,
+      20,
+      40
+    ],
+    "filter_resnet_dt": false,
+    "n_axis_neuron": 12,
+    "n_neuron": [
+      100,
+      100,
+      100
+    ],
+    "resnet_dt": true,
+    "coord_norm": true,
+    "type_fitting_net": false,
+    "systems": [],
+    "set_prefix": "set",
+    "stop_batch": 40000,
+    "batch_size": 1,
+    "start_lr": 0.001,
+    "decay_steps": 200,
+    "decay_rate": 0.95,
+    "seed": 0,
+    "start_pref_e": 0.02,
+    "limit_pref_e": 2,
+    "start_pref_f": 1000,
+    "limit_pref_f": 1,
+    "start_pref_v": 0.0,
+    "limit_pref_v": 0.0,
+    "disp_file": "lcurve.out",
+    "disp_freq": 1000,
+    "numb_test": 4,
+    "save_freq": 1000,
+    "save_ckpt": "model.ckpt",
+    "load_ckpt": "model.ckpt",
+    "disp_training": true,
+    "time_training": true,
+    "profiling": false,
+    "profiling_file": "timeline.json"
+  },
+  "model_devi_dt": 0.002,
+  "model_devi_skip": 0,
+  "model_devi_f_trust_lo": 0.05,
+  "model_devi_f_trust_hi": 0.15,
+  "model_devi_e_trust_lo": 10000000000.0,
+  "model_devi_e_trust_hi": 10000000000.0,
+  "model_devi_clean_traj": true,
+  "model_devi_jobs": [
+    {
+      "sys_idx": [
+        0
+      ],
+      "temps": [
+        100
+      ],
+      "press": [
+        1.0
+      ],
+      "trj_freq": 10,
+      "nsteps": 300,
+      "ensemble": "nvt",
+      "_idx": "00"
     },
-
-    "_comment":		" 01.model_devi ",
-    "_comment": "model_devi_skip: the first x of the recorded frames",
-    "model_devi_dt":		0.002,
-    "model_devi_skip":		0,
-    "model_devi_f_trust_lo":	0.05,
-    "model_devi_f_trust_hi":	0.15,
-    "model_devi_e_trust_lo":	1e10,
-    "model_devi_e_trust_hi":	1e10,
-    "model_devi_clean_traj":	true,
-    "model_devi_jobs":	[
-	{"sys_idx": [0],
-	"temps": [  100], "press": [1.0], "trj_freq": 10, "nsteps": 300,  "ensemble": "npt", "_idx": "00"},
-	{"sys_idx": [1],
-	"temps": [  100], "press": [1.0], "trj_freq": 10, "nsteps": 1000,  "ensemble": "npt", "_idx": "01"},
-	{"sys_idx": [2],
-	"temps": [  100], "press": [1.0], "trj_freq": 10, "nsteps": 3000,  "ensemble": "npt", "_idx": "02"},
-	{"sys_idx": [3],
-	"temps": [  100], "press": [1.0], "trj_freq": 10, "nsteps": 3000,  "ensemble": "npt", "_idx": "03"}
-	],
-
-
-    "_comment":		" 02.fp ",
-    "fp_style":		"vasp",
-    "shuffle_poscar":	false,
-    "fp_task_max":	30,
-    "fp_task_min":	5,
-    "fp_pp_path":	"/sharedext4/generator/example/deep.gen/data/ch4/",
-    "fp_pp_files":	["POTCAR"],
-    "fp_params":	{
-	"_comment": "given in unit depending on the fp method",
-	"ecut":		400,
-	"ediff":	1e-6,
-	"kspacing":	2,
-	"_comment": "gauss, mp:N(methfessel-paxton:order by default order=1), fd(Fermi-Dirac)",
-	"smearing":	"gauss",
-	"sigma":	0.05,
-	"_comment": "only for vasp, can be NONE, SCAN, TPSS, RTPSS, M06L or MBJ",
-	"metagga":	"NONE",
-	"npar":		4,
-	"kpar":		1,
-	"_comment":	" that's all "
-    },
-    "_comment":		" that's all "
+    {
+      "sys_idx": [
+        1
+      ],
+      "temps": [
+        100
+      ],
+      "press": [
+        1.0
+      ],
+      "trj_freq": 10,
+      "nsteps": 3000,
+      "ensemble": "nvt",
+      "_idx": "01"
+    }
+  ],
+  "fp_style": "vasp",
+  "shuffle_poscar": false,
+  "fp_task_max": 20,
+  "fp_task_min": 1,
+  "fp_pp_path": "/gpfs/share/home/1600017784/yuzhi/methane/",
+  "fp_pp_files": [
+    "POTCAR"
+  ],
+  "fp_incar": "/gpfs/share/home/1600017784/yuzhi/methane/INCAR_methane"
 }
 ```
 
-+ `type_map` (list of string ), is the atom type you want to explore.
+The following table gives explicit descriptions on keys in `PARAM`. 
 
-+ `mass_map` (list of float), contains the corresponding standard atom weights.
+The bold notation of key (such aas **type_map**) means that it's a necessary key. 
 
-+ `init_data_prefix` (string) is the location of folder containg initial data.
+ Key  | Type          | Example                                                      | Discription                                                      |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| *#Basics*
+| **type_map** | List of string | ["H", "C"] | Atom types
+| **mass_map** | List of float |  [1, 12] | Standard atom weights.
+| *#Data*
+ | init_data_prefix | String | "/sharedext4/.../data/" | Prefix of initial data directories 
+ | ***init_data_sys*** | List of string|["CH4.POSCAR.01x01x01/.../deepmd"] |Directories of initial data. You may use either absolute or relative path here.
+ | **init_batch_size**   | String of integer     | [8]                                                            | Each number is the batch_size of corresponding system  for training in `init_data_sys`. One recommended rule for setting the `sys_batch_size` and `init_batch_size` is that `batch_size` mutiply number of atoms ot the stucture should be larger than 32. |
+  | sys_configs_prefix | String | "/sharedext4/.../data/" | Prefix of `sys_configs`
+ | **sys_configs**   | List of list of string         | [<br />["/sharedext4/.../POSCAR"], <br />["/sharedext4/.../POSCAR"]<br />] | Containing directories of structures to be explored in iterations.Wildcard characters are supported here. |
+| ***sys_batch_size***      | List of integer   | [8, 8]                                                 | Each number  is the batch_size for training of corresponding system in `sys_configs`. |
+| *#Training*
+| **numb_models**      | Integer      | 4 (recommend)                                                           | Number of models to be trained in `00.train`. |
+| **default_training_param** | Dict | {<br />... <br />"use_smooth": true, <br/>"sel_a": [16, 4], <br/>"rcut_smth": 0.5, <br/>"rcut": 5, <br/>"filter_neuron": [10, 20, 40], <br/>...<br />} | Training parameters for `deepmd-kit` in `00.train`. <br /> You can find instructions from here: (https://github.com/deepmodeling/deepmd-kit)..<br /> We commonly let `stop_batch` = 200 * `decay_steps`. |
+| *#Exploration*
+| **model_devi_dt** | Float | 0.002 (recommend) | Timestep for MD | 
+| **model_devi_skip** | Integer | 0 | Number of structures skipped for fp in each MD  
+| **model_devi_f_trust_lo** | Float | 0.05 | Lower bound of forces for the selection.
+ | **model_devi_f_trust_hi** | Float | 0.15 | Upper bound of forces for the selection
+| **model_devi_e_trust_lo**  | Float | 1e10                                                         | Lower bound of energies for the selection. Recommend to set them a high number, since forces provide more precise information. Special cases such as energy minimization may need this. |
+| **model_devi_e_trust_hi**  | Float | 1e10                                                         | Upper bound of energies for the selection. |
+| **model_devi_clean_traj**  | Boolean | true                                                         | Deciding whether to clean traj folders in MD since they are too large. |
+| **model_devi_jobs**        | [<br/>{<br/>"sys_idx": [0], <br/>"temps": <br/>[100],<br/>"press":<br/>[1],<br/>"trj_freq":<br/>10,<br/>"nsteps":<br/> 1000,<br/> "ensembles": <br/> "nvt" <br />},<br />...<br />] | List of dict | Settings for exploration in `01.model_devi`. Each dict in the list corresponds to one iteration. The index of `model_devi_jobs` exactly accord with index of iterations |
+| **model_devi_jobs["sys_idx"]**    | List of integer           | [0]                                                          | Systems to be selected as the initial structure of MD and be explored. The index corresponds exactly to the `sys_configs`. |
+| **model_devi_jobs["temps"]**  | List of integer | [50, 300] | Temperature (**K**) in MD 
+| **model_devi_jobs["press"]**  | List of integer | [1,10] | Pressure (**Bar**) in MD 
+| **model_devi_jobs["trj_freq"]**   | Integer  | 10                                                            | Frequecy of trajectory saved in MD.                   |
+| **model_devi_jobs["nsteps"]**     | Integer      | 3000                                                         | Running steps of MD.                                  |
+| **model_devi_jobs["ensembles"]** | String             | "nvt"                                    | Determining which ensemble used in MD, **options** include “npt” and “nvt”. |
+| *#Labeling*
+| **fp_style** | string                | "vasp"                                                       | Software for First Principles. **Options** include “vasp”, “pwscf” and “gaussian” up to now. |
+| **fp_task_max** | Integer            | 20                                                           | Maximum of  structures to be calculated in `02.fp` of each iteration. |
+| **fp_task_min**     | Integer        | 5                                                            | Minimum of structures to calculate in `02.fp` of each iteration. |
+| **fp_pp_path**   | String           | "/sharedext4/.../ch4/"                                       | Directory of psuedo-potential file to be used for 02.fp exists. |
+| **fp_pp_files**    | List of string         | ["POTCAR"]                                                   | Psuedo-potential file to be used for 02.fp. Note that the order of elements should correspond to the order in `type_map`. |
+|**fp_incar** | String | "/sharedext4/../ch4/INCAR" | Input file for VASP
 
-+ `init_data_sys` (list of string) is the exact directory of initial data.
-
-+ `init_batch_size` (list of integer) Each number in the list is the batch_size for training of corresponding system in init_data_sys. Therefore, the size of these two lists should be the same. One recommend rule for setting is that init_batch_size mutiply number of atoms in one structure should be larger than 32.
-
-+ `sys_configs` (list of list) contains the directory of structure to be explored in iterations.Default file format is POSCAR.
-
-+ `sys_batch_size` (list of integer) Each number in the list is the batch_size for training of corresponding system in sys_configs. Setting ules are similar to init_batch_size
-
-+ `num_models` : (integer) is the number of models to be trained in 00.train
-
-+ `default_training_param` (dict): is training parameters for DeepMD in 00.train. You can find instructions from here:  https://github.com/deepmodeling/deepmd-kit
-
-+ `model_devi_f_trust_lo` and `model_devi_f_trust_hi` (float) are the lower bound and upper bound of force for the selection in 01.model_devi. One recommended setting for the lower bound is twice of the traning error.
-
-+ `model_devi_clean_traj`(boolin), decides whether to clean traj folders in Moldecular-Dynamics since they are too large.
-
-+ `model_devi_jobs` (list of dict), contains the settings for model deviation. Each dict in the list correspond one iteration.In the dict, `sys_idx`(list), choose which system to be tested, the index here corresponds exactly to the 'sys_configs'. `temp` and `press` (list) are the temperature and pressure in MD. `trj_freq` is the frequecy of trajectory saved in MD. `nsteps` is the running steps of MD. `ensembles`(string), determines which ensemble used in MD, options include "npt" and "nvt".
-
-+ `fp_style`(string): chooses the software for First Principles.
-
-+ `fp_task_max` and `fp_task_min` are the maximum and minimum numbers of structures to calculate in 02.fp.
-
-+ `fp_pp_path` and `fp_pp_files` determine the location psuedo-potential file to be used for 02.fp.
-
-+ `fp_params` are parameters for 02.fp.
-
-
-### Test case : Methane
-We have provided an easy case of modelling methane (CH4) in $100K$ for you in folder generator. In the following part, we will take it as an example to give an instuction of DP-GEN.
-
-We have prepared data for CH4 in $50K$ using the tools in folder `data` and put them in the folder `data/CH4.POSCAR.01.01.01/` which contains 300 frames of initial data. 
-
-Next we'll try explore CH4 in $100K$ with DP-GEN by calculating faily a few new frames of data.
-
-The two jsons mentioned above have been placed in folder `generator/ch4/`.You need to modify `machine.json` and such following keys in `param.json` : `init_data_prefix`, `init_data_sys`, `sys_configs` and `fp_pp_path` to run the example successfully on your own machine .
-
-(Noted by Yuzhi: We'd better use relative path here for convenience.)
-
-Once the jsons have been set correctly, you may simply run DP-GEN by `python run.py ch4/param.json ch4/machine.json`! 
-
-
-## Doing Auto_test
+## Test: Evaluating performances of model
 At this step, we assume that you have prepared some graph files like `graph.*.pb` and the particular pseudopotential `POTCAR`.
 
 The main code of this step is 
@@ -422,11 +404,10 @@ The whole program contains a series of tasks shown as follows. In each task, the
 
 + `05.surf`: the surface formation energy
 
-### param.json 
 
 We take Al as an example to show the parameter settings of `param.json`.
 The first part is the fundamental setting for particular alloy system. 
-```
+```json
     "_comment": "models",
     "potcar_map" : {
 	"Al" : "/somewhere/POTCAR"
@@ -470,13 +451,13 @@ The second part is the computational settings for vasp and lammps. The most impo
     },
 ```
 The last part is the optional settings for various tasks mentioned above. You can change the parameters according to actual needs.
-```
+```json
     "_comment":"00.equi",
     "store_stable":true,
 ```
 + `store_stable`:(boolean) whether to store the stable energy and volume
 
-```
+```json
     "_comment": "01.eos",
     "vol_start":	12,
     "vol_end":		22,
@@ -484,7 +465,7 @@ The last part is the optional settings for various tasks mentioned above. You ca
 ```
 + `vol_start`, `vol_end` and `vol_step` determine the volumetric range and accuracy of the **eos**.
 
-```
+```json
     "_comment": "02.elastic",
     "norm_deform":	2e-2,
     "shear_deform":	5e-2,
@@ -492,12 +473,12 @@ The last part is the optional settings for various tasks mentioned above. You ca
 + `norm_deform` and `shear_deform` are the scales of material deformation. 
 This task uses the stress-strain relationship to calculate the elastic constant.
 
-```
+```json
     "_comment":"03.vacancy",
     "supercell":[3,3,3],
 ```
 + `supercell`:(list of integer) the supercell size used to generate vacancy defect and interstitial defect
-```
+```json
     "_comment":"04.interstitial",
     "insert_ele":["Al"],
     "reprod-opt":false,
@@ -505,7 +486,7 @@ This task uses the stress-strain relationship to calculate the elastic constant.
 + `insert_ele`:(list of string) the elements used to generate point interstitial defect
 + `repord-opt`:(boolean) whether to reproduce trajectories of interstitial defect
 
-```
+```json
     "_comment": "05.surface",
     "min_slab_size":	10,
     "min_vacuum_size":	11,
@@ -523,4 +504,128 @@ This task uses the stress-strain relationship to calculate the elastic constant.
 
 
 
-## Appendix and FAQ
+
+## Set up machine
+When switching into a new machine, you may modifying the `MACHINE`, according to the actual circumstance. Once you have finished, the `MACHINE` can be re-used for any DP-GEN tasks without any extra efforts.
+
+An example for `MACHINE` is:
+```json
+{
+  "train": [
+    {
+      "machine": {
+        "machine_type": "slurm",
+        "hostname": "localhost",
+        "port": 22,
+        "username": "1600017784",
+        "work_path": "/gpfs/share/home/1600017784/yuzhi/methane/work"
+      },
+      "resources": {
+        "numb_node": 1,
+        "numb_gpu": 1,
+        "task_per_node": 4,
+        "partition": "AdminGPU",
+        "exclude_list": [],
+        "source_list": [
+          "/gpfs/share/home/1600017784/env/train_tf112_float.env"
+        ],
+        "module_list": [],
+        "time_limit": "23:0:0",
+        "qos": "bigdata"
+      },
+      "deepmd_path": "/gpfs/share/software/deepmd-kit/0.12.4/gpu/gcc/4.9.0/tf1120-lowprec"
+    }
+  ],
+  "model_devi": [
+    {
+      "machine": {
+        "machine_type": "slurm",
+        "hostname": "localhost",
+        "port": 22,
+        "username": "1600017784",
+        "work_path": "/gpfs/share/home/1600017784/yuzhi/methane/work"
+      },
+      "resources": {
+        "numb_node": 1,
+        "numb_gpu": 1,
+        "task_per_node": 2,
+        "partition": "AdminGPU",
+        "exclude_list": [],
+        "source_list": [
+          "/gpfs/share/home/1600017784/env/lmp_tf112_float.env"
+        ],
+        "module_list": [],
+        "time_limit": "23:0:0",
+        "qos": "bigdata"
+      },
+      "command": "lmp_serial",
+      "group_size": 1
+    }
+  ],
+  "fp": [
+    {
+      "machine": {
+        "machine_type": "slurm",
+        "hostname": "localhost",
+        "port": 22,
+        "username": "1600017784",
+        "work_path": "/gpfs/share/home/1600017784/yuzhi/methane/work"
+      },
+      "resources": {
+        "cvasp": true,
+        "task_per_node": 4,
+        "numb_gpu": 1,
+        "exclude_list": [],
+        "with_mpi": false,
+        "source_list": [],
+        "module_list": [
+          "mpich/3.2.1-intel-2017.1",
+          "vasp/5.4.4-intel-2017.1",
+          "cuda/10.1"
+        ],
+        "time_limit": "120:0:0",
+        "partition": "AdminGPU",
+        "_comment": "that's All"
+      },
+      "command": "vasp_gpu",
+      "group_size": 1
+    }
+  ]
+}
+```
+Following table illustrates which key is needed for three types of machine: `train`,`model_devi`  and `fp`. Each of them is a list of dicts. Each dict can be considered as an independent environmnet for calculation. 
+
+ Key   | `train`          | `model_devi`                                                    | `fp`                                                     |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| machine | NEED  | NEED | NEED 
+| resources | NEED | NEED | NEED 
+| deepmd_path | NEED | 
+| command |  |NEED |  NEED | 
+| group_size | | NEED | NEED | 
+
+The following table gives explicit descriptions on keys in param.json.
+
+
+ Key   | Type       | Example                                                  | Discription                                                     |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+|deepmd_path | String |"/gpfs/share/software/deepmd-kit/0.12.4/gpu/gcc/4.9.0/tf1120-lowprec" | Installed directory of DeepMD-Kit, which should contain `bin lib include`.
+| machine | Dict | | Settings of the machine for TASK.
+| resources | Dict | | Resources needed for calculation.
+| # Followings are keys in resources 
+| numb_node | Integer | 1 | Node count required for the job 
+| task_per_node | Integer | 4 | Number of CPU cores required 
+| `numb_gpu` | Integer | 4 | Number of GPUs required 
+| source_list | List of string | "....../vasp.env" | Environment needed for certain job. For example, if "env" is in the list, 'source env' will be written in the script.
+| module_list | List of string | [ "Intel/2018", "Anaconda3"] | For example, If "Intel/2018" is in the list, "module load Intel/2018" will be written in the script.
+| time_limit | String (time format) | 23:00:00 | Maximal time permitted for the job | 
+mem_limit | Interger | 16 | Maximal memory permitted to apply for the job.
+| with_mpi | Boolean | true | Deciding whether to use mpi for calculation. If it's true and machine type is Slurm, "srun" will be prefixed to `command` in the script.
+| qos | "string"| "bigdata" | Deciding priority, dependent on particular settings of your HPC.
+| # End of resources
+| command | String | "lmp_serial" | Executable path of software, such as `lmp_serial`, `lmp_mpi` and `vasp_gpu`, `vasp_std`, etc.
+| group_size | Integer | 5 | DP-GEN will put these jobs together in one submitting script.
+
+## Troubleshooting
+
+
+
