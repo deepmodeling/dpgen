@@ -18,10 +18,10 @@ install_requires=['numpy>=1.14.3,<1.17', 'dpdata>=0.1.2', 'pymatgen', 'ase', 'mo
 setuptools.setup(
     name=NAME,
     version_format='{tag}.dev{commitcount}+{gitsha}',
-    version="0.1.0",
+    setup_requires=['setuptools-git-version'],
     author="Han Wang",
     author_email="wang_han@iapcm.ac.cn",
-    description="Manipulating DeePMD-kit, VASP and LAMMPS data formats",
+    description="DPGen: The deep potential generator",
     long_description=readme,
     long_description_content_type="text/markdown",
     url="https://github.com/deepmodeling/dpgen",
