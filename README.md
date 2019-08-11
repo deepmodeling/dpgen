@@ -134,9 +134,9 @@ Following is an example for `PARAM`, which generates data from a typical structu
     "latt":     4.479,
     "super_cell":   [2, 2, 2],
     "elements":     ["Mg"],
-    "potcars":      ["/gpfs/share/home/1600017784/start/data/POTCAR/Mg/POTCAR"],
-    "relax_incar": "/gpfs/share/home/1600017784/start/pku_input_set/INCAR_metal_rlx_low",
-    "md_incar" : "/gpfs/share/home/1600017784/yuzhi/data_test/INCAR_metal_md",
+    "potcars":      ["....../POTCAR"],
+    "relax_incar": "....../INCAR_metal_rlx",
+    "md_incar" : "....../INCAR_metal_md",
     "scale":        [1.00],
     "skip_relax":   false,
     "pert_numb":    2,
@@ -152,7 +152,7 @@ If you want to specify a structure as starting point for `init_bulk`, you may se
 
 ```json
 "from_poscar":	true,
-"from_poscar_path":	"/gpfs/share/home/1600017784/start/none_metal_element/C_mp-47_conventional.POSCAR",
+"from_poscar_path":	"....../C_mp-47_conventional.POSCAR",
 ```
 The following table gives explicit descriptions on keys in `PARAM`. 
 
@@ -215,14 +215,14 @@ In `PARAM`, you can specialize the task as you expect.
     1,
     12
   ],
-  "init_data_prefix": "/gpfs/share/home/1600017784/yuzhi/methane/init/",
+  "init_data_prefix": "....../init/",
   "init_data_sys": [
     "CH4.POSCAR.01x01x01/02.md/sys-0004-0001/deepmd"
   ],
   "init_batch_size": [
     8
   ],
-  "sys_configs_prefix": "/gpfs/share/home/1600017784/yuzhi/methane/init/",
+  "sys_configs_prefix": "....../init/",
   "sys_configs": [
     [
       "CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale*/00000*/POSCAR"
@@ -293,8 +293,6 @@ In `PARAM`, you can specialize the task as you expect.
   "model_devi_skip": 0,
   "model_devi_f_trust_lo": 0.05,
   "model_devi_f_trust_hi": 0.15,
-  "model_devi_e_trust_lo": 10000000000.0,
-  "model_devi_e_trust_hi": 10000000000.0,
   "model_devi_clean_traj": true,
   "model_devi_jobs": [
     {
@@ -332,11 +330,11 @@ In `PARAM`, you can specialize the task as you expect.
   "shuffle_poscar": false,
   "fp_task_max": 20,
   "fp_task_min": 1,
-  "fp_pp_path": "/gpfs/share/home/1600017784/yuzhi/methane/",
+  "fp_pp_path": "....../methane/",
   "fp_pp_files": [
     "POTCAR"
   ],
-  "fp_incar": "/gpfs/share/home/1600017784/yuzhi/methane/INCAR_methane"
+  "fp_incar": "....../INCAR_methane"
 }
 ```
 
@@ -354,7 +352,7 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
  | ***init_data_sys*** | List of string|["CH4.POSCAR.01x01x01/.../deepmd"] |Directories of initial data. You may use either absolute or relative path here.
  | **init_batch_size**   | String of integer     | [8]                                                            | Each number is the batch_size of corresponding system  for training in `init_data_sys`. One recommended rule for setting the `sys_batch_size` and `init_batch_size` is that `batch_size` mutiply number of atoms ot the stucture should be larger than 32. |
   | sys_configs_prefix | String | "/sharedext4/.../data/" | Prefix of `sys_configs`
- | **sys_configs**   | List of list of string         | [<br />["/sharedext4/.../POSCAR"], <br />["/sharedext4/.../POSCAR"]<br />] | Containing directories of structures to be explored in iterations.Wildcard characters are supported here. |
+ | **sys_configs**   | List of list of string         | [<br />["/sharedext4/.../POSCAR"], <br />["....../POSCAR"]<br />] | Containing directories of structures to be explored in iterations.Wildcard characters are supported here. |
 | ***sys_batch_size***      | List of integer   | [8, 8]                                                 | Each number  is the batch_size for training of corresponding system in `sys_configs`. |
 | *#Training*
 | **numb_models**      | Integer      | 4 (recommend)                                                           | Number of models to be trained in `00.train`. |
