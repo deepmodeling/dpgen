@@ -46,10 +46,8 @@ def main():
         "init_surf", help="dpgen initial data preparation tools for surface systems.")
     parser_init_surf.add_argument('PARAM', type=str, 
                              help="parameter file, json/yaml format")
-    parser_init_surf.add_argument('STAGE', type=int,
-                        help="the stage of init, can be 1 or 2 "
-                        "1: Setup vasp jobs for relaxation. "
-                        "2: Collect vasp relaxed confs (if relax is not skiped). Perturb system.")
+    parser_init_surf.add_argument('MACHINE', type=str,
+                        help="machine file, json/yaml format")
     parser_init_surf.set_defaults(func=gen_init_surf)
     
     # init bulk model
