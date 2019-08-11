@@ -477,16 +477,6 @@ def post_train (iter_index,
                 mdata) :
     # load json param
     numb_models = jdata['numb_models']
-    try:
-        mdata["deepmd_version"]
-    except:
-        mdata = set_version(mdata)
-    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
-        # 0.x
-        deepmd_path = mdata['deepmd_path']
-    else:
-        # 1.x
-        python_path = mdata['python_path']
     # paths
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, train_name)
@@ -495,27 +485,13 @@ def post_train (iter_index,
     if os.path.isfile(copy_flag) :
         log_task('copied model, do not post train')
         return
-    all_task = []
-    for ii in range(numb_models) :
-        task_path = os.path.join(work_path, train_task_fmt % ii)
-        all_task.append(task_path)
-    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
-        # 0.x
-        command = os.path.join(deepmd_path, 'bin/dp_frz')
-    else:
-        # 1.x
-        command = python_path + ' -m deepmd freeze'
-    command = cmd_append_log(command, 'freeze.log')
-    command = 'CUDA_VISIBLE_DEVICES="" ' + command
-    # frz models
-    # exec_hosts(MachineLocal, command, 1, all_task, None)
     # symlink models
     for ii in range(numb_models) :
         task_file = os.path.join(train_task_fmt % ii, 'frozen_model.pb')
         ofile = os.path.join(work_path, 'graph.%03d.pb' % ii)
         if os.path.isfile(ofile) :
             os.remove(ofile)
-        os.symlink(task_file, ofile)    
+        os.symlink(task_file, ofile)
 
 def _get_param_alias(jdata, 
                      names) :
