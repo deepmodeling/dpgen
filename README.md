@@ -76,7 +76,7 @@ and if everything works, it gives
 DeepModeling
 ------------
 
-Version: 0.1.0
+Version: 0.2.0
 Path:    /home/wanghan/.local/lib/python3.6/site-packages/dpgen-0.1.0-py3.6.egg/dpgen
 Date:    Aug 13, 2019
 
