@@ -81,7 +81,7 @@ Version: 0.1.0
 Path:    /home/wanghan/.local/lib/python3.6/site-packages/dpgen-0.1.0-py3.6.egg/dpgen
 Date:    Jun 27, 2019
 
-usage: dpgen [-h] {init,run,test} ...
+usage: dpgen [-h] {init_surf,init_bulk,run,test,db} ...
 
 dpgen is a convenient script that uses DeepGenerator to prepare initial data,
 drive DeepMDkit and analyze results. This script works based on several sub-
@@ -89,21 +89,25 @@ commands with their own options. To see the options for the sub-commands, type
 "dpgen sub-command -h".
 
 positional arguments:
-  {init,run,test}
-    init           dpgen initial data preparation tools.
-    run            Runing DeepMD with generator model.
-    test           auto test for deep potential.
+  {init_surf,init_bulk,run,test,db}
+    init_surf           dpgen initial data preparation tools for surface
+                        systems.
+    init_bulk           dpgen initial data preparation tools for bulk systems.
+    run                 Runing DeepMD with generator model.
+    test                auto test for deep potential.
+    db                  data collection from dpgen.
 
 optional arguments:
-  -h, --help       show this help message and exit
-
-Author: DeepGenTeam Version: 0.1.0 Last updated: 2019.06.26
+  -h, --help            show this help message and exit
 ```
 + Option `init`: As the first step, you may prepare the initital data here.
 
 + Option `run`: The main exploration process will take place here.
 
 + Option `test` : You can use this module to undertake relevant tests, based on the  model trained in previous process and Pymatgen.
+
++ Option `db` :  a convinent tool to collect data from dpgen iterations and save it into .json file, which can be directly saved into 
+                 `MongoDB` or `ElasticSearch` database
 
 
 
