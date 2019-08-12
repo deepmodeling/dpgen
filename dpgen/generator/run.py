@@ -992,8 +992,8 @@ def _make_fp_vasp_configs(iter_index,
                           jdata):
     fp_task_max = jdata['fp_task_max']
     model_devi_skip = jdata['model_devi_skip']
-    e_trust_lo = jdata['model_devi_e_trust_lo']
-    e_trust_hi = jdata['model_devi_e_trust_hi']
+    e_trust_lo = 1e+10
+    e_trust_hi = 1e+10
     f_trust_lo = jdata['model_devi_f_trust_lo']
     f_trust_hi = jdata['model_devi_f_trust_hi']
     type_map = jdata['type_map']
@@ -1002,6 +1002,9 @@ def _make_fp_vasp_configs(iter_index,
     create_path(work_path)
 
     #copy cvasp.py 
+    # Move cvasp interface to jdata
+    if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+        mdata['fp_resources']['cvasp'] = True
     if ('cvasp' in  mdata["fp_resources"]) and (mdata["fp_resources"]["cvasp"]==True):
         shutil.copyfile(cvasp_file, os.path.join(work_path,'cvasp.py')) 
 
@@ -1310,6 +1313,9 @@ def run_fp (iter_index,
     if fp_style == "vasp" :
         forward_files = ['POSCAR', 'INCAR', 'KPOINTS'] + fp_pp_files 
         backward_files = ['OUTCAR','vasprun.xml']
+        # Move cvasp interface to jdata
+        if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+            mdata['fp_resources']['cvasp'] = True
         if ('cvasp' in  mdata["fp_resources"] ) and (mdata["fp_resources"]["cvasp"]==True):
             forward_common_files=['cvasp.py']
         else:
