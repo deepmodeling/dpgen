@@ -251,7 +251,7 @@ The bold notation of key (such as **Elements**) means that it's a necessary key.
 | **latt** | Float | 4.479 | Lattice constant for single cell.
 | **z_min** | Float | 9 | Thickness of slab (Angstrom).
 | **vacuum_max** | Float | 9 | Maximal thickness of vacuum (Angstrom).
-| **vacuum_resol** | List of string | [0.5, 1 ] | Interval of thichness of vacuum. If size of `vacuum_resol` is 1, the interval is fixed to its value. If size of `vacuum_resol` is 2, the interval is `vacuum_resol[0]` before `mid_point`, otherwise `vacuum_resol[1]` after `mid_point`.
+| **vacuum_resol** | List of float | [0.5, 1 ] | Interval of thichness of vacuum. If size of `vacuum_resol` is 1, the interval is fixed to its value. If size of `vacuum_resol` is 2, the interval is `vacuum_resol[0]` before `mid_point`, otherwise `vacuum_resol[1]` after `mid_point`.
 | **millers** | List of list of Integer | [[1,0,0]] | Miller indices. 
 | relax_incar | String | "....../INCAR" | Path of INCAR for relaxation in VASP. **Necessary** if `stages` include 1.
 | **scale** | List of float | [0.980, 1.000, 1.020] | Scales for transforming cells.
