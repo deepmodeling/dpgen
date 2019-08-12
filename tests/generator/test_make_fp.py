@@ -6,6 +6,7 @@ import unittest
 from context import make_fp_vasp
 from context import make_fp_pwscf
 from context import make_fp_gaussian
+from context import make_fp_cp2k
 from context import detect_multiplicity
 from context import parse_cur_job
 from context import param_file
@@ -13,6 +14,7 @@ from context import param_old_file
 from context import param_pwscf_file
 from context import param_pwscf_old_file
 from context import param_gaussian_file
+from context import param_cp2k_file
 from context import machine_file
 from context import param_diy_file
 from context import make_kspacing_kpoints
@@ -70,6 +72,74 @@ gaussian_input_ref="""%nproc=14
 DPGEN
 """
 
+cp2k_input_ref="\
+&GLOBAL\n\
+PROJECT DPGEN\n\
+&END GLOBAL\n\
+&FORCE_EVAL\n\
+METHOD QS\n\
+STRESS_TENSOR ANALYTICAL\n\
+&DFT\n\
+BASIS_SET_FILE_NAME ./cp2k_basis_pp_file/BASIS_MOLOPT\n\
+POTENTIAL_FILE_NAME ./cp2k_basis_pp_file/GTH_POTENTIALS\n\
+CHARGE 0\n\
+UKS F\n\
+MULTIPLICITY 1\n\
+&MGRID\n\
+CUTOFF 400\n\
+REL_CUTOFF 50\n\
+NGRIDS 4\n\
+&END MGRID\n\
+&QS\n\
+EPS_DEFAULT 1.0E-12\n\
+&END QS\n\
+&SCF\n\
+SCF_GUESS ATOMIC\n\
+EPS_SCF 1.0E-6\n\
+MAX_SCF 50\n\
+&OT\n\
+MINIMIZER DIIS\n\
+PRECONDITIONER FULL_SINGLE_INVERSE\n\
+&END OT\n\
+&END SCF\n\
+&XC\n\
+&XC_FUNCTIONAL PBE\n\
+&END XC_FUNCTIONAL\n\
+&VDW_POTENTIAL\n\
+DISPERSION_FUNCTIONAL PAIR_POTENTIAL\n\
+&PAIR_POTENTIAL\n\
+TYPE DFTD3\n\
+PARAMETER_FILE_NAME ./cp2k_basis_pp_file/dftd3.dat\n\
+REFERENCE_FUNCTIONAL PBE\n\
+&END PAIR_POTENTIAL\n\
+&END VDW_POTENTIAL\n\
+&END XC\n\
+&END DFT\n\
+&SUBSYS\n\
+&CELL\n\
+&END CELL\n\
+&COORD\n\
+@include coord.xyz\n\
+&END COORD\n\
+&KIND H\n\
+BASIS_SET DZVP-MOLOPT-GTH\n\
+POTENTIAL GTH-PBE-q1\n\
+&END KIND\n\
+&KIND C\n\
+BASIS_SET DZVP-MOLOPT-GTH\n\
+POTENTIAL GTH-PBE-q4\n\
+&END KIND\n\
+&KIND N\n\
+BASIS_SET DZVP-MOLOPT-GTH\n\
+POTENTIAL GTH-PBE-q5\n\
+&END KIND\n\
+&END SUBSYS\n\
+&PRINT\n\
+&FORCES ON\n\
+&END FORCES\n\
+&END PRINT\n\
+&END FORCE_EVAL\n"
+
 def _box2lmpbox(orig, box) :
     lohi = np.zeros([3,2])
     for dd in range(3) :
@@ -118,7 +188,7 @@ def _write_lammps_dump(sys, dump_file, f_idx = 0) :
         fp.write('ITEM: ATOMS id type x y z\n')
         for ii in range(natoms) :
             fp.write('%d %d %f %f %f\n' % (ii+1, atype[ii]+1, coord[ii][0], coord[ii][1], coord[ii][2]))
-    
+
 
 def _make_fake_md(idx, md_descript, atom_types, type_map) :
     """
@@ -145,9 +215,9 @@ def _make_fake_md(idx, md_descript, atom_types, type_map) :
                                     'task.%03d.%06d' % (sidx, midx))
             os.makedirs(os.path.join(task_dir, 'traj'), exist_ok = True)
             for ii in range(nframes) :
-                _write_lammps_dump(sys, 
+                _write_lammps_dump(sys,
                                    os.path.join(task_dir,
-                                                'traj', 
+                                                'traj',
                                                 '%d.lammpstrj' % ii))
             md_out = np.zeros([nframes, 7])
             md_out[:,0] = np.arange(nframes)
@@ -172,14 +242,14 @@ def _check_poscars(testCase, idx, fp_task_max, type_map) :
         cc = 0
         for tt,ff in zip(md_task, f_idx) :
             traj_file = os.path.join(tt, 'traj', '%d.lammpstrj' % int(ff))
-            poscar_file = os.path.join(fp_path, 
-                                       'task.%03d.%06d' % (int(sidx), cc), 
+            poscar_file = os.path.join(fp_path,
+                                       'task.%03d.%06d' % (int(sidx), cc),
                                        'POSCAR')
             cc += 1
             sys0 = dpdata.System(traj_file, fmt = 'lammps/dump', type_map = type_map)
             sys1 = dpdata.System(poscar_file, fmt = 'vasp/poscar')
             test_atom_names(testCase, sys0, sys1)
-            
+
 def _check_kpoints_exists(testCase, idx) :
     fp_path = os.path.join('iter.%06d' % idx, '02.fp')
     tasks = glob.glob(os.path.join(fp_path, 'task.*'))
@@ -202,9 +272,9 @@ def _check_kpoints(testCase, idx) :
            else:
               gamma=False
         ret=make_kspacing_kpoints(os.path.join(os.path.join(ii, 'POSCAR')), kspacing, gamma)
-        kpoints_ref=Kpoints.from_string(ret) 
+        kpoints_ref=Kpoints.from_string(ret)
         testCase.assertEqual(repr(kpoints), repr(kpoints_ref))
-       
+
 
 def _check_incar_exists(testCase, idx) :
     fp_path = os.path.join('iter.%06d' % idx, '02.fp')
@@ -212,9 +282,9 @@ def _check_incar_exists(testCase, idx) :
     tasks = glob.glob(os.path.join(fp_path, 'task.*'))
     for ii in tasks :
         testCase.assertTrue(filecmp.cmp(
-            os.path.join(fp_path, 'INCAR'), 
+            os.path.join(fp_path, 'INCAR'),
             os.path.join(ii, 'INCAR')))
-    
+
 
 def _check_potcar(testCase, idx, fp_pp_path, fp_pp_files) :
     nfile = len(fp_pp_files)
@@ -225,9 +295,9 @@ def _check_potcar(testCase, idx, fp_pp_path, fp_pp_files) :
     for ii in tasks :
         for jj in range(nfile):
             testCase.assertTrue(filecmp.cmp(
-                os.path.join(fp_pp_path, fp_pp_files[jj]), 
+                os.path.join(fp_pp_path, fp_pp_files[jj]),
                 os.path.join(ii, fp_pp_files[jj])))
-    
+
 
 def _check_sel(testCase, idx, fp_task_max, flo, fhi):
     fp_path = os.path.join('iter.%06d' % idx, '02.fp')
@@ -284,6 +354,23 @@ def _check_gaussian_input_head(testCase, idx) :
                 break
         lines = lines[:idx]
         testCase.assertEqual(('\n'.join(lines)).strip(), gaussian_input_ref.strip())
+
+
+def _check_cp2k_input_head(testCase, idx) :
+    fp_path = os.path.join('iter.%06d' % idx, '02.fp')
+    tasks = glob.glob(os.path.join(fp_path, 'task.*'))
+    for ii in tasks :
+        ifile = os.path.join(ii, 'input.inp')
+        testCase.assertTrue(os.path.isfile(ifile))
+        with open(ifile) as fp:
+            lines = fp.read().split('\n')
+        for idx, jj in enumerate(lines) :
+            if '&CELL' in jj :
+                cell_start_idx = idx
+            if '&END CELL' in jj :
+                cell_end_idx = idx
+        lines_check = lines[:cell_start_idx+1] + lines[cell_end_idx:]
+        testCase.assertEqual(('\n'.join(lines_check)).strip(), cp2k_input_ref.strip())
 
 
 class TestMakeFPPwscf(unittest.TestCase):
@@ -365,7 +452,7 @@ class TestMakeFPVasp(unittest.TestCase):
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
         _check_incar_exists(self, 0)
         _check_incar(self, 0)
-        _check_kpoints_exists(self, 0) 
+        _check_kpoints_exists(self, 0)
         _check_kpoints(self,0)
         _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
@@ -394,7 +481,7 @@ class TestMakeFPVasp(unittest.TestCase):
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
         _check_incar_exists(self, 0)
         _check_incar(self, 0)
-        _check_kpoints_exists(self, 0) 
+        _check_kpoints_exists(self, 0)
         _check_kpoints(self,0)
         _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
@@ -423,7 +510,7 @@ class TestMakeFPVasp(unittest.TestCase):
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
         _check_incar_exists(self, 0)
         _check_incar(self, 0)
-        _check_kpoints_exists(self, 0) 
+        _check_kpoints_exists(self, 0)
         _check_kpoints(self,0)
         _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
@@ -456,7 +543,7 @@ class TestMakeFPVasp(unittest.TestCase):
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
         _check_incar_exists(self, 0)
         _check_incar(self, 0)
-        _check_kpoints_exists(self, 0) 
+        _check_kpoints_exists(self, 0)
         _check_kpoints(self,0)
         _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
@@ -488,7 +575,7 @@ class TestMakeFPGaussian(unittest.TestCase):
         _check_gaussian_input_head(self, 0)
         _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
-    
+
     def test_detect_multiplicity(self):
         # oxygen O2 3
         self._check_multiplicity(['O', 'O'], 3)
@@ -504,8 +591,35 @@ class TestMakeFPGaussian(unittest.TestCase):
     def _check_multiplicity(self, symbols, multiplicity):
         self.assertEqual(detect_multiplicity(np.array(symbols)), multiplicity)
 
+class TestMakeFPCP2K(unittest.TestCase):
+    def test_make_fp_cp2k(self):
+        if os.path.isdir('iter.000000') :
+            shutil.rmtree('iter.000000')
+        with open (param_cp2k_file, 'r') as fp :
+            jdata = json.load (fp)
+        with open (machine_file, 'r') as fp:
+            mdata = json.load (fp)
+        md_descript = []
+        nsys = 2
+        nmd = 3
+        n_frame = 10
+        for ii in range(nsys) :
+            tmp = []
+            for jj in range(nmd) :
+                tmp.append(np.arange(0, 0.29, 0.29/10))
+            md_descript.append(tmp)
+        atom_types = [0, 1, 2, 2, 0, 1]
+        type_map = jdata['type_map']
+        _make_fake_md(0, md_descript, atom_types, type_map)
+        make_fp_cp2k(0, jdata)
+        _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
+        _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
+        _check_cp2k_input_head(self, 0)
+        _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
+        shutil.rmtree('iter.000000')
+
 
 if __name__ == '__main__':
     unittest.main()
 
-            
+
