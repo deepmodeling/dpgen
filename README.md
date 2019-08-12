@@ -455,6 +455,9 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | **model_devi_jobs["trj_freq"]**   | Integer  | 10                                                            | Frequecy of trajectory saved in MD.                   |
 | **model_devi_jobs["nsteps"]**     | Integer      | 3000                                                         | Running steps of MD.                                  |
 | **model_devi_jobs["ensembles"]** | String             | "nvt"                                    | Determining which ensemble used in MD, **options** include “npt” and “nvt”. |
+| model_devi_jobs["neidelay"] | Integer             | "10"                                    | delay building until this many steps since last build |
+| model_devi_jobs["taut"] | Float          | "0.1"                                    | Coupling time of thermostat (fs) |
+| model_devi_jobs["taup"] | Float             | "0.5"                                    | Coupling time of barostat (fs)
 | *#Labeling*
 | **fp_style** | string                | "vasp"                                                       | Software for First Principles. **Options** include “vasp”, “pwscf” and “gaussian” up to now. |
 | **fp_task_max** | Integer            | 20                                                           | Maximum of  structures to be calculated in `02.fp` of each iteration. |
@@ -462,7 +465,7 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | *fp_style == VASP*
 | **fp_pp_path**   | String           | "/sharedext4/.../ch4/"                                       | Directory of psuedo-potential file to be used for 02.fp exists. |
 | **fp_pp_files**    | List of string         | ["POTCAR"]                                                   | Psuedo-potential file to be used for 02.fp. Note that the order of elements should correspond to the order in `type_map`. |
-|**fp_incar** | String | "/sharedext4/../ch4/INCAR" | Input file for VASP
+|**fp_incar** | String | "/sharedext4/../ch4/INCAR" | Input file for VASP. INCAR must specify KSPACING.
 |cvasp| Boolean | true | If `cvasp` is true, DP-GEN will use Custodian to help control VASP calculation.
 | *fp_style == Gaussian*
 | **use_clusters** | Boolean | false | If set to `true`, clusters will be taken instead of the whole system. This option does not work with DeePMD-kit 0.x.
