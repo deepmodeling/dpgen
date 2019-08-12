@@ -791,11 +791,12 @@ class LSFJob (RemoteJob) :
             else :
                 raise RuntimeError ("status command bjobs fails to execute. erro info: %s return code %d"
                                     % (err_str, ret))
-        if len(stdout.read().decode('utf-8').split ('\n')) == 1:
+        status_out = stdout.read().decode('utf-8').split('\n')
+        if len(status_out) < 2:
             return JobStatus.unknown
         else:
-            status_line = stdout.read().decode('utf-8').split ('\n')[1]
-            status_word = status_line.split ()[2]
+            status_line = status_out[1]
+            status_word = status_line.split()[2]
         # ref: https://www.ibm.com/support/knowledgecenter/en/SSETD4_9.1.2/lsf_command_ref/bjobs.1.html
         if      status_word in ["PEND", "WAIT"] :
             return JobStatus.waiting
