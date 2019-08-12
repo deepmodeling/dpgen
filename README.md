@@ -697,8 +697,8 @@ The following table gives explicit descriptions on keys in param.json.
 
  Key   | Type       | Example                                                  | Discription                                                     |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
-|deepmd_path | String |"/gpfs/share/software/deepmd-kit/0.12.4/gpu/gcc/4.9.0/tf1120-lowprec" | Installed directory of DeepMD-Kit 0.x, which should contain `bin lib include`.
-| python_path | String | "/gpfs/home/tzhu/anaconda3/envs/python3.6/bin/python" | Python path for DeePMD-kit 1.x installed. This option should not be used with `deepmd_path` together.
+|deepmd_path | String |"......tf1120-lowprec" | Installed directory of DeepMD-Kit 0.x, which should contain `bin lib include`.
+| python_path | String | "....../python3.6/bin/python" | Python path for DeePMD-kit 1.x installed. This option should not be used with `deepmd_path` together.
 | machine | Dict | | Settings of the machine for TASK.
 | resources | Dict | | Resources needed for calculation.
 | # Followings are keys in resources
