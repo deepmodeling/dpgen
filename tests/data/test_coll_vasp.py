@@ -47,7 +47,6 @@ class TestCollVasp(unittest.TestCase):
         with open (param_file, 'r') as fp :
             jdata = json.load (fp)
         jdata['out_dir'] = self.odir
-        print('here')
         coll_vasp_md(jdata)
         
         sys = dpdata.LabeledSystem(self.odir + '/02.md/sys-004/deepmd//', fmt = 'deepmd/raw')
