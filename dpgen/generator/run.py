@@ -461,7 +461,7 @@ def run_train (iter_index,
                         forward_files,
                         backward_files)
     else :
-        raise RuntimeError("unknow machine type")
+        raise RuntimeError("unknown machine type")
 
     # exec_batch(command,
     #            1,
@@ -711,7 +711,7 @@ def run_model_devi (iter_index,
 
     dlog.info("group_size %d"%model_devi_group_size)
     if ssh_sess == None and machine_type == 'ucloud':
-        dlog.info("The first situation!")
+        #dlog.info("The first situation!")
         ucloud_submit_jobs(mdata['model_devi_machine'],
                             mdata['model_devi_resources'],
                             command,
@@ -722,7 +722,7 @@ def run_model_devi (iter_index,
                             forward_files,
                             backward_files)
     elif machine_type == 'slurm' :        
-        dlog.info("The second situation!")
+        #dlog.info("The second situation!")
         group_slurm_jobs(ssh_sess,
                            model_devi_resources,
                            command,
@@ -775,7 +775,7 @@ def run_model_devi (iter_index,
                         forward_files,
                         backward_files)
     else :
-        raise RuntimeError("unknow machine type")
+        raise RuntimeError("unknown machine type")
 
     # exec_hosts_batch(exec_machine, command, model_devi_np, run_tasks, None, verbose = True, gpu = True)
     # exec_batch_group(command,
@@ -992,8 +992,8 @@ def _make_fp_vasp_configs(iter_index,
                           jdata):
     fp_task_max = jdata['fp_task_max']
     model_devi_skip = jdata['model_devi_skip']
-    e_trust_lo = jdata['model_devi_e_trust_lo']
-    e_trust_hi = jdata['model_devi_e_trust_hi']
+    e_trust_lo = 1e+10
+    e_trust_hi = 1e+10
     f_trust_lo = jdata['model_devi_f_trust_lo']
     f_trust_hi = jdata['model_devi_f_trust_hi']
     type_map = jdata['type_map']
@@ -1002,7 +1002,9 @@ def _make_fp_vasp_configs(iter_index,
     create_path(work_path)
 
     #copy cvasp.py 
-    shutil.copyfile(cvasp_file, os.path.join(work_path,'cvasp.py')) 
+    # Move cvasp interface to jdata
+    if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+        shutil.copyfile(cvasp_file, os.path.join(work_path,'cvasp.py')) 
 
     modd_path = os.path.join(iter_name, model_devi_name)
     task_min = -1
@@ -1288,7 +1290,7 @@ def run_fp_inner (iter_index,
                             forward_files,
                             backward_files)
     else :
-        raise RuntimeError("unknow machine type")
+        raise RuntimeError("unknown machine type")
 
 #    exec_hosts_batch(exec_machine, fp_command, fp_np, fp_run_tasks, verbose = True, mpi = False, gpu=True)
     # exec_batch_group(fp_command,
@@ -1309,7 +1311,10 @@ def run_fp (iter_index,
     if fp_style == "vasp" :
         forward_files = ['POSCAR', 'INCAR', 'KPOINTS'] + fp_pp_files 
         backward_files = ['OUTCAR','vasprun.xml']
-        if 'cvasp' in  mdata["fp_resources"] and mdata["fp_resources"]["cvasp"]==True:
+        # Move cvasp interface to jdata
+        if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+            mdata['fp_resources']['cvasp'] = True
+        if ('cvasp' in  mdata["fp_resources"] ) and (mdata["fp_resources"]["cvasp"]==True):
             forward_common_files=['cvasp.py']
         else:
             forward_common_files=[]
