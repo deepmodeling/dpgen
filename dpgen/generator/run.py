@@ -1004,8 +1004,6 @@ def _make_fp_vasp_configs(iter_index,
     #copy cvasp.py 
     # Move cvasp interface to jdata
     if ('cvasp' in jdata) and (jdata['cvasp'] == True):
-        mdata['fp_resources']['cvasp'] = True
-    if ('cvasp' in  mdata["fp_resources"]) and (mdata["fp_resources"]["cvasp"]==True):
         shutil.copyfile(cvasp_file, os.path.join(work_path,'cvasp.py')) 
 
     modd_path = os.path.join(iter_name, model_devi_name)
