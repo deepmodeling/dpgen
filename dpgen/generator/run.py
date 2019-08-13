@@ -39,6 +39,7 @@ from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
 from dpgen.generator.lib.pwscf import make_pwscf_input
 from dpgen.generator.lib.pwscf import cvt_1frame
 from dpgen.generator.lib.gaussian import make_gaussian_input, take_cluster
+from dpgen.generator.lib.cp2k import make_cp2k_input, make_cp2k_xyz
 from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, LSFJob, CloudMachineJob, awsMachineJob
 from dpgen.remote.group_jobs import ucloud_submit_jobs, aws_submit_jobs
 from dpgen.remote.group_jobs import group_slurm_jobs
@@ -76,7 +77,7 @@ def make_model_devi_task_name (sys_idx, task_idx) :
 def make_model_devi_conf_name (sys_idx, conf_idx) :
     return model_devi_conf_fmt % (sys_idx, conf_idx)
 
-def make_fp_task_name(sys_idx, counter) : 
+def make_fp_task_name(sys_idx, counter) :
     return 'task.' + fp_task_fmt % (sys_idx, counter)
 
 def get_sys_index(task) :
@@ -88,7 +89,7 @@ def get_sys_index(task) :
     system_index = list(set_tmp)
     system_index.sort()
     return system_index
-    
+
 def _check_empty_iter(iter_index, max_v = 0) :
     fp_path = os.path.join(make_iter_name(iter_index), fp_name)
     fp_tasks = glob.glob(os.path.join(fp_path, "task.*"))
@@ -113,7 +114,7 @@ def copy_model(numb_model, prv_iter_index, cur_iter_index) :
         os.symlink(os.path.join(train_task_fmt%ii, 'frozen_model.pb'), 'graph.%03d.pb' % ii)
         os.chdir(cwd)
     with open(os.path.join(cur_train_path, "copied"), 'w') as fp:
-        None 
+        None
 
 def poscar_natoms(lines) :
     numb_atoms = 0
@@ -151,7 +152,7 @@ def expand_idx (in_list) :
 
 def _check_skip_train(job) :
     try :
-        skip = _get_param_alias(job, ['s_t', 'sk_tr', 'skip_train', 'skip_training']) 
+        skip = _get_param_alias(job, ['s_t', 'sk_tr', 'skip_train', 'skip_training'])
     except ValueError :
         skip = False
     return skip
@@ -166,20 +167,20 @@ def dump_to_poscar(dump, poscar, type_map) :
     sys = dpdata.System(dump, fmt = 'lammps/dump', type_map = type_map)
     sys.to_vasp_poscar(poscar)
 
-        
-def make_train (iter_index, 
-                jdata, 
-                mdata) :    
+
+def make_train (iter_index,
+                jdata,
+                mdata) :
     # load json param
     # train_param = jdata['train_param']
     train_input_file = default_train_input_file
     numb_models = jdata['numb_models']
-    init_data_prefix = jdata['init_data_prefix']    
+    init_data_prefix = jdata['init_data_prefix']
     init_data_prefix = os.path.abspath(init_data_prefix)
-    init_data_sys_ = jdata['init_data_sys']    
-    fp_task_min = jdata['fp_task_min']    
+    init_data_sys_ = jdata['init_data_sys']
+    fp_task_min = jdata['fp_task_min']
     model_devi_jobs = jdata['model_devi_jobs']
-    
+
     if iter_index > 0 and _check_empty_iter(iter_index-1, fp_task_min) :
         log_task('prev data is empty, copy prev model')
         copy_model(numb_models, iter_index-1, iter_index)
@@ -225,7 +226,7 @@ def make_train (iter_index,
     if iter_index > 0 :
         for ii in range(iter_index) :
             fp_path = os.path.join(make_iter_name(ii), fp_name)
-            fp_data_sys = glob.glob(os.path.join(fp_path, "data.*"))            
+            fp_data_sys = glob.glob(os.path.join(fp_path, "data.*"))
             for jj in fp_data_sys :
                 sys_idx = int(jj.split('.')[-1])
                 if 'use_clusters' in jdata and jdata['use_clusters']:
@@ -299,7 +300,7 @@ def make_train (iter_index,
                 basejj = os.path.basename(jj)
                 os.chdir(task_old_path)
                 os.symlink(os.path.relpath(absjj), basejj)
-                os.chdir(cwd)            
+                os.chdir(cwd)
 
 def detect_batch_size(batch_size, system=None):
     if type(batch_size) == int:
@@ -312,8 +313,8 @@ def detect_batch_size(batch_size, system=None):
         raise RuntimeError("Unsupported batch size")
 
 def run_train (iter_index,
-               jdata, 
-               mdata, 
+               jdata,
+               mdata,
                ssh_sess) :
     # load json param
     numb_models = jdata['numb_models']
@@ -363,7 +364,7 @@ def run_train (iter_index,
         check_pb = os.path.join(ii, "frozen_model.pb")
         check_lcurve = os.path.join(ii, "lcurve.out")
         if os.path.isfile(check_pb) and os.path.isfile(check_lcurve):
-            pass 
+            pass
         else:
             run_tasks.append(ii)
 
@@ -401,14 +402,14 @@ def run_train (iter_index,
     if ssh_sess == None and machine_type == 'ucloud':
         ucloud_submit_jobs(mdata['train_machine'],
                            mdata['train_resources'],
-                           command, 
+                           command,
                            work_path,
                            run_tasks,
                            1,
                            trans_comm_data,
                            forward_files,
                            backward_files)
-    elif machine_type == 'slurm' :        
+    elif machine_type == 'slurm' :
         group_slurm_jobs(ssh_sess,
                          train_resources,
                          command,
@@ -418,7 +419,7 @@ def run_train (iter_index,
                          trans_comm_data,
                          forward_files,
                          backward_files)
-    elif machine_type == 'pbs' :        
+    elif machine_type == 'pbs' :
         group_slurm_jobs(ssh_sess,
                          train_resources,
                          command,
@@ -429,7 +430,7 @@ def run_train (iter_index,
                          forward_files,
                          backward_files,
                          remote_job = PBSJob)
-    elif machine_type == 'lsf':        
+    elif machine_type == 'lsf':
         group_slurm_jobs(ssh_sess,
                            train_resources,
                            command,
@@ -453,7 +454,7 @@ def run_train (iter_index,
     elif ssh_sess == None and machine_type == 'aws':
         aws_submit_jobs(mdata['train_machine'],
                         mdata['train_resources'],
-                        mdata['run_train_task_definition'], 
+                        mdata['run_train_task_definition'],
                         work_path,
                         run_tasks,
                         5,
@@ -493,7 +494,7 @@ def post_train (iter_index,
             os.remove(ofile)
         os.symlink(task_file, ofile)
 
-def _get_param_alias(jdata, 
+def _get_param_alias(jdata,
                      names) :
     for ii in names :
         if ii in jdata :
@@ -521,8 +522,8 @@ def parse_cur_job(cur_job) :
         dt = None
     return ensemble, nsteps, trj_freq, temps, press, pka_e, dt
 
-def make_model_devi (iter_index, 
-                     jdata, 
+def make_model_devi (iter_index,
+                     jdata,
                      mdata) :
     model_devi_dt = jdata['model_devi_dt']
     model_devi_neidelay = None
@@ -542,8 +543,8 @@ def make_model_devi (iter_index,
     # nsteps = model_devi_jobs['nsteps']
     # trj_freq = model_devi_jobs['trj_freq']
     # job_names = get_job_names (model_devi_jobs)
-    # assert (iter_index < len(job_names)) 
-    # cur_job_name = job_names[iter_index]    
+    # assert (iter_index < len(job_names))
+    # cur_job_name = job_names[iter_index]
     # cur_job = model_devi_jobs[cur_job_name]
     ensemble, nsteps, trj_freq, temps, press, pka_e, dt = parse_cur_job(cur_job)
     if dt is not None :
@@ -575,9 +576,9 @@ def make_model_devi (iter_index,
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
     train_path = os.path.abspath(train_path)
-    models = glob.glob(os.path.join(train_path, "graph*pb"))    
+    models = glob.glob(os.path.join(train_path, "graph*pb"))
     task_model_list = []
-    for ii in models: 
+    for ii in models:
         task_model_list.append(os.path.join('..', os.path.basename(ii)))
     work_path = os.path.join(iter_name, model_devi_name)
     create_path(work_path)
@@ -592,7 +593,7 @@ def make_model_devi (iter_index,
     sys_counter = 0
     for ss in conf_systems:
         conf_counter = 0
-        for cc in ss :            
+        for cc in ss :
             conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter)
             orig_poscar_name = conf_name + '.orig.poscar'
             poscar_name = conf_name + '.poscar'
@@ -617,7 +618,7 @@ def make_model_devi (iter_index,
     for ss in conf_systems:
         conf_counter = 0
         task_counter = 0
-        for cc in ss :            
+        for cc in ss :
             for tt in temps:
                 for pp in press:
                     task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
@@ -627,7 +628,7 @@ def make_model_devi (iter_index,
                     create_path(task_path)
                     create_path(os.path.join(task_path, 'traj'))
                     loc_conf_name = 'conf.lmp'
-                    os.symlink(os.path.join(os.path.join('..','confs'), conf_name), 
+                    os.symlink(os.path.join(os.path.join('..','confs'), conf_name),
                                os.path.join(task_path, loc_conf_name) )
                     cwd_ = os.getcwd()
                     os.chdir(task_path)
@@ -641,13 +642,13 @@ def make_model_devi (iter_index,
                                                task_model_list,
                                                nsteps,
                                                model_devi_dt,
-                                               model_devi_neidelay,                                               
+                                               model_devi_neidelay,
                                                trj_freq,
                                                mass_map,
                                                tt,
                                                tau_t = model_devi_taut,
-                                               pres = pp, 
-                                               tau_p = model_devi_taup, 
+                                               pres = pp,
+                                               tau_p = model_devi_taup,
                                                pka_e = pka_e,
                                                is_use_clusters = is_use_clusters,
                                                deepmd_version = deepmd_version)
@@ -667,7 +668,7 @@ def make_model_devi (iter_index,
 
     return True
 
-def run_model_devi (iter_index, 
+def run_model_devi (iter_index,
                     jdata,
                     mdata,
                     ssh_sess) :
@@ -690,7 +691,7 @@ def run_model_devi (iter_index,
     cur_job = json.load (fp)
     ensemble, nsteps, trj_freq, temps, press, pka_e, dt = parse_cur_job(cur_job)
     nframes = nsteps // trj_freq + 1
-    
+
     run_tasks_ = []
     for ii in all_task:
         fres = os.path.join(ii, 'model_devi.out')
@@ -721,7 +722,7 @@ def run_model_devi (iter_index,
                             model_names,
                             forward_files,
                             backward_files)
-    elif machine_type == 'slurm' :        
+    elif machine_type == 'slurm' :
         #dlog.info("The second situation!")
         group_slurm_jobs(ssh_sess,
                            model_devi_resources,
@@ -732,7 +733,7 @@ def run_model_devi (iter_index,
                            model_names,
                            forward_files,
                            backward_files)
-    elif machine_type == 'pbs' :        
+    elif machine_type == 'pbs' :
         group_slurm_jobs(ssh_sess,
                            model_devi_resources,
                            command,
@@ -743,7 +744,7 @@ def run_model_devi (iter_index,
                            forward_files,
                            backward_files,
                           remote_job = PBSJob)
-    elif machine_type == 'lsf' :        
+    elif machine_type == 'lsf' :
         group_slurm_jobs(ssh_sess,
                            model_devi_resources,
                            command,
@@ -754,7 +755,7 @@ def run_model_devi (iter_index,
                            forward_files,
                            backward_files,
                           remote_job = LSFJob)
-    elif machine_type == 'local' :        
+    elif machine_type == 'local' :
         group_local_jobs(ssh_sess,
                            model_devi_resources,
                            command,
@@ -767,7 +768,7 @@ def run_model_devi (iter_index,
     elif ssh_sess == None and machine_type == 'aws':
         aws_submit_jobs(mdata['model_devi_machine'],
                         mdata['model_devi_resources'],
-                        mdata['model_devi_task_definition'], 
+                        mdata['model_devi_task_definition'],
                         work_path,
                         run_tasks,
                         model_devi_group_size,
@@ -786,8 +787,8 @@ def run_model_devi (iter_index,
     #                  modules = model_devi_modules,
     #                  sources = model_devi_sources)
 
-def post_model_devi (iter_index, 
-                     jdata, 
+def post_model_devi (iter_index,
+                     jdata,
                      mdata) :
     pass
 
@@ -810,7 +811,7 @@ def _make_fp_vasp_inner (modd_path,
     fp_link_files       [string]        linked files for fp, POTCAR for example
     fp_params           map             parameters for fp
     """
-    
+
     modd_task = glob.glob(os.path.join(modd_path, "task.*"))
     modd_task.sort()
     system_index = []
@@ -913,10 +914,10 @@ def _make_fp_vasp_inner (modd_path,
     return fp_tasks
 
 def _link_fp_vasp_incar (iter_index,
-                         jdata,                         
+                         jdata,
                          incar = 'INCAR') :
     iter_name = make_iter_name(iter_index)
-    work_path = os.path.join(iter_name, fp_name)    
+    work_path = os.path.join(iter_name, fp_name)
     incar_file = os.path.join(work_path, incar)
     incar_file = os.path.abspath(incar_file)
     fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
@@ -934,13 +935,13 @@ def _make_fp_vasp_kp (iter_index,jdata, incar):
     standard_incar={}
     for key,val in dincar.items():
         standard_incar[key.upper()]=val
-      
+
     try:
-       kspacing = standard_incar['KSPACING'] 
+       kspacing = standard_incar['KSPACING']
     except:
        raise RuntimeError ("KSPACING must be given in INCAR")
     try:
-       gamma = standard_incar['KGAMMA'] 
+       gamma = standard_incar['KGAMMA']
        if isinstance(gamma,bool):
           pass
        else:
@@ -973,7 +974,7 @@ def _link_fp_vasp_pp (iter_index,
     fp_pp_files = jdata['fp_pp_files']
     assert(os.path.exists(fp_pp_path))
     fp_pp_path = os.path.abspath(fp_pp_path)
-    
+
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
 
@@ -989,7 +990,7 @@ def _link_fp_vasp_pp (iter_index,
             os.symlink(pp_file, jj)
         os.chdir(cwd)
 
-def _make_fp_vasp_configs(iter_index, 
+def _make_fp_vasp_configs(iter_index,
                           jdata):
     fp_task_max = jdata['fp_task_max']
     model_devi_skip = jdata['model_devi_skip']
@@ -1002,10 +1003,10 @@ def _make_fp_vasp_configs(iter_index,
     work_path = os.path.join(iter_name, fp_name)
     create_path(work_path)
 
-    #copy cvasp.py 
+    #copy cvasp.py
     # Move cvasp interface to jdata
     if ('cvasp' in jdata) and (jdata['cvasp'] == True):
-        shutil.copyfile(cvasp_file, os.path.join(work_path,'cvasp.py')) 
+        shutil.copyfile(cvasp_file, os.path.join(work_path,'cvasp.py'))
 
     modd_path = os.path.join(iter_name, model_devi_name)
     task_min = -1
@@ -1025,16 +1026,16 @@ def _make_fp_vasp_configs(iter_index,
     return fp_tasks
 
 
-def make_fp_vasp (iter_index, 
+def make_fp_vasp (iter_index,
                   jdata) :
     # make config
     fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
     if len(fp_tasks) == 0 :
-        return        
+        return
     # create incar
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
-    
+
    #fp_params=jdata["fp_params"]
 
     if 'fp_incar' in jdata.keys() :
@@ -1070,23 +1071,23 @@ def make_fp_vasp (iter_index,
         for ii in md_trajs :
             shutil.rmtree(ii)
 
-            
+
 def make_fp_pwscf(iter_index,
                   jdata) :
     # make config
     fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
     if len(fp_tasks) == 0 :
-        return        
+        return
     # make pwscf input
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
     fp_pp_files = jdata['fp_pp_files']
-    if 'user_fp_params' in jdata.keys() :        
+    if 'user_fp_params' in jdata.keys() :
         fp_params = jdata['user_fp_params']
         user_input = True
     else:
         fp_params = jdata['fp_params']
-        user_input = False        
+        user_input = False
     cwd = os.getcwd()
     for ii in fp_tasks:
         os.chdir(ii)
@@ -1114,11 +1115,11 @@ def make_fp_gaussian(iter_index,
     # make config
     fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
     if len(fp_tasks) == 0 :
-        return        
+        return
     # make gaussian gjf file
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
-    if 'user_fp_params' in jdata.keys() :        
+    if 'user_fp_params' in jdata.keys() :
         fp_params = jdata['user_fp_params']
     else:
         fp_params = jdata['fp_params']
@@ -1141,18 +1142,61 @@ def make_fp_gaussian(iter_index,
         md_trajs = glob.glob(os.path.join(modd_path, 'task*/traj'))
         for ii in md_trajs :
             shutil.rmtree(ii)
-            
+
+def make_fp_cp2k (iter_index,
+                  jdata):
+    # make config
+    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
+    if len(fp_tasks) == 0 :
+        return
+    # make cp2k input
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    if 'user_fp_params' in jdata.keys() :
+        fp_params = jdata['user_fp_params']
+    else:
+        fp_params = jdata['fp_params']
+    cwd = os.getcwd()
+    for ii in fp_tasks:
+        os.chdir(ii)
+        sys_data = dpdata.System('POSCAR').data
+        # make input for every task
+        cp2k_input = make_cp2k_input(sys_data, fp_params)
+        with open('input.inp', 'w') as fp:
+            fp.write(cp2k_input)
+            fp.close()
+        # make coord.xyz used by cp2k for every task
+        cp2k_coord = make_cp2k_xyz(sys_data)
+        with open('coord.xyz', 'w') as fp:
+            fp.write(cp2k_coord)
+            fp.close()
+        os.chdir(cwd)
+
+    # link pp files
+    _link_fp_vasp_pp(iter_index, jdata)
+    # clean traj
+    clean_traj = True
+    if 'model_devi_clean_traj' in jdata :
+        clean_traj = jdata['model_devi_clean_traj']
+    if clean_traj:
+        modd_path = os.path.join(iter_name, model_devi_name)
+        md_trajs = glob.glob(os.path.join(modd_path, 'task*/traj'))
+        for ii in md_trajs :
+            shutil.rmtree(ii)
+
 def make_fp (iter_index,
-             jdata, 
+             jdata,
              mdata) :
     fp_style = jdata['fp_style']
 
     if fp_style == "vasp" :
-        make_fp_vasp(iter_index, jdata) 
+        make_fp_vasp(iter_index, jdata)
     elif fp_style == "pwscf" :
-        make_fp_pwscf(iter_index, jdata) 
+        make_fp_pwscf(iter_index, jdata)
     elif fp_style == "gaussian" :
         make_fp_gaussian(iter_index, jdata)
+    elif fp_style == "cp2k" :
+        make_fp_cp2k(iter_index, jdata)
     else :
         raise RuntimeError ("unsupported fp style")
 
@@ -1188,8 +1232,8 @@ def _gaussian_check_fin(ii):
     else :
         return False
     return True
-    
-        
+
+
 def run_fp_inner (iter_index,
                   jdata,
                   mdata,
@@ -1237,7 +1281,7 @@ def run_fp_inner (iter_index,
                             [],
                             forward_files,
                             backward_files)
-    elif machine_type == 'slurm' :        
+    elif machine_type == 'slurm' :
         group_slurm_jobs(ssh_sess,
                            fp_resources,
                            fp_command,
@@ -1247,7 +1291,7 @@ def run_fp_inner (iter_index,
                            forward_common_files,
                            forward_files,
                            backward_files)
-    elif machine_type == 'pbs' :        
+    elif machine_type == 'pbs' :
         group_slurm_jobs(ssh_sess,
                            fp_resources,
                            fp_command,
@@ -1258,7 +1302,7 @@ def run_fp_inner (iter_index,
                            forward_files,
                            backward_files,
                           remote_job = PBSJob)
-    elif machine_type == 'lsf' :        
+    elif machine_type == 'lsf' :
         group_slurm_jobs(ssh_sess,
                            fp_resources,
                            fp_command,
@@ -1269,7 +1313,7 @@ def run_fp_inner (iter_index,
                            forward_files,
                            backward_files,
                           remote_job = LSFJob)
-    elif machine_type == 'local' :        
+    elif machine_type == 'local' :
         group_local_jobs(ssh_sess,
                            fp_resources,
                            fp_command,
@@ -1300,7 +1344,7 @@ def run_fp_inner (iter_index,
     #                  time_limit = fp_tlimit,
     #                  modules = fp_modules,
     #                  sources = fp_sources)
-        
+
 def run_fp (iter_index,
             jdata,
             mdata,
@@ -1309,7 +1353,7 @@ def run_fp (iter_index,
     fp_pp_files = jdata['fp_pp_files']
 
     if fp_style == "vasp" :
-        forward_files = ['POSCAR', 'INCAR', 'KPOINTS'] + fp_pp_files 
+        forward_files = ['POSCAR', 'INCAR', 'KPOINTS'] + fp_pp_files
         backward_files = ['OUTCAR','vasprun.xml']
         # Move cvasp interface to jdata
         if ('cvasp' in jdata) and (jdata['cvasp'] == True):
@@ -1319,26 +1363,30 @@ def run_fp (iter_index,
         else:
             forward_common_files=[]
         run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _vasp_check_fin,
-                     forward_common_files=forward_common_files) 
+                     forward_common_files=forward_common_files)
     elif fp_style == "pwscf" :
         forward_files = ['input'] + fp_pp_files
         backward_files = ['output']
-        run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _qe_check_fin, log_file = 'output') 
+        run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _qe_check_fin, log_file = 'output')
     elif fp_style == "gaussian":
         forward_files = ['input']
         backward_files = ['output']
-        run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _gaussian_check_fin, log_file = 'output') 
+        run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _gaussian_check_fin, log_file = 'output')
+    elif fp_style == "cp2k":
+        forward_files = ['input.inp']
+        backward_files = ['output']
+        run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _gaussian_check_fin, log_file = 'output')
     else :
-        raise RuntimeError ("unsupported fp style") 
+        raise RuntimeError ("unsupported fp style")
 
 
 def post_fp_vasp (iter_index,
                   jdata,
                   rfailed=None):
-    
+
     ratio_failed =  rfailed if rfailed else jdata.get('ratio_failed',0.05)
     model_devi_jobs = jdata['model_devi_jobs']
-    assert (iter_index < len(model_devi_jobs)) 
+    assert (iter_index < len(model_devi_jobs))
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -1348,20 +1396,20 @@ def post_fp_vasp (iter_index,
         return
 
     system_index = []
-    for ii in fp_tasks :        
+    for ii in fp_tasks :
         system_index.append(os.path.basename(ii).split('.')[1])
     system_index.sort()
     set_tmp = set(system_index)
     system_index = list(set_tmp)
     system_index.sort()
-    
+
     cwd = os.getcwd()
 
-    tcount=0 
-    icount=0 
+    tcount=0
+    icount=0
     for ss in system_index :
         sys_outcars = glob.glob(os.path.join(work_path, "task.%s.*/OUTCAR"%ss))
-        sys_outcars.sort()                
+        sys_outcars.sort()
         flag=True
         tcount+=len(sys_outcars)
         for oo in sys_outcars :
@@ -1404,7 +1452,7 @@ def post_fp_vasp (iter_index,
 def post_fp_pwscf (iter_index,
                    jdata):
     model_devi_jobs = jdata['model_devi_jobs']
-    assert (iter_index < len(model_devi_jobs)) 
+    assert (iter_index < len(model_devi_jobs))
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -1414,13 +1462,13 @@ def post_fp_pwscf (iter_index,
         return
 
     system_index = []
-    for ii in fp_tasks :        
+    for ii in fp_tasks :
         system_index.append(os.path.basename(ii).split('.')[1])
     system_index.sort()
     set_tmp = set(system_index)
     system_index = list(set_tmp)
     system_index.sort()
-    
+
     cwd = os.getcwd()
     for ss in system_index :
         sys_output = glob.glob(os.path.join(work_path, "task.%s.*/output"%ss))
@@ -1452,7 +1500,7 @@ def post_fp_pwscf (iter_index,
 def post_fp_gaussian (iter_index,
                       jdata):
     model_devi_jobs = jdata['model_devi_jobs']
-    assert (iter_index < len(model_devi_jobs)) 
+    assert (iter_index < len(model_devi_jobs))
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -1462,19 +1510,19 @@ def post_fp_gaussian (iter_index,
         return
 
     system_index = []
-    for ii in fp_tasks :        
+    for ii in fp_tasks :
         system_index.append(os.path.basename(ii).split('.')[1])
     system_index.sort()
     set_tmp = set(system_index)
     system_index = list(set_tmp)
     system_index.sort()
-    
+
     cwd = os.getcwd()
     for ss in system_index :
         sys_output = glob.glob(os.path.join(work_path, "task.%s.*/output"%ss))
         sys_output.sort()
         for idx,oo in enumerate(sys_output) :
-            sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log') 
+            sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log')
             if 'use_atom_pref' in jdata and jdata['use_atom_pref']:
                 sys.data['atom_pref'] = np.load(os.path.join(os.path.dirname(oo), "atom_pref.npy"))
             if idx == 0:
@@ -1489,19 +1537,56 @@ def post_fp_gaussian (iter_index,
         all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
 
 
+def post_fp_cp2k (iter_index,
+                      jdata):
+    model_devi_jobs = jdata['model_devi_jobs']
+    assert (iter_index < len(model_devi_jobs))
+
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
+    fp_tasks.sort()
+    if len(fp_tasks) == 0 :
+        return
+
+    system_index = []
+    for ii in fp_tasks :
+        system_index.append(os.path.basename(ii).split('.')[1])
+    system_index.sort()
+    set_tmp = set(system_index)
+    system_index = list(set_tmp)
+    system_index.sort()
+
+    cwd = os.getcwd()
+    for ss in system_index :
+        sys_output = glob.glob(os.path.join(work_path, "task.%s.*/output"%ss))
+        sys_output.sort()
+        for idx,oo in enumerate(sys_output) :
+            sys = dpdata.LabeledSystem(oo, fmt = 'cp2k/output')
+            if idx == 0:
+                all_sys = sys
+            else:
+                all_sys.append(sys)
+        sys_data_path = os.path.join(work_path, 'data.%s'%ss)
+        all_sys.to_deepmd_raw(sys_data_path)
+        all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
+
+
 def post_fp (iter_index,
              jdata) :
     fp_style = jdata['fp_style']
 
     if fp_style == "vasp" :
-        post_fp_vasp(iter_index, jdata) 
+        post_fp_vasp(iter_index, jdata)
     elif fp_style == "pwscf" :
-        post_fp_pwscf(iter_index, jdata) 
+        post_fp_pwscf(iter_index, jdata)
     elif fp_style == 'gaussian' :
         post_fp_gaussian(iter_index, jdata)
+    elif fp_style == 'cp2k' :
+        post_fp_cp2k(iter_index, jdata)
     else :
-        raise RuntimeError ("unsupported fp style")            
-    
+        raise RuntimeError ("unsupported fp style")
+
 def set_version(mdata):
     if 'deepmd_path' in mdata:
         deepmd_version = '0.1'
@@ -1540,7 +1625,7 @@ def run_iter (param_file, machine_file) :
     iter_rec = [0, -1]
     if os.path.isfile (record) :
         with open (record) as frec :
-            for line in frec : 
+            for line in frec :
                 iter_rec = [int(x) for x in line.split()]
         dlog.info ("continue from iter %03d task %02d" % (iter_rec[0], iter_rec[1]))
 
@@ -1551,17 +1636,17 @@ def run_iter (param_file, machine_file) :
         iter_name=make_iter_name(ii)
         sepline(iter_name,'=')
         for jj in range (numb_task) :
-            if ii * max_tasks + jj <= iter_rec[0] * max_tasks + iter_rec[1] : 
+            if ii * max_tasks + jj <= iter_rec[0] * max_tasks + iter_rec[1] :
                 continue
             task_name="task %02d"%jj
             sepline(task_name,'-')
             if   jj == 0 :
                 log_iter ("make_train", ii, jj)
-                make_train (ii, jdata, mdata) 
+                make_train (ii, jdata, mdata)
             elif jj == 1 :
                 log_iter ("run_train", ii, jj)
                 mdata  = decide_train_machine(mdata)
-                train_machine = mdata['train_machine'] 
+                train_machine = mdata['train_machine']
                 if ('machine_type' in train_machine) and  \
                    ((train_machine['machine_type'] == 'ucloud') or (train_machine['machine_type'] == 'aws')):
                     train_ssh_sess = None
@@ -1579,7 +1664,7 @@ def run_iter (param_file, machine_file) :
             elif jj == 4 :
                 log_iter ("run_model_devi", ii, jj)
                 mdata = decide_model_devi_machine(mdata)
-                model_devi_machine = mdata['model_devi_machine']    
+                model_devi_machine = mdata['model_devi_machine']
                 if ('machine_type' in model_devi_machine) and  \
                    ((model_devi_machine['machine_type'] == 'ucloud') or (model_devi_machine['machine_type'] == 'aws')):
                     model_devi_ssh_sess = None
@@ -1596,7 +1681,7 @@ def run_iter (param_file, machine_file) :
                 log_iter ("run_fp", ii, jj)
 
                 mdata = decide_fp_machine(mdata)
-                fp_machine = mdata['fp_machine']  
+                fp_machine = mdata['fp_machine']
                 if ('machine_type' in fp_machine) and  \
                    ((fp_machine['machine_type'] == 'ucloud') or (fp_machine['machine_type'] == 'aws')):
                     fp_ssh_sess = None
@@ -1613,13 +1698,13 @@ def gen_run(args) :
     if args.PARAM and args.MACHINE:
        dlog.info ("start running")
        run_iter (args.PARAM, args.MACHINE)
-       dlog.info ("finished")    
+       dlog.info ("finished")
 
 def _main () :
     parser = argparse.ArgumentParser()
-    parser.add_argument("PARAM", type=str, 
+    parser.add_argument("PARAM", type=str,
                         help="The parameters of the generator")
-    parser.add_argument("MACHINE", type=str, 
+    parser.add_argument("MACHINE", type=str,
                         help="The settings of the machine running the generator")
     args = parser.parse_args()
 
