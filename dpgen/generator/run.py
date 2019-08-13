@@ -802,7 +802,7 @@ def _make_fp_vasp_inner (modd_path,
                          fp_task_max,
                          fp_link_files,
                          type_map,
-                         cluster_cutoff = None):
+                         jdata):
     """
     modd_path           string          path of model devi
     work_path           string          path of fp
@@ -821,6 +821,7 @@ def _make_fp_vasp_inner (modd_path,
     system_index.sort()
 
     fp_tasks = []
+    cluster_cutoff = jdata['cluster_cutoff'] if 'use_clusters' in jdata and jdata['use_clusters'] else None
     for ss in system_index :
         fp_candidate = []
         fp_rest_accurate = []
@@ -886,7 +887,7 @@ def _make_fp_vasp_inner (modd_path,
                 # take clusters
                 jj = fp_candidate[cc][2]
                 poscar_name = '{}.cluster.{}.POSCAR'.format(conf_name, jj)
-                new_system = take_cluster(conf_name, type_map, jj, cluster_cutoff)
+                new_system = take_cluster(conf_name, type_map, jj, jdata)
                 new_system.to_vasp_poscar(poscar_name)
             fp_task_name = make_fp_task_name(int(ss), cc)
             fp_task_path = os.path.join(work_path, fp_task_name)
@@ -1013,7 +1014,6 @@ def _make_fp_vasp_configs(iter_index,
         if 'task_min' in cur_job :
             task_min = cur_job['task_min']
     # make configs
-    cluster_cutoff = jdata['cluster_cutoff'] if 'use_clusters' in jdata and jdata['use_clusters'] else None
     fp_tasks = _make_fp_vasp_inner(modd_path, work_path,
                                    model_devi_skip,
                                    e_trust_lo, e_trust_hi,
@@ -1021,7 +1021,7 @@ def _make_fp_vasp_configs(iter_index,
                                    task_min, fp_task_max,
                                    [],
                                    type_map,
-                                   cluster_cutoff)
+                                   jdata)
     return fp_tasks
 
 
