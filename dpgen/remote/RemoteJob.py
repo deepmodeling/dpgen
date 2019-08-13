@@ -763,20 +763,22 @@ class LSFJob (RemoteJob) :
         sftp.close()
 
     def check_status(self) :
-        job_id = self._get_job_id()
+        try:
+            job_id = self._get_job_id()
+        except:
+            return JobStatus.terminated
         if job_id == "" :
             raise RuntimeError("job %s is has not been submitted" % self.remote_root)
         ret, stdin, stdout, stderr\
             = self.block_call ("bjobs " + job_id)
         err_str = stderr.read().decode('utf-8')
-        if (ret != 0) :
-            if ("Job <%s> is not found" % job_id) in err_str :
-                if self._check_finish_tag() :
-                    return JobStatus.finished
-                else :
-                    return JobStatus.terminated
+        if ("Job <%s> is not found" % job_id) in err_str :
+            if self._check_finish_tag() :
+                return JobStatus.finished
             else :
-                raise RuntimeError ("status command qstat fails to execute. erro info: %s return code %d"
+                return JobStatus.terminated
+        elif ret != 0 :
+            raise RuntimeError ("status command qstat fails to execute. erro info: %s return code %d"
                                     % (err_str, ret))
         status_line = stdout.read().decode('utf-8').split ('\n')[-2]
         status_word = status_line.split ()[2]
