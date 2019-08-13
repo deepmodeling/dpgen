@@ -12,6 +12,7 @@ from context import param_old_file
 from context import param_pwscf_file
 from context import param_pwscf_old_file
 from context import param_gaussian_file
+from context import param_cp2k_file
 from context import machine_file
 from comp_sys import test_atom_names
 from comp_sys import test_atom_types
@@ -56,10 +57,10 @@ class TestPostFPVasp(unittest.TestCase):
         with open (param_file, 'r') as fp :
             jdata = json.load (fp)
         post_fp_vasp(0, jdata, rfailed=0.3)
-        
+
         sys = dpdata.LabeledSystem('iter.000000/02.fp/data.000/', fmt = 'deepmd/raw')
         self.assertEqual(sys.get_nframes(), 2)
-        
+
         if sys.data['coords'][0][1][0] < sys.data['coords'][1][1][0]:
             idx = [1, 0]
         else :
@@ -70,7 +71,7 @@ class TestPostFPVasp(unittest.TestCase):
         ref_f = self.ref_f[idx]
         ref_v = self.ref_v[idx]
         ref_at = self.ref_at
-            
+
         for ff in range(2) :
             self.assertAlmostEqual(ref_e[ff], sys.data['energies'][ff])
         for ii in range(2) :
@@ -78,16 +79,16 @@ class TestPostFPVasp(unittest.TestCase):
         for ff in range(2) :
             for ii in range(2) :
                 for dd in range(3) :
-                    self.assertAlmostEqual(ref_coord[ff][ii][dd], 
+                    self.assertAlmostEqual(ref_coord[ff][ii][dd],
                                            sys.data['coords'][ff][ii][dd])
-                    self.assertAlmostEqual(ref_f[ff][ii][dd], 
+                    self.assertAlmostEqual(ref_f[ff][ii][dd],
                                            sys.data['forces'][ff][ii][dd])
         for ff in range(2):
             for ii in range(3) :
                 for jj in range(3) :
-                    self.assertAlmostEqual(ref_v[ff][ii][jj], 
+                    self.assertAlmostEqual(ref_v[ff][ii][jj],
                                            sys.data['virials'][ff][ii][jj], places = 5)
-                    self.assertAlmostEqual(ref_cell[ff][ii][jj], 
+                    self.assertAlmostEqual(ref_cell[ff][ii][jj],
                                            sys.data['cells'][ff][ii][jj])
 
 
@@ -96,10 +97,10 @@ class TestPostFPVasp(unittest.TestCase):
         with open (param_file, 'r') as fp :
             jdata = json.load (fp)
         post_fp_vasp(0, jdata, rfailed=0.3)
-        
+
         sys = dpdata.LabeledSystem('iter.000000/02.fp/data.001/', fmt = 'deepmd/raw')
         self.assertEqual(sys.get_nframes(), 1)
-        
+
         # if sys.data['coords'][0][1][0] < sys.data['coords'][1][1][0]:
         #     idx = [0]
         # else :
@@ -110,7 +111,7 @@ class TestPostFPVasp(unittest.TestCase):
         ref_f = self.ref_f[idx]
         ref_v = self.ref_v[idx]
         ref_at = self.ref_at
-            
+
         for ff in range(1) :
             self.assertAlmostEqual(ref_e[ff], sys.data['energies'][ff])
         for ii in range(2) :
@@ -118,16 +119,16 @@ class TestPostFPVasp(unittest.TestCase):
         for ff in range(1) :
             for ii in range(2) :
                 for dd in range(3) :
-                    self.assertAlmostEqual(ref_coord[ff][ii][dd], 
+                    self.assertAlmostEqual(ref_coord[ff][ii][dd],
                                            sys.data['coords'][ff][ii][dd])
-                    self.assertAlmostEqual(ref_f[ff][ii][dd], 
+                    self.assertAlmostEqual(ref_f[ff][ii][dd],
                                            sys.data['forces'][ff][ii][dd])
         for ff in range(1):
             for ii in range(3) :
                 for jj in range(3) :
-                    self.assertAlmostEqual(ref_v[ff][ii][jj], 
+                    self.assertAlmostEqual(ref_v[ff][ii][jj],
                                            sys.data['virials'][ff][ii][jj], places = 5)
-                    self.assertAlmostEqual(ref_cell[ff][ii][jj], 
+                    self.assertAlmostEqual(ref_cell[ff][ii][jj],
                                            sys.data['cells'][ff][ii][jj])
 
     def test_post_fp_vasp_2(self):
@@ -169,6 +170,22 @@ class TestPostGaussian(unittest.TestCase, CompLabeledSys):
         self.system_1 = dpdata.LabeledSystem('iter.000000/orig', fmt = 'deepmd/raw')
         self.system_2 = dpdata.LabeledSystem('iter.000000/02.fp/data.000', fmt = 'deepmd/raw')
 
-    
+
+class TestPostCP2K(unittest.TestCase, CompLabeledSys):
+    def setUp(self):
+        self.places = 5
+        self.e_places = 5
+        self.f_places = 5
+        self.v_places = 5
+        assert os.path.isdir('out_data_post_fp_cp2k'), 'out data for post fp gaussian should exist'
+        if os.path.isdir('iter.000000') :
+            shutil.rmtree('iter.000000')
+        shutil.copytree('out_data_post_fp_cp2k', 'iter.000000')
+        with open (param_cp2k_file, 'r') as fp :
+            jdata = json.load (fp)
+        post_fp(0, jdata)
+        self.system_1 = dpdata.LabeledSystem('iter.000000/orig', fmt = 'deepmd/raw')
+        self.system_2 = dpdata.LabeledSystem('iter.000000/02.fp/data.000', fmt = 'deepmd/raw')
+
 if __name__ == '__main__':
     unittest.main()
