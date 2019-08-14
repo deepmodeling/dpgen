@@ -207,6 +207,8 @@ def make_lammps(jdata, conf_dir, supercell, insert_ele, task_type) :
         _make_lammps(jdata, conf_dir, supercell, ii, task_type)
 
 def _make_lammps(jdata, conf_dir, supercell, insert_ele, task_type) :
+    fp_params = jdata['vasp_params']
+    kspacing = fp_params['kspacing']
     fp_params = jdata['lammps_params']
     model_dir = fp_params['model_dir']
     type_map = fp_params['type_map'] 
@@ -228,16 +230,21 @@ def _make_lammps(jdata, conf_dir, supercell, insert_ele, task_type) :
     conf_poscar = os.path.join(conf_path, 'POSCAR')
     # get equi poscar
     equi_path = re.sub('confs', global_equi_name, conf_path)
-    equi_path = os.path.join(equi_path, task_type)
-    equi_dump = os.path.join(equi_path, 'dump.relax')
-    assert os.path.exists(equi_dump),"Please compute the equilibrium state using vasp first"
+    equi_path = os.path.join(equi_path, 'vasp-k%.2f' % kspacing)
+    equi_contcar = os.path.join(equi_path, 'CONTCAR')
+    #equi_path = os.path.join(equi_path, task_type)
+    #equi_dump = os.path.join(equi_path, 'dump.relax')
+    assert os.path.exists(equi_contcar),"Please compute the equilibrium state using vasp first"
     task_path = re.sub('confs', global_task_name, conf_path)
     task_path = os.path.join(task_path, task_type)
     os.makedirs(task_path, exist_ok=True)
     task_poscar = os.path.join(task_path, 'POSCAR')
     cwd = os.getcwd()
     os.chdir(task_path)
-    lammps.poscar_from_last_dump(equi_dump, task_poscar, type_map)
+    if os.path.isfile('POSCAR') :
+        os.remove('POSCAR')
+    os.symlink(os.path.relpath(equi_contcar), 'POSCAR')
+    #lammps.poscar_from_last_dump(equi_dump, task_poscar, type_map)
     os.chdir(cwd)
     # gen structure from equi poscar
     print("task poscar: ", task_poscar)
