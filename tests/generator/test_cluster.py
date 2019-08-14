@@ -13,7 +13,7 @@ class Test_take_cluster(unittest.TestCase, CompSys):
             "cluster_cutoff": 3.5
         }
         self.system_1 = take_cluster("cluster/14400.lammpstrj", type_map, 1125, jdata)
-        self.system_2 = dpdata.LabeledSystem("cluster/input0_old.log", fmt="gaussian/log")
+        self.system_2 = dpdata.LabeledSystem("cluster/input0_old.gaussianlog", fmt="gaussian/log")
         self.system_2.data['cells'] = self.system_1['cells']
         self.places=0
 
@@ -26,7 +26,7 @@ class Test_take_cluster_minify(unittest.TestCase, CompSys):
             "cluster_minify": True
         }
         self.system_1 = take_cluster("cluster/14400.lammpstrj", type_map, 1125, jdata)
-        self.system_2 = dpdata.LabeledSystem("cluster/input0_new.log", fmt="gaussian/log")
+        self.system_2 = dpdata.LabeledSystem("cluster/input0_new.gaussianlog", fmt="gaussian/log")
         self.system_2.data['cells'] = self.system_1['cells']
         self.places=0
 
