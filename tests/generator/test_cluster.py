@@ -1,11 +1,13 @@
 import dpdata
 import numpy as np
 import unittest
+import importlib
 
 from context import take_cluster
 from comp_sys import CompSys
 
 
+@unittest.skipIf(importlib.util.find_spec("openbabel") is None, "requires openbabel")
 class Test_take_cluster(unittest.TestCase, CompSys):
     def setUp (self) :
         type_map = ['C', 'H']
@@ -18,6 +20,7 @@ class Test_take_cluster(unittest.TestCase, CompSys):
         self.places=0
 
 
+@unittest.skipIf(importlib.util.find_spec("openbabel") is None, "requires openbabel")
 class Test_take_cluster_minify(unittest.TestCase, CompSys):
     def setUp (self) :
         type_map = ['C', 'H']
