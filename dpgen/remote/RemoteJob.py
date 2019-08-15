@@ -782,15 +782,15 @@ class LSFJob (RemoteJob) :
         ret, stdin, stdout, stderr\
             = self.block_call ("bjobs " + job_id)
         err_str = stderr.read().decode('utf-8')
-        if (ret != 0) :
-            if ("Job <%s> is not found" % job_id) in err_str :
-                if self._check_finish_tag() :
-                    return JobStatus.finished
-                else :
-                    return JobStatus.terminated
+        # if (ret != 0) : For LSF the 'ret' returned is always 0.
+        if ("Job <%s> is not found" % job_id) in err_str :
+            if self._check_finish_tag() :
+                return JobStatus.finished
             else :
-                raise RuntimeError ("status command bjobs fails to execute. erro info: %s return code %d"
-                                    % (err_str, ret))
+                return JobStatus.terminated
+        #else :
+        #    raise RuntimeError ("status command bjobs fails to execute. erro info: %s return code %d"
+        #                        % (err_str, ret))
         status_out = stdout.read().decode('utf-8').split('\n')
         if len(status_out) < 2:
             return JobStatus.unknown
