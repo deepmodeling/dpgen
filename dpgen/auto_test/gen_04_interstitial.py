@@ -139,16 +139,6 @@ def _make_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_type) :
     f_lammps_in = os.path.join(lmps_path, 'lammps.in')
     with open(f_lammps_in, 'w') as fp :
         fp.write(fc)
-    if task_type=='deepmd':
-        os.chdir(lmps_path)
-        for ii in model_name :
-            if os.path.exists(ii) :
-                os.remove(ii)
-        for (ii,jj) in zip(models, model_name) :
-            os.symlink(os.path.relpath(ii), jj)
-        share_models = glob.glob(os.path.join(lmps_path, '*pb'))
-    else:
-        share_models = models
 
     for vs in vasp_struct :
         # get vasp energy
@@ -174,6 +164,21 @@ def _make_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_type) :
             xdat_lines = xdat_lines[xdat_nlines:]
         xdat_nframes = len(xdat_lines) // xdat_secsize
         print(xdat_nframes, len(energies))
+        #link lammps.in and model
+        for jj in ['lammps.in'] + model_name :
+            if os.path.islink(jj):
+                os.unlink(jj)
+        os.symlink(os.path.relpath(f_lammps_in), 'lammps.in')
+        if task_type=='deepmd':
+            for ii in model_name :
+                if os.path.exists(ii) :
+                    os.remove(ii)
+            for (ii,jj) in zip(models, model_name) :
+                os.symlink(os.path.relpath(ii), jj)
+            share_models = glob.glob(os.path.join(ls, '*pb'))
+        else:
+            share_models = models
+            
         # loop over frames
         for ii in range(xdat_nframes) :
             frame_path = 'frame.%06d' % ii
@@ -187,7 +192,7 @@ def _make_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_type) :
                 if os.path.islink(jj):
                     os.unlink(jj)            
             # link lammps in
-            os.symlink(os.path.relpath(f_lammps_in), 'lammps.in')
+            os.symlink(os.path.relpath('../lammps.in'), 'lammps.in')
             # make conf
             with open('POSCAR', 'w') as fp :
                 fp.write('\n'.join(xdat_lines[ii*xdat_secsize:(ii+1)*xdat_secsize]))
