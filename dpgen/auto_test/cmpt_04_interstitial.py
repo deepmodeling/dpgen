@@ -90,7 +90,7 @@ def _cmpt_deepmd_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_name) 
         error = np.linalg.norm(diff) / np.sqrt(np.size(lmp_ener))
         np.savetxt(vasp_ener_file, vasp_ener[error_start:])
         np.savetxt(lmp_ener_file,  lmp_ener[error_start:])
-        print(ls, error)
+        print(os.path.basename(ls), 'EpA_std_err=',error)
 
 def cmpt_deepmd_lammps(jdata, conf_dir, supercell, insert_ele, task_name) :
     for ii in insert_ele:
