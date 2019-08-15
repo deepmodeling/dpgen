@@ -160,7 +160,6 @@ def run_equi(task_type,jdata,mdata,ssh_sess):
             else :
                 run_tasks_.append(ii)
 
-        run_tasks = [os.path.basename(ii) for ii in run_tasks_]
         forward_files = ['INCAR', 'POTCAR']
         backward_files = ['OUTCAR','CONTCAR','OSZICAR']
         common_files=['POSCAR']
@@ -191,7 +190,7 @@ def run_equi(task_type,jdata,mdata,ssh_sess):
                     run_tasks_.append(ii)
             else :
                 run_tasks_.append(ii)
-        run_tasks = [os.path.basename(ii) for ii in run_tasks_]
+        
         forward_files = ['conf.lmp', 'lammps.in']
         backward_files = ['dump.relax','log.lammps', 'model_devi.log']
 
@@ -212,6 +211,7 @@ def run_equi(task_type,jdata,mdata,ssh_sess):
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
     
+    run_tasks = [os.path.basename(ii) for ii in run_tasks_]
     _run(machine,
          machine_type,
          ssh_sess,
@@ -293,7 +293,6 @@ def run_eos(task_type,jdata,mdata,ssh_sess):
             else :
                 run_tasks_.append(ii)
 
-        run_tasks = [os.path.basename(ii) for ii in run_tasks_]
         forward_files = ['INCAR', 'POSCAR','POTCAR']
         backward_files = ['OUTCAR','OSZICAR']
         common_files=['INCAR','POTCAR']
@@ -324,7 +323,6 @@ def run_eos(task_type,jdata,mdata,ssh_sess):
             else :
                 run_tasks_.append(ii)
 
-        run_tasks = [os.path.basename(ii) for ii in run_tasks_]
         fp_params = jdata['lammps_params']
         model_dir = fp_params['model_dir']
         model_dir = os.path.abspath(model_dir)
@@ -344,6 +342,7 @@ def run_eos(task_type,jdata,mdata,ssh_sess):
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
+    run_tasks = [os.path.basename(ii) for ii in run_tasks_]
     _run(machine,
          machine_type,
          ssh_sess,
@@ -416,8 +415,7 @@ def run_elastic(task_type,jdata,mdata,ssh_sess):
                     run_tasks_.append(ii)
             else :
                 run_tasks_.append(ii)
-        
-        run_tasks = [os.path.basename(ii) for ii in run_tasks_]
+
         forward_files = ['INCAR', 'POSCAR','POTCAR','KPOINTS']
         backward_files = ['OUTCAR','CONTCAR','OSZICAR']
         common_files=['INCAR','POTCAR','KPOINTS']
@@ -448,7 +446,6 @@ def run_elastic(task_type,jdata,mdata,ssh_sess):
             else :
                 run_tasks_.append(ii)
 
-        run_tasks = [os.path.basename(ii) for ii in run_tasks_]
         fp_params = jdata['lammps_params']
         model_dir = fp_params['model_dir']
         model_dir = os.path.abspath(model_dir)
@@ -467,7 +464,8 @@ def run_elastic(task_type,jdata,mdata,ssh_sess):
 
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
-
+        
+    run_tasks = [os.path.basename(ii) for ii in run_tasks_]
     _run(machine,
          machine_type,
          ssh_sess,
@@ -539,7 +537,6 @@ def run_vacancy(task_type,jdata,mdata,ssh_sess):
             else :
                 run_tasks_.append(ii)
         
-        run_tasks = [os.path.basename(ii) for ii in run_tasks_]
         forward_files = ['INCAR', 'POSCAR','POTCAR']
         backward_files = ['OUTCAR','OSZICAR']
         common_files=['INCAR','POTCAR']
@@ -569,8 +566,7 @@ def run_vacancy(task_type,jdata,mdata,ssh_sess):
                     run_tasks_.append(ii)
             else :
                 run_tasks_.append(ii)
-
-        run_tasks = [os.path.basename(ii) for ii in run_tasks_]
+        
         fp_params = jdata['lammps_params']
         model_dir = fp_params['model_dir']
         model_dir = os.path.abspath(model_dir)
@@ -590,7 +586,8 @@ def run_vacancy(task_type,jdata,mdata,ssh_sess):
 
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
-
+        
+    run_tasks = [os.path.basename(ii) for ii in run_tasks_]
     _run(machine,
          machine_type,
          ssh_sess,
@@ -672,7 +669,6 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
             else :
                 run_tasks_.append(ii)
         
-        run_tasks = [os.path.basename(ii) for ii in run_tasks_]
         forward_files = ['INCAR', 'POSCAR','POTCAR']
         backward_files = ['OUTCAR','XDATCAR','OSZICAR']
         common_files=['INCAR']
@@ -687,6 +683,13 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
         machine_type = mdata['model_devi_machine']['machine_type']
         command = lmp_exec + " -i lammps.in"
         command = cmd_append_log(command, "model_devi.log")
+        
+        if reprod_opt:
+            all_frame=[]
+            for ii in all_task:
+                all_frame+=(glob.glob(os.path.join(ii,'frame.*')))
+            work_path = all_task
+            all_task = all_frame
 
         run_tasks_ = []
         for ii in all_task:
@@ -703,7 +706,6 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
             else :
                 run_tasks_.append(ii)
 
-        run_tasks = [os.path.basename(ii) for ii in run_tasks_]
         fp_params = jdata['lammps_params']
         model_dir = fp_params['model_dir']
         model_dir = os.path.abspath(model_dir)
@@ -723,17 +725,36 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
-    _run(machine,
-         machine_type,
-         ssh_sess,
-         resources,
-         command,
-         work_path,
-         run_tasks,
-         group_size,
-         common_files,
-         forward_files,
-         backward_files)
+    if reprod_opt:
+        for ii in work_path:
+            run_tasks=[]
+            for jj in run_tasks_:
+                if ii in jj:
+                    run_tasks.append(os.path.basename(jj))
+            _run(machine,
+             machine_type,
+             ssh_sess,
+             resources, 
+             command,
+             ii,
+             run_tasks,
+             group_size,
+             common_files,
+             forward_files,
+             backward_files)
+    else:
+        run_tasks = [os.path.basename(ii) for ii in run_tasks_]
+        _run(machine,
+             machine_type,
+             ssh_sess,
+             resources,
+             command,
+             work_path,
+             run_tasks,
+             group_size,
+             common_files,
+             forward_files,
+             backward_files)
 
 def cmpt_interstitial(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
@@ -814,7 +835,7 @@ def run_surf(task_type,jdata,mdata,ssh_sess):
             else :
                 run_tasks_.append(ii)
             
-        run_tasks = [os.path.basename(ii) for ii in run_tasks_]
+
         forward_files = ['INCAR', 'POSCAR','POTCAR']
         backward_files = ['OUTCAR','OSZICAR']
         common_files=['INCAR','POTCAR']
@@ -845,7 +866,6 @@ def run_surf(task_type,jdata,mdata,ssh_sess):
             else :
                 run_tasks_.append(ii)
 
-        run_tasks = [os.path.basename(ii) for ii in run_tasks_]
         fp_params = jdata['lammps_params']
         model_dir = fp_params['model_dir']
         model_dir = os.path.abspath(model_dir)
@@ -864,7 +884,8 @@ def run_surf(task_type,jdata,mdata,ssh_sess):
 
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
-
+    
+    run_tasks = [os.path.basename(ii) for ii in run_tasks_]
     _run(machine,
          machine_type,
          ssh_sess,
