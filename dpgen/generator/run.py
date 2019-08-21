@@ -1233,6 +1233,16 @@ def _gaussian_check_fin(ii):
         return False
     return True
 
+def _cp2k_check_fin(ii):
+    if os.path.isfile(os.path.join(ii, 'output')) :
+        with open(os.path.join(ii, 'output'), 'r') as fp :
+            content = fp.read()
+            count = content.count('SCF run converged')
+            if count == 0 :
+                return False
+    else :
+        return False
+    return True
 
 def run_fp_inner (iter_index,
                   jdata,
@@ -1373,9 +1383,9 @@ def run_fp (iter_index,
         backward_files = ['output']
         run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _gaussian_check_fin, log_file = 'output')
     elif fp_style == "cp2k":
-        forward_files = ['input.inp']
+        forward_files = ['input.inp', 'coord.xyz']
         backward_files = ['output']
-        run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _gaussian_check_fin, log_file = 'output')
+        run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _cp2k_check_fin, log_file = 'output')
     else :
         raise RuntimeError ("unsupported fp style")
 
