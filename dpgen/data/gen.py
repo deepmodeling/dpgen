@@ -12,6 +12,7 @@ import shutil
 import time
 import dpdata
 import numpy as np
+from dpgen import dlog
 import os,json,shutil,re,glob,argparse,dpdata
 import numpy as np
 import subprocess as sp
@@ -21,6 +22,7 @@ import dpgen.data.tools.bcc as bcc
 import dpgen.data.tools.diamond as diamond
 import dpgen.data.tools.sc as sc
 from pymatgen import Structure
+from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
 from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
 from dpgen import ROOT_PATH
 
@@ -223,23 +225,48 @@ def make_super_cell_poscar(jdata) :
     from_struct.make_supercell(super_cell)
     from_struct.to('poscar',to_file)  
 
-    # make system dir (copy)
-    lines = open(to_file, 'r').read().split('\n')
-    natoms_str = lines[6]
-    natoms_list = [int(ii) for ii in natoms_str.split()]
-    print(natoms_list)
-    comb_name = "sys-"
-    for idx,ii in enumerate(natoms_list) :
-        comb_name += "%04d" % ii
-        if idx != len(natoms_list)-1 :
-            comb_name += "-"
-    path_work = os.path.join(path_sc, comb_name)
-    create_path(path_work)
+    #-----------------------------------------------
+    natoms = int(len(from_struct))
+    elements = from_struct.symbol_set
+    path_sc = os.path.join(out_dir, global_dirname_02)
+    path_pe = os.path.join(out_dir, global_dirname_02)
+    combines = np.array(make_combines(len(elements), natoms), dtype = int)
+
+    assert(os.path.isdir(path_pe))
     cwd = os.getcwd()
-    to_file = os.path.abspath(to_file)
-    os.chdir(path_work)
-    os.symlink(os.path.relpath(to_file), 'POSCAR')
-    os.chdir(cwd)
+    for ii in combines :
+        if any(ii == 0) :
+            continue
+        comb_name = "sys-"
+        for idx,jj in enumerate(ii) :
+            comb_name += "%04d" % jj
+            if idx != len(ii)-1 :
+                comb_name += "-"
+        path_pos_in = path_sc
+        path_work = os.path.join(path_pe, comb_name)
+        create_path(path_work)
+        pos_in = os.path.join(path_pos_in, 'POSCAR')
+        pos_out = os.path.join(path_work, 'POSCAR')
+        poscar_ele(pos_in, pos_out, elements, ii)
+        poscar_shuffle(pos_out, pos_out)
+
+    ## make system dir (copy)
+    #lines = open(to_file, 'r').read().split('\n')
+    #natoms_str = lines[6]
+    #natoms_list = [int(ii) for ii in natoms_str.split()]
+    #print(natoms_list)
+    #comb_name = "sys-"
+    #for idx,ii in enumerate(natoms_list) :
+    #    comb_name += "%04d" % ii
+    #    if idx != len(natoms_list)-1 :
+    #        comb_name += "-"
+    #path_work = os.path.join(path_sc, comb_name)
+    #create_path(path_work)
+    #cwd = os.getcwd()
+    #to_file = os.path.abspath(to_file)
+    #os.chdir(path_work)
+    #os.symlink(os.path.relpath(to_file), 'POSCAR')
+    #os.chdir(cwd)
 
 def make_combines (dim, natoms) :
     if dim == 1 :
@@ -326,7 +353,7 @@ def make_vasp_relax (jdata, mdata) :
     os.chdir(work_dir)
     #replace('INCAR', 'ENCUT=.*', 'ENCUT=%f' % encut)
     #replace('INCAR', 'ISIF=.*', 'ISIF=3')
-    #replace('INCAR', 'KSPACING=.*', 'KSPACING=%f' % kspacing)
+    #replace('INCAR', 'KSPACING=.*from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine', 'KSPACING=%f' % kspacing)
     #if kgamma :
     #    replace('INCAR', 'KGAMMA=.*', 'KGAMMA=T')
     #else :
@@ -512,11 +539,17 @@ def coll_vasp_md(jdata) :
             for kk in range(pert_numb) :
                 path_work = os.path.join("scale-%.3f" % jj, "%06d" % kk)
                 outcar = os.path.join(path_work, 'OUTCAR')
+                #print("OUTCAR",outcar)
                 if os.path.isfile(outcar) :
+                    #print("*"*40)
                     with open(outcar, 'r') as fin:
                         nforce = fin.read().count('TOTAL-FORCE')
+                    #print("nforce is", nforce)
+                    #print("md_nstep", md_nstep)
                     if nforce == md_nstep :
                         valid_outcars.append(outcar)
+                    else:
+                        print("WARNING : in directory %s nforce in OUTCAR is not equal to settings in INCAR"%(os.getcwd()))
         arg_cvt = " "
         if len(valid_outcars) == 0:
             raise RuntimeError("MD dir: %s: find no valid outcar in sys %s, "
@@ -604,8 +637,8 @@ def run_vasp_relax(jdata, mdata, ssh_sess):
             forward_common_files=['cvasp.py']
     relax_tasks = glob.glob(os.path.join(work_dir, "sys-*"))
     relax_tasks.sort()
-    print("work_dir",work_dir)
-    print("relax_tasks",relax_tasks)
+    #print("work_dir",work_dir)
+    #print("relax_tasks",relax_tasks)
     if len(relax_tasks) == 0:
         return
 
@@ -648,11 +681,8 @@ def run_vasp_md(jdata, mdata, ssh_sess):
     path_md = os.path.abspath(path_md)
     cwd = os.getcwd()
     assert(os.path.isdir(path_md)), "md path should exists"
-    os.chdir(path_md)
-    md_tasks = glob.glob('sys-*/scale*/00*')
+    md_tasks = glob.glob(os.path.join(work_dir, 'sys-*/scale*/00*'))
     md_tasks.sort()
-
-    os.chdir(cwd)
 
     if len(md_tasks) == 0:
         return
@@ -661,9 +691,12 @@ def run_vasp_md(jdata, mdata, ssh_sess):
     for ii in md_tasks : 
         if not _vasp_check_fin(ii):
             md_run_tasks.append(ii)
-    run_tasks = [ii for ii in md_run_tasks]
 
-    print("run_tasks",run_tasks)
+
+    run_tasks = [ii.replace(work_dir+"/", "") for ii in md_run_tasks]
+    #print("md_work_dir", work_dir)
+    #print("run_tasks",run_tasks)
+
     assert (machine_type == "slurm" or machine_type =="Slurm"), "Currently only support for Slurm!"
     _group_slurm_jobs(ssh_sess,
                            fp_resources,
@@ -674,7 +707,6 @@ def run_vasp_md(jdata, mdata, ssh_sess):
                            forward_common_files,
                            forward_files,
                            backward_files)
-    
 
     
 
@@ -693,28 +725,55 @@ def gen_init_bulk(args) :
             jdata = json.load (fp)
         with open (args.MACHINE, "r") as fp:
             mdata = json.load(fp)
-
-    out_dir = out_dir_name(jdata)
-
-    fp_machine = mdata['fp_machine']    
+    # Selecting a proper machine
+    mdata = decide_fp_machine(mdata)
+    fp_machine = mdata['fp_machine']
     fp_ssh_sess = SSHSession(fp_machine)  
+    # Decide work path
+    out_dir = out_dir_name(jdata)
     jdata['out_dir'] = out_dir
+    print ("# working dir %s" % out_dir)
+    # Decide whether to use a given poscar
+    from_poscar = False 
+    if 'from_poscar' in jdata :
+        from_poscar = jdata['from_poscar']
+    # Verify md_nstep
+    md_nstep_jdata = jdata["md_nstep"]
+    try:
+        md_incar = jdata['md_incar']
+        if os.path.isfile(md_incar):
+            with open(md_incar , "r") as fr:
+                md_incar_lines = fr.readlines()
+            nsw_flag = False
+            for incar_line in md_incar_lines:
+                line = incar_line.split()
+                if "NSW" in line:
+                    nsw_flag = True
+                    nsw_steps = int(incar_line.split()[-1])
+                    break
+            #print("nsw_steps is", nsw_steps)
+            #print("md_nstep_jdata is", md_nstep_jdata)
+            if nsw_flag:
+                if (nsw_steps != md_nstep_jdata):
+                    print("WARNING: your set-up for MD steps in PARAM and md_incar are not consistent!")
+                    print("MD steps in PARAM is %d"%(md_nstep_jdata))
+                    print("MD steps in md_incar is %d"%(nsw_steps))
+                    print("DP-GEN will use settings in md_incar!")
+                    jdata['md_nstep'] = nsw_steps
+    except:
+        pass
     ## correct element name 
     temp_elements = []
     for ele in jdata['elements']:
         temp_elements.append(ele[0].upper() + ele[1:])
     jdata['elements'] = temp_elements
+    print("Elements are", jdata['elements'])
 
-    from_poscar = False 
-    if 'from_poscar' in jdata :
-        from_poscar = jdata['from_poscar']
-    print ("# working dir %s" % out_dir)
-
+    ## Iteration 
     stage_list = [int(i) for i in jdata['stages']]
-
-    
     for stage in stage_list:
         if stage == 1 :
+            print("Current stage is 1, relax")
             create_path(out_dir)
             shutil.copy2(args.PARAM, os.path.join(out_dir, 'param.json'))
             if from_poscar :
@@ -723,15 +782,18 @@ def gen_init_bulk(args) :
                 make_unit_cell(jdata)
                 make_super_cell(jdata)
                 place_element(jdata)
-            make_vasp_relax(jdata, mdata)      
+            make_vasp_relax(jdata, mdata)
             run_vasp_relax(jdata, mdata, fp_ssh_sess)
         elif stage == 2 :
+            print("Current stage is 2, perturb and scale")
             make_scale(jdata)
             pert_scaled(jdata)
         elif stage == 3 :
+            print("Current stage is 3, run a short md")
             make_vasp_md(jdata)
             run_vasp_md(jdata, mdata, fp_ssh_sess)
         elif stage == 4 :
+            print("Current stage is 4, collect data")
             coll_vasp_md(jdata)
         else :
             raise RuntimeError("unknown stage %d" % stage)
@@ -756,19 +818,55 @@ def _main() :
             jdata = json.load (fp)
         with open (args.MACHINE, "r") as fp:
             mdata = json.load(fp)
-
-
+    # Selecting a proper machine
+    mdata = decide_fp_machine(mdata)
+    fp_machine = mdata['fp_machine']
+    fp_ssh_sess = SSHSession(fp_machine)  
+    # Decide work path
     out_dir = out_dir_name(jdata)
     jdata['out_dir'] = out_dir
+    print ("# working dir %s" % out_dir)
+    # Decide whether to use a given poscar
     from_poscar = False 
     if 'from_poscar' in jdata :
         from_poscar = jdata['from_poscar']
-    print ("# working dir %s" % out_dir)
+    # Verify md_nstep
+    md_nstep_jdata = jdata["md_nstep"]
+    try:
+        md_incar = jdata['md_incar']
+        if os.path.isfile(md_incar):
+            with open(md_incar , "r") as fr:
+                md_incar_lines = fr.readlines()
+            nsw_flag = False
+            for incar_line in md_incar_lines:
+                line = incar_line.split()
+                if "NSW" in line:
+                    nsw_flag = True
+                    nsw_steps = int(incar_line.split()[-1])
+                    break
+            #print("nsw_steps is", nsw_steps)
+            #print("md_nstep_jdata is", md_nstep_jdata)
+            if nsw_flag:
+                if (nsw_steps != md_nstep_jdata):
+                    print("WARNING: your set-up for MD steps in PARAM and md_incar are not consistent!")
+                    print("MD steps in PARAM is %d"%(md_nstep_jdata))
+                    print("MD steps in md_incar is %d"(nsw_steps))
+                    print("DP-GEN will use settings in md_incar!")
+                    jdata['md_nstep'] = nsw_steps
+    except:
+        pass
+    ## correct element name 
+    temp_elements = []
+    for ele in jdata['elements']:
+        temp_elements.append(ele[0].upper() + ele[1:])
+    jdata['elements'] = temp_elements
+    print("Elements are", jdata['elements'])
 
+    ## Iteration 
     stage_list = [int(i) for i in jdata['stages']]
-
     for stage in stage_list:
         if stage == 1 :
+            print("Current stage is 1, relax")
             create_path(out_dir)
             shutil.copy2(args.PARAM, os.path.join(out_dir, 'param.json'))
             if from_poscar :
@@ -778,13 +876,17 @@ def _main() :
                 make_super_cell(jdata)
                 place_element(jdata)
             make_vasp_relax(jdata, mdata)
+            run_vasp_relax(jdata, mdata, fp_ssh_sess)
         elif stage == 2 :
+            print("Current stage is 2, perturb and scale")
             make_scale(jdata)
             pert_scaled(jdata)
         elif stage == 3 :
+            print("Current stage is 3, run a short md")
             make_vasp_md(jdata)
-            run_vasp_md(jdata, mdata)
+            run_vasp_md(jdata, mdata, fp_ssh_sess)
         elif stage == 4 :
+            print("Current stage is 4, collect data")
             coll_vasp_md(jdata)
         else :
             raise RuntimeError("unknown stage %d" % stage)

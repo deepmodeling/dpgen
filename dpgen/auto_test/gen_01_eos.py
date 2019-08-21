@@ -47,7 +47,17 @@ def make_vasp(jdata, conf_dir) :
                        os.path.join(conf_path, '..'),
                        'alloy'
                    )
-               )    
+               )  
+    # read potcar
+    with open(to_poscar,'r') as fp :
+        lines = fp.read().split('\n')
+        ele_list = lines[5].split()
+    potcar_map = jdata['potcar_map']
+    potcar_list = []
+    for ii in ele_list :
+        assert os.path.exists(os.path.abspath(potcar_map[ii])),"No POTCAR in the potcar_map of %s"%(ii)
+        potcar_list.append(os.path.abspath(potcar_map[ii]))
+        
     vasp_path = os.path.join(task_path, 'vasp-k%.2f' % kspacing)
     os.makedirs(vasp_path, exist_ok = True)
     os.chdir(vasp_path)
@@ -59,14 +69,6 @@ def make_vasp(jdata, conf_dir) :
     with open('INCAR', 'w') as fp :
         fp.write(fc)
     # gen potcar
-    with open(to_poscar,'r') as fp :
-        lines = fp.read().split('\n')
-        ele_list = lines[5].split()
-    potcar_map = jdata['potcar_map']
-    potcar_list = []
-    for ii in ele_list :
-        assert(os.path.exists(potcar_map[ii]))
-        potcar_list.append(potcar_map[ii])
     with open('POTCAR', 'w') as outfile:
         for fname in potcar_list:
             with open(fname) as infile:
@@ -100,6 +102,7 @@ def make_lammps (jdata, conf_dir,task_type) :
     if not model_name and task_type =='deepmd':
         models = glob.glob(os.path.join(model_dir, '*pb'))
         model_name = [os.path.basename(ii) for ii in models]
+        assert len(model_name)>0,"No deepmd model in the model_dir"
     else:
         models = [os.path.join(model_dir,ii) for ii in model_name]
 

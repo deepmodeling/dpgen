@@ -1,0 +1,43 @@
+---
+stages:
+- 1
+- 2
+cell_type: fcc
+latt: 4.1
+super_cell:
+- 1
+- 1
+- 1
+z_min: 9
+vacuum_max: 9
+vacuum_resol:
+- 0.5
+- 1
+mid_point: 4
+head_ratio: 0.6
+vacuum_numb: 20
+millers:
+- - 1
+  - 0
+  - 0
+- - 1
+  - 1
+  - 0
+- - 1
+  - 1
+  - 1
+elements:
+- Al
+potcars:
+- "./POTCAR"
+relax_incar: INCAR_metal_rlx_low
+scale:
+- 0.98
+- 1
+skip_relax: true
+pert_numb: 5
+pert_box: 0.03
+pert_atom: 0.01
+coll_ndata: 5000
+_comment: that's all
+

@@ -776,27 +776,30 @@ class LSFJob (RemoteJob) :
             return True
 
     def check_status(self) :
-        job_id = self._get_job_id()
+        try:
+            job_id = self._get_job_id()
+        except:
+            return JobStatus.terminated
         if job_id == "" :
             raise RuntimeError("job %s is has not been submitted" % self.remote_root)
         ret, stdin, stdout, stderr\
             = self.block_call ("bjobs " + job_id)
         err_str = stderr.read().decode('utf-8')
-        # if (ret != 0) : For LSF the 'ret' returned is always 0.
         if ("Job <%s> is not found" % job_id) in err_str :
             if self._check_finish_tag() :
                 return JobStatus.finished
             else :
                 return JobStatus.terminated
-        #else :
-        #    raise RuntimeError ("status command bjobs fails to execute. erro info: %s return code %d"
-        #                        % (err_str, ret))
+        elif ret != 0 :
+            raise RuntimeError ("status command bjobs fails to execute. erro info: %s return code %d"
+                                    % (err_str, ret))
         status_out = stdout.read().decode('utf-8').split('\n')
         if len(status_out) < 2:
             return JobStatus.unknown
         else:
             status_line = status_out[1]
             status_word = status_line.split()[2]
+
         # ref: https://www.ibm.com/support/knowledgecenter/en/SSETD4_9.1.2/lsf_command_ref/bjobs.1.html
         if      status_word in ["PEND", "WAIT"] :
             return JobStatus.waiting
