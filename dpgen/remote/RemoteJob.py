@@ -731,8 +731,9 @@ class LSFJob (RemoteJob) :
             status = self.check_status()
             if status in [  JobStatus.unsubmitted, JobStatus.unknown, JobStatus.terminated ]:
                 dlog.debug('task restart point !!!')
-                while self.check_limit(task_max=resources['task_max']):
-                    time.sleep(60)
+                if 'task_max' in resources and resources['task_max'] > 0:
+                    while self.check_limit(task_max=resources['task_max']):
+                        time.sleep(60)
                 self._submit(job_dirs, cmd, args, resources)
             elif status==JobStatus.waiting:
                 dlog.debug('task is waiting')
@@ -746,8 +747,9 @@ class LSFJob (RemoteJob) :
                #self._submit(job_dirs, cmd, args, resources)
         else:
             dlog.debug('new task!!!')
-            while self.check_limit(task_max=resources['task_max']):
-                time.sleep(60)
+            if 'task_max' in resources and resources['task_max'] > 0:
+                while self.check_limit(task_max=resources['task_max']):
+                    time.sleep(60)
             self._submit(job_dirs, cmd, args, resources)
         time.sleep(20) # For preventing the crash of the tasks while submitting.
 
@@ -842,9 +844,11 @@ class LSFJob (RemoteJob) :
             ret += '#BSUB -R span[ptile=%d]\n#BSUB -n %d\n' % (
                 res['node_cpu'], res['numb_node'] * res['task_per_node'])
         else:
-            ret += '#BSUB -R span[ptile=%d]\n#BSUB -n %d\n' % (
-                res['numb_node'] * res['task_per_node'], res['numb_node'] * res['task_per_node'])
-            # ret += '#BSUB -R "select[ngpus >0] rusage[ngpus_excl_p=1]"\n#BSUB -n %d\n' % (res['numb_gpu'])
+            if 'node_cpu' in resources and res['node_cpu'] > 0:
+                ret += '#BSUB -R span[ptile=%d]\n' % res['node_cpu']
+                # It is selected only for the situation that GPU is related to CPU node.
+            ret += '#BSUB -R "select[ngpus >0] rusage[ngpus_excl_p=1]"\n#BSUB -n %d\n' % (
+                res['numb_gpu'])
         if res['time_limit']:
             ret += '#BSUB -W %s\n' % (res['time_limit'].split(':')[
                 0] + ':' + res['time_limit'].split(':')[1])
@@ -875,8 +879,9 @@ class LSFJob (RemoteJob) :
         for ii,jj in zip(job_dirs, args) :
             ret += 'cd %s\n' % ii
             ret += 'test $? -ne 0 && exit\n'
-            if res['with_mpi'] :
-                ret += 'mpirun -machinefile $LSB_DJOB_HOSTFILE -n %d %s %s\n' % (res['numb_node'] * res['task_per_node'], cmd, jj)
+            if res['with_mpi']:
+                ret += 'mpirun -machinefile $LSB_DJOB_HOSTFILE -n %d %s %s\n' % (
+                    res['numb_node'] * res['task_per_node'], cmd, jj)
             else :
                 ret += '%s %s\n' % (cmd, jj)                
             if 'allow_failure' not in res or res['allow_failure'] is False:
