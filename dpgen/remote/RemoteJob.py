@@ -844,7 +844,7 @@ class LSFJob (RemoteJob) :
             ret += '#BSUB -R span[ptile=%d]\n#BSUB -n %d\n' % (
                 res['node_cpu'], res['numb_node'] * res['task_per_node'])
         else:
-            if 'node_cpu' in resources and res['node_cpu'] > 0:
+            if res['node_cpu']:
                 ret += '#BSUB -R span[ptile=%d]\n' % res['node_cpu']
                 # It is selected only for the situation that GPU is related to CPU node.
             ret += '#BSUB -R "select[ngpus >0] rusage[ngpus_excl_p=1]"\n#BSUB -n %d\n' % (
