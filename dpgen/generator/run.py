@@ -1243,6 +1243,10 @@ def _cp2k_check_fin(ii):
     else :
         return False
     return True
+<<<<<<< HEAD
+=======
+
+>>>>>>> upstream/devel
 
 def run_fp_inner (iter_index,
                   jdata,
