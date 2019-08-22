@@ -1244,7 +1244,6 @@ def _cp2k_check_fin(ii):
         return False
     return True
 
-
 def run_fp_inner (iter_index,
                   jdata,
                   mdata,

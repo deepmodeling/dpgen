@@ -36,7 +36,7 @@ def decide_train_machine(mdata):
 	            temp_resources = mdata['train'][machine_idx]['resources']
 	            #assert isinstance(temp_machine, dict), "unsupported type of train machine [%d]!" %machine_idx
 	            #assert isinstance(temp_resources, dict), "unsupported type of train resources [%d]!"%machine_idx
-	            assert temp_machine['machine_type'] == 'slurm', "Currently only support for Slurm!"
+	            #assert temp_machine['machine_type'] == 'slurm', "Currently only support for Slurm!"
 	            temp_ssh_sess = SSHSession(temp_machine)
 	            cwd = os.getcwd()
 	            temp_rjob = SlurmJob(temp_ssh_sess, cwd)
@@ -104,7 +104,7 @@ def decide_model_devi_machine(mdata):
 	            temp_resources = mdata['model_devi'][machine_idx]['resources']
 	            #assert isinstance(temp_machine, dict), "unsupported type of model_devi machine [%d]!" %machine_idx
 	            #assert isinstance(temp_resources, dict), "unsupported type of model_devi resources [%d]!"%machine_idx
-	            assert temp_machine['machine_type'] == 'slurm', "Currently only support for Slurm!"
+	            #assert temp_machine['machine_type'] == 'slurm', "Currently only support for Slurm!"
 	            temp_ssh_sess = SSHSession(temp_machine)
 	            cwd = os.getcwd()
 	            temp_rjob = SlurmJob(temp_ssh_sess, cwd)
@@ -166,7 +166,7 @@ def decide_fp_machine(mdata):
 	        temp_resources = mdata['fp'][machine_idx]['resources']
 	        #assert isinstance(temp_machine, dict), "unsupported type of fp machine [%d]!" %machine_idx
 	        #assert isinstance(temp_resources, dict), "unsupported type of fp resources [%d]!"%machine_idx
-	        assert temp_machine['machine_type'] == 'slurm', "Currently only support for Slurm!"
+	        #assert temp_machine['machine_type'] == 'slurm', "Currently only support for Slurm!"
 	        temp_ssh_sess = SSHSession(temp_machine)
 	        cwd = os.getcwd()
 	        temp_rjob = SlurmJob(temp_ssh_sess, cwd)
