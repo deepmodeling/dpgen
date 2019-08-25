@@ -23,11 +23,11 @@ def make_lammps_input(ensemble,
                       trj_freq, 
                       mass_map,
                       temp, 
+                      jdata,
                       tau_t = 0.1,
                       pres = None,
                       tau_p = 0.5,
                       pka_e = None,
-                      is_use_clusters = False,
                       max_seed = 1000000,
                       deepmd_version = '0.1') :
     ret = "variable        NSTEPS          equal %d\n" % nsteps
@@ -59,8 +59,13 @@ def make_lammps_input(ensemble,
         ret+= "pair_style      deepmd %s ${THERMO_FREQ} model_devi.out\n" % graph_list
     else:
         # 1.x
-        out_each_str = "out_each" if is_use_clusters else ""
-        ret+= "pair_style      deepmd %s out_freq ${THERMO_FREQ} out_file model_devi.out %s\n" % (graph_list, out_each_str)
+        keywords = ""
+        if jdata.get('use_clusters', False):
+            keywords += "out_each"
+        if jdata.get('out_rel', False):
+            eps = jdata.get('eps', 0.)
+            keywords += "out_rel " + str(jdata['eps'])
+        ret+= "pair_style      deepmd %s out_freq ${THERMO_FREQ} out_file model_devi.out %s\n" % (graph_list, keywords)
     ret+= "pair_coeff      \n"
     ret+= "\n"
     ret+= "thermo_style    custom step temp pe ke etotal press vol lx ly lz xy xz yz\n"
