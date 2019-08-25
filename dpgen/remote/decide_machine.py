@@ -46,6 +46,8 @@ def decide_train_machine(mdata):
 	            stdin, stdout, stderr = temp_rjob.ssh.exec_command(command)
 	            pd_response = stdout.read().decode('utf-8').split("\n")
 	            pd_count = len(pd_response)
+
+	            temp_rjob.clean()
 	            ## If there is no need to waiting for allocation
 	            if pd_count ==1:
 	                mdata['train_machine'] = temp_machine   
@@ -110,6 +112,7 @@ def decide_model_devi_machine(mdata):
 	            stdin, stdout, stderr = temp_rjob.ssh.exec_command(command)
 	            pd_response = stdout.read().decode('utf-8').split("\n")
 	            pd_count = len(pd_response)
+	            temp_rjob.clean()
 	            if pd_count ==0:
 	                mdata['model_devi_machine'] = temp_machine   
 	                mdata['model_devi_resources'] = temp_resources
@@ -171,6 +174,7 @@ def decide_fp_machine(mdata):
 	        stdin, stdout, stderr = temp_rjob.ssh.exec_command(command)
 	        pd_response = stdout.read().decode('utf-8').split("\n")
 	        pd_count = len(pd_response)
+	        temp_rjob.clean()
 	        if pd_count ==0:
 	            mdata['fp_machine'] = temp_machine   
 	            mdata['fp_resources'] = temp_resources
