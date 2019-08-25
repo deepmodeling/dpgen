@@ -216,7 +216,7 @@ def make_train (iter_index,
     init_batch_size_ = list(jdata['init_batch_size'])
     sys_batch_size = jdata['sys_batch_size']
     for ii, ss in zip(init_data_sys_, init_batch_size_) :
-        if jdata.get'init_multi_systems', False):
+        if jdata.get('init_multi_systems', False):
             for single_sys in os.listdir(os.path.join(work_path, 'data.init', ii)):
                 init_data_sys.append(os.path.join('..', 'data.init', ii, single_sys))
                 init_batch_size.append(detect_batch_size(ss, os.path.join(work_path, 'data.init', ii, single_sys)))
