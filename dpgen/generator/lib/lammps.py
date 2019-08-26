@@ -61,10 +61,10 @@ def make_lammps_input(ensemble,
         # 1.x
         keywords = ""
         if jdata.get('use_clusters', False):
-            keywords += "out_each"
+            keywords += "out_each "
         if jdata.get('out_rel', False):
             eps = jdata.get('eps', 0.)
-            keywords += "out_rel " + str(jdata['eps'])
+            keywords += "out_rel %s " % jdata['eps']
         ret+= "pair_style      deepmd %s out_freq ${THERMO_FREQ} out_file model_devi.out %s\n" % (graph_list, keywords)
     ret+= "pair_coeff      \n"
     ret+= "\n"
