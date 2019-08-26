@@ -149,6 +149,9 @@ class RemoteJob (object):
         dlog.info("local_root is %s"% local_root)
         dlog.info("remote_root is %s"% self.remote_root)
         self.ssh = ssh_session.get_ssh_client()        
+        # keep ssh alive
+        transport = self.ssh.get_transport()
+        transport.set_keepalive(60)
         try:
            sftp = self.ssh.open_sftp()        
            sftp.mkdir(self.remote_root)
