@@ -292,7 +292,10 @@ class CloudMachineJob (RemoteJob) :
         if not self._check_finish(self.stdout) :
             return JobStatus.running
         elif self._get_exit_status(self.stdout) == 0 :
-            return JobStatus.finished
+            if self._check_finish_tag:
+                return JobStatus.finished
+            else:
+                return JobStatus.terminated
         else :
             return JobStatus.terminated
 
@@ -301,6 +304,16 @@ class CloudMachineJob (RemoteJob) :
     
     def _get_exit_status(self, stdout) :
         return stdout.channel.recv_exit_status() 
+
+    def _check_finish_tag(self) :
+        sftp = self.ssh.open_sftp()
+        try:
+            sftp.stat(os.path.join(self.remote_root, 'tag_finished')) 
+            ret =  True
+        except IOError:
+            ret = False
+        sftp.close()
+        return ret
     
     def _make_script(self, 
                      job_dirs,
@@ -309,6 +322,7 @@ class CloudMachineJob (RemoteJob) :
                      resources = None) :
         _set_default_resource(resources)
         envs = resources['envs']
+        source_list = resources['source_list']
         module_list = resources['module_list']
         module_unload_list = resources['module_unload_list']
         task_per_node = resources['task_per_node']
@@ -326,6 +340,10 @@ class CloudMachineJob (RemoteJob) :
             if envs != None :
                 for key in envs.keys() :
                     fp.write('export %s=%s\n' % (key, envs[key]))
+                fp.write('\n')
+            if source_list is not None:
+                for ii in source_list:
+                    fp.write('source %s\n' % ii)
                 fp.write('\n')
             if module_unload_list is not None :
                 for ii in module_unload_list :
