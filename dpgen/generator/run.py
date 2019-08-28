@@ -1362,13 +1362,14 @@ def run_fp (iter_index,
     fp_pp_files = jdata['fp_pp_files']
 
     if fp_style == "vasp" :
-        forward_files = ['POSCAR', 'INCAR', 'KPOINTS'] + fp_pp_files
+        forward_files = ['POSCAR', 'INCAR'] + fp_pp_files
         backward_files = ['OUTCAR','vasprun.xml']
         # Move cvasp interface to jdata
         if ('cvasp' in jdata) and (jdata['cvasp'] == True):
             mdata['fp_resources']['cvasp'] = True
         if ('cvasp' in  mdata["fp_resources"] ) and (mdata["fp_resources"]["cvasp"]==True):
             forward_common_files=['cvasp.py']
+            forward_files.append('KPOINTS')
         else:
             forward_common_files=[]
         run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _vasp_check_fin,
