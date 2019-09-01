@@ -10,10 +10,12 @@ env:
   - PYMATGEN_VERSION=2019.1.13
   - PYMATGEN_VERSION=2019.7.30
 before_install:
-  - pip install --upgrade pip
+  - pip install --upgrade pip coverage codecov
   - pip install pymatgen==$PYMATGEN_VERSION
 install:
   - pip install .
 # command to run tests
 script:
-  - cd tests && cd auto_test && python -m unittest && cd ../data &&  python -m unittest && cd ../generator && python -m unittest && cd ../database && python -m unittest  && cd ../..
+  - cd tests && cd auto_test && coverage run --source=../../dpgen -m unittest && cd ../data &&  coverage run --source=../../dpgen -m unittest && cd ../generator && coverage run --source=../../dpgen -m unittest && cd ../database && coverage run --source=../../dpgen -m unittest  && cd ../.. && coverage combine tests/*/.coverage && coverage report
+after_success:
+  - codecov

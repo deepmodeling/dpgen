@@ -43,7 +43,7 @@ def main():
 
     # init surf model
     parser_init_surf = subparsers.add_parser(
-        "init_surf", help="dpgen initial data preparation tools for surface systems.")
+        "init_surf", help="Generating initial data for surface systems.")
     parser_init_surf.add_argument('PARAM', type=str, 
                              help="parameter file, json/yaml format")
     parser_init_surf.add_argument('MACHINE', type=str,
@@ -52,7 +52,7 @@ def main():
     
     # init bulk model
     parser_init_bulk = subparsers.add_parser(
-        "init_bulk", help="dpgen initial data preparation tools for bulk systems.")
+        "init_bulk", help="Generating initial data for bulk systems.")
     parser_init_bulk.add_argument('PARAM', type=str, 
                              help="parameter file, json/yaml format")
     parser_init_bulk.add_argument('MACHINE', type=str,
@@ -74,7 +74,7 @@ def main():
     # run 
     parser_run = subparsers.add_parser(
         "run",
-        help="Runing DeepMD with generator model.")
+        help="Main process of Deep Generator.")
     parser_run.add_argument('PARAM', type=str,
                         help="parameter file, json/yaml format")
     parser_run.add_argument('MACHINE', type=str,
@@ -82,7 +82,7 @@ def main():
     parser_run.set_defaults(func=gen_run)
 
     # test 
-    parser_test = subparsers.add_parser("test", help="auto test for deep potential.")
+    parser_test = subparsers.add_parser("test", help="Auto-test for Deep Potential.")
     parser_test.add_argument('PARAM', type=str,
                         help="parameter file, json/yaml format")
     parser_test.add_argument('MACHINE', type=str,
@@ -92,7 +92,7 @@ def main():
     # db 
     parser_db = subparsers.add_parser(
         "db",
-        help="data collection from dpgen.")
+        help="Collecting data from DP-GEN.")
     parser_db.add_argument('PATH', type=str,
                         help="root path for dpgen modeling")
     parser_db.add_argument('CALCULATOR', type=str,

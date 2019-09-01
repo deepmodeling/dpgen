@@ -36,7 +36,7 @@ def decide_train_machine(mdata):
 	            temp_resources = mdata['train'][machine_idx]['resources']
 	            #assert isinstance(temp_machine, dict), "unsupported type of train machine [%d]!" %machine_idx
 	            #assert isinstance(temp_resources, dict), "unsupported type of train resources [%d]!"%machine_idx
-	            assert temp_machine['machine_type'] == 'slurm', "Currently only support for Slurm!"
+	            #assert temp_machine['machine_type'] == 'slurm', "Currently only support for Slurm!"
 	            temp_ssh_sess = SSHSession(temp_machine)
 	            cwd = os.getcwd()
 	            temp_rjob = SlurmJob(temp_ssh_sess, cwd)
@@ -46,6 +46,8 @@ def decide_train_machine(mdata):
 	            stdin, stdout, stderr = temp_rjob.ssh.exec_command(command)
 	            pd_response = stdout.read().decode('utf-8').split("\n")
 	            pd_count = len(pd_response)
+
+	            temp_rjob.clean()
 	            ## If there is no need to waiting for allocation
 	            if pd_count ==1:
 	                mdata['train_machine'] = temp_machine   
@@ -102,7 +104,7 @@ def decide_model_devi_machine(mdata):
 	            temp_resources = mdata['model_devi'][machine_idx]['resources']
 	            #assert isinstance(temp_machine, dict), "unsupported type of model_devi machine [%d]!" %machine_idx
 	            #assert isinstance(temp_resources, dict), "unsupported type of model_devi resources [%d]!"%machine_idx
-	            assert temp_machine['machine_type'] == 'slurm', "Currently only support for Slurm!"
+	            #assert temp_machine['machine_type'] == 'slurm', "Currently only support for Slurm!"
 	            temp_ssh_sess = SSHSession(temp_machine)
 	            cwd = os.getcwd()
 	            temp_rjob = SlurmJob(temp_ssh_sess, cwd)
@@ -110,6 +112,7 @@ def decide_model_devi_machine(mdata):
 	            stdin, stdout, stderr = temp_rjob.ssh.exec_command(command)
 	            pd_response = stdout.read().decode('utf-8').split("\n")
 	            pd_count = len(pd_response)
+	            temp_rjob.clean()
 	            if pd_count ==0:
 	                mdata['model_devi_machine'] = temp_machine   
 	                mdata['model_devi_resources'] = temp_resources
@@ -163,7 +166,7 @@ def decide_fp_machine(mdata):
 	        temp_resources = mdata['fp'][machine_idx]['resources']
 	        #assert isinstance(temp_machine, dict), "unsupported type of fp machine [%d]!" %machine_idx
 	        #assert isinstance(temp_resources, dict), "unsupported type of fp resources [%d]!"%machine_idx
-	        assert temp_machine['machine_type'] == 'slurm', "Currently only support for Slurm!"
+	        #assert temp_machine['machine_type'] == 'slurm', "Currently only support for Slurm!"
 	        temp_ssh_sess = SSHSession(temp_machine)
 	        cwd = os.getcwd()
 	        temp_rjob = SlurmJob(temp_ssh_sess, cwd)
@@ -171,6 +174,7 @@ def decide_fp_machine(mdata):
 	        stdin, stdout, stderr = temp_rjob.ssh.exec_command(command)
 	        pd_response = stdout.read().decode('utf-8').split("\n")
 	        pd_count = len(pd_response)
+	        temp_rjob.clean()
 	        if pd_count ==0:
 	            mdata['fp_machine'] = temp_machine   
 	            mdata['fp_resources'] = temp_resources

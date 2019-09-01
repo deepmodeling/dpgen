@@ -14,7 +14,7 @@ from hashlib import sha1
 def _verfy_ac(private_key, params):
     items= sorted(params.items())
     
-    params_data = "";
+    params_data = ""
     for key, value in items:
         params_data = params_data + str(key) + str(value)
     params_data = params_data + private_key
@@ -347,7 +347,7 @@ def group_slurm_jobs(ssh_sess,
                     job_list[_idx] = SlurmJob(ssh_sess, work_path, _rjob.job_uuid)
                   count_fail = count_fail +1
                   dlog.info("ssh_sess failed for %d times"%count_fail)
-                  break;
+                  break
                 if status == JobStatus.terminated :
                     lcount[idx]+=1
                     _job_uuid=rjob.remote_root.split('/')[-1]

@@ -149,6 +149,9 @@ class RemoteJob (object):
         dlog.info("local_root is %s"% local_root)
         dlog.info("remote_root is %s"% self.remote_root)
         self.ssh = ssh_session.get_ssh_client()        
+        # keep ssh alive
+        transport = self.ssh.get_transport()
+        transport.set_keepalive(60)
         try:
            sftp = self.ssh.open_sftp()        
            sftp.mkdir(self.remote_root)
@@ -614,7 +617,7 @@ class PBSJob (RemoteJob) :
                                     % (err_str, ret))
         status_line = stdout.read().decode('utf-8').split ('\n')[-2]
         status_word = status_line.split ()[-2]        
-#        dlog.info (status_word)
+        # dlog.info (status_word)
         if      status_word in ["Q","H"] :
             return JobStatus.waiting
         elif    status_word in ["R"] :
@@ -731,6 +734,9 @@ class LSFJob (RemoteJob) :
             status = self.check_status()
             if status in [  JobStatus.unsubmitted, JobStatus.unknown, JobStatus.terminated ]:
                 dlog.debug('task restart point !!!')
+                if 'task_max' in resources and resources['task_max'] > 0:
+                    while self.check_limit(task_max=resources['task_max']):
+                        time.sleep(60)
                 self._submit(job_dirs, cmd, args, resources)
             elif status==JobStatus.waiting:
                 dlog.debug('task is waiting')
@@ -738,15 +744,17 @@ class LSFJob (RemoteJob) :
                 dlog.debug('task is running')
             else:
                 dlog.debug('task is finished')
-               
-
-           #except:
+            #except:
                #dlog.debug('no job_id file')
                #dlog.debug('task restart point !!!')
                #self._submit(job_dirs, cmd, args, resources)
         else:
-           dlog.debug('new task!!!')
-           self._submit(job_dirs, cmd, args, resources)
+            dlog.debug('new task!!!')
+            if 'task_max' in resources and resources['task_max'] > 0:
+                while self.check_limit(task_max=resources['task_max']):
+                    time.sleep(60)
+            self._submit(job_dirs, cmd, args, resources)
+        time.sleep(20) # For preventing the crash of the tasks while submitting.
 
     def _submit(self, 
                job_dirs,
@@ -762,24 +770,41 @@ class LSFJob (RemoteJob) :
             fp.write(job_id)
         sftp.close()
 
+    def check_limit(self, task_max):
+        stdin_run, stdout_run, stderr_run = self.block_checkcall("bjobs | grep RUN | wc -l")
+        njobs_run = int(stdout_run.read().decode('utf-8').split ('\n')[0])
+        stdin_pend, stdout_pend, stderr_pend = self.block_checkcall("bjobs | grep PEND | wc -l")
+        njobs_pend = int(stdout_pend.read().decode('utf-8').split ('\n')[0])
+        if (njobs_pend + njobs_run) < task_max:
+            return False
+        else:
+            return True
+
     def check_status(self) :
-        job_id = self._get_job_id()
+        try:
+            job_id = self._get_job_id()
+        except:
+            return JobStatus.terminated
         if job_id == "" :
             raise RuntimeError("job %s is has not been submitted" % self.remote_root)
         ret, stdin, stdout, stderr\
             = self.block_call ("bjobs " + job_id)
         err_str = stderr.read().decode('utf-8')
-        if (ret != 0) :
-            if ("Job <%s> is not found" % job_id) in err_str :
-                if self._check_finish_tag() :
-                    return JobStatus.finished
-                else :
-                    return JobStatus.terminated
+        if ("Job <%s> is not found" % job_id) in err_str :
+            if self._check_finish_tag() :
+                return JobStatus.finished
             else :
-                raise RuntimeError ("status command qstat fails to execute. erro info: %s return code %d"
+                return JobStatus.terminated
+        elif ret != 0 :
+            raise RuntimeError ("status command bjobs fails to execute. erro info: %s return code %d"
                                     % (err_str, ret))
-        status_line = stdout.read().decode('utf-8').split ('\n')[-2]
-        status_word = status_line.split ()[2]
+        status_out = stdout.read().decode('utf-8').split('\n')
+        if len(status_out) < 2:
+            return JobStatus.unknown
+        else:
+            status_line = status_out[1]
+            status_word = status_line.split()[2]
+
         # ref: https://www.ibm.com/support/knowledgecenter/en/SSETD4_9.1.2/lsf_command_ref/bjobs.1.html
         if      status_word in ["PEND", "WAIT"] :
             return JobStatus.waiting
@@ -819,12 +844,19 @@ class LSFJob (RemoteJob) :
         ret = ''
         ret += "#!/bin/bash -l\n#BSUB -e %J.err\n#BSUB -o %J.out\n"
         if res['numb_gpu'] == 0:
-            ret += '#BSUB -R span[ptile=%d]\n#BSUB -n %d\n' % (res['node_cpu'], res['numb_node'] * res['task_per_node'])
-        else :
-            ret += '#BSUB -R "select[ngpus >0] rusage[ngpus_excl_p=1]"\n#BSUB -n %d\n' % (res['numb_gpu'])
-        #ret += '#BSUB -l walltime=%s\n' % (res['time_limit'])
-        #if res['mem_limit'] > 0 :
-        #    ret += "#BSUB -l mem=%dG \n" % res['mem_limit']
+            ret += '#BSUB -R span[ptile=%d]\n#BSUB -n %d\n' % (
+                res['node_cpu'], res['numb_node'] * res['task_per_node'])
+        else:
+            if res['node_cpu']:
+                ret += '#BSUB -R span[ptile=%d]\n' % res['node_cpu']
+                # It is selected only for the situation that GPU is related to CPU node.
+            ret += '#BSUB -R "select[ngpus >0] rusage[ngpus_excl_p=1]"\n#BSUB -n %d\n' % (
+                res['numb_gpu'])
+        if res['time_limit']:
+            ret += '#BSUB -W %s\n' % (res['time_limit'].split(':')[
+                0] + ':' + res['time_limit'].split(':')[1])
+        if res['mem_limit'] > 0 :
+            ret += "#BSUB -M %d \n" % (res['mem_limit'])
         ret += '#BSUB -J %s\n' % (res['job_name'] if 'job_name' in res else 'dpgen')
         if len(res['partition']) > 0 :
             ret += '#BSUB -q %s\n' % res['partition']
@@ -842,7 +874,6 @@ class LSFJob (RemoteJob) :
             for key in envs.keys() :
                 ret += 'export %s=%s\n' % (key, envs[key])
             ret += '\n'
-        #ret += 'cd $PBS_O_WORKDIR\n\n'
 
         if args == None :
             args = []
@@ -851,8 +882,9 @@ class LSFJob (RemoteJob) :
         for ii,jj in zip(job_dirs, args) :
             ret += 'cd %s\n' % ii
             ret += 'test $? -ne 0 && exit\n'
-            if res['with_mpi'] :
-                ret += 'mpirun -machinefile $LSB_DJOB_HOSTFILE -n %d %s %s\n' % (res['numb_node'] * res['task_per_node'], cmd, jj)
+            if res['with_mpi']:
+                ret += 'mpirun -machinefile $LSB_DJOB_HOSTFILE -n %d %s %s\n' % (
+                    res['numb_node'] * res['task_per_node'], cmd, jj)
             else :
                 ret += '%s %s\n' % (cmd, jj)                
             if 'allow_failure' not in res or res['allow_failure'] is False:
