@@ -1090,7 +1090,7 @@ def make_fp_pwscf(iter_index,
     cwd = os.getcwd()
     for ii in fp_tasks:
         os.chdir(ii)
-        sys_data = dpdata.System('POSCAR', type_map = jdata['type_map']).data
+        sys_data = dpdata.System('POSCAR').data
         sys_data['atom_masses'] = jdata['mass_map']
         ret = make_pwscf_input(sys_data, fp_pp_files, fp_params, user_input = user_input)
         with open('input', 'w') as fp:
@@ -1125,7 +1125,7 @@ def make_fp_gaussian(iter_index,
     cwd = os.getcwd()
     for ii in fp_tasks:
         os.chdir(ii)
-        sys_data = dpdata.System('POSCAR', type_map = jdata['type_map']).data
+        sys_data = dpdata.System('POSCAR').data
         ret = make_gaussian_input(sys_data, fp_params)
         with open('input', 'w') as fp:
             fp.write(ret)
@@ -1158,7 +1158,7 @@ def make_fp_cp2k (iter_index,
     cwd = os.getcwd()
     for ii in fp_tasks:
         os.chdir(ii)
-        sys_data = dpdata.System('POSCAR', type_map = jdata['type_map']).data
+        sys_data = dpdata.System('POSCAR').data
         # make input for every task
         cp2k_input = make_cp2k_input(sys_data, fp_params)
         with open('input.inp', 'w') as fp:
@@ -1424,11 +1424,11 @@ def post_fp_vasp (iter_index,
         tcount+=len(sys_outcars)
         for oo in sys_outcars :
             try:
-                _sys = dpdata.LabeledSystem(oo, type_map = jdata['type_map'])
+                _sys = dpdata.LabeledSystem(oo)
             except:
                 dlog.info('Try to parse from vasprun.xml')
                 try:
-                   _sys = dpdata.LabeledSystem(oo.replace('OUTCAR','vasprun.xml'), type_map = jdata['type_map'])
+                   _sys = dpdata.LabeledSystem(oo.replace('OUTCAR','vasprun.xml'))
                 except:
                    _sys = dpdata.LabeledSystem()
                    dlog.info('Failed fp path: %s'%oo.replace('OUTCAR',''))
@@ -1532,7 +1532,8 @@ def post_fp_gaussian (iter_index,
         sys_output = glob.glob(os.path.join(work_path, "task.%s.*/output"%ss))
         sys_output.sort()
         for idx,oo in enumerate(sys_output) :
-            sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log', type_map = jdata['type_map']) 
+            sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log') 
+            sys.check_type_map(type_map = jdata['type_map'])
             if jdata.get('use_atom_pref', False):
                 sys.data['atom_pref'] = np.load(os.path.join(os.path.dirname(oo), "atom_pref.npy"))
             if idx == 0:
@@ -1572,7 +1573,8 @@ def post_fp_cp2k (iter_index,
         sys_output = glob.glob(os.path.join(work_path, "task.%s.*/output"%ss))
         sys_output.sort()
         for idx,oo in enumerate(sys_output) :
-            sys = dpdata.LabeledSystem(oo, fmt = 'cp2k/output', type_map = jdata['type_map'])
+            sys = dpdata.LabeledSystem(oo, fmt = 'cp2k/output')
+            sys.check_type_map(type_map = jdata['type_map'])
             if idx == 0:
                 all_sys = sys
             else:
