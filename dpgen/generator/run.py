@@ -1537,7 +1537,7 @@ def post_fp_gaussian (iter_index,
                 sys.data['atom_pref'] = np.load(os.path.join(os.path.dirname(oo), "atom_pref.npy"))
             if idx == 0:
                 if jdata.get('use_clusters', False):
-                    all_sys = dpdata.MultiSystems(sys)
+                    all_sys = dpdata.MultiSystems(sys, type_map = jdata['type_map'])
                 else:
                     all_sys = sys
             else:
