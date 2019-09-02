@@ -1533,11 +1533,12 @@ def post_fp_gaussian (iter_index,
         sys_output.sort()
         for idx,oo in enumerate(sys_output) :
             sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log') 
+            sys.check_type_map(type_map = jdata['type_map'])
             if jdata.get('use_atom_pref', False):
                 sys.data['atom_pref'] = np.load(os.path.join(os.path.dirname(oo), "atom_pref.npy"))
             if idx == 0:
                 if jdata.get('use_clusters', False):
-                    all_sys = dpdata.MultiSystems(sys)
+                    all_sys = dpdata.MultiSystems(sys, type_map = jdata['type_map'])
                 else:
                     all_sys = sys
             else:
@@ -1573,6 +1574,7 @@ def post_fp_cp2k (iter_index,
         sys_output.sort()
         for idx,oo in enumerate(sys_output) :
             sys = dpdata.LabeledSystem(oo, fmt = 'cp2k/output')
+            sys.check_type_map(type_map = jdata['type_map'])
             if idx == 0:
                 all_sys = sys
             else:
