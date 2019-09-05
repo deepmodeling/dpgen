@@ -71,7 +71,7 @@ class SSHSession (object) :
         self.ssh.close()
 
 
-class RemoteContext (object):
+class SSHContext (object):
     def __init__ (self,
                   ssh_session,
                   local_root,

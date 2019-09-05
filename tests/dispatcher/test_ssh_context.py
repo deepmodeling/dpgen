@@ -2,9 +2,9 @@ import os,json,glob,shutil,filecmp,uuid,getpass
 import unittest
 from pathlib import Path
 
-from context import RemoteContext, SSHSession
+from context import SSHContext, SSHSession
 
-class TestRemoteContext(unittest.TestCase):
+class TestSSHContext(unittest.TestCase):
     def setUp(self) :
         os.makedirs('loc', exist_ok = True)
         os.makedirs('loc/task0', exist_ok = True)
@@ -22,8 +22,8 @@ class TestRemoteContext(unittest.TestCase):
                                        'port': 5566,
                                        'username' : getpass.getuser(),
                                        'work_path' : os.path.join(os.getcwd(), 'rmt')})
-        self.job = RemoteContext(self.ssh_session, 'loc')
-        self.job1 = RemoteContext(self.ssh_session, 'loc', job_uuid = self.job.job_uuid)
+        self.job = SSHContext(self.ssh_session, 'loc')
+        self.job1 = SSHContext(self.ssh_session, 'loc', job_uuid = self.job.job_uuid)
 
     def tearDown(self):
         shutil.rmtree('loc')

@@ -30,7 +30,11 @@ class TestSlurm(unittest.TestCase) :
         ret = self.slurm.sub_script(job_dirs, ['touch test1', 'touch test2'])
         self.slurm.context.write_file('run.sub', ret)
         with open('run.sub', 'w') as fp:
-            fp.write(ret)            
+            fp.write(ret)
+        ret1 = self.slurm.sub_script(job_dirs, ['touch', 'touch'], [['test1 ', 'test2 '], ['test1 ', 'test2 ']])
+        with open('run.sub.1', 'w') as fp:
+            fp.write(ret1)        
+        self.assertTrue(filecmp.cmp('run.sub.1', 'run.sub'))
 
     def test_sub_success(self) :
         job_dirs = ['task0', 'task1']

@@ -10,7 +10,7 @@ def _default_item(resources, key, value) :
 class Shell(Batch) :
 
     def check_status(self) :
-        if not hassttr(self, proc):
+        if not hasattr(self, 'proc'):
             return JobStatus.unsubmitted
         if not self.context.check_finish(self.proc) :
             return JobStatus.running

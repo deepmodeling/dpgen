@@ -2,8 +2,8 @@ import os,sys,time,random
 
 from dpgen.dispatcher.LocalContext import LocalSession
 from dpgen.dispatcher.LocalContext import LocalContext
-from dpgen.dispatcher.RemoteContext import SSHSession
-from dpgen.dispatcher.RemoteContext import RemoteContext
+from dpgen.dispatcher.SSHContext import SSHSession
+from dpgen.dispatcher.SSHContext import SSHContext
 from dpgen.dispatcher.Slurm import Slurm
 from dpgen.dispatcher.Shell import Shell
 from dpgen.dispatcher.JobStatus import JobStatus
@@ -22,7 +22,7 @@ class Dispatcher(object):
             self.context = LocalContext
         elif context_type == 'remote':
             self.session = SSHSession(remote_profile)
-            self.context = RemoteContext
+            self.context = SSHContext
         else :
             raise RuntimeError('unknown context')
         if batch_type == 'slurm':
