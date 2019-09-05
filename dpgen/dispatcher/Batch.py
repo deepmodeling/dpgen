@@ -51,6 +51,11 @@ class Batch(object) :
                     _args.append('')
                 args.append(_args)
         # loop over commands 
+        self.cmd_cnt = 0
+        try:
+            self.manual_gpu = res['manual_cuda_devices']
+        except:
+            self.manual_gpu = 0
         for ii in range(len(cmd)):            
             # for one command
             ret += self._sub_script_inner(job_dirs,
@@ -113,12 +118,22 @@ class Batch(object) :
         for ii,jj in zip(job_dirs, args) :
             ret += 'cd %s\n' % ii
             ret += 'test $? -ne 0 && exit\n\n'
-            ret += 'if [ ! -f tag_%d_finished ] ;then\n' % idx
-            ret += '  %s 1> %s 2> %s \n' % (self.sub_script_cmd(cmd, jj, res), outlog, errlog)
-            if res['allow_failure'] is False:
-                ret += '  if test $? -ne 0; then exit; else touch tag_%d_finished; fi \n' % idx
-            ret += 'fi\n\n'
+            if self.manual_gpu <= 0:
+                ret += 'if [ ! -f tag_%d_finished ] ;then\n' % idx
+                ret += '  %s 1> %s 2> %s \n' % (self.sub_script_cmd(cmd, jj, res), outlog, errlog)
+                if res['allow_failure'] is False:
+                    ret += '  if test $? -ne 0; then exit; else touch tag_%d_finished; fi \n' % idx
+                else :
+                    ret += '  touch tag_%d_finished; fi \n' % idx
+                ret += 'fi\n\n'
+            else :
+                # do not support task-wise restart
+                tmp_cmd = ' %s 1> %s 2> %s ' % (self.sub_script_cmd(cmd, jj, res), outlog, errlog)
+                ret += 'CUDA_VISIBLE_DEVICES=%d %s &\n\n' % ((self.cmd_cnt % self.manual_gpu), tmp_cmd)
+                self.cmd_cnt += 1
             ret += 'cd %s\n' % self.context.remote_root
             ret += 'test $? -ne 0 && exit\n'
+            if self.manual_gpu > 0 and self.cmd_cnt % self.manual_gpu == 0:
+                ret += '\nwait\n\n'
+        ret += '\nwait\n\n'
         return ret
-        
