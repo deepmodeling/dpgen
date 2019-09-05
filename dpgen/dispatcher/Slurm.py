@@ -11,7 +11,7 @@ class Slurm(Batch) :
     def check_status(self) :
         job_id = self._get_job_id()
         if job_id == '' :
-            return JobStatus.terminated
+            return JobStatus.unsubmitted
         while True:
             stat = self._check_status_inner(job_id)
             if stat != JobStatus.completing:

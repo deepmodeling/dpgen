@@ -87,8 +87,10 @@ class Batch(object) :
                 dlog.debug('task is waiting')
             elif status==JobStatus.running:
                 dlog.debug('task is running')
-            else:
+            elif status==JobStatus.finished:
                 dlog.debug('task is finished')
+            else:
+                raise RuntimeError('unknow job status, must be wrong')
         else:
             dlog.debug('new task')
             self.do_submit(job_dirs, cmd, args, res)
