@@ -36,10 +36,45 @@ def _set_default_resource(res_) :
     
 class Slurm(Batch) :
 
-    def sub_cmd(self) :
+    def check_status(self) :
+        job_id = self._get_job_id()
+        if job_id == '' :
+            return JobStatus.terminated
+        while True:
+            stat = self._check_status_inner(job_id)
+            if stat != JobStatus.completing:
+                return stat
+            else:
+                time.sleep(5)
+
+    def do_submit(self, 
+                  job_dirs,
+                  cmd,
+                  args = None, 
+                  res = None):
+        if res == None:
+            res = {}
+        if 'task_max' in res and res['task_max'] > 0:
+            while self._check_sub_limit(task_max=res['task_max']):
+                time.sleep(60)
+        script_str = self._sub_script(job_dirs, cmd, args=args, res=res)
+        self.context.write_file('run.sub', script_str)
+        stdin, stdout, stderr = self.context.block_checkcall('cd %s && %s %s' % (self.context.remote_root, self._sub_cmd(), 'run.sub'))
+        subret = (stdout.readlines())
+        job_id = subret[0].split()[-1]
+        self.context.write_file('job_id', job_id)        
+                
+
+    def _get_job_id(self) :
+        if self.context.check_file_exists('job_id') :
+            return self.context.read_file('job_id')
+        else:
+            return ""
+
+    def _sub_cmd(self) :
         return 'sbatch'
 
-    def sub_script(self,
+    def _sub_script(self,
                    job_dirs,
                    cmd,
                    args = None,
@@ -57,10 +92,8 @@ class Slurm(Batch) :
         outlog(str):            file name for output
         errlog(str):            file name for error
         """
-
         res = _set_default_resource(res)
         ret = self._script_head(res)
-
         if not isinstance(cmd, list):
             cmd = [cmd]
         if args == None :
@@ -95,34 +128,16 @@ class Slurm(Batch) :
         ret += '\ntouch tag_finished\n'
         return ret
 
+    def _check_finish_tag(self) :
+        return self.context.check_file_exists('tag_finished') 
         
-    def check_sub_limit(self, task_max, **kwarg) :
-        if task_max <= 0:
-            return True
-        username = getpass.getuser()
-        stdin, stdout, stderr = self.context.block_checkcall('squeue -u %s -h' % username)
-        nj = len(stdout.readlines())
-        return nj < task_max
-
-
-    def check_status(self) :
-        job_id = self.get_job_id()
-        if job_id == '' :
-            return JobStatus.terminated
-        while True:
-            stat = self._check_status_inner(job_id)
-            if stat != JobStatus.completing:
-                return stat
-            else:
-                time.sleep(5)
-
     def _check_status_inner(self, job_id):
         ret, stdin, stdout, stderr\
             = self.context.block_call ("squeue --job " + job_id)
         if (ret != 0) :
             err_str = stderr.read().decode('utf-8')
             if str("Invalid job id specified") in err_str :
-                if self.check_finish_tag() :
+                if self._check_finish_tag() :
                     return JobStatus.finished
                 else :
                     return JobStatus.terminated
@@ -138,7 +153,7 @@ class Slurm(Batch) :
         elif status_word in ["CG"] :
             return JobStatus.completing
         elif status_word in ["C","E","K","BF","CA","CD","F","NF","PR","SE","ST","TO"] :
-            if self.check_finish_tag() :
+            if self._check_finish_tag() :
                 return JobStatus.finished
             else :
                 return JobStatus.terminated
@@ -227,3 +242,13 @@ class Slurm(Batch) :
             ret += 'cd %s\n' % self.context.remote_root
             ret += 'test $? -ne 0 && exit\n'
         return ret
+
+
+    def _check_sub_limit(self, task_max, **kwarg) :
+        if task_max <= 0:
+            return True
+        username = getpass.getuser()
+        stdin, stdout, stderr = self.context.block_checkcall('squeue -u %s -h' % username)
+        nj = len(stdout.readlines())
+        return nj < task_max
+
