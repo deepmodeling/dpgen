@@ -17,19 +17,49 @@ class SSHSession (object) :
         if 'password' in self.remote_profile :
             self.remote_password = self.remote_profile['password']
         self.remote_workpath = self.remote_profile['work_path']
-        self.ssh = self._setup_ssh(self.remote_host, self.remote_port, username = self.remote_uname,password=self.remote_password)
-        
+        self.ssh = None
+        self._setup_ssh(self.remote_host,
+                        self.remote_port,
+                        username=self.remote_uname,
+                        password=self.remote_password)
+
+    def ensure_alive(self,
+                     max_check = 10,
+                     sleep_time = 10):
+        count = 1
+        while not self._check_alive():
+            if count == max_check:
+                raise RuntimeError('cannot connect ssh after %d failures at interval %d s' %
+                                   (max_check, sleep_time))
+            self._setup_ssh(self.remote_host,
+                            self.remote_port,
+                            username=self.remote_uname,
+                            password=self.remote_password)
+            count += 1
+            time.sleep(sleep)
+
+    def _check_alive(self):
+        if self.ssh == None:
+            return False
+        try :
+            transport = self.ssh.get_transport()
+            transport.send_ignore()
+            return True
+        except EOFError:
+            return False        
+
     def _setup_ssh(self,
                    hostname,
                    port, 
                    username = None,
                    password = None):
-        ssh_client = paramiko.SSHClient()        
+        self.ssh = paramiko.SSHClient()        
         # ssh_client.load_system_host_keys()        
-        ssh_client.set_missing_host_key_policy(paramiko.WarningPolicy)
-        ssh_client.connect(hostname, port=port, username=username, password=password)
-        assert(ssh_client.get_transport().is_active())
-        return ssh_client
+        self.ssh.set_missing_host_key_policy(paramiko.WarningPolicy)
+        self.ssh.connect(hostname, port=port, username=username, password=password)
+        assert(self.ssh.get_transport().is_active())
+        transport = self.ssh.get_transport()
+        transport.set_keepalive(60)
 
     def get_ssh_client(self) :
         return self.ssh
@@ -52,21 +82,16 @@ class RemoteContext (object):
            self.job_uuid=job_uuid
         else:
            self.job_uuid = str(uuid.uuid4())
-
         self.remote_root = os.path.join(ssh_session.get_session_root(), self.job_uuid)
-        dlog.info("local_root is %s"% local_root)
-        dlog.info("remote_root is %s"% self.remote_root)
-        self.ssh = ssh_session.get_ssh_client()        
-        # keep ssh alive
-        transport = self.ssh.get_transport()
-        transport.set_keepalive(60)
+        self.ssh_session = ssh_session
+        self.ssh = self.ssh_session.get_ssh_client()        
+        self.ssh_session.ensure_alive()
         try:
            sftp = self.ssh.open_sftp()        
            sftp.mkdir(self.remote_root)
            sftp.close()
         except: 
            pass
-        # open('job_uuid', 'w').write(self.job_uuid)
 
     def get_job_root(self) :
         return self.remote_root
@@ -75,6 +100,7 @@ class RemoteContext (object):
                job_dirs,
                local_up_files,
                dereference = True) :
+        self.ssh_session.ensure_alive()
         cwd = os.getcwd()
         os.chdir(self.local_root) 
         file_list = []
@@ -88,6 +114,7 @@ class RemoteContext (object):
                  job_dirs,
                  remote_down_files,
                  back_error=False) :
+        self.ssh_session.ensure_alive()
         cwd = os.getcwd()
         os.chdir(self.local_root) 
         file_list = []
@@ -102,30 +129,36 @@ class RemoteContext (object):
         
     def block_checkcall(self, 
                         cmd) :
+        self.ssh_session.ensure_alive()
         stdin, stdout, stderr = self.ssh.exec_command(('cd %s ;' % self.remote_root) + cmd)
         exit_status = stdout.channel.recv_exit_status() 
         if exit_status != 0:
-            raise RuntimeError("Get error code %d in calling %s through ssh with job: %s ", (exit_status, cmd, self.job_uuid))
+            raise RuntimeError("Get error code %d in calling %s through ssh with job: %s . message:",
+                               (exit_status, cmd, self.job_uuid, stderr.read().decode('utf-8')))
         return stdin, stdout, stderr    
 
     def block_call(self, 
                    cmd) :
+        self.ssh_session.ensure_alive()
         stdin, stdout, stderr = self.ssh.exec_command(('cd %s ;' % self.remote_root) + cmd)
         exit_status = stdout.channel.recv_exit_status() 
         return exit_status, stdin, stdout, stderr
 
     def clean(self) :        
+        self.ssh_session.ensure_alive()
         sftp = self.ssh.open_sftp()        
         self._rmtree(sftp, self.remote_root)
         sftp.close()
 
     def write_file(self, fname, write_str):
+        self.ssh_session.ensure_alive()
         sftp = self.ssh.open_sftp()
         with sftp.open(os.path.join(self.remote_root, fname), 'w') as fp :
             fp.write(write_str)
         sftp.close()
 
     def read_file(self, fname):
+        self.ssh_session.ensure_alive()
         sftp = self.ssh.open_sftp()
         with sftp.open(os.path.join(self.remote_root, fname), 'r') as fp:
             ret = fp.read().decode('utf-8')
@@ -133,6 +166,7 @@ class RemoteContext (object):
         return ret
 
     def check_file_exists(self, fname):
+        self.ssh_session.ensure_alive()
         sftp = self.ssh.open_sftp()
         try:
             sftp.stat(os.path.join(self.remote_root, fname)) 
@@ -142,6 +176,28 @@ class RemoteContext (object):
         sftp.close()
         return ret        
         
+    def call(self, cmd):
+        stdin, stdout, stderr = self.ssh.exec_command(cmd)
+        # stdin, stdout, stderr = self.ssh.exec_command('echo $$; exec ' + cmd)
+        # pid = stdout.readline().strip()
+        # print(pid)
+        return {'stdin':stdin, 'stdout':stdout, 'stderr':stderr}
+    
+    def check_finish(self, cmd_pipes):
+        return cmd_pipes['stdout'].channel.exit_status_ready()
+        
+    def get_return(self, cmd_pipes):
+        if not self.check_finish(cmd_pipes):
+            return None, None, None
+        else :
+            retcode = cmd_pipes['stdout'].channel.recv_exit_status()
+            return retcode, cmd_pipes['stdout'], cmd_pipes['stderr']
+
+    def kill(self, cmd_pipes) :
+        raise RuntimeError('dose not work! we do not know how to kill proc through paramiko.SSHClient')
+        self.block_checkcall('kill -15 %s' % cmd_pipes['pid'])
+
+
     def _rmtree(self, sftp, remotepath, level=0, verbose = False):
         for f in sftp.listdir_attr(remotepath):
             rpath = os.path.join(remotepath, f.filename)

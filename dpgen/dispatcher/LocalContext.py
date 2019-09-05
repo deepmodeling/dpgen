@@ -42,8 +42,8 @@ class LocalContext(object) :
            self.job_uuid = str(uuid.uuid4())
 
         self.remote_root = os.path.join(work_profile.get_work_root(), self.job_uuid)
-        dlog.info("local_root is %s"% local_root)
-        dlog.info("remote_root is %s"% self.remote_root)
+        dlog.debug("local_root is %s"% local_root)
+        dlog.debug("remote_root is %s"% self.remote_root)
 
         os.makedirs(self.remote_root, exist_ok = True)
         
@@ -137,3 +137,31 @@ class LocalContext(object) :
     def check_file_exists(self, fname):
         return os.path.isfile(os.path.join(self.remote_root, fname))
         
+    def call(self, cmd) :
+        cwd = os.getcwd()
+        os.chdir(self.remote_root)
+        proc = sp.Popen(cmd, shell=True, stdout = sp.PIPE, stderr = sp.PIPE)
+        os.chdir(cwd)        
+        return proc
+
+    def kill(self, proc):
+        proc.kill()
+
+    def check_finish(self, proc):
+        return (proc.poll() != None)
+
+    def get_return(self, proc):
+        ret = proc.poll()
+        if ret is None:
+            return None, None, None
+        else :
+            try:
+                o, e = proc.communicate()
+                stdout = SPRetObj(o)
+                stderr = SPRetObj(e)
+            except:
+                stdout = None
+                stderr = None
+        return ret, stdout, stderr
+    
+    
