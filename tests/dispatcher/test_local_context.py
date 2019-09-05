@@ -1,4 +1,4 @@
-import os,json,glob,shutil,filecmp,uuid
+import os,json,glob,shutil,filecmp,uuid,time
 import unittest
 from pathlib import Path
 
@@ -168,3 +168,22 @@ class TestLocalContext(unittest.TestCase):
         tmp1 = self.job.read_file('aaa')
         self.assertEqual(tmp, tmp1)
         
+
+    def test_call(self) :
+        work_profile = LocalSession({'work_path':'rmt'})
+        self.job = LocalContext(work_profile, 'loc')
+        proc = self.job.call('sleep 3')
+        self.assertFalse(self.job.check_finish(proc))
+        time.sleep(1)
+        self.assertFalse(self.job.check_finish(proc))
+        time.sleep(2.5)
+        self.assertTrue(self.job.check_finish(proc))
+        r,o,e=self.job.get_return(proc)
+        self.assertEqual(r, 0)
+        self.assertEqual(o.read(), b'')
+        self.assertEqual(e.read(), b'')
+        r,o,e=self.job.get_return(proc)
+        self.assertEqual(r, 0)
+        self.assertEqual(o, None)
+        self.assertEqual(e, None)
+

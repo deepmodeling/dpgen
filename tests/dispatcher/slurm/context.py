@@ -7,4 +7,5 @@ from dpgen.dispatcher.RemoteContext import SSHSession
 from dpgen.dispatcher.LocalContext import LocalContext
 from dpgen.dispatcher.RemoteContext import RemoteContext
 from dpgen.dispatcher.Slurm import Slurm
+from dpgen.dispatcher.Dispatcher import Dispatcher
 from dpgen.dispatcher.JobStatus import JobStatus

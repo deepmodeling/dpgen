@@ -24,13 +24,10 @@ class TestSlurm(unittest.TestCase) :
         if os.path.exists('dpgen.log'):
             os.remove('dpgen.log')
 
-    def test_sub_cmd(self):
-        self.assertEqual(self.slurm.sub_cmd(), 'sbatch')
-
     def test_gen_sub_script(self):
         job_dirs = ['task0', 'task1']
         self.slurm.context.upload(job_dirs, ['test0'])
-        ret = self.slurm.sub_script(job_dirs, ['touch test1', 'touch test2'])
+        ret = self.slurm._sub_script(job_dirs, ['touch test1', 'touch test2'])
         self.slurm.context.write_file('run.sub', ret)
         with open('run.sub', 'w') as fp:
             fp.write(ret)            
@@ -66,7 +63,7 @@ class TestSlurm(unittest.TestCase) :
             if ret == JobStatus.running :
                 # wait for file writing
                 time.sleep(2)
-                job_id = self.slurm.get_job_id()
+                job_id = self.slurm._get_job_id()
                 os.system('scancel ' + job_id)
                 break
             time.sleep(1)
