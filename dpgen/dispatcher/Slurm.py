@@ -23,13 +23,15 @@ class Slurm(Batch) :
                   job_dirs,
                   cmd,
                   args = None, 
-                  res = None):
+                  res = None,
+                  outlog = 'log',
+                  errlog = 'err'):
         if res == None:
             res = {}
         if 'task_max' in res and res['task_max'] > 0:
             while self._check_sub_limit(task_max=res['task_max']):
                 time.sleep(60)
-        script_str = self.sub_script(job_dirs, cmd, args=args, res=res)
+        script_str = self.sub_script(job_dirs, cmd, args=args, res=res, outlog=outlog, errlog=errlog)
         self.context.write_file('run.sub', script_str)
         stdin, stdout, stderr = self.context.block_checkcall('cd %s && %s %s' % (self.context.remote_root, 'sbatch', 'run.sub'))
         subret = (stdout.readlines())

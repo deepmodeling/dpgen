@@ -20,7 +20,7 @@ class Dispatcher(object):
         if context_type == 'local':
             self.session = LocalSession(remote_profile)
             self.context = LocalContext
-        elif context_type == 'remote':
+        elif context_type == 'ssh':
             self.session = SSHSession(remote_profile)
             self.context = SSHContext
         else :
@@ -41,7 +41,9 @@ class Dispatcher(object):
                  forward_common_files,
                  forward_task_files,
                  backward_task_files,
-                 forward_task_deference = True) :
+                 forward_task_deference = True,
+                 outlog = 'log',
+                 errlog = 'err') :
         task_chunks = [
             [os.path.basename(j) for j in tasks[i:i + group_size]] \
             for i in range(0, len(tasks), group_size)
@@ -74,11 +76,11 @@ class Dispatcher(object):
                 rjob['context'].write_file('tag_upload', '')
             if job_uuid is None:
                 dlog.debug('new submission of %s' % task_chunks_[ii])
-                rjob['batch'].submit(chunk, command, res = resources)
+                rjob['batch'].submit(chunk, command, res = resources, outlog=outlog, errlog=errlog)
                 dlog.debug('assigned uudi %s for %s ' % (rjob['context'].job_uuid, task_chunks_[ii]))
             else:
                 dlog.debug('restart from old submission of %s ' % task_chunks_[ii])
-                rjob['batch'].submit(chunk, command, res = resources, restart = True)
+                rjob['batch'].submit(chunk, command, res = resources, outlog=outlog, errlog=errlog, restart = True)
             job_list.append(rjob)
             path_map[chunk_sha1] = [context.local_root,context.remote_root]
         _pmap.dump(path_map)
@@ -97,7 +99,7 @@ class Dispatcher(object):
                             raise RuntimeError('Job %s failed for more than 3 times' % job_uuid)
                         dlog.info('Job at %s  terminated, submit again'% job_uuid)
                         dlog.debug('try %s times for %s'% (fcount[idx], job_uuid))
-                        rjob['batch'].submit(task_chunks[idx], command, res = resources,restart=True)
+                        rjob['batch'].submit(task_chunks[idx], command, res = resources, outlog=outlog, errlog=errlog,restart=True)
                     elif status == JobStatus.finished :
                         dlog.debug('job %s finished' % job_uuid)
                         rjob['context'].download(task_chunks[idx], backward_task_files)

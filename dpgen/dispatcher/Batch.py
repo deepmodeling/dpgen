@@ -21,6 +21,12 @@ class Batch(object) :
     def sub_script_cmd(self, cmd, res, errlog, outlog):
         raise RuntimeError('abstract method sub_script_cmd should be implemented by derived class')        
 
+    def do_submit(self) :
+        '''
+        submit a single job, assuming that no job is running there.
+        '''
+        raise RuntimeError('abstract method check_status should be implemented by derived class')        
+
     def sub_script(self,
                    job_dirs,
                    cmd,
@@ -68,26 +74,21 @@ class Batch(object) :
         ret += '\ntouch tag_finished\n'
         return ret
 
-
-    def do_submit(self) :
-        '''
-        submit a single job, assuming that no job is running there.
-        '''
-        raise RuntimeError('abstract method check_status should be implemented by derived class')        
-
     def submit(self,
                job_dirs,
                cmd,
                args = None,
                res = None,
                restart = False,
-               sleep = 0):
+               sleep = 0,
+               outlog = 'log',
+               errlog = 'err'):
         if restart:
             dlog.debug('restart task')
             status = self.check_status()
             if status in [  JobStatus.unsubmitted, JobStatus.unknown, JobStatus.terminated ]:
                 dlog.debug('task restart point !!!')
-                self.do_submit(job_dirs, cmd, args, res)
+                self.do_submit(job_dirs, cmd, args, res, outlog=outlog, errlog=errlog)
             elif status==JobStatus.waiting:
                 dlog.debug('task is waiting')
             elif status==JobStatus.running:
@@ -98,7 +99,7 @@ class Batch(object) :
                 raise RuntimeError('unknow job status, must be wrong')
         else:
             dlog.debug('new task')
-            self.do_submit(job_dirs, cmd, args, res)
+            self.do_submit(job_dirs, cmd, args, res, outlog=outlog, errlog=errlog)
         time.sleep(sleep) # For preventing the crash of the tasks while submitting        
 
 
