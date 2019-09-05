@@ -28,13 +28,20 @@ class TestShell(unittest.TestCase) :
         if os.path.exists('run.sub.1'):
             os.remove('run.sub.1')
 
+    def test_manual_gpu(self):
+        job_dirs = ['task0', 'task1']
+        res = {'manual_cuda_devices': 3}
+        ret = self.shell.sub_script(job_dirs, ['touch test1', 'touch test2'], res = res)
+        with open('run.sub.gpu', 'w') as fp:
+            fp.write(ret)        
+            
     def test_gen_sub_script(self):
         job_dirs = ['task0', 'task1']
         self.shell.context.upload(job_dirs, ['test0'])
         ret = self.shell.sub_script(job_dirs, ['touch test1', 'touch test2'])
         with open('run.sub', 'w') as fp:
             fp.write(ret)
-        ret1 = self.shell.sub_script(job_dirs, ['touch', 'touch'], [['test1 ', 'test2 '], ['test1 ', 'test2 ']])
+        ret1 = self.shell.sub_script(job_dirs, ['touch', 'touch'], args = [['test1 ', 'test2 '], ['test1 ', 'test2 ']])
         with open('run.sub.1', 'w') as fp:
             fp.write(ret1)
         self.assertTrue(filecmp.cmp('run.sub.1', 'run.sub'))
