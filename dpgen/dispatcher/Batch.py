@@ -21,7 +21,13 @@ class Batch(object) :
     def sub_script_cmd(self, cmd, res, errlog, outlog):
         raise RuntimeError('abstract method sub_script_cmd should be implemented by derived class')        
 
-    def do_submit(self) :
+    def do_submit(self,
+                  job_dirs,
+                  cmd,
+                  args = None, 
+                  res = None,
+                  outlog = 'log',
+                  errlog = 'err'):
         '''
         submit a single job, assuming that no job is running there.
         '''

@@ -23,7 +23,9 @@ class Shell(Batch) :
                   job_dirs,
                   cmd,
                   args = None, 
-                  res = None):
+                  res = None,
+                  outlog = 'log',
+                  errlog = 'err'):
         if res == None:
             res = {}
         script_str = self.sub_script(job_dirs, cmd, args=args, res=res, outlog=outlog, errlog=errlog)
