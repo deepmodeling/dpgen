@@ -48,44 +48,54 @@ class Dispatcher(object):
             [os.path.basename(j) for j in tasks[i:i + group_size]] \
             for i in range(0, len(tasks), group_size)
         ]
-        cwd=os.getcwd()
-        _pmap=PMap(cwd)
+        _pmap=PMap(work_path)
         path_map=_pmap.load()
+        _fr = FinRecord(work_path, len(task_chunks))        
 
         job_list = []
         task_chunks_=['+'.join(ii) for ii in task_chunks]
+        job_fin = _fr.get_record()
+        assert(len(job_fin) == len(task_chunks))
         for ii,chunk in enumerate(task_chunks) :
-            # map chunk info. to uniq id    
-            chunk_uni = task_chunks_[ii].encode('utf-8')
-            chunk_sha1 = sha1(chunk_uni).hexdigest() 
-            if chunk_sha1 in path_map:
-                job_uuid = path_map[chunk_sha1][1].split('/')[-1]
-                dlog.debug("load uuid %s for chunk %s" % (job_uuid, task_chunks_[ii]))
-            else:
-                job_uuid = None
-            context = self.context(self.session, work_path, job_uuid)
-            batch = self.batch(context)
-            rjob = {'context':context, 'batch':batch}
-            if not rjob['context'].check_file_exists('tag_upload'):
-                dlog.debug('upload files for %s' % task_chunks_[ii])
-                rjob['context'].upload('.',
-                                       forward_common_files)
-                rjob['context'].upload(chunk,
-                                       forward_task_files, 
-                                       dereference = forward_task_deference)
-                rjob['context'].write_file('tag_upload', '')
-            if job_uuid is None:
-                dlog.debug('new submission of %s' % task_chunks_[ii])
-                rjob['batch'].submit(chunk, command, res = resources, outlog=outlog, errlog=errlog)
-                dlog.debug('assigned uudi %s for %s ' % (rjob['context'].job_uuid, task_chunks_[ii]))
-            else:
-                dlog.debug('restart from old submission of %s ' % task_chunks_[ii])
-                rjob['batch'].submit(chunk, command, res = resources, outlog=outlog, errlog=errlog, restart = True)
-            job_list.append(rjob)
-            path_map[chunk_sha1] = [context.local_root,context.remote_root]
+            if not job_fin[ii] :
+                # map chunk info. to uniq id    
+                chunk_sha1 = sha1(task_chunks_[ii].encode('utf-8')).hexdigest() 
+                # if hash in map, recover job, else start a new job
+                if chunk_sha1 in path_map:
+                    job_uuid = path_map[chunk_sha1][1].split('/')[-1]
+                    dlog.debug("load uuid %s for chunk %s" % (job_uuid, task_chunks_[ii]))
+                else:
+                    job_uuid = None
+                # communication context, bach system
+                context = self.context(self.session, work_path, job_uuid)
+                batch = self.batch(context)
+                rjob = {'context':context, 'batch':batch}
+                # upload files
+                if not rjob['context'].check_file_exists('tag_upload'):
+                    rjob['context'].upload('.',
+                                           forward_common_files)
+                    rjob['context'].upload(chunk,
+                                           forward_task_files, 
+                                           dereference = forward_task_deference)
+                    rjob['context'].write_file('tag_upload', '')
+                    dlog.debug('uploaded files for %s' % task_chunks_[ii])
+                # submit new or recover old submission
+                if job_uuid is None:
+                    rjob['batch'].submit(chunk, command, res = resources, outlog=outlog, errlog=errlog)
+                    dlog.debug('assigned uudi %s for %s ' % (rjob['context'].job_uuid, task_chunks_[ii]))
+                    dlog.info('new submission of %s' % rjob['context'].job_uuid)
+                else:
+                    rjob['batch'].submit(chunk, command, res = resources, outlog=outlog, errlog=errlog, restart = True)
+                    dlog.info('restart from old submission %s ' % job_uuid)
+                # record job and its hash
+                job_list.append(rjob)
+                path_map[chunk_sha1] = [context.local_root,context.remote_root]
+            else :
+                # finished job, append a None to list
+                job_list.append(None)
         _pmap.dump(path_map)
 
-        job_fin = [False]*len(job_list)
+        assert(len(job_list) == len(task_chunks))
         fcount = [0]*len(job_list)
         while not all(job_fin) :
             dlog.debug('checking jobs')
@@ -97,17 +107,40 @@ class Dispatcher(object):
                         fcount[idx] += 1
                         if fcount[idx] > 3:
                             raise RuntimeError('Job %s failed for more than 3 times' % job_uuid)
-                        dlog.info('Job at %s  terminated, submit again'% job_uuid)
+                        dlog.info('job %s terminated, submit again'% job_uuid)
                         dlog.debug('try %s times for %s'% (fcount[idx], job_uuid))
                         rjob['batch'].submit(task_chunks[idx], command, res = resources, outlog=outlog, errlog=errlog,restart=True)
                     elif status == JobStatus.finished :
-                        dlog.debug('job %s finished' % job_uuid)
+                        dlog.info('job %s finished' % job_uuid)
                         rjob['context'].download(task_chunks[idx], backward_task_files)
                         rjob['context'].clean()
                         job_fin[idx] = True
+                        _fr.write_record(job_fin)
             time.sleep(10)
         # delete path map file when job finish
         _pmap.delete()
+
+
+class FinRecord(object):
+    def __init__ (self, path, njobs, fname = 'fin.record'):
+        self.path = os.path.abspath(path)
+        self.fname = os.path.join(self.path, fname)
+        self.njobs = njobs
+
+    def get_record(self):
+        if not os.path.exists(self.fname):
+            return [False] * self.njobs
+        else :
+            with open(self.fname) as fp:
+                return [bool(int(ii)) for ii in fp.read().split()]
+
+    def write_record(self, job_fin):
+        with open(self.fname, 'w') as fp:
+            for ii in job_fin:
+                if ii:
+                    fp.write('1 ')
+                else:
+                    fp.write('0 ')
 
 
 class PMap(object):
