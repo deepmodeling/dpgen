@@ -654,8 +654,6 @@ def run_model_devi (iter_index,
     forward_files = ['conf.lmp', 'input.lammps', 'traj']
     backward_files = ['model_devi.out', 'model_devi.log', 'traj']
 
-    dlog.info("group_size %d"%model_devi_group_size)
-
     dispatcher.run_jobs(mdata['model_devi_resources'],
                         commands,
                         work_path,
@@ -720,16 +718,19 @@ def _make_fp_vasp_inner (modd_path,
                 res_failed_conf = []
                 res_accurate_conf = []
                 for ii in range(all_conf.shape[0]) :
+                    if all_conf[ii][0] < model_devi_skip :
+                        continue
                     cc = int(all_conf[ii][0])
                     if cluster_cutoff is None:
                         if (all_conf[ii][1] < e_trust_hi and all_conf[ii][1] >= e_trust_lo) or \
-                        (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] >= f_trust_lo) and \
-                        ii >= model_devi_skip :
+                           (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] >= f_trust_lo) :
                             fp_candidate.append([tt, cc])
                         elif (all_conf[ii][1] >= e_trust_hi ) or (all_conf[ii][4] >= f_trust_hi ):
                             fp_rest_failed.append([tt, cc])
                         elif (all_conf[ii][1] < e_trust_lo and all_conf[ii][4] < f_trust_lo ):
                             fp_rest_accurate.append([tt, cc])
+                        else :
+                            raise RuntimeError('md traj %s frame %d with f devi %f does not belong to either accurate, candidiate and failed, it should not happen' % (tt, ii, all_conf[ii][4]))
                     else:
                         idx_candidate = np.where(np.logical_and(all_conf[ii][7:] < f_trust_hi, all_conf[ii][7:] >= f_trust_lo))[0]
                         idx_rest_failed = np.where(all_conf[ii][7:] >= f_trust_hi)[0]
@@ -1514,9 +1515,11 @@ def run_iter (param_file, machine_file) :
 
 def gen_run(args) :
     if args.PARAM and args.MACHINE:
-       dlog.info ("start running")
-       run_iter (args.PARAM, args.MACHINE)
-       dlog.info ("finished")
+        if args.debug:
+            dlog.setLevel(logging.DEBUG)
+        dlog.info ("start running")
+        run_iter (args.PARAM, args.MACHINE)
+        dlog.info ("finished")
 
 
 def _main () :
