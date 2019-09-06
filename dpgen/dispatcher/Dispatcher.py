@@ -11,6 +11,22 @@ from dpgen import dlog
 from hashlib import sha1
 from monty.serialization import dumpfn,loadfn
 
+
+def _split_tasks(tasks,
+                 group_size):
+    ntasks = len(tasks)
+    ngroups = ntasks // group_size
+    if ngroups * group_size < ntasks:
+        ngroups += 1
+    chunks = [[]] * ngroups
+    tot = 0
+    for ii in range(ngroups) :
+        chunks[ii] = (tasks[ii::ngroups])
+        tot += len(chunks[ii])
+    assert(tot == len(tasks))
+    return chunks
+
+    
 class Dispatcher(object):
     def __init__ (self,
                   remote_profile,
@@ -31,7 +47,8 @@ class Dispatcher(object):
             self.batch = Shell
         else :
             raise RuntimeError('unknown batch ' + batch_type)
-        
+
+
     def run_jobs(self,
                  resources,
                  command,
@@ -44,10 +61,11 @@ class Dispatcher(object):
                  forward_task_deference = True,
                  outlog = 'log',
                  errlog = 'err') :
-        task_chunks = [
-            [os.path.basename(j) for j in tasks[i:i + group_size]] \
-            for i in range(0, len(tasks), group_size)
-        ]
+        # task_chunks = [
+        #     [os.path.basename(j) for j in tasks[i:i + group_size]] \
+        #     for i in range(0, len(tasks), group_size)
+        # ]
+        task_chunks = _split_tasks(tasks, group_size)    
         _pmap=PMap(work_path)
         path_map=_pmap.load()
         _fr = FinRecord(work_path, len(task_chunks))        

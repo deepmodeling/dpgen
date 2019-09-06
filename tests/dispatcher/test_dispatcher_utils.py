@@ -2,8 +2,9 @@ import os,json,glob,shutil,filecmp,uuid,time
 import unittest
 
 from context import FinRecord
+from context import _split_tasks
 
-class TestDispUtils(unittest.TestCase):
+class TestFinRecord(unittest.TestCase):
     def setUp(self):
         self.njobs = 10
         self.fr = FinRecord('.', self.njobs)
@@ -22,3 +23,16 @@ class TestDispUtils(unittest.TestCase):
         self.fr.write_record(recd)
         recd1 = self.fr.get_record()
         self.assertEqual(recd, recd1)
+
+class TestDispatchSplit(unittest.TestCase):
+    def test_split(self):
+        tasks = [ii for ii in range(10)]
+        chunks = _split_tasks(tasks, 5)
+        self.assertEqual(chunks, [[0,2,4,6,8],[1,3,5,7,9]])
+
+    def test_split_1(self):
+        tasks = [ii for ii in range(13)]
+        chunks = _split_tasks(tasks, 5)
+        self.assertEqual(chunks, [[0,3,6,9,12],[1,4,7,10],[2,5,8,11]])
+
+        
