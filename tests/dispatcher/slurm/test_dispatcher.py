@@ -28,8 +28,12 @@ class TestDispatcher(unittest.TestCase) :
                            2,
                            [],
                            ['test0'],
-                           ['test1'])
+                           ['test1', 'hereout.log', 'hereerr.log'],
+                           outlog = 'hereout.log',
+                           errlog = 'hereerr.log')
         for ii in tasks:            
             self.assertTrue(filecmp.cmp(os.path.join('loc', ii, 'test0'),
                                         os.path.join('loc', ii, 'test1')))
-                           
+            self.assertTrue(os.path.isfile(os.path.join('loc', ii, 'hereout.log')))
+            self.assertTrue(os.path.isfile(os.path.join('loc', ii, 'hereerr.log')))
+            
