@@ -361,15 +361,15 @@ def run_train (iter_index,
         commands.append(command)
 
     #_tasks = [os.path.basename(ii) for ii in all_task]
-
-    run_tasks = []
-    for ii in all_task:
-        check_pb = os.path.join(ii, "frozen_model.pb")
-        check_lcurve = os.path.join(ii, "lcurve.out")
-        if os.path.isfile(check_pb) and os.path.isfile(check_lcurve):
-            pass
-        else:
-            run_tasks.append(ii)
+    # run_tasks = []
+    # for ii in all_task:
+    #     check_pb = os.path.join(ii, "frozen_model.pb")
+    #     check_lcurve = os.path.join(ii, "lcurve.out")
+    #     if os.path.isfile(check_pb) and os.path.isfile(check_lcurve):
+    #         pass
+    #     else:
+    #         run_tasks.append(ii)
+    run_tasks = [os.path.basename(ii) for ii in all_task]
 
     forward_files = [train_input_file]
     backward_files = ['frozen_model.pb', 'lcurve.out']
