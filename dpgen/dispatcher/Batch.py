@@ -21,6 +21,9 @@ class Batch(object) :
     def sub_script_cmd(self, cmd, res, errlog, outlog):
         raise RuntimeError('abstract method sub_script_cmd should be implemented by derived class')        
 
+    def check_finish_tag(self) :
+        return self.context.check_file_exists('tag_finished') 
+
     def do_submit(self,
                   job_dirs,
                   cmd,

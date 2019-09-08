@@ -9,6 +9,9 @@ def _default_item(resources, key, value) :
 class Slurm(Batch) :
 
     def check_status(self) :
+        """
+        check the status of a job
+        """
         job_id = self._get_job_id()
         if job_id == '' :
             return JobStatus.unsubmitted
@@ -27,7 +30,7 @@ class Slurm(Batch) :
                   outlog = 'log',
                   errlog = 'err'):
         if res == None:
-            res = {}
+            res = self.default_resources(res)
         if 'task_max' in res and res['task_max'] > 0:
             while self._check_sub_limit(task_max=res['task_max']):
                 time.sleep(60)
@@ -39,6 +42,9 @@ class Slurm(Batch) :
         self.context.write_file('job_id', job_id)        
                 
     def default_resources(self, res_) :
+        """
+        set default value if a key in res_ is not fhound
+        """
         if res_ == None :
             res = {}
         else:
@@ -143,16 +149,13 @@ class Slurm(Batch) :
         else:
             return ""
 
-    def _check_finish_tag(self) :
-        return self.context.check_file_exists('tag_finished') 
-        
     def _check_status_inner(self, job_id):
         ret, stdin, stdout, stderr\
             = self.context.block_call ("squeue --job " + job_id)
         if (ret != 0) :
             err_str = stderr.read().decode('utf-8')
             if str("Invalid job id specified") in err_str :
-                if self._check_finish_tag() :
+                if self.check_finish_tag() :
                     return JobStatus.finished
                 else :
                     return JobStatus.terminated
@@ -168,7 +171,7 @@ class Slurm(Batch) :
         elif status_word in ["CG"] :
             return JobStatus.completing
         elif status_word in ["C","E","K","BF","CA","CD","F","NF","PR","SE","ST","TO"] :
-            if self._check_finish_tag() :
+            if self.check_finish_tag() :
                 return JobStatus.finished
             else :
                 return JobStatus.terminated
