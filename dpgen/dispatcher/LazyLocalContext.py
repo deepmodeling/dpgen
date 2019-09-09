@@ -20,13 +20,14 @@ class SPRetObj(object) :
 
 class LazyLocalContext(object) :
     def __init__ (self,
-                  work_profile,
                   local_root,
+                  work_profile = None,
                   job_uuid = None) :
         """
         work_profile:
         local_root:
         """
+        assert(type(local_root) == str)
         self.local_root = os.path.abspath(local_root)
         self.remote_root = self.local_root
         if job_uuid:

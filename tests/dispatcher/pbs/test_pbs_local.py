@@ -15,7 +15,7 @@ class TestPBS(unittest.TestCase) :
             with open(os.path.join(ii, 'test0'),'w') as fp:
                 fp.write(str(uuid.uuid4()))
         work_profile = LocalSession({'work_path':'rmt'})
-        self.ctx = LocalContext(work_profile, 'loc')        
+        self.ctx = LocalContext('loc', work_profile)
         self.pbs = PBS(self.ctx)
 
     def tearDown(self):

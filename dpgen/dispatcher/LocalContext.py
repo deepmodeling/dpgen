@@ -28,13 +28,14 @@ class SPRetObj(object) :
 
 class LocalContext(object) :
     def __init__ (self,
-                  work_profile,
                   local_root,
+                  work_profile,
                   job_uuid = None) :
         """
         work_profile:
         local_root:
         """
+        assert(type(local_root) == str)
         self.local_root = os.path.abspath(local_root)
         if job_uuid:
            self.job_uuid=job_uuid

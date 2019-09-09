@@ -22,8 +22,8 @@ class TestSSHContext(unittest.TestCase):
                                        'port': 5566,
                                        'username' : getpass.getuser(),
                                        'work_path' : os.path.join(os.getcwd(), 'rmt')})
-        self.job = SSHContext(self.ssh_session, 'loc')
-        self.job1 = SSHContext(self.ssh_session, 'loc', job_uuid = self.job.job_uuid)
+        self.job = SSHContext('loc', self.ssh_session)
+        self.job1 = SSHContext('loc', self.ssh_session, job_uuid = self.job.job_uuid)
 
     def tearDown(self):
         shutil.rmtree('loc')

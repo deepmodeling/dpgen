@@ -98,7 +98,7 @@ class Dispatcher(object):
                 else:
                     job_uuid = None
                 # communication context, bach system
-                context = self.context(self.session, work_path, job_uuid)
+                context = self.context(work_path, self.session, job_uuid)
                 batch = self.batch(context, uuid_names = self.uuid_names)
                 rjob = {'context':context, 'batch':batch}
                 # upload files

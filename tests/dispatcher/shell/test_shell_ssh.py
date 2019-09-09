@@ -18,7 +18,7 @@ class TestShell(unittest.TestCase) :
                                   'port': 5566,
                                   'username' : getpass.getuser(),
                                   'work_path' : os.path.join(os.getcwd(), 'rmt')})
-        self.ctx = SSHContext(ssh_session, 'loc')        
+        self.ctx = SSHContext('loc', ssh_session)
         self.shell = Shell(self.ctx)
 
     def tearDown(self):

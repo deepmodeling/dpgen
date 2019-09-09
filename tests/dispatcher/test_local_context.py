@@ -25,7 +25,7 @@ class TestLocalContext(unittest.TestCase):
 
     def test_upload_non_exist(self) :
         work_profile = LocalSession({'work_path':'rmt'})
-        self.job  = LocalContext(work_profile, 'loc')
+        self.job  = LocalContext('loc', work_profile)
         tasks = ['task0', 'task1']
         # test uploading non-existing file
         with self.assertRaises(RuntimeError):
@@ -33,8 +33,8 @@ class TestLocalContext(unittest.TestCase):
 
     def test_upload(self) :
         work_profile = LocalSession({'work_path':'rmt'})
-        self.job  = LocalContext(work_profile, 'loc')
-        self.job1 = LocalContext(work_profile, 'loc', job_uuid = self.job.job_uuid)
+        self.job  = LocalContext('loc', work_profile)
+        self.job1 = LocalContext('loc', work_profile, job_uuid = self.job.job_uuid)
         tasks = ['task0', 'task1']
         files = ['test0', 'test1']
         self.job.upload(tasks, files)
@@ -68,7 +68,7 @@ class TestLocalContext(unittest.TestCase):
 
     def test_download_non_exist(self):
         work_profile = LocalSession({'work_path':'rmt'})
-        self.job  = LocalContext(work_profile, 'loc')
+        self.job  = LocalContext('loc', work_profile)
         tasks = ['task0', 'task1']
         # down load non-existing file
         with self.assertRaises(RuntimeError):
@@ -77,7 +77,7 @@ class TestLocalContext(unittest.TestCase):
     def test_download(self):        
         # upload files
         work_profile = LocalSession({'work_path':'rmt'})
-        self.job  = LocalContext(work_profile, 'loc')
+        self.job  = LocalContext('loc', work_profile)
         tasks = ['task0', 'task1']
         self.job.upload(tasks, ['test0', 'dir0'])
         # generate extra donwload files
@@ -132,7 +132,7 @@ class TestLocalContext(unittest.TestCase):
                 
     def test_block_call(self) :
         work_profile = LocalSession({'work_path':'rmt'})
-        self.job  = LocalContext(work_profile, 'loc')
+        self.job  = LocalContext('loc', work_profile)
         tasks = ['task0', 'task1']
         files = ['test0', 'test1']
         self.job.upload(tasks, files)
@@ -151,7 +151,7 @@ class TestLocalContext(unittest.TestCase):
 
     def test_block_checkcall(self) :
         work_profile = LocalSession({'work_path':'rmt'})
-        self.job  = LocalContext(work_profile, 'loc')
+        self.job  = LocalContext('loc', work_profile)
         tasks = ['task0', 'task1']
         files = ['test0', 'test1']
         self.job.upload(tasks, files)
@@ -164,7 +164,7 @@ class TestLocalContext(unittest.TestCase):
             
     def test_file(self) :
         work_profile = LocalSession({'work_path':'rmt'})
-        self.job = LocalContext(work_profile, 'loc')
+        self.job = LocalContext('loc', work_profile)
         self.assertFalse(self.job.check_file_exists('aaa'))
         tmp = str(uuid.uuid4())
         self.job.write_file('aaa', tmp)
@@ -175,7 +175,7 @@ class TestLocalContext(unittest.TestCase):
 
     def test_call(self) :
         work_profile = LocalSession({'work_path':'rmt'})
-        self.job = LocalContext(work_profile, 'loc')
+        self.job = LocalContext('loc', work_profile)
         proc = self.job.call('sleep 3')
         self.assertFalse(self.job.check_finish(proc))
         time.sleep(1)

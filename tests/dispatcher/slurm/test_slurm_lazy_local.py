@@ -13,7 +13,7 @@ class TestSlurm(unittest.TestCase) :
         for ii in ['loc/task0', 'loc/task1']:
             with open(os.path.join(ii, 'test0'),'w') as fp:
                 fp.write(str(uuid.uuid4()))
-        self.ctx = LazyLocalContext(None, 'loc')
+        self.ctx = LazyLocalContext('loc')
         self.slurm = Slurm(self.ctx, uuid_names = True)
 
     def tearDown(self):
