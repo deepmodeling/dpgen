@@ -32,64 +32,71 @@ class TestLSF(unittest.TestCase) :
         with open('run.sub', 'w') as fp:
             fp.write(ret)            
 
-    # def test_sub_success(self) :
-    #     job_dirs = ['task0', 'task1']
-    #     self.lsf.context.upload(job_dirs, ['test0'])
-    #     self.lsf.submit(job_dirs, ['touch test1', 'touch test2'])
-    #     while True:
-    #         ret = self.lsf.check_status()
-    #         if ret == JobStatus.finished  :
-    #             break
-    #         time.sleep(1)        
-    #     self.assertTrue(os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task0/tag_0_finished')))
-    #     self.assertTrue(os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task0/tag_1_finished')))
-    #     self.assertTrue(os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task1/tag_0_finished')))
-    #     self.assertTrue(os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task1/tag_1_finished')))
-    #     self.assertTrue(os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'tag_finished')))
-    #     self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task0/test1')))
-    #     self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task1/test1')))
-    #     self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task0/test2')))
-    #     self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task1/test2')))
+    @unittest.skipIf(not shutil.which("bsub"), "requires LSF")
+    def test_sub_success(self) :
+         job_dirs = ['task0', 'task1']
+         self.lsf.context.upload(job_dirs, ['test0'])
+         self.lsf.submit(job_dirs, ['touch test1', 'touch test2'])
+         while True:
+             ret = self.lsf.check_status()
+             if ret == JobStatus.finished  :
+                 break
+             time.sleep(1)        
+         self.assertTrue(os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task0/tag_0_finished')))
+         self.assertTrue(os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task0/tag_1_finished')))
+         self.assertTrue(os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task1/tag_0_finished')))
+         self.assertTrue(os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task1/tag_1_finished')))
+         self.assertTrue(os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'tag_finished')))
+         self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task0/test1')))
+         self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task1/test1')))
+         self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task0/test2')))
+         self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task1/test2')))
 
-    # def test_sub_scancel(self) :
-    #     job_dirs = ['task0', 'task1']
-    #     self.lsf.context.upload(job_dirs, ['test0'])
-    #     # sub        
-    #     self.lsf.submit(job_dirs, ['touch test1', 'sleep 10'])
-    #     while True:
-    #         ret = self.lsf.check_status()
-    #         if ret == JobStatus.finished  :
-    #             raise RuntimeError('should not finished')
-    #         if ret == JobStatus.running :
-    #             # wait for file writing
-    #             time.sleep(2)
-    #             job_id = self.lsf._get_job_id()
-    #             os.system('scancel ' + job_id)
-    #             break
-    #         time.sleep(1)
-    #     self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task0/tag_0_finished')))
-    #     self.assertFalse(os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task0/tag_1_finished')))
-    #     self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task1/tag_0_finished')))
-    #     self.assertFalse(os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task1/tag_1_finished')))
-    #     self.assertFalse(os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'tag_finished')))
-    #     self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task0/test1')))
-    #     self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task1/test1')))
-    #     self.assertFalse(os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task0/test2')))
-    #     self.assertFalse(os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task1/test2')))
-    #     # sub restart
-    #     self.lsf.submit(job_dirs, ['rm test1', 'touch test2'], restart = True)
-    #     while True:
-    #         ret = self.lsf.check_status()
-    #         if ret == JobStatus.finished  :
-    #             break
-    #         time.sleep(1)
-    #     self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task0/tag_0_finished')))
-    #     self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task0/tag_1_finished')))
-    #     self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task1/tag_0_finished')))
-    #     self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task1/tag_1_finished')))
-    #     self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'tag_finished')))
-    #     self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task0/test1')))
-    #     self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task1/test1')))
-    #     self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task0/test2')))
-    #     self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task1/test2')))
-        
+    @unittest.skipIf(not shutil.which("bsub"), "requires LSF")
+    def test_sub_bkill(self) :
+         job_dirs = ['task0', 'task1']
+         self.lsf.context.upload(job_dirs, ['test0'])
+         # sub        
+         self.lsf.submit(job_dirs, ['touch test1', 'sleep 10'])
+         while True:
+             ret = self.lsf.check_status()
+             if ret == JobStatus.finished  :
+                 raise RuntimeError('should not finished')
+             if ret == JobStatus.running :
+                # wait for file writing
+                 time.sleep(2)
+                 job_id = self.lsf._get_job_id()
+                 os.system('bkill ' + job_id)
+                 break
+             time.sleep(1)
+         while True:
+             ret = self.lsf.check_status()
+             if ret == JobStatus.terminated  :
+                 break
+             time.sleep(1)
+         self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task0/tag_0_finished')))
+         self.assertFalse(os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task0/tag_1_finished')))
+         self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task1/tag_0_finished')))
+         self.assertFalse(os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task1/tag_1_finished')))
+         self.assertFalse(os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'tag_finished')))
+         self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task0/test1')))
+         self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task1/test1')))
+         self.assertFalse(os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task0/test2')))
+         self.assertFalse(os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task1/test2')))
+         # sub restart
+         self.lsf.submit(job_dirs, ['rm test1', 'touch test2'], restart = True)
+         while True:
+             ret = self.lsf.check_status()
+             if ret == JobStatus.finished  :
+                 break
+             time.sleep(1)
+         self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task0/tag_0_finished')))
+         self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task0/tag_1_finished')))
+         self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task1/tag_0_finished')))
+         self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task1/tag_1_finished')))
+         self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'tag_finished')))
+         self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task0/test1')))
+         self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task1/test1')))
+         self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task0/test2')))
+         self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task1/test2')))
+       
