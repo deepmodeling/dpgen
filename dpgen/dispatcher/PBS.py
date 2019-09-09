@@ -13,7 +13,7 @@ class PBS(Batch) :
         if job_id == "" :
             return JobStatus.unsubmitted
         ret, stdin, stdout, stderr\
-            = self.block_call ("qstat " + job_id)
+            = self.context.block_call ("qstat " + job_id)
         err_str = stderr.read().decode('utf-8')
         if (ret != 0) :
             if str("qstat: Unknown Job Id") in err_str :

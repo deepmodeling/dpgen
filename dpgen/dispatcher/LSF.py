@@ -16,7 +16,7 @@ class LSF(Batch) :
         if job_id == "" :
             raise RuntimeError("job %s is has not been submitted" % self.remote_root)
         ret, stdin, stdout, stderr\
-            = self.block_call ("bjobs " + job_id)
+            = self.context.block_call ("bjobs " + job_id)
         err_str = stderr.read().decode('utf-8')
         if ("Job <%s> is not found" % job_id) in err_str :
             if self.check_finish_tag() :
