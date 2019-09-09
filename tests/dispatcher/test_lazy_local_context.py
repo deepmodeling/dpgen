@@ -22,8 +22,8 @@ class TestLazyLocalContext(unittest.TestCase):
         shutil.rmtree('loc')
 
     def test_upload(self) :
-        self.job  = LazyLocalContext('loc')
-        self.job1 = LazyLocalContext('loc', job_uuid = self.job.job_uuid)
+        self.job  = LazyLocalContext(None, 'loc')
+        self.job1 = LazyLocalContext(None, 'loc', job_uuid = self.job.job_uuid)
         tasks = ['task0', 'task1']
         files = ['test0', 'test1']
         self.job.upload(tasks, files)
@@ -31,13 +31,13 @@ class TestLazyLocalContext(unittest.TestCase):
 
     def test_download(self):        
         # upload files
-        self.job  = LazyLocalContext('loc')
+        self.job  = LazyLocalContext(None, 'loc')
         tasks = ['task0', 'task1']
         self.job.upload(tasks, ['test0', 'dir0'])
         self.job.download(tasks, ['test0', 'dir0'])
                 
     def test_block_call(self) :
-        self.job  = LazyLocalContext('loc')
+        self.job  = LazyLocalContext(None, 'loc')
         tasks = ['task0', 'task1']
         files = ['test0', 'test1']
         self.job.upload(tasks, files)
@@ -54,7 +54,7 @@ class TestLazyLocalContext(unittest.TestCase):
         self.assertTrue('No such file or directory\n' in err_msg)
 
     def test_block_checkcall(self) :
-        self.job  = LazyLocalContext('loc')
+        self.job  = LazyLocalContext(None, 'loc')
         tasks = ['task0', 'task1']
         files = ['test0', 'test1']
         self.job.upload(tasks, files)
@@ -66,7 +66,7 @@ class TestLazyLocalContext(unittest.TestCase):
             stdin, stdout, stderr = self.job.block_checkcall('ls a')
             
     def test_file(self) :
-        self.job = LazyLocalContext('loc')
+        self.job = LazyLocalContext(None, 'loc')
         self.assertFalse(self.job.check_file_exists('aaa'))
         tmp = str(uuid.uuid4())
         self.job.write_file('aaa', tmp)
@@ -76,7 +76,7 @@ class TestLazyLocalContext(unittest.TestCase):
         
 
     def test_call(self) :
-        self.job = LazyLocalContext('loc')
+        self.job = LazyLocalContext(None, 'loc')
         proc = self.job.call('sleep 3')
         self.assertFalse(self.job.check_finish(proc))
         time.sleep(1)
