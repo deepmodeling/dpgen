@@ -32,7 +32,7 @@ class TestLSF(unittest.TestCase) :
         with open('run.sub', 'w') as fp:
             fp.write(ret)            
 
-    @unittest.skipIf(shutil.which("bsub"), "requires LSF")
+    @unittest.skipIf(not shutil.which("bsub"), "requires LSF")
     def test_sub_success(self) :
          job_dirs = ['task0', 'task1']
          self.lsf.context.upload(job_dirs, ['test0'])
@@ -52,7 +52,7 @@ class TestLSF(unittest.TestCase) :
          self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task0/test2')))
          self.assertTrue (os.path.isfile(os.path.join('rmt', self.lsf.context.remote_root, 'task1/test2')))
 
-    @unittest.skipIf(shutil.which("bsub"), "requires LSF")
+    @unittest.skipIf(not shutil.which("bsub"), "requires LSF")
     def test_sub_bkill(self) :
          job_dirs = ['task0', 'task1']
          self.lsf.context.upload(job_dirs, ['test0'])
