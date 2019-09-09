@@ -63,7 +63,7 @@ class LSF(Batch) :
         self.context.write_file('run.sub', script_str)
         stdin, stdout, stderr = self.context.block_checkcall('cd %s && %s < %s' % (self.context.remote_root, 'bsub', 'run.sub'))
         subret = (stdout.readlines())
-        job_id = subret[0].split()[-1]
+        job_id = subret[0].split()[1][1:-1]
         self.context.write_file('job_id', job_id)        
 
 
