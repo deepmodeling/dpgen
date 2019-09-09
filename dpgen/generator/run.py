@@ -29,7 +29,6 @@ from dpgen.generator.lib.utils import make_iter_name
 from dpgen.generator.lib.utils import create_path
 from dpgen.generator.lib.utils import copy_file_list
 from dpgen.generator.lib.utils import replace
-from dpgen.generator.lib.utils import cmd_append_log
 from dpgen.generator.lib.utils import log_iter
 from dpgen.generator.lib.utils import record_iter
 from dpgen.generator.lib.utils import log_task
@@ -45,6 +44,7 @@ from dpgen.remote.group_jobs import ucloud_submit_jobs, aws_submit_jobs
 from dpgen.remote.group_jobs import group_slurm_jobs
 from dpgen.remote.group_jobs import group_local_jobs
 from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
+from dpgen.dispatcher.Dispatcher import Dispatcher
 from dpgen.util import sepline
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar,Kpoints,Potcar
@@ -315,7 +315,7 @@ def detect_batch_size(batch_size, system=None):
 def run_train (iter_index,
                jdata,
                mdata,
-               ssh_sess) :
+               dispatcher) :
     # load json param
     numb_models = jdata['numb_models']
     # train_param = jdata['train_param']
@@ -346,27 +346,30 @@ def run_train (iter_index,
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         all_task.append(task_path)
+    commands = []
     if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
         # 0.x
-        command =  os.path.join(deepmd_path, 'bin/dp_train')
-        command += ' %s && ' % train_input_file
-        command += os.path.join(deepmd_path, 'bin/dp_frz')
+        command = os.path.join(deepmd_path, 'bin/dp_train %s' % train_input_file)
+        commands.append(command)
+        command = os.path.join(deepmd_path, 'bin/dp_frz')
+        commands.append(command)        
     else:
         # 1.x
-        command =  '%s -m deepmd train' % python_path
-        command += ' %s && ' % train_input_file
-        command += '%s -m deepmd freeze' % python_path
+        command =  '%s -m deepmd train %s' % (python_path, train_input_file)
+        commands.append(command)
+        command = '%s -m deepmd freeze' % python_path
+        commands.append(command)
 
     #_tasks = [os.path.basename(ii) for ii in all_task]
-
-    run_tasks = []
-    for ii in all_task:
-        check_pb = os.path.join(ii, "frozen_model.pb")
-        check_lcurve = os.path.join(ii, "lcurve.out")
-        if os.path.isfile(check_pb) and os.path.isfile(check_lcurve):
-            pass
-        else:
-            run_tasks.append(ii)
+    # run_tasks = []
+    # for ii in all_task:
+    #     check_pb = os.path.join(ii, "frozen_model.pb")
+    #     check_lcurve = os.path.join(ii, "lcurve.out")
+    #     if os.path.isfile(check_pb) and os.path.isfile(check_lcurve):
+    #         pass
+    #     else:
+    #         run_tasks.append(ii)
+    run_tasks = [os.path.basename(ii) for ii in all_task]
 
     forward_files = [train_input_file]
     backward_files = ['frozen_model.pb', 'lcurve.out']
@@ -399,79 +402,20 @@ def run_train (iter_index,
             trans_comm_data += glob.glob(os.path.join(ii, 'type.raw'))
     os.chdir(cwd)
 
-    if ssh_sess == None and machine_type == 'ucloud':
-        ucloud_submit_jobs(mdata['train_machine'],
-                           mdata['train_resources'],
-                           command,
-                           work_path,
-                           run_tasks,
-                           1,
-                           trans_comm_data,
-                           forward_files,
-                           backward_files)
-    elif machine_type == 'slurm' :
-        group_slurm_jobs(ssh_sess,
-                         train_resources,
-                         command,
-                         work_path,
-                         run_tasks,
-                         1,
-                         trans_comm_data,
-                         forward_files,
-                         backward_files)
-    elif machine_type == 'pbs' :
-        group_slurm_jobs(ssh_sess,
-                         train_resources,
-                         command,
-                         work_path,
-                         run_tasks,
-                         1,
-                         trans_comm_data,
-                         forward_files,
-                         backward_files,
-                         remote_job = PBSJob)
-    elif machine_type == 'lsf':
-        group_slurm_jobs(ssh_sess,
-                           train_resources,
-                           command,
-                           work_path,
-                           run_tasks,
-                           1,
-                           trans_comm_data,
-                           forward_files,
-                           backward_files,
-                          remote_job = LSFJob)
-    elif machine_type == 'local' :
-        group_local_jobs(ssh_sess,
-                         train_resources,
-                         command,
-                         work_path,
-                         run_tasks,
-                         1,
-                         trans_comm_data,
-                         forward_files,
-                         backward_files)
-    elif ssh_sess == None and machine_type == 'aws':
-        aws_submit_jobs(mdata['train_machine'],
-                        mdata['train_resources'],
-                        mdata['run_train_task_definition'],
+    try:
+        train_group_size = mdata['train_group_size']
+    except:
+        train_group_size = 1
+
+    dispatcher.run_jobs(mdata['train_resources'],
+                        commands,
                         work_path,
                         run_tasks,
-                        5,
+                        train_group_size,
                         trans_comm_data,
                         forward_files,
                         backward_files)
-    else :
-        raise RuntimeError("unknown machine type")
 
-    # exec_batch(command,
-    #            1,
-    #            train_nppn,
-    #            train_ngpu,
-    #            all_task,
-    #            time_limit = train_tlimit,
-    #            modules = train_modules,
-    #            sources = train_sources)
 
 def post_train (iter_index,
                 jdata,
@@ -670,7 +614,7 @@ def make_model_devi (iter_index,
 def run_model_devi (iter_index,
                     jdata,
                     mdata,
-                    ssh_sess) :
+                    dispatcher) :
     #rmdlog.info("This module has been run !")
     lmp_exec = mdata['lmp_command']
     model_devi_group_size = mdata['model_devi_group_size']
@@ -684,22 +628,22 @@ def run_model_devi (iter_index,
     all_task = glob.glob(os.path.join(work_path, "task.*"))
     all_task.sort()
     command = lmp_exec + " -i input.lammps"
-    command = cmd_append_log(command, "model_devi.log")
+    commands = [command]
 
     fp = open (os.path.join(work_path, 'cur_job.json'), 'r')
     cur_job = json.load (fp)
     ensemble, nsteps, trj_freq, temps, press, pka_e, dt = parse_cur_job(cur_job)
     nframes = nsteps // trj_freq + 1
-
-    run_tasks_ = []
-    for ii in all_task:
-        fres = os.path.join(ii, 'model_devi.out')
-        if os.path.isfile(fres) :
-            nlines = np.loadtxt(fres).shape[0]
-            if nframes != nlines :
-                run_tasks_.append(ii)
-        else :
-            run_tasks_.append(ii)
+    
+    run_tasks_ = all_task
+    # for ii in all_task:
+    #     fres = os.path.join(ii, 'model_devi.out')
+    #     if os.path.isfile(fres) :
+    #         nlines = np.loadtxt(fres).shape[0]
+    #         if nframes != nlines :
+    #             run_tasks_.append(ii)
+    #     else :
+    #         run_tasks_.append(ii)
 
     run_tasks = [os.path.basename(ii) for ii in run_tasks_]
     #dlog.info("all_task is ", all_task)
@@ -709,82 +653,17 @@ def run_model_devi (iter_index,
     forward_files = ['conf.lmp', 'input.lammps', 'traj']
     backward_files = ['model_devi.out', 'model_devi.log', 'traj']
 
-    dlog.info("group_size %d"%model_devi_group_size)
-    if ssh_sess == None and machine_type == 'ucloud':
-        #dlog.info("The first situation!")
-        ucloud_submit_jobs(mdata['model_devi_machine'],
-                            mdata['model_devi_resources'],
-                            command,
-                            work_path,
-                            run_tasks,
-                            model_devi_group_size,
-                            model_names,
-                            forward_files,
-                            backward_files)
-    elif machine_type == 'slurm' :
-        #dlog.info("The second situation!")
-        group_slurm_jobs(ssh_sess,
-                           model_devi_resources,
-                           command,
-                           work_path,
-                           run_tasks,
-                           model_devi_group_size,
-                           model_names,
-                           forward_files,
-                           backward_files)
-    elif machine_type == 'pbs' :
-        group_slurm_jobs(ssh_sess,
-                           model_devi_resources,
-                           command,
-                           work_path,
-                           run_tasks,
-                           model_devi_group_size,
-                           model_names,
-                           forward_files,
-                           backward_files,
-                          remote_job = PBSJob)
-    elif machine_type == 'lsf' :
-        group_slurm_jobs(ssh_sess,
-                           model_devi_resources,
-                           command,
-                           work_path,
-                           run_tasks,
-                           model_devi_group_size,
-                           model_names,
-                           forward_files,
-                           backward_files,
-                          remote_job = LSFJob)
-    elif machine_type == 'local' :
-        group_local_jobs(ssh_sess,
-                           model_devi_resources,
-                           command,
-                           work_path,
-                           run_tasks,
-                           model_devi_group_size,
-                           model_names,
-                           forward_files,
-                           backward_files)
-    elif ssh_sess == None and machine_type == 'aws':
-        aws_submit_jobs(mdata['model_devi_machine'],
-                        mdata['model_devi_resources'],
-                        mdata['model_devi_task_definition'],
+    dispatcher.run_jobs(mdata['model_devi_resources'],
+                        commands,
                         work_path,
                         run_tasks,
                         model_devi_group_size,
                         model_names,
                         forward_files,
-                        backward_files)
-    else :
-        raise RuntimeError("unknown machine type")
+                        backward_files,
+                        outlog = 'model_devi.log',
+                        errlog = 'model_devi.log')
 
-    # exec_hosts_batch(exec_machine, command, model_devi_np, run_tasks, None, verbose = True, gpu = True)
-    # exec_batch_group(command,
-    #                  model_devi_nn, model_devi_nppn, model_devi_ngpu,
-    #                  run_tasks,
-    #                  group_size = model_devi_group_size,
-    #                  time_limit = model_devi_tlimit,
-    #                  modules = model_devi_modules,
-    #                  sources = model_devi_sources)
 
 def post_model_devi (iter_index,
                      jdata,
@@ -838,16 +717,19 @@ def _make_fp_vasp_inner (modd_path,
                 res_failed_conf = []
                 res_accurate_conf = []
                 for ii in range(all_conf.shape[0]) :
+                    if all_conf[ii][0] < model_devi_skip :
+                        continue
                     cc = int(all_conf[ii][0])
                     if cluster_cutoff is None:
                         if (all_conf[ii][1] < e_trust_hi and all_conf[ii][1] >= e_trust_lo) or \
-                        (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] >= f_trust_lo) and \
-                        ii >= model_devi_skip :
+                           (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] >= f_trust_lo) :
                             fp_candidate.append([tt, cc])
                         elif (all_conf[ii][1] >= e_trust_hi ) or (all_conf[ii][4] >= f_trust_hi ):
                             fp_rest_failed.append([tt, cc])
                         elif (all_conf[ii][1] < e_trust_lo and all_conf[ii][4] < f_trust_lo ):
                             fp_rest_accurate.append([tt, cc])
+                        else :
+                            raise RuntimeError('md traj %s frame %d with f devi %f does not belong to either accurate, candidiate and failed, it should not happen' % (tt, ii, all_conf[ii][4]))
                     else:
                         idx_candidate = np.where(np.logical_and(all_conf[ii][7:] < f_trust_hi, all_conf[ii][7:] >= f_trust_lo))[0]
                         idx_rest_failed = np.where(all_conf[ii][7:] >= f_trust_hi)[0]
@@ -1246,7 +1128,7 @@ def _cp2k_check_fin(ii):
 def run_fp_inner (iter_index,
                   jdata,
                   mdata,
-                  ssh_sess,
+                  dispatcher,
                   forward_files,
                   backward_files,
                   check_fin,
@@ -1256,14 +1138,6 @@ def run_fp_inner (iter_index,
     fp_group_size = mdata['fp_group_size']
     fp_resources = mdata['fp_resources']
     machine_type = mdata['fp_machine']['machine_type']
-    # fp_command = ("OMP_NUM_THREADS=1 mpirun -n %d " % fp_np) + fp_command
-    # cpu task in parallel
-    # if (('numb_gpu' not in fp_resources) or (fp_resources['numb_gpu'] == 0)) and (machine_type == 'slurm'):
-    #     fp_command = 'srun ' + fp_command
-    # if (('numb_gpu' not in fp_resources) or (fp_resources['numb_gpu'] == 0)) and (machine_type == 'pbs'):
-    #     fp_command = 'mpirun  ' + fp_command
-
-    fp_command = cmd_append_log(fp_command, log_file)
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -1273,91 +1147,28 @@ def run_fp_inner (iter_index,
     if len(fp_tasks) == 0 :
         return
 
-    fp_run_tasks = []
-    for ii in fp_tasks :
-        if not check_fin(ii) :
-            fp_run_tasks.append(ii)
-
+    fp_run_tasks = fp_tasks
+    # for ii in fp_tasks :
+    #     if not check_fin(ii) :
+    #         fp_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
 
-    if ssh_sess == None and machine_type == 'ucloud':
-        ucloud_submit_jobs(mdata['fp_machine'],
-                            mdata['fp_resources'],
-                            fp_command,
-                            work_path,
-                            run_tasks,
-                            fp_group_size,
-                            [],
-                            forward_files,
-                            backward_files)
-    elif machine_type == 'slurm' :
-        group_slurm_jobs(ssh_sess,
-                           fp_resources,
-                           fp_command,
-                           work_path,
-                           run_tasks,
-                           fp_group_size,
-                           forward_common_files,
-                           forward_files,
-                           backward_files)
-    elif machine_type == 'pbs' :
-        group_slurm_jobs(ssh_sess,
-                           fp_resources,
-                           fp_command,
-                           work_path,
-                           run_tasks,
-                           fp_group_size,
-                           [],
-                           forward_files,
-                           backward_files,
-                          remote_job = PBSJob)
-    elif machine_type == 'lsf' :
-        group_slurm_jobs(ssh_sess,
-                           fp_resources,
-                           fp_command,
-                           work_path,
-                           run_tasks,
-                           fp_group_size,
-                           [],
-                           forward_files,
-                           backward_files,
-                          remote_job = LSFJob)
-    elif machine_type == 'local' :
-        group_local_jobs(ssh_sess,
-                           fp_resources,
-                           fp_command,
-                           work_path,
-                           run_tasks,
-                           fp_group_size,
-                           [],
-                           forward_files,
-                           backward_files)
-    elif ssh_sess == None and machine_type == 'aws':
-        aws_submit_jobs(mdata['fp_machine'],
-                            mdata['fp_resources'],
-                            mdata['fp_task_definition'],
-                            work_path,
-                            run_tasks,
-                            fp_group_size,
-                            [],
-                            forward_files,
-                            backward_files)
-    else :
-        raise RuntimeError("unknown machine type")
+    dispatcher.run_jobs(mdata['fp_resources'],
+                        [fp_command],
+                        work_path,
+                        run_tasks,
+                        fp_group_size,
+                        [],
+                        forward_files,
+                        backward_files,
+                        outlog = log_file,
+                        errlog = log_file)
 
-#    exec_hosts_batch(exec_machine, fp_command, fp_np, fp_run_tasks, verbose = True, mpi = False, gpu=True)
-    # exec_batch_group(fp_command,
-    #                  fp_nn, fp_nppn, fp_ngpu,
-    #                  fp_run_tasks,
-    #                  group_size = fp_group_size,
-    #                  time_limit = fp_tlimit,
-    #                  modules = fp_modules,
-    #                  sources = fp_sources)
 
 def run_fp (iter_index,
             jdata,
             mdata,
-            ssh_sess) :
+            dispatcher) :
     fp_style = jdata['fp_style']
     fp_pp_files = jdata['fp_pp_files']
 
@@ -1372,20 +1183,20 @@ def run_fp (iter_index,
             forward_files.append('KPOINTS')
         else:
             forward_common_files=[]
-        run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _vasp_check_fin,
+        run_fp_inner(iter_index, jdata, mdata, dispatcher, forward_files, backward_files, _vasp_check_fin,
                      forward_common_files=forward_common_files)
     elif fp_style == "pwscf" :
         forward_files = ['input'] + fp_pp_files
         backward_files = ['output']
-        run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _qe_check_fin, log_file = 'output')
+        run_fp_inner(iter_index, jdata, mdata, dispatcher, forward_files, backward_files, _qe_check_fin, log_file = 'output')
     elif fp_style == "gaussian":
         forward_files = ['input']
         backward_files = ['output']
-        run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _gaussian_check_fin, log_file = 'output')
+        run_fp_inner(iter_index, jdata, mdata, dispatcher, forward_files, backward_files, _gaussian_check_fin, log_file = 'output')
     elif fp_style == "cp2k":
         forward_files = ['input.inp', 'coord.xyz']
         backward_files = ['output']
-        run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _cp2k_check_fin, log_file = 'output')
+        run_fp_inner(iter_index, jdata, mdata, dispatcher, forward_files, backward_files, _cp2k_check_fin, log_file = 'output')
     else :
         raise RuntimeError ("unsupported fp style")
 
@@ -1611,6 +1422,17 @@ def set_version(mdata):
     mdata['deepmd_version'] = deepmd_version
     return mdata
 
+
+def make_dispatcher(mdata):
+    try:
+        hostname = mdata['hostname']
+        context_type = 'ssh'
+    except:
+        context_type = 'local'
+    batch_type = mdata['machine_type']
+    disp = Dispatcher(mdata, context_type=context_type, batch_type=batch_type)
+    return disp
+    
 def run_iter (param_file, machine_file) :
     try:
        import ruamel
@@ -1658,13 +1480,8 @@ def run_iter (param_file, machine_file) :
             elif jj == 1 :
                 log_iter ("run_train", ii, jj)
                 mdata  = decide_train_machine(mdata)
-                train_machine = mdata['train_machine']
-                if ('machine_type' in train_machine) and  \
-                   ((train_machine['machine_type'] == 'ucloud') or (train_machine['machine_type'] == 'aws')):
-                    train_ssh_sess = None
-                else :
-                    train_ssh_sess = SSHSession(train_machine)
-                run_train  (ii, jdata, mdata, train_ssh_sess)
+                disp = make_dispatcher(mdata['train_machine'])
+                run_train  (ii, jdata, mdata, disp)
             elif jj == 2 :
                 log_iter ("post_train", ii, jj)
                 post_train (ii, jdata, mdata)
@@ -1676,13 +1493,8 @@ def run_iter (param_file, machine_file) :
             elif jj == 4 :
                 log_iter ("run_model_devi", ii, jj)
                 mdata = decide_model_devi_machine(mdata)
-                model_devi_machine = mdata['model_devi_machine']
-                if ('machine_type' in model_devi_machine) and  \
-                   ((model_devi_machine['machine_type'] == 'ucloud') or (model_devi_machine['machine_type'] == 'aws')):
-                    model_devi_ssh_sess = None
-                else :
-                    model_devi_ssh_sess = SSHSession(model_devi_machine)
-                run_model_devi (ii, jdata, mdata, model_devi_ssh_sess)
+                disp = make_dispatcher(mdata['model_devi_machine'])
+                run_model_devi (ii, jdata, mdata, disp)
             elif jj == 5 :
                 log_iter ("post_model_devi", ii, jj)
                 post_model_devi (ii, jdata, mdata)
@@ -1691,26 +1503,25 @@ def run_iter (param_file, machine_file) :
                 make_fp (ii, jdata, mdata)
             elif jj == 7 :
                 log_iter ("run_fp", ii, jj)
-
                 mdata = decide_fp_machine(mdata)
-                fp_machine = mdata['fp_machine']
-                if ('machine_type' in fp_machine) and  \
-                   ((fp_machine['machine_type'] == 'ucloud') or (fp_machine['machine_type'] == 'aws')):
-                    fp_ssh_sess = None
-                else :
-                    fp_ssh_sess = SSHSession(fp_machine)
-                run_fp (ii, jdata, mdata, fp_ssh_sess)
+                disp = make_dispatcher(mdata['fp_machine'])
+                run_fp (ii, jdata, mdata, disp)
             elif jj == 8 :
                 log_iter ("post_fp", ii, jj)
                 post_fp (ii, jdata)
             else :
                 raise RuntimeError ("unknown task %d, something wrong" % jj)
             record_iter (record, ii, jj)
+
+
 def gen_run(args) :
     if args.PARAM and args.MACHINE:
-       dlog.info ("start running")
-       run_iter (args.PARAM, args.MACHINE)
-       dlog.info ("finished")
+        if args.debug:
+            dlog.setLevel(logging.DEBUG)
+        dlog.info ("start running")
+        run_iter (args.PARAM, args.MACHINE)
+        dlog.info ("finished")
+
 
 def _main () :
     parser = argparse.ArgumentParser()
