@@ -5,7 +5,8 @@ from dpgen.dispatcher.LocalContext import LocalContext
 from dpgen.dispatcher.SSHContext import SSHSession
 from dpgen.dispatcher.SSHContext import SSHContext
 from dpgen.dispatcher.Slurm import Slurm
-from dpgen.dispatcher.Slurm import LSF
+from dpgen.dispatcher.LSF import LSF
+from dpgen.dispatcher.PBS import PBS
 from dpgen.dispatcher.Shell import Shell
 from dpgen.dispatcher.JobStatus import JobStatus
 from dpgen import dlog
@@ -46,6 +47,8 @@ class Dispatcher(object):
             self.batch = Slurm            
         elif batch_type == 'lsf':
             self.batch = LSF
+        elif batch_type == 'pbs':
+            self.batch = PBS
         elif batch_type == 'shell':
             self.batch = Shell
         else :
