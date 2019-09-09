@@ -6,8 +6,17 @@ from dpgen import dlog
 
 class Batch(object) :
     def __init__ (self,
-                  context) :
+                  context, 
+                  uuid_names = False) :
         self.context = context
+        if uuid_names:
+            self.finish_tag_name = '%s_tag_finished' % self.context.job_uuid
+            self.sub_script_name = '%s.sub' % self.context.job_uuid
+            self.job_id_name = '%s_job_id' % self.context.job_uuid
+        else:
+            self.finish_tag_name = 'tag_finished'
+            self.sub_script_name = 'run.sub'
+            self.job_id_name = 'job_id'
 
     def check_status(self) :
         raise RuntimeError('abstract method check_status should be implemented by derived class')        
@@ -20,9 +29,6 @@ class Batch(object) :
 
     def sub_script_cmd(self, cmd, res, errlog, outlog):
         raise RuntimeError('abstract method sub_script_cmd should be implemented by derived class')        
-
-    def check_finish_tag(self) :
-        return self.context.check_file_exists('tag_finished') 
 
     def do_submit(self,
                   job_dirs,
@@ -80,7 +86,7 @@ class Batch(object) :
                                           res,
                                           outlog=outlog,
                                           errlog=errlog)
-        ret += '\ntouch tag_finished\n'
+        ret += '\ntouch %s\n' % self.finish_tag_name
         return ret
 
     def submit(self,
@@ -111,6 +117,8 @@ class Batch(object) :
             self.do_submit(job_dirs, cmd, args, res, outlog=outlog, errlog=errlog)
         time.sleep(sleep) # For preventing the crash of the tasks while submitting        
 
+    def check_finish_tag(self) :
+        return self.context.check_file_exists(self.finish_tag_name)
 
     def _sub_script_inner(self, 
                           job_dirs,

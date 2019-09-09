@@ -60,11 +60,11 @@ class LSF(Batch) :
             while self._check_sub_limit(task_max=res['task_max']):
                 time.sleep(60)
         script_str = self.sub_script(job_dirs, cmd, args=args, res=res, outlog=outlog, errlog=errlog)
-        self.context.write_file('run.sub', script_str)
-        stdin, stdout, stderr = self.context.block_checkcall('cd %s && %s < %s' % (self.context.remote_root, 'bsub', 'run.sub'))
+        self.context.write_file(self.sub_script_name, script_str)
+        stdin, stdout, stderr = self.context.block_checkcall('cd %s && %s < %s' % (self.context.remote_root, 'bsub', self.sub_script_name))
         subret = (stdout.readlines())
         job_id = subret[0].split()[1][1:-1]
-        self.context.write_file('job_id', job_id)        
+        self.context.write_file(self.job_id_name, job_id)        
 
 
     def default_resources(self, res_) :
@@ -148,8 +148,8 @@ class LSF(Batch) :
 
 
     def _get_job_id(self) :
-        if self.context.check_file_exists('job_id') :
-            return self.context.read_file('job_id')
+        if self.context.check_file_exists(self.job_id_name) :
+            return self.context.read_file(self.job_id_name)
         else:
             return ""
 

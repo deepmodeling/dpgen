@@ -143,7 +143,11 @@ class TestLocalContext(unittest.TestCase):
         self.assertEqual(code, 0)
         code, stdin, stdout, stderr = self.job.block_call('ls a')
         self.assertEqual(code, 2)
-        self.assertEqual(stderr.read().decode('utf-8'), 'ls: cannot access a: No such file or directory\n')
+        # self.assertEqual(stderr.read().decode('utf-8'), 'ls: cannot access a: No such file or directory\n')
+        err_msg = stderr.read().decode('utf-8')
+        self.assertTrue('ls: cannot access' in err_msg)
+        self.assertTrue('No such file or directory\n' in err_msg)
+
 
     def test_block_checkcall(self) :
         work_profile = LocalSession({'work_path':'rmt'})
