@@ -14,10 +14,17 @@ class TestShell(unittest.TestCase) :
         for ii in ['loc/task0', 'loc/task1']:
             with open(os.path.join(ii, 'test0'),'w') as fp:
                 fp.write(str(uuid.uuid4()))
-        ssh_session = SSHSession({'hostname' : 'localhost',
-                                  'port': 5566,
-                                  'username' : getpass.getuser(),
-                                  'work_path' : os.path.join(os.getcwd(), 'rmt')})
+        port = 22
+        try :
+            ssh_session = SSHSession({'hostname' : 'localhost',
+                                      'port': port,
+                                      'username' : getpass.getuser(),
+                                      'work_path' : os.path.join(os.getcwd(), 'rmt')})
+        except:
+            ssh_session = SSHSession({'hostname' : 'localhost',
+                                      'port': 5566,
+                                      'username' : getpass.getuser(),
+                                      'work_path' : os.path.join(os.getcwd(), 'rmt')})
         self.ctx = SSHContext('loc', ssh_session)
         self.shell = Shell(self.ctx)
 
