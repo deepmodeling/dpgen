@@ -4,6 +4,7 @@ from context import LazyLocalContext
 from context import Slurm
 from context import JobStatus
 
+@unittest.skipIf(not shutil.which("sbatch"), "requires Slurm")
 class TestSlurm(unittest.TestCase) :
     def setUp(self) :
         os.makedirs('loc', exist_ok = True)

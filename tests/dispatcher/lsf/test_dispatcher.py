@@ -19,6 +19,7 @@ class TestDispatcher(unittest.TestCase) :
         work_profile = {'work_path':'rmt'}
         self.disp = Dispatcher(work_profile, 'local', 'lsf')
 
+    @unittest.skipIf(not shutil.which("bsub"), "requires LSF")
     def test_sub_success(self):
         tasks = ['task0', 'task1', 'task2']
         self.disp.run_jobs(None,

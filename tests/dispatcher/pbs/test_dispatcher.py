@@ -6,6 +6,7 @@ from context import PBS
 from context import JobStatus
 from context import Dispatcher
 
+@unittest.skipIf(not shutil.which("qsub"), "requires PBS")
 class TestDispatcher(unittest.TestCase) :
     def setUp(self) :
         os.makedirs('loc', exist_ok = True)

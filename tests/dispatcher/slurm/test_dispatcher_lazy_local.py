@@ -6,6 +6,7 @@ from context import Slurm
 from context import JobStatus
 from context import Dispatcher
 
+@unittest.skipIf(not shutil.which("sbatch"), "requires Slurm")
 class TestDispatcher(unittest.TestCase) :
     def setUp(self) :
         os.makedirs('loc', exist_ok = True)
