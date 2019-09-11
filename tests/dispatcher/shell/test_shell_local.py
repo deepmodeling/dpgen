@@ -44,6 +44,7 @@ class TestShell(unittest.TestCase) :
         ret1 = self.shell.sub_script(job_dirs, ['touch', 'touch'], args = [['test1 ', 'test2 '], ['test1 ', 'test2 ']])
         with open('run.sub.1', 'w') as fp:
             fp.write(ret1)
+        time.sleep(1)
         self.assertTrue(filecmp.cmp('run.sub.1', 'run.sub'))
         # with open('run.sub', 'w') as fp:
         #     fp.write(ret)
