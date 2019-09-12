@@ -216,7 +216,7 @@ def make_train (iter_index,
     init_batch_size_ = list(jdata['init_batch_size'])
     sys_batch_size = jdata['sys_batch_size']
     for ii, ss in zip(init_data_sys_, init_batch_size_) :
-        if 'init_multi_systems' in jdata and jdata['init_multi_systems']:
+        if jdata.get('init_multi_systems', False):
             for single_sys in os.listdir(os.path.join(work_path, 'data.init', ii)):
                 init_data_sys.append(os.path.join('..', 'data.init', ii, single_sys))
                 init_batch_size.append(detect_batch_size(ss, os.path.join(work_path, 'data.init', ii, single_sys)))
@@ -229,7 +229,7 @@ def make_train (iter_index,
             fp_data_sys = glob.glob(os.path.join(fp_path, "data.*"))
             for jj in fp_data_sys :
                 sys_idx = int(jj.split('.')[-1])
-                if 'use_clusters' in jdata and jdata['use_clusters']:
+                if jdata.get('use_clusters', False):
                     nframes = 0
                     for sys_single in os.listdir(jj):
                         tmp_box = np.loadtxt(os.path.join(jj, sys_single, 'box.raw'))
@@ -382,7 +382,7 @@ def run_train (iter_index,
     cwd = os.getcwd()
     os.chdir(work_path)
     for ii in init_data_sys :
-        if 'init_multi_systems' in jdata and jdata['init_multi_systems']:
+        if jdata.get('init_multi_systems', False):
             for single_sys in os.listdir(os.path.join(ii)):
                 trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'set.*'))
                 trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type.raw'))
@@ -390,7 +390,7 @@ def run_train (iter_index,
             trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
             trans_comm_data += glob.glob(os.path.join(ii, 'type.raw'))
     for ii in fp_data :
-        if 'use_clusters' in jdata and jdata['use_clusters']:
+        if jdata.get('use_clusters', False):
             for single_sys in os.listdir(os.path.join(ii)):
                 trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'set.*'))
                 trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type.raw'))
@@ -614,7 +614,6 @@ def make_model_devi (iter_index,
         sys_counter += 1
 
     sys_counter = 0
-    is_use_clusters = True if 'use_clusters' in jdata and jdata['use_clusters'] else False
     for ss in conf_systems:
         conf_counter = 0
         task_counter = 0
@@ -646,11 +645,11 @@ def make_model_devi (iter_index,
                                                trj_freq,
                                                mass_map,
                                                tt,
+                                               jdata = jdata,
                                                tau_t = model_devi_taut,
                                                pres = pp,
                                                tau_p = model_devi_taup,
                                                pka_e = pka_e,
-                                               is_use_clusters = is_use_clusters,
                                                deepmd_version = deepmd_version)
                     job = {}
                     job["ensemble"] = ensemble
@@ -1533,12 +1532,14 @@ def post_fp_gaussian (iter_index,
         sys_output = glob.glob(os.path.join(work_path, "task.%s.*/output"%ss))
         sys_output.sort()
         for idx,oo in enumerate(sys_output) :
-            sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log')
-            if 'use_atom_pref' in jdata and jdata['use_atom_pref']:
+            sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log') 
+            if len(sys) > 0:
+                sys.check_type_map(type_map = jdata['type_map'])
+            if jdata.get('use_atom_pref', False):
                 sys.data['atom_pref'] = np.load(os.path.join(os.path.dirname(oo), "atom_pref.npy"))
             if idx == 0:
-                if 'use_clusters' in jdata and jdata['use_clusters']:
-                    all_sys = dpdata.MultiSystems(sys)
+                if jdata.get('use_clusters', False):
+                    all_sys = dpdata.MultiSystems(sys, type_map = jdata['type_map'])
                 else:
                     all_sys = sys
             else:
@@ -1574,6 +1575,8 @@ def post_fp_cp2k (iter_index,
         sys_output.sort()
         for idx,oo in enumerate(sys_output) :
             sys = dpdata.LabeledSystem(oo, fmt = 'cp2k/output')
+            if len(sys) > 0:
+                sys.check_type_map(type_map = jdata['type_map'])
             if idx == 0:
                 all_sys = sys
             else:

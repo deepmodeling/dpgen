@@ -89,8 +89,8 @@ commands with their own options. To see the options for the sub-commands, type
 
 positional arguments:
   {init_surf,init_bulk,run,test,db}
-    init_surf           Generating initial data for bulk systems.
-    init_bulk           Generating initial data for surface systems.
+    init_surf           Generating initial data for surface systems.
+    init_bulk           Generating initial data for bulk systems.
     run                 Main process of Deep Generator.
     test                Auto-test for Deep Potential.
     db                  Collecting data from DP-GEN.
