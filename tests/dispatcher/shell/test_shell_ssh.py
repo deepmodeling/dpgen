@@ -1,4 +1,4 @@
-import os,json,glob,shutil,filecmp,uuid,time,getpass
+import os,json,glob,shutil,uuid,time,getpass
 import unittest
 from context import SSHSession
 from context import SSHContext

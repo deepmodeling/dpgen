@@ -9,3 +9,8 @@ from dpgen.dispatcher.SSHContext import SSHContext
 from dpgen.dispatcher.LSF import LSF
 from dpgen.dispatcher.Dispatcher import Dispatcher
 from dpgen.dispatcher.JobStatus import JobStatus
+
+def my_file_cmp(test, f0, f1):
+    with open(f0) as fp0 :
+        with open(f1) as fp1:
+            test.assertTrue(fp0.read() == fp1.read())

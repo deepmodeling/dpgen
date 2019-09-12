@@ -1,4 +1,4 @@
-import os,json,glob,shutil,filecmp,uuid,getpass
+import os,json,glob,shutil,uuid,getpass
 import unittest
 from pathlib import Path
 
@@ -18,14 +18,23 @@ class TestSSHContext(unittest.TestCase):
             with open(os.path.join(ii, 'dir0', 'test2'),'w') as fp:
                 fp.write(str(uuid.uuid4()))
         os.makedirs('rmt', exist_ok = True)
-        self.ssh_session = SSHSession({'hostname' : 'localhost',
-                                       'port': 5566,
-                                       'username' : getpass.getuser(),
-                                       'work_path' : os.path.join(os.getcwd(), 'rmt')})
+        try :
+            self.ssh_session = SSHSession({'hostname' : 'localhost',
+                                           'port': 22,
+                                           'username' : getpass.getuser(),
+                                           'work_path' : os.path.join(os.getcwd(), 'rmt')})
+        except:
+            # for tianhe-2
+            self.ssh_session = SSHSession({'hostname' : 'localhost',
+                                           'port': 5566,
+                                           'username' : getpass.getuser(),
+                                           'work_path' : os.path.join(os.getcwd(), 'rmt')})
         self.job = SSHContext('loc', self.ssh_session)
         self.job1 = SSHContext('loc', self.ssh_session, job_uuid = self.job.job_uuid)
-
+    
     def tearDown(self):
+        self.job.close()
+        self.job1.close()
         shutil.rmtree('loc')
         shutil.rmtree('rmt')
 
@@ -107,7 +116,10 @@ class TestSSHContext(unittest.TestCase):
         self.assertEqual(stdout.readlines(), ['task0\n','task1\n'])
         code, stdin, stdout, stderr = self.job.block_call('ls a')
         self.assertEqual(code, 2)
-        self.assertEqual(stderr.read().decode('utf-8'), 'ls: cannot access a: No such file or directory\n')
+        # self.assertEqual(stderr.read().decode('utf-8'), 'ls: cannot access a: No such file or directory\n')
+        err_msg = stderr.read().decode('utf-8')
+        self.assertTrue('ls: cannot access' in err_msg)
+        self.assertTrue('No such file or directory\n' in err_msg)
                         
     def test_block_checkcall(self) :
         tasks = ['task0', 'task1']

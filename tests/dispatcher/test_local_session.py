@@ -1,4 +1,4 @@
-import os,json,glob,shutil,filecmp
+import os,json,glob,shutil
 import unittest
 
 from context import LocalSession

@@ -94,6 +94,9 @@ class SSHContext (object):
         except: 
            pass
 
+    def close(self):
+        self.ssh_session.close()
+
     def get_job_root(self) :
         return self.remote_root
         
@@ -260,3 +263,4 @@ class SSHContext (object):
         # cleanup
         os.remove(to_f)
         sftp.remove(from_f)
+        sftp.close()

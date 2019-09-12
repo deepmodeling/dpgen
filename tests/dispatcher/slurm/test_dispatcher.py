@@ -1,10 +1,11 @@
-import os,json,glob,shutil,filecmp,uuid,time
+import os,json,glob,shutil,uuid,time
 import unittest
 from context import LocalSession
 from context import LocalContext
 from context import Slurm
 from context import JobStatus
 from context import Dispatcher
+from context import my_file_cmp
 
 @unittest.skipIf(not shutil.which("sbatch"), "requires Slurm")
 class TestDispatcher(unittest.TestCase) :
@@ -39,8 +40,9 @@ class TestDispatcher(unittest.TestCase) :
                            outlog = 'hereout.log',
                            errlog = 'hereerr.log')
         for ii in tasks:            
-            self.assertTrue(filecmp.cmp(os.path.join('loc', ii, 'test0'),
-                                        os.path.join('loc', ii, 'test1')))
+            my_file_cmp(self,
+                        os.path.join('loc', ii, 'test0'),
+                        os.path.join('loc', ii, 'test1')))
             self.assertTrue(os.path.isfile(os.path.join('loc', ii, 'hereout.log')))
             self.assertTrue(os.path.isfile(os.path.join('loc', ii, 'hereerr.log')))
             

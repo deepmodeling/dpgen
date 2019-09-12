@@ -1,4 +1,4 @@
-import os,shutil,filecmp
+import os,shutil
 import unittest
 import numpy as np
 import tarfile

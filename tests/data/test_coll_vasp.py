@@ -1,4 +1,4 @@
-import os,json,glob,shutil,filecmp
+import os,json,glob,shutil
 import dpdata
 import numpy as np
 import unittest
