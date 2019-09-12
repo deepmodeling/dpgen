@@ -66,7 +66,7 @@ def make_cp2k_input(sys_data, fp_params):
 
     outer_scf_section = make_section('OUTER_SCF')
     outer_scf_section = section_add_keyword_and_value(outer_scf_section, 'EPS_SCF', '1.0E-6')
-    outer_scf_section = section_add_keyword_and_value(outer_scf_section, 'MAX_SCF', '5')
+    outer_scf_section = section_add_keyword_and_value(outer_scf_section, 'MAX_SCF', '10')
 
     scf_section = make_section('SCF')
     scf_section = section_add_keyword_and_value(scf_section, 'SCF_GUESS', 'ATOMIC')
