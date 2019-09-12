@@ -1236,7 +1236,7 @@ def _cp2k_check_fin(ii):
     if os.path.isfile(os.path.join(ii, 'output')) :
         with open(os.path.join(ii, 'output'), 'r') as fp :
             content = fp.read()
-            count = content.count('SCF run converged')
+            count = content.count('PROGRAM ENDED')
             if count == 0 :
                 return False
     else :
