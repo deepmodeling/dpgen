@@ -1,4 +1,4 @@
-import os,json,glob,shutil,filecmp,uuid,time
+import os,json,glob,shutil,uuid,time
 import unittest
 
 from context import FinRecord

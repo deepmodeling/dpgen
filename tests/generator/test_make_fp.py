@@ -1,4 +1,4 @@
-import os,json,glob,shutil,filecmp
+import os,json,glob,shutil
 import dpdata
 import numpy as np
 import unittest
@@ -18,6 +18,7 @@ from context import param_cp2k_file
 from context import machine_file
 from context import param_diy_file
 from context import make_kspacing_kpoints
+from context import my_file_cmp
 from comp_sys import test_atom_names
 from comp_sys import test_atom_types
 from comp_sys import test_coord
@@ -282,9 +283,9 @@ def _check_incar_exists(testCase, idx) :
     testCase.assertTrue(os.path.isfile(os.path.join(fp_path, 'INCAR')))
     tasks = glob.glob(os.path.join(fp_path, 'task.*'))
     for ii in tasks :
-        testCase.assertTrue(filecmp.cmp(
-            os.path.join(fp_path, 'INCAR'),
-            os.path.join(ii, 'INCAR')))
+        my_file_cmp(testCase,
+                    os.path.join(fp_path, 'INCAR'),
+                    os.path.join(ii, 'INCAR'))
 
 
 def _check_potcar(testCase, idx, fp_pp_path, fp_pp_files) :
@@ -295,9 +296,9 @@ def _check_potcar(testCase, idx, fp_pp_path, fp_pp_files) :
     tasks = glob.glob(os.path.join(fp_path, 'task.*'))
     for ii in tasks :
         for jj in range(nfile):
-            testCase.assertTrue(filecmp.cmp(
-                os.path.join(fp_pp_path, fp_pp_files[jj]),
-                os.path.join(ii, fp_pp_files[jj])))
+            my_file_cmp(testCase,
+                        os.path.join(fp_pp_path, fp_pp_files[jj]),
+                        os.path.join(ii, fp_pp_files[jj]))
 
 
 def _check_sel(testCase, idx, fp_task_max, flo, fhi):

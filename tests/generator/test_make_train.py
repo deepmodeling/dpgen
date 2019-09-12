@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os,json,glob,filecmp,shutil
+import os,json,glob,shutil
 import numpy as np
 import unittest
 
@@ -13,13 +13,17 @@ def _comp_sys_files (sys0, sys1) :
     os.chdir(sys0) 
     files = glob.glob('*.raw') 
     set_files = glob.glob('set.*/*npy') 
-    files += set_files
+    # files += set_files
     os.chdir(pwd)
     for ii in files :
-        ret = filecmp.cmp(os.path.join(sys0, ii), 
-                          os.path.join(sys1, ii),
-                          shallow = False)
-        if not ret :
+        with open(os.path.join(sys0, ii)) as fp0 :
+            with open(os.path.join(sys1, ii)) as fp1:
+                if fp0.read() != fp1.read() :
+                    return False
+    for ii in set_files:
+        t0 = np.load(os.path.join(sys0, ii))
+        t1 = np.load(os.path.join(sys1, ii))
+        if np.linalg.norm(t0-t1) > 1e-12 :
             return False
     return True
 
