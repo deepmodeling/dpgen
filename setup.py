@@ -33,6 +33,7 @@ setuptools.setup(
               'dpgen/data',
               'dpgen/data/tools',
               'dpgen/remote',
+              'dpgen/dispatcher',
               'dpgen/database'
     ],
     # package_data={'example':['*.json']},
