@@ -2,11 +2,11 @@ import os,json,glob,shutil,filecmp,uuid,time
 import unittest
 from context import LocalSession
 from context import LocalContext
-from context import Slurm
+from context import PBS
 from context import JobStatus
 from context import Dispatcher
 
-@unittest.skipIf(not shutil.which("sbatch"), "requires Slurm")
+@unittest.skipIf(not shutil.which("qsub"), "requires PBS")
 class TestDispatcher(unittest.TestCase) :
     def setUp(self) :
         os.makedirs('loc', exist_ok = True)
@@ -18,14 +18,8 @@ class TestDispatcher(unittest.TestCase) :
             with open(os.path.join(ii, 'test0'),'w') as fp:
                 fp.write('this is test0 from ' + ii + '\n')
         work_profile = {'work_path':'rmt'}
-        self.disp = Dispatcher(work_profile, 'local', 'slurm')
+        self.disp = Dispatcher(work_profile, 'local', 'pbs')
 
-    def tearDown(self):
-        shutil.rmtree('loc')
-        shutil.rmtree('rmt')
-        if os.path.exists('dpgen.log'):
-            os.remove('dpgen.log')
-        
     def test_sub_success(self):
         tasks = ['task0', 'task1', 'task2']
         self.disp.run_jobs(None,

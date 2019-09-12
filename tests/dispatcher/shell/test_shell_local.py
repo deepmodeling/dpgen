@@ -15,7 +15,7 @@ class TestShell(unittest.TestCase) :
             with open(os.path.join(ii, 'test0'),'w') as fp:
                 fp.write(str(uuid.uuid4()))
         work_profile = LocalSession({'work_path':'rmt'})
-        self.ctx = LocalContext(work_profile, 'loc')        
+        self.ctx = LocalContext('loc', work_profile)
         self.shell = Shell(self.ctx)
 
     def tearDown(self):
@@ -44,6 +44,7 @@ class TestShell(unittest.TestCase) :
         ret1 = self.shell.sub_script(job_dirs, ['touch', 'touch'], args = [['test1 ', 'test2 '], ['test1 ', 'test2 ']])
         with open('run.sub.1', 'w') as fp:
             fp.write(ret1)
+        time.sleep(1)
         self.assertTrue(filecmp.cmp('run.sub.1', 'run.sub'))
         # with open('run.sub', 'w') as fp:
         #     fp.write(ret)

@@ -5,6 +5,7 @@ from context import LocalContext
 from context import Slurm
 from context import JobStatus
 
+@unittest.skipIf(not shutil.which("sbatch"), "requires Slurm")
 class TestSlurm(unittest.TestCase) :
     def setUp(self) :
         os.makedirs('loc', exist_ok = True)
@@ -15,7 +16,7 @@ class TestSlurm(unittest.TestCase) :
             with open(os.path.join(ii, 'test0'),'w') as fp:
                 fp.write(str(uuid.uuid4()))
         work_profile = LocalSession({'work_path':'rmt'})
-        self.ctx = LocalContext(work_profile, 'loc')        
+        self.ctx = LocalContext('loc', work_profile)
         self.slurm = Slurm(self.ctx)
 
     def tearDown(self):

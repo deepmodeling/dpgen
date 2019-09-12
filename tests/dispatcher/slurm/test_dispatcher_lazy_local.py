@@ -17,14 +17,15 @@ class TestDispatcher(unittest.TestCase) :
         for ii in ['loc/task0', 'loc/task1', 'loc/task2']:
             with open(os.path.join(ii, 'test0'),'w') as fp:
                 fp.write('this is test0 from ' + ii + '\n')
-        work_profile = {'work_path':'rmt'}
-        self.disp = Dispatcher(work_profile, 'local', 'slurm')
+        work_profile = None
+        self.disp = Dispatcher(work_profile, 'lazy-local', 'slurm')
 
     def tearDown(self):
-        shutil.rmtree('loc')
-        shutil.rmtree('rmt')
-        if os.path.exists('dpgen.log'):
-            os.remove('dpgen.log')
+        # shutil.rmtree('loc')
+        # shutil.rmtree('rmt')
+        # if os.path.exists('dpgen.log'):
+        #     os.remove('dpgen.log')
+        pass
         
     def test_sub_success(self):
         tasks = ['task0', 'task1', 'task2']
