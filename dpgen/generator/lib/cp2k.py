@@ -55,7 +55,7 @@ def make_cp2k_input(sys_data, fp_params):
     mgrid_section = make_section('MGRID')
     mgrid_section = section_add_keyword_and_value(mgrid_section, 'CUTOFF', fp_params['cutoff'])
     mgrid_section = section_add_keyword_and_value(mgrid_section, 'REL_CUTOFF', fp_params['rel_cutoff'])
-    mgrid_section = section_add_keyword_and_value(mgrid_section, 'NGRIDS', '4')
+    mgrid_section = section_add_keyword_and_value(mgrid_section, 'NGRIDS', '5')
 
     qs_section = make_section('QS')
     qs_section = section_add_keyword_and_value(qs_section, 'EPS_DEFAULT', '1.0E-12')
@@ -64,11 +64,16 @@ def make_cp2k_input(sys_data, fp_params):
     ot_section = section_add_keyword_and_value(ot_section, 'MINIMIZER', 'DIIS')
     ot_section = section_add_keyword_and_value(ot_section, 'PRECONDITIONER', 'FULL_SINGLE_INVERSE')
 
+    outer_scf_section = make_section('OUTER_SCF')
+    outer_scf_section = section_add_keyword_and_value(outer_scf_section, 'EPS_SCF', '1.0E-6')
+    outer_scf_section = section_add_keyword_and_value(outer_scf_section, 'MAX_SCF', '5')
+
     scf_section = make_section('SCF')
     scf_section = section_add_keyword_and_value(scf_section, 'SCF_GUESS', 'ATOMIC')
     scf_section = section_add_keyword_and_value(scf_section, 'EPS_SCF', '1.0E-6')
     scf_section = section_add_keyword_and_value(scf_section, 'MAX_SCF', '50')
     scf_section = section_add_subsection(scf_section, ot_section)
+    scf_section = section_add_subsection(scf_section,outer_scf_section)
 
 
     xc_functional_section = make_section('XC_FUNCTIONAL', fp_params['functional'])
@@ -86,7 +91,8 @@ def make_cp2k_input(sys_data, fp_params):
 
     xc_section = make_section('XC')
     xc_section = section_add_subsection(xc_section, xc_functional_section)
-    xc_section = section_add_subsection(xc_section, vdw_potential_section)
+    if fp_params['pair_potential_path'] !="None":
+        xc_section = section_add_subsection(xc_section, vdw_potential_section)
 
 
     dft_section = make_section('DFT')
@@ -130,6 +136,7 @@ def make_cp2k_input(sys_data, fp_params):
     force_eval_section = section_add_subsection(force_eval_section, subsys_section)
     force_eval_section = section_add_subsection(force_eval_section, print_section)
     return global_section + force_eval_section
+
 
 
 
