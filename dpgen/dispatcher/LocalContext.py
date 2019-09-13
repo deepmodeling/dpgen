@@ -26,6 +26,12 @@ class SPRetObj(object) :
             ret.append(aa+'\n')
         return ret
 
+def _check_file_path(fname) :
+    dirname = os.path.dirname(fname)    
+    if dirname != "":
+        os.makedirs(dirname, exist_ok=True)
+
+
 class LocalContext(object) :
     def __init__ (self,
                   local_root,
@@ -67,6 +73,7 @@ class LocalContext(object) :
                     raise RuntimeError('cannot file upload file ' + os.path.join(local_job, jj))
                 if os.path.exists(os.path.join(remote_job, jj)) :
                     os.remove(os.path.join(remote_job, jj))
+                _check_file_path(jj)
                 os.symlink(os.path.join(local_job, jj),
                            os.path.join(remote_job, jj))
         os.chdir(cwd)
