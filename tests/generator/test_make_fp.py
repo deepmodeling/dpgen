@@ -456,7 +456,8 @@ class TestMakeFPVasp(unittest.TestCase):
         _check_incar(self, 0)
         _check_kpoints_exists(self, 0)
         _check_kpoints(self,0)
-        _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
+        # checked elsewhere
+        # _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
 
     def test_make_fp_vasp_old(self):
@@ -485,7 +486,8 @@ class TestMakeFPVasp(unittest.TestCase):
         _check_incar(self, 0)
         _check_kpoints_exists(self, 0)
         _check_kpoints(self,0)
-        _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
+        # checked elsewhere
+        # _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
 
     def test_make_fp_vasp_less_sel(self):
@@ -514,7 +516,8 @@ class TestMakeFPVasp(unittest.TestCase):
         _check_incar(self, 0)
         _check_kpoints_exists(self, 0)
         _check_kpoints(self,0)
-        _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
+        # checked elsewhere
+        # _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
 
 
@@ -547,7 +550,8 @@ class TestMakeFPVasp(unittest.TestCase):
         _check_incar(self, 0)
         _check_kpoints_exists(self, 0)
         _check_kpoints(self,0)
-        _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
+        # checked elsewhere
+        # _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
 
 
