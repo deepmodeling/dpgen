@@ -17,6 +17,9 @@ class TestLocalContext(unittest.TestCase):
             with open(os.path.join(ii, 'test2'),'w') as fp:
                 fp.write(str(uuid.uuid4()))
             os.makedirs(os.path.join(ii, 'dir0'), exist_ok = True)
+            os.makedirs(os.path.join(ii, 'dir2'), exist_ok = True)
+            with open(os.path.join(ii, 'dir2', 'dtest0'),'w') as fp:
+                fp.write(str(uuid.uuid4()))
         os.makedirs('rmt', exist_ok = True)
 
     def tearDown(self):
@@ -36,7 +39,7 @@ class TestLocalContext(unittest.TestCase):
         self.job  = LocalContext('loc', work_profile)
         self.job1 = LocalContext('loc', work_profile, job_uuid = self.job.job_uuid)
         tasks = ['task0', 'task1']
-        files = ['test0', 'test1']
+        files = ['test0', 'test1', 'dir2/dtest0']
         self.job.upload(tasks, files)
         for ii in tasks :
             for jj in files :
