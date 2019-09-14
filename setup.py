@@ -25,6 +25,7 @@ setuptools.setup(
     long_description=readme,
     long_description_content_type="text/markdown",
     url="https://github.com/deepmodeling/dpgen",
+    python_requires="~=3.6",
     packages=['dpgen', 
               'dpgen/generator',
               'dpgen/generator/lib',
