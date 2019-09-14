@@ -18,3 +18,5 @@ def my_file_cmp(test, f0, f1):
         with open(f1) as fp1:
             test.assertTrue(fp0.read() == fp1.read())
 
+def setUpModule():
+    os.chdir(os.path.abspath(os.path.dirname(__file__)))

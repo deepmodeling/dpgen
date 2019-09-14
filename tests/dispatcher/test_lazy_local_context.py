@@ -2,7 +2,8 @@ import os,json,glob,shutil,uuid,time
 import unittest
 from pathlib import Path
 
-from context import LazyLocalContext
+from .context import LazyLocalContext
+from .context import setUpModule
 
 class TestLazyLocalContext(unittest.TestCase):
     def setUp(self) :

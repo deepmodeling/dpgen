@@ -3,26 +3,27 @@ import dpdata
 import numpy as np
 import unittest
 
-from context import make_fp_vasp
-from context import make_fp_pwscf
-from context import make_fp_gaussian
-from context import make_fp_cp2k
-from context import detect_multiplicity
-from context import parse_cur_job
-from context import param_file
-from context import param_old_file
-from context import param_pwscf_file
-from context import param_pwscf_old_file
-from context import param_gaussian_file
-from context import param_cp2k_file
-from context import machine_file
-from context import param_diy_file
-from context import make_kspacing_kpoints
-from context import my_file_cmp
-from comp_sys import test_atom_names
-from comp_sys import test_atom_types
-from comp_sys import test_coord
-from comp_sys import test_cell
+from .context import make_fp_vasp
+from .context import make_fp_pwscf
+from .context import make_fp_gaussian
+from .context import make_fp_cp2k
+from .context import detect_multiplicity
+from .context import parse_cur_job
+from .context import param_file
+from .context import param_old_file
+from .context import param_pwscf_file
+from .context import param_pwscf_old_file
+from .context import param_gaussian_file
+from .context import param_cp2k_file
+from .context import machine_file
+from .context import param_diy_file
+from .context import make_kspacing_kpoints
+from .context import my_file_cmp
+from .context import setUpModule
+from .comp_sys import test_atom_names
+from .comp_sys import test_atom_types
+from .comp_sys import test_coord
+from .comp_sys import test_cell
 from pymatgen.io.vasp import Kpoints,Incar
 
 vasp_incar_ref = "PREC=A\n\

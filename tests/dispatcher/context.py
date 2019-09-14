@@ -9,3 +9,6 @@ from dpgen.dispatcher.SSHContext import SSHSession
 from dpgen.dispatcher.SSHContext import SSHContext
 from dpgen.dispatcher.Dispatcher import FinRecord
 from dpgen.dispatcher.Dispatcher import _split_tasks
+
+def setUpModule():
+    os.chdir(os.path.abspath(os.path.dirname(__file__)))

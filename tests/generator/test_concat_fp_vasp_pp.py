@@ -2,9 +2,10 @@ import os,json,glob,shutil
 import dpdata
 import numpy as np
 import unittest
-from context import sys_link_fp_vasp_pp
-from context import make_iter_name
-from context import fp_name
+from .context import sys_link_fp_vasp_pp
+from .context import make_iter_name
+from .context import fp_name
+from .context import setUpModule
 
 class TestConcatVASPPP(unittest.TestCase):
     def test(self):

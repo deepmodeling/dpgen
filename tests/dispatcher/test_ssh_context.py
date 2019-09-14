@@ -2,7 +2,8 @@ import os,json,glob,shutil,uuid,getpass
 import unittest
 from pathlib import Path
 
-from context import SSHContext, SSHSession
+from .context import SSHContext, SSHSession
+from .context import setUpModule
 
 class TestSSHContext(unittest.TestCase):
     def setUp(self) :
@@ -25,10 +26,13 @@ class TestSSHContext(unittest.TestCase):
                                            'work_path' : os.path.join(os.getcwd(), 'rmt')})
         except:
             # for tianhe-2
-            self.ssh_session = SSHSession({'hostname' : 'localhost',
-                                           'port': 5566,
-                                           'username' : getpass.getuser(),
-                                           'work_path' : os.path.join(os.getcwd(), 'rmt')})
+            try:
+                self.ssh_session = SSHSession({'hostname' : 'localhost',
+                                            'port': 5566,
+                                            'username' : getpass.getuser(),
+                                            'work_path' : os.path.join(os.getcwd(), 'rmt')})
+            except:
+                self.skipTest("Network error")
         self.job = SSHContext('loc', self.ssh_session)
         self.job1 = SSHContext('loc', self.ssh_session, job_uuid = self.job.job_uuid)
     

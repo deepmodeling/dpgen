@@ -1,8 +1,9 @@
 import os,json,glob,shutil,uuid,time
 import unittest
 
-from context import FinRecord
-from context import _split_tasks
+from .context import FinRecord
+from .context import _split_tasks
+from .context import setUpModule
 
 class TestFinRecord(unittest.TestCase):
     def setUp(self):
