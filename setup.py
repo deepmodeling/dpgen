@@ -13,7 +13,7 @@ except ImportError:
     with open(readme_file) as f:
         readme = f.read()
 
-install_requires=['numpy>=1.14.3', 'dpdata>=0.1.5', 'pymatgen>=2017.9.1', 'ase', 'monty>2.0.0', 'paramiko', 'custodian']
+install_requires=['numpy>=1.14.3', 'dpdata>=0.1.6', 'pymatgen>=2017.9.1', 'ase', 'monty>2.0.0', 'paramiko', 'custodian']
 
 setuptools.setup(
     name=NAME,
@@ -34,6 +34,7 @@ setuptools.setup(
               'dpgen/data',
               'dpgen/data/tools',
               'dpgen/remote',
+              'dpgen/dispatcher',
               'dpgen/database'
     ],
     # package_data={'example':['*.json']},

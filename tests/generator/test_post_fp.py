@@ -1,4 +1,4 @@
-import os,json,glob,shutil,filecmp
+import os,json,glob,shutil
 import dpdata
 import numpy as np
 import unittest
@@ -31,7 +31,8 @@ class TestPostFPVasp(unittest.TestCase):
         self.ref_coord = [[[0, 0, 0], [2.3, 2.3, 2.3]],
                           [[0, 0, 0], [2.2, 2.3, 2.4]]]
         self.ref_cell = [4.6 * np.eye(3), 4.6 * np.eye(3)]
-        self.ref_at = [0, 0]
+        # type_map = ["Mg", "Al"], Al OUTCAR provided
+        self.ref_at = [1, 1]
         self.ref_e = [-1.90811235, -1.89718546]
         self.ref_f = [[[ 0.      ,  0.      ,  0.      ], \
                        [-0.      , -0.      , -0.      ]],\
