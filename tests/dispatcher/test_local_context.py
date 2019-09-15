@@ -2,7 +2,8 @@ import os,json,glob,shutil,uuid,time
 import unittest
 from pathlib import Path
 
-from context import LocalContext, LocalSession
+from .context import LocalContext, LocalSession
+from .context import setUpModule
 
 class TestLocalContext(unittest.TestCase):
     def setUp(self) :

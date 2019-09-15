@@ -3,9 +3,10 @@ import dpdata
 import numpy as np
 import unittest
 
-from context import coll_vasp_md
-from context import out_dir_name
-from context import param_file
+from .context import coll_vasp_md
+from .context import out_dir_name
+from .context import param_file
+from .context import setUpModule
 
 
 class TestCollVasp(unittest.TestCase):

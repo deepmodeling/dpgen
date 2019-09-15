@@ -1,11 +1,12 @@
 import os,json,glob,shutil,uuid,time
 import unittest
-from context import LocalSession
-from context import LocalContext
-from context import LSF
-from context import JobStatus
-from context import Dispatcher
-from context import my_file_cmp
+from .context import LocalSession
+from .context import LocalContext
+from .context import LSF
+from .context import JobStatus
+from .context import Dispatcher
+from .context import my_file_cmp
+from .context import setUpModule
 
 class TestDispatcher(unittest.TestCase) :
     def setUp(self) :

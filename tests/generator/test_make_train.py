@@ -4,9 +4,10 @@ import os,json,glob,shutil
 import numpy as np
 import unittest
 
-from context import make_train
-from context import param_file
-from context import machine_file
+from .context import make_train
+from .context import param_file
+from .context import machine_file
+from .context import setUpModule
 
 def _comp_sys_files (sys0, sys1) :
     pwd = os.getcwd()

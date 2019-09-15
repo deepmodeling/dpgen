@@ -1,9 +1,10 @@
 import os,json,glob,shutil,uuid,time,getpass
 import unittest
-from context import SSHSession
-from context import SSHContext
-from context import Shell
-from context import JobStatus
+from .context import SSHSession
+from .context import SSHContext
+from .context import Shell
+from .context import JobStatus
+from .context import setUpModule
 
 class TestShell(unittest.TestCase) :
     def setUp(self) :

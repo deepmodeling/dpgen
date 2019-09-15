@@ -1,11 +1,12 @@
 import os,json,glob,shutil,uuid,time
 import unittest
-from context import LocalSession
-from context import LocalContext
-from context import Slurm
-from context import JobStatus
-from context import Dispatcher
-from context import my_file_cmp
+from .context import LocalSession
+from .context import LocalContext
+from .context import Slurm
+from .context import JobStatus
+from .context import Dispatcher
+from .context import my_file_cmp
+from .context import setUpModule
 
 @unittest.skipIf(not shutil.which("sbatch"), "requires Slurm")
 class TestDispatcher(unittest.TestCase) :

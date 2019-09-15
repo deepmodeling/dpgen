@@ -1,9 +1,10 @@
 import os,json,glob,shutil,uuid,time
 import unittest
-from context import LocalSession
-from context import LocalContext
-from context import LSF
-from context import JobStatus
+from .context import LocalSession
+from .context import LocalContext
+from .context import LSF
+from .context import JobStatus
+from .context import setUpModule
 
 class TestLSF(unittest.TestCase) :
     def setUp(self) :
