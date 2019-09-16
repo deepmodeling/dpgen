@@ -216,7 +216,6 @@ def make_super_cell_poscar(jdata) :
     
     from_file = os.path.join(path_sc, 'POSCAR.copied')
     shutil.copy2(from_poscar_path, from_file)
-
     to_path = path_sc
     to_file = os.path.join(to_path, 'POSCAR')
   
@@ -225,48 +224,23 @@ def make_super_cell_poscar(jdata) :
     from_struct.make_supercell(super_cell)
     from_struct.to('poscar',to_file)  
 
-    #-----------------------------------------------
-    natoms = int(len(from_struct))
-    elements = from_struct.symbol_set
-    path_sc = os.path.join(out_dir, global_dirname_02)
-    path_pe = os.path.join(out_dir, global_dirname_02)
-    combines = np.array(make_combines(len(elements), natoms), dtype = int)
-
-    assert(os.path.isdir(path_pe))
+    # make system dir (copy)
+    lines = open(to_file, 'r').read().split('\n')
+    natoms_str = lines[6]
+    natoms_list = [int(ii) for ii in natoms_str.split()]
+    print(natoms_list)
+    comb_name = "sys-"
+    for idx,ii in enumerate(natoms_list) :
+        comb_name += "%04d" % ii
+        if idx != len(natoms_list)-1 :
+            comb_name += "-"
+    path_work = os.path.join(path_sc, comb_name)
+    create_path(path_work)
     cwd = os.getcwd()
-    for ii in combines :
-        if any(ii == 0) :
-            continue
-        comb_name = "sys-"
-        for idx,jj in enumerate(ii) :
-            comb_name += "%04d" % jj
-            if idx != len(ii)-1 :
-                comb_name += "-"
-        path_pos_in = path_sc
-        path_work = os.path.join(path_pe, comb_name)
-        create_path(path_work)
-        pos_in = os.path.join(path_pos_in, 'POSCAR')
-        pos_out = os.path.join(path_work, 'POSCAR')
-        poscar_ele(pos_in, pos_out, elements, ii)
-        poscar_shuffle(pos_out, pos_out)
-
-    ## make system dir (copy)
-    #lines = open(to_file, 'r').read().split('\n')
-    #natoms_str = lines[6]
-    #natoms_list = [int(ii) for ii in natoms_str.split()]
-    #print(natoms_list)
-    #comb_name = "sys-"
-    #for idx,ii in enumerate(natoms_list) :
-    #    comb_name += "%04d" % ii
-    #    if idx != len(natoms_list)-1 :
-    #        comb_name += "-"
-    #path_work = os.path.join(path_sc, comb_name)
-    #create_path(path_work)
-    #cwd = os.getcwd()
-    #to_file = os.path.abspath(to_file)
-    #os.chdir(path_work)
-    #os.symlink(os.path.relpath(to_file), 'POSCAR')
-    #os.chdir(cwd)
+    to_file = os.path.abspath(to_file)
+    os.chdir(path_work)
+    os.symlink(os.path.relpath(to_file), 'POSCAR')
+    os.chdir(cwd)
 
 def make_combines (dim, natoms) :
     if dim == 1 :

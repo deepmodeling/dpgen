@@ -4,3 +4,5 @@ from dpgen.data.gen import *
 
 param_file = 'al.json'
 
+def setUpModule():
+    os.chdir(os.path.abspath(os.path.dirname(__file__)))

@@ -1,17 +1,18 @@
-import os,shutil,filecmp
+import os,shutil
 import unittest
 import numpy as np
 import tarfile
 
 from glob import glob
-from context import dpgen
-from context import Entry
-from context import VaspInput,DPPotcar
-from context import parsing_vasp
+from .context import dpgen
+from .context import Entry
+from .context import VaspInput,DPPotcar
+from .context import parsing_vasp
 from dpdata import System,LabeledSystem
 from monty.shutil import remove 
 from monty.serialization import loadfn,dumpfn
 from pymatgen.io.vasp import Potcar,Poscar,Incar,Kpoints
+from .context import setUpModule
 
 iter_pat="02.fp/task.007.00000*"
 init_pat="al.bcc.02x02x02/02.md/sys-0016/scale-1.000/00000*"

@@ -13,12 +13,12 @@ try:
 except ImportError:
     pass
 try:
-    from ase import Atoms
+    from ase import Atoms, Atom
 except ImportError:
     pass
 
 
-def _crd2frag(symbols, crds, pbc=False, cell=None):
+def _crd2frag(symbols, crds, pbc=False, cell=None, return_bonds=False):
     atomnumber = len(symbols)
     if pbc:
         all_atoms = Atoms(symbols = symbols, positions = crds, pbc=True, cell=cell)
@@ -55,11 +55,13 @@ def _crd2frag(symbols, crds, pbc=False, cell=None):
                         a = realnumber[a-atomnumber]
                     elif b >= atomnumber:
                         b = realnumber[b-atomnumber]
-                    bonds.append([a, b, l])
+                    bonds.extend([[a, b, l], [b, a, l]])
     bonds = np.array(bonds, ndmin=2).reshape((-1, 3))
     graph = csr_matrix(
         (bonds[:, 2], (bonds[:, 0], bonds[:, 1])), shape=(atomnumber, atomnumber))
     frag_numb, frag_index = connected_components(graph, 0)
+    if return_bonds:
+        return frag_numb, frag_index, graph
     return frag_numb, frag_index
 
 
@@ -170,7 +172,8 @@ def make_gaussian_input(sys_data, fp_params):
     buff.append('\n')
     return '\n'.join(buff)
 
-def take_cluster(old_conf_name, type_map, idx, cutoff):
+def take_cluster(old_conf_name, type_map, idx, jdata):
+    cutoff = jdata['cluster_cutoff']
     sys = dpdata.System(old_conf_name, fmt = 'lammps/dump', type_map = type_map)
     atom_names = sys['atom_names']
     atom_types = sys['atom_types']
@@ -178,28 +181,49 @@ def take_cluster(old_conf_name, type_map, idx, cutoff):
     coords = sys['coords'][0]
     symbols = [atom_names[atom_type] for atom_type in atom_types]
     # detect fragment 
-    frag_numb, frag_index = _crd2frag(symbols, coords, True, cell)
+    frag_numb, frag_index, graph = _crd2frag(symbols, coords, True, cell, return_bonds=True)
     # get_distances
     all_atoms = Atoms(symbols = symbols, positions = coords, pbc=True, cell=cell)
     all_atoms[idx].tag = 1
     distances = all_atoms.get_distances(idx, range(len(all_atoms)), mic=True)
-    cutoff_atoms_idx = np.where(distances < cutoff)[0]
+    distancescutoff = distances < cutoff
+    cutoff_atoms_idx = np.where(distancescutoff)[0]
     # make cutoff atoms in molecules
     taken_atoms_idx = []
+    added = []
     for ii in range(frag_numb):
         frag_atoms_idx = np.where(frag_index == ii)[0]
         if np.any(np.isin(frag_atoms_idx, cutoff_atoms_idx)):
-            taken_atoms_idx.append(frag_atoms_idx)
+            if 'cluster_minify' in jdata and jdata['cluster_minify']:
+                # currently support C, H
+                take_frag_idx=[]
+                for aa in frag_atoms_idx:
+                    if np.any(np.isin(aa, cutoff_atoms_idx)):
+                        take_frag_idx.append(aa)
+                    elif np.count_nonzero(np.logical_and(distancescutoff, graph.toarray()[aa]==1)):
+                        if all_atoms[aa].symbol == 'H':
+                            take_frag_idx.append(aa)
+                        elif all_atoms[aa].symbol == 'C':
+                            near_atom_idx = np.nonzero(np.logical_and(distancescutoff, graph.toarray()[aa]>0))[0][0]
+                            vector = all_atoms[aa].position - all_atoms[near_atom_idx].position
+                            new_position = all_atoms[near_atom_idx].position + vector / np.linalg.norm(vector) * 1.09
+                            added.append(Atom('H', new_position))
+                    elif np.count_nonzero(np.logical_and(distancescutoff, graph.toarray()[aa]>1)):
+                        take_frag_idx=frag_atoms_idx
+                        break
+            else:
+                take_frag_idx = frag_atoms_idx
+            taken_atoms_idx.append(take_frag_idx)
     all_taken_atoms_idx = np.concatenate(taken_atoms_idx)
     # wrap
-    cutoff_atoms = all_atoms[all_taken_atoms_idx]
+    cutoff_atoms = sum(added, all_atoms[all_taken_atoms_idx])
     cutoff_atoms.wrap(
         center=coords[idx] /
         cutoff_atoms.get_cell_lengths_and_angles()[0: 3],
         pbc=True)
     coords = cutoff_atoms.get_positions()
     sys.data['coords'] = np.array([coords])
-    sys.data['atom_types'] = atom_types[all_taken_atoms_idx]
+    sys.data['atom_types'] = np.array(list(atom_types[all_taken_atoms_idx]) + [atom_names.index('H')]*len(added))
     sys.data['atom_pref'] = np.array([cutoff_atoms.get_tags()])
     for ii, _ in enumerate(atom_names):
         sys.data['atom_numbs'][ii] = np.count_nonzero(sys.data['atom_types']==ii)
