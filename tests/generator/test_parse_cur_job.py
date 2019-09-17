@@ -1,9 +1,10 @@
 import numpy as np
 import unittest
 
-from context import parse_cur_job
-from context import param_file
-from context import machine_file
+from .context import parse_cur_job
+from .context import param_file
+from .context import machine_file
+from .context import setUpModule
 
 class TestParseCurJob(unittest.TestCase):
     def test_npt (self) :        

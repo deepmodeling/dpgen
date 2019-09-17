@@ -69,7 +69,7 @@ def decide_train_machine(mdata):
             ## Record whihc machine is selected
 	        with open("record.machine","w") as _outfile:
 	            profile = {}
-	            profile['purporse'] = 'train'
+	            profile['purpose'] = 'train'
 	            profile['machine'] = mdata['train_machine']
 	            profile['resources'] = mdata['train_resources']
 	            profile['deepmd_path'] = mdata['deepmd_path']
@@ -130,7 +130,7 @@ def decide_model_devi_machine(mdata):
 	            mdata['model_devi_group_size'] =  mdata['model_devi'][min_machine_idx]['group_size']
 	        with open("record.machine","w") as _outfile:
 	            profile = {}
-	            profile['purporse'] = 'model_devi'
+	            profile['purpose'] = 'model_devi'
 	            profile['machine'] = mdata['model_devi_machine']
 	            profile['resources'] = mdata['model_devi_resources']
 	            profile['group_size'] = mdata['model_devi_group_size']
@@ -161,43 +161,45 @@ def decide_fp_machine(mdata):
 	            pass
 	    pd_count_list =[]
 	    pd_flag = False
-	    for machine_idx in range(len(mdata['fp'])):
-	        temp_machine = mdata['fp'][machine_idx]['machine']
-	        temp_resources = mdata['fp'][machine_idx]['resources']
-	        #assert isinstance(temp_machine, dict), "unsupported type of fp machine [%d]!" %machine_idx
-	        #assert isinstance(temp_resources, dict), "unsupported type of fp resources [%d]!"%machine_idx
-	        #assert temp_machine['machine_type'] == 'slurm', "Currently only support for Slurm!"
-	        temp_ssh_sess = SSHSession(temp_machine)
-	        cwd = os.getcwd()
-	        temp_rjob = SlurmJob(temp_ssh_sess, cwd)
-	        command = temp_rjob._make_squeue(temp_machine, temp_resources)
-	        stdin, stdout, stderr = temp_rjob.ssh.exec_command(command)
-	        pd_response = stdout.read().decode('utf-8').split("\n")
-	        pd_count = len(pd_response)
-	        temp_rjob.clean()
-	        if pd_count ==0:
-	            mdata['fp_machine'] = temp_machine   
-	            mdata['fp_resources'] = temp_resources
-	            mdata['fp_command'] = mdata['fp'][machine_idx]['command']
-	            mdata['fp_group_size'] =  mdata['fp'][machine_idx]['group_size']
-	            pd_flag = True
-	            break
-	        else:
-	            pd_count_list.append(pd_count)
-	    if not pd_flag:
-	        min_machine_idx = np.argsort(pd_count_list)[0]
-	        mdata['fp_machine'] = mdata['fp'][min_machine_idx]['machine']
-	        mdata['fp_resources'] = mdata['fp'][min_machine_idx]['resources']
-	        mdata['fp_command'] = mdata['fp'][min_machine_idx]['command']
-	        mdata['fp_group_size'] =  mdata['fp'][min_machine_idx]['group_size']
+	    if not continue_flag:
+		    for machine_idx in range(len(mdata['fp'])):
+		        temp_machine = mdata['fp'][machine_idx]['machine']
+		        temp_resources = mdata['fp'][machine_idx]['resources']
+		        #assert isinstance(temp_machine, dict), "unsupported type of fp machine [%d]!" %machine_idx
+		        #assert isinstance(temp_resources, dict), "unsupported type of fp resources [%d]!"%machine_idx
+		        #assert temp_machine['machine_type'] == 'slurm', "Currently only support for Slurm!"
+		        temp_ssh_sess = SSHSession(temp_machine)
+		        cwd = os.getcwd()
+		        temp_rjob = SlurmJob(temp_ssh_sess, cwd)
+		        command = temp_rjob._make_squeue(temp_machine, temp_resources)
+		        stdin, stdout, stderr = temp_rjob.ssh.exec_command(command)
+		        pd_response = stdout.read().decode('utf-8').split("\n")
+		        pd_count = len(pd_response)
+		        temp_rjob.clean()
+		        if pd_count ==0:
+		            mdata['fp_machine'] = temp_machine   
+		            mdata['fp_resources'] = temp_resources
+		            mdata['fp_command'] = mdata['fp'][machine_idx]['command']
+		            mdata['fp_group_size'] =  mdata['fp'][machine_idx]['group_size']
+		            pd_flag = True
+		            break
+		        else:
+		            pd_count_list.append(pd_count)
+		    if not pd_flag:
+		        min_machine_idx = np.argsort(pd_count_list)[0]
+		        mdata['fp_machine'] = mdata['fp'][min_machine_idx]['machine']
+		        mdata['fp_resources'] = mdata['fp'][min_machine_idx]['resources']
+		        mdata['fp_command'] = mdata['fp'][min_machine_idx]['command']
+		        mdata['fp_group_size'] =  mdata['fp'][min_machine_idx]['group_size']
 
-	    with open("record.machine","w") as _outfile:
-	            profile = {}
-	            profile['purporse'] = 'fp'
-	            profile['machine'] = mdata['fp_machine']
-	            profile['resources'] = mdata['fp_resources']
-	            profile['group_size'] = mdata['fp_group_size']
-	            profile['command'] = mdata['fp_command']
-	            json.dump(profile, _outfile, indent = 4)
+		    with open("record.machine","w") as _outfile:
+		            profile = {}
+		            profile['purpose'] = 'fp'
+		            profile['machine'] = mdata['fp_machine']
+		            profile['resources'] = mdata['fp_resources']
+		            profile['group_size'] = mdata['fp_group_size']
+		            profile['command'] = mdata['fp_command']
+		            json.dump(profile, _outfile, indent = 4)
+	print("mdata", mdata)
 	return mdata
 

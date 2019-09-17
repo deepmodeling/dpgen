@@ -21,10 +21,10 @@ A master convenience script with many tools for driving dpgen.
 
 __author__ = "Han Wang"
 __copyright__ = "Copyright 2019, The DP-GEN Project"
-__version__ = "0.1.0"
+__version__ = "0.3.1"
 __maintainer__ = "Haidi Wang"
 __email__ = ""
-__date__ = "2019.06.26"
+__date__ = "2019.09.17"
 
 
 def main():
@@ -79,6 +79,8 @@ def main():
                         help="parameter file, json/yaml format")
     parser_run.add_argument('MACHINE', type=str,
                         help="machine file, json/yaml format")
+    parser_run.add_argument('-d','--debug', action='store_true',
+                        help="log debug info")
     parser_run.set_defaults(func=gen_run)
 
     # test 

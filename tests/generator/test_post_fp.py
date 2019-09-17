@@ -1,25 +1,26 @@
-import os,json,glob,shutil,filecmp
+import os,json,glob,shutil
 import dpdata
 import numpy as np
 import unittest
 
-from context import post_fp
-from context import post_fp_pwscf
-from context import post_fp_vasp
-from context import post_fp_gaussian
-from context import post_fp_cp2k
-from context import param_file
-from context import param_old_file
-from context import param_pwscf_file
-from context import param_pwscf_old_file
-from context import param_gaussian_file
-from context import param_cp2k_file
-from context import machine_file
-from comp_sys import test_atom_names
-from comp_sys import test_atom_types
-from comp_sys import test_coord
-from comp_sys import test_cell
-from comp_sys import CompLabeledSys
+from .context import post_fp
+from .context import post_fp_pwscf
+from .context import post_fp_vasp
+from .context import post_fp_gaussian
+from .context import post_fp_cp2k
+from .context import param_file
+from .context import param_old_file
+from .context import param_pwscf_file
+from .context import param_pwscf_old_file
+from .context import param_gaussian_file
+from .context import param_cp2k_file
+from .context import machine_file
+from .context import setUpModule
+from .comp_sys import test_atom_names
+from .comp_sys import test_atom_types
+from .comp_sys import test_coord
+from .comp_sys import test_cell
+from .comp_sys import CompLabeledSys
 
 
 class TestPostFPVasp(unittest.TestCase):
@@ -31,7 +32,8 @@ class TestPostFPVasp(unittest.TestCase):
         self.ref_coord = [[[0, 0, 0], [2.3, 2.3, 2.3]],
                           [[0, 0, 0], [2.2, 2.3, 2.4]]]
         self.ref_cell = [4.6 * np.eye(3), 4.6 * np.eye(3)]
-        self.ref_at = [0, 0]
+        # type_map = ["Mg", "Al"], Al OUTCAR provided
+        self.ref_at = [1, 1]
         self.ref_e = [-1.90811235, -1.89718546]
         self.ref_f = [[[ 0.      ,  0.      ,  0.      ], \
                        [-0.      , -0.      , -0.      ]],\

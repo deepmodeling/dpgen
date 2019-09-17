@@ -84,7 +84,7 @@
     "fp_task_max":	100,
     "fp_task_min":	10,
     "fp_pp_path":	".",
-    "fp_pp_files":	["POTCAR"],
+    "fp_pp_files":	["POTCAR.mg", "POTCAR.al"],
     "_comment":		" user provided vasp script ",
     "fp_incar" : "INCAR.diy",
     "_comment":		" that's all "
