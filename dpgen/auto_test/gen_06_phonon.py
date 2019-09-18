@@ -125,7 +125,7 @@ def make_vasp(jdata, conf_dir) :
         user_incar_path = os.path.abspath(user_incar_path)
         fc = open(user_incar_path).read()
     else :
-        fc = vasp.make_vasp_phonon_incar(ecut, ediff, npar, kpar, kspacing = None, kgamma = None)
+        fc = vasp.make_vasp_phonon_incar(ecut, ediff, npar, kpar, kspacing = kspacing, kgamma = kgamma)
     with open(os.path.join(task_path, 'INCAR'), 'w') as fp :
         fp.write(fc)
     # gen potcar
@@ -142,9 +142,9 @@ def make_vasp(jdata, conf_dir) :
             with open(fname) as infile:
                 outfile.write(infile.read())
     # gen kpoints
-    fc = vasp.make_kspacing_kpoints(task_poscar, kspacing, kgamma)
-    with open(os.path.join(task_path,'KPOINTS'), 'w') as fp:
-        fp.write(fc)
+    #fc = vasp.make_kspacing_kpoints(task_poscar, kspacing, kgamma)
+    #with open(os.path.join(task_path,'KPOINTS'), 'w') as fp:
+    #    fp.write(fc)
     # gen band.conf
     os.chdir(task_path)
     with open('band.conf','w') as fp:
