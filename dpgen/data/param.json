@@ -3,18 +3,20 @@
     "latt":		4.03,
     "super_cell":	[2, 1, 1],
     "elements":		["Al", "Mg"],
-    "potcars":		["/home/wanghan/Soft/vasp/potcar.54/potpaw_PBE.54/Al/POTCAR",
-			 "/home/wanghan/Soft/vasp/potcar.54/potpaw_PBE.54/Mg/POTCAR"
+    "potcars":		["/gpfs/share/home/1600017784/start/data/POTCAR/Al/POTCAR",
+			 "/gpfs/share/home/1600017784/start/data/POTCAR/Mg/POTCAR"
 			],
     "encut":		600,
     "kspacing":		0.06,
     "kgamma":		false,
     "scale":		[0.96, 0.98, 1.00, 1.02, 1.04, 1.06],
-    "skip_relax":	false,
+    "skip_relax":	true,
+    "relax_incar":      "INCAR",
     "pert_numb":	100,
     "pert_box":		0.03,
     "pert_atom":	0.01,
     "md_temp":		100,
     "md_nstep":		20,
-    "_comment":		"that's all"
+    "_comment":		"that's all",
+    "stages":[1,2]
 }

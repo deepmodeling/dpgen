@@ -46,7 +46,7 @@ def main():
         "init_surf", help="Generating initial data for surface systems.")
     parser_init_surf.add_argument('PARAM', type=str, 
                              help="parameter file, json/yaml format")
-    parser_init_surf.add_argument('MACHINE', type=str,
+    parser_init_surf.add_argument('MACHINE', type=str,default=None,nargs="?",
                         help="machine file, json/yaml format")
     parser_init_surf.set_defaults(func=gen_init_surf)
     
@@ -55,7 +55,7 @@ def main():
         "init_bulk", help="Generating initial data for bulk systems.")
     parser_init_bulk.add_argument('PARAM', type=str, 
                              help="parameter file, json/yaml format")
-    parser_init_bulk.add_argument('MACHINE', type=str,
+    parser_init_bulk.add_argument('MACHINE', type=str,default=None,nargs="?",
                         help="machine file, json/yaml format")
     parser_init_bulk.set_defaults(func=gen_init_bulk)
     # parser_init.add_argument("-p",'--parameter', type=str, dest='param',
@@ -94,7 +94,7 @@ def main():
     # db 
     parser_db = subparsers.add_parser(
         "db",
-        help="Collecting data from DP-GEN.")
+        help="Collecting data from Deep Generator.")
     parser_db.add_argument('PATH', type=str,
                         help="root path for dpgen modeling")
     parser_db.add_argument('CALCULATOR', type=str,
