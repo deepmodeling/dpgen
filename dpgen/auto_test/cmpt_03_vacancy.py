@@ -29,12 +29,18 @@ def cmpt_vasp(jdata, conf_dir, supercell) :
     fp_params = jdata['vasp_params']
     kspacing = fp_params['kspacing']
 
+    if 'relax_incar' in jdata.keys():
+        vasp_str='vasp-relax_incar'
+    else:
+        kspacing = jdata['vasp_params']['kspacing']
+        vasp_str='vasp-k%.2f' % kspacing
+
     equi_path = re.sub('confs', global_equi_name, conf_dir)
-    equi_path = os.path.join(equi_path, 'vasp-k%.2f' % kspacing)
+    equi_path = os.path.join(equi_path, vasp_str)
     equi_path = os.path.abspath(equi_path)
     equi_outcar = os.path.join(equi_path, 'OUTCAR')
     task_path = re.sub('confs', global_task_name, conf_dir)    
-    task_path = os.path.join(task_path, 'vasp-k%.2f' % kspacing)
+    task_path = os.path.join(task_path, vasp_str)
     task_path = os.path.abspath(task_path)
     print("# ", task_path)
 
@@ -49,7 +55,7 @@ def cmpt_vasp(jdata, conf_dir, supercell) :
     sys.stdout.write ("Structure: \tVac_E(eV)  E(eV) equi_E(eV)\n")
     for ii in struct_path_list :
         struct_poscar = os.path.join(ii, 'POSCAR')
-        energy_shift = comput_e_shift(struct_poscar, 'vasp-k%.2f' % kspacing)
+        energy_shift = comput_e_shift(struct_poscar, vasp_str)
         structure_dir = os.path.basename(ii)
         outcar = os.path.join(ii, 'OUTCAR')
         natoms, epa, vpa = vasp.get_nev(outcar)

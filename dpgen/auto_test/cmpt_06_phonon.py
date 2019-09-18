@@ -49,17 +49,16 @@ def get_force_from_dump(cell):
 
 def cmpt_vasp(jdata, conf_dir) :
     fp_params = jdata['vasp_params']
-    ecut = fp_params['ecut']
-    ediff = fp_params['ediff']
-    npar = fp_params['npar']
-    kpar = fp_params['kpar']
     kspacing = fp_params['kspacing']
-    kgamma = fp_params['kgamma']
     supercell_matrix=jdata['supercell_matrix']
-    
+    if 'relax_incar' in jdata.keys():
+        vasp_str='vasp-relax_incar'
+    else:
+        vasp_str='vasp-k%.2f' % kspacing
+
     conf_path = os.path.abspath(conf_dir)
     task_path = re.sub('confs', global_task_name, conf_path)
-    task_path = os.path.join(task_path, 'vasp-k%.2f' % kspacing)
+    task_path = os.path.join(task_path, vasp_str)
     cwd = os.getcwd()
     os.chdir(task_path)
     if os.path.isfile('vasprun.xml'):

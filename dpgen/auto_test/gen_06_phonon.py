@@ -91,13 +91,22 @@ def make_vasp(jdata, conf_dir) :
     supercell_matrix=jdata['supercell_matrix']
     band_path=jdata['band']
 
+    if 'relax_incar' in jdata.keys():
+        vasp_str='vasp-relax_incar'
+    else:
+        vasp_str='vasp-k%.2f' % kspacing
+
     conf_path = os.path.abspath(conf_dir)
     conf_poscar = os.path.join(conf_path, 'POSCAR')
     equi_path = re.sub('confs', global_equi_name, conf_path)
-    equi_path = os.path.join(equi_path, 'vasp-k%.2f' % kspacing)
+    equi_path = os.path.join(equi_path, vasp_str)
     equi_contcar = os.path.join(equi_path, 'CONTCAR')
     task_path = re.sub('confs', global_task_name, conf_path)
-    task_path = os.path.join(task_path, 'vasp-k%.2f' % kspacing)
+    if 'user_incar' in jdata.keys():
+        vasp_user_str='vasp-user_incar'
+    else:
+        vasp_user_str='vasp-k%.2f' % kspacing
+    task_path = os.path.join(task_path, vasp_user_str)
     os.makedirs(task_path, exist_ok=True)
     cwd = os.getcwd()
     os.chdir(task_path)

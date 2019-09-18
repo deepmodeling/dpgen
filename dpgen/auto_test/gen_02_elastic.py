@@ -12,23 +12,23 @@ global_equi_name = '00.equi'
 global_task_name = '02.elastic'
 
 def make_vasp(jdata, conf_dir, norm_def = 2e-3, shear_def = 5e-3) :
-    fp_params = jdata['vasp_params']
-    ecut = fp_params['ecut']
-    ediff = fp_params['ediff']
-    npar = fp_params['npar']
-    kpar = fp_params['kpar']
-    kspacing = fp_params['kspacing']
-    kgamma = fp_params['kgamma']
     norm_def = jdata['norm_deform']
     shear_def = jdata['shear_deform']
     conf_path = os.path.abspath(conf_dir)
     conf_poscar = os.path.join(conf_path, 'POSCAR')
+
     # get equi poscar
+    if 'relax_incar' in jdata.keys():
+        vasp_str='vasp-relax_incar'
+    else:
+        kspacing = jdata['vasp_params']['kspacing']
+        vasp_str='vasp-k%.2f' % kspacing
+
     equi_path = re.sub('confs', global_equi_name, conf_path)
-    equi_path = os.path.join(equi_path, 'vasp-k%.2f' % kspacing)
+    equi_path = os.path.join(equi_path, vasp_str)
     equi_contcar = os.path.join(equi_path, 'CONTCAR')
     task_path = re.sub('confs', global_task_name, conf_path)
-    task_path = os.path.join(task_path, 'vasp-k%.2f' % kspacing)
+    task_path = os.path.join(task_path, vasp_str)
     os.makedirs(task_path, exist_ok=True)
     cwd = os.getcwd()
     os.chdir(task_path)
@@ -58,7 +58,15 @@ def make_vasp(jdata, conf_dir, norm_def = 2e-3, shear_def = 5e-3) :
         relax_incar_path = os.path.abspath(relax_incar_path)
         fc = open(relax_incar_path).read()
     else :
+        fp_params = jdata['vasp_params']
+        ecut = fp_params['ecut']
+        ediff = fp_params['ediff']
+        npar = fp_params['npar']
+        kpar = fp_params['kpar']
+        kspacing = fp_params['kspacing']
+        kgamma = fp_params['kgamma']
         fc = vasp.make_vasp_relax_incar(ecut, ediff, True, False, False, npar=npar,kpar=kpar, kspacing = None, kgamma = None)
+        
     with open(os.path.join(task_path, 'INCAR'), 'w') as fp :
         fp.write(fc)
     # gen potcar

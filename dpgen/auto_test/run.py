@@ -110,6 +110,41 @@ def _run(machine,
     else :
         raise RuntimeError("unknow machine type")
 
+def make_work_path(jdata,task,reprod_opt,static,user):
+    kspacing = jdata['vasp_params']['kspacing']
+    task_type=jdata['task_type']
+    conf_dir=jdata['conf_dir']
+    conf_path = os.path.abspath(conf_dir)
+    task_path = re.sub('confs', task, conf_path)
+
+    if task_type=="vasp":
+        if user:
+            work_path=os.path.join(task_path, 'vasp-user_incar')
+            assert(os.path.isdir(work_path))
+            return work_path
+        if static:
+            if 'scf_incar' in jdata.keys():
+                task_type=task_type+'-static-scf_incar'
+            else:
+                task_type=task_type+'-static-k%.2f' % (kspacing)
+        else:
+            if 'relax_incar' in jdata.keys():
+                task_type=task_type+'-relax_incar'
+            else: 
+                task_type=task_type+'-k%.2f' % (kspacing)
+    elif task_type in lammps_task_type:
+        if static:
+            task_type=task_type+'-static'
+        elif reprod_opt :
+            if 'relax_incar' in jdata.keys():
+                task_type=task_type+'-reprod-relax_incar'
+            else:
+                task_type=task_type+'-reprod-k%.2f'% (kspacing)
+
+    work_path=os.path.join(task_path, task_type)
+    assert(os.path.isdir(work_path))
+    return work_path
+
 def gen_equi(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
     cwd=os.getcwd()
@@ -126,18 +161,7 @@ def gen_equi(task_type,jdata,mdata):
 def run_equi(task_type,jdata,mdata,ssh_sess):
         #rmprint("This module has been run !")
 
-    conf_dir=jdata['conf_dir']
-    fp_params = jdata['vasp_params']
-    kspacing = fp_params['kspacing']
-
-    conf_path = os.path.abspath(conf_dir)
-    equi_path = re.sub('confs', '00.equi', conf_path)
-    if task_type=="vasp":
-        work_path=os.path.join(equi_path, 'vasp-k%.2f' % kspacing)
-    elif task_type in lammps_task_type:
-        work_path=os.path.join(equi_path, task_type)
-    assert(os.path.isdir(work_path))
-    
+    work_path=make_work_path(jdata,'00.equi',False,False,False)
     all_task = glob.glob(os.path.join(work_path,'.'))
     
     #vasp
@@ -257,19 +281,9 @@ def gen_eos(task_type,jdata,mdata):
     os.chdir(cwd)
 
 def run_eos(task_type,jdata,mdata,ssh_sess):
-    conf_dir=jdata['conf_dir']
-    fp_params = jdata['vasp_params']
-    kspacing = fp_params['kspacing']
-    
-    conf_path = os.path.abspath(conf_dir)
-    task_path = re.sub('confs', '01.eos', conf_path)
-    if task_type=="vasp":
-        work_path=os.path.join(task_path, 'vasp-k%.2f' % kspacing)
-    elif task_type in lammps_task_type:
-        work_path=os.path.join(task_path, task_type)
-    assert(os.path.isdir(work_path))
+    work_path=make_work_path(jdata,'01.eos',False,False,False)
     print(work_path)
-    
+
     all_task = glob.glob(os.path.join(work_path, "vol-*"))
     all_task.sort()
     
@@ -380,17 +394,7 @@ def gen_elastic(task_type,jdata,mdata):
     os.chdir(cwd)
 
 def run_elastic(task_type,jdata,mdata,ssh_sess):
-    conf_dir=jdata['conf_dir']
-    fp_params = jdata['vasp_params']
-    kspacing = fp_params['kspacing']
-    
-    conf_path = os.path.abspath(conf_dir)
-    task_path = re.sub('confs', '02.elastic', conf_path)
-    if task_type == "vasp":
-        work_path=os.path.join(task_path, 'vasp-k%.2f' % kspacing)
-    elif task_type in lammps_task_type:
-        work_path=os.path.join(task_path, task_type)
-    assert(os.path.isdir(work_path))
+    work_path=make_work_path(jdata,'02.elastic',False,False,False)
     print(work_path)
     
     all_task = glob.glob(os.path.join(work_path, "dfm-*"))
@@ -502,19 +506,8 @@ def gen_vacancy(task_type,jdata,mdata):
     os.chdir(cwd)
 
 def run_vacancy(task_type,jdata,mdata,ssh_sess):
-    conf_dir=jdata['conf_dir']
-    fp_params = jdata['vasp_params']
-    kspacing = fp_params['kspacing']
-    
 
-    conf_path = os.path.abspath(conf_dir)
-    task_path = re.sub('confs', '03.vacancy', conf_path)
-    if task_type == "vasp":
-        work_path=os.path.join(task_path, 'vasp-k%.2f' % kspacing)
-    elif task_type in lammps_task_type:
-        work_path=os.path.join(task_path, task_type)
-    assert(os.path.isdir(work_path))
-    
+    work_path=make_work_path(jdata,'03.vacancy',False,False,False)
     all_task = glob.glob(os.path.join(work_path,'struct-*'))
     
     #vasp
@@ -632,21 +625,9 @@ def gen_interstitial(task_type,jdata,mdata):
     os.chdir(cwd)
 
 def run_interstitial(task_type,jdata,mdata,ssh_sess):
-    conf_dir=jdata['conf_dir']
-    fp_params = jdata['vasp_params']
-    kspacing = fp_params['kspacing']
+
     reprod_opt=jdata['reprod-opt']
-        
-    conf_path = os.path.abspath(conf_dir)
-    task_path = re.sub('confs', '04.interstitial', conf_path)
-    if task_type == "vasp":
-        work_path=os.path.join(task_path, 'vasp-k%.2f' % kspacing)
-    elif task_type in lammps_task_type:
-        work_path=os.path.join(task_path, task_type)
-        if reprod_opt:
-            work_path=os.path.join(task_path, '%s-reprod-k%.2f'%(task_type,kspacing))
-    assert(os.path.isdir(work_path))
-    
+    work_path=make_work_path(jdata,'04.interstitial',reprod_opt,False,False)
     all_task = glob.glob(os.path.join(work_path,'struct-*'))
     
     #vasp
@@ -780,38 +761,21 @@ def gen_surf(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
     max_miller=jdata['max_miller']
     relax_box=jdata['relax_box']
-    static_opt=jdata['static-opt']
+    static=jdata['static-opt']
     cwd=os.getcwd()
     #vasp
     if task_type == "vasp":
-        gen_05_surf.make_vasp(jdata, conf_dir, max_miller, static = static_opt, relax_box = relax_box)
+        gen_05_surf.make_vasp(jdata, conf_dir, max_miller, static = static, relax_box = relax_box)
     #lammps
     elif task_type in lammps_task_type :
-        gen_05_surf.make_lammps(jdata, conf_dir, max_miller, static = static_opt, relax_box = relax_box, task_type = task_type)
+        gen_05_surf.make_lammps(jdata, conf_dir, max_miller, static = static, relax_box = relax_box, task_type = task_type)
     else :
         raise RuntimeError("unknow task ", task_type)
     os.chdir(cwd)
 
 def run_surf(task_type,jdata,mdata,ssh_sess):
-    conf_dir=jdata['conf_dir']
-    fp_params = jdata['vasp_params']
-    kspacing = fp_params['kspacing']
-    static = jdata['static-opt']
-
-    conf_path = os.path.abspath(conf_dir)
-    task_path = re.sub('confs', '05.surf', conf_path)
-    if task_type == "vasp":
-        if static:
-            work_path=os.path.join(task_path, 'vasp-static-k%.2f' % kspacing)
-        else:
-            work_path=os.path.join(task_path, 'vasp-k%.2f' % kspacing)
-    elif task_type in lammps_task_type:
-        if static:
-            task_name=task_type+'-static'
-        else:
-            task_name=task_type
-        work_path=os.path.join(task_path, task_name)
-    assert(os.path.isdir(work_path))
+    static=jdata['static-opt']
+    work_path=make_work_path(jdata,'05.surf',False,static,False)
     
     all_task = glob.glob(os.path.join(work_path,'struct-*'))
      
@@ -930,17 +894,8 @@ def gen_phonon(task_type,jdata,mdata):
     os.chdir(cwd)
 
 def run_phonon(task_type,jdata,mdata,ssh_sess):
-    conf_dir=jdata['conf_dir']
-    fp_params = jdata['vasp_params']
-    kspacing = fp_params['kspacing']
-    
-    conf_path = os.path.abspath(conf_dir)
-    task_path = re.sub('confs', '06.phonon', conf_path)
-    if task_type == "vasp":
-        work_path=os.path.join(task_path, 'vasp-k%.2f' % kspacing)
-    elif task_type in lammps_task_type:
-        work_path=os.path.join(task_path, task_type)
-    assert(os.path.isdir(work_path))
+    user= ('user_incar' in jdata.keys())
+    work_path=make_work_path(jdata,'06.phonon',False,False,user)
     
     all_task = glob.glob(os.path.join(work_path,'.'))
      
@@ -1026,9 +981,16 @@ def run_task (json_file, machine_file) :
     confs = jdata['conf_dir']
     ele_list=[key for key in jdata['potcar_map'].keys()]
     key_id = jdata['key_id']
+
     ii = jdata['task_type']
     jj=jdata['task']
-    task_list=['equi','eos','elastic','vacancy','interstitial','surf','all']
+    task_list=['equi','eos','elastic','vacancy','interstitial','surf','phonon','all']
+    task_type_list=['vasp']+lammps_task_type
+    if jj not in task_list :
+        raise RuntimeError ("unknow task %s, something wrong" % jj)
+    if ii not in task_type_list :
+        raise RuntimeError ("unknow task type %s, something wrong" % ii)
+
     #gen_configuration
     if 'confs' in confs and (not os.path.exists(confs+'/POSCAR')) :
         print('generate %s' % (ele_list))
@@ -1087,8 +1049,6 @@ def run_task (json_file, machine_file) :
         log_iter ("cmpt_phonon", ii, "phonon")
         cmpt_phonon (ii, jdata, mdata)
     '''
-    if jj not in task_list :
-        raise RuntimeError ("unknow task %s, something wrong" % jj)
     record_iter (record, confs, ii, jj)
 
 def gen_test(args):

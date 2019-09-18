@@ -22,20 +22,29 @@ def make_vasp(jdata, conf_dir, max_miller = 2, relax_box = False, static = False
     min_vacuum_size = jdata['min_vacuum_size']
     pert_xz = jdata['pert_xz']
 
+    if 'relax_incar' in jdata.keys():
+        vasp_str='vasp-relax_incar'
+    else: 
+        vasp_str='vasp-k%.2f' % (kspacing)
+
     # get conf poscar
     # conf_path = os.path.abspath(conf_dir)
     # conf_poscar = os.path.join(conf_path, 'POSCAR')
     equi_path = re.sub('confs', global_equi_name, conf_dir)
-    equi_path = os.path.join(equi_path, 'vasp-k%.2f' % kspacing)
+    equi_path = os.path.join(equi_path, vasp_str)
     equi_path = os.path.abspath(equi_path)    
     equi_contcar = os.path.join(equi_path, 'CONTCAR')
     assert os.path.exists(equi_contcar),"Please compute the equilibrium state using vasp first"
     task_path = re.sub('confs', global_task_name, conf_dir)
     task_path = os.path.abspath(task_path)
     if static:
-        task_path = os.path.join(task_path, 'vasp-static-k%.2f' % kspacing)
+        if 'scf_incar' in jdata.keys():
+            vasp_static_str='vasp-static-scf_incar'
+        else:
+            vasp_static_str='vasp-static-k%.2f' % (kspacing)
+        task_path = os.path.join(task_path, vasp_static_str)
     else :
-        task_path = os.path.join(task_path, 'vasp-k%.2f' % kspacing)
+        task_path = os.path.join(task_path, vasp_str)
     os.makedirs(task_path, exist_ok=True)
     cwd = os.getcwd()
     os.chdir(task_path)
@@ -131,8 +140,13 @@ def make_lammps(jdata, conf_dir, max_miller = 2, static = False, relax_box = Fal
     # get equi poscar
     # conf_path = os.path.abspath(conf_dir)
     # conf_poscar = os.path.join(conf_path, 'POSCAR')
+    if 'relax_incar' in jdata.keys():
+        vasp_str='vasp-relax_incar'
+    else: 
+        vasp_str='vasp-k%.2f' % (kspacing)
+
     equi_path = re.sub('confs', global_equi_name, conf_dir)
-    equi_path = os.path.join(equi_path, 'vasp-k%.2f' % kspacing)
+    equi_path = os.path.join(equi_path, vasp_str)
     equi_path = os.path.abspath(equi_path)    
     equi_contcar = os.path.join(equi_path, 'CONTCAR')    
     assert os.path.exists(equi_contcar),"Please compute the equilibrium state using vasp first"
