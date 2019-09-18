@@ -420,9 +420,9 @@ def run_elastic(task_type,jdata,mdata,ssh_sess):
             else :
                 run_tasks_.append(ii)
 
-        forward_files = ['INCAR', 'POSCAR','POTCAR','KPOINTS']
+        forward_files = ['INCAR', 'POSCAR','POTCAR']
         backward_files = ['OUTCAR','CONTCAR','OSZICAR']
-        common_files=['INCAR','POTCAR','KPOINTS']
+        common_files=['INCAR','POTCAR']
 
     #lammps
     elif task_type in lammps_task_type:
@@ -920,7 +920,7 @@ def run_phonon(task_type,jdata,mdata,ssh_sess):
                 run_tasks_.append(ii)
             
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
-        forward_files = ['INCAR', 'POTCAR','KPOINTS']
+        forward_files = ['INCAR', 'POTCAR']
         backward_files = ['OUTCAR','OSZICAR','vasprun.xml']
         common_files=['POSCAR']
 
