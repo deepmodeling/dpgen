@@ -56,10 +56,13 @@ def make_vasp(jdata, conf_dir) :
     os.chdir(vasp_path)
     print(vasp_path)
     # gen incar
-    if is_alloy :
-        fc = vasp.make_vasp_relax_incar(ecut, ediff, True,  True, True, npar, kpar, kspacing, kgamma)
+    if  'relax_incar' in jdata.keys():
+        relax_incar_path = jdata['relax_incar']
+        assert(os.path.exists(relax_incar_path))
+        relax_incar_path = os.path.abspath(relax_incar_path)
+        fc = open(relax_incar_path).read()
     else :
-        fc = vasp.make_vasp_relax_incar(ecut, ediff, False, True, True, npar, kpar, kspacing, kgamma)
+        fc = vasp.make_vasp_relax_incar(ecut, ediff, is_alloy,  True, True, npar, kpar, kspacing, kgamma)
     with open('INCAR', 'w') as fp :
         fp.write(fc)
     # gen poscar

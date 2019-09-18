@@ -50,7 +50,13 @@ def _make_vasp(jdata, conf_dir, supercell, insert_ele) :
     for jj in vds :
         dss.append(jj.generate_defect_structure(supercell))
     # gen incar
-    fc = vasp.make_vasp_relax_incar(ecut, ediff, True, True, True, npar=npar,kpar=kpar, kspacing = kspacing, kgamma = kgamma)
+    if  'relax_incar' in jdata.keys():
+        relax_incar_path = jdata['relax_incar']
+        assert(os.path.exists(relax_incar_path))
+        relax_incar_path = os.path.abspath(relax_incar_path)
+        fc = open(relax_incar_path).read()
+    else :
+        fc = vasp.make_vasp_relax_incar(ecut, ediff, True, True, True, npar=npar,kpar=kpar, kspacing = kspacing, kgamma = kgamma)
     with open(os.path.join(task_path, 'INCAR'), 'w') as fp :
         fp.write(fc)
     # gen tasks    
@@ -169,16 +175,14 @@ def _make_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_type) :
             if os.path.islink(jj):
                 os.unlink(jj)
         os.symlink(os.path.relpath(f_lammps_in), 'lammps.in')
-        if task_type=='deepmd':
-            for ii in model_name :
-                if os.path.exists(ii) :
-                    os.remove(ii)
-            for (ii,jj) in zip(models, model_name) :
-                os.symlink(os.path.relpath(ii), jj)
-            share_models = glob.glob(os.path.join(ls, '*pb'))
-        else:
-            share_models = models
-            
+
+        for ii in model_name :
+            if os.path.exists(ii) :
+                os.remove(ii)
+        for (ii,jj) in zip(models, model_name) :
+            os.symlink(os.path.relpath(ii), jj)
+        share_models = [os.path.join(ls,ii) for ii in model_name]
+        
         # loop over frames
         for ii in range(xdat_nframes) :
             frame_path = 'frame.%06d' % ii
@@ -280,18 +284,15 @@ def _make_lammps(jdata, conf_dir, supercell, insert_ele, task_type) :
     # gen tasks    
     copy_str = "%sx%sx%s" % (supercell[0], supercell[1], supercell[2])
     cwd = os.getcwd()
-    if task_type=='deepmd':
-        os.chdir(task_path)
-        for ii in model_name :
-            if os.path.exists(ii) :
-                os.remove(ii)
-        for (ii,jj) in zip(models, model_name) :
-            os.symlink(os.path.relpath(ii), jj)
-        share_models = glob.glob(os.path.join(task_path, '*pb'))
-    else :
-        share_models=models 
-    
 
+    os.chdir(task_path)
+    for ii in model_name :
+        if os.path.exists(ii) :
+            os.remove(ii)
+    for (ii,jj) in zip(models, model_name) :
+        os.symlink(os.path.relpath(ii), jj)
+    share_models = [os.path.join(task_path,ii) for ii in model_name]
+    
     for ii in range(len(dss)) :
         struct_path = os.path.join(task_path, 'struct-%s-%s-%03d' % (insert_ele,copy_str,ii))
         print('# generate %s' % (struct_path))

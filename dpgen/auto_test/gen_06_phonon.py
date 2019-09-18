@@ -110,7 +110,13 @@ def make_vasp(jdata, conf_dir) :
     os.chdir(cwd)
     task_poscar = os.path.join(task_path, 'POSCAR-unitcell')   
     # gen incar
-    fc = vasp.make_vasp_phonon_incar(ecut, ediff, npar, kpar, kspacing = None, kgamma = None)
+    if  'user_incar' in jdata.keys():
+        user_incar_path = jdata['user_incar']
+        assert(os.path.exists(user_incar_path))
+        user_incar_path = os.path.abspath(user_incar_path)
+        fc = open(user_incar_path).read()
+    else :
+        fc = vasp.make_vasp_phonon_incar(ecut, ediff, npar, kpar, kspacing = None, kgamma = None)
     with open(os.path.join(task_path, 'INCAR'), 'w') as fp :
         fp.write(fc)
     # gen potcar
