@@ -81,13 +81,7 @@ def get_structure_from_poscar(file_name, number_of_dimensions=3):
                         cell=direct_cell)
 
 def make_vasp(jdata, conf_dir) :
-    fp_params = jdata['vasp_params']
-    ecut = fp_params['ecut']
-    ediff = fp_params['ediff']
-    npar = fp_params['npar']
-    kpar = fp_params['kpar']
-    kspacing = fp_params['kspacing']
-    kgamma = fp_params['kgamma']
+    
     supercell_matrix=jdata['supercell_matrix']
     band_path=jdata['band']
 
@@ -124,8 +118,17 @@ def make_vasp(jdata, conf_dir) :
         assert(os.path.exists(user_incar_path))
         user_incar_path = os.path.abspath(user_incar_path)
         fc = open(user_incar_path).read()
+        kspacing =float(re.findall((r"KSPACING(.+?)\n"),fc)[0].replace('=',''))
+        kgamma =('T' in re.findall((r"KGAMMA(.+?)\n"),fc)[0])
     else :
-        fc = vasp.make_vasp_phonon_incar(ecut, ediff, npar, kpar, kspacing = kspacing, kgamma = kgamma)
+        fp_params = jdata['vasp_params']
+        ecut = fp_params['ecut']
+        ediff = fp_params['ediff']
+        npar = fp_params['npar']
+        kpar = fp_params['kpar']
+        kspacing = fp_params['kspacing']
+        kgamma = fp_params['kgamma']
+        fc = vasp.make_vasp_phonon_incar(ecut, ediff, npar, kpar, kspacing = None, kgamma = None)
     with open(os.path.join(task_path, 'INCAR'), 'w') as fp :
         fp.write(fc)
     # gen potcar
@@ -142,9 +145,9 @@ def make_vasp(jdata, conf_dir) :
             with open(fname) as infile:
                 outfile.write(infile.read())
     # gen kpoints
-    #fc = vasp.make_kspacing_kpoints(task_poscar, kspacing, kgamma)
-    #with open(os.path.join(task_path,'KPOINTS'), 'w') as fp:
-    #    fp.write(fc)
+    fc = vasp.make_kspacing_kpoints(task_poscar, kspacing, kgamma)
+    with open(os.path.join(task_path,'KPOINTS'), 'w') as fp:
+        fp.write(fc)
     # gen band.conf
     os.chdir(task_path)
     with open('band.conf','w') as fp:
