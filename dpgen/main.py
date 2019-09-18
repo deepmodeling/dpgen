@@ -107,29 +107,6 @@ def main():
 
     parser_db.set_defaults(func=db_run)
 
-    # # convert  model
-    # parser_structure = subparsers.add_parser(
-    #     "struct",
-    #     help="structure conversion and analysis tools.")
-
-    # parser_structure.add_argument(
-    #     "-f", "--filenames", dest="filenames",
-    #     metavar="filename", nargs="+",
-    #     help="List of structure files.")
-
-    # groups = parser_structure.add_mutually_exclusive_group(required=True)
-    # groups.add_argument("-c", "--convert", dest="convert", action="store_true",
-    #                     help="Convert from structure file 1 to structure "
-    #                          "file 2. Format determined from filename. "
-    #                          "Supported formats include POSCAR/CONTCAR, "
-    #                          "CIF, lmp.")
-    # groups.add_argument("-s", "--symmetry", dest="symmetry",
-    #                     metavar="tolerance", type=float,
-    #                    help="Determine the spacegroup using the "
-    #                          "specified tolerance. 0.1 is usually a good "
-    #                          "value for DFT calculations.")
-    # parser_structure.set_defaults(func=gen_struct)
-
 
     try:
         import argcomplete
