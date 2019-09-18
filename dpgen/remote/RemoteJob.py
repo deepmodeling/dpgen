@@ -197,6 +197,7 @@ class RemoteJob (object):
         stdin, stdout, stderr = self.ssh.exec_command(('cd %s ;' % self.remote_root) + cmd)
         exit_status = stdout.channel.recv_exit_status() 
         if exit_status != 0:
+            dlog.info("Error info: %s "%(stderr.readlines()[0]))
             raise RuntimeError("Get error code %d in calling %s through ssh with job: %s "% (exit_status, cmd, self.job_uuid))
         return stdin, stdout, stderr    
 

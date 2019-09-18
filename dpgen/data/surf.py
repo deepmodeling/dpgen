@@ -8,6 +8,7 @@ import dpgen.data.tools.fcc as fcc
 import dpgen.data.tools.diamond as diamond
 import dpgen.data.tools.sc as sc
 import dpgen.data.tools.bcc as bcc
+from dpgen import dlog
 import time
 from dpgen import ROOT_PATH
 from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
@@ -212,8 +213,8 @@ def make_super_cell_pymatgen (jdata) :
         os.chdir(path_cur_surf)
         slabgen = SlabGenerator(ss, miller, z_min, 1e-3)
         all_slabs = slabgen.get_slabs() 
-        print(os.getcwd())
-        print("Miller %s: The slab has %s termination, use the first one" %(str(miller), len(all_slabs)))
+        dlog.info(os.getcwd())
+        dlog.info("Miller %s: The slab has %s termination, use the first one" %(str(miller), len(all_slabs)))
         all_slabs[0].to('POSCAR', 'POSCAR')
         if super_cell[0] > 1 or super_cell[1] > 1 :
             st=Structure.from_file('POSCAR')
@@ -435,7 +436,7 @@ def pert_scaled(jdata) :
             path_scale = os.path.join(path_scale, 'scale-%.3f' % jj)
             assert(os.path.isdir(path_scale))
             os.chdir(path_scale)
-            print(os.getcwd())
+            dlog.info(os.getcwd())
             poscar_in = os.path.join(path_scale, 'POSCAR')
             assert(os.path.isfile(poscar_in))
             for ll in elongs:
@@ -518,8 +519,8 @@ def run_vasp_relax(jdata, mdata, ssh_sess):
     #        forward_common_files=['cvasp.py']
     relax_tasks = glob.glob(os.path.join(work_dir, "surf-*/","sys-*"))
     relax_tasks.sort()
-    #print("work_dir",work_dir)
-    #print("relax_tasks",relax_tasks)
+    #dlog.info("work_dir",work_dir)
+    #dlog.info("relax_tasks",relax_tasks)
     if len(relax_tasks) == 0:
         return
 
@@ -529,7 +530,7 @@ def run_vasp_relax(jdata, mdata, ssh_sess):
             relax_run_tasks.append(ii)
     run_tasks = [ii.replace(work_dir+"/", "") for ii in relax_run_tasks]
 
-    #print(run_tasks)
+    #dlog.info(run_tasks)
     assert (machine_type == "slurm" or machine_type =="Slurm"), "Currently only support for Slurm!"
     _group_slurm_jobs(ssh_sess,
                            fp_resources,
@@ -546,20 +547,24 @@ def gen_init_surf(args):
        from monty.serialization import loadfn,dumpfn
        warnings.simplefilter('ignore', ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
        jdata=loadfn(args.PARAM)
-       mdata=loadfn(args.MACHINE)
+       if args.MACHINE is not None:
+          mdata=loadfn(args.MACHINE)
     except:
         with open (args.PARAM, 'r') as fp :
             jdata = json.load (fp)
-        with open (args.MACHINE, "r") as fp:
-            mdata = json.load(fp)
+        if args.MACHINE is not None:
+           with open (args.MACHINE, "r") as fp:
+                mdata = json.load(fp)
 
     out_dir = out_dir_name(jdata)
     jdata['out_dir'] = out_dir
-    print ("# working dir %s" % out_dir)
-    # Decide a proper machine
-    mdata = decide_fp_machine(mdata)
-    fp_machine = mdata['fp_machine']
-    fp_ssh_sess = SSHSession(fp_machine)  
+    dlog.info ("# working dir %s" % out_dir)
+
+    if args.MACHINE is not None:
+       # Decide a proper machine
+       mdata = decide_fp_machine(mdata)
+       fp_machine = mdata['fp_machine']
+       fp_ssh_sess = SSHSession(fp_machine)  
     #stage = args.STAGE
     stage_list = [int(i) for i in jdata['stages']]
     for stage in stage_list:
@@ -568,7 +573,8 @@ def gen_init_surf(args):
             make_super_cell_pymatgen(jdata)
             place_element(jdata)
             make_vasp_relax(jdata)
-            run_vasp_relax(jdata, mdata, fp_ssh_sess)
+            if args.MACHINE is not None:
+               run_vasp_relax(jdata, mdata, fp_ssh_sess)
         # elif stage == 0 :
         #     # create_path(out_dir)
         #     # make_super_cell(jdata)
@@ -606,7 +612,7 @@ def _main() :
 
     out_dir = out_dir_name(jdata)
     jdata['out_dir'] = out_dir
-    print ("# working dir %s" % out_dir)
+    dlog.info ("# working dir %s" % out_dir)
 
     stage = args.STAGE
 

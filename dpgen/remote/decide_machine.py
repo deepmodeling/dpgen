@@ -200,6 +200,6 @@ def decide_fp_machine(mdata):
 		            profile['group_size'] = mdata['fp_group_size']
 		            profile['command'] = mdata['fp_command']
 		            json.dump(profile, _outfile, indent = 4)
-	print("mdata", mdata)
+#	print("mdata", mdata)
 	return mdata
 
