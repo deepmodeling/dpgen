@@ -57,6 +57,8 @@ def make_vasp(jdata, conf_dir, norm_def = 2e-3, shear_def = 5e-3) :
         assert(os.path.exists(relax_incar_path))
         relax_incar_path = os.path.abspath(relax_incar_path)
         fc = open(relax_incar_path).read()
+        kspacing =float(re.findall((r"KSPACING(.+?)\n"),fc)[0].replace('=',''))
+        kgamma =('T' in re.findall((r"KGAMMA(.+?)\n"),fc)[0])
     else :
         fp_params = jdata['vasp_params']
         ecut = fp_params['ecut']
@@ -83,9 +85,9 @@ def make_vasp(jdata, conf_dir, norm_def = 2e-3, shear_def = 5e-3) :
             with open(fname) as infile:
                 outfile.write(infile.read())
     # gen kpoints
-    #fc = vasp.make_kspacing_kpoints(task_poscar, kspacing, kgamma)
-    #with open(os.path.join(task_path,'KPOINTS'), 'w') as fp:
-    #    fp.write(fc)
+    fc = vasp.make_kspacing_kpoints(task_poscar, kspacing, kgamma)
+    with open(os.path.join(task_path,'KPOINTS'), 'w') as fp:
+        fp.write(fc)
     # gen tasks    
     cwd = os.getcwd()
     for ii in range(n_dfm) :
@@ -93,7 +95,7 @@ def make_vasp(jdata, conf_dir, norm_def = 2e-3, shear_def = 5e-3) :
         dfm_path = os.path.join(task_path, 'dfm-%03d' % ii)
         os.makedirs(dfm_path, exist_ok=True)
         os.chdir(dfm_path)
-        for jj in ['POSCAR', 'POTCAR', 'INCAR'] :
+        for jj in ['POSCAR', 'POTCAR', 'INCAR', 'KPOINTS'] :
             if os.path.isfile(jj):
                 os.remove(jj)
         # make conf
@@ -104,7 +106,7 @@ def make_vasp(jdata, conf_dir, norm_def = 2e-3, shear_def = 5e-3) :
         # link incar, potcar, kpoints
         os.symlink(os.path.relpath(os.path.join(task_path, 'INCAR')), 'INCAR')
         os.symlink(os.path.relpath(os.path.join(task_path, 'POTCAR')), 'POTCAR')
-        #os.symlink(os.path.relpath(os.path.join(task_path, 'KPOINTS')), 'KPOINTS')
+        os.symlink(os.path.relpath(os.path.join(task_path, 'KPOINTS')), 'KPOINTS')
     cwd = os.getcwd()
 
 def make_lammps(jdata, conf_dir,task_type) :
