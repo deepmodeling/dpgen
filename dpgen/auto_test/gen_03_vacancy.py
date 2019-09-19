@@ -13,22 +13,21 @@ global_equi_name = '00.equi'
 global_task_name = '03.vacancy'
 
 def make_vasp(jdata, conf_dir, supercell = [1,1,1]) :
-    fp_params = jdata['vasp_params']
-    ecut = fp_params['ecut']
-    ediff = fp_params['ediff']
-    npar = fp_params['npar']
-    kpar = fp_params['kpar']
-    kspacing = fp_params['kspacing']
-    kgamma = fp_params['kgamma']
     conf_path = os.path.abspath(conf_dir)
     conf_poscar = os.path.join(conf_path, 'POSCAR')
     # get equi poscar
+    if 'relax_incar' in jdata.keys():
+        vasp_str='vasp-relax_incar'
+    else:
+        kspacing = jdata['vasp_params']['kspacing']
+        vasp_str='vasp-k%.2f' % kspacing
     equi_path = re.sub('confs', global_equi_name, conf_path)
-    equi_path = os.path.join(equi_path, 'vasp-k%.2f' % kspacing)
+    equi_path = os.path.join(equi_path, vasp_str)
     equi_contcar = os.path.join(equi_path, 'CONTCAR')
     assert os.path.exists(equi_contcar),"Please compute the equilibrium state using vasp first"
     task_path = re.sub('confs', global_task_name, conf_path)
-    task_path = os.path.join(task_path, 'vasp-k%.2f' % kspacing)
+    task_path = os.path.join(task_path, vasp_str)
+
     os.makedirs(task_path, exist_ok=True)
     cwd = os.getcwd()
     os.chdir(task_path)
@@ -45,7 +44,20 @@ def make_vasp(jdata, conf_dir, supercell = [1,1,1]) :
     for jj in vds :
         dss.append(jj.generate_defect_structure(supercell))
     # gen incar
-    fc = vasp.make_vasp_relax_incar(ecut, ediff, True, True, True, npar=npar,kpar=kpar, kspacing = kspacing, kgamma = kgamma)
+    if  'relax_incar' in jdata.keys():
+        relax_incar_path = jdata['relax_incar']
+        assert(os.path.exists(relax_incar_path))
+        relax_incar_path = os.path.abspath(relax_incar_path)
+        fc = open(relax_incar_path).read()
+    else :
+        fp_params = jdata['vasp_params']
+        ecut = fp_params['ecut']
+        ediff = fp_params['ediff']
+        npar = fp_params['npar']
+        kpar = fp_params['kpar']
+        kspacing = fp_params['kspacing']
+        kgamma = fp_params['kgamma']
+        fc = vasp.make_vasp_relax_incar(ecut, ediff, True, True, True, npar=npar,kpar=kpar, kspacing = kspacing, kgamma = kgamma)
     with open(os.path.join(task_path, 'INCAR'), 'w') as fp :
         fp.write(fc)
     # gen potcar
@@ -105,7 +117,11 @@ def make_lammps(jdata, conf_dir, task_type, supercell) :
     conf_poscar = os.path.join(conf_path, 'POSCAR')
     # get equi poscar
     equi_path = re.sub('confs', global_equi_name, conf_path)
-    equi_path = os.path.join(equi_path, 'vasp-k%.2f' % kspacing)
+    if 'relax_incar' in jdata.keys():
+        vasp_str='vasp-relax_incar'
+    else:
+        vasp_str='vasp-k%.2f' % kspacing 
+    equi_path = os.path.join(equi_path, vasp_str)
     equi_contcar = os.path.join(equi_path, 'CONTCAR')
     assert os.path.exists(equi_contcar),"Please compute the equilibrium state using vasp first"
     # equi_path = re.sub('confs', global_equi_name, conf_path)
@@ -152,17 +168,13 @@ def make_lammps(jdata, conf_dir, task_type, supercell) :
     copy_str = "%sx%sx%s" % (supercell[0], supercell[1], supercell[2])
     cwd = os.getcwd()
     
-    if task_type =='deepmd':    
-        os.chdir(task_path)
-        for ii in model_name :
-            if os.path.exists(ii) :
-                os.remove(ii)
-        for (ii,jj) in zip(models, model_name) :
-            os.symlink(os.path.relpath(ii), jj)
-        share_models = glob.glob(os.path.join(task_path, '*pb'))
-    else:
-        share_models = models
-
+    os.chdir(task_path)
+    for ii in model_name :
+        if os.path.exists(ii) :
+            os.remove(ii)
+    for (ii,jj) in zip(models, model_name) :
+        os.symlink(os.path.relpath(ii), jj)
+    share_models = [os.path.join(task_path,ii) for ii in model_name]
 
     for ii in range(len(dss)) :
         struct_path = os.path.join(task_path, 'struct-%s-%03d' % (copy_str,ii))

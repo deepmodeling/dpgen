@@ -55,9 +55,14 @@ def comput_vasp_nev(jdata, conf_dir, write_stable = False) :
         ele_types = vasp.get_poscar_types(poscar) 
         if len(ele_types) > 1 :
             raise RuntimeError('stable energy and volume only for one element, current you have %s from POSCAR' % str(ele_types))
-    ener_shift = comput_e_shift(poscar, 'vasp-k%.2f' % kspacing)
 
-    vasp_path = os.path.join(conf_path, 'vasp-k%.2f' % kspacing)
+    if 'relax_incar' in jdata.keys():
+        vasp_str='vasp-relax_incar'
+    else:
+        vasp_str='vasp-k%.2f' % kspacing
+
+    ener_shift = comput_e_shift(poscar, vasp_str)
+    vasp_path = os.path.join(conf_path, vasp_str)
     outcar = os.path.join(vasp_path, 'OUTCAR')
     # tag_fin = os.path.join(vasp_path, 'tag_finished')
     if not os.path.isfile(outcar) :
@@ -70,7 +75,7 @@ def comput_vasp_nev(jdata, conf_dir, write_stable = False) :
         if write_stable :
             stable_dir = 'stables'
             os.makedirs(stable_dir, exist_ok=True)
-            name_prefix=os.path.join(stable_dir,'%s.vasp-k%.2f' % (ele_types[0], kspacing))
+            name_prefix=os.path.join(stable_dir,'%s.'% (ele_types[0])+vasp_str)
             open(name_prefix + '.e', 'w').write('%.16f\n' % (epa))
             open(name_prefix + '.v', 'w').write('%.16f\n' % (vpa))
         return natoms, epa, vpa
