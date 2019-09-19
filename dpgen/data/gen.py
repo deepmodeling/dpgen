@@ -760,11 +760,11 @@ def gen_init_bulk(args) :
                 make_unit_cell(jdata)
                 make_super_cell(jdata)
                 place_element(jdata)
-                if args.MACHINE is not None:
-                   make_vasp_relax(jdata, mdata)
-                   run_vasp_relax(jdata, mdata, fp_ssh_sess)
-                else:
-                   make_vasp_relax(jdata, {"fp_resources":{}})
+            if args.MACHINE is not None:
+               make_vasp_relax(jdata, mdata)
+               run_vasp_relax(jdata, mdata, fp_ssh_sess)
+            else:
+               make_vasp_relax(jdata, {"fp_resources":{}})
         elif stage == 2 :
             dlog.info("Current stage is 2, perturb and scale")
             make_scale(jdata)
@@ -860,11 +860,12 @@ def _main() :
                 make_unit_cell(jdata)
                 make_super_cell(jdata)
                 place_element(jdata)
-                if args.MACHINE is not None:
-                   make_vasp_relax(jdata, mdata)
-                   run_vasp_relax(jdata, mdata, fp_ssh_sess)
-                else:
-                   make_vasp_relax(jdata, {"fp_resources":{}})
+
+            if args.MACHINE is not None:
+               make_vasp_relax(jdata, mdata)
+               run_vasp_relax(jdata, mdata, fp_ssh_sess)
+            else:
+               make_vasp_relax(jdata, {"fp_resources":{}})
         elif stage == 2 :
             dlog.info("Current stage is 2, perturb and scale")
             make_scale(jdata)
