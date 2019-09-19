@@ -372,7 +372,7 @@ def run_train (iter_index,
     run_tasks = [os.path.basename(ii) for ii in all_task]
 
     forward_files = [train_input_file]
-    backward_files = ['frozen_model.pb', 'lcurve.out']
+    backward_files = ['frozen_model.pb', 'lcurve.out', 'train.log']
     init_data_sys_ = jdata['init_data_sys']
     init_data_sys = []
     for ii in init_data_sys_ :
@@ -414,7 +414,9 @@ def run_train (iter_index,
                         train_group_size,
                         trans_comm_data,
                         forward_files,
-                        backward_files)
+                        backward_files,
+                        outlog = 'train.log',
+                        errlog = 'train.log')
 
 
 def post_train (iter_index,
@@ -1199,7 +1201,7 @@ def run_fp_inner (iter_index,
                         work_path,
                         run_tasks,
                         fp_group_size,
-                        [],
+                        forward_common_files,
                         forward_files,
                         backward_files,
                         outlog = log_file,
@@ -1220,6 +1222,7 @@ def run_fp (iter_index,
         if ('cvasp' in jdata) and (jdata['cvasp'] == True):
             mdata['fp_resources']['cvasp'] = True
         if ('cvasp' in  mdata["fp_resources"] ) and (mdata["fp_resources"]["cvasp"]==True):
+            #dlog.info("cvasp is on !")
             forward_common_files=['cvasp.py']
             forward_files.append('KPOINTS')
         else:

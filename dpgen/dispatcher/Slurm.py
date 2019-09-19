@@ -187,3 +187,9 @@ class Slurm(Batch) :
         nj = len(stdout.readlines())
         return nj < task_max
 
+    def _make_squeue(self,mdata1, res):
+        ret = ''
+        ret += 'squeue -u %s ' % mdata1['username']
+        ret += '-p %s ' % res['partition']
+        ret += '| grep PD'
+        return ret

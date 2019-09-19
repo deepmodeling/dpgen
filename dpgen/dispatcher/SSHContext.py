@@ -88,7 +88,7 @@ class SSHContext (object):
         self.ssh = self.ssh_session.get_ssh_client()        
         self.ssh_session.ensure_alive()
         try:
-           sftp = self.ssh.open_sftp()        
+           sftp = self.ssh.open_sftp() 
            sftp.mkdir(self.remote_root)
            sftp.close()
         except: 
