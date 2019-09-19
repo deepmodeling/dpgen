@@ -525,7 +525,7 @@ Usually, if you add the relative path of POSCAR as the above format,
 
 It is worth noting that the subsequent tasks need to rely on the calculation results of the equilibrium state, so it is necessary to give priority to the calculation of the equilibrium state while testing. And due to the stable consideration, we recommand you to test the equilibrium state of **vasp** before other tests.
 
-The second part is the computational settings for vasp and lammps. According to your actual needs， you can choose to add the paths of specific INCAR or use the simplified INCAR by setting `vasp_params`. The most important setting is to add the folder path `model_dir` of **deepmd** model and supply the corresponding element type map. Besides, `dpgen test` also is able to call common lammps packages, such as **meam**.
+The second part is the computational settings for vasp and lammps. According to your actual needs， you can choose to add the paths of specific INCAR or use the simplified INCAR by setting `vasp_params`. The priority of specified INCAR is higher than using `vasp_params`. The most important setting is to add the folder path `model_dir` of **deepmd** model and supply the corresponding element type map. Besides, `dpgen test` also is able to call common lammps packages, such as **meam**.
 ```json
 "relax_incar":"somewhere/relax_incar",
 "scf_incar":"somewhere/scf_incar",
