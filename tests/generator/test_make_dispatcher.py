@@ -1,6 +1,9 @@
+import os,sys,sys
 import unittest
 
-from context import make_dispatcher
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+__package__ = 'generator'
+from .context import make_dispatcher
 
 class TestDispatcher(unittest.TestCase):
     # def test_ssh_slurm(self):

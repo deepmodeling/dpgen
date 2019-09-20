@@ -1,5 +1,8 @@
-import os,json,glob,shutil,uuid,time
+import os,sys,json,glob,shutil,uuid,time
 import unittest
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+__package__ = 'lsf'
 from .context import LocalSession
 from .context import LocalContext
 from .context import LSF
@@ -37,7 +40,7 @@ class TestDispatcher(unittest.TestCase) :
         for ii in tasks:            
             my_file_cmp(self,
                         os.path.join('loc', ii, 'test0'),
-                        os.path.join('loc', ii, 'test1')))
+                        os.path.join('loc', ii, 'test1'))
             self.assertTrue(os.path.isfile(os.path.join('loc', ii, 'hereout.log')))
             self.assertTrue(os.path.isfile(os.path.join('loc', ii, 'hereerr.log')))
             

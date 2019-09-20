@@ -1,8 +1,10 @@
-import os,json,glob,shutil
+import os,sys,json,glob,shutil
 import dpdata
 import numpy as np
 import unittest
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+__package__ = 'auto_test'
 from .context import make_kspacing_kpoints
 from .context import setUpModule
 from pymatgen.io.vasp import Kpoints,Incar
