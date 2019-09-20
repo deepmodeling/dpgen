@@ -331,7 +331,6 @@ def run_train (iter_index,
         # 1.x
         python_path = mdata['python_path']
     train_resources = mdata['train_resources']
-    machine_type = mdata['train_machine']['machine_type']
 
     # paths
     iter_name = make_iter_name(iter_index)
@@ -621,7 +620,6 @@ def run_model_devi (iter_index,
     lmp_exec = mdata['lmp_command']
     model_devi_group_size = mdata['model_devi_group_size']
     model_devi_resources = mdata['model_devi_resources']
-    machine_type = mdata['model_devi_machine']['machine_type']
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, model_devi_name)
@@ -1180,7 +1178,6 @@ def run_fp_inner (iter_index,
     fp_command = mdata['fp_command']
     fp_group_size = mdata['fp_group_size']
     fp_resources = mdata['fp_resources']
-    machine_type = mdata['fp_machine']['machine_type']
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
