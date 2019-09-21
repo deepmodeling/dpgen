@@ -911,7 +911,6 @@ def sys_link_fp_vasp_pp (iter_index,
             os.symlink(os.path.join('..', 'POTCAR.%s' % ii), 'POTCAR')
             os.chdir(cwd)
 
-
 def _make_fp_vasp_configs(iter_index,
                           jdata):
     fp_task_max = jdata['fp_task_max']
@@ -983,15 +982,7 @@ def make_fp_vasp (iter_index,
     sys_link_fp_vasp_pp(iter_index, jdata)
     # create kpoints
     _make_fp_vasp_kp(iter_index, jdata, incar)
-    # clean traj
-    clean_traj = True
-    if 'model_devi_clean_traj' in jdata :
-        clean_traj = jdata['model_devi_clean_traj']
-    if clean_traj:
-        modd_path = os.path.join(iter_name, model_devi_name)
-        md_trajs = glob.glob(os.path.join(modd_path, 'task*/traj'))
-        for ii in md_trajs :
-            shutil.rmtree(ii)
+    
 
 
 def make_fp_pwscf(iter_index,
@@ -1021,15 +1012,6 @@ def make_fp_pwscf(iter_index,
         os.chdir(cwd)
     # link pp files
     _link_fp_vasp_pp(iter_index, jdata)
-    # clean traj
-    clean_traj = True
-    if 'model_devi_clean_traj' in jdata :
-        clean_traj = jdata['model_devi_clean_traj']
-    if clean_traj:
-        modd_path = os.path.join(iter_name, model_devi_name)
-        md_trajs = glob.glob(os.path.join(modd_path, 'task*/traj'))
-        for ii in md_trajs :
-            shutil.rmtree(ii)
 
 
 def make_fp_gaussian(iter_index,
@@ -1055,15 +1037,6 @@ def make_fp_gaussian(iter_index,
         os.chdir(cwd)
     # link pp files
     _link_fp_vasp_pp(iter_index, jdata)
-    # clean traj
-    clean_traj = True
-    if 'model_devi_clean_traj' in jdata :
-        clean_traj = jdata['model_devi_clean_traj']
-    if clean_traj:
-        modd_path = os.path.join(iter_name, model_devi_name)
-        md_trajs = glob.glob(os.path.join(modd_path, 'task*/traj'))
-        for ii in md_trajs :
-            shutil.rmtree(ii)
 
 def make_fp_cp2k (iter_index,
                   jdata):
@@ -1096,15 +1069,6 @@ def make_fp_cp2k (iter_index,
 
     # link pp files
     _link_fp_vasp_pp(iter_index, jdata)
-    # clean traj
-    clean_traj = True
-    if 'model_devi_clean_traj' in jdata :
-        clean_traj = jdata['model_devi_clean_traj']
-    if clean_traj:
-        modd_path = os.path.join(iter_name, model_devi_name)
-        md_trajs = glob.glob(os.path.join(modd_path, 'task*/traj'))
-        for ii in md_trajs :
-            shutil.rmtree(ii)
 
 def make_fp (iter_index,
              jdata,
@@ -1441,7 +1405,6 @@ def post_fp_cp2k (iter_index,
 def post_fp (iter_index,
              jdata) :
     fp_style = jdata['fp_style']
-
     if fp_style == "vasp" :
         post_fp_vasp(iter_index, jdata)
     elif fp_style == "pwscf" :
@@ -1452,6 +1415,16 @@ def post_fp (iter_index,
         post_fp_cp2k(iter_index, jdata)
     else :
         raise RuntimeError ("unsupported fp style")
+    # clean traj
+    iter_name = make_iter_name(iter_index)
+    clean_traj = True
+    if 'model_devi_clean_traj' in jdata :
+        clean_traj = jdata['model_devi_clean_traj']
+    if clean_traj:
+        modd_path = os.path.join(iter_name, model_devi_name)
+        md_trajs = glob.glob(os.path.join(modd_path, 'task*/traj'))
+        for ii in md_trajs :
+            shutil.rmtree(ii)
 
 def set_version(mdata):
     if 'deepmd_path' in mdata:
