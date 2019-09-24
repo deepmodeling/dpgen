@@ -1,5 +1,8 @@
-import os,json,glob,shutil,uuid,time,getpass
+import os,sys,json,glob,shutil,uuid,time,getpass
 import unittest
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+__package__ = 'shell'
 from .context import SSHSession
 from .context import SSHContext
 from .context import Shell

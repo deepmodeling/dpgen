@@ -331,7 +331,6 @@ def run_train (iter_index,
         # 1.x
         python_path = mdata['python_path']
     train_resources = mdata['train_resources']
-    machine_type = mdata['train_machine']['machine_type']
 
     # paths
     iter_name = make_iter_name(iter_index)
@@ -372,7 +371,7 @@ def run_train (iter_index,
     run_tasks = [os.path.basename(ii) for ii in all_task]
 
     forward_files = [train_input_file]
-    backward_files = ['frozen_model.pb', 'lcurve.out']
+    backward_files = ['frozen_model.pb', 'lcurve.out', 'train.log']
     init_data_sys_ = jdata['init_data_sys']
     init_data_sys = []
     for ii in init_data_sys_ :
@@ -414,7 +413,9 @@ def run_train (iter_index,
                         train_group_size,
                         trans_comm_data,
                         forward_files,
-                        backward_files)
+                        backward_files,
+                        outlog = 'train.log',
+                        errlog = 'train.log')
 
 
 def post_train (iter_index,
@@ -619,7 +620,6 @@ def run_model_devi (iter_index,
     lmp_exec = mdata['lmp_command']
     model_devi_group_size = mdata['model_devi_group_size']
     model_devi_resources = mdata['model_devi_resources']
-    machine_type = mdata['model_devi_machine']['machine_type']
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, model_devi_name)
@@ -911,7 +911,6 @@ def sys_link_fp_vasp_pp (iter_index,
             os.symlink(os.path.join('..', 'POTCAR.%s' % ii), 'POTCAR')
             os.chdir(cwd)
 
-
 def _make_fp_vasp_configs(iter_index,
                           jdata):
     fp_task_max = jdata['fp_task_max']
@@ -983,15 +982,7 @@ def make_fp_vasp (iter_index,
     sys_link_fp_vasp_pp(iter_index, jdata)
     # create kpoints
     _make_fp_vasp_kp(iter_index, jdata, incar)
-    # clean traj
-    clean_traj = True
-    if 'model_devi_clean_traj' in jdata :
-        clean_traj = jdata['model_devi_clean_traj']
-    if clean_traj:
-        modd_path = os.path.join(iter_name, model_devi_name)
-        md_trajs = glob.glob(os.path.join(modd_path, 'task*/traj'))
-        for ii in md_trajs :
-            shutil.rmtree(ii)
+    
 
 
 def make_fp_pwscf(iter_index,
@@ -1021,15 +1012,6 @@ def make_fp_pwscf(iter_index,
         os.chdir(cwd)
     # link pp files
     _link_fp_vasp_pp(iter_index, jdata)
-    # clean traj
-    clean_traj = True
-    if 'model_devi_clean_traj' in jdata :
-        clean_traj = jdata['model_devi_clean_traj']
-    if clean_traj:
-        modd_path = os.path.join(iter_name, model_devi_name)
-        md_trajs = glob.glob(os.path.join(modd_path, 'task*/traj'))
-        for ii in md_trajs :
-            shutil.rmtree(ii)
 
 
 def make_fp_gaussian(iter_index,
@@ -1055,15 +1037,6 @@ def make_fp_gaussian(iter_index,
         os.chdir(cwd)
     # link pp files
     _link_fp_vasp_pp(iter_index, jdata)
-    # clean traj
-    clean_traj = True
-    if 'model_devi_clean_traj' in jdata :
-        clean_traj = jdata['model_devi_clean_traj']
-    if clean_traj:
-        modd_path = os.path.join(iter_name, model_devi_name)
-        md_trajs = glob.glob(os.path.join(modd_path, 'task*/traj'))
-        for ii in md_trajs :
-            shutil.rmtree(ii)
 
 def make_fp_cp2k (iter_index,
                   jdata):
@@ -1096,15 +1069,6 @@ def make_fp_cp2k (iter_index,
 
     # link pp files
     _link_fp_vasp_pp(iter_index, jdata)
-    # clean traj
-    clean_traj = True
-    if 'model_devi_clean_traj' in jdata :
-        clean_traj = jdata['model_devi_clean_traj']
-    if clean_traj:
-        modd_path = os.path.join(iter_name, model_devi_name)
-        md_trajs = glob.glob(os.path.join(modd_path, 'task*/traj'))
-        for ii in md_trajs :
-            shutil.rmtree(ii)
 
 def make_fp (iter_index,
              jdata,
@@ -1178,7 +1142,6 @@ def run_fp_inner (iter_index,
     fp_command = mdata['fp_command']
     fp_group_size = mdata['fp_group_size']
     fp_resources = mdata['fp_resources']
-    machine_type = mdata['fp_machine']['machine_type']
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -1199,7 +1162,7 @@ def run_fp_inner (iter_index,
                         work_path,
                         run_tasks,
                         fp_group_size,
-                        [],
+                        forward_common_files,
                         forward_files,
                         backward_files,
                         outlog = log_file,
@@ -1220,6 +1183,7 @@ def run_fp (iter_index,
         if ('cvasp' in jdata) and (jdata['cvasp'] == True):
             mdata['fp_resources']['cvasp'] = True
         if ('cvasp' in  mdata["fp_resources"] ) and (mdata["fp_resources"]["cvasp"]==True):
+            #dlog.info("cvasp is on !")
             forward_common_files=['cvasp.py']
             forward_files.append('KPOINTS')
         else:
@@ -1441,7 +1405,6 @@ def post_fp_cp2k (iter_index,
 def post_fp (iter_index,
              jdata) :
     fp_style = jdata['fp_style']
-
     if fp_style == "vasp" :
         post_fp_vasp(iter_index, jdata)
     elif fp_style == "pwscf" :
@@ -1452,6 +1415,16 @@ def post_fp (iter_index,
         post_fp_cp2k(iter_index, jdata)
     else :
         raise RuntimeError ("unsupported fp style")
+    # clean traj
+    iter_name = make_iter_name(iter_index)
+    clean_traj = True
+    if 'model_devi_clean_traj' in jdata :
+        clean_traj = jdata['model_devi_clean_traj']
+    if clean_traj:
+        modd_path = os.path.join(iter_name, model_devi_name)
+        md_trajs = glob.glob(os.path.join(modd_path, 'task*/traj'))
+        for ii in md_trajs :
+            shutil.rmtree(ii)
 
 def set_version(mdata):
     if 'deepmd_path' in mdata:
@@ -1472,10 +1445,22 @@ def make_dispatcher(mdata):
         context_type = 'ssh'
     except:
         context_type = 'local'
-    batch_type = mdata['machine_type']
+    try:
+        batch_type = mdata['batch']
+    except:
+        dlog.info('cannot find key "batch" in machine file, try to use deprecated key "machine_type"')
+        batch_type = mdata['machine_type']
+    try:
+        lazy_local = mdata['lazy_local']
+    except:
+        lazy_local = False
+    if lazy_local and context_type == 'local':
+        dlog.info('Dispatcher switches to the lazy local mode')
+        context_type = 'lazy-local'
     disp = Dispatcher(mdata, context_type=context_type, batch_type=batch_type)
     return disp
     
+
 def run_iter (param_file, machine_file) :
     try:
        import ruamel

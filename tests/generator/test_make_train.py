@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
-import os,json,glob,shutil
+import os,sys,json,glob,shutil
 import numpy as np
 import unittest
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+__package__ = 'generator'
 from .context import make_train
 from .context import param_file
 from .context import machine_file

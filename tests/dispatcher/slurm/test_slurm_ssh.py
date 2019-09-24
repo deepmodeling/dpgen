@@ -1,5 +1,8 @@
-import os,json,glob,shutil,uuid,time
+import os,sys,json,glob,shutil,uuid,time
 import unittest
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+__package__ = 'slurm'
 from .context import LocalSession
 from .context import LocalContext
 from .context import Slurm
@@ -37,7 +40,7 @@ class TestSlurm(unittest.TestCase) :
         ret1 = self.slurm.sub_script(job_dirs, ['touch', 'touch'], [['test1 ', 'test2 '], ['test1 ', 'test2 ']])
         with open('run.sub.1', 'w') as fp:
             fp.write(ret1)        
-        my_file_cmp(self, 'run.sub.1', 'run.sub'))
+        my_file_cmp(self, 'run.sub.1', 'run.sub')
 
     def test_sub_success(self) :
         job_dirs = ['task0', 'task1']

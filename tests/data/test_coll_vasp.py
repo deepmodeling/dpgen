@@ -1,13 +1,14 @@
-import os,json,glob,shutil
+import os,sys,json,glob,shutil
 import dpdata
 import numpy as np
 import unittest
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+__package__ = 'data'
 from .context import coll_vasp_md
 from .context import out_dir_name
 from .context import param_file
 from .context import setUpModule
-
 
 class TestCollVasp(unittest.TestCase):
     def setUp(self):

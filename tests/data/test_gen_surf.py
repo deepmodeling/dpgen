@@ -1,10 +1,11 @@
-import os,json,glob,shutil
+import os,sys,json,glob,shutil
 import unittest
 from pymatgen import Structure
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+__package__ = 'data'
 from .context import setUpModule
 from .context_surf import *
-
 
 class TestGenSurf(unittest.TestCase):
     def setUp(self):

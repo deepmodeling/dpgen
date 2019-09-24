@@ -1,10 +1,11 @@
-import os,json,glob,shutil
+import os,sys,json,glob,shutil
 import unittest
 from pymatgen import Structure,Composition
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+__package__ = 'data'
 from .context import setUpModule
 from .context_bulk import *
-
 
 class TestGenBulk(unittest.TestCase):
     def setUp(self):
