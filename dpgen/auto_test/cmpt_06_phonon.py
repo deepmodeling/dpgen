@@ -74,17 +74,12 @@ def cmpt_vasp(jdata, conf_dir) :
 
     
     
-def cmpt_deepmd_lammps(jdata, conf_dir) :
-    deepmd_model_dir = jdata['deepmd_model_dir']
-    deepmd_type_map = jdata['deepmd_type_map']
-    ntypes = len(deepmd_type_map)    
-    deepmd_model_dir = os.path.abspath(deepmd_model_dir)
-    deepmd_models = glob.glob(os.path.join(deepmd_model_dir, '*pb'))
+def cmpt_lammps(jdata, conf_dir, task_type) :
     supercell_matrix=jdata['supercell_matrix']
 
     conf_path = os.path.abspath(conf_dir)
     task_path = re.sub('confs', global_task_name, conf_path)
-    task_path = os.path.join(task_path, 'deepmd')
+    task_path = os.path.join(task_path, task_type)
     task_poscar = os.path.join(task_path, 'POSCAR')
 
     os.chdir(task_path)
@@ -112,10 +107,8 @@ def _main() :
 #    print('generate %s task with conf %s' % (args.TASK, args.CONF))
     if args.TASK == 'vasp':
         cmpt_vasp(jdata, args.CONF)               
-    elif args.TASK == 'deepmd' :
-        cmpt_deepmd_lammps(jdata, args.CONF)
-    elif args.TASK == 'meam' :
-        cmpt_meam_lammps(jdata, args.CONF)
+    elif args.TASK == 'deepmd' or args.TASK =='meam' :
+        cmptlammps(jdata, args.CONF,args.TASK)
     else :
         raise RuntimeError("unknow task ", args.TASK)
     
