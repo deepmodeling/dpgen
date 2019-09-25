@@ -1,10 +1,12 @@
-import os,json,glob,shutil,filecmp,uuid,time
+import os,json,glob,shutil,uuid,time
 import unittest
-from context import LocalSession
-from context import LocalContext
-from context import LSF
-from context import JobStatus
-from context import Dispatcher
+from .context import LocalSession
+from .context import LocalContext
+from .context import LSF
+from .context import JobStatus
+from .context import Dispatcher
+from .context import my_file_cmp
+from .context import setUpModule
 
 class TestDispatcher(unittest.TestCase) :
     def setUp(self) :
@@ -19,6 +21,7 @@ class TestDispatcher(unittest.TestCase) :
         work_profile = {'work_path':'rmt'}
         self.disp = Dispatcher(work_profile, 'local', 'lsf')
 
+    @unittest.skipIf(not shutil.which("bsub"), "requires LSF")
     def test_sub_success(self):
         tasks = ['task0', 'task1', 'task2']
         self.disp.run_jobs(None,
@@ -32,8 +35,9 @@ class TestDispatcher(unittest.TestCase) :
                            outlog = 'hereout.log',
                            errlog = 'hereerr.log')
         for ii in tasks:            
-            self.assertTrue(filecmp.cmp(os.path.join('loc', ii, 'test0'),
-                                        os.path.join('loc', ii, 'test1')))
+            my_file_cmp(self,
+                        os.path.join('loc', ii, 'test0'),
+                        os.path.join('loc', ii, 'test1')))
             self.assertTrue(os.path.isfile(os.path.join('loc', ii, 'hereout.log')))
             self.assertTrue(os.path.isfile(os.path.join('loc', ii, 'hereerr.log')))
             

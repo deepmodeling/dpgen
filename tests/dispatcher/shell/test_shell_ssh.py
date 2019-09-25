@@ -1,9 +1,10 @@
-import os,json,glob,shutil,filecmp,uuid,time,getpass
+import os,json,glob,shutil,uuid,time,getpass
 import unittest
-from context import SSHSession
-from context import SSHContext
-from context import Shell
-from context import JobStatus
+from .context import SSHSession
+from .context import SSHContext
+from .context import Shell
+from .context import JobStatus
+from .context import setUpModule
 
 class TestShell(unittest.TestCase) :
     def setUp(self) :
@@ -14,11 +15,18 @@ class TestShell(unittest.TestCase) :
         for ii in ['loc/task0', 'loc/task1']:
             with open(os.path.join(ii, 'test0'),'w') as fp:
                 fp.write(str(uuid.uuid4()))
-        ssh_session = SSHSession({'hostname' : 'localhost',
-                                  'port': 5566,
-                                  'username' : getpass.getuser(),
-                                  'work_path' : os.path.join(os.getcwd(), 'rmt')})
-        self.ctx = SSHContext(ssh_session, 'loc')        
+        port = 22
+        try :
+            ssh_session = SSHSession({'hostname' : 'localhost',
+                                      'port': port,
+                                      'username' : getpass.getuser(),
+                                      'work_path' : os.path.join(os.getcwd(), 'rmt')})
+        except:
+            ssh_session = SSHSession({'hostname' : 'localhost',
+                                      'port': 5566,
+                                      'username' : getpass.getuser(),
+                                      'work_path' : os.path.join(os.getcwd(), 'rmt')})
+        self.ctx = SSHContext('loc', ssh_session)
         self.shell = Shell(self.ctx)
 
     def tearDown(self):

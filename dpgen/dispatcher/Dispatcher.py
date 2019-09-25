@@ -2,6 +2,7 @@ import os,sys,time,random
 
 from dpgen.dispatcher.LocalContext import LocalSession
 from dpgen.dispatcher.LocalContext import LocalContext
+from dpgen.dispatcher.LazyLocalContext import LazyLocalContext
 from dpgen.dispatcher.SSHContext import SSHSession
 from dpgen.dispatcher.SSHContext import SSHContext
 from dpgen.dispatcher.Slurm import Slurm
@@ -38,9 +39,15 @@ class Dispatcher(object):
         if context_type == 'local':
             self.session = LocalSession(remote_profile)
             self.context = LocalContext
+            self.uuid_names = False
+        elif context_type == 'lazy-local':
+            self.session = None
+            self.context = LazyLocalContext
+            self.uuid_names = True
         elif context_type == 'ssh':
             self.session = SSHSession(remote_profile)
             self.context = SSHContext
+            self.uuid_names = False
         else :
             raise RuntimeError('unknown context')
         if batch_type == 'slurm':
@@ -91,8 +98,8 @@ class Dispatcher(object):
                 else:
                     job_uuid = None
                 # communication context, bach system
-                context = self.context(self.session, work_path, job_uuid)
-                batch = self.batch(context)
+                context = self.context(work_path, self.session, job_uuid)
+                batch = self.batch(context, uuid_names = self.uuid_names)
                 rjob = {'context':context, 'batch':batch}
                 # upload files
                 if not rjob['context'].check_file_exists('tag_upload'):

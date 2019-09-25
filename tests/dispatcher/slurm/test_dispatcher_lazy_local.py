@@ -2,12 +2,13 @@ import os,json,glob,shutil,uuid,time
 import unittest
 from .context import LocalSession
 from .context import LocalContext
-from .context import Shell
+from .context import Slurm
 from .context import JobStatus
 from .context import Dispatcher
 from .context import my_file_cmp
 from .context import setUpModule
 
+@unittest.skipIf(not shutil.which("sbatch"), "requires Slurm")
 class TestDispatcher(unittest.TestCase) :
     def setUp(self) :
         os.makedirs('loc', exist_ok = True)
@@ -18,9 +19,16 @@ class TestDispatcher(unittest.TestCase) :
         for ii in ['loc/task0', 'loc/task1', 'loc/task2']:
             with open(os.path.join(ii, 'test0'),'w') as fp:
                 fp.write('this is test0 from ' + ii + '\n')
-        work_profile = {'work_path':'rmt'}
-        self.disp = Dispatcher(work_profile, context_type = 'local', batch_type = 'shell')
+        work_profile = None
+        self.disp = Dispatcher(work_profile, 'lazy-local', 'slurm')
 
+    def tearDown(self):
+        # shutil.rmtree('loc')
+        # shutil.rmtree('rmt')
+        # if os.path.exists('dpgen.log'):
+        #     os.remove('dpgen.log')
+        pass
+        
     def test_sub_success(self):
         tasks = ['task0', 'task1', 'task2']
         self.disp.run_jobs(None,
@@ -35,8 +43,8 @@ class TestDispatcher(unittest.TestCase) :
                            errlog = 'hereerr.log')
         for ii in tasks:            
             my_file_cmp(self, 
-                      os.path.join('loc', ii, 'test0'),
-                      os.path.join('loc', ii, 'test1'))
+                        os.path.join('loc', ii, 'test0'),
+                        os.path.join('loc', ii, 'test1')))
             self.assertTrue(os.path.isfile(os.path.join('loc', ii, 'hereout.log')))
             self.assertTrue(os.path.isfile(os.path.join('loc', ii, 'hereerr.log')))
             

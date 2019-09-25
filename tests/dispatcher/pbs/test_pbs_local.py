@@ -1,10 +1,12 @@
-import os,json,glob,shutil,filecmp,uuid,time
+import os,json,glob,shutil,uuid,time
 import unittest
-from context import LocalSession
-from context import LocalContext
-from context import PBS
-from context import JobStatus
+from .context import LocalSession
+from .context import LocalContext
+from .context import PBS
+from .context import JobStatus
+from .context import setUpModule
 
+@unittest.skipIf(not shutil.which("qsub"), "requires PBS")
 class TestPBS(unittest.TestCase) :
     def setUp(self) :
         os.makedirs('loc', exist_ok = True)
@@ -15,7 +17,7 @@ class TestPBS(unittest.TestCase) :
             with open(os.path.join(ii, 'test0'),'w') as fp:
                 fp.write(str(uuid.uuid4()))
         work_profile = LocalSession({'work_path':'rmt'})
-        self.ctx = LocalContext(work_profile, 'loc')        
+        self.ctx = LocalContext('loc', work_profile)
         self.pbs = PBS(self.ctx)
 
     def tearDown(self):

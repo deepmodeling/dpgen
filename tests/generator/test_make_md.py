@@ -1,16 +1,18 @@
-import os,json,glob,shutil,filecmp
+import os,json,glob,shutil
 import dpdata
 import numpy as np
 import unittest
 
-from context import make_model_devi
-from context import parse_cur_job
-from context import param_file
-from context import machine_file
-from comp_sys import test_atom_names
-from comp_sys import test_atom_types
-from comp_sys import test_coord
-from comp_sys import test_cell
+from .context import make_model_devi
+from .context import parse_cur_job
+from .context import param_file
+from .context import machine_file
+from .context import my_file_cmp
+from .context import setUpModule
+from .comp_sys import test_atom_names
+from .comp_sys import test_atom_types
+from .comp_sys import test_coord
+from .comp_sys import test_cell
 
 def _make_fake_models(idx, numb_models) :
     train_dir = os.path.join('iter.%06d' % idx, 
@@ -66,7 +68,7 @@ def _check_pb(testCase, idx) :
     md_pb.sort()
     tr_pb.sort()
     for ii,jj in zip(md_pb, tr_pb) :
-        testCase.assertTrue(filecmp.cmp(ii,jj))
+        my_file_cmp(testCase,ii,jj)
 
         
 def _check_traj_dir(testCase, idx) :

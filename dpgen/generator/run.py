@@ -871,6 +871,47 @@ def _link_fp_vasp_pp (iter_index,
             os.symlink(pp_file, jj)
         os.chdir(cwd)
 
+def sys_link_fp_vasp_pp (iter_index,
+                         jdata) :
+    fp_pp_path = jdata['fp_pp_path']
+    fp_pp_files = jdata['fp_pp_files']
+    fp_pp_path = os.path.abspath(fp_pp_path)
+    type_map = jdata['type_map']
+    assert(os.path.exists(fp_pp_path))
+    assert(len(fp_pp_files) == len(type_map)), 'size of fp_pp_files should be the same as the size of type_map'
+
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+
+    fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
+    fp_tasks.sort()
+    if len(fp_tasks) == 0 :
+        return
+
+    system_idx_str = [os.path.basename(ii).split('.')[1] for ii in fp_tasks]
+    system_idx_str = list(set(system_idx_str))
+    system_idx_str.sort()
+    for ii in system_idx_str:
+        potcars = []
+        sys_tasks = glob.glob(os.path.join(work_path, 'task.%s.*' % ii))
+        assert (len(sys_tasks) != 0)
+        sys_poscar = os.path.join(sys_tasks[0], 'POSCAR')
+        sys = dpdata.System(sys_poscar, fmt = 'vasp/poscar')
+        for ele_name in sys['atom_names']:
+            ele_idx = jdata['type_map'].index(ele_name)
+            potcars.append(fp_pp_files[ele_idx])                
+        with open(os.path.join(work_path,'POTCAR.%s' % ii), 'w') as fp_pot:
+            for jj in potcars:
+                with open(os.path.join(fp_pp_path, jj)) as fp:
+                    fp_pot.write(fp.read())
+        sys_tasks = glob.glob(os.path.join(work_path, 'task.%s.*' % ii))
+        cwd = os.getcwd()
+        for jj in sys_tasks:
+            os.chdir(jj)
+            os.symlink(os.path.join('..', 'POTCAR.%s' % ii), 'POTCAR')
+            os.chdir(cwd)
+
+
 def _make_fp_vasp_configs(iter_index,
                           jdata):
     fp_task_max = jdata['fp_task_max']
@@ -939,7 +980,7 @@ def make_fp_vasp (iter_index,
     fp.close()
     _link_fp_vasp_incar(iter_index, jdata)
     # create potcar
-    _link_fp_vasp_pp(iter_index, jdata)
+    sys_link_fp_vasp_pp(iter_index, jdata)
     # create kpoints
     _make_fp_vasp_kp(iter_index, jdata, incar)
     # clean traj
@@ -1173,7 +1214,7 @@ def run_fp (iter_index,
     fp_pp_files = jdata['fp_pp_files']
 
     if fp_style == "vasp" :
-        forward_files = ['POSCAR', 'INCAR'] + fp_pp_files
+        forward_files = ['POSCAR', 'INCAR', 'POTCAR']
         backward_files = ['OUTCAR','vasprun.xml']
         # Move cvasp interface to jdata
         if ('cvasp' in jdata) and (jdata['cvasp'] == True):
@@ -1235,11 +1276,11 @@ def post_fp_vasp (iter_index,
         tcount+=len(sys_outcars)
         for oo in sys_outcars :
             try:
-                _sys = dpdata.LabeledSystem(oo)
+                _sys = dpdata.LabeledSystem(oo, type_map = jdata['type_map'])
             except:
                 dlog.info('Try to parse from vasprun.xml')
                 try:
-                   _sys = dpdata.LabeledSystem(oo.replace('OUTCAR','vasprun.xml'))
+                   _sys = dpdata.LabeledSystem(oo.replace('OUTCAR','vasprun.xml'), type_map = jdata['type_map'])
                 except:
                    _sys = dpdata.LabeledSystem()
                    dlog.info('Failed fp path: %s'%oo.replace('OUTCAR',''))
@@ -1300,7 +1341,7 @@ def post_fp_pwscf (iter_index,
         flag=True
         for ii,oo in zip(sys_input,sys_output) :
             if flag:
-                _sys = dpdata.LabeledSystem()
+                _sys = dpdata.LabeledSystem(type_map = jdata['type_map'])
                 _sys.data=cvt_1frame(ii,oo)
                 if len(_sys)>0:
                    all_sys=_sys
@@ -1308,7 +1349,7 @@ def post_fp_pwscf (iter_index,
                 else:
                    pass
             else:
-                _sys = dpdata.LabeledSystem()
+                _sys = dpdata.LabeledSystem(type_map = jdata['type_map'])
                 _sys.data = cvt_1frame(ii,oo)
                 if len(_sys)>0:
                    all_sys.append(_sys)
@@ -1344,7 +1385,8 @@ def post_fp_gaussian (iter_index,
         sys_output.sort()
         for idx,oo in enumerate(sys_output) :
             sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log') 
-            sys.check_type_map(type_map = jdata['type_map'])
+            if len(sys) > 0:
+                sys.check_type_map(type_map = jdata['type_map'])
             if jdata.get('use_atom_pref', False):
                 sys.data['atom_pref'] = np.load(os.path.join(os.path.dirname(oo), "atom_pref.npy"))
             if idx == 0:
@@ -1385,7 +1427,8 @@ def post_fp_cp2k (iter_index,
         sys_output.sort()
         for idx,oo in enumerate(sys_output) :
             sys = dpdata.LabeledSystem(oo, fmt = 'cp2k/output')
-            sys.check_type_map(type_map = jdata['type_map'])
+            if len(sys) > 0:
+                sys.check_type_map(type_map = jdata['type_map'])
             if idx == 0:
                 all_sys = sys
             else:

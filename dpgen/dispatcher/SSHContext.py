@@ -73,10 +73,11 @@ class SSHSession (object) :
 
 class SSHContext (object):
     def __init__ (self,
-                  ssh_session,
                   local_root,
+                  ssh_session,
                   job_uuid=None,
     ) :
+        assert(type(local_root) == str)
         self.local_root = os.path.abspath(local_root)
         if job_uuid:
            self.job_uuid=job_uuid
@@ -92,6 +93,9 @@ class SSHContext (object):
            sftp.close()
         except: 
            pass
+
+    def close(self):
+        self.ssh_session.close()
 
     def get_job_root(self) :
         return self.remote_root
@@ -259,3 +263,4 @@ class SSHContext (object):
         # cleanup
         os.remove(to_f)
         sftp.remove(from_f)
+        sftp.close()

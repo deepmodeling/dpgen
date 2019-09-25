@@ -1,10 +1,8 @@
 import os,json,glob,shutil,uuid,time
 import unittest
-from .context import LocalSession
-from .context import LocalContext
+from .context import LazyLocalContext
 from .context import Slurm
 from .context import JobStatus
-from .context import my_file_cmp
 from .context import setUpModule
 
 @unittest.skipIf(not shutil.which("sbatch"), "requires Slurm")
@@ -17,9 +15,8 @@ class TestSlurm(unittest.TestCase) :
         for ii in ['loc/task0', 'loc/task1']:
             with open(os.path.join(ii, 'test0'),'w') as fp:
                 fp.write(str(uuid.uuid4()))
-        work_profile = LocalSession({'work_path':'rmt'})
-        self.ctx = LocalContext('loc', work_profile)
-        self.slurm = Slurm(self.ctx)
+        self.ctx = LazyLocalContext('loc')
+        self.slurm = Slurm(self.ctx, uuid_names = True)
 
     def tearDown(self):
         shutil.rmtree('loc')
@@ -33,26 +30,26 @@ class TestSlurm(unittest.TestCase) :
         ret = self.slurm.sub_script(job_dirs, ['touch test1', 'touch test2'])
         self.slurm.context.write_file('run.sub', ret)
         with open('run.sub', 'w') as fp:
-            fp.write(ret)
-        ret1 = self.slurm.sub_script(job_dirs, ['touch', 'touch'], [['test1 ', 'test2 '], ['test1 ', 'test2 ']])
-        with open('run.sub.1', 'w') as fp:
-            fp.write(ret1)        
-        my_file_cmp(self, 'run.sub.1', 'run.sub'))
+            fp.write(ret)            
 
     def test_sub_success(self) :
         job_dirs = ['task0', 'task1']
         self.slurm.context.upload(job_dirs, ['test0'])
         self.slurm.submit(job_dirs, ['touch test1', 'touch test2'])
+        job_uuid = self.slurm.context.job_uuid
+        with open(os.path.join('rmt', self.slurm.context.remote_root, '%s_job_id' % job_uuid)) as fp:
+            tmp_id = fp.read()
+            self.assertEqual(self.slurm._get_job_id(), tmp_id)
         while True:
             ret = self.slurm.check_status()
             if ret == JobStatus.finished  :
                 break
-            time.sleep(1)        
+            time.sleep(1)
         self.assertTrue(os.path.isfile(os.path.join('rmt', self.slurm.context.remote_root, 'task0/tag_0_finished')))
         self.assertTrue(os.path.isfile(os.path.join('rmt', self.slurm.context.remote_root, 'task0/tag_1_finished')))
         self.assertTrue(os.path.isfile(os.path.join('rmt', self.slurm.context.remote_root, 'task1/tag_0_finished')))
         self.assertTrue(os.path.isfile(os.path.join('rmt', self.slurm.context.remote_root, 'task1/tag_1_finished')))
-        self.assertTrue(os.path.isfile(os.path.join('rmt', self.slurm.context.remote_root, 'tag_finished')))
+        self.assertTrue(os.path.isfile(os.path.join('rmt', self.slurm.context.remote_root, '%s_tag_finished' % job_uuid)))
         self.assertTrue (os.path.isfile(os.path.join('rmt', self.slurm.context.remote_root, 'task0/test1')))
         self.assertTrue (os.path.isfile(os.path.join('rmt', self.slurm.context.remote_root, 'task1/test1')))
         self.assertTrue (os.path.isfile(os.path.join('rmt', self.slurm.context.remote_root, 'task0/test2')))
@@ -71,6 +68,10 @@ class TestSlurm(unittest.TestCase) :
                 # wait for file writing
                 time.sleep(2)
                 job_id = self.slurm._get_job_id()
+                job_uuid = self.slurm.context.job_uuid
+                with open(os.path.join('rmt', self.slurm.context.remote_root, '%s_job_id' % job_uuid)) as fp:
+                    tmp_id = fp.read()
+                    self.assertEqual(job_id, tmp_id)
                 os.system('scancel ' + job_id)
                 break
             time.sleep(1)
@@ -78,7 +79,7 @@ class TestSlurm(unittest.TestCase) :
         self.assertFalse(os.path.isfile(os.path.join('rmt', self.slurm.context.remote_root, 'task0/tag_1_finished')))
         self.assertTrue (os.path.isfile(os.path.join('rmt', self.slurm.context.remote_root, 'task1/tag_0_finished')))
         self.assertFalse(os.path.isfile(os.path.join('rmt', self.slurm.context.remote_root, 'task1/tag_1_finished')))
-        self.assertFalse(os.path.isfile(os.path.join('rmt', self.slurm.context.remote_root, 'tag_finished')))
+        self.assertFalse(os.path.isfile(os.path.join('rmt', self.slurm.context.remote_root, '%s_tag_finished' % job_uuid)))
         self.assertTrue (os.path.isfile(os.path.join('rmt', self.slurm.context.remote_root, 'task0/test1')))
         self.assertTrue (os.path.isfile(os.path.join('rmt', self.slurm.context.remote_root, 'task1/test1')))
         self.assertFalse(os.path.isfile(os.path.join('rmt', self.slurm.context.remote_root, 'task0/test2')))
@@ -94,7 +95,7 @@ class TestSlurm(unittest.TestCase) :
         self.assertTrue (os.path.isfile(os.path.join('rmt', self.slurm.context.remote_root, 'task0/tag_1_finished')))
         self.assertTrue (os.path.isfile(os.path.join('rmt', self.slurm.context.remote_root, 'task1/tag_0_finished')))
         self.assertTrue (os.path.isfile(os.path.join('rmt', self.slurm.context.remote_root, 'task1/tag_1_finished')))
-        self.assertTrue (os.path.isfile(os.path.join('rmt', self.slurm.context.remote_root, 'tag_finished')))
+        self.assertTrue (os.path.isfile(os.path.join('rmt', self.slurm.context.remote_root, '%s_tag_finished' % job_uuid)))
         self.assertTrue (os.path.isfile(os.path.join('rmt', self.slurm.context.remote_root, 'task0/test1')))
         self.assertTrue (os.path.isfile(os.path.join('rmt', self.slurm.context.remote_root, 'task1/test1')))
         self.assertTrue (os.path.isfile(os.path.join('rmt', self.slurm.context.remote_root, 'task0/test2')))
