@@ -36,7 +36,7 @@ from dpgen.generator.lib.lammps import make_lammps_input
 from dpgen.generator.lib.vasp import write_incar_dict
 from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
 from dpgen.generator.lib.pwscf import make_pwscf_input
-from dpgen.generator.lib.pwscf import cvt_1frame
+#from dpgen.generator.lib.pwscf import cvt_1frame
 from dpgen.generator.lib.gaussian import make_gaussian_input, take_cluster
 from dpgen.generator.lib.cp2k import make_cp2k_input, make_cp2k_xyz
 from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, LSFJob, CloudMachineJob, awsMachineJob
@@ -1305,16 +1305,14 @@ def post_fp_pwscf (iter_index,
         flag=True
         for ii,oo in zip(sys_input,sys_output) :
             if flag:
-                _sys = dpdata.LabeledSystem(type_map = jdata['type_map'])
-                _sys.data=cvt_1frame(ii,oo)
+                _sys = dpdata.LabeledSystem(oo, fmt = 'pwscf/scf', type_map = jdata['type_map'])
                 if len(_sys)>0:
                    all_sys=_sys
                    flag=False
                 else:
                    pass
             else:
-                _sys = dpdata.LabeledSystem(type_map = jdata['type_map'])
-                _sys.data = cvt_1frame(ii,oo)
+                _sys = dpdata.LabeledSystem(oo, fmt = 'pwscf/scf', type_map = jdata['type_map'])
                 if len(_sys)>0:
                    all_sys.append(_sys)
 
