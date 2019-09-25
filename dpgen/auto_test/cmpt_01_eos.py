@@ -19,11 +19,16 @@ def comput_lmp_eos(conf_dir, task_name) :
         print(vpa, epa)
 
 def comput_vasp_eos(jdata, conf_dir) :
-    kspacing = jdata['vasp_params']['kspacing']
     conf_path = re.sub('confs', global_task_name, conf_dir)
     conf_path = os.path.abspath(conf_path)
-    conf_path = os.path.join(conf_path, 'vasp-k%.2f' % kspacing)
-    vol_paths = glob.glob(os.path.join(conf_path, 'vol-*'))
+
+    if 'relax_incar' in jdata.keys():
+        vasp_str='vasp-relax_incar'
+    else:
+        kspacing = jdata['vasp_params']['kspacing']
+        vasp_str='vasp-k%.2f' % kspacing
+    task_path = os.path.join(conf_path, vasp_str)
+    vol_paths = glob.glob(os.path.join(task_path, 'vol-*'))
     vol_paths.sort()
     print('Vpa(A^3)\tEpA(eV)')
     for ii in vol_paths :

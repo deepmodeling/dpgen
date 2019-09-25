@@ -3,7 +3,7 @@
 import os,sys,json,glob,argparse,shutil
 import numpy as np
 import subprocess as sp
-sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 from lib.pwscf import make_pwscf_input
 from lib.vasp import make_vasp_incar
 from lib.vasp import system_from_poscar
@@ -56,11 +56,16 @@ def make_vasp(tdir, fp_params) :
         fp.write(incar)
     os.chdir(cwd)
         
-
-def make_pwscf(tdir, fp_params, mass_map, fp_pp_path, fp_pp_files) :        
+def make_vasp_incar(tdir, fp_incar) :
     cwd = os.getcwd()
     os.chdir(tdir)
-    sys_data = system_from_poscar('POSCAR')
+    shutil.copyfile(fp_incar, 'INCAR')
+    os.chdir(cwd)        
+
+def make_pwscf(tdir, fp_params, mass_map, fp_pp_path, fp_pp_files, user_input) : 
+    cwd = os.getcwd()
+    os.chdir(tdir)
+    sys_data = dpdata.System('POSCAR').data
     sys_data['atom_masses'] = mass_map
     ret = make_pwscf_input(sys_data, fp_pp_files, fp_params)
     open('input', 'w').write(ret)        
@@ -79,7 +84,10 @@ def create_init_tasks(target_folder, param_file, output, fp_json, verbose = True
     fp_style = fp_jdata['fp_style']
     fp_pp_path = fp_jdata['fp_pp_path']
     fp_pp_files = fp_jdata['fp_pp_files']
-    fp_params = fp_jdata['fp_params']
+    cwd_ = os.getcwd()
+    os.chdir(target_folder)
+    fp_pp_path = os.path.abspath(fp_pp_path)
+    os.chdir(cwd_)
     # init data sys
     init_data_prefix = jdata['init_data_prefix']
     init_data_sys = jdata['init_data_sys']
@@ -108,7 +116,13 @@ def create_init_tasks(target_folder, param_file, output, fp_json, verbose = True
                     os.remove('INCAR')
                 os.symlink(os.path.relpath(os.path.join(output, 'INCAR')), 'INCAR')
             elif fp_style == 'pwscf':
-                make_pwscf('.', fp_params, mass_map, fp_pp_files, fp_pp_files)
+                try:                    
+                    fp_params = fp_jdata['user_fp_params']
+                    user_input = True
+                except:
+                    fp_params = fp_jdata['fp_params']
+                    user_input = False
+                make_pwscf('.', fp_params, mass_map, fp_pp_files, fp_pp_files, user_input)
             os.chdir(cwd_)            
     
 
@@ -127,7 +141,11 @@ def create_tasks(target_folder, param_file, output, fp_json, verbose = True) :
     fp_style = fp_jdata['fp_style']
     fp_pp_path = fp_jdata['fp_pp_path']
     fp_pp_files = fp_jdata['fp_pp_files']
-    fp_params = fp_jdata['fp_params']
+    cwd_ = os.getcwd()
+    os.chdir(target_folder)
+    fp_pp_path = os.path.abspath(fp_pp_path)
+    os.chdir(cwd_)
+    # fp_params = fp_jdata['fp_params']
     # collect tasks from iter dirs
     sys_tasks = [[] for ii in sys]
     sys_tasks_record = [[] for ii in sys]
@@ -144,7 +162,12 @@ def create_tasks(target_folder, param_file, output, fp_json, verbose = True) :
         for jj in iter_tasks :
             sys_idx = int(os.path.basename(jj).split('.')[-2])
             sys_tasks[sys_idx].append(jj)
-            linked_file = os.path.realpath(os.path.join(jj, 'conf.lmp'))
+            if os.path.islink(os.path.join(jj, 'conf.lmp')):
+                linked_file = os.path.realpath(os.path.join(jj, 'conf.lmp'))
+            elif os.path.islink(os.path.join(jj, 'conf.dump')):
+                linked_file = os.path.realpath(os.path.join(jj, 'conf.dump'))
+            else:
+                raise RuntimeError('cannot file linked conf file')
             linked_keys = linked_file.split('/')
             task_record = linked_keys[-5] + '.' + linked_keys[-3] + '.' + linked_keys[-1].split('.')[0]
             task_record_keys = task_record.split('.')
@@ -167,7 +190,16 @@ def create_tasks(target_folder, param_file, output, fp_json, verbose = True) :
     os.makedirs(output, exist_ok = True)
     if fp_style == 'vasp':
         copy_pp_files(output, fp_pp_path, fp_pp_files)
-        make_vasp(output, fp_params)
+        try :
+            fp_params = fp_jdata['fp_params']
+            make_vasp(output, fp_params)
+        except:
+            fp_incar = fp_jdata['fp_incar']
+            cwd_ = os.getcwd()
+            os.chdir(target_folder)
+            fp_incar = os.path.abspath(fp_incar)
+            os.chdir(cwd_)
+            make_vasp_incar(output, fp_incar)
     if fp_style == 'pwscf' :
         copy_pp_files(output, fp_pp_path, fp_pp_files)        
     for si in range(numb_sys) :
@@ -202,7 +234,13 @@ def create_tasks(target_folder, param_file, output, fp_json, verbose = True) :
                     os.remove('INCAR')
                 os.symlink(os.path.relpath(os.path.join(output, 'INCAR')), 'INCAR')
             elif fp_style == 'pwscf':
-                make_pwscf('.', fp_params, mass_map, fp_pp_files, fp_pp_files)
+                try:                    
+                    fp_params = fp_jdata['user_fp_params']
+                    user_input = True
+                except:
+                    fp_params = fp_jdata['fp_params']
+                    user_input = False
+                make_pwscf('.', fp_params, mass_map, fp_pp_files, fp_pp_files, user_input)
             os.chdir(cwd_)
     os.chdir(cwd)
 

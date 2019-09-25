@@ -1,8 +1,10 @@
-import os,json,glob,shutil
+import os,sys,json,glob,shutil
 import dpdata
 import numpy as np
 import unittest
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+__package__ = 'generator'
 from .context import post_fp
 from .context import post_fp_pwscf
 from .context import post_fp_vasp

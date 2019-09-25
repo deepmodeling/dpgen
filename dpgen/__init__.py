@@ -22,15 +22,22 @@ __date__      = "Aug 13, 2019"
 
 
 
-
 def info():
     """
         Show basic information about """+NAME+""", its location and version.
     """
 
-    print('DeepModeling\n------------\n')
+    print('DeepModeling\n------------')
     print('Version: ' + __version__)
-    print('Path:    ' + ROOT_PATH)
     print('Date:    ' + __date__)
+    print('Path:    ' + ROOT_PATH)
+    print('')
+    print('Dependency')
+    print('------------')
+    for modui in ['numpy', 'dpdata', 'pymatgen', 'monty', 'ase', 'paramiko', 'custodian' ]:
+        try:
+            mm = __import__(modui)
+            print('%10s %10s   %s' % (modui, mm.__version__, mm.__path__[0]))
+        except ImportError:
+            print('%10s %10s Not Found' % (modui, ''))
     print()
-

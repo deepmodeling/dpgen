@@ -14,14 +14,6 @@ link potcar
 make incar
 '''
 def make_vasp(jdata, conf_dir) :
-    fp_params = jdata['vasp_params']
-    ecut = fp_params['ecut']
-    ediff = fp_params['ediff']
-    npar = fp_params['npar']
-    kpar = fp_params['kpar']
-    kspacing = fp_params['kspacing']
-    kgamma = fp_params['kgamma']
-
     conf_path = os.path.abspath(conf_dir)
     equi_path = re.sub('confs', global_task_name, conf_path)
     os.makedirs(equi_path, exist_ok = True)
@@ -51,15 +43,28 @@ def make_vasp(jdata, conf_dir) :
         assert os.path.exists(os.path.abspath(potcar_map[ii])),"No POTCAR in the potcar_map of %s"%(ii)
         potcar_list.append(os.path.abspath(potcar_map[ii]))
         
-    vasp_path = os.path.join(equi_path, 'vasp-k%.2f' % kspacing)
+    # gen incar
+    if  'relax_incar' in jdata.keys():
+        relax_incar_path = jdata['relax_incar']
+        assert(os.path.exists(relax_incar_path))
+        relax_incar_path = os.path.abspath(relax_incar_path)
+        fc = open(relax_incar_path).read()
+        vasp_path = os.path.join(equi_path, 'vasp-relax_incar' )
+    else :
+        fp_params = jdata['vasp_params']
+        ecut = fp_params['ecut']
+        ediff = fp_params['ediff']
+        npar = fp_params['npar']
+        kpar = fp_params['kpar']
+        kspacing = fp_params['kspacing']
+        kgamma = fp_params['kgamma']
+        fc = vasp.make_vasp_relax_incar(ecut, ediff, is_alloy,  True, True, npar, kpar, kspacing, kgamma)
+        vasp_path = os.path.join(equi_path, 'vasp-k%.2f' % kspacing)
+
     os.makedirs(vasp_path, exist_ok = True)
     os.chdir(vasp_path)
     print(vasp_path)
-    # gen incar
-    if is_alloy :
-        fc = vasp.make_vasp_relax_incar(ecut, ediff, True,  True, True, npar, kpar, kspacing, kgamma)
-    else :
-        fc = vasp.make_vasp_relax_incar(ecut, ediff, False, True, True, npar, kpar, kspacing, kgamma)
+
     with open('INCAR', 'w') as fp :
         fp.write(fc)
     # gen poscar

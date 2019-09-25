@@ -1,9 +1,11 @@
-import os,shutil
+import os,sys,shutil
 import unittest
 import numpy as np
 import tarfile
-
 from glob import glob
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+__package__ = 'database'
 from .context import dpgen
 from .context import Entry
 from .context import VaspInput,DPPotcar

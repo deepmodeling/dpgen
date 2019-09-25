@@ -31,6 +31,7 @@ class SSHSession (object) :
             if count == max_check:
                 raise RuntimeError('cannot connect ssh after %d failures at interval %d s' %
                                    (max_check, sleep_time))
+            dlog.info('connection check failed, try to reconnect to ' + self.remote_host)
             self._setup_ssh(self.remote_host,
                             self.remote_port,
                             username=self.remote_uname,
@@ -88,7 +89,7 @@ class SSHContext (object):
         self.ssh = self.ssh_session.get_ssh_client()        
         self.ssh_session.ensure_alive()
         try:
-           sftp = self.ssh.open_sftp()        
+           sftp = self.ssh.open_sftp() 
            sftp.mkdir(self.remote_root)
            sftp.close()
         except: 

@@ -22,20 +22,29 @@ def make_vasp(jdata, conf_dir, max_miller = 2, relax_box = False, static = False
     min_vacuum_size = jdata['min_vacuum_size']
     pert_xz = jdata['pert_xz']
 
+    if 'relax_incar' in jdata.keys():
+        vasp_str='vasp-relax_incar'
+    else: 
+        vasp_str='vasp-k%.2f' % (kspacing)
+
     # get conf poscar
     # conf_path = os.path.abspath(conf_dir)
     # conf_poscar = os.path.join(conf_path, 'POSCAR')
     equi_path = re.sub('confs', global_equi_name, conf_dir)
-    equi_path = os.path.join(equi_path, 'vasp-k%.2f' % kspacing)
+    equi_path = os.path.join(equi_path, vasp_str)
     equi_path = os.path.abspath(equi_path)    
     equi_contcar = os.path.join(equi_path, 'CONTCAR')
     assert os.path.exists(equi_contcar),"Please compute the equilibrium state using vasp first"
     task_path = re.sub('confs', global_task_name, conf_dir)
     task_path = os.path.abspath(task_path)
     if static:
-        task_path = os.path.join(task_path, 'vasp-static-k%.2f' % kspacing)
+        if 'scf_incar' in jdata.keys():
+            vasp_static_str='vasp-static-scf_incar'
+        else:
+            vasp_static_str='vasp-static-k%.2f' % (kspacing)
+        task_path = os.path.join(task_path, vasp_static_str)
     else :
-        task_path = os.path.join(task_path, 'vasp-k%.2f' % kspacing)
+        task_path = os.path.join(task_path, vasp_str)
     os.makedirs(task_path, exist_ok=True)
     cwd = os.getcwd()
     os.chdir(task_path)
@@ -51,9 +60,21 @@ def make_vasp(jdata, conf_dir, max_miller = 2, relax_box = False, static = False
     all_slabs = generate_all_slabs(ss, max_miller, min_slab_size, min_vacuum_size)
     # gen incar
     if static :
-        fc = vasp.make_vasp_static_incar(ecut, ediff, npar=npar,kpar=kpar, kspacing = kspacing, kgamma = kgamma)
+        if  'scf_incar' in jdata.keys():
+            scf_incar_path = jdata['scf_incar']
+            assert(os.path.exists(scf_incar_path))
+            scf_incar_path = os.path.abspath(scf_incar_path)
+            fc = open(scf_incar_path).read()
+        else :
+            fc = vasp.make_vasp_static_incar(ecut, ediff, npar=npar,kpar=kpar, kspacing = kspacing, kgamma = kgamma)
     else :
-        fc = vasp.make_vasp_relax_incar(ecut, ediff, True, relax_box, False, npar=npar,kpar=kpar, kspacing = kspacing, kgamma = kgamma)
+        if  'relax_incar' in jdata.keys():
+            relax_incar_path = jdata['relax_incar']
+            assert(os.path.exists(relax_incar_path))
+            relax_incar_path = os.path.abspath(relax_incar_path)
+            fc = open(relax_incar_path).read()
+        else :
+            fc = vasp.make_vasp_relax_incar(ecut, ediff, True, relax_box, False, npar=npar,kpar=kpar, kspacing = kspacing, kgamma = kgamma)
     with open(os.path.join(task_path, 'INCAR'), 'w') as fp :
         fp.write(fc)
     # gen potcar
@@ -119,8 +140,13 @@ def make_lammps(jdata, conf_dir, max_miller = 2, static = False, relax_box = Fal
     # get equi poscar
     # conf_path = os.path.abspath(conf_dir)
     # conf_poscar = os.path.join(conf_path, 'POSCAR')
+    if 'relax_incar' in jdata.keys():
+        vasp_str='vasp-relax_incar'
+    else: 
+        vasp_str='vasp-k%.2f' % (kspacing)
+
     equi_path = re.sub('confs', global_equi_name, conf_dir)
-    equi_path = os.path.join(equi_path, 'vasp-k%.2f' % kspacing)
+    equi_path = os.path.join(equi_path, vasp_str)
     equi_path = os.path.abspath(equi_path)    
     equi_contcar = os.path.join(equi_path, 'CONTCAR')    
     assert os.path.exists(equi_contcar),"Please compute the equilibrium state using vasp first"
@@ -172,16 +198,13 @@ def make_lammps(jdata, conf_dir, max_miller = 2, static = False, relax_box = Fal
         fp.write(fc)
     cwd = os.getcwd()
 
-    if task_type=='deepmd':
-        os.chdir(task_path)
-        for ii in model_name :
-            if os.path.exists(ii) :
-                os.remove(ii)
-        for (ii,jj) in zip(models, model_name) :
-            os.symlink(os.path.relpath(ii), jj)
-        share_models = glob.glob(os.path.join(task_path, '*pb'))
-    else :
-        share_models=models
+    os.chdir(task_path)
+    for ii in model_name :
+        if os.path.exists(ii) :
+            os.remove(ii)
+    for (ii,jj) in zip(models, model_name) :
+        os.symlink(os.path.relpath(ii), jj)
+    share_models = [os.path.join(task_path,ii) for ii in model_name]
 
     for ii in range(len(all_slabs)) :
         slab = all_slabs[ii]

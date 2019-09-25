@@ -14,6 +14,7 @@ except ImportError:
     pass
 try:
     from ase import Atoms, Atom
+    from ase.data import atomic_numbers
 except ImportError:
     pass
 
@@ -80,11 +81,12 @@ def _crd2mul(symbols, crds):
 
 
 def detect_multiplicity(symbols):
-    # only support C, H, O at present
+    # currently only support charge=0
     # oxygen -> 3
     if np.count_nonzero(symbols == ["O"]) == 2 and symbols.size == 2:
         return 3
-    n_total = np.count_nonzero(symbols == ["H"])
+    # calculates the total number of electrons, assumes they are paired as much as possible
+    n_total = sum([atomic_numbers[s] for s in symbols])
     return n_total % 2 + 1
 
 
@@ -106,7 +108,7 @@ def make_gaussian_input(sys_data, fp_params):
     if type(keywords) == str:
         keywords = [keywords]
     # assume default charge is zero and default spin multiplicity is 1
-    charge = fp_params['charge'] if 'charge' in fp_params else 0
+    charge = fp_params.get('charge', 0)
     mult_auto = False
     frag = False
     if 'multiplicity' in fp_params:

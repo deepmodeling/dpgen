@@ -1,14 +1,15 @@
-import os,json,glob,shutil
+import os,sys,json,glob,shutil
 import unittest
 from pymatgen import Structure
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+__package__ = 'data'
 from .context import setUpModule
 from .context_surf import *
 
-
-class TestCollVasp(unittest.TestCase):
+class TestGenSurf(unittest.TestCase):
     def setUp(self):
-        self.surfs=["surf-100"] #,"surf-110","surf-111"]
+        self.surfs=["surf-100"] 
         self.elongs=["elong-0.500", "elong-1.000", "elong-1.500", "elong-2.000", "elong-2.500",\
              "elong-3.000", "elong-3.500", "elong-4.000", "elong-5.000", "elong-6.000",\
              "elong-7.000", "elong-8.000" ]

@@ -81,23 +81,26 @@ def get_structure_from_poscar(file_name, number_of_dimensions=3):
                         cell=direct_cell)
 
 def make_vasp(jdata, conf_dir) :
-    fp_params = jdata['vasp_params']
-    ecut = fp_params['ecut']
-    ediff = fp_params['ediff']
-    npar = fp_params['npar']
-    kpar = fp_params['kpar']
-    kspacing = fp_params['kspacing']
-    kgamma = fp_params['kgamma']
+    
     supercell_matrix=jdata['supercell_matrix']
     band_path=jdata['band']
+
+    if 'relax_incar' in jdata.keys():
+        vasp_str='vasp-relax_incar'
+    else:
+        vasp_str='vasp-k%.2f' % kspacing
 
     conf_path = os.path.abspath(conf_dir)
     conf_poscar = os.path.join(conf_path, 'POSCAR')
     equi_path = re.sub('confs', global_equi_name, conf_path)
-    equi_path = os.path.join(equi_path, 'vasp-k%.2f' % kspacing)
+    equi_path = os.path.join(equi_path, vasp_str)
     equi_contcar = os.path.join(equi_path, 'CONTCAR')
     task_path = re.sub('confs', global_task_name, conf_path)
-    task_path = os.path.join(task_path, 'vasp-k%.2f' % kspacing)
+    if 'user_incar' in jdata.keys():
+        vasp_user_str='vasp-user_incar'
+    else:
+        vasp_user_str='vasp-k%.2f' % kspacing
+    task_path = os.path.join(task_path, vasp_user_str)
     os.makedirs(task_path, exist_ok=True)
     cwd = os.getcwd()
     os.chdir(task_path)
@@ -110,7 +113,22 @@ def make_vasp(jdata, conf_dir) :
     os.chdir(cwd)
     task_poscar = os.path.join(task_path, 'POSCAR-unitcell')   
     # gen incar
-    fc = vasp.make_vasp_phonon_incar(ecut, ediff, npar, kpar, kspacing = None, kgamma = None)
+    if  'user_incar' in jdata.keys():
+        user_incar_path = jdata['user_incar']
+        assert(os.path.exists(user_incar_path))
+        user_incar_path = os.path.abspath(user_incar_path)
+        fc = open(user_incar_path).read()
+        kspacing =float(re.findall((r"KSPACING(.+?)\n"),fc)[0].replace('=',''))
+        kgamma =('T' in re.findall((r"KGAMMA(.+?)\n"),fc)[0])
+    else :
+        fp_params = jdata['vasp_params']
+        ecut = fp_params['ecut']
+        ediff = fp_params['ediff']
+        npar = fp_params['npar']
+        kpar = fp_params['kpar']
+        kspacing = fp_params['kspacing']
+        kgamma = fp_params['kgamma']
+        fc = vasp.make_vasp_phonon_incar(ecut, ediff, npar, kpar, kspacing = None, kgamma = None)
     with open(os.path.join(task_path, 'INCAR'), 'w') as fp :
         fp.write(fc)
     # gen potcar

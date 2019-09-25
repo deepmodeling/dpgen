@@ -20,12 +20,18 @@ def _cmpt_vasp(jdata, conf_dir, supercell, insert_ele) :
     fp_params = jdata['vasp_params']
     kspacing = fp_params['kspacing']
 
+    if 'relax_incar' in jdata.keys():
+        vasp_str='vasp-relax_incar'
+    else:
+        kspacing = jdata['vasp_params']['kspacing']
+        vasp_str='vasp-k%.2f' % kspacing
+
     equi_path = re.sub('confs', global_equi_name, conf_dir)
-    equi_path = os.path.join(equi_path, 'vasp-k%.2f' % kspacing)
+    equi_path = os.path.join(equi_path, vasp_str)
     equi_path = os.path.abspath(equi_path)
     equi_outcar = os.path.join(equi_path, 'OUTCAR')
     task_path = re.sub('confs', global_task_name, conf_dir)
-    task_path = os.path.join(task_path, 'vasp-k%.2f' % kspacing)
+    task_path = os.path.join(task_path, vasp_str)
     task_path = os.path.abspath(task_path)
 
     equi_natoms, equi_epa, equi_vpa = vasp.get_nev(equi_outcar)
@@ -53,10 +59,15 @@ def _cmpt_deepmd_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_name) 
     fp_params = jdata['vasp_params']
     kspacing = fp_params['kspacing']
 
+    if 'relax_incar' in jdata.keys():
+        vasp_str='vasp-relax_incar'
+    else:
+        vasp_str='vasp-k%.2f' % kspacing
+
     conf_path = os.path.abspath(conf_dir)
     task_path = re.sub('confs', global_task_name, conf_path)
-    vasp_path = os.path.join(task_path, 'vasp-k%.2f' % kspacing)
-    lmps_path = os.path.join(task_path, task_name + '-k%.2f' % kspacing)    
+    vasp_path = os.path.join(task_path, vasp_str)
+    lmps_path = os.path.join(task_path, task_name + vasp_str.replace('vasp',''))    
     copy_str = "%sx%sx%s" % (supercell[0], supercell[1], supercell[2])
     struct_widecard = os.path.join(vasp_path, 'struct-%s-%s-*' % (insert_ele,copy_str))
     vasp_struct = glob.glob(struct_widecard)
