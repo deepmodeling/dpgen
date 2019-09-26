@@ -1,0 +1,35 @@
+dpdata is a python package for manipulating DeePMD-kit, VASP, LAMMPS data formats. dpdata only works with python 3.x.It is recommended to use python 3.6.
+Now,added technical support for SIESTA，and modified part of the code for gaussian (log.py)
+The source code link is as follows：
+deepmd-kit: https://github.com/deepmodeling/deepmd-kit
+dpdata：https://github.com/deepmodeling/dpdata
+
+
+
+install：
+
+（sudo）python3.6 setup.py install
+
+
+## quick to use
+## for SIESTA support
+```bash
+python 3.6
+import dpdata 
+
+### SIESTA SCF calculation output file: scf_output    (only a frame)
+### SIESTA aimd calculation output file: aimd_output  (contain a lot of frames)
+
+ret_scf  = dpdata.LabeledSystem('scf_output', fmt='siesta/output')
+ret_aimd = dpdata.LabeledSystem('aimd_output', fmt='siesta/aimd_output') 
+
+## convert to deepmd-kit input file
+ret_scf.to_deepmd_npy('save_file_path')
+
+## sample from aimd output
+import numpy as np
+arr = np.arange(100, 10000, 10)
+res=ret_aimd.sub_system(arr)
+res.to_deepmd_npy('save_file_path')
+
+```
