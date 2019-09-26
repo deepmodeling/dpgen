@@ -5,6 +5,7 @@ import numpy as np
 import subprocess as sp
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 from lib.pwscf import make_pwscf_input
+from lib.siesta import make_siesta_input
 from lib.vasp import make_vasp_incar
 from lib.vasp import system_from_poscar
 import dpdata
@@ -66,6 +67,13 @@ def make_pwscf(tdir, fp_params, mass_map, fp_pp_path, fp_pp_files) :
     open('input', 'w').write(ret)        
     os.chdir(cwd)
 
+def make_siesta(tdir, fp_params, fp_pp_path, fp_pp_files) :
+    cwd = os.getcwd()
+    os.chdir(tdir)
+    sys_data = system_from_poscar('POSCAR')
+    ret = make_siesta_input(sys_data, fp_pp_files, fp_params)
+    open('input', 'w').write(ret)
+    os.chdir(cwd)
 
 def create_init_tasks(target_folder, param_file, output, fp_json, verbose = True) :
     target_folder = os.path.abspath(target_folder)
@@ -109,6 +117,8 @@ def create_init_tasks(target_folder, param_file, output, fp_json, verbose = True
                 os.symlink(os.path.relpath(os.path.join(output, 'INCAR')), 'INCAR')
             elif fp_style == 'pwscf':
                 make_pwscf('.', fp_params, mass_map, fp_pp_files, fp_pp_files)
+            elif fp_style == 'siesta':
+                make_siesta('.', fp_params, fp_pp_files, fp_pp_files)
             os.chdir(cwd_)            
     
 
@@ -169,7 +179,9 @@ def create_tasks(target_folder, param_file, output, fp_json, verbose = True) :
         copy_pp_files(output, fp_pp_path, fp_pp_files)
         make_vasp(output, fp_params)
     if fp_style == 'pwscf' :
-        copy_pp_files(output, fp_pp_path, fp_pp_files)        
+        copy_pp_files(output, fp_pp_path, fp_pp_files)
+    if fp_style == 'siesta' :
+        copy_pp_files(output, fp_pp_path, fp_pp_files)
     for si in range(numb_sys) :
         sys_dir = os.path.join(output, 'system.%03d' % si)
         if verbose :
@@ -203,6 +215,8 @@ def create_tasks(target_folder, param_file, output, fp_json, verbose = True) :
                 os.symlink(os.path.relpath(os.path.join(output, 'INCAR')), 'INCAR')
             elif fp_style == 'pwscf':
                 make_pwscf('.', fp_params, mass_map, fp_pp_files, fp_pp_files)
+            elif fp_style == 'siesta':
+                make_siesta('.', fp_params, mass_map, fp_pp_files, fp_pp_files)
             os.chdir(cwd_)
     os.chdir(cwd)
 

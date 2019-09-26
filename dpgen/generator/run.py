@@ -38,6 +38,7 @@ from dpgen.generator.lib.vasp import write_incar_dict
 from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
 from dpgen.generator.lib.pwscf import make_pwscf_input
 from dpgen.generator.lib.pwscf import cvt_1frame
+from dpgen.generator.lib.siesta import make_siesta_input
 from dpgen.generator.lib.gaussian import make_gaussian_input, take_cluster
 from dpgen.generator.lib.cp2k import make_cp2k_input, make_cp2k_xyz
 from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, LSFJob, CloudMachineJob, awsMachineJob
@@ -216,7 +217,7 @@ def make_train (iter_index,
     init_batch_size_ = list(jdata['init_batch_size'])
     sys_batch_size = jdata['sys_batch_size']
     for ii, ss in zip(init_data_sys_, init_batch_size_) :
-        if jdata.get('init_multi_systems', False):
+        if 'init_multi_systems' in jdata and jdata['init_multi_systems']:
             for single_sys in os.listdir(os.path.join(work_path, 'data.init', ii)):
                 init_data_sys.append(os.path.join('..', 'data.init', ii, single_sys))
                 init_batch_size.append(detect_batch_size(ss, os.path.join(work_path, 'data.init', ii, single_sys)))
@@ -229,7 +230,7 @@ def make_train (iter_index,
             fp_data_sys = glob.glob(os.path.join(fp_path, "data.*"))
             for jj in fp_data_sys :
                 sys_idx = int(jj.split('.')[-1])
-                if jdata.get('use_clusters', False):
+                if 'use_clusters' in jdata and jdata['use_clusters']:
                     nframes = 0
                     for sys_single in os.listdir(jj):
                         tmp_box = np.loadtxt(os.path.join(jj, sys_single, 'box.raw'))
@@ -256,7 +257,7 @@ def make_train (iter_index,
         mdata["deepmd_version"]
     except:
         mdata = set_version(mdata)
-    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
+    if (mdata["deepmd_version"]) < LooseVersion('1'):
         # 0.x
         jinput['systems'] = init_data_sys
         jinput['batch_size'] = init_batch_size
@@ -382,7 +383,7 @@ def run_train (iter_index,
     cwd = os.getcwd()
     os.chdir(work_path)
     for ii in init_data_sys :
-        if jdata.get('init_multi_systems', False):
+        if 'init_multi_systems' in jdata and jdata['init_multi_systems']:
             for single_sys in os.listdir(os.path.join(ii)):
                 trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'set.*'))
                 trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type.raw'))
@@ -390,7 +391,7 @@ def run_train (iter_index,
             trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
             trans_comm_data += glob.glob(os.path.join(ii, 'type.raw'))
     for ii in fp_data :
-        if jdata.get('use_clusters', False):
+        if 'use_clusters' in jdata and jdata['use_clusters']:
             for single_sys in os.listdir(os.path.join(ii)):
                 trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'set.*'))
                 trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type.raw'))
@@ -614,6 +615,7 @@ def make_model_devi (iter_index,
         sys_counter += 1
 
     sys_counter = 0
+    is_use_clusters = True if 'use_clusters' in jdata and jdata['use_clusters'] else False
     for ss in conf_systems:
         conf_counter = 0
         task_counter = 0
@@ -645,11 +647,11 @@ def make_model_devi (iter_index,
                                                trj_freq,
                                                mass_map,
                                                tt,
-                                               jdata = jdata,
                                                tau_t = model_devi_taut,
                                                pres = pp,
                                                tau_p = model_devi_taup,
                                                pka_e = pka_e,
+                                               is_use_clusters = is_use_clusters,
                                                deepmd_version = deepmd_version)
                     job = {}
                     job["ensemble"] = ensemble
@@ -1108,6 +1110,41 @@ def make_fp_pwscf(iter_index,
         for ii in md_trajs :
             shutil.rmtree(ii)
 
+def make_fp_siesta(iter_index,
+                  jdata) :
+    # make config
+    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
+    if len(fp_tasks) == 0 :
+        return
+    # make siesta input
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    fp_pp_files = jdata['fp_pp_files']
+    if 'user_fp_params' in jdata.keys() :
+        fp_params = jdata['user_fp_params']
+        user_input = True
+    else:
+        fp_params = jdata['fp_params']
+        user_input = False
+    cwd = os.getcwd()
+    for ii in fp_tasks:
+        os.chdir(ii)
+        sys_data = dpdata.System('POSCAR').data
+        ret = make_siesta_input(sys_data, fp_pp_files, fp_params)
+        with open('input', 'w') as fp:
+            fp.write(ret)
+        os.chdir(cwd)
+    # link pp files
+    _link_fp_vasp_pp(iter_index, jdata)
+    # clean traj
+    clean_traj = True
+    if 'model_devi_clean_traj' in jdata :
+        clean_traj = jdata['model_devi_clean_traj']
+    if clean_traj:
+        modd_path = os.path.join(iter_name, model_devi_name)
+        md_trajs = glob.glob(os.path.join(modd_path, 'task*/traj'))
+        for ii in md_trajs :
+            shutil.rmtree(ii)
 
 def make_fp_gaussian(iter_index,
                      jdata):
@@ -1192,6 +1229,8 @@ def make_fp (iter_index,
         make_fp_vasp(iter_index, jdata)
     elif fp_style == "pwscf" :
         make_fp_pwscf(iter_index, jdata)
+    elif fp_style == "siesta" :
+        make_fp_siesta(iter_index, jdata)
     elif fp_style == "gaussian" :
         make_fp_gaussian(iter_index, jdata)
     elif fp_style == "cp2k" :
@@ -1221,6 +1260,17 @@ def _qe_check_fin(ii) :
         return False
     return True
 
+def _siesta_check_fin(ii) :
+    if os.path.isfile(os.path.join(ii, 'output')) :
+        with open(os.path.join(ii, 'output'), 'r') as fp :
+            content = fp.read()
+            count = content.count('End of run')
+            if count != 1 :
+                return False
+    else :
+        return False
+    return True
+
 def _gaussian_check_fin(ii):
     if os.path.isfile(os.path.join(ii, 'output')) :
         with open(os.path.join(ii, 'output'), 'r') as fp :
@@ -1232,16 +1282,6 @@ def _gaussian_check_fin(ii):
         return False
     return True
 
-def _cp2k_check_fin(ii):
-    if os.path.isfile(os.path.join(ii, 'output')) :
-        with open(os.path.join(ii, 'output'), 'r') as fp :
-            content = fp.read()
-            count = content.count('SCF run converged')
-            if count == 0 :
-                return False
-    else :
-        return False
-    return True
 
 def run_fp_inner (iter_index,
                   jdata,
@@ -1362,14 +1402,13 @@ def run_fp (iter_index,
     fp_pp_files = jdata['fp_pp_files']
 
     if fp_style == "vasp" :
-        forward_files = ['POSCAR', 'INCAR'] + fp_pp_files
+        forward_files = ['POSCAR', 'INCAR', 'KPOINTS'] + fp_pp_files
         backward_files = ['OUTCAR','vasprun.xml']
         # Move cvasp interface to jdata
         if ('cvasp' in jdata) and (jdata['cvasp'] == True):
             mdata['fp_resources']['cvasp'] = True
         if ('cvasp' in  mdata["fp_resources"] ) and (mdata["fp_resources"]["cvasp"]==True):
             forward_common_files=['cvasp.py']
-            forward_files.append('KPOINTS')
         else:
             forward_common_files=[]
         run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _vasp_check_fin,
@@ -1378,14 +1417,18 @@ def run_fp (iter_index,
         forward_files = ['input'] + fp_pp_files
         backward_files = ['output']
         run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _qe_check_fin, log_file = 'output')
+    elif fp_style == "siesta":
+        forward_files = ['input'] + fp_pp_files
+        backward_files = ['output']
+        run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _siesta_check_fin, log_file='output')
     elif fp_style == "gaussian":
         forward_files = ['input']
         backward_files = ['output']
         run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _gaussian_check_fin, log_file = 'output')
     elif fp_style == "cp2k":
-        forward_files = ['input.inp', 'coord.xyz']
+        forward_files = ['input.inp']
         backward_files = ['output']
-        run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _cp2k_check_fin, log_file = 'output')
+        run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _gaussian_check_fin, log_file = 'output')
     else :
         raise RuntimeError ("unsupported fp style")
 
@@ -1506,6 +1549,52 @@ def post_fp_pwscf (iter_index,
         all_sys.to_deepmd_raw(sys_data_path)
         all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
 
+def post_fp_siesta (iter_index,
+                   jdata):
+    model_devi_jobs = jdata['model_devi_jobs']
+    assert (iter_index < len(model_devi_jobs))
+
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
+    fp_tasks.sort()
+    if len(fp_tasks) == 0 :
+        return
+
+    system_index = []
+    for ii in fp_tasks :
+        system_index.append(os.path.basename(ii).split('.')[1])
+    system_index.sort()
+    set_tmp = set(system_index)
+    system_index = list(set_tmp)
+    system_index.sort()
+
+    cwd = os.getcwd()
+    for ss in system_index :
+        sys_output = glob.glob(os.path.join(work_path, "task.%s.*/output"%ss))
+        sys_input = glob.glob(os.path.join(work_path, "task.%s.*/input"%ss))
+        sys_output.sort()
+        sys_input.sort()
+        for idx, oo in enumerate(sys_output):
+            _sys = dpdata.LabeledSystem()
+            _sys.data['atom_names'], \
+            _sys.data['atom_numbs'], \
+            _sys.data['atom_types'], \
+            _sys.data['cells'], \
+            _sys.data['coords'], \
+            _sys.data['energies'], \
+            _sys.data['forces'], \
+            _sys.data['virials'] \
+            = dpdata.siesta.output.obtain_frame(oo)
+            if idx == 0:
+                all_sys = _sys
+            else:
+                all_sys.append(_sys)
+
+        sys_data_path = os.path.join(work_path, 'data.%s'%ss)
+        all_sys.to_deepmd_raw(sys_data_path)
+        all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
+
 
 def post_fp_gaussian (iter_index,
                       jdata):
@@ -1532,14 +1621,12 @@ def post_fp_gaussian (iter_index,
         sys_output = glob.glob(os.path.join(work_path, "task.%s.*/output"%ss))
         sys_output.sort()
         for idx,oo in enumerate(sys_output) :
-            sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log') 
-            if len(sys) > 0:
-                sys.check_type_map(type_map = jdata['type_map'])
-            if jdata.get('use_atom_pref', False):
+            sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log')
+            if 'use_atom_pref' in jdata and jdata['use_atom_pref']:
                 sys.data['atom_pref'] = np.load(os.path.join(os.path.dirname(oo), "atom_pref.npy"))
             if idx == 0:
-                if jdata.get('use_clusters', False):
-                    all_sys = dpdata.MultiSystems(sys, type_map = jdata['type_map'])
+                if 'use_clusters' in jdata and jdata['use_clusters']:
+                    all_sys = dpdata.MultiSystems(sys)
                 else:
                     all_sys = sys
             else:
@@ -1575,8 +1662,6 @@ def post_fp_cp2k (iter_index,
         sys_output.sort()
         for idx,oo in enumerate(sys_output) :
             sys = dpdata.LabeledSystem(oo, fmt = 'cp2k/output')
-            if len(sys) > 0:
-                sys.check_type_map(type_map = jdata['type_map'])
             if idx == 0:
                 all_sys = sys
             else:
@@ -1594,6 +1679,8 @@ def post_fp (iter_index,
         post_fp_vasp(iter_index, jdata)
     elif fp_style == "pwscf" :
         post_fp_pwscf(iter_index, jdata)
+    elif fp_style == "siesta":
+        post_fp_siesta(iter_index, jdata)
     elif fp_style == 'gaussian' :
         post_fp_gaussian(iter_index, jdata)
     elif fp_style == 'cp2k' :
