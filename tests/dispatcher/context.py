@@ -10,5 +10,7 @@ from dpgen.dispatcher.SSHContext import SSHContext
 from dpgen.dispatcher.Dispatcher import FinRecord
 from dpgen.dispatcher.Dispatcher import _split_tasks
 
+from dpgen.dispatcher.LocalContext import _identical_files
+
 def setUpModule():
     os.chdir(os.path.abspath(os.path.dirname(__file__)))

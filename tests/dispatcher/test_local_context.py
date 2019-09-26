@@ -6,6 +6,27 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 __package__ = 'dispatcher'
 from .context import LocalContext, LocalSession
 from .context import setUpModule
+from .context import _identical_files
+
+class TestIdFile(unittest.TestCase) :
+    def test_id(self) :
+        with open('f0', 'w') as fp:
+            fp.write('foo')
+        with open('f1', 'w') as fp:
+            fp.write('foo')
+        self.assertTrue(_identical_files('f0', 'f1'))
+        os.remove('f0')
+        os.remove('f1')
+
+    def test_diff(self) :
+        with open('f0', 'w') as fp:
+            fp.write('foo')
+        with open('f1', 'w') as fp:
+            fp.write('bar')
+        self.assertFalse(_identical_files('f0', 'f1'))
+        os.remove('f0')
+        os.remove('f1')
+
 
 class TestLocalContext(unittest.TestCase):
     def setUp(self) :
@@ -71,6 +92,67 @@ class TestLocalContext(unittest.TestCase):
                     rmts = fp.read()
                 self.assertEqual(locs, rmts)
 
+    def test_dl_f_f(self):
+        # no local, no remote
+        self.test_download_non_exist()
+        
+    def test_dl_t_f(self) :
+        # has local, no remote
+        work_profile = LocalSession({'work_path':'rmt'})
+        self.job  = LocalContext('loc', work_profile)
+        tasks = ['task0', 'task1']
+        record_uuid = []        
+        for ii in tasks :
+            for jj in ['dir1'] :
+                os.makedirs(os.path.join('loc',ii,jj), exist_ok=False)
+                for kk in ['test6', 'test7']:
+                    with open(os.path.join('loc',ii,jj,kk), 'w') as fp:
+                        tmp = str(uuid.uuid4())
+                        fp.write(tmp)
+                        record_uuid.append(tmp)
+        files = ['dir1']
+        self.job.download(tasks, files)
+        cc = 0
+        for ii in tasks :
+            for jj in ['dir1'] :
+                for kk in ['test6', 'test7']:
+                    with open(os.path.join('loc',ii,jj,kk), 'r') as fp:
+                        tmp = fp.read()
+                        self.assertEqual(tmp, record_uuid[cc])
+                        cc += 1
+        
+    def test_dl_t_t(self) :
+        # has local, has remote
+        work_profile = LocalSession({'work_path':'rmt'})
+        self.job  = LocalContext('loc', work_profile)
+        tasks = ['task0', 'task1']
+        for ii in tasks :
+            for jj in ['dir1'] :
+                os.makedirs(os.path.join('loc',ii,jj), exist_ok=False)
+                for kk in ['test6', 'test7']:
+                    with open(os.path.join('loc',ii,jj,kk), 'w') as fp:
+                        tmp = str(uuid.uuid4())
+                        fp.write(tmp)
+        record_uuid = []        
+        for ii in tasks :
+            for jj in ['dir1'] :
+                os.makedirs(os.path.join('rmt', self.job.job_uuid,ii,jj), exist_ok=False)
+                for kk in ['test6', 'test7']:
+                    with open(os.path.join('rmt', self.job.job_uuid,ii,jj,kk), 'w') as fp:
+                        tmp = str(uuid.uuid4())
+                        fp.write(tmp)
+                        record_uuid.append(tmp)
+        files = ['dir1']
+        self.job.download(tasks, files)
+        cc = 0
+        for ii in tasks :
+            for jj in ['dir1'] :
+                for kk in ['test6', 'test7']:
+                    with open(os.path.join('loc',ii,jj,kk), 'r') as fp:
+                        tmp = fp.read()
+                        self.assertEqual(tmp, record_uuid[cc])
+                        cc += 1
+        
 
     def test_download_non_exist(self):
         work_profile = LocalSession({'work_path':'rmt'})
