@@ -1,5 +1,14 @@
 # DP-GEN Manual
 
+Description: We just add the technical support of SIESTA on the basis of the source code.
+
+The source code link is as follows:
+
+dpdata: https://github.com/deepmodeling/dpdata
+
+dpgen: https://github.com/deepmodeling/dpgen
+
+
 ## Table of Contents
    * [DP-GEN Manual](#dp-gen-manual)
       * [Table of Contents](#table-of-contents)
@@ -23,7 +32,7 @@ DP-GEN (Deep Generator)  is a software written in Python, delicately designed to
 ### Highlighted features
 + **Accurate and efficient**: DP-GEN is capable to sample more than tens of million structures and select only a few for first principles calculation. DP-GEN will finally obtain a uniformly accurate model.
 + **User-friendly and automatic**: Users may install and run DP-GEN easily. Once succusefully running, DP-GEN can dispatch and handle all jobs on HPCs, and thus there's no need for any personal effort.
-+ **Highly scalable**: With modularized code structures, users and developers can easily extend DP-GEN for their most relevant needs. DP-GEN currently supports for HPC systems (Slurm, PBS, LSF and cloud machines ), Deep Potential interface with DeePMD-kit, MD interface with LAMMPS  and *ab-initio* calculation interface with VASP, PWSCF, and Gaussian. We're sincerely welcome and embraced to users' contributions, with more possibilities and cases to use DP-GEN.
++ **Highly scalable**: With modularized code structures, users and developers can easily extend DP-GEN for their most relevant needs. DP-GEN currently supports for HPC systems (Slurm, PBS, LSF and cloud machines ), Deep Potential interface with DeePMD-kit, MD interface with LAMMPS  and *ab-initio* calculation interface with VASP, PWSCF, SIESTA, and Gaussian. We're sincerely welcome and embraced to users' contributions, with more possibilities and cases to use DP-GEN.
 
 ### Code structure and interface
 + dpgen:
@@ -56,8 +65,9 @@ Options for TASK:
 ## Download and Install
 One can download the source code of dpgen by
 ```bash
-git clone https://github.com/deepmodeling/dpgen.git
+git clone https://github.com/LiuGroupHNU/dpgen dpgen
 ```
+demand to use python 3.6 or higher version.
 then you may install DP-GEN easily by: 
 ```bash
 cd dpgen
@@ -89,8 +99,8 @@ commands with their own options. To see the options for the sub-commands, type
 
 positional arguments:
   {init_surf,init_bulk,run,test,db}
-    init_surf           Generating initial data for surface systems.
-    init_bulk           Generating initial data for bulk systems.
+    init_surf           Generating initial data for bulk systems.
+    init_bulk           Generating initial data for surface systems.
     run                 Main process of Deep Generator.
     test                Auto-test for Deep Potential.
     db                  Collecting data from DP-GEN.
@@ -459,7 +469,7 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | model_devi_jobs["taut"] | Float          | "0.1"                                    | Coupling time of thermostat (fs) |
 | model_devi_jobs["taup"] | Float             | "0.5"                                    | Coupling time of barostat (fs)
 | *#Labeling*
-| **fp_style** | string                | "vasp"                                                       | Software for First Principles. **Options** include “vasp”, “pwscf” and “gaussian” up to now. |
+| **fp_style** | string                | "vasp"                                                       | Software for First Principles. **Options** include “vasp”, “pwscf”, “siesta” and “gaussian” up to now. |
 | **fp_task_max** | Integer            | 20                                                           | Maximum of  structures to be calculated in `02.fp` of each iteration. |
 | **fp_task_min**     | Integer        | 5                                                            | Minimum of structures to calculate in `02.fp` of each iteration. |
 | *fp_style == VASP*
@@ -474,6 +484,16 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 |**fp_params["keywords"]** | String or list | "mn15/6-31g** nosymm scf(maxcyc=512)" | Keywords for Gaussian input.
 |**fp_params["multiplicity"]**| Integer or String | 1 | Spin multiplicity for Gaussian input. If set to `auto`, the spin multiplicity will be detected automatically. If set to `frag`, the "fragment=N" method will be used.
 |**fp_params["nproc"]** | Integer| 4 | The number of processors for Gaussian input.
+| *fp_style == siesta*
+| **use_clusters** | Boolean | false | If set to `true`, clusters will be taken instead of the whole system. This option does not work with DeePMD-kit 0.x.
+| **cluster_cutoff**| Float | 3.5 | The cutoff radius of clusters if `use_clusters` is set to `true`.
+| **fp_params** | Dict | | Parameters for siesta calculation.
+|**fp_params["ecut"]** | Integer | 300 | Define the plane wave cutoff for grid.
+|**fp_params["ediff"]**| Float | 1e-4 | Tolerance of Density Matrix.
+|**fp_params["kspacing"]** | Float| 0.4 | sample factor in Brillouin zones.
+|**fp_params["mixingweight"]**| Float | 0.05 | Proportion a of output Density Matrix to be used for the input Density Matrix of next SCF cycle (linear mixing).
+|**fp_params["NumberPulay"]** | Integer| 5 | controls the Pulay convergence accelerator.
+
 
 ## Test: Auto-test for Deep Generator
 At this step, we assume that you have prepared some graph files like `graph.*.pb` and the particular pseudopotential `POTCAR`.
