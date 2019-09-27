@@ -148,7 +148,7 @@ class TestPostFPPWSCF(unittest.TestCase, CompLabeledSys):
         self.places = 5
         self.e_places = 5
         self.f_places = 5
-        self.v_places = 5
+        self.v_places = 2
         assert os.path.isdir('out_data_post_fp_pwscf'), 'out data for post fp pwscf should exist'
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
