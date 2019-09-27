@@ -1,10 +1,14 @@
+import os,sys
 import dpdata
 import numpy as np
 import unittest
 import importlib
 
-from context import take_cluster
-from comp_sys import CompSys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+__package__ = 'generator'
+from .context import take_cluster
+from .context import setUpModule
+from .comp_sys import CompSys
 
 
 @unittest.skipIf(importlib.util.find_spec("openbabel") is None, "requires openbabel")

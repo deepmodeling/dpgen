@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # coding: utf-8
-from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, LSFJob, CloudMachineJob
+
+from dpgen.dispatcher.SSHContext import SSHSession
+from dpgen.dispatcher.SSHContext import SSHContext
+from dpgen.dispatcher.Slurm import Slurm
+from dpgen import dlog
 import os
 import json
 import numpy as np
@@ -18,9 +22,19 @@ def decide_train_machine(mdata):
 	                    mdata['train_machine'] = profile['machine']
 	                    mdata['train_resources'] = profile['resources']
 	                    mdata['deepmd_path'] = profile['deepmd_path']
+	                    if "group_size" in profile:
+	                    	mdata["train_group_size"] = profile["group_size"]
 	                    continue_flag = True
 	        except:
 	            pass
+	    if "hostname" not in mdata["train"][0]["machine"]:
+	    	mdata["train_machine"] = mdata["train"][0]["machine"]
+	    	mdata["train_resources"] = mdata["train"][0]["resources"]
+	    	mdata["deepmd_path"] = mdata["train"][0]["deepmd_path"]
+	    	if "group_size" in mdata["train"][0]:
+	    		mdata["train_group_size"] = mdata["train"][0]["group_size"]
+	    	continue_flag = True
+
 	    pd_flag = False
 	    pd_count_list =[]
 	    # pd for pending job in slurm
@@ -34,20 +48,15 @@ def decide_train_machine(mdata):
 	        for machine_idx in range(len(mdata['train'])):
 	            temp_machine = mdata['train'][machine_idx]['machine']
 	            temp_resources = mdata['train'][machine_idx]['resources']
-	            #assert isinstance(temp_machine, dict), "unsupported type of train machine [%d]!" %machine_idx
-	            #assert isinstance(temp_resources, dict), "unsupported type of train resources [%d]!"%machine_idx
-	            #assert temp_machine['machine_type'] == 'slurm', "Currently only support for Slurm!"
 	            temp_ssh_sess = SSHSession(temp_machine)
 	            cwd = os.getcwd()
-	            temp_rjob = SlurmJob(temp_ssh_sess, cwd)
-
-	            ## By `squeue -u user -p partition | grep PD` 
-	            command = temp_rjob._make_squeue(temp_machine, temp_resources)
-	            stdin, stdout, stderr = temp_rjob.ssh.exec_command(command)
+	            temp_context = SSHContext(cwd, temp_ssh_sess)
+	            temp_batch = Slurm(temp_context)
+	            command = temp_batch._make_squeue(temp_machine, temp_resources)
+	            ret, stdin, stdout, stderr = temp_batch.context.block_call(command)
 	            pd_response = stdout.read().decode('utf-8').split("\n")
 	            pd_count = len(pd_response)
-
-	            temp_rjob.clean()
+	            temp_context.clean()
 	            ## If there is no need to waiting for allocation
 	            if pd_count ==1:
 	                mdata['train_machine'] = temp_machine   
@@ -65,14 +74,19 @@ def decide_train_machine(mdata):
 	            mdata['train_machine'] = mdata['train'][min_machine_idx]['machine']
 	            mdata['train_resources'] = mdata['train'][min_machine_idx]['resources']
 	            mdata['deepmd_path'] = mdata['train'][min_machine_idx]['deepmd_path']
+	            if "group_size" in mdata['train'][min_machine_idx]:
+	            	mdata["train_group_size"] = mdata['train'][min_machine_idx]["group_size"]
 
-            ## Record whihc machine is selected
+            ## Record which machine is selected
 	        with open("record.machine","w") as _outfile:
 	            profile = {}
 	            profile['purpose'] = 'train'
 	            profile['machine'] = mdata['train_machine']
 	            profile['resources'] = mdata['train_resources']
 	            profile['deepmd_path'] = mdata['deepmd_path']
+	            if "train_group_size" in mdata:
+	            	profile["group_size"] = mdata["train_group_size"]
+
 	            json.dump(profile, _outfile, indent = 4)
 	return mdata
 
@@ -91,6 +105,13 @@ def decide_model_devi_machine(mdata):
 	                    continue_flag = True
 	        except:
 	            pass
+	    if "hostname" not in mdata["model_devi"][0]["machine"]:
+	    	mdata["model_devi_machine"] = mdata["model_devi"][0]["machine"]
+	    	mdata["model_devi_resources"] = mdata["model_devi"][0]["resources"]
+	    	mdata["lmp_command"] = mdata["model_devi"][0]["command"]
+	    	#if "group_size" in mdata["train"][0]:
+	    	mdata["model_devi_group_size"] = mdata["model_devi"][0]["group_size"]
+	    	continue_flag = True
 	    pd_count_list =[]
 	    pd_flag = False
 	    if not continue_flag:
@@ -107,12 +128,13 @@ def decide_model_devi_machine(mdata):
 	            #assert temp_machine['machine_type'] == 'slurm', "Currently only support for Slurm!"
 	            temp_ssh_sess = SSHSession(temp_machine)
 	            cwd = os.getcwd()
-	            temp_rjob = SlurmJob(temp_ssh_sess, cwd)
-	            command = temp_rjob._make_squeue(temp_machine, temp_resources)
-	            stdin, stdout, stderr = temp_rjob.ssh.exec_command(command)
+	            temp_context = SSHContext(cwd, temp_ssh_sess)
+	            temp_batch = Slurm(temp_context)
+	            command = temp_batch._make_squeue(temp_machine, temp_resources)
+	            ret, stdin, stdout, stderr = temp_batch.context.block_call(command)
 	            pd_response = stdout.read().decode('utf-8').split("\n")
 	            pd_count = len(pd_response)
-	            temp_rjob.clean()
+	            temp_context.clean()
 	            if pd_count ==0:
 	                mdata['model_devi_machine'] = temp_machine   
 	                mdata['model_devi_resources'] = temp_resources
@@ -159,23 +181,29 @@ def decide_fp_machine(mdata):
 	                    continue_flag = True
 	        except:
 	            pass
+	    if "hostname" not in mdata["fp"][0]["machine"]:
+	    	mdata["fp_machine"] = mdata["fp"][0]["machine"]
+	    	mdata["fp_resources"] = mdata["fp"][0]["resources"]
+	    	mdata["fp_command"] = mdata["fp"][0]["command"]
+	    	#if "group_size" in mdata["train"][0]:
+	    	mdata["fp_group_size"] = mdata["fp"][0]["group_size"]
+	    	continue_flag = True
 	    pd_count_list =[]
 	    pd_flag = False
 	    if not continue_flag:
 		    for machine_idx in range(len(mdata['fp'])):
 		        temp_machine = mdata['fp'][machine_idx]['machine']
 		        temp_resources = mdata['fp'][machine_idx]['resources']
-		        #assert isinstance(temp_machine, dict), "unsupported type of fp machine [%d]!" %machine_idx
-		        #assert isinstance(temp_resources, dict), "unsupported type of fp resources [%d]!"%machine_idx
-		        #assert temp_machine['machine_type'] == 'slurm', "Currently only support for Slurm!"
 		        temp_ssh_sess = SSHSession(temp_machine)
 		        cwd = os.getcwd()
-		        temp_rjob = SlurmJob(temp_ssh_sess, cwd)
-		        command = temp_rjob._make_squeue(temp_machine, temp_resources)
-		        stdin, stdout, stderr = temp_rjob.ssh.exec_command(command)
+		        temp_context = SSHContext(cwd, temp_ssh_sess)
+		        temp_batch = Slurm(temp_context)
+		        command = temp_batch._make_squeue(temp_machine, temp_resources)
+		        ret, stdin, stdout, stderr = temp_batch.context.block_call(command)
 		        pd_response = stdout.read().decode('utf-8').split("\n")
 		        pd_count = len(pd_response)
-		        temp_rjob.clean()
+		        temp_context.clean()
+		        #dlog.info(temp_machine["username"] + " " + temp_machine["hostname"] +  " " + str(pd_count))
 		        if pd_count ==0:
 		            mdata['fp_machine'] = temp_machine   
 		            mdata['fp_resources'] = temp_resources
@@ -200,6 +228,6 @@ def decide_fp_machine(mdata):
 		            profile['group_size'] = mdata['fp_group_size']
 		            profile['command'] = mdata['fp_command']
 		            json.dump(profile, _outfile, indent = 4)
-	print("mdata", mdata)
+#	print("mdata", mdata)
 	return mdata
 

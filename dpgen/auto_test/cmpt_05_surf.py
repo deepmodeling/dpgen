@@ -16,15 +16,24 @@ def cmpt_vasp(jdata, conf_dir, static = False) :
     fp_params = jdata['vasp_params']
     kspacing = fp_params['kspacing']
 
+    if 'relax_incar' in jdata.keys():
+        vasp_str='vasp-relax_incar'
+    else: 
+        vasp_str='vasp-k%.2f' % (kspacing)
+
     equi_path = re.sub('confs', global_equi_name, conf_dir)
-    equi_path = os.path.join(equi_path, 'vasp-k%.2f' % kspacing)
+    equi_path = os.path.join(equi_path, vasp_str)
     equi_path = os.path.abspath(equi_path)
     equi_outcar = os.path.join(equi_path, 'OUTCAR')
     task_path = re.sub('confs', global_task_name, conf_dir)
     if static :
-        task_path = os.path.join(task_path, 'vasp-static-k%.2f' % kspacing)
+        if 'scf_incar' in jdata.keys():
+            vasp_static_str='vasp-static-scf_incar'
+        else:
+            vasp_static_str='vasp-static-k%.2f' % (kspacing)
+        task_path = os.path.join(task_path, vasp_static_str)
     else :
-        task_path = os.path.join(task_path, 'vasp-k%.2f' % kspacing)
+        task_path = os.path.join(task_path, vasp_str)
     task_path = os.path.abspath(task_path)
 
     equi_natoms, equi_epa, equi_vpa = vasp.get_nev(equi_outcar)
@@ -33,7 +42,7 @@ def cmpt_vasp(jdata, conf_dir, static = False) :
     struct_path_list = glob.glob(struct_path_widecard)
     struct_path_list.sort()
     if len(struct_path_list) == 0:
-        print("# cannot find results for conf %s supercell %s" % (conf_dir, supercell))
+        print("# cannot find results for conf %s" % (conf_dir))
     sys.stdout.write ("Miller_Indices: \tSurf_E(J/m^2) EpA(eV) equi_EpA(eV)\n")
     for ii in struct_path_list :
         structure_dir = os.path.basename(ii)

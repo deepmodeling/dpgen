@@ -16,13 +16,6 @@ link potcar
 make incar
 '''
 def make_vasp(jdata, conf_dir) :
-    fp_params = jdata['vasp_params']
-    ecut = fp_params['ecut']
-    ediff = fp_params['ediff']
-    npar = fp_params['npar']
-    kpar = fp_params['kpar']
-    kspacing = fp_params['kspacing']
-    kgamma = fp_params['kgamma']
     vol_start = jdata['vol_start']
     vol_end = jdata['vol_end']
     vol_step = jdata['vol_step']
@@ -57,15 +50,29 @@ def make_vasp(jdata, conf_dir) :
     for ii in ele_list :
         assert os.path.exists(os.path.abspath(potcar_map[ii])),"No POTCAR in the potcar_map of %s"%(ii)
         potcar_list.append(os.path.abspath(potcar_map[ii]))
-        
-    vasp_path = os.path.join(task_path, 'vasp-k%.2f' % kspacing)
+
+    # gen incar
+    if  'relax_incar' in jdata.keys():
+        relax_incar_path = jdata['relax_incar']
+        assert(os.path.exists(relax_incar_path))
+        relax_incar_path = os.path.abspath(relax_incar_path)
+        fc = open(relax_incar_path).read()
+        vasp_path = os.path.join(task_path, 'vasp-relax_incar' )
+    else :
+        fp_params = jdata['vasp_params']
+        ecut = fp_params['ecut']
+        ediff = fp_params['ediff']
+        npar = fp_params['npar']
+        kpar = fp_params['kpar']
+        kspacing = fp_params['kspacing']
+        kgamma = fp_params['kgamma']
+        fc = vasp.make_vasp_relax_incar(ecut, ediff, is_alloy,  True, True, npar, kpar, kspacing, kgamma)
+        vasp_path = os.path.join(task_path, 'vasp-k%.2f' % kspacing)
+
     os.makedirs(vasp_path, exist_ok = True)
     os.chdir(vasp_path)
-    # gen incar
-    if is_alloy :
-        fc = vasp.make_vasp_relax_incar(ecut, ediff, True,  True, False, npar, kpar, kspacing, kgamma)
-    else :
-        fc = vasp.make_vasp_relax_incar(ecut, ediff, False, True, False, npar, kpar, kspacing, kgamma)
+    print(vasp_path)
+
     with open('INCAR', 'w') as fp :
         fp.write(fc)
     # gen potcar
@@ -154,16 +161,14 @@ def make_lammps (jdata, conf_dir,task_type) :
     # lammps.cvt_lammps_conf(to_poscar, conf_file)
     # ptypes = vasp.get_poscar_types(to_poscar)
     # lammps.apply_type_map(conf_file, deepmd_type_map, ptypes)
-    if task_type =='deepmd':
-        os.chdir(lmp_path)
-        for ii in model_name :
-            if os.path.exists(ii) :
-                os.remove(ii)
-        for (ii,jj) in zip(models, model_name) :
-            os.symlink(os.path.relpath(ii), jj)
-        share_models = glob.glob(os.path.join(lmp_path, '*pb'))
-    else:
-        share_models =models
+
+    os.chdir(lmp_path)
+    for ii in model_name :
+        if os.path.exists(ii) :
+            os.remove(ii)
+    for (ii,jj) in zip(models, model_name) :
+        os.symlink(os.path.relpath(ii), jj)
+    share_models =[os.path.join(lmp_path,ii) for ii in model_name]
 
     for vol in np.arange(vol_start, vol_end, vol_step) :
         vol_path = os.path.join(lmp_path, 'vol-%.2f' % vol)        
@@ -253,17 +258,13 @@ def make_lammps_fixv (jdata, conf_dir,task_type) :
     with open(f_lammps_in, 'w') as fp :
         fp.write(fc)
 
-    if task_type =='deepmd':    
-        os.chdir(task_path)
-        for ii in model_name :
-            if os.path.exists(ii) :
-                os.remove(ii)
-        for (ii,jj) in zip(models, model_name) :
-            os.symlink(os.path.relpath(ii), jj)
-        share_models = glob.glob(os.path.join(task_path, '*pb'))
-    else:
-        share_models = models
-
+    os.chdir(task_path)
+    for ii in model_name :
+        if os.path.exists(ii) :
+            os.remove(ii)
+    for (ii,jj) in zip(models, model_name) :
+        os.symlink(os.path.relpath(ii), jj)
+    share_models = [os.path.join(task_path,ii) for ii in model_name]
 
     # make vols
     for vol in np.arange(vol_start, vol_end, vol_step) :

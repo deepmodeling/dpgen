@@ -21,10 +21,10 @@ A master convenience script with many tools for driving dpgen.
 
 __author__ = "Han Wang"
 __copyright__ = "Copyright 2019, The DP-GEN Project"
-__version__ = "0.1.0"
+__version__ = "0.3.1"
 __maintainer__ = "Haidi Wang"
 __email__ = ""
-__date__ = "2019.06.26"
+__date__ = "2019.09.17"
 
 
 def main():
@@ -46,7 +46,7 @@ def main():
         "init_surf", help="Generating initial data for surface systems.")
     parser_init_surf.add_argument('PARAM', type=str, 
                              help="parameter file, json/yaml format")
-    parser_init_surf.add_argument('MACHINE', type=str,
+    parser_init_surf.add_argument('MACHINE', type=str,default=None,nargs="?",
                         help="machine file, json/yaml format")
     parser_init_surf.set_defaults(func=gen_init_surf)
     
@@ -55,7 +55,7 @@ def main():
         "init_bulk", help="Generating initial data for bulk systems.")
     parser_init_bulk.add_argument('PARAM', type=str, 
                              help="parameter file, json/yaml format")
-    parser_init_bulk.add_argument('MACHINE', type=str,
+    parser_init_bulk.add_argument('MACHINE', type=str,default=None,nargs="?",
                         help="machine file, json/yaml format")
     parser_init_bulk.set_defaults(func=gen_init_bulk)
     # parser_init.add_argument("-p",'--parameter', type=str, dest='param',
@@ -79,6 +79,8 @@ def main():
                         help="parameter file, json/yaml format")
     parser_run.add_argument('MACHINE', type=str,
                         help="machine file, json/yaml format")
+    parser_run.add_argument('-d','--debug', action='store_true',
+                        help="log debug info")
     parser_run.set_defaults(func=gen_run)
 
     # test 
@@ -92,7 +94,7 @@ def main():
     # db 
     parser_db = subparsers.add_parser(
         "db",
-        help="Collecting data from DP-GEN.")
+        help="Collecting data from Deep Generator.")
     parser_db.add_argument('PATH', type=str,
                         help="root path for dpgen modeling")
     parser_db.add_argument('CALCULATOR', type=str,
@@ -104,29 +106,6 @@ def main():
                                  help="prefix of an  entry id")
 
     parser_db.set_defaults(func=db_run)
-
-    # # convert  model
-    # parser_structure = subparsers.add_parser(
-    #     "struct",
-    #     help="structure conversion and analysis tools.")
-
-    # parser_structure.add_argument(
-    #     "-f", "--filenames", dest="filenames",
-    #     metavar="filename", nargs="+",
-    #     help="List of structure files.")
-
-    # groups = parser_structure.add_mutually_exclusive_group(required=True)
-    # groups.add_argument("-c", "--convert", dest="convert", action="store_true",
-    #                     help="Convert from structure file 1 to structure "
-    #                          "file 2. Format determined from filename. "
-    #                          "Supported formats include POSCAR/CONTCAR, "
-    #                          "CIF, lmp.")
-    # groups.add_argument("-s", "--symmetry", dest="symmetry",
-    #                     metavar="tolerance", type=float,
-    #                    help="Determine the spacegroup using the "
-    #                          "specified tolerance. 0.1 is usually a good "
-    #                          "value for DFT calculations.")
-    # parser_structure.set_defaults(func=gen_struct)
 
 
     try:

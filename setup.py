@@ -13,7 +13,7 @@ except ImportError:
     with open(readme_file) as f:
         readme = f.read()
 
-install_requires=['numpy>=1.14.3', 'dpdata>=0.1.5', 'pymatgen>=2017.9.1', 'ase', 'monty>2.0.0', 'paramiko', 'custodian']
+install_requires=['numpy>=1.14.3', 'dpdata>=0.1.7', 'pymatgen>=2017.9.1', 'ase', 'monty>2.0.0', 'paramiko', 'custodian']
 
 setuptools.setup(
     name=NAME,
@@ -25,6 +25,7 @@ setuptools.setup(
     long_description=readme,
     long_description_content_type="text/markdown",
     url="https://github.com/deepmodeling/dpgen",
+    python_requires="~=3.6",
     packages=['dpgen', 
               'dpgen/generator',
               'dpgen/generator/lib',
@@ -33,6 +34,7 @@ setuptools.setup(
               'dpgen/data',
               'dpgen/data/tools',
               'dpgen/remote',
+              'dpgen/dispatcher',
               'dpgen/database'
     ],
     # package_data={'example':['*.json']},

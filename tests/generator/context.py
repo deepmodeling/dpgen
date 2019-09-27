@@ -12,3 +12,11 @@ param_gaussian_file = 'param-pyridine-gaussian.json'
 param_cp2k_file = 'param-pyridine-cp2k.json'
 machine_file = 'machine-local.json'
 param_diy_file = 'param-mg-vasp-diy.json'
+
+def my_file_cmp(test, f0, f1):
+    with open(f0) as fp0 :
+        with open(f1) as fp1:
+            test.assertTrue(fp0.read() == fp1.read())
+
+def setUpModule():
+    os.chdir(os.path.abspath(os.path.dirname(__file__)))
