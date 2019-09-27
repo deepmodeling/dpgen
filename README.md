@@ -710,6 +710,7 @@ The following table gives explicit descriptions on keys in param.json.
 | `numb_gpu` | Integer | 4 | Number of GPUs required
 | source_list | List of string | "....../vasp.env" | Environment needed for certain job. For example, if "env" is in the list, 'source env' will be written in the script.
 | module_list | List of string | [ "Intel/2018", "Anaconda3"] | For example, If "Intel/2018" is in the list, "module load Intel/2018" will be written in the script.
+| partition | String  | "AdminGPU" | Partition / queue in which to run the job. |
 | time_limit | String (time format) | 23:00:00 | Maximal time permitted for the job |
 mem_limit | Interger | 16 | Maximal memory permitted to apply for the job.
 | with_mpi | Boolean | true | Deciding whether to use mpi for calculation. If it's true and machine type is Slurm, "srun" will be prefixed to `command` in the script.
