@@ -1305,14 +1305,14 @@ def post_fp_pwscf (iter_index,
         flag=True
         for ii,oo in zip(sys_input,sys_output) :
             if flag:
-                _sys = dpdata.LabeledSystem(oo, fmt = 'pwscf/scf', type_map = jdata['type_map'])
+                _sys = dpdata.LabeledSystem(oo, fmt = 'qe/pw/scf', type_map = jdata['type_map'])
                 if len(_sys)>0:
                    all_sys=_sys
                    flag=False
                 else:
                    pass
             else:
-                _sys = dpdata.LabeledSystem(oo, fmt = 'pwscf/scf', type_map = jdata['type_map'])
+                _sys = dpdata.LabeledSystem(oo, fmt = 'qe/pw/scf', type_map = jdata['type_map'])
                 if len(_sys)>0:
                    all_sys.append(_sys)
 
