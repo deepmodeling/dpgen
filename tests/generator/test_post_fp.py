@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 __package__ = 'generator'
 from .context import post_fp
 from .context import post_fp_pwscf
-from context import post_fp_siesta
+from .context import post_fp_siesta
 from .context import post_fp_vasp
 from .context import post_fp_gaussian
 from .context import post_fp_cp2k
@@ -15,7 +15,7 @@ from .context import param_file
 from .context import param_old_file
 from .context import param_pwscf_file
 from .context import param_pwscf_old_file
-from context import param_siesta_file
+from .context import param_siesta_file
 from .context import param_gaussian_file
 from .context import param_cp2k_file
 from .context import machine_file
