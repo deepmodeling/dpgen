@@ -7,6 +7,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 __package__ = 'generator'
 from .context import make_fp_vasp
 from .context import make_fp_pwscf
+from context import make_fp_siesta
 from .context import make_fp_gaussian
 from .context import make_fp_cp2k
 from .context import detect_multiplicity
@@ -15,6 +16,7 @@ from .context import param_file
 from .context import param_old_file
 from .context import param_pwscf_file
 from .context import param_pwscf_old_file
+from context import param_siesta_file
 from .context import param_gaussian_file
 from .context import param_cp2k_file
 from .context import machine_file
@@ -69,6 +71,37 @@ ntyp=3,\n\
 &electrons\n\
 conv_thr=1e-08,\n\
 /\n"
+
+siesta_input_ref="\
+SystemName        system\n\
+SystemLabel       system\n\
+NumberOfAtoms     6\n\
+NumberOfSpecies   3\n\
+\n\
+WriteForces       T\n\
+WriteCoorStep     T\n\
+WriteCoorXmol     T\n\
+WriteMDXmol       T\n\
+WriteMDHistory    T\n\
+\n\
+MeshCutoff            300 Ry\n\
+DM.Tolerance          1.000000e-04\n\
+DM.NumberPulay         5\n\
+DM.UseSaveDM          true\n\
+XC.functional          GGA\n\
+XC.authors             PBE\n\
+MD.UseSaveXV           T\n\
+\n\
+DM.UseSaveDM           F\n\
+WriteDM                F\n\
+WriteDM.NetCDF         F\n\
+WriteDMHS.NetCDF       F\n\
+\n\
+%block Chemical_Species_label\n\
+1	6	C\n\
+2	1	H\n\
+3	7	N\n"
+
 
 gaussian_input_ref="""%nproc=14
 #force b3lyp/6-31g*
@@ -346,6 +379,21 @@ def _check_pwscf_input_head(testCase, idx) :
         lines = lines[:idx]
         testCase.assertEqual(('\n'.join(lines)).strip(), pwscf_input_ref.strip())
 
+def _check_siesta_input_head(testCase, idx) :
+    fp_path = os.path.join('iter.%06d' % idx, '02.fp')
+    tasks = glob.glob(os.path.join(fp_path, 'task.*'))
+    for ii in tasks :
+        ifile = os.path.join(ii, 'input')
+        testCase.assertTrue(os.path.isfile(ifile))
+        with open(ifile) as fp:
+            lines = fp.read().split('\n')
+        for idx, jj in enumerate(lines) :
+            if '%endblock Chemical_Species_label' in jj :
+                break
+        lines = lines[:idx]
+        testCase.assertEqual(('\n'.join(lines)).strip(), siesta_input_ref.strip())
+
+
 def _check_gaussian_input_head(testCase, idx) :
     fp_path = os.path.join('iter.%06d' % idx, '02.fp')
     tasks = glob.glob(os.path.join(fp_path, 'task.*'))
@@ -431,6 +479,32 @@ class TestMakeFPPwscf(unittest.TestCase):
         _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
 
+class TestMakeFPSIESTA(unittest.TestCase):
+    def test_make_fp_siesta(self):
+        if os.path.isdir('iter.000000') :
+            shutil.rmtree('iter.000000')
+        with open (param_siesta_file, 'r') as fp :
+            jdata = json.load (fp)
+        with open (machine_file, 'r') as fp:
+            mdata = json.load (fp)
+        md_descript = []
+        nsys = 2
+        nmd = 3
+        n_frame = 10
+        for ii in range(nsys) :
+            tmp = []
+            for jj in range(nmd) :
+                tmp.append(np.arange(0, 0.29, 0.29/10))
+            md_descript.append(tmp)
+        atom_types = [0, 1, 2, 2, 0, 1]
+        type_map = jdata['type_map']
+        _make_fake_md(0, md_descript, atom_types, type_map)
+        make_fp_siesta(0, jdata)
+        _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
+        _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
+        _check_siesta_input_head(self, 0)
+        _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
+        shutil.rmtree('iter.000000')
 
 class TestMakeFPVasp(unittest.TestCase):
     def test_make_fp_vasp(self):
