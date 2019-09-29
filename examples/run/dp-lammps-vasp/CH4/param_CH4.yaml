@@ -102,14 +102,4 @@ fp_pp_path: "/gpfs/share/home/1600017784/yuzhi/methane/"
 fp_pp_files:
 - POTCAR
 fp_incar: "/gpfs/share/home/1600017784/yuzhi/methane/INCAR_methane"
-fp_params:
-  _comment: " that's all "
-  ecut: 400
-  ediff: 1.0e-06
-  kspacing: 2
-  smearing: gauss
-  sigma: 0.05
-  metagga: NONE
-  npar: 4
-  kpar: 1
 
