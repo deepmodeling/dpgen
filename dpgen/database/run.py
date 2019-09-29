@@ -15,7 +15,7 @@ from dpdata import System,LabeledSystem
 from monty.serialization import loadfn,dumpfn
 
 OUTPUT=SHORT_CMD+'_db.json'
-SUPPORTED_CACULATOR=['vasp','pwscf','gaussian']
+SUPPORTED_CACULATOR=['vasp','pwscf','siesta','gaussian']
 ITERS_PAT="iter.*/02.fp/task*"
 INIT_PAT="init/*/02.md/sys-*/scale-*/*"
 
@@ -32,6 +32,8 @@ def _main(path,calculator,output,id_prefix):
         parsing_vasp(path,output,id_prefix)
     elif calculator == 'gaussian': 
         parsing_gaussian(path,output)
+    elif calculator == "siesta":
+        parsing_siesta(path, output)
     else:
         parsing_pwscf(path,output)
 
@@ -90,7 +92,8 @@ def _parsing_vasp(paths,id_prefix,iters=True):
 
 def parsing_pwscf(path,output=OUTPUT):
     pass
-
+def parsing_siesta(path,output=OUTPUT):
+    pass
 def parsing_gaussian(path,output=OUTPUT):
     pass
 

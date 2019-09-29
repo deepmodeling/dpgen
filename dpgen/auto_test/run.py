@@ -33,6 +33,7 @@ from dpgen.auto_test.lib.utils import log_iter
 from dpgen.auto_test.lib.utils import record_iter
 from dpgen.auto_test.lib.utils import log_iter
 from dpgen.auto_test.lib.pwscf import make_pwscf_input
+from dpgen.auto_test.lib.siesta import make_siesta_input
 from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
 from dpgen.remote.decide_machine import decide_fp_machine, decide_model_devi_machine
 from dpgen.remote.group_jobs import *

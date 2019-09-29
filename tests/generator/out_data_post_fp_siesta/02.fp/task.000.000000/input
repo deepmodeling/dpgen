@@ -1,0 +1,51 @@
+SystemName        system
+SystemLabel       system
+NumberOfAtoms     6
+NumberOfSpecies   3
+
+WriteForces       T
+WriteCoorStep     T
+WriteCoorXmol     T
+WriteMDXmol       T
+WriteMDHistory    T
+
+MeshCutoff            300 Ry
+DM.Tolerance          1.000000e-04
+DM.NumberPulay         5
+DM.UseSaveDM          true
+XC.functional          GGA
+XC.authors             PBE
+MD.UseSaveXV           T
+
+DM.UseSaveDM           F
+WriteDM                F
+WriteDM.NetCDF         F
+WriteDMHS.NetCDF       F
+
+%block Chemical_Species_label
+1	6	C
+2	1	H
+3	7	N
+%endblock Chemical_Species_label
+
+%block kgrid_Monkhorst_Pack
+1	0	0	0.0
+0	1	0	0.0
+0	0	150	0.0
+%endblock kgrid_Monkhorst_Pack
+
+LatticeConstant 1.00 Ang
+%block LatticeVectors
+10.269575 0.000000 0.000000
+-0.255660 9.882868 0.000000
+0.112990 -0.148019 9.809641
+%endblock LatticeVectors
+
+AtomicCoordinatesFormat Ang
+%block AtomicCoordinatesAndAtomicSpecies
+5.386680 4.158650 3.377770 1 H
+3.945500 4.521670 4.457510 1 H
+5.562160 5.555940 4.281570 1 H
+5.436810 4.034550 5.278340 1 H
+5.095370 4.564810 4.366510 2 C
+%endblock AtomicCoordinatesAndAtomicSpecies
