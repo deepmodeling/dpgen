@@ -1041,16 +1041,7 @@ def make_fp_siesta(iter_index,
         os.chdir(cwd)
     # link pp files
     _link_fp_vasp_pp(iter_index, jdata)
-    # clean traj
-    clean_traj = True
-    if 'model_devi_clean_traj' in jdata :
-        clean_traj = jdata['model_devi_clean_traj']
-    if clean_traj:
-        modd_path = os.path.join(iter_name, model_devi_name)
-        md_trajs = glob.glob(os.path.join(modd_path, 'task*/traj'))
-        for ii in md_trajs :
-            shutil.rmtree(ii)
-
+        
 def make_fp_gaussian(iter_index,
                      jdata):
     # make config
