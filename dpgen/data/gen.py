@@ -531,16 +531,20 @@ def coll_vasp_md(jdata) :
                                % (path_md, ii)) 
 
         flag=True
+        if ("type_map" in jdata) and isinstance(jdata["type_map"], list):
+            type_map = jdata["type_map"]
+        else:
+            type_map = None 
         for oo in valid_outcars :
             if flag:
-                _sys = dpdata.LabeledSystem(oo)
+                _sys = dpdata.LabeledSystem(oo, type_map= type_map)
                 if len(_sys)>0:
                    all_sys=_sys
                    flag=False
                 else:
                    pass
             else:
-                _sys = dpdata.LabeledSystem(oo)
+                _sys = dpdata.LabeledSystem(oo, type_map= type_map)
                 if len(_sys)>0:
                    all_sys.append(_sys)
         # create deepmd data
