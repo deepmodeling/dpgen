@@ -108,7 +108,7 @@ def _main() :
     if args.TASK == 'vasp':
         cmpt_vasp(jdata, args.CONF)               
     elif args.TASK == 'deepmd' or args.TASK =='meam' :
-        cmptlammps(jdata, args.CONF,args.TASK)
+        cmpt_lammps(jdata, args.CONF,args.TASK)
     else :
         raise RuntimeError("unknow task ", args.TASK)
     
