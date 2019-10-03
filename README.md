@@ -137,6 +137,7 @@ Following is an example for `PARAM`, which generates data from a typical structu
     "pert_box":     0.03,
     "pert_atom":    0.01,
     "coll_ndata":   5000,
+    "type_map" : [ "Mg", "Al"],
     "_comment":     "that's all"
 }
 ```
@@ -168,6 +169,7 @@ The bold notation of key (such as **Elements**) means that it's a necessary key.
 | **pert_atom** | Float | 0.01 | Pertubation of each atoms (Angstrom).
 | **md_nstep** | Integer | 10 | Steps of AIMD in stage 3. If it's not equal to settings via `NSW` in `md_incar`, DP-GEN will follow `NSW`.
 | **coll_ndata** | Integer | 5000 | Maximal number of collected data.
+| type_map | List | [ "Mg", "Al"] | The indices of elements in deepmd formats will be set in this order.
 
 ### Init_surf
 
