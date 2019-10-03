@@ -44,18 +44,23 @@ def cmpt_vasp(jdata, conf_dir, static = False) :
     if len(struct_path_list) == 0:
         print("# cannot find results for conf %s" % (conf_dir))
     sys.stdout.write ("Miller_Indices: \tSurf_E(J/m^2) EpA(eV) equi_EpA(eV)\n")
-    for ii in struct_path_list :
-        structure_dir = os.path.basename(ii)
-        outcar = os.path.join(ii, 'OUTCAR')
-        natoms, epa, vpa = vasp.get_nev(outcar)
-        if static :
-            e0 = np.array(vasp.get_energies(outcar)) / natoms
-            epa = e0[0]
-        boxes = vasp.get_boxes(outcar)
-        AA = np.linalg.norm(np.cross(boxes[0][0], boxes[0][1]))
-        Cf = 1.60217657e-16 / (1e-20 * 2) * 0.001
-        evac = (epa * natoms - equi_epa * natoms) / AA * Cf
-        sys.stdout.write ("%s:\t %7.3f   %8.3f %8.3f\n" % (structure_dir, evac, epa, equi_epa))
+    
+    with open(os.path.join(task_path,'result'),'w') as fp:
+        fp.write('conf_dir:%s\n'% (conf_dir))
+        fp.write("Miller_Indices: \tSurf_E(J/m^2) EpA(eV) equi_EpA(eV)\n")
+        for ii in struct_path_list :
+            structure_dir = os.path.basename(ii)
+            outcar = os.path.join(ii, 'OUTCAR')
+            natoms, epa, vpa = vasp.get_nev(outcar)
+            if static :
+                e0 = np.array(vasp.get_energies(outcar)) / natoms
+                epa = e0[0]
+            boxes = vasp.get_boxes(outcar)
+            AA = np.linalg.norm(np.cross(boxes[0][0], boxes[0][1]))
+            Cf = 1.60217657e-16 / (1e-20 * 2) * 0.001
+            evac = (epa * natoms - equi_epa * natoms) / AA * Cf
+            sys.stdout.write ("%s:\t %7.3f   %8.3f %8.3f\n" % (structure_dir, evac, epa, equi_epa))
+            fp.write("%s:\t %7.3f   %8.3f %8.3f\n" % (structure_dir, evac, epa, equi_epa))
 
 def cmpt_deepmd_lammps(jdata, conf_dir, task_name, static = False) :
     equi_path = re.sub('confs', global_equi_name, conf_dir)
@@ -74,14 +79,18 @@ def cmpt_deepmd_lammps(jdata, conf_dir, task_name, static = False) :
     if len(struct_path_list) == 0:
         print("# cannot find results for conf %s" % (conf_dir))
     sys.stdout.write ("Miller_Indices: \tSurf_E(J/m^2) EpA(eV) equi_EpA(eV)\n")
-    for ii in struct_path_list :
-        structure_dir = os.path.basename(ii)
-        lmp_log = os.path.join(ii, 'log.lammps')
-        natoms, epa, vpa = lammps.get_nev(lmp_log)
-        AA = lammps.get_base_area(lmp_log)
-        Cf = 1.60217657e-16 / (1e-20 * 2) * 0.001
-        evac = (epa * natoms - equi_epa * natoms) / AA * Cf 
-        sys.stdout.write ("%s: \t%7.3f    %8.3f %8.3f\n" % (structure_dir, evac, epa, equi_epa))
+    with open(os.path.join(task_path,'result'),'w') as fp:
+        fp.write('conf_dir:%s\n'% (conf_dir))
+        fp.write("Miller_Indices: \tSurf_E(J/m^2) EpA(eV) equi_EpA(eV)\n")
+        for ii in struct_path_list :
+            structure_dir = os.path.basename(ii)
+            lmp_log = os.path.join(ii, 'log.lammps')
+            natoms, epa, vpa = lammps.get_nev(lmp_log)
+            AA = lammps.get_base_area(lmp_log)
+            Cf = 1.60217657e-16 / (1e-20 * 2) * 0.001
+            evac = (epa * natoms - equi_epa * natoms) / AA * Cf
+            sys.stdout.write ("%s: \t%7.3f    %8.3f %8.3f\n" % (structure_dir, evac, epa, equi_epa))
+            fp.write("%s:\t %7.3f   %8.3f %8.3f\n" % (structure_dir, evac, epa, equi_epa))
 
 def _main() :
     parser = argparse.ArgumentParser(
