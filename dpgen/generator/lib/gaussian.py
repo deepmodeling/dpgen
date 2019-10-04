@@ -33,14 +33,14 @@ def _crd2frag(symbols, crds, pbc=False, cell=None, return_bonds=False):
     # Use openbabel to connect atoms
     mol = openbabel.OBMol()
     mol.BeginModify()
-    for idx, (num, position) in enumerate(zip(all_atoms.get_atomic_numbers(), step_atoms.positions)):
+    for idx, (num, position) in enumerate(zip(all_atoms.get_atomic_numbers(), all_atoms.positions)):
         atom = mol.NewAtom(idx)
         atom.SetAtomicNum(int(num))
         atom.SetVector(*position)
     mol.ConnectTheDots()
     mol.PerceiveBondOrders()
     mol.EndModify()
-    bond = []
+    bonds = []
     for ii in range(mol.NumBonds()):
         bond = mol.GetBond(ii)
         a = bond.GetBeginAtom().GetId()
