@@ -375,12 +375,14 @@ def make_scale(jdata):
     create_path(work_path)
     for ii in init_sys :
         for jj in scale :
-            pos_src = os.path.join(os.path.join(init_path, ii), 'CONTCAR')
-            if not os.path.isfile(pos_src):
-                if skip_relax :
-                    pos_src = os.path.join(os.path.join(init_path, ii), 'POSCAR')
+            if skip_relax :
+                pos_src = os.path.join(os.path.join(init_path, ii), 'POSCAR')
+                assert(os.path.isfile(pos_src))
+            else :
+                try:
+                    pos_src = os.path.join(os.path.join(init_path, ii), 'CONTCAR')
                     assert(os.path.isfile(pos_src))
-                else :
+                except:
                     raise RuntimeError("not file %s, vasp relaxation should be run before scale poscar")
             scale_path = os.path.join(work_path, ii)
             scale_path = os.path.join(scale_path, "scale-%.3f" % jj)
