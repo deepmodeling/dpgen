@@ -700,11 +700,14 @@ def _make_fp_vasp_inner (modd_path,
     system_index.sort()
 
     fp_tasks = []
-    cluster_cutoff = jdata['cluster_cutoff'] if 'use_clusters' in jdata and jdata['use_clusters'] else None
+    cluster_cutoff = jdata['cluster_cutoff'] if jdata.get('use_clusters', False) else None
+    # skip save *.out if make_fp_out is False, default is True
+    make_fp_out = jdata.get("make_fp_out", True)
     for ss in system_index :
         fp_candidate = []
-        fp_rest_accurate = []
-        fp_rest_failed = []
+        if make_fp_out:
+            fp_rest_accurate = []
+            fp_rest_failed = []
         modd_system_glob = os.path.join(modd_path, 'task.' + ss + '.*')
         modd_system_task = glob.glob(modd_system_glob)
         modd_system_task.sort()
@@ -713,9 +716,6 @@ def _make_fp_vasp_inner (modd_path,
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 all_conf = np.loadtxt(os.path.join(tt, 'model_devi.out'))
-                sel_conf = []
-                res_failed_conf = []
-                res_accurate_conf = []
                 for ii in range(all_conf.shape[0]) :
                     if all_conf[ii][0] < model_devi_skip :
                         continue
@@ -725,33 +725,34 @@ def _make_fp_vasp_inner (modd_path,
                            (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] >= f_trust_lo) :
                             fp_candidate.append([tt, cc])
                         elif (all_conf[ii][1] >= e_trust_hi ) or (all_conf[ii][4] >= f_trust_hi ):
-                            fp_rest_failed.append([tt, cc])
+                            if make_fp_out:
+                                fp_rest_failed.append([tt, cc])
                         elif (all_conf[ii][1] < e_trust_lo and all_conf[ii][4] < f_trust_lo ):
-                            fp_rest_accurate.append([tt, cc])
+                            if make_fp_out:
+                                fp_rest_accurate.append([tt, cc])
                         else :
                             raise RuntimeError('md traj %s frame %d with f devi %f does not belong to either accurate, candidiate and failed, it should not happen' % (tt, ii, all_conf[ii][4]))
                     else:
-                        idx_candidate = np.where(np.logical_and(all_conf[ii][7:] < f_trust_hi, all_conf[ii][7:] >= f_trust_lo))[0]
-                        idx_rest_failed = np.where(all_conf[ii][7:] >= f_trust_hi)[0]
-                        idx_rest_accurate = np.where(all_conf[ii][7:] < f_trust_lo)[0]
-                        for jj in idx_candidate:
+                        for jj in np.where(np.logical_and(all_conf[ii][7:] < f_trust_hi, all_conf[ii][7:] >= f_trust_lo))[0]:
                             fp_candidate.append([tt, cc, jj])
-                        for jj in idx_rest_accurate:
-                            fp_rest_accurate.append([tt, cc, jj])
-                        for jj in idx_rest_failed:
-                            fp_rest_failed.append([tt, cc, jj])
+                        if make_fp_out:
+                            for jj in np.where(all_conf[ii][7:] < f_trust_lo)[0]:
+                                fp_rest_accurate.append([tt, cc, jj])
+                            for jj in np.where(all_conf[ii][7:] >= f_trust_hi)[0]:
+                                fp_rest_failed.append([tt, cc, jj])
         random.shuffle(fp_candidate)
-        random.shuffle(fp_rest_failed)
-        random.shuffle(fp_rest_accurate)
-        with open(os.path.join(work_path,'candidate.shuffled.%s.out'%ss), 'w') as fp:
-            for ii in fp_candidate:
-                fp.write(" ".join([str(nn) for nn in ii]) + "\n")
-        with open(os.path.join(work_path,'rest_accurate.shuffled.%s.out'%ss), 'w') as fp:
-            for ii in fp_rest_accurate:
-                fp.write(" ".join([str(nn) for nn in ii]) + "\n")
-        with open(os.path.join(work_path,'rest_failed.shuffled.%s.out'%ss), 'w') as fp:
-            for ii in fp_rest_failed:
-                fp.write(" ".join([str(nn) for nn in ii]) + "\n")
+        if make_fp_out:
+            random.shuffle(fp_rest_failed)
+            random.shuffle(fp_rest_accurate)
+            with open(os.path.join(work_path,'candidate.shuffled.%s.out'%ss), 'w') as fp:
+                for ii in fp_candidate:
+                    fp.write(" ".join([str(nn) for nn in ii]) + "\n")
+            with open(os.path.join(work_path,'rest_accurate.shuffled.%s.out'%ss), 'w') as fp:
+                for ii in fp_rest_accurate:
+                    fp.write(" ".join([str(nn) for nn in ii]) + "\n")
+            with open(os.path.join(work_path,'rest_failed.shuffled.%s.out'%ss), 'w') as fp:
+                for ii in fp_rest_failed:
+                    fp.write(" ".join([str(nn) for nn in ii]) + "\n")
         numb_task = min(fp_task_max, len(fp_candidate))
         for cc in range(numb_task) :
             tt = fp_candidate[cc][0]
