@@ -433,6 +433,7 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
  | init_data_prefix | String | "/sharedext4/.../data/" | Prefix of initial data directories
  | ***init_data_sys*** | List of string|["CH4.POSCAR.01x01x01/.../deepmd"] |Directories of initial data. You may use either absolute or relative path here.
  | ***sys_format*** | String | "vasp/poscar" | Format of initial data. It will be `vasp/poscar` if not set.
+ | init_multi_systems | Boolean | false | If set to `true`, `init_data_sys` directories should contain sub-directories of various systems. DP-GEN will regard all of these sub-directories as inital data systems.
  | **init_batch_size**   | String of integer     | [8]                                                            | Each number is the batch_size of corresponding system  for training in `init_data_sys`. One recommended rule for setting the `sys_batch_size` and `init_batch_size` is that `batch_size` mutiply number of atoms ot the stucture should be larger than 32. If set to `auto`, batch size will be 32 divided by number of atoms. |
   | sys_configs_prefix | String | "/sharedext4/.../data/" | Prefix of `sys_configs`
  | **sys_configs**   | List of list of string         | [<br />["/sharedext4/.../POSCAR"], <br />["....../POSCAR"]<br />] | Containing directories of structures to be explored in iterations.Wildcard characters are supported here. |
