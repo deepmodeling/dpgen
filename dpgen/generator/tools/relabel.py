@@ -111,7 +111,7 @@ def create_init_tasks(target_folder, param_file, output, fp_json, verbose = True
         for ff in range(nframes) :
             task_dir = os.path.join(sys_dir, 'task.%06d' % ff)
             os.makedirs(task_dir, exist_ok = True)
-            sys.to_vasp_poscar(os.path.join(task_dir, 'POSCAR'))
+            sys.to_vasp_poscar(os.path.join(task_dir, 'POSCAR'), frame_idx=ff)
             # make fp
             cwd_ = os.getcwd()
             os.chdir(task_dir)
@@ -136,7 +136,7 @@ def create_init_tasks(target_folder, param_file, output, fp_json, verbose = True
             os.chdir(cwd_)            
     
 
-def create_tasks(target_folder, param_file, output, fp_json, verbose = True) :
+def create_tasks(target_folder, param_file, output, fp_json, verbose = True, numb_iter = -1) :
     target_folder = os.path.abspath(target_folder)
     output = os.path.abspath(output)
     tool_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'template')    
@@ -164,7 +164,7 @@ def create_tasks(target_folder, param_file, output, fp_json, verbose = True) :
     iters = glob.glob('iter.[0-9]*[0-9]')
     iters.sort()
     # iters = iters[:2]
-    for ii in iters :
+    for ii in iters[:numb_iter] :
         iter_tasks = glob.glob(os.path.join(ii, '02.fp', 'task.[0-9]*[0-9].[0-9]*[0-9]'))
         iter_tasks.sort()
         if verbose :
@@ -269,11 +269,13 @@ def _main()   :
                         help="the output directory of relabel tasks")
     parser.add_argument('-p',"--parameter", type=str, default = 'param.json',
                         help="the json file provides DP-GEN paramters, should be located in JOB_DIR")
+    parser.add_argument('-n',"--numb-iter", type=int, default = -1,
+                        help="number of iterations to relabel")
     parser.add_argument('-v',"--verbose", action = 'store_true',
                         help="being loud")
     args = parser.parse_args()
             
-    create_tasks(args.JOB_DIR, args.parameter, args.OUTPUT, args.PARAM, verbose = args.verbose)
+    create_tasks(args.JOB_DIR, args.parameter, args.OUTPUT, args.PARAM, numb_iter = args.numb_iter, verbose = args.verbose)
     create_init_tasks(args.JOB_DIR, args.parameter, args.OUTPUT, args.PARAM, verbose = args.verbose)
 
 if __name__ == '__main__':
