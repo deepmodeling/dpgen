@@ -27,7 +27,7 @@ class Batch(object) :
     def sub_script_head(self, res) :
         raise RuntimeError('abstract method sub_script_head should be implemented by derived class')        
 
-    def sub_script_cmd(self, cmd, res, errlog, outlog):
+    def sub_script_cmd(self, cmd, res):
         raise RuntimeError('abstract method sub_script_cmd should be implemented by derived class')        
 
     def do_submit(self,
