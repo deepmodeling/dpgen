@@ -93,7 +93,8 @@ class Dispatcher(object):
                 chunk_sha1 = sha1(task_chunks_[ii].encode('utf-8')).hexdigest() 
                 # if hash in map, recover job, else start a new job
                 if chunk_sha1 in path_map:
-                    job_uuid = path_map[chunk_sha1][1].split('/')[-1]
+                    # job_uuid = path_map[chunk_sha1][1].split('/')[-1]
+                    job_uuid = path_map[chunk_sha1][2]
                     dlog.debug("load uuid %s for chunk %s" % (job_uuid, task_chunks_[ii]))
                 else:
                     job_uuid = None
@@ -113,14 +114,15 @@ class Dispatcher(object):
                 # submit new or recover old submission
                 if job_uuid is None:
                     rjob['batch'].submit(chunk, command, res = resources, outlog=outlog, errlog=errlog)
-                    dlog.debug('assigned uudi %s for %s ' % (rjob['context'].job_uuid, task_chunks_[ii]))
-                    dlog.info('new submission of %s' % rjob['context'].job_uuid)
+                    job_uuid = rjob['context'].job_uuid
+                    dlog.debug('assigned uudi %s for %s ' % (job_uuid, task_chunks_[ii]))
+                    dlog.info('new submission of %s' % job_uuid)
                 else:
                     rjob['batch'].submit(chunk, command, res = resources, outlog=outlog, errlog=errlog, restart = True)
                     dlog.info('restart from old submission %s ' % job_uuid)
                 # record job and its hash
                 job_list.append(rjob)
-                path_map[chunk_sha1] = [context.local_root,context.remote_root]
+                path_map[chunk_sha1] = [context.local_root, context.remote_root, job_uuid]
             else :
                 # finished job, append a None to list
                 job_list.append(None)
