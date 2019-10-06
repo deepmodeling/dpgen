@@ -1,0 +1,128 @@
+import os,getpass,time
+from datetime import datetime
+from itertools import zip_longest
+from dpgen.dispatcher.Batch import Batch 
+from dpgen.dispatcher.JobStatus import JobStatus
+from dpgen import dlog
+
+class AWS(Batch):
+    try :
+        import boto3
+        batch = boto3.client('batch')
+    except ModuleNotFoundError:
+        pass
+    _query_max_results = 1000
+    _query_time_interval = 30
+    _job_id_map_status = {}
+    _jobQueue = ""
+    _query_next_allow_time = datetime.now().timestamp()
+
+    @classmethod
+    def AWS_check_status(cls, caller_instance=None):
+        """
+        to aviod query jobStatus too often, set a time interval
+        query_dict example:
+        {job_id: JobStatus}
+
+        {'40fb24b2-d0ca-4443-8e3a-c0906ea03622': <JobStatus.running: 3>,
+         '41bda50c-0a23-4372-806c-87d16a680d85': <JobStatus.waiting: 2>}
+
+           
+        """
+        if datetime.now().timestamp() > cls._query_next_allow_time:
+            cls._query_next_allow_time=datetime.now().timestamp()+cls._query_time_interval
+            query_dict ={}
+            for status in ['SUBMITTED', 'PENDING', 'RUNNABLE', 'STARTING', 'RUNNING','SUCCEEDED', 'FAILED']:
+                status_response = cls.batch.list_jobs(jobQueue=cls._jobQueue, jobStatus=status, maxResults=cls._query_max_results)
+                status_list=status_response.get('jobSummaryList', [])
+                for job_dict in status_list:
+                    query_dict.update({job_dict['jobId']: job_dict['status']})
+            for job in cls._job_id_map_status:
+                cls._job_id_map_status[job]= cls.map_aws_status_to_dpgen_status(query_dict.get(job, 'UNKNOWN'))
+            dlog.debug('20000: _query: %s, _map: %s' %(query_dict, cls._job_id_map_status))
+        if caller_instance:
+            return cls._job_id_map_status.get(caller_instance.job_id, JobStatus.unknown)
+        return cls._job_id_map_status
+
+    @staticmethod
+    def map_aws_status_to_dpgen_status(aws_status):
+        map_dict = {'SUBMITTED': JobStatus.waiting,
+                'PENDING': JobStatus.waiting,
+                'RUNNABLE': JobStatus.waiting,
+                'STARTING': JobStatus.waiting,
+                'RUNNING': JobStatus.running,
+                'SUCCEEDED': JobStatus.finished,
+                'FAILED': JobStatus.terminated,
+                'UNKNOWN': JobStatus.unknown}
+        return map_dict.get(aws_status, JobStatus.unknown)
+
+    @property
+    def job_id(self):
+        return self._job_id
+
+    @job_id.setter
+    def job_id(self, values):
+        response, jobQueue = values
+        self._job_id = response['jobId']
+        self._job_name = response['jobName']
+        self.__class__._jobQueue = jobQueue
+        self.__class__._job_id_map_status[self._job_id] = JobStatus.waiting
+        dlog.debug("15000, _job_id:%s, _job_name:%s, _map:%s, _Queue:%s" % (self._job_id, self._job_name, self.__class__._job_id_map_status, self.__class__._jobQueue))
+
+    def check_status(self):
+        return self.__class__.AWS_check_status(caller_instance=self)
+    
+    def sub_script(self, job_dirs, cmd, args, res, outlog, errlog):
+        """
+        return a command_Str like(indeed withoud tailing \n):
+        ((cd /home/ec2-user/Ag_init/run_gen/iter.000000/00.train/001 && /usr/bin/dp_train input.json 2>>train.log |tee -a train.log)&& touch tag_0_finished);wait;
+        ((cd /home/ec2-user/Ag_init/run_gen/iter.000000/00.train/001 && /usr/bin/dp_frz 2>>train.log |tee -a train.log)&& touch tag_1_finished);wait;
+        ((cd /home/ec2-user/Ag_init/run_gen/iter.000000/00.train/003 && /usr/bin/dp_train input.json 2>>train.log |tee -a train.log)&& touch tag_0_finished);wait;
+        ((cd /home/ec2-user/Ag_init/run_gen/iter.000000/00.train/003 && /usr/bin/dp_frz 2>>train.log |tee -a train.log)&& touch tag_1_finished);wait;
+        """
+        if args is None:
+            args=[]
+        multi_command = ""
+        for job_dir in job_dirs:
+            for idx,t in enumerate(zip_longest(cmd, args, fillvalue='')):
+                c_str =  f"((cd {self.context.remote_root}/{job_dir} && {t[0]} {t[1]} 2>>{errlog} |tee -a {outlog})&& touch tag_{idx}_finished);wait;"
+                multi_command += c_str
+        dlog.debug("10000, %s" % multi_command)
+        return multi_command
+        
+    def default_resources(self, res):
+        if res == None:
+            res = {}
+        else:
+            # res.setdefault(jobDefinition)
+            res.setdefault('cpu_num', 32)
+            res.setdefault('memory_size', 120000)
+            res.setdefault('jobQueue', 'deepmd_m5_v1_7')
+        return res
+    
+    def submit(self,
+            job_dirs,
+            cmd,
+            args = None,
+            res = None,
+            outlog = 'log',
+            errlog = 'err'):
+
+        res = self.default_resources(res)
+        dlog.debug("2000, params=(%s, %s, %s, %s, %s, %s, )" % (job_dirs, cmd, args, res,  outlog, errlog ))
+        dlog.debug('2200, self.context.remote_root: %s , self.context.local_root: %s' % (self.context.remote_root, self.context.local_root))
+        # concreate_command = 
+        script_str = self.sub_script(job_dirs, cmd, args=args, res=res, outlog=outlog, errlog=errlog)
+        dlog.debug('2300, script_str: %s, self.sub_script_name: %s' % (script_str, self.sub_script_name))
+        """
+        jobName example:
+        home-ec2-user-Ag_init-run_gen-iter_000000-01_model_devi-task_000_000048
+        """
+        jobName = os.path.join(self.context.remote_root,job_dirs.pop())[1:].replace('/','-').replace('.','_')
+        response = self.__class__.batch.submit_job(jobName=jobName, 
+                jobQueue=res['jobQueue'], 
+                jobDefinition=res['jobDefinition'],
+                parameters={'task_command':script_str},
+                containerOverrides={'vcpus':res['cpu_num'], 'memory':res['memory_size']})
+        dlog.debug('4000, response:%s' % response)
+        self.job_id = (response, res['jobQueue'])

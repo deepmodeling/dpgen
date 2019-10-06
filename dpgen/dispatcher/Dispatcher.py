@@ -9,6 +9,7 @@ from dpgen.dispatcher.Slurm import Slurm
 from dpgen.dispatcher.LSF import LSF
 from dpgen.dispatcher.PBS import PBS
 from dpgen.dispatcher.Shell import Shell
+from dpgen.dispatcher.AWS import AWS 
 from dpgen.dispatcher.JobStatus import JobStatus
 from dpgen import dlog
 from hashlib import sha1
@@ -58,6 +59,8 @@ class Dispatcher(object):
             self.batch = PBS
         elif batch_type == 'shell':
             self.batch = Shell
+        elif batch_type == 'aws':
+            self.batch = AWS
         else :
             raise RuntimeError('unknown batch ' + batch_type)
 
