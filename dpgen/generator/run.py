@@ -22,6 +22,7 @@ import time
 import dpdata
 import numpy as np
 import subprocess as sp
+from collections import Counter
 from distutils.version import LooseVersion
 from dpgen import dlog
 from dpgen import SHORT_CMD
@@ -707,22 +708,23 @@ def _make_fp_vasp_inner (modd_path,
     system_index.sort()
 
     fp_tasks = []
-    cluster_cutoff = jdata['cluster_cutoff'] if 'use_clusters' in jdata and jdata['use_clusters'] else None
+    cluster_cutoff = jdata['cluster_cutoff'] if jdata.get('use_clusters', False) else None
+    # skip save *.out if detailed_report_make_fp is False, default is True
+    detailed_report_make_fp = jdata.get("detailed_report_make_fp", True)
     for ss in system_index :
         fp_candidate = []
-        fp_rest_accurate = []
-        fp_rest_failed = []
+        if detailed_report_make_fp:
+            fp_rest_accurate = []
+            fp_rest_failed = []
         modd_system_glob = os.path.join(modd_path, 'task.' + ss + '.*')
         modd_system_task = glob.glob(modd_system_glob)
         modd_system_task.sort()
         cc = 0
+        counter = Counter()
         for tt in modd_system_task :
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 all_conf = np.loadtxt(os.path.join(tt, 'model_devi.out'))
-                sel_conf = []
-                res_failed_conf = []
-                res_accurate_conf = []
                 for ii in range(all_conf.shape[0]) :
                     if all_conf[ii][0] < model_devi_skip :
                         continue
@@ -731,34 +733,49 @@ def _make_fp_vasp_inner (modd_path,
                         if (all_conf[ii][1] < e_trust_hi and all_conf[ii][1] >= e_trust_lo) or \
                            (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] >= f_trust_lo) :
                             fp_candidate.append([tt, cc])
+                            counter['candidate'] += 1
                         elif (all_conf[ii][1] >= e_trust_hi ) or (all_conf[ii][4] >= f_trust_hi ):
-                            fp_rest_failed.append([tt, cc])
+                            if detailed_report_make_fp:
+                                fp_rest_failed.append([tt, cc])
+                            counter['failed'] += 1
                         elif (all_conf[ii][1] < e_trust_lo and all_conf[ii][4] < f_trust_lo ):
-                            fp_rest_accurate.append([tt, cc])
+                            if detailed_report_make_fp:
+                                fp_rest_accurate.append([tt, cc])
+                            counter['accurate'] += 1
                         else :
                             raise RuntimeError('md traj %s frame %d with f devi %f does not belong to either accurate, candidiate and failed, it should not happen' % (tt, ii, all_conf[ii][4]))
                     else:
                         idx_candidate = np.where(np.logical_and(all_conf[ii][7:] < f_trust_hi, all_conf[ii][7:] >= f_trust_lo))[0]
-                        idx_rest_failed = np.where(all_conf[ii][7:] >= f_trust_hi)[0]
-                        idx_rest_accurate = np.where(all_conf[ii][7:] < f_trust_lo)[0]
                         for jj in idx_candidate:
                             fp_candidate.append([tt, cc, jj])
-                        for jj in idx_rest_accurate:
-                            fp_rest_accurate.append([tt, cc, jj])
-                        for jj in idx_rest_failed:
-                            fp_rest_failed.append([tt, cc, jj])
+                        counter['candidate'] += len(idx_candidate)
+                        idx_rest_accurate = np.where(all_conf[ii][7:] < f_trust_lo)[0]
+                        if detailed_report_make_fp:
+                            for jj in idx_rest_accurate:
+                                fp_rest_accurate.append([tt, cc, jj])
+                        counter['accurate'] += len(idx_rest_accurate)
+                        idx_rest_failed = np.where(all_conf[ii][7:] >= f_trust_hi)[0]
+                        if detailed_report_make_fp:
+                            for jj in idx_rest_failed:
+                                fp_rest_failed.append([tt, cc, jj])
+                        counter['failed'] += len(idx_rest_failed)
+        # print a report
+        fp_sum = sum(counter.values())
+        for cc_key, cc_value in counter.items():
+            dlog.info("{}: {} {}".format(cc_key, cc_value, cc_value/fp_sum))
         random.shuffle(fp_candidate)
-        random.shuffle(fp_rest_failed)
-        random.shuffle(fp_rest_accurate)
-        with open(os.path.join(work_path,'candidate.shuffled.%s.out'%ss), 'w') as fp:
-            for ii in fp_candidate:
-                fp.write(" ".join([str(nn) for nn in ii]) + "\n")
-        with open(os.path.join(work_path,'rest_accurate.shuffled.%s.out'%ss), 'w') as fp:
-            for ii in fp_rest_accurate:
-                fp.write(" ".join([str(nn) for nn in ii]) + "\n")
-        with open(os.path.join(work_path,'rest_failed.shuffled.%s.out'%ss), 'w') as fp:
-            for ii in fp_rest_failed:
-                fp.write(" ".join([str(nn) for nn in ii]) + "\n")
+        if detailed_report_make_fp:
+            random.shuffle(fp_rest_failed)
+            random.shuffle(fp_rest_accurate)
+            with open(os.path.join(work_path,'candidate.shuffled.%s.out'%ss), 'w') as fp:
+                for ii in fp_candidate:
+                    fp.write(" ".join([str(nn) for nn in ii]) + "\n")
+            with open(os.path.join(work_path,'rest_accurate.shuffled.%s.out'%ss), 'w') as fp:
+                for ii in fp_rest_accurate:
+                    fp.write(" ".join([str(nn) for nn in ii]) + "\n")
+            with open(os.path.join(work_path,'rest_failed.shuffled.%s.out'%ss), 'w') as fp:
+                for ii in fp_rest_failed:
+                    fp.write(" ".join([str(nn) for nn in ii]) + "\n")
         numb_task = min(fp_task_max, len(fp_candidate))
         for cc in range(numb_task) :
             tt = fp_candidate[cc][0]
