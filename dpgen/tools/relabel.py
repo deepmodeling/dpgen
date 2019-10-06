@@ -4,14 +4,15 @@ import os,sys,json,glob,argparse,shutil
 import numpy as np
 import subprocess as sp
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
-from lib.pwscf import make_pwscf_input
-from lib.siesta import make_siesta_input
-from lib.vasp import make_vasp_incar
-from lib.vasp import system_from_poscar
+from dpgen.generator.lib.pwscf import make_pwscf_input
+from dpgen.generator.lib.siesta import make_siesta_input
+from dpgen.generator.lib.vasp import make_vasp_incar
+from dpgen.generator.lib.vasp import system_from_poscar
 import dpdata
 
 def get_lmp_info(input_file) :
-    lines = [line.rstrip('\n') for line in open(input_file)]
+    with open(input_file) as fp:
+        lines = [line.rstrip('\n') for line in fp]
     for ii in lines :
         words = ii.split()
         if len(words) >= 4 and words[0] == 'variable' :

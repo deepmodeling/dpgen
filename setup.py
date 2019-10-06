@@ -39,7 +39,8 @@ setuptools.setup(
               'dpgen/data/tools',
               'dpgen/remote',
               'dpgen/dispatcher',
-              'dpgen/database'
+              'dpgen/database',
+              'dpgen/tools'
     ],
     # package_data={'example':['*.json']},
     classifiers=[
