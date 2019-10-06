@@ -3,7 +3,7 @@
 
 from os import path
 from  dpgen import NAME,SHORT_CMD
-import setuptools
+import setuptools, datetime
 
 readme_file = path.join(path.dirname(path.abspath(__file__)), 'README.md')
 try:
@@ -13,12 +13,16 @@ except ImportError:
     with open(readme_file) as f:
         readme = f.read()
 
+today = datetime.date.today().strftime("%b-%d-%Y")
+with open(path.join('dpgen', '_date.py'), 'w') as fp :
+    fp.write('date = \'%s\'' % today)
+
 install_requires=['numpy>=1.14.3', 'dpdata>=0.1.10', 'pymatgen>=2017.9.1', 'ase', 'monty>2.0.0', 'paramiko', 'custodian']
 
 setuptools.setup(
     name=NAME,
-    version_format='{tag}.dev{commitcount}+{gitsha}',
-    setup_requires=['setuptools-git-version'],
+    use_scm_version={'write_to': 'dpgen/_version.py'},
+    setup_requires=['setuptools_scm'],
     author="Han Wang",
     author_email="wang_han@iapcm.ac.cn",
     description="DPGen: The deep potential generator",
@@ -42,7 +46,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3.6",
         "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
     ],
-    keywords='lammps vasp deepmd-kit',
+    keywords='deep potential generator active learning deepmd-kit',
     install_requires=install_requires,    
         entry_points={
           'console_scripts': [
