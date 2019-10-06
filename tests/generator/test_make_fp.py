@@ -5,11 +5,7 @@ import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 __package__ = 'generator'
-from .context import make_fp_vasp
-from .context import make_fp_pwscf
-from .context import make_fp_siesta
-from .context import make_fp_gaussian
-from .context import make_fp_cp2k
+from .context import make_fp
 from .context import detect_multiplicity
 from .context import parse_cur_job
 from .context import param_file
@@ -446,7 +442,7 @@ class TestMakeFPPwscf(unittest.TestCase):
         atom_types = [0, 1, 2, 2, 0, 1]
         type_map = jdata['type_map']
         _make_fake_md(0, md_descript, atom_types, type_map)
-        make_fp_pwscf(0, jdata)
+        make_fp(0, jdata, {})
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
         _check_pwscf_input_head(self, 0)
@@ -472,7 +468,7 @@ class TestMakeFPPwscf(unittest.TestCase):
         atom_types = [0, 1, 2, 2, 0, 1]
         type_map = jdata['type_map']
         _make_fake_md(0, md_descript, atom_types, type_map)
-        make_fp_pwscf(0, jdata)
+        make_fp(0, jdata, {})
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
         _check_pwscf_input_head(self, 0)
@@ -499,7 +495,7 @@ class TestMakeFPSIESTA(unittest.TestCase):
         atom_types = [0, 1, 2, 2, 0, 1]
         type_map = jdata['type_map']
         _make_fake_md(0, md_descript, atom_types, type_map)
-        make_fp_siesta(0, jdata)
+        make_fp(0, jdata, {})
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
         _check_siesta_input_head(self, 0)
@@ -526,7 +522,7 @@ class TestMakeFPVasp(unittest.TestCase):
         atom_types = [0, 1, 0, 1]
         type_map = jdata['type_map']
         _make_fake_md(0, md_descript, atom_types, type_map)
-        make_fp_vasp(0, jdata)
+        make_fp(0, jdata, {})
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
         _check_incar_exists(self, 0)
@@ -556,7 +552,7 @@ class TestMakeFPVasp(unittest.TestCase):
         atom_types = [0, 1, 0, 1]
         type_map = jdata['type_map']
         _make_fake_md(0, md_descript, atom_types, type_map)
-        make_fp_vasp(0, jdata)
+        make_fp(0, jdata, {})
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
         _check_incar_exists(self, 0)
@@ -586,7 +582,7 @@ class TestMakeFPVasp(unittest.TestCase):
         atom_types = [0, 1, 0, 1]
         type_map = jdata['type_map']
         _make_fake_md(0, md_descript, atom_types, type_map)
-        make_fp_vasp(0, jdata)
+        make_fp(0, jdata, {})
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
         _check_incar_exists(self, 0)
@@ -620,7 +616,7 @@ class TestMakeFPVasp(unittest.TestCase):
         atom_types = [0, 1, 0, 1]
         type_map = jdata['type_map']
         _make_fake_md(0, md_descript, atom_types, type_map)
-        make_fp_vasp(0, jdata)
+        make_fp(0, jdata, {})
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
         _check_incar_exists(self, 0)
@@ -652,7 +648,7 @@ class TestMakeFPGaussian(unittest.TestCase):
         atom_types = [0, 1, 2, 2, 0, 1]
         type_map = jdata['type_map']
         _make_fake_md(0, md_descript, atom_types, type_map)
-        make_fp_gaussian(0, jdata)
+        make_fp(0, jdata, {})
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
         _check_gaussian_input_head(self, 0)
@@ -694,7 +690,7 @@ class TestMakeFPCP2K(unittest.TestCase):
         atom_types = [0, 1, 2, 2, 0, 1]
         type_map = jdata['type_map']
         _make_fake_md(0, md_descript, atom_types, type_map)
-        make_fp_cp2k(0, jdata)
+        make_fp(0, jdata, {})
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
         _check_cp2k_input_head(self, 0)
