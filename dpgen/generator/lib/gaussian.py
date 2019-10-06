@@ -30,33 +30,30 @@ def _crd2frag(symbols, crds, pbc=False, cell=None, return_bonds=False):
         ghost_atoms = repeated_atoms[nearest]
         realnumber = np.where(nearest)[0] % atomnumber
         all_atoms += ghost_atoms
-    xyzstring = ''.join((f"{atomnumber}\nDPGEN\n", "\n".join(
-        ['{:2s} {:22.15f} {:22.15f} {:22.15f}'.format(s, x, y, z)
-            for s, (x, y, z) in zip(symbols, crds)])))
-    conv = openbabel.OBConversion()
-    conv.SetInAndOutFormats('xyz', 'mol2')
+    # Use openbabel to connect atoms
     mol = openbabel.OBMol()
-    conv.ReadString(mol, xyzstring)
-    mol2string = conv.WriteString(mol)
+    mol.BeginModify()
+    for idx, (num, position) in enumerate(zip(all_atoms.get_atomic_numbers(), all_atoms.positions)):
+        atom = mol.NewAtom(idx)
+        atom.SetAtomicNum(int(num))
+        atom.SetVector(*position)
+    mol.ConnectTheDots()
+    mol.PerceiveBondOrders()
+    mol.EndModify()
     bonds = []
-    linecontent = -1
-    for line in mol2string.split('\n'):
-        if line.startswith("@<TRIPOS>BOND"):
-            linecontent = 0
-        else:
-            if linecontent == 0:
-                s = line.split()
-                if len(s) > 3:
-                    l = 12 if s[3] == 'ar' else int(s[3])
-                    a, b = int(s[1])-1, int(s[2])-1
-                    if a >= atomnumber and b >= atomnumber:
-                        # duplicated
-                        continue
-                    elif a >= atomnumber:
-                        a = realnumber[a-atomnumber]
-                    elif b >= atomnumber:
-                        b = realnumber[b-atomnumber]
-                    bonds.extend([[a, b, l], [b, a, l]])
+    for ii in range(mol.NumBonds()):
+        bond = mol.GetBond(ii)
+        a = bond.GetBeginAtom().GetId()
+        b = bond.GetEndAtom().GetId()
+        bo = bond.GetBO()
+        if a >= atomnumber and b >= atomnumber:
+            # duplicated
+            continue
+        elif a >= atomnumber:
+            a = realnumber[a-atomnumber]
+        elif b >= atomnumber:
+            b = realnumber[b-atomnumber]
+        bonds.extend([[a, b, bo], [b, a, bo]])
     bonds = np.array(bonds, ndmin=2).reshape((-1, 3))
     graph = csr_matrix(
         (bonds[:, 2], (bonds[:, 0], bonds[:, 1])), shape=(atomnumber, atomnumber))
