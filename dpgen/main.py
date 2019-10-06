@@ -11,7 +11,7 @@ from dpgen.data.gen import gen_init_bulk
 from dpgen.data.surf import gen_init_surf
 from dpgen.auto_test.run import gen_test
 from dpgen.database.run import db_run
-from dpgen import info
+from dpgen import info, __version__, __date__
 
 
 
@@ -21,23 +21,18 @@ A master convenience script with many tools for driving dpgen.
 
 __author__ = "Han Wang"
 __copyright__ = "Copyright 2019, The DP-GEN Project"
-__version__ = "0.3.1"
 __maintainer__ = "Haidi Wang"
 __email__ = ""
-__date__ = "2019.09.17"
 
 
 def main():
     info()
+    print("Description\n------------")
     parser = argparse.ArgumentParser(description="""
     dpgen is a convenient script that uses DeepGenerator to prepare initial
     data, drive DeepMDkit and analyze results. This script works based on
     several sub-commands with their own options. To see the options for the
-    sub-commands, type "dpgen sub-command -h".""",
-                                     epilog="""
-    Author: DeepGenTeam
-    Version: {}
-    Last updated: {}""".format(__version__, __date__))
+    sub-commands, type "dpgen sub-command -h".""")
 
     subparsers = parser.add_subparsers()
 
