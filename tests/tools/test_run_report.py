@@ -9,7 +9,7 @@ from .context import stat_tasks
 class TestRunReport(unittest.TestCase):
     def test (self):
         folder = 'run_report_test_output'
-        sys, sys_count, sys_all = stat_tasks(folder, verbose = False, mute = True)
+        sys, sys_count, sys_all = stat_tasks(os.path.join(test_dir,folder), verbose = False, mute = True)
         with open(os.path.join(test_dir, folder, 'param.json')) as fp:
             jdata = json.load(fp)
         self.assertEqual(sys, jdata['sys_configs'])
