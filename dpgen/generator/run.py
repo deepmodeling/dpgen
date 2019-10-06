@@ -795,6 +795,22 @@ def _make_fp_vasp_inner (modd_path,
             os.chdir(cwd)
     return fp_tasks
 
+def make_fp_vasp_incar(jdata, filename):
+    if 'fp_incar' in jdata.keys() :
+        fp_incar_path = jdata['fp_incar']
+        assert(os.path.exists(fp_incar_path))
+        fp_incar_path = os.path.abspath(fp_incar_path)
+        fr = open(fp_incar_path)
+        incar = fr.read()
+        fr.close()
+    elif 'user_fp_params' in jdata.keys() :
+        incar = write_incar_dict(jdata['user_fp_params'])
+    else:
+        incar = make_vasp_incar_user_dict(jdata['fp_params'])
+    with open(filename, 'w') as fp:
+        fp.write(incar)
+    return incar    
+
 def _link_fp_vasp_incar (iter_index,
                          jdata,
                          incar = 'INCAR') :
@@ -817,7 +833,6 @@ def _make_fp_vasp_kp (iter_index,jdata, incar):
     standard_incar={}
     for key,val in dincar.items():
         standard_incar[key.upper()]=val
-
     try:
        kspacing = standard_incar['KSPACING']
     except:
@@ -954,36 +969,16 @@ def make_fp_vasp (iter_index,
     fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
     if len(fp_tasks) == 0 :
         return
-    # create incar
-    iter_name = make_iter_name(iter_index)
-    work_path = os.path.join(iter_name, fp_name)
-
-   #fp_params=jdata["fp_params"]
-
-    if 'fp_incar' in jdata.keys() :
-        fp_incar_path = jdata['fp_incar']
-        assert(os.path.exists(fp_incar_path))
-        fp_incar_path = os.path.abspath(fp_incar_path)
-        fr = open(fp_incar_path)
-        incar = fr.read()
-        fr.close()
-        #incar= open(fp_incar_path).read()
-    elif 'user_fp_params' in jdata.keys() :
-        incar = write_incar_dict(jdata['user_fp_params'])
-    else:
-        incar = make_vasp_incar_user_dict(jdata['fp_params'])
-    incar_file = os.path.join(work_path, 'INCAR')
-    incar_file = os.path.abspath(incar_file)
-
-    with open(incar_file, 'w') as fp:
-        fp.write(incar)
-    fp.close()
+    # all tasks share the same incar
+    work_path = os.path.join(make_iter_name(iter_index), fp_name)
+    incar_file = os.path.abspath(os.path.join(work_path, 'INCAR'))
+    incar_str = make_fp_vasp_incar(jdata, incar_file)
+    # link incar to each task folder
     _link_fp_vasp_incar(iter_index, jdata)
     # create potcar
     sys_link_fp_vasp_pp(iter_index, jdata)
     # create kpoints
-    _make_fp_vasp_kp(iter_index, jdata, incar)
-    
+    _make_fp_vasp_kp(iter_index, jdata, incar_str)    
 
 
 def make_fp_pwscf(iter_index,
