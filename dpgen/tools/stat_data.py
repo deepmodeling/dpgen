@@ -4,8 +4,6 @@ import os,sys,json,glob,argparse,shutil
 import numpy as np
 import subprocess as sp
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
-from lib.vasp import make_vasp_incar
-from lib.vasp import system_from_poscar
 from relabel import get_lmp_info
 
 def ascii_hist(count) :

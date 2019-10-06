@@ -762,7 +762,7 @@ def _make_fp_vasp_inner (modd_path,
         # print a report
         fp_sum = sum(counter.values())
         for cc_key, cc_value in counter.items():
-            dlog.info("{}: {} {}".format(cc_key, cc_value, cc_value/fp_sum))
+            dlog.info("system {0:s} {1:9s} : {2:6d}  {3:6.2f} %".format(ss, cc_key, cc_value, cc_value/fp_sum*100))
         random.shuffle(fp_candidate)
         if detailed_report_make_fp:
             random.shuffle(fp_rest_failed)
