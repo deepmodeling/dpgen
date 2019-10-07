@@ -199,7 +199,7 @@ Following is an example for `PARAM`, which generates data from a typical structu
     2,
     2
   ],
-  "z_min": 9,
+  "layer_numb": 3,
   "vacuum_max": 9,
   "vacuum_resol": [
     0.5,
@@ -251,7 +251,7 @@ The bold notation of key (such as **Elements**) means that it's a necessary key.
 | **Elements** | List of String | ["Mg"] | Atom types
 |  **cell_type** | String  | "hcp" | Specifying which typical structure to be generated. **Options** include fcc, hcp, bcc, sc, diamond.
 | **latt** | Float | 4.479 | Lattice constant for single cell.
-| **z_min** | Float | 9 | Thickness of slab (Angstrom).
+| **layer_numb** | Integer | 3 | Number of equavilent layers of slab.
 | **vacuum_max** | Float | 9 | Maximal thickness of vacuum (Angstrom).
 | **vacuum_resol** | List of float | [0.5, 1 ] | Interval of thichness of vacuum. If size of `vacuum_resol` is 1, the interval is fixed to its value. If size of `vacuum_resol` is 2, the interval is `vacuum_resol[0]` before `mid_point`, otherwise `vacuum_resol[1]` after `mid_point`.
 | **millers** | List of list of Integer | [[1,0,0]] | Miller indices. 
