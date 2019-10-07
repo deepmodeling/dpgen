@@ -10,7 +10,7 @@
     1,
     1
   ],
-  "z_min": 9,
+  "layer_numb": 3,
   "vacuum_max": 9,
   "vacuum_resol": [
     0.5,

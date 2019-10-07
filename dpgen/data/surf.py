@@ -15,6 +15,11 @@ from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine,
 from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
 from pymatgen.core.surface import SlabGenerator,generate_all_slabs, Structure
 from pymatgen.io.vasp import Poscar
+#-----ASE-------
+from pymatgen.io.ase import AseAtomsAdaptor
+from ase.io import read
+from ase.build import general_surface
+
 
 def create_path (path) :
     path += '/'
@@ -195,10 +200,16 @@ def make_super_cell_pymatgen (jdata) :
     from_path = path_uc
     from_file = os.path.join(from_path, 'POSCAR.unit')
     ss = Structure.from_file(from_file)
+    # ase only support X type  element
+    for i in range(len(ss)):
+        ss[i]='X'
+    ss=AseAtomsAdaptor.get_atoms(ss)
+
 
     all_millers = jdata['millers']
     path_sc = os.path.join(out_dir, global_dirname_02)
-    z_min = jdata['z_min']
+    #z_min = jdata['z_min']
+    layer_numb = jdata['layer_numb']
     super_cell = jdata['super_cell']
 
     cwd = os.getcwd()    
@@ -211,11 +222,13 @@ def make_super_cell_pymatgen (jdata) :
             miller_str += str(ii)        
         path_cur_surf = create_path('surf-'+miller_str)
         os.chdir(path_cur_surf)
-        slabgen = SlabGenerator(ss, miller, z_min, 1e-3)
-        all_slabs = slabgen.get_slabs() 
+        #slabgen = SlabGenerator(ss, miller, z_min, 1e-3)
+        slab=general_surface.surface(ss,indices=miller,vacuum=1e-3,layers=layer_numb)
+        #all_slabs = slabgen.get_slabs() 
         dlog.info(os.getcwd())
-        dlog.info("Miller %s: The slab has %s termination, use the first one" %(str(miller), len(all_slabs)))
-        all_slabs[0].to('POSCAR', 'POSCAR')
+        #dlog.info("Miller %s: The slab has %s termination, use the first one" %(str(miller), len(all_slabs)))
+        #all_slabs[0].to('POSCAR', 'POSCAR')
+        slab.write('POSCAR',vasp5=True)
         if super_cell[0] > 1 or super_cell[1] > 1 :
             st=Structure.from_file('POSCAR')
             st.make_supercell([super_cell[0], super_cell[1], 1])
@@ -408,7 +421,7 @@ def pert_scaled(jdata) :
           tail_elongs = np.arange(mid_point, vacuum_max, vacuum_resol[1]).tolist()
           elongs = np.unique(head_elongs+tail_elongs).tolist()
        else:
-          raise RuntimeError("the length of vacuum_resol must equal 2")
+          raise RuntimeError("the length of vacuum_resol must equal 1 or 2")
           
     else:         
        vacuum_num = jdata['vacuum_numb']
