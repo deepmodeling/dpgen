@@ -22,6 +22,7 @@ import time
 import dpdata
 import numpy as np
 import subprocess as sp
+import scipy.constants as pc
 from collections import Counter
 from distutils.version import LooseVersion
 from dpgen import dlog
@@ -36,6 +37,7 @@ from dpgen.generator.lib.utils import log_task
 from dpgen.generator.lib.lammps import make_lammps_input
 from dpgen.generator.lib.vasp import write_incar_dict
 from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
+from dpgen.generator.lib.vasp import incar_upper
 from dpgen.generator.lib.pwscf import make_pwscf_input
 #from dpgen.generator.lib.pwscf import cvt_1frame
 from dpgen.generator.lib.siesta import make_siesta_input
@@ -818,7 +820,7 @@ def _make_fp_vasp_inner (modd_path,
             os.chdir(cwd)
     return fp_tasks
 
-def make_fp_vasp_incar(jdata, filename):
+def _make_vasp_incar(jdata, filename):
     if 'fp_incar' in jdata.keys() :
         fp_incar_path = jdata['fp_incar']
         assert(os.path.exists(fp_incar_path))
@@ -834,13 +836,25 @@ def make_fp_vasp_incar(jdata, filename):
         fp.write(incar)
     return incar    
 
-def _link_fp_vasp_incar (iter_index,
+def _make_vasp_incar_ele_temp(jdata, filename, temp_ele, nbands_esti = None):
+    with open(filename) as fp:
+        incar = fp.read()
+    incar = incar_upper(Incar.from_string(incar))
+    incar['ISMEAR'] = -1
+    incar['SIGMA'] = temp_ele * pc.Boltzmann / pc.electron_volt
+    incar.write_file('INCAR')
+    if nbands_esti is not None:
+        nbands = nbands_esti.predict('.')
+        with open(filename) as fp:
+            incar = Incar.from_string(fp.read())
+        incar['NBANDS'] = nbands
+        incar.write_file('INCAR')
+
+def _make_fp_vasp_incar (iter_index,
                          jdata,
-                         incar = 'INCAR') :
+                         nbands_esti = None) :
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
-    incar_file = os.path.join(work_path, incar)
-    incar_file = os.path.abspath(incar_file)
     fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
     fp_tasks.sort()
     if len(fp_tasks) == 0 :
@@ -848,30 +862,16 @@ def _link_fp_vasp_incar (iter_index,
     cwd = os.getcwd()
     for ii in fp_tasks:
         os.chdir(ii)
-        os.symlink(os.path.relpath(incar_file), incar)
+        _make_vasp_incar(jdata, 'INCAR')
+        if os.path.exists('job.json'):
+            with open('job.json') as fp:
+                job_data = json.load(fp)
+            if 'temp_ele' in job_data:
+                _make_vasp_incar_ele_temp(jdata, 'INCAR', job_data['temp_ele'],
+                                          nbands_esti = nbands_esti)
         os.chdir(cwd)
 
-def _make_fp_vasp_kp (iter_index,jdata, incar):
-    dincar=Incar.from_string(incar)
-    standard_incar={}
-    for key,val in dincar.items():
-        standard_incar[key.upper()]=val
-    try:
-       kspacing = standard_incar['KSPACING']
-    except:
-       raise RuntimeError ("KSPACING must be given in INCAR")
-    try:
-       gamma = standard_incar['KGAMMA']
-       if isinstance(gamma,bool):
-          pass
-       else:
-          if gamma[0].upper()=="T":
-             gamma=True
-          else:
-             gamma=False
-    except:
-       raise RuntimeError ("KGAMMA must be given in INCAR")
-
+def _make_fp_vasp_kp (iter_index,jdata):
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
 
@@ -882,11 +882,34 @@ def _make_fp_vasp_kp (iter_index,jdata, incar):
     cwd = os.getcwd()
     for ii in fp_tasks:
         os.chdir(ii)
+        # get kspacing and kgamma from incar
+        assert(os.path.exists('INCAR'))
+        with open('INCAR') as fp:
+            incar = fp.read()
+        standard_incar = incar_upper(Incar.from_string(incar))
+        try:
+            kspacing = standard_incar['KSPACING']
+        except:
+            raise RuntimeError ("KSPACING must be given in INCAR")
+        try:
+            gamma = standard_incar['KGAMMA']
+            if isinstance(gamma,bool):
+                pass
+            else:
+                if gamma[0].upper()=="T":
+                    gamma=True
+                else:
+                    gamma=False
+        except:
+            raise RuntimeError ("KGAMMA must be given in INCAR")
+        # check poscar
         assert(os.path.exists('POSCAR'))
+        # make kpoints
         ret=make_kspacing_kpoints('POSCAR', kspacing, gamma)
         kp=Kpoints.from_string(ret)
         kp.write_file("KPOINTS")
         os.chdir(cwd)
+
 
 def _link_fp_vasp_pp (iter_index,
                       jdata) :
@@ -985,23 +1008,21 @@ def _make_fp_vasp_configs(iter_index,
                                    jdata)
     return fp_tasks
 
-
 def make_fp_vasp (iter_index,
                   jdata) :
     # make config
     fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
     if len(fp_tasks) == 0 :
         return
-    # all tasks share the same incar
-    work_path = os.path.join(make_iter_name(iter_index), fp_name)
-    incar_file = os.path.abspath(os.path.join(work_path, 'INCAR'))
-    incar_str = make_fp_vasp_incar(jdata, incar_file)
-    # link incar to each task folder
-    _link_fp_vasp_incar(iter_index, jdata)
+    # abs path for fp_incar if it exists
+    if 'fp_incar' in jdata:
+        jdata['fp_incar'] = os.path.abspath(jdata['fp_incar'])
+    # create incar
+    _make_fp_vasp_incar(iter_index, jdata)
     # create potcar
     sys_link_fp_vasp_pp(iter_index, jdata)
     # create kpoints
-    _make_fp_vasp_kp(iter_index, jdata, incar_str)    
+    _make_fp_vasp_kp(iter_index, jdata)
 
 
 def make_fp_pwscf(iter_index,

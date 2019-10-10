@@ -2,6 +2,7 @@
 
 import os
 import numpy as np
+from pymatgen.io.vasp import Incar
 
 def _make_vasp_incar_dict (ecut, ediff, npar, kpar, 
                            kspacing = 0.5, kgamma = True, 
@@ -113,3 +114,8 @@ def make_vasp_incar_user_dict(fp_params) :
     incar = write_incar_dict(incar_dict)
     return incar
     
+def incar_upper(dincar):
+    standard_incar={}
+    for key,val in dincar.items():
+        standard_incar[key.upper()]=val
+    return Incar(standard_incar)
