@@ -406,7 +406,10 @@ def _check_incar_temp_ele(testCase, idx, temp_ele):
             # make_fake_md: the frames in a system shares the same temp_ele
             incar1 = Incar.from_string(vasp_incar_temp_ele_ref%(temp_ele[sidx][0] * pc.Boltzmann / pc.electron_volt))
             for ii in incar0.keys():
-                testCase.assertAlmostEqual(incar0[ii], incar1[ii], msg = 'key %s differ: ' % (ii), places = 5)
+                # skip checking nbands...
+                if ii == 'NBANDS':
+                    continue
+                testCase.assertAlmostEqual(incar0[ii], incar1[ii], msg = 'key %s differ' % (ii), places = 5)
         os.chdir(cwd)
 
 def _check_pwscf_input_head(testCase, idx) :
@@ -695,7 +698,7 @@ class TestMakeFPVasp(unittest.TestCase):
             for jj in range(nmd) :
                 tmp.append(np.arange(0, 0.29, 0.29/10))
             md_descript.append(tmp)
-            temp_ele.append([np.random.random() * 10000] * nmd)
+            temp_ele.append([np.random.random() * 100000] * nmd)
         atom_types = [0, 1, 0, 1]
         type_map = jdata['type_map']
         _make_fake_md(0, md_descript, atom_types, type_map, temp_ele = temp_ele)

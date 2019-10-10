@@ -43,6 +43,7 @@ from dpgen.generator.lib.pwscf import make_pwscf_input
 from dpgen.generator.lib.siesta import make_siesta_input
 from dpgen.generator.lib.gaussian import make_gaussian_input, take_cluster
 from dpgen.generator.lib.cp2k import make_cp2k_input, make_cp2k_xyz
+from dpgen.generator.lib.ele_temp import NBandsEsti
 from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, LSFJob, CloudMachineJob, awsMachineJob
 from dpgen.remote.group_jobs import ucloud_submit_jobs, aws_submit_jobs
 from dpgen.remote.group_jobs import group_slurm_jobs
@@ -867,7 +868,8 @@ def _make_fp_vasp_incar (iter_index,
             with open('job.json') as fp:
                 job_data = json.load(fp)
             if 'temp_ele' in job_data:
-                _make_vasp_incar_ele_temp(jdata, 'INCAR', job_data['temp_ele'],
+                _make_vasp_incar_ele_temp(jdata, 'INCAR', 
+                                          job_data['temp_ele'],
                                           nbands_esti = nbands_esti)
         os.chdir(cwd)
 
@@ -1017,11 +1019,17 @@ def make_fp_vasp (iter_index,
     # abs path for fp_incar if it exists
     if 'fp_incar' in jdata:
         jdata['fp_incar'] = os.path.abspath(jdata['fp_incar'])
-    # create incar
-    _make_fp_vasp_incar(iter_index, jdata)
-    # create potcar
+    # get nbands esti if it exists
+    if 'fp_nbands_esti_data' in jdata:
+        nbe = NBandsEsti(jdata['fp_nbands_esti_data'])
+    else:
+        nbe = None
+    # order is critical!
+    # 1, create potcar
     sys_link_fp_vasp_pp(iter_index, jdata)
-    # create kpoints
+    # 2, create incar
+    _make_fp_vasp_incar(iter_index, jdata, nbands_esti = nbe)
+    # 3, create kpoints
     _make_fp_vasp_kp(iter_index, jdata)
 
 
