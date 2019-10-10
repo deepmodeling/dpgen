@@ -1329,8 +1329,9 @@ def post_fp_vasp (iter_index,
     for ss in system_index :
         sys_outcars = glob.glob(os.path.join(work_path, "task.%s.*/OUTCAR"%ss))
         sys_outcars.sort()
-        flag=True
-        tcount+=len(sys_outcars)
+        tcount += len(sys_outcars)
+        all_sys = None
+        all_te = []
         for oo in sys_outcars :
             try:
                 _sys = dpdata.LabeledSystem(oo, type_map = jdata['type_map'])
@@ -1341,23 +1342,29 @@ def post_fp_vasp (iter_index,
                 except:
                    _sys = dpdata.LabeledSystem()
                    dlog.info('Failed fp path: %s'%oo.replace('OUTCAR',''))
-
             if len(_sys) == 1:
-               if flag:
-                  all_sys = _sys
-                  flag = False
-               else:
-                  all_sys.append(_sys)
+                if all_sys is None:
+                    all_sys = _sys
+                else:
+                    all_sys.append(_sys)
+                # save temp_ele, if any
+                with open(oo.replace('OUTCAR', 'job.json')) as fp:
+                    job_data = json.load(fp)
+                if 'temp_ele' in job_data:
+                    temp_ele = job_data['temp_ele']
+                    all_te.append(temp_ele)
             else:
-               icount+=1
-
-        try:
-           # limitation -->  all_sys not defined
+                icount+=1
+        all_te = np.array(all_te)
+        if all_sys is not None:
            sys_data_path = os.path.join(work_path, 'data.%s'%ss)
            all_sys.to_deepmd_raw(sys_data_path)
            all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_outcars))
-        except:
-           pass
+           if all_te.size > 0:
+               assert(len(all_sys) == all_sys.get_nframes())
+               all_te = np.reshape(all_te, [-1,1])
+               np.savetxt(os.path.join(sys_data_path, 'fparam.raw'), all_te)
+               np.save(os.path.join(sys_data_path, 'set.000', 'fparam.npy'), all_te)
 
     dlog.info("failed frame number: %s "%icount)
     dlog.info("total frame number: %s "%tcount)
