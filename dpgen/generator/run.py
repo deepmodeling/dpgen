@@ -1326,7 +1326,8 @@ def post_fp_vasp (iter_index,
            # limitation -->  all_sys not defined
            sys_data_path = os.path.join(work_path, 'data.%s'%ss)
            all_sys.to_deepmd_raw(sys_data_path)
-           all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_outcars))
+           all_sys.to_deepmd_npy(sys_data_path)
+           #all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_outcars))
         except:
            pass
 
