@@ -47,7 +47,7 @@ PSTRESS=0\n\
 KSPACING=0.16\n\
 KGAMMA=F\n";
 
-vasp_incar_temp_ele_ref = "PREC=A\n\
+vasp_incar_ele_temp_ref = "PREC=A\n\
 ENCUT=600\n\
 ISYM=0\n\
 ALGO=fast\n\
@@ -245,11 +245,11 @@ def _write_lammps_dump(sys, dump_file, f_idx = 0) :
             fp.write('%d %d %f %f %f\n' % (ii+1, atype[ii]+1, coord[ii][0], coord[ii][1], coord[ii][2]))
 
 
-def _make_fake_md(idx, md_descript, atom_types, type_map, temp_ele = None) :
+def _make_fake_md(idx, md_descript, atom_types, type_map, ele_temp = None) :
     """
     md_descript: list of dimension
                  [n_sys][n_MD][n_frame]
-    temp_ele: list of dimension
+    ele_temp: list of dimension
                  [n_sys][n_MD]
     """
     natoms = len(atom_types)
@@ -280,9 +280,9 @@ def _make_fake_md(idx, md_descript, atom_types, type_map, temp_ele = None) :
             md_out[:,0] = np.arange(nframes)
             md_out[:,4] = mm
             np.savetxt(os.path.join(task_dir, 'model_devi.out'), md_out)
-            if temp_ele is not None:
+            if ele_temp is not None:
                 with open(os.path.join(task_dir, 'job.json'), 'w') as fp:
-                    json.dump({"temp_ele": temp_ele[sidx][midx]}, fp)
+                    json.dump({"ele_temp": ele_temp[sidx][midx]}, fp)
 
 
 def _check_poscars(testCase, idx, fp_task_max, type_map) :
@@ -391,7 +391,7 @@ def _check_incar(testCase, idx):
             testCase.assertEqual(incar.strip(), vasp_incar_ref.strip())
         os.chdir(cwd)
 
-def _check_incar_temp_ele(testCase, idx, temp_ele):
+def _check_incar_ele_temp(testCase, idx, ele_temp):
     fp_path = os.path.join('iter.%06d' % idx, '02.fp')
     tasks = glob.glob(os.path.join(fp_path, 'task.*'))
     cwd = os.getcwd()
@@ -403,8 +403,8 @@ def _check_incar_temp_ele(testCase, idx, temp_ele):
         with open('INCAR') as fp:
             incar = fp.read()
             incar0 = Incar.from_string(incar)
-            # make_fake_md: the frames in a system shares the same temp_ele
-            incar1 = Incar.from_string(vasp_incar_temp_ele_ref%(temp_ele[sidx][0] * pc.Boltzmann / pc.electron_volt))
+            # make_fake_md: the frames in a system shares the same ele_temp
+            incar1 = Incar.from_string(vasp_incar_ele_temp_ref%(ele_temp[sidx][0] * pc.Boltzmann / pc.electron_volt))
             for ii in incar0.keys():
                 # skip checking nbands...
                 if ii == 'NBANDS':
@@ -678,7 +678,7 @@ class TestMakeFPVasp(unittest.TestCase):
         # _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
 
-    def test_make_fp_vasp_temp_ele(self):
+    def test_make_fp_vasp_ele_temp(self):
         ## Verify if user chooses to diy VASP INCAR totally.
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
@@ -689,7 +689,7 @@ class TestMakeFPVasp(unittest.TestCase):
             mdata = json.load (fp)
         fp.close()
         md_descript = []
-        temp_ele = []
+        ele_temp = []
         nsys = 2
         nmd = 3
         n_frame = 10
@@ -698,14 +698,14 @@ class TestMakeFPVasp(unittest.TestCase):
             for jj in range(nmd) :
                 tmp.append(np.arange(0, 0.29, 0.29/10))
             md_descript.append(tmp)
-            temp_ele.append([np.random.random() * 100000] * nmd)
+            ele_temp.append([np.random.random() * 100000] * nmd)
         atom_types = [0, 1, 0, 1]
         type_map = jdata['type_map']
-        _make_fake_md(0, md_descript, atom_types, type_map, temp_ele = temp_ele)
+        _make_fake_md(0, md_descript, atom_types, type_map, ele_temp = ele_temp)
         make_fp(0, jdata, {})
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
-        _check_incar_temp_ele(self, 0, temp_ele)
+        _check_incar_ele_temp(self, 0, ele_temp)
         _check_kpoints_exists(self, 0)
         _check_kpoints(self,0)
         # checked elsewhere

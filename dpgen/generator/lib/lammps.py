@@ -28,12 +28,17 @@ def make_lammps_input(ensemble,
                       pres = None,
                       tau_p = 0.5,
                       pka_e = None,
+                      ele_temp = None,
                       max_seed = 1000000,
                       deepmd_version = '0.1') :
+    if ele_temp is not None and LooseVersion(deepmd_version) < LooseVersion('1'):
+        raise RuntimeError('the electron temperature is only supported by deepmd-kit >= 1.0.0, please upgrade your deepmd-kit')
     ret = "variable        NSTEPS          equal %d\n" % nsteps
     ret+= "variable        THERMO_FREQ     equal %d\n" % trj_freq
     ret+= "variable        DUMP_FREQ       equal %d\n" % trj_freq
     ret+= "variable        TEMP            equal %f\n" % temp
+    if ele_temp is not None:
+        ret+= "variable        ELE_TEMP        equal %f\n" % ele_temp
     ret+= "variable        PRES            equal %f\n" % pres
     ret+= "variable        TAU_T           equal %f\n" % tau_t
     ret+= "variable        TAU_P           equal %f\n" % tau_p
@@ -65,6 +70,8 @@ def make_lammps_input(ensemble,
         if jdata.get('use_relative', False):
             eps = jdata.get('eps', 0.)
             keywords += "relative %s " % jdata['epsilon']
+        if ele_temp is not None:
+            keywords += "fparam ${ELE_TEMP}"
         ret+= "pair_style      deepmd %s out_freq ${THERMO_FREQ} out_file model_devi.out %s\n" % (graph_list, keywords)
     ret+= "pair_coeff      \n"
     ret+= "\n"

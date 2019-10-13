@@ -6,8 +6,7 @@ import subprocess as sp
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 from dpgen.generator.lib.pwscf import make_pwscf_input
 from dpgen.generator.lib.siesta import make_siesta_input
-from dpgen.generator.lib.vasp import make_vasp_incar
-from dpgen.generator.lib.vasp import system_from_poscar
+from dpgen.generator.run import make_vasp_incar
 import dpdata
 
 def get_lmp_info(input_file) :
@@ -76,7 +75,7 @@ def make_pwscf(tdir, fp_params, mass_map, fp_pp_path, fp_pp_files, user_input) :
 def make_siesta(tdir, fp_params, fp_pp_path, fp_pp_files) :
     cwd = os.getcwd()
     os.chdir(tdir)
-    sys_data = system_from_poscar('POSCAR')
+    sys_data = dpdata.System('POSCAR').data
     ret = make_siesta_input(sys_data, fp_pp_files, fp_params)
     open('input', 'w').write(ret)
     os.chdir(cwd)
@@ -201,16 +200,7 @@ def create_tasks(target_folder, param_file, output, fp_json, verbose = True, num
     os.makedirs(output, exist_ok = True)
     if fp_style == 'vasp':
         copy_pp_files(output, fp_pp_path, fp_pp_files)
-        try :
-            fp_params = fp_jdata['fp_params']
-            make_vasp(output, fp_params)
-        except:
-            fp_incar = fp_jdata['fp_incar']
-            cwd_ = os.getcwd()
-            os.chdir(target_folder)
-            fp_incar = os.path.abspath(fp_incar)
-            os.chdir(cwd_)
-            make_vasp_incar(output, fp_incar)
+        make_vasp_incar(fp_params, output)
     if fp_style == 'pwscf' :
         copy_pp_files(output, fp_pp_path, fp_pp_files)        
     if fp_style == 'siesta' :

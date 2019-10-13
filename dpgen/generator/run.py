@@ -185,6 +185,7 @@ def make_train (iter_index,
     init_data_sys_ = jdata['init_data_sys']
     fp_task_min = jdata['fp_task_min']
     model_devi_jobs = jdata['model_devi_jobs']
+    use_ele_temp = jdata.get('use_ele_temp', False)
 
     if iter_index > 0 and _check_empty_iter(iter_index-1, fp_task_min) :
         log_task('prev data is empty, copy prev model')
@@ -271,10 +272,15 @@ def make_train (iter_index,
         # 0.x
         jinput['systems'] = init_data_sys
         jinput['batch_size'] = init_batch_size
+        if use_ele_temp:
+            raise RuntimeError('the electron temperature is only supported by deepmd-kit >= 1.0.0, please upgrade your deepmd-kit')
     else:
         # 1.x
         jinput['training']['systems'] = init_data_sys
         jinput['training']['batch_size'] = init_batch_size
+        if use_ele_temp:
+            # fparam for electron temperature
+            jinput['model']['fitting_net']['numb_fparam'] = 1
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         create_path(task_path)
@@ -481,6 +487,7 @@ def parse_cur_job(cur_job) :
 def make_model_devi (iter_index,
                      jdata,
                      mdata) :
+    use_ele_temp = jdata.get('use_ele_temp', False)
     model_devi_dt = jdata['model_devi_dt']
     model_devi_neidelay = None
     if 'model_devi_neidelay' in jdata :
@@ -574,7 +581,18 @@ def make_model_devi (iter_index,
         conf_counter = 0
         task_counter = 0
         for cc in ss :
-            for tt in temps:
+            for tt_ in temps:
+                if use_ele_temp:
+                    if type(tt_) == list:
+                        tt = tt_[0]
+                        te = tt_[1]
+                    else:
+                        assert(type(tt_) == float or type(tt_) == int)
+                        tt = float(tt_)
+                        te = tt
+                else :
+                    tt = tt_
+                    te = None
                 for pp in press:
                     task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
                     conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter) + '.lmp'
@@ -606,11 +624,14 @@ def make_model_devi (iter_index,
                                                pres = pp,
                                                tau_p = model_devi_taup,
                                                pka_e = pka_e,
+                                               ele_temp = te,
                                                deepmd_version = deepmd_version)
                     job = {}
                     job["ensemble"] = ensemble
                     job["press"] = pp
                     job["temps"] = tt
+                    if te is not None:
+                        job["ele_temp"] = te
                     job["model_devi_dt"] =  model_devi_dt
                     with open('job.json', 'w') as _outfile:
                         json.dump(job, _outfile, indent = 4)
@@ -821,7 +842,7 @@ def _make_fp_vasp_inner (modd_path,
             os.chdir(cwd)
     return fp_tasks
 
-def _make_vasp_incar(jdata, filename):
+def make_vasp_incar(jdata, filename):
     if 'fp_incar' in jdata.keys() :
         fp_incar_path = jdata['fp_incar']
         assert(os.path.exists(fp_incar_path))
@@ -837,12 +858,12 @@ def _make_vasp_incar(jdata, filename):
         fp.write(incar)
     return incar    
 
-def _make_vasp_incar_ele_temp(jdata, filename, temp_ele, nbands_esti = None):
+def make_vasp_incar_ele_temp(jdata, filename, ele_temp, nbands_esti = None):
     with open(filename) as fp:
         incar = fp.read()
     incar = incar_upper(Incar.from_string(incar))
     incar['ISMEAR'] = -1
-    incar['SIGMA'] = temp_ele * pc.Boltzmann / pc.electron_volt
+    incar['SIGMA'] = ele_temp * pc.Boltzmann / pc.electron_volt
     incar.write_file('INCAR')
     if nbands_esti is not None:
         nbands = nbands_esti.predict('.')
@@ -863,14 +884,14 @@ def _make_fp_vasp_incar (iter_index,
     cwd = os.getcwd()
     for ii in fp_tasks:
         os.chdir(ii)
-        _make_vasp_incar(jdata, 'INCAR')
+        make_vasp_incar(jdata, 'INCAR')
         if os.path.exists('job.json'):
             with open('job.json') as fp:
                 job_data = json.load(fp)
-            if 'temp_ele' in job_data:
-                _make_vasp_incar_ele_temp(jdata, 'INCAR', 
-                                          job_data['temp_ele'],
-                                          nbands_esti = nbands_esti)
+            if 'ele_temp' in job_data:
+                make_vasp_incar_ele_temp(jdata, 'INCAR', 
+                                         job_data['ele_temp'],
+                                         nbands_esti = nbands_esti)
         os.chdir(cwd)
 
 def _make_fp_vasp_kp (iter_index,jdata):
@@ -1347,12 +1368,12 @@ def post_fp_vasp (iter_index,
                     all_sys = _sys
                 else:
                     all_sys.append(_sys)
-                # save temp_ele, if any
+                # save ele_temp, if any
                 with open(oo.replace('OUTCAR', 'job.json')) as fp:
                     job_data = json.load(fp)
-                if 'temp_ele' in job_data:
-                    temp_ele = job_data['temp_ele']
-                    all_te.append(temp_ele)
+                if 'ele_temp' in job_data:
+                    ele_temp = job_data['ele_temp']
+                    all_te.append(ele_temp)
             else:
                 icount+=1
         all_te = np.array(all_te)
@@ -1362,6 +1383,7 @@ def post_fp_vasp (iter_index,
            all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_outcars))
            if all_te.size > 0:
                assert(len(all_sys) == all_sys.get_nframes())
+               assert(len(all_sys) == all_te.size)
                all_te = np.reshape(all_te, [-1,1])
                np.savetxt(os.path.join(sys_data_path, 'fparam.raw'), all_te)
                np.save(os.path.join(sys_data_path, 'set.000', 'fparam.npy'), all_te)
