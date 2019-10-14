@@ -1600,8 +1600,14 @@ def set_version(mdata):
         deepmd_version = '0.1'
     elif 'python_path' in mdata:
         deepmd_version = '1'
+    elif 'train' in mdata:
+        if 'deepmd_path' in mdata['train'][0]:
+            deepmd_version = '0.1'
+        elif 'python_path' in mdata['train'][0]:
+            deepmd_version = '1'
+        else:
+            deepmd_version = '0.1'
     else:
-        # default
         deepmd_version = '0.1'
     # set
     mdata['deepmd_version'] = deepmd_version
