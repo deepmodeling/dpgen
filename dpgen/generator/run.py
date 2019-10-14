@@ -1307,7 +1307,7 @@ def run_fp (iter_index,
     elif fp_style == "siesta":
         forward_files = ['input'] + fp_pp_files
         backward_files = ['output']
-        run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _siesta_check_fin, log_file='output')
+        run_fp_inner(iter_index, jdata, mdata, dispatcher, forward_files, backward_files, _siesta_check_fin, log_file='output')
     elif fp_style == "gaussian":
         forward_files = ['input']
         backward_files = ['output']
