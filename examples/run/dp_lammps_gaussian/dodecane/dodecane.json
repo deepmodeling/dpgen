@@ -58,7 +58,7 @@
         "time_training":	true,
         "profiling":		false,
         "profiling_file":	"timeline.json"
-      },
+      }
     },
     "use_clusters": true,
     "cluster_cutoff": 3.5,
