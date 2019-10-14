@@ -98,6 +98,10 @@ class TestPostFPVasp(unittest.TestCase):
                     self.assertAlmostEqual(ref_cell[ff][ii][jj],
                                            sys.data['cells'][ff][ii][jj])
 
+        fparam = np.load('iter.000000/02.fp/data.000/set.000/fparam.npy')
+        self.assertEqual(fparam.shape[0], 2)
+        self.assertEqual(list(fparam), [0, 1])
+
 
     def test_post_fp_vasp_1(self):
 
@@ -137,6 +141,11 @@ class TestPostFPVasp(unittest.TestCase):
                                            sys.data['virials'][ff][ii][jj], places = 5)
                     self.assertAlmostEqual(ref_cell[ff][ii][jj],
                                            sys.data['cells'][ff][ii][jj])
+
+        fparam = np.load('iter.000000/02.fp/data.001/set.000/fparam.npy')
+        self.assertEqual(fparam.shape[0], 1)
+        self.assertEqual(list(fparam), [100000])
+
 
     def test_post_fp_vasp_2(self):
         with open (param_file, 'r') as fp :

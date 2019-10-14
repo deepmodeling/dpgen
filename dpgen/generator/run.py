@@ -22,6 +22,7 @@ import time
 import dpdata
 import numpy as np
 import subprocess as sp
+import scipy.constants as pc
 from collections import Counter
 from distutils.version import LooseVersion
 from dpgen import dlog
@@ -36,11 +37,13 @@ from dpgen.generator.lib.utils import log_task
 from dpgen.generator.lib.lammps import make_lammps_input
 from dpgen.generator.lib.vasp import write_incar_dict
 from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
+from dpgen.generator.lib.vasp import incar_upper
 from dpgen.generator.lib.pwscf import make_pwscf_input
 #from dpgen.generator.lib.pwscf import cvt_1frame
 from dpgen.generator.lib.siesta import make_siesta_input
 from dpgen.generator.lib.gaussian import make_gaussian_input, take_cluster
 from dpgen.generator.lib.cp2k import make_cp2k_input, make_cp2k_xyz
+from dpgen.generator.lib.ele_temp import NBandsEsti
 from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, LSFJob, CloudMachineJob, awsMachineJob
 from dpgen.remote.group_jobs import ucloud_submit_jobs, aws_submit_jobs
 from dpgen.remote.group_jobs import group_slurm_jobs
@@ -182,6 +185,7 @@ def make_train (iter_index,
     init_data_sys_ = jdata['init_data_sys']
     fp_task_min = jdata['fp_task_min']
     model_devi_jobs = jdata['model_devi_jobs']
+    use_ele_temp = jdata.get('use_ele_temp', False)
 
     if iter_index > 0 and _check_empty_iter(iter_index-1, fp_task_min) :
         log_task('prev data is empty, copy prev model')
@@ -268,10 +272,15 @@ def make_train (iter_index,
         # 0.x
         jinput['systems'] = init_data_sys
         jinput['batch_size'] = init_batch_size
+        if use_ele_temp:
+            raise RuntimeError('the electron temperature is only supported by deepmd-kit >= 1.0.0, please upgrade your deepmd-kit')
     else:
         # 1.x
         jinput['training']['systems'] = init_data_sys
         jinput['training']['batch_size'] = init_batch_size
+        if use_ele_temp:
+            # fparam for electron temperature
+            jinput['model']['fitting_net']['numb_fparam'] = 1
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         create_path(task_path)
@@ -478,6 +487,7 @@ def parse_cur_job(cur_job) :
 def make_model_devi (iter_index,
                      jdata,
                      mdata) :
+    use_ele_temp = jdata.get('use_ele_temp', False)
     model_devi_dt = jdata['model_devi_dt']
     model_devi_neidelay = None
     if 'model_devi_neidelay' in jdata :
@@ -571,7 +581,18 @@ def make_model_devi (iter_index,
         conf_counter = 0
         task_counter = 0
         for cc in ss :
-            for tt in temps:
+            for tt_ in temps:
+                if use_ele_temp:
+                    if type(tt_) == list:
+                        tt = tt_[0]
+                        te = tt_[1]
+                    else:
+                        assert(type(tt_) == float or type(tt_) == int)
+                        tt = float(tt_)
+                        te = tt
+                else :
+                    tt = tt_
+                    te = None
                 for pp in press:
                     task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
                     conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter) + '.lmp'
@@ -603,11 +624,14 @@ def make_model_devi (iter_index,
                                                pres = pp,
                                                tau_p = model_devi_taup,
                                                pka_e = pka_e,
+                                               ele_temp = te,
                                                deepmd_version = deepmd_version)
                     job = {}
                     job["ensemble"] = ensemble
                     job["press"] = pp
                     job["temps"] = tt
+                    if te is not None:
+                        job["ele_temp"] = te
                     job["model_devi_dt"] =  model_devi_dt
                     with open('job.json', 'w') as _outfile:
                         json.dump(job, _outfile, indent = 4)
@@ -818,7 +842,7 @@ def _make_fp_vasp_inner (modd_path,
             os.chdir(cwd)
     return fp_tasks
 
-def make_fp_vasp_incar(jdata, filename):
+def make_vasp_incar(jdata, filename):
     if 'fp_incar' in jdata.keys() :
         fp_incar_path = jdata['fp_incar']
         assert(os.path.exists(fp_incar_path))
@@ -834,13 +858,25 @@ def make_fp_vasp_incar(jdata, filename):
         fp.write(incar)
     return incar    
 
-def _link_fp_vasp_incar (iter_index,
+def make_vasp_incar_ele_temp(jdata, filename, ele_temp, nbands_esti = None):
+    with open(filename) as fp:
+        incar = fp.read()
+    incar = incar_upper(Incar.from_string(incar))
+    incar['ISMEAR'] = -1
+    incar['SIGMA'] = ele_temp * pc.Boltzmann / pc.electron_volt
+    incar.write_file('INCAR')
+    if nbands_esti is not None:
+        nbands = nbands_esti.predict('.')
+        with open(filename) as fp:
+            incar = Incar.from_string(fp.read())
+        incar['NBANDS'] = nbands
+        incar.write_file('INCAR')
+
+def _make_fp_vasp_incar (iter_index,
                          jdata,
-                         incar = 'INCAR') :
+                         nbands_esti = None) :
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
-    incar_file = os.path.join(work_path, incar)
-    incar_file = os.path.abspath(incar_file)
     fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
     fp_tasks.sort()
     if len(fp_tasks) == 0 :
@@ -848,30 +884,17 @@ def _link_fp_vasp_incar (iter_index,
     cwd = os.getcwd()
     for ii in fp_tasks:
         os.chdir(ii)
-        os.symlink(os.path.relpath(incar_file), incar)
+        make_vasp_incar(jdata, 'INCAR')
+        if os.path.exists('job.json'):
+            with open('job.json') as fp:
+                job_data = json.load(fp)
+            if 'ele_temp' in job_data:
+                make_vasp_incar_ele_temp(jdata, 'INCAR', 
+                                         job_data['ele_temp'],
+                                         nbands_esti = nbands_esti)
         os.chdir(cwd)
 
-def _make_fp_vasp_kp (iter_index,jdata, incar):
-    dincar=Incar.from_string(incar)
-    standard_incar={}
-    for key,val in dincar.items():
-        standard_incar[key.upper()]=val
-    try:
-       kspacing = standard_incar['KSPACING']
-    except:
-       raise RuntimeError ("KSPACING must be given in INCAR")
-    try:
-       gamma = standard_incar['KGAMMA']
-       if isinstance(gamma,bool):
-          pass
-       else:
-          if gamma[0].upper()=="T":
-             gamma=True
-          else:
-             gamma=False
-    except:
-       raise RuntimeError ("KGAMMA must be given in INCAR")
-
+def _make_fp_vasp_kp (iter_index,jdata):
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
 
@@ -882,11 +905,34 @@ def _make_fp_vasp_kp (iter_index,jdata, incar):
     cwd = os.getcwd()
     for ii in fp_tasks:
         os.chdir(ii)
+        # get kspacing and kgamma from incar
+        assert(os.path.exists('INCAR'))
+        with open('INCAR') as fp:
+            incar = fp.read()
+        standard_incar = incar_upper(Incar.from_string(incar))
+        try:
+            kspacing = standard_incar['KSPACING']
+        except:
+            raise RuntimeError ("KSPACING must be given in INCAR")
+        try:
+            gamma = standard_incar['KGAMMA']
+            if isinstance(gamma,bool):
+                pass
+            else:
+                if gamma[0].upper()=="T":
+                    gamma=True
+                else:
+                    gamma=False
+        except:
+            raise RuntimeError ("KGAMMA must be given in INCAR")
+        # check poscar
         assert(os.path.exists('POSCAR'))
+        # make kpoints
         ret=make_kspacing_kpoints('POSCAR', kspacing, gamma)
         kp=Kpoints.from_string(ret)
         kp.write_file("KPOINTS")
         os.chdir(cwd)
+
 
 def _link_fp_vasp_pp (iter_index,
                       jdata) :
@@ -985,23 +1031,27 @@ def _make_fp_vasp_configs(iter_index,
                                    jdata)
     return fp_tasks
 
-
 def make_fp_vasp (iter_index,
                   jdata) :
     # make config
     fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
     if len(fp_tasks) == 0 :
         return
-    # all tasks share the same incar
-    work_path = os.path.join(make_iter_name(iter_index), fp_name)
-    incar_file = os.path.abspath(os.path.join(work_path, 'INCAR'))
-    incar_str = make_fp_vasp_incar(jdata, incar_file)
-    # link incar to each task folder
-    _link_fp_vasp_incar(iter_index, jdata)
-    # create potcar
+    # abs path for fp_incar if it exists
+    if 'fp_incar' in jdata:
+        jdata['fp_incar'] = os.path.abspath(jdata['fp_incar'])
+    # get nbands esti if it exists
+    if 'fp_nbands_esti_data' in jdata:
+        nbe = NBandsEsti(jdata['fp_nbands_esti_data'])
+    else:
+        nbe = None
+    # order is critical!
+    # 1, create potcar
     sys_link_fp_vasp_pp(iter_index, jdata)
-    # create kpoints
-    _make_fp_vasp_kp(iter_index, jdata, incar_str)    
+    # 2, create incar
+    _make_fp_vasp_incar(iter_index, jdata, nbands_esti = nbe)
+    # 3, create kpoints
+    _make_fp_vasp_kp(iter_index, jdata)
 
 
 def make_fp_pwscf(iter_index,
@@ -1300,8 +1350,9 @@ def post_fp_vasp (iter_index,
     for ss in system_index :
         sys_outcars = glob.glob(os.path.join(work_path, "task.%s.*/OUTCAR"%ss))
         sys_outcars.sort()
-        flag=True
-        tcount+=len(sys_outcars)
+        tcount += len(sys_outcars)
+        all_sys = None
+        all_te = []
         for oo in sys_outcars :
             try:
                 _sys = dpdata.LabeledSystem(oo, type_map = jdata['type_map'])
@@ -1312,23 +1363,30 @@ def post_fp_vasp (iter_index,
                 except:
                    _sys = dpdata.LabeledSystem()
                    dlog.info('Failed fp path: %s'%oo.replace('OUTCAR',''))
-
             if len(_sys) == 1:
-               if flag:
-                  all_sys = _sys
-                  flag = False
-               else:
-                  all_sys.append(_sys)
+                if all_sys is None:
+                    all_sys = _sys
+                else:
+                    all_sys.append(_sys)
+                # save ele_temp, if any
+                with open(oo.replace('OUTCAR', 'job.json')) as fp:
+                    job_data = json.load(fp)
+                if 'ele_temp' in job_data:
+                    ele_temp = job_data['ele_temp']
+                    all_te.append(ele_temp)
             else:
-               icount+=1
-
-        try:
-           # limitation -->  all_sys not defined
+                icount+=1
+        all_te = np.array(all_te)
+        if all_sys is not None:
            sys_data_path = os.path.join(work_path, 'data.%s'%ss)
            all_sys.to_deepmd_raw(sys_data_path)
            all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_outcars))
-        except:
-           pass
+           if all_te.size > 0:
+               assert(len(all_sys) == all_sys.get_nframes())
+               assert(len(all_sys) == all_te.size)
+               all_te = np.reshape(all_te, [-1,1])
+               np.savetxt(os.path.join(sys_data_path, 'fparam.raw'), all_te)
+               np.save(os.path.join(sys_data_path, 'set.000', 'fparam.npy'), all_te)
 
     dlog.info("failed frame number: %s "%icount)
     dlog.info("total frame number: %s "%tcount)
