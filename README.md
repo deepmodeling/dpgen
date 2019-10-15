@@ -119,6 +119,8 @@ Basically `init_bulk` can be devided into four parts , denoted as `stages` in `P
 
 All stages must be **in order**. One doesn't need to run all stages. For example, you may run stage 1 and 2, generating supercells as starting point of exploration in `dpgen run`.
 
+If MACHINE is None, there should be only one stage in stages. Corresponding tasks will be generated, but user's intervention should be involved in, to manunally run the scripts.
+
 Following is an example for `PARAM`, which generates data from a typical structure hcp.
 ```json
 {

@@ -49,7 +49,7 @@ from dpgen.remote.group_jobs import ucloud_submit_jobs, aws_submit_jobs
 from dpgen.remote.group_jobs import group_slurm_jobs
 from dpgen.remote.group_jobs import group_local_jobs
 from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
-from dpgen.dispatcher.Dispatcher import Dispatcher
+from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher
 from dpgen.util import sepline
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar,Kpoints,Potcar
@@ -861,7 +861,7 @@ def _make_fp_vasp_inner (modd_path,
             dump_to_poscar('conf.dump', 'POSCAR', type_map)
             os.chdir(cwd)
     return fp_tasks
-
+    
 def make_vasp_incar(jdata, filename):
     if 'fp_incar' in jdata.keys() :
         fp_incar_path = jdata['fp_incar']
@@ -1327,7 +1327,7 @@ def run_fp (iter_index,
     elif fp_style == "siesta":
         forward_files = ['input'] + fp_pp_files
         backward_files = ['output']
-        run_fp_inner(iter_index, jdata, mdata, ssh_sess, forward_files, backward_files, _siesta_check_fin, log_file='output')
+        run_fp_inner(iter_index, jdata, mdata, dispatcher, forward_files, backward_files, _siesta_check_fin, log_file='output')
     elif fp_style == "gaussian":
         forward_files = ['input']
         backward_files = ['output']
@@ -1629,34 +1629,21 @@ def set_version(mdata):
         deepmd_version = '0.1'
     elif 'python_path' in mdata:
         deepmd_version = '1'
+    elif 'train' in mdata:
+        if 'deepmd_path' in mdata['train'][0]:
+            deepmd_version = '0.1'
+        elif 'python_path' in mdata['train'][0]:
+            deepmd_version = '1'
+        else:
+            deepmd_version = '0.1'
     else:
-        # default
         deepmd_version = '0.1'
     # set
     mdata['deepmd_version'] = deepmd_version
     return mdata
 
 
-def make_dispatcher(mdata):
-    try:
-        hostname = mdata['hostname']
-        context_type = 'ssh'
-    except:
-        context_type = 'local'
-    try:
-        batch_type = mdata['batch']
-    except:
-        dlog.info('cannot find key "batch" in machine file, try to use deprecated key "machine_type"')
-        batch_type = mdata['machine_type']
-    try:
-        lazy_local = mdata['lazy_local']
-    except:
-        lazy_local = False
-    if lazy_local and context_type == 'local':
-        dlog.info('Dispatcher switches to the lazy local mode')
-        context_type = 'lazy-local'
-    disp = Dispatcher(mdata, context_type=context_type, batch_type=batch_type)
-    return disp
+
     
 
 def run_iter (param_file, machine_file) :
