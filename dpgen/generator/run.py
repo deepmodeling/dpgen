@@ -185,7 +185,7 @@ def make_train (iter_index,
     init_data_sys_ = jdata['init_data_sys']
     fp_task_min = jdata['fp_task_min']
     model_devi_jobs = jdata['model_devi_jobs']
-    use_ele_temp = jdata.get('use_ele_temp', False)
+    use_ele_temp = jdata.get('use_ele_temp', 0)    
 
     if iter_index > 0 and _check_empty_iter(iter_index-1, fp_task_min) :
         log_task('prev data is empty, copy prev model')
@@ -278,9 +278,15 @@ def make_train (iter_index,
         # 1.x
         jinput['training']['systems'] = init_data_sys
         jinput['training']['batch_size'] = init_batch_size
-        if use_ele_temp:
-            # fparam for electron temperature
+        # electron temperature
+        if use_ele_temp == 1:
             jinput['model']['fitting_net']['numb_fparam'] = 1
+            jinput['model']['fitting_net'].pop('numb_aparam', None)
+        elif use_ele_temp == 2:
+            jinput['model']['fitting_net']['numb_aparam'] = 1
+            jinput['model']['fitting_net'].pop('numb_fparam', None)
+        else:
+            raise RuntimeError('invalid setting for use_ele_temp')
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         create_path(task_path)
@@ -487,7 +493,7 @@ def parse_cur_job(cur_job) :
 def make_model_devi (iter_index,
                      jdata,
                      mdata) :
-    use_ele_temp = jdata.get('use_ele_temp', False)
+    use_ele_temp = jdata.get('use_ele_temp', 0)
     model_devi_dt = jdata['model_devi_dt']
     model_devi_neidelay = None
     if 'model_devi_neidelay' in jdata :
@@ -585,14 +591,25 @@ def make_model_devi (iter_index,
                 if use_ele_temp:
                     if type(tt_) == list:
                         tt = tt_[0]
-                        te = tt_[1]
+                        if use_ele_temp == 1:
+                            te_f = tt_[1]
+                            te_a = None
+                        else:
+                            te_f = None
+                            te_a = tt_[1]
                     else:
                         assert(type(tt_) == float or type(tt_) == int)
                         tt = float(tt_)
-                        te = tt
+                        if use_ele_temp == 1:
+                            te_f = tt
+                            te_a = None
+                        else:
+                            te_f = None
+                            te_a = tt
                 else :
                     tt = tt_
-                    te = None
+                    te_f = None
+                    te_a = None
                 for pp in press:
                     task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
                     conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter) + '.lmp'
@@ -624,14 +641,17 @@ def make_model_devi (iter_index,
                                                pres = pp,
                                                tau_p = model_devi_taup,
                                                pka_e = pka_e,
-                                               ele_temp = te,
+                                               ele_temp_f = te_f,
+                                               ele_temp_a = te_a,
                                                deepmd_version = deepmd_version)
                     job = {}
                     job["ensemble"] = ensemble
                     job["press"] = pp
                     job["temps"] = tt
-                    if te is not None:
-                        job["ele_temp"] = te
+                    if te_f is not None:
+                        job["ele_temp"] = te_f
+                    if te_a is not None:
+                        job["ele_temp"] = te_a
                     job["model_devi_dt"] =  model_devi_dt
                     with open('job.json', 'w') as _outfile:
                         json.dump(job, _outfile, indent = 4)
@@ -1327,6 +1347,7 @@ def post_fp_vasp (iter_index,
     ratio_failed =  rfailed if rfailed else jdata.get('ratio_failed',0.05)
     model_devi_jobs = jdata['model_devi_jobs']
     assert (iter_index < len(model_devi_jobs))
+    use_ele_temp = jdata.get('use_ele_temp', 0)
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -1372,6 +1393,7 @@ def post_fp_vasp (iter_index,
                 with open(oo.replace('OUTCAR', 'job.json')) as fp:
                     job_data = json.load(fp)
                 if 'ele_temp' in job_data:
+                    assert(use_ele_temp)
                     ele_temp = job_data['ele_temp']
                     all_te.append(ele_temp)
             else:
@@ -1385,8 +1407,15 @@ def post_fp_vasp (iter_index,
                assert(len(all_sys) == all_sys.get_nframes())
                assert(len(all_sys) == all_te.size)
                all_te = np.reshape(all_te, [-1,1])
-               np.savetxt(os.path.join(sys_data_path, 'fparam.raw'), all_te)
-               np.save(os.path.join(sys_data_path, 'set.000', 'fparam.npy'), all_te)
+               if use_ele_temp == 1:
+                   np.savetxt(os.path.join(sys_data_path, 'fparam.raw'), all_te)
+                   np.save(os.path.join(sys_data_path, 'set.000', 'fparam.npy'), all_te)
+               elif use_ele_temp == 2:
+                   tile_te = np.tile(all_te, [1, all_sys.get_natoms()])
+                   np.savetxt(os.path.join(sys_data_path, 'aparam.raw'), tile_te)
+                   np.save(os.path.join(sys_data_path, 'set.000', 'aparam.npy'), tile_te)
+               else:
+                   raise RuntimeError('invalid setting of use_ele_temp ' + use_ele_temp)
 
     dlog.info("failed frame number: %s "%icount)
     dlog.info("total frame number: %s "%tcount)
