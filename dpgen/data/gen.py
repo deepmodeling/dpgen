@@ -25,6 +25,7 @@ from pymatgen import Structure
 from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
 from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
 from dpgen import ROOT_PATH
+#from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher
 
 
 
@@ -289,19 +290,7 @@ def place_element (jdata) :
 def make_vasp_relax (jdata, mdata) :
     out_dir = jdata['out_dir']
     potcars = jdata['potcars']
-    #encut = jdata['encut']
-    #kspacing = jdata['kspacing_relax']
-    #kgamma = jdata['kgamma']
-    #ismear = 1
-    #if 'ismear' in jdata :
-    #    ismear = jdata['ismear']
-    #sigma = 0.2
-    #if 'sigma' in jdata :
-    #    sigma = jdata['sigma']
     cwd = os.getcwd()
-
-    #vasp_dir = os.path.join(cwd, 'vasp.in')
-
     work_dir = os.path.join(out_dir, global_dirname_02)
     assert (os.path.isdir(work_dir))
     work_dir = os.path.abspath(work_dir)
@@ -602,11 +591,11 @@ def _group_slurm_jobs(ssh_sess,
                     job_fin[idx] = True
         time.sleep(10)
 
-def run_vasp_relax(jdata, mdata, ssh_sess):
+def run_vasp_relax(jdata, mdata, dispatcher):
     fp_command = mdata['fp_command']
     fp_group_size = mdata['fp_group_size']
     fp_resources = mdata['fp_resources']
-    machine_type = mdata['fp_machine']['machine_type']
+    #machine_type = mdata['fp_machine']['machine_type']
     work_dir = os.path.join(jdata['out_dir'], global_dirname_02)
     
     forward_files = ["POSCAR", "INCAR", "POTCAR"]
@@ -622,29 +611,28 @@ def run_vasp_relax(jdata, mdata, ssh_sess):
     if len(relax_tasks) == 0:
         return
 
-    relax_run_tasks = []
-    for ii in relax_tasks : 
-        if not _vasp_check_fin(ii):
-            relax_run_tasks.append(ii)
+    relax_run_tasks = relax_tasks
+    #for ii in relax_tasks : 
+    #    if not _vasp_check_fin(ii):
+    #        relax_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in relax_run_tasks]
 
     #dlog.info(run_tasks)
-    assert (machine_type == "slurm" or machine_type =="Slurm"), "Currently only support for Slurm!"
-    _group_slurm_jobs(ssh_sess,
-                           fp_resources,
-                           fp_command,
-                           work_dir,
-                           run_tasks,
-                           fp_group_size,
-                           forward_common_files,
-                           forward_files,
-                           backward_files)
+    #assert (machine_type == "slurm" or machine_type =="Slurm"), "Currently only support for Slurm!"
+    dispatcher.run_jobs(fp_resources,
+                       [fp_command],
+                       work_dir,
+                       run_tasks,
+                       fp_group_size,
+                       forward_common_files,
+                       forward_files,
+                       backward_files)
 
 def run_vasp_md(jdata, mdata, ssh_sess):
     fp_command = mdata['fp_command']
     fp_group_size = mdata['fp_group_size']
     fp_resources = mdata['fp_resources']
-    machine_type = mdata['fp_machine']['machine_type']
+    #machine_type = mdata['fp_machine']['machine_type']
     work_dir = os.path.join(jdata['out_dir'], global_dirname_04)
     scale = jdata['scale']   
     pert_numb = jdata['pert_numb'] 
@@ -667,26 +655,24 @@ def run_vasp_md(jdata, mdata, ssh_sess):
     if len(md_tasks) == 0:
         return
 
-    md_run_tasks = []
-    for ii in md_tasks : 
-        if not _vasp_check_fin(ii):
-            md_run_tasks.append(ii)
-
+    md_run_tasks = md_tasks
+    #for ii in md_tasks : 
+    #    if not _vasp_check_fin(ii):
+    #        md_run_tasks.append(ii)
 
     run_tasks = [ii.replace(work_dir+"/", "") for ii in md_run_tasks]
     #dlog.info("md_work_dir", work_dir)
     #dlog.info("run_tasks",run_tasks)
 
-    assert (machine_type == "slurm" or machine_type =="Slurm"), "Currently only support for Slurm!"
-    _group_slurm_jobs(ssh_sess,
-                           fp_resources,
-                           fp_command,
-                           work_dir,
-                           run_tasks,
-                           fp_group_size,
-                           forward_common_files,
-                           forward_files,
-                           backward_files)
+    #assert (machine_type == "slurm" or machine_type =="Slurm"), "Currently only support for Slurm!"
+    dispatcher.run_jobs(fp_resources,
+                       [fp_command],
+                       work_dir,
+                       run_tasks,
+                       fp_group_size,
+                       forward_common_files,
+                       forward_files,
+                       backward_files)
 
     
 
@@ -711,8 +697,9 @@ def gen_init_bulk(args) :
     if args.MACHINE is not None:
        # Selecting a proper machine
        mdata = decide_fp_machine(mdata)
-       fp_machine = mdata['fp_machine']
-       fp_ssh_sess = SSHSession(fp_machine)  
+       disp = make_dispatcher(mdata["fp_machine"])
+       #fp_machine = mdata['fp_machine']
+       #fp_ssh_sess = SSHSession(fp_machine)  
     # Decide work path
     out_dir = out_dir_name(jdata)
     jdata['out_dir'] = out_dir
@@ -768,7 +755,7 @@ def gen_init_bulk(args) :
                 place_element(jdata)
             if args.MACHINE is not None:
                make_vasp_relax(jdata, mdata)
-               run_vasp_relax(jdata, mdata, fp_ssh_sess)
+               run_vasp_relax(jdata, mdata, disp)
             else:
                make_vasp_relax(jdata, {"fp_resources":{}})
         elif stage == 2 :
@@ -779,113 +766,9 @@ def gen_init_bulk(args) :
             dlog.info("Current stage is 3, run a short md")
             make_vasp_md(jdata)
             if args.MACHINE is not None:
-               run_vasp_md(jdata, mdata, fp_ssh_sess)
+               run_vasp_md(jdata, mdata, disp)
         elif stage == 4 :
             dlog.info("Current stage is 4, collect data")
             coll_vasp_md(jdata)
         else :
             raise RuntimeError("unknown stage %d" % stage)
-
-def _main() :
-    parser = argparse.ArgumentParser(
-        description="gen init confs")
-    parser.add_argument('PARAM', type=str, 
-                        help="parameter file, json/yaml format")
-    parser.add_argument("MACHINE", type=str, default=None,nargs="?",
-                        help="The settings of the machine running the generator")
-    args = parser.parse_args()
-
-    try:
-       import ruamel
-       from monty.serialization import loadfn,dumpfn
-       warnings.simplefilter('ignore', ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
-       jdata=loadfn(args.PARAM)
-       if args.MACHINE is not None:
-          mdata=loadfn(args.MACHINE)
-    except:
-        with open (args.PARAM, 'r') as fp :
-            jdata = json.load (fp)
-        if args.MACHINE is not None:
-           with open (args.MACHINE, "r") as fp:
-               mdata = json.load(fp)
-    if args.MACHINE is not None:
-       # Selecting a proper machine
-       mdata = decide_fp_machine(mdata)
-       fp_machine = mdata['fp_machine']
-       fp_ssh_sess = SSHSession(fp_machine)  
-    # Decide work path
-    out_dir = out_dir_name(jdata)
-    jdata['out_dir'] = out_dir
-    dlog.info ("# working dir %s" % out_dir)
-    # Decide whether to use a given poscar
-    from_poscar = False 
-    if 'from_poscar' in jdata :
-        from_poscar = jdata['from_poscar']
-    # Verify md_nstep
-    md_nstep_jdata = jdata["md_nstep"]
-    try:
-        md_incar = jdata['md_incar']
-        if os.path.isfile(md_incar):
-            with open(md_incar , "r") as fr:
-                md_incar_lines = fr.readlines()
-            nsw_flag = False
-            for incar_line in md_incar_lines:
-                line = incar_line.split()
-                if "NSW" in line:
-                    nsw_flag = True
-                    nsw_steps = int(incar_line.split()[-1])
-                    break
-            #dlog.info("nsw_steps is", nsw_steps)
-            #dlog.info("md_nstep_jdata is", md_nstep_jdata)
-            if nsw_flag:
-                if (nsw_steps != md_nstep_jdata):
-                    dlog.info("WARNING: your set-up for MD steps in PARAM and md_incar are not consistent!")
-                    dlog.info("MD steps in PARAM is %d"%(md_nstep_jdata))
-                    dlog.info("MD steps in md_incar is %d"(nsw_steps))
-                    dlog.info("DP-GEN will use settings in md_incar!")
-                    jdata['md_nstep'] = nsw_steps
-    except:
-        pass
-    ## correct element name 
-    temp_elements = []
-    for ele in jdata['elements']:
-        temp_elements.append(ele[0].upper() + ele[1:])
-    jdata['elements'] = temp_elements
-    dlog.info("Elements are %s"%(' '.join(jdata['elements'])))
-
-    ## Iteration 
-    stage_list = [int(i) for i in jdata['stages']]
-    for stage in stage_list:
-        if stage == 1 :
-            dlog.info("Current stage is 1, relax")
-            create_path(out_dir)
-            shutil.copy2(args.PARAM, os.path.join(out_dir, 'param.json'))
-            if from_poscar :
-                make_super_cell_poscar(jdata)
-            else :
-                make_unit_cell(jdata)
-                make_super_cell(jdata)
-                place_element(jdata)
-
-            if args.MACHINE is not None:
-               make_vasp_relax(jdata, mdata)
-               run_vasp_relax(jdata, mdata, fp_ssh_sess)
-            else:
-               make_vasp_relax(jdata, {"fp_resources":{}})
-        elif stage == 2 :
-            dlog.info("Current stage is 2, perturb and scale")
-            make_scale(jdata)
-            pert_scaled(jdata)
-        elif stage == 3 :
-            dlog.info("Current stage is 3, run a short md")
-            make_vasp_md(jdata)
-            if args.MACHINE is not None:
-               run_vasp_md(jdata, mdata, fp_ssh_sess)
-        elif stage == 4 :
-            dlog.info("Current stage is 4, collect data")
-            coll_vasp_md(jdata)
-        else :
-            raise RuntimeError("unknown stage %d" % stage)
-    
-if __name__ == "__main__":
-    _main()
