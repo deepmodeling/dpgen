@@ -431,6 +431,7 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | *#Basics*
 | **type_map** | List of string | ["H", "C"] | Atom types
 | **mass_map** | List of float |  [1, 12] | Standard atom weights.
+| **use_ele_temp** | int | 0 | Currently only support fp_style vasp. 0(default): no electron temperature. 1: eletron temperature as frame parameter. 2: electron temperature as atom parameter.
 | *#Data*
  | init_data_prefix | String | "/sharedext4/.../data/" | Prefix of initial data directories
  | ***init_data_sys*** | List of string|["CH4.POSCAR.01x01x01/.../deepmd"] |Directories of initial data. You may use either absolute or relative path here.
