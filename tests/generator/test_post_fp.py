@@ -63,6 +63,7 @@ class TestPostFPVasp(unittest.TestCase):
 
         with open (param_file, 'r') as fp :
             jdata = json.load (fp)
+        jdata['use_ele_temp'] = 2
         post_fp_vasp(0, jdata, rfailed=0.3)
 
         sys = dpdata.LabeledSystem('iter.000000/02.fp/data.000/', fmt = 'deepmd/raw')
@@ -98,15 +99,19 @@ class TestPostFPVasp(unittest.TestCase):
                     self.assertAlmostEqual(ref_cell[ff][ii][jj],
                                            sys.data['cells'][ff][ii][jj])
 
-        fparam = np.load('iter.000000/02.fp/data.000/set.000/fparam.npy')
-        self.assertEqual(fparam.shape[0], 2)
-        self.assertEqual(list(fparam), [0, 1])
+        self.assertTrue(os.path.isfile('iter.000000/02.fp/data.000/set.000/aparam.npy'))
+        aparam = np.load('iter.000000/02.fp/data.000/set.000/aparam.npy')
+        natoms = sys.get_natoms()
+        self.assertEqual(natoms, 2)
+        self.assertEqual(list(list(aparam)[0]), [0,0])
+        self.assertEqual(list(list(aparam)[1]), [1,1])
 
 
     def test_post_fp_vasp_1(self):
 
         with open (param_file, 'r') as fp :
             jdata = json.load (fp)
+        jdata['use_ele_temp'] = 1
         post_fp_vasp(0, jdata, rfailed=0.3)
 
         sys = dpdata.LabeledSystem('iter.000000/02.fp/data.001/', fmt = 'deepmd/raw')
@@ -150,6 +155,7 @@ class TestPostFPVasp(unittest.TestCase):
     def test_post_fp_vasp_2(self):
         with open (param_file, 'r') as fp :
             jdata = json.load (fp)
+        jdata['use_ele_temp'] = 1
         with self.assertRaises(RuntimeError):
             post_fp_vasp(0, jdata)
 
