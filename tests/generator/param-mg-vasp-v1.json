@@ -3,16 +3,13 @@
     "mass_map":		[27, 24],
     "use_ele_temp":	2,
 
-    "init_data_prefix":	"/home/wanghan/study/deep.md/data/almgop.20/init//",
-
-    "init_data_sys":	[
-	"al.fcc.01x01x01/02.md/sys-0004/deepmd",
-	"mg.fcc.01x01x01/02.md/sys-0004/deepmd"
-    ],
-    "init_batch_size":	[1,1],
+    "init_data_prefix":	"data",
+    "init_data_sys":	["deepmd"
+			],
+    "init_batch_size":	[16],
     "sys_configs":	[
-	["/home/wanghan/study/deep.md/data/almgop.20/init/al.fcc.02x02x02/01.scale_pert/sys-0032/scale-1.000/00000[0-4]/POSCAR"],
-	["/home/wanghan/study/deep.md/data/almgop.20/init/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale-1.000/00000[0-4]/POSCAR"]
+	["data/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale*/000010/POSCAR"],
+	["data/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale*/00000[8-9]/POSCAR"]
     ],
     "sys_batch_size":	[1,1],
 
