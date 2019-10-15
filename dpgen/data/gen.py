@@ -628,7 +628,7 @@ def run_vasp_relax(jdata, mdata, dispatcher):
                        forward_files,
                        backward_files)
 
-def run_vasp_md(jdata, mdata, ssh_sess):
+def run_vasp_md(jdata, mdata, dispatcher):
     fp_command = mdata['fp_command']
     fp_group_size = mdata['fp_group_size']
     fp_resources = mdata['fp_resources']
