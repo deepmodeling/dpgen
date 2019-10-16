@@ -6,9 +6,9 @@ from dpgen.dispatcher.JobStatus import JobStatus
 from dpgen import dlog
 
 class AWS(Batch):
-    try :
+    try:
         import boto3
-        batch = boto3.client('batch')
+        batch_client = boto3.client('batch')
     except ModuleNotFoundError:
         pass
     _query_max_results = 1000
@@ -44,7 +44,7 @@ class AWS(Batch):
         if datetime.now().timestamp() > cls._query_next_allow_time:
             cls._query_next_allow_time=datetime.now().timestamp()+cls._query_time_interval
             for status in ['SUBMITTED', 'PENDING', 'RUNNABLE', 'STARTING', 'RUNNING','SUCCEEDED', 'FAILED']:
-                status_response = cls.batch.list_jobs(jobQueue=cls._jobQueue, jobStatus=status, maxResults=cls._query_max_results)
+                status_response = cls.batch_client.list_jobs(jobQueue=cls._jobQueue, jobStatus=status, maxResults=cls._query_max_results)
                 status_list=status_response.get('jobSummaryList', [])
                 for job_dict in status_list:
                     query_dict.update({job_dict['jobId']: cls.map_aws_status_to_dpgen_status(job_dict['status'])})
@@ -64,7 +64,7 @@ class AWS(Batch):
         except AttributeError:
             if self.context.check_file_exists(self.job_id_name):
                 self._job_id = self.context.read_file(self.job_id_name)
-                response_list = self.__class__.batch.describe_jobs(jobs=[self._job_id]).get('jobs')
+                response_list = self.__class__.batch_client.describe_jobs(jobs=[self._job_id]).get('jobs')
                 try:
                     response = response_list[0]
                     jobQueue = response['jobQueue']
@@ -103,7 +103,7 @@ class AWS(Batch):
         multi_command = ""
         for job_dir in job_dirs:
             for idx,t in enumerate(zip_longest(cmd, args, fillvalue='')):
-                c_str =  f"((cd {self.context.remote_root}/{job_dir} && {t[0]} {t[1]} 2>>{errlog} |tee -a {outlog})&& touch tag_{idx}_finished);wait;"
+                c_str =  f"((cd {self.context.remote_root}/{job_dir} && test -f touch tag_{idx}_finished || {t[0]} {t[1]} 2>>{errlog} && touch tag_{idx}_finished ) | tee -a {outlog});wait;"
                 multi_command += c_str
         dlog.debug("10000, %s" % multi_command)
         return multi_command
@@ -138,7 +138,7 @@ class AWS(Batch):
         """
         jobName = os.path.join(self.context.remote_root,job_dirs.pop())[1:].replace('/','-').replace('.','_')
         jobName += ("_" + str(self.context.job_uuid))
-        response = self.__class__.batch.submit_job(jobName=jobName, 
+        response = self.__class__.batch_client.submit_job(jobName=jobName, 
                 jobQueue=res['jobQueue'], 
                 jobDefinition=res['jobDefinition'],
                 parameters={'task_command':script_str},
