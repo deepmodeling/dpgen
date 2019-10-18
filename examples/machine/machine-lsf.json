@@ -9,6 +9,7 @@
         "work_path": "/data/home/ypliu/test/deepmd-tutorial/cp2k_dpgen/dpmd"
       },
       "resources": {
+        "_comment": "this part should be modified if GPU resources could be called directly by LSF",
         "node_cpu": 4,
         "numb_node": 1,
         "task_per_node": 4,
@@ -38,6 +39,7 @@
         "work_path": "/data/home/ypliu/test/deepmd-tutorial/cp2k_dpgen/lammps"
       },
       "resources": {
+        "_comment": "this part should be modified if GPU resources could be called directly by LSF",
         "node_cpu": 4,
         "numb_node": 1,
         "task_per_node": 4,
