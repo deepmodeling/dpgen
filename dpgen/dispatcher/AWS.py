@@ -47,13 +47,13 @@ class AWS(Batch):
                 status_response = cls.batch_client.list_jobs(jobQueue=cls._jobQueue, jobStatus=status, maxResults=cls._query_max_results)
                 status_list=status_response.get('jobSummaryList', [])
                 for job_dict in status_list:
-                    query_dict.update({job_dict['jobId']: cls.map_aws_status_to_dpgen_status(job_dict['status'])})
-            for job in cls._job_id_map_status:
-                cls._job_id_map_status[job]=query_dict.get(job, JobStatus.unknown)
-            dlog.debug('20000: _query: %s, _map: %s' %(query_dict, cls._job_id_map_status))
+                    cls._job_id_map_status.update({job_dict['jobId']: cls.map_aws_status_to_dpgen_status(job_dict['status'])})
+            # for job in cls._job_id_map_status:
+            #     cls._job_id_map_status[job]=query_dict.get(job, JobStatus.unknown)
+            dlog.debug('20000:_map: %s' %(cls._job_id_map_status))
         dlog.debug('62000:job_id:%s, _query: %s, _map: %s' %(job_id, query_dict, cls._job_id_map_status))
         if job_id:
-            return cls._job_id_map_status.get(job_id, query_dict.get(job_id,JobStatus.unknown))
+            return cls._job_id_map_status.get(job_id, JobStatus.unknown)
                     
         return cls._job_id_map_status
 
