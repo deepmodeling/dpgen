@@ -1,6 +1,7 @@
 #!/usr/bin/env python3 
 
 import os
+import re
 import sys
 import argparse
 import glob
@@ -13,8 +14,6 @@ import time
 import dpdata
 import numpy as np
 from dpgen import dlog
-import os,json,shutil,re,glob,argparse,dpdata
-import numpy as np
 import subprocess as sp
 import dpgen.data.tools.hcp as hcp
 import dpgen.data.tools.fcc as fcc
@@ -22,8 +21,7 @@ import dpgen.data.tools.bcc as bcc
 import dpgen.data.tools.diamond as diamond
 import dpgen.data.tools.sc as sc
 from pymatgen import Structure
-from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
-from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
+from dpgen.remote.decide_machine import  decide_fp_machine
 from dpgen import ROOT_PATH
 from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher
 
@@ -314,15 +312,6 @@ def make_vasp_relax (jdata, mdata) :
                 outfile.write(infile.read())
     
     os.chdir(work_dir)
-    #replace('INCAR', 'ENCUT=.*', 'ENCUT=%f' % encut)
-    #replace('INCAR', 'ISIF=.*', 'ISIF=3')
-    #replace('INCAR', 'KSPACING=.*from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine', 'KSPACING=%f' % kspacing)
-    #if kgamma :
-    #    replace('INCAR', 'KGAMMA=.*', 'KGAMMA=T')
-    #else :
-    #    replace('INCAR', 'KGAMMA=.*', 'KGAMMA=F')
-    #replace('INCAR', 'ISMEAR=.*', 'ISMEAR=%d' % ismear)
-    #replace('INCAR', 'SIGMA=.*', 'SIGMA=%f' % sigma)
     
     sys_list = glob.glob('sys-*')
     for ss in sys_list:
@@ -426,8 +415,6 @@ def make_vasp_md(jdata) :
     md_nstep = jdata['md_nstep']
 
     cwd = os.getcwd()
-    #vasp_dir = os.path.join(cwd, 'vasp.in')
-    #vasp_dir = os.path.join(cwd, vasp_dir)
     path_ps = os.path.join(out_dir, global_dirname_03)
     path_ps = os.path.abspath(path_ps)
     assert(os.path.isdir(path_ps))
@@ -446,18 +433,6 @@ def make_vasp_md(jdata) :
             with open(fname) as infile:
                 outfile.write(infile.read())
     os.chdir(path_md)
-    #replace('INCAR', 'ENCUT=.*', 'ENCUT=%f' % encut)
-    #replace('INCAR', 'ISIF=.*', 'ISIF=2')
-    #replace('INCAR', 'KSPACING=.*', 'KSPACING=%f' % kspacing)
-    #if kgamma :
-    #    replace('INCAR', 'KGAMMA=.*', 'KGAMMA=T')
-    #else :
-    #    replace('INCAR', 'KGAMMA=.*', 'KGAMMA=F')    
-    #replace('INCAR', 'NSW=.*', 'NSW=%d' % md_nstep)
-    #replace('INCAR', 'TEBEG=.*', 'TEBEG=%d' % md_temp)
-    #replace('INCAR', 'TEEND=.*', 'TEEND=%d' % md_temp)
-    #replace('INCAR', 'ISMEAR=.*', 'ISMEAR=%d' % ismear)
-    #replace('INCAR', 'SIGMA=.*', 'SIGMA=%f' % sigma)
     os.chdir(cwd)    
 
     for ii in sys_ps :
@@ -556,40 +531,6 @@ def _vasp_check_fin (ii) :
     else :
         return False
     return True
-def _group_slurm_jobs(ssh_sess,
-                      resources,
-                      command,
-                      work_path,
-                      tasks,
-                      group_size,
-                      forward_common_files,
-                      forward_task_files,
-                      backward_task_files,
-                      remote_job = SlurmJob) :
-    task_chunks = [
-        [j for j in tasks[i:i + group_size]] \
-        for i in range(0, len(tasks), group_size)
-    ]
-    job_list = []
-    for chunk in task_chunks :
-        rjob = remote_job(ssh_sess, work_path)
-        rjob.upload('.',  forward_common_files)
-        rjob.upload(chunk, forward_task_files)
-        rjob.submit(chunk, command, resources = resources)
-        job_list.append(rjob)
-
-    job_fin = [False for ii in job_list]
-    while not all(job_fin) :
-        for idx,rjob in enumerate(job_list) :
-            if not job_fin[idx] :
-                status = rjob.check_status()
-                if status == JobStatus.terminated :
-                    raise RuntimeError("find unsuccessfully terminated job in %s" % rjob.get_job_root())
-                elif status == JobStatus.finished :
-                    rjob.download(task_chunks[idx], backward_task_files)
-                    rjob.clean()
-                    job_fin[idx] = True
-        time.sleep(10)
 
 def run_vasp_relax(jdata, mdata, dispatcher):
     fp_command = mdata['fp_command']
@@ -612,13 +553,12 @@ def run_vasp_relax(jdata, mdata, dispatcher):
         return
 
     relax_run_tasks = relax_tasks
-    #for ii in relax_tasks : 
-    #    if not _vasp_check_fin(ii):
-    #        relax_run_tasks.append(ii)
+    for ii in relax_tasks : 
+        if not _vasp_check_fin(ii):
+            relax_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in relax_run_tasks]
 
     #dlog.info(run_tasks)
-    #assert (machine_type == "slurm" or machine_type =="Slurm"), "Currently only support for Slurm!"
     dispatcher.run_jobs(fp_resources,
                        [fp_command],
                        work_dir,
@@ -664,7 +604,6 @@ def run_vasp_md(jdata, mdata, dispatcher):
     #dlog.info("md_work_dir", work_dir)
     #dlog.info("run_tasks",run_tasks)
 
-    #assert (machine_type == "slurm" or machine_type =="Slurm"), "Currently only support for Slurm!"
     dispatcher.run_jobs(fp_resources,
                        [fp_command],
                        work_dir,
@@ -673,11 +612,6 @@ def run_vasp_md(jdata, mdata, dispatcher):
                        forward_common_files,
                        forward_files,
                        backward_files)
-
-    
-
-
-
 
 def gen_init_bulk(args) :
     try:
@@ -698,8 +632,7 @@ def gen_init_bulk(args) :
        # Selecting a proper machine
        mdata = decide_fp_machine(mdata)
        disp = make_dispatcher(mdata["fp_machine"])
-       #fp_machine = mdata['fp_machine']
-       #fp_ssh_sess = SSHSession(fp_machine)  
+
     # Decide work path
     out_dir = out_dir_name(jdata)
     jdata['out_dir'] = out_dir
@@ -772,3 +705,13 @@ def gen_init_bulk(args) :
             coll_vasp_md(jdata)
         else :
             raise RuntimeError("unknown stage %d" % stage)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Generating initial data for bulk systems.")
+    parser.add_argument('PARAM', type=str,
+                        help="parameter file, json/yaml format")
+    parser.add_argument('MACHINE', type=str,default=None,nargs="?",
+                        help="machine file, json/yaml format")
+    args = parser.parse_args()
+    gen_init_bulk(args)
