@@ -5,12 +5,13 @@ from dpgen.dispatcher.Batch import Batch
 from dpgen.dispatcher.JobStatus import JobStatus
 from dpgen import dlog
 
+try:
+    import boto3
+except ModuleNotFoundError:
+    pass
+
 class AWS(Batch):
-    try:
-        import boto3
-        batch_client = boto3.client('batch')
-    except ModuleNotFoundError:
-        pass
+    batch_client = boto3.client('batch')
     _query_max_results = 1000
     _query_time_interval = 30
     _job_id_map_status = {}
@@ -42,6 +43,7 @@ class AWS(Batch):
         """
         query_dict ={}
         if datetime.now().timestamp() > cls._query_next_allow_time:
+            cls.batch_client = boto3.client('batch')
             cls._query_next_allow_time=datetime.now().timestamp()+cls._query_time_interval
             for status in ['SUBMITTED', 'PENDING', 'RUNNABLE', 'STARTING', 'RUNNING','SUCCEEDED', 'FAILED']:
                 status_response = cls.batch_client.list_jobs(jobQueue=cls._jobQueue, jobStatus=status, maxResults=cls._query_max_results)
