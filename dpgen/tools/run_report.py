@@ -4,9 +4,7 @@ import os,sys,json,glob,argparse,shutil
 import numpy as np
 import subprocess as sp
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
-from lib.vasp import make_vasp_incar
-from lib.vasp import system_from_poscar
-from relabel import get_lmp_info
+from dpgen.tools.relabel import get_lmp_info
 
 def ascii_hist(count) :
     np = (count-1) // 5 + 1
@@ -15,10 +13,13 @@ def ascii_hist(count) :
         ret += '='
     return ret    
 
-def stat_tasks(target_folder, param_file, verbose = True) :
+def stat_tasks(target_folder, 
+               param_file = 'param.json', 
+               verbose = True, 
+               mute = False) :
     target_folder = os.path.abspath(target_folder)
-    tool_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'template')    
-    jdata = json.load(open(os.path.join(target_folder, param_file)))
+    with open(os.path.join(target_folder, param_file)) as fp:
+        jdata = json.load(fp)
     # goto input        
     cwd = os.getcwd()
     os.chdir(target_folder)
@@ -39,7 +40,7 @@ def stat_tasks(target_folder, param_file, verbose = True) :
         for jj in iter_tasks :
             sys_idx = int(os.path.basename(jj).split('.')[-2])
             sys_tasks_count[sys_idx] += 1
-            linked_file = os.path.realpath(os.path.join(jj, 'conf.lmp'))
+            linked_file = os.path.realpath(os.path.join(jj, 'conf.dump'))
             linked_keys = linked_file.split('/')
             task_record = linked_keys[-5] + '.' + linked_keys[-3] + '.' + linked_keys[-1].split('.')[0]
             task_record_keys = task_record.split('.')
@@ -67,26 +68,32 @@ def stat_tasks(target_folder, param_file, verbose = True) :
         str_blk += " "
     trait_fmt = str_blk + 'ens: %s   T: %10.2f   P: %12.2f   count:   %6d'
     for ii in range(numb_sys):
-        print(sys_fmt % (str(sys[ii]), sys_tasks_count[ii]))
+        if not mute:
+            print(sys_fmt % (str(sys[ii]), sys_tasks_count[ii]))
         for jj in range(len(sys_tasks_all[ii])):
             hist_str = ascii_hist(sys_tasks_all[ii][jj][3])
-            print((trait_fmt + hist_str) % (sys_tasks_all[ii][jj][0],
-                                            sys_tasks_all[ii][jj][1],
-                                            sys_tasks_all[ii][jj][2],
-                                            sys_tasks_all[ii][jj][3]))
-            
+            if not mute:
+                print((trait_fmt + hist_str) % (sys_tasks_all[ii][jj][0],
+                                                sys_tasks_all[ii][jj][1],
+                                                sys_tasks_all[ii][jj][2],
+                                                sys_tasks_all[ii][jj][3]))
+    return sys, sys_tasks_count, sys_tasks_all
+
+def run_report(args):
+    stat_tasks(args.JOB_DIR, args.param, args.verbose)            
+
 
 def _main()   :
     parser = argparse.ArgumentParser(description='Some data statistics of DP-GEN iterations')
     parser.add_argument("JOB_DIR", type=str, 
                         help="the directory of the DP-GEN job")
-    parser.add_argument('-p',"--parameter", type=str, default = 'param.json',
+    parser.add_argument('-p',"--param", type=str, default = 'param.json',
                         help="the json file provides DP-GEN paramters, should be located in JOB_DIR")
     parser.add_argument('-v',"--verbose", action = 'store_true',
                         help="being loud")
     args = parser.parse_args()
     
-    stat_tasks(args.JOB_DIR, args.parameter, args.verbose)
+    stat_tasks(args.JOB_DIR, args.param, args.verbose)
 
 
 if __name__ == '__main__':

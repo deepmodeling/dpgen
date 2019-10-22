@@ -5,11 +5,7 @@ import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 __package__ = 'generator'
-from .context import make_fp_vasp
-from .context import make_fp_pwscf
-from .context import make_fp_siesta
-from .context import make_fp_gaussian
-from .context import make_fp_cp2k
+from .context import make_fp
 from .context import detect_multiplicity
 from .context import parse_cur_job
 from .context import param_file
@@ -29,6 +25,7 @@ from .comp_sys import test_atom_types
 from .comp_sys import test_coord
 from .comp_sys import test_cell
 from pymatgen.io.vasp import Kpoints,Incar
+import scipy.constants as pc
 
 vasp_incar_ref = "PREC=A\n\
 ENCUT=600\n\
@@ -42,6 +39,26 @@ NELMIN=4\n\
 ISIF=2\n\
 ISMEAR=1\n\
 SIGMA=0.25\n\
+IBRION=-1\n\
+NSW=0\n\
+LWAVE=F\n\
+LCHARG=F\n\
+PSTRESS=0\n\
+KSPACING=0.16\n\
+KGAMMA=F\n";
+
+vasp_incar_ele_temp_ref = "PREC=A\n\
+ENCUT=600\n\
+ISYM=0\n\
+ALGO=fast\n\
+EDIFF=1e-05\n\
+LREAL=A\n\
+NPAR=1\n\
+KPAR=1\n\
+NELMIN=4\n\
+ISIF=2\n\
+ISMEAR=-1\n\
+SIGMA=%.10f\n\
 IBRION=-1\n\
 NSW=0\n\
 LWAVE=F\n\
@@ -228,10 +245,12 @@ def _write_lammps_dump(sys, dump_file, f_idx = 0) :
             fp.write('%d %d %f %f %f\n' % (ii+1, atype[ii]+1, coord[ii][0], coord[ii][1], coord[ii][2]))
 
 
-def _make_fake_md(idx, md_descript, atom_types, type_map) :
+def _make_fake_md(idx, md_descript, atom_types, type_map, ele_temp = None) :
     """
     md_descript: list of dimension
                  [n_sys][n_MD][n_frame]
+    ele_temp: list of dimension
+                 [n_sys][n_MD]
     """
     natoms = len(atom_types)
     ntypes = len(type_map)
@@ -261,6 +280,9 @@ def _make_fake_md(idx, md_descript, atom_types, type_map) :
             md_out[:,0] = np.arange(nframes)
             md_out[:,4] = mm
             np.savetxt(os.path.join(task_dir, 'model_devi.out'), md_out)
+            if ele_temp is not None:
+                with open(os.path.join(task_dir, 'job.json'), 'w') as fp:
+                    json.dump({"ele_temp": ele_temp[sidx][midx]}, fp)
 
 
 def _check_poscars(testCase, idx, fp_task_max, type_map) :
@@ -316,7 +338,7 @@ def _check_kpoints(testCase, idx) :
 
 def _check_incar_exists(testCase, idx) :
     fp_path = os.path.join('iter.%06d' % idx, '02.fp')
-    testCase.assertTrue(os.path.isfile(os.path.join(fp_path, 'INCAR')))
+    # testCase.assertTrue(os.path.isfile(os.path.join(fp_path, 'INCAR')))
     tasks = glob.glob(os.path.join(fp_path, 'task.*'))
     for ii in tasks :
         my_file_cmp(testCase,
@@ -360,10 +382,35 @@ def _check_sel(testCase, idx, fp_task_max, flo, fhi):
 
 def _check_incar(testCase, idx):
     fp_path = os.path.join('iter.%06d' % idx, '02.fp')
-    with open(os.path.join(fp_path, 'INCAR')) as fp:
-        incar = fp.read()
-    testCase.assertEqual(incar.strip(), vasp_incar_ref.strip())
+    tasks = glob.glob(os.path.join(fp_path, 'task.*'))
+    cwd = os.getcwd()
+    for ii in tasks :    
+        os.chdir(ii)
+        with open('INCAR') as fp:
+            incar = fp.read()
+            testCase.assertEqual(incar.strip(), vasp_incar_ref.strip())
+        os.chdir(cwd)
 
+def _check_incar_ele_temp(testCase, idx, ele_temp):
+    fp_path = os.path.join('iter.%06d' % idx, '02.fp')
+    tasks = glob.glob(os.path.join(fp_path, 'task.*'))
+    cwd = os.getcwd()
+    for ii in tasks :            
+        os.chdir(ii)
+        bname = os.path.basename(ii)
+        sidx = int(bname.split('.')[1])
+        tidx = int(bname.split('.')[2])
+        with open('INCAR') as fp:
+            incar = fp.read()
+            incar0 = Incar.from_string(incar)
+            # make_fake_md: the frames in a system shares the same ele_temp
+            incar1 = Incar.from_string(vasp_incar_ele_temp_ref%(ele_temp[sidx][0] * pc.Boltzmann / pc.electron_volt))
+            for ii in incar0.keys():
+                # skip checking nbands...
+                if ii == 'NBANDS':
+                    continue
+                testCase.assertAlmostEqual(incar0[ii], incar1[ii], msg = 'key %s differ' % (ii), places = 5)
+        os.chdir(cwd)
 
 def _check_pwscf_input_head(testCase, idx) :
     fp_path = os.path.join('iter.%06d' % idx, '02.fp')
@@ -446,7 +493,7 @@ class TestMakeFPPwscf(unittest.TestCase):
         atom_types = [0, 1, 2, 2, 0, 1]
         type_map = jdata['type_map']
         _make_fake_md(0, md_descript, atom_types, type_map)
-        make_fp_pwscf(0, jdata)
+        make_fp(0, jdata, {})
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
         _check_pwscf_input_head(self, 0)
@@ -472,7 +519,7 @@ class TestMakeFPPwscf(unittest.TestCase):
         atom_types = [0, 1, 2, 2, 0, 1]
         type_map = jdata['type_map']
         _make_fake_md(0, md_descript, atom_types, type_map)
-        make_fp_pwscf(0, jdata)
+        make_fp(0, jdata, {})
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
         _check_pwscf_input_head(self, 0)
@@ -499,7 +546,7 @@ class TestMakeFPSIESTA(unittest.TestCase):
         atom_types = [0, 1, 2, 2, 0, 1]
         type_map = jdata['type_map']
         _make_fake_md(0, md_descript, atom_types, type_map)
-        make_fp_siesta(0, jdata)
+        make_fp(0, jdata, {})
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
         _check_siesta_input_head(self, 0)
@@ -526,10 +573,10 @@ class TestMakeFPVasp(unittest.TestCase):
         atom_types = [0, 1, 0, 1]
         type_map = jdata['type_map']
         _make_fake_md(0, md_descript, atom_types, type_map)
-        make_fp_vasp(0, jdata)
+        make_fp(0, jdata, {})
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
-        _check_incar_exists(self, 0)
+        # _check_incar_exists(self, 0)
         _check_incar(self, 0)
         _check_kpoints_exists(self, 0)
         _check_kpoints(self,0)
@@ -556,10 +603,10 @@ class TestMakeFPVasp(unittest.TestCase):
         atom_types = [0, 1, 0, 1]
         type_map = jdata['type_map']
         _make_fake_md(0, md_descript, atom_types, type_map)
-        make_fp_vasp(0, jdata)
+        make_fp(0, jdata, {})
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
-        _check_incar_exists(self, 0)
+        # _check_incar_exists(self, 0)
         _check_incar(self, 0)
         _check_kpoints_exists(self, 0)
         _check_kpoints(self,0)
@@ -586,10 +633,10 @@ class TestMakeFPVasp(unittest.TestCase):
         atom_types = [0, 1, 0, 1]
         type_map = jdata['type_map']
         _make_fake_md(0, md_descript, atom_types, type_map)
-        make_fp_vasp(0, jdata)
+        make_fp(0, jdata, {})
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
-        _check_incar_exists(self, 0)
+        # _check_incar_exists(self, 0)
         _check_incar(self, 0)
         _check_kpoints_exists(self, 0)
         _check_kpoints(self,0)
@@ -620,11 +667,45 @@ class TestMakeFPVasp(unittest.TestCase):
         atom_types = [0, 1, 0, 1]
         type_map = jdata['type_map']
         _make_fake_md(0, md_descript, atom_types, type_map)
-        make_fp_vasp(0, jdata)
+        make_fp(0, jdata, {})
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
-        _check_incar_exists(self, 0)
+        # _check_incar_exists(self, 0)
         _check_incar(self, 0)
+        _check_kpoints_exists(self, 0)
+        _check_kpoints(self,0)
+        # checked elsewhere
+        # _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
+        shutil.rmtree('iter.000000')
+
+    def test_make_fp_vasp_ele_temp(self):
+        ## Verify if user chooses to diy VASP INCAR totally.
+        if os.path.isdir('iter.000000') :
+            shutil.rmtree('iter.000000')
+        with open (param_diy_file, 'r') as fp :
+            jdata = json.load (fp)
+        fp.close()
+        with open (machine_file, 'r') as fp:
+            mdata = json.load (fp)
+        fp.close()
+        md_descript = []
+        ele_temp = []
+        nsys = 2
+        nmd = 3
+        n_frame = 10
+        for ii in range(nsys) :
+            tmp = []
+            for jj in range(nmd) :
+                tmp.append(np.arange(0, 0.29, 0.29/10))
+            md_descript.append(tmp)
+            ele_temp.append([np.random.random() * 100000] * nmd)
+        atom_types = [0, 1, 0, 1]
+        type_map = jdata['type_map']
+        _make_fake_md(0, md_descript, atom_types, type_map, ele_temp = ele_temp)
+        make_fp(0, jdata, {})
+        _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
+        _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
+        _check_incar_ele_temp(self, 0, ele_temp)
         _check_kpoints_exists(self, 0)
         _check_kpoints(self,0)
         # checked elsewhere
@@ -652,7 +733,7 @@ class TestMakeFPGaussian(unittest.TestCase):
         atom_types = [0, 1, 2, 2, 0, 1]
         type_map = jdata['type_map']
         _make_fake_md(0, md_descript, atom_types, type_map)
-        make_fp_gaussian(0, jdata)
+        make_fp(0, jdata, {})
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
         _check_gaussian_input_head(self, 0)
@@ -694,7 +775,7 @@ class TestMakeFPCP2K(unittest.TestCase):
         atom_types = [0, 1, 2, 2, 0, 1]
         type_map = jdata['type_map']
         _make_fake_md(0, md_descript, atom_types, type_map)
-        make_fp_cp2k(0, jdata)
+        make_fp(0, jdata, {})
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
         _check_cp2k_input_head(self, 0)

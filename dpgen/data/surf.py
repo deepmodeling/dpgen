@@ -11,10 +11,14 @@ import dpgen.data.tools.bcc as bcc
 from dpgen import dlog
 import time
 from dpgen import ROOT_PATH
-from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
-from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
+from dpgen.remote.decide_machine import  decide_fp_machine
 from pymatgen.core.surface import SlabGenerator,generate_all_slabs, Structure
 from pymatgen.io.vasp import Poscar
+from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher
+#-----ASE-------
+from pymatgen.io.ase import AseAtomsAdaptor
+from ase.io import read
+from ase.build import general_surface
 
 def create_path (path) :
     path += '/'
@@ -195,10 +199,16 @@ def make_super_cell_pymatgen (jdata) :
     from_path = path_uc
     from_file = os.path.join(from_path, 'POSCAR.unit')
     ss = Structure.from_file(from_file)
+    # ase only support X type  element
+    for i in range(len(ss)):
+        ss[i]='X'
+    ss=AseAtomsAdaptor.get_atoms(ss)
+
 
     all_millers = jdata['millers']
     path_sc = os.path.join(out_dir, global_dirname_02)
-    z_min = jdata['z_min']
+    #z_min = jdata['z_min']
+    layer_numb = jdata['layer_numb']
     super_cell = jdata['super_cell']
 
     cwd = os.getcwd()    
@@ -211,11 +221,13 @@ def make_super_cell_pymatgen (jdata) :
             miller_str += str(ii)        
         path_cur_surf = create_path('surf-'+miller_str)
         os.chdir(path_cur_surf)
-        slabgen = SlabGenerator(ss, miller, z_min, 1e-3)
-        all_slabs = slabgen.get_slabs() 
+        #slabgen = SlabGenerator(ss, miller, z_min, 1e-3)
+        slab=general_surface.surface(ss,indices=miller,vacuum=1e-3,layers=layer_numb)
+        #all_slabs = slabgen.get_slabs() 
         dlog.info(os.getcwd())
-        dlog.info("Miller %s: The slab has %s termination, use the first one" %(str(miller), len(all_slabs)))
-        all_slabs[0].to('POSCAR', 'POSCAR')
+        #dlog.info("Miller %s: The slab has %s termination, use the first one" %(str(miller), len(all_slabs)))
+        #all_slabs[0].to('POSCAR', 'POSCAR')
+        slab.write('POSCAR',vasp5=True)
         if super_cell[0] > 1 or super_cell[1] > 1 :
             st=Structure.from_file('POSCAR')
             st.make_supercell([super_cell[0], super_cell[1], 1])
@@ -279,11 +291,7 @@ def place_element (jdata) :
 def make_vasp_relax (jdata) :
     out_dir = jdata['out_dir']
     potcars = jdata['potcars']
-    #encut = jdata['encut']
-    #kspacing = jdata['kspacing_relax']
-    #kgamma = jdata['kgamma']
     cwd = os.getcwd()
-    #vasp_dir = os.path.join(cwd, 'vasp.in')
 
     work_dir = os.path.join(out_dir, global_dirname_02)
     assert (os.path.isdir(work_dir))
@@ -301,13 +309,6 @@ def make_vasp_relax (jdata) :
                 outfile.write(infile.read())
     
     os.chdir(work_dir)
-    #replace('INCAR', 'ENCUT=.*', 'ENCUT=%f' % encut)
-    #replace('INCAR', 'ISIF=.*', 'ISIF=3')
-    #replace('INCAR', 'KSPACING=.*', 'KSPACING=%f' % kspacing)
-    #if kgamma :
-    #    replace('INCAR', 'KGAMMA=.*', 'KGAMMA=T')
-    #else :
-    #    replace('INCAR', 'KGAMMA=.*', 'KGAMMA=F')
     
     sys_list = glob.glob(os.path.join('surf-*', 'sys-*'))
     for ss in sys_list:
@@ -375,12 +376,14 @@ def make_scale(jdata):
     create_path(work_path)
     for ii in init_sys :
         for jj in scale :
-            pos_src = os.path.join(os.path.join(init_path, ii), 'CONTCAR')
-            if not os.path.isfile(pos_src):
-                if skip_relax :
-                    pos_src = os.path.join(os.path.join(init_path, ii), 'POSCAR')
+            if skip_relax :
+                pos_src = os.path.join(os.path.join(init_path, ii), 'POSCAR')
+                assert(os.path.isfile(pos_src))
+            else :
+                try:
+                    pos_src = os.path.join(os.path.join(init_path, ii), 'CONTCAR')
                     assert(os.path.isfile(pos_src))
-                else :
+                except:
                     raise RuntimeError("not file %s, vasp relaxation should be run before scale poscar")
             scale_path = os.path.join(work_path, ii)
             scale_path = os.path.join(scale_path, "scale-%.3f" % jj)
@@ -406,7 +409,7 @@ def pert_scaled(jdata) :
           tail_elongs = np.arange(mid_point, vacuum_max, vacuum_resol[1]).tolist()
           elongs = np.unique(head_elongs+tail_elongs).tolist()
        else:
-          raise RuntimeError("the length of vacuum_resol must equal 2")
+          raise RuntimeError("the length of vacuum_resol must equal 1 or 2")
           
     else:         
        vacuum_num = jdata['vacuum_numb']
@@ -470,41 +473,8 @@ def _vasp_check_fin (ii) :
     else :
         return False
     return True
-def _group_slurm_jobs(ssh_sess,
-                      resources,
-                      command,
-                      work_path,
-                      tasks,
-                      group_size,
-                      forward_common_files,
-                      forward_task_files,
-                      backward_task_files,
-                      remote_job = SlurmJob) :
-    task_chunks = [
-        [j for j in tasks[i:i + group_size]] \
-        for i in range(0, len(tasks), group_size)
-    ]
-    job_list = []
-    for chunk in task_chunks :
-        rjob = remote_job(ssh_sess, work_path)
-        rjob.upload('.',  forward_common_files)
-        rjob.upload(chunk, forward_task_files)
-        rjob.submit(chunk, command, resources = resources)
-        job_list.append(rjob)
 
-    job_fin = [False for ii in job_list]
-    while not all(job_fin) :
-        for idx,rjob in enumerate(job_list) :
-            if not job_fin[idx] :
-                status = rjob.check_status()
-                if status == JobStatus.terminated :
-                    raise RuntimeError("find unsuccessfully terminated job in %s" % rjob.get_job_root())
-                elif status == JobStatus.finished :
-                    rjob.download(task_chunks[idx], backward_task_files)
-                    rjob.clean()
-                    job_fin[idx] = True
-        time.sleep(10)
-def run_vasp_relax(jdata, mdata, ssh_sess):
+def run_vasp_relax(jdata, mdata, dispatcher):
     fp_command = mdata['fp_command']
     fp_group_size = mdata['fp_group_size']
     fp_resources = mdata['fp_resources']
@@ -531,16 +501,15 @@ def run_vasp_relax(jdata, mdata, ssh_sess):
     run_tasks = [ii.replace(work_dir+"/", "") for ii in relax_run_tasks]
 
     #dlog.info(run_tasks)
-    assert (machine_type == "slurm" or machine_type =="Slurm"), "Currently only support for Slurm!"
-    _group_slurm_jobs(ssh_sess,
-                           fp_resources,
-                           fp_command,
-                           work_dir,
-                           run_tasks,
-                           fp_group_size,
-                           forward_common_files,
-                           forward_files,
-                           backward_files)              
+    dispatcher.run_jobs(fp_resources,
+                       [fp_command],
+                       work_dir,
+                       run_tasks,
+                       fp_group_size,
+                       forward_common_files,
+                       forward_files,
+                       backward_files)
+
 def gen_init_surf(args):
     try:
        import ruamel
@@ -563,8 +532,8 @@ def gen_init_surf(args):
     if args.MACHINE is not None:
        # Decide a proper machine
        mdata = decide_fp_machine(mdata)
-       fp_machine = mdata['fp_machine']
-       fp_ssh_sess = SSHSession(fp_machine)  
+       disp = make_dispatcher(mdata["fp_machine"])
+
     #stage = args.STAGE
     stage_list = [int(i) for i in jdata['stages']]
     for stage in stage_list:
@@ -574,67 +543,19 @@ def gen_init_surf(args):
             place_element(jdata)
             make_vasp_relax(jdata)
             if args.MACHINE is not None:
-               run_vasp_relax(jdata, mdata, fp_ssh_sess)
-        # elif stage == 0 :
-        #     # create_path(out_dir)
-        #     # make_super_cell(jdata)
-        #     # place_element(jdata)
-        #     # make_vasp_relax(jdata)
-        #     # make_scale(jdata)
-        #     # pert_scaled(jdata)
-        #     # poscar_elong('POSCAR', 'POSCAR.out', 3)
-        #     pert_scaled(jdata)
+               run_vasp_relax(jdata, mdata, disp)
         elif stage == 2 :
             make_scale(jdata)
             pert_scaled(jdata)
         else :
             raise RuntimeError("unknown stage %d" % stage)
     
-def _main() :
-    parser = argparse.ArgumentParser(
-        description="gen init confs")
-    parser.add_argument('PARAM', type=str, 
-                        help="parameter file, json format")
-    parser.add_argument('STAGE', type=int,
-                        help="the stage of init, can be 1 or 2 "
-                        "1: Setup vasp jobs for relaxation. "
-                        "2: Collect vasp relaxed confs (if relax is not skiped). Perturb system. "
-    )
-    args = parser.parse_args()
-    try:
-       import ruamel
-       from monty.serialization import loadfn,dumpfn
-       warnings.simplefilter('ignore', ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
-       jdata=loadfn(args.PARAM)
-    except:
-       with open (args.PARAM, 'r') as fp :
-           jdata = json.load (fp)
-
-    out_dir = out_dir_name(jdata)
-    jdata['out_dir'] = out_dir
-    dlog.info ("# working dir %s" % out_dir)
-
-    stage = args.STAGE
-
-    if stage == 1 :
-        create_path(out_dir)
-        make_super_cell_pymatgen(jdata)
-        place_element(jdata)
-        make_vasp_relax(jdata)
-    # elif stage == 0 :
-    #     # create_path(out_dir)
-    #     # make_super_cell(jdata)
-    #     # place_element(jdata)
-    #     # make_vasp_relax(jdata)
-    #     # make_scale(jdata)
-    #     # pert_scaled(jdata)
-    #     # poscar_elong('POSCAR', 'POSCAR.out', 3)
-    #     pert_scaled(jdata)
-    elif stage == 2 :
-        make_scale(jdata)
-        pert_scaled(jdata)
-    else :
-        raise RuntimeError("unknow stage %d" % stage)
-    
 if __name__ == "__main__":
-    _main()
+   parser = argparse.ArgumentParser(
+       description="Generating initial data for surface systems.")
+   parser.add_argument('PARAM', type=str, 
+                       help="parameter file, json/yaml format")
+   parser.add_argument('MACHINE', type=str,default=None,nargs="?",
+                       help="machine file, json/yaml format")
+   args = parser.parse_args()
+   gen_init_surf(args)
