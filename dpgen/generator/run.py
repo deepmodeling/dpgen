@@ -288,7 +288,7 @@ def make_train (iter_index,
             jinput['model']['fitting_net']['numb_aparam'] = 1
             jinput['model']['fitting_net'].pop('numb_fparam', None)
         else:
-            raise RuntimeError('invalid setting for use_ele_temp ' + use_ele_temp)
+            raise RuntimeError('invalid setting for use_ele_temp ' + str(use_ele_temp))
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         create_path(task_path)
@@ -1419,7 +1419,7 @@ def post_fp_vasp (iter_index,
                    np.savetxt(os.path.join(sys_data_path, 'aparam.raw'), tile_te)
                    np.save(os.path.join(sys_data_path, 'set.000', 'aparam.npy'), tile_te)
                else:
-                   raise RuntimeError('invalid setting of use_ele_temp ' + use_ele_temp)
+                   raise RuntimeError('invalid setting of use_ele_temp ' + str(use_ele_temp))
 
     dlog.info("failed frame number: %s "%icount)
     dlog.info("total frame number: %s "%tcount)
