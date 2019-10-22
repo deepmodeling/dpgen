@@ -13,10 +13,13 @@ def comput_lmp_eos(conf_dir, task_name) :
     vol_paths = glob.glob(os.path.join(conf_path, 'vol-*'))
     vol_paths.sort()
     print('Vpa(A^3)\tEpA(eV)')
-    for ii in vol_paths :
-        log_lammps = os.path.join(ii, 'log.lammps')
-        natoms, epa, vpa = lammps.get_nev(log_lammps)
-        print(vpa, epa)
+    with open(os.path.join(conf_path,'result'),'w') as fp:
+        fp.write('conf_dir:%s\n VpA(A^3)  EpA(eV)\n'% (conf_dir))
+        for ii in vol_paths :
+            log_lammps = os.path.join(ii, 'log.lammps')
+            natoms, epa, vpa = lammps.get_nev(log_lammps)
+            print(vpa, epa)
+            fp.write('%7.3f  %8.4f \n' % (vpa,epa))
 
 def comput_vasp_eos(jdata, conf_dir) :
     conf_path = re.sub('confs', global_task_name, conf_dir)
@@ -31,10 +34,13 @@ def comput_vasp_eos(jdata, conf_dir) :
     vol_paths = glob.glob(os.path.join(task_path, 'vol-*'))
     vol_paths.sort()
     print('Vpa(A^3)\tEpA(eV)')
-    for ii in vol_paths :
-        outcar = os.path.join(ii, 'OUTCAR')
-        natoms, epa, vpa = vasp.get_nev(outcar)
-        print(vpa, epa)
+    with open(os.path.join(conf_path,'result'),'w') as fp:
+        fp.write('conf_dir:%s\n VpA(A^3)  EpA(eV)\n'% (conf_dir))
+        for ii in vol_paths :
+            outcar = os.path.join(ii, 'OUTCAR')
+            natoms, epa, vpa = vasp.get_nev(outcar)
+            print(vpa, epa)
+            fp.write('%7.3f  %8.4f \n' % (vpa,epa))
 
 def _main():
     parser = argparse.ArgumentParser(
