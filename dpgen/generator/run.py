@@ -279,14 +279,16 @@ def make_train (iter_index,
         jinput['training']['systems'] = init_data_sys
         jinput['training']['batch_size'] = init_batch_size
         # electron temperature
-        if use_ele_temp == 1:
+        if use_ele_temp == 0:
+            pass
+        elif use_ele_temp == 1:
             jinput['model']['fitting_net']['numb_fparam'] = 1
             jinput['model']['fitting_net'].pop('numb_aparam', None)
         elif use_ele_temp == 2:
             jinput['model']['fitting_net']['numb_aparam'] = 1
             jinput['model']['fitting_net'].pop('numb_fparam', None)
         else:
-            raise RuntimeError('invalid setting for use_ele_temp')
+            raise RuntimeError('invalid setting for use_ele_temp ' + use_ele_temp)
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         create_path(task_path)
@@ -1407,7 +1409,9 @@ def post_fp_vasp (iter_index,
                assert(len(all_sys) == all_sys.get_nframes())
                assert(len(all_sys) == all_te.size)
                all_te = np.reshape(all_te, [-1,1])
-               if use_ele_temp == 1:
+               if use_ele_temp == 0:
+                   raise RuntimeError('should not get ele temp at setting: use_ele_temp == 0')
+               elif use_ele_temp == 1:
                    np.savetxt(os.path.join(sys_data_path, 'fparam.raw'), all_te)
                    np.save(os.path.join(sys_data_path, 'set.000', 'fparam.npy'), all_te)
                elif use_ele_temp == 2:
