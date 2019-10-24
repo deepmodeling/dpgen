@@ -43,16 +43,14 @@ def print_et (et):
     print("# Poission Ratio uV = %.2f " % (uV))
 
 def cmpt_vasp(jdata, conf_dir) :
-    fp_params = jdata['vasp_params']
-    kspacing = fp_params['kspacing']
-    kgamma = fp_params['kgamma']
-
     conf_path = os.path.abspath(conf_dir)
     conf_poscar = os.path.join(conf_path, 'POSCAR')
     task_path = re.sub('confs', global_task_name, conf_path)
     if 'relax_incar' in jdata.keys():
         vasp_str='vasp-relax_incar'
     else:
+        fp_params = jdata['vasp_params']
+        kspacing = fp_params['kspacing']
         vasp_str='vasp-k%.2f' % kspacing 
     task_path = os.path.join(task_path, vasp_str)
 
@@ -76,10 +74,6 @@ def cmpt_vasp(jdata, conf_dir) :
     result_et(et,conf_dir,task_path)
 
 def cmpt_deepmd_lammps(jdata, conf_dir, task_name) :
-    deepmd_model_dir = jdata['deepmd_model_dir']
-    deepmd_type_map = jdata['deepmd_type_map']
-    ntypes = len(deepmd_type_map)    
-
     conf_path = os.path.abspath(conf_dir)
     conf_poscar = os.path.join(conf_path, 'POSCAR')
     task_path = re.sub('confs', global_task_name, conf_path)
