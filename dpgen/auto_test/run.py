@@ -74,7 +74,7 @@ def _run(machine,
                             common_files,
                             forward_files,
                             backward_files)
-    elif machine_type == 'slurm' :        
+    elif machine_type == 'slurm' :
         print("The second situation!")
         group_slurm_jobs(ssh_sess,
                            resources,
@@ -86,7 +86,7 @@ def _run(machine,
                            forward_files,
                            backward_files,
                            forward_task_deference =False)
-    elif machine_type == 'pbs' :        
+    elif machine_type == 'pbs' :
         group_slurm_jobs(ssh_sess,
                            resources,
                            command,
@@ -98,7 +98,7 @@ def _run(machine,
                            backward_files,
                           remote_job = PBSJob,
                           forward_task_deference =False)
-    elif machine_type == 'local' :        
+    elif machine_type == 'local' :
         group_local_jobs(ssh_sess,
                            resources,
                            command,
@@ -131,7 +131,7 @@ def make_work_path(jdata,task,reprod_opt,static,user):
         else:
             if 'relax_incar' in jdata.keys():
                 task_type=task_type+'-relax_incar'
-            else: 
+            else:
                 kspacing = jdata['vasp_params']['kspacing']
                 task_type=task_type+'-k%.2f' % (kspacing)
     elif task_type in lammps_task_type:
@@ -159,13 +159,13 @@ def gen_equi(task_type,jdata,mdata):
     else :
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
     os.chdir(cwd)
-        
+
 def run_equi(task_type,jdata,mdata,ssh_sess):
         #rmprint("This module has been run !")
 
     work_path=make_work_path(jdata,'00.equi',False,False,False)
     all_task = glob.glob(os.path.join(work_path,'.'))
-    
+
     #vasp
     if task_type=="vasp":
         mdata=decide_fp_machine(mdata)
@@ -198,7 +198,7 @@ def run_equi(task_type,jdata,mdata,ssh_sess):
         resources = mdata['model_devi_resources']
         machine=mdata['model_devi_machine']
         machine_type = mdata['model_devi_machine']['machine_type']
-        
+
         command = lmp_exec + " -i lammps.in"
         command = cmd_append_log(command, "model_devi.log")
 
@@ -216,7 +216,7 @@ def run_equi(task_type,jdata,mdata,ssh_sess):
                     run_tasks_.append(ii)
             else :
                 run_tasks_.append(ii)
-        
+
         forward_files = ['conf.lmp', 'lammps.in']
         backward_files = ['dump.relax','log.lammps', 'model_devi.log']
 
@@ -230,13 +230,13 @@ def run_equi(task_type,jdata,mdata,ssh_sess):
         else:
             models = [os.path.join(model_dir,ii) for ii in model_name]
         common_files = model_name
-        
+
         if len(model_name)>1 and task_type == 'deepmd':
             backward_files = backward_files + ['model_devi.out']
 
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
-    
+
     run_tasks = [os.path.basename(ii) for ii in run_tasks_]
     _run(machine,
          machine_type,
@@ -271,13 +271,13 @@ def gen_eos(task_type,jdata,mdata):
     cwd=os.getcwd()
     #vasp
     if task_type == "vasp":
-        gen_01_eos.make_vasp(jdata, conf_dir)  
-    #lammps             
+        gen_01_eos.make_vasp(jdata, conf_dir)
+    #lammps
     elif task_type in lammps_task_type:
         if fix_shape :
             gen_01_eos.make_lammps_fixv(jdata, conf_dir,task_type)
         else :
-            gen_01_eos.make_lammps(jdata, conf_dir,task_type)                 
+            gen_01_eos.make_lammps(jdata, conf_dir,task_type)
     else :
         raise RuntimeError("unknow task ", task_type)
     os.chdir(cwd)
@@ -288,7 +288,7 @@ def run_eos(task_type,jdata,mdata,ssh_sess):
 
     all_task = glob.glob(os.path.join(work_path, "vol-*"))
     all_task.sort()
-    
+
     #vasp
     if task_type=="vasp":
         mdata=decide_fp_machine(mdata)
@@ -351,7 +351,7 @@ def run_eos(task_type,jdata,mdata,ssh_sess):
         forward_files = ['conf.lmp', 'lammps.in']+model_name
         backward_files = ['log.lammps', 'model_devi.log']
         common_files=['lammps.in']+model_name
-                
+
         if len(model_name)>1 and task_type == 'deepmd':
             backward_files = backward_files + ['model_devi.out']
 
@@ -375,10 +375,10 @@ def cmpt_eos(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
     #vasp
     if task_type == "vasp":
-        cmpt_01_eos.comput_vasp_eos(jdata, conf_dir)   
-    #lammps             
+        cmpt_01_eos.comput_vasp_eos(jdata, conf_dir)
+    #lammps
     elif task_type in lammps_task_type:
-        cmpt_01_eos.comput_lmp_eos(conf_dir, task_type)
+        cmpt_01_eos.comput_lmp_eos(jdata, conf_dir, task_type)
     else :
         raise RuntimeError("unknow task ", task_type)
 
@@ -398,10 +398,10 @@ def gen_elastic(task_type,jdata,mdata):
 def run_elastic(task_type,jdata,mdata,ssh_sess):
     work_path=make_work_path(jdata,'02.elastic',False,False,False)
     print(work_path)
-    
+
     all_task = glob.glob(os.path.join(work_path, "dfm-*"))
     all_task.sort()
-    
+
     #vasp
     if task_type == "vasp":
         mdata=decide_fp_machine(mdata)
@@ -464,13 +464,13 @@ def run_elastic(task_type,jdata,mdata,ssh_sess):
         forward_files = ['conf.lmp', 'lammps.in','strain.out']+model_name
         backward_files = ['log.lammps', 'model_devi.log']
         common_files=['lammps.in']+model_name
-                
+
         if len(model_name)>1 and task_type == 'deepmd':
             backward_files = backward_files + ['model_devi.out']
 
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
-        
+
     run_tasks = [os.path.basename(ii) for ii in run_tasks_]
     _run(machine,
          machine_type,
@@ -483,16 +483,16 @@ def run_elastic(task_type,jdata,mdata,ssh_sess):
          common_files,
          forward_files,
          backward_files)
-    
+
 def cmpt_elastic(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
     if task_type == "vasp":
-        cmpt_02_elastic.cmpt_vasp(jdata, conf_dir)               
+        cmpt_02_elastic.cmpt_vasp(jdata, conf_dir)
     elif task_type in lammps_task_type:
         cmpt_02_elastic.cmpt_deepmd_lammps(jdata, conf_dir, task_type)
     else :
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
-    
+
 def gen_vacancy(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
     supercell=jdata['supercell']
@@ -511,7 +511,7 @@ def run_vacancy(task_type,jdata,mdata,ssh_sess):
 
     work_path=make_work_path(jdata,'03.vacancy',False,False,False)
     all_task = glob.glob(os.path.join(work_path,'struct-*'))
-    
+
     #vasp
     if task_type == "vasp":
         mdata=decide_fp_machine(mdata)
@@ -531,7 +531,7 @@ def run_vacancy(task_type,jdata,mdata,ssh_sess):
                     run_tasks_.append(ii)
             else :
                 run_tasks_.append(ii)
-        
+
         forward_files = ['INCAR', 'POSCAR','POTCAR']
         backward_files = ['OUTCAR','OSZICAR']
         common_files=['INCAR','POTCAR']
@@ -561,7 +561,7 @@ def run_vacancy(task_type,jdata,mdata,ssh_sess):
                     run_tasks_.append(ii)
             else :
                 run_tasks_.append(ii)
-        
+
         fp_params = jdata['lammps_params']
         model_dir = fp_params['model_dir']
         model_dir = os.path.abspath(model_dir)
@@ -581,7 +581,7 @@ def run_vacancy(task_type,jdata,mdata,ssh_sess):
 
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
-        
+
     run_tasks = [os.path.basename(ii) for ii in run_tasks_]
     _run(machine,
          machine_type,
@@ -600,7 +600,7 @@ def cmpt_vacancy(task_type,jdata,mdata):
     supercell=jdata['supercell']
     #vasp
     if task_type == "vasp":
-        cmpt_03_vacancy.cmpt_vasp(jdata, conf_dir, supercell)               
+        cmpt_03_vacancy.cmpt_vasp(jdata, conf_dir, supercell)
     #lammps
     elif task_type in lammps_task_type:
         cmpt_03_vacancy.cmpt_deepmd_lammps(jdata, conf_dir, supercell, task_type)
@@ -631,7 +631,7 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
     reprod_opt=jdata['reprod-opt']
     work_path=make_work_path(jdata,'04.interstitial',reprod_opt,False,False)
     all_task = glob.glob(os.path.join(work_path,'struct-*'))
-    
+
     #vasp
     if task_type == "vasp":
         mdata=decide_fp_machine(mdata)
@@ -651,7 +651,7 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
                     run_tasks_.append(ii)
             else :
                 run_tasks_.append(ii)
-        
+
         forward_files = ['INCAR', 'POSCAR','POTCAR']
         backward_files = ['OUTCAR','XDATCAR','OSZICAR']
         common_files=['INCAR']
@@ -666,7 +666,7 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
         machine_type = mdata['model_devi_machine']['machine_type']
         command = lmp_exec + " -i lammps.in"
         command = cmd_append_log(command, "model_devi.log")
-        
+
         if reprod_opt:
             all_frame=[]
             for ii in all_task:
@@ -701,7 +701,7 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
         forward_files = ['conf.lmp', 'lammps.in']+model_name
         backward_files = ['log.lammps', 'model_devi.log']
         common_files=['lammps.in']+model_name
-                
+
         if len(model_name)>1 and task_type == 'deepmd':
             backward_files = backward_files + ['model_devi.out']
 
@@ -717,7 +717,7 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
             _run(machine,
              machine_type,
              ssh_sess,
-             resources, 
+             resources,
              command,
              ii,
              run_tasks,
@@ -778,9 +778,9 @@ def gen_surf(task_type,jdata,mdata):
 def run_surf(task_type,jdata,mdata,ssh_sess):
     static=jdata['static-opt']
     work_path=make_work_path(jdata,'05.surf',False,static,False)
-    
+
     all_task = glob.glob(os.path.join(work_path,'struct-*'))
-     
+
     #vasp
     if task_type == "vasp":
         mdata=decide_fp_machine(mdata)
@@ -800,7 +800,7 @@ def run_surf(task_type,jdata,mdata,ssh_sess):
                     run_tasks_.append(ii)
             else :
                 run_tasks_.append(ii)
-            
+
 
         forward_files = ['INCAR', 'POSCAR','POTCAR']
         backward_files = ['OUTCAR','OSZICAR']
@@ -844,13 +844,13 @@ def run_surf(task_type,jdata,mdata,ssh_sess):
         forward_files = ['conf.lmp', 'lammps.in']+model_name
         backward_files = ['log.lammps','model_devi.log']
         common_files=['lammps.in']+model_name
-                
+
         if len(model_name)>1 and task_type == 'deepmd':
             backward_files = backward_files + ['model_devi.out']
 
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
-    
+
     run_tasks = [os.path.basename(ii) for ii in run_tasks_]
     _run(machine,
          machine_type,
@@ -870,8 +870,8 @@ def cmpt_surf(task_type,jdata,mdata):
     cwd=os.getcwd()
     #vasp
     if task_type == "vasp":
-        cmpt_05_surf.cmpt_vasp(jdata, conf_dir, static = static_opt) 
-    #lammps        
+        cmpt_05_surf.cmpt_vasp(jdata, conf_dir, static = static_opt)
+    #lammps
     elif task_type in lammps_task_type :
         if static_opt:
             task_name =task_type+'-static'
@@ -898,9 +898,9 @@ def gen_phonon(task_type,jdata,mdata):
 def run_phonon(task_type,jdata,mdata,ssh_sess):
     user= ('user_incar' in jdata.keys())
     work_path=make_work_path(jdata,'06.phonon',False,False,user)
-    
+
     all_task = glob.glob(os.path.join(work_path,'.'))
-     
+
     #vasp
     if task_type == "vasp":
         mdata=decide_fp_machine(mdata)
@@ -920,7 +920,7 @@ def run_phonon(task_type,jdata,mdata,ssh_sess):
                     run_tasks_.append(ii)
             else :
                 run_tasks_.append(ii)
-            
+
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
         forward_files = ['INCAR', 'POTCAR','KPOINTS']
         backward_files = ['OUTCAR','OSZICAR','vasprun.xml']
@@ -948,13 +948,13 @@ def cmpt_phonon(task_type,jdata,mdata):
     cwd=os.getcwd()
     #vasp
     if task_type == "vasp":
-        cmpt_06_phonon.cmpt_vasp(jdata, conf_dir)   
-    #lammps                
+        cmpt_06_phonon.cmpt_vasp(jdata, conf_dir)
+    #lammps
     elif task_type in lammps_task_type :
         cmpt_06_phonon.cmpt_lammps(jdata,conf_dir, task_type)
     else :
         raise RuntimeError("unknow task ", task_type)
-    os.chdir(cwd)      
+    os.chdir(cwd)
 
 def run_task (json_file, machine_file) :
     with open (json_file, 'r') as fp :
@@ -965,21 +965,21 @@ def run_task (json_file, machine_file) :
     record = "record.auto_test"
 
     model_devi_mdata  = decide_model_devi_machine(mdata)
-    model_devi_machine = model_devi_mdata['model_devi_machine']    
+    model_devi_machine = model_devi_mdata['model_devi_machine']
     if ('machine_type' in model_devi_machine) and  \
        (model_devi_machine['machine_type'] == 'ucloud'):
         model_devi_ssh_sess = None
     else :
         model_devi_ssh_sess = SSHSession(model_devi_machine)
-    
+
     fp_mdata=decide_fp_machine(mdata)
-    fp_machine = fp_mdata['fp_machine']    
+    fp_machine = fp_mdata['fp_machine']
     if ('machine_type' in fp_machine) and  \
        (fp_machine['machine_type'] == 'ucloud'):
         fp_ssh_sess = None
     else :
         fp_ssh_sess = SSHSession(fp_machine)
-    
+
     confs = jdata['conf_dir']
     ele_list=[key for key in jdata['potcar_map'].keys()]
     key_id = jdata['key_id']
@@ -1002,42 +1002,42 @@ def run_task (json_file, machine_file) :
                 gen_confs.gen_alloy(ele_list,key_id)
     #default task
     log_iter ("gen_equi", ii, "equi")
-    gen_equi (ii, jdata, mdata) 
+    gen_equi (ii, jdata, mdata)
     log_iter ("run_equi", ii, "equi")
     run_equi  (ii, jdata, mdata,model_devi_ssh_sess)
     log_iter ("cmpt_equi", ii,"equi")
     cmpt_equi (ii, jdata, mdata)
     if  jj == "eos" or jj=="all":
         log_iter ("gen_eos", ii, "eos")
-        gen_eos (ii, jdata, mdata) 
+        gen_eos (ii, jdata, mdata)
         log_iter ("run_eos", ii, "eos")
         run_eos  (ii, jdata, mdata,model_devi_ssh_sess)
         log_iter ("cmpt_eos", ii, "eos")
         cmpt_eos (ii, jdata, mdata)
     if jj=="elastic" or jj=="all":
         log_iter ("gen_elastic", ii, "elastic")
-        gen_elastic (ii, jdata, mdata) 
+        gen_elastic (ii, jdata, mdata)
         log_iter ("run_elastic", ii, "elastic")
         run_elastic  (ii, jdata, mdata,model_devi_ssh_sess)
         log_iter ("cmpt_elastic", ii, "elastic")
         cmpt_elastic (ii, jdata, mdata)
     if jj=="vacancy" or jj=="all":
         log_iter ("gen_vacancy", ii, "vacancy")
-        gen_vacancy (ii, jdata, mdata) 
+        gen_vacancy (ii, jdata, mdata)
         log_iter ("run_vacancy", ii, "vacancy")
         run_vacancy  (ii, jdata, mdata,model_devi_ssh_sess)
         log_iter ("cmpt_vacancy", ii, "vacancy")
         cmpt_vacancy (ii, jdata, mdata)
     if jj=="interstitial" or jj=="all":
         log_iter ("gen_interstitial", ii, "interstitial")
-        gen_interstitial (ii, jdata, mdata) 
+        gen_interstitial (ii, jdata, mdata)
         log_iter ("run_interstitial", ii, "interstitial")
         run_interstitial  (ii, jdata, mdata,model_devi_ssh_sess)
         log_iter ("cmpt_interstitial", ii, "interstitial")
         cmpt_interstitial (ii, jdata, mdata)
     if jj=="surf" or jj=="all":
         log_iter ("gen_surf", ii, "surf")
-        gen_surf (ii, jdata, mdata) 
+        gen_surf (ii, jdata, mdata)
         log_iter ("run_surf", ii, "surf")
         run_surf  (ii, jdata, mdata,model_devi_ssh_sess)
         log_iter ("cmpt_surf", ii, "surf")
@@ -1045,7 +1045,7 @@ def run_task (json_file, machine_file) :
     '''
     if jj=="phonon":
         log_iter ("gen_phonon", ii, "phonon")
-        gen_phonon (ii, jdata, mdata) 
+        gen_phonon (ii, jdata, mdata)
         log_iter ("run_phonon", ii, "phonon")
         run_phonon  (ii, jdata, mdata,model_devi_ssh_sess)
         log_iter ("cmpt_phonon", ii, "phonon")
@@ -1061,9 +1061,9 @@ def gen_test(args):
 
 def _main () :
     parser = argparse.ArgumentParser()
-    parser.add_argument("PARAM", type=str, 
+    parser.add_argument("PARAM", type=str,
                         help="The parameters of the generator")
-    parser.add_argument("MACHINE", type=str, 
+    parser.add_argument("MACHINE", type=str,
                         help="The settings of the machine running the generator")
     args = parser.parse_args()
 

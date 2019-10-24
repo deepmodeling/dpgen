@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
 import os, glob, argparse, json, re
+import dpgen.auto_test.lib.util as util
 import dpgen.auto_test.lib.lammps as lammps
 import dpgen.auto_test.lib.vasp as vasp
 
 global_task_name = '01.eos'
 
-def comput_lmp_eos(conf_dir, task_name) :
+def comput_lmp_eos(jdata,conf_dir, task_name) :
     conf_path = re.sub('confs', global_task_name, conf_dir)
     conf_path = os.path.abspath(conf_path)
     conf_path = os.path.join(conf_path, task_name)
@@ -20,6 +21,9 @@ def comput_lmp_eos(conf_dir, task_name) :
             natoms, epa, vpa = lammps.get_nev(log_lammps)
             print(vpa, epa)
             fp.write('%7.3f  %8.4f \n' % (vpa,epa))
+    if 'upload_username' in jdata.keys() and task_name =='deepmd':
+        upload_username=jdata['upload_username']
+        util.insert_data('eos','deepmd',upload_username,'result')
 
 def comput_vasp_eos(jdata, conf_dir) :
     conf_path = re.sub('confs', global_task_name, conf_dir)
@@ -41,12 +45,15 @@ def comput_vasp_eos(jdata, conf_dir) :
             natoms, epa, vpa = vasp.get_nev(outcar)
             print(vpa, epa)
             fp.write('%7.3f  %8.4f \n' % (vpa,epa))
+    if 'upload_username' in jdata.keys():
+        upload_username=jdata['upload_username']
+        util.insert_data('eos','vasp',upload_username,'result')
 
 def _main():
     parser = argparse.ArgumentParser(
         description="cmpt 01.eos")
     parser.add_argument('TASK', type=str,
-                        choices = ['vasp', 'deepmd', 'meam'], 
+                        choices = ['vasp', 'deepmd', 'meam'],
                         help='the task of generation, vasp or lammps')
     parser.add_argument('PARAM', type=str,
                         help='json parameter file')
@@ -58,14 +65,13 @@ def _main():
         jdata = json.load (fp)
 
     if args.TASK == 'vasp':
-        comput_vasp_eos(jdata, args.CONF)               
+        comput_vasp_eos(jdata, args.CONF)
     elif args.TASK == 'deepmd' :
-        comput_lmp_eos(args.CONF, args.TASK)
+        comput_lmp_eos(jdata,args.CONF, args.TASK)
     elif args.TASK == 'meam' :
-        comput_lmp_eos(args.CONF, args.TASK)
+        comput_lmp_eos(jdata,args.CONF, args.TASK)
     else :
         raise RuntimeError("unknow task ", args.TASK)
 
 if __name__ == '__main__' :
     _main()
-    

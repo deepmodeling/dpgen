@@ -5,6 +5,7 @@ import subprocess as sp
 import numpy as np
 import dpgen.auto_test.lib.vasp as vasp
 import dpgen.auto_test.lib.lammps as lammps
+import dpgen.auto_test.lib.util as util
 from pymatgen.analysis.elasticity.elastic import ElasticTensor
 from pymatgen.analysis.elasticity.strain import Strain
 from pymatgen.analysis.elasticity.stress import Stress
@@ -28,7 +29,8 @@ def result_et(et,conf_dir,task_path):
         fp.write("# Youngs Modulus EV = %.2f GPa\n" % (EV))
         fp.write("# Poission Ratio uV = %.2f \n" % (uV))
 
-def print_et (et): 
+
+def print_et (et):
     for ii in range(6) :
         for jj in range(6) :
             sys.stdout.write ("%7.2f " % (et.voigt[ii][jj] / 1e4))
@@ -51,7 +53,7 @@ def cmpt_vasp(jdata, conf_dir) :
     else:
         fp_params = jdata['vasp_params']
         kspacing = fp_params['kspacing']
-        vasp_str='vasp-k%.2f' % kspacing 
+        vasp_str='vasp-k%.2f' % kspacing
     task_path = os.path.join(task_path, vasp_str)
 
     equi_stress = Stress(np.loadtxt(os.path.join(task_path, 'equi.stress.out')))
@@ -69,9 +71,13 @@ def cmpt_vasp(jdata, conf_dir) :
     et = ElasticTensor.from_independent_strains(lst_strain, lst_stress, eq_stress = equi_stress, vasp = False)
     # et = ElasticTensor.from_independent_strains(lst_strain, lst_stress, eq_stress = None)
     # bar to GPa
-    # et = -et / 1e4 
+    # et = -et / 1e4
     print_et(et)
     result_et(et,conf_dir,task_path)
+    if 'upload_username' in jdata.keys():
+        upload_username=jdata['upload_username']
+        util.insert_data('elastic','vasp',upload_username,'result')
+
 
 def cmpt_deepmd_lammps(jdata, conf_dir, task_name) :
     conf_path = os.path.abspath(conf_dir)
@@ -93,9 +99,14 @@ def cmpt_deepmd_lammps(jdata, conf_dir, task_name) :
     et = ElasticTensor.from_independent_strains(lst_strain, lst_stress, eq_stress = equi_stress, vasp = False)
     # et = ElasticTensor.from_independent_strains(lst_strain, lst_stress, eq_stress = None)
     # bar to GPa
-    # et = -et / 1e4 
+    # et = -et / 1e4
     print_et(et)
     result_et(et,conf_dir,task_path)
+    if 'upload_username' in jdata.keys() and task_name=='deepmd':
+        upload_username=jdata['upload_username']
+        util.insert_data('elastic','deepmd',upload_username,'result')
+
+
 
 def _main() :
     parser = argparse.ArgumentParser(
@@ -113,15 +124,13 @@ def _main() :
 
     print('# generate %s task with conf %s' % (args.TASK, args.CONF))
     if args.TASK == 'vasp':
-        cmpt_vasp(jdata, args.CONF)               
+        cmpt_vasp(jdata, args.CONF)
     elif args.TASK == 'deepmd' :
         cmpt_deepmd_lammps(jdata, args.CONF, args.TASK)
     elif args.TASK == 'meam' :
         cmpt_deepmd_lammps(jdata, args.CONF, args.TASK)
     else :
         raise RuntimeError("unknow task ", args.TASK)
-    
+
 if __name__ == '__main__' :
     _main()
-
-    

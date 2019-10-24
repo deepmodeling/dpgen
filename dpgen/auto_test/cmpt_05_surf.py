@@ -3,11 +3,9 @@
 import os, re, argparse, filecmp, json, glob, sys
 import subprocess as sp
 import numpy as np
+import dpgen.auto_test.lib.util as util
 import dpgen.auto_test.lib.vasp as vasp
 import dpgen.auto_test.lib.lammps as lammps
-from pymatgen.analysis.elasticity.elastic import ElasticTensor
-from pymatgen.analysis.elasticity.strain import Strain
-from pymatgen.analysis.elasticity.stress import Stress
 
 global_equi_name = '00.equi'
 global_task_name = '05.surf'
@@ -44,7 +42,7 @@ def cmpt_vasp(jdata, conf_dir, static = False) :
     if len(struct_path_list) == 0:
         print("# cannot find results for conf %s" % (conf_dir))
     sys.stdout.write ("Miller_Indices: \tSurf_E(J/m^2) EpA(eV) equi_EpA(eV)\n")
-    
+
     with open(os.path.join(task_path,'result'),'w') as fp:
         fp.write('conf_dir:%s\n'% (conf_dir))
         fp.write("Miller_Indices: \tSurf_E(J/m^2) EpA(eV) equi_EpA(eV)\n")
@@ -61,6 +59,9 @@ def cmpt_vasp(jdata, conf_dir, static = False) :
             evac = (epa * natoms - equi_epa * natoms) / AA * Cf
             sys.stdout.write ("%s:\t %7.3f   %8.3f %8.3f\n" % (structure_dir, evac, epa, equi_epa))
             fp.write("%s:\t %7.3f   %8.3f %8.3f\n" % (structure_dir, evac, epa, equi_epa))
+    if 'upload_username' in jdata.keys():
+        upload_username=jdata['upload_username']
+        util.insert_data('surf','vasp',upload_username,'result')
 
 def cmpt_deepmd_lammps(jdata, conf_dir, task_name, static = False) :
     equi_path = re.sub('confs', global_equi_name, conf_dir)
@@ -91,6 +92,9 @@ def cmpt_deepmd_lammps(jdata, conf_dir, task_name, static = False) :
             evac = (epa * natoms - equi_epa * natoms) / AA * Cf
             sys.stdout.write ("%s: \t%7.3f    %8.3f %8.3f\n" % (structure_dir, evac, epa, equi_epa))
             fp.write("%s:\t %7.3f   %8.3f %8.3f\n" % (structure_dir, evac, epa, equi_epa))
+    if 'upload_username' in jdata.keys() and task_name=='deepmd':
+        upload_username=jdata['upload_username']
+        util.insert_data('surf','deepmd',upload_username,'result')
 
 def _main() :
     parser = argparse.ArgumentParser(
@@ -108,9 +112,9 @@ def _main() :
 
     print('# generate %s task with conf %s' % (args.TASK, args.CONF))
     if args.TASK == 'vasp':
-        cmpt_vasp(jdata, args.CONF)               
+        cmpt_vasp(jdata, args.CONF)
     elif args.TASK == 'vasp-static':
-        cmpt_vasp(jdata, args.CONF, static = True)               
+        cmpt_vasp(jdata, args.CONF, static = True)
     elif args.TASK == 'deepmd' :
         cmpt_deepmd_lammps(jdata, args.CONF, args.TASK)
     elif args.TASK == 'deepmd-static' :
@@ -121,8 +125,6 @@ def _main() :
         cmpt_deepmd_lammps(jdata, args.CONF, args.TASK, static = True)
     else :
         raise RuntimeError("unknow task ", args.TASK)
-    
+
 if __name__ == '__main__' :
     _main()
-
-    
