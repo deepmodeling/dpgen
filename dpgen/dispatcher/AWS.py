@@ -105,8 +105,9 @@ class AWS(Batch):
         multi_command = ""
         for job_dir in job_dirs:
             for idx,t in enumerate(zip_longest(cmd, args, fillvalue='')):
-                c_str =  f"((cd {self.context.remote_root}/{job_dir} && (test -f tag_{idx}_finished || {t[0]} {t[1]} 2>>{errlog} && touch tag_{idx}_finished ) | tee -a {outlog}));wait;"
+                c_str =  f"cd {self.context.remote_root}/{job_dir} && ( test -f tag_{idx}_finished || ( ({t[0]} {t[1]} && touch tag_{idx}_finished  2>>{errlog} || exit 52 ) | tee -a {outlog}) ) || exit 51;"
                 multi_command += c_str
+        multi_command +="exit 0;"
         dlog.debug("10000, %s" % multi_command)
         return multi_command
         

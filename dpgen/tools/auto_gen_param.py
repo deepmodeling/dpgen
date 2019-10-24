@@ -101,7 +101,7 @@ class Iteration(object):
             sub_iter_list.append(iter_dict)
         return sub_iter_list
 
-def default_map_generator(map_list=[1,1,2,2,4,4,4,4], data_list=None):
+def default_map_generator(map_list=[1,1,2,2,2,4,4,4], data_list=None):
     num = 0
     # if len(data_list) < sum(map_list):
     #     raise RuntimeError(f'{data_list} < {map_list};not enough structure to expore, data_list_too_short!')
@@ -119,7 +119,7 @@ def default_map_generator(map_list=[1,1,2,2,4,4,4,4], data_list=None):
         # num += ii 
 
 def get_system_list(system_dict,
-    map_list=[1,1,2,2,4,4,4,4],
+    map_list=[1,1,2,2,2,4,4,4],
     meta_iter_num=4, 
     sub_iteration_num=8, 
     map_iterator=None,
@@ -134,6 +134,7 @@ def get_system_list(system_dict,
     system_list = []
     for system_prefix,data_list in system_dict.items():
         if map_iterator is None:
+            print('12', data_list)
             new_map_iterator = default_map_generator(map_list=map_list, data_list=data_list)
         else:
             origin_one, new_map_iterator = tee(map_iterator) # pylint: disable=unused-variable
@@ -227,8 +228,8 @@ def get_basic_param_json(melt_point,
     scan_dir="./", 
     file_name='POSCAR',
     init_file_name='type.raw',
-    min_allow_files_num=20,
-    map_list=[1,1,2,2,4,4,4,4],
+    min_allow_files_num=16,
+    map_list=[1,1,2,2,2,4,4,4],
     meta_iter_num=4,
     sub_iteration_num=8,
     map_iterator=None,
@@ -241,7 +242,7 @@ def get_basic_param_json(melt_point,
     num_temps=5,):
 
     init_data_sys = get_init_data_sys(scan_dir=scan_dir, init_file_name=init_file_name)
-    print(f"length of init_data_sys: {len(init_data_sys)}")
+    print(f"length of init_data_sys: {len(init_data_sys)} {init_data_sys}")
     system_dict = scan_files(scan_dir, file_name, min_allow_files_num)
     print(f"num of different systems: {len(system_dict)}")
     system_list =get_system_list(system_dict,
@@ -272,4 +273,14 @@ def get_basic_param_json(melt_point,
     with open(out_param_filename, 'w') as p:
         json.dump(param_dict, p, indent=4)
 
+def _main():
+    parser = argparse.ArgumentParser(description='Collect data from inputs and generate basic param.json')
+    parser.add_argument("melt_point", type=float, help="melt_point")
+    # parser.addparser.add_argument("JOB_DIR", type=str, help="the directory of the DP-GEN job")
+    args = parser.parse_args()
+    get_basic_param_json(melt_point=args.melt_point)
+  
+if __name__=='__main__':
+    _main()
+    
 #%%
