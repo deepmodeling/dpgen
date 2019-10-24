@@ -13,12 +13,11 @@ global_equi_name = '00.equi'
 global_task_name = '05.surf'
 
 def cmpt_vasp(jdata, conf_dir, static = False) :
-    fp_params = jdata['vasp_params']
-    kspacing = fp_params['kspacing']
 
     if 'relax_incar' in jdata.keys():
         vasp_str='vasp-relax_incar'
-    else: 
+    else:
+        kspacing = jdata['vasp_params']['kspacing']
         vasp_str='vasp-k%.2f' % (kspacing)
 
     equi_path = re.sub('confs', global_equi_name, conf_dir)
@@ -30,6 +29,7 @@ def cmpt_vasp(jdata, conf_dir, static = False) :
         if 'scf_incar' in jdata.keys():
             vasp_static_str='vasp-static-scf_incar'
         else:
+            kspacing = jdata['vasp_params']['kspacing']
             vasp_static_str='vasp-static-k%.2f' % (kspacing)
         task_path = os.path.join(task_path, vasp_static_str)
     else :
