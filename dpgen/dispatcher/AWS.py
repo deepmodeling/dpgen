@@ -93,13 +93,6 @@ class AWS(Batch):
         return self.__class__.AWS_check_status(job_id=self.job_id)
     
     def sub_script(self, job_dirs, cmd, args, res, outlog, errlog):
-        """
-        return a command_Str like(indeed withoud tailing \n):
-        ((cd /home/ec2-user/Ag_init/run_gen/iter.000000/00.train/001 && /usr/bin/dp_train input.json 2>>train.log |tee -a train.log)&& touch tag_0_finished);wait;
-        ((cd /home/ec2-user/Ag_init/run_gen/iter.000000/00.train/001 && /usr/bin/dp_frz 2>>train.log |tee -a train.log)&& touch tag_1_finished);wait;
-        ((cd /home/ec2-user/Ag_init/run_gen/iter.000000/00.train/003 && /usr/bin/dp_train input.json 2>>train.log |tee -a train.log)&& touch tag_0_finished);wait;
-        ((cd /home/ec2-user/Ag_init/run_gen/iter.000000/00.train/003 && /usr/bin/dp_frz 2>>train.log |tee -a train.log)&& touch tag_1_finished);wait;
-        """
         if args is None:
             args=[]
         multi_command = ""
