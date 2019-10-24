@@ -23,21 +23,6 @@
         "model_name":false,
         "model_param_type":false
     },
-    "deepmd_model_dir":	"somewhere/example/Al_model",
-    "deepmd_type_map":	[
-	"Al"
-    ],
-    "meam_potfile_dir":	"meam",
-    "meam_type_map":	[
-	"Al", "Si", "Mg", "Cu", "Fe"
-    ],
-    "meam_potfile":	[
-	"library.meam",
-	"AlSiMgCuFe.meam"
-    ],
-    "meam_param_type":	[
-	"AlS", "SiS", "MgS", "CuS", "FeS"
-    ],
 
     "_comment":"00.equi",
     "store_stable":true,
