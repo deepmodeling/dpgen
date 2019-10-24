@@ -112,7 +112,6 @@ def _run(machine,
         raise RuntimeError("unknow machine type")
 
 def make_work_path(jdata,task,reprod_opt,static,user):
-    kspacing = jdata['vasp_params']['kspacing']
     task_type=jdata['task_type']
     conf_dir=jdata['conf_dir']
     conf_path = os.path.abspath(conf_dir)
@@ -127,11 +126,13 @@ def make_work_path(jdata,task,reprod_opt,static,user):
             if 'scf_incar' in jdata.keys():
                 task_type=task_type+'-static-scf_incar'
             else:
+                kspacing = jdata['vasp_params']['kspacing']
                 task_type=task_type+'-static-k%.2f' % (kspacing)
         else:
             if 'relax_incar' in jdata.keys():
                 task_type=task_type+'-relax_incar'
             else: 
+                kspacing = jdata['vasp_params']['kspacing']
                 task_type=task_type+'-k%.2f' % (kspacing)
     elif task_type in lammps_task_type:
         if static:
