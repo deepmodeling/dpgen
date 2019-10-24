@@ -7,6 +7,7 @@ from dpgen.generator.lib.ele_temp import NBandsEsti
 
 param_file = 'param-mg-vasp.json'
 param_file_v1 = 'param-mg-vasp-v1.json'
+param_file_v1_et = 'param-mg-vasp-v1-et.json'
 param_old_file = 'param-mg-vasp-old.json'
 param_pwscf_file = 'param-pyridine-pwscf.json'
 param_pwscf_old_file = 'param-pyridine-pwscf-old.json'

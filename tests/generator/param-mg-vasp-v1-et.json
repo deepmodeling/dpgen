@@ -1,7 +1,7 @@
 {
     "type_map":		["Al", "Mg"],
     "mass_map":		[27, 24],
-    "use_ele_temp":	0,
+    "use_ele_temp":	2,
 
     "init_data_prefix":	"data",
     "init_data_sys":	["deepmd"
@@ -30,6 +30,7 @@
 	    "fitting_net" : {
 		"neuron":	[120, 120, 120],
 		"resnet_dt":	true,
+		"numb_fparam":	10,
 		"seed":		1
 	    }
 	},

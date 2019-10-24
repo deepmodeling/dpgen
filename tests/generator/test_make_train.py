@@ -9,6 +9,7 @@ __package__ = 'generator'
 from .context import make_train
 from .context import param_file
 from .context import param_file_v1
+from .context import param_file_v1_et
 from .context import machine_file
 from .context import machine_file_v1
 from .context import setUpModule
@@ -218,6 +219,25 @@ class TestMakeTrain(unittest.TestCase):
 
     def test_1_data_v1(self) :
         with open (param_file_v1, 'r') as fp :
+            jdata = json.load (fp)
+            jdata.pop('use_ele_temp', None)
+        with open (machine_file_v1, 'r') as fp:
+            mdata = json.load (fp)
+        make_train(0, jdata, mdata)
+        # make fake fp results #data == fp_task_min
+        _make_fake_fp(0, 0, jdata['fp_task_min'])
+        # make iter1 train
+        make_train(1, jdata, mdata)
+        # check data is linked
+        self.assertTrue(os.path.isdir(os.path.join('iter.000001', '00.train', 'data.iters', 'iter.000000', '02.fp')))
+        # check models inputs
+        _check_model_inputs_v1(self, 1, jdata)
+        # remove testing dirs
+        shutil.rmtree('iter.000001')
+        shutil.rmtree('iter.000000')
+        
+    def test_1_data_v1_eletron_temp(self) :
+        with open (param_file_v1_et, 'r') as fp :
             jdata = json.load (fp)
         with open (machine_file_v1, 'r') as fp:
             mdata = json.load (fp)
