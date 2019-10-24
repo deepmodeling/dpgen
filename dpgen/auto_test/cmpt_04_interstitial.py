@@ -17,8 +17,6 @@ def cmpt_vasp(jdata, conf_dir, supercell, insert_ele) :
         _cmpt_vasp(jdata, conf_dir, supercell, ii)
 
 def _cmpt_vasp(jdata, conf_dir, supercell, insert_ele) :
-    fp_params = jdata['vasp_params']
-    kspacing = fp_params['kspacing']
 
     if 'relax_incar' in jdata.keys():
         vasp_str='vasp-relax_incar'
