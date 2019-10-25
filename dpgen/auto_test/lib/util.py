@@ -1,5 +1,11 @@
 import numpy as np
 import requests
+import os,re
+import dpgen.auto_test.lib.vasp as vasp
+import dpgen.auto_test.lib.lammps as lammps
+from dpgen.auto_test.lib.utils import cmd_append_log
+
+lammps_task_type=['deepmd','meam','eam']
 
 def voigt_to_stress(inpt) :
     ret = np.zeros((3,3))
@@ -17,7 +23,85 @@ def voigt_to_stress(inpt) :
 def insert_data(task,task_type,username,file_name):
     assert task in ['eos','elastic','surf']
     assert task_type in ['vasp','deepmd']
-    #check the corresponding of expr_type and data_type
     url='http://115.27.161.2:5000/insert_test_data?username=%s&expr_type=%s&data_type=%s' % (username,task_type,task)
     res = requests.post(url, data=open(file_name).read())
     print('Successful upload!')
+
+
+def make_work_path(jdata,task,reprod_opt,static,user):
+
+    task_type=jdata['task_type']
+    conf_dir=jdata['conf_dir']
+    conf_path = os.path.abspath(conf_dir)
+    task_path = re.sub('confs', task, conf_path)
+
+    if task_type=="vasp":
+        if user:
+            work_path=os.path.join(task_path, 'vasp-user_incar')
+            assert(os.path.isdir(work_path))
+            return work_path
+        if static:
+            if 'scf_incar' in jdata.keys():
+                task_type=task_type+'-static-scf_incar'
+            else:
+                kspacing = jdata['vasp_params']['kspacing']
+                task_type=task_type+'-static-k%.2f' % (kspacing)
+        else:
+            if 'relax_incar' in jdata.keys():
+                task_type=task_type+'-relax_incar'
+            else:
+                kspacing = jdata['vasp_params']['kspacing']
+                task_type=task_type+'-k%.2f' % (kspacing)
+    elif task_type in lammps_task_type:
+        if static:
+            task_type=task_type+'-static'
+        elif reprod_opt :
+            if 'relax_incar' in jdata.keys():
+                task_type=task_type+'-reprod-relax_incar'
+            else:
+                task_type=task_type+'-reprod-k%.2f'% (kspacing)
+
+    work_path=os.path.join(task_path, task_type)
+    assert(os.path.isdir(work_path))
+    return work_path
+
+
+def get_machine_info(mdata,task_type):
+    if task_type=="vasp":
+        vasp_exec=mdata['fp_command']
+        group_size = mdata['fp_group_size']
+        resources = mdata['fp_resources']
+        machine=mdata['fp_machine']
+        machine_type = mdata['fp_machine']['machine_type']
+        command = vasp_exec
+        command = cmd_append_log(command, "log")
+    elif task_type in lammps_task_type:
+        lmp_exec = mdata['lmp_command']
+        group_size = mdata['model_devi_group_size']
+        resources = mdata['model_devi_resources']
+        machine=mdata['model_devi_machine']
+        machine_type = mdata['model_devi_machine']['machine_type']
+        command = lmp_exec + " -i lammps.in"
+        command = cmd_append_log(command, "model_devi.log")
+    return machine, machine_type, resources, command, group_size
+
+def collect_task(all_task,task_type):
+
+    if task_type == 'vasp':
+        output_file ='OUTCAR'
+        check_finished = vasp.check_finished
+    elif task_type in lammps_task_type:
+        output_file = 'log.lammps'
+        check_finished = lammps.check_finished
+
+    run_tasks_ = []
+    for ii in all_task:
+        fres = os.path.join(ii, output_file)
+        if os.path.isfile(fres) :
+            if not check_finished(fres):
+                run_tasks_.append(ii)
+        else :
+            run_tasks_.append(ii)
+    
+    run_tasks = [os.path.basename(ii) for ii in run_tasks_]
+    return run_tasks
