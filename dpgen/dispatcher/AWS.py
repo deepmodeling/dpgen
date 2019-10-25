@@ -5,13 +5,14 @@ from dpgen.dispatcher.Batch import Batch
 from dpgen.dispatcher.JobStatus import JobStatus
 from dpgen import dlog
 
-try:
-    import boto3
-except ModuleNotFoundError:
-    pass
 
 class AWS(Batch):
-    batch_client = boto3.client('batch')
+    try:
+        import boto3
+    except ModuleNotFoundError:
+        pass
+    else:
+        batch_client = boto3.client('batch')
     _query_max_results = 1000
     _query_time_interval = 30
     _job_id_map_status = {}
