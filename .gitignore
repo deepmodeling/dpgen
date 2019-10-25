@@ -36,3 +36,4 @@ dpgen.egg-info
 *.swp
 .eggs
 .coverage
+dbconfig.json

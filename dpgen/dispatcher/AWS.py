@@ -5,12 +5,14 @@ from dpgen.dispatcher.Batch import Batch
 from dpgen.dispatcher.JobStatus import JobStatus
 from dpgen import dlog
 
+
 class AWS(Batch):
     try:
         import boto3
-        batch_client = boto3.client('batch')
     except ModuleNotFoundError:
         pass
+    else:
+        batch_client = boto3.client('batch')
     _query_max_results = 1000
     _query_time_interval = 30
     _job_id_map_status = {}
@@ -42,18 +44,19 @@ class AWS(Batch):
         """
         query_dict ={}
         if datetime.now().timestamp() > cls._query_next_allow_time:
+            cls.batch_client = boto3.client('batch')
             cls._query_next_allow_time=datetime.now().timestamp()+cls._query_time_interval
             for status in ['SUBMITTED', 'PENDING', 'RUNNABLE', 'STARTING', 'RUNNING','SUCCEEDED', 'FAILED']:
                 status_response = cls.batch_client.list_jobs(jobQueue=cls._jobQueue, jobStatus=status, maxResults=cls._query_max_results)
                 status_list=status_response.get('jobSummaryList', [])
                 for job_dict in status_list:
-                    query_dict.update({job_dict['jobId']: cls.map_aws_status_to_dpgen_status(job_dict['status'])})
-            for job in cls._job_id_map_status:
-                cls._job_id_map_status[job]=query_dict.get(job, JobStatus.unknown)
-            dlog.debug('20000: _query: %s, _map: %s' %(query_dict, cls._job_id_map_status))
+                    cls._job_id_map_status.update({job_dict['jobId']: cls.map_aws_status_to_dpgen_status(job_dict['status'])})
+            # for job in cls._job_id_map_status:
+            #     cls._job_id_map_status[job]=query_dict.get(job, JobStatus.unknown)
+            dlog.debug('20000:_map: %s' %(cls._job_id_map_status))
         dlog.debug('62000:job_id:%s, _query: %s, _map: %s' %(job_id, query_dict, cls._job_id_map_status))
         if job_id:
-            return cls._job_id_map_status.get(job_id, query_dict.get(job_id,JobStatus.unknown))
+            return cls._job_id_map_status.get(job_id, JobStatus.unknown)
                     
         return cls._job_id_map_status
 
@@ -91,20 +94,14 @@ class AWS(Batch):
         return self.__class__.AWS_check_status(job_id=self.job_id)
     
     def sub_script(self, job_dirs, cmd, args, res, outlog, errlog):
-        """
-        return a command_Str like(indeed withoud tailing \n):
-        ((cd /home/ec2-user/Ag_init/run_gen/iter.000000/00.train/001 && /usr/bin/dp_train input.json 2>>train.log |tee -a train.log)&& touch tag_0_finished);wait;
-        ((cd /home/ec2-user/Ag_init/run_gen/iter.000000/00.train/001 && /usr/bin/dp_frz 2>>train.log |tee -a train.log)&& touch tag_1_finished);wait;
-        ((cd /home/ec2-user/Ag_init/run_gen/iter.000000/00.train/003 && /usr/bin/dp_train input.json 2>>train.log |tee -a train.log)&& touch tag_0_finished);wait;
-        ((cd /home/ec2-user/Ag_init/run_gen/iter.000000/00.train/003 && /usr/bin/dp_frz 2>>train.log |tee -a train.log)&& touch tag_1_finished);wait;
-        """
         if args is None:
             args=[]
         multi_command = ""
         for job_dir in job_dirs:
             for idx,t in enumerate(zip_longest(cmd, args, fillvalue='')):
-                c_str =  f"((cd {self.context.remote_root}/{job_dir} && test -f touch tag_{idx}_finished || {t[0]} {t[1]} 2>>{errlog} && touch tag_{idx}_finished ) | tee -a {outlog});wait;"
+                c_str =  f"cd {self.context.remote_root}/{job_dir} && ( test -f tag_{idx}_finished || ( ({t[0]} {t[1]} && touch tag_{idx}_finished  2>>{errlog} || exit 52 ) | tee -a {outlog}) ) || exit 51;"
                 multi_command += c_str
+        multi_command +="exit 0;"
         dlog.debug("10000, %s" % multi_command)
         return multi_command
         
