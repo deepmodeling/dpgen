@@ -15,6 +15,7 @@ task:
 
 import sys
 import os, re, argparse, filecmp, json, glob
+import dpgen.auto_test.lib.util as util
 import dpgen.auto_test.lib.vasp as vasp
 import dpgen.auto_test.lib.lammps as lammps
 import random
@@ -28,7 +29,7 @@ from dpgen.auto_test.lib.utils import make_iter_name
 from dpgen.auto_test.lib.utils import create_path
 from dpgen.auto_test.lib.utils import copy_file_list
 from dpgen.auto_test.lib.utils import replace
-from dpgen.auto_test.lib.utils import cmd_append_log
+
 from dpgen.auto_test.lib.utils import log_iter
 from dpgen.auto_test.lib.utils import record_iter
 from dpgen.auto_test.lib.utils import log_iter
@@ -111,41 +112,7 @@ def _run(machine,
     else :
         raise RuntimeError("unknow machine type")
 
-def make_work_path(jdata,task,reprod_opt,static,user):
-    task_type=jdata['task_type']
-    conf_dir=jdata['conf_dir']
-    conf_path = os.path.abspath(conf_dir)
-    task_path = re.sub('confs', task, conf_path)
 
-    if task_type=="vasp":
-        if user:
-            work_path=os.path.join(task_path, 'vasp-user_incar')
-            assert(os.path.isdir(work_path))
-            return work_path
-        if static:
-            if 'scf_incar' in jdata.keys():
-                task_type=task_type+'-static-scf_incar'
-            else:
-                kspacing = jdata['vasp_params']['kspacing']
-                task_type=task_type+'-static-k%.2f' % (kspacing)
-        else:
-            if 'relax_incar' in jdata.keys():
-                task_type=task_type+'-relax_incar'
-            else:
-                kspacing = jdata['vasp_params']['kspacing']
-                task_type=task_type+'-k%.2f' % (kspacing)
-    elif task_type in lammps_task_type:
-        if static:
-            task_type=task_type+'-static'
-        elif reprod_opt :
-            if 'relax_incar' in jdata.keys():
-                task_type=task_type+'-reprod-relax_incar'
-            else:
-                task_type=task_type+'-reprod-k%.2f'% (kspacing)
-
-    work_path=os.path.join(task_path, task_type)
-    assert(os.path.isdir(work_path))
-    return work_path
 
 def gen_equi(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
@@ -163,28 +130,12 @@ def gen_equi(task_type,jdata,mdata):
 def run_equi(task_type,jdata,mdata,ssh_sess):
         #rmprint("This module has been run !")
 
-    work_path=make_work_path(jdata,'00.equi',False,False,False)
+    work_path=util.make_work_path(jdata,'00.equi',False,False,False)
     all_task = glob.glob(os.path.join(work_path,'.'))
 
     #vasp
     if task_type=="vasp":
         mdata=decide_fp_machine(mdata)
-        vasp_exec=mdata['fp_command']
-        group_size = mdata['fp_group_size']
-        resources = mdata['fp_resources']
-        machine=mdata['fp_machine']
-        machine_type = mdata['fp_machine']['machine_type']
-        command = vasp_exec
-        command = cmd_append_log(command, "log")
-
-        run_tasks_ = []
-        for ii in all_task:
-            fres = os.path.join(ii, 'OUTCAR')
-            if os.path.isfile(fres) :
-                if not vasp.check_finished(fres):
-                    run_tasks_.append(ii)
-            else :
-                run_tasks_.append(ii)
 
         forward_files = ['INCAR', 'POTCAR']
         backward_files = ['OUTCAR','CONTCAR','OSZICAR']
@@ -193,29 +144,6 @@ def run_equi(task_type,jdata,mdata,ssh_sess):
     #lammps
     elif task_type in lammps_task_type:
         mdata = decide_model_devi_machine(mdata)
-        lmp_exec = mdata['lmp_command']
-        group_size = mdata['model_devi_group_size']
-        resources = mdata['model_devi_resources']
-        machine=mdata['model_devi_machine']
-        machine_type = mdata['model_devi_machine']['machine_type']
-
-        command = lmp_exec + " -i lammps.in"
-        command = cmd_append_log(command, "model_devi.log")
-
-        run_tasks_ = []
-        for ii in all_task:
-            fres = os.path.join(ii, 'log.lammps')
-            if os.path.isfile(fres) :
-                with open(fres, 'r') as fp :
-                    lines = fp.read().split('\n')
-                flag=False
-                for jj in lines:
-                    if ("Final energy per atoms" in jj) and (not 'print' in jj):
-                        flag=True
-                if not flag:
-                    run_tasks_.append(ii)
-            else :
-                run_tasks_.append(ii)
 
         forward_files = ['conf.lmp', 'lammps.in']
         backward_files = ['dump.relax','log.lammps', 'model_devi.log']
@@ -237,7 +165,10 @@ def run_equi(task_type,jdata,mdata,ssh_sess):
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
-    run_tasks = [os.path.basename(ii) for ii in run_tasks_]
+    run_tasks = util.collect_task(all_task,task_type)
+
+    machine,machine_type,resources,command,group_size=util.get_machine_info(mdata,task_type)
+
     _run(machine,
          machine_type,
          ssh_sess,
@@ -266,7 +197,6 @@ def cmpt_equi(task_type,jdata,mdata):
 
 def gen_eos(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
-    #fix_shape=jdata['fix_shape']
     fix_shape = True
     cwd=os.getcwd()
     #vasp
@@ -283,7 +213,7 @@ def gen_eos(task_type,jdata,mdata):
     os.chdir(cwd)
 
 def run_eos(task_type,jdata,mdata,ssh_sess):
-    work_path=make_work_path(jdata,'01.eos',False,False,False)
+    work_path=util.make_work_path(jdata,'01.eos',False,False,False)
     print(work_path)
 
     all_task = glob.glob(os.path.join(work_path, "vol-*"))
@@ -292,22 +222,6 @@ def run_eos(task_type,jdata,mdata,ssh_sess):
     #vasp
     if task_type=="vasp":
         mdata=decide_fp_machine(mdata)
-        vasp_exec=mdata['fp_command']
-        group_size = mdata['fp_group_size']
-        resources = mdata['fp_resources']
-        machine=mdata['fp_machine']
-        machine_type = mdata['fp_machine']['machine_type']
-        command = vasp_exec
-        command = cmd_append_log(command, "log")
-
-        run_tasks_ = []
-        for ii in all_task:
-            fres = os.path.join(ii, 'OUTCAR')
-            if os.path.isfile(fres) :
-                if not vasp.check_finished(fres):
-                    run_tasks_.append(ii)
-            else :
-                run_tasks_.append(ii)
 
         forward_files = ['INCAR', 'POSCAR','POTCAR']
         backward_files = ['OUTCAR','OSZICAR']
@@ -316,28 +230,6 @@ def run_eos(task_type,jdata,mdata,ssh_sess):
     #lammps
     elif task_type in lammps_task_type:
         mdata = decide_model_devi_machine(mdata)
-        lmp_exec = mdata['lmp_command']
-        group_size = mdata['model_devi_group_size']
-        resources = mdata['model_devi_resources']
-        machine=mdata['model_devi_machine']
-        machine_type = mdata['model_devi_machine']['machine_type']
-        command = lmp_exec + " -i lammps.in"
-        command = cmd_append_log(command, "model_devi.log")
-
-        run_tasks_ = []
-        for ii in all_task:
-            fres = os.path.join(ii, 'log.lammps')
-            if os.path.isfile(fres) :
-                with open(fres, 'r') as fp :
-                    lines = fp.read().split('\n')
-                flag=False
-                for jj in lines:
-                    if ("Final energy per atoms" in jj) and (not 'print' in jj):
-                        flag=True
-                if not flag:
-                    run_tasks_.append(ii)
-            else :
-                run_tasks_.append(ii)
 
         fp_params = jdata['lammps_params']
         model_dir = fp_params['model_dir']
@@ -358,7 +250,9 @@ def run_eos(task_type,jdata,mdata,ssh_sess):
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
-    run_tasks = [os.path.basename(ii) for ii in run_tasks_]
+    run_tasks = util.collect_task(all_task,task_type)
+
+    machine,machine_type,resources,command,group_size=util.get_machine_info(mdata,task_type)
     _run(machine,
          machine_type,
          ssh_sess,
@@ -396,7 +290,7 @@ def gen_elastic(task_type,jdata,mdata):
     os.chdir(cwd)
 
 def run_elastic(task_type,jdata,mdata,ssh_sess):
-    work_path=make_work_path(jdata,'02.elastic',False,False,False)
+    work_path=util.make_work_path(jdata,'02.elastic',False,False,False)
     print(work_path)
 
     all_task = glob.glob(os.path.join(work_path, "dfm-*"))
@@ -405,22 +299,6 @@ def run_elastic(task_type,jdata,mdata,ssh_sess):
     #vasp
     if task_type == "vasp":
         mdata=decide_fp_machine(mdata)
-        vasp_exec=mdata['fp_command']
-        group_size = mdata['fp_group_size']
-        resources = mdata['fp_resources']
-        machine=mdata['fp_machine']
-        machine_type = mdata['fp_machine']['machine_type']
-        command = vasp_exec
-        command = cmd_append_log(command, "log")
-
-        run_tasks_ = []
-        for ii in all_task:
-            fres = os.path.join(ii, 'OUTCAR')
-            if os.path.isfile(fres) :
-                if not vasp.check_finished(fres):
-                    run_tasks_.append(ii)
-            else :
-                run_tasks_.append(ii)
 
         forward_files = ['INCAR', 'POSCAR','POTCAR','KPOINTS']
         backward_files = ['OUTCAR','CONTCAR','OSZICAR']
@@ -429,28 +307,6 @@ def run_elastic(task_type,jdata,mdata,ssh_sess):
     #lammps
     elif task_type in lammps_task_type:
         mdata = decide_model_devi_machine(mdata)
-        lmp_exec = mdata['lmp_command']
-        group_size = mdata['model_devi_group_size']
-        resources = mdata['model_devi_resources']
-        machine=mdata['model_devi_machine']
-        machine_type = mdata['model_devi_machine']['machine_type']
-        command = lmp_exec + " -i lammps.in"
-        command = cmd_append_log(command, "model_devi.log")
-
-        run_tasks_ = []
-        for ii in all_task:
-            fres = os.path.join(ii, 'log.lammps')
-            if os.path.isfile(fres) :
-                with open(fres, 'r') as fp :
-                    lines = fp.read().split('\n')
-                flag=False
-                for jj in lines:
-                    if ('Final Stress' in jj) and (not 'print' in jj):
-                        flag=True
-                if not flag:
-                    run_tasks_.append(ii)
-            else :
-                run_tasks_.append(ii)
 
         fp_params = jdata['lammps_params']
         model_dir = fp_params['model_dir']
@@ -471,7 +327,8 @@ def run_elastic(task_type,jdata,mdata,ssh_sess):
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
-    run_tasks = [os.path.basename(ii) for ii in run_tasks_]
+    run_tasks = util.collect_task(all_task,task_type)
+    machine,machine_type,resources,command,group_size=util.get_machine_info(mdata,task_type)
     _run(machine,
          machine_type,
          ssh_sess,
@@ -509,28 +366,12 @@ def gen_vacancy(task_type,jdata,mdata):
 
 def run_vacancy(task_type,jdata,mdata,ssh_sess):
 
-    work_path=make_work_path(jdata,'03.vacancy',False,False,False)
+    work_path=util.make_work_path(jdata,'03.vacancy',False,False,False)
     all_task = glob.glob(os.path.join(work_path,'struct-*'))
 
     #vasp
     if task_type == "vasp":
         mdata=decide_fp_machine(mdata)
-        vasp_exec=mdata['fp_command']
-        group_size = mdata['fp_group_size']
-        resources = mdata['fp_resources']
-        machine=mdata['fp_machine']
-        machine_type = mdata['fp_machine']['machine_type']
-        command = vasp_exec
-        command = cmd_append_log(command, "log")
-
-        run_tasks_ = []
-        for ii in all_task:
-            fres = os.path.join(ii, 'OUTCAR')
-            if os.path.isfile(fres) :
-                if not vasp.check_finished(fres):
-                    run_tasks_.append(ii)
-            else :
-                run_tasks_.append(ii)
 
         forward_files = ['INCAR', 'POSCAR','POTCAR']
         backward_files = ['OUTCAR','OSZICAR']
@@ -539,28 +380,6 @@ def run_vacancy(task_type,jdata,mdata,ssh_sess):
     #lammps
     elif task_type in lammps_task_type:
         mdata = decide_model_devi_machine(mdata)
-        lmp_exec = mdata['lmp_command']
-        group_size = mdata['model_devi_group_size']
-        resources = mdata['model_devi_resources']
-        machine=mdata['model_devi_machine']
-        machine_type = mdata['model_devi_machine']['machine_type']
-        command = lmp_exec + " -i lammps.in"
-        command = cmd_append_log(command, "model_devi.log")
-
-        run_tasks_ = []
-        for ii in all_task:
-            fres = os.path.join(ii, 'log.lammps')
-            if os.path.isfile(fres) :
-                with open(fres, 'r') as fp :
-                    lines = fp.read().split('\n')
-                flag=False
-                for jj in lines:
-                    if ("Final energy per atoms" in jj) and (not 'print' in jj):
-                        flag=True
-                if not flag:
-                    run_tasks_.append(ii)
-            else :
-                run_tasks_.append(ii)
 
         fp_params = jdata['lammps_params']
         model_dir = fp_params['model_dir']
@@ -582,7 +401,8 @@ def run_vacancy(task_type,jdata,mdata,ssh_sess):
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
-    run_tasks = [os.path.basename(ii) for ii in run_tasks_]
+    run_tasks = util.collect_task(all_task,task_type)
+    machine,machine_type,resources,command,group_size=util.get_machine_info(mdata,task_type)
     _run(machine,
          machine_type,
          ssh_sess,
@@ -629,28 +449,12 @@ def gen_interstitial(task_type,jdata,mdata):
 def run_interstitial(task_type,jdata,mdata,ssh_sess):
 
     reprod_opt=jdata['reprod-opt']
-    work_path=make_work_path(jdata,'04.interstitial',reprod_opt,False,False)
+    work_path=util.make_work_path(jdata,'04.interstitial',reprod_opt,False,False)
     all_task = glob.glob(os.path.join(work_path,'struct-*'))
 
     #vasp
     if task_type == "vasp":
         mdata=decide_fp_machine(mdata)
-        vasp_exec=mdata['fp_command']
-        group_size = mdata['fp_group_size']
-        resources = mdata['fp_resources']
-        machine=mdata['fp_machine']
-        machine_type = mdata['fp_machine']['machine_type']
-        command = vasp_exec
-        command = cmd_append_log(command, "log")
-
-        run_tasks_ = []
-        for ii in all_task:
-            fres = os.path.join(ii, 'OUTCAR')
-            if os.path.isfile(fres) :
-                if not vasp.check_finished(fres):
-                    run_tasks_.append(ii)
-            else :
-                run_tasks_.append(ii)
 
         forward_files = ['INCAR', 'POSCAR','POTCAR']
         backward_files = ['OUTCAR','XDATCAR','OSZICAR']
@@ -659,13 +463,6 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
     #lammps
     elif task_type in lammps_task_type:
         mdata = decide_model_devi_machine(mdata)
-        lmp_exec = mdata['lmp_command']
-        group_size = mdata['model_devi_group_size']
-        resources = mdata['model_devi_resources']
-        machine=mdata['model_devi_machine']
-        machine_type = mdata['model_devi_machine']['machine_type']
-        command = lmp_exec + " -i lammps.in"
-        command = cmd_append_log(command, "model_devi.log")
 
         if reprod_opt:
             all_frame=[]
@@ -678,13 +475,7 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
         for ii in all_task:
             fres = os.path.join(ii, 'log.lammps')
             if os.path.isfile(fres) :
-                with open(fres, 'r') as fp :
-                    lines = fp.read().split('\n')
-                flag=False
-                for jj in lines:
-                    if ("Final energy per atoms" in jj) and (not 'print' in jj):
-                        flag=True
-                if not flag:
+                if not lammps.check_finished(fres):
                     run_tasks_.append(ii)
             else :
                 run_tasks_.append(ii)
@@ -708,6 +499,8 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
+    machine,machine_type,resources,command,group_size=util.get_machine_info(mdata,task_type)
+
     if reprod_opt:
         for ii in work_path:
             run_tasks=[]
@@ -726,7 +519,7 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
              forward_files,
              backward_files)
     else:
-        run_tasks = [os.path.basename(ii) for ii in run_tasks_]
+        run_tasks = util.collect_task(all_task,task_type)
         _run(machine,
              machine_type,
              ssh_sess,
@@ -777,30 +570,13 @@ def gen_surf(task_type,jdata,mdata):
 
 def run_surf(task_type,jdata,mdata,ssh_sess):
     static=jdata['static-opt']
-    work_path=make_work_path(jdata,'05.surf',False,static,False)
+    work_path=util.make_work_path(jdata,'05.surf',False,static,False)
 
     all_task = glob.glob(os.path.join(work_path,'struct-*'))
 
     #vasp
     if task_type == "vasp":
         mdata=decide_fp_machine(mdata)
-        vasp_exec=mdata['fp_command']
-        group_size = mdata['fp_group_size']
-        resources = mdata['fp_resources']
-        machine=mdata['fp_machine']
-        machine_type = mdata['fp_machine']['machine_type']
-        command = vasp_exec
-        command = cmd_append_log(command, "log")
-
-        run_tasks_ = []
-        for ii in all_task:
-            fres = os.path.join(ii, 'OUTCAR')
-            if os.path.isfile(fres) :
-                if not vasp.check_finished(fres):
-                    run_tasks_.append(ii)
-            else :
-                run_tasks_.append(ii)
-
 
         forward_files = ['INCAR', 'POSCAR','POTCAR']
         backward_files = ['OUTCAR','OSZICAR']
@@ -809,28 +585,6 @@ def run_surf(task_type,jdata,mdata,ssh_sess):
     #lammps
     elif task_type in lammps_task_type:
         mdata = decide_model_devi_machine(mdata)
-        lmp_exec = mdata['lmp_command']
-        group_size = mdata['model_devi_group_size']
-        resources = mdata['model_devi_resources']
-        machine=mdata['model_devi_machine']
-        machine_type = mdata['model_devi_machine']['machine_type']
-        command = lmp_exec + " -i lammps.in"
-        command = cmd_append_log(command, "model_devi.log")
-
-        run_tasks_ = []
-        for ii in all_task:
-            fres = os.path.join(ii, 'log.lammps')
-            if os.path.isfile(fres) :
-                with open(fres, 'r') as fp :
-                    lines = fp.read().split('\n')
-                flag=False
-                for jj in lines:
-                    if ("Final energy per atoms" in jj) and (not 'print' in jj):
-                        flag=True
-                if not flag:
-                    run_tasks_.append(ii)
-            else :
-                run_tasks_.append(ii)
 
         fp_params = jdata['lammps_params']
         model_dir = fp_params['model_dir']
@@ -851,7 +605,8 @@ def run_surf(task_type,jdata,mdata,ssh_sess):
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
-    run_tasks = [os.path.basename(ii) for ii in run_tasks_]
+    run_tasks = util.collect_task(all_task,task_type)
+    machine,machine_type,resources,command,group_size=util.get_machine_info(mdata,task_type)
     _run(machine,
          machine_type,
          ssh_sess,
@@ -897,31 +652,16 @@ def gen_phonon(task_type,jdata,mdata):
 
 def run_phonon(task_type,jdata,mdata,ssh_sess):
     user= ('user_incar' in jdata.keys())
-    work_path=make_work_path(jdata,'06.phonon',False,False,user)
+    work_path=util.make_work_path(jdata,'06.phonon',False,False,user)
 
     all_task = glob.glob(os.path.join(work_path,'.'))
 
     #vasp
     if task_type == "vasp":
         mdata=decide_fp_machine(mdata)
-        vasp_exec=mdata['fp_command']
-        group_size = mdata['fp_group_size']
-        resources = mdata['fp_resources']
-        machine=mdata['fp_machine']
-        machine_type = mdata['fp_machine']['machine_type']
-        command = vasp_exec
-        command = cmd_append_log(command, "log")
+        machine,machine_type,resources,command,group_size=util.get_machine_info(mdata,task_type)
 
-        run_tasks_ = []
-        for ii in all_task:
-            fres = os.path.join(ii, 'OUTCAR')
-            if os.path.isfile(fres) :
-                if not vasp.check_finished(fres):
-                    run_tasks_.append(ii)
-            else :
-                run_tasks_.append(ii)
-
-        run_tasks = [os.path.basename(ii) for ii in run_tasks_]
+        run_tasks = util.collect_task(all_task,task_type)
         forward_files = ['INCAR', 'POTCAR','KPOINTS']
         backward_files = ['OUTCAR','OSZICAR','vasprun.xml']
         common_files=['POSCAR']
