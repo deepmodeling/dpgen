@@ -127,7 +127,7 @@ def gen_equi(task_type,jdata,mdata):
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
     os.chdir(cwd)
 
-def run_equi(task_type,jdata,mdata,ssh_sess):
+def run_equi(task_type,jdata,mdata):
         #rmprint("This module has been run !")
 
     work_path=util.make_work_path(jdata,'00.equi',False,False,False)
@@ -167,7 +167,7 @@ def run_equi(task_type,jdata,mdata,ssh_sess):
 
     run_tasks = util.collect_task(all_task,task_type)
 
-    machine,machine_type,resources,command,group_size=util.get_machine_info(mdata,task_type)
+    machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
 
     _run(machine,
          machine_type,
@@ -212,9 +212,8 @@ def gen_eos(task_type,jdata,mdata):
         raise RuntimeError("unknow task ", task_type)
     os.chdir(cwd)
 
-def run_eos(task_type,jdata,mdata,ssh_sess):
+def run_eos(task_type,jdata,mdata):
     work_path=util.make_work_path(jdata,'01.eos',False,False,False)
-    print(work_path)
 
     all_task = glob.glob(os.path.join(work_path, "vol-*"))
     all_task.sort()
@@ -252,7 +251,7 @@ def run_eos(task_type,jdata,mdata,ssh_sess):
 
     run_tasks = util.collect_task(all_task,task_type)
 
-    machine,machine_type,resources,command,group_size=util.get_machine_info(mdata,task_type)
+    machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
     _run(machine,
          machine_type,
          ssh_sess,
@@ -289,9 +288,8 @@ def gen_elastic(task_type,jdata,mdata):
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
     os.chdir(cwd)
 
-def run_elastic(task_type,jdata,mdata,ssh_sess):
+def run_elastic(task_type,jdata,mdata):
     work_path=util.make_work_path(jdata,'02.elastic',False,False,False)
-    print(work_path)
 
     all_task = glob.glob(os.path.join(work_path, "dfm-*"))
     all_task.sort()
@@ -328,7 +326,7 @@ def run_elastic(task_type,jdata,mdata,ssh_sess):
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
     run_tasks = util.collect_task(all_task,task_type)
-    machine,machine_type,resources,command,group_size=util.get_machine_info(mdata,task_type)
+    machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
     _run(machine,
          machine_type,
          ssh_sess,
@@ -364,7 +362,7 @@ def gen_vacancy(task_type,jdata,mdata):
         raise RuntimeError("unknow task ", task_type)
     os.chdir(cwd)
 
-def run_vacancy(task_type,jdata,mdata,ssh_sess):
+def run_vacancy(task_type,jdata,mdata):
 
     work_path=util.make_work_path(jdata,'03.vacancy',False,False,False)
     all_task = glob.glob(os.path.join(work_path,'struct-*'))
@@ -402,7 +400,7 @@ def run_vacancy(task_type,jdata,mdata,ssh_sess):
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
     run_tasks = util.collect_task(all_task,task_type)
-    machine,machine_type,resources,command,group_size=util.get_machine_info(mdata,task_type)
+    machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
     _run(machine,
          machine_type,
          ssh_sess,
@@ -446,7 +444,7 @@ def gen_interstitial(task_type,jdata,mdata):
         raise RuntimeError("unknow task ", task_type)
     os.chdir(cwd)
 
-def run_interstitial(task_type,jdata,mdata,ssh_sess):
+def run_interstitial(task_type,jdata,mdata):
 
     reprod_opt=jdata['reprod-opt']
     work_path=util.make_work_path(jdata,'04.interstitial',reprod_opt,False,False)
@@ -499,7 +497,7 @@ def run_interstitial(task_type,jdata,mdata,ssh_sess):
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
-    machine,machine_type,resources,command,group_size=util.get_machine_info(mdata,task_type)
+    machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
 
     if reprod_opt:
         for ii in work_path:
@@ -568,7 +566,7 @@ def gen_surf(task_type,jdata,mdata):
         raise RuntimeError("unknow task ", task_type)
     os.chdir(cwd)
 
-def run_surf(task_type,jdata,mdata,ssh_sess):
+def run_surf(task_type,jdata,mdata):
     static=jdata['static-opt']
     work_path=util.make_work_path(jdata,'05.surf',False,static,False)
 
@@ -606,7 +604,7 @@ def run_surf(task_type,jdata,mdata,ssh_sess):
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
     run_tasks = util.collect_task(all_task,task_type)
-    machine,machine_type,resources,command,group_size=util.get_machine_info(mdata,task_type)
+    machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
     _run(machine,
          machine_type,
          ssh_sess,
@@ -650,7 +648,7 @@ def gen_phonon(task_type,jdata,mdata):
         raise RuntimeError("unknow task ", task_type)
     os.chdir(cwd)
 
-def run_phonon(task_type,jdata,mdata,ssh_sess):
+def run_phonon(task_type,jdata,mdata):
     user= ('user_incar' in jdata.keys())
     work_path=util.make_work_path(jdata,'06.phonon',False,False,user)
 
@@ -659,7 +657,7 @@ def run_phonon(task_type,jdata,mdata,ssh_sess):
     #vasp
     if task_type == "vasp":
         mdata=decide_fp_machine(mdata)
-        machine,machine_type,resources,command,group_size=util.get_machine_info(mdata,task_type)
+        machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
 
         run_tasks = util.collect_task(all_task,task_type)
         forward_files = ['INCAR', 'POTCAR','KPOINTS']
@@ -704,22 +702,6 @@ def run_task (json_file, machine_file) :
 
     record = "record.auto_test"
 
-    model_devi_mdata  = decide_model_devi_machine(mdata)
-    model_devi_machine = model_devi_mdata['model_devi_machine']
-    if ('machine_type' in model_devi_machine) and  \
-       (model_devi_machine['machine_type'] == 'ucloud'):
-        model_devi_ssh_sess = None
-    else :
-        model_devi_ssh_sess = SSHSession(model_devi_machine)
-
-    fp_mdata=decide_fp_machine(mdata)
-    fp_machine = fp_mdata['fp_machine']
-    if ('machine_type' in fp_machine) and  \
-       (fp_machine['machine_type'] == 'ucloud'):
-        fp_ssh_sess = None
-    else :
-        fp_ssh_sess = SSHSession(fp_machine)
-
     confs = jdata['conf_dir']
     ele_list=[key for key in jdata['potcar_map'].keys()]
     key_id = jdata['key_id']
@@ -744,42 +726,42 @@ def run_task (json_file, machine_file) :
     log_iter ("gen_equi", ii, "equi")
     gen_equi (ii, jdata, mdata)
     log_iter ("run_equi", ii, "equi")
-    run_equi  (ii, jdata, mdata,model_devi_ssh_sess)
+    run_equi  (ii, jdata, mdata)
     log_iter ("cmpt_equi", ii,"equi")
     cmpt_equi (ii, jdata, mdata)
     if  jj == "eos" or jj=="all":
         log_iter ("gen_eos", ii, "eos")
         gen_eos (ii, jdata, mdata)
         log_iter ("run_eos", ii, "eos")
-        run_eos  (ii, jdata, mdata,model_devi_ssh_sess)
+        run_eos  (ii, jdata, mdata)
         log_iter ("cmpt_eos", ii, "eos")
         cmpt_eos (ii, jdata, mdata)
     if jj=="elastic" or jj=="all":
         log_iter ("gen_elastic", ii, "elastic")
         gen_elastic (ii, jdata, mdata)
         log_iter ("run_elastic", ii, "elastic")
-        run_elastic  (ii, jdata, mdata,model_devi_ssh_sess)
+        run_elastic  (ii, jdata, mdata)
         log_iter ("cmpt_elastic", ii, "elastic")
         cmpt_elastic (ii, jdata, mdata)
     if jj=="vacancy" or jj=="all":
         log_iter ("gen_vacancy", ii, "vacancy")
         gen_vacancy (ii, jdata, mdata)
         log_iter ("run_vacancy", ii, "vacancy")
-        run_vacancy  (ii, jdata, mdata,model_devi_ssh_sess)
+        run_vacancy  (ii, jdata, mdata)
         log_iter ("cmpt_vacancy", ii, "vacancy")
         cmpt_vacancy (ii, jdata, mdata)
     if jj=="interstitial" or jj=="all":
         log_iter ("gen_interstitial", ii, "interstitial")
         gen_interstitial (ii, jdata, mdata)
         log_iter ("run_interstitial", ii, "interstitial")
-        run_interstitial  (ii, jdata, mdata,model_devi_ssh_sess)
+        run_interstitial  (ii, jdata, mdata)
         log_iter ("cmpt_interstitial", ii, "interstitial")
         cmpt_interstitial (ii, jdata, mdata)
     if jj=="surf" or jj=="all":
         log_iter ("gen_surf", ii, "surf")
         gen_surf (ii, jdata, mdata)
         log_iter ("run_surf", ii, "surf")
-        run_surf  (ii, jdata, mdata,model_devi_ssh_sess)
+        run_surf  (ii, jdata, mdata)
         log_iter ("cmpt_surf", ii, "surf")
         cmpt_surf (ii, jdata, mdata)
     '''
@@ -787,7 +769,7 @@ def run_task (json_file, machine_file) :
         log_iter ("gen_phonon", ii, "phonon")
         gen_phonon (ii, jdata, mdata)
         log_iter ("run_phonon", ii, "phonon")
-        run_phonon  (ii, jdata, mdata,model_devi_ssh_sess)
+        run_phonon  (ii, jdata, mdata)
         log_iter ("cmpt_phonon", ii, "phonon")
         cmpt_phonon (ii, jdata, mdata)
     '''

@@ -43,7 +43,8 @@ def cmpt_vasp(jdata, conf_dir, static = False) :
         print("# cannot find results for conf %s" % (conf_dir))
     sys.stdout.write ("Miller_Indices: \tSurf_E(J/m^2) EpA(eV) equi_EpA(eV)\n")
 
-    with open(os.path.join(task_path,'result'),'w') as fp:
+    result = os.path.join(task_path,'result')
+    with open(result,'w') as fp:
         fp.write('conf_dir:%s\n'% (conf_dir))
         fp.write("Miller_Indices: \tSurf_E(J/m^2) EpA(eV) equi_EpA(eV)\n")
         for ii in struct_path_list :
@@ -59,9 +60,10 @@ def cmpt_vasp(jdata, conf_dir, static = False) :
             evac = (epa * natoms - equi_epa * natoms) / AA * Cf
             sys.stdout.write ("%s:\t %7.3f   %8.3f %8.3f\n" % (structure_dir, evac, epa, equi_epa))
             fp.write("%s:\t %7.3f   %8.3f %8.3f\n" % (structure_dir, evac, epa, equi_epa))
+    fp.close()
     if 'upload_username' in jdata.keys():
         upload_username=jdata['upload_username']
-        util.insert_data('surf','vasp',upload_username,'result')
+        util.insert_data('surf','vasp',upload_username,result)
 
 def cmpt_deepmd_lammps(jdata, conf_dir, task_name, static = False) :
     equi_path = re.sub('confs', global_equi_name, conf_dir)
@@ -80,7 +82,8 @@ def cmpt_deepmd_lammps(jdata, conf_dir, task_name, static = False) :
     if len(struct_path_list) == 0:
         print("# cannot find results for conf %s" % (conf_dir))
     sys.stdout.write ("Miller_Indices: \tSurf_E(J/m^2) EpA(eV) equi_EpA(eV)\n")
-    with open(os.path.join(task_path,'result'),'w') as fp:
+    result = os.path.join(task_path,'result')
+    with open(result,'w') as fp:
         fp.write('conf_dir:%s\n'% (conf_dir))
         fp.write("Miller_Indices: \tSurf_E(J/m^2) EpA(eV) equi_EpA(eV)\n")
         for ii in struct_path_list :
@@ -92,9 +95,10 @@ def cmpt_deepmd_lammps(jdata, conf_dir, task_name, static = False) :
             evac = (epa * natoms - equi_epa * natoms) / AA * Cf
             sys.stdout.write ("%s: \t%7.3f    %8.3f %8.3f\n" % (structure_dir, evac, epa, equi_epa))
             fp.write("%s:\t %7.3f   %8.3f %8.3f\n" % (structure_dir, evac, epa, equi_epa))
-    if 'upload_username' in jdata.keys() and task_name=='deepmd':
+    fp.close()
+    if 'upload_username' in jdata.keys() and task_name=='deepm':
         upload_username=jdata['upload_username']
-        util.insert_data('surf','deepmd',upload_username,'result')
+        util.insert_data('surf','deepmd',upload_username,result)
 
 def _main() :
     parser = argparse.ArgumentParser(

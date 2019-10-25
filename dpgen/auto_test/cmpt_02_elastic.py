@@ -13,8 +13,8 @@ from pymatgen.analysis.elasticity.stress import Stress
 global_equi_name = '00.equi'
 global_task_name = '02.elastic'
 
-def result_et(et,conf_dir,task_path):
-    with open(os.path.join(task_path,'result'),'w') as fp:
+def result_et(et,conf_dir,result):
+    with open(result,'w') as fp:
         fp.write('conf_dir:%s\n'% (conf_dir))
         for ii in range(6) :
             for jj in range(6) :
@@ -28,6 +28,7 @@ def result_et(et,conf_dir,task_path):
         fp.write("# Shear  Modulus GV = %.2f GPa\n" % (GV))
         fp.write("# Youngs Modulus EV = %.2f GPa\n" % (EV))
         fp.write("# Poission Ratio uV = %.2f \n" % (uV))
+    fp.close()
 
 
 def print_et (et):
@@ -73,10 +74,11 @@ def cmpt_vasp(jdata, conf_dir) :
     # bar to GPa
     # et = -et / 1e4
     print_et(et)
-    result_et(et,conf_dir,task_path)
+    result = os.path.join(task_path,'result')
+    result_et(et,conf_dir,result)
     if 'upload_username' in jdata.keys():
         upload_username=jdata['upload_username']
-        util.insert_data('elastic','vasp',upload_username,'result')
+        util.insert_data('elastic','vasp',upload_username,result)
 
 
 def cmpt_deepmd_lammps(jdata, conf_dir, task_name) :
@@ -101,10 +103,11 @@ def cmpt_deepmd_lammps(jdata, conf_dir, task_name) :
     # bar to GPa
     # et = -et / 1e4
     print_et(et)
+    result = os.path.join(task_path,'result')
     result_et(et,conf_dir,task_path)
     if 'upload_username' in jdata.keys() and task_name=='deepmd':
         upload_username=jdata['upload_username']
-        util.insert_data('elastic','deepmd',upload_username,'result')
+        util.insert_data('elastic','deepmd',upload_username,result)
 
 
 

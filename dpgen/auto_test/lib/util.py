@@ -1,8 +1,9 @@
 import numpy as np
 import requests
 import os,re
-import dpgen.auto_test.lib.vasp as vasp
-import dpgen.auto_test.lib.lammps as lammps
+from dpgen.remote.RemoteJob import SSHSession
+from dpgen.auto_test.lib import vasp
+from dpgen.auto_test.lib import lammps
 from dpgen.auto_test.lib.utils import cmd_append_log
 
 lammps_task_type=['deepmd','meam','eam']
@@ -83,7 +84,8 @@ def get_machine_info(mdata,task_type):
         machine_type = mdata['model_devi_machine']['machine_type']
         command = lmp_exec + " -i lammps.in"
         command = cmd_append_log(command, "model_devi.log")
-    return machine, machine_type, resources, command, group_size
+    ssh_sess = SSHSession(machine)
+    return machine, machine_type,ssh_sess,resources, command, group_size
 
 def collect_task(all_task,task_type):
 
@@ -102,6 +104,6 @@ def collect_task(all_task,task_type):
                 run_tasks_.append(ii)
         else :
             run_tasks_.append(ii)
-    
+
     run_tasks = [os.path.basename(ii) for ii in run_tasks_]
     return run_tasks
