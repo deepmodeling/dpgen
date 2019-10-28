@@ -7,7 +7,7 @@ __package__ = 'tools'
 from .context import stat_sys
 
 class TestRunReport(unittest.TestCase):
-    def test (self):
+    def test_stat_sys (self):
         folder = 'run_report_test_output'
         sys, sys_count, sys_all = stat_sys(os.path.join(test_dir,folder), verbose = False, mute = True)
         with open(os.path.join(test_dir, folder, 'param.json')) as fp:
