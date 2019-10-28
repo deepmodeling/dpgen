@@ -85,6 +85,8 @@ def main():
         help="Report the systems and the thermodynamic conditions of the labeled frames.")
     parser_rr.add_argument("JOB_DIR", type=str, 
                            help="the directory of the DP-GEN job")
+    parser_rr.add_argument('-s',"--stat-sys", action = 'store_true',
+                           help="count the labeled frames for each system")
     parser_rr.add_argument('-p',"--param", type=str, default = 'param.json',
                            help="the json file provides DP-GEN paramters, should be located in JOB_DIR")
     parser_rr.add_argument('-v',"--verbose", action = 'store_true',
