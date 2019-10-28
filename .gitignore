@@ -35,3 +35,5 @@ dpgen.egg-info
 */__pycache__
 *.swp
 .eggs
+.coverage
+dbconfig.json

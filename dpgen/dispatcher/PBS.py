@@ -17,7 +17,7 @@ class PBS(Batch) :
         err_str = stderr.read().decode('utf-8')
         if (ret != 0) :
             if str("qstat: Unknown Job Id") in err_str :
-                if self._check_finish_tag() :
+                if self.check_finish_tag() :
                     return JobStatus.finished
                 else :
                     return JobStatus.terminated
@@ -32,7 +32,7 @@ class PBS(Batch) :
         elif    status_word in ["R"] :
             return JobStatus.running
         elif    status_word in ["C","E","K"] :
-            if self._check_finish_tag() :
+            if self.check_finish_tag() :
                 return JobStatus.finished
             else :
                 return JobStatus.terminated

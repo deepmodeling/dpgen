@@ -16,11 +16,15 @@ dlog.addHandler(dlogf)
 
 __author__    = "Han Wang"
 __copyright__ = "Copyright 2019"
-__version__   = "0.2.0"
 __status__    = "Development"
-__date__      = "Aug 13, 2019"
-
-
+try:
+    from ._version import version as __version__
+except ImportError:
+    __version__ = 'unkown'
+try:
+    from ._date import date as __date__
+except ImportError:
+    __date__ = 'unkown'
 
 def info():
     """

@@ -1,4 +1,4 @@
-import os,shutil,uuid
+import os,shutil,uuid,hashlib
 import subprocess as sp
 from glob import glob
 from dpgen import dlog
@@ -30,6 +30,13 @@ def _check_file_path(fname) :
     dirname = os.path.dirname(fname)    
     if dirname != "":
         os.makedirs(dirname, exist_ok=True)
+
+def _identical_files(fname0, fname1) :
+    with open(fname0) as fp:
+        code0 = hashlib.sha1(fp.read().encode('utf-8')).hexdigest()
+    with open(fname1) as fp:
+        code1 = hashlib.sha1(fp.read().encode('utf-8')).hexdigest()
+    return code0 == code1
 
 
 class LocalContext(object) :
@@ -70,7 +77,7 @@ class LocalContext(object) :
             for jj in local_up_files :
                 if not os.path.exists(os.path.join(local_job, jj)):
                     os.chdir(cwd)
-                    raise RuntimeError('cannot file upload file ' + os.path.join(local_job, jj))
+                    raise RuntimeError('cannot find upload file ' + os.path.join(local_job, jj))
                 if os.path.exists(os.path.join(remote_job, jj)) :
                     os.remove(os.path.join(remote_job, jj))
                 _check_file_path(jj)
@@ -94,13 +101,24 @@ class LocalContext(object) :
             for jj in flist :
                 rfile = os.path.join(remote_job, jj)
                 lfile = os.path.join(local_job, jj)
-                if not os.path.exists(rfile) :
-                    os.chdir(cwd)
-                    raise RuntimeError('cannot file download file ' + rfile)
                 if not os.path.realpath(rfile) == os.path.realpath(lfile) :
-                    shutil.move(rfile, lfile)
+                    if (not os.path.exists(rfile)) and (not os.path.exists(lfile)):
+                        raise RuntimeError('do not find download file ' + rfile)
+                    elif (not os.path.exists(rfile)) and (os.path.exists(lfile)) :
+                        # already downloaded
+                        pass
+                    elif (os.path.exists(rfile)) and (not os.path.exists(lfile)) :
+                        # trivial case, download happily
+                        shutil.move(rfile, lfile)
+                    elif (os.path.exists(rfile)) and (os.path.exists(lfile)) :
+                        # both exists, replace!
+                        dlog.info('find existing %s, replacing by %s' % (lfile, rfile))
+                        shutil.rmtree(lfile)
+                        shutil.move(rfile, lfile)
+                    else :
+                        raise RuntimeError('should not reach here!')
                 else :
-                    # print('skip ' + rfile)
+                    # no nothing in the case of linked files
                     pass
         os.chdir(cwd)
 

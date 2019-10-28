@@ -7,6 +7,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 __package__ = 'generator'
 from .context import post_fp
 from .context import post_fp_pwscf
+from .context import post_fp_siesta
 from .context import post_fp_vasp
 from .context import post_fp_gaussian
 from .context import post_fp_cp2k
@@ -14,6 +15,7 @@ from .context import param_file
 from .context import param_old_file
 from .context import param_pwscf_file
 from .context import param_pwscf_old_file
+from .context import param_siesta_file
 from .context import param_gaussian_file
 from .context import param_cp2k_file
 from .context import machine_file
@@ -61,6 +63,7 @@ class TestPostFPVasp(unittest.TestCase):
 
         with open (param_file, 'r') as fp :
             jdata = json.load (fp)
+        jdata['use_ele_temp'] = 2
         post_fp_vasp(0, jdata, rfailed=0.3)
 
         sys = dpdata.LabeledSystem('iter.000000/02.fp/data.000/', fmt = 'deepmd/raw')
@@ -96,11 +99,19 @@ class TestPostFPVasp(unittest.TestCase):
                     self.assertAlmostEqual(ref_cell[ff][ii][jj],
                                            sys.data['cells'][ff][ii][jj])
 
+        self.assertTrue(os.path.isfile('iter.000000/02.fp/data.000/set.000/aparam.npy'))
+        aparam = np.load('iter.000000/02.fp/data.000/set.000/aparam.npy')
+        natoms = sys.get_natoms()
+        self.assertEqual(natoms, 2)
+        self.assertEqual(list(list(aparam)[0]), [0,0])
+        self.assertEqual(list(list(aparam)[1]), [1,1])
+
 
     def test_post_fp_vasp_1(self):
 
         with open (param_file, 'r') as fp :
             jdata = json.load (fp)
+        jdata['use_ele_temp'] = 1
         post_fp_vasp(0, jdata, rfailed=0.3)
 
         sys = dpdata.LabeledSystem('iter.000000/02.fp/data.001/', fmt = 'deepmd/raw')
@@ -136,9 +147,15 @@ class TestPostFPVasp(unittest.TestCase):
                     self.assertAlmostEqual(ref_cell[ff][ii][jj],
                                            sys.data['cells'][ff][ii][jj])
 
+        fparam = np.load('iter.000000/02.fp/data.001/set.000/fparam.npy')
+        self.assertEqual(fparam.shape[0], 1)
+        self.assertEqual(list(fparam), [100000])
+
+
     def test_post_fp_vasp_2(self):
         with open (param_file, 'r') as fp :
             jdata = json.load (fp)
+        jdata['use_ele_temp'] = 1
         with self.assertRaises(RuntimeError):
             post_fp_vasp(0, jdata)
 
@@ -148,12 +165,28 @@ class TestPostFPPWSCF(unittest.TestCase, CompLabeledSys):
         self.places = 5
         self.e_places = 5
         self.f_places = 5
-        self.v_places = 5
+        self.v_places = 2
         assert os.path.isdir('out_data_post_fp_pwscf'), 'out data for post fp pwscf should exist'
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         shutil.copytree('out_data_post_fp_pwscf', 'iter.000000')
         with open (param_pwscf_file, 'r') as fp :
+            jdata = json.load (fp)
+        post_fp(0, jdata)
+        self.system_1 = dpdata.LabeledSystem('iter.000000/orig', fmt = 'deepmd/raw')
+        self.system_2 = dpdata.LabeledSystem('iter.000000/02.fp/data.000', fmt = 'deepmd/raw')
+
+class TestPostFPSIESTA(unittest.TestCase, CompLabeledSys):
+    def setUp(self):
+        self.places = 5
+        self.e_places = 5
+        self.f_places = 5
+        self.v_places = 5
+        assert os.path.isdir('out_data_post_fp_siesta'), 'out data for post fp siesta should exist'
+        if os.path.isdir('iter.000000') :
+            shutil.rmtree('iter.000000')
+        shutil.copytree('out_data_post_fp_siesta', 'iter.000000')
+        with open (param_siesta_file, 'r') as fp :
             jdata = json.load (fp)
         post_fp(0, jdata)
         self.system_1 = dpdata.LabeledSystem('iter.000000/orig', fmt = 'deepmd/raw')

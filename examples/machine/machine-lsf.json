@@ -1,0 +1,93 @@
+{
+  "train": [
+    {
+      "machine": {
+        "machine_type": "lsf",
+        "hostname": "localhost",
+        "port": 22,
+        "username": "ypliu",
+        "work_path": "/data/home/ypliu/test/deepmd-tutorial/cp2k_dpgen/dpmd"
+      },
+      "resources": {
+        "_comment": "this part should be modified if GPU resources could be called directly by LSF",
+        "node_cpu": 4,
+        "numb_node": 1,
+        "task_per_node": 4,
+        "partition": "gpu",
+        "exclude_list": [],
+        "mem_limit": 11,
+        "source_list": [
+          "/data/home/ypliu/test/deepmd-tutorial/cp2k_dpgen/source_env.sh",
+          "/data/home/ypliu/test/deepmd-tutorial/cp2k_dpgen/test_gpu_sub.sh"
+        ],
+        "module_list": [
+          "vasp/5.4.4",
+          "cuda"
+        ],
+        "time_limit": "23:0:0"
+      },
+      "deepmd_path": "/data/home/ypliu/deepmd/deepmd_root"
+    }
+  ],
+  "model_devi": [
+    {
+      "machine": {
+        "machine_type": "lsf",
+        "hostname": "localhost",
+        "port": 22,
+        "username": "ypliu",
+        "work_path": "/data/home/ypliu/test/deepmd-tutorial/cp2k_dpgen/lammps"
+      },
+      "resources": {
+        "_comment": "this part should be modified if GPU resources could be called directly by LSF",
+        "node_cpu": 4,
+        "numb_node": 1,
+        "task_per_node": 4,
+        "partition": "gpu",
+        "exclude_list": [],
+        "mem_limit": 11,
+        "source_list": [
+          "/data/home/ypliu/test/deepmd-tutorial/cp2k_dpgen/source_env.sh",
+          "/data/home/ypliu/test/deepmd-tutorial/cp2k_dpgen/test_gpu_sub.sh"
+        ],
+        "module_list": [
+          "vasp/5.4.4",
+          "cuda",
+          "gcc/4.9.4"
+        ],
+        "time_limit": "23:0:0"
+      },
+      "command": "/data/home/ypliu/lammps/lammps-7Aug19/src/lmp_mpi",
+      "group_size": 10
+    }
+  ],
+  "fp": [
+    {
+      "machine": {
+        "machine_type": "lsf",
+        "hostname": "localhost",
+        "port": 22,
+        "username": "ypliu",
+        "work_path": "/data/home/ypliu/test/deepmd-tutorial/cp2k_dpgen/cp2k"
+      },
+      "resources": {
+        "cvasp": false,
+        "task_per_node": 28,
+        "node_cpu": 28,
+        "exclude_list": [],
+        "mem_limit": 128,
+        "with_mpi": true,
+        "source_list": [],
+        "module_list": [
+          "intel/17.0.1",
+          "mpi/intel/2017.1.132"
+        ],
+        "time_limit": "96:0:0",
+        "partition": "q2680v4m128",
+        "_comment": "that's Bel"
+      },
+      "command": "/share/apps/cp2k-5.0/Linux-x86-64-intel-host/cp2k.popt -i input.inp",
+      "group_size": 5
+    }
+  ]
+}

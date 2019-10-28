@@ -9,6 +9,7 @@ from dpgen.dispatcher.Slurm import Slurm
 from dpgen.dispatcher.LSF import LSF
 from dpgen.dispatcher.PBS import PBS
 from dpgen.dispatcher.Shell import Shell
+from dpgen.dispatcher.AWS import AWS 
 from dpgen.dispatcher.JobStatus import JobStatus
 from dpgen import dlog
 from hashlib import sha1
@@ -58,6 +59,8 @@ class Dispatcher(object):
             self.batch = PBS
         elif batch_type == 'shell':
             self.batch = Shell
+        elif batch_type == 'aws':
+            self.batch = AWS
         else :
             raise RuntimeError('unknown batch ' + batch_type)
 
@@ -93,7 +96,8 @@ class Dispatcher(object):
                 chunk_sha1 = sha1(task_chunks_[ii].encode('utf-8')).hexdigest() 
                 # if hash in map, recover job, else start a new job
                 if chunk_sha1 in path_map:
-                    job_uuid = path_map[chunk_sha1][1].split('/')[-1]
+                    # job_uuid = path_map[chunk_sha1][1].split('/')[-1]
+                    job_uuid = path_map[chunk_sha1][2]
                     dlog.debug("load uuid %s for chunk %s" % (job_uuid, task_chunks_[ii]))
                 else:
                     job_uuid = None
@@ -113,14 +117,15 @@ class Dispatcher(object):
                 # submit new or recover old submission
                 if job_uuid is None:
                     rjob['batch'].submit(chunk, command, res = resources, outlog=outlog, errlog=errlog)
-                    dlog.debug('assigned uudi %s for %s ' % (rjob['context'].job_uuid, task_chunks_[ii]))
-                    dlog.info('new submission of %s' % rjob['context'].job_uuid)
+                    job_uuid = rjob['context'].job_uuid
+                    dlog.debug('assigned uudi %s for %s ' % (job_uuid, task_chunks_[ii]))
+                    dlog.info('new submission of %s' % job_uuid)
                 else:
                     rjob['batch'].submit(chunk, command, res = resources, outlog=outlog, errlog=errlog, restart = True)
                     dlog.info('restart from old submission %s ' % job_uuid)
                 # record job and its hash
                 job_list.append(rjob)
-                path_map[chunk_sha1] = [context.local_root,context.remote_root]
+                path_map[chunk_sha1] = [context.local_root, context.remote_root, job_uuid]
             else :
                 # finished job, append a None to list
                 job_list.append(None)
@@ -200,3 +205,24 @@ class PMap(object):
          os.remove(f_path_map)
       except:
          pass
+
+def make_dispatcher(mdata):
+    try:
+        hostname = mdata['hostname']
+        context_type = 'ssh'
+    except:
+        context_type = 'local'
+    try:
+        batch_type = mdata['batch']
+    except:
+        dlog.info('cannot find key "batch" in machine file, try to use deprecated key "machine_type"')
+        batch_type = mdata['machine_type']
+    try:
+        lazy_local = mdata['lazy_local']
+    except:
+        lazy_local = False
+    if lazy_local and context_type == 'local':
+        dlog.info('Dispatcher switches to the lazy local mode')
+        context_type = 'lazy-local'
+    disp = Dispatcher(mdata, context_type=context_type, batch_type=batch_type)
+    return disp
