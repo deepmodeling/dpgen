@@ -9,9 +9,12 @@ from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import connected_components
 from scipy.spatial import cKDTree
 try:
-    import openbabel
+    from openbabel import openbabel
 except ImportError:
-    pass
+    try:
+        import openbabel
+    except ImportError:
+        pass
 try:
     from ase import Atoms, Atom
     from ase.data import atomic_numbers
