@@ -17,6 +17,7 @@ import json
 import random
 import logging
 import logging.handlers
+import queue
 import warnings
 import shutil
 import time
@@ -1673,7 +1674,12 @@ def run_iter (param_file, machine_file) :
 
     if mdata.get('handlers', None):
         if mdata['handlers'].get('smtp', None):
-            dlog.addHandler(logging.handlers.SMTPHandler(**mdata['handlers']['smtp']))
+            que = queue.Queue(-1)
+            queue_handler = logging.handlers.QueueHandler(que)
+            smtp_handler = logging.handlers.SMTPHandler(**mdata['handlers']['smtp'])
+            listener = logging.handlers.QueueListener(que, smtp_handler)
+            dlog.addHandler(queue_handler)
+            listener.start()
 
     max_tasks = 10000
     numb_task = 9
