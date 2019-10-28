@@ -4,12 +4,12 @@ import unittest
 test_dir = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 sys.path.insert(0, os.path.join(test_dir, '..'))
 __package__ = 'tools'
-from .context import stat_tasks
+from .context import stat_sys
 
 class TestRunReport(unittest.TestCase):
     def test (self):
         folder = 'run_report_test_output'
-        sys, sys_count, sys_all = stat_tasks(os.path.join(test_dir,folder), verbose = False, mute = True)
+        sys, sys_count, sys_all = stat_sys(os.path.join(test_dir,folder), verbose = False, mute = True)
         with open(os.path.join(test_dir, folder, 'param.json')) as fp:
             jdata = json.load(fp)
         self.assertEqual(sys, jdata['sys_configs'])
