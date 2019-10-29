@@ -118,11 +118,13 @@ class Test(unittest.TestCase):
 
     def testParsingVasp(self):
         parsing_vasp(self.cwd, self.config_info_dict, self.skip_init,self.output, id_prefix=dpgen.SHORT_CMD )
-        try:
-           Potcar(['Al'])
-           ref=os.path.join(self.cwd,'data/all_data_pp.json')
-        except:
-           ref=os.path.join(self.cwd,'data/all_data.json')
+        #try:
+        #   Potcar(['Al'])
+        #   ref=os.path.join(self.cwd,'data/all_data_pp.json')
+        #except:
+        #   ref=os.path.join(self.cwd,'data/all_data.json')
+        Potcar(['Al'])
+        ref=os.path.join(self.cwd,'data/all_data_pp.json')
         ret=os.path.join(self.cwd,'dpgen_db.json')
 
         retd=loadfn(ret)
