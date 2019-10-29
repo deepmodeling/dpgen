@@ -1,5 +1,6 @@
 import os,sys,shutil
 import unittest
+import json
 import numpy as np
 import tarfile
 from glob import glob
@@ -42,6 +43,11 @@ class Test(unittest.TestCase):
         self.ref_entries=loadfn(os.path.join(self.cwd,'data/entries.json'))
         self.init_path=sorted(glob(os.path.join(self.r_init_path,init_pat)))
         self.iter_path=sorted(glob(os.path.join(self.r_iter_path,iter_pat)))
+        with open("param_Al.json", "r") as fr:
+          jdata = json.load(fr)
+        self.config_info_dict = jdata["config_info_dict"]
+        self.skip_init = jdata["skip_init"]
+        self.output = jdata["output"]
 
     def testDPPotcar(self):
             
@@ -111,7 +117,7 @@ class Test(unittest.TestCase):
         self.assertEqual(ret0.entry_id,'pku-0')
 
     def testParsingVasp(self):
-        parsing_vasp(self.cwd,id_prefix=dpgen.SHORT_CMD)
+        parsing_vasp(self.cwd, self.config_info_dict, self.skip_init,self.output, id_prefix=dpgen.SHORT_CMD )
         try:
            Potcar(['Al'])
            ref=os.path.join(self.cwd,'data/all_data_pp.json')
@@ -134,10 +140,14 @@ class Test(unittest.TestCase):
             self.assertEqual(len(i.composition),len(j.composition))
             self.assertEqual(len(i.attribute),len(j.attribute))
         os.remove(os.path.join(self.cwd,'dpgen_db.json'))
-           
+        
 
     def tearDown(self):
         for path in [self.r_init_path, self.r_iter_path, self.data]:
            if os.path.isdir(path) :
               shutil.rmtree(path)
+        if os.path.isfile("dpgen.log"):
+          os.remove("dpgen.log")
+        if os.path.isfile("record.database"):
+          os.remove("record.database")
         
