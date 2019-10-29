@@ -123,8 +123,9 @@ class Test(unittest.TestCase):
         #   ref=os.path.join(self.cwd,'data/all_data_pp.json')
         #except:
         #   ref=os.path.join(self.cwd,'data/all_data.json')
-        Potcar(['Al'])
+        #Potcar(['Al'])
         ref=os.path.join(self.cwd,'data/all_data_pp.json')
+
         ret=os.path.join(self.cwd,'dpgen_db.json')
 
         retd=loadfn(ret)
