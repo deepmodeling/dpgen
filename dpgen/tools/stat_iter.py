@@ -65,14 +65,13 @@ def stat_iter(target_folder,
                 f":OUTCAR_not_convergence:{value['OUTCAR_not_convergence']}"
                 f":reff:{value['reff']}")
 
-
-
 def stat_time(target_folder, 
             param_file = 'param.json', 
             verbose = True, 
             mute = False):
-    script = os.path.join(os.path.dirname(__file__), 'update_time.py')
+    script = os.path.join(os.path.dirname(__file__), 'update_time.sh')
     output = subprocess.run([f'bash {script} {target_folder}'],
         shell=True,stdout=subprocess.PIPE).stdout
     data = output.decode()
     print(data)
+
