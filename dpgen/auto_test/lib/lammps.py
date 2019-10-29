@@ -52,7 +52,7 @@ def apply_type_map(conf_file, deepmd_type_map, ptypes) :
         raise RuntimeError("cannot find the entry 'atom types' in ", conf_file)
     words = lines[idx_ntypes].split()
     words[0] = str(ntypes)
-    new_lines[idx_ntypes] = " ".join(words)    
+    new_lines[idx_ntypes] = " ".join(words)
     # find number of atoms
     idx_atom_entry = -1
     for idx, ii in enumerate(lines) :
@@ -71,7 +71,7 @@ def apply_type_map(conf_file, deepmd_type_map, ptypes) :
         ii = " ".join(words)
         new_lines[idx] = ii
     with open(conf_file, 'w') as fp:
-        fp.write("\n".join(new_lines))        
+        fp.write("\n".join(new_lines))
 
 def _get_ntype(conf) :
     with open(conf, 'r') as fp:
@@ -127,7 +127,7 @@ def make_lammps_eval(conf, ntypes, interaction, param) :
     ret += "box         tilt large\n"
     ret += "read_data   %s\n" % conf
     for ii in range(ntypes) :
-        ret += "mass            %d 1\n" % (ii+1)            
+        ret += "mass            %d 1\n" % (ii+1)
     ret += "neigh_modify    every 1 delay 0 check no\n"
     ret += interaction(param)
     ret += "compute         mype all pe\n"
@@ -157,9 +157,9 @@ def make_lammps_eval(conf, ntypes, interaction, param) :
     return ret
 
 
-def make_lammps_equi(conf, ntypes, interaction, param, 
-                     etol=1e-12, ftol=1e-6, 
-                     maxiter=5000, maxeval=500000, 
+def make_lammps_equi(conf, ntypes, interaction, param,
+                     etol=1e-12, ftol=1e-6,
+                     maxiter=5000, maxeval=500000,
                      change_box = True) :
     """
     make lammps input for equilibritation
@@ -173,7 +173,7 @@ def make_lammps_equi(conf, ntypes, interaction, param,
     ret += "box         tilt large\n"
     ret += "read_data   %s\n" % conf
     for ii in range(ntypes) :
-        ret += "mass            %d 1\n" % (ii+1)            
+        ret += "mass            %d 1\n" % (ii+1)
     ret += "neigh_modify    every 1 delay 0 check no\n"
     ret += interaction(param)
     ret += "compute         mype all pe\n"
@@ -208,8 +208,8 @@ def make_lammps_equi(conf, ntypes, interaction, param,
     ret += "print \"Final Stress (xx yy zz xy xz yz) = ${Pxx} ${Pyy} ${Pzz} ${Pxy} ${Pxz} ${Pyz}\"\n"
     return ret
 
-def make_lammps_elastic(conf, ntypes, interaction, param, 
-                        etol=1e-12, ftol=1e-6, 
+def make_lammps_elastic(conf, ntypes, interaction, param,
+                        etol=1e-12, ftol=1e-6,
                         maxiter=5000, maxeval=500000) :
     """
     make lammps input for elastic calculation
@@ -223,7 +223,7 @@ def make_lammps_elastic(conf, ntypes, interaction, param,
     ret += "box         tilt large\n"
     ret += "read_data   %s\n" % conf
     for ii in range(ntypes) :
-        ret += "mass            %d 1\n" % (ii+1)            
+        ret += "mass            %d 1\n" % (ii+1)
     ret += "neigh_modify    every 1 delay 0 check no\n"
     ret += interaction(param)
     ret += "compute         mype all pe\n"
@@ -251,8 +251,8 @@ def make_lammps_elastic(conf, ntypes, interaction, param,
     return ret
 
 def make_lammps_press_relax(conf, ntypes, scale2equi, interaction, param,
-                            B0 = 70, bp = 0, 
-                            etol=1e-12, ftol=1e-6, 
+                            B0 = 70, bp = 0,
+                            etol=1e-12, ftol=1e-6,
                             maxiter=5000, maxeval=500000) :
     """
     make lammps input for relaxation at a certain volume
@@ -274,7 +274,7 @@ def make_lammps_press_relax(conf, ntypes, scale2equi, interaction, param,
     ret += "box         tilt large\n"
     ret += "read_data   %s\n" % conf
     for ii in range(ntypes) :
-        ret += "mass            %d 1\n" % (ii+1)            
+        ret += "mass            %d 1\n" % (ii+1)
     ret += "neigh_modify    every 1 delay 0 check no\n"
     ret += interaction(param)
     ret += "compute         mype all pe\n"
@@ -305,8 +305,8 @@ def make_lammps_press_relax(conf, ntypes, scale2equi, interaction, param,
     ret += "print \"Final Stress (xx yy zz xy xz yz) = ${Pxx} ${Pyy} ${Pzz} ${Pxy} ${Pxz} ${Pyz}\"\n"
     return ret
 
-def make_lammps_phonon(conf, masses, interaction, param, 
-                        etol=1e-12, ftol=1e-6, 
+def make_lammps_phonon(conf, masses, interaction, param,
+                        etol=1e-12, ftol=1e-6,
                         maxiter=5000, maxeval=500000):
     """
     make lammps input for elastic calculation
@@ -318,10 +318,10 @@ def make_lammps_phonon(conf, masses, interaction, param,
     ret += "boundary	p	p    p\n"
     ret += "atom_style	atomic\n"
     ret += "box         tilt large\n"
-    ret += "read_data   %s\n" % conf            
+    ret += "read_data   %s\n" % conf
     ntypes=len(masses)
     for ii in range(ntypes) :
-        ret += "mass            %d %f\n" % (ii+1,masses[ii])  
+        ret += "mass            %d %f\n" % (ii+1,masses[ii])
     ret += "neigh_modify    every 1 delay 0 check no\n"
     ret += interaction(param)
     return ret
@@ -329,7 +329,7 @@ def make_lammps_phonon(conf, masses, interaction, param,
 def _get_epa (lines) :
     for ii in lines:
         if ("Final energy per atoms" in ii) and (not 'print' in ii):
-            return float(ii.split('=')[1].split()[0])    
+            return float(ii.split('=')[1].split()[0])
     raise RuntimeError("cannot find key \"Final energy per atoms\" in lines, something wrong")
 
 def _get_vpa (lines) :
@@ -349,7 +349,7 @@ def get_nev (log) :
     get natoms, energy_per_atom and volume_per_atom from lammps log
     """
     with open(log, 'r') as fp:
-        lines = fp.read().split('\n') 
+        lines = fp.read().split('\n')
     epa = _get_epa(lines)
     vpa = _get_vpa(lines)
     natoms = _get_natoms(lines)
@@ -360,7 +360,7 @@ def get_base_area (log) :
     get base area
     """
     with open(log, 'r') as fp:
-        lines = fp.read().split('\n') 
+        lines = fp.read().split('\n')
     for ii in lines:
         if ("Final Base area" in ii) and (not 'print' in ii):
             return float(ii.split('=')[1].split()[0])
@@ -388,7 +388,7 @@ def poscar_from_last_dump(dump, poscar_out, deepmd_type_map) :
         if 'ITEM: TIMESTEP' in ii :
             step_idx = idx
     if step_idx == -1 :
-        raise RuntimeError("cannot find timestep in lammps dump, something wrong")    
+        raise RuntimeError("cannot find timestep in lammps dump, something wrong")
     with open('tmp_dump', 'w') as fp:
         fp.write("\n".join(lines[step_idx:]))
     cvt_lammps_conf('tmp_dump', poscar_out, ofmt='vasp')
@@ -401,6 +401,15 @@ def poscar_from_last_dump(dump, poscar_out, deepmd_type_map) :
         lines = fp.write("\n".join(lines))
 
 
+def check_finished_new(fname,keyword):
+    with open(fname, 'r') as fp :
+        lines = fp.read().split('\n')
+    flag=False
+    for jj in lines:
+        if (keyword in jj) and (not 'print' in jj):
+            flag=True
+    return flag
 
-    
- 
+def check_finished(fname):
+    with open(fname, 'r') as fp:
+        return 'Total wall time:' in fp.read()

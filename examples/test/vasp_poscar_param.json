@@ -1,0 +1,47 @@
+{
+    "_comment": "models",
+    "potcar_map" : {
+	      "Al" : "/somewhere/example/POTCAR" 
+    },
+    "conf_dir":"confs/Al/std-fcc",
+    "key_id":"key id of Material project",
+    "task_type":"vasp",
+    "task":"all",
+    
+   "relax_incar":"somewhere/relax_incar",
+   "scf_incar":"somewhere/scf_incar",
+
+    "_comment":"00.equi",
+    "store_stable":true,
+
+    "_comment": "01.eos",
+    "vol_start":	12,
+    "vol_end":		22,
+    "vol_step":		0.5,
+
+    "_comment": "02.elastic",
+    "norm_deform":	2e-2,
+    "shear_deform":	5e-2,
+    
+    "_comment":"03.vacancy",
+    "supercell":[3,3,3],
+
+    "_comment":"04.interstitial",
+    "insert_ele":["Al"],
+    "reprod-opt":false,
+
+    "_comment": "05.surface",
+    "min_slab_size":	10,
+    "min_vacuum_size":	11,
+    "_comment": "pert xz to work around vasp bug...",
+    "pert_xz":		0.01,
+    "max_miller": 2,
+    "static-opt":false,
+    "relax_box":false,    
+
+    "_comment":"06.phonon",
+    "supercell_matrix":[2,2,2],
+    "band":"0 1 0  0.5 1 0.5  0.375 0.75 0.375  0  0  0  0.5 0.5 0.5",
+
+    "_comment":	"that's all"
+}
