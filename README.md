@@ -582,7 +582,7 @@ The last part is the optional settings for various tasks mentioned above. You ca
     "_comment":"00.equi",
     "store_stable":true,
 ```
-+ `store_stable`:(boolean) whether to store the stable energy and volume
++ `store_stable`:(boolean) whether to store the stable energy and volume for element. If you test alloy or something with more than 1 element, you need to compute the energies of corresponding elements respectively first of all and set false while testing alloy.
 
 ```json
     "_comment": "01.eos",
