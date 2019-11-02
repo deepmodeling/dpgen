@@ -19,7 +19,6 @@
     },
 
     "_comment":"00.equi",
-    "store_stable":true,
 
     "_comment": "01.eos",
     "vol_start":	12,
