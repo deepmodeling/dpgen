@@ -53,7 +53,7 @@ def cmpt_vasp(jdata, conf_dir, supercell) :
     sys.stdout.write ("Structure: \tVac_E(eV)  E(eV) equi_E(eV)\n")
     for ii in struct_path_list :
         struct_poscar = os.path.join(ii, 'POSCAR')
-        energy_shift = comput_e_shift(struct_poscar, vasp_str)
+        #energy_shift = comput_e_shift(struct_poscar, vasp_str)
         structure_dir = os.path.basename(ii)
         outcar = os.path.join(ii, 'OUTCAR')
         natoms, epa, vpa = vasp.get_nev(outcar)
@@ -84,7 +84,7 @@ def cmpt_deepmd_lammps(jdata, conf_dir, supercell, task_name) :
     sys.stdout.write ("Structure: \tVac_E(eV)  E(eV) equi_E(eV)\n")
     for ii in struct_path_list :
         struct_poscar = os.path.join(ii, 'POSCAR')
-        energy_shift = comput_e_shift(struct_poscar, task_name)
+        #energy_shift = comput_e_shift(struct_poscar, task_name)
         structure_dir = os.path.basename(ii)
         lmp_log = os.path.join(ii, 'log.lammps')
         natoms, epa, vpa = lammps.get_nev(lmp_log)
