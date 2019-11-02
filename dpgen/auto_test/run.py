@@ -723,12 +723,13 @@ def run_task (json_file, machine_file) :
         else :
                 gen_confs.gen_alloy(ele_list,key_id)
     #default task
-    log_iter ("gen_equi", ii, "equi")
-    gen_equi (ii, jdata, mdata)
-    log_iter ("run_equi", ii, "equi")
-    run_equi  (ii, jdata, mdata)
-    log_iter ("cmpt_equi", ii,"equi")
-    cmpt_equi (ii, jdata, mdata)
+    if  jj == "equi" or jj=="all":
+        log_iter ("gen_equi", ii, "equi")
+        gen_equi (ii, jdata, mdata)
+        log_iter ("run_equi", ii, "equi")
+        run_equi  (ii, jdata, mdata)
+        log_iter ("cmpt_equi", ii,"equi")
+        cmpt_equi (ii, jdata, mdata)
     if  jj == "eos" or jj=="all":
         log_iter ("gen_eos", ii, "eos")
         gen_eos (ii, jdata, mdata)
