@@ -183,13 +183,12 @@ def run_equi(task_type,jdata,mdata):
 
 def cmpt_equi(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
-    stable=jdata['store_stable']
     #vasp
     if task_type=="vasp":
-        n, e, v = cmpt_00_equi.comput_vasp_nev(jdata, conf_dir, stable)
+        n, e, v = cmpt_00_equi.comput_vasp_nev(jdata, conf_dir,False)
     #lammps
     elif task_type in lammps_task_type:
-        n, e, v = cmpt_00_equi.comput_lmp_nev(conf_dir, task_type, stable)
+        n, e, v = cmpt_00_equi.comput_lmp_nev(conf_dir, task_type,False)
     else :
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
     print('conf_dir:\t EpA(eV)  VpA(A^3)')
@@ -723,13 +722,12 @@ def run_task (json_file, machine_file) :
         else :
                 gen_confs.gen_alloy(ele_list,key_id)
     #default task
-    if  jj == "equi" or jj=="all":
-        log_iter ("gen_equi", ii, "equi")
-        gen_equi (ii, jdata, mdata)
-        log_iter ("run_equi", ii, "equi")
-        run_equi  (ii, jdata, mdata)
-        log_iter ("cmpt_equi", ii,"equi")
-        cmpt_equi (ii, jdata, mdata)
+    log_iter ("gen_equi", ii, "equi")
+    gen_equi (ii, jdata, mdata)
+    log_iter ("run_equi", ii, "equi")
+    run_equi  (ii, jdata, mdata)
+    log_iter ("cmpt_equi", ii,"equi")
+    cmpt_equi (ii, jdata, mdata)
     if  jj == "eos" or jj=="all":
         log_iter ("gen_eos", ii, "eos")
         gen_eos (ii, jdata, mdata)

@@ -1,0 +1,55 @@
+new OUTCAR
+   ions per type =              24
+  volume of cell :      612.19
+  in kB     -18.16816   -13.58089   -16.99041    -0.72272    -4.13486    -0.96833
+  volume of cell :      612.19
+  free  energy   TOTEN  =       -83.61785448 eV
+  in kB     -17.28469   -12.32458   -15.77149    -0.62755    -4.08115    -0.85650
+  volume of cell :      612.19
+  free  energy   TOTEN  =       -83.69512350 eV
+  in kB     -14.73306    -8.44737   -12.16792    -0.40947    -3.99919    -0.40694
+  volume of cell :      612.19
+  free  energy   TOTEN  =       -83.77388705 eV
+  in kB     -14.42783    -8.04197   -11.78520    -0.39515    -3.99010    -0.37041
+  volume of cell :      612.19
+  free  energy   TOTEN  =       -83.77414804 eV
+  in kB     -14.12763    -7.64661   -11.14419    -0.49191    -3.98088    -0.25052
+  volume of cell :      612.19
+  free  energy   TOTEN  =       -83.78497552 eV
+  in kB     -13.97870    -7.39776   -10.67605    -0.57698    -3.97295    -0.12607
+  volume of cell :      612.19
+  free  energy   TOTEN  =       -83.78901460 eV
+  in kB     -13.78709    -7.19157   -10.44735    -0.58735    -3.96959    -0.11032
+  volume of cell :      612.19
+  free  energy   TOTEN  =       -83.78907665 eV
+  in kB     -13.50223    -6.62259   -10.16392    -0.63271    -4.00206    -0.03616
+  volume of cell :      612.19
+  free  energy   TOTEN  =       -83.79217882 eV
+  in kB     -13.04231    -5.81616    -9.70884    -0.69010    -4.04003     0.05986
+  volume of cell :      612.19
+  free  energy   TOTEN  =       -83.79409968 eV
+  in kB     -12.95004    -5.58709    -9.61832    -0.71352    -4.05343     0.10082
+  volume of cell :      612.19
+  free  energy   TOTEN  =       -83.79429021 eV
+  in kB     -12.44649    -4.71175    -9.03030    -0.75963    -4.17867     0.18397
+  volume of cell :      612.19
+  free  energy   TOTEN  =       -83.79610552 eV
+  in kB     -12.40387    -4.40210    -8.92842    -0.79247    -4.26651     0.24547
+  volume of cell :      612.19
+  free  energy   TOTEN  =       -83.79672797 eV
+  in kB     -11.52239    -2.96988    -7.92736    -0.86274    -4.45452     0.37372
+  volume of cell :      612.19
+  free  energy   TOTEN  =       -83.79613341 eV
+  in kB     -12.01134    -3.87153    -8.50560    -0.81047    -4.31649     0.27597
+  volume of cell :      612.19
+  free  energy   TOTEN  =       -83.79681283 eV
+  in kB     -11.82985    -3.45668    -8.27964    -0.81211    -4.39249     0.30374
+  volume of cell :      612.19
+  free  energy   TOTEN  =       -83.79725653 eV
+  in kB     -12.14156    -3.70364    -8.57669    -0.81318    -4.41647     0.31122
+  volume of cell :      612.19
+  free  energy   TOTEN  =       -83.79727785 eV
+  in kB     -11.79360    -3.23330    -8.20893    -0.80105    -4.44847     0.33097
+  volume of cell :      612.19
+  free  energy   TOTEN  =       -83.79738986 eV
+                         Elapsed time (sec):   125785.883

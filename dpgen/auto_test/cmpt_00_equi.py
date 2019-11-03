@@ -21,14 +21,12 @@ def comput_e_shift(poscar, task_name) :
             ener_shift += a_natoms[ii] * ener
     return ener_shift
 
-def comput_lmp_nev(conf_dir, task_name, write_stable = False) :
+def comput_lmp_nev(conf_dir, task_name,write_stable = False) :
     conf_path = re.sub('confs', global_equi_name, conf_dir)
     conf_path = os.path.abspath(conf_path)
     poscar = os.path.join(conf_path, 'POSCAR')
-    if write_stable :
-        ele_types = vasp.get_poscar_types(poscar) 
-        if len(ele_types) > 1 :
-            raise RuntimeError('stable energy and volume only for one element, current you have %s from POSCAR' % str(ele_types))
+    ele_types = vasp.get_poscar_types(poscar)
+
     ener_shift = comput_e_shift(poscar, task_name)
 
     lmp_path = os.path.join(conf_path, task_name)
@@ -36,7 +34,7 @@ def comput_lmp_nev(conf_dir, task_name, write_stable = False) :
     if os.path.isfile(log_lammps):
         natoms, epa, vpa = lammps.get_nev(log_lammps)
         epa = (epa * natoms - ener_shift) / natoms
-        if write_stable :
+        if len(ele_types)==1:
             stable_dir = 'stables'
             os.makedirs(stable_dir, exist_ok=True)
             name_prefix=os.path.join(stable_dir,'%s.%s' % (ele_types[0], task_name))
@@ -47,14 +45,11 @@ def comput_lmp_nev(conf_dir, task_name, write_stable = False) :
         return None, None, None
 
 def comput_vasp_nev(jdata, conf_dir, write_stable = False) :
-    
+
     conf_path = re.sub('confs', global_equi_name, conf_dir)
     conf_path = os.path.abspath(conf_path)
     poscar = os.path.join(conf_path, 'POSCAR')
-    if write_stable :
-        ele_types = vasp.get_poscar_types(poscar) 
-        if len(ele_types) > 1 :
-            raise RuntimeError('stable energy and volume only for one element, current you have %s from POSCAR' % str(ele_types))
+    ele_types = vasp.get_poscar_types(poscar)
 
     if 'relax_incar' in jdata.keys():
         vasp_str='vasp-relax_incar'
@@ -73,7 +68,7 @@ def comput_vasp_nev(jdata, conf_dir, write_stable = False) :
     if os.path.isfile(outcar):
         natoms, epa, vpa = vasp.get_nev(outcar)
         epa = (epa * natoms - ener_shift) / natoms
-        if write_stable :
+        if len(ele_types)==1:
             stable_dir = 'stables'
             os.makedirs(stable_dir, exist_ok=True)
             name_prefix=os.path.join(stable_dir,'%s.'% (ele_types[0])+vasp_str)
@@ -86,8 +81,8 @@ def comput_vasp_nev(jdata, conf_dir, write_stable = False) :
 def _main():
     parser = argparse.ArgumentParser(
         description="cmpt 00.equi")
-    parser.add_argument('TASK', type=str, 
-                        choices = ['all', 'vasp', 'deepmd', 'meam'], 
+    parser.add_argument('TASK', type=str,
+                        choices = ['all', 'vasp', 'deepmd', 'meam'],
                         help='the task of generation, vasp or lammps')
     parser.add_argument('PARAM', type=str,
                         help='the json param')
@@ -120,4 +115,3 @@ def _main():
 
 if __name__ == '__main__' :
     _main()
-    

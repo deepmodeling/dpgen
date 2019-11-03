@@ -1,0 +1,25 @@
+new OUTCAR
+   ions per type =               6
+  volume of cell :      156.02
+  in kB     -15.08384   -13.49661   -11.83062    -2.45023     4.10908    -2.98979
+  volume of cell :      156.02
+  free  energy   TOTEN  =       -21.16707045 eV
+  in kB     -13.75295   -12.10683   -10.38018    -2.53007     4.25120    -3.08883
+  volume of cell :      156.02
+  free  energy   TOTEN  =       -21.17342065 eV
+  in kB     -12.58106   -10.85240    -9.03087    -2.64123     4.45215    -3.22856
+  volume of cell :      156.02
+  free  energy   TOTEN  =       -21.17688448 eV
+  in kB     -12.41603   -10.65416    -8.80366    -2.68005     4.52416    -3.27608
+  volume of cell :      156.02
+  free  energy   TOTEN  =       -21.17743134 eV
+  in kB     -12.62010   -10.82822    -8.95095    -2.71584     4.59025    -3.32012
+  volume of cell :      156.02
+  free  energy   TOTEN  =       -21.17756202 eV
+  in kB     -11.85029   -10.04312    -8.15611    -2.72883     4.61716    -3.33563
+  volume of cell :      156.02
+  free  energy   TOTEN  =       -21.17763980 eV
+  in kB     -11.80158    -9.94768    -8.03012    -2.76993     4.70105    -3.38476
+  volume of cell :      156.02
+  free  energy   TOTEN  =       -21.17783388 eV
+                         Elapsed time (sec):     3845.924
