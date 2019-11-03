@@ -1,0 +1,107 @@
+LAMMPS (16 Mar 2018)
+clear
+units 	metal
+dimension	3
+boundary	p	p    p
+atom_style	atomic
+box         tilt large
+read_data   conf.lmp
+  triclinic box = (0 0 0) to (2.57003 4.26191 23.0131) with tilt (1.28501 0 48.8182)
+WARNING: Triclinic box skew is large (../domain.cpp:197)
+  1 by 1 by 1 MPI processor grid
+  reading atoms ...
+  10 atoms
+mass            1 1
+neigh_modify    every 1 delay 0 check no
+pair_style deepmd frozen_model.pb
+pair_coeff
+compute         mype all pe
+thermo          100
+thermo_style    custom step pe pxx pyy pzz pxy pxz pyz lx ly lz vol c_mype
+dump            1 all custom 100 dump.relax id type xs ys zs fx fy fz
+min_style       cg
+minimize        1.000000e-12 1.000000e-06 5000 500000
+WARNING: Using 'neigh_modify every 1 delay 0 check yes' setting during minimization (../min.cpp:168)
+Neighbor list info ...
+  update every 1 steps, delay 0 steps, check yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 10
+  ghost atom cutoff = 10
+  binsize = 5, bins = 1 11 5
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair deepmd, perpetual
+      attributes: , newton on
+      pair build: full/bin/atomonly
+      stencil: full/bin/3d
+      bin: standard
+Per MPI rank memory allocation (min/avg/max) = 5.295 | 5.295 | 5.295 Mbytes
+Step PotEng Pxx Pyy Pzz Pxy Pxz Pyz Lx Ly Lz Volume c_mype 
+       0   -35.118007   -19303.589   -15450.874   -9413.3955 -0.037382974  0.071318155   -1579.2278     2.570027    4.2619083    23.013131    252.06787   -35.118007 
+      23   -35.177619   -14178.808    -8227.108  -0.29753663 -0.011309558 -0.001606834    0.3137459     2.570027    4.2619083    23.013131    252.06787   -35.177619 
+Loop time of 1.96996 on 1 procs for 23 steps with 10 atoms
+
+304.8% CPU use with 1 MPI tasks x no OpenMP threads
+
+Minimization stats:
+  Stopping criterion = energy tolerance
+  Energy initial, next-to-last, final = 
+        -35.1180067392       -35.17761946       -35.17761946
+  Force two-norm initial, final = 0.777913 1.44248e-05
+  Force max component initial, final = 0.444041 5.52476e-06
+  Final line search alpha, max atom move = 1 5.52476e-06
+  Iterations, force evaluations = 23 46
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 1.9673     | 1.9673     | 1.9673     |   0.0 | 99.86
+Neigh   | 0          | 0          | 0          |   0.0 |  0.00
+Comm    | 0.0015643  | 0.0015643  | 0.0015643  |   0.0 |  0.08
+Output  | 0          | 0          | 0          |   0.0 |  0.00
+Modify  | 0          | 0          | 0          |   0.0 |  0.00
+Other   |            | 0.001111   |            |       |  0.06
+
+Nlocal:    10 ave 10 max 10 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    2270 ave 2270 max 2270 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 0
+Ave neighs/atom = 0
+Neighbor list builds = 0
+Dangerous builds not checked
+variable        N equal count(all)
+variable        V equal vol
+variable        E equal "c_mype"
+variable        tmplx equal lx
+variable        tmply equal ly
+variable        Pxx equal pxx
+variable        Pyy equal pyy
+variable        Pzz equal pzz
+variable        Pxy equal pxy
+variable        Pxz equal pxz
+variable        Pyz equal pyz
+variable        Epa equal ${E}/${N}
+variable        Epa equal -35.177619460023/${N}
+variable        Epa equal -35.177619460023/10
+variable        Vpa equal ${V}/${N}
+variable        Vpa equal 252.067871220571/${N}
+variable        Vpa equal 252.067871220571/10
+variable        AA equal (${tmplx}*${tmply})
+variable        AA equal (2.570027*${tmply})
+variable        AA equal (2.570027*4.2619082872)
+print "All done"
+All done
+print "Total number of atoms = ${N}"
+Total number of atoms = 10
+print "Final energy per atoms = ${Epa}"
+Final energy per atoms = -3.5177619460023
+print "Final volume per atoms = ${Vpa}"
+Final volume per atoms = 25.2067871220571
+print "Final Base area = ${AA}"
+Final Base area = 10.9532193696278
+print "Final Stress (xx yy zz xy xz yz) = ${Pxx} ${Pyy} ${Pzz} ${Pxy} ${Pxz} ${Pyz}"
+Final Stress (xx yy zz xy xz yz) = -14178.8075720271 -8227.10795518025 -0.297536628260136 -0.0113095578883443 -0.00160683399402732 0.313745895252059
+Total wall time: 0:00:04

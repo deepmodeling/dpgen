@@ -48,7 +48,6 @@ class Testsurf(unittest,TestCase):
         conf_dir="confs/Cu/std-fcc"
         with open (param_file, 'r') as fp :
             jdata = json.load (fp)
-        max_miller=jdata['max_miller']
         static_opt=jdata['static-opt']
         cmpt_05_surf.cmpt_vasp(jdata, conf_dir,static_opt)
         cmpt_05_surf.cmpt_deepmd_lammps(jdata, conf_dir,'deepmd',static_opt)
