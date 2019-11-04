@@ -1,7 +1,8 @@
 import numpy as np
 import unittest
 import json,re,os
-from input_data import *
+from .input_data import *
+from .context import setUpModule
 from dpgen.auto_test import gen_01_eos,cmpt_01_eos
 
 class TestEos(unittest,TestCase):

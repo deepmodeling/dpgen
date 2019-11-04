@@ -1,8 +1,10 @@
 import numpy as np
 import unittest
 import json,re,os
-from input_data import *
+from .input_data import *
+from .context import setUpModule
 from dpgen.auto_test import gen_00_equi,cmpt_00_equi
+
 
 class TestEqui(unittest,TestCase):
 

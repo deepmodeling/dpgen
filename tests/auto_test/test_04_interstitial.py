@@ -1,7 +1,8 @@
 import numpy as np
 import unittest
 import json,re,os,shutil,glob
-from input_data import *
+from .input_data import *
+from .context import setUpModule
 from dpgen.auto_test import gen_04_interstitial,cmpt_04_interstitial
 
 class Testinterstitial(unittest,TestCase):
