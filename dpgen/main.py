@@ -84,9 +84,13 @@ def main():
         "run/report",
         help="Report the systems and the thermodynamic conditions of the labeled frames.")
     parser_rr.add_argument("JOB_DIR", type=str, 
-                           help="the directory of the DP-GEN job")
+                           help="the directory of the DP-GEN job,")
     parser_rr.add_argument('-s',"--stat-sys", action = 'store_true',
                            help="count the labeled frames for each system")
+    parser_rr.add_argument('-i', "--stat-iter", action= 'store_true',
+                            help="print the iteration candidate,failed,accurate count and fp calculation,success and fail count")
+    parser_rr.add_argument('-t', "--stat-time", action= 'store_true',
+                            help="print the iteration time, warning!! assume model_devi parallel cores == 1")
     parser_rr.add_argument('-p',"--param", type=str, default = 'param.json',
                            help="the json file provides DP-GEN paramters, should be located in JOB_DIR")
     parser_rr.add_argument('-v',"--verbose", action = 'store_true',
@@ -104,16 +108,10 @@ def main():
     # db 
     parser_db = subparsers.add_parser(
         "db",
-        help="Collecting data from Deep Generator.")
-    parser_db.add_argument('PATH', type=str,
-                        help="root path for dpgen modeling")
-    parser_db.add_argument('ENGINE', type=str,
-                        help="engine used for labeling: vasp/pwscf/cp2k/gaussian/siesta")
-    parser_db.add_argument('OUTPUT', type=str,
-                        help="output filename : file.json/file.yaml")
-    parser_db.add_argument("ID_PREFIX", type=str, default=None,
-                                 nargs="?",
-                                 help="prefix of an  entry id")
+        help="Collecting data from DP-GEN.")
+
+    parser_db.add_argument('PARAM', type=str,
+                        help="parameter file, json format")
 
     parser_db.set_defaults(func=db_run)
 

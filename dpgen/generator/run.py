@@ -16,6 +16,8 @@ import glob
 import json
 import random
 import logging
+import logging.handlers
+import queue
 import warnings
 import shutil
 import time
@@ -1669,6 +1671,15 @@ def run_iter (param_file, machine_file) :
        dumpfn(jdata,fparam,indent=4)
        fmachine=SHORT_CMD+'_'+machine_file.split('.')[0]+'.'+jdata.get('pretty_format','json')
        dumpfn(mdata,fmachine,indent=4)
+
+    if mdata.get('handlers', None):
+        if mdata['handlers'].get('smtp', None):
+            que = queue.Queue(-1)
+            queue_handler = logging.handlers.QueueHandler(que)
+            smtp_handler = logging.handlers.SMTPHandler(**mdata['handlers']['smtp'])
+            listener = logging.handlers.QueueListener(que, smtp_handler)
+            dlog.addHandler(queue_handler)
+            listener.start()
 
     max_tasks = 10000
     numb_task = 9

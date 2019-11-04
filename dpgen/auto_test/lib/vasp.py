@@ -1,4 +1,4 @@
-#!/usr/bin/python3 
+#!/usr/bin/python3
 
 import warnings
 import numpy as np
@@ -43,7 +43,7 @@ def regulate_poscar(poscar_in, poscar_out) :
         for ii in posis :
             ele_name = ii.split()[-1]
             if ele_name == ele :
-                ele_lines.append(ii) 
+                ele_lines.append(ii)
         all_lines += ele_lines
     all_lines.append('')
     ret = lines[0:5]
@@ -70,7 +70,7 @@ def sort_poscar(poscar_in, poscar_out, new_names) :
         for ii in posis :
             ele_name = ii.split()[-1]
             if ele_name == ele :
-                ele_lines.append(ii) 
+                ele_lines.append(ii)
         all_lines += ele_lines
     all_lines.append('')
     ret = lines[0:5]
@@ -79,7 +79,7 @@ def sort_poscar(poscar_in, poscar_out, new_names) :
     ret.append("Direct")
     ret += all_lines
     with open(poscar_out, 'w') as fp:
-        fp.write("\n".join(ret))    
+        fp.write("\n".join(ret))
 
 def perturb_xz (poscar_in, poscar_out, pert = 0.01) :
     with open(poscar_in, 'r') as fp:
@@ -119,7 +119,7 @@ def get_energies (fname) :
     if not check_finished(fname):
         warnings.warn("incomplete outcar: "+fname)
     with open(fname, 'r') as fp:
-        lines = fp.read().split('\n') 
+        lines = fp.read().split('\n')
     try :
         ener = _get_energies(lines)
         return ener
@@ -130,7 +130,7 @@ def get_boxes (fname) :
     if not check_finished(fname):
         warnings.warn("incomplete outcar: "+fname)
     with open(fname, 'r') as fp:
-        lines = fp.read().split('\n') 
+        lines = fp.read().split('\n')
     try :
         ener = _get_boxes(lines)
         return ener
@@ -141,7 +141,7 @@ def get_nev(fname) :
     if not check_finished(fname):
         warnings.warn("incomplete outcar: "+fname)
     with open(fname, 'r') as fp:
-        lines = fp.read().split('\n') 
+        lines = fp.read().split('\n')
     try:
         natoms = _get_natoms(lines)
         vol = _get_volumes(lines)[-1]
@@ -155,7 +155,7 @@ def get_stress(fname) :
     if not check_finished(fname):
         warnings.warn("incomplete outcar: "+fname)
     with open(fname, 'r') as fp:
-        lines = fp.read().split('\n') 
+        lines = fp.read().split('\n')
     try:
         stress = _get_stress(lines)[-1]
         return stress
@@ -163,7 +163,7 @@ def get_stress(fname) :
         return None
 
 def check_finished(fname) :
-    with open(fname, 'r') as fp:        
+    with open(fname, 'r') as fp:
         return 'Elapsed time (sec):' in fp.read()
 
 def _get_natoms(lines) :
@@ -217,9 +217,9 @@ def _get_stress(lines) :
             items.append(util.voigt_to_stress(sv))
     if len(items) == 0:
         raise OutcarItemError("cannot find item 'in kB'")
-    return items    
+    return items
 
-def _compute_isif (relax_ions, 
+def _compute_isif (relax_ions,
                   relax_shape,
                   relax_volume) :
     if   (relax_ions) and (not relax_shape) and (not relax_volume) :
@@ -321,8 +321,8 @@ def make_vasp_relax_incar (ecut, ediff,
     return ret
 
 def make_vasp_phonon_incar (ecut, ediff,
-                            npar, kpar, 
-                            kspacing = 0.5, kgamma = True, 
+                            npar, kpar,
+                            kspacing = 0.5, kgamma = True,
                             ismear = 1, sigma = 0.2) :
     isif = 2
     ret = ''
@@ -399,7 +399,7 @@ def _poscar_scale_cartesian (str_in, scale) :
         cv = [float(ii) for ii in cl]
         cv = np.array(cv) * scale
         lines[ii] = "%.16e %.16e %.16e\n" % (cv[0], cv[1], cv[2])
-    return lines    
+    return lines
 
 def poscar_natoms(poscar_in) :
     with open(poscar_in, 'r') as fin :
@@ -409,9 +409,9 @@ def poscar_natoms(poscar_in) :
 def poscar_scale (poscar_in, poscar_out, scale) :
     with open(poscar_in, 'r') as fin :
         lines = list(fin)
-    if 'D' == lines[7][0] or 'd' == lines[7][0] : 
+    if 'D' == lines[7][0] or 'd' == lines[7][0] :
         lines = _poscar_scale_direct(lines, scale)
-    elif 'C' == lines[7][0] or 'c' == lines[7][0] : 
+    elif 'C' == lines[7][0] or 'c' == lines[7][0] :
         lines = _poscar_scale_cartesian(lines, scale)
     else :
         raise RuntimeError("Unknow poscar coord style at line 7: %s" % lines[7])
@@ -451,7 +451,8 @@ def _make_vasp_kp_mp(kpoints):
 
 def make_vasp_kpoints (kpoints, kgamma = False) :
     if kgamma :
-        ret = _make_vasp_kp_gamma(kpoints) 
+        ret = _make_vasp_kp_gamma(kpoints)
     else :
         ret = _make_vasp_kp_mp(kpoints)
     return ret
+

@@ -17,8 +17,6 @@ def cmpt_vasp(jdata, conf_dir, supercell, insert_ele) :
         _cmpt_vasp(jdata, conf_dir, supercell, ii)
 
 def _cmpt_vasp(jdata, conf_dir, supercell, insert_ele) :
-    fp_params = jdata['vasp_params']
-    kspacing = fp_params['kspacing']
 
     if 'relax_incar' in jdata.keys():
         vasp_str='vasp-relax_incar'
@@ -56,12 +54,10 @@ def cmpt_deepmd_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_name) :
         _cmpt_deepmd_reprod_traj(jdata, conf_dir, supercell, ii, task_name)
 
 def _cmpt_deepmd_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_name) :
-    fp_params = jdata['vasp_params']
-    kspacing = fp_params['kspacing']
-
     if 'relax_incar' in jdata.keys():
         vasp_str='vasp-relax_incar'
     else:
+        kspacing = jdata['vasp_params']['kspacing']
         vasp_str='vasp-k%.2f' % kspacing
 
     conf_path = os.path.abspath(conf_dir)

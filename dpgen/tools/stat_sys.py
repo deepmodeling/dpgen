@@ -77,6 +77,7 @@ def stat_sys(target_folder,
                                                 sys_tasks_all[ii][jj][1],
                                                 sys_tasks_all[ii][jj][2],
                                                 sys_tasks_all[ii][jj][3]))
+    os.chdir(cwd)
     return sys, sys_tasks_count, sys_tasks_all
 
 def run_report(args):
