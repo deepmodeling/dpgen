@@ -58,7 +58,7 @@ One can download the source code of dpgen by
 ```bash
 git clone https://github.com/deepmodeling/dpgen.git
 ```
-then you may install DP-GEN easily by: 
+then you may install DP-GEN easily by:
 ```bash
 cd dpgen
 pip install --user .
@@ -123,7 +123,7 @@ You may prepare initial data for bulk systems with VASP by:
 ```bash
 dpgen init_bulk PARAM [MACHINE]
 ```
-The MACHINE configure file is optional. If this parameter exists, then the optimization 
+The MACHINE configure file is optional. If this parameter exists, then the optimization
 tasks or MD tasks will be submitted automatically according to MACHINE.json.
 
 Basically `init_bulk` can be devided into four parts , denoted as `stages` in `PARAM`:
@@ -273,7 +273,7 @@ The bold notation of key (such as **Elements**) means that it's a necessary key.
 | **layer_numb** | Integer | 3 | Number of equavilent layers of slab.
 | **vacuum_max** | Float | 9 | Maximal thickness of vacuum (Angstrom).
 | **vacuum_resol** | List of float | [0.5, 1 ] | Interval of thichness of vacuum. If size of `vacuum_resol` is 1, the interval is fixed to its value. If size of `vacuum_resol` is 2, the interval is `vacuum_resol[0]` before `mid_point`, otherwise `vacuum_resol[1]` after `mid_point`.
-| **millers** | List of list of Integer | [[1,0,0]] | Miller indices. 
+| **millers** | List of list of Integer | [[1,0,0]] | Miller indices.
 | relax_incar | String | "....../INCAR" | Path of INCAR for relaxation in VASP. **Necessary** if `stages` include 1.
 | **scale** | List of float | [0.980, 1.000, 1.020] | Scales for transforming cells.
 | **skip_relax** | Boolean | False | If it's true, you may directly run stage 2 (pertub and scale) using an unrelaxed POSCAR.
@@ -580,9 +580,9 @@ The second part is the computational settings for vasp and lammps. According to 
 The last part is the optional settings for various tasks mentioned above. You can change the parameters according to actual needs.
 ```json
     "_comment":"00.equi",
-    "store_stable":true,
+    "cmpt_shift":false,
 ```
-+ `store_stable`:(boolean) whether to store the stable energy and volume for element. If you test alloy or something with more than 1 element, you need to compute the energies of corresponding elements respectively first of all and set false while testing alloy.
++ `cmpt_shift`:(boolean) whether to compute the shift between stable energy of alloy and total energy for corresponding elements. If you test alloy and set 'true', you need to compute the energies of corresponding elements respectively first of all.
 
 ```json
     "_comment": "01.eos",
@@ -763,7 +763,7 @@ mem_limit | Interger | 16 | Maximal memory permitted to apply for the job.
     - Index of `sys_configs` and `sys_idx`
 
 2. Please verify the directories of `sys_configs`. If there isnt's any POSCAR for `01.model_devi` in one iteration, it may happen that you write the false path of `sys_configs`.
-3. Correct format of JSON file. 
+3. Correct format of JSON file.
 4. In `02.fp`, total cores you require through `task_per_node` should be devided by `npar` times `kpar`.
 5. The frames of one system should be larger than `batch_size` and `numb_test` in `default_training_param`. It happens that one iteration adds only a few structures and causes error in next iteration's training. In this condition, you may let `fp_task_min` be larger than `numb_test`.
 ## License
