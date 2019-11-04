@@ -75,12 +75,23 @@ and if everything works, it gives
 ```
 DeepModeling
 ------------
+Version: 0.5.1.dev53+gddbeee7.d20191020
+Date:    Oct-07-2019
+Path:    /home/me/miniconda3/envs/py363/lib/python3.6/site-packages/dpgen-0.5.1.dev53+gddbeee7.d20191020-py3.6.egg/dpgen
 
-Version: 0.2.0
-Path:    /home/wanghan/.local/lib/python3.6/site-packages/dpgen-0.1.0-py3.6.egg/dpgen
-Date:    Aug 13, 2019
+Dependency
+------------
+     numpy     1.17.2   /home/me/miniconda3/envs/py363/lib/python3.6/site-packages/numpy
+    dpdata     0.1.10   /home/me/miniconda3/envs/py363/lib/python3.6/site-packages/dpdata-0.1.10-py3.6.egg/dpdata
+  pymatgen   2019.7.2   /home/me/miniconda3/envs/py363/lib/python3.6/site-packages/pymatgen
+     monty      2.0.4   /home/me/miniconda3/envs/py363/lib/python3.6/site-packages/monty
+       ase     3.17.0   /home/me/miniconda3/envs/py363/lib/python3.6/site-packages/ase-3.17.0-py3.6.egg/ase
+  paramiko      2.6.0   /home/me/miniconda3/envs/py363/lib/python3.6/site-packages/paramiko
+ custodian  2019.2.10   /home/me/miniconda3/envs/py363/lib/python3.6/site-packages/custodian
 
-usage: dpgen [-h] {init_surf,init_bulk,run,test,db} ...
+Description
+------------
+usage: dpgen [-h] {init_surf,init_bulk,run,run/report,test,db} ...
 
 dpgen is a convenient script that uses DeepGenerator to prepare initial data,
 drive DeepMDkit and analyze results. This script works based on several sub-
@@ -88,16 +99,18 @@ commands with their own options. To see the options for the sub-commands, type
 "dpgen sub-command -h".
 
 positional arguments:
-  {init_surf,init_bulk,run,test,db}
+  {init_surf,init_bulk,run,run/report,test,db}
     init_surf           Generating initial data for surface systems.
     init_bulk           Generating initial data for bulk systems.
-    run                 Main process of Deep Generator.
+    run                 Main process of Deep Potential Generator.
+    run/report          Report the systems and the thermodynamic conditions of
+                        the labeled frames.
     test                Auto-test for Deep Potential.
-    db                  Collecting data from DP-GEN.
-
+    db                  Collecting data from Deep Generator.
 
 optional arguments:
   -h, --help            show this help message and exit
+
 ```
 
 
@@ -108,8 +121,10 @@ optional arguments:
 You may prepare initial data for bulk systems with VASP by:
 
 ```bash
-dpgen init_bulk PARAM MACHINE
+dpgen init_bulk PARAM [MACHINE]
 ```
+The MACHINE configure file is optional. If this parameter exists, then the optimization 
+tasks or MD tasks will be submitted automatically according to MACHINE.json.
 
 Basically `init_bulk` can be devided into four parts , denoted as `stages` in `PARAM`:
 1. Relax in folder `00.place_ele`
@@ -118,6 +133,8 @@ Basically `init_bulk` can be devided into four parts , denoted as `stages` in `P
 4. Collect data in folder `02.md`.
 
 All stages must be **in order**. One doesn't need to run all stages. For example, you may run stage 1 and 2, generating supercells as starting point of exploration in `dpgen run`.
+
+If MACHINE is None, there should be only one stage in stages. Corresponding tasks will be generated, but user's intervention should be involved in, to manunally run the scripts.
 
 Following is an example for `PARAM`, which generates data from a typical structure hcp.
 ```json
@@ -176,8 +193,10 @@ The bold notation of key (such as **Elements**) means that it's a necessary key.
 You may prepare initial data for surface systems with VASP by:
 
 ```bash
-dpgen init_surf PARAM MACHINE
+dpgen init_surf PARAM [MACHINE]
 ```
+The MACHINE configure file is optional. If this parameter exists, then the optimization
+tasks or MD tasks will be submitted automatically according to MACHINE.json.
 
 Basically `init_surf` can be devided into two parts , denoted as `stages` in `PARAM`:
 1. Build specific surface in folder `00.place_ele`
@@ -199,7 +218,7 @@ Following is an example for `PARAM`, which generates data from a typical structu
     2,
     2
   ],
-  "z_min": 9,
+  "layer_numb": 3,
   "vacuum_max": 9,
   "vacuum_resol": [
     0.5,
@@ -251,7 +270,7 @@ The bold notation of key (such as **Elements**) means that it's a necessary key.
 | **Elements** | List of String | ["Mg"] | Atom types
 |  **cell_type** | String  | "hcp" | Specifying which typical structure to be generated. **Options** include fcc, hcp, bcc, sc, diamond.
 | **latt** | Float | 4.479 | Lattice constant for single cell.
-| **z_min** | Float | 9 | Thickness of slab (Angstrom).
+| **layer_numb** | Integer | 3 | Number of equavilent layers of slab.
 | **vacuum_max** | Float | 9 | Maximal thickness of vacuum (Angstrom).
 | **vacuum_resol** | List of float | [0.5, 1 ] | Interval of thichness of vacuum. If size of `vacuum_resol` is 1, the interval is fixed to its value. If size of `vacuum_resol` is 2, the interval is `vacuum_resol[0]` before `mid_point`, otherwise `vacuum_resol[1]` after `mid_point`.
 | **millers** | List of list of Integer | [[1,0,0]] | Miller indices. 
@@ -431,6 +450,7 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | *#Basics*
 | **type_map** | List of string | ["H", "C"] | Atom types
 | **mass_map** | List of float |  [1, 12] | Standard atom weights.
+| **use_ele_temp** | int | 0 | Currently only support fp_style vasp. 0(default): no electron temperature. 1: eletron temperature as frame parameter. 2: electron temperature as atom parameter.
 | *#Data*
  | init_data_prefix | String | "/sharedext4/.../data/" | Prefix of initial data directories
  | ***init_data_sys*** | List of string|["CH4.POSCAR.01x01x01/.../deepmd"] |Directories of initial data. You may use either absolute or relative path here.

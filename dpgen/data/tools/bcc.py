@@ -9,7 +9,7 @@ def gen_box () :
 def poscar_unit (latt) :
     box = gen_box()
     ret  = ""
-    ret += "FCC : a = %f \n" % latt
+    ret += "BCC : a = %f \n" % latt
     ret += "%.16f\n" % (latt)
     ret += "%.16f %.16f %.16f\n" % (box[0][0], box[0][1], box[0][2])
     ret += "%.16f %.16f %.16f\n" % (box[1][0], box[1][1], box[1][2])

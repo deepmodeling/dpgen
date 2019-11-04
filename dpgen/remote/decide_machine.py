@@ -21,18 +21,28 @@ def decide_train_machine(mdata):
 	                if profile['purpose'] == 'train':
 	                    mdata['train_machine'] = profile['machine']
 	                    mdata['train_resources'] = profile['resources']
-	                    mdata['deepmd_path'] = profile['deepmd_path']
+	                    if 'deepmd_path' in profile:
+	                    	mdata['deepmd_path'] = profile['deepmd_path']
+	                    elif 'python_path' in profile:
+	                    	mdata['python_path'] = profile['python_path']
 	                    if "group_size" in profile:
 	                    	mdata["train_group_size"] = profile["group_size"]
+	                    if 'deepmd_version' in profile:
+	                    	mdata["deepmd_version"] = profile['deepmd_version']
 	                    continue_flag = True
 	        except:
 	            pass
 	    if "hostname" not in mdata["train"][0]["machine"]:
 	    	mdata["train_machine"] = mdata["train"][0]["machine"]
 	    	mdata["train_resources"] = mdata["train"][0]["resources"]
-	    	mdata["deepmd_path"] = mdata["train"][0]["deepmd_path"]
+	    	if 'deepmd_path' in mdata["train"][0]:
+	    		mdata["deepmd_path"] = mdata["train"][0]["deepmd_path"]
+	    	elif 'python_path' in mdata["train"][0]:
+	    		mdata["python_path"] = mdata["train"][0]["python_path"]
 	    	if "group_size" in mdata["train"][0]:
 	    		mdata["train_group_size"] = mdata["train"][0]["group_size"]
+	    	if 'deepmd_version' in mdata["train"][0]:
+	    		mdata["deepmd_version"] = mdata["train"][0]["deepmd_version"]
 	    	continue_flag = True
 
 	    pd_flag = False
@@ -61,7 +71,15 @@ def decide_train_machine(mdata):
 	            if pd_count ==1:
 	                mdata['train_machine'] = temp_machine   
 	                mdata['train_resources'] = temp_resources
-	                mdata['deepmd_path'] = mdata['train'][machine_idx]['deepmd_path']
+	                if 'deepmd_path' in mdata['train'][machine_idx]:
+	                	mdata['deepmd_path'] = mdata['train'][machine_idx]['deepmd_path']
+	                elif 'python_path' in mdata['train'][machine_idx]:
+	                	mdata['python_path'] = mdata['train'][machine_idx]['python_path']
+	                if 'group_size' in mdata['train'][machine_idx]:
+	                	mdata['train_group_size'] = mdata['train'][machine_idx]['group_size']
+	                if 'deepmd_version' in mdata['train'][machine_idx]:
+	                	mdata['deepmd_version'] = mdata['train'][machine_idx]['deepmd_version']
+
 	                ## No need to wait
 	                pd_flag = True
 	                break
@@ -73,9 +91,14 @@ def decide_train_machine(mdata):
 	            min_machine_idx = np.argsort(pd_count_list)[0]
 	            mdata['train_machine'] = mdata['train'][min_machine_idx]['machine']
 	            mdata['train_resources'] = mdata['train'][min_machine_idx]['resources']
-	            mdata['deepmd_path'] = mdata['train'][min_machine_idx]['deepmd_path']
+	            if 'deepmd_path' in mdata['train'][min_machine_idx]:
+	            	mdata['deepmd_path'] = mdata['train'][min_machine_idx]['deepmd_path']
+	            elif 'python_path' in mdata['train'][min_machine_idx]:
+	            	mdata['python_path'] = mdata['train'][min_machine_idx]['python_path']
 	            if "group_size" in mdata['train'][min_machine_idx]:
 	            	mdata["train_group_size"] = mdata['train'][min_machine_idx]["group_size"]
+	            if 'deepmd_version' in mdata['train'][min_machine_idx]:
+	            	mdata['deepmd_version'] = mdata['train'][min_machine_idx]["deepmd_version"]
 
             ## Record which machine is selected
 	        with open("record.machine","w") as _outfile:
@@ -83,9 +106,14 @@ def decide_train_machine(mdata):
 	            profile['purpose'] = 'train'
 	            profile['machine'] = mdata['train_machine']
 	            profile['resources'] = mdata['train_resources']
-	            profile['deepmd_path'] = mdata['deepmd_path']
+	            if 'deepmd_path' in mdata:
+	            	profile['deepmd_path'] = mdata['deepmd_path']
+	            elif 'python_path' in mdata:
+	            	profile['python_path'] = mdata['python_path']
 	            if "train_group_size" in mdata:
 	            	profile["group_size"] = mdata["train_group_size"]
+	            if 'deepmd_version' in mdata:
+	            	profile['deepmd_version'] = mdata['deepmd_version']
 
 	            json.dump(profile, _outfile, indent = 4)
 	return mdata

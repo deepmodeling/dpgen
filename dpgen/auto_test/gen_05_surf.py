@@ -11,20 +11,11 @@ global_equi_name = '00.equi'
 global_task_name = '05.surf'
 
 def make_vasp(jdata, conf_dir, max_miller = 2, relax_box = False, static = False) :
-    fp_params = jdata['vasp_params']
-    ecut = fp_params['ecut']
-    ediff = fp_params['ediff']
-    npar = fp_params['npar']
-    kpar = fp_params['kpar']
-    kspacing = fp_params['kspacing']
-    kgamma = fp_params['kgamma']
-    min_slab_size = jdata['min_slab_size']
-    min_vacuum_size = jdata['min_vacuum_size']
-    pert_xz = jdata['pert_xz']
 
     if 'relax_incar' in jdata.keys():
         vasp_str='vasp-relax_incar'
     else: 
+        kspacing = jdata['vasp_params']['kspacing']
         vasp_str='vasp-k%.2f' % (kspacing)
 
     # get conf poscar
@@ -66,6 +57,16 @@ def make_vasp(jdata, conf_dir, max_miller = 2, relax_box = False, static = False
             scf_incar_path = os.path.abspath(scf_incar_path)
             fc = open(scf_incar_path).read()
         else :
+            fp_params = jdata['vasp_params']
+            ecut = fp_params['ecut']
+            ediff = fp_params['ediff']
+            npar = fp_params['npar']
+            kpar = fp_params['kpar']
+            kspacing = fp_params['kspacing']
+            kgamma = fp_params['kgamma']
+            min_slab_size = jdata['min_slab_size']
+            min_vacuum_size = jdata['min_vacuum_size']
+            pert_xz = jdata['pert_xz']
             fc = vasp.make_vasp_static_incar(ecut, ediff, npar=npar,kpar=kpar, kspacing = kspacing, kgamma = kgamma)
     else :
         if  'relax_incar' in jdata.keys():
@@ -74,6 +75,16 @@ def make_vasp(jdata, conf_dir, max_miller = 2, relax_box = False, static = False
             relax_incar_path = os.path.abspath(relax_incar_path)
             fc = open(relax_incar_path).read()
         else :
+            fp_params = jdata['vasp_params']
+            ecut = fp_params['ecut']
+            ediff = fp_params['ediff']
+            npar = fp_params['npar']
+            kpar = fp_params['kpar']
+            kspacing = fp_params['kspacing']
+            kgamma = fp_params['kgamma']
+            min_slab_size = jdata['min_slab_size']
+            min_vacuum_size = jdata['min_vacuum_size']
+            pert_xz = jdata['pert_xz']
             fc = vasp.make_vasp_relax_incar(ecut, ediff, True, relax_box, False, npar=npar,kpar=kpar, kspacing = kspacing, kgamma = kgamma)
     with open(os.path.join(task_path, 'INCAR'), 'w') as fp :
         fp.write(fc)

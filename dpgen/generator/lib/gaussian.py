@@ -9,9 +9,12 @@ from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import connected_components
 from scipy.spatial import cKDTree
 try:
-    import openbabel
+    from openbabel import openbabel
 except ImportError:
-    pass
+    try:
+        import openbabel
+    except ImportError:
+        pass
 try:
     from ase import Atoms, Atom
     from ase.data import atomic_numbers
@@ -21,8 +24,8 @@ except ImportError:
 
 def _crd2frag(symbols, crds, pbc=False, cell=None, return_bonds=False):
     atomnumber = len(symbols)
+    all_atoms = Atoms(symbols = symbols, positions = crds, pbc=pbc, cell=cell)
     if pbc:
-        all_atoms = Atoms(symbols = symbols, positions = crds, pbc=True, cell=cell)
         repeated_atoms = all_atoms.repeat(2)[atomnumber:]
         tree = cKDTree(crds)
         d = tree.query(repeated_atoms.get_positions(), k=1)[0]

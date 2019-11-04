@@ -66,7 +66,7 @@ def make_vasp(jdata, conf_dir) :
         kpar = fp_params['kpar']
         kspacing = fp_params['kspacing']
         kgamma = fp_params['kgamma']
-        fc = vasp.make_vasp_relax_incar(ecut, ediff, is_alloy,  True, True, npar, kpar, kspacing, kgamma)
+        fc = vasp.make_vasp_relax_incar(ecut, ediff, is_alloy,  True, False, npar, kpar, kspacing, kgamma)
         vasp_path = os.path.join(task_path, 'vasp-k%.2f' % kspacing)
 
     os.makedirs(vasp_path, exist_ok = True)

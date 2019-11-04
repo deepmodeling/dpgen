@@ -84,8 +84,9 @@
     "fp_task_max":	100,
     "fp_task_min":	10,
     "fp_pp_path":	".",
-    "fp_pp_files":	["POTCAR.mg", "POTCAR.al"],
+    "fp_pp_files":	["vasp/potcars/POTCAR.mg", "vasp/potcars/POTCAR.al"],
     "_comment":		" user provided vasp script ",
-    "fp_incar" : "INCAR.diy",
+    "fp_incar" :	"vasp/INCAR.diy",
+    "fp_nbands_esti_data": "vasp/nbands_esti.out",
     "_comment":		" that's all "
 }
