@@ -21,30 +21,31 @@ def comput_e_shift(poscar, task_name) :
             ener_shift += a_natoms[ii] * ener
     return ener_shift
 
-def comput_lmp_nev(conf_dir, task_name,write_stable = False) :
+def comput_lmp_nev(conf_dir, task_name,write_shift = False) :
     conf_path = re.sub('confs', global_equi_name, conf_dir)
     conf_path = os.path.abspath(conf_path)
     poscar = os.path.join(conf_path, 'POSCAR')
     ele_types = vasp.get_poscar_types(poscar)
 
-    ener_shift = comput_e_shift(poscar, task_name)
-
     lmp_path = os.path.join(conf_path, task_name)
     log_lammps = os.path.join(lmp_path, 'log.lammps')
     if os.path.isfile(log_lammps):
         natoms, epa, vpa = lammps.get_nev(log_lammps)
-        epa = (epa * natoms - ener_shift) / natoms
+        if write_shift and len(ele_types)>1:
+            ener_shift = comput_e_shift(poscar, task_name)
+            shift = (epa * natoms - ener_shift) / natoms
+            return natoms,epa,vpa,shift
         if len(ele_types)==1:
             stable_dir = 'stables'
             os.makedirs(stable_dir, exist_ok=True)
             name_prefix=os.path.join(stable_dir,'%s.%s' % (ele_types[0], task_name))
             open(name_prefix + '.e', 'w').write('%.16f\n' % (epa))
             open(name_prefix + '.v', 'w').write('%.16f\n' % (vpa))
-        return natoms, epa, vpa
+        return natoms, epa, vpa , None
     else :
-        return None, None, None
+        return None, None, None, None
 
-def comput_vasp_nev(jdata, conf_dir, write_stable = False) :
+def comput_vasp_nev(jdata, conf_dir, write_shift = False) :
 
     conf_path = re.sub('confs', global_equi_name, conf_dir)
     conf_path = os.path.abspath(conf_path)
@@ -57,7 +58,6 @@ def comput_vasp_nev(jdata, conf_dir, write_stable = False) :
         kspacing = jdata['vasp_params']['kspacing']
         vasp_str='vasp-k%.2f' % kspacing
 
-    ener_shift = comput_e_shift(poscar, vasp_str)
     vasp_path = os.path.join(conf_path, vasp_str)
     outcar = os.path.join(vasp_path, 'OUTCAR')
     # tag_fin = os.path.join(vasp_path, 'tag_finished')
@@ -67,16 +67,19 @@ def comput_vasp_nev(jdata, conf_dir, write_stable = False) :
         warnings.warn("incomplete job "+vasp_path+" use the last frame")
     if os.path.isfile(outcar):
         natoms, epa, vpa = vasp.get_nev(outcar)
-        epa = (epa * natoms - ener_shift) / natoms
+        if write_shift and len(ele_types)>1:
+            ener_shift = comput_e_shift(poscar, vasp_str)
+            shift = (epa * natoms - ener_shift) / natoms
+            return natoms,epa,vpa,shift
         if len(ele_types)==1:
             stable_dir = 'stables'
             os.makedirs(stable_dir, exist_ok=True)
             name_prefix=os.path.join(stable_dir,'%s.'% (ele_types[0])+vasp_str)
             open(name_prefix + '.e', 'w').write('%.16f\n' % (epa))
             open(name_prefix + '.v', 'w').write('%.16f\n' % (vpa))
-        return natoms, epa, vpa
+        return natoms, epa, vpa, None
     else :
-        return None, None, None
+        return None, None, None, None
 
 def _main():
     parser = argparse.ArgumentParser(

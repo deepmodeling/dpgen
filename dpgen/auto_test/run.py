@@ -29,7 +29,7 @@ from dpgen.auto_test.lib.utils import make_iter_name
 from dpgen.auto_test.lib.utils import create_path
 from dpgen.auto_test.lib.utils import copy_file_list
 from dpgen.auto_test.lib.utils import replace
-
+from dpgen.dispatcher.Dispatcher import make_dispatcher
 from dpgen.auto_test.lib.utils import log_iter
 from dpgen.auto_test.lib.utils import record_iter
 from dpgen.auto_test.lib.utils import log_iter
@@ -168,31 +168,36 @@ def run_equi(task_type,jdata,mdata):
     run_tasks = util.collect_task(all_task,task_type)
 
     machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
+    disp = make_dispatcher(machine)
+    disp.run_jobs(resources,
+                  command,
+                  work_path,
+                  run_tasks,
+                  group_size,
+                  common_files,
+                  forward_files,
+                  backward_files,
+                  outlog='autotest.log',
+                  errlog='autotest.log')
 
-    _run(machine,
-         machine_type,
-         ssh_sess,
-         resources,
-         command,
-         work_path,
-         run_tasks,
-         group_size,
-         common_files,
-         forward_files,
-         backward_files)
 
 def cmpt_equi(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
+    cmpt_shift=jdata['cmpt_shift']
     #vasp
     if task_type=="vasp":
-        n, e, v = cmpt_00_equi.comput_vasp_nev(jdata, conf_dir,False)
+        n, e, v, s = cmpt_00_equi.comput_vasp_nev(jdata, conf_dir,cmpt_shift)
     #lammps
     elif task_type in lammps_task_type:
-        n, e, v = cmpt_00_equi.comput_lmp_nev(conf_dir, task_type,False)
+        n, e, v, s = cmpt_00_equi.comput_lmp_nev(conf_dir, task_type,cmpt_shift)
     else :
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
-    print('conf_dir:\t EpA(eV)  VpA(A^3)')
-    print("%s\t %8.4f  %7.3f " % (conf_dir, e, v))
+    if cmpt_shift:
+        print('conf_dir:\t EpA(eV)  VpA(A^3)  ener_shift(eV)')
+        print("%s\t %8.4f  %7.3f %8.4f" % (conf_dir, e, v, s))
+    else:
+        print('conf_dir:\t EpA(eV)  VpA(A^3)')
+        print("%s\t %8.4f  %7.3f " % (conf_dir, e, v))
 
 def gen_eos(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
@@ -251,17 +256,17 @@ def run_eos(task_type,jdata,mdata):
     run_tasks = util.collect_task(all_task,task_type)
 
     machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
-    _run(machine,
-         machine_type,
-         ssh_sess,
-         resources,
-         command,
-         work_path,
-         run_tasks,
-         group_size,
-         common_files,
-         forward_files,
-         backward_files)
+    disp = make_dispatcher(machine)
+    disp.run_jobs(resources,
+                  command,
+                  work_path,
+                  run_tasks,
+                  group_size,
+                  common_files,
+                  forward_files,
+                  backward_files,
+                  outlog='autotest.log',
+                  errlog='autotest.log')
 
 def cmpt_eos(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
@@ -326,17 +331,17 @@ def run_elastic(task_type,jdata,mdata):
 
     run_tasks = util.collect_task(all_task,task_type)
     machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
-    _run(machine,
-         machine_type,
-         ssh_sess,
-         resources,
-         command,
-         work_path,
-         run_tasks,
-         group_size,
-         common_files,
-         forward_files,
-         backward_files)
+    disp = make_dispatcher(machine)
+    disp.run_jobs(resources,
+                  command,
+                  work_path,
+                  run_tasks,
+                  group_size,
+                  common_files,
+                  forward_files,
+                  backward_files,
+                  outlog='autotest.log',
+                  errlog='autotest.log')
 
 def cmpt_elastic(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
@@ -400,17 +405,17 @@ def run_vacancy(task_type,jdata,mdata):
 
     run_tasks = util.collect_task(all_task,task_type)
     machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
-    _run(machine,
-         machine_type,
-         ssh_sess,
-         resources,
-         command,
-         work_path,
-         run_tasks,
-         group_size,
-         common_files,
-         forward_files,
-         backward_files)
+    disp = make_dispatcher(machine)
+    disp.run_jobs(resources,
+                  command,
+                  work_path,
+                  run_tasks,
+                  group_size,
+                  common_files,
+                  forward_files,
+                  backward_files,
+                  outlog='autotest.log',
+                  errlog='autotest.log')
 
 def cmpt_vacancy(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
@@ -497,37 +502,36 @@ def run_interstitial(task_type,jdata,mdata):
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
     machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
-
+    disp = make_dispatcher(machine)
     if reprod_opt:
         for ii in work_path:
             run_tasks=[]
             for jj in run_tasks_:
                 if ii in jj:
                     run_tasks.append(os.path.basename(jj))
-            _run(machine,
-             machine_type,
-             ssh_sess,
-             resources,
-             command,
-             ii,
-             run_tasks,
-             group_size,
-             common_files,
-             forward_files,
-             backward_files)
+
+            disp.run_jobs(resources,
+                          command,
+                          ii,
+                          run_tasks,
+                          group_size,
+                          common_files,
+                          forward_files,
+                          backward_files,
+                          outlog='autotest.log',
+                          errlog='autotest.log')
     else:
         run_tasks = util.collect_task(all_task,task_type)
-        _run(machine,
-             machine_type,
-             ssh_sess,
-             resources,
-             command,
-             work_path,
-             run_tasks,
-             group_size,
-             common_files,
-             forward_files,
-             backward_files)
+        disp.run_jobs(resources,
+                      command,
+                      work_path,
+                      run_tasks,
+                      group_size,
+                      common_files,
+                      forward_files,
+                      backward_files,
+                      outlog='autotest.log',
+                      errlog='autotest.log')
 
 def cmpt_interstitial(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
@@ -604,17 +608,17 @@ def run_surf(task_type,jdata,mdata):
 
     run_tasks = util.collect_task(all_task,task_type)
     machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
-    _run(machine,
-         machine_type,
-         ssh_sess,
-         resources,
-         command,
-         work_path,
-         run_tasks,
-         group_size,
-         common_files,
-         forward_files,
-         backward_files)
+    disp = make_dispatcher(machine)
+    disp.run_jobs(resources,
+                  command,
+                  work_path,
+                  run_tasks,
+                  group_size,
+                  common_files,
+                  forward_files,
+                  backward_files,
+                  outlog='autotest.log',
+                  errlog='autotest.log')
 
 def cmpt_surf(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
@@ -663,17 +667,17 @@ def run_phonon(task_type,jdata,mdata):
         backward_files = ['OUTCAR','OSZICAR','vasprun.xml']
         common_files=['POSCAR']
 
-        _run(machine,
-         machine_type,
-         ssh_sess,
-         resources,
-         command,
-         work_path,
-         run_tasks,
-         group_size,
-         common_files,
-         forward_files,
-         backward_files)
+        disp = make_dispatcher(machine)
+        disp.run_jobs(resources,
+                  command,
+                  work_path,
+                  run_tasks,
+                  group_size,
+                  common_files,
+                  forward_files,
+                  backward_files,
+                  outlog='autotest.log',
+                  errlog='autotest.log')
     #lammps
     elif task_type in lammps_task_type:
         None

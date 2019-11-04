@@ -1,7 +1,7 @@
 {
     "_comment": "models",
     "potcar_map" : {
-	      "Al" : "/somewhere/example/POTCAR" 
+	      "Al" : "/somewhere/example/POTCAR"
     },
     "conf_dir":"confs/Al/std-fcc",
     "key_id":"key id of Material project",
@@ -19,7 +19,7 @@
     },
 
     "_comment":"00.equi",
-    "store_stable":true,
+    "cmpt_shift": false,
 
     "_comment": "01.eos",
     "vol_start":	12,
@@ -29,7 +29,7 @@
     "_comment": "02.elastic",
     "norm_deform":	2e-2,
     "shear_deform":	5e-2,
-    
+
     "_comment":"03.vacancy",
     "supercell":[3,3,3],
 
@@ -44,7 +44,7 @@
     "pert_xz":		0.01,
     "max_miller": 2,
     "static-opt":false,
-    "relax_box":false,    
+    "relax_box":false,
 
     "_comment":"06.phonon",
     "supercell_matrix":[2,2,2],
