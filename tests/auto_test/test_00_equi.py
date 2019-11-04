@@ -12,7 +12,7 @@ class TestEqui(unittest,TestCase):
         task_path=os.path.abspath(re.sub('confs', global_task_name, conf_dir))
         with open (param_file, 'r') as fp :
             jdata = json.load (fp)
-            
+
         gen_00_equi.make_vasp(jdata,conf_dir)
         kspacing = jdata['vasp_params']['kspacing']
         vasp_str='vasp-k%.2f' % kspacing
@@ -37,8 +37,8 @@ class TestEqui(unittest,TestCase):
         conf_dir="confs/Cu/std-fcc"
         with open (param_file, 'r') as vasp_fp :
             jdata = json.load (vasp_fp)
-        n, e, v = cmpt_00_equi.comput_vasp_nev(jdata, conf_dir,False)
-        n, e, v = cmpt_00_equi.comput_lmp_nev(conf_dir, "deepmd",False)
+        cmpt_00_equi.comput_vasp_nev(jdata, conf_dir,False)
+        cmpt_00_equi.comput_lmp_nev(conf_dir, "deepmd",False)
 
 
 
