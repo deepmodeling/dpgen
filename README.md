@@ -506,6 +506,23 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 |**fp_params["kspacing"]** | Float| 0.4 | Sample factor in Brillouin zones.
 |**fp_params["mixingweight"]** | Float| 0.05 | Proportion a of output Density Matrix to be used for the input Density Matrix of next SCF cycle (linear mixing).
 |**fp_params["NumberPulay"]** | Integer| 5 | Controls the Pulay convergence accelerator.
+| *fp_style == cp2k*
+| **fp_params** | Dict | | Parameters for cp2k calculation. find detail in manual.cp2k.org. if it is not remarked with "optional", the parameter must be set. we assume that you have basic knowledge for cp2k input.
+|**fp_params["cutoff"]**| String | 400 |
+|**fp_params["rel_cutoff"]**| String | 50 |
+|**fp_params["functional"]**| String | PBE |
+|**fp_params["max_scf"]**| String | 50 |
+|**fp_params["pair_potential_type"]**| String | DFTD3 | This is optional.
+|**fp_params["pair_potential_path"]**| String | "./cp2k_basis_pp_file/dftd3.dat" | must be set if you set the "pair_potential_type"
+|**fp_params["pair_ref_functional"]**| String | PBE | must be set if you set the "pair_potential_type"
+|**fp_params["basis_path"]**| String | "./cp2k_basis_pp_file/BASIS_MOLOPT" |
+|**fp_params["pp_path"]**| String | "./cp2k_basis_pp_file/GTH_POTENTIALS" |
+|**fp_params["element_list"]**| List | ["H","C","N"] |
+|**fp_params["basis_list"]**| List | ["DZVP_MOLOPT_GTH","DZVP_MOLOPT_GTH","DZVP_MOLOPT_GTH"] | Must be same order with element_list
+|**fp_params["pp_list"]**| List | ["GTH-PBE-q1","GTH-PBE-q4","GTH-PBE-q5"] | Must be same order with element_list
+
+
+
 
 ## Test: Auto-test for Deep Generator
 At this step, we assume that you have prepared some graph files like `graph.*.pb` and the particular pseudopotential `POTCAR`.
