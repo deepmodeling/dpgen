@@ -224,7 +224,7 @@ def get_init_data_sys(scan_dir='./', init_file_name='type.raw'):
 
 
 def get_basic_param_json(melt_point,
-    out_param_filename='param.json',
+    out_param_filename='param_basic.json',
     scan_dir="./", 
     file_name='POSCAR',
     init_file_name='type.raw',
@@ -273,6 +273,7 @@ def get_basic_param_json(melt_point,
     with open(out_param_filename, 'w') as p:
         json.dump(param_dict, p, indent=4)
 
+    return param_dict 
 def _main():
     parser = argparse.ArgumentParser(description='Collect data from inputs and generate basic param.json')
     parser.add_argument("melt_point", type=float, help="melt_point")
@@ -282,5 +283,14 @@ def _main():
   
 if __name__=='__main__':
     _main()
-    
+
+def auto_gen_param(args):
+    if args.PARAM:
+        with open(args.PARAM) as p:
+            j = json.load(p)
+        melt_point = j['melt_point']
+        print('param_basic.json', get_basic_param_json(melt_point=melt_point))
+    else:
+        raise RuntimeError('must provide melt point or PARAM')
+
 #%%
