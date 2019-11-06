@@ -65,7 +65,7 @@ pip install --user .
 ```
 With this command, the dpgen executable is install to `$HOME/.local/bin/dpgen`. You may want to export the `PATH` by
 ```bash
-export PATH=$HOME/.local/bin/dpgen:$PATH
+export PATH=$HOME/.local/bin:$PATH
 ```
 To test if the installation is successful, you may execute
 ```bash
