@@ -758,7 +758,8 @@ The following table gives explicit descriptions on keys in param.json.
 | # Followings are keys in resources
 | numb_node | Integer | 1 | Node count required for the job
 | task_per_node | Integer | 4 | Number of CPU cores required
-| `numb_gpu` | Integer | 4 | Number of GPUs required
+| numb_gpu | Integer | 4 | Number of GPUs required
+| node_cpu | Integer | 4 | Only for LSF. The number of CPU cores on each node that should be allocated to the job.
 | source_list | List of string | "....../vasp.env" | Environment needed for certain job. For example, if "env" is in the list, 'source env' will be written in the script.
 | module_list | List of string | [ "Intel/2018", "Anaconda3"] | For example, If "Intel/2018" is in the list, "module load Intel/2018" will be written in the script.
 | partition | String  | "AdminGPU" | Partition / queue in which to run the job. |
