@@ -15,6 +15,7 @@ from .context import param_pwscf_old_file
 from .context import param_siesta_file
 from .context import param_gaussian_file
 from .context import param_cp2k_file
+from .context import param_cp2k_file_v1
 from .context import machine_file
 from .context import param_diy_file
 from .context import make_kspacing_kpoints
@@ -167,6 +168,67 @@ PARAMETER_FILE_NAME ./cp2k_basis_pp_file/dftd3.dat\n\
 REFERENCE_FUNCTIONAL PBE\n\
 &END PAIR_POTENTIAL\n\
 &END VDW_POTENTIAL\n\
+&END XC\n\
+&END DFT\n\
+&SUBSYS\n\
+&CELL\n\
+&END CELL\n\
+&COORD\n\
+@include coord.xyz\n\
+&END COORD\n\
+&KIND H\n\
+BASIS_SET DZVP-MOLOPT-GTH\n\
+POTENTIAL GTH-PBE-q1\n\
+&END KIND\n\
+&KIND C\n\
+BASIS_SET DZVP-MOLOPT-GTH\n\
+POTENTIAL GTH-PBE-q4\n\
+&END KIND\n\
+&KIND N\n\
+BASIS_SET DZVP-MOLOPT-GTH\n\
+POTENTIAL GTH-PBE-q5\n\
+&END KIND\n\
+&END SUBSYS\n\
+&PRINT\n\
+&FORCES ON\n\
+&END FORCES\n\
+&END PRINT\n\
+&END FORCE_EVAL\n"
+
+
+cp2k_input_ref_v1="\
+&GLOBAL\n\
+PROJECT DPGEN\n\
+&END GLOBAL\n\
+&FORCE_EVAL\n\
+METHOD QS\n\
+STRESS_TENSOR ANALYTICAL\n\
+&DFT\n\
+BASIS_SET_FILE_NAME ./cp2k_basis_pp_file/BASIS_MOLOPT\n\
+POTENTIAL_FILE_NAME ./cp2k_basis_pp_file/GTH_POTENTIALS\n\
+CHARGE 0\n\
+UKS F\n\
+MULTIPLICITY 1\n\
+&MGRID\n\
+CUTOFF 400\n\
+REL_CUTOFF 50\n\
+NGRIDS 4\n\
+&END MGRID\n\
+&QS\n\
+EPS_DEFAULT 1.0E-12\n\
+&END QS\n\
+&SCF\n\
+SCF_GUESS ATOMIC\n\
+EPS_SCF 1.0E-6\n\
+MAX_SCF 320\n\
+&OT\n\
+MINIMIZER DIIS\n\
+PRECONDITIONER FULL_SINGLE_INVERSE\n\
+&END OT\n\
+&END SCF\n\
+&XC\n\
+&XC_FUNCTIONAL PBE\n\
+&END XC_FUNCTIONAL\n\
 &END XC\n\
 &END DFT\n\
 &SUBSYS\n\
@@ -384,7 +446,7 @@ def _check_incar(testCase, idx):
     fp_path = os.path.join('iter.%06d' % idx, '02.fp')
     tasks = glob.glob(os.path.join(fp_path, 'task.*'))
     cwd = os.getcwd()
-    for ii in tasks :    
+    for ii in tasks :
         os.chdir(ii)
         with open('INCAR') as fp:
             incar = fp.read()
@@ -395,7 +457,7 @@ def _check_incar_ele_temp(testCase, idx, ele_temp):
     fp_path = os.path.join('iter.%06d' % idx, '02.fp')
     tasks = glob.glob(os.path.join(fp_path, 'task.*'))
     cwd = os.getcwd()
-    for ii in tasks :            
+    for ii in tasks :
         os.chdir(ii)
         bname = os.path.basename(ii)
         sidx = int(bname.split('.')[1])
@@ -471,6 +533,22 @@ def _check_cp2k_input_head(testCase, idx) :
                 cell_end_idx = idx
         lines_check = lines[:cell_start_idx+1] + lines[cell_end_idx:]
         testCase.assertEqual(('\n'.join(lines_check)).strip(), cp2k_input_ref.strip())
+
+def _check_cp2k_input_head_v1(testCase, idx) :
+    fp_path = os.path.join('iter.%06d' % idx, '02.fp')
+    tasks = glob.glob(os.path.join(fp_path, 'task.*'))
+    for ii in tasks :
+        ifile = os.path.join(ii, 'input.inp')
+        testCase.assertTrue(os.path.isfile(ifile))
+        with open(ifile) as fp:
+            lines = fp.read().split('\n')
+        for idx, jj in enumerate(lines) :
+            if '&CELL' in jj :
+                cell_start_idx = idx
+            if '&END CELL' in jj :
+                cell_end_idx = idx
+        lines_check = lines[:cell_start_idx+1] + lines[cell_end_idx:]
+        testCase.assertEqual(('\n'.join(lines_check)).strip(), cp2k_input_ref_v1.strip())
 
 
 class TestMakeFPPwscf(unittest.TestCase):
@@ -779,6 +857,31 @@ class TestMakeFPCP2K(unittest.TestCase):
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
         _check_cp2k_input_head(self, 0)
+        _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
+        shutil.rmtree('iter.000000')
+    def test_make_fp_cp2k_choose_vdw(self):
+        if os.path.isdir('iter.000000') :
+            shutil.rmtree('iter.000000')
+        with open (param_cp2k_file_v1, 'r') as fp :
+            jdata = json.load (fp)
+        with open (machine_file, 'r') as fp:
+            mdata = json.load (fp)
+        md_descript = []
+        nsys = 2
+        nmd = 3
+        n_frame = 10
+        for ii in range(nsys) :
+            tmp = []
+            for jj in range(nmd) :
+                tmp.append(np.arange(0, 0.29, 0.29/10))
+            md_descript.append(tmp)
+        atom_types = [0, 1, 2, 2, 0, 1]
+        type_map = jdata['type_map']
+        _make_fake_md(0, md_descript, atom_types, type_map)
+        make_fp(0, jdata, {})
+        _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
+        _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
+        _check_cp2k_input_head_v1(self, 0)
         _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
 

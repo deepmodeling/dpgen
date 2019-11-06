@@ -64,29 +64,34 @@ def make_cp2k_input(sys_data, fp_params):
     ot_section = section_add_keyword_and_value(ot_section, 'MINIMIZER', 'DIIS')
     ot_section = section_add_keyword_and_value(ot_section, 'PRECONDITIONER', 'FULL_SINGLE_INVERSE')
 
+#    outer_scf_section = make_section('OUTER_SCF')
+#    outer_scf_section = section_add_keyword_and_value(outer_scf_section, 'MAX_SCF', None)
+#    outer_scf_section = section_add_keyword_and_value(outer_scf_section, 'EPS_SCF', None)
+
     scf_section = make_section('SCF')
     scf_section = section_add_keyword_and_value(scf_section, 'SCF_GUESS', 'ATOMIC')
     scf_section = section_add_keyword_and_value(scf_section, 'EPS_SCF', '1.0E-6')
-    scf_section = section_add_keyword_and_value(scf_section, 'MAX_SCF', '50')
+    scf_section = section_add_keyword_and_value(scf_section, 'MAX_SCF', fp_params['max_scf'])
     scf_section = section_add_subsection(scf_section, ot_section)
-
+#    scf_section = section_add_subsection(scf_section, outer_scf_section)
 
     xc_functional_section = make_section('XC_FUNCTIONAL', fp_params['functional'])
+    if 'pair_potential_type' in fp_params :
+        pair_potential_section = make_section('PAIR_POTENTIAL')
+        pair_potential_section = section_add_keyword_and_value(pair_potential_section, 'TYPE', fp_params['pair_potential_type'])
+        pair_potential_section = section_add_keyword_and_value(pair_potential_section, 'PARAMETER_FILE_NAME', fp_params['pair_potential_path'])
+        pair_potential_section = section_add_keyword_and_value(pair_potential_section, 'REFERENCE_FUNCTIONAL',fp_params['pair_ref_functional'])
 
-    pair_potential_section = make_section('PAIR_POTENTIAL')
-    pair_potential_section = section_add_keyword_and_value(pair_potential_section, 'TYPE', 'DFTD3')
-    pair_potential_section = section_add_keyword_and_value(pair_potential_section, 'PARAMETER_FILE_NAME', fp_params['pair_potential_path'])
-    pair_potential_section = section_add_keyword_and_value(pair_potential_section, 'REFERENCE_FUNCTIONAL', fp_params['pair_ref_functional'])
-
-
-    vdw_potential_section = make_section('VDW_POTENTIAL')
-    vdw_potential_section = section_add_keyword_and_value(vdw_potential_section, 'DISPERSION_FUNCTIONAL', 'PAIR_POTENTIAL')
-    vdw_potential_section = section_add_subsection(vdw_potential_section, pair_potential_section)
+    if 'pair_potential_type' in fp_params :
+        vdw_potential_section = make_section('VDW_POTENTIAL')
+        vdw_potential_section = section_add_keyword_and_value(vdw_potential_section, 'DISPERSION_FUNCTIONAL', 'PAIR_POTENTIAL')
+        vdw_potential_section = section_add_subsection(vdw_potential_section, pair_potential_section)
 
 
     xc_section = make_section('XC')
     xc_section = section_add_subsection(xc_section, xc_functional_section)
-    xc_section = section_add_subsection(xc_section, vdw_potential_section)
+    if 'pair_potential_type' in fp_params :
+        xc_section = section_add_subsection(xc_section, vdw_potential_section)
 
 
     dft_section = make_section('DFT')
