@@ -767,10 +767,10 @@ The following table gives explicit descriptions on keys in param.json.
 mem_limit | Interger | 16 | Maximal memory permitted to apply for the job.
 | with_mpi | Boolean | true | Deciding whether to use mpi for calculation. If it's true and machine type is Slurm, "srun" will be prefixed to `command` in the script.
 | qos | "string"| "bigdata" | Deciding priority, dependent on particular settings of your HPC.
+| allow_failure | Boolean | false | Allow the command to return a non-zero exit code.
 | # End of resources
 | command | String | "lmp_serial" | Executable path of software, such as `lmp_serial`, `lmp_mpi` and `vasp_gpu`, `vasp_std`, etc.
 | group_size | Integer | 5 | DP-GEN will put these jobs together in one submitting script.
-| allow_failure | Boolean | false | Allow the command to return a non-zero exit code.
 
 ## Troubleshooting
 1. The most common problem is whether two settings correspond with each other, including:
