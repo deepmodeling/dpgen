@@ -2,7 +2,7 @@
   "train": [
     {
       "machine": {
-        "machine_type": "slurm",
+        "batch": "slurm",
         "hostname": "localhost",
         "port": 22,
         "username": "1600017784",
@@ -27,7 +27,7 @@
   "model_devi": [
     {
       "machine": {
-        "machine_type": "slurm",
+        "batch": "slurm",
         "hostname": "localhost",
         "port": 22,
         "username": "1600017784",
@@ -53,7 +53,7 @@
   "fp": [
     {
       "machine": {
-        "machine_type": "slurm",
+        "batch": "slurm",
         "hostname": "localhost",
         "port": 22,
         "username": "1600017784",
