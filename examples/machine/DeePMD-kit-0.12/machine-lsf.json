@@ -2,7 +2,7 @@
   "train": [
     {
       "machine": {
-        "machine_type": "lsf",
+        "batch": "lsf",
         "hostname": "localhost",
         "port": 22,
         "username": "ypliu",
@@ -32,7 +32,7 @@
   "model_devi": [
     {
       "machine": {
-        "machine_type": "lsf",
+        "batch": "lsf",
         "hostname": "localhost",
         "port": 22,
         "username": "ypliu",
@@ -64,7 +64,7 @@
   "fp": [
     {
       "machine": {
-        "machine_type": "lsf",
+        "batch": "lsf",
         "hostname": "localhost",
         "port": 22,
         "username": "ypliu",

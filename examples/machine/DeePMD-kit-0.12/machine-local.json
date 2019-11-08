@@ -1,19 +1,15 @@
 {
     "_comment":		"training on localhost ",
-    "deepmd_path":	"/home/wanghan/local/deepmd/0.10.1/",
+    "_comment" : "This is for DeePMD-kit 0.12.4",
+    "deepmd_path":	"/home/wanghan/local/deepmd/0.12.4/",
     "train_machine":	{
-	"machine_type":	"local",
-	"hostname" :	"127.0.0.1",
-	"port" :	22,
-	"username":	"wanghan",
-	"work_path" :	"/home/wanghan/tmp/subs/",
-	"_comment" :	"that's all"
+	"batch":	"shell",
+	"work_path" :	"/home/wanghan/tmp/subs/"
     },	
     "train_resources":	{
 	"envs":		{
 	    "PYTHONPATH" : "/home/wanghan/local/tensorflow/1.8.py/lib/python3.6/site-packages/"
-	},
-	"_comment":	"that's all"
+	}
     },    
 
 
@@ -21,25 +17,18 @@
     "lmp_command":	"/home/wanghan/local/bin/lmp_mpi_010",
     "model_devi_group_size": 5,
     "model_devi_machine":	{
-	"machine_type":	"local",
-	"hostname" :	"127.0.0.1",
-	"port" :	22,
-	"username":	"wanghan",
-	"work_path" :	"/home/wanghan/tmp/subs/",
-	"_comment" :	"that's all"
+	"batch":	"shell",
+	"_comment" : "If lazy_local is true, calculations are done directly in current folders.",
+	"lazy_local" : true
     },	
     "model_devi_resources":	{
-	"_comment":	"that's all"
     },    
 
     "_comment":		"fp on localhost ",
     "fp_command":	"/home/wanghan/local/bin/vasp_std",
     "fp_group_size":	2,
     "fp_machine":	{
-	"machine_type":	"local",
-	"hostname" :	"127.0.0.1",
-	"port" :	22,
-	"username":	"wanghan",
+	"batch":	"local",
 	"work_path" :	"/home/wanghan/tmp/subs/",
 	"_comment" :	"that's all"
     },	
