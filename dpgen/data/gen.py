@@ -63,14 +63,12 @@ global_dirname_03 = '01.scale_pert'
 global_dirname_04 = '02.md'
 
 def out_dir_name(jdata) :
-    cell_type = jdata['cell_type']
     elements = jdata['elements']
     super_cell = jdata['super_cell']    
     from_poscar = False
     if 'from_poscar' in jdata :
         from_poscar = jdata['from_poscar']
         from_poscar_path = jdata['from_poscar_path']
-
     if from_poscar:
         poscar_name = os.path.basename(from_poscar_path)
         cell_str = "%02d" % (super_cell[0])
@@ -78,6 +76,7 @@ def out_dir_name(jdata) :
             cell_str = cell_str + ("x%02d" % super_cell[ii])
         return poscar_name + '.' + cell_str
     else :
+        cell_type = jdata['cell_type']
         ele_str = ""
         for ii in elements:
             ele_str = ele_str + ii.lower()
@@ -408,6 +407,12 @@ def pert_scaled(jdata) :
             os.chdir(cwd)
 
 def make_vasp_md(jdata) :
+    ## If restart_md is true, md folders won't be created again.
+    restart_md = False
+    if "restart_md" in jdata and jdata["restart_md"]:
+        restart_md = True
+    if restart_md:
+        return
     out_dir = jdata['out_dir']
     potcars = jdata['potcars']
     scale = jdata['scale']   
@@ -552,10 +557,10 @@ def run_vasp_relax(jdata, mdata, dispatcher):
     if len(relax_tasks) == 0:
         return
 
-    relax_run_tasks = relax_tasks
-    #for ii in relax_tasks : 
-    #    if not _vasp_check_fin(ii):
-    #        relax_run_tasks.append(ii)
+    relax_run_tasks = [t for t in relax_tasks]
+    for ii in relax_tasks : 
+        if not _vasp_check_fin(ii):
+            relax_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in relax_run_tasks]
 
     #dlog.info(run_tasks)
@@ -595,11 +600,10 @@ def run_vasp_md(jdata, mdata, dispatcher):
     if len(md_tasks) == 0:
         return
 
-    md_run_tasks = md_tasks
-    #for ii in md_tasks : 
-    #    if not _vasp_check_fin(ii):
-    #        md_run_tasks.append(ii)
-
+    md_run_tasks = [t for t in md_tasks]
+    for ii in md_tasks : 
+        if not _vasp_check_fin(ii):
+            md_run_tasks.append(ii)
     run_tasks = [ii.replace(work_dir+"/", "") for ii in md_run_tasks]
     #dlog.info("md_work_dir", work_dir)
     #dlog.info("run_tasks",run_tasks)
