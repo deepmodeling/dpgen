@@ -42,7 +42,7 @@ setuptools.setup(
               'dpgen/database',
               'dpgen/tools'
     ],
-    data_files = [('dpgen/tools/', ['dpgen/tools/update_time.sh', ])],
+    # data_files = [('dpgen/tools/', ['dpgen/tools/update_time.sh', ])],
     # package_data={'example':['*.json']},
     classifiers=[
         "Programming Language :: Python :: 3.6",
