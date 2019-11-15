@@ -8,7 +8,10 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 __package__ = 'generator'
 from .context import make_train
 from .context import param_file
+from .context import param_file_v1
+from .context import param_file_v1_et
 from .context import machine_file
+from .context import machine_file_v1
 from .context import setUpModule
 
 def _comp_sys_files (sys0, sys1) :
@@ -48,7 +51,7 @@ def _check_numb_models(testCase, iter_idx, numb_models) :
 
 
 def _check_model_inputs(testCase, iter_idx, jdata) :
-    train_param = jdata['train_param']
+    train_param = jdata.get('train_param', 'input.json')
     numb_models = jdata['numb_models']
     default_training_param = jdata['default_training_param']
     init_data_sys = [os.path.join('..', 'data.init', ii) for ii in jdata['init_data_sys']]
@@ -78,6 +81,59 @@ def _check_model_inputs(testCase, iter_idx, jdata) :
                 pass
             else :
                 testCase.assertEqual(jdata0[ii], default_training_param[ii])
+
+def _check_model_input_dict(testCase, input_dict, init_data_sys, init_batch_size, default_training_param):
+    for ii in input_dict.keys() :
+        if ii == 'systems' :
+            for jj,kk in zip(input_dict[ii], init_data_sys):
+                testCase.assertEqual(jj, kk)
+        elif ii == 'batch_size' :
+            for jj, kk in zip(input_dict[ii], init_batch_size) :
+                testCase.assertEqual(jj, kk)
+        elif ii == 'seed':
+            # can be anything
+            pass
+        elif ii == 'numb_fparam':
+            testCase.assertEqual(input_dict[ii], 1)
+        elif ii == 'numb_aparam':
+            testCase.assertEqual(input_dict[ii], 1)
+        else :                        
+            testCase.assertEqual(input_dict[ii], default_training_param[ii])
+
+
+def _check_model_inputs_v1(testCase, iter_idx, jdata) :
+    train_param = jdata.get('train_param', 'input.json')
+    numb_models = jdata['numb_models']
+    use_ele_temp = jdata.get('use_ele_temp', 0)
+    default_training_param = jdata['default_training_param']
+    init_data_sys = [os.path.join('..', 'data.init', ii) for ii in jdata['init_data_sys']]
+    init_batch_size = jdata['init_batch_size']
+    sys_batch_size = jdata['sys_batch_size']
+    if iter_idx > 0 :
+        systems = glob.glob(os.path.join('iter.*', '02.fp', 'data.*'))
+        for ii in systems :
+            init_data_sys.append(os.path.join('..', 'data.iters', ii))
+            sys_idx = int(os.path.basename(ii).split('.')[1])
+            init_batch_size.append(sys_batch_size[sys_idx])
+    for kk in range(numb_models) :
+        with open(os.path.join('iter.%06d' % iter_idx, 
+                               '00.train', 
+                               '%03d' % kk,
+                               train_param)) as fp :
+            jdata0 = json.load(fp)
+        # keys except 'systems', 'batch_size', 'seed' should be identical
+        if use_ele_temp == 1:
+            testCase.assertTrue('numb_fparam' in jdata0['model']['fitting_net'])
+            testCase.assertFalse('numb_aparam' in jdata0['model']['fitting_net'])
+        if use_ele_temp == 2:
+            testCase.assertTrue('numb_aparam' in jdata0['model']['fitting_net'])
+            testCase.assertFalse('numb_fparam' in jdata0['model']['fitting_net'])
+        _check_model_input_dict(testCase, jdata0['model']['descriptor'], init_data_sys, init_batch_size, default_training_param['model']['descriptor'])
+        _check_model_input_dict(testCase, jdata0['model']['fitting_net'], init_data_sys, init_batch_size, default_training_param['model']['fitting_net'])
+        _check_model_input_dict(testCase, jdata0['loss'], init_data_sys, init_batch_size, default_training_param['loss'])
+        _check_model_input_dict(testCase, jdata0['learning_rate'], init_data_sys, init_batch_size, default_training_param['learning_rate'])
+        _check_model_input_dict(testCase, jdata0['training'], init_data_sys, init_batch_size, default_training_param['training'])
+
 
 def _make_fake_fp(iter_idx, sys_idx, nframes):
     for ii in range(nframes) :
@@ -156,6 +212,44 @@ class TestMakeTrain(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join('iter.000001', '00.train', 'copied')))
         # check pb file linked
         _check_pb_link(self, 1, jdata['numb_models'])
+        # remove testing dirs
+        shutil.rmtree('iter.000001')
+        shutil.rmtree('iter.000000')
+
+
+    def test_1_data_v1(self) :
+        with open (param_file_v1, 'r') as fp :
+            jdata = json.load (fp)
+            jdata.pop('use_ele_temp', None)
+        with open (machine_file_v1, 'r') as fp:
+            mdata = json.load (fp)
+        make_train(0, jdata, mdata)
+        # make fake fp results #data == fp_task_min
+        _make_fake_fp(0, 0, jdata['fp_task_min'])
+        # make iter1 train
+        make_train(1, jdata, mdata)
+        # check data is linked
+        self.assertTrue(os.path.isdir(os.path.join('iter.000001', '00.train', 'data.iters', 'iter.000000', '02.fp')))
+        # check models inputs
+        _check_model_inputs_v1(self, 1, jdata)
+        # remove testing dirs
+        shutil.rmtree('iter.000001')
+        shutil.rmtree('iter.000000')
+        
+    def test_1_data_v1_eletron_temp(self) :
+        with open (param_file_v1_et, 'r') as fp :
+            jdata = json.load (fp)
+        with open (machine_file_v1, 'r') as fp:
+            mdata = json.load (fp)
+        make_train(0, jdata, mdata)
+        # make fake fp results #data == fp_task_min
+        _make_fake_fp(0, 0, jdata['fp_task_min'])
+        # make iter1 train
+        make_train(1, jdata, mdata)
+        # check data is linked
+        self.assertTrue(os.path.isdir(os.path.join('iter.000001', '00.train', 'data.iters', 'iter.000000', '02.fp')))
+        # check models inputs
+        _check_model_inputs_v1(self, 1, jdata)
         # remove testing dirs
         shutil.rmtree('iter.000001')
         shutil.rmtree('iter.000000')

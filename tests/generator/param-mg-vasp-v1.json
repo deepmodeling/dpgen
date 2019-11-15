@@ -1,0 +1,97 @@
+{
+    "type_map":		["Al", "Mg"],
+    "mass_map":		[27, 24],
+    "use_ele_temp":	0,
+
+    "init_data_prefix":	"data",
+    "init_data_sys":	["deepmd"
+			],
+    "init_batch_size":	[16],
+    "sys_configs":	[
+	["data/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale*/000010/POSCAR"],
+	["data/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale*/00000[8-9]/POSCAR"]
+    ],
+    "sys_batch_size":	[1,1],
+
+    "_comment":		" 00.train ",
+    "numb_models":	4,
+    "default_training_param" : {
+	"model" : {
+	    "descriptor": {
+		"type":		"se_a",
+		"sel":		[90, 90],
+		"rcut_smth":	1.80,
+		"rcut":		6.00,
+		"neuron":	[10, 20, 40],
+		"resnet_dt":	false,
+		"axis_neuron":	4,
+		"seed":		1
+	    },
+	    "fitting_net" : {
+		"neuron":	[120, 120, 120],
+		"resnet_dt":	true,
+		"seed":		1
+	    }
+	},
+
+	"loss" : {
+	    "start_pref_e":	0.02,
+	    "limit_pref_e":	1,
+	    "start_pref_f":	1000,
+	    "limit_pref_f":	1,
+	    "start_pref_v":	0,
+	    "limit_pref_v":	0
+	},
+
+	"learning_rate" : {
+	    "start_lr":		0.001,
+	    "decay_steps":	5000,
+	    "decay_rate":	0.95
+	},
+
+	"training" : {
+	    "systems":		[],
+	    "set_prefix":	"set",
+	    "stop_batch":	1000,
+	    "batch_size":	1,
+
+	    "seed":		1,
+
+	    "_comment": " display and restart",
+	    "_comment": " frequencies counted in batch",
+	    "disp_file":	"lcurve.out",
+	    "disp_freq":	1000,
+	    "numb_test":	1,
+	    "save_freq":	1000,
+	    "save_ckpt":	"model.ckpt",
+	    "load_ckpt":	"model.ckpt",
+	    "disp_training":true,
+	    "time_training":true,
+	    "profiling":	false,
+	    "profiling_file":	"timeline.json"
+	}
+    },
+
+    "_comment":		" 01.model_devi ",
+    "_comment": "model_devi_skip: the first x of the recorded frames",
+    "model_devi_dt":		0.002,
+    "model_devi_skip":		0,
+    "model_devi_f_trust_lo":	0.05,
+    "model_devi_f_trust_hi":	0.20,
+    "model_devi_e_trust_lo":	1e10,
+    "model_devi_e_trust_hi":	1e10,
+    "model_devi_clean_traj":	false,
+    "model_devi_jobs":	[
+	{ "_idx": 0, "ensemble": "npt", "nsteps": 50, "press": [1.0,2.0], "sys_idx": [0, 1], "temps": [50,100], "trj_freq": 10 }
+    ],
+    "_comment":		" 02.fp ",
+    "fp_style":		"vasp",
+    "shuffle_poscar":	false,
+    "fp_task_max":	8,
+    "fp_task_min":	2,
+    "fp_pp_path":	"/home/wanghan/study/deep.md/dpgen/almg/vasp",
+    "fp_pp_files":	["POTCAR.Al", "POTCAR.Mg"],
+    "fp_incar":         "/home/wanghan/study/deep.md/dpgen/almg/vasp/INCAR",
+    "_comment":		" that's all "
+}
+

@@ -47,7 +47,7 @@ def comput_lmp_nev(conf_dir, task_name, write_stable = False) :
         return None, None, None
 
 def comput_vasp_nev(jdata, conf_dir, write_stable = False) :
-    kspacing = jdata['vasp_params']['kspacing']
+    
     conf_path = re.sub('confs', global_equi_name, conf_dir)
     conf_path = os.path.abspath(conf_path)
     poscar = os.path.join(conf_path, 'POSCAR')
@@ -59,6 +59,7 @@ def comput_vasp_nev(jdata, conf_dir, write_stable = False) :
     if 'relax_incar' in jdata.keys():
         vasp_str='vasp-relax_incar'
     else:
+        kspacing = jdata['vasp_params']['kspacing']
         vasp_str='vasp-k%.2f' % kspacing
 
     ener_shift = comput_e_shift(poscar, vasp_str)
