@@ -104,12 +104,11 @@ def link_trj(jdata):
 
 def run_build_dataset(jdata, mdata, dispatcher, log_file="build_log"):
     work_path = build_path
-    build_command = "{cmd} -n {dataset_name} -a {type_map} -d {lammpstrj} -c {cutoff} -i {interval} -s {dataset_size} -k \"{qmkeywords}\" --nprocjob {nprocjob} --nproc {nproc}".format(
+    build_command = "{cmd} -n {dataset_name} -a {type_map} -d {lammpstrj} -c {cutoff} -s {dataset_size} -k \"{qmkeywords}\" --nprocjob {nprocjob} --nproc {nproc}".format(
         cmd=mdata["build_command"],
         type_map=" ".join(jdata["type_map"]),
         lammpstrj=trj_path,
         cutoff=jdata["cutoff"],
-        interval=jdata["interval"],
         dataset_size=jdata["dataset_size"],
         qmkeywords=jdata["qmkeywords"],
         nprocjob=mdata["fp_resources"]["task_per_node"],
