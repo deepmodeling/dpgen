@@ -60,14 +60,14 @@ def run_build_dataset(jdata, mdata, dispatcher, log_file="log"):
                         1,
                         [],
                         [trj_path],
-                        [f"{dataset_name}_gjf"],
+                        [f"dataset_{dataset_name}_gjf"],
                         outlog=log_file,
                         errlog=log_file)
 
 
 def link_fp_input():
     all_input_file = glob.glob(os.path.join(
-        build_path, "task.*", f"{dataset_name}_gjf", "*", "*.gjf"))
+        build_path, "task.*", f"dataset_{dataset_name}_gjf", "*", "*.gjf"))
     work_path = fp_path
     create_path(work_path)
 
@@ -81,7 +81,7 @@ def link_fp_input():
 def run_fp(jdata,
            mdata,
            dispatcher,
-           log_file="log",
+           log_file="output",
            forward_common_files=[]):
     fp_command = mdata['fp_command']
     fp_group_size = mdata['fp_group_size']
@@ -103,7 +103,7 @@ def run_fp(jdata,
                         fp_group_size,
                         [],
                         ["input"],
-                        ["output"],
+                        [log_file],
                         outlog=log_file,
                         errlog=log_file)
 
@@ -113,6 +113,7 @@ def convert_data(jdata):
                               for x in glob.glob(os.path.join(fp_path, "*", "output"))],
                             type_map=jdata["type_map"])
     s.to_deepmd_npy(data_path)
+    dlog.info("Initial data is avaiable in %s" % os.path.abspath(data_path))
 
 
 def gen_init_reaction(args):
@@ -140,13 +141,13 @@ def gen_init_reaction(args):
                 iter_rec = int(line.strip())
         dlog.info("continue from task %02d" % iter_rec)
     for ii in range(numb_task):
-        sepline(ii, '-')
+        sepline(str(ii), '-')
         if ii <= iter_rec:
             continue
         elif ii == 0:
-            dispatcher = make_dispatcher(mdata["build_machine"])
             link_trj(jdata)
         elif ii == 1:
+            dispatcher = make_dispatcher(mdata["build_machine"])
             run_build_dataset(jdata, mdata, dispatcher)
         elif ii == 2:
             link_fp_input()
@@ -156,4 +157,4 @@ def gen_init_reaction(args):
         elif ii == 4:
             convert_data(jdata)
         with open(record, "a") as frec:
-            frec.write(ii)
+            frec.write(str(ii)+'\n')
