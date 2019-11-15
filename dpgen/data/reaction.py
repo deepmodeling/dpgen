@@ -1,8 +1,9 @@
 """
 input: trajectory
-00: build dataset (mddatasetbuilder)
-01: fp (gaussian)
-02: convert to deepmd data
+00: ReaxFF MD (lammps)
+01: build dataset (mddatasetbuilder)
+02: fp (gaussian)
+03: convert to deepmd data
 output: data
 """
 
@@ -10,6 +11,7 @@ import argparse
 import glob
 import json
 import os
+import random
 
 import dpdata
 from dpgen import dlog
@@ -17,12 +19,77 @@ from dpgen.dispatcher.Dispatcher import make_dispatcher
 from dpgen.generator.run import create_path, make_fp_task_name
 from dpgen.util import sepline
 
-build_path = "00.build"
-fp_path = "01.fp"
-data_path = "02.data"
+reaxff_path = "00.reaxff"
+build_path = "01.build"
+fp_path = "02.fp"
+data_path = "03.data"
 
 trj_path = "lammpstrj"
+ff_path = "ffield.reax"
+data_path = "data.init"
+control_path = "lmp_control"
+lmp_path = "in.lmp"
 dataset_name = "dpgen_init"
+
+
+def link_reaxff(jdata):
+    create_path(reaxff_path)
+    task_path = os.path.join(reaxff_path, "task.000")
+    create_path(task_path)
+
+    rdata = jdata['reaxff']
+    os.symlink(os.path.abspath(rdata["data"]), os.path.abspath(
+        os.path.join(task_path, data_path)))
+    os.symlink(os.path.abspath(rdata["ff"]), os.path.abspath(
+        os.path.join(task_path, ff_path)))
+    os.symlink(os.path.abspath(rdata["control"]), os.path.abspath(
+        os.path.join(task_path, control_path)))
+    with open(os.path.join(task_path, lmp_path)) as f:
+        f.write(make_lmp(jdata))
+
+
+def make_lmp(jdata):
+    rdata = jdata['reaxff']
+    lmp_string = """units real
+atom_style charge
+read_data data.init
+pair_style reax/c lmp_control
+pair_coeff * * ffield.reax.cho {type_map}
+velocity all create {temp} {rand}
+fix 1 all nvt temp {temp} {temp} {tau_t}
+fix 2 all qeq/reax 1 0.0 10.0 1.0e-6 reax/c
+dump 1 all custom {dump_freq} lammpstrj id type x y z 
+timestep {dt}
+run	{nstep}
+""".format(
+        type_map=" ".join(jdata['type_map']),
+        temp=rdata['temp'],
+        rand=random.randrange(1000000-1)+1,
+        tau_t=rdata['tau_t'],
+        dump_frep=rdata['dump_freq'],
+        dt=rdata['dt'],
+        nstep=rdata['nstep']
+    )
+    return lmp_string
+
+
+def run_reaxff(jdata, mdata, dispatcher, log_file="reaxff_log"):
+    work_path = reaxff_path
+    reaxff_command = "{} -in {}".format(mdata["reaxff_command"], lmp_path)
+    run_tasks = glob.glob(os.path.join(work_path, 'task.*'))
+    run_tasks.sort()
+    run_tasks = [os.path.basename(ii) for ii in run_tasks]
+
+    dispatcher.run_jobs(mdata['reaxff_resources'],
+                        [reaxff_command],
+                        work_path,
+                        run_tasks,
+                        1,
+                        [],
+                        [ff_path, data_path, control_path, lmp_path],
+                        [trj_path],
+                        outlog=log_file,
+                        errlog=log_file)
 
 
 def link_trj(jdata):
@@ -35,7 +102,7 @@ def link_trj(jdata):
         os.path.join(task_path, trj_path)))
 
 
-def run_build_dataset(jdata, mdata, dispatcher, log_file="log"):
+def run_build_dataset(jdata, mdata, dispatcher, log_file="build_log"):
     work_path = build_path
     build_command = "{cmd} -n {dataset_name} -a {type_map} -d {lammpstrj} -c {cutoff} -i {interval} -s {dataset_size} -k \"{qmkeywords}\" --nprocjob {nprocjob} --nproc {nproc}".format(
         cmd=mdata["build_command"],
@@ -134,7 +201,7 @@ def gen_init_reaction(args):
 
     record = "record.reaction"
     iter_rec = -1
-    numb_task = 5
+    numb_task = 7
     if os.path.isfile(record):
         with open(record) as frec:
             for line in frec:
@@ -147,14 +214,18 @@ def gen_init_reaction(args):
         elif ii == 0:
             link_trj(jdata)
         elif ii == 1:
+            link_trj(jdata)
+        elif ii == 2:
+            link_trj(jdata)
+        elif ii == 3:
             dispatcher = make_dispatcher(mdata["build_machine"])
             run_build_dataset(jdata, mdata, dispatcher)
-        elif ii == 2:
+        elif ii == 4:
             link_fp_input()
-        elif ii == 3:
+        elif ii == 5:
             dispatcher = make_dispatcher(mdata["fp_machine"])
             run_fp(jdata, mdata, dispatcher)
-        elif ii == 4:
+        elif ii == 6:
             convert_data(jdata)
         with open(record, "a") as frec:
             frec.write(str(ii)+'\n')
