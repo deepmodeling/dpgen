@@ -5,7 +5,7 @@ from .input_data import *
 from .context import setUpModule
 from dpgen.auto_test import gen_04_interstitial,cmpt_04_interstitial
 
-class Testinterstitial(unittest,TestCase):
+class TestInterstitial(unittest.TestCase):
 
     def test_gen_interstitial(self):
         conf_dir="confs/Cu/std-fcc"
@@ -27,10 +27,8 @@ class Testinterstitial(unittest,TestCase):
         for ss in struct_task :
             vasp_check+=[os.path.join(ss,ii) for ii in vasp_input]
         for ii in vasp_check:
-            if os.path.isfile(ii):
+            if self.assertTrue(os.path.isfile(ii)):
                 os.remove(ii)
-            else:
-                raise "error in gen_04_interstitial.make_vasp "
 
         gen_04_interstitial.make_lammps(jdata,conf_dir,supercell,insert_ele,'deepmd')
         dp_path = os.path.join(task_path,'deepmd')
@@ -40,10 +38,8 @@ class Testinterstitial(unittest,TestCase):
         for ss in struct_task :
             dp_check+=[os.path.join(ss,ii) for ii in dp_input]
         for ii in dp_check:
-            if os.path.isfile(ii):
+            if self.assertTrue(os.path.isfile(ii)):
                 os.remove(ii)
-            else:
-                raise "error in gen_04_interstitial.make_lammps "
 
     def test_cmpt_interstitial(self):
         conf_dir="confs/Cu/std-fcc"

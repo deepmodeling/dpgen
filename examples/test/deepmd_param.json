@@ -26,7 +26,7 @@
         "model_param_type": false
     },
     "_comment": "00.equi",
-    "cmpt_shift": false,
+    "alloy_shift": false,
     "_comment": "01.eos",
     "vol_start": 12,
     "vol_end": 22,

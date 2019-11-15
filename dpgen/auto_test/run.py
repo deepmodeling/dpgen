@@ -51,69 +51,6 @@ from hashlib import sha1
 
 lammps_task_type=['deepmd','meam','eam']
 
-def _run(machine,
-         machine_type,
-         ssh_sess,
-         resources,
-         command,
-         work_path,
-         run_tasks,
-         group_size,
-         common_files,
-         forward_files,
-         backward_files):
-
-    print("group_size",group_size)
-    if ssh_sess == None and machine_type == 'ucloud':
-        print("The first situation!")
-        ucloud_submit_jobs(machine,
-                            resources,
-                            command,
-                            work_path,
-                            run_tasks,
-                            group_size,
-                            common_files,
-                            forward_files,
-                            backward_files)
-    elif machine_type == 'slurm' :
-        print("The second situation!")
-        group_slurm_jobs(ssh_sess,
-                           resources,
-                           command,
-                           work_path,
-                           run_tasks,
-                           group_size,
-                           common_files,
-                           forward_files,
-                           backward_files,
-                           forward_task_deference =False)
-    elif machine_type == 'pbs' :
-        group_slurm_jobs(ssh_sess,
-                           resources,
-                           command,
-                           work_path,
-                           run_tasks,
-                           group_size,
-                           common_files,
-                           forward_files,
-                           backward_files,
-                          remote_job = PBSJob,
-                          forward_task_deference =False)
-    elif machine_type == 'local' :
-        group_local_jobs(ssh_sess,
-                           resources,
-                           command,
-                           work_path,
-                           run_tasks,
-                           group_size,
-                           common_files,
-                           forward_files,
-                           backward_files)
-    else :
-        raise RuntimeError("unknow machine type")
-
-
-
 def gen_equi(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
     cwd=os.getcwd()
@@ -177,13 +114,13 @@ def run_equi(task_type,jdata,mdata):
                   common_files,
                   forward_files,
                   backward_files,
-                  outlog='autotest.log',
-                  errlog='autotest.log')
+                  outlog='autotest.out',
+                  errlog='autotest.err')
 
 
 def cmpt_equi(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
-    cmpt_shift=jdata['cmpt_shift']
+    cmpt_shift=jdata['alloy_shift']
     #vasp
     if task_type=="vasp":
         n, e, v, s = cmpt_00_equi.comput_vasp_nev(jdata, conf_dir,cmpt_shift)
@@ -265,8 +202,8 @@ def run_eos(task_type,jdata,mdata):
                   common_files,
                   forward_files,
                   backward_files,
-                  outlog='autotest.log',
-                  errlog='autotest.log')
+                  outlog='autotest.out',
+                  errlog='autotest.err')
 
 def cmpt_eos(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
@@ -340,8 +277,8 @@ def run_elastic(task_type,jdata,mdata):
                   common_files,
                   forward_files,
                   backward_files,
-                  outlog='autotest.log',
-                  errlog='autotest.log')
+                  outlog='autotest.out',
+                  errlog='autotest.err')
 
 def cmpt_elastic(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
@@ -414,8 +351,8 @@ def run_vacancy(task_type,jdata,mdata):
                   common_files,
                   forward_files,
                   backward_files,
-                  outlog='autotest.log',
-                  errlog='autotest.log')
+                  outlog='autotest.out',
+                  errlog='autotest.err')
 
 def cmpt_vacancy(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
@@ -518,8 +455,8 @@ def run_interstitial(task_type,jdata,mdata):
                           common_files,
                           forward_files,
                           backward_files,
-                          outlog='autotest.log',
-                          errlog='autotest.log')
+                          outlog='autotest.out',
+                          errlog='autotest.err')
     else:
         run_tasks = util.collect_task(all_task,task_type)
         disp.run_jobs(resources,
@@ -617,8 +554,8 @@ def run_surf(task_type,jdata,mdata):
                   common_files,
                   forward_files,
                   backward_files,
-                  outlog='autotest.log',
-                  errlog='autotest.log')
+                  outlog='autotest.out',
+                  errlog='autotest.err')
 
 def cmpt_surf(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
@@ -676,8 +613,8 @@ def run_phonon(task_type,jdata,mdata):
                   common_files,
                   forward_files,
                   backward_files,
-                  outlog='autotest.log',
-                  errlog='autotest.log')
+                  outlog='autotest.out',
+                  errlog='autotest.err')
     #lammps
     elif task_type in lammps_task_type:
         None

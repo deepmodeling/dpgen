@@ -1,11 +1,11 @@
 import numpy as np
 import unittest
-import json,re,os
+import json,re,os,filecmp
 from .input_data import *
 from .context import setUpModule
 from dpgen.auto_test import gen_01_eos,cmpt_01_eos
 
-class TestEos(unittest,TestCase):
+class TestEos(unittest.TestCase):
 
     def test_gen_eos(self):
         conf_dir="confs/Cu/std-fcc"
@@ -27,10 +27,8 @@ class TestEos(unittest,TestCase):
             vol_path = os.path.join(vasp_path, 'vol-%.2f' % vol)
             vasp_check=+[os.path.join(vol_path,ii) for ii in vasp_input]
         for ii in vasp_check:
-            if os.path.isfile(ii):
+            if self.assertTrue(os.path.isfile(ii)):
                 os.remove(ii)
-            else:
-                raise "error in gen_01_eos.make_vasp "
 
         gen_01_eos.make_lammps(jdata,conf_dir,"deepmd")
         dp_path = os.path.join(task_path,'deepmd')
@@ -39,17 +37,29 @@ class TestEos(unittest,TestCase):
             vol_path = os.path.join(dp_path, 'vol-%.2f' % vol)
             dp_check+=[os.path.join(vol_path,ii) for ii in dp_input]
         for ii in vasp_check:
-            if os.path.isfile(ii):
+            if self.assertTrue(os.path.isfile(ii)):
                 os.remove(ii)
-            else:
-                raise "error in gen_01_eos.make_lammps "
 
     def test_cmpt_eos(self):
         conf_dir="confs/Cu/std-fcc"
+        global_task_name='01.eos'
+        task_path=os.path.abspath(re.sub('confs', global_task_name, conf_dir))
         with open (param_file, 'r') as fp :
             jdata = json.load (fp)
+            
         cmpt_01_eos.comput_vasp_eos(jdata, conf_dir)
+        kspacing = jdata['vasp_params']['kspacing']
+        vasp_str='vasp-k%.2f' % kspacing
+        vasp_path=os.path.join(task_path,vasp_str)
+        result =os.path.join(vasp_path,'result')
+        ref = os.path.join(vasp_path,'ref')
+        self.assertTrue(filecmp.cmp(result,ref))
+
         cmpt_01_eos.comput_lmp_eos(jdata, conf_dir,'deepmd')
+        dp_path = os.path.join(task_path,'deepmd')
+        result =os.path.join(dp_path,'result')
+        ref = os.path.join(dp_path,'ref')
+        self.assertTrue(filecmp.cmp(result,ref))
 
 
 

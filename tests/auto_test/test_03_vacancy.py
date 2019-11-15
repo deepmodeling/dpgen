@@ -5,7 +5,7 @@ from .input_data import *
 from .context import setUpModule
 from dpgen.auto_test import gen_03_vacancy,cmpt_03_vacancy
 
-class TestVacancy(unittest,TestCase):
+class TestVacancy(unittest.TestCase):
 
     def test_gen_vacancy(self):
         conf_dir="confs/Cu/std-fcc"
@@ -26,10 +26,8 @@ class TestVacancy(unittest,TestCase):
         for ss in struct_task :
             vasp_check+=[os.path.join(ss,ii) for ii in vasp_input]
         for ii in vasp_check:
-            if os.path.isfile(ii):
+            if self.assertTrue(os.path.isfile(ii)):
                 os.remove(ii)
-            else:
-                raise "error in gen_03_vacancy.make_vasp "
 
         gen_03_vacancy.make_lammps(jdata,conf_dir,"deepmd",supercell)
         dp_path = os.path.join(task_path,'deepmd')
@@ -39,10 +37,8 @@ class TestVacancy(unittest,TestCase):
         for ss in struct_task :
             dp_check+=[os.path.join(ss,ii) for ii in dp_input]
         for ii in dp_check:
-            if os.path.isfile(ii):
+            if self.assertTrue(os.path.isfile(ii)):
                 os.remove(ii)
-            else:
-                raise "error in gen_03_vacancy.make_lammps "
 
     def test_cmpt_vacancy(self):
         conf_dir="confs/Cu/std-fcc"

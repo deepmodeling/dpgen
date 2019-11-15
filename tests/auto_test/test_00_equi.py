@@ -6,7 +6,7 @@ from .context import setUpModule
 from dpgen.auto_test import gen_00_equi,cmpt_00_equi
 
 
-class TestEqui(unittest,TestCase):
+class TestEqui(unittest.TestCase):
 
     def test_gen_equi(self):
         conf_dir="confs/Cu/std-fcc"
@@ -21,26 +21,26 @@ class TestEqui(unittest,TestCase):
         vasp_path=os.path.join(task_path,vasp_str)
         vasp_check=[os.path.join(vasp_path,ii) for ii in vasp_input]
         for ii in vasp_check:
-            if os.path.isfile(ii):
+            if self.assertTrue(os.path.isfile(ii)):
                 os.remove(ii)
-            else:
-                raise "error in gen_00_equi.make_vasp "
 
         gen_00_equi.make_lammps(jdata,conf_dir,"deepmd")
         dp_path = os.path.join(task_path,'deepmd')
         dp_check=[os.path.join(dp_path,ii) for ii in dp_input]
         for ii in dp_check:
-            if os.path.isfile(ii):
+            if self.assertTrue(os.path.isfile(ii)):
                 os.remove(ii)
-            else:
-                raise "error in gen_00_equi.make_dp "
 
     def test_cmpt_equi(self):
         conf_dir="confs/Cu/std-fcc"
         with open (param_file, 'r') as vasp_fp :
             jdata = json.load (vasp_fp)
-        cmpt_00_equi.comput_vasp_nev(jdata, conf_dir,False)
-        cmpt_00_equi.comput_lmp_nev(conf_dir, "deepmd",False)
+        n,e,v,s=cmpt_00_equi.comput_vasp_nev(jdata, conf_dir,False)
+        vasp_ref = (1 ,-3.72869783,12.0)
+        self.assertEquals((n,e,v),vasp_ref)
+        n,e,v,s=cmpt_00_equi.comput_lmp_nev(conf_dir, "deepmd",False)
+        dp_ref = (1,-3.72713824311381,12.0042496444885)
+        self.assertEquals((n,e,v),dp_ref)
 
 
 
