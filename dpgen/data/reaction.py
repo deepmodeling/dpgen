@@ -108,9 +108,10 @@ def run_fp(jdata,
                         errlog=log_file)
 
 
-def convert_data():
+def convert_data(jdata):
     s = dpdata.MultiSystems(*[dpdata.LabeledSystem(x, fmt="gaussian/log")
-                              for x in glob.glob(os.path.join(fp_path, "*", "output"))])
+                              for x in glob.glob(os.path.join(fp_path, "*", "output"))],
+                            type_map=jdata["type_map"])
     s.to_deepmd_npy(data_path)
 
 
@@ -153,6 +154,6 @@ def gen_init_reaction(args):
             dispatcher = make_dispatcher(mdata["fp_machine"])
             run_fp(jdata, mdata, dispatcher)
         elif ii == 4:
-            convert_data()
+            convert_data(jdata)
         with open(record, "a") as frec:
             frec.write(ii)
