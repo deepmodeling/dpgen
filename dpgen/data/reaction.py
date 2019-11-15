@@ -211,9 +211,10 @@ def gen_init_reaction(args):
         if ii <= iter_rec:
             continue
         elif ii == 0:
-            link_trj(jdata)
+            link_reaxff(jdata)
         elif ii == 1:
-            link_trj(jdata)
+            dispatcher = make_dispatcher(mdata["reaxff_machine"])
+            run_reaxff(jdata, mdata, dispatcher)
         elif ii == 2:
             link_trj(jdata)
         elif ii == 3:
