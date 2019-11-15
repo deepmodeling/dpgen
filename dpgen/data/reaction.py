@@ -26,7 +26,7 @@ data_path = "03.data"
 
 trj_path = "lammpstrj"
 ff_path = "ffield.reax"
-data_path = "data.init"
+data_init_path = "data.init"
 control_path = "lmp_control"
 lmp_path = "in.lmp"
 dataset_name = "dpgen_init"
@@ -39,12 +39,12 @@ def link_reaxff(jdata):
 
     rdata = jdata['reaxff']
     os.symlink(os.path.abspath(rdata["data"]), os.path.abspath(
-        os.path.join(task_path, data_path)))
+        os.path.join(task_path, data_init_path)))
     os.symlink(os.path.abspath(rdata["ff"]), os.path.abspath(
         os.path.join(task_path, ff_path)))
     os.symlink(os.path.abspath(rdata["control"]), os.path.abspath(
         os.path.join(task_path, control_path)))
-    with open(os.path.join(task_path, lmp_path)) as f:
+    with open(os.path.join(task_path, lmp_path), 'w') as f:
         f.write(make_lmp(jdata))
 
 
@@ -54,7 +54,7 @@ def make_lmp(jdata):
 atom_style charge
 read_data data.init
 pair_style reax/c lmp_control
-pair_coeff * * ffield.reax.cho {type_map}
+pair_coeff * * ffield.reax {type_map}
 velocity all create {temp} {rand}
 fix 1 all nvt temp {temp} {temp} {tau_t}
 fix 2 all qeq/reax 1 0.0 10.0 1.0e-6 reax/c
@@ -66,7 +66,7 @@ run	{nstep}
         temp=rdata['temp'],
         rand=random.randrange(1000000-1)+1,
         tau_t=rdata['tau_t'],
-        dump_frep=rdata['dump_freq'],
+        dump_freq=rdata['dump_freq'],
         dt=rdata['dt'],
         nstep=rdata['nstep']
     )
@@ -86,7 +86,7 @@ def run_reaxff(jdata, mdata, dispatcher, log_file="reaxff_log"):
                         run_tasks,
                         1,
                         [],
-                        [ff_path, data_path, control_path, lmp_path],
+                        [ff_path, data_init_path, control_path, lmp_path],
                         [trj_path],
                         outlog=log_file,
                         errlog=log_file)
@@ -98,7 +98,7 @@ def link_trj(jdata):
     task_path = os.path.join(build_path, "task.000")
     create_path(task_path)
 
-    os.symlink(os.path.abspath(jdata["lammpstrj"]), os.path.abspath(
+    os.symlink(os.path.abspath(os.path.join(reaxff_path, "task.000", trj_path)), os.path.abspath(
         os.path.join(task_path, trj_path)))
 
 
