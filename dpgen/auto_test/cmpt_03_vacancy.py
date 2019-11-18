@@ -23,7 +23,7 @@ def comput_e_shift(poscar, task_name) :
         ref_e_file = os.path.join('stables', ref_e_file)
         ener = float(open(ref_e_file).read())
         ener_shift += a_natoms[ii] * ener
-    return ener_shift 
+    return ener_shift
 
 def cmpt_vasp(jdata, conf_dir, supercell) :
 
@@ -37,7 +37,7 @@ def cmpt_vasp(jdata, conf_dir, supercell) :
     equi_path = os.path.join(equi_path, vasp_str)
     equi_path = os.path.abspath(equi_path)
     equi_outcar = os.path.join(equi_path, 'OUTCAR')
-    task_path = re.sub('confs', global_task_name, conf_dir)    
+    task_path = re.sub('confs', global_task_name, conf_dir)
     task_path = os.path.join(task_path, vasp_str)
     task_path = os.path.abspath(task_path)
     print("# ", task_path)
@@ -51,17 +51,23 @@ def cmpt_vasp(jdata, conf_dir, supercell) :
     if len(struct_path_list) == 0:
         print("# cannot find results for conf %s supercell %s" % (conf_dir, supercell))
     sys.stdout.write ("Structure: \tVac_E(eV)  E(eV) equi_E(eV)\n")
-    for ii in struct_path_list :
-        struct_poscar = os.path.join(ii, 'POSCAR')
-        #energy_shift = comput_e_shift(struct_poscar, vasp_str)
-        structure_dir = os.path.basename(ii)
-        outcar = os.path.join(ii, 'OUTCAR')
-        natoms, epa, vpa = vasp.get_nev(outcar)
-        evac = epa * natoms - equi_epa * natoms
-        sys.stdout.write ("%s: %7.3f  %7.3f %7.3f \n" % (structure_dir, evac, epa * natoms, equi_epa*natoms))
+    result = os.path.join(task_path,'result')
+    with open(result,'w') as fp:
+        fp.write('conf_dir:%s\n'% (conf_dir))
+        fp.write("Structure: \tVac_E(eV)  E(eV) equi_E(eV)\n")
+        for ii in struct_path_list :
+            struct_poscar = os.path.join(ii, 'POSCAR')
+            #energy_shift = comput_e_shift(struct_poscar, vasp_str)
+            structure_dir = os.path.basename(ii)
+            outcar = os.path.join(ii, 'OUTCAR')
+            natoms, epa, vpa = vasp.get_nev(outcar)
+            evac = epa * natoms - equi_epa * natoms
+            sys.stdout.write ("%s: %7.3f  %7.3f %7.3f \n" % (structure_dir, evac, epa * natoms, equi_epa*natoms))
+            fp.write("%s: %7.3f  %7.3f %7.3f \n" % (structure_dir, evac, epa * natoms, equi_epa*natoms))
+    fp.close()
         # evac = epa * natoms - energy_shift
         # sys.stdout.write ("%s: %7.3f  %7.3f %7.3f \n" % (structure_dir, evac, epa * natoms, energy_shift))
-        # sys.stdout.write ("%s: %7.3f \n" % (structure_dir, evac))    
+        # sys.stdout.write ("%s: %7.3f \n" % (structure_dir, evac))
 
 def cmpt_deepmd_lammps(jdata, conf_dir, supercell, task_name) :
     equi_path = re.sub('confs', global_equi_name, conf_dir)
@@ -82,14 +88,20 @@ def cmpt_deepmd_lammps(jdata, conf_dir, supercell, task_name) :
     if len(struct_path_list) == 0:
         print("# cannot find results for conf %s supercell %s" % (conf_dir, supercell))
     sys.stdout.write ("Structure: \tVac_E(eV)  E(eV) equi_E(eV)\n")
-    for ii in struct_path_list :
-        struct_poscar = os.path.join(ii, 'POSCAR')
-        #energy_shift = comput_e_shift(struct_poscar, task_name)
-        structure_dir = os.path.basename(ii)
-        lmp_log = os.path.join(ii, 'log.lammps')
-        natoms, epa, vpa = lammps.get_nev(lmp_log)
-        evac = epa * natoms - equi_epa * natoms
-        sys.stdout.write ("%s: %7.3f  %7.3f %7.3f \n" % (structure_dir, evac, epa * natoms, equi_epa * natoms))
+    result = os.path.join(task_path,'result')
+    with open(result,'w') as fp:
+        fp.write('conf_dir:%s\n'% (conf_dir))
+        fp.write("Structure: \tVac_E(eV)  E(eV) equi_E(eV)\n")
+        for ii in struct_path_list :
+            struct_poscar = os.path.join(ii, 'POSCAR')
+            #energy_shift = comput_e_shift(struct_poscar, task_name)
+            structure_dir = os.path.basename(ii)
+            lmp_log = os.path.join(ii, 'log.lammps')
+            natoms, epa, vpa = lammps.get_nev(lmp_log)
+            evac = epa * natoms - equi_epa * natoms
+            sys.stdout.write ("%s: %7.3f  %7.3f %7.3f \n" % (structure_dir, evac, epa * natoms, equi_epa * natoms))
+            fp.write("%s: %7.3f  %7.3f %7.3f \n" % (structure_dir, evac, epa * natoms, equi_epa*natoms))
+    fp.close()
         # evac = epa * natoms - energy_shift
         # sys.stdout.write ("%s: %7.3f  %7.3f %7.3f \n" % (structure_dir, evac, epa * natoms, energy_shift))
         # sys.stdout.write ("%s: %7.3f\n" % (structure_dir, evac))
@@ -112,15 +124,13 @@ def _main() :
 
 #    print('# generate %s task with conf %s' % (args.TASK, args.CONF))
     if args.TASK == 'vasp':
-        cmpt_vasp(jdata, args.CONF, args.COPY)               
+        cmpt_vasp(jdata, args.CONF, args.COPY)
     elif args.TASK == 'deepmd' :
         cmpt_deepmd_lammps(jdata, args.CONF, args.COPY, args.TASK)
     elif args.TASK == 'meam' :
         cmpt_deepmd_lammps(jdata, args.CONF, args.COPY, args.TASK)
     else :
         raise RuntimeError("unknow task ", args.TASK)
-    
+
 if __name__ == '__main__' :
     _main()
-
-    

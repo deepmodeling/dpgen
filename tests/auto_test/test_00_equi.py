@@ -36,11 +36,17 @@ class TestEqui(unittest.TestCase):
         with open (param_file, 'r') as vasp_fp :
             jdata = json.load (vasp_fp)
         n,e,v,s=cmpt_00_equi.comput_vasp_nev(jdata, conf_dir,False)
-        vasp_ref = (1 ,-3.72869783,12.0)
-        self.assertEquals((n,e,v),vasp_ref)
+        sn=str(n)
+        se=str('%2.4f'%e)
+        sv=str('%2.1f'%v)
+        vasp_ref = ['1' ,'-3.7287','12.0']
+        self.assertEquals([sn,se,sv],vasp_ref)
         n,e,v,s=cmpt_00_equi.comput_lmp_nev(conf_dir, "deepmd",False)
-        dp_ref = (1,-3.72713824311381,12.0042496444885)
-        self.assertEquals((n,e,v),dp_ref)
+        sn=str(n)
+        se=str('%2.4f'%e)
+        sv=str('%2.1f'%v)
+        dp_ref = ['1','-3.7271','12.0']
+        self.assertEquals([sn,se,sv],dp_ref)
 
 
 

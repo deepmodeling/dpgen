@@ -75,7 +75,7 @@ def run_equi(task_type,jdata,mdata):
         mdata=decide_fp_machine(mdata)
 
         forward_files = ['INCAR', 'POTCAR']
-        backward_files = ['OUTCAR','CONTCAR','OSZICAR']
+        backward_files = ['OUTCAR', 'log' , 'CONTCAR','OSZICAR']
         common_files=['POSCAR']
 
     #lammps
@@ -164,7 +164,7 @@ def run_eos(task_type,jdata,mdata):
         mdata=decide_fp_machine(mdata)
 
         forward_files = ['INCAR', 'POSCAR','POTCAR']
-        backward_files = ['OUTCAR','OSZICAR']
+        backward_files = ['OUTCAR', 'log' , 'OSZICAR']
         common_files=['INCAR','POTCAR']
 
     #lammps
@@ -240,7 +240,7 @@ def run_elastic(task_type,jdata,mdata):
         mdata=decide_fp_machine(mdata)
 
         forward_files = ['INCAR', 'POSCAR','POTCAR','KPOINTS']
-        backward_files = ['OUTCAR','CONTCAR','OSZICAR']
+        backward_files = ['OUTCAR', 'log' , 'CONTCAR','OSZICAR']
         common_files=['INCAR','POTCAR','KPOINTS']
 
     #lammps
@@ -313,7 +313,7 @@ def run_vacancy(task_type,jdata,mdata):
         mdata=decide_fp_machine(mdata)
 
         forward_files = ['INCAR', 'POSCAR','POTCAR']
-        backward_files = ['OUTCAR','OSZICAR']
+        backward_files = ['OUTCAR',  'log' , 'OSZICAR']
         common_files=['INCAR','POTCAR']
 
     #lammps
@@ -396,7 +396,7 @@ def run_interstitial(task_type,jdata,mdata):
         mdata=decide_fp_machine(mdata)
 
         forward_files = ['INCAR', 'POSCAR','POTCAR']
-        backward_files = ['OUTCAR','XDATCAR','OSZICAR']
+        backward_files = ['OUTCAR',  'log' , 'XDATCAR','OSZICAR']
         common_files=['INCAR']
 
     #lammps
@@ -517,7 +517,7 @@ def run_surf(task_type,jdata,mdata):
         mdata=decide_fp_machine(mdata)
 
         forward_files = ['INCAR', 'POSCAR','POTCAR']
-        backward_files = ['OUTCAR','OSZICAR']
+        backward_files = ['OUTCAR',  'log' , 'OSZICAR']
         common_files=['INCAR','POTCAR']
 
     #lammps
@@ -601,7 +601,7 @@ def run_phonon(task_type,jdata,mdata):
 
         run_tasks = util.collect_task(all_task,task_type)
         forward_files = ['INCAR', 'POTCAR','KPOINTS']
-        backward_files = ['OUTCAR','OSZICAR','vasprun.xml']
+        backward_files = ['OUTCAR',  'log' , 'OSZICAR','vasprun.xml']
         common_files=['POSCAR']
 
         disp = make_dispatcher(machine)
