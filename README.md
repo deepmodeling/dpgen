@@ -580,9 +580,9 @@ The second part is the computational settings for vasp and lammps. According to 
 The last part is the optional settings for various tasks mentioned above. You can change the parameters according to actual needs.
 ```json
     "_comment":"00.equi",
-    "cmpt_shift":false,
+    "alloy_shift":false,
 ```
-+ `cmpt_shift`:(boolean) whether to compute the shift between stable energy of alloy and total energy for corresponding elements. If you test alloy and set 'true', you need to compute the energies of corresponding elements respectively first of all.
++ `alloy_shift`:(boolean) whether to compute the alloy formation energy. If you test alloy and set 'true', you need to compute the energies of corresponding elements respectively first of ßall. Please set 'false' when test single element.
 
 ```json
     "_comment": "01.eos",
