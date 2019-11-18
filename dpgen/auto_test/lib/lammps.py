@@ -395,7 +395,7 @@ def poscar_from_last_dump(dump, poscar_out, deepmd_type_map) :
     os.remove('tmp_dump')
     with open(poscar_out, 'r') as fp:
         lines = fp.read().split('\n')
-    types = [ deepmd_type_map[int(ii.split('_')[1])-1] for ii in lines[5].split()]
+    types = [ deepmd_type_map[int(ii.split('_')[1])] for ii in lines[5].split()]
     lines[5] = " ".join(types)
     with open(poscar_out, 'w') as fp:
         lines = fp.write("\n".join(lines))
