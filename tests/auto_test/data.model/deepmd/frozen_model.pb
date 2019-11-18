@@ -1,1 +1,0 @@
-deepmd model

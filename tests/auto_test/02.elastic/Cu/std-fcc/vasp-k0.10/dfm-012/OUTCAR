@@ -1,7 +1,0 @@
-new OUTCAR
-   ions per type =               1
-  volume of cell :       11.94
-  in kB      21.40063    38.12398     0.89426    83.19758    -0.00000     0.00000
-  volume of cell :       11.94
-  free  energy   TOTEN  =        -3.69680115 eV
-                         Elapsed time (sec):      234.031
