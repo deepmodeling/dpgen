@@ -148,7 +148,7 @@ def get_nev(fname) :
         ener = _get_energies(lines)[-1]
         return natoms, ener/natoms, vol/natoms
     except OutcarItemError:
-        return natoms, None, None
+        raise OutcarItemError("Please check the OUTCAR")
     # print(fname, natoms, vol, ener)
 
 def get_stress(fname) :
