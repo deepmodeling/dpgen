@@ -4,8 +4,8 @@ import os,sys,json,glob,argparse,shutil
 import numpy as np
 import subprocess as sp
 from dpgen.tools.stat_sys import stat_sys
-from dpgen.tools.stat_iter import stat_iter, stat_time
-
+from dpgen.tools.stat_iter import stat_iter 
+from dpgen.tools.stat_time import stat_time
 
 def run_report(args):
     report_count = 0

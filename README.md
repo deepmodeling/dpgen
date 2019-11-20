@@ -58,14 +58,14 @@ One can download the source code of dpgen by
 ```bash
 git clone https://github.com/deepmodeling/dpgen.git
 ```
-then you may install DP-GEN easily by: 
+then you may install DP-GEN easily by:
 ```bash
 cd dpgen
 pip install --user .
 ```
 With this command, the dpgen executable is install to `$HOME/.local/bin/dpgen`. You may want to export the `PATH` by
 ```bash
-export PATH=$HOME/.local/bin/dpgen:$PATH
+export PATH=$HOME/.local/bin:$PATH
 ```
 To test if the installation is successful, you may execute
 ```bash
@@ -123,7 +123,7 @@ You may prepare initial data for bulk systems with VASP by:
 ```bash
 dpgen init_bulk PARAM [MACHINE]
 ```
-The MACHINE configure file is optional. If this parameter exists, then the optimization 
+The MACHINE configure file is optional. If this parameter exists, then the optimization
 tasks or MD tasks will be submitted automatically according to MACHINE.json.
 
 Basically `init_bulk` can be devided into four parts , denoted as `stages` in `PARAM`:
@@ -273,7 +273,7 @@ The bold notation of key (such as **Elements**) means that it's a necessary key.
 | **layer_numb** | Integer | 3 | Number of equavilent layers of slab.
 | **vacuum_max** | Float | 9 | Maximal thickness of vacuum (Angstrom).
 | **vacuum_resol** | List of float | [0.5, 1 ] | Interval of thichness of vacuum. If size of `vacuum_resol` is 1, the interval is fixed to its value. If size of `vacuum_resol` is 2, the interval is `vacuum_resol[0]` before `mid_point`, otherwise `vacuum_resol[1]` after `mid_point`.
-| **millers** | List of list of Integer | [[1,0,0]] | Miller indices. 
+| **millers** | List of list of Integer | [[1,0,0]] | Miller indices.
 | relax_incar | String | "....../INCAR" | Path of INCAR for relaxation in VASP. **Necessary** if `stages` include 1.
 | **scale** | List of float | [0.980, 1.000, 1.020] | Scales for transforming cells.
 | **skip_relax** | Boolean | False | If it's true, you may directly run stage 2 (pertub and scale) using an unrelaxed POSCAR.
@@ -506,6 +506,23 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 |**fp_params["kspacing"]** | Float| 0.4 | Sample factor in Brillouin zones.
 |**fp_params["mixingweight"]** | Float| 0.05 | Proportion a of output Density Matrix to be used for the input Density Matrix of next SCF cycle (linear mixing).
 |**fp_params["NumberPulay"]** | Integer| 5 | Controls the Pulay convergence accelerator.
+| *fp_style == cp2k*
+| **fp_params** | Dict | | Parameters for cp2k calculation. find detail in manual.cp2k.org. if it is not remarked with "optional", the parameter must be set. we assume that you have basic knowledge for cp2k input.
+|**fp_params["cutoff"]**| String | 400 |
+|**fp_params["rel_cutoff"]**| String | 50 |
+|**fp_params["functional"]**| String | PBE |
+|**fp_params["max_scf"]**| String | 50 |
+|**fp_params["pair_potential_type"]**| String | DFTD3 | This is optional.
+|**fp_params["pair_potential_path"]**| String | "./cp2k_basis_pp_file/dftd3.dat" | must be set if you set the "pair_potential_type"
+|**fp_params["pair_ref_functional"]**| String | PBE | must be set if you set the "pair_potential_type"
+|**fp_params["basis_path"]**| String | "./cp2k_basis_pp_file/BASIS_MOLOPT" |
+|**fp_params["pp_path"]**| String | "./cp2k_basis_pp_file/GTH_POTENTIALS" |
+|**fp_params["element_list"]**| List | ["H","C","N"] |
+|**fp_params["basis_list"]**| List | ["DZVP_MOLOPT_GTH","DZVP_MOLOPT_GTH","DZVP_MOLOPT_GTH"] | Must be same order with element_list
+|**fp_params["pp_list"]**| List | ["GTH-PBE-q1","GTH-PBE-q4","GTH-PBE-q5"] | Must be same order with element_list
+
+
+
 
 ## Test: Auto-test for Deep Generator
 At this step, we assume that you have prepared some graph files like `graph.*.pb` and the particular pseudopotential `POTCAR`.
@@ -580,9 +597,9 @@ The second part is the computational settings for vasp and lammps. According to 
 The last part is the optional settings for various tasks mentioned above. You can change the parameters according to actual needs.
 ```json
     "_comment":"00.equi",
-    "store_stable":true,
+    "alloy_shift":false,
 ```
-+ `store_stable`:(boolean) whether to store the stable energy and volume
++ `alloy_shift`:(boolean) whether to compute the alloy formation energy. If you test alloy and set 'true', you need to compute the energies of corresponding elements respectively first of ßall. Please set 'false' when test single element.
 
 ```json
     "_comment": "01.eos",
@@ -741,7 +758,8 @@ The following table gives explicit descriptions on keys in param.json.
 | # Followings are keys in resources
 | numb_node | Integer | 1 | Node count required for the job
 | task_per_node | Integer | 4 | Number of CPU cores required
-| `numb_gpu` | Integer | 4 | Number of GPUs required
+| numb_gpu | Integer | 4 | Number of GPUs required
+| node_cpu | Integer | 4 | Only for LSF. The number of CPU cores on each node that should be allocated to the job.
 | source_list | List of string | "....../vasp.env" | Environment needed for certain job. For example, if "env" is in the list, 'source env' will be written in the script.
 | module_list | List of string | [ "Intel/2018", "Anaconda3"] | For example, If "Intel/2018" is in the list, "module load Intel/2018" will be written in the script.
 | partition | String  | "AdminGPU" | Partition / queue in which to run the job. |
@@ -749,10 +767,10 @@ The following table gives explicit descriptions on keys in param.json.
 mem_limit | Interger | 16 | Maximal memory permitted to apply for the job.
 | with_mpi | Boolean | true | Deciding whether to use mpi for calculation. If it's true and machine type is Slurm, "srun" will be prefixed to `command` in the script.
 | qos | "string"| "bigdata" | Deciding priority, dependent on particular settings of your HPC.
+| allow_failure | Boolean | false | Allow the command to return a non-zero exit code.
 | # End of resources
 | command | String | "lmp_serial" | Executable path of software, such as `lmp_serial`, `lmp_mpi` and `vasp_gpu`, `vasp_std`, etc.
 | group_size | Integer | 5 | DP-GEN will put these jobs together in one submitting script.
-| allow_failure | Boolean | false | Allow the command to return a non-zero exit code.
 
 ## Troubleshooting
 1. The most common problem is whether two settings correspond with each other, including:
@@ -763,7 +781,7 @@ mem_limit | Interger | 16 | Maximal memory permitted to apply for the job.
     - Index of `sys_configs` and `sys_idx`
 
 2. Please verify the directories of `sys_configs`. If there isnt's any POSCAR for `01.model_devi` in one iteration, it may happen that you write the false path of `sys_configs`.
-3. Correct format of JSON file. 
+3. Correct format of JSON file.
 4. In `02.fp`, total cores you require through `task_per_node` should be devided by `npar` times `kpar`.
 5. The frames of one system should be larger than `batch_size` and `numb_test` in `default_training_param`. It happens that one iteration adds only a few structures and causes error in next iteration's training. In this condition, you may let `fp_task_min` be larger than `numb_test`.
 ## License

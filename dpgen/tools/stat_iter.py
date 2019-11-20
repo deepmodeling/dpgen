@@ -22,10 +22,10 @@ def stat_iter(target_folder,
             num, relative_path_doc = line.strip().split(' ')
             path_doc = os.path.abspath(relative_path_doc)
             num = int(num)
-            prefix, iter_dirname, stage, out_filename = path_doc.rsplit('/',3)
+            prefix, iter_dirname, stage, out_filename = path_doc.rsplit('/',3) # pylint: disable=unused-variable
             pk_id, out_filename = path_doc.rsplit('/', 1)
-            iter = int(iter_dirname.split('.')[-1])
-            out_id = int(out_filename.strip().split('.')[-2])
+            iter = int(iter_dirname.split('.')[-1]) # pylint: disable=unused-variable
+            out_id = int(out_filename.strip().split('.')[-2]) # pylint: disable=unused-variable
             out_type = out_filename.strip().split('.')[0]
             iter_dict[pk_id][out_type] += num
     # for ii in 
@@ -39,7 +39,7 @@ def stat_iter(target_folder,
         if line:
             # [/home/felix/workplace/SiC/iter.000002/02.fp/task.018.000040/OUTCAR]
             path_doc = os.path.abspath(line)
-            pk_id, task_dirname, OUTCAR_filename=path_doc.rsplit('/', 2)
+            pk_id, task_dirname, OUTCAR_filename=path_doc.rsplit('/', 2) # pylint: disable=unused-variable
             try:
                 _sys = dpdata.LabeledSystem(path_doc, type_map = jdata['type_map'] )
             except:
@@ -65,13 +65,5 @@ def stat_iter(target_folder,
                 f":OUTCAR_not_convergence:{value['OUTCAR_not_convergence']}"
                 f":reff:{value['reff']}")
 
-def stat_time(target_folder, 
-            param_file = 'param.json', 
-            verbose = True, 
-            mute = False):
-    script = os.path.join(os.path.dirname(__file__), 'update_time.sh')
-    output = subprocess.run([f'bash {script} {target_folder}'],
-        shell=True,stdout=subprocess.PIPE).stdout
-    data = output.decode()
-    print(data)
+
 

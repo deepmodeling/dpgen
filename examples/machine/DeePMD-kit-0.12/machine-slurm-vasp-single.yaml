@@ -1,7 +1,7 @@
 ---
 train:
 - machine:
-    machine_type: slurm
+    batch: slurm
     hostname: localhost
     port: 22
     username: '1600017784'
@@ -20,7 +20,7 @@ train:
   deepmd_path: "/gpfs/share/software/deepmd-kit/0.12.4/gpu/gcc/4.9.0/tf1120-lowprec"
 model_devi:
 - machine:
-    machine_type: slurm
+    batch: slurm
     hostname: localhost
     port: 22
     username: '1600017784'
@@ -40,7 +40,7 @@ model_devi:
   group_size: 10
 fp:
 - machine:
-    machine_type: slurm
+    batch: slurm
     hostname: localhost
     port: 22
     username: '1600017784'

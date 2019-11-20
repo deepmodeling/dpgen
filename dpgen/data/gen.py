@@ -553,9 +553,9 @@ def run_vasp_relax(jdata, mdata, dispatcher):
         return
 
     relax_run_tasks = relax_tasks
-    for ii in relax_tasks : 
-        if not _vasp_check_fin(ii):
-            relax_run_tasks.append(ii)
+    #for ii in relax_tasks : 
+    #    if not _vasp_check_fin(ii):
+    #        relax_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in relax_run_tasks]
 
     #dlog.info(run_tasks)
