@@ -75,7 +75,7 @@ def run_equi(task_type,jdata,mdata):
         mdata=decide_fp_machine(mdata)
 
         forward_files = ['INCAR', 'POTCAR']
-        backward_files = ['OUTCAR', 'log' , 'CONTCAR','OSZICAR']
+        backward_files = ['OUTCAR', 'autotest.out' , 'CONTCAR','OSZICAR']
         common_files=['POSCAR']
 
     #lammps
@@ -83,7 +83,7 @@ def run_equi(task_type,jdata,mdata):
         mdata = decide_model_devi_machine(mdata)
 
         forward_files = ['conf.lmp', 'lammps.in']
-        backward_files = ['dump.relax','log.lammps', 'model_devi.log']
+        backward_files = ['dump.relax','log.lammps', 'autotest.out']
 
         fp_params = jdata['lammps_params']
         model_dir = fp_params['model_dir']
@@ -164,7 +164,7 @@ def run_eos(task_type,jdata,mdata):
         mdata=decide_fp_machine(mdata)
 
         forward_files = ['INCAR', 'POSCAR','POTCAR']
-        backward_files = ['OUTCAR', 'log' , 'OSZICAR']
+        backward_files = ['OUTCAR', 'autotest.out' , 'OSZICAR']
         common_files=['INCAR','POTCAR']
 
     #lammps
@@ -181,7 +181,7 @@ def run_eos(task_type,jdata,mdata):
         else:
             models = [os.path.join(model_dir,ii) for ii in model_name]
         forward_files = ['conf.lmp', 'lammps.in']+model_name
-        backward_files = ['log.lammps', 'model_devi.log']
+        backward_files = ['log.lammps', 'autotest.out']
         common_files=['lammps.in']+model_name
 
         if len(model_name)>1 and task_type == 'deepmd':
@@ -240,7 +240,7 @@ def run_elastic(task_type,jdata,mdata):
         mdata=decide_fp_machine(mdata)
 
         forward_files = ['INCAR', 'POSCAR','POTCAR','KPOINTS']
-        backward_files = ['OUTCAR', 'log' , 'CONTCAR','OSZICAR']
+        backward_files = ['OUTCAR', 'autotest.out' , 'CONTCAR','OSZICAR']
         common_files=['INCAR','POTCAR','KPOINTS']
 
     #lammps
@@ -257,7 +257,7 @@ def run_elastic(task_type,jdata,mdata):
         else:
             models = [os.path.join(model_dir,ii) for ii in model_name]
         forward_files = ['conf.lmp', 'lammps.in','strain.out']+model_name
-        backward_files = ['log.lammps', 'model_devi.log']
+        backward_files = ['log.lammps', 'autotest.out']
         common_files=['lammps.in']+model_name
 
         if len(model_name)>1 and task_type == 'deepmd':
@@ -313,7 +313,7 @@ def run_vacancy(task_type,jdata,mdata):
         mdata=decide_fp_machine(mdata)
 
         forward_files = ['INCAR', 'POSCAR','POTCAR']
-        backward_files = ['OUTCAR',  'log' , 'OSZICAR']
+        backward_files = ['OUTCAR',  'autotest.out' , 'OSZICAR']
         common_files=['INCAR','POTCAR']
 
     #lammps
@@ -331,7 +331,7 @@ def run_vacancy(task_type,jdata,mdata):
             models = [os.path.join(model_dir,ii) for ii in model_name]
         common_files = model_name
         forward_files = ['conf.lmp', 'lammps.in']+model_name
-        backward_files = ['log.lammps','model_devi.log']
+        backward_files = ['log.lammps','autotest.out']
         common_files=['lammps.in']+model_name
 
         if len(model_name)>1 and task_type == 'deepmd':
@@ -396,7 +396,7 @@ def run_interstitial(task_type,jdata,mdata):
         mdata=decide_fp_machine(mdata)
 
         forward_files = ['INCAR', 'POSCAR','POTCAR']
-        backward_files = ['OUTCAR',  'log' , 'XDATCAR','OSZICAR']
+        backward_files = ['OUTCAR',  'autotest.out' , 'XDATCAR','OSZICAR']
         common_files=['INCAR']
 
     #lammps
@@ -429,7 +429,7 @@ def run_interstitial(task_type,jdata,mdata):
         else:
             models = [os.path.join(model_dir,ii) for ii in model_name]
         forward_files = ['conf.lmp', 'lammps.in']+model_name
-        backward_files = ['log.lammps', 'model_devi.log']
+        backward_files = ['log.lammps', 'autotest.out']
         common_files=['lammps.in']+model_name
 
         if len(model_name)>1 and task_type == 'deepmd':
@@ -467,8 +467,8 @@ def run_interstitial(task_type,jdata,mdata):
                       common_files,
                       forward_files,
                       backward_files,
-                      outlog='autotest.log',
-                      errlog='autotest.log')
+                      outlog='autotest.out',
+                      errlog='autotest.err')
 
 def cmpt_interstitial(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
@@ -517,7 +517,7 @@ def run_surf(task_type,jdata,mdata):
         mdata=decide_fp_machine(mdata)
 
         forward_files = ['INCAR', 'POSCAR','POTCAR']
-        backward_files = ['OUTCAR',  'log' , 'OSZICAR']
+        backward_files = ['OUTCAR',  'autotest.out' , 'OSZICAR']
         common_files=['INCAR','POTCAR']
 
     #lammps
@@ -534,7 +534,7 @@ def run_surf(task_type,jdata,mdata):
         else:
             models = [os.path.join(model_dir,ii) for ii in model_name]
         forward_files = ['conf.lmp', 'lammps.in']+model_name
-        backward_files = ['log.lammps','model_devi.log']
+        backward_files = ['log.lammps','autotest.out']
         common_files=['lammps.in']+model_name
 
         if len(model_name)>1 and task_type == 'deepmd':
@@ -601,7 +601,7 @@ def run_phonon(task_type,jdata,mdata):
 
         run_tasks = util.collect_task(all_task,task_type)
         forward_files = ['INCAR', 'POTCAR','KPOINTS']
-        backward_files = ['OUTCAR',  'log' , 'OSZICAR','vasprun.xml']
+        backward_files = ['OUTCAR',  'autotest.out' , 'OSZICAR','vasprun.xml']
         common_files=['POSCAR']
 
         disp = make_dispatcher(machine)
