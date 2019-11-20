@@ -41,13 +41,19 @@ def _cmpt_vasp(jdata, conf_dir, supercell, insert_ele) :
     struct_path_list.sort()
     if len(struct_path_list) == 0:
         print("# cannot find results for conf %s supercell %s" % (conf_dir, supercell))
-    sys.stdout.write ("Insert_ele-Struct: Inter_E(eV)\n")
-    for ii in struct_path_list :
-        structure_dir = os.path.basename(ii)
-        outcar = os.path.join(ii, 'OUTCAR')
-        natoms, epa, vpa = vasp.get_nev(outcar)
-        evac = epa * natoms - equi_epa * natoms
-        sys.stdout.write ("%s: %7.3f \n" % (structure_dir, evac))    
+    sys.stdout.write ("Insert_ele-Struct: Inter_E(eV)  E(eV) equi_E(eV)\n")
+    result = os.path.join(task_path,'result')
+    with open(result,'w') as fp:
+        fp.write('conf_dir:%s\n'% (conf_dir))
+        fp.write ("Insert_ele-Struct: Inter_E(eV)  E(eV) equi_E(eV)\n")
+        for ii in struct_path_list :
+            structure_dir = os.path.basename(ii)
+            outcar = os.path.join(ii, 'OUTCAR')
+            natoms, epa, vpa = vasp.get_nev(outcar)
+            evac = epa * natoms - equi_epa * natoms
+            sys.stdout.write ("%s: %7.3f  %7.3f %7.3f \n" % (structure_dir, evac, epa * natoms, equi_epa * natoms))
+            fp.write ("%s: %7.3f  %7.3f %7.3f \n" % (structure_dir, evac, epa * natoms, equi_epa * natoms))
+    fp.close()
 
 def cmpt_deepmd_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_name) :
     for ii in insert_ele:
@@ -63,7 +69,7 @@ def _cmpt_deepmd_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_name) 
     conf_path = os.path.abspath(conf_dir)
     task_path = re.sub('confs', global_task_name, conf_path)
     vasp_path = os.path.join(task_path, vasp_str)
-    lmps_path = os.path.join(task_path, task_name + vasp_str.replace('vasp',''))    
+    lmps_path = os.path.join(task_path, task_name + vasp_str.replace('vasp',''))
     copy_str = "%sx%sx%s" % (supercell[0], supercell[1], supercell[2])
     struct_widecard = os.path.join(vasp_path, 'struct-%s-%s-*' % (insert_ele,copy_str))
     vasp_struct = glob.glob(struct_widecard)
@@ -122,12 +128,18 @@ def _cmpt_deepmd_lammps(jdata, conf_dir, supercell, insert_ele, task_name) :
     if len(struct_path_list) == 0:
         print("# cannot find results for conf %s supercell %s" % (conf_dir, supercell))
     sys.stdout.write ("Insert_ele-Struct: Inter_E(eV)  E(eV) equi_E(eV)\n")
-    for ii in struct_path_list :
-        structure_dir = os.path.basename(ii)
-        lmp_log = os.path.join(ii, 'log.lammps')
-        natoms, epa, vpa = lammps.get_nev(lmp_log)
-        evac = epa * natoms - equi_epa * natoms
-        sys.stdout.write ("%s: %7.3f  %7.3f %7.3f \n" % (structure_dir, evac, epa * natoms, equi_epa * natoms))
+    result = os.path.join(task_path,'result')
+    with open(result,'w') as fp:
+        fp.write('conf_dir:%s\n'% (conf_dir))
+        fp.write ("Insert_ele-Struct: Inter_E(eV)  E(eV) equi_E(eV)\n")
+        for ii in struct_path_list :
+            structure_dir = os.path.basename(ii)
+            lmp_log = os.path.join(ii, 'log.lammps')
+            natoms, epa, vpa = lammps.get_nev(lmp_log)
+            evac = epa * natoms - equi_epa * natoms
+            sys.stdout.write ("%s: %7.3f  %7.3f %7.3f \n" % (structure_dir, evac, epa * natoms, equi_epa * natoms))
+            fp.write ("%s: %7.3f  %7.3f %7.3f \n" % (structure_dir, evac, epa * natoms, equi_epa * natoms))
+    fp.close()
 
 def _main() :
     parser = argparse.ArgumentParser(
@@ -149,7 +161,7 @@ def _main() :
 
 #    print('# generate %s task with conf %s' % (args.TASK, args.CONF))
     if args.TASK == 'vasp':
-        cmpt_vasp(jdata, args.CONF, args.COPY, args.ELEMENT)               
+        cmpt_vasp(jdata, args.CONF, args.COPY, args.ELEMENT)
     elif args.TASK == 'deepmd' :
         cmpt_deepmd_lammps(jdata, args.CONF, args.COPY, args.ELEMENT, args.TASK)
     elif args.TASK == 'deepmd-reprod' :
@@ -160,8 +172,6 @@ def _main() :
         cmpt_deepmd_reprod_traj(jdata, args.CONF, args.COPY, args.ELEMENT, args.TASK)
     else :
         raise RuntimeError("unknow task ", args.TASK)
-    
+
 if __name__ == '__main__' :
     _main()
-
-    
