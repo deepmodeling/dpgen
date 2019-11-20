@@ -103,7 +103,7 @@ def run_equi(task_type,jdata,mdata):
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
     run_tasks = util.collect_task(all_task,task_type)
-
+    if len(run_tasks)==0: return
     machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
     disp = make_dispatcher(machine)
     disp.run_jobs(resources,
@@ -191,7 +191,7 @@ def run_eos(task_type,jdata,mdata):
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
     run_tasks = util.collect_task(all_task,task_type)
-
+    if len(run_tasks)==0: return
     machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
     disp = make_dispatcher(machine)
     disp.run_jobs(resources,
@@ -267,6 +267,7 @@ def run_elastic(task_type,jdata,mdata):
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
     run_tasks = util.collect_task(all_task,task_type)
+    if len(run_tasks)==0: return
     machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
     disp = make_dispatcher(machine)
     disp.run_jobs(resources,
@@ -341,6 +342,7 @@ def run_vacancy(task_type,jdata,mdata):
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
     run_tasks = util.collect_task(all_task,task_type)
+    if len(run_tasks)==0: return
     machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
     disp = make_dispatcher(machine)
     disp.run_jobs(resources,
@@ -459,6 +461,7 @@ def run_interstitial(task_type,jdata,mdata):
                           errlog='autotest.err')
     else:
         run_tasks = util.collect_task(all_task,task_type)
+        if len(run_tasks)==0: return
         disp.run_jobs(resources,
                       command,
                       work_path,
@@ -544,6 +547,7 @@ def run_surf(task_type,jdata,mdata):
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
     run_tasks = util.collect_task(all_task,task_type)
+    if len(run_tasks)==0: return
     machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
     disp = make_dispatcher(machine)
     disp.run_jobs(resources,
