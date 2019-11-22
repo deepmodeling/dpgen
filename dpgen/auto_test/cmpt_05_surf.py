@@ -96,7 +96,7 @@ def cmpt_deepmd_lammps(jdata, conf_dir, task_name, static = False) :
             sys.stdout.write ("%s: \t%7.3f    %8.3f %8.3f\n" % (structure_dir, evac, epa, equi_epa))
             fp.write("%s:\t %7.3f   %8.3f %8.3f\n" % (structure_dir, evac, epa, equi_epa))
     fp.close()
-    if 'upload_username' in jdata.keys() and task_name=='deepm':
+    if 'upload_username' in jdata.keys() and task_name=='deepmd':
         upload_username=jdata['upload_username']
         util.insert_data('surf','deepmd',upload_username,result)
 
