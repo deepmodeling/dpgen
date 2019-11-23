@@ -557,7 +557,7 @@ def run_vasp_relax(jdata, mdata, dispatcher):
     if len(relax_tasks) == 0:
         return
 
-    relax_run_tasks = []
+    relax_run_tasks = [t for t in relax_tasks]
     for ii in relax_tasks : 
         if not _vasp_check_fin(ii):
             relax_run_tasks.append(ii)
@@ -600,7 +600,7 @@ def run_vasp_md(jdata, mdata, dispatcher):
     if len(md_tasks) == 0:
         return
 
-    md_run_tasks = []
+    md_run_tasks = [t for t in md_tasks]
     for ii in md_tasks : 
         if not _vasp_check_fin(ii):
             md_run_tasks.append(ii)
