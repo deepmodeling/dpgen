@@ -509,37 +509,38 @@ Key  | Type          | Example                                                  
 |**fp_params["NumberPulay"]** | Integer| 5 | Controls the Pulay convergence accelerator.
 | *fp_style == cp2k*
 | **fp_params** | Dict |  Parameters for cp2k calculation. find detail in manual.cp2k.org. only the kind section must be set before use.  we assume that you have basic knowledge for cp2k input. |
+
 #### Rules for cp2k input at dictionary form
-Converting cp2k input is very simple as dictionary used to dpgen input. You just need follow some simple rule:
+  Converting cp2k input is very simple as dictionary used to dpgen input. You just need follow some simple rule:
 - kind section parameter must be provide
 - replace `keyword` in cp2k as `keyword` in dict.
 - replace `keyword parameter` in cp2k as `value` in dict.
 - replace `section name` in cp2k as `keyword` in dict. . The corresponding value is a `dict`.
-- repalce `section parameter` in cp2k as `value` with dict. keyword `"_"`(underscore)
-- `repeat section` in cp2k just need to be written once with repeat parameter as list.
+- repalce `section parameter` in cp2k as `value` with dict. keyword `"_"`
+- `repeat section` in cp2k just need to be written once with repeat parameter as list. 
 
-    Here are examples for setting:
+Here are examples for setting:
 
-    ```python
+```python
 
-    #minimal information you should provide for input
-    "user_fp_params":   {
-    "FORCE_EVAL":{
-    "DFT":{
-    "BASIS_SET_FILE_NAME": "path",
-    "POTENTIAL_FILE_NAME": "path"
-    }
-    "SUBSYS":{
-    "KIND":{
-    "_": ["N","C","H"],
-    "POTENTIAL": ["GTH-PBE-q5","GTH-PBE-q4", "GTH-PBE-q1"],
-    "BASIS_SET": ["DZVP-MOLOPT-GTH","DZVP-MOLOPT-GTH","DZVP-MOLOPT-GTH"]
-    }
-    }
-    }
-
-    }
+#minimal information you should provide for input
+"user_fp_params":   {
+"FORCE_EVAL":{
+"DFT":{
+"BASIS_SET_FILE_NAME": "path",
+"POTENTIAL_FILE_NAME": "path"
+}
+"SUBSYS":{
+"KIND":{
+"_": ["N","C","H"],
+"POTENTIAL": ["GTH-PBE-q5","GTH-PBE-q4", "GTH-PBE-q1"],
+"BASIS_SET": ["DZVP-MOLOPT-GTH","DZVP-MOLOPT-GTH","DZVP-MOLOPT-GTH"]
+}
+}
+}
+}
 ```
+
 
 
 ## Test: Auto-test for Deep Generator
