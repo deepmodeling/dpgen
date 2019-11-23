@@ -524,7 +524,7 @@ Here are examples for setting:
 ```python
 
 #minimal information you should provide for input
-#other we have set other parameters in code, if you want to
+#we have set other parameters in code, if you want to
 #use your own paramter, just write a corresponding dictionary
 "user_fp_params":   {
 "FORCE_EVAL":{
