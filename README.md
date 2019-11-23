@@ -508,7 +508,7 @@ Key  | Type          | Example                                                  
 |**fp_params["mixingweight"]** | Float| 0.05 | Proportion a of output Density Matrix to be used for the input Density Matrix of next SCF cycle (linear mixing).
 |**fp_params["NumberPulay"]** | Integer| 5 | Controls the Pulay convergence accelerator.
 | *fp_style == cp2k*
-| **fp_params** | Dict |  Parameters for cp2k calculation. find detail in manual.cp2k.org. only the kind section must be set before use.  we assume that you have basic knowledge for cp2k input. |
+| **fp_params** | Dict |  |Parameters for cp2k calculation. find detail in manual.cp2k.org. only the kind section must be set before use.  we assume that you have basic knowledge for cp2k input. 
 
 #### Rules for cp2k input at dictionary form
   Converting cp2k input is very simple as dictionary used to dpgen input. You just need follow some simple rule:
@@ -524,6 +524,8 @@ Here are examples for setting:
 ```python
 
 #minimal information you should provide for input
+#other we have set other parameters in code, if you want to
+#use your own paramter, just write a corresponding dictionary
 "user_fp_params":   {
 "FORCE_EVAL":{
 "DFT":{
