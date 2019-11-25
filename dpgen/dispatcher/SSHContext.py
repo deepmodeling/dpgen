@@ -138,7 +138,7 @@ class SSHContext (object):
         stdin, stdout, stderr = self.ssh.exec_command(('cd %s ;' % self.remote_root) + cmd)
         exit_status = stdout.channel.recv_exit_status() 
         if exit_status != 0:
-            raise RuntimeError("Get error code %d in calling %s through ssh with job: %s . message:",
+            raise RuntimeError("Get error code %d in calling %s through ssh with job: %s . message: %s" %
                                (exit_status, cmd, self.job_uuid, stderr.read().decode('utf-8')))
         return stdin, stdout, stderr    
 
