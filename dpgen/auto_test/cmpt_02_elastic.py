@@ -104,7 +104,7 @@ def cmpt_deepmd_lammps(jdata, conf_dir, task_name) :
     # et = -et / 1e4
     print_et(et)
     result = os.path.join(task_path,'result')
-    result_et(et,conf_dir,task_path)
+    result_et(et,conf_dir,result)
     if 'upload_username' in jdata.keys() and task_name=='deepmd':
         upload_username=jdata['upload_username']
         util.insert_data('elastic','deepmd',upload_username,result)
