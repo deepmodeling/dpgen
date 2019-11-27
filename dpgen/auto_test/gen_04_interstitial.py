@@ -222,8 +222,8 @@ def make_lammps(jdata, conf_dir, supercell, insert_ele, task_type) :
         _make_lammps(jdata, conf_dir, supercell, ii, task_type)
 
 def _make_lammps(jdata, conf_dir, supercell, insert_ele, task_type) :
-    fp_params = jdata['vasp_params']
-    kspacing = fp_params['kspacing']
+    #fp_params = jdata['vasp_params']
+    #kspacing = fp_params['kspacing']
     fp_params = jdata['lammps_params']
     model_dir = fp_params['model_dir']
     type_map = fp_params['type_map'] 
@@ -245,7 +245,12 @@ def _make_lammps(jdata, conf_dir, supercell, insert_ele, task_type) :
     conf_poscar = os.path.join(conf_path, 'POSCAR')
     # get equi poscar
     equi_path = re.sub('confs', global_equi_name, conf_path)
-    equi_path = os.path.join(equi_path, 'vasp-k%.2f' % kspacing)
+    if 'relax_incar' in jdata.keys():
+        vasp_str = 'vasp-relax_incar'
+    else:
+        kspacing = jdata['vasp_params']['kspacing']
+        vasp_str = 'vasp-k%.2f' % kspacing
+    equi_path = os.path.join(equi_path, vasp_str)
     equi_contcar = os.path.join(equi_path, 'CONTCAR')
     #equi_path = os.path.join(equi_path, task_type)
     #equi_dump = os.path.join(equi_path, 'dump.relax')
