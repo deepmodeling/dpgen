@@ -165,7 +165,9 @@ class Dispatcher(object):
         job_handler = {
             'task_chunks': task_chunks,
             'job_list': job_list,
-            'job_record': job_record,            
+            'job_record': job_record,
+            'command': command,
+            'backward_task_files': backward_task_files
         }
         return job_handler
 
@@ -177,6 +179,8 @@ class Dispatcher(object):
         task_hashes = [sha1(ii.encode('utf-8')).hexdigest() for ii in task_chunks_str]
         job_list = job_handler['job_list']
         job_record = job_handler['job_record']
+        command = job_handler['command']
+        backward_task_files = job_handler['backward_task_files']
         dlog.debug('checking jobs')
         nchunks = len(task_chunks)
         for idx in range(nchunks) :
@@ -196,7 +200,7 @@ class Dispatcher(object):
                     rjob['batch'].submit(task_chunks[idx], command, res = resources, outlog=outlog, errlog=errlog,restart=True)
                 elif status == JobStatus.finished :
                     dlog.info('job %s finished' % job_uuid)
-                    rjob['context'].download(task_chunks[idx], self.backward_task_files)
+                    rjob['context'].download(task_chunks[idx], backward_task_files)
                     rjob['context'].clean()
                     job_record.record_finish(cur_hash)
                     job_record.dump()
