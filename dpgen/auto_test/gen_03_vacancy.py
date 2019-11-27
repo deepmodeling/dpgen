@@ -94,8 +94,8 @@ def make_vasp(jdata, conf_dir, supercell = [1,1,1]) :
     os.chdir(cwd)
 
 def make_lammps(jdata, conf_dir, task_type, supercell) :
-    fp_params = jdata['vasp_params']
-    kspacing = fp_params['kspacing']
+    #fp_params = jdata['vasp_params']
+    #kspacing = fp_params['kspacing']
     fp_params = jdata['lammps_params']
     model_dir = fp_params['model_dir']
     type_map = fp_params['type_map'] 
@@ -120,6 +120,7 @@ def make_lammps(jdata, conf_dir, task_type, supercell) :
     if 'relax_incar' in jdata.keys():
         vasp_str='vasp-relax_incar'
     else:
+        kspacing = jdata['vasp_params']['kspacing']
         vasp_str='vasp-k%.2f' % kspacing 
     equi_path = os.path.join(equi_path, vasp_str)
     equi_contcar = os.path.join(equi_path, 'CONTCAR')
