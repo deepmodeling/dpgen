@@ -77,6 +77,35 @@ class Dispatcher(object):
                  forward_task_deference = True,
                  outlog = 'log',
                  errlog = 'err') :
+        job_handler = self.submit_jobs(resources,
+                                       command,
+                                       work_path,
+                                       tasks,
+                                       group_size,
+                                       forward_common_files,
+                                       forward_task_files,
+                                       backward_task_files,
+                                       forward_task_deference,
+                                       outlog,
+                                       errlog)
+        while not self.all_finished(job_handler) :
+            time.sleep(10)
+        # delete path map file when job finish
+        # _pmap.delete()
+
+
+    def submit_jobs(self,
+                    resources,
+                    command,
+                    work_path,
+                    tasks,
+                    group_size,
+                    forward_common_files,
+                    forward_task_files,
+                    backward_task_files,
+                    forward_task_deference = True,
+                    outlog = 'log',
+                    errlog = 'err') :
         # task_chunks = [
         #     [os.path.basename(j) for j in tasks[i:i + group_size]] \
         #     for i in range(0, len(tasks), group_size)
@@ -118,7 +147,7 @@ class Dispatcher(object):
                 if job_uuid is None:
                     rjob['batch'].submit(chunk, command, res = resources, outlog=outlog, errlog=errlog)
                     job_uuid = rjob['context'].job_uuid
-                    dlog.debug('assigned uudi %s for %s ' % (job_uuid, task_chunks_[ii]))
+                    dlog.debug('assigned uuid %s for %s ' % (job_uuid, task_chunks_[ii]))
                     dlog.info('new submission of %s' % job_uuid)
                 else:
                     rjob['batch'].submit(chunk, command, res = resources, outlog=outlog, errlog=errlog, restart = True)
@@ -133,29 +162,46 @@ class Dispatcher(object):
 
         assert(len(job_list) == len(task_chunks))
         fcount = [0]*len(job_list)
-        while not all(job_fin) :
-            dlog.debug('checking jobs')
-            for idx,rjob in enumerate(job_list) :
-                if not job_fin[idx] :
-                    status = rjob['batch'].check_status()
-                    job_uuid = rjob['context'].job_uuid
-                    if status == JobStatus.terminated :
-                        fcount[idx] += 1
-                        if fcount[idx] > 3:
-                            raise RuntimeError('Job %s failed for more than 3 times' % job_uuid)
-                        dlog.info('job %s terminated, submit again'% job_uuid)
-                        dlog.debug('try %s times for %s'% (fcount[idx], job_uuid))
-                        rjob['batch'].submit(task_chunks[idx], command, res = resources, outlog=outlog, errlog=errlog,restart=True)
-                    elif status == JobStatus.finished :
-                        dlog.info('job %s finished' % job_uuid)
-                        rjob['context'].download(task_chunks[idx], backward_task_files)
-                        rjob['context'].clean()
-                        job_fin[idx] = True
-                        _fr.write_record(job_fin)
-            time.sleep(10)
-        # delete path map file when job finish
-        _pmap.delete()
 
+        job_handler = {
+            'task_chunks': task_chunks,
+            'fin_record': _fr,
+            'job_list': job_list,
+            'fail_count': fcount,
+            'backward_task_files': backward_task_files,
+        }
+        return job_handler
+
+
+    def all_finished(self, 
+                     job_handler):
+        task_chunks = job_handler['task_chunks']
+        _fr = job_handler['fin_record']
+        job_fin = _fr.get_record()
+        fcount = job_handler['fail_count']
+        job_list = job_handler['job_list']
+        backward_task_files = job_handler['backward_task_files']
+        dlog.debug('checking jobs')
+        for idx,rjob in enumerate(job_list) :
+            if not job_fin[idx] :
+                status = rjob['batch'].check_status()
+                job_uuid = rjob['context'].job_uuid
+                if status == JobStatus.terminated :
+                    fcount[idx] += 1
+                    if fcount[idx] > 3:
+                        raise RuntimeError('Job %s failed for more than 3 times' % job_uuid)
+                    dlog.info('job %s terminated, submit again'% job_uuid)
+                    dlog.debug('try %s times for %s'% (fcount[idx], job_uuid))
+                    rjob['batch'].submit(task_chunks[idx], command, res = resources, outlog=outlog, errlog=errlog,restart=True)
+                elif status == JobStatus.finished :
+                    dlog.info('job %s finished' % job_uuid)
+                    rjob['context'].download(task_chunks[idx], backward_task_files)
+                    rjob['context'].clean()
+                    job_fin[idx] = True
+                    _fr.write_record(job_fin)
+        return all(job_fin)
+
+        
 
 class FinRecord(object):
     def __init__ (self, path, njobs, fname = 'fin.record'):
