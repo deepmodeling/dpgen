@@ -192,7 +192,7 @@ class Dispatcher(object):
                     if job_record.check_nfail(cur_hash) > 3:
                         raise RuntimeError('Job %s failed for more than 3 times' % job_uuid)
                     dlog.info('job %s terminated, submit again'% job_uuid)
-                    dlog.debug('try %s times for %s'% (fcount[idx], job_uuid))
+                    dlog.debug('try %s times for %s'% (job_record.check_nfail(cur_hash), job_uuid))
                     rjob['batch'].submit(task_chunks[idx], command, res = resources, outlog=outlog, errlog=errlog,restart=True)
                 elif status == JobStatus.finished :
                     dlog.info('job %s finished' % job_uuid)
