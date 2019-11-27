@@ -101,18 +101,16 @@
     "fp_pp_path":	".",
     "fp_pp_files":	[],
     "user_fp_params":	{
-	"cutoff": "400",
-	"rel_cutoff": "50",
-    "functional": "PBE",
-    "max_scf": "50",
-    "pair_potential_type": "DFTD3",
-    "pair_potential_path": "./cp2k_basis_pp_file/dftd3.dat",
-    "pair_ref_functional": "PBE",
-    "basis_path": "./cp2k_basis_pp_file/BASIS_MOLOPT",
-    "pp_path": "./cp2k_basis_pp_file/GTH_POTENTIALS",
-    "element_list": ["H", "C", "N"],
-    "basis_list": ["DZVP-MOLOPT-GTH", "DZVP-MOLOPT-GTH", "DZVP-MOLOPT-GTH"],
-    "pp_list": ["GTH-PBE-q1", "GTH-PBE-q4", "GTH-PBE-q5"]
+        "FORCE_EVAL":{
+         "SUBSYS":{
+             "KIND":{
+                "_": ["N","C","H"],
+               "POTENTIAL": ["GTH-PBE-q5","GTH-PBE-q4", "GTH-PBE-q1"],
+               "BASIS_SET": ["DZVP-MOLOPT-GTH","DZVP-MOLOPT-GTH","DZVP-MOLOPT-GTH"]
+                 }
+             }
+         }
+        
     },
     "_comment":		" that's all "
 }

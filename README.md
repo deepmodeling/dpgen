@@ -511,20 +511,39 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 |**fp_params["mixingweight"]** | Float| 0.05 | Proportion a of output Density Matrix to be used for the input Density Matrix of next SCF cycle (linear mixing).
 |**fp_params["NumberPulay"]** | Integer| 5 | Controls the Pulay convergence accelerator.
 | *fp_style == cp2k*
-| **fp_params** | Dict | | Parameters for cp2k calculation. find detail in manual.cp2k.org. if it is not remarked with "optional", the parameter must be set. we assume that you have basic knowledge for cp2k input.
-|**fp_params["cutoff"]**| String | 400 |
-|**fp_params["rel_cutoff"]**| String | 50 |
-|**fp_params["functional"]**| String | PBE |
-|**fp_params["max_scf"]**| String | 50 |
-|**fp_params["pair_potential_type"]**| String | DFTD3 | This is optional.
-|**fp_params["pair_potential_path"]**| String | "./cp2k_basis_pp_file/dftd3.dat" | must be set if you set the "pair_potential_type"
-|**fp_params["pair_ref_functional"]**| String | PBE | must be set if you set the "pair_potential_type"
-|**fp_params["basis_path"]**| String | "./cp2k_basis_pp_file/BASIS_MOLOPT" |
-|**fp_params["pp_path"]**| String | "./cp2k_basis_pp_file/GTH_POTENTIALS" |
-|**fp_params["element_list"]**| List | ["H","C","N"] |
-|**fp_params["basis_list"]**| List | ["DZVP_MOLOPT_GTH","DZVP_MOLOPT_GTH","DZVP_MOLOPT_GTH"] | Must be same order with element_list
-|**fp_params["pp_list"]**| List | ["GTH-PBE-q1","GTH-PBE-q4","GTH-PBE-q5"] | Must be same order with element_list
+| **fp_params** | Dict |  |Parameters for cp2k calculation. find detail in manual.cp2k.org. only the kind section must be set before use.  we assume that you have basic knowledge for cp2k input.
 
+
+#### Rules for cp2k input at dictionary form
+   Converting cp2k input is very simple as dictionary used to dpgen input. You just need follow some simple rule:
+- kind section parameter must be provide
+- replace `keyword` in cp2k as `keyword` in dict.
+- replace `keyword parameter` in cp2k as `value` in dict.
+- replace `section name` in cp2k as `keyword` in dict. . The corresponding value is a `dict`.
+- repalce `section parameter` in cp2k as `value` with dict. keyword `"_"`
+- `repeat section` in cp2k just need to be written once with repeat parameter as list. 
+Here are examples for setting:
+ ```python
+
+ #minimal information you should provide for input
+ #other we have set other parameters in code, if you want to
+ #use your own paramter, just write a corresponding dictionary
+ "user_fp_params":   {
+ "FORCE_EVAL":{
+ "DFT":{
+ "BASIS_SET_FILE_NAME": "path",
+ "POTENTIAL_FILE_NAME": "path"
+ }
+ "SUBSYS":{
+ "KIND":{
+ "_": ["N","C","H"],
+ "POTENTIAL": ["GTH-PBE-q5","GTH-PBE-q4", "GTH-PBE-q1"],
+ "BASIS_SET": ["DZVP-MOLOPT-GTH","DZVP-MOLOPT-GTH","DZVP-MOLOPT-GTH"]
+ }
+ }
+ }
+ }
+```
 
 
 
