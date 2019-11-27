@@ -167,6 +167,7 @@ class Dispatcher(object):
             'job_list': job_list,
             'job_record': job_record,
             'command': command,
+            'resources': resources,
             'backward_task_files': backward_task_files
         }
         return job_handler
@@ -180,6 +181,7 @@ class Dispatcher(object):
         job_list = job_handler['job_list']
         job_record = job_handler['job_record']
         command = job_handler['command']
+        resources = job_handler['resources']
         backward_task_files = job_handler['backward_task_files']
         dlog.debug('checking jobs')
         nchunks = len(task_chunks)
