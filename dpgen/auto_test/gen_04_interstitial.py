@@ -23,7 +23,7 @@ def _make_vasp(jdata, conf_dir, supercell, insert_ele) :
     # get equi poscar
     if 'relax_incar' in jdata.keys():
         vasp_str='vasp-relax_incar'
-    else: 
+    else:
         kspacing = jdata['vasp_params']['kspacing']
         vasp_str='vasp-k%.2f' % (kspacing)
     equi_path = re.sub('confs', global_equi_name, conf_path)
@@ -65,7 +65,7 @@ def _make_vasp(jdata, conf_dir, supercell, insert_ele) :
         fc = vasp.make_vasp_relax_incar(ecut, ediff, True, True, True, npar=npar,kpar=kpar, kspacing = kspacing, kgamma = kgamma)
     with open(os.path.join(task_path, 'INCAR'), 'w') as fp :
         fp.write(fc)
-    # gen tasks    
+    # gen tasks
     copy_str = "%sx%sx%s" % (supercell[0], supercell[1], supercell[2])
     cwd = os.getcwd()
     for ii in range(len(dss)) :
@@ -82,7 +82,7 @@ def _make_vasp(jdata, conf_dir, supercell, insert_ele) :
         with open('POSCAR','r') as fp :
             lines = fp.read().split('\n')
             ele_list = lines[5].split()
-                  
+
         os.chdir(cwd)
         potcar_map = jdata['potcar_map']
         potcar_list = []
@@ -90,12 +90,12 @@ def _make_vasp(jdata, conf_dir, supercell, insert_ele) :
             assert os.path.exists(os.path.abspath(potcar_map[ii])),"No POTCAR in the potcar_map of %s"%(ii)
             potcar_list.append(os.path.abspath(potcar_map[ii]))
         os.chdir(struct_path)
-                  
+
         with open('POTCAR', 'w') as outfile:
             for fname in potcar_list:
                 with open(fname) as infile:
                     outfile.write(infile.read())
-        
+
         # link incar
         os.symlink(os.path.relpath(os.path.join(task_path, 'INCAR')), 'INCAR')
         # save supercell
@@ -103,15 +103,15 @@ def _make_vasp(jdata, conf_dir, supercell, insert_ele) :
     os.chdir(cwd)
 
 
-def make_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_type) : 
+def make_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_type) :
     for ii in insert_ele :
         _make_reprod_traj(jdata, conf_dir, supercell, ii, task_type)
 
-def _make_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_type) : 
-    kspacing = jdata['vasp_params']['kspacing']
+def _make_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_type) :
+
     fp_params = jdata['lammps_params']
     model_dir = fp_params['model_dir']
-    type_map = fp_params['type_map'] 
+    type_map = fp_params['type_map']
     model_dir = os.path.abspath(model_dir)
     model_name =fp_params['model_name']
     if not model_name and task_type=='deepmd':
@@ -128,24 +128,33 @@ def _make_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_type) :
 
     conf_path = os.path.abspath(conf_dir)
     task_path = re.sub('confs', global_task_name, conf_path)
-    vasp_path = os.path.join(task_path, 'vasp-k%.2f' % kspacing)
-    lmps_path = os.path.join(task_path, task_type + '-reprod-k%.2f' % kspacing)    
+    if 'relax_incar' in jdata.keys():
+        vasp_str='vasp-relax_incar'
+        lmps_str= task_type + '-reprod-relax_incar'
+    else:
+        kspacing = jdata['vasp_params']['kspacing']
+        vasp_str = 'vasp-k%.2f' % (kspacing)
+        lmps_str = task_type + '-reprod-k%.2f' % (kspacing)
+
+    vasp_path = os.path.join(task_path, vasp_str)
+    lmps_path = os.path.join(task_path, lmps_str)
+
     os.makedirs(lmps_path, exist_ok = True)
     copy_str = "%sx%sx%s" % (supercell[0], supercell[1], supercell[2])
     struct_widecard = os.path.join(vasp_path, 'struct-%s-%s-*' % (insert_ele,copy_str))
     vasp_struct = glob.glob(struct_widecard)
     vasp_struct.sort()
     cwd=os.getcwd()
-    
+
     # make lammps.in
     if task_type =='deepmd':
-        fc = lammps.make_lammps_eval('conf.lmp', 
-                                 ntypes, 
+        fc = lammps.make_lammps_eval('conf.lmp',
+                                 ntypes,
                                  lammps.inter_deepmd,
                                  model_name)
     elif task_type =='meam':
-        fc = lammps.make_lammps_eval('conf.lmp', 
-                                 ntypes, 
+        fc = lammps.make_lammps_eval('conf.lmp',
+                                 ntypes,
                                  lammps.inter_meam,
                                  model_param)
     f_lammps_in = os.path.join(lmps_path, 'lammps.in')
@@ -188,7 +197,7 @@ def _make_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_type) :
         for (ii,jj) in zip(models, model_name) :
             os.symlink(os.path.relpath(ii), jj)
         share_models = [os.path.join(ls,ii) for ii in model_name]
-        
+
         # loop over frames
         for ii in range(xdat_nframes) :
             frame_path = 'frame.%06d' % ii
@@ -197,10 +206,10 @@ def _make_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_type) :
             # clear dir
             for jj in ['conf.lmp'] :
                 if os.path.isfile(jj):
-                    os.remove(jj)            
+                    os.remove(jj)
             for jj in ['lammps.in'] + model_name :
                 if os.path.islink(jj):
-                    os.unlink(jj)            
+                    os.unlink(jj)
             # link lammps in
             os.symlink(os.path.relpath('../lammps.in'), 'lammps.in')
             # make conf
@@ -222,11 +231,10 @@ def make_lammps(jdata, conf_dir, supercell, insert_ele, task_type) :
         _make_lammps(jdata, conf_dir, supercell, ii, task_type)
 
 def _make_lammps(jdata, conf_dir, supercell, insert_ele, task_type) :
-    fp_params = jdata['vasp_params']
-    kspacing = fp_params['kspacing']
+
     fp_params = jdata['lammps_params']
     model_dir = fp_params['model_dir']
-    type_map = fp_params['type_map'] 
+    type_map = fp_params['type_map']
     model_dir = os.path.abspath(model_dir)
     model_name =fp_params['model_name']
     if not model_name and task_type=='deepmd':
@@ -245,7 +253,12 @@ def _make_lammps(jdata, conf_dir, supercell, insert_ele, task_type) :
     conf_poscar = os.path.join(conf_path, 'POSCAR')
     # get equi poscar
     equi_path = re.sub('confs', global_equi_name, conf_path)
-    equi_path = os.path.join(equi_path, 'vasp-k%.2f' % kspacing)
+    if 'relax_incar' in jdata.keys():
+        vasp_str='vasp-relax_incar'
+    else:
+        kspacing = jdata['vasp_params']['kspacing']
+        vasp_str='vasp-k%.2f' % (kspacing)
+    equi_path = os.path.join(equi_path, vasp_str)
     equi_contcar = os.path.join(equi_path, 'CONTCAR')
     #equi_path = os.path.join(equi_path, task_type)
     #equi_dump = os.path.join(equi_path, 'dump.relax')
@@ -269,25 +282,25 @@ def _make_lammps(jdata, conf_dir, supercell, insert_ele, task_type) :
     dss = []
     for jj in vds :
         dss.append(jj.generate_defect_structure(supercell))
-    # gen tasks    
+    # gen tasks
     cwd = os.getcwd()
     # make lammps.in, relax at 0 bar (scale = 1)
     if task_type=='deepmd':
-        fc = lammps.make_lammps_press_relax('conf.lmp', 
-                                        ntypes, 
+        fc = lammps.make_lammps_press_relax('conf.lmp',
+                                        ntypes,
                                         1,
                                         lammps.inter_deepmd,
                                         model_name)
     elif task_type =='meam':
-        fc = lammps.make_lammps_press_relax('conf.lmp', 
-                                        ntypes, 
-                                        1, 
+        fc = lammps.make_lammps_press_relax('conf.lmp',
+                                        ntypes,
+                                        1,
                                         lammps.inter_meam,
                                         model_param)
     f_lammps_in = os.path.join(task_path, 'lammps.in')
     with open(f_lammps_in, 'w') as fp :
         fp.write(fc)
-    # gen tasks    
+    # gen tasks
     copy_str = "%sx%sx%s" % (supercell[0], supercell[1], supercell[2])
     cwd = os.getcwd()
 
@@ -298,7 +311,7 @@ def _make_lammps(jdata, conf_dir, supercell, insert_ele, task_type) :
     for (ii,jj) in zip(models, model_name) :
         os.symlink(os.path.relpath(ii), jj)
     share_models = [os.path.join(task_path,ii) for ii in model_name]
-    
+
     for ii in range(len(dss)) :
         struct_path = os.path.join(task_path, 'struct-%s-%s-%03d' % (insert_ele,copy_str,ii))
         print('# generate %s' % (struct_path))
@@ -311,7 +324,7 @@ def _make_lammps(jdata, conf_dir, supercell, insert_ele, task_type) :
         dss[ii].to('POSCAR', 'POSCAR')
         lammps.cvt_lammps_conf('POSCAR', 'conf.lmp')
         ptypes = vasp.get_poscar_types('POSCAR')
-        lammps.apply_type_map('conf.lmp', type_map, ptypes)    
+        lammps.apply_type_map('conf.lmp', type_map, ptypes)
         # link lammps.in
         os.symlink(os.path.relpath(f_lammps_in), 'lammps.in')
         # link models
@@ -321,7 +334,7 @@ def _make_lammps(jdata, conf_dir, supercell, insert_ele, task_type) :
         np.savetxt('supercell.out', supercell, fmt='%d')
     os.chdir(cwd)
 
-    
+
 def _main() :
     parser = argparse.ArgumentParser(
         description="gen 04.interstitial")
@@ -350,8 +363,6 @@ def _main() :
         make_reprod_traj(jdata, args.CONF, args.COPY, args.ELEMENT, args.TASK)
     else :
         raise RuntimeError("unknow task ", args.TASK)
-    
+
 if __name__ == '__main__' :
     _main()
-
-    
