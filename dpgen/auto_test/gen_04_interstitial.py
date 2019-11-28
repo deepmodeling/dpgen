@@ -143,6 +143,7 @@ def _make_reprod_traj(jdata, conf_dir, supercell, insert_ele, task_type) :
     copy_str = "%sx%sx%s" % (supercell[0], supercell[1], supercell[2])
     struct_widecard = os.path.join(vasp_path, 'struct-%s-%s-*' % (insert_ele,copy_str))
     vasp_struct = glob.glob(struct_widecard)
+    assert len(vasp_struct)>0 ,"Please compute the interstitial defect using vasp first"
     vasp_struct.sort()
     cwd=os.getcwd()
 
