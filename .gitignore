@@ -37,3 +37,4 @@ dpgen.egg-info
 .eggs
 .coverage
 dbconfig.json
+.vscode/*
