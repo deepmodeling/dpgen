@@ -125,7 +125,7 @@ def make_vasp(jdata, conf_dir, max_miller = 2, relax_box = False, static = False
     cwd = os.getcwd()
 
 def make_lammps(jdata, conf_dir, max_miller = 2, static = False, relax_box = False, task_type = 'wrong-task') :
-    kspacing = jdata['vasp_params']['kspacing']
+
     fp_params = jdata['lammps_params']
     model_dir = fp_params['model_dir']
     type_map = fp_params['type_map']
@@ -152,6 +152,7 @@ def make_lammps(jdata, conf_dir, max_miller = 2, static = False, relax_box = Fal
     if 'relax_incar' in jdata.keys():
         vasp_str='vasp-relax_incar'
     else:
+        kspacing = jdata['vasp_params']['kspacing']
         vasp_str='vasp-k%.2f' % (kspacing)
 
     equi_path = re.sub('confs', global_equi_name, conf_dir)
