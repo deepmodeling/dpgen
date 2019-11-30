@@ -1701,7 +1701,7 @@ def run_iter (param_file, machine_file) :
             if ii * max_tasks + jj <= iter_rec[0] * max_tasks + iter_rec[1] :
                 continue
             task_name="task %02d"%jj
-            sepline(task_name,'-')
+            sepline("{} {}".format(iter_name, task_name),'-')
             if   jj == 0 :
                 log_iter ("make_train", ii, jj)
                 make_train (ii, jdata, mdata)

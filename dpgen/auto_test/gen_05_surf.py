@@ -12,9 +12,13 @@ global_task_name = '05.surf'
 
 def make_vasp(jdata, conf_dir, max_miller = 2, relax_box = False, static = False) :
 
+    min_slab_size = jdata['min_slab_size']
+    min_vacuum_size = jdata['min_vacuum_size']
+    pert_xz = jdata['pert_xz']
+
     if 'relax_incar' in jdata.keys():
         vasp_str='vasp-relax_incar'
-    else: 
+    else:
         kspacing = jdata['vasp_params']['kspacing']
         vasp_str='vasp-k%.2f' % (kspacing)
 
@@ -23,7 +27,7 @@ def make_vasp(jdata, conf_dir, max_miller = 2, relax_box = False, static = False
     # conf_poscar = os.path.join(conf_path, 'POSCAR')
     equi_path = re.sub('confs', global_equi_name, conf_dir)
     equi_path = os.path.join(equi_path, vasp_str)
-    equi_path = os.path.abspath(equi_path)    
+    equi_path = os.path.abspath(equi_path)
     equi_contcar = os.path.join(equi_path, 'CONTCAR')
     assert os.path.exists(equi_contcar),"Please compute the equilibrium state using vasp first"
     task_path = re.sub('confs', global_task_name, conf_dir)
@@ -64,9 +68,6 @@ def make_vasp(jdata, conf_dir, max_miller = 2, relax_box = False, static = False
             kpar = fp_params['kpar']
             kspacing = fp_params['kspacing']
             kgamma = fp_params['kgamma']
-            min_slab_size = jdata['min_slab_size']
-            min_vacuum_size = jdata['min_vacuum_size']
-            pert_xz = jdata['pert_xz']
             fc = vasp.make_vasp_static_incar(ecut, ediff, npar=npar,kpar=kpar, kspacing = kspacing, kgamma = kgamma)
     else :
         if  'relax_incar' in jdata.keys():
@@ -82,9 +83,6 @@ def make_vasp(jdata, conf_dir, max_miller = 2, relax_box = False, static = False
             kpar = fp_params['kpar']
             kspacing = fp_params['kspacing']
             kgamma = fp_params['kgamma']
-            min_slab_size = jdata['min_slab_size']
-            min_vacuum_size = jdata['min_vacuum_size']
-            pert_xz = jdata['pert_xz']
             fc = vasp.make_vasp_relax_incar(ecut, ediff, True, relax_box, False, npar=npar,kpar=kpar, kspacing = kspacing, kgamma = kgamma)
     with open(os.path.join(task_path, 'INCAR'), 'w') as fp :
         fp.write(fc)
@@ -101,7 +99,7 @@ def make_vasp(jdata, conf_dir, max_miller = 2, relax_box = False, static = False
         for fname in potcar_list:
             with open(fname) as infile:
                 outfile.write(infile.read())
-    # gen tasks    
+    # gen tasks
     cwd = os.getcwd()
     for ii in range(len(all_slabs)) :
         slab = all_slabs[ii]
@@ -127,10 +125,10 @@ def make_vasp(jdata, conf_dir, max_miller = 2, relax_box = False, static = False
     cwd = os.getcwd()
 
 def make_lammps(jdata, conf_dir, max_miller = 2, static = False, relax_box = False, task_type = 'wrong-task') :
-    kspacing = jdata['vasp_params']['kspacing']
+
     fp_params = jdata['lammps_params']
     model_dir = fp_params['model_dir']
-    type_map = fp_params['type_map'] 
+    type_map = fp_params['type_map']
     model_dir = os.path.abspath(model_dir)
     model_name =fp_params['model_name']
     if not model_name and task_type=='deepmd':
@@ -153,13 +151,14 @@ def make_lammps(jdata, conf_dir, max_miller = 2, static = False, relax_box = Fal
     # conf_poscar = os.path.join(conf_path, 'POSCAR')
     if 'relax_incar' in jdata.keys():
         vasp_str='vasp-relax_incar'
-    else: 
+    else:
+        kspacing = jdata['vasp_params']['kspacing']
         vasp_str='vasp-k%.2f' % (kspacing)
 
     equi_path = re.sub('confs', global_equi_name, conf_dir)
     equi_path = os.path.join(equi_path, vasp_str)
-    equi_path = os.path.abspath(equi_path)    
-    equi_contcar = os.path.join(equi_path, 'CONTCAR')    
+    equi_path = os.path.abspath(equi_path)
+    equi_contcar = os.path.join(equi_path, 'CONTCAR')
     assert os.path.exists(equi_contcar),"Please compute the equilibrium state using vasp first"
     task_path = re.sub('confs', global_task_name, conf_dir)
     task_path = os.path.abspath(task_path)
@@ -182,27 +181,27 @@ def make_lammps(jdata, conf_dir, max_miller = 2, static = False, relax_box = Fal
     # make lammps.in
     if task_type =='deepmd':
         if static :
-            fc = lammps.make_lammps_eval('conf.lmp', 
-                                     ntypes, 
+            fc = lammps.make_lammps_eval('conf.lmp',
+                                     ntypes,
                                      lammps.inter_deepmd,
                                      model_name)
         else :
-            fc = lammps.make_lammps_equi('conf.lmp', 
-                                     ntypes, 
+            fc = lammps.make_lammps_equi('conf.lmp',
+                                     ntypes,
                                      lammps.inter_deepmd,
-                                     model_name, 
+                                     model_name,
                                      change_box = relax_box)
     elif task_type =='meam':
         if static :
-            fc = lammps.make_lammps_eval('conf.lmp', 
-                                     ntypes, 
+            fc = lammps.make_lammps_eval('conf.lmp',
+                                     ntypes,
                                      lammps.inter_meam,
                                      model_param)
         else :
-            fc = lammps.make_lammps_equi('conf.lmp', 
-                                     ntypes, 
+            fc = lammps.make_lammps_equi('conf.lmp',
+                                     ntypes,
                                      lammps.inter_meam,
-                                     model_param, 
+                                     model_param,
                                      change_box = relax_box)
     f_lammps_in = os.path.join(task_path, 'lammps.in')
     with open(f_lammps_in, 'w') as fp :
@@ -233,7 +232,7 @@ def make_lammps(jdata, conf_dir, max_miller = 2, static = False, relax_box = Fal
         vasp.regulate_poscar('POSCAR', 'POSCAR')
         lammps.cvt_lammps_conf('POSCAR', 'conf.lmp')
         ptypes = vasp.get_poscar_types('POSCAR')
-        lammps.apply_type_map('conf.lmp', type_map, ptypes)    
+        lammps.apply_type_map('conf.lmp', type_map, ptypes)
         # record miller
         np.savetxt('miller.out', slab.miller_index, fmt='%d')
         # link lammps.in
@@ -273,8 +272,6 @@ def _main() :
         make_lammps(jdata, args.CONF, args.MAX_MILLER, static = True, relax_box = args.relax_box, task_type = args.TASK)
     else :
         raise RuntimeError("unknow task ", args.TASK)
-    
+
 if __name__ == '__main__' :
     _main()
-
-    

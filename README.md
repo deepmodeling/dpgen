@@ -19,6 +19,10 @@
 
 
 ## About DP-GEN
+
+[![GitHub release](https://img.shields.io/github/release/deepmodeling/dpgen.svg?maxAge=86400)](https://github.com/deepmodeling/dpgen/releases/)
+[![arxiv:1910.12690](http://img.shields.io/badge/arXiv-1910.12690-B31B1B.svg?maxAge=86400)](https://arxiv.org/abs/1910.12690)
+
 DP-GEN (Deep Generator)  is a software written in Python, delicately designed to generate a deep learning based model of interatomic potential energy and force field. DP-GEN is depedent on DeepMD-kit (https://github.com/deepmodeling/deepmd-kit/blob/master/README.md). With highly scalable interface with common softwares for molecular simulation, DP-GEN is capable to  automatically prepare scripts and maintain job queues on HPC machines (High Performance Cluster) and analyze results
 ### Highlighted features
 + **Accurate and efficient**: DP-GEN is capable to sample more than tens of million structures and select only a few for first principles calculation. DP-GEN will finally obtain a uniformly accurate model.
@@ -58,7 +62,7 @@ One can download the source code of dpgen by
 ```bash
 git clone https://github.com/deepmodeling/dpgen.git
 ```
-then you may install DP-GEN easily by: 
+then you may install DP-GEN easily by:
 ```bash
 cd dpgen
 pip install --user .
@@ -123,7 +127,7 @@ You may prepare initial data for bulk systems with VASP by:
 ```bash
 dpgen init_bulk PARAM [MACHINE]
 ```
-The MACHINE configure file is optional. If this parameter exists, then the optimization 
+The MACHINE configure file is optional. If this parameter exists, then the optimization
 tasks or MD tasks will be submitted automatically according to MACHINE.json.
 
 Basically `init_bulk` can be devided into four parts , denoted as `stages` in `PARAM`:
@@ -273,7 +277,7 @@ The bold notation of key (such as **Elements**) means that it's a necessary key.
 | **layer_numb** | Integer | 3 | Number of equavilent layers of slab.
 | **vacuum_max** | Float | 9 | Maximal thickness of vacuum (Angstrom).
 | **vacuum_resol** | List of float | [0.5, 1 ] | Interval of thichness of vacuum. If size of `vacuum_resol` is 1, the interval is fixed to its value. If size of `vacuum_resol` is 2, the interval is `vacuum_resol[0]` before `mid_point`, otherwise `vacuum_resol[1]` after `mid_point`.
-| **millers** | List of list of Integer | [[1,0,0]] | Miller indices. 
+| **millers** | List of list of Integer | [[1,0,0]] | Miller indices.
 | relax_incar | String | "....../INCAR" | Path of INCAR for relaxation in VASP. **Necessary** if `stages` include 1.
 | **scale** | List of float | [0.980, 1.000, 1.020] | Scales for transforming cells.
 | **skip_relax** | Boolean | False | If it's true, you may directly run stage 2 (pertub and scale) using an unrelaxed POSCAR.
@@ -507,20 +511,39 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 |**fp_params["mixingweight"]** | Float| 0.05 | Proportion a of output Density Matrix to be used for the input Density Matrix of next SCF cycle (linear mixing).
 |**fp_params["NumberPulay"]** | Integer| 5 | Controls the Pulay convergence accelerator.
 | *fp_style == cp2k*
-| **fp_params** | Dict | | Parameters for cp2k calculation. find detail in manual.cp2k.org. if it is not remarked with "optional", the parameter must be set. we assume that you have basic knowledge for cp2k input.
-|**fp_params["cutoff"]**| String | 400 |
-|**fp_params["rel_cutoff"]**| String | 50 |
-|**fp_params["functional"]**| String | PBE |
-|**fp_params["max_scf"]**| String | 50 |
-|**fp_params["pair_potential_type"]**| String | DFTD3 | This is optional.
-|**fp_params["pair_potential_path"]**| String | "./cp2k_basis_pp_file/dftd3.dat" | must be set if you set the "pair_potential_type"
-|**fp_params["pair_ref_functional"]**| String | PBE | must be set if you set the "pair_potential_type"
-|**fp_params["basis_path"]**| String | "./cp2k_basis_pp_file/BASIS_MOLOPT" |
-|**fp_params["pp_path"]**| String | "./cp2k_basis_pp_file/GTH_POTENTIALS" |
-|**fp_params["element_list"]**| List | ["H","C","N"] |
-|**fp_params["basis_list"]**| List | ["DZVP_MOLOPT_GTH","DZVP_MOLOPT_GTH","DZVP_MOLOPT_GTH"] | Must be same order with element_list
-|**fp_params["pp_list"]**| List | ["GTH-PBE-q1","GTH-PBE-q4","GTH-PBE-q5"] | Must be same order with element_list
+| **fp_params** | Dict |  |Parameters for cp2k calculation. find detail in manual.cp2k.org. only the kind section must be set before use.  we assume that you have basic knowledge for cp2k input.
 
+
+#### Rules for cp2k input at dictionary form
+   Converting cp2k input is very simple as dictionary used to dpgen input. You just need follow some simple rule:
+- kind section parameter must be provide
+- replace `keyword` in cp2k as `keyword` in dict.
+- replace `keyword parameter` in cp2k as `value` in dict.
+- replace `section name` in cp2k as `keyword` in dict. . The corresponding value is a `dict`.
+- repalce `section parameter` in cp2k as `value` with dict. keyword `"_"`
+- `repeat section` in cp2k just need to be written once with repeat parameter as list. 
+Here are examples for setting:
+ ```python
+
+ #minimal information you should provide for input
+ #other we have set other parameters in code, if you want to
+ #use your own paramter, just write a corresponding dictionary
+ "user_fp_params":   {
+ "FORCE_EVAL":{
+ "DFT":{
+ "BASIS_SET_FILE_NAME": "path",
+ "POTENTIAL_FILE_NAME": "path"
+ }
+ "SUBSYS":{
+ "KIND":{
+ "_": ["N","C","H"],
+ "POTENTIAL": ["GTH-PBE-q5","GTH-PBE-q4", "GTH-PBE-q1"],
+ "BASIS_SET": ["DZVP-MOLOPT-GTH","DZVP-MOLOPT-GTH","DZVP-MOLOPT-GTH"]
+ }
+ }
+ }
+ }
+```
 
 
 
@@ -597,9 +620,9 @@ The second part is the computational settings for vasp and lammps. According to 
 The last part is the optional settings for various tasks mentioned above. You can change the parameters according to actual needs.
 ```json
     "_comment":"00.equi",
-    "store_stable":true,
+    "alloy_shift":false,
 ```
-+ `store_stable`:(boolean) whether to store the stable energy and volume
++ `alloy_shift`:(boolean) whether to compute the alloy formation energy. If you test alloy and set 'true', you need to compute the energies of corresponding elements respectively first of ßall. Please set 'false' when test single element.
 
 ```json
     "_comment": "01.eos",
@@ -1434,7 +1457,7 @@ mem_limit | Interger | 16 | Maximal memory permitted to apply for the job.
     - Index of `sys_configs` and `sys_idx`
 
 2. Please verify the directories of `sys_configs`. If there isnt's any POSCAR for `01.model_devi` in one iteration, it may happen that you write the false path of `sys_configs`.
-3. Correct format of JSON file. 
+3. Correct format of JSON file.
 4. In `02.fp`, total cores you require through `task_per_node` should be devided by `npar` times `kpar`.
 5. The frames of one system should be larger than `batch_size` and `numb_test` in `default_training_param`. It happens that one iteration adds only a few structures and causes error in next iteration's training. In this condition, you may let `fp_task_min` be larger than `numb_test`.
 ## License
