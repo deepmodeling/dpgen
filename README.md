@@ -646,6 +646,659 @@ This task uses the stress-strain relationship to calculate the elastic constant.
 + `static-opt`:(boolean) whether to use atomic relaxation to compute surface energy. if false, the structure will be relaxed.
 + `relax_box`:(boolean) set true if the box is relaxed, otherwise only relax atom positions.
 
+## Test: The content of the auto_test
+The atom configuration file to be testes.
+### param.json
+|Key  | Type  | Example | Discription  |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| potcar_map | dict | {"Al": "example/POTCAR"} |a dict like { "element" : "position of POTCAR"  } |
+|  conf_dir | path_like | confs/Al/std-fcc | the dir which contains vasp's POSCAR  |
+
+
+### 00.equi
+
+equi will test the the equilibrium state and get the following results.
+#### 1.test results
+
+Field  | Type          | Example                                                      | Discription                                                      |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| EpA(eV) | real number | -3.7468 | the potential energy of a atom|
+| VpA(A^3)| real number | 16.511| theEquilibrium volume of a atom  |
+
+#### 2.param.json
+vasp
+|Key  | Type  | Example | Discription  |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| ecut | real number | 650  | the plane wave cutoff for grid.  |
+| ediff | real number | 1e-6 |Tolerance of Density Matrix |
+| kspacing | real number | 0.1 | Sample factor in Brillouin zones |
+| kgamma | boolen | false | whether generate a Gamma centered grid |
+| npar | positive integer | 1 | the number of k-points that are to be treated in parallel  |
+| kpar | positive integer | 1 | the number of bands that are treated in parallel |
+
+lammps
+|key  | Type  | Example| Discription|
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| store_stable | boolean | true |whether to store the stable energy and volume|
+
+
+#### 3.atom configuration
+The atom configuration is specified by param['conf_dir']/POSCAR
+
+The box is periodic, so that particles interact across the boundary, and they can exit one end of the box and re-enter the other end
+ 
+Here are the configuration file used by lammps and vasp , note that the following  2 configuration are **equal**.
+ 
+ lammps atom configuration example
+```
+# Al/std-fcc/conf.lmp
+
+1 atoms
+1 atom types
+   0.0000000000    2.8637824638 xlo xhi
+   0.0000000000    2.4801083646 ylo yhi
+   0.0000000000    2.3382685902 zlo zhi
+   1.4318912319    1.4318912319    0.8267027882 xy xz yz
+
+Atoms # atomic
+
+1 1 0.0000000000 0.0000000000 0.0000000000
+```
+vasp Al/std-fcc/POSCAR
+```
+Al1
+1.0
+0.000000 2.025000 2.025000
+2.025000 0.000000 2.025000
+2.025000 2.025000 0.000000
+Al
+1
+direct
+0.000000 0.000000 0.000000 Al
+```
+
+vasp atom configuration example
+
+
+
+#### 4.lammps
+##### 4.1 input file
+lammps perform  energy minimizations of the system,and use the results of energy minimizations as  the test result.
+
+```
+# lammps.in
+dimension       3
+boundary        p       p    p
+atom_style      atomic
+box         tilt large
+read_data   conf.lmp
+
+......
+
+min_style       cg
+fix             1 all box/relax iso 0.0  # 
+minimize        1.000000e-12 1.000000e-06 5000 500000
+fix             1 all box/relax aniso 0.0
+minimize        1.000000e-12 1.000000e-06 5000 500000
+......
+```
+`minimize` perform an energy minimization of the system, by iteratively adjusting atom coordinates. Iterations are terminated when one of the stopping criteria is satisfied.
+
+`fix`  Apply an external pressure or stress tensor to the simulation box during an energy minimization. This allows the box size and shape to vary during the iterations of the minimizer so that the final configuration will be both an energy minimum for the potential energy of the atoms, and the system pressure tensor will be close to the specified external tensor.
+
+`iso/aniso`  The keyword iso means couple all 3 diagonal components together when pressure is computed (hydrostatic pressure), and dilate/contract the dimensions together.
+The keyword aniso means x, y, and z dimensions are controlled independently using the Pxx, Pyy, and Pzz components of the stress tensor as the driving forces
+
+
+#### 4.2 output file
+after  energy minimization, 
+dpgen will use the PotEng of the last step  -3.7467628 as `EpA(eV)`
+dpgen will use the Volume of the last step 16.510567as `VpA(A^3)`
+```
+Step PotEng Pxx Pyy Pzz Pxy Pxz Pyz Lx Ly Lz Volume c_mype
+       0   -3.7465689   -5490.0435     -5489.99   -5489.9875 8.0059506e-05 -0.00015863904 0.00072809883    2.8637825    2.4801084    2.3382686    16.607531   -3.7465689
+      21   -3.7467629   -829.55143   -829.56516   -829.55757 -1.7925939e-05 -9.5713646e-05 0.0038858896    2.8581981    2.4752722     2.333709    16.510567   -3.7467629
+      22   -3.7467628   -829.56697   -829.63547   -829.55631 0.00051858009 1.8511104e-07 -0.0017081319    2.8581981    2.4752722     2.333709    16.510567   -3.7467628
+```
+
+#### 5 vasp
+##### 5.1 INCAR
+some field of the INCAR will be changed according to 
+```
+PREC=A
+ENCUT=650 # will use param.json's
+# ISYM=0
+ALGO=fast
+EDIFF=1.000000e-06  # will use param.json's
+EDIFFG=-0.01
+LREAL=A
+NPAR=1 # will use param.json's
+KPAR=1 # will use param.json's
+
+ISMEAR=1
+SIGMA=0.220000
+
+ISTART=0
+ICHARG=2
+NELM=100
+NELMIN=6
+ISIF=6
+IBRION=2
+
+NSW=50
+
+LWAVE=F
+LCHARG=F
+PSTRESS=0
+
+KSPACING=0.100000 # will use param.json's
+KGAMMA=F # will use param.json's
+```
+
+### 01.eos
+eos will calculate the equation of state and get the following results.
+
+Auto_test 01.eos will calculate the potential energy of single atom in a range of volumes. 
+
+You may then use the test results to draw the  equation of state curve.
+
+#### 1.test results
+
+Field  | Type          | Example                                                      | Discription                                                      |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| EpA(eV) | list of real number | [15.5,16.0,16.5,17.0] | the potential energy of a atom in  quilibrium state|
+| VpA(A^3)| list of real number |[-3.7306, -3.7429, -3.746762, -3.7430] | the equilibrium volume of a atom  |
+
+#### 2.param.json
+
+vol_start, vol_end and vol_step determine the volumetric range and accuracy of the eos.
+|Key  | Type  | Example | Discription  |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| vol_start |real number | 12 | the start volume  |
+| vol_end | real number | 22 | the end volume  |
+| vol_step | real number | 0.5 | the intervel to change volume |
+
+The param.json above will become a list below.
+each volume in volume_list will become the target 
+
+```python
+volume_list = list(range(vol_start,vol_end,vol_step))
+```
+
+#### 3.atom configuration
+
+The initial atom configuration  will be the equilibrium state atom configuration(configuration of the last step of 00.equi)
+
+The box will contain only one atom.
+
+The box is periodic, so that particles interact across the boundary, and they can exit one end of the box and re-enter the other end.
+
+
+And the box and atom position will deform proportionally in x,y,z direction to reach the target volume.
+
+For, examle, the file  below will generate a box with single atom.
+the box volume is 2.857588\*2.474744\*2.333211==16.50 A^(3) 
+```
+# vol-16.50/conf.lmp
+
+1 atoms
+1 atom types
+   0.0000000000    2.8575880000 xlo xhi
+   0.0000000000    2.4747440000 ylo yhi
+   0.0000000000    2.3332110000 zlo zhi
+   1.4287940000    1.4287940000    0.8249150000 xy xz yz
+
+Atoms # atomic
+
+1 1 2.8547961365 3.2972419997 2.3309314529
+```
+the images below are atom configuration of volume 12.0, 16.5, 21.5
+![](https://i.imgur.com/R1mXWrM.png)![](https://i.imgur.com/IsQZW8n.png)![](https://i.imgur.com/wTl375d.png)
+
+
+
+
+#### 4.lammps
+Lammps will create a serials of folders and each of the folder will contain different a conf.lmp file.
+
+All of the conf.lmp will contain only one atom, the box size of these conf.lmp will be different
+
+##### 4.1 input file
+
+lammps perform an energy minimizations of the system,and use the results of energy minimizations as  the test result.
+
+notice that lammps will not fix all box/relax 0.0, that means lammps  will **not** try to keep the stress of box to 0.0 (this is different from 00.equi)
+```
+# vol-16.50 lammps.in
+
+units   metal
+dimension       3
+boundary        p       p    p
+atom_style      atomic
+box         tilt large
+read_data   conf.lmp
+
+......
+
+min_style       cg
+minimize        1.000000e-12 1.000000e-06 5000 500000
+......
+```
+
+##### 4.2 output file
+
+
+After the energy minimization(in this example, the energy minimization had run only one step before it stopped).
+
+dpgen will use the PotEng of the last step  -3.7467628 as `EpA(eV)` where  `VpA(A^3)==16.50`
+
+```
+# vol-16.50/log.lammps
+
+Step PotEng Pxx Pyy Pzz Pxy Pxz Pyz Lx Ly Lz Volume c_mype
+       0   -3.7467629   -315.56544   -315.60474   -315.65689 -0.00081929052 -0.0015852434 -0.038537753     2.857588     2.474744     2.333211    16.499999   -3.7467629
+       1   -3.7467629   -315.56544   -315.60474   -315.65689 -0.00081929052 -0.0015852434 -0.038537753     2.857588     2.474744     2.333211    16.499999   -3.746762
+```
+#### 5.VASP
+VASP will calculate the potential energy of the atom configuration. The VASP INCAR is the same as 00.equi's.
+
+
+### 02.elasitc
+
+Calculate the elastic module, bulk modulus, shear modulus, Youngs Modulus, Poission Ratio.
+
+#### 1.test results
+
+Field  | Type          | Example                                                      | Discription                                                      |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| elastic module(GPa)| 6*6 matrix of real number| [[130.50   57.45   54.45    4.24    0.00    0.00] [57.61  130.31   54.45   -4.29   -0.00   -0.00]  [54.48   54.48  133.32   -0.00   -0.00   -0.00]   [4.49   -4.02   -0.89   33.78    0.00   -0.00]  [-0.00   -0.00   -0.00   -0.00   33.77    4.29] [0.00   -0.00   -0.00   -0.00    4.62   36.86]]| Voigt-notation elastic module;sequence of row and column is (xx, yy, zz, yz, zx, xy)|
+| bulk modulus(GPa) | real number | 80.78 | bulk modulus |
+| shear modulus(GPa) | real number | 36.07 | shear modulus |
+| Youngs Modulus(GPa) | real number | 94.19 | Youngs Modulus|
+| Poission Ratio | real number | 0.31 | Poission Ratio  |
+
+#### 2.param.json
+
+norm_deform and shear_deform are the scales of material deformation. This task uses the stress-strain relationship to calculate the elastic constant.
+|Key  | Type  | Example | Discription  |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| norm_deform | real number | 0.02  | uniaxial deformation range  |
+| shear_deform | real number | 0.05| shear deformation range  |
+
+
+#### 3.atom configuration
+##### 3.1 uniaxial deformation
+norm_deform=0.02 will become a list ,and then this list will become a list of 3*3 matrix,which will change the configuration of the simulation box. 
+```python
+norm_deform=0.02
+norm_strains = [-norm_def, -0.5*norm_deform, 0.5*norm_deform, norm_def]
+
+# the result of the command above 
+norm_strains = [-0.02, -0.01, 0.01, 0.02]
+
+```
+#For X-axis uniaxial deformation, the list above will become the matrix list below.
+$norm\_x\_matrix\_list=
+[\begin{pmatrix}
+0.98 & 0 & 0\\
+0 & 1 & 0\\
+0 & 0 & 1
+\end{pmatrix} , \begin{pmatrix}
+0.99 & 0 & 0\\
+0 & 1 & 0\\
+0 & 0 & 1
+\end{pmatrix}, 
+\begin{pmatrix}
+1.01 & 0 & 0\\
+0 & 1 & 0\\
+0 & 0 & 1
+\end{pmatrix}, \begin{pmatrix}
+1.02 & 0 & 0\\
+0 & 1 & 0\\
+0 & 0 & 1
+\end{pmatrix}]$
+
+
+
+The initial atom configuration  will be the equilibrium state atom configuration(configuration of the last step of 00.equi)
+
+for each matrix in norm_matrix_list, the atom position and box size of the initial atom configuration will deform accordingly.
+
+For example, the initial box size will be a Lower triangular matrix
+$box\_size=\begin{pmatrix}
+xx &   &  \\
+xy & yy &  \\
+xz & yz & zz
+\end{pmatrix} =\begin{pmatrix}
+2.858198 & 0.0 & 0.0\\
+1.429099 & 2.475272 & 0\\
+1.429099 & 0.825091 & 2.333709
+\end{pmatrix}$
+
+The atom position in the box is 
+(note that the atom may be out of the simulation box, but the box is periodic, the atom will be move into the box automatically)
+$atom\_position = \begin{pmatrix}
+x & y & z
+\end{pmatrix} = \begin{pmatrix}
+2.855406 & 3.297945  & 2.331429 
+\end{pmatrix}$ 
+
+The box_size and atom_position will according to the matrix in norm_matrix_list.
+for example,
+
+$box\_size\_x\_axis\_0.98=\begin{pmatrix}
+2.858198 & 0.0 & 0.0\\
+1.429099 & 2.475272 & 0\\
+1.429099 & 0.825091 & 2.333709
+\end{pmatrix}  \begin{pmatrix}
+0.98 & 0 & 0\\
+0 & 1 & 0\\
+0 & 0 & 1
+\end{pmatrix}=\begin{pmatrix}
+2.800451 & 0 & 0\\
+1.400225 & 2.475272 & 0\\
+1.400225 & 0.825091 & 2.333709
+\end{pmatrix}$
+
+$atom\_position\_x\_axis\_0.98 = \begin{pmatrix}
+2.855406 & 3.297945  & 2.331429
+\end{pmatrix} \begin{pmatrix}
+0.98 & 0 & 0\\
+0 & 1 & 0\\
+0 & 0 & 1
+\end{pmatrix}$
+
+##### 3.2 shear deform
+
+shear_deform=0.05 will become a list ,and then this list will become a list of 3*3 matrix,which will change the configuration of the simulation box. 
+```python
+shear_deform=0.05
+shear_strains = [-shear_deform, -0.5*shear_deform, 0.5*shear_deform, shear_deform]
+
+# the result of the command above 
+shear_strains = [-0.05, -0.025, 0.025, 0.05]
+```
+
+#For yz shear deformation, the list above will become the matrix list below.
+
+$shear\_yz\_matrix\_list=
+[\begin{pmatrix}
+1 & 0 & 0\\
+0 & 1 & -0.05\\
+0 & -0.05 & 1
+\end{pmatrix} , \begin{pmatrix}
+1 & 0 & 0\\
+0 & 1 & -0.025\\
+0 & -0.025 & 1
+\end{pmatrix}, 
+\begin{pmatrix}
+1 & 0 & 0\\
+0 & 1 & 0.025\\
+0 & 0.025 & 1
+\end{pmatrix}, \begin{pmatrix}
+1 & 0 & 0\\
+0 & 1 & 0.05\\
+0 & 0.05 & 1
+\end{pmatrix}]$
+
+and then box_size matrix and atom_position vector will change according to the matrix above
+
+#### 4.lammps
+##### 4.1 input file
+
+lammps perform an energy minimizations of the system,and use the results of energy minimizations as  the test result.
+
+notice that lammps will not fix all box/relax 0.0, that means lammps  will **not** try to keep the stress of box to 0.0 (this is different from 00.equi)
+```
+# dfm-000/lammps , x-axis deform -0.02
+
+min_style       cg
+minimize        1.000000e-12 1.000000e-06 5000 500000
+```
+##### 4.2 output file
+
+After the energy minimization(in this example, the energy minimization had run only one step before it stopped).
+
+```
+Step PotEng Pxx Pyy Pzz Pxy Pxz Pyz Lx Ly Lz Volume c_mype
+       0   -3.7440621    27804.084    11040.856    10437.716  0.082776521  0.063238993    852.90808     2.800451     2.475272     2.333709    16.176986   -3.7440621
+       1   -3.7440621    27804.102    11040.877    10437.739  0.081399331  0.061721109    852.90771     2.800451     2.475272     2.333709    16.176986   -3.7440621
+```
+
+will use the result Pxx Pyy Pzz Pxy Pxz Pyz  of the last MD step as the stress tensor.
+that is,
+
+$stress\_x\_axis\_0.98=\begin{pmatrix}
+Pxx & Pxy & Pxz\\
+Pyx & Pyy & Pyz\\
+Pzx & Pzy & Pzz
+\end{pmatrix}=\begin{pmatrix}
+27804.1 & 0.0813993 & 0.0617211\\
+0.0813993 & 11040.9 & 852.908\\
+0.0617211 & 852.908 & 10437.7
+\end{pmatrix}$
+
+#### 5.vasp
+The atom configuration is the same as lammps's.
+
+VASP will calculate the potential energy of the atom configuration. The VASP INCAR is the same as 00.equi's.
+
+#### 6.data analyze
+the strain_matrix and corresponding stress_matrix will be used to calculate the elastic tensor using least-squares fit.
+```python3
+# lst_strains: list of strain objects to fit
+# lst_stresses: list of stress objects to use in fit
+# eq_stress: the stress of equilibrium state
+
+pymatgen.analysis.elasticity.elastic.from_independent_strains(lst_strain, 
+    lst_stress, 
+    eq_stress = equi_stress)
+
+```
+This will return elastic module, bulk modulus, shear modulus, Youngs modulus and Poission ratio.
+
+### 03.vacancy
+Calculate the vacancy formation energy
+
+#### 1.test results
+the results will be a table,here only show one row of the table.
+
+Field  | Type          | Example                                                      | Discription                                                      |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+|Structure| list of string |['struct-3x3x3-000'] | structure name|
+| Vac_E(eV) | real number |0.723 | the vacancy formation energy |
+| E(eV) | real number | -96.684 | potential energy of the vacancy configuration |
+| equi_E(eV) | real number |-97.407 | potential energy of the equilibrium state|
+
+
+#### 2.param.json
+
+norm_deform and shear_deform are the scales of material deformation. This task uses the stress-strain relationship to calculate the elastic constant.
+|Key  | Type  | Example | Discription  |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| supercell | list of integer | [3,3,3] | the supercell size used to generate vacancy defect and interstitial defect |
+
+#### 3.atom configuration
+Auto_test will use the 00.equi result atom configuration CONTCAR.
+and create a supercell with param.json's supercell.
+
+The atom configuration will be auto generated by pymatgen's module
+Class  pymatgen.analysis.defects.generators.VacancyGenerator.
+
+Atom configuration for vacancies will be based on periodically equivalent sites.
+
+```python3
+pymatgen.analysis.defects.generators.VacancyGenerator(Structure.from_file(task_poscar))
+```
+VASP CONTCAR of 00.equi
+```
+Al1
+   1.00000000000000
+     0.0000000000000000    2.0213150252059031    2.0213150252059031
+     2.0213150252059031    0.0000000000000000    2.0213150252059031
+     2.0213150252059031    2.0213150252059031   -0.0000000000000000
+   Al
+     1
+Direct
+  0.0000000000000000  0.0000000000000000  0.0000000000000000
+
+  0.00000000E+00  0.00000000E+00  0.00000000E+00
+```
+
+vasp POSCAR to test vacancy formation energy
+```
+  Al26
+1.0
+0.000000 6.063945 6.063945
+6.063945 0.000000 6.063945
+6.063945 6.063945 0.000000
+Al
+26
+direct
+0.000000 0.000000 0.333333 Al
+0.000000 0.000000 0.666667 Al
+0.000000 0.333333 0.000000 Al
+0.000000 0.333333 0.333333 Al
+1.000000 0.333333 0.666667 Al
+0.000000 0.666667 0.000000 Al
+1.000000 0.666667 0.333333 Al
+0.000000 0.666667 0.666667 Al
+0.333333 0.000000 0.000000 Al
+0.333333 0.000000 0.333333 Al
+0.333333 1.000000 0.666667 Al
+0.333333 0.333333 0.000000 Al
+0.333333 0.333333 0.333333 Al
+0.333333 0.333333 0.666667 Al
+0.333333 0.666667 0.000000 Al
+0.333333 0.666667 0.333333 Al
+0.333333 0.666667 0.666667 Al
+0.666667 0.000000 0.000000 Al
+0.666667 1.000000 0.333333 Al
+0.666667 0.000000 0.666667 Al
+0.666667 0.333333 0.000000 Al
+0.666667 0.333333 0.333333 Al
+0.666667 0.333333 0.666667 Al
+0.666667 0.666667 0.000000 Al
+0.666667 0.666667 0.333333 Al
+0.666667 0.666667 0.666667 Al
+```
+
+
+#### 4.lammps
+lammps perform energy minimizations of the system,a nd use the potential energy results of energy minimizations as the vacancy formation atom configuration result.
+
+The formation energy will be the different between vacancy configuration and equilibrium configuration.
+```
+min_style       cg
+fix             1 all box/relax iso ${Px}
+minimize        1.000000e-12 1.000000e-06 5000 500000
+fix             1 all box/relax aniso ${Px}
+minimize        1.000000e-12 1.000000e-06 5000 500000
+```
+#### 5.VASP
+VASP will calculate the potential energy of vacancy configuration and  equilibrium configuration. The formation energy will be the different between them.
+
+### 04.interstitial
+Calculate the interstitial formation energy.
+
+#### 1.test results
+the results will be in a table, here only show one row of the table.
+
+Field  | Type          | Example                                                      | Discription                                                      |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+|Structure| string |'struct-Al-3x3x3-000' | structure name|
+| Inter_E(eV) | real number |0.723 | the interstitial formation energy |
+| E(eV) | real number | -96.684 | potential energy of the interstitial configuration |
+| equi_E(eV) | real number |-97.407 | potential energy of the equilibrium state|
+
+
+#### 2.param.json
+
+|Key  | Type  | Example | Discription  |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| insert_ele | list of string | ["Al"] | the elements used to generate point interstitial defect |
+| reprod-opt | boolean | false | whether to reproduce trajectories of interstitial defect|
+
+#### 3.atom configuration
+
+Auto_test will use the 00.equi result atom configuration CONTCAR.
+and create a supercell with param.json's supercell.
+
+The atom configuration will be auto generated by pymatgen's module
+Class  pymatgen.analysis.defects.generators.VacancyGenerator.
+
+Atom configuration for interstitials will be based on a simple Voronoi analysis
+ ```python3
+pymatgen.analysis.defects.generators.InterstitialGenerator(Structure.from_file(task_poscar), insert_ele)
+
+``` 
+#### 4.lammps
+##### 4.1 input file
+lammps perform energy minimizations of the system,a nd use the potential energy results of energy minimizations as the interstitials formation atom configuration result.
+
+The formation energy will be the different between interstitials configuration and equilibrium configuration.
+```
+min_style       cg
+fix             1 all box/relax iso 0.0
+minimize        1.000000e-12 1.000000e-06 5000 500000
+fix             1 all box/relax aniso 0.0
+minimize        1.000000e-12 1.000000e-06 5000 500000
+```
+#### 5.VASP
+will calculate the potential energy of interstitials configuration and  equilibrium configuration. The formation energy will be the different between them.
+
+### 05.surface
+Calculate the surface formation energy
+
+#### 1.test results
+the results will be in a table, here only show one row of the table.
+
+Field  | Type          | Example                                                      | Discription                                                      |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+|Miller_Indices| string | struct-000-m1.1.1m | Miller Indices|
+|Surf_E(J/m^2)| real number | 0.673 | the surface formation energy |
+| EpA(eV) | real number | -3.628 | potential energy of the surface configuration |
+| equi_EpA | real number | -3.747 | potential energy of the equilibrium state|
+
+
+#### 2.param.json
+
+norm_deform and shear_deform are the scales of material deformation. This task uses the stress-strain relationship to calculate the elastic constant.
+|Key  | Type  | Example | Discription  |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| min_slab_size| real number| 10 |  the minimum size of slab thickness |
+|min_vacuum_size | real number| 11 |  the minimum size of  the vacuume width |
+|pert_xz  | real number| 0.01 |  the perturbation through xz direction used to compute surface energy |
+|max_miller  | integer| 2 |  the maximum miller index |
+|static-opt|boolean| false | whether to use atomic relaxation to compute surface energy. if false, the structure will be relaxed. |
+|relax_box | boolean | false | set true if the box is relaxed, otherwise only relax atom positions |
+
+#### 3.atom configuration
+The atom configuration will be auto generated by pymatgen's module
+`pymatgen.core.surface.Structure` and `pymatgen.core.surface.generate_all_slabs` with  `equilibrium state atom structure, max_miller, min_slab_size, min_vacuum_size`
+
+```python
+all_slabs = generate_all_slabs(Structure.from_file(poscar), max_miller, min_slab_size, min_vacuum_size)
+```
+
+the images are slab configuration.
+![](https://i.imgur.com/WxU8K0s.png)![](https://i.imgur.com/0h9IZ6L.png)
+
+
+
+#### 4.lammps
+lammps  will calculate the potential energy of the configuration.and divide the atom numbers as the surface formation energy.
+
+the surface energy will be the difference between  surface formation energy and the potential energy of a atom in equilibrium configuration.
+
+#####4.1 input file
+```
+min_style       cg
+minimize        1.000000e-12 1.000000e-06 5000 500000
+```
+
+#### 5.VASP
+VASP will calculate the potential energy of the configuration.and divide the atom numbers as energy of one atom. The VASP INCAR is the same as 00.equi's
 
 
 
