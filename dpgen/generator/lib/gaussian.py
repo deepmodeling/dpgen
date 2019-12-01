@@ -48,7 +48,7 @@ def _crd2frag(symbols, crds, pbc=False, cell=None, return_bonds=False):
         bond = mol.GetBond(ii)
         a = bond.GetBeginAtom().GetId()
         b = bond.GetEndAtom().GetId()
-        bo = bond.GetBO()
+        bo = bond.GetBondOrder()
         if a >= atomnumber and b >= atomnumber:
             # duplicated
             continue
