@@ -25,7 +25,7 @@ class TestEos(unittest.TestCase):
         vasp_check=[]
         for vol in np.arange(vol_start, vol_end, vol_step) :
             vol_path = os.path.join(vasp_path, 'vol-%.2f' % vol)
-            vasp_check=+[os.path.join(vol_path,ii) for ii in vasp_input]
+            vasp_check+=[os.path.join(vol_path,ii) for ii in vasp_input]
         for ii in vasp_check:
             if self.assertTrue(os.path.isfile(ii)):
                 os.remove(ii)
@@ -46,7 +46,7 @@ class TestEos(unittest.TestCase):
         task_path=os.path.abspath(re.sub('confs', global_task_name, conf_dir))
         with open (param_file, 'r') as fp :
             jdata = json.load (fp)
-            
+
         cmpt_01_eos.comput_vasp_eos(jdata, conf_dir)
         kspacing = jdata['vasp_params']['kspacing']
         vasp_str='vasp-k%.2f' % kspacing

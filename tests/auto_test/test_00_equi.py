@@ -40,13 +40,13 @@ class TestEqui(unittest.TestCase):
         se=str('%2.4f'%e)
         sv=str('%2.1f'%v)
         vasp_ref = ['1' ,'-3.7287','12.0']
-        self.assertEquals([sn,se,sv],vasp_ref)
+        self.assertEqual([sn,se,sv],vasp_ref)
         n,e,v,s=cmpt_00_equi.comput_lmp_nev(conf_dir, "deepmd",False)
         sn=str(n)
         se=str('%2.4f'%e)
         sv=str('%2.1f'%v)
         dp_ref = ['1','-3.7271','12.0']
-        self.assertEquals([sn,se,sv],dp_ref)
+        self.assertEqual([sn,se,sv],dp_ref)
 
 
 
