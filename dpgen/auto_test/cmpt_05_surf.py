@@ -39,10 +39,9 @@ def cmpt_vasp(jdata, conf_dir, static = False) :
     struct_path_widecard = os.path.join(task_path, 'struct-*-m*m')
     struct_path_list = glob.glob(struct_path_widecard)
     struct_path_list.sort()
-    if len(struct_path_list) == 0:
-        print("# cannot find results for conf %s" % (conf_dir))
-    sys.stdout.write ("Miller_Indices: \tSurf_E(J/m^2) EpA(eV) equi_EpA(eV)\n")
+    assert len(struct_path_list)>0,"# cannot find results for conf %s" % (conf_dir)
 
+    sys.stdout.write ("Miller_Indices: \tSurf_E(J/m^2) EpA(eV) equi_EpA(eV)\n")
     result = os.path.join(task_path,'result')
     with open(result,'w') as fp:
         fp.write('conf_dir:%s\n'% (conf_dir))
@@ -79,8 +78,8 @@ def cmpt_deepmd_lammps(jdata, conf_dir, task_name, static = False) :
     struct_path_widecard = os.path.join(task_path, 'struct-*-m*m')
     struct_path_list = glob.glob(struct_path_widecard)
     struct_path_list.sort()
-    if len(struct_path_list) == 0:
-        print("# cannot find results for conf %s" % (conf_dir))
+    assert len(struct_path_list)>0,"# cannot find results for conf %s" % (conf_dir)
+
     sys.stdout.write ("Miller_Indices: \tSurf_E(J/m^2) EpA(eV) equi_EpA(eV)\n")
     result = os.path.join(task_path,'result')
     with open(result,'w') as fp:
@@ -96,7 +95,7 @@ def cmpt_deepmd_lammps(jdata, conf_dir, task_name, static = False) :
             sys.stdout.write ("%s: \t%7.3f    %8.3f %8.3f\n" % (structure_dir, evac, epa, equi_epa))
             fp.write("%s:\t %7.3f   %8.3f %8.3f\n" % (structure_dir, evac, epa, equi_epa))
     fp.close()
-    if 'upload_username' in jdata.keys() and task_name=='deepm':
+    if 'upload_username' in jdata.keys() and task_name=='deepmd':
         upload_username=jdata['upload_username']
         util.insert_data('surf','deepmd',upload_username,result)
 

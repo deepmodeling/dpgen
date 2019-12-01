@@ -21,7 +21,7 @@ def comput_lmp_eos(jdata,conf_dir, task_name) :
             log_lammps = os.path.join(ii, 'log.lammps')
             natoms, epa, vpa = lammps.get_nev(log_lammps)
             print(vpa, epa)
-            fp.write('%7.3f  %8.4f \n' % (vpa,epa))
+            fp.write('%7.3f  %8.4f\n' % (vpa,epa))
     fp.close()
     if 'upload_username' in jdata.keys() and task_name =='deepmd':
         upload_username=jdata['upload_username']
@@ -47,7 +47,7 @@ def comput_vasp_eos(jdata, conf_dir) :
             outcar = os.path.join(ii, 'OUTCAR')
             natoms, epa, vpa = vasp.get_nev(outcar)
             print(vpa, epa)
-            fp.write('%7.3f  %8.4f \n' % (vpa,epa))
+            fp.write('%7.3f  %8.4f\n' % (vpa,epa))
     fp.close()
     if 'upload_username' in jdata.keys():
         upload_username=jdata['upload_username']
