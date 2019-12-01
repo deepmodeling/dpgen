@@ -122,7 +122,7 @@ def make_vasp(jdata, conf_dir, max_miller = 2, relax_box = False, static = False
         # link incar, potcar, kpoints
         os.symlink(os.path.relpath(os.path.join(task_path, 'INCAR')), 'INCAR')
         os.symlink(os.path.relpath(os.path.join(task_path, 'POTCAR')), 'POTCAR')
-    cwd = os.getcwd()
+    os.chdir(cwd)
 
 def make_lammps(jdata, conf_dir, max_miller = 2, static = False, relax_box = False, task_type = 'wrong-task') :
 
@@ -240,7 +240,7 @@ def make_lammps(jdata, conf_dir, max_miller = 2, static = False, relax_box = Fal
         # link models
         for (ii,jj) in zip(share_models, model_name) :
             os.symlink(os.path.relpath(ii), jj)
-    cwd = os.getcwd()
+    os.chdir(cwd)
 
 def _main() :
     parser = argparse.ArgumentParser(

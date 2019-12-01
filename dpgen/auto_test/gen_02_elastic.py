@@ -46,8 +46,8 @@ def make_vasp(jdata, conf_dir, norm_def = 2e-3, shear_def = 5e-3) :
     # gen defomations
     norm_strains = [-norm_def, -0.5*norm_def, 0.5*norm_def, norm_def]
     shear_strains = [-shear_def, -0.5*shear_def, 0.5*shear_def, shear_def]
-    dfm_ss = DeformedStructureSet(ss, 
-                                  symmetry = False, 
+    dfm_ss = DeformedStructureSet(ss,
+                                  symmetry = False,
                                   norm_strains = norm_strains,
                                   shear_strains = shear_strains)
     n_dfm = len(dfm_ss)
@@ -68,7 +68,7 @@ def make_vasp(jdata, conf_dir, norm_def = 2e-3, shear_def = 5e-3) :
         kspacing = fp_params['kspacing']
         kgamma = fp_params['kgamma']
         fc = vasp.make_vasp_relax_incar(ecut, ediff, True, False, False, npar=npar,kpar=kpar, kspacing = kspacing, kgamma = kgamma)
-        
+
     with open(os.path.join(task_path, 'INCAR'), 'w') as fp :
         fp.write(fc)
     # gen potcar
@@ -88,7 +88,7 @@ def make_vasp(jdata, conf_dir, norm_def = 2e-3, shear_def = 5e-3) :
     fc = vasp.make_kspacing_kpoints(task_poscar, kspacing, kgamma)
     with open(os.path.join(task_path,'KPOINTS'), 'w') as fp:
         fp.write(fc)
-    # gen tasks    
+    # gen tasks
     cwd = os.getcwd()
     for ii in range(n_dfm) :
         # make dir
@@ -107,12 +107,12 @@ def make_vasp(jdata, conf_dir, norm_def = 2e-3, shear_def = 5e-3) :
         os.symlink(os.path.relpath(os.path.join(task_path, 'INCAR')), 'INCAR')
         os.symlink(os.path.relpath(os.path.join(task_path, 'POTCAR')), 'POTCAR')
         os.symlink(os.path.relpath(os.path.join(task_path, 'KPOINTS')), 'KPOINTS')
-    cwd = os.getcwd()
+    os.chdir(cwd)
 
 def make_lammps(jdata, conf_dir,task_type) :
     fp_params = jdata['lammps_params']
     model_dir = fp_params['model_dir']
-    type_map = fp_params['type_map'] 
+    type_map = fp_params['type_map']
     model_dir = os.path.abspath(model_dir)
     model_name =fp_params['model_name']
     if not model_name and task_type =='deepmd':
@@ -124,7 +124,7 @@ def make_lammps(jdata, conf_dir,task_type) :
 
     model_param = {'model_name' :      fp_params['model_name'],
                   'param_type':          fp_params['model_param_type']}
-    
+
     ntypes = len(type_map)
 
     norm_def = jdata['norm_deform']
@@ -156,29 +156,29 @@ def make_lammps(jdata, conf_dir,task_type) :
     shear_strains = [-shear_def, -0.5*shear_def, 0.5*shear_def, shear_def]
     print('gen with norm '+str(norm_strains))
     print('gen with shear '+str(shear_strains))
-    dfm_ss = DeformedStructureSet(ss, 
-                                  symmetry = False, 
+    dfm_ss = DeformedStructureSet(ss,
+                                  symmetry = False,
                                   norm_strains = norm_strains,
                                   shear_strains = shear_strains)
     n_dfm = len(dfm_ss)
-    # gen tasks    
+    # gen tasks
     cwd = os.getcwd()
     # make lammps.in
     if task_type=='deepmd':
-        fc = lammps.make_lammps_elastic('conf.lmp', 
-                                    ntypes, 
+        fc = lammps.make_lammps_elastic('conf.lmp',
+                                    ntypes,
                                     lammps.inter_deepmd,
-                                    model_name)  
+                                    model_name)
     elif task_type=='meam':
-        fc = lammps.make_lammps_elastic('conf.lmp', 
-                                    ntypes, 
+        fc = lammps.make_lammps_elastic('conf.lmp',
+                                    ntypes,
                                     lammps.inter_meam,
                                     model_param)
     f_lammps_in = os.path.join(task_path, 'lammps.in')
     with open(f_lammps_in, 'w') as fp :
         fp.write(fc)
     cwd = os.getcwd()
-    
+
     os.chdir(task_path)
     for ii in model_name :
         if os.path.exists(ii) :
@@ -199,7 +199,7 @@ def make_lammps(jdata, conf_dir,task_type) :
         dfm_ss.deformed_structures[ii].to('POSCAR', 'POSCAR')
         lammps.cvt_lammps_conf('POSCAR', 'conf.lmp')
         ptypes = vasp.get_poscar_types('POSCAR')
-        lammps.apply_type_map('conf.lmp', type_map, ptypes)    
+        lammps.apply_type_map('conf.lmp', type_map, ptypes)
         # record strain
         strain = Strain.from_deformation(dfm_ss.deformations[ii])
         np.savetxt('strain.out', strain)
@@ -208,9 +208,9 @@ def make_lammps(jdata, conf_dir,task_type) :
         # link models
         for (ii,jj) in zip(share_models, model_name) :
             os.symlink(os.path.relpath(ii), jj)
-    cwd = os.getcwd()
+    os.chdir(cwd)
 
-    
+
 def _main() :
     parser = argparse.ArgumentParser(
         description="gen 02.elastic")
@@ -227,13 +227,11 @@ def _main() :
 
     print('generate %s task with conf %s' % (args.TASK, args.CONF))
     if args.TASK == 'vasp':
-        make_vasp(jdata, args.CONF)               
+        make_vasp(jdata, args.CONF)
     elif args.TASK == 'deepmd' or args.TASK=='meam':
         make_lammps(jdata, args.CONF,args.TASK)
     else :
         raise RuntimeError("unknow task ", args.TASK)
-    
+
 if __name__ == '__main__' :
     _main()
-
-    
