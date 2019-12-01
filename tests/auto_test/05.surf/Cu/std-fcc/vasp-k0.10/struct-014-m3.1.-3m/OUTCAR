@@ -791,3 +791,4 @@ new OUTCAR
  POSITION                                       TOTAL-FORCE (eV/Angst)
  -----------------------------------------------------------------------------------
   free  energy   TOTEN  =       -83.79738986 eV
+                         Elapsed time (sec):   125785.883
