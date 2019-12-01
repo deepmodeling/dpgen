@@ -76,7 +76,11 @@ def _crd2mul(symbols, crds):
     mol = openbabel.OBMol()
     conv.ReadString(mol, xyzstring)
     gjfstring = conv.WriteString(mol)
-    mul = int(gjfstring.split('\n')[4].split()[1])
+    try:
+        mul = int(gjfstring.split('\n')[4].split()[1])
+    except IndexError:
+        # openbabel 3.0
+        mul = int(gjfstring.split('\n')[5].split()[1])
     return mul  
 
 
