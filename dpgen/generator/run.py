@@ -356,7 +356,8 @@ def run_train (iter_index,
         deepmd_path = mdata['deepmd_path']
     else:
         # 1.x
-        python_path = mdata['python_path']
+        python_path = mdata.get('python_path', None)
+        train_command = mdata.get('train_command', 'dp')
     train_resources = mdata['train_resources']
 
     # paths
@@ -379,12 +380,21 @@ def run_train (iter_index,
         commands.append(command)
         command = os.path.join(deepmd_path, 'bin/dp_frz')
         commands.append(command)        
-    else:
+    elif python_path:
         # 1.x
         command =  '%s -m deepmd train %s' % (python_path, train_input_file)
         commands.append(command)
         command = '%s -m deepmd freeze' % python_path
         commands.append(command)
+    else: 
+        ## Commands are like `dp train` and `dp freeze`
+        ## train_command should not be None
+        assert(train_command)
+        command =  '%s train %s' % (train_command, train_input_file)
+        commands.append(command)
+        command = '%s freeze' % train_command
+        commands.append(command)
+
 
     #_tasks = [os.path.basename(ii) for ii in all_task]
     # run_tasks = []
@@ -1635,15 +1645,19 @@ def set_version(mdata):
         deepmd_version = '0.1'
     elif 'python_path' in mdata:
         deepmd_version = '1'
+    elif mdata['train_command'] == 'dp':
+        deepmd_version = '1'
     elif 'train' in mdata:
         if 'deepmd_path' in mdata['train'][0]:
             deepmd_version = '0.1'
         elif 'python_path' in mdata['train'][0]:
             deepmd_version = '1'
+        elif mdata['train'][0]['command'] == 'dp' :
+            deepmd_version = '1'
         else:
             deepmd_version = '0.1'
     else:
-        deepmd_version = '0.1'
+        deepmd_version = '1'
     # set
     mdata['deepmd_version'] = deepmd_version
     return mdata
