@@ -8,7 +8,7 @@ from dpgen.auto_test import gen_00_equi,cmpt_00_equi
 
 class TestEqui(unittest.TestCase):
 
-    def test_gen_equi(self):
+    def test_1_gen_equi(self):
         conf_dir="confs/Cu/std-fcc"
         global_task_name='00.equi'
         task_path=os.path.abspath(re.sub('confs', global_task_name, conf_dir))
@@ -31,7 +31,7 @@ class TestEqui(unittest.TestCase):
             if self.assertTrue(os.path.isfile(ii)):
                 os.remove(ii)
 
-    def test_cmpt_equi(self):
+    def test_2_cmpt_equi(self):
         conf_dir="confs/Cu/std-fcc"
         with open (param_file, 'r') as vasp_fp :
             jdata = json.load (vasp_fp)

@@ -7,7 +7,7 @@ from dpgen.auto_test import gen_03_vacancy,cmpt_03_vacancy
 
 class TestVacancy(unittest.TestCase):
 
-    def test_gen_vacancy(self):
+    def test_1_gen_vacancy(self):
         conf_dir="confs/Cu/std-fcc"
         global_task_name='03.vacancy'
         task_path=os.path.abspath(re.sub('confs', global_task_name, conf_dir))
@@ -40,11 +40,11 @@ class TestVacancy(unittest.TestCase):
             if self.assertTrue(os.path.isfile(ii)):
                 os.remove(ii)
 
-    def test_cmpt_vacancy(self):
+    def test_2_cmpt_vacancy(self):
         conf_dir="confs/Cu/std-fcc"
         global_task_name='03.vacancy'
         task_path=os.path.abspath(re.sub('confs', global_task_name, conf_dir))
-        
+
         with open (param_file, 'r') as fp :
             jdata = json.load (fp)
 

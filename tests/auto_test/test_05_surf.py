@@ -7,7 +7,7 @@ from dpgen.auto_test import gen_05_surf,cmpt_05_surf
 
 class TestSurf(unittest.TestCase):
 
-    def test_gen_surf(self):
+    def test_1_gen_surf(self):
         conf_dir="confs/Cu/std-fcc"
         global_task_name='05.surf'
         task_path=os.path.abspath(re.sub('confs', global_task_name, conf_dir))
@@ -40,7 +40,7 @@ class TestSurf(unittest.TestCase):
             if self.assertTrue(os.path.isfile(ii)):
                 os.remove(ii)
 
-    def test_cmpt_surf(self):
+    def test_2_cmpt_surf(self):
         conf_dir="confs/Cu/std-fcc"
         global_task_name='05.surf'
         task_path=os.path.abspath(re.sub('confs', global_task_name, conf_dir))

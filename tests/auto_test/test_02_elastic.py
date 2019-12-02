@@ -7,7 +7,7 @@ from dpgen.auto_test import gen_02_elastic,cmpt_02_elastic
 
 class TestElastic(unittest.TestCase):
 
-    def test_gen_elastic(self):
+    def test_1_gen_elastic(self):
         conf_dir="confs/Cu/std-fcc"
         global_task_name='02.elastic'
         task_path=os.path.abspath(re.sub('confs', global_task_name, conf_dir))
@@ -36,7 +36,7 @@ class TestElastic(unittest.TestCase):
             if self.assertTrue(os.path.isfile(ii)):
                 os.remove(ii)
 
-    def test_cmpt_elastic(self):
+    def test_2_cmpt_elastic(self):
         conf_dir="confs/Cu/std-fcc"
         global_task_name='02.elastic'
         task_path=os.path.abspath(re.sub('confs', global_task_name, conf_dir))

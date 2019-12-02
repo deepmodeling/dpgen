@@ -7,7 +7,7 @@ from dpgen.auto_test import gen_04_interstitial,cmpt_04_interstitial
 
 class TestInterstitial(unittest.TestCase):
 
-    def test_gen_interstitial(self):
+    def test_1_gen_interstitial(self):
         conf_dir="confs/Cu/std-fcc"
         global_task_name='04.interstitial'
         task_path=os.path.abspath(re.sub('confs', global_task_name, conf_dir))
@@ -41,7 +41,7 @@ class TestInterstitial(unittest.TestCase):
             if self.assertTrue(os.path.isfile(ii)):
                 os.remove(ii)
 
-    def test_cmpt_interstitial(self):
+    def test_2_cmpt_interstitial(self):
         conf_dir="confs/Cu/std-fcc"
         global_task_name='04.interstitial'
         task_path=os.path.abspath(re.sub('confs', global_task_name, conf_dir))

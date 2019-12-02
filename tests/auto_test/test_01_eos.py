@@ -7,7 +7,7 @@ from dpgen.auto_test import gen_01_eos,cmpt_01_eos
 
 class TestEos(unittest.TestCase):
 
-    def test_gen_eos(self):
+    def test_1_gen_eos(self):
         conf_dir="confs/Cu/std-fcc"
         global_task_name='01.eos'
         task_path=os.path.abspath(re.sub('confs', global_task_name, conf_dir))
@@ -40,7 +40,7 @@ class TestEos(unittest.TestCase):
             if self.assertTrue(os.path.isfile(ii)):
                 os.remove(ii)
 
-    def test_cmpt_eos(self):
+    def test_2_cmpt_eos(self):
         conf_dir="confs/Cu/std-fcc"
         global_task_name='01.eos'
         task_path=os.path.abspath(re.sub('confs', global_task_name, conf_dir))
