@@ -77,6 +77,10 @@ class Batch(object) :
             self.manual_gpu = res['manual_cuda_devices']
         except:
             self.manual_gpu = 0
+        try:
+            self.manual_gpu_multiplicity = res['manual_cuda_multiplicity']
+        except:
+            self.manual_gpu_multiplicity = 1
         for ii in range(len(cmd)):            
             # for one command
             ret += self._sub_script_inner(job_dirs,
@@ -151,7 +155,7 @@ class Batch(object) :
                 self.cmd_cnt += 1
             ret += 'cd %s\n' % self.context.remote_root
             ret += 'test $? -ne 0 && exit\n'
-            if self.manual_gpu > 0 and self.cmd_cnt % self.manual_gpu == 0:
+            if self.manual_gpu > 0 and self.cmd_cnt % (self.manual_gpu * self.manual_gpu_multiplicity) == 0:
                 ret += '\nwait\n\n'
         ret += '\nwait\n\n'
         return ret
