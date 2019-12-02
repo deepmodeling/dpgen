@@ -5,26 +5,12 @@
     },
     "conf_dir": "confs/Al/std-fcc",
     "key_id": "key id of Material project",
-    "task_type": "deepmd",
+    "task_type": "vasp",
     "task": "all",
-    
-    "vasp_params": {
-        "ecut": 650,
-        "ediff": 1e-6,
-        "kspacing": 0.1,
-        "kgamma": false,
-        "npar": 1,
-        "kpar": 1,
-        "_comment": " that's all "
-    },
-    "lammps_params": {
-        "model_dir": "somewhere/example/Al_model",
-        "type_map": [
-            "Al"
-        ],
-        "model_name": false,
-        "model_param_type": false
-    },
+
+    "relax_incar": "somewhere/relax_incar",
+    "scf_incar": "somewhere/scf_incar",
+
     "_comment": "00.equi",
     "alloy_shift": false,
     "_comment": "01.eos",

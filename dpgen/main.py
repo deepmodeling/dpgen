@@ -9,9 +9,11 @@ import itertools
 from dpgen.generator.run import gen_run
 from dpgen.data.gen import gen_init_bulk
 from dpgen.data.surf import gen_init_surf
+from dpgen.data.reaction import gen_init_reaction
 from dpgen.auto_test.run import gen_test
 from dpgen.database.run import db_run
 from dpgen.tools.run_report import run_report
+from dpgen.tools.auto_gen_param import auto_gen_param
 from dpgen import info, __version__, __date__
 
 
@@ -54,6 +56,13 @@ def main():
     parser_init_bulk.add_argument('MACHINE', type=str,default=None,nargs="?",
                         help="machine file, json/yaml format")
     parser_init_bulk.set_defaults(func=gen_init_bulk)
+
+    parser_auto_gen_param = subparsers.add_parser(
+        "auto_gen_param", help="auto gen param.json")
+    # parser_auto_gen_param.add_argument('meltpoint', type=float, help="melt point")
+    parser_auto_gen_param.add_argument('PARAM', type=str, 
+                        help="parameter file, json/yaml format")
+    parser_auto_gen_param.set_defaults(func=auto_gen_param)
     # parser_init.add_argument("-p",'--parameter', type=str, dest='param',
     #                     help="parameter file, json/yaml format")
     # parser_init.add_argument("-s","--stage", type=int, dest='stage',
@@ -66,6 +75,14 @@ def main():
     #                             type=str, nargs="*",
     #                             help="directory to process (default to .)")
     # parser_init.set_defaults(func=gen_data)
+
+    parser_init_reaction = subparsers.add_parser(
+        "init_reaction", help="Generating initial data for reactive systems.")
+    parser_init_reaction.add_argument('PARAM', type=str, 
+                             help="parameter file, json/yaml format")
+    parser_init_reaction.add_argument('MACHINE', type=str,default=None,nargs="?",
+                        help="machine file, json/yaml format")
+    parser_init_reaction.set_defaults(func=gen_init_reaction)
 
     # run 
     parser_run = subparsers.add_parser(

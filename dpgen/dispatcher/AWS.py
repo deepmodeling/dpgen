@@ -5,15 +5,14 @@ from dpgen.dispatcher.Batch import Batch
 from dpgen.dispatcher.JobStatus import JobStatus
 from dpgen import dlog
 
+try:
+    import boto3
+except ModuleNotFoundError:
+    pass
+else:
+    batch_client = boto3.client('batch')
 
 class AWS(Batch):
-    try:
-        import boto3
-    except ModuleNotFoundError:
-        pass
-    else:
-        batch_client = boto3.client('batch')
-    _query_max_results = 1000
     _query_time_interval = 30
     _job_id_map_status = {}
     _jobQueue = ""
@@ -44,19 +43,19 @@ class AWS(Batch):
         """
         query_dict ={}
         if datetime.now().timestamp() > cls._query_next_allow_time:
-            cls.batch_client = boto3.client('batch')
             cls._query_next_allow_time=datetime.now().timestamp()+cls._query_time_interval
             for status in ['SUBMITTED', 'PENDING', 'RUNNABLE', 'STARTING', 'RUNNING','SUCCEEDED', 'FAILED']:
-                status_response = cls.batch_client.list_jobs(jobQueue=cls._jobQueue, jobStatus=status, maxResults=cls._query_max_results)
-                status_list=status_response.get('jobSummaryList', [])
-                for job_dict in status_list:
-                    cls._job_id_map_status.update({job_dict['jobId']: cls.map_aws_status_to_dpgen_status(job_dict['status'])})
-            # for job in cls._job_id_map_status:
-            #     cls._job_id_map_status[job]=query_dict.get(job, JobStatus.unknown)
+                nextToken = ''
+                while nextToken is not None:
+                    status_response = batch_client.list_jobs(jobQueue=cls._jobQueue, jobStatus=status, maxResults=100, nextToken=nextToken)
+                    status_list=status_response.get('jobSummaryList')
+                    nextToken = status_response.get('nextToken', None)
+                    for job_dict in status_list:
+                        cls._job_id_map_status.update({job_dict['jobId']: cls.map_aws_status_to_dpgen_status(job_dict['status'])})
             dlog.debug('20000:_map: %s' %(cls._job_id_map_status))
         dlog.debug('62000:job_id:%s, _query: %s, _map: %s' %(job_id, query_dict, cls._job_id_map_status))
         if job_id:
-            return cls._job_id_map_status.get(job_id, JobStatus.unknown)
+            return cls._job_id_map_status.get(job_id)
                     
         return cls._job_id_map_status
 
@@ -67,7 +66,7 @@ class AWS(Batch):
         except AttributeError:
             if self.context.check_file_exists(self.job_id_name):
                 self._job_id = self.context.read_file(self.job_id_name)
-                response_list = self.__class__.batch_client.describe_jobs(jobs=[self._job_id]).get('jobs')
+                response_list = batch_client.describe_jobs(jobs=[self._job_id]).get('jobs')
                 try:
                     response = response_list[0]
                     jobQueue = response['jobQueue']
@@ -135,7 +134,7 @@ class AWS(Batch):
         """
         jobName = os.path.join(self.context.remote_root,job_dirs.pop())[1:].replace('/','-').replace('.','_')
         jobName += ("_" + str(self.context.job_uuid))
-        response = self.__class__.batch_client.submit_job(jobName=jobName, 
+        response = batch_client.submit_job(jobName=jobName, 
                 jobQueue=res['jobQueue'], 
                 jobDefinition=res['jobDefinition'],
                 parameters={'task_command':script_str},
