@@ -1,0 +1,55 @@
+{
+    "_comment": "models",
+    "potcar_map": {
+        "Cu": "./data.model/vasp/POTCAR"
+    },
+    "conf_dir": "confs/Cu/std-fcc",
+    "key_id": "key id of Material project",
+    "task_type": "deepmd",
+    "task": "all",
+    "vasp_params": {
+        "ecut": 650,
+        "ediff": 1e-6,
+        "kspacing": 0.1,
+        "kgamma": false,
+        "npar": 1,
+        "kpar": 1,
+        "_comment": " that's all "
+    },
+    "lammps_params": {
+        "model_dir": "./data.model/deepmd",
+        "type_map": [
+            "Cu"
+        ],
+        "model_name": false,
+        "model_param_type": false
+    },
+    "_comment": "00.equi",
+    "_comment": "01.eos",
+    "vol_start": 10,
+    "vol_end": 20,
+    "vol_step": 0.5,
+    "_comment": "02.elastic",
+    "norm_deform": 2e-2,
+    "shear_deform": 5e-2,
+    "_comment": "03.vacancy",
+    "supercell": [
+        3,
+        3,
+        3
+    ],
+    "_comment": "04.interstitial",
+    "insert_ele": [
+        "Cu"
+    ],
+    "reprod-opt": false,
+    "_comment": "05.surface",
+    "min_slab_size": 10,
+    "min_vacuum_size": 11,
+    "_comment": "pert xz to work around vasp bug...",
+    "pert_xz": 0.01,
+    "max_miller": 3,
+    "static-opt": false,
+    "relax_box": false,
+    "_comment": "that's all"
+}

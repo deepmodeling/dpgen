@@ -1,0 +1,3 @@
+conf_dir:confs/Cu/std-fcc
+Structure: 	Vac_E(eV)  E(eV) equi_E(eV)
+struct-3x3x3-000:   1.061  -95.885 -96.946 
