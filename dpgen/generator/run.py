@@ -1643,19 +1643,19 @@ def post_fp (iter_index,
 def set_version(mdata):
     if 'deepmd_path' in mdata:
         deepmd_version = '0.1'
-    elif 'python_path' in mdata:
-        deepmd_version = '1'
-    elif mdata['train_command'] == 'dp':
-        deepmd_version = '1'
+    #elif 'python_path' in mdata:
+    #    deepmd_version = '1'
+    #elif 'train_command' in mdata:
+    #    deepmd_version = '1'
     elif 'train' in mdata:
         if 'deepmd_path' in mdata['train'][0]:
             deepmd_version = '0.1'
-        elif 'python_path' in mdata['train'][0]:
-            deepmd_version = '1'
-        elif mdata['train'][0]['command'] == 'dp' :
-            deepmd_version = '1'
         else:
-            deepmd_version = '0.1'
+            deepmd_version = '1'
+    #    elif 'python_path' in mdata['train'][0]:
+    #        deepmd_version = '1'
+    #    elif 'command' in mdata['train']:
+    #        deepmd_version = '1'
     else:
         deepmd_version = '1'
     # set
