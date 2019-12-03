@@ -624,8 +624,9 @@ The second part is the computational settings for vasp and lammps. According to 
 The last part is the optional settings for various tasks mentioned above. You can change the parameters according to actual needs.
 
 
-A dictionary 
-| Key  | Type  | Example | Discription  |
+param.json in a dictionary.
+
+| Fields  | Type  | Example | Discription  |
 | :---------------- | :--------------------- | :------------- | :----------------|
 | potcar_map | dict | {"Al": "example/POTCAR"} |a  dict like { "element" : "position of POTCAR"  } |
 | conf_dir | path like string | "confs/Al/std-fcc" | the dir which contains vasp's POSCAR  |
@@ -635,9 +636,9 @@ A dictionary
 | vasp_params| dict | seeing below | params relating to vasp INCAR|
 | lammps_params | dict| seeing below| params relating to lammps |
 
-the keys in param["vasp_params"]
+The keys in param["vasp_params"] is shown below.
 
-| Key  | Type  | Example | Discription  |
+| Fields  | Type  | Example | Discription  |
 | :---------------- | :--------------------- | :---------------- | :----------------|
 | ecut | real number | 650  | the plane wave cutoff for grid.  |
 | ediff | real number | 1e-6 |Tolerance of Density Matrix |
@@ -646,7 +647,8 @@ the keys in param["vasp_params"]
 | npar | positive integer | 1 | the number of k-points that are to be treated in parallel  |
 | kpar | positive integer | 1 | the number of bands that are treated in parallel |
 
-the keys in param["lammps_params"]
+the keys in param["lammps_params"].
+
 | Key  | Type  | Example | Discription  |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
 | model_dir | path like string | "example/Al_model" | the model dir which contains .pb file  |
@@ -662,7 +664,8 @@ the keys in param["lammps_params"]
 ```
 + `store_stable`:(boolean) whether to store the stable energy and volume
 
-param.json
+param.json.
+
 | Field  | Type | Example | Discription |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
 | EpA(eV) | real number | -3.7468 | the potential energy of a atom|
@@ -673,7 +676,6 @@ test results
 conf_dir:        EpA(eV)  VpA(A^3)
 confs/Al/std-fcc  -3.7468   16.511
 ```
-
 
 | Field  | Type | Example | Discription |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
