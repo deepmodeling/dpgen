@@ -46,7 +46,7 @@ def init_pick(iter_index, jdata, mdata):
     # TODO: support MultiSystems with LabeledSystem
     # TODO: support other format
     systems = dpdata.MultiSystems(
-        *[dpdata.System(s, fmt='deepmd/npy') for s in os.listdir(pick_data)])
+        *[dpdata.System(os.path.join(pick_data, s), fmt='deepmd/npy') for s in os.listdir(pick_data)])
     # label the system
     labels = []
     for key, system in systems.systems.items():
@@ -100,7 +100,7 @@ def make_model_devi(iter_index, jdata, mdata):
     if not os.path.exists(rest_data_path):
         return False
     for jj, subsystem in enumerate(os.listdir(rest_data_path)):
-        task_name = "%03d.%06d" % (iter_index, jj)
+        task_name = "task.%03d.%06d" % (iter_index, jj)
         task_path = os.path.join(work_path, task_name)
         create_path(task_path)
         os.symlink(os.path.abspath(os.path.join(rest_data_path, subsystem)),
@@ -121,7 +121,7 @@ def run_model_devi(iter_index, jdata, mdata, dispatcher):
     model_names = [os.path.basename(ii) for ii in models]
     task_model_list = []
     for ii in model_names:
-        task_model_list.append(os.path.join('..', model_names))
+        task_model_list.append(os.path.join('..', ii))
     # get max data size
     data_size = max([len(dpdata.System(os.path.join(
         task, rest_data_name), fmt="deepmd/npy")) for task in tasks])
@@ -149,7 +149,7 @@ def run_model_devi(iter_index, jdata, mdata, dispatcher):
     except:
         model_devi_group_size = 1
 
-    forward_files = rest_data_name
+    forward_files = [rest_data_name]
     backward_files = sum([[pf+".e.out", pf+".f.out", pf+".v.out"] for pf in detail_file_names], [])
 
     dispatcher.run_jobs(mdata['model_devi_resources'],
@@ -207,7 +207,7 @@ def post_model_devi(iter_index, jdata, mdata):
     counter = {"candidate": sys_candinate.get_nframes(), "accurate": sys_accurate.get_nframes(), "failed": sys_failed.get_nframes()}
     fp_sum = sum(counter.values())
     for cc_key, cc_value in counter.items():
-        dlog.info("system {1:9s} : {2:6d} in {3:6d} {4:6.2f} %".format(cc_key, cc_value, fp_sum, cc_value/fp_sum*100))
+        dlog.info("{0:9s} : {1:6d} in {2:6d} {3:6.2f} %".format(cc_key, cc_value, fp_sum, cc_value/fp_sum*100))
     
     # label the candidate system
     labels = []
@@ -252,7 +252,7 @@ def make_fp(iter_index, jdata, mdata):
     create_path(work_path)
     picked_data_path = os.path.join(iter_name, model_devi_name, picked_data_name)
     systems = dpdata.MultiSystems(
-        *[dpdata.System(s, fmt='deepmd/npy') for s in os.listdir(picked_data_path)])
+        *[dpdata.System(os.path.join(picked_data_path, s), fmt='deepmd/npy') for s in os.listdir(picked_data_path)])
     fp_style = jdata['fp_style']
     if 'user_fp_params' in jdata.keys() :
         fp_params = jdata['user_fp_params']
@@ -262,7 +262,7 @@ def make_fp(iter_index, jdata, mdata):
     for system in systems:
         for subsys in system:
             sys_data = subsys.data
-            task_name = "%03d.%06d" % (iter_index, jj)
+            task_name = "task.%03d.%06d" % (iter_index, jj)
             task_path = os.path.join(work_path, task_name)
             create_path(task_path)
             if fp_style == "gaussian" :
@@ -343,6 +343,7 @@ def run_iter(param_file, machine_file):
                 continue
             task_name = "task %02d" % jj
             sepline("{} {}".format(iter_name, task_name), '-')
+            jdata['model_devi_jobs'] = [{} for _ in range(ii+1)]
             if ii == 0 and jj < 6:
                 if jj == 0:
                     log_iter("init_pick", ii, jj)
@@ -362,12 +363,12 @@ def run_iter(param_file, machine_file):
             elif jj == 3:
                 log_iter("make_model_devi", ii, jj)
                 cont = make_model_devi(ii, jdata, mdata)
-                if not cont:
+                if not cont or ii >= jdata.get("stop_iter", ii+1):
                     break
             elif jj == 4:
                 log_iter("run_model_devi", ii, jj)
                 mdata = decide_model_devi_machine(mdata)
-                disp = make_dispatcher(mdata['pick_machine'])
+                disp = make_dispatcher(mdata['model_devi_machine'])
                 run_model_devi(ii, jdata, mdata, disp)
             elif jj == 5:
                 log_iter("post_model_devi", ii, jj)
