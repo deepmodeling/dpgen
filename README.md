@@ -625,10 +625,10 @@ The last part is the optional settings for various tasks mentioned above. You ca
 
 
 A dictionary 
-|Key  | Type  | Example | Discription  |
-| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
-| potcar_map | dict | {"Al": "example/POTCAR"} |a dict like { "element" : "position of POTCAR"  } |
-|  conf_dir | path like string | "confs/Al/std-fcc" | the dir which contains vasp's POSCAR  |
+| Key  | Type  | Example | Discription  |
+| :---------------- | :--------------------- | :------------- | :----------------|
+| potcar_map | dict | {"Al": "example/POTCAR"} |a  dict like { "element" : "position of POTCAR"  } |
+| conf_dir | path like string | "confs/Al/std-fcc" | the dir which contains vasp's POSCAR  |
 | key_id | string| "DZIwdXCXg1fiXXXXXX" |the API key of Material project|
 | task_type | string | "vasp" | task type, one of deepmd vasp meam |
 | task | string | "equi" | task, one of equi, eos, elastic, vacancy, interstitial, surf or all  |
@@ -637,8 +637,8 @@ A dictionary
 
 the keys in param["vasp_params"]
 
-|Key  | Type  | Example | Discription  |
-| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| Key  | Type  | Example | Discription  |
+| :---------------- | :--------------------- | :---------------- | :----------------|
 | ecut | real number | 650  | the plane wave cutoff for grid.  |
 | ediff | real number | 1e-6 |Tolerance of Density Matrix |
 | kspacing | real number | 0.1 | Sample factor in Brillouin zones |
@@ -647,7 +647,7 @@ the keys in param["vasp_params"]
 | kpar | positive integer | 1 | the number of bands that are treated in parallel |
 
 the keys in param["lammps_params"]
-|Key  | Type  | Example | Discription  |
+| Key  | Type  | Example | Discription  |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
 | model_dir | path like string | "example/Al_model" | the model dir which contains .pb file  |
 | type_map | list of string | ["Al"] | a list contains the element, usually useful for multiple element situation |
