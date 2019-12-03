@@ -40,7 +40,8 @@ setuptools.setup(
               'dpgen/remote',
               'dpgen/dispatcher',
               'dpgen/database',
-              'dpgen/tools'
+              'dpgen/tools',
+              'dpgen/simplify',
     ],
     # data_files = [('dpgen/tools/', ['dpgen/tools/update_time.sh', ])],
     # package_data={'example':['*.json']},

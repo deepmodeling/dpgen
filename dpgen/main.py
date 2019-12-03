@@ -10,7 +10,7 @@ from dpgen.generator.run import gen_run
 from dpgen.data.gen import gen_init_bulk
 from dpgen.data.surf import gen_init_surf
 from dpgen.data.reaction import gen_init_reaction
-from dpgen.simpilify.simplify import gen_simpilify
+from dpgen.simplify.simplify import gen_simpilify
 from dpgen.auto_test.run import gen_test
 from dpgen.database.run import db_run
 from dpgen.tools.run_report import run_report
