@@ -103,8 +103,8 @@ def make_model_devi(iter_index, jdata, mdata):
         task_name = "%03d.%06d" % (iter_index, jj)
         task_path = os.path.join(work_path, task_name)
         create_path(task_path)
-        os.symlink(os.path.join(rest_data_path, subsystem),
-                   os.path.join(task_path, rest_data_name))
+        os.symlink(os.path.abspath(os.path.join(rest_data_path, subsystem)),
+                   os.path.abspath(os.path.join(task_path, rest_data_name)))
     return True
 
 
