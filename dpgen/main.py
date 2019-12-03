@@ -10,7 +10,7 @@ from dpgen.generator.run import gen_run
 from dpgen.data.gen import gen_init_bulk
 from dpgen.data.surf import gen_init_surf
 from dpgen.data.reaction import gen_init_reaction
-from dpgen.simplify.simplify import gen_simpilify
+from dpgen.simplify.simplify import gen_simplify
 from dpgen.auto_test.run import gen_test
 from dpgen.database.run import db_run
 from dpgen.tools.run_report import run_report
@@ -115,17 +115,17 @@ def main():
                            help="being loud")
     parser_rr.set_defaults(func=run_report)    
 
-    # simpilify
+    # simplify
     parser_run = subparsers.add_parser(
-        "simpilify",
-        help="Simpilify data.")
+        "simplify",
+        help="Simplify data.")
     parser_run.add_argument('PARAM', type=str,
                         help="parameter file, json/yaml format")
     parser_run.add_argument('MACHINE', type=str,
                         help="machine file, json/yaml format")
     parser_run.add_argument('-d','--debug', action='store_true',
                         help="log debug info")
-    parser_run.set_defaults(func=gen_simpilify)
+    parser_run.set_defaults(func=gen_simplify)
 
     # test 
     parser_test = subparsers.add_parser("test", help="Auto-test for Deep Potential.")
