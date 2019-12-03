@@ -100,7 +100,7 @@ def make_model_devi(iter_index, jdata, mdata):
     if not os.path.exists(rest_data_path):
         return False
     for jj, subsystem in enumerate(os.listdir(rest_data_path)):
-        task_name = "task.%03d.%06d" % (iter_index, jj)
+        task_name = "task.%03d.%06d" % (0, jj)
         task_path = os.path.join(work_path, task_name)
         create_path(task_path)
         os.symlink(os.path.abspath(os.path.join(rest_data_path, subsystem)),
@@ -262,7 +262,7 @@ def make_fp(iter_index, jdata, mdata):
     for system in systems:
         for subsys in system:
             sys_data = subsys.data
-            task_name = "task.%03d.%06d" % (iter_index, jj)
+            task_name = "task.%03d.%06d" % (0, jj)
             task_path = os.path.join(work_path, task_name)
             create_path(task_path)
             if fp_style == "gaussian" :
