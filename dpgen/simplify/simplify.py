@@ -388,7 +388,7 @@ def run_iter(param_file, machine_file):
             record_iter(record, ii, jj)
 
 
-def gen_simpilify(args):
+def gen_simplify(args):
     if args.PARAM and args.MACHINE:
         if args.debug:
             dlog.setLevel(logging.DEBUG)
