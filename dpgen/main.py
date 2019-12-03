@@ -125,7 +125,7 @@ def main():
                         help="machine file, json/yaml format")
     parser_run.add_argument('-d','--debug', action='store_true',
                         help="log debug info")
-    parser_run.set_defaults(func=simpilify_run)
+    parser_run.set_defaults(func=gen_simpilify)
 
     # test 
     parser_test = subparsers.add_parser("test", help="Auto-test for Deep Potential.")
