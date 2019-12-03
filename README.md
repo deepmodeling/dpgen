@@ -851,7 +851,7 @@ dpgen simplify param.json machine.json
 ```
 
 Here is an example of `param.json` for QM7 dataset:
-```
+```json
 {
     "type_map": [
         "C",
