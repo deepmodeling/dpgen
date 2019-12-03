@@ -548,6 +548,7 @@ Here are examples for setting:
 
 
 ## Test: Auto-test for Deep Generator
+###  configure and param.json
 At this step, we assume that you have prepared some graph files like `graph.*.pb` and the particular pseudopotential `POTCAR`.
 
 The main code of this step is
@@ -569,6 +570,8 @@ The whole program contains a series of tasks shown as follows. In each task, the
 
 + `05.surf`: the surface formation energy
 
+Dpgen auto_test will auto make dir for each task it tests, the dir name is the same as the dir name. And the test results will in a plain text file named result. For example `cat ./01.eos/Al/std-fcc/deepmd/result`
+
 
 We take Al as an example to show the parameter settings of `param.json`.
 The first part is the fundamental setting for particular alloy system.
@@ -582,6 +585,7 @@ The first part is the fundamental setting for particular alloy system.
     "task_type":"deepmd",
     "task":"eos",
 ```
+
 You need to add the specified paths of necessary `POTCAR` files in "potcar_map". The different `POTCAR` paths are separated by commas.
 Then you also need to add the folder path of particular configuration, which contains `POSCAR` file.
 ```
@@ -618,12 +622,67 @@ The second part is the computational settings for vasp and lammps. According to 
     },
 ```
 The last part is the optional settings for various tasks mentioned above. You can change the parameters according to actual needs.
+
+
+param.json in a dictionary.
+
+| Fields  | Type  | Example | Discription  |
+| :---------------- | :--------------------- | :------------- | :----------------|
+| potcar_map | dict | {"Al": "example/POTCAR"} |a  dict like { "element" : "position of POTCAR"  } |
+| conf_dir | path like string | "confs/Al/std-fcc" | the dir which contains vasp's POSCAR  |
+| key_id | string| "DZIwdXCXg1fiXXXXXX" |the API key of Material project|
+| task_type | string | "vasp" | task type, one of deepmd vasp meam |
+| task | string | "equi" | task, one of equi, eos, elastic, vacancy, interstitial, surf or all  |
+| vasp_params| dict | seeing below | params relating to vasp INCAR|
+| lammps_params | dict| seeing below| params relating to lammps |
+
+The keys in param["vasp_params"] is shown below.
+
+| Fields  | Type  | Example | Discription  |
+| :---------------- | :--------------------- | :---------------- | :----------------|
+| ecut | real number | 650  | the plane wave cutoff for grid.  |
+| ediff | real number | 1e-6 |Tolerance of Density Matrix |
+| kspacing | real number | 0.1 | Sample factor in Brillouin zones |
+| kgamma | boolen | false | whether generate a Gamma centered grid |
+| npar | positive integer | 1 | the number of k-points that are to be treated in parallel  |
+| kpar | positive integer | 1 | the number of bands that are treated in parallel |
+
+the keys in param["lammps_params"].
+
+| Key  | Type  | Example | Discription  |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| model_dir | path like string | "example/Al_model" | the model dir which contains .pb file  |
+| type_map | list of string | ["Al"] | a list contains the element, usually useful for multiple element situation |
+| model_name | boolean |  false |  |
+| model_param_type | boolean |  false |  |
+
+### auto_test tasks
+#### 00.equi
 ```json
     "_comment":"00.equi",
-    "alloy_shift":false,
+    "store_stable":true,
 ```
-+ `alloy_shift`:(boolean) whether to compute the alloy formation energy. If you test alloy and set 'true', you need to compute the energies of corresponding elements respectively first of ßall. Please set 'false' when test single element.
++ `store_stable`:(boolean) whether to store the stable energy and volume
 
+param.json.
+
+| Field  | Type | Example | Discription |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| EpA(eV) | real number | -3.7468 | the potential energy of a atom|
+| VpA(A^3)| real number | 16.511| theEquilibrium volume of a atom  |
+
+test results
+```
+conf_dir:        EpA(eV)  VpA(A^3)
+confs/Al/std-fcc  -3.7468   16.511
+```
+
+| Field  | Type | Example | Discription |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| EpA(eV) | real number | -3.7468 | the potential energy of a atom|
+| VpA(A^3)| real number | 16.511| theEquilibrium volume of a atom  |
+
+#### 01.eos
 ```json
     "_comment": "01.eos",
     "vol_start":	12,
@@ -632,6 +691,23 @@ The last part is the optional settings for various tasks mentioned above. You ca
 ```
 + `vol_start`, `vol_end` and `vol_step` determine the volumetric range and accuracy of the **eos**.
 
+test results
+```
+conf_dir:confs/Al/std-fcc
+VpA(A^3)  EpA(eV)
+15.500   -3.7306
+16.000   -3.7429
+16.500   -3.7468
+17.000   -3.7430
+```
+
+
+| Field  | Type| Example| Discription  |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| EpA(eV) | list of real number | [15.5,16.0,16.5,17.0] | the potential energy of a atom in  quilibrium state|
+| VpA(A^3)| list of real number |[-3.7306, -3.7429, -3.746762, -3.7430] | the equilibrium volume of a atom  |
+
+#### 02.elastic
 ```json
     "_comment": "02.elastic",
     "norm_deform":	2e-2,
@@ -640,11 +716,61 @@ The last part is the optional settings for various tasks mentioned above. You ca
 + `norm_deform` and `shear_deform` are the scales of material deformation.
 This task uses the stress-strain relationship to calculate the elastic constant.
 
+|Key  | Type  | Example | Discription  |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| norm_deform | real number | 0.02  | uniaxial deformation range  |
+| shear_deform | real number | 0.05| shear deformation range  |
+
+test results
+```
+conf_dir:confs/Al/std-fcc
+130.50   57.45   54.45    4.24    0.00    0.00
+57.61  130.31   54.45   -4.29   -0.00   -0.00
+54.48   54.48  133.32   -0.00   -0.00   -0.00
+4.49   -4.02   -0.89   33.78    0.00   -0.00
+-0.00   -0.00   -0.00   -0.00   33.77    4.29
+0.00   -0.00   -0.00   -0.00    4.62   36.86
+# Bulk   Modulus BV = 80.78 GPa
+# Shear  Modulus GV = 36.07 GPa
+# Youngs Modulus EV = 94.19 GPa
+# Poission Ratio uV = 0.31
+```
+
+| Field  | Type | Example | Discription |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| elastic module(GPa)| 6*6 matrix of real number| [[130.50   57.45   54.45    4.24    0.00    0.00] [57.61  130.31   54.45   -4.29   -0.00   -0.00]  [54.48   54.48  133.32   -0.00   -0.00   -0.00]   [4.49   -4.02   -0.89   33.78    0.00   -0.00]  [-0.00   -0.00   -0.00   -0.00   33.77    4.29] [0.00   -0.00   -0.00   -0.00    4.62   36.86]]| Voigt-notation elastic module;sequence of row and column is (xx, yy, zz, yz, zx, xy)|
+| bulk modulus(GPa) | real number | 80.78 | bulk modulus |
+| shear modulus(GPa) | real number | 36.07 | shear modulus |
+| Youngs Modulus(GPa) | real number | 94.19 | Youngs Modulus|
+| Poission Ratio | real number | 0.31 | Poission Ratio  |
+
+
+
+#### 03.vacancy
 ```json
     "_comment":"03.vacancy",
     "supercell":[3,3,3],
 ```
 + `supercell`:(list of integer) the supercell size used to generate vacancy defect and interstitial defect
+
+|Key  | Type  | Example | Discription  |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| supercell | list of integer | [3,3,3] | the supercell size used to generate vacancy defect and interstitial defect |
+
+test result
+```
+conf_dir:confs/Al/std-fcc
+Structure:      Vac_E(eV)  E(eV) equi_E(eV)
+struct-3x3x3-000:   0.859  -96.557 -97.416
+```
+| Field  | Type | Example | Discription |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+|Structure| list of string |['struct-3x3x3-000'] | structure name|
+| Vac_E(eV) | real number |0.723 | the vacancy formation energy |
+| E(eV) | real number | -96.684 | potential energy of the vacancy configuration |
+| equi_E(eV) | real number |-97.407 | potential energy of the equilibrium state|
+
+#### 04.interstitial
 ```json
     "_comment":"04.interstitial",
     "insert_ele":["Al"],
@@ -652,6 +778,27 @@ This task uses the stress-strain relationship to calculate the elastic constant.
 ```
 + `insert_ele`:(list of string) the elements used to generate point interstitial defect
 + `repord-opt`:(boolean) whether to reproduce trajectories of interstitial defect
+
+|Key  | Type  | Example | Discription  |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| insert_ele | list of string | ["Al"] | the elements used to generate point interstitial defect |
+| reprod-opt | boolean | false | whether to reproduce trajectories of interstitial defect|
+
+test result
+```
+conf_dir:confs/Al/std-fcc
+Insert_ele-Struct: Inter_E(eV)  E(eV) equi_E(eV)
+struct-Al-3x3x3-000:   3.919  -100.991 -104.909
+struct-Al-3x3x3-001:   2.681  -102.229 -104.909
+```
+| Field  | Type | Example | Discription |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+|Structure| string |'struct-Al-3x3x3-000' | structure name|
+| Inter_E(eV) | real number |0.723 | the interstitial formation energy |
+| E(eV) | real number | -96.684 | potential energy of the interstitial configuration |
+| equi_E(eV) | real number |-97.407 | potential energy of the equilibrium state|
+
+#### 05.surface
 
 ```json
     "_comment": "05.surface",
@@ -669,6 +816,31 @@ This task uses the stress-strain relationship to calculate the elastic constant.
 + `static-opt`:(boolean) whether to use atomic relaxation to compute surface energy. if false, the structure will be relaxed.
 + `relax_box`:(boolean) set true if the box is relaxed, otherwise only relax atom positions.
 
+|Key  | Type  | Example | Discription  |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| min_slab_size| real number| 10 |  the minimum size of slab thickness |
+|min_vacuum_size | real number| 11 |  the minimum size of  the vacuume width |
+|pert_xz  | real number| 0.01 |  the perturbation through xz direction used to compute surface energy |
+|max_miller  | integer| 2 |  the maximum miller index |
+|static-opt|boolean| false | whether to use atomic relaxation to compute surface energy. if false, the structure will be relaxed. |
+|relax_box | boolean | false | set true if the box is relaxed, otherwise only relax atom positions |
+
+test result
+```
+conf_dir:confs/Al/std-fcc
+Miller_Indices:         Surf_E(J/m^2) EpA(eV) equi_EpA(eV)
+struct-000-m1.1.1m:        0.673     -3.628   -3.747
+struct-001-m2.2.1m:        0.917     -3.592   -3.747
+```
+| Field  | Type | Example| Discription|
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+|Miller_Indices| string | struct-000-m1.1.1m | Miller Indices|
+|Surf_E(J/m^2)| real number | 0.673 | the surface formation energy |
+| EpA(eV) | real number | -3.628 | potential energy of the surface configuration |
+| equi_EpA | real number | -3.747 | potential energy of the equilibrium state|
+
+### The content of the auto_test
+To know what actually will dpgen autotest do, including the lammps and vasp script, the input file and atom configuration file auto_test will generate, please refer to https://hackmd.io/@yeql5ephQLaGJGgFgpvIDw/rJY1FO92B
 
 ## Simplify
 When you have a dataset containing lots of repeated data, this step will help you simplify your dataset. The workflow contains three stages: train, model_devi, and fp. The train stage and the fp stage are as the same as the run step, and the model_devi stage will calculate model deviations of the rest data that has not been confirmed accurate. Data with small model deviations will be confirmed accurate, while the program will pick data from those with large model deviations to the new dataset.
@@ -796,6 +968,7 @@ Here is an example of `param.json` for QM7 dataset:
 ```
 
 Here `pick_data` is the data to simplify and currently only supports `MultiSystems` containing `System` with `deepmd/npy` format, and `use_clusters` should always be `true`. `init_pick_number` and `iter_pick_number` are the numbers of picked frames. `e_trust_lo`, `e_trust_hi` mean the range of the deviation of the frame energy, and `f_trust_lo` and `f_trust_hi` mean the range of the max deviation of atomic forces in a frame. `fp_style` can only be `gaussian` currently. Other parameters are as the same as those of generator.
+
 
 ## Set up machine
 When switching into a new machine, you may modifying the `MACHINE`, according to the actual circumstance. Once you have finished, the `MACHINE` can be re-used for any DP-GEN tasks without any extra efforts.
