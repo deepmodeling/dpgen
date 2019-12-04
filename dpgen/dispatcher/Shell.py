@@ -69,7 +69,7 @@ class Shell(Batch) :
             ret += ('module load %s\n' % ii)
         ret += ('\n')
         for ii in source_list :
-            ret += 'source %s\n'
+            ret += ('source %s\n' % ii)
         ret += ('\n')
         return ret
 
