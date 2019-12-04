@@ -504,34 +504,14 @@ def parse_cur_job(cur_job) :
         dt = None
     return ensemble, nsteps, trj_freq, temps, press, pka_e, dt
 
+
 def make_model_devi (iter_index,
                      jdata,
                      mdata) :
-    use_ele_temp = jdata.get('use_ele_temp', 0)
-    model_devi_dt = jdata['model_devi_dt']
-    model_devi_neidelay = None
-    if 'model_devi_neidelay' in jdata :
-        model_devi_neidelay = jdata['model_devi_neidelay']
-    model_devi_taut = 0.1
-    if 'model_devi_taut' in jdata :
-        model_devi_taut = jdata['model_devi_taut']
-    model_devi_taup = 0.5
-    if 'model_devi_taup' in jdata :
-        model_devi_taup = jdata['model_devi_taup']
     model_devi_jobs = jdata['model_devi_jobs']
     if (iter_index >= len(model_devi_jobs)) :
         return False
     cur_job = model_devi_jobs[iter_index]
-    # ensemble = model_devi_jobs['ensemble']
-    # nsteps = model_devi_jobs['nsteps']
-    # trj_freq = model_devi_jobs['trj_freq']
-    # job_names = get_job_names (model_devi_jobs)
-    # assert (iter_index < len(job_names))
-    # cur_job_name = job_names[iter_index]
-    # cur_job = model_devi_jobs[cur_job_name]
-    ensemble, nsteps, trj_freq, temps, press, pka_e, dt = parse_cur_job(cur_job)
-    if dt is not None :
-        model_devi_dt = dt
     if "sys_configs_prefix" in jdata:
         sys_configs = []
         for sys_list in jdata["sys_configs"]:
@@ -554,15 +534,11 @@ def make_model_devi (iter_index,
         cur_systems.sort()
         cur_systems = [os.path.abspath(ii) for ii in cur_systems]
         conf_systems.append (cur_systems)
-    mass_map = jdata['mass_map']
 
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
     train_path = os.path.abspath(train_path)
     models = glob.glob(os.path.join(train_path, "graph*pb"))
-    task_model_list = []
-    for ii in models:
-        task_model_list.append(os.path.join('..', os.path.basename(ii)))
     work_path = os.path.join(iter_name, model_devi_name)
     create_path(work_path)
     for mm in models :
@@ -595,6 +571,45 @@ def make_model_devi (iter_index,
             system.to_lammps_lmp(os.path.join(conf_path, lmp_name))
             conf_counter += 1
         sys_counter += 1
+
+    _make_model_devi_inner(iter_index, jdata, mdata, conf_systems)
+
+    return True
+
+
+def _make_model_devi_inner(iter_index, jdata, mdata, conf_systems):
+    model_devi_jobs = jdata['model_devi_jobs']
+    if (iter_index >= len(model_devi_jobs)) :
+        return False
+    cur_job = model_devi_jobs[iter_index]
+    ensemble, nsteps, trj_freq, temps, press, pka_e, dt = parse_cur_job(cur_job)
+    if dt is not None :
+        model_devi_dt = dt    
+    sys_idx = expand_idx(cur_job['sys_idx'])
+    if (len(sys_idx) != len(list(set(sys_idx)))) :
+        raise RuntimeError("system index should be uniq")
+
+    use_ele_temp = jdata.get('use_ele_temp', 0)
+    model_devi_dt = jdata['model_devi_dt']
+    model_devi_neidelay = None
+    if 'model_devi_neidelay' in jdata :
+        model_devi_neidelay = jdata['model_devi_neidelay']
+    model_devi_taut = 0.1
+    if 'model_devi_taut' in jdata :
+        model_devi_taut = jdata['model_devi_taut']
+    model_devi_taup = 0.5
+    if 'model_devi_taup' in jdata :
+        model_devi_taup = jdata['model_devi_taup']
+    mass_map = jdata['mass_map']
+
+    iter_name = make_iter_name(iter_index)
+    train_path = os.path.join(iter_name, train_name)
+    train_path = os.path.abspath(train_path)
+    models = glob.glob(os.path.join(train_path, "graph*pb"))
+    task_model_list = []
+    for ii in models:
+        task_model_list.append(os.path.join('..', os.path.basename(ii)))
+    work_path = os.path.join(iter_name, model_devi_name)
 
     sys_counter = 0
     for ss in conf_systems:
@@ -676,7 +691,6 @@ def make_model_devi (iter_index,
             conf_counter += 1
         sys_counter += 1
 
-    return True
 
 def run_model_devi (iter_index,
                     jdata,
