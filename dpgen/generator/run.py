@@ -881,8 +881,6 @@ def run_model_devi (iter_index,
 
     fp = open (os.path.join(work_path, 'cur_job.json'), 'r')
     cur_job = json.load (fp)
-    ensemble, nsteps, trj_freq, temps, press, pka_e, dt = parse_cur_job(cur_job)
-    nframes = nsteps // trj_freq + 1
     
     run_tasks_ = all_task
     # for ii in all_task:
