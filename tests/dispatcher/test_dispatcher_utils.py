@@ -3,29 +3,29 @@ import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 __package__ = 'dispatcher'
-from .context import FinRecord
+# from .context import FinRecord
 from .context import _split_tasks
 from .context import setUpModule
 
-class TestFinRecord(unittest.TestCase):
-    def setUp(self):
-        self.njobs = 10
-        self.fr = FinRecord('.', self.njobs)
+# class TestFinRecord(unittest.TestCase):
+#     def setUp(self):
+#         self.njobs = 10
+#         self.fr = FinRecord('.', self.njobs)
 
-    def tearDown(self):
-        if os.path.isfile('fin.record'):
-            os.remove('fin.record')
+#     def tearDown(self):
+#         if os.path.isfile('fin.record'):
+#             os.remove('fin.record')
 
-    def test_all_false(self) :
-        recd = self.fr.get_record()
-        self.assertEqual(recd, [False]*self.njobs)
+#     def test_all_false(self) :
+#         recd = self.fr.get_record()
+#         self.assertEqual(recd, [False]*self.njobs)
 
-    def test_write_read(self) :
-        recd = self.fr.get_record()
-        recd[self.njobs//3] = True
-        self.fr.write_record(recd)
-        recd1 = self.fr.get_record()
-        self.assertEqual(recd, recd1)
+#     def test_write_read(self) :
+#         recd = self.fr.get_record()
+#         recd[self.njobs//3] = True
+#         self.fr.write_record(recd)
+#         recd1 = self.fr.get_record()
+#         self.assertEqual(recd, recd1)
 
 class TestDispatchSplit(unittest.TestCase):
     def test_split(self):

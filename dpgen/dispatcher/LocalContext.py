@@ -113,7 +113,10 @@ class LocalContext(object) :
                     elif (os.path.exists(rfile)) and (os.path.exists(lfile)) :
                         # both exists, replace!
                         dlog.info('find existing %s, replacing by %s' % (lfile, rfile))
-                        shutil.rmtree(lfile)
+                        if os.path.isdir(lfile):
+                            shutil.rmtree(lfile)
+                        elif os.path.isfile(lfile) or os.path.islink(lfile):
+                            os.remove(lfile)
                         shutil.move(rfile, lfile)
                     else :
                         raise RuntimeError('should not reach here!')
