@@ -340,17 +340,23 @@ class CloudMachineJob (RemoteJob) :
                     fp.write('module load %s\n' % ii)
                 fp.write('\n')
             for ii,jj in zip(job_dirs, args) :
+                if resources['with_pl'] in resources and resources['allow_failure'] is True:
+                    fp.write('{')
+                fp.write('cd %s\n' % self.remote_root)
+                fp.write('test $? -ne 0 && exit\n')
                 fp.write('cd %s\n' % ii)                
                 fp.write('test $? -ne 0 && exit\n')
                 if resources['with_mpi'] == True :
                     fp.write('mpirun -n %d %s %s\n' 
                              % (task_per_node, cmd, jj))
-                else :
+                else:
                     fp.write('%s %s\n' % (cmd, jj))
                 if 'allow_failure' not in resources or resources['allow_failure'] is False:
                     fp.write('test $? -ne 0 && exit\n')
-                fp.write('cd %s\n' % self.remote_root)         
-                fp.write('test $? -ne 0 && exit\n')  
+                if resources['with_pl'] in resources and resources['allow_failure'] is True:
+                    fp.write('} &')
+            fp.write('cd %s\n' % self.remote_root)         
+            fp.write('test $? -ne 0 && exit\n')  
             fp.write('\ntouch tag_finished\n')
         sftp.close()
         return script_name
@@ -881,6 +887,10 @@ class LSFJob (RemoteJob) :
             for ii in job_dirs:
                 args.append('')
         for ii,jj in zip(job_dirs, args) :
+            if resources['with_pl'] in resources and resources['allow_failure'] is True:
+                ret '{'
+            ret += 'cd %s\n' % self.remote_root
+            ret += 'test $? -ne 0 && exit\n'
             ret += 'cd %s\n' % ii
             ret += 'test $? -ne 0 && exit\n'
             if res['with_mpi']:
@@ -889,9 +899,11 @@ class LSFJob (RemoteJob) :
             else :
                 ret += '%s %s\n' % (cmd, jj)                
             if 'allow_failure' not in res or res['allow_failure'] is False:
-                ret += 'test $? -ne 0 && exit\n'
-            ret += 'cd %s\n' % self.remote_root
-            ret += 'test $? -ne 0 && exit\n'
+                ret += 'test $? -ne 0 && exit\n'\
+            if resources['with_pl'] in resources and resources['allow_failure'] is True:
+                ret '} &'
+        ret += 'cd %s\n' % self.remote_root
+        ret += 'test $? -ne 0 && exit\n'
         ret += '\ntouch tag_finished\n'
 
         script_name = 'run.sub'
