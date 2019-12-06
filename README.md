@@ -1079,8 +1079,8 @@ The following table gives explicit descriptions on keys in param.json.
 | # Followings are keys in resources
 | numb_node | Integer | 1 | Node count required for the job
 | task_per_node | Integer | 4 | Number of CPU cores required
-| numb_gpu | Integer | 4 | Number of GPUs required
-| manual_cuda_devices | 1 | Used with key "manual_cuda_multiplicity" specify the gpu number
+| numb_gpu | Integer | Integer | 4 | Number of GPUs required
+| manual_cuda_devices | Interger | 1 | Used with key "manual_cuda_multiplicity" specify the gpu number
 | manual_cuda_multiplicity | 5 | Used in 01.model_devi,used with key "manual_cuda_devices" specify the MD program number running on one GPU  at the same time,dpgen will  automatically allocate MD jobs on different GPU. This can improve GPU usage for GPU like V100.
 | node_cpu | Integer | 4 | Only for LSF. The number of CPU cores on each node that should be allocated to the job.
 | source_list | List of string | "....../vasp.env" | Environment needed for certain job. For example, if "env" is in the list, 'source env' will be written in the script.
