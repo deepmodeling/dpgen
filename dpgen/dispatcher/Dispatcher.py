@@ -235,7 +235,7 @@ class JobRecord(object):
                               job_uuid,
                               ip=None):
         self.valid_hash(chunk_hash)
-        if not ip:
+        if ip:
             self.record[chunk_hash]['context'] = [local_root, remote_root, job_uuid, ip]
         else:
             self.record[chunk_hash]['context'] = [local_root, remote_root, job_uuid]
