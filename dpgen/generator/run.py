@@ -52,7 +52,8 @@ from dpgen.remote.group_jobs import ucloud_submit_jobs, aws_submit_jobs
 from dpgen.remote.group_jobs import group_slurm_jobs
 from dpgen.remote.group_jobs import group_local_jobs
 from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
-from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher
+from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher, make_dispatchers, _split_tasks
+from dpgen.dispatcher.ALI import ALI
 from dpgen.util import sepline
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar,Kpoints,Potcar
@@ -340,6 +341,20 @@ def detect_batch_size(batch_size, system=None):
     else:
         raise RuntimeError("Unsupported batch size")
 
+def run_ALI(stage, num_of_instance, adata):
+    if stage == "train":
+        instance_type = "ecs.gn5-c8g1.2xlarge"
+    elif stage == "model_devi":
+        instance_type = "ecs.gn5-c8g1.2xlarge"
+    elif stage == "fp":
+        instance_type = "ecs.c6.2xlarge"
+    ali = ALI(adata)
+    return ali.create_machine(num_of_instance, instance_type)
+
+def exit_ALI(instance_id, adata):
+    ali = ALI(adata)
+    ali.delete_machine(instance_id)
+
 def run_train (iter_index,
                jdata,
                mdata,
@@ -444,16 +459,47 @@ def run_train (iter_index,
     except:
         train_group_size = 1
 
-    dispatcher.run_jobs(mdata['train_resources'],
-                        commands,
-                        work_path,
-                        run_tasks,
-                        train_group_size,
-                        trans_comm_data,
-                        forward_files,
-                        backward_files,
-                        outlog = 'train.log',
-                        errlog = 'train.log')
+    if mdata['train_machine']['type'] == 'ALI':
+        task_chunks = _split_tasks(run_tasks, train_group_size)
+        nchunks = len(task_chunks)
+        ip, instance_id = run_ALI('train', nchunks, mdata['ali_auth'])
+        mdata['train_machine']['hostname'] = ip
+        disp = make_dispatchers(nchunks, mdata['train_machine'])
+        job_handlers = []
+        for ii in range(nchunks):
+            job_handler = disp[ii].submit_jobs(mdata['train_resources'],
+                                 commands,
+                                 work_path,
+                                 task_chunks[ii],
+                                 train_group_size,
+                                 trans_comm_data,
+                                 forward_files,
+                                 backward_files,
+                                 outlog = 'train.log',
+                                 errlog = 'train.log')
+            job_handlers.append(job_handler)
+
+        while True:
+            cnt = 0
+            for ii in range(nchunks):
+                if disp[ii].all_finished(job_handlers[ii]):
+                    cnt += 1
+            if cnt == nchunks:
+                break
+            else:
+                time.sleep(10)
+        exit_ALI(instance_id, mdata['ali_auth'])
+    else:
+        dispatcher.run_jobs(mdata['train_resources'],
+                            commands,
+                            work_path,
+                            run_tasks,
+                            train_group_size,
+                            trans_comm_data,
+                            forward_files,
+                            backward_files,
+                            outlog = 'train.log',
+                            errlog = 'train.log')
 
 
 def post_train (iter_index,
@@ -903,16 +949,47 @@ def run_model_devi (iter_index,
         forward_files += ['input.plumed']
         backward_files += ['output.plumed']
 
-    dispatcher.run_jobs(mdata['model_devi_resources'],
-                        commands,
-                        work_path,
-                        run_tasks,
-                        model_devi_group_size,
-                        model_names,
-                        forward_files,
-                        backward_files,
-                        outlog = 'model_devi.log',
-                        errlog = 'model_devi.log')
+    if mdata['model_devi_machine']['type'] == 'ALI':
+        task_chunks = _split_tasks(run_tasks, model_devi_group_size)
+        nchunks = len(task_chunks)
+        ip, instance_id = run_ALI('model_devi', nchunks, mdata['ali_auth'])
+        mdata['model_devi_machine']['hostname'] = ip
+        disp = make_dispatchers(nchunks, mdata['model_devi_machine'])
+        job_handlers = []
+        for ii in range(nchunks):
+            job_handler = disp[ii].submit_jobs(mdata['model_devi_resources'],
+                                               commands,
+                                               work_path,
+                                               task_chunks[ii],
+                                               model_devi_group_size,
+                                               model_names,
+                                               forward_files,
+                                               backward_files,
+                                               outlog = 'model_devi.log',
+                                               errlog = 'model_devi.log')
+            job_handlers.append(job_handler)
+            
+        while True:
+            cnt = 0
+            for ii in range(nchunks):
+                if disp[ii].all_finished(job_handlers[ii]):
+                    cnt += 1
+            if cnt == nchunks:
+                break
+            else:
+                time.sleep(10)
+        exit_ALI(instance_id, mdata['ali_auth'])
+    else:
+        dispatcher.run_jobs(mdata['model_devi_resources'],
+                            commands,
+                            work_path,
+                            run_tasks,
+                            model_devi_group_size,
+                            model_names,
+                            forward_files,
+                            backward_files,
+                            outlog = 'model_devi.log',
+                            errlog = 'model_devi.log')
 
 
 def post_model_devi (iter_index,
@@ -1485,16 +1562,48 @@ def run_fp_inner (iter_index,
     #         fp_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
 
-    dispatcher.run_jobs(mdata['fp_resources'],
-                        [fp_command],
-                        work_path,
-                        run_tasks,
-                        fp_group_size,
-                        forward_common_files,
-                        forward_files,
-                        backward_files,
-                        outlog = log_file,
-                        errlog = log_file)
+    if mdata['fp_machine']['type'] == 'ALI':
+        task_chunks = _split_tasks(run_tasks, fp_group_size)
+        nchunks = len(task_chunks)
+        ip, instance_id = run_ALI('fp', nchunks, mdata['ali_auth'])
+        mdata['fp_machine']['hostname'] = ip
+        disp = make_dispatchers(nchunks, mdata['fp_machine'])
+        job_handlers = []
+        for ii in range(nchunks):
+            job_handler = disp[ii].submit_jobs(mdata['fp_resources'],
+                                               [fp_command],
+                                               work_path,
+                                               task_chunks[ii],
+                                               fp_group_size,
+                                               forward_common_files,
+                                               forward_files,
+                                               backward_files,
+                                               outlog = log_file,
+                                               errlog = log_file)
+            job_handlers.append(job_handler)
+
+        while True:
+            cnt = 0
+            for ii in range(nchunks):
+                if disp[ii].all_finished(job_handlers[ii]):
+                    cnt += 1
+            if cnt == nchunks:
+                break
+            else:
+                time.sleep(10)
+        exit_ALI(instance_id, mdata['ali_auth'])
+
+    else:
+        dispatcher.run_jobs(mdata['fp_resources'],
+                            [fp_command],
+                            work_path,
+                            run_tasks,
+                            fp_group_size,
+                            forward_common_files,
+                            forward_files,
+                            backward_files,
+                            outlog = log_file,
+                            errlog = log_file)
 
 
 def run_fp (iter_index,
@@ -1906,7 +2015,10 @@ def run_iter (param_file, machine_file) :
             elif jj == 1 :
                 log_iter ("run_train", ii, jj)
                 mdata  = decide_train_machine(mdata)
-                disp = make_dispatcher(mdata['train_machine'])
+                if mdata['train_machine']['type'] == 'ALI':
+                    disp = []
+                else:
+                    disp = make_dispatcher(mdata['train_machine'])
                 run_train  (ii, jdata, mdata, disp)
             elif jj == 2 :
                 log_iter ("post_train", ii, jj)
@@ -1919,7 +2031,10 @@ def run_iter (param_file, machine_file) :
             elif jj == 4 :
                 log_iter ("run_model_devi", ii, jj)
                 mdata = decide_model_devi_machine(mdata)
-                disp = make_dispatcher(mdata['model_devi_machine'])
+                if mdata['model_devi_machine']['type'] == 'ALI':
+                    disp = []
+                else:
+                    disp = make_dispatcher(mdata['model_devi_machine'])
                 run_model_devi (ii, jdata, mdata, disp)
             elif jj == 5 :
                 log_iter ("post_model_devi", ii, jj)
@@ -1930,7 +2045,10 @@ def run_iter (param_file, machine_file) :
             elif jj == 7 :
                 log_iter ("run_fp", ii, jj)
                 mdata = decide_fp_machine(mdata)
-                disp = make_dispatcher(mdata['fp_machine'])
+                if mdata['fp_machine']['type'] == 'ALI':
+                    disp = []
+                else:
+                    disp = make_dispatcher(mdata['fp_machine'])
                 run_fp (ii, jdata, mdata, disp)
             elif jj == 8 :
                 log_iter ("post_fp", ii, jj)

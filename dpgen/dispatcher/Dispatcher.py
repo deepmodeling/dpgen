@@ -215,7 +215,7 @@ class Dispatcher(object):
 
 
 class JobRecord(object):
-    def __init__ (self, path, task_chunks, fname = 'job_record.json'):
+    def __init__ (self, path, task_chunks, fname = 'job_record.json', ip=None):
         self.path = os.path.abspath(path)
         self.fname = os.path.join(self.path, fname)
         self.task_chunks = task_chunks
@@ -232,9 +232,13 @@ class JobRecord(object):
                               chunk_hash, 
                               local_root, 
                               remote_root, 
-                              job_uuid):
+                              job_uuid,
+                              ip=None):
         self.valid_hash(chunk_hash)
-        self.record[chunk_hash]['context'] = [local_root, remote_root, job_uuid]
+        if not ip:
+            self.record[chunk_hash]['context'] = [local_root, remote_root, job_uuid, ip]
+        else:
+            self.record[chunk_hash]['context'] = [local_root, remote_root, job_uuid]
 
     def get_uuid(self, chunk_hash):
         self.valid_hash(chunk_hash)
@@ -305,3 +309,29 @@ def make_dispatcher(mdata):
         context_type = 'lazy-local'
     disp = Dispatcher(mdata, context_type=context_type, batch_type=batch_type)
     return disp
+
+def make_dispatchers(num, mdata):
+    dispatchers = []
+    for i in range(num):
+        try:
+            hostname = mdata['hostname'][i]
+            context_type = 'ssh'
+        except:
+            context_type = 'local'
+        try:
+            batch_type = mdata['batch']
+        except:
+            dlog.info('cannot find key "batch" in machine file, try to use deprecated key "machine_type"')
+            batch_type = mdata['machine_type']
+        try:
+            lazy_local = mdata['lazy_local']
+        except:
+            lazy_local = False
+        if lazy_local and context_type == 'local':
+            dlog.info('Dispatcher switches to the lazy local mode')
+            context_type = 'lazy-local'
+        remote_profile = mdata.copy()
+        remote_profile['hostname'] = hostname
+        disp = Dispatcher(remote_profile, context_type=context_type, batch_type=batch_type, job_record='jr%d.json' %i)
+        dispatchers.append(disp)
+    return dispatchers
