@@ -55,6 +55,8 @@ from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine,
 from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher, make_dispatchers, _split_tasks
 try:
     from dpgen.dispatcher.ALI import ALI, run_ALI, exit_ALI
+except:
+    pass
 from dpgen.util import sepline
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar,Kpoints,Potcar
