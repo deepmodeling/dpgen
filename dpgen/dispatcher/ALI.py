@@ -19,6 +19,7 @@ class ALI():
         self.AccessKey_ID = adata["AccessKey_ID"]
         self.AccessKey_Secret = adata["AccessKey_Secret"]
         self.strategy = adata["pay_strategy"]
+        self.pwd = adata["pwd"]
 
     def create_machine(self, instance_number, instance_type):
         if True:
@@ -26,7 +27,7 @@ class ALI():
             request = RunInstancesRequest()
             request.set_accept_format('json')
             request.set_UniqueSuffix(True)
-            request.set_Password("975481DING!")
+            request.set_Password(self.pwd)
             request.set_Amount(instance_number)
             request.set_LaunchTemplateName(instance_type + '_cn-hangzhou_i')
             response = client.do_action_with_exception(request)
@@ -43,7 +44,6 @@ class ALI():
             for i in range(len(response["Instances"]["Instance"])):
                 ip.append(response["Instances"]["Instance"][i]["PublicIpAddress"]['IpAddress'][0])
             self.ip_list = ip
-            # print(self.ip_list, self.instance_list)
             return self.ip_list, self.instance_list
         else:
             return "create failed"
@@ -56,7 +56,7 @@ class ALI():
         request.set_Force(True)
         response = client.do_action_with_exception(request)
 
-def run_ALI(stage, num_of_instance, strategy, adata):
+def run_ALI(stage, num_of_instance, adata):
     if stage == "train":
         instance_type = "ecs.gn5-c8g1.2xlarge"
     elif stage == "model_devi":
@@ -64,7 +64,7 @@ def run_ALI(stage, num_of_instance, strategy, adata):
     elif stage == "fp":
         instance_type = "ecs.c6.2xlarge"
     ali = ALI(adata)
-    return ali.create_machine(num_of_instance, instance_type, strategy)
+    return ali.create_machine(num_of_instance, instance_type)
 
 def exit_ALI(instance_id, adata):
     ali = ALI(adata)
