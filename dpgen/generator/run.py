@@ -457,22 +457,21 @@ def run_train (iter_index,
         instance_id_list = []
         if len(glob.glob('jr.*.json')) == nchunks:
             for ii in range(nchunks):
-                with open('jr.%.06d.json' %ii) as fp:
+                with open('jr.%.06d.json' % ii) as fp:
                     job_record = json.load(fp)
                     key = list(job_record.keys())[0]
                     ip, instance_id = job_record[key]['context'][-2], job_record[key]['context'][-1]
-                    print(ip, instance_id)
+                    # print(ip, instance_id)
                     mdata['train_machine']['hostname'] = ip
                     mdata['train_machine']['instance_id'] = instance_id
                     instance_id_list.append(instance_id)
-                    disp = make_dispatcher(mdata['train_machine'], job_record='jr.%.06d.json' %ii)
+                    disp = make_dispatcher(mdata['train_machine'], job_record='jr.%.06d.json' % ii)
                     max_check = 10
                     cnt = 0
                     while not disp.session._check_alive():
                         cnt += 1
                         if cnt == max_check:
                             break
-                    # print('cnt', cnt)
                     if cnt != max_check:
                         tmp_dispatchers.append(disp)
         if len(tmp_dispatchers) == nchunks:
@@ -1003,7 +1002,7 @@ def run_model_devi (iter_index,
                     job_record = json.load(fp)
                     key = list(job_record.keys())[0]
                     ip, instance_id = job_record[key]['context'][-2], job_record[key]['context'][-1]
-                    print(ip, instance_id)
+                    # print(ip, instance_id)
                     mdata['model_devi_machine']['hostname'] = ip
                     mdata['model_devi_machine']['instance_id'] = instance_id
                     instance_id_list.append(instance_id)
@@ -1668,7 +1667,7 @@ def run_fp_inner (iter_index,
                     job_record = json.load(fp)
                     key = list(job_record.keys())[0]
                     ip, instance_id = job_record[key]['context'][-2], job_record[key]['context'][-1]
-                    print(ip, instance_id)
+                    # print(ip, instance_id)
                     mdata['fp_machine']['hostname'] = ip
                     mdata['fp_machine']['instance_id'] = instance_id
                     instance_id_list.append(instance_id)
