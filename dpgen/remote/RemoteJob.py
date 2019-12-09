@@ -813,9 +813,9 @@ class LSFJob (RemoteJob) :
             status_word = status_line.split()[2]
 
         # ref: https://www.ibm.com/support/knowledgecenter/en/SSETD4_9.1.2/lsf_command_ref/bjobs.1.html
-        if      status_word in ["PEND", "WAIT"] :
+        if      status_word in ["PEND", "WAIT", "PSUSP"] :
             return JobStatus.waiting
-        elif    status_word in ["RUN"] :
+        elif    status_word in ["RUN", "USUSP"] :
             return JobStatus.running
         elif    status_word in ["DONE","EXIT"] :
             if self._check_finish_tag() :
@@ -887,8 +887,8 @@ class LSFJob (RemoteJob) :
             for ii in job_dirs:
                 args.append('')
         for ii,jj in zip(job_dirs, args) :
-            if resources['with_pl'] in resources and resources['allow_failure'] is True:
-                ret '{'
+            if res['with_pl'] in res and res['with_pl'] is True:
+                ret += '{'
             ret += 'cd %s\n' % self.remote_root
             ret += 'test $? -ne 0 && exit\n'
             ret += 'cd %s\n' % ii
@@ -899,9 +899,9 @@ class LSFJob (RemoteJob) :
             else :
                 ret += '%s %s\n' % (cmd, jj)                
             if 'allow_failure' not in res or res['allow_failure'] is False:
-                ret += 'test $? -ne 0 && exit\n'\
-            if resources['with_pl'] in resources and resources['allow_failure'] is True:
-                ret '} &'
+                ret += 'test $? -ne 0 && exit\n'
+            if res['with_pl'] in res and res['with_pl'] is True:
+                ret += '} &'
         ret += 'cd %s\n' % self.remote_root
         ret += 'test $? -ne 0 && exit\n'
         ret += '\ntouch tag_finished\n'
