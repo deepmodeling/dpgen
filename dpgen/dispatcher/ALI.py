@@ -18,6 +18,7 @@ class ALI():
         self.instance_list = None
         self.AccessKey_ID = adata["AccessKey_ID"]
         self.AccessKey_Secret = adata["AccessKey_Secret"]
+        self.strategy = adata["pay_strategy"]
 
     def create_machine(self, instance_number, instance_type):
         if True:
@@ -55,3 +56,16 @@ class ALI():
         request.set_Force(True)
         response = client.do_action_with_exception(request)
 
+def run_ALI(stage, num_of_instance, strategy, adata):
+    if stage == "train":
+        instance_type = "ecs.gn5-c8g1.2xlarge"
+    elif stage == "model_devi":
+        instance_type = "ecs.gn5-c8g1.2xlarge"
+    elif stage == "fp":
+        instance_type = "ecs.c6.2xlarge"
+    ali = ALI(adata)
+    return ali.create_machine(num_of_instance, instance_type, strategy)
+
+def exit_ALI(instance_id, adata):
+    ali = ALI(adata)
+    ali.delete_machine(instance_id)

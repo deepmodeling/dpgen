@@ -153,10 +153,17 @@ class Dispatcher(object):
                     dlog.info('restart from old submission %s for chunk %s' % (job_uuid, cur_hash))
                 # record job and its remote context
                 job_list.append(rjob)
+                ip = None
+                instance_id = None
+                if self.remote_profile['type'] == 'ALI':
+                    ip = self.remote_profile['hostname']
+                    instance_id = self.remote_profile['instance_id']
                 job_record.record_remote_context(cur_hash,                                                 
                                                  context.local_root, 
                                                  context.remote_root, 
-                                                 job_uuid)
+                                                 job_uuid,
+                                                 ip,
+                                                 instance_id)
             else :
                 # finished job, append a None to list
                 job_list.append(None)
@@ -233,12 +240,10 @@ class JobRecord(object):
                               local_root, 
                               remote_root, 
                               job_uuid,
-                              ip=None):
+                              ip=None,
+                              instance_id=None):
         self.valid_hash(chunk_hash)
-        if ip:
-            self.record[chunk_hash]['context'] = [local_root, remote_root, job_uuid, ip]
-        else:
-            self.record[chunk_hash]['context'] = [local_root, remote_root, job_uuid]
+        self.record[chunk_hash]['context'] = [local_root, remote_root, job_uuid, ip, instance_id]
 
     def get_uuid(self, chunk_hash):
         self.valid_hash(chunk_hash)
@@ -289,7 +294,7 @@ class JobRecord(object):
             }
 
 
-def make_dispatcher(mdata):
+def make_dispatcher(mdata, job_record=None):
     try:
         hostname = mdata['hostname']
         context_type = 'ssh'
@@ -307,7 +312,7 @@ def make_dispatcher(mdata):
     if lazy_local and context_type == 'local':
         dlog.info('Dispatcher switches to the lazy local mode')
         context_type = 'lazy-local'
-    disp = Dispatcher(mdata, context_type=context_type, batch_type=batch_type)
+    disp = Dispatcher(mdata, context_type=context_type, batch_type=batch_type, job_record=job_record)
     return disp
 
 def make_dispatchers(num, mdata):
@@ -315,6 +320,7 @@ def make_dispatchers(num, mdata):
     for i in range(num):
         try:
             hostname = mdata['hostname'][i]
+            instance_id = mdata['instance_id'][i]
             context_type = 'ssh'
         except:
             context_type = 'local'
@@ -332,6 +338,7 @@ def make_dispatchers(num, mdata):
             context_type = 'lazy-local'
         remote_profile = mdata.copy()
         remote_profile['hostname'] = hostname
-        disp = Dispatcher(remote_profile, context_type=context_type, batch_type=batch_type, job_record='jr%d.json' %i)
+        remote_profile['instance_id'] = instance_id
+        disp = Dispatcher(remote_profile, context_type=context_type, batch_type=batch_type, job_record='jr.%.06d.json' %i)
         dispatchers.append(disp)
     return dispatchers
