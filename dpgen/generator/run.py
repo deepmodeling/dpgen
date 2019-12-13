@@ -449,86 +449,28 @@ def run_train (iter_index,
         train_group_size = 1
 
     if mdata['train_machine']['type'] == 'ALI':
-        task_chunks = _split_tasks(run_tasks, train_group_size)
-        nchunks = len(task_chunks)
-        cwd = os.getcwd()
-        os.chdir(work_path)
-        tmp_dispatchers = []
-        instance_id_list = []
-        if len(glob.glob('jr.*.json')) == nchunks:
-            for ii in range(nchunks):
-                with open('jr.%.06d.json' % ii) as fp:
-                    job_record = json.load(fp)
-                    key = list(job_record.keys())[0]
-                    ip, instance_id = job_record[key]['context'][-2], job_record[key]['context'][-1]
-                    # print(ip, instance_id)
-                    mdata['train_machine']['hostname'] = ip
-                    mdata['train_machine']['instance_id'] = instance_id
-                    instance_id_list.append(instance_id)
-                    disp = make_dispatcher(mdata['train_machine'], job_record='jr.%.06d.json' % ii)
-                    max_check = 10
-                    cnt = 0
-                    while not disp.session._check_alive():
-                        cnt += 1
-                        if cnt == max_check:
-                            break
-                    if cnt != max_check:
-                        tmp_dispatchers.append(disp)
-        if len(tmp_dispatchers) == nchunks:
-            os.chdir(cwd)
-            job_handlers = []
-            for ii in range(nchunks):
-                job_handler = tmp_dispatchers[ii].submit_jobs(mdata['train_resources'],
-                                                              commands,
-                                                              work_path,
-                                                              task_chunks[ii],
-                                                              train_group_size,
-                                                              trans_comm_data,
-                                                              forward_files,
-                                                              backward_files,
-                                                              outlog = 'train.log',
-                                                              errlog = 'train.log')
-                job_handlers.append(job_handler)
-            while True:
-                cnt = 0
-                for ii in range(nchunks):
-                    if tmp_dispatchers[ii].all_finished(job_handlers[ii]):
-                        cnt += 1
-                if cnt == nchunks:
-                    break
-                else:
-                    time.sleep(10)
-            exit_ALI(instance_id_list, mdata['ali_auth'])  
+        if ali_restart_jobs(stage = 'train',
+                            cwd = cwd,
+                            mdata = mdata,
+                            commands = commands,
+                            work_path = work_path,
+                            run_tasks = run_tasks,
+                            train_group_size = train_group_size,
+                            trans_comm_data = trans_comm_data,
+                            forward_files = forward_files,
+                            backward_files = backward_files):
+            pass
         else:
-            os.chdir(cwd)
-            ip, instance_id = run_ALI('train', nchunks, mdata['ali_auth'])
-            mdata['train_machine']['hostname'] = ip
-            mdata['train_machine']['instance_id'] = instance_id
-            disp = make_dispatchers(nchunks, mdata['train_machine'])
-            job_handlers = []
-            for ii in range(nchunks):
-                job_handler = disp[ii].submit_jobs(mdata['train_resources'],
-                                     commands,
-                                     work_path,
-                                     task_chunks[ii],
-                                     train_group_size,
-                                     trans_comm_data,
-                                     forward_files,
-                                     backward_files,
-                                     outlog = 'train.log',
-                                     errlog = 'train.log')
-                job_handlers.append(job_handler)
-
-            while True:
-                cnt = 0
-                for ii in range(nchunks):
-                    if disp[ii].all_finished(job_handlers[ii]):
-                        cnt += 1
-                if cnt == nchunks:
-                    break
-                else:
-                    time.sleep(10)
-            exit_ALI(instance_id, mdata['ali_auth'])
+            ali_start_jobs(stasge = 'train',
+                           cwd = cwd,
+                           mdata = mdata,
+                           commands = commands,
+                           work_path = work_path,
+                           run_tasks = run_tasks,
+                           train_group_size = train_group_size,
+                           trans_comm_data = trans_comm_data,
+                           forward_files = forward_files,
+                           backward_files = backward_files)
     else:
         dispatcher.run_jobs(mdata['train_resources'],
                             commands,
@@ -989,88 +931,28 @@ def run_model_devi (iter_index,
         forward_files += ['input.plumed']
         backward_files += ['output.plumed']
 
+    cwd = os.getcwd()
     if mdata['model_devi_machine']['type'] == 'ALI':
-        task_chunks = _split_tasks(run_tasks, model_devi_group_size)
-        nchunks = len(task_chunks)
-        cwd = os.getcwd()
-        os.chdir(work_path)
-        tmp_dispatchers = []
-        instance_id_list = []
-        if len(glob.glob('jr.*.json')) == nchunks:
-            for ii in range(nchunks):
-                with open('jr.%.06d.json' %ii) as fp:
-                    job_record = json.load(fp)
-                    key = list(job_record.keys())[0]
-                    ip, instance_id = job_record[key]['context'][-2], job_record[key]['context'][-1]
-                    # print(ip, instance_id)
-                    mdata['model_devi_machine']['hostname'] = ip
-                    mdata['model_devi_machine']['instance_id'] = instance_id
-                    instance_id_list.append(instance_id)
-                    disp = make_dispatcher(mdata['model_devi_machine'], job_record='jr.%.06d.json' %ii)
-                    max_check = 10
-                    cnt = 0
-                    while not disp.session._check_alive():
-                        cnt += 1
-                        if cnt == max_check:
-                            break
-                    # print('cnt', cnt)
-                    if cnt != max_check:
-                        tmp_dispatchers.append(disp)
-        if len(tmp_dispatchers) == nchunks:
-            os.chdir(cwd)
-            job_handlers = []
-            for ii in range(nchunks):
-                job_handler = tmp_dispatchers[ii].submit_jobs(mdata['model_devi_resources'],
-                                                              commands,
-                                                              work_path,
-                                                              task_chunks[ii],
-                                                              model_devi_group_size,
-                                                              model_names,
-                                                              forward_files,
-                                                              backward_files,
-                                                              outlog = 'model_devi.log',
-                                                              errlog = 'model_devi.log')
-                job_handlers.append(job_handler)
-            while True:
-                cnt = 0
-                for ii in range(nchunks):
-                    if tmp_dispatchers[ii].all_finished(job_handlers[ii]):
-                        cnt += 1
-                if cnt == nchunks:
-                    break
-                else:
-                    time.sleep(10)
-            exit_ALI(instance_id_list, mdata['ali_auth'])  
+        if ali_restart_jobs(stage = 'model_devi',
+                            cwd = cwd,
+                            mdata = mdata,
+                            work_path = work_path,
+                            run_tasks = run_tasks,
+                            model_devi_group_size = model_devi_group_size,
+                            model_names = model_names,
+                            forward_files = forward_files,
+                            backward_files = backward_files):
+            pass
         else:
-            os.chdir(cwd)
-            ip, instance_id = run_ALI('model_devi', nchunks, mdata['ali_auth'])
-            mdata['model_devi_machine']['hostname'] = ip
-            mdata['model_devi_machine']['instance_id'] = instance_id
-            disp = make_dispatchers(nchunks, mdata['model_devi_machine'])
-            job_handlers = []
-            for ii in range(nchunks):
-                job_handler = disp[ii].submit_jobs(mdata['model_devi_resources'],
-                                                   commands,
-                                                   work_path,
-                                                   task_chunks[ii],
-                                                   model_devi_group_size,
-                                                   model_names,
-                                                   forward_files,
-                                                   backward_files,
-                                                   outlog = 'model_devi.log',
-                                                   errlog = 'model_devi.log')
-                job_handlers.append(job_handler)
-                
-            while True:
-                cnt = 0
-                for ii in range(nchunks):
-                    if disp[ii].all_finished(job_handlers[ii]):
-                        cnt += 1
-                if cnt == nchunks:
-                    break
-                else:
-                    time.sleep(10)
-            exit_ALI(instance_id, mdata['ali_auth'])
+            ali_start_jobs(stage = 'model_devi',
+                           run_tasks = run_tasks,
+                           work_path = work_path,
+                           cwd = cwd,
+                           mdata = mdata,
+                           model_devi_group_size = model_devi_group_size,
+                           model_names = model_names,
+                           forward_files = forward_files,
+                           backward_files = backward_files)
     else:
         dispatcher.run_jobs(mdata['model_devi_resources'],
                             commands,
@@ -1653,89 +1535,34 @@ def run_fp_inner (iter_index,
     #     if not check_fin(ii) :
     #         fp_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
-
+    cwd = os.getcwd()
     if mdata['fp_machine']['type'] == 'ALI':
-        task_chunks = _split_tasks(run_tasks, fp_group_size)
-        nchunks = len(task_chunks)
-        cwd = os.getcwd()
-        os.chdir(work_path)
-        tmp_dispatchers = []
-        instance_id_list = []
-        if len(glob.glob('jr.*.json')) == nchunks:
-            for ii in range(nchunks):
-                with open('jr.%.06d.json' %ii) as fp:
-                    job_record = json.load(fp)
-                    key = list(job_record.keys())[0]
-                    ip, instance_id = job_record[key]['context'][-2], job_record[key]['context'][-1]
-                    # print(ip, instance_id)
-                    mdata['fp_machine']['hostname'] = ip
-                    mdata['fp_machine']['instance_id'] = instance_id
-                    instance_id_list.append(instance_id)
-                    disp = make_dispatcher(mdata['fp_machine'], job_record='jr.%.06d.json' %ii)
-                    max_check = 10
-                    cnt = 0
-                    while not disp.session._check_alive():
-                        cnt += 1
-                        if cnt == max_check:
-                            break
-                    # print('cnt', cnt)
-                    if cnt != max_check:
-                        tmp_dispatchers.append(disp)
-        if len(tmp_dispatchers) == nchunks:
-            os.chdir(cwd)
-            job_handlers = []
-            for ii in range(nchunks):
-                job_handler = tmp_dispatchers[ii].submit_jobs(mdata['fp_resources'],
-                                                              [fp_command],
-                                                              work_path,
-                                                              task_chunks[ii],
-                                                              fp_group_size,
-                                                              forward_common_files,
-                                                              forward_files,
-                                                              backward_files,
-                                                              outlog = log_file,
-                                                              errlog = log_file)
-                job_handlers.append(job_handler)
-            while True:
-                cnt = 0
-                for ii in range(nchunks):
-                    if tmp_dispatchers[ii].all_finished(job_handlers[ii]):
-                        cnt += 1
-                if cnt == nchunks:
-                    break
-                else:
-                    time.sleep(10)
-            exit_ALI(instance_id_list, mdata['ali_auth'])  
+        if ali_restart_jobs(stage = 'fp',
+                            mdata = mdata,
+                            run_tasks = run_tasks,
+                            work_path = work_path,
+                            cwd = cwd,
+                            command = [fp_command],
+                            fp_group_size = fp_group_size,
+                            forward_common_files = forward_common_files,
+                            forward_files = forward_files,
+                            backward_files = backward_files,
+                            outlog = log_file,
+                            errlog = log_file):
+            pass
         else:
-            os.chdir(cwd)
-            ip, instance_id = run_ALI('fp', nchunks, mdata['ali_auth'])
-            mdata['fp_machine']['hostname'] = ip
-            mdata['fp_machine']['instance_id'] = instance_id
-            disp = make_dispatchers(nchunks, mdata['fp_machine'])
-            job_handlers = []
-            for ii in range(nchunks):
-                job_handler = disp[ii].submit_jobs(mdata['fp_resources'],
-                                                   [fp_command],
-                                                   work_path,
-                                                   task_chunks[ii],
-                                                   fp_group_size,
-                                                   forward_common_files,
-                                                   forward_files,
-                                                   backward_files,
-                                                   outlog = log_file,
-                                                   errlog = log_file)
-                job_handlers.append(job_handler)
-            while True:
-                cnt = 0
-                for ii in range(nchunks):
-                    if disp[ii].all_finished(job_handlers[ii]):
-                        cnt += 1
-                if cnt == nchunks:
-                    break
-                else:
-                    time.sleep(10)
-            exit_ALI(instance_id, mdata['ali_auth'])
-
+            ali_start_jobs(stage = 'fp',
+                           mdata = mdata,
+                           run_tasks = run_tasks,
+                           work_path = work_path,
+                           cwd = cwd,
+                           command = [fp_command],
+                           fp_group_size = fp_group_size,
+                           forward_common_files = forward_common_files,
+                           forward_files = forward_files,
+                           backward_files = backward_files,
+                           outlog = log_file,
+                           errlog = log_file)
     else:
         dispatcher.run_jobs(mdata['fp_resources'],
                             [fp_command],
