@@ -739,6 +739,10 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                 # dump input of lammps
                 with open('input.lammps', 'w') as fp:
                     fp.write(''.join(lmp_lines))
+                with open('job.json', 'w') as fp:
+                    job = {}
+                    for ii,jj in zip(rev_keys, rev_item) : job[ii] = jj
+                    json.dump(job, fp, indent = 4)
                 os.chdir(cwd_)
                 task_counter += 1
             conf_counter += 1
