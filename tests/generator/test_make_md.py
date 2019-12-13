@@ -192,6 +192,7 @@ class TestMakeModelDeviRevMat(unittest.TestCase):
         # check the first task
         md_dir = os.path.join('iter.%06d' % 0, '01.model_devi')
         tasks = glob.glob(os.path.join(md_dir, 'task.*'))
+        tasks.sort()
         # 4 accounts for 2 systems each with 2 frames
         self.assertEqual(len(tasks), (len(jdata['model_devi_jobs'][0]['rev_mat']['lmp']['V_NSTEPS']) * 
                                       len(jdata['model_devi_jobs'][0]['rev_mat']['lmp']['V_TEMP']) * 
@@ -199,7 +200,25 @@ class TestMakeModelDeviRevMat(unittest.TestCase):
                                       len(jdata['model_devi_jobs'][0]['rev_mat']['plm']['V_DIST0']) * 
                                       len(jdata['model_devi_jobs'][0]['rev_mat']['plm']['V_DIST1']) * 
                                       4))
-        tasks.sort()
+
+        cur_job = jdata['model_devi_jobs'][0]
+        rev_keys = ['V_NSTEPS', 'V_TEMP', 'V_PRES', 'V_DIST0', 'V_DIST1']
+        rev_matrix = []
+        for i0 in cur_job['rev_mat']['lmp']['V_NSTEPS']:
+            for i1 in cur_job['rev_mat']['lmp']['V_TEMP']:
+                for i2 in cur_job['rev_mat']['lmp']['V_PRES']:
+                    for i3 in cur_job['rev_mat']['plm']['V_DIST0']:
+                        for i4 in cur_job['rev_mat']['plm']['V_DIST1']:
+                            rev_matrix.append([i0, i1, i2, i3, i4])        
+        numb_rev = len(rev_matrix)
+        for ii in range(len(tasks)):
+            with open(os.path.join(tasks[ii], 'job.json')) as fp:
+                rev_values = rev_matrix[ii % numb_rev]
+                job_recd = json.load(fp)
+                for kk in job_recd.keys():
+                    kidx = rev_keys.index(kk)
+                self.assertEqual(rev_values[kidx], job_recd[kk])
+
         cwd_ = os.getcwd()
         os.chdir(tasks[0])
         with open('input.lammps') as fp:
