@@ -1,4 +1,4 @@
-import os,sys,time,random,json
+import os,sys,time,random,json,glob
 
 from dpgen.dispatcher.LocalContext import LocalSession
 from dpgen.dispatcher.LocalContext import LocalContext
@@ -11,6 +11,10 @@ from dpgen.dispatcher.PBS import PBS
 from dpgen.dispatcher.Shell import Shell
 from dpgen.dispatcher.AWS import AWS 
 from dpgen.dispatcher.JobStatus import JobStatus
+try:
+    from dpgen.dispatcher.ALI import ALI, run_ALI, exit_ALI
+except:
+    pass
 from dpgen import dlog
 from hashlib import sha1
 
@@ -349,52 +353,60 @@ def ali_start_jobs(stage,
                    work_path,
                    cwd,
                    commands,
-                   trans_comm_data = None,
+                   forward_files,
+                   backward_files,
                    train_group_size = None,
                    model_devi_group_size = None,
                    fp_group_size = None,
+                   trans_comm_data = None,
                    model_names = None,
-                   forward_files,
-                   backward_files,
-                   log_file = None)
+                   forward_common_files = None,
+                   log_file = None):
     os.chdir(cwd)
-    task_chunks = _split_tasks(run_tasks)
+    group_size = 1
+    if stage == 'train':
+        group_size = train_group_size
+    elif stage == 'model_devi':
+        group_size = model_devi_group_size
+    elif stage == 'fp':
+        group_size = fp_group_size
+    task_chunks = _split_tasks(run_tasks, group_size)
     nchunks = len(task_chunks)
-    ip, instance_id = run_ALI('stage', nchunks, mdata['ali_auth'])
+    ip, instance_id = run_ALI(stage, nchunks, mdata['ali_auth'])
     mdata[stage + '_machine']['hostname'] = ip
     mdata[stage + '_machine']['instance_id'] = instance_id
     disp = make_dispatchers(nchunks, mdata[stage + '_machine'])
     job_handlers = []
     if stage == 'train':
         for ii in range(nchunks):
-            job_handler = disp[ii].submit_jobs(mdata['fp_resources'],
-                                               [fp_command],
+            job_handler = disp[ii].submit_jobs(mdata['train_resources'],
+                                               commands,
                                                work_path,
                                                task_chunks[ii],
-                                               fp_group_size,
-                                               forward_common_files,                                               
+                                               train_group_size,
+                                               trans_comm_data,                                               
                                                forward_files,
                                                backward_files,
-                                               outlog = log_file,
-                                               errlog = log_file)
+                                               outlog = 'train.log',
+                                               errlog = 'train.log')
             job_handlers.append(job_handler)
     elif stage == 'model_devi':
         for ii in range(nchunks):
-            job_handler = disp[ii].submit_jobs(mdata['fp_resources'],
-                                               [fp_command],
+            job_handler = disp[ii].submit_jobs(mdata['model_devi_resources'],
+                                               commands,
                                                work_path,
                                                task_chunks[ii],
-                                               fp_group_size,
-                                               forward_common_files,                                               
+                                               model_devi_group_size,
+                                               model_names,                                               
                                                forward_files,
                                                backward_files,
-                                               outlog = log_file,
-                                               errlog = log_file)
+                                               outlog = 'model_devi.log',
+                                               errlog = 'model_devi.log')
             job_handlers.append(job_handler)
     elif stage == 'fp':
         for ii in range(nchunks):
             job_handler = disp[ii].submit_jobs(mdata['fp_resources'],
-                                               [fp_command],
+                                               commands,
                                                work_path,
                                                task_chunks[ii],
                                                fp_group_size,
@@ -421,16 +433,23 @@ def ali_restart_jobs(stage,
                      commands,
                      work_path,
                      run_tasks,
+                     forward_files,
+                     backward_files,
                      train_group_size = None,
                      model_devi_group_size = None,
                      fp_group_size = None,
                      trans_comm_data = None,
                      model_names = None,
                      forward_common_files = None,
-                     forward_files,
-                     backward_files,
                      log_file=None):
-    task_chunks = _split_tasks(run_tasks, stage + '_group_size')
+    group_size = 1
+    if stage == 'train':
+        group_size = train_group_size
+    elif stage == 'model_devi':
+        group_size = model_devi_group_size
+    elif stage == 'fp':
+        group_size = fp_group_size
+    task_chunks = _split_tasks(run_tasks, group_size)
     nchunks = len(task_chunks)
     os.chdir(work_path)
     tmp_dispatchers = []

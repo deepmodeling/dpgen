@@ -52,11 +52,7 @@ from dpgen.remote.group_jobs import ucloud_submit_jobs, aws_submit_jobs
 from dpgen.remote.group_jobs import group_slurm_jobs
 from dpgen.remote.group_jobs import group_local_jobs
 from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
-from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher, make_dispatchers, _split_tasks
-try:
-    from dpgen.dispatcher.ALI import ALI, run_ALI, exit_ALI
-except:
-    pass
+from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher, make_dispatchers, _split_tasks, ali_restart_jobs, ali_start_jobs
 from dpgen.util import sepline
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar,Kpoints,Potcar
@@ -461,7 +457,7 @@ def run_train (iter_index,
                             backward_files = backward_files):
             pass
         else:
-            ali_start_jobs(stasge = 'train',
+            ali_start_jobs(stage = 'train',
                            cwd = cwd,
                            mdata = mdata,
                            commands = commands,
@@ -936,6 +932,7 @@ def run_model_devi (iter_index,
         if ali_restart_jobs(stage = 'model_devi',
                             cwd = cwd,
                             mdata = mdata,
+                            commands = commands,
                             work_path = work_path,
                             run_tasks = run_tasks,
                             model_devi_group_size = model_devi_group_size,
@@ -945,10 +942,11 @@ def run_model_devi (iter_index,
             pass
         else:
             ali_start_jobs(stage = 'model_devi',
-                           run_tasks = run_tasks,
-                           work_path = work_path,
                            cwd = cwd,
                            mdata = mdata,
+                           commands = commands,
+                           run_tasks = run_tasks,
+                           work_path = work_path,
                            model_devi_group_size = model_devi_group_size,
                            model_names = model_names,
                            forward_files = forward_files,
@@ -1538,31 +1536,29 @@ def run_fp_inner (iter_index,
     cwd = os.getcwd()
     if mdata['fp_machine']['type'] == 'ALI':
         if ali_restart_jobs(stage = 'fp',
-                            mdata = mdata,
-                            run_tasks = run_tasks,
-                            work_path = work_path,
                             cwd = cwd,
-                            command = [fp_command],
+                            mdata = mdata,
+                            commands = [fp_command],
+                            work_path = work_path,
+                            run_tasks = run_tasks,
                             fp_group_size = fp_group_size,
                             forward_common_files = forward_common_files,
                             forward_files = forward_files,
                             backward_files = backward_files,
-                            outlog = log_file,
-                            errlog = log_file):
+                            log_file = log_file):
             pass
         else:
             ali_start_jobs(stage = 'fp',
                            mdata = mdata,
+                           cwd = cwd,
+                           commands = [fp_command],
                            run_tasks = run_tasks,
                            work_path = work_path,
-                           cwd = cwd,
-                           command = [fp_command],
                            fp_group_size = fp_group_size,
                            forward_common_files = forward_common_files,
                            forward_files = forward_files,
                            backward_files = backward_files,
-                           outlog = log_file,
-                           errlog = log_file)
+                           log_file = log_file)
     else:
         dispatcher.run_jobs(mdata['fp_resources'],
                             [fp_command],
