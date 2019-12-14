@@ -53,7 +53,10 @@ from dpgen.remote.group_jobs import group_slurm_jobs
 from dpgen.remote.group_jobs import group_local_jobs
 from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
 from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks
-from dpgen.dispatcher.ALI import ALI
+try:
+    from dpgen.dispatcher.ALI import ALI
+except:
+    pass
 from dpgen.util import sepline
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar,Kpoints,Potcar
