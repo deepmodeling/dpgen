@@ -52,7 +52,8 @@ from dpgen.remote.group_jobs import ucloud_submit_jobs, aws_submit_jobs
 from dpgen.remote.group_jobs import group_slurm_jobs
 from dpgen.remote.group_jobs import group_local_jobs
 from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
-from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher, make_dispatchers, _split_tasks, ali_restart_jobs, ali_start_jobs
+from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks
+from dpgen.dispatcher.ALI import ALI
 from dpgen.util import sepline
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar,Kpoints,Potcar
@@ -444,41 +445,23 @@ def run_train (iter_index,
     except:
         train_group_size = 1
 
+    task_chunks = _split_tasks(run_tasks, train_group_size)
+    nchunks = len(task_chunks)
     if mdata['train_machine']['type'] == 'ALI':
-        if ali_restart_jobs(stage = 'train',
-                            cwd = cwd,
-                            mdata = mdata,
-                            commands = commands,
-                            work_path = work_path,
-                            run_tasks = run_tasks,
-                            train_group_size = train_group_size,
-                            trans_comm_data = trans_comm_data,
-                            forward_files = forward_files,
-                            backward_files = backward_files):
-            pass
-        else:
-            ali_start_jobs(stage = 'train',
-                           cwd = cwd,
-                           mdata = mdata,
-                           commands = commands,
-                           work_path = work_path,
-                           run_tasks = run_tasks,
-                           train_group_size = train_group_size,
-                           trans_comm_data = trans_comm_data,
-                           forward_files = forward_files,
-                           backward_files = backward_files)
-    else:
-        dispatcher.run_jobs(mdata['train_resources'],
-                            commands,
-                            work_path,
-                            run_tasks,
-                            train_group_size,
-                            trans_comm_data,
-                            forward_files,
-                            backward_files,
-                            outlog = 'train.log',
-                            errlog = 'train.log')
-
+        adata = mdata['ali_auth']
+        dispatcher = ALI(adata, mdata['train_resources'], nchunks, work_path, cwd)
+        dispatcher.init()
+        
+    dispatcher.run_jobs(mdata['train_resources'],
+                        commands,
+                        work_path,
+                        run_tasks,
+                        train_group_size,
+                        trans_comm_data,
+                        forward_files,
+                        backward_files,
+                        outlog = 'train.log',
+                        errlog = 'train.log')
 
 def post_train (iter_index,
                 jdata,
@@ -928,40 +911,23 @@ def run_model_devi (iter_index,
         backward_files += ['output.plumed']
 
     cwd = os.getcwd()
+    task_chunks = _split_tasks(run_tasks, model_devi_group_size)
+    nchunks = len(task_chunks)
     if mdata['model_devi_machine']['type'] == 'ALI':
-        if ali_restart_jobs(stage = 'model_devi',
-                            cwd = cwd,
-                            mdata = mdata,
-                            commands = commands,
-                            work_path = work_path,
-                            run_tasks = run_tasks,
-                            model_devi_group_size = model_devi_group_size,
-                            model_names = model_names,
-                            forward_files = forward_files,
-                            backward_files = backward_files):
-            pass
-        else:
-            ali_start_jobs(stage = 'model_devi',
-                           cwd = cwd,
-                           mdata = mdata,
-                           commands = commands,
-                           run_tasks = run_tasks,
-                           work_path = work_path,
-                           model_devi_group_size = model_devi_group_size,
-                           model_names = model_names,
-                           forward_files = forward_files,
-                           backward_files = backward_files)
-    else:
-        dispatcher.run_jobs(mdata['model_devi_resources'],
-                            commands,
-                            work_path,
-                            run_tasks,
-                            model_devi_group_size,
-                            model_names,
-                            forward_files,
-                            backward_files,
-                            outlog = 'model_devi.log',
-                            errlog = 'model_devi.log')
+        adata = mdata['ali_auth']
+        dispatcher = ALI(adata, mdata['model_devi_resources'], nchunks, work_path, cwd)
+        dispatcher.init()
+    
+    dispatcher.run_jobs(mdata['model_devi_resources'],
+                        commands,
+                        work_path,
+                        run_tasks,
+                        model_devi_group_size,
+                        model_names,
+                        forward_files,
+                        backward_files,
+                        outlog = 'model_devi.log',
+                        errlog = 'model_devi.log')
 
 
 def post_model_devi (iter_index,
@@ -1514,7 +1480,7 @@ def run_fp_inner (iter_index,
                   forward_files,
                   backward_files,
                   check_fin,
-                  log_file = "log",
+                  log_file = "fp.log",
                   forward_common_files=[]) :
     fp_command = mdata['fp_command']
     fp_group_size = mdata['fp_group_size']
@@ -1534,42 +1500,23 @@ def run_fp_inner (iter_index,
     #         fp_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
     cwd = os.getcwd()
+    task_chunks = _split_tasks(run_tasks, fp_group_size)
+    nchunks = len(task_chunks)
     if mdata['fp_machine']['type'] == 'ALI':
-        if ali_restart_jobs(stage = 'fp',
-                            cwd = cwd,
-                            mdata = mdata,
-                            commands = [fp_command],
-                            work_path = work_path,
-                            run_tasks = run_tasks,
-                            fp_group_size = fp_group_size,
-                            forward_common_files = forward_common_files,
-                            forward_files = forward_files,
-                            backward_files = backward_files,
-                            log_file = log_file):
-            pass
-        else:
-            ali_start_jobs(stage = 'fp',
-                           mdata = mdata,
-                           cwd = cwd,
-                           commands = [fp_command],
-                           run_tasks = run_tasks,
-                           work_path = work_path,
-                           fp_group_size = fp_group_size,
-                           forward_common_files = forward_common_files,
-                           forward_files = forward_files,
-                           backward_files = backward_files,
-                           log_file = log_file)
-    else:
-        dispatcher.run_jobs(mdata['fp_resources'],
-                            [fp_command],
-                            work_path,
-                            run_tasks,
-                            fp_group_size,
-                            forward_common_files,
-                            forward_files,
-                            backward_files,
-                            outlog = log_file,
-                            errlog = log_file)
+        adata = mdata['ali_auth']
+        dispatcher = ALI(adata, mdata['fp_resources'], nchunks, work_path, cwd)
+        dispatcher.init()
+
+    dispatcher.run_jobs(mdata['fp_resources'],
+                        [fp_command],
+                        work_path,
+                        run_tasks,
+                        fp_group_size,
+                        forward_common_files,
+                        forward_files,
+                        backward_files,
+                        outlog = log_file,
+                        errlog = log_file)
 
 
 def run_fp (iter_index,
