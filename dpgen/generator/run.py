@@ -452,7 +452,7 @@ def run_train (iter_index,
     nchunks = len(task_chunks)
     if mdata['train_machine']['type'] == 'ALI':
         adata = mdata['ali_auth']
-        dispatcher = ALI(adata, mdata['train_resources'], nchunks, work_path, cwd)
+        dispatcher = ALI(adata, mdata['train_resources'], mdata['train_machine'], nchunks, work_path)
         dispatcher.init()
         
     dispatcher.run_jobs(mdata['train_resources'],
@@ -918,7 +918,7 @@ def run_model_devi (iter_index,
     nchunks = len(task_chunks)
     if mdata['model_devi_machine']['type'] == 'ALI':
         adata = mdata['ali_auth']
-        dispatcher = ALI(adata, mdata['model_devi_resources'], nchunks, work_path, cwd)
+        dispatcher = ALI(adata, mdata['model_devi_resources'], mdata['model_devi_machine'], nchunks, work_path)
         dispatcher.init()
     
     dispatcher.run_jobs(mdata['model_devi_resources'],
@@ -1507,7 +1507,7 @@ def run_fp_inner (iter_index,
     nchunks = len(task_chunks)
     if mdata['fp_machine']['type'] == 'ALI':
         adata = mdata['ali_auth']
-        dispatcher = ALI(adata, mdata['fp_resources'], nchunks, work_path, cwd)
+        dispatcher = ALI(adata, mdata['fp_resources'], mdata['fp_machine'], nchunks, work_path)
         dispatcher.init()
 
     dispatcher.run_jobs(mdata['fp_resources'],

@@ -21,17 +21,15 @@ determine_machine = {
 }
 
 class ALI():
-    def __init__(self, adata, mdata, nchunks, work_path, cwd):
+    def __init__(self, adata, mdata_resources, mdata_machine, nchunks, work_path):
         self.ip_list = None
         self.instance_list = None
         self.dispatchers = None
-        self.job_handlers = None
         self.adata = adata
-        self.mdata = mdata
+        self.mdata_resources = mdata_resources
+        self.mdata_machine = mdata_machine
         self.nchunks = nchunks
         self.work_path = work_path
-        self.cwd = cwd
-        self.regionID = 'cn-hangzhou'
         
     def init(self):
         if self.check_restart():
@@ -41,25 +39,18 @@ class ALI():
             self.dispatchers = self.make_dispatchers()
 
     def check_restart(self):
-        os.chdir(self.work_path)
         dispatchers = []
         instance_list = []
-        if len(glob.glob('jr.*.json')) == self.nchunks:
+        if len(glob.glob(os.path.join(self.work_path, 'jr.*.json'))) == self.nchunks:
             for ii in range(self.nchunks):
-                with open('jr.%.06d.json' % ii) as fp:
+                with open(os.path.join(self.work_path, 'jr.%.06d.json' % ii)) as fp:
                     job_record = json.load(fp)
                     key = list(job_record.keys())[0]
                     ip, instance_id = job_record[key]['context'][-2], job_record[key]['context'][-1]
                     instance_list.append(instance_id)
-                    profile = {
-                        'type': 'ALI',
-                        'hostname': ip,
-                        'instance_id': instance_id,
-                        'port': 22,
-                        'username': 'root',
-                        'password': self.adata['password'],
-                        'work_path': '/root/dpgen_work'
-                    }
+                    profile = self.mdata_machine.copy()
+                    profile['hostname'] = ip
+                    profile['instance_id'] = instance_id
                     disp = Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
                     max_check = 10
                     cnt = 0
@@ -74,7 +65,6 @@ class ALI():
             restart = True
             self.dispatchers = dispatchers
             self.instance_list = instance_list
-        os.chdir(self.cwd)
         return restart
 
     def run_jobs(self,
@@ -118,16 +108,10 @@ class ALI():
     def make_dispatchers(self):
         dispatchers = []
         for ii in range(self.nchunks):
-            remote_profile = {
-                'type': 'ALI',
-                'hostname': self.ip_list[ii],
-                'instance_id': self.instance_list[ii],
-                'port': 22,
-                'username': 'root',
-                'password': self.adata['password'],
-                'work_path': '/root/dpgen_work'
-            }
-            disp = Dispatcher(remote_profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
+            profile = self.mdata_machine.copy()
+            profile['hostname'] = self.ip_list[ii]
+            profile['instance_id'] = self.instance_list[ii]
+            disp = Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
             dispatchers.append(disp)
         return dispatchers
 
@@ -136,10 +120,10 @@ class ALI():
         AccessKey_Secret = self.adata["AccessKey_Secret"]
         strategy = self.adata["pay_strategy"]
         pwd = self.adata["password"]
-        regionID = self.regionID
-        instance_type = determine_machine[self.mdata['partition']][self.mdata['numb_gpu']]
+        regionID = self.mdata_machine['regionID']
+        instance_type = determine_machine[self.mdata_resources['partition']][self.mdata_resources['numb_gpu']]
         if True:
-            client = AcsClient(AccessKey_ID,AccessKey_Secret, 'cn-hangzhou')
+            client = AcsClient(AccessKey_ID,AccessKey_Secret, regionID)
             request = RunInstancesRequest()
             request.set_accept_format('json')
             request.set_UniqueSuffix(True)
@@ -165,7 +149,7 @@ class ALI():
     def delete_machine(self):
         AccessKey_ID = self.adata["AccessKey_ID"]
         AccessKey_Secret = self.adata["AccessKey_Secret"]
-        regionID = self.regionID
+        regionID = self.mdata_machine['regionID']
         client = AcsClient(AccessKey_ID,AccessKey_Secret, regionID)
         request = DeleteInstancesRequest()
         request.set_accept_format('json')
