@@ -6,8 +6,7 @@ from aliyunsdkecs.request.v20140526.RunInstancesRequest import RunInstancesReque
 from aliyunsdkecs.request.v20140526.DeleteInstancesRequest import DeleteInstancesRequest
 import time, json, os, glob
 from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks
-from os import listdir
-from os.path import isfile, join
+from os.path import join
 
 determine_machine = {
     "gpu": {
