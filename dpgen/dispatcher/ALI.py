@@ -4,30 +4,130 @@ from aliyunsdkcore.acs_exception.exceptions import ClientException
 from aliyunsdkcore.acs_exception.exceptions import ServerException
 from aliyunsdkecs.request.v20140526.RunInstancesRequest import RunInstancesRequest
 from aliyunsdkecs.request.v20140526.DeleteInstancesRequest import DeleteInstancesRequest
-import time
-import json
-from dpgen.dispatcher.Batch import Batch
-from dpgen.dispatcher.JobStatus import JobStatus
-from dpgen.dispatcher.Shell import Shell
-from dpgen.dispatcher.SSHContext import SSHContext, SSHSession
+import time, json, os, glob
+from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks
+from os.path import join
+
+determine_machine = {
+    "gpu": {
+            1: "ecs.gn5-c8g1.2xlarge",
+    },
+    "cpu": {
+            1: "ecs.c6.large",
+            4: "ecs.c6.2xlarge",
+            8: "ecs.c6.4xlarge"
+    }
+}
 
 class ALI():
-    def __init__(self, adata):
+    def __init__(self, adata, mdata_resources, mdata_machine, nchunks, work_path):
         self.ip_list = None
-        self.regionID = None
         self.instance_list = None
-        self.AccessKey_ID = adata["AccessKey_ID"]
-        self.AccessKey_Secret = adata["AccessKey_Secret"]
-        self.strategy = adata["pay_strategy"]
+        self.dispatchers = None
+        self.adata = adata
+        self.mdata_resources = mdata_resources
+        self.mdata_machine = mdata_machine
+        self.nchunks = nchunks
+        self.work_path = work_path
+        
+    def init(self):
+        if self.check_restart():
+            pass
+        else:
+            self.create_machine()
+            self.dispatchers = self.make_dispatchers()
 
-    def create_machine(self, instance_number, instance_type):
+    def check_restart(self):
+        dispatchers = []
+        instance_list = []
+        if len(glob.glob(os.path.join(self.work_path, 'jr.*.json'))) == self.nchunks:
+            for ii in range(self.nchunks):
+                with open(os.path.join(self.work_path, 'jr.%.06d.json' % ii)) as fp:
+                    job_record = json.load(fp)
+                    key = list(job_record.keys())[0]
+                    ip, instance_id = job_record[key]['context'][-2], job_record[key]['context'][-1]
+                    instance_list.append(instance_id)
+                    profile = self.mdata_machine.copy()
+                    profile['hostname'] = ip
+                    profile['instance_id'] = instance_id
+                    disp = Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
+                    max_check = 10
+                    cnt = 0
+                    while not disp.session._check_alive():
+                        cnt += 1
+                        if cnt == max_check:
+                            break
+                    if cnt != max_check:
+                        dispatchers.append(disp)
+        restart = False
+        if len(dispatchers) == self.nchunks:
+            restart = True
+            self.dispatchers = dispatchers
+            self.instance_list = instance_list
+        return restart
+
+    def run_jobs(self,
+                 resources,
+                 command,
+                 work_path,
+                 tasks,
+                 group_size,
+                 forward_common_files,
+                 forward_task_files,
+                 backward_task_files,
+                 forward_task_deference = True,
+                 outlog = 'log',
+                 errlog = 'err'):
+        task_chunks = _split_tasks(tasks, group_size)
+        job_handlers = []
+        for ii in range(self.nchunks):
+            job_handler = self.dispatchers[ii].submit_jobs(resources,
+                                                           command,
+                                                           work_path,
+                                                           task_chunks[ii],
+                                                           group_size,
+                                                           forward_common_files,
+                                                           forward_task_files,
+                                                           backward_task_files,
+                                                           forward_task_deference,
+                                                           outlog,
+                                                           errlog)
+            job_handlers.append(job_handler)
+        while True:
+            cnt = 0
+            for ii in range(self.nchunks):
+                if self.dispatchers[ii].all_finished(job_handlers[ii]):
+                    cnt += 1
+            if cnt == self.nchunks:
+                break
+            else:
+                time.sleep(10)
+        self.delete_machine()
+
+    def make_dispatchers(self):
+        dispatchers = []
+        for ii in range(self.nchunks):
+            profile = self.mdata_machine.copy()
+            profile['hostname'] = self.ip_list[ii]
+            profile['instance_id'] = self.instance_list[ii]
+            disp = Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
+            dispatchers.append(disp)
+        return dispatchers
+
+    def create_machine(self):
+        AccessKey_ID = self.adata["AccessKey_ID"]
+        AccessKey_Secret = self.adata["AccessKey_Secret"]
+        strategy = self.adata["pay_strategy"]
+        pwd = self.adata["password"]
+        regionID = self.mdata_machine['regionID']
+        instance_type = determine_machine[self.mdata_resources['partition']][self.mdata_resources['numb_gpu']]
         if True:
-            client = AcsClient(self.AccessKey_ID,self.AccessKey_Secret, 'cn-hangzhou')
+            client = AcsClient(AccessKey_ID,AccessKey_Secret, regionID)
             request = RunInstancesRequest()
             request.set_accept_format('json')
             request.set_UniqueSuffix(True)
-            request.set_Password("975481DING!")
-            request.set_Amount(instance_number)
+            request.set_Password(pwd)
+            request.set_Amount(self.nchunks)
             request.set_LaunchTemplateName(instance_type + '_cn-hangzhou_i')
             response = client.do_action_with_exception(request)
             response = json.loads(response)
@@ -38,34 +138,21 @@ class ALI():
             request.set_InstanceIds(self.instance_list)
             response = client.do_action_with_exception(request)
             response = json.loads(response)
-
             ip = []
             for i in range(len(response["Instances"]["Instance"])):
                 ip.append(response["Instances"]["Instance"][i]["PublicIpAddress"]['IpAddress'][0])
             self.ip_list = ip
-            # print(self.ip_list, self.instance_list)
-            return self.ip_list, self.instance_list
         else:
             return "create failed"
 
-    def delete_machine(self, instance_id):
-        client = AcsClient(self.AccessKey_ID,self.AccessKey_Secret, 'cn-hangzhou')
+    def delete_machine(self):
+        AccessKey_ID = self.adata["AccessKey_ID"]
+        AccessKey_Secret = self.adata["AccessKey_Secret"]
+        regionID = self.mdata_machine['regionID']
+        client = AcsClient(AccessKey_ID,AccessKey_Secret, regionID)
         request = DeleteInstancesRequest()
         request.set_accept_format('json')
-        request.set_InstanceIds(instance_id)
+        request.set_InstanceIds(self.instance_list)
         request.set_Force(True)
         response = client.do_action_with_exception(request)
 
-def run_ALI(stage, num_of_instance, strategy, adata):
-    if stage == "train":
-        instance_type = "ecs.gn5-c8g1.2xlarge"
-    elif stage == "model_devi":
-        instance_type = "ecs.gn5-c8g1.2xlarge"
-    elif stage == "fp":
-        instance_type = "ecs.c6.2xlarge"
-    ali = ALI(adata)
-    return ali.create_machine(num_of_instance, instance_type, strategy)
-
-def exit_ALI(instance_id, adata):
-    ali = ALI(adata)
-    ali.delete_machine(instance_id)

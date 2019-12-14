@@ -1,4 +1,4 @@
-import os,sys,time,random,json
+import os,sys,time,random,json,glob
 
 from dpgen.dispatcher.LocalContext import LocalSession
 from dpgen.dispatcher.LocalContext import LocalContext
@@ -314,31 +314,3 @@ def make_dispatcher(mdata, job_record=None):
         context_type = 'lazy-local'
     disp = Dispatcher(mdata, context_type=context_type, batch_type=batch_type, job_record=job_record)
     return disp
-
-def make_dispatchers(num, mdata):
-    dispatchers = []
-    for i in range(num):
-        try:
-            hostname = mdata['hostname'][i]
-            instance_id = mdata['instance_id'][i]
-            context_type = 'ssh'
-        except:
-            context_type = 'local'
-        try:
-            batch_type = mdata['batch']
-        except:
-            dlog.info('cannot find key "batch" in machine file, try to use deprecated key "machine_type"')
-            batch_type = mdata['machine_type']
-        try:
-            lazy_local = mdata['lazy_local']
-        except:
-            lazy_local = False
-        if lazy_local and context_type == 'local':
-            dlog.info('Dispatcher switches to the lazy local mode')
-            context_type = 'lazy-local'
-        remote_profile = mdata.copy()
-        remote_profile['hostname'] = hostname
-        remote_profile['instance_id'] = instance_id
-        disp = Dispatcher(remote_profile, context_type=context_type, batch_type=batch_type, job_record='jr.%.06d.json' %i)
-        dispatchers.append(disp)
-    return dispatchers
