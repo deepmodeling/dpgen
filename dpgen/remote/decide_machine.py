@@ -13,7 +13,6 @@ import numpy as np
 def decide_train_machine(mdata):
 	if 'train' in mdata:
 	    continue_flag = False
-	    ## decide whether to use an existing machine
 	    if 'record.machine' in os.listdir():
 	        try:
 	            with open('record.machine', 'r') as _infile:
@@ -32,7 +31,7 @@ def decide_train_machine(mdata):
 	                    continue_flag = True
 	        except:
 	            pass
-	    if "hostname" not in mdata["train"][0]["machine"]:
+	    if ("hostname" not in mdata["train"][0]["machine"]) or (len(mdata["train"]) == 1):
 	    	mdata["train_machine"] = mdata["train"][0]["machine"]
 	    	mdata["train_resources"] = mdata["train"][0]["resources"]
 	    	if 'deepmd_path' in mdata["train"][0]:
@@ -43,23 +42,10 @@ def decide_train_machine(mdata):
 	    		mdata["train_group_size"] = mdata["train"][0]["group_size"]
 	    	if 'deepmd_version' in mdata["train"][0]:
 	    		mdata["deepmd_version"] = mdata["train"][0]["deepmd_version"]
+	    	if 'command' in mdata["train"][0]:
+	    		mdata["train_command"] = mdata["train"][0]["command"]
 	    	continue_flag = True
-
-	    if mdata["train"][0]["machine"]["type"] == "ALI":
-	    	mdata["train_machine"] = mdata["train"][0]["machine"]
-	    	mdata["train_resources"] = mdata["train"][0]["resources"]
-	    	if 'deepmd_path' in mdata["train"][0]:
-	    		mdata["deepmd_path"] = mdata["train"][0]["deepmd_path"]
-	    	elif 'python_path' in mdata["train"][0]:
-	    		mdata["python_path"] = mdata["train"][0]["python_path"]
-	    	if "group_size" in mdata["train"][0]:
-	    		mdata["train_group_size"] = mdata["train"][0]["group_size"]
-	    	if 'deepmd_version' in mdata["train"][0]:
-	    		mdata["deepmd_version"] = mdata["train"][0]["deepmd_version"]
-	    	mdata["ali_auth"] = mdata["ali_auth"]
-	    	mdata["train_command"] = mdata["train"][0]["command"]
-	    	continue_flag = True
-
+		
 	    pd_flag = False
 	    pd_count_list =[]
 	    # pd for pending job in slurm
@@ -148,20 +134,12 @@ def decide_model_devi_machine(mdata):
 	                    continue_flag = True
 	        except:
 	            pass
-	    if "hostname" not in mdata["model_devi"][0]["machine"]:
+	    if ("hostname" not in mdata["model_devi"][0]["machine"]) or (len(mdata["model_devi"]) == 1):
 	    	mdata["model_devi_machine"] = mdata["model_devi"][0]["machine"]
 	    	mdata["model_devi_resources"] = mdata["model_devi"][0]["resources"]
 	    	mdata["lmp_command"] = mdata["model_devi"][0]["command"]
 	    	#if "group_size" in mdata["train"][0]:
 	    	mdata["model_devi_group_size"] = mdata["model_devi"][0]["group_size"]
-	    	continue_flag = True
-
-	    if mdata["model_devi"][0]["machine"]["type"] == 'ALI':
-	    	mdata["model_devi_machine"] = mdata["model_devi"][0]["machine"]
-	    	mdata["model_devi_resources"] = mdata["model_devi"][0]["resources"]
-	    	mdata["lmp_command"] = mdata["model_devi"][0]["command"]
-	    	mdata["model_devi_group_size"] = mdata["model_devi"][0]["group_size"]
-	    	mdata["ali_auth"] = mdata["ali_auth"]
 	    	continue_flag = True
 
 	    pd_count_list =[]
@@ -233,7 +211,7 @@ def decide_fp_machine(mdata):
 	                    continue_flag = True
 	        except:
 	            pass
-	    if "hostname" not in mdata["fp"][0]["machine"]:
+	    if ("hostname" not in mdata["fp"][0]["machine"]) or (len(mdata["fp"]) == 1):
 	    	mdata["fp_machine"] = mdata["fp"][0]["machine"]
 	    	mdata["fp_resources"] = mdata["fp"][0]["resources"]
 	    	mdata["fp_command"] = mdata["fp"][0]["command"]
@@ -241,15 +219,7 @@ def decide_fp_machine(mdata):
 	    	mdata["fp_group_size"] = mdata["fp"][0]["group_size"]
 	    	continue_flag = True
 
-	    if mdata["fp"][0]["machine"]["type"] == 'ALI':
-	    	mdata["fp_machine"] = mdata["fp"][0]["machine"]
-	    	mdata["fp_resources"] = mdata["fp"][0]["resources"]
-	    	mdata["fp_command"] = mdata["fp"][0]["command"]
-	    	#if "group_size" in mdata["train"][0]:
-	    	mdata["fp_group_size"] = mdata["fp"][0]["group_size"]
-	    	mdata["ali_auth"] = mdata["ali_auth"]
-	    	continue_flag = True
-
+	   
 	    pd_count_list =[]
 	    pd_flag = False
 	    if not continue_flag:
@@ -290,6 +260,5 @@ def decide_fp_machine(mdata):
 		            profile['group_size'] = mdata['fp_group_size']
 		            profile['command'] = mdata['fp_command']
 		            json.dump(profile, _outfile, indent = 4)
-#	print("mdata", mdata)
 	return mdata
 

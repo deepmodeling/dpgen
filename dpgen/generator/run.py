@@ -52,10 +52,11 @@ from dpgen.remote.group_jobs import ucloud_submit_jobs, aws_submit_jobs
 from dpgen.remote.group_jobs import group_slurm_jobs
 from dpgen.remote.group_jobs import group_local_jobs
 from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
-from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks
+from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, make_dispatcher
 try:
     from dpgen.dispatcher.ALI import ALI
-except:
+except ImportError as e:
+    dlog.info(e)
     pass
 from dpgen.util import sepline
 from dpgen import ROOT_PATH
@@ -450,9 +451,8 @@ def run_train (iter_index,
 
     task_chunks = _split_tasks(run_tasks, train_group_size)
     nchunks = len(task_chunks)
-    if mdata['train_machine']['type'] == 'ALI':
-        adata = mdata['ali_auth']
-        dispatcher = ALI(adata, mdata['train_resources'], mdata['train_machine'], nchunks, work_path)
+    if "ali_auth" in mdata:
+        dispatcher = ALI(mdata['ali_auth'], mdata['train_resources'], mdata['train_machine'], nchunks, work_path)
         dispatcher.init()
         
     dispatcher.run_jobs(mdata['train_resources'],
@@ -916,9 +916,8 @@ def run_model_devi (iter_index,
     cwd = os.getcwd()
     task_chunks = _split_tasks(run_tasks, model_devi_group_size)
     nchunks = len(task_chunks)
-    if mdata['model_devi_machine']['type'] == 'ALI':
-        adata = mdata['ali_auth']
-        dispatcher = ALI(adata, mdata['model_devi_resources'], mdata['model_devi_machine'], nchunks, work_path)
+    if "ali_auth" in mdata:
+        dispatcher = ALI(mdata['ali_auth'], mdata['model_devi_resources'], mdata['model_devi_machine'], nchunks, work_path)
         dispatcher.init()
     
     dispatcher.run_jobs(mdata['model_devi_resources'],
@@ -1505,9 +1504,8 @@ def run_fp_inner (iter_index,
     cwd = os.getcwd()
     task_chunks = _split_tasks(run_tasks, fp_group_size)
     nchunks = len(task_chunks)
-    if mdata['fp_machine']['type'] == 'ALI':
-        adata = mdata['ali_auth']
-        dispatcher = ALI(adata, mdata['fp_resources'], mdata['fp_machine'], nchunks, work_path)
+    if "ali_auth" in mdata:
+        dispatcher = ALI(mdata['ali_auth'], mdata['fp_resources'], mdata['fp_machine'], nchunks, work_path)
         dispatcher.init()
 
     dispatcher.run_jobs(mdata['fp_resources'],
@@ -1931,7 +1929,7 @@ def run_iter (param_file, machine_file) :
             elif jj == 1 :
                 log_iter ("run_train", ii, jj)
                 mdata  = decide_train_machine(mdata)
-                if mdata['train_machine']['type'] == 'ALI':
+                if "ali_auth" in mdata: 
                     disp = []
                 else:
                     disp = make_dispatcher(mdata['train_machine'])
@@ -1947,7 +1945,7 @@ def run_iter (param_file, machine_file) :
             elif jj == 4 :
                 log_iter ("run_model_devi", ii, jj)
                 mdata = decide_model_devi_machine(mdata)
-                if mdata['model_devi_machine']['type'] == 'ALI':
+                if "ali_auth" in mdata:
                     disp = []
                 else:
                     disp = make_dispatcher(mdata['model_devi_machine'])
@@ -1961,7 +1959,7 @@ def run_iter (param_file, machine_file) :
             elif jj == 7 :
                 log_iter ("run_fp", ii, jj)
                 mdata = decide_fp_machine(mdata)
-                if mdata['fp_machine']['type'] == 'ALI':
+                if "ali_auth" in mdata:
                     disp = []
                 else:
                     disp = make_dispatcher(mdata['fp_machine'])

@@ -155,9 +155,10 @@ class Dispatcher(object):
                 job_list.append(rjob)
                 ip = None
                 instance_id = None
-                if self.remote_profile['type'] == 'ALI':
-                    ip = self.remote_profile['hostname']
-                    instance_id = self.remote_profile['instance_id']
+                if "type" in self.remote_profile:
+                    if self.remote_profile['type'] == 'ALI':
+                        ip = self.remote_profile['hostname']
+                        instance_id = self.remote_profile['instance_id']
                 job_record.record_remote_context(cur_hash,                                                 
                                                  context.local_root, 
                                                  context.remote_root, 
@@ -294,7 +295,7 @@ class JobRecord(object):
             }
 
 
-def make_dispatcher(mdata, job_record=None):
+def make_dispatcher(mdata):
     try:
         hostname = mdata['hostname']
         context_type = 'ssh'
@@ -312,5 +313,5 @@ def make_dispatcher(mdata, job_record=None):
     if lazy_local and context_type == 'local':
         dlog.info('Dispatcher switches to the lazy local mode')
         context_type = 'lazy-local'
-    disp = Dispatcher(mdata, context_type=context_type, batch_type=batch_type, job_record=job_record)
+    disp = Dispatcher(mdata, context_type=context_type, batch_type=batch_type)
     return disp
