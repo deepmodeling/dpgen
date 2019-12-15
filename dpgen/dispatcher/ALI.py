@@ -8,17 +8,6 @@ import time, json, os, glob
 from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks
 from os.path import join
 
-determine_machine = {
-    "gpu": {
-            1: "ecs.gn5-c8g1.2xlarge",
-    },
-    "cpu": {
-            1: "ecs.c6.large",
-            4: "ecs.c6.2xlarge",
-            8: "ecs.c6.4xlarge"
-    }
-}
-
 class ALI():
     def __init__(self, adata, mdata_resources, mdata_machine, nchunks, work_path):
         self.ip_list = None
@@ -120,31 +109,28 @@ class ALI():
         strategy = self.adata["pay_strategy"]
         pwd = self.adata["password"]
         regionID = self.mdata_machine['regionID']
-        instance_type = determine_machine[self.mdata_resources['partition']][self.mdata_resources['numb_gpu']]
-        if True:
-            client = AcsClient(AccessKey_ID,AccessKey_Secret, regionID)
-            request = RunInstancesRequest()
-            request.set_accept_format('json')
-            request.set_UniqueSuffix(True)
-            request.set_Password(pwd)
-            request.set_Amount(self.nchunks)
-            request.set_LaunchTemplateName(instance_type + '_cn-hangzhou_i')
-            response = client.do_action_with_exception(request)
-            response = json.loads(response)
-            self.instance_list = response["InstanceIdSets"]["InstanceIdSet"]
-            time.sleep(50)
-            request = DescribeInstancesRequest()
-            request.set_accept_format('json')
-            request.set_InstanceIds(self.instance_list)
-            response = client.do_action_with_exception(request)
-            response = json.loads(response)
-            ip = []
-            for i in range(len(response["Instances"]["Instance"])):
-                ip.append(response["Instances"]["Instance"][i]["PublicIpAddress"]['IpAddress'][0])
-            self.ip_list = ip
-        else:
-            return "create failed"
-
+        template_name = '%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['numb_gpu'], strategy)
+        client = AcsClient(AccessKey_ID,AccessKey_Secret, regionID)
+        request = RunInstancesRequest()
+        request.set_accept_format('json')
+        request.set_UniqueSuffix(True)
+        request.set_Password(pwd)
+        request.set_Amount(self.nchunks)
+        request.set_LaunchTemplateName(template_name)
+        response = client.do_action_with_exception(request)
+        response = json.loads(response)
+        self.instance_list = response["InstanceIdSets"]["InstanceIdSet"]
+        time.sleep(50)
+        request = DescribeInstancesRequest()
+        request.set_accept_format('json')
+        request.set_InstanceIds(self.instance_list)
+        response = client.do_action_with_exception(request)
+        response = json.loads(response)
+        ip = []
+        for i in range(len(response["Instances"]["Instance"])):
+            ip.append(response["Instances"]["Instance"][i]["PublicIpAddress"]['IpAddress'][0])
+        self.ip_list = ip
+        
     def delete_machine(self):
         AccessKey_ID = self.adata["AccessKey_ID"]
         AccessKey_Secret = self.adata["AccessKey_Secret"]
