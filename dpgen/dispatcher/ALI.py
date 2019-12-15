@@ -8,33 +8,6 @@ import time, json, os, glob
 from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks
 from os.path import join
 
-determine_machine = {
-    "gpu": {
-            "on_demand": {
-                1: "gpu_on_demand",
-                2: "gpu_2_on_demand",
-                4: "gpu_4_on_demand",
-            },
-            "spot": {
-                1: "gpu_spot",
-                2: "gpu_2_spot",
-                4: "gpu_4_spot"
-            }
-    },
-    "cpu": {
-            "on_demand": {
-                4: "cpu_4_on_demand",
-                8: "cpu_8_on_demand",
-                16: "cpu_16_on_demand"
-            },
-            "spot": {
-                4: "cpu_4_spot",
-                8: "cpu_8_spot",
-                16: "cpu_16_spot"
-            }
-    }
-}
-
 class ALI():
     def __init__(self, adata, mdata_resources, mdata_machine, nchunks, work_path):
         self.ip_list = None
@@ -136,7 +109,7 @@ class ALI():
         strategy = self.adata["pay_strategy"]
         pwd = self.adata["password"]
         regionID = self.mdata_machine['regionID']
-        template_name = determine_machine[self.mdata_resources['partition']][strategy][self.mdata_resources['numb_gpu']]
+        template_name = '%s_%s_%s' %(self.mdata_resources['partition'], self.mdata_resources['numb_gpu'], strategy)
         client = AcsClient(AccessKey_ID, AccessKey_Secret, regionID)
         request = RunInstancesRequest()
         request.set_accept_format('json')
