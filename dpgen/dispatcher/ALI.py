@@ -10,12 +10,28 @@ from os.path import join
 
 determine_machine = {
     "gpu": {
-            1: "ecs.gn5-c8g1.2xlarge",
+            "on_demand": {
+                1: "gpu_on_demand",
+                2: "gpu_2_on_demand",
+                4: "gpu_4_on_demand",
+            },
+            "spot": {
+                1: "gpu_spot",
+                2: "gpu_2_spot",
+                4: "gpu_4_spot"
+            }
     },
     "cpu": {
-            1: "ecs.c6.large",
-            4: "ecs.c6.2xlarge",
-            8: "ecs.c6.4xlarge"
+            "on_demand": {
+                4: "cpu_4_on_demand",
+                8: "cpu_8_on_demand",
+                16: "cpu_16_on_demand"
+            },
+            "spot": {
+                4: "cpu_4_spot",
+                8: "cpu_8_spot",
+                16: "cpu_16_spot"
+            }
     }
 }
 
@@ -120,30 +136,27 @@ class ALI():
         strategy = self.adata["pay_strategy"]
         pwd = self.adata["password"]
         regionID = self.mdata_machine['regionID']
-        instance_type = determine_machine[self.mdata_resources['partition']][self.mdata_resources['numb_gpu']]
-        if True:
-            client = AcsClient(AccessKey_ID,AccessKey_Secret, regionID)
-            request = RunInstancesRequest()
-            request.set_accept_format('json')
-            request.set_UniqueSuffix(True)
-            request.set_Password(pwd)
-            request.set_Amount(self.nchunks)
-            request.set_LaunchTemplateName(instance_type + '_cn-hangzhou_i')
-            response = client.do_action_with_exception(request)
-            response = json.loads(response)
-            self.instance_list = response["InstanceIdSets"]["InstanceIdSet"]
-            time.sleep(50)
-            request = DescribeInstancesRequest()
-            request.set_accept_format('json')
-            request.set_InstanceIds(self.instance_list)
-            response = client.do_action_with_exception(request)
-            response = json.loads(response)
-            ip = []
-            for i in range(len(response["Instances"]["Instance"])):
-                ip.append(response["Instances"]["Instance"][i]["PublicIpAddress"]['IpAddress'][0])
-            self.ip_list = ip
-        else:
-            return "create failed"
+        template_name = determine_machine[self.mdata_resources['partition']][strategy][self.mdata_resources['numb_gpu']]
+        client = AcsClient(AccessKey_ID, AccessKey_Secret, regionID)
+        request = RunInstancesRequest()
+        request.set_accept_format('json')
+        request.set_UniqueSuffix(True)
+        request.set_Password(pwd)
+        request.set_Amount(self.nchunks)
+        request.set_LaunchTemplateName(template_name)
+        response = client.do_action_with_exception(request)
+        response = json.loads(response)
+        self.instance_list = response["InstanceIdSets"]["InstanceIdSet"]
+        time.sleep(50)
+        request = DescribeInstancesRequest()
+        request.set_accept_format('json')
+        request.set_InstanceIds(self.instance_list)
+        response = client.do_action_with_exception(request)
+        response = json.loads(response)
+        ip = []
+        for i in range(len(response["Instances"]["Instance"])):
+            ip.append(response["Instances"]["Instance"][i]["PublicIpAddress"]['IpAddress'][0])
+        self.ip_list = ip
 
     def delete_machine(self):
         AccessKey_ID = self.adata["AccessKey_ID"]
