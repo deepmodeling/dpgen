@@ -60,17 +60,29 @@ global_dirname_03 = '01.scale_pert'
 global_dirname_04 = '02.md'
 
 def out_dir_name(jdata) :
-    cell_type = jdata['cell_type']
-    elements = jdata['elements']
     super_cell = jdata['super_cell']    
 
-    ele_str = "surf."
-    for ii in elements:
-        ele_str = ele_str + ii.lower()
-    cell_str = "%02d" % (super_cell[0])
-    for ii in range(1,len(super_cell)) :
-        cell_str = cell_str + ("x%02d" % super_cell[ii])
-    return ele_str + '.' + cell_type + '.' + cell_str
+    from_poscar= jdata.get('from_poscar',False)
+
+    if  from_poscar:
+        from_poscar_path = jdata['from_poscar_path']
+        poscar_name = os.path.basename(from_poscar_path)
+        cell_str = "%02d" % (super_cell[0])
+        for ii in range(1,len(super_cell)) :
+            cell_str = cell_str + ("x%02d" % super_cell[ii])
+        return poscar_name + '.' + cell_str
+    else:
+        cell_type = jdata['cell_type']
+        elements = jdata['elements']
+        super_cell = jdata['super_cell']    
+
+        ele_str = "surf."
+        for ii in elements:
+            ele_str = ele_str + ii.lower()
+        cell_str = "%02d" % (super_cell[0])
+        for ii in range(1,len(super_cell)) :
+            cell_str = cell_str + ("x%02d" % super_cell[ii])
+        return ele_str + '.' + cell_type + '.' + cell_str
 
 def class_cell_type(jdata) :
     ct = jdata['cell_type']
@@ -177,33 +189,46 @@ def poscar_elong (poscar_in, poscar_out, elong) :
         fout.write("".join(lines))
 
 def make_unit_cell (jdata) :
-    latt = jdata['latt']
+
+    from_poscar= jdata.get('from_poscar',False)
+    if not from_poscar:
+       latt = jdata['latt']
+       cell_type = class_cell_type(jdata)
+
     out_dir = jdata['out_dir']
     path_uc = os.path.join(out_dir, global_dirname_02)
-    cell_type = class_cell_type(jdata)
 
     cwd = os.getcwd()    
     # for ii in scale :
     # path_work = create_path(os.path.join(path_uc, '%.3f' % ii))
     path_work = create_path(path_uc)    
     os.chdir(path_work)
-    with open('POSCAR.unit', 'w') as fp:
-        fp.write (cell_type.poscar_unit(latt))
+    if not from_poscar:
+       with open('POSCAR.unit', 'w') as fp:
+           fp.write (cell_type.poscar_unit(latt))
     os.chdir(cwd)        
 
 def make_super_cell_pymatgen (jdata) :
-    make_unit_cell(jdata)
 
+    make_unit_cell(jdata)
     out_dir = jdata['out_dir']
     path_uc = os.path.join(out_dir, global_dirname_02)
-    from_path = path_uc
-    from_file = os.path.join(from_path, 'POSCAR.unit')
-    ss = Structure.from_file(from_file)
-    # ase only support X type  element
-    for i in range(len(ss)):
-        ss[i]='X'
-    ss=AseAtomsAdaptor.get_atoms(ss)
 
+    from_poscar= jdata.get('from_poscar',False)
+
+    if from_poscar:
+        from_poscar_path = jdata['from_poscar_path']
+        poscar_name = os.path.basename(from_poscar_path)
+        ss = Structure.from_file(poscar_name)
+    else:
+        from_path = path_uc
+        from_file = os.path.join(from_path, 'POSCAR.unit')
+        ss = Structure.from_file(from_file)
+        # ase only support X type  element
+        for i in range(len(ss)):
+            ss[i]='X'
+
+    ss=AseAtomsAdaptor.get_atoms(ss)
 
     all_millers = jdata['millers']
     path_sc = os.path.join(out_dir, global_dirname_02)
@@ -256,6 +281,7 @@ def place_element (jdata) :
     super_cell = jdata['super_cell']
     cell_type = class_cell_type(jdata)
     elements = jdata['elements']
+    from_poscar= jdata.get('from_poscar',False)
     path_sc = os.path.join(out_dir, global_dirname_02)
     path_pe = os.path.join(out_dir, global_dirname_02)    
     path_sc = os.path.abspath(path_sc)
@@ -285,7 +311,10 @@ def place_element (jdata) :
             path_work = os.path.join(path_surf, comb_name)
             create_path(path_work)
             pos_out = os.path.join(path_work, 'POSCAR')
-            poscar_ele(pos_in, pos_out, elements, ii)
+            if from_poscar:
+               shutil.copy2( pos_in, pos_out) 
+            else:
+               poscar_ele(pos_in, pos_out, elements, ii)
             poscar_shuffle(pos_out, pos_out)
 
 def make_vasp_relax (jdata) :
@@ -528,7 +557,7 @@ def gen_init_surf(args):
     out_dir = out_dir_name(jdata)
     jdata['out_dir'] = out_dir
     dlog.info ("# working dir %s" % out_dir)
-
+    
     if args.MACHINE is not None:
        # Decide a proper machine
        mdata = decide_fp_machine(mdata)
