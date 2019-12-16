@@ -110,11 +110,13 @@ class ALI():
         pwd = self.adata["password"]
         regionID = self.mdata_machine['regionID']
         template_name = '%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['numb_gpu'], strategy)
+        instance_name = self.adata["instance_name"]
         client = AcsClient(AccessKey_ID,AccessKey_Secret, regionID)
         request = RunInstancesRequest()
         request.set_accept_format('json')
         request.set_UniqueSuffix(True)
         request.set_Password(pwd)
+        request.set_InstanceName(instance_name)
         request.set_Amount(self.nchunks)
         request.set_LaunchTemplateName(template_name)
         response = client.do_action_with_exception(request)
