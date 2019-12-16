@@ -266,6 +266,8 @@ def make_fp(iter_index, jdata, mdata):
     if jdata.get("labeled", False):
         dlog.info("already labeled, skip make_fp and link data directly")
         os.symlink(os.path.abspath(picked_data_path), os.path.abspath(
+            os.path.join(work_path, "task.%03d" % 0)))
+        os.symlink(os.path.abspath(picked_data_path), os.path.abspath(
             os.path.join(work_path, "data.%03d" % 0)))
         return
     systems = get_systems(picked_data_path, jdata)
@@ -394,12 +396,18 @@ def run_iter(param_file, machine_file):
                 make_fp(ii, jdata, mdata)
             elif jj == 7:
                 log_iter("run_fp", ii, jj)
-                mdata = decide_fp_machine(mdata)
-                disp = make_dispatcher(mdata['fp_machine'])
-                run_fp(ii, jdata, mdata, disp)
+                if jdata.get("labeled", False):
+                    dlog.info("already have labeled data, skip run_fp")
+                else:
+                    mdata = decide_fp_machine(mdata)
+                    disp = make_dispatcher(mdata['fp_machine'])
+                    run_fp(ii, jdata, mdata, disp)
             elif jj == 8:
                 log_iter("post_fp", ii, jj)
-                post_fp(ii, jdata)
+                if jdata.get("labeled", False):
+                    dlog.info("already have labeled data, skip post_fp")
+                else:
+                    post_fp(ii, jdata)
             else:
                 raise RuntimeError("unknown task %d, something wrong" % jj)
             record_iter(record, ii, jj)
