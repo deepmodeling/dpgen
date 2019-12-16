@@ -52,7 +52,12 @@ from dpgen.remote.group_jobs import ucloud_submit_jobs, aws_submit_jobs
 from dpgen.remote.group_jobs import group_slurm_jobs
 from dpgen.remote.group_jobs import group_local_jobs
 from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
-from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher
+from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, make_dispatcher
+try:
+    from dpgen.dispatcher.ALI import ALI
+except ImportError as e:
+    dlog.info(e)
+    pass
 from dpgen.util import sepline
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar,Kpoints,Potcar
@@ -342,8 +347,7 @@ def detect_batch_size(batch_size, system=None):
 
 def run_train (iter_index,
                jdata,
-               mdata,
-               dispatcher) :
+               mdata) :
     # load json param
     numb_models = jdata['numb_models']
     # train_param = jdata['train_param']
@@ -444,6 +448,14 @@ def run_train (iter_index,
     except:
         train_group_size = 1
 
+    task_chunks = _split_tasks(run_tasks, train_group_size)
+    nchunks = len(task_chunks)
+    if "ali_auth" in mdata:
+        dispatcher = ALI(mdata['ali_auth'], mdata['train_resources'], mdata['train_machine'], nchunks, work_path)
+        dispatcher.init()
+    else:
+        dispatcher = make_dispatcher(mdata['train_machine'])
+
     dispatcher.run_jobs(mdata['train_resources'],
                         commands,
                         work_path,
@@ -454,7 +466,6 @@ def run_train (iter_index,
                         backward_files,
                         outlog = 'train.log',
                         errlog = 'train.log')
-
 
 def post_train (iter_index,
                 jdata,
@@ -866,8 +877,7 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
 
 def run_model_devi (iter_index,
                     jdata,
-                    mdata,
-                    dispatcher) :
+                    mdata) :
     #rmdlog.info("This module has been run !")
     lmp_exec = mdata['lmp_command']
     model_devi_group_size = mdata['model_devi_group_size']
@@ -907,6 +917,14 @@ def run_model_devi (iter_index,
         forward_files += ['input.plumed']
         backward_files += ['output.plumed']
 
+    cwd = os.getcwd()
+    task_chunks = _split_tasks(run_tasks, model_devi_group_size)
+    nchunks = len(task_chunks)
+    if "ali_auth" in mdata:
+        dispatcher = ALI(mdata['ali_auth'], mdata['model_devi_resources'], mdata['model_devi_machine'], nchunks, work_path)
+        dispatcher.init()
+    else:
+        dispatcher = make_dispatcher(mdata['model_devi_machine'])
     dispatcher.run_jobs(mdata['model_devi_resources'],
                         commands,
                         work_path,
@@ -1465,11 +1483,10 @@ def _cp2k_check_fin(ii):
 def run_fp_inner (iter_index,
                   jdata,
                   mdata,
-                  dispatcher,
                   forward_files,
                   backward_files,
                   check_fin,
-                  log_file = "log",
+                  log_file = "fp.log",
                   forward_common_files=[]) :
     fp_command = mdata['fp_command']
     fp_group_size = mdata['fp_group_size']
@@ -1488,7 +1505,14 @@ def run_fp_inner (iter_index,
     #     if not check_fin(ii) :
     #         fp_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
-
+    cwd = os.getcwd()
+    task_chunks = _split_tasks(run_tasks, fp_group_size)
+    nchunks = len(task_chunks)
+    if "ali_auth" in mdata:
+        dispatcher = ALI(mdata['ali_auth'], mdata['fp_resources'], mdata['fp_machine'], nchunks, work_path)
+        dispatcher.init()
+    else:
+        dispatcher = make_dispatcher(mdata['fp_machine'])
     dispatcher.run_jobs(mdata['fp_resources'],
                         [fp_command],
                         work_path,
@@ -1501,10 +1525,10 @@ def run_fp_inner (iter_index,
                         errlog = log_file)
 
 
+
 def run_fp (iter_index,
             jdata,
-            mdata,
-            dispatcher) :
+            mdata) :
     fp_style = jdata['fp_style']
     fp_pp_files = jdata['fp_pp_files']
 
@@ -1520,24 +1544,24 @@ def run_fp (iter_index,
             forward_files.append('KPOINTS')
         else:
             forward_common_files=[]
-        run_fp_inner(iter_index, jdata, mdata, dispatcher, forward_files, backward_files, _vasp_check_fin,
+        run_fp_inner(iter_index, jdata, mdata,  forward_files, backward_files, _vasp_check_fin,
                      forward_common_files=forward_common_files)
     elif fp_style == "pwscf" :
         forward_files = ['input'] + fp_pp_files
         backward_files = ['output']
-        run_fp_inner(iter_index, jdata, mdata, dispatcher, forward_files, backward_files, _qe_check_fin, log_file = 'output')
+        run_fp_inner(iter_index, jdata, mdata,  forward_files, backward_files, _qe_check_fin, log_file = 'output')
     elif fp_style == "siesta":
         forward_files = ['input'] + fp_pp_files
         backward_files = ['output']
-        run_fp_inner(iter_index, jdata, mdata, dispatcher, forward_files, backward_files, _siesta_check_fin, log_file='output')
+        run_fp_inner(iter_index, jdata, mdata,  forward_files, backward_files, _siesta_check_fin, log_file='output')
     elif fp_style == "gaussian":
         forward_files = ['input']
         backward_files = ['output']
-        run_fp_inner(iter_index, jdata, mdata, dispatcher, forward_files, backward_files, _gaussian_check_fin, log_file = 'output')
+        run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, _gaussian_check_fin, log_file = 'output')
     elif fp_style == "cp2k":
         forward_files = ['input.inp', 'coord.xyz']
         backward_files = ['output']
-        run_fp_inner(iter_index, jdata, mdata, dispatcher, forward_files, backward_files, _cp2k_check_fin, log_file = 'output')
+        run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, _cp2k_check_fin, log_file = 'output')
     else :
         raise RuntimeError ("unsupported fp style")
 
@@ -1910,8 +1934,7 @@ def run_iter (param_file, machine_file) :
             elif jj == 1 :
                 log_iter ("run_train", ii, jj)
                 mdata  = decide_train_machine(mdata)
-                disp = make_dispatcher(mdata['train_machine'])
-                run_train  (ii, jdata, mdata, disp)
+                run_train  (ii, jdata, mdata)
             elif jj == 2 :
                 log_iter ("post_train", ii, jj)
                 post_train (ii, jdata, mdata)
@@ -1923,8 +1946,8 @@ def run_iter (param_file, machine_file) :
             elif jj == 4 :
                 log_iter ("run_model_devi", ii, jj)
                 mdata = decide_model_devi_machine(mdata)
-                disp = make_dispatcher(mdata['model_devi_machine'])
-                run_model_devi (ii, jdata, mdata, disp)
+                run_model_devi (ii, jdata, mdata)
+                
             elif jj == 5 :
                 log_iter ("post_model_devi", ii, jj)
                 post_model_devi (ii, jdata, mdata)
@@ -1934,8 +1957,7 @@ def run_iter (param_file, machine_file) :
             elif jj == 7 :
                 log_iter ("run_fp", ii, jj)
                 mdata = decide_fp_machine(mdata)
-                disp = make_dispatcher(mdata['fp_machine'])
-                run_fp (ii, jdata, mdata, disp)
+                run_fp (ii, jdata, mdata)
             elif jj == 8 :
                 log_iter ("post_fp", ii, jj)
                 post_fp (ii, jdata)

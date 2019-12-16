@@ -1,4 +1,4 @@
-import os,sys,time,random,json
+import os,sys,time,random,json,glob
 
 from dpgen.dispatcher.LocalContext import LocalSession
 from dpgen.dispatcher.LocalContext import LocalContext
@@ -153,10 +153,18 @@ class Dispatcher(object):
                     dlog.info('restart from old submission %s for chunk %s' % (job_uuid, cur_hash))
                 # record job and its remote context
                 job_list.append(rjob)
+                ip = None
+                instance_id = None
+                if "type" in self.remote_profile:
+                    if self.remote_profile['type'] == 'ALI':
+                        ip = self.remote_profile['hostname']
+                        instance_id = self.remote_profile['instance_id']
                 job_record.record_remote_context(cur_hash,                                                 
                                                  context.local_root, 
                                                  context.remote_root, 
-                                                 job_uuid)
+                                                 job_uuid,
+                                                 ip,
+                                                 instance_id)
             else :
                 # finished job, append a None to list
                 job_list.append(None)
@@ -215,7 +223,7 @@ class Dispatcher(object):
 
 
 class JobRecord(object):
-    def __init__ (self, path, task_chunks, fname = 'job_record.json'):
+    def __init__ (self, path, task_chunks, fname = 'job_record.json', ip=None):
         self.path = os.path.abspath(path)
         self.fname = os.path.join(self.path, fname)
         self.task_chunks = task_chunks
@@ -232,9 +240,11 @@ class JobRecord(object):
                               chunk_hash, 
                               local_root, 
                               remote_root, 
-                              job_uuid):
+                              job_uuid,
+                              ip=None,
+                              instance_id=None):
         self.valid_hash(chunk_hash)
-        self.record[chunk_hash]['context'] = [local_root, remote_root, job_uuid]
+        self.record[chunk_hash]['context'] = [local_root, remote_root, job_uuid, ip, instance_id]
 
     def get_uuid(self, chunk_hash):
         self.valid_hash(chunk_hash)
