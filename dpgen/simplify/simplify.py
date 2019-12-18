@@ -146,7 +146,7 @@ def run_model_devi(iter_index, jdata, mdata, dispatcher):
         )
         # TODO: support 0.x?
         command = "{python} -m deepmd test -m {model} -s {system} -n {numb_test} -d {detail_file}".format(
-            python=mdata['python_path'],
+            python=mdata['python_test_path'],
             model=mm,
             system=rest_data_name,
             numb_test=data_size,
