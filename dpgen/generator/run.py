@@ -415,17 +415,21 @@ def run_train (iter_index,
             for single_sys in os.listdir(os.path.join(ii)):
                 trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'set.*'))
                 trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type.raw'))
+                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'nopbc'))
         else:
             trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
             trans_comm_data += glob.glob(os.path.join(ii, 'type.raw'))
+            trans_comm_data += glob.glob(os.path.join(ii, 'nopbc'))
     for ii in fp_data :
         if jdata.get('use_clusters', False):
             for single_sys in os.listdir(os.path.join(ii)):
                 trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'set.*'))
                 trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type.raw'))
+                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'nopbc'))
         else:
             trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
             trans_comm_data += glob.glob(os.path.join(ii, 'type.raw'))
+            trans_comm_data += glob.glob(os.path.join(ii, 'nopbc'))
     os.chdir(cwd)
 
     try:
