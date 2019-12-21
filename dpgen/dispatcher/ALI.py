@@ -135,7 +135,7 @@ class ALI():
         self.ip_list = ip
         with open('machine_record.json', 'w') as fp:
             json.dump({'ip': self.ip_list, 'instance_id': self.instance_list}, fp, indent=4)
-
+        
     def delete_machine(self):
         AccessKey_ID = self.adata["AccessKey_ID"]
         AccessKey_Secret = self.adata["AccessKey_Secret"]
