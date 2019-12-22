@@ -374,7 +374,7 @@ def run_iter(param_file, machine_file):
                 log_iter("run_train", ii, jj)
                 mdata = decide_train_machine(mdata)
                 disp = make_dispatcher(mdata['train_machine'])
-                run_train(ii, jdata, mdata, disp)
+                run_train(ii, jdata, mdata)
             elif jj == 2:
                 log_iter("post_train", ii, jj)
                 post_train(ii, jdata, mdata)
@@ -401,7 +401,7 @@ def run_iter(param_file, machine_file):
                 else:
                     mdata = decide_fp_machine(mdata)
                     disp = make_dispatcher(mdata['fp_machine'])
-                    run_fp(ii, jdata, mdata, disp)
+                    run_fp(ii, jdata, mdata)
             elif jj == 8:
                 log_iter("post_fp", ii, jj)
                 if jdata.get("labeled", False):
