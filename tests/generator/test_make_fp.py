@@ -15,6 +15,7 @@ from .context import param_pwscf_old_file
 from .context import param_siesta_file
 from .context import param_gaussian_file
 from .context import param_cp2k_file
+from .context import param_cp2k_file_v1
 from .context import machine_file
 from .context import param_diy_file
 from .context import make_kspacing_kpoints
@@ -159,14 +160,6 @@ PRECONDITIONER FULL_SINGLE_INVERSE\n\
 &XC\n\
 &XC_FUNCTIONAL PBE\n\
 &END XC_FUNCTIONAL\n\
-&VDW_POTENTIAL\n\
-DISPERSION_FUNCTIONAL PAIR_POTENTIAL\n\
-&PAIR_POTENTIAL\n\
-TYPE DFTD3\n\
-PARAMETER_FILE_NAME ./cp2k_basis_pp_file/dftd3.dat\n\
-REFERENCE_FUNCTIONAL PBE\n\
-&END PAIR_POTENTIAL\n\
-&END VDW_POTENTIAL\n\
 &END XC\n\
 &END DFT\n\
 &SUBSYS\n\
@@ -193,6 +186,8 @@ POTENTIAL GTH-PBE-q5\n\
 &END FORCES\n\
 &END PRINT\n\
 &END FORCE_EVAL\n"
+
+
 
 
 def _box2lmpbox(orig, box) :
@@ -384,7 +379,7 @@ def _check_incar(testCase, idx):
     fp_path = os.path.join('iter.%06d' % idx, '02.fp')
     tasks = glob.glob(os.path.join(fp_path, 'task.*'))
     cwd = os.getcwd()
-    for ii in tasks :    
+    for ii in tasks :
         os.chdir(ii)
         with open('INCAR') as fp:
             incar = fp.read()
@@ -395,7 +390,7 @@ def _check_incar_ele_temp(testCase, idx, ele_temp):
     fp_path = os.path.join('iter.%06d' % idx, '02.fp')
     tasks = glob.glob(os.path.join(fp_path, 'task.*'))
     cwd = os.getcwd()
-    for ii in tasks :            
+    for ii in tasks :
         os.chdir(ii)
         bname = os.path.basename(ii)
         sidx = int(bname.split('.')[1])
@@ -471,6 +466,7 @@ def _check_cp2k_input_head(testCase, idx) :
                 cell_end_idx = idx
         lines_check = lines[:cell_start_idx+1] + lines[cell_end_idx:]
         testCase.assertEqual(('\n'.join(lines_check)).strip(), cp2k_input_ref.strip())
+
 
 
 class TestMakeFPPwscf(unittest.TestCase):

@@ -48,7 +48,7 @@ def _crd2frag(symbols, crds, pbc=False, cell=None, return_bonds=False):
         bond = mol.GetBond(ii)
         a = bond.GetBeginAtom().GetId()
         b = bond.GetEndAtom().GetId()
-        bo = bond.GetBO()
+        bo = bond.GetBondOrder()
         if a >= atomnumber and b >= atomnumber:
             # duplicated
             continue
@@ -76,7 +76,11 @@ def _crd2mul(symbols, crds):
     mol = openbabel.OBMol()
     conv.ReadString(mol, xyzstring)
     gjfstring = conv.WriteString(mol)
-    mul = int(gjfstring.split('\n')[4].split()[1])
+    try:
+        mul = int(gjfstring.split('\n')[4].split()[1])
+    except IndexError:
+        # openbabel 3.0
+        mul = int(gjfstring.split('\n')[5].split()[1])
     return mul  
 
 
@@ -176,6 +180,7 @@ def make_gaussian_input(sys_data, fp_params):
 
 def take_cluster(old_conf_name, type_map, idx, jdata):
     cutoff = jdata['cluster_cutoff']
+    cutoff_hard = jdata.get('cluster_cutoff_hard', None)
     sys = dpdata.System(old_conf_name, fmt = 'lammps/dump', type_map = type_map)
     atom_names = sys['atom_names']
     atom_types = sys['atom_types']
@@ -190,27 +195,42 @@ def take_cluster(old_conf_name, type_map, idx, jdata):
     distances = all_atoms.get_distances(idx, range(len(all_atoms)), mic=True)
     distancescutoff = distances < cutoff
     cutoff_atoms_idx = np.where(distancescutoff)[0]
+    if cutoff_hard is not None:
+        distancescutoff_hard = distances < cutoff_hard
+        cutoff_atoms_idx_hard = np.where(distancescutoff_hard)[0]
     # make cutoff atoms in molecules
     taken_atoms_idx = []
     added = []
     for ii in range(frag_numb):
         frag_atoms_idx = np.where(frag_index == ii)[0]
+        if cutoff_hard is not None:
+            # drop atoms out of the hard cutoff anyway
+            frag_atoms_idx = np.intersect1d(frag_atoms_idx, cutoff_atoms_idx_hard)
         if np.any(np.isin(frag_atoms_idx, cutoff_atoms_idx)):
             if 'cluster_minify' in jdata and jdata['cluster_minify']:
-                # currently support C, H
+                # support for organic species
                 take_frag_idx=[]
                 for aa in frag_atoms_idx:
                     if np.any(np.isin(aa, cutoff_atoms_idx)):
+                        # atom is in the soft cutoff
+                        # pick up anyway
                         take_frag_idx.append(aa)
                     elif np.count_nonzero(np.logical_and(distancescutoff, graph.toarray()[aa]==1)):
+                        # atom is between the hard cutoff and the soft cutoff
+                        # and has a single bond with the atom inside
                         if all_atoms[aa].symbol == 'H':
+                            # for atom H: just add it
                             take_frag_idx.append(aa)
-                        elif all_atoms[aa].symbol == 'C':
+                        else:
+                            # for other atoms (C, O, etc.): replace it with a ghost H atom
                             near_atom_idx = np.nonzero(np.logical_and(distancescutoff, graph.toarray()[aa]>0))[0][0]
                             vector = all_atoms[aa].position - all_atoms[near_atom_idx].position
                             new_position = all_atoms[near_atom_idx].position + vector / np.linalg.norm(vector) * 1.09
                             added.append(Atom('H', new_position))
                     elif np.count_nonzero(np.logical_and(distancescutoff, graph.toarray()[aa]>1)):
+                        # if that atom has a double bond with the atom inside
+                        # just pick up the whole fragment (within the hard cutoff)
+                        # TODO: use a more fantastic method
                         take_frag_idx=frag_atoms_idx
                         break
             else:

@@ -1,7 +1,7 @@
 ---
 train:
 - machine:
-    machine_type: slurm
+    batch: slurm
     hostname: localhost
     port: 22
     username: '1600017784'
@@ -19,7 +19,7 @@ train:
     qos: bigdata
   deepmd_path: "/gpfs/share/software/deepmd-kit/0.12.4/gpu/gcc/4.9.0/tf1120-lowprec"
 - machine:
-    machine_type: slurm
+    batch: slurm
     hostname: localhost
     port: 22
     username: '1600017784'
@@ -38,7 +38,7 @@ train:
   deepmd_path: "/gpfs/share/software/deepmd-kit/0.12.4/gpu/gcc/4.9.0/tf1120-lowprec"
 - deepmd_path: "/data2/publicsoft/deepmd-kit/0.12.4-s/"
   machine:
-    machine_type: slurm
+    batch: slurm
     hostname: 115.27.161.2
     port: 22
     username: anguse
@@ -60,7 +60,7 @@ train:
     _comment: that's all
 model_devi:
 - machine:
-    machine_type: slurm
+    batch: slurm
     hostname: localhost
     port: 22
     username: '1600017784'
@@ -79,7 +79,7 @@ model_devi:
   command: lmp_serial
   group_size: 10
 - machine:
-    machine_type: slurm
+    batch: slurm
     hostname: localhost
     port: 22
     username: '1600017784'
@@ -98,7 +98,7 @@ model_devi:
   command: lmp_serial
   group_size: 10
 - machine:
-    machine_type: slurm
+    batch: slurm
     hostname: 115.27.161.2
     port: 22
     username: anguse
@@ -121,7 +121,7 @@ model_devi:
   group_size: 20
 fp:
 - machine:
-    machine_type: slurm
+    batch: slurm
     hostname: localhost
     port: 22
     username: '1600017784'
@@ -143,7 +143,7 @@ fp:
   command: vasp_std
   group_size: 5
 - machine:
-    machine_type: slurm
+    batch: slurm
     hostname: 162.105.133.134
     port: 22
     username: '1600017784'
@@ -165,7 +165,7 @@ fp:
   command: mpirun -n 16 vasp_std
   group_size: 5
 - machine:
-    machine_type: slurm
+    batch: slurm
     hostname: 162.105.133.134
     port: 22
     username: '1600017784'

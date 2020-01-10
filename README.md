@@ -19,6 +19,10 @@
 
 
 ## About DP-GEN
+
+[![GitHub release](https://img.shields.io/github/release/deepmodeling/dpgen.svg?maxAge=86400)](https://github.com/deepmodeling/dpgen/releases/)
+[![arxiv:1910.12690](http://img.shields.io/badge/arXiv-1910.12690-B31B1B.svg?maxAge=86400)](https://arxiv.org/abs/1910.12690)
+
 DP-GEN (Deep Generator)  is a software written in Python, delicately designed to generate a deep learning based model of interatomic potential energy and force field. DP-GEN is depedent on DeepMD-kit (https://github.com/deepmodeling/deepmd-kit/blob/master/README.md). With highly scalable interface with common softwares for molecular simulation, DP-GEN is capable to  automatically prepare scripts and maintain job queues on HPC machines (High Performance Cluster) and analyze results
 ### Highlighted features
 + **Accurate and efficient**: DP-GEN is capable to sample more than tens of million structures and select only a few for first principles calculation. DP-GEN will finally obtain a uniformly accurate model.
@@ -58,14 +62,14 @@ One can download the source code of dpgen by
 ```bash
 git clone https://github.com/deepmodeling/dpgen.git
 ```
-then you may install DP-GEN easily by: 
+then you may install DP-GEN easily by:
 ```bash
 cd dpgen
 pip install --user .
 ```
 With this command, the dpgen executable is install to `$HOME/.local/bin/dpgen`. You may want to export the `PATH` by
 ```bash
-export PATH=$HOME/.local/bin/dpgen:$PATH
+export PATH=$HOME/.local/bin:$PATH
 ```
 To test if the installation is successful, you may execute
 ```bash
@@ -123,7 +127,7 @@ You may prepare initial data for bulk systems with VASP by:
 ```bash
 dpgen init_bulk PARAM [MACHINE]
 ```
-The MACHINE configure file is optional. If this parameter exists, then the optimization 
+The MACHINE configure file is optional. If this parameter exists, then the optimization
 tasks or MD tasks will be submitted automatically according to MACHINE.json.
 
 Basically `init_bulk` can be devided into four parts , denoted as `stages` in `PARAM`:
@@ -273,7 +277,7 @@ The bold notation of key (such as **Elements**) means that it's a necessary key.
 | **layer_numb** | Integer | 3 | Number of equavilent layers of slab.
 | **vacuum_max** | Float | 9 | Maximal thickness of vacuum (Angstrom).
 | **vacuum_resol** | List of float | [0.5, 1 ] | Interval of thichness of vacuum. If size of `vacuum_resol` is 1, the interval is fixed to its value. If size of `vacuum_resol` is 2, the interval is `vacuum_resol[0]` before `mid_point`, otherwise `vacuum_resol[1]` after `mid_point`.
-| **millers** | List of list of Integer | [[1,0,0]] | Miller indices. 
+| **millers** | List of list of Integer | [[1,0,0]] | Miller indices.
 | relax_incar | String | "....../INCAR" | Path of INCAR for relaxation in VASP. **Necessary** if `stages` include 1.
 | **scale** | List of float | [0.980, 1.000, 1.020] | Scales for transforming cells.
 | **skip_relax** | Boolean | False | If it's true, you may directly run stage 2 (pertub and scale) using an unrelaxed POSCAR.
@@ -506,8 +510,45 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 |**fp_params["kspacing"]** | Float| 0.4 | Sample factor in Brillouin zones.
 |**fp_params["mixingweight"]** | Float| 0.05 | Proportion a of output Density Matrix to be used for the input Density Matrix of next SCF cycle (linear mixing).
 |**fp_params["NumberPulay"]** | Integer| 5 | Controls the Pulay convergence accelerator.
+| *fp_style == cp2k*
+| **fp_params** | Dict |  |Parameters for cp2k calculation. find detail in manual.cp2k.org. only the kind section must be set before use.  we assume that you have basic knowledge for cp2k input.
+
+
+#### Rules for cp2k input at dictionary form
+   Converting cp2k input is very simple as dictionary used to dpgen input. You just need follow some simple rule:
+- kind section parameter must be provide
+- replace `keyword` in cp2k as `keyword` in dict.
+- replace `keyword parameter` in cp2k as `value` in dict.
+- replace `section name` in cp2k as `keyword` in dict. . The corresponding value is a `dict`.
+- repalce `section parameter` in cp2k as `value` with dict. keyword `"_"`
+- `repeat section` in cp2k just need to be written once with repeat parameter as list. 
+Here are examples for setting:
+ ```python
+
+ #minimal information you should provide for input
+ #other we have set other parameters in code, if you want to
+ #use your own paramter, just write a corresponding dictionary
+ "user_fp_params":   {
+ "FORCE_EVAL":{
+ "DFT":{
+ "BASIS_SET_FILE_NAME": "path",
+ "POTENTIAL_FILE_NAME": "path"
+ }
+ "SUBSYS":{
+ "KIND":{
+ "_": ["N","C","H"],
+ "POTENTIAL": ["GTH-PBE-q5","GTH-PBE-q4", "GTH-PBE-q1"],
+ "BASIS_SET": ["DZVP-MOLOPT-GTH","DZVP-MOLOPT-GTH","DZVP-MOLOPT-GTH"]
+ }
+ }
+ }
+ }
+```
+
+
 
 ## Test: Auto-test for Deep Generator
+###  configure and param.json
 At this step, we assume that you have prepared some graph files like `graph.*.pb` and the particular pseudopotential `POTCAR`.
 
 The main code of this step is
@@ -529,6 +570,8 @@ The whole program contains a series of tasks shown as follows. In each task, the
 
 + `05.surf`: the surface formation energy
 
+Dpgen auto_test will auto make dir for each task it tests, the dir name is the same as the dir name. And the test results will in a plain text file named result. For example `cat ./01.eos/Al/std-fcc/deepmd/result`
+
 
 We take Al as an example to show the parameter settings of `param.json`.
 The first part is the fundamental setting for particular alloy system.
@@ -542,6 +585,7 @@ The first part is the fundamental setting for particular alloy system.
     "task_type":"deepmd",
     "task":"eos",
 ```
+
 You need to add the specified paths of necessary `POTCAR` files in "potcar_map". The different `POTCAR` paths are separated by commas.
 Then you also need to add the folder path of particular configuration, which contains `POSCAR` file.
 ```
@@ -578,12 +622,67 @@ The second part is the computational settings for vasp and lammps. According to 
     },
 ```
 The last part is the optional settings for various tasks mentioned above. You can change the parameters according to actual needs.
+
+
+param.json in a dictionary.
+
+| Fields  | Type  | Example | Discription  |
+| :---------------- | :--------------------- | :------------- | :----------------|
+| potcar_map | dict | {"Al": "example/POTCAR"} |a  dict like { "element" : "position of POTCAR"  } |
+| conf_dir | path like string | "confs/Al/std-fcc" | the dir which contains vasp's POSCAR  |
+| key_id | string| "DZIwdXCXg1fiXXXXXX" |the API key of Material project|
+| task_type | string | "vasp" | task type, one of deepmd vasp meam |
+| task | string | "equi" | task, one of equi, eos, elastic, vacancy, interstitial, surf or all  |
+| vasp_params| dict | seeing below | params relating to vasp INCAR|
+| lammps_params | dict| seeing below| params relating to lammps |
+
+The keys in param["vasp_params"] is shown below.
+
+| Fields  | Type  | Example | Discription  |
+| :---------------- | :--------------------- | :---------------- | :----------------|
+| ecut | real number | 650  | the plane wave cutoff for grid.  |
+| ediff | real number | 1e-6 |Tolerance of Density Matrix |
+| kspacing | real number | 0.1 | Sample factor in Brillouin zones |
+| kgamma | boolen | false | whether generate a Gamma centered grid |
+| npar | positive integer | 1 | the number of k-points that are to be treated in parallel  |
+| kpar | positive integer | 1 | the number of bands that are treated in parallel |
+
+the keys in param["lammps_params"].
+
+| Key  | Type  | Example | Discription  |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| model_dir | path like string | "example/Al_model" | the model dir which contains .pb file  |
+| type_map | list of string | ["Al"] | a list contains the element, usually useful for multiple element situation |
+| model_name | boolean |  false |  |
+| model_param_type | boolean |  false |  |
+
+### auto_test tasks
+#### 00.equi
 ```json
     "_comment":"00.equi",
     "store_stable":true,
 ```
 + `store_stable`:(boolean) whether to store the stable energy and volume
 
+param.json.
+
+| Field  | Type | Example | Discription |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| EpA(eV) | real number | -3.7468 | the potential energy of a atom|
+| VpA(A^3)| real number | 16.511| theEquilibrium volume of a atom  |
+
+test results
+```
+conf_dir:        EpA(eV)  VpA(A^3)
+confs/Al/std-fcc  -3.7468   16.511
+```
+
+| Field  | Type | Example | Discription |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| EpA(eV) | real number | -3.7468 | the potential energy of a atom|
+| VpA(A^3)| real number | 16.511| theEquilibrium volume of a atom  |
+
+#### 01.eos
 ```json
     "_comment": "01.eos",
     "vol_start":	12,
@@ -592,6 +691,23 @@ The last part is the optional settings for various tasks mentioned above. You ca
 ```
 + `vol_start`, `vol_end` and `vol_step` determine the volumetric range and accuracy of the **eos**.
 
+test results
+```
+conf_dir:confs/Al/std-fcc
+VpA(A^3)  EpA(eV)
+15.500   -3.7306
+16.000   -3.7429
+16.500   -3.7468
+17.000   -3.7430
+```
+
+
+| Field  | Type| Example| Discription  |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| EpA(eV) | list of real number | [15.5,16.0,16.5,17.0] | the potential energy of a atom in  quilibrium state|
+| VpA(A^3)| list of real number |[-3.7306, -3.7429, -3.746762, -3.7430] | the equilibrium volume of a atom  |
+
+#### 02.elastic
 ```json
     "_comment": "02.elastic",
     "norm_deform":	2e-2,
@@ -600,11 +716,61 @@ The last part is the optional settings for various tasks mentioned above. You ca
 + `norm_deform` and `shear_deform` are the scales of material deformation.
 This task uses the stress-strain relationship to calculate the elastic constant.
 
+|Key  | Type  | Example | Discription  |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| norm_deform | real number | 0.02  | uniaxial deformation range  |
+| shear_deform | real number | 0.05| shear deformation range  |
+
+test results
+```
+conf_dir:confs/Al/std-fcc
+130.50   57.45   54.45    4.24    0.00    0.00
+57.61  130.31   54.45   -4.29   -0.00   -0.00
+54.48   54.48  133.32   -0.00   -0.00   -0.00
+4.49   -4.02   -0.89   33.78    0.00   -0.00
+-0.00   -0.00   -0.00   -0.00   33.77    4.29
+0.00   -0.00   -0.00   -0.00    4.62   36.86
+# Bulk   Modulus BV = 80.78 GPa
+# Shear  Modulus GV = 36.07 GPa
+# Youngs Modulus EV = 94.19 GPa
+# Poission Ratio uV = 0.31
+```
+
+| Field  | Type | Example | Discription |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| elastic module(GPa)| 6*6 matrix of real number| [[130.50   57.45   54.45    4.24    0.00    0.00] [57.61  130.31   54.45   -4.29   -0.00   -0.00]  [54.48   54.48  133.32   -0.00   -0.00   -0.00]   [4.49   -4.02   -0.89   33.78    0.00   -0.00]  [-0.00   -0.00   -0.00   -0.00   33.77    4.29] [0.00   -0.00   -0.00   -0.00    4.62   36.86]]| Voigt-notation elastic module;sequence of row and column is (xx, yy, zz, yz, zx, xy)|
+| bulk modulus(GPa) | real number | 80.78 | bulk modulus |
+| shear modulus(GPa) | real number | 36.07 | shear modulus |
+| Youngs Modulus(GPa) | real number | 94.19 | Youngs Modulus|
+| Poission Ratio | real number | 0.31 | Poission Ratio  |
+
+
+
+#### 03.vacancy
 ```json
     "_comment":"03.vacancy",
     "supercell":[3,3,3],
 ```
 + `supercell`:(list of integer) the supercell size used to generate vacancy defect and interstitial defect
+
+|Key  | Type  | Example | Discription  |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| supercell | list of integer | [3,3,3] | the supercell size used to generate vacancy defect and interstitial defect |
+
+test result
+```
+conf_dir:confs/Al/std-fcc
+Structure:      Vac_E(eV)  E(eV) equi_E(eV)
+struct-3x3x3-000:   0.859  -96.557 -97.416
+```
+| Field  | Type | Example | Discription |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+|Structure| list of string |['struct-3x3x3-000'] | structure name|
+| Vac_E(eV) | real number |0.723 | the vacancy formation energy |
+| E(eV) | real number | -96.684 | potential energy of the vacancy configuration |
+| equi_E(eV) | real number |-97.407 | potential energy of the equilibrium state|
+
+#### 04.interstitial
 ```json
     "_comment":"04.interstitial",
     "insert_ele":["Al"],
@@ -612,6 +778,27 @@ This task uses the stress-strain relationship to calculate the elastic constant.
 ```
 + `insert_ele`:(list of string) the elements used to generate point interstitial defect
 + `repord-opt`:(boolean) whether to reproduce trajectories of interstitial defect
+
+|Key  | Type  | Example | Discription  |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| insert_ele | list of string | ["Al"] | the elements used to generate point interstitial defect |
+| reprod-opt | boolean | false | whether to reproduce trajectories of interstitial defect|
+
+test result
+```
+conf_dir:confs/Al/std-fcc
+Insert_ele-Struct: Inter_E(eV)  E(eV) equi_E(eV)
+struct-Al-3x3x3-000:   3.919  -100.991 -104.909
+struct-Al-3x3x3-001:   2.681  -102.229 -104.909
+```
+| Field  | Type | Example | Discription |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+|Structure| string |'struct-Al-3x3x3-000' | structure name|
+| Inter_E(eV) | real number |0.723 | the interstitial formation energy |
+| E(eV) | real number | -96.684 | potential energy of the interstitial configuration |
+| equi_E(eV) | real number |-97.407 | potential energy of the equilibrium state|
+
+#### 05.surface
 
 ```json
     "_comment": "05.surface",
@@ -629,7 +816,158 @@ This task uses the stress-strain relationship to calculate the elastic constant.
 + `static-opt`:(boolean) whether to use atomic relaxation to compute surface energy. if false, the structure will be relaxed.
 + `relax_box`:(boolean) set true if the box is relaxed, otherwise only relax atom positions.
 
+|Key  | Type  | Example | Discription  |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| min_slab_size| real number| 10 |  the minimum size of slab thickness |
+|min_vacuum_size | real number| 11 |  the minimum size of  the vacuume width |
+|pert_xz  | real number| 0.01 |  the perturbation through xz direction used to compute surface energy |
+|max_miller  | integer| 2 |  the maximum miller index |
+|static-opt|boolean| false | whether to use atomic relaxation to compute surface energy. if false, the structure will be relaxed. |
+|relax_box | boolean | false | set true if the box is relaxed, otherwise only relax atom positions |
 
+test result
+```
+conf_dir:confs/Al/std-fcc
+Miller_Indices:         Surf_E(J/m^2) EpA(eV) equi_EpA(eV)
+struct-000-m1.1.1m:        0.673     -3.628   -3.747
+struct-001-m2.2.1m:        0.917     -3.592   -3.747
+```
+| Field  | Type | Example| Discription|
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+|Miller_Indices| string | struct-000-m1.1.1m | Miller Indices|
+|Surf_E(J/m^2)| real number | 0.673 | the surface formation energy |
+| EpA(eV) | real number | -3.628 | potential energy of the surface configuration |
+| equi_EpA | real number | -3.747 | potential energy of the equilibrium state|
+
+### The content of the auto_test
+To know what actually will dpgen autotest do, including the lammps and vasp script, the input file and atom configuration file auto_test will generate, please refer to https://hackmd.io/@yeql5ephQLaGJGgFgpvIDw/rJY1FO92B
+
+## Simplify
+When you have a dataset containing lots of repeated data, this step will help you simplify your dataset. The workflow contains three stages: train, model_devi, and fp. The train stage and the fp stage are as the same as the run step, and the model_devi stage will calculate model deviations of the rest data that has not been confirmed accurate. Data with small model deviations will be confirmed accurate, while the program will pick data from those with large model deviations to the new dataset.
+
+Use the following script to start the workflow:
+```bash
+dpgen simplify param.json machine.json
+```
+
+Here is an example of `param.json` for QM7 dataset:
+```json
+{
+    "type_map": [
+        "C",
+        "H",
+        "N",
+        "O",
+        "S"
+    ],
+    "mass_map": [
+        12.011,
+        1.008,
+        14.007,
+        15.999,
+        32.065
+    ],
+    "pick_data": "/scratch/jz748/simplify/qm7",
+    "init_data_prefix": "",
+    "init_data_sys": [],
+    "sys_batch_size": [
+        "auto"
+    ],
+    "numb_models": 4,
+    "train_param": "input.json",
+    "default_training_param": {
+        "model": {
+            "type_map": [
+                "C",
+                "H",
+                "N",
+                "O",
+                "S"
+            ],
+            "descriptor": {
+                "type": "se_a",
+                "sel": [
+                    7,
+                    16,
+                    3,
+                    3,
+                    1
+                ],
+                "rcut_smth": 1.00,
+                "rcut": 6.00,
+                "neuron": [
+                    25,
+                    50,
+                    100
+                ],
+                "resnet_dt": false,
+                "axis_neuron": 12
+            },
+            "fitting_net": {
+                "neuron": [
+                    240,
+                    240,
+                    240
+                ],
+                "resnet_dt": true
+            }
+        },
+        "learning_rate": {
+            "type": "exp",
+            "start_lr": 0.001,
+            "decay_steps": 10,
+            "decay_rate": 0.99
+        },
+        "loss": {
+            "start_pref_e": 0.02,
+            "limit_pref_e": 1,
+            "start_pref_f": 1000,
+            "limit_pref_f": 1,
+            "start_pref_v": 0,
+            "limit_pref_v": 0,
+            "start_pref_pf": 0,
+            "limit_pref_pf": 0
+        },
+        "training": {
+            "set_prefix": "set",
+            "stop_batch": 10000,
+            "disp_file": "lcurve.out",
+            "disp_freq": 1000,
+            "numb_test": 1,
+            "save_freq": 1000,
+            "save_ckpt": "model.ckpt",
+            "load_ckpt": "model.ckpt",
+            "disp_training": true,
+            "time_training": true,
+            "profiling": false,
+            "profiling_file": "timeline.json"
+        },
+        "_comment": "that's all"
+    },
+    "use_clusters": true,
+    "fp_style": "gaussian",
+    "shuffle_poscar": false,
+    "fp_task_max": 1000,
+    "fp_task_min": 10,
+    "fp_pp_path": "/home/jzzeng/",
+    "fp_pp_files": [],
+    "fp_params": {
+        "keywords": "mn15/6-31g** force nosymm scf(maxcyc=512)",
+        "nproc": 28,
+        "multiplicity": 1,
+        "_comment": " that's all "
+    },
+    "init_pick_number":100,
+    "iter_pick_number":100,
+    "e_trust_lo":1e10,
+    "e_trust_hi":1e10,
+    "f_trust_lo":0.25,
+    "f_trust_hi":0.45,
+    "_comment": " that's all "
+}
+```
+
+Here `pick_data` is the data to simplify and currently only supports `MultiSystems` containing `System` with `deepmd/npy` format, and `use_clusters` should always be `true`. `init_pick_number` and `iter_pick_number` are the numbers of picked frames. `e_trust_lo`, `e_trust_hi` mean the range of the deviation of the frame energy, and `f_trust_lo` and `f_trust_hi` mean the range of the max deviation of atomic forces in a frame. `fp_style` can only be `gaussian` currently. Other parameters are as the same as those of generator.
 
 
 ## Set up machine
@@ -741,7 +1079,10 @@ The following table gives explicit descriptions on keys in param.json.
 | # Followings are keys in resources
 | numb_node | Integer | 1 | Node count required for the job
 | task_per_node | Integer | 4 | Number of CPU cores required
-| `numb_gpu` | Integer | 4 | Number of GPUs required
+| numb_gpu | Integer | Integer | 4 | Number of GPUs required
+| manual_cuda_devices | Interger | 1 | Used with key "manual_cuda_multiplicity" specify the gpu number
+| manual_cuda_multiplicity |Interger | 5 | Used in 01.model_devi,used with key "manual_cuda_devices" specify the MD program number running on one GPU  at the same time,dpgen will  automatically allocate MD jobs on different GPU. This can improve GPU usage for GPU like V100.
+| node_cpu | Integer | 4 | Only for LSF. The number of CPU cores on each node that should be allocated to the job.
 | source_list | List of string | "....../vasp.env" | Environment needed for certain job. For example, if "env" is in the list, 'source env' will be written in the script.
 | module_list | List of string | [ "Intel/2018", "Anaconda3"] | For example, If "Intel/2018" is in the list, "module load Intel/2018" will be written in the script.
 | partition | String  | "AdminGPU" | Partition / queue in which to run the job. |
@@ -749,10 +1090,10 @@ The following table gives explicit descriptions on keys in param.json.
 mem_limit | Interger | 16 | Maximal memory permitted to apply for the job.
 | with_mpi | Boolean | true | Deciding whether to use mpi for calculation. If it's true and machine type is Slurm, "srun" will be prefixed to `command` in the script.
 | qos | "string"| "bigdata" | Deciding priority, dependent on particular settings of your HPC.
+| allow_failure | Boolean | false | Allow the command to return a non-zero exit code.
 | # End of resources
 | command | String | "lmp_serial" | Executable path of software, such as `lmp_serial`, `lmp_mpi` and `vasp_gpu`, `vasp_std`, etc.
 | group_size | Integer | 5 | DP-GEN will put these jobs together in one submitting script.
-| allow_failure | Boolean | false | Allow the command to return a non-zero exit code.
 
 ## Troubleshooting
 1. The most common problem is whether two settings correspond with each other, including:
@@ -763,7 +1104,7 @@ mem_limit | Interger | 16 | Maximal memory permitted to apply for the job.
     - Index of `sys_configs` and `sys_idx`
 
 2. Please verify the directories of `sys_configs`. If there isnt's any POSCAR for `01.model_devi` in one iteration, it may happen that you write the false path of `sys_configs`.
-3. Correct format of JSON file. 
+3. Correct format of JSON file.
 4. In `02.fp`, total cores you require through `task_per_node` should be devided by `npar` times `kpar`.
 5. The frames of one system should be larger than `batch_size` and `numb_test` in `default_training_param`. It happens that one iteration adds only a few structures and causes error in next iteration's training. In this condition, you may let `fp_task_min` be larger than `numb_test`.
 ## License

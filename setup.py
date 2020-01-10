@@ -17,7 +17,7 @@ today = datetime.date.today().strftime("%b-%d-%Y")
 with open(path.join('dpgen', '_date.py'), 'w') as fp :
     fp.write('date = \'%s\'' % today)
 
-install_requires=['numpy>=1.14.3', 'dpdata>=0.1.10', 'pymatgen>=2017.9.1', 'ase', 'monty>2.0.0', 'paramiko', 'custodian']
+install_requires=['numpy>=1.14.3', 'dpdata>=0.1.12', 'pymatgen>=2019.1.13', 'ase', 'monty>2.0.0', 'paramiko', 'custodian']
 
 setuptools.setup(
     name=NAME,
@@ -40,9 +40,10 @@ setuptools.setup(
               'dpgen/remote',
               'dpgen/dispatcher',
               'dpgen/database',
-              'dpgen/tools'
+              'dpgen/tools',
+              'dpgen/simplify',
     ],
-    data_files = [('dpgen/tools/', ['dpgen/tools/update_time.sh', ])],
+    # data_files = [('dpgen/tools/', ['dpgen/tools/update_time.sh', ])],
     # package_data={'example':['*.json']},
     classifiers=[
         "Programming Language :: Python :: 3.6",
