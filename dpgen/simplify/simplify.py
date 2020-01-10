@@ -255,7 +255,7 @@ def post_model_devi(iter_index, jdata, mdata):
     # dump the accurate data -- to another directory
     sys_data_path = os.path.join(work_path, accurate_data_name)
     sys_accurate.to_deepmd_raw(sys_data_path)
-    sys_accurate.to_deepmd_npy(sys_data_path, set_size=rest_idx.size)
+    sys_accurate.to_deepmd_npy(sys_data_path, set_size=sys_accurate.get_nframes())
 
 
 def make_fp(iter_index, jdata, mdata):
