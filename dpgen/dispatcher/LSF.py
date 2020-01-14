@@ -71,8 +71,6 @@ class LSF(Batch):
         subret = (stdout.readlines())
         job_id = subret[0].split()[1][1:-1]
         self.context.write_file(self.job_id_name, job_id)
-        if 'wait' in res and res['wait'] > 0:
-            time.sleep(res['wait']) # For preventing the crash of the tasks while submitting.
 
     def default_resources(self, res_):
         """
