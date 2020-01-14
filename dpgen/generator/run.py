@@ -43,6 +43,9 @@ from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
 from dpgen.generator.lib.vasp import incar_upper
 from dpgen.generator.lib.pwscf import make_pwscf_input
 #from dpgen.generator.lib.pwscf import cvt_1frame
+from dpgen.generator.lib.pwmat import write_input_dict
+from dpgen.generator.lib.pwmat import make_pwmat_input_user_dict
+from dpgen.generator.lib.pwmat import input_upper
 from dpgen.generator.lib.siesta import make_siesta_input
 from dpgen.generator.lib.gaussian import make_gaussian_input, take_cluster
 from dpgen.generator.lib.cp2k import make_cp2k_input, make_cp2k_xyz
@@ -1102,6 +1105,32 @@ def make_vasp_incar(jdata, filename):
         fp.write(incar)
     return incar    
 
+def make_pwmat_input(jdata, filename):
+    if 'fp_incar' in jdata.keys() :
+        fp_incar_path = jdata['fp_incar']
+        assert(os.path.exists(fp_incar_path))
+        fp_incar_path = os.path.abspath(fp_incar_path)
+        fr = open(fp_incar_path)
+        input = fr.read()
+        fr.close()
+    elif 'user_fp_params' in jdata.keys() :
+        input = write_input_dict(jdata['user_fp_params'])
+    else:
+        input = make_pwmat_input_user_dict(jdata['fp_params'])
+    if 'IN.PSP' in input or 'in.psp' in input:
+        with open(filename, 'w') as fp:
+            fp.write(input)
+            fp.write('OUT.MLMD = T\n')
+        return input
+    else:
+        with open(filename, 'w') as fp:
+            fp.write(input)
+            fp.write('OUT.MLMD = T\n')
+            fp_pp_files = jdata['fp_pp_files']
+            for idx, ii in enumerate(fp_pp_files) : 
+                fp.write('IN.PSP%d = %s\n' %(idx+1, ii))
+        return input    
+
 def make_vasp_incar_ele_temp(jdata, filename, ele_temp, nbands_esti = None):
     with open(filename) as fp:
         incar = fp.read()
@@ -1136,6 +1165,21 @@ def _make_fp_vasp_incar (iter_index,
                 make_vasp_incar_ele_temp(jdata, 'INCAR', 
                                          job_data['ele_temp'],
                                          nbands_esti = nbands_esti)
+        os.chdir(cwd)
+
+def _make_fp_pwmat_input (iter_index,
+                         jdata) :
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
+    fp_tasks.sort()
+    if len(fp_tasks) == 0 :
+        return
+    cwd = os.getcwd()
+    for ii in fp_tasks:
+        os.chdir(ii)
+        make_pwmat_input(jdata, 'etot.input')
+        os.system("poscar2config.x < POSCAR")
         os.chdir(cwd)
 
 def _make_fp_vasp_kp (iter_index,jdata):
@@ -1410,6 +1454,21 @@ def make_fp_cp2k (iter_index,
     # link pp files
     _link_fp_vasp_pp(iter_index, jdata)
 
+def make_fp_pwmat (iter_index,
+                  jdata) :
+    # make config
+    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
+    if len(fp_tasks) == 0 :
+        return
+    # abs path for fp_incar if it exists
+    if 'fp_incar' in jdata:
+        jdata['fp_incar'] = os.path.abspath(jdata['fp_incar'])
+    # order is critical!
+    # 1, link pp files
+    _link_fp_vasp_pp(iter_index, jdata)
+    # 2, create pwmat input
+    _make_fp_pwmat_input(iter_index, jdata)
+
 def make_fp (iter_index,
              jdata,
              mdata) :
@@ -1425,6 +1484,8 @@ def make_fp (iter_index,
         make_fp_gaussian(iter_index, jdata)
     elif fp_style == "cp2k" :
         make_fp_cp2k(iter_index, jdata)
+    elif fp_style == "pwmat" :
+        make_fp_pwmat(iter_index, jdata)
     else :
         raise RuntimeError ("unsupported fp style")
 
@@ -1479,6 +1540,17 @@ def _cp2k_check_fin(ii):
             content = fp.read()
             count = content.count('SCF run converged')
             if count == 0 :
+                return False
+    else :
+        return False
+    return True
+
+def _pwmat_check_fin (ii) :
+    if os.path.isfile(os.path.join(ii, 'REPORT')) :
+        with open(os.path.join(ii, 'REPORT'), 'r') as fp :
+            content = fp.read()
+            count = content.count('time')
+            if count != 1 :
                 return False
     else :
         return False
@@ -1566,6 +1638,10 @@ def run_fp (iter_index,
         forward_files = ['input.inp', 'coord.xyz']
         backward_files = ['output']
         run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, _cp2k_check_fin, log_file = 'output')
+    elif fp_style == "pwmat" :
+        forward_files = ['atom.config', 'etot.input'] + fp_pp_files
+        backward_files = ['REPORT', 'OUT.MLMD', 'output']
+        run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, _pwmat_check_fin, log_file = 'output')
     else :
         raise RuntimeError ("unsupported fp style")
 
@@ -1830,6 +1906,59 @@ def post_fp_cp2k (iter_index,
         all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
 
 
+def post_fp_pwmat (iter_index,
+                  jdata,
+                  rfailed=None):
+
+    ratio_failed =  rfailed if rfailed else jdata.get('ratio_failed',0.05)
+    model_devi_jobs = jdata['model_devi_jobs']
+    assert (iter_index < len(model_devi_jobs))
+
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
+    fp_tasks.sort()
+    if len(fp_tasks) == 0 :
+        return
+
+    system_index = []
+    for ii in fp_tasks :
+        system_index.append(os.path.basename(ii).split('.')[1])
+    system_index.sort()
+    set_tmp = set(system_index)
+    system_index = list(set_tmp)
+    system_index.sort()
+
+    cwd = os.getcwd()
+
+    tcount=0
+    icount=0
+    for ss in system_index :
+        sys_output = glob.glob(os.path.join(work_path, "task.%s.*/OUT.MLMD"%ss))
+        sys_output.sort()
+        tcount += len(sys_output)
+        all_sys = None
+        for oo in sys_output :
+            _sys = dpdata.LabeledSystem(oo, type_map = jdata['type_map'])
+            if len(_sys) == 1:
+                if all_sys is None:
+                    all_sys = _sys
+                else:
+                    all_sys.append(_sys)
+            else:
+                icount+=1
+        if all_sys is not None:
+           sys_data_path = os.path.join(work_path, 'data.%s'%ss)
+           all_sys.to_deepmd_raw(sys_data_path)
+           all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
+    dlog.info("failed frame number: %s "%icount)
+    dlog.info("total frame number: %s "%tcount)
+    reff=icount/tcount
+    dlog.info('ratio of failed frame:  {:.2%}'.format(reff))
+
+    if reff>ratio_failed:
+       raise RuntimeError("find too many unsuccessfully terminated jobs")
+
 def post_fp (iter_index,
              jdata) :
     fp_style = jdata['fp_style']
@@ -1843,6 +1972,8 @@ def post_fp (iter_index,
         post_fp_gaussian(iter_index, jdata)
     elif fp_style == 'cp2k' :
         post_fp_cp2k(iter_index, jdata)
+    elif fp_style == 'pwmat' :
+        post_fp_pwmat(iter_index, jdata)
     else :
         raise RuntimeError ("unsupported fp style")
     # clean traj

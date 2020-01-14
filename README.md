@@ -27,7 +27,7 @@ DP-GEN (Deep Generator)  is a software written in Python, delicately designed to
 ### Highlighted features
 + **Accurate and efficient**: DP-GEN is capable to sample more than tens of million structures and select only a few for first principles calculation. DP-GEN will finally obtain a uniformly accurate model.
 + **User-friendly and automatic**: Users may install and run DP-GEN easily. Once succusefully running, DP-GEN can dispatch and handle all jobs on HPCs, and thus there's no need for any personal effort.
-+ **Highly scalable**: With modularized code structures, users and developers can easily extend DP-GEN for their most relevant needs. DP-GEN currently supports for HPC systems (Slurm, PBS, LSF and cloud machines ), Deep Potential interface with DeePMD-kit, MD interface with LAMMPS  and *ab-initio* calculation interface with VASP, PWSCF,SIESTA and Gaussian. We're sincerely welcome and embraced to users' contributions, with more possibilities and cases to use DP-GEN.
++ **Highly scalable**: With modularized code structures, users and developers can easily extend DP-GEN for their most relevant needs. DP-GEN currently supports for HPC systems (Slurm, PBS, LSF and cloud machines ), Deep Potential interface with DeePMD-kit, MD interface with LAMMPS  and *ab-initio* calculation interface with VASP, PWSCF,SIESTA, Gaussian and PWmat. We're sincerely welcome and embraced to users' contributions, with more possibilities and cases to use DP-GEN.
 
 ### Code structure and interface
 + dpgen:
@@ -486,7 +486,7 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | model_devi_jobs["taut"] | Float          | "0.1"                                    | Coupling time of thermostat (fs) |
 | model_devi_jobs["taup"] | Float             | "0.5"                                    | Coupling time of barostat (fs)
 | *#Labeling*
-| **fp_style** | string                | "vasp"                                                       | Software for First Principles. **Options** include “vasp”, “pwscf”, “siesta” and “gaussian” up to now. |
+| **fp_style** | string                | "vasp"                                                       | Software for First Principles. **Options** include “vasp”, “pwscf”, “siesta”, “gaussian” and “pwmat” up to now. |
 | **fp_task_max** | Integer            | 20                                                           | Maximum of  structures to be calculated in `02.fp` of each iteration. |
 | **fp_task_min**     | Integer        | 5                                                            | Minimum of structures to calculate in `02.fp` of each iteration. |
 | *fp_style == VASP*

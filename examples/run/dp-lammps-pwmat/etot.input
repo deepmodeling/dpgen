@@ -1,0 +1,11 @@
+4 1
+IN.ATOM = atom.config
+JOB = scf
+IN.PSP1 = C.SG15.PBE.UPF
+IN.PSP2 = H.SG15.PBE.UPF
+Ecut = 50
+Ecut2 = 200
+MP_N123 = 1 1 1 0 0 0 
+SCF_ITER0_1 =    6   4    3    0.0000     0.02500    2
+SCF_ITER0_2 =   94   4    3    1.0000     0.200    2
+
