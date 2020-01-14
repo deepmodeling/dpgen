@@ -755,7 +755,6 @@ class LSFJob (RemoteJob) :
                 while self.check_limit(task_max=resources['task_max']):
                     time.sleep(60)
             self._submit(job_dirs, cmd, args, resources)
-        time.sleep(20) # For preventing the crash of the tasks while submitting.
 
     def _submit(self, 
                job_dirs,
@@ -770,6 +769,7 @@ class LSFJob (RemoteJob) :
         with sftp.open(os.path.join(self.remote_root, 'job_id'), 'w') as fp:
             fp.write(job_id)
         sftp.close()
+        time.sleep(20) # For preventing the crash of the tasks while submitting.
 
     def check_limit(self, task_max):
         stdin_run, stdout_run, stderr_run = self.block_checkcall("bjobs | grep RUN | wc -l")
@@ -807,11 +807,11 @@ class LSFJob (RemoteJob) :
             status_word = status_line.split()[2]
 
         # ref: https://www.ibm.com/support/knowledgecenter/en/SSETD4_9.1.2/lsf_command_ref/bjobs.1.html
-        if      status_word in ["PEND", "WAIT"] :
+        if status_word in ["PEND", "WAIT", "PSUSP"] :
             return JobStatus.waiting
-        elif    status_word in ["RUN"] :
+        elif status_word in ["RUN", "USUSP"] :
             return JobStatus.running
-        elif    status_word in ["DONE","EXIT"] :
+        elif status_word in ["DONE","EXIT"] :
             if self._check_finish_tag() :
                 return JobStatus.finished
             else :
@@ -845,14 +845,19 @@ class LSFJob (RemoteJob) :
         ret = ''
         ret += "#!/bin/bash -l\n#BSUB -e %J.err\n#BSUB -o %J.out\n"
         if res['numb_gpu'] == 0:
-            ret += '#BSUB -R span[ptile=%d]\n#BSUB -n %d\n' % (
-                res['node_cpu'], res['numb_node'] * res['task_per_node'])
+            ret += '#BSUB -n %d\n#BSUB -R span[ptile=%d]\n' % (
+                res['numb_node'] * res['task_per_node'], res['node_cpu'])
         else:
             if res['node_cpu']:
                 ret += '#BSUB -R span[ptile=%d]\n' % res['node_cpu']
-                # It is selected only for the situation that GPU is related to CPU node.
-            ret += '#BSUB -R "select[ngpus >0] rusage[ngpus_excl_p=1]"\n#BSUB -n %d\n' % (
-                res['numb_gpu'])
+            if 'new_lsf_gpu' in res and res['new_lsf_gpu'] == True:
+                # supportted in LSF >= 10.1.0 SP6
+                # ref: https://www.ibm.com/support/knowledgecenter/en/SSWRJV_10.1.0/lsf_resource_sharing/use_gpu_res_reqs.html
+                ret += '#BSUB -n %d\n#BSUB -gpu "num=%d:mode=shared:j_exclusive=yes"\n' % (
+                    res['numb_gpu'], res['task_per_node'])
+            else:
+                ret += '#BSUB -n %d\n#BSUB -R "select[ngpus >0] rusage[ngpus_excl_p=%d]"\n' % (
+                    res['numb_gpu'], res['task_per_node'])
         if res['time_limit']:
             ret += '#BSUB -W %s\n' % (res['time_limit'].split(':')[
                 0] + ':' + res['time_limit'].split(':')[1])
