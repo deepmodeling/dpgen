@@ -74,13 +74,13 @@ class Batch(object) :
         # loop over commands 
         self.cmd_cnt = 0
         try:
-            self.manual_gpu = res['manual_cuda_devices']
-        except:
-            self.manual_gpu = 0
+            self.manual_cuda_devices = res['manual_cuda_devices']
+        except KeyError:
+            self.manual_cuda_devices = 0
         try:
-            self.manual_gpu_multiplicity = res['manual_cuda_multiplicity']
-        except:
-            self.manual_gpu_multiplicity = 1
+            self.manual_cuda_multiplicity = res['manual_cuda_multiplicity']
+        except KeyError:
+            self.manual_cuda_multiplicity = 1
         for ii in range(len(cmd)):            
             # for one command
             ret += self._sub_script_inner(job_dirs,
@@ -140,7 +140,7 @@ class Batch(object) :
         for ii,jj in zip(job_dirs, args) :
             ret += 'cd %s\n' % ii
             ret += 'test $? -ne 0 && exit\n\n'
-            if self.manual_gpu <= 0:
+            if self.manual_cuda_devices <= 0:
                 ret += 'if [ ! -f tag_%d_finished ] ;then\n' % idx
                 ret += '  %s 1>> %s 2>> %s \n' % (self.sub_script_cmd(cmd, jj, res), outlog, errlog)
                 if res['allow_failure'] is False:
@@ -151,11 +151,11 @@ class Batch(object) :
             else :
                 # do not support task-wise restart
                 tmp_cmd = ' %s 1>> %s 2>> %s ' % (self.sub_script_cmd(cmd, jj, res), outlog, errlog)
-                ret += 'CUDA_VISIBLE_DEVICES=%d %s &\n\n' % ((self.cmd_cnt % self.manual_gpu), tmp_cmd)
+                ret += 'CUDA_VISIBLE_DEVICES=%d %s &\n\n' % ((self.cmd_cnt % self.manual_cuda_devices), tmp_cmd)
                 self.cmd_cnt += 1
             ret += 'cd %s\n' % self.context.remote_root
             ret += 'test $? -ne 0 && exit\n'
-            if self.manual_gpu > 0 and self.cmd_cnt % (self.manual_gpu * self.manual_gpu_multiplicity) == 0:
+            if self.manual_cuda_devices > 0 and self.cmd_cnt % (self.manual_cuda_devices * self.manual_cuda_multiplicity) == 0:
                 ret += '\nwait\n\n'
         ret += '\nwait\n\n'
         return ret

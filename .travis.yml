@@ -1,12 +1,10 @@
 language: python
 python:
-  - "3.6.3"
-  - "3.6-dev"  # 3.6 development branch
+  - "3.6"
+  - "3.7"
 # command to install dependencies
 env:
   matrix:
-  - PYMATGEN_VERSION=2017.9.1
-  - PYMATGEN_VERSION=2018.1.19
   - PYMATGEN_VERSION=2019.1.13
   - PYMATGEN_VERSION=2019.7.30
 before_install:

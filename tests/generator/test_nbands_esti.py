@@ -71,5 +71,9 @@ class TestNBandsEsti(unittest.TestCase):
             'ele_temp': 20000.0,
             'nbands': 81
         }
-        self.assertEqual(res, ref)
-    
+        self.assertEqual(res['natoms'], ref['natoms'])
+        self.assertAlmostEqual(res['vol'], ref['vol'])
+        self.assertAlmostEqual(res['nvalence'][0], ref['nvalence'][0])
+        self.assertEqual(len(res['nvalence']), len(ref['nvalence']))
+        self.assertAlmostEqual(res['ele_temp'], ref['ele_temp'], places = 1)
+        self.assertEqual(res['nbands'], ref['nbands'])    

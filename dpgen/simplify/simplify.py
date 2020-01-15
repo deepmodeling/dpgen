@@ -37,16 +37,27 @@ accurate_data_name = "data.accurate"
 detail_file_name_prefix = "details"
 
 
+def get_system_cls(jdata):
+    if jdata.get("labeled", False):
+        return dpdata.LabeledSystem
+    return dpdata.System
+
+
+def get_systems(path, jdata):
+    system = get_system_cls(jdata)
+    systems = dpdata.MultiSystems(
+        *[system(os.path.join(path, s), fmt='deepmd/npy') for s in os.listdir(path)])
+    return systems
+
+
 def init_pick(iter_index, jdata, mdata):
     """pick up init data from dataset randomly"""
     pick_data = jdata['pick_data']
     init_pick_number = jdata['init_pick_number']
     # use MultiSystems with System
     # TODO: support System and LabeledSystem
-    # TODO: support MultiSystems with LabeledSystem
     # TODO: support other format
-    systems = dpdata.MultiSystems(
-        *[dpdata.System(os.path.join(pick_data, s), fmt='deepmd/npy') for s in os.listdir(pick_data)])
+    systems = get_systems(pick_data, jdata)
     # label the system
     labels = []
     for key, system in systems.systems.items():
@@ -135,7 +146,7 @@ def run_model_devi(iter_index, jdata, mdata, dispatcher):
         )
         # TODO: support 0.x?
         command = "{python} -m deepmd test -m {model} -s {system} -n {numb_test} -d {detail_file}".format(
-            python=mdata['python_path'],
+            python=mdata['python_test_path'],
             model=mm,
             system=rest_data_name,
             numb_test=data_size,
@@ -197,7 +208,8 @@ def post_model_devi(iter_index, jdata, mdata):
         f_std = np.max(f_std, axis=1)
         # (n_frame,)
 
-        for subsys, e_devi, f_devi in zip(dpdata.System(os.path.join(task, rest_data_name), fmt='deepmd/npy'), e_std, f_std):
+        system_cls = get_system_cls(jdata)
+        for subsys, e_devi, f_devi in zip(system_cls(os.path.join(task, rest_data_name), fmt='deepmd/npy'), e_std, f_std):
             if (e_devi < e_trust_hi and e_devi >= e_trust_lo) or (f_devi < f_trust_hi and f_devi >= f_trust_lo) :
                 sys_candinate.append(subsys)
             elif (e_devi >= e_trust_hi ) or (f_devi >= f_trust_hi ):
@@ -243,7 +255,7 @@ def post_model_devi(iter_index, jdata, mdata):
     # dump the accurate data -- to another directory
     sys_data_path = os.path.join(work_path, accurate_data_name)
     sys_accurate.to_deepmd_raw(sys_data_path)
-    sys_accurate.to_deepmd_npy(sys_data_path, set_size=rest_idx.size)
+    sys_accurate.to_deepmd_npy(sys_data_path, set_size=sys_accurate.get_nframes())
 
 
 def make_fp(iter_index, jdata, mdata):
@@ -251,8 +263,14 @@ def make_fp(iter_index, jdata, mdata):
     work_path = os.path.join(iter_name, fp_name)
     create_path(work_path)
     picked_data_path = os.path.join(iter_name, model_devi_name, picked_data_name)
-    systems = dpdata.MultiSystems(
-        *[dpdata.System(os.path.join(picked_data_path, s), fmt='deepmd/npy') for s in os.listdir(picked_data_path)])
+    if jdata.get("labeled", False):
+        dlog.info("already labeled, skip make_fp and link data directly")
+        os.symlink(os.path.abspath(picked_data_path), os.path.abspath(
+            os.path.join(work_path, "task.%03d" % 0)))
+        os.symlink(os.path.abspath(picked_data_path), os.path.abspath(
+            os.path.join(work_path, "data.%03d" % 0)))
+        return
+    systems = get_systems(picked_data_path, jdata)
     fp_style = jdata['fp_style']
     if 'user_fp_params' in jdata.keys() :
         fp_params = jdata['user_fp_params']
@@ -356,7 +374,7 @@ def run_iter(param_file, machine_file):
                 log_iter("run_train", ii, jj)
                 mdata = decide_train_machine(mdata)
                 disp = make_dispatcher(mdata['train_machine'])
-                run_train(ii, jdata, mdata, disp)
+                run_train(ii, jdata, mdata)
             elif jj == 2:
                 log_iter("post_train", ii, jj)
                 post_train(ii, jdata, mdata)
@@ -378,12 +396,18 @@ def run_iter(param_file, machine_file):
                 make_fp(ii, jdata, mdata)
             elif jj == 7:
                 log_iter("run_fp", ii, jj)
-                mdata = decide_fp_machine(mdata)
-                disp = make_dispatcher(mdata['fp_machine'])
-                run_fp(ii, jdata, mdata, disp)
+                if jdata.get("labeled", False):
+                    dlog.info("already have labeled data, skip run_fp")
+                else:
+                    mdata = decide_fp_machine(mdata)
+                    disp = make_dispatcher(mdata['fp_machine'])
+                    run_fp(ii, jdata, mdata)
             elif jj == 8:
                 log_iter("post_fp", ii, jj)
-                post_fp(ii, jdata)
+                if jdata.get("labeled", False):
+                    dlog.info("already have labeled data, skip post_fp")
+                else:
+                    post_fp(ii, jdata)
             else:
                 raise RuntimeError("unknown task %d, something wrong" % jj)
             record_iter(record, ii, jj)
