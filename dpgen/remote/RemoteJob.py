@@ -755,6 +755,8 @@ class LSFJob (RemoteJob) :
                 while self.check_limit(task_max=resources['task_max']):
                     time.sleep(60)
             self._submit(job_dirs, cmd, args, resources)
+        if resources.get('wait_time', False):
+            time.sleep(resources['wait_time']) # For preventing the crash of the tasks while submitting.
 
     def _submit(self, 
                job_dirs,
@@ -769,7 +771,6 @@ class LSFJob (RemoteJob) :
         with sftp.open(os.path.join(self.remote_root, 'job_id'), 'w') as fp:
             fp.write(job_id)
         sftp.close()
-        time.sleep(20) # For preventing the crash of the tasks while submitting.
 
     def check_limit(self, task_max):
         stdin_run, stdout_run, stderr_run = self.block_checkcall("bjobs | grep RUN | wc -l")

@@ -119,8 +119,8 @@ class Batch(object) :
         else:
             dlog.debug('new task')
             self.do_submit(job_dirs, cmd, args, res, outlog=outlog, errlog=errlog)
-        if 'sleep' in res and res['sleep'] > 0:
-            sleep = res['sleep']
+        if 'wait_time' in res and res['wait_time'] > 0:
+            sleep = res['wait_time']
             time.sleep(sleep) # For preventing the crash of the tasks while submitting        
 
     def check_finish_tag(self) :
