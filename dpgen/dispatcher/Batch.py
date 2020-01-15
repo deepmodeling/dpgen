@@ -99,7 +99,6 @@ class Batch(object) :
                args = None,
                res = None,
                restart = False,
-               sleep = 0,
                outlog = 'log',
                errlog = 'err'):
         if restart:
@@ -119,7 +118,8 @@ class Batch(object) :
         else:
             dlog.debug('new task')
             self.do_submit(job_dirs, cmd, args, res, outlog=outlog, errlog=errlog)
-        time.sleep(sleep) # For preventing the crash of the tasks while submitting        
+        sleep = res.get('submit_wait_time', 0)
+        time.sleep(sleep) # For preventing the crash of the tasks while submitting
 
     def check_finish_tag(self) :
         return self.context.check_file_exists(self.finish_tag_name)
