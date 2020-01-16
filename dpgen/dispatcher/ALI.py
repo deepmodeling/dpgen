@@ -29,12 +29,11 @@ class ALI():
     def check_restart(self):
         dispatchers = []
         instance_list = []
-        if len(glob.glob(os.path.join(self.work_path, 'jr.*.json'))) == self.nchunks:
-            for ii in range(self.nchunks):
-                with open(os.path.join(self.work_path, 'jr.%.06d.json' % ii)) as fp:
-                    job_record = json.load(fp)
-                    key = list(job_record.keys())[0]
-                    ip, instance_id = job_record[key]['context'][-2], job_record[key]['context'][-1]
+        if os.path.exists('machine_record.json'):
+            with open('machine_record.json', 'r') as fp:
+                machine_record = json.load(fp)
+                for ii in range(self.nchunks):
+                    ip, instance_id = machine_record['ip'][ii], machine_record['instance_id'][ii]
                     instance_list.append(instance_id)
                     profile = self.mdata_machine.copy()
                     profile['hostname'] = ip
@@ -47,13 +46,15 @@ class ALI():
                         if cnt == max_check:
                             break
                     if cnt != max_check:
-                        dispatchers.append(disp)
-        restart = False
-        if len(dispatchers) == self.nchunks:
-            restart = True
-            self.dispatchers = dispatchers
-            self.instance_list = instance_list
-        return restart
+                         dispatchers.append(disp)
+            restart = False
+            if len(dispatchers) == self.nchunks:
+                restart = True
+                self.dispatchers = dispatchers
+                self.instance_list = instance_list
+            return restart
+        else:
+            return False
 
     def run_jobs(self,
                  resources,
@@ -111,7 +112,7 @@ class ALI():
         regionID = self.mdata_machine['regionID']
         template_name = '%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['numb_gpu'], strategy)
         instance_name = self.adata["instance_name"]
-        client = AcsClient(AccessKey_ID,AccessKey_Secret, regionID)
+        client = AcsClient(AccessKey_ID, AccessKey_Secret, regionID)
         request = RunInstancesRequest()
         request.set_accept_format('json')
         request.set_UniqueSuffix(True)
@@ -132,6 +133,8 @@ class ALI():
         for i in range(len(response["Instances"]["Instance"])):
             ip.append(response["Instances"]["Instance"][i]["PublicIpAddress"]['IpAddress'][0])
         self.ip_list = ip
+        with open('machine_record.json', 'w') as fp:
+            json.dump({'ip': self.ip_list, 'instance_id': self.instance_list}, fp, indent=4)
         
     def delete_machine(self):
         AccessKey_ID = self.adata["AccessKey_ID"]
@@ -143,4 +146,4 @@ class ALI():
         request.set_InstanceIds(self.instance_list)
         request.set_Force(True)
         response = client.do_action_with_exception(request)
-
+        os.remove('machine_record.json')
