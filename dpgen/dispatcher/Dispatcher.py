@@ -13,6 +13,11 @@ from dpgen.dispatcher.AWS import AWS
 from dpgen.dispatcher.JobStatus import JobStatus
 from dpgen import dlog
 from hashlib import sha1
+try:
+    from dpgen.dispatcher.ALI import ALI
+except ImportError as e:
+    dlog.info(e)
+    pass
 
 def _split_tasks(tasks,
                  group_size):
@@ -285,23 +290,29 @@ class JobRecord(object):
             }
 
 
-def make_dispatcher(mdata):
-    try:
-        hostname = mdata['hostname']
-        context_type = 'ssh'
-    except:
-        context_type = 'local'
-    try:
-        batch_type = mdata['batch']
-    except:
-        dlog.info('cannot find key "batch" in machine file, try to use deprecated key "machine_type"')
-        batch_type = mdata['machine_type']
-    try:
-        lazy_local = mdata['lazy_local']
-    except:
-        lazy_local = False
-    if lazy_local and context_type == 'local':
-        dlog.info('Dispatcher switches to the lazy local mode')
-        context_type = 'lazy-local'
-    disp = Dispatcher(mdata, context_type=context_type, batch_type=batch_type)
-    return disp
+def make_dispatcher(mdata_machine, mdata_resource, run_tasks):
+    if 'ali_auth' in mdata_machine:
+        nchunks = len(_split_tasks(run_tasks))
+        dispatcher = ALI(mdata_machine['ali_auth'], mdata_resource, mdata_machine, nchunks)
+        dispatcher.init()
+        return dispatcher
+    else:    
+        try:
+            hostname = mdata['hostname']
+            context_type = 'ssh'
+        except:
+            context_type = 'local'
+        try:
+            batch_type = mdata['batch']
+        except:
+            dlog.info('cannot find key "batch" in machine file, try to use deprecated key "machine_type"')
+            batch_type = mdata['machine_type']
+        try:
+            lazy_local = mdata['lazy_local']
+        except:
+            lazy_local = False
+        if lazy_local and context_type == 'local':
+            dlog.info('Dispatcher switches to the lazy local mode')
+            context_type = 'lazy-local'
+        disp = Dispatcher(mdata, context_type=context_type, batch_type=batch_type)
+        return disp

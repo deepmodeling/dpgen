@@ -53,11 +53,6 @@ from dpgen.remote.group_jobs import group_slurm_jobs
 from dpgen.remote.group_jobs import group_local_jobs
 from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
 from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, make_dispatcher
-try:
-    from dpgen.dispatcher.ALI import ALI
-except ImportError as e:
-    dlog.info(e)
-    pass
 from dpgen.util import sepline
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar,Kpoints,Potcar
@@ -452,14 +447,7 @@ def run_train (iter_index,
     except:
         train_group_size = 1
 
-    task_chunks = _split_tasks(run_tasks, train_group_size)
-    nchunks = len(task_chunks)
-    if "ali_auth" in mdata:
-        dispatcher = ALI(mdata['ali_auth'], mdata['train_resources'], mdata['train_machine'], nchunks, work_path)
-        dispatcher.init()
-    else:
-        dispatcher = make_dispatcher(mdata['train_machine'])
-
+    dispatcher = make_dispatcher(mdata['train_machine'], mdata['train_resources'], run_tasks)
     dispatcher.run_jobs(mdata['train_resources'],
                         commands,
                         work_path,
@@ -922,13 +910,7 @@ def run_model_devi (iter_index,
         backward_files += ['output.plumed']
 
     cwd = os.getcwd()
-    task_chunks = _split_tasks(run_tasks, model_devi_group_size)
-    nchunks = len(task_chunks)
-    if "ali_auth" in mdata:
-        dispatcher = ALI(mdata['ali_auth'], mdata['model_devi_resources'], mdata['model_devi_machine'], nchunks, work_path)
-        dispatcher.init()
-    else:
-        dispatcher = make_dispatcher(mdata['model_devi_machine'])
+    dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], run_tasks)
     dispatcher.run_jobs(mdata['model_devi_resources'],
                         commands,
                         work_path,
@@ -1509,14 +1491,7 @@ def run_fp_inner (iter_index,
     #     if not check_fin(ii) :
     #         fp_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
-    cwd = os.getcwd()
-    task_chunks = _split_tasks(run_tasks, fp_group_size)
-    nchunks = len(task_chunks)
-    if "ali_auth" in mdata:
-        dispatcher = ALI(mdata['ali_auth'], mdata['fp_resources'], mdata['fp_machine'], nchunks, work_path)
-        dispatcher.init()
-    else:
-        dispatcher = make_dispatcher(mdata['fp_machine'])
+    dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], run_tasks)
     dispatcher.run_jobs(mdata['fp_resources'],
                         [fp_command],
                         work_path,
