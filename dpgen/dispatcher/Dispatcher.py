@@ -1,5 +1,4 @@
 import os,sys,time,random,json,glob
-
 from dpgen.dispatcher.LocalContext import LocalSession
 from dpgen.dispatcher.LocalContext import LocalContext
 from dpgen.dispatcher.LazyLocalContext import LazyLocalContext
@@ -13,11 +12,6 @@ from dpgen.dispatcher.AWS import AWS
 from dpgen.dispatcher.JobStatus import JobStatus
 from dpgen import dlog
 from hashlib import sha1
-try:
-    from dpgen.dispatcher.ALI import ALI
-except ImportError as e:
-    dlog.info(e)
-    pass
 
 def _split_tasks(tasks,
                  group_size):
@@ -290,9 +284,10 @@ class JobRecord(object):
             }
 
 
-def make_dispatcher(mdata_machine, mdata_resource, run_tasks):
+def make_dispatcher(mdata_machine, mdata_resource, run_tasks, group_size):
     if 'ali_auth' in mdata_machine:
-        nchunks = len(_split_tasks(run_tasks))
+        from dpgen.dispatcher.ALI import ALI
+        nchunks = len(_split_tasks(run_tasks, group_size))
         dispatcher = ALI(mdata_machine['ali_auth'], mdata_resource, mdata_machine, nchunks)
         dispatcher.init()
         return dispatcher

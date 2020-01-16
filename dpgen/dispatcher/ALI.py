@@ -9,7 +9,7 @@ from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks
 from os.path import join
 
 class ALI():
-    def __init__(self, adata, mdata_resources, mdata_machine, nchunks, work_path):
+    def __init__(self, adata, mdata_resources, mdata_machine, nchunks):
         self.ip_list = None
         self.instance_list = None
         self.dispatchers = None
@@ -17,7 +17,6 @@ class ALI():
         self.mdata_resources = mdata_resources
         self.mdata_machine = mdata_machine
         self.nchunks = nchunks
-        self.work_path = work_path
         
     def init(self):
         if self.check_restart():
@@ -135,11 +134,7 @@ class ALI():
         self.ip_list = ip
         with open('machine_record.json', 'w') as fp:
             json.dump({'ip': self.ip_list, 'instance_id': self.instance_list}, fp, indent=4)
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> 919c46a94f950c32eff6e7c308bafb3f3d14233f
     def delete_machine(self):
         AccessKey_ID = self.adata["AccessKey_ID"]
         AccessKey_Secret = self.adata["AccessKey_Secret"]
