@@ -284,7 +284,7 @@ class JobRecord(object):
             }
 
 
-def make_dispatcher(mdata_machine, mdata_resource, run_tasks, group_size):
+def make_dispatcher(mdata_machine, mdata_resource=None, run_tasks=None, group_size=None):
     if 'ali_auth' in mdata_machine:
         from dpgen.dispatcher.ALI import ALI
         nchunks = len(_split_tasks(run_tasks, group_size))
