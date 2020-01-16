@@ -166,8 +166,8 @@ class Slurm(Batch) :
         status_word = status_line.split ()[-1]
         if not (len(status_line.split()) == 2 and status_word.isupper()): 
             raise RuntimeError("Error in getting job status, " +
-                               "status_line = {status_line}, " + 
-                               "parsed status_word = {status_word}")
+                              f"status_line = {status_line}, " + 
+                              f"parsed status_word = {status_word}")
         if status_word in ["PD","CF","S"] :
             return JobStatus.waiting
         elif status_word in ["R"] :
