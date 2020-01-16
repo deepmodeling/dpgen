@@ -284,11 +284,11 @@ class JobRecord(object):
             }
 
 
-def make_dispatcher(mdata_machine, mdata_resource=None, run_tasks=None, group_size=None):
-    if 'ali_auth' in mdata_machine:
+def make_dispatcher(mdata, mdata_resource=None, run_tasks=None, group_size=None):
+    if 'ali_auth' in mdata:
         from dpgen.dispatcher.ALI import ALI
         nchunks = len(_split_tasks(run_tasks, group_size))
-        dispatcher = ALI(mdata_machine['ali_auth'], mdata_resource, mdata_machine, nchunks)
+        dispatcher = ALI(mdata['ali_auth'], mdata_resource, mdata, nchunks)
         dispatcher.init()
         return dispatcher
     else:    
