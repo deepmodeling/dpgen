@@ -84,7 +84,10 @@ def get_machine_info(mdata,task_type):
         machine_type = mdata['model_devi_machine']['machine_type']
         command = lmp_exec + " -i lammps.in"
         command = cmd_append_log(command, "model_devi.log")
-    ssh_sess = SSHSession(machine)
+    if machine_type == 'ALI':
+        ssh_sess = None
+    else:
+        ssh_sess = SSHSession(machine)
     return machine, machine_type,ssh_sess,resources, command, group_size
 
 def collect_task(all_task,task_type):
