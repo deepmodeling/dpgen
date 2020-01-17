@@ -86,14 +86,17 @@ class SSHContext (object):
            self.job_uuid = str(uuid.uuid4())
         self.remote_root = os.path.join(ssh_session.get_session_root(), self.job_uuid)
         self.ssh_session = ssh_session
-        self.ssh = self.ssh_session.get_ssh_client()        
         self.ssh_session.ensure_alive()
         try:
-           sftp = self.ssh.open_sftp() 
+           sftp = self.ssh_session.ssh.open_sftp() 
            sftp.mkdir(self.remote_root)
            sftp.close()
         except: 
            pass
+    
+    @property
+    def ssh(self):
+        return self.ssh_session.get_ssh_client()  
 
     def close(self):
         self.ssh_session.close()
