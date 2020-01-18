@@ -652,6 +652,8 @@ def make_model_devi (iter_index,
             else:
                 fmt = 'vasp/poscar'
             system = dpdata.System(os.path.join(conf_path, poscar_name), fmt = fmt, type_map = jdata['type_map'])
+            if jdata.get('model_devi_nopbc', False):
+                system.remove_pbc()
             system.to_lammps_lmp(os.path.join(conf_path, lmp_name))
             conf_counter += 1
         sys_counter += 1
@@ -776,6 +778,7 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
     if 'model_devi_taup' in jdata :
         model_devi_taup = jdata['model_devi_taup']
     mass_map = jdata['mass_map']
+    nopbc = jdata.get('model_devi_nopbc', False)
 
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
@@ -847,6 +850,7 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
                                                pka_e = pka_e,
                                                ele_temp_f = te_f,
                                                ele_temp_a = te_a,
+                                               nopbc = nopbc,
                                                deepmd_version = deepmd_version)
                     job = {}
                     job["ensemble"] = ensemble
