@@ -31,6 +31,7 @@ def make_lammps_input(ensemble,
                       ele_temp_f = None,
                       ele_temp_a = None,
                       max_seed = 1000000,
+                      nopbc = False,
                       deepmd_version = '0.1') :
     if (ele_temp_f is not None or ele_temp_a is not None) and LooseVersion(deepmd_version) < LooseVersion('1'):
         raise RuntimeError('the electron temperature is only supported by deepmd-kit >= 1.0.0, please upgrade your deepmd-kit')
@@ -49,7 +50,10 @@ def make_lammps_input(ensemble,
     ret+= "variable        TAU_P           equal %f\n" % tau_p
     ret+= "\n"
     ret+= "units           metal\n"
-    ret+= "boundary        p p p\n"
+    if nopbc:
+        ret+= "boundary        f f f\n"
+    else:
+        ret+= "boundary        p p p\n"
     ret+= "atom_style      atomic\n"
     ret+= "\n"
     ret+= "neighbor        1.0 bin\n"
@@ -104,6 +108,8 @@ def make_lammps_input(ensemble,
     ret+= "\n"
     if ensemble.split('-')[0] == 'npt' :
         assert (pres is not None)
+        if nopbc:
+            raise RuntimeError('ensemble %s is conflicting with nopbc' % ensemble)
     if ensemble == "npt" or ensemble == "npt-i" or ensemble == "npt-iso" :
         ret+= "fix             1 all npt temp ${TEMP} ${TEMP} ${TAU_T} iso ${PRES} ${PRES} ${TAU_P}\n"
     elif ensemble == 'npt-a' or ensemble == 'npt-aniso' : 
@@ -116,6 +122,9 @@ def make_lammps_input(ensemble,
         ret+= "fix             1 all nve\n"
     else :
         raise RuntimeError("unknown emsemble " + ensemble)
+    if nopbc:
+        ret+= "velocity        all zero linear\n"
+        ret+= "fix             fm all momentum 1 linear 1 1 1\n"
     ret+= "\n"
     ret+= "timestep        %f\n" % dt
     ret+= "run             ${NSTEPS}\n"

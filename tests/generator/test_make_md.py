@@ -146,8 +146,38 @@ class TestMakeModelDevi(unittest.TestCase):
         _check_confs(self, 0, jdata)
         _check_traj_dir(self, 0)
         _check_pt(self, 0, jdata)
-        shutil.rmtree('iter.000000')
-        
+        #shutil.rmtree('iter.000000')        
+
+    def test_make_model_devi_nopbc_npt (self) :        
+        if os.path.isdir('iter.000000') :
+            shutil.rmtree('iter.000000')
+        with open (param_file, 'r') as fp :
+            jdata = json.load (fp)
+            jdata['model_devi_nopbc'] = True
+        with open (machine_file, 'r') as fp:
+            mdata = json.load (fp)
+        _make_fake_models(0, jdata['numb_models'])
+        cwd = os.getcwd()
+        with self.assertRaises(RuntimeError) :
+            make_model_devi(0, jdata, mdata)        
+        os.chdir(cwd)
+
+    def test_make_model_devi_nopbc_nvt (self) :        
+        if os.path.isdir('iter.000000') :
+            shutil.rmtree('iter.000000')
+        with open (param_file, 'r') as fp :
+            jdata = json.load (fp)
+            jdata['model_devi_nopbc'] = True
+            jdata['model_devi_jobs'][0]['ensemble'] = 'nvt'
+        with open (machine_file, 'r') as fp:
+            mdata = json.load (fp)
+        _make_fake_models(0, jdata['numb_models'])
+        make_model_devi(0, jdata, mdata)
+        _check_pb(self, 0)
+        # _check_confs(self, 0, jdata)
+        _check_traj_dir(self, 0)
+        _check_pt(self, 0, jdata)
+        # shutil.rmtree('iter.000000')
 
 
 class TestMakeModelDeviRevMat(unittest.TestCase):
