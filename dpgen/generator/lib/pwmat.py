@@ -4,8 +4,9 @@ import os
 import numpy as np
 
 def _reciprocal_box(box) :
-    rbox = np.linaly.inv(box)
+    rbox = np.linalg.inv(box)
     rbox = rbox.T
+    return rbox
 
 def _make_pwmat_kp_mp(kpoints) :
     ret = ""
@@ -28,17 +29,16 @@ def _make_kspacing_kpoints(config, kspacing) :
     return ret
 
 
-def _make_pwmat_input_dict (node1, node2, atom_config, ecut, e_error, 
+def make_pwmat_input_dict (node1, node2, atom_config, ecut, e_error, 
                             rho_error, icmix = None, smearing = None,
-                            sigma = None,kspacing = 0.5, xcfunctional = None,
-                            convergence = None, flag_symm = None) :
+                            sigma = None,kspacing = 0.5, flag_symm = None) :
     input_dict = {}
     input_dict['node1'] = node1
     input_dict['node2'] = node2
-    input_dict['IN.ATOM'] = atom_config
-    input_dict['ECUT'] = ecut
-    input_dict['E_ERROR'] = e_eroor
-    input_dict['RHO_ERROR'] = rho_error
+    input_dict['in.atom'] = atom_config
+    input_dict['ecut'] = ecut
+    input_dict['e_error'] = e_error
+    input_dict['rho_error'] = rho_error
     if icmix is not None:
         if sigma is not None:
             if smearing is not None:
@@ -70,21 +70,17 @@ def _make_pwmat_input_dict (node1, node2, atom_config, ecut, e_error,
             else:
                 SCF_ITER0_1 = "6 4 3 0.0000 0.025 2"
                 SCF_ITER0_2 = "94 4 3 1.0000 0.025 2"
-    input_dict['SCF_ITER0_1'] = SCF_ITER0_1
-    input_dict['SCF_ITER0_2'] = SCF_ITER0_2
-    if xcfunctional is not None:
-        input_dict['XCFUNCTIONAL'] = xcfunctional
-    if convergence is not None:
-        input_dict['CONVERGENCE'] = convergence
+    input_dict['scf_iter0_1'] = SCF_ITER0_1
+    input_dict['scf_iter0_2'] = SCF_ITER0_2
     if flag_symm is not None :
-        MP_N123 = _make_kspacing_kpoints(atom.config, kspacing)
+        MP_N123 = _make_kspacing_kpoints(atom_config, kspacing)
         MP_N123 += str(flag_symm)
     else:
-        MP_N123 = _make_kspacing_kpoints(atom.config, kspacing)
-    input_dict['MP_N123'] = MP_N123
-    input_dict['OUT.WG'] = 'F'
-    input_dict['OUT.RHO'] = 'F'
-    input_dict['OUT.MLMD'] = 'T'
+        MP_N123 = _make_kspacing_kpoints(atom_config, kspacing)
+    input_dict['mp_n123'] = MP_N123
+    input_dict['out.wg'] = 'F'
+    input_dict['out.rho'] = 'F'
+    input_dict['out.mlmd'] = 'T\n'
     return input_dict
 
 def _update_input_dict(input_dict_, user_dict) :
@@ -141,27 +137,6 @@ def _make_smearing(fp_params) :
                 return icmix, smearing, None
             else:
                 return icmix, smearing, sigma
-
-def _make_xcfunctional(fp_params) :
-    xcfunctional = None
-    if 'xcfunctional' in fp_params :
-        xcfunctional = fp_params['xcfunctional']
-    if xcfunctional == 'NONE':
-        xcfunctional = None
-    elif xcfunctional not in [None,'LDA', 'PBE', 'HSE', 'PBESOL', 'PW91', 'TPSS', 'SCAN'] :
-        raise RuntimeError ("unknown xcfunctional " + xcfunctional) 
-    return xcfunctional
-
-def _make_convergence(fp_params) :
-    convergence = None
-    if 'convergence' in fp_params :
-        convergence = fp_params['convergence']
-    if convergence == 'NONE' :
-        convergence = None
-    elif convergence not in [None, 'EASY', 'DIFFICULT'] :
-        raise RuntimeError ("unknow convergence type " + convergence)
-    return convergence
-
 def _make_flag_symm(fp_params) :
     flag_symm = None
     if 'flag_symm' in fp_params :
@@ -185,13 +160,10 @@ def make_pwmat_input_user_dict(fp_params) :
     else :
         user_dict = None
     icmix, smearing, sigma = _make_smearing(fp_params)
-    xcfunctional = _make_xcfunctional(fp_params)
-    convergence = _make_convergence(fp_params)
     flag_symm = _make_flag_symm(fp_params)
-    input_dict = _make_pwmat_input_dict(node1, node2, atom_config, ecut, e_error,
+    input_dict = make_pwmat_input_dict(node1, node2, atom_config, ecut, e_error,
                                         rho_error, icmix = icmix, smearing = smearing,
                                         sigma = sigma, kspacing = kspacing, 
-                                        xcfunctional = xcfunctional, convergence = convergence,
                                         flag_symm = flag_symm
     )
     input_dict = _update_input_dict(input_dict, user_dict)

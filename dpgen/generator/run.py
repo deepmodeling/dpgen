@@ -43,6 +43,7 @@ from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
 from dpgen.generator.lib.vasp import incar_upper
 from dpgen.generator.lib.pwscf import make_pwscf_input
 #from dpgen.generator.lib.pwscf import cvt_1frame
+from dpgen.generator.lib.pwmat import make_pwmat_input_dict
 from dpgen.generator.lib.pwmat import write_input_dict
 from dpgen.generator.lib.pwmat import make_pwmat_input_user_dict
 from dpgen.generator.lib.pwmat import input_upper
@@ -1114,22 +1115,47 @@ def make_pwmat_input(jdata, filename):
         input = fr.read()
         fr.close()
     elif 'user_fp_params' in jdata.keys() :
-        input = write_input_dict(jdata['user_fp_params'])
+        fp_params = jdata['user_fp_params']
+        node1 = fp_params['node1']
+        node2 = fp_params['node2']
+        atom_config = fp_params['in.atom']
+        ecut = fp_params['ecut']
+        e_error = fp_params['e_error']
+        rho_error = fp_params['rho_error']
+        kspacing = fp_params['kspacing']
+        flag_symm = fp_params['flag_symm']
+        os.system('poscar2config.x < POSCAR > tmp.config')
+        os.system('rm -rf tmp.config')
+        input_dict = make_pwmat_input_dict(node1, node2, atom_config, ecut, e_error,
+                                           rho_error, icmix = None, smearing = None,
+                                           sigma = None, kspacing = kspacing, 
+                                           flag_symm = flag_symm
+        )
+
+        input = write_input_dict(input_dict)
     else:
         input = make_pwmat_input_user_dict(jdata['fp_params'])
     if 'IN.PSP' in input or 'in.psp' in input:
         with open(filename, 'w') as fp:
             fp.write(input)
-            fp.write('OUT.MLMD = T\n')
-        return input
+            fp.write('job=scf\n')
+            if 'OUT.MLMD' in input or 'out.mlmd' in input:
+                return input
+            else:
+                fp.write('OUT.MLMD = T')
+                return input
     else:
         with open(filename, 'w') as fp:
             fp.write(input)
-            fp.write('OUT.MLMD = T\n')
+            fp.write('job=scf\n')
             fp_pp_files = jdata['fp_pp_files']
             for idx, ii in enumerate(fp_pp_files) : 
                 fp.write('IN.PSP%d = %s\n' %(idx+1, ii))
-        return input    
+            if 'OUT.MLMD' in input or 'out.mlmd' in input:
+                return input
+            else:
+                fp.write('OUT.MLMD = T')
+                return input
 
 def make_vasp_incar_ele_temp(jdata, filename, ele_temp, nbands_esti = None):
     with open(filename) as fp:
@@ -1179,7 +1205,7 @@ def _make_fp_pwmat_input (iter_index,
     for ii in fp_tasks:
         os.chdir(ii)
         make_pwmat_input(jdata, 'etot.input')
-        os.system("poscar2config.x < POSCAR")
+        os.system("sed -i '1,2c 4 1' etot.input")
         os.chdir(cwd)
 
 def _make_fp_vasp_kp (iter_index,jdata):
