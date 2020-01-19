@@ -1124,7 +1124,10 @@ def make_pwmat_input(jdata, filename):
         rho_error = fp_params['rho_error']
         kspacing = fp_params['kspacing']
         flag_symm = fp_params['flag_symm']
-        os.system('poscar2config.x < POSCAR > tmp.config')
+        if os.path.exists('poscar2config.x'):
+            os.system('./poscar2config.x < POSCAR > tmp.config')
+        else:
+            os.system('poscar2config.x < POSCAR > tmp.config')
         os.system('rm -rf tmp.config')
         input_dict = make_pwmat_input_dict(node1, node2, atom_config, ecut, e_error,
                                            rho_error, icmix = None, smearing = None,
