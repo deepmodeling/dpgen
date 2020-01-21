@@ -2,6 +2,7 @@ import os,sys,json,glob,shutil
 import dpdata
 import numpy as np
 import unittest
+import importlib
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 __package__ = 'generator'
@@ -710,6 +711,7 @@ class TestMakeFPVasp(unittest.TestCase):
 
 
 class TestMakeFPGaussian(unittest.TestCase):
+    @unittest.skipIf(importlib.util.find_spec("openbabel") is None, "requires openbabel")
     def test_make_fp_gaussian(self):
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
