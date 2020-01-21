@@ -3,6 +3,7 @@
 
 import uuid
 import itertools
+import warnings
 import numpy as np
 import dpdata
 from scipy.sparse import csr_matrix
@@ -113,30 +114,33 @@ def make_gaussian_input(sys_data, fp_params):
         keywords = [keywords]
     # assume default charge is zero and default spin multiplicity is 1
     charge = fp_params.get('charge', 0)
-    mult_auto = False
-    frag = False
-    if 'multiplicity' in fp_params:
-        if type(fp_params['multiplicity']) == int:
-            multiplicity = fp_params['multiplicity']
-        elif fp_params['multiplicity'] == 'auto':
-            mult_auto = True
-        elif fp_params['multiplicity'] == 'frag':
-            mult_auto = True
-            frag = True
-        else:
-            raise RuntimeError('The keyword "multiplicity" is illegal.')
+    use_fragment_guesses = False
+    multiplicity = fp_params.get('multiplicity', 'auto')
+    if type(multiplicity) == int:
+        multiplicity = fp_params['multiplicity']
+        mult_auto = False
+    elif multiplicity == 'auto':
+        mult_auto = True
     else:
-        multiplicity = 1
+        raise RuntimeError('The keyword "multiplicity" is illegal.')
+
+    if fp_params.get("fragment_guesses", False):
+        # Initial guess generated from fragment guesses
+        # New feature of Gaussian 16
+        use_fragment_guesses = True
+        if not mult_auto:
+            warnings.warn("Automatically set multiplicity to auto!")
+            mult_auto = True
 
     if mult_auto:
         frag_numb, frag_index = _crd2frag(symbols, coordinates)
         if frag_numb == 1:
-            frag = False
+            use_fragment_guesses = False
         mult_frags = []
         for i in range(frag_numb):
             idx = frag_index == i
             mult_frags.append(detect_multiplicity(np.array(symbols)[idx]))
-        if frag:
+        if use_fragment_guesses:
             multiplicity = sum(mult_frags) - frag_numb + 1
             chargekeywords_frag = "%d %d" % (charge, multiplicity) + \
                 ''.join([' %d %d' % (charge, mult_frag)
@@ -164,7 +168,7 @@ def make_gaussian_input(sys_data, fp_params):
         keywords[0]), '', titlekeywords, '', (chargekeywords_frag if frag else chargekeywords)]
 
     for ii, (symbol, coordinate) in enumerate(zip(symbols, coordinates)):
-        if frag:
+        if use_fragment_guesses:
             buff.append("%s(Fragment=%d) %f %f %f" %
                         (symbol, frag_index[ii] + 1, *coordinate))
         else:
