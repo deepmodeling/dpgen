@@ -711,7 +711,7 @@ class TestMakeFPVasp(unittest.TestCase):
 
 
 class TestMakeFPGaussian(unittest.TestCase):
-    def make_fp_gaussian(self, multiplicity="auto")
+    def make_fp_gaussian(self, multiplicity="auto"):
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_gaussian_file, 'r') as fp :
