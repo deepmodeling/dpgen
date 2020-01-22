@@ -152,7 +152,7 @@ def make_gaussian_input(sys_data, fp_params):
                 np.count_nonzero(multi_frags == 3) * 2
     buff = []
     # keywords, e.g., force b3lyp/6-31g**
-    if frag:
+    if use_fragment_guesses:
         keywords[0] = '{} guess=fragment={}'.format(
             keywords[0], frag_numb)
 
