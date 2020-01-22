@@ -711,8 +711,7 @@ class TestMakeFPVasp(unittest.TestCase):
 
 
 class TestMakeFPGaussian(unittest.TestCase):
-    @unittest.skipIf(importlib.util.find_spec("openbabel") is None, "requires openbabel")
-    def test_make_fp_gaussian(self, multiplicity="auto"):
+    def make_fp_gaussian(self, multiplicity="auto")
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_gaussian_file, 'r') as fp :
@@ -739,8 +738,12 @@ class TestMakeFPGaussian(unittest.TestCase):
         _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
 
+    @unittest.skipIf(importlib.util.find_spec("openbabel") is None, "requires openbabel")
+    def test_make_fp_gaussian(self):
+        self.make_fp_gaussian()
+
     def test_make_fp_gaussian_multiplicity_one(self):
-        self.test_make_fp_gaussian(multiplicity=1)
+        self.make_fp_gaussian(multiplicity=1)
 
     def test_detect_multiplicity(self):
         # oxygen O2 3
