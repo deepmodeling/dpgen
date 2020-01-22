@@ -165,7 +165,7 @@ def make_gaussian_input(sys_data, fp_params):
     chargekeywords = '{} {}'.format(charge, multiplicity)
 
     buff = [*chkkeywords, nprockeywords, '#{}'.format(
-        keywords[0]), '', titlekeywords, '', (chargekeywords_frag if frag else chargekeywords)]
+        keywords[0]), '', titlekeywords, '', (chargekeywords_frag if use_fragment_guesses else chargekeywords)]
 
     for ii, (symbol, coordinate) in enumerate(zip(symbols, coordinates)):
         if use_fragment_guesses:
