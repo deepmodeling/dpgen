@@ -8,6 +8,23 @@ import time, json, os, glob
 from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks
 from os.path import join
 
+def manual_delete():
+    with open('machine-ali.json') as fp1:
+        mdata = json.load(fp1)
+        AccessKey_ID = mdata['train'][0]['machine']['ali_auth']['AccessKey_ID']
+        AccessKey_Secret = mdata['train'][0]['machine']['ali_auth']['AccessKey_Secret']
+        regionID = mdata['train'][0]['machine']['regionID']
+        with open('machine_record.json', 'r') as fp2:
+            machine_record = json.load(fp2)
+            instance_list = machine_record['instance_id']
+            client = AcsClient(AccessKey_ID, AccessKey_Secret, regionID)
+            request = DeleteInstancesRequest()
+            request.set_accept_format('json')
+            request.set_InstanceIds(instance_list)
+            request.set_Force(True)
+            response = client.do_action_with_exception(request)
+            os.remove('machine_record.json')
+
 class ALI():
     def __init__(self, adata, mdata_resources, mdata_machine, nchunks):
         self.ip_list = None
@@ -112,23 +129,40 @@ class ALI():
         template_name = '%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['numb_gpu'], strategy)
         instance_name = self.adata["instance_name"]
         client = AcsClient(AccessKey_ID, AccessKey_Secret, regionID)
+        instance_list = []
+        ip = []
         request = RunInstancesRequest()
         request.set_accept_format('json')
         request.set_UniqueSuffix(True)
         request.set_Password(pwd)
         request.set_InstanceName(instance_name)
-        request.set_Amount(self.nchunks)
         request.set_LaunchTemplateName(template_name)
-        response = client.do_action_with_exception(request)
-        response = json.loads(response)
-        self.instance_list = response["InstanceIdSets"]["InstanceIdSet"]
-        time.sleep(50)
+        if self.nchunks <= 100:
+            request.set_Amount(self.nchunks)
+            response = client.do_action_with_exception(request)
+            response = json.loads(response)
+            for instanceID in response["InstanceIdSets"]["InstanceIdSet"]:
+                instance_list.append(instanceID)
+        else:
+            iteration = self.nchunks // 100 
+            for i in range(iteration):
+                request.set_Amount(100)
+                response = client.do_action_with_exception(request)
+                response = json.loads(response)
+                for instanceID in response["InstanceIdSets"]["InstanceIdSet"]:
+                    instance_list.append(instanceID)
+            request.set_Amount(self.nchunks - iteration * 100)
+            response = client.do_action_with_exception(request)
+            response = json.loads(response)
+            for instanceID in response["InstanceIdSets"]["InstanceIdSet"]:
+                instance_list.append(instanceID)
+        self.instance_list = instance_list
+        time.sleep(90)
         request = DescribeInstancesRequest()
         request.set_accept_format('json')
         request.set_InstanceIds(self.instance_list)
         response = client.do_action_with_exception(request)
         response = json.loads(response)
-        ip = []
         for i in range(len(response["Instances"]["Instance"])):
             ip.append(response["Instances"]["Instance"][i]["PublicIpAddress"]['IpAddress'][0])
         self.ip_list = ip
