@@ -16,14 +16,25 @@ def manual_delete():
         AccessKey_Secret = mdata['train'][0]['machine']['ali_auth']['AccessKey_Secret']
         regionID = mdata['train'][0]['machine']['regionID']
         with open('machine_record.json', 'r') as fp2:
-            machine_record = json.load(fp2  )
+            machine_record = json.load(fp2)
             instance_list = machine_record['instance_id']
             client = AcsClient(AccessKey_ID, AccessKey_Secret, regionID)
             request = DeleteInstancesRequest()
             request.set_accept_format('json')
-            request.set_InstanceIds(instance_list)
-            request.set_Force(True)
-            response = client.do_action_with_exception(request)
+            if len(instance_list) <= 100:
+                request.set_InstanceIds(instance_list)
+                request.set_Force(True)
+                response = client.do_action_with_exception(request)
+            else:
+                iteration = len(instance_list) // 100
+                for i in range(iteration):
+                    request.set_InstanceIds(instance_list[i*100:(i+1)*100])
+                    request.set_Force(True)
+                    response = client.do_action_with_exception(request)
+                if len(instance_list) - iteration * 100 != 0:
+                    request.set_InstanceIds(instance_list[iteration*100:])
+                    request.set_Force(True)
+                    response = client.do_action_with_exception(request)
             os.remove('machine_record.json')
 
 class ALI():
@@ -173,7 +184,7 @@ class ALI():
                     dlog.debug("Create failed, please check the console.")
                     if len(self.instance_list) > 0:
                         self.delete_machine()
-        time.sleep(90)
+        time.sleep(60)
         request = DescribeInstancesRequest()
         request.set_accept_format('json')
         if len(self.instance_list) <= 10:
@@ -206,9 +217,20 @@ class ALI():
         client = AcsClient(AccessKey_ID,AccessKey_Secret, regionID)
         request = DeleteInstancesRequest()
         request.set_accept_format('json')
-        request.set_InstanceIds(self.instance_list)
-        request.set_Force(True)
-        response = client.do_action_with_exception(request)
+        if len(self.instance_list) <= 100:
+            request.set_InstanceIds(self.instance_list)
+            request.set_Force(True)
+            response = client.do_action_with_exception(request)
+        else:
+            iteration = len(self.instance_list) // 100
+            for i in range(iteration):
+                request.set_InstanceIds(self.instance_list[i*100:(i+1)*100])
+                request.set_Force(True)
+                response = client.do_action_with_exception(request)
+            if len(self.instance_list) - iteration * 100 != 0:
+                request.set_InstanceIds(self.instance_list[iteration*100:])
+                request.set_Force(True)
+                response = client.do_action_with_exception(request)
         self.instance_list = []
         os.remove('machine_record.json')
         dlog.debug("Successfully free the machine!")
