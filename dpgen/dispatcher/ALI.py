@@ -176,26 +176,26 @@ class ALI():
         time.sleep(90)
         request = DescribeInstancesRequest()
         request.set_accept_format('json')
-        if len(self.instance_list) <= 100:
+        if len(self.instance_list) <= 10:
             request.set_InstanceIds(self.instance_list)
             response = client.do_action_with_exception(request)
             response = json.loads(response)
             for i in range(len(response["Instances"]["Instance"])):
                 self.ip_list.append(response["Instances"]["Instance"][i]["PublicIpAddress"]['IpAddress'][0])
         else:
-            iteration = len(self.instance_list) // 100
+            iteration = len(self.instance_list) // 10
             for i in range(iteration):
-                request.set_InstanceIds(self.instance_list[i*100:(i+1)*100])
+                request.set_InstanceIds(self.instance_list[i*10:(i+1)*10])
                 response = client.do_action_with_exception(request)
                 response = json.loads(response)
                 for j in range(len(response["Instances"]["Instance"])):
-                    self.ip_list.append(response["Instances"]["Instance"][i]["PublicIpAddress"]['IpAddress'][0])
-            if len(self.instance_list) - iteration * 100 != 0:
-                request.set_InstanceIds(self.instance_list[iteration*100:])
+                    self.ip_list.append(response["Instances"]["Instance"][j]["PublicIpAddress"]['IpAddress'][0])
+            if len(self.instance_list) - iteration * 10 != 0:
+                request.set_InstanceIds(self.instance_list[iteration*10:])
                 response = client.do_action_with_exception(request)
                 response = json.loads(response)
                 for j in range(len(response["Instances"]["Instance"])):
-                    self.ip_list.append(response["Instances"]["Instance"][i]["PublicIpAddress"]['IpAddress'][0])
+                    self.ip_list.append(response["Instances"]["Instance"][j]["PublicIpAddress"]['IpAddress'][0])
         with open('machine_record.json', 'w') as fp:
             json.dump({'ip': self.ip_list, 'instance_id': self.instance_list}, fp, indent=4)
 
