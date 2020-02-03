@@ -9,12 +9,11 @@ from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks
 from os.path import join
 from dpgen  import dlog
 
-def manual_delete():
+def manual_delete(regionID):
     with open('machine-ali.json') as fp1:
         mdata = json.load(fp1)
         AccessKey_ID = mdata['train'][0]['machine']['ali_auth']['AccessKey_ID']
         AccessKey_Secret = mdata['train'][0]['machine']['ali_auth']['AccessKey_Secret']
-        regionID = mdata['train'][0]['machine']['regionID']
         with open('machine_record.json', 'r') as fp2:
             machine_record = json.load(fp2)
             instance_list = machine_record['instance_id']
@@ -41,11 +40,13 @@ class ALI():
     def __init__(self, adata, mdata_resources, mdata_machine, nchunks):
         self.ip_list = None
         self.instance_list = None
+        self.regionID = mdata_machine["regionID"]
         self.dispatchers = None
         self.adata = adata
         self.mdata_resources = mdata_resources
         self.mdata_machine = mdata_machine
         self.nchunks = nchunks
+
         
     def init(self):
         if self.check_restart():
@@ -111,16 +112,29 @@ class ALI():
                                                            outlog,
                                                            errlog)
             job_handlers.append(job_handler)
+        tmp = [1 for ii in range(self.nchunks)]
         while True:
-            cnt = 0
             for ii in range(self.nchunks):
-                if self.dispatchers[ii].all_finished(job_handlers[ii]):
-                    cnt += 1
-            if cnt == self.nchunks:
+                if tmp[ii] and self.dispatchers[ii].all_finished(job_handlers[ii]):
+                    self.delete(self.instance_list[ii])
+                    tmp[ii] = 0
+            if sum(tmp) == 0:
+                os.remove('machine_record.json')
                 break
             else:
                 time.sleep(10)
-        self.delete_machine()
+        #self.delete_machine()
+
+    def delete(self, instance_list):
+        AccessKey_ID = self.adata["AccessKey_ID"]
+        AccessKey_Secret = self.adata["AccessKey_Secret"]
+        regionID = self.regionID
+        client = AcsClient(AccessKey_ID, AccessKey_Secret, regionID)
+        request = DeleteInstancesRequest()
+        request.set_accept_format('json')
+        request.set_InstanceIds([instance_list])
+        request.set_Force(True)
+        response = client.do_action_with_exception(request)
 
     def make_dispatchers(self):
         dispatchers = []
@@ -137,7 +151,7 @@ class ALI():
         AccessKey_Secret = self.adata["AccessKey_Secret"]
         strategy = self.adata["pay_strategy"]
         pwd = self.adata["password"]
-        regionID = self.mdata_machine['regionID']
+        regionID = self.regionID
         template_name = '%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['numb_gpu'], strategy)
         instance_name = self.adata["instance_name"]
         client = AcsClient(AccessKey_ID, AccessKey_Secret, regionID)
