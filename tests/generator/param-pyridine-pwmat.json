@@ -116,7 +116,7 @@
     "scf_iter0_2": "94 4 3 1.0000 0.025 2",
     "xcfunctional": "PBE",
     "convergence": "EASY",
-    "kspacing": 0.2
+    "kspacing": 0.1
 
     },
     "_comment":		" that's all "
