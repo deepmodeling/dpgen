@@ -60,6 +60,7 @@ def make_work_path(jdata,task,reprod_opt,static,user):
             if 'relax_incar' in jdata.keys():
                 task_type=task_type+'-reprod-relax_incar'
             else:
+                kspacing = jdata['vasp_params']['kspacing']
                 task_type=task_type+'-reprod-k%.2f'% (kspacing)
 
     work_path=os.path.join(task_path, task_type)
