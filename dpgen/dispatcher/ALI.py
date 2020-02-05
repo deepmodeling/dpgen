@@ -9,12 +9,11 @@ from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks
 from os.path import join
 from dpgen  import dlog
 
-def manual_delete():
+def manual_delete(regionID):
     with open('machine-ali.json') as fp1:
         mdata = json.load(fp1)
         AccessKey_ID = mdata['train'][0]['machine']['ali_auth']['AccessKey_ID']
         AccessKey_Secret = mdata['train'][0]['machine']['ali_auth']['AccessKey_Secret']
-        regionID = mdata['train'][0]['machine']['regionID']
         with open('machine_record.json', 'r') as fp2:
             machine_record = json.load(fp2)
             instance_list = machine_record['instance_id']
@@ -41,12 +40,14 @@ class ALI():
     def __init__(self, adata, mdata_resources, mdata_machine, nchunks):
         self.ip_list = None
         self.instance_list = None
+        self.regionID = mdata_machine["regionID"]
         self.dispatchers = None
+        self.job_handlers = None
         self.adata = adata
         self.mdata_resources = mdata_resources
         self.mdata_machine = mdata_machine
         self.nchunks = nchunks
-        
+
     def init(self):
         if self.check_restart():
             pass
@@ -97,7 +98,7 @@ class ALI():
                  outlog = 'log',
                  errlog = 'err'):
         task_chunks = _split_tasks(tasks, group_size)
-        job_handlers = []
+        self.job_handlers = []
         for ii in range(self.nchunks):
             job_handler = self.dispatchers[ii].submit_jobs(resources,
                                                            command,
@@ -110,17 +111,35 @@ class ALI():
                                                            forward_task_deference,
                                                            outlog,
                                                            errlog)
-            job_handlers.append(job_handler)
+            self.job_handlers.append(job_handler)
         while True:
-            cnt = 0
             for ii in range(self.nchunks):
-                if self.dispatchers[ii].all_finished(job_handlers[ii]):
-                    cnt += 1
-            if cnt == self.nchunks:
+                if self.dispatchers[ii].all_finished(self.job_handlers[ii]):
+                    self.delete(ii)
+                    break
+            if self.nchunks == 0:
+                os.remove('machine_record.json')
                 break
             else:
                 time.sleep(10)
-        self.delete_machine()
+
+    def delete(self, ii):
+        AccessKey_ID = self.adata["AccessKey_ID"]
+        AccessKey_Secret = self.adata["AccessKey_Secret"]
+        regionID = self.regionID
+        client = AcsClient(AccessKey_ID, AccessKey_Secret, regionID)
+        request = DeleteInstancesRequest()
+        request.set_accept_format('json')
+        request.set_InstanceIds([self.instance_list[ii]])
+        request.set_Force(True)
+        response = client.do_action_with_exception(request)
+        self.nchunks -= 1
+        self.instance_list.pop(ii)
+        self.ip_list.pop(ii)
+        self.dispatchers.pop(ii)
+        self.job_handlers.pop(ii)
+        with open('machine_record.json', 'w') as fp:
+            json.dump({'ip': self.ip_list, 'instance_id': self.instance_list}, fp, indent=4)
 
     def make_dispatchers(self):
         dispatchers = []
@@ -137,7 +156,7 @@ class ALI():
         AccessKey_Secret = self.adata["AccessKey_Secret"]
         strategy = self.adata["pay_strategy"]
         pwd = self.adata["password"]
-        regionID = self.mdata_machine['regionID']
+        regionID = self.regionID
         template_name = '%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['numb_gpu'], strategy)
         instance_name = self.adata["instance_name"]
         client = AcsClient(AccessKey_ID, AccessKey_Secret, regionID)
@@ -157,9 +176,10 @@ class ALI():
                 for instanceID in response["InstanceIdSets"]["InstanceIdSet"]:
                     self.instance_list.append(instanceID)
             except:
-                dlog.debug("Create failed, please check the console.")
+                dlog.info("Create failed, please check the console.")
                 if len(self.instance_list) > 0:
                     self.delete_machine()
+                exit()
         else:
             iteration = self.nchunks // 100 
             try:
@@ -170,9 +190,10 @@ class ALI():
                     for instanceID in response["InstanceIdSets"]["InstanceIdSet"]:
                         self.instance_list.append(instanceID)
             except:
-                dlog.debug("Create failed, please check the console.")
+                dlog.info("Create failed, please check the console.")
                 if len(self.instance_list) > 0:
                     self.delete_machine()
+                exit()
             if self.nchunks - iteration * 100 != 0:
                 try:
                     request.set_Amount(self.nchunks - iteration * 100)
@@ -181,32 +202,33 @@ class ALI():
                     for instanceID in response["InstanceIdSets"]["InstanceIdSet"]:
                         self.instance_list.append(instanceID)
                 except:
-                    dlog.debug("Create failed, please check the console.")
+                    dlog.info("Create failed, please check the console.")
                     if len(self.instance_list) > 0:
                         self.delete_machine()
+                    exit()
         time.sleep(60)
         request = DescribeInstancesRequest()
         request.set_accept_format('json')
         if len(self.instance_list) <= 10:
-            request.set_InstanceIds(self.instance_list)
-            response = client.do_action_with_exception(request)
-            response = json.loads(response)
-            for i in range(len(response["Instances"]["Instance"])):
-                self.ip_list.append(response["Instances"]["Instance"][i]["PublicIpAddress"]['IpAddress'][0])
+            for i in range(len(self.instance_list)):
+                request.set_InstanceIds([self.instance_list[i]])
+                response = client.do_action_with_exception(request)
+                response = json.loads(response)
+                self.ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]['IpAddress'][0])
         else:
             iteration = len(self.instance_list) // 10
             for i in range(iteration):
-                request.set_InstanceIds(self.instance_list[i*10:(i+1)*10])
-                response = client.do_action_with_exception(request)
-                response = json.loads(response)
-                for j in range(len(response["Instances"]["Instance"])):
-                    self.ip_list.append(response["Instances"]["Instance"][j]["PublicIpAddress"]['IpAddress'][0])
+                for j in range(10):
+                    request.set_InstanceIds([self.instance_list[i*10+j]])
+                    response = client.do_action_with_exception(request)
+                    response = json.loads(response)
+                    self.ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]['IpAddress'][0])
             if len(self.instance_list) - iteration * 10 != 0:
-                request.set_InstanceIds(self.instance_list[iteration*10:])
-                response = client.do_action_with_exception(request)
-                response = json.loads(response)
-                for j in range(len(response["Instances"]["Instance"])):
-                    self.ip_list.append(response["Instances"]["Instance"][j]["PublicIpAddress"]['IpAddress'][0])
+                for j in range(len(self.instance_list) - iteration * 10):
+                    request.set_InstanceIds([self.instance_list[iteration*10+j]])
+                    response = client.do_action_with_exception(request)
+                    response = json.loads(response)
+                    self.ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]['IpAddress'][0])
         with open('machine_record.json', 'w') as fp:
             json.dump({'ip': self.ip_list, 'instance_id': self.instance_list}, fp, indent=4)
 
