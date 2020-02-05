@@ -48,7 +48,6 @@ class ALI():
         self.mdata_machine = mdata_machine
         self.nchunks = nchunks
 
-        
     def init(self):
         if self.check_restart():
             pass
@@ -123,7 +122,6 @@ class ALI():
                 break
             else:
                 time.sleep(10)
-        #self.delete_machine()
 
     def delete(self, ii):
         AccessKey_ID = self.adata["AccessKey_ID"]
@@ -142,8 +140,6 @@ class ALI():
         self.job_handlers.pop(ii)
         with open('machine_record.json', 'w') as fp:
             json.dump({'ip': self.ip_list, 'instance_id': self.instance_list}, fp, indent=4)
-
-
 
     def make_dispatchers(self):
         dispatchers = []
@@ -180,9 +176,10 @@ class ALI():
                 for instanceID in response["InstanceIdSets"]["InstanceIdSet"]:
                     self.instance_list.append(instanceID)
             except:
-                dlog.debug("Create failed, please check the console.")
+                dlog.info("Create failed, please check the console.")
                 if len(self.instance_list) > 0:
                     self.delete_machine()
+                exit()
         else:
             iteration = self.nchunks // 100 
             try:
@@ -193,9 +190,10 @@ class ALI():
                     for instanceID in response["InstanceIdSets"]["InstanceIdSet"]:
                         self.instance_list.append(instanceID)
             except:
-                dlog.debug("Create failed, please check the console.")
+                dlog.info("Create failed, please check the console.")
                 if len(self.instance_list) > 0:
                     self.delete_machine()
+                exit()
             if self.nchunks - iteration * 100 != 0:
                 try:
                     request.set_Amount(self.nchunks - iteration * 100)
@@ -204,9 +202,10 @@ class ALI():
                     for instanceID in response["InstanceIdSets"]["InstanceIdSet"]:
                         self.instance_list.append(instanceID)
                 except:
-                    dlog.debug("Create failed, please check the console.")
+                    dlog.info("Create failed, please check the console.")
                     if len(self.instance_list) > 0:
                         self.delete_machine()
+                    exit()
         time.sleep(60)
         request = DescribeInstancesRequest()
         request.set_accept_format('json')
