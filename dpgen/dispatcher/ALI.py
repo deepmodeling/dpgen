@@ -116,13 +116,7 @@ class ALI():
         while True:
             for ii in range(self.nchunks):
                 if self.dispatchers[ii].all_finished(self.job_handlers[ii]):
-                    print("before delete:", self.ip_list)
-                    print(self.instance_list)
-                    print(self.nchunks)
-                    print(self.job_handlers[ii]['job_record'].record)
-                    #print(self.job_handlers[ii]['task_chunks'])
                     self.delete(ii)
-                    print("after delete:", self.ip_list)
                     break
             if self.nchunks == 0:
                 os.remove('machine_record.json')

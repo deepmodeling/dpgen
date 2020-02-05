@@ -205,8 +205,6 @@ class Dispatcher(object):
                     rjob['batch'].submit(task_chunks[idx], command, res = resources, outlog=outlog, errlog=errlog,restart=True)
                 elif status == JobStatus.finished :
                     dlog.info('job %s finished' % job_uuid)
-
-                    print('download:', rjob['context'].ssh_session.remote_host)
                     rjob['context'].download(task_chunks[idx], backward_task_files)
                     rjob['context'].clean()
                     job_record.record_finish(cur_hash)
