@@ -115,6 +115,7 @@ def make_lammps(jdata, conf_dir,task_type) :
     type_map = fp_params['type_map'] 
     model_dir = os.path.abspath(model_dir)
     model_name =fp_params['model_name']
+    deepmd_version = fp_params.get("deepmd_version", "0.12")
     if not model_name and task_type =='deepmd':
         models = glob.glob(os.path.join(model_dir, '*pb'))
         model_name = [os.path.basename(ii) for ii in models]
@@ -122,8 +123,9 @@ def make_lammps(jdata, conf_dir,task_type) :
     else:
         models = [os.path.join(model_dir,ii) for ii in model_name]
 
-    model_param = {'model_name' :      fp_params['model_name'],
-                  'param_type':          fp_params['model_param_type']}
+    model_param = {'model_name' :      model_name,
+                  'param_type':          fp_params['model_param_type'],
+                  'deepmd_version' : deepmd_version}
     
     ntypes = len(type_map)
 
@@ -168,7 +170,7 @@ def make_lammps(jdata, conf_dir,task_type) :
         fc = lammps.make_lammps_elastic('conf.lmp', 
                                     ntypes, 
                                     lammps.inter_deepmd,
-                                    model_name)  
+                                    model_param)  
     elif task_type=='meam':
         fc = lammps.make_lammps_elastic('conf.lmp', 
                                     ntypes, 

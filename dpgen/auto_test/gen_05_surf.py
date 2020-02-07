@@ -131,6 +131,7 @@ def make_lammps(jdata, conf_dir, max_miller = 2, static = False, relax_box = Fal
     type_map = fp_params['type_map']
     model_dir = os.path.abspath(model_dir)
     model_name =fp_params['model_name']
+    deepmd_version = fp_params.get("deepmd_version", "0.12")
     if not model_name and task_type=='deepmd':
         models = glob.glob(os.path.join(model_dir, '*pb'))
         model_name = [os.path.basename(ii) for ii in models]
@@ -138,8 +139,9 @@ def make_lammps(jdata, conf_dir, max_miller = 2, static = False, relax_box = Fal
     else:
         models = [os.path.join(model_dir,ii) for ii in model_name]
 
-    model_param = {'model_name' :      fp_params['model_name'],
-                  'param_type':          fp_params['model_param_type']}
+    model_param = {'model_name' :      model_name,
+                  'param_type':          fp_params['model_param_type'],
+                  'deepmd_version' : deepmd_version}
 
     ntypes = len(type_map)
 
@@ -184,12 +186,12 @@ def make_lammps(jdata, conf_dir, max_miller = 2, static = False, relax_box = Fal
             fc = lammps.make_lammps_eval('conf.lmp',
                                      ntypes,
                                      lammps.inter_deepmd,
-                                     model_name)
+                                     model_param)
         else :
             fc = lammps.make_lammps_equi('conf.lmp',
                                      ntypes,
                                      lammps.inter_deepmd,
-                                     model_name,
+                                     model_param,
                                      change_box = relax_box)
     elif task_type =='meam':
         if static :

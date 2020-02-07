@@ -35,15 +35,13 @@ from dpgen.auto_test.lib.utils import record_iter
 from dpgen.auto_test.lib.utils import log_iter
 from dpgen.auto_test.lib.pwscf import make_pwscf_input
 from dpgen.auto_test.lib.siesta import make_siesta_input
-from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, CloudMachineJob
-from dpgen.remote.decide_machine import decide_fp_machine, decide_model_devi_machine
-from dpgen.remote.group_jobs import *
 from dpgen.auto_test import gen_00_equi,cmpt_00_equi
 from dpgen.auto_test import gen_01_eos,cmpt_01_eos
 from dpgen.auto_test import gen_02_elastic,cmpt_02_elastic
 from dpgen.auto_test import gen_03_vacancy,cmpt_03_vacancy
 from dpgen.auto_test import gen_04_interstitial,cmpt_04_interstitial
 from dpgen.auto_test import gen_05_surf,cmpt_05_surf
+from dpgen.remote.decide_machine import decide_fp_machine, decide_model_devi_machine
 #from dpgen.auto_test import gen_06_phonon,cmpt_06_phonon
 from dpgen.auto_test import gen_confs
 import requests
@@ -104,7 +102,7 @@ def run_equi(task_type,jdata,mdata):
 
     run_tasks = util.collect_task(all_task,task_type)
     if len(run_tasks)==0: return
-    machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
+    machine,resources,command,group_size=util.get_machine_info(mdata,task_type)
     disp = make_dispatcher(machine, resources, run_tasks, group_size)
     disp.run_jobs(resources,
                   command,
@@ -192,7 +190,7 @@ def run_eos(task_type,jdata,mdata):
 
     run_tasks = util.collect_task(all_task,task_type)
     if len(run_tasks)==0: return
-    machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
+    machine,resources,command,group_size=util.get_machine_info(mdata,task_type)
     disp = make_dispatcher(machine, resources, run_tasks, group_size)
     disp.run_jobs(resources,
                   command,
@@ -268,7 +266,7 @@ def run_elastic(task_type,jdata,mdata):
 
     run_tasks = util.collect_task(all_task,task_type)
     if len(run_tasks)==0: return
-    machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
+    machine,resources,command,group_size=util.get_machine_info(mdata,task_type)
     disp = make_dispatcher(machine, resources, run_tasks, group_size)
     disp.run_jobs(resources,
                   command,
@@ -343,7 +341,7 @@ def run_vacancy(task_type,jdata,mdata):
 
     run_tasks = util.collect_task(all_task,task_type)
     if len(run_tasks)==0: return
-    machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
+    machine,resources,command,group_size=util.get_machine_info(mdata,task_type)
     disp = make_dispatcher(machine, resources, run_tasks, group_size)
     disp.run_jobs(resources,
                   command,
@@ -440,7 +438,7 @@ def run_interstitial(task_type,jdata,mdata):
     else:
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
-    machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
+    machine,resources,command,group_size=util.get_machine_info(mdata,task_type)
     if reprod_opt:
         for ii in work_path:
             run_tasks=[]
@@ -548,7 +546,7 @@ def run_surf(task_type,jdata,mdata):
 
     run_tasks = util.collect_task(all_task,task_type)
     if len(run_tasks)==0: return
-    machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
+    machine,resources,command,group_size=util.get_machine_info(mdata,task_type)
     disp = make_dispatcher(machine, resources, run_tasks, group_size)
     disp.run_jobs(resources,
                   command,
@@ -601,7 +599,7 @@ def run_phonon(task_type,jdata,mdata):
     #vasp
     if task_type == "vasp":
         mdata=decide_fp_machine(mdata)
-        machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
+        machine,resources,command,group_size=util.get_machine_info(mdata,task_type)
 
         run_tasks = util.collect_task(all_task,task_type)
         forward_files = ['INCAR', 'POTCAR','KPOINTS']
@@ -623,7 +621,7 @@ def run_phonon(task_type,jdata,mdata):
     elif task_type in lammps_task_type:
         None
     else:
-        raise RuntimeError ("unknow task %s, something wrong" % task_type)
+        raise RuntimeError ("unknown task %s, something wrong" % task_type)
 
 def cmpt_phonon(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']

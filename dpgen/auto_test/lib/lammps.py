@@ -4,6 +4,7 @@ import random, os, sys
 import dpdata
 import subprocess as sp
 import dpgen.auto_test.lib.util as util
+from distutils.version import LooseVersion
 
 def cvt_lammps_conf(fin, fout, ofmt = 'lammps/data'):
     """
@@ -89,16 +90,26 @@ def _get_conf_natom(conf) :
             return int(ii.split()[0])
     raise RuntimeError("cannot find line indicate atom types in ", conf)
 
-def inter_deepmd(models) :
-    ret = ""
-    line = "pair_style deepmd "
-    if len(models) > 1 :
-        for ii in models :
-            line += ii + ' '
-        line += ' 10 model_devi.out\npair_coeff\n'
-    else :
-        line += models[0] + '\npair_coeff\n'
-    ret += line
+def inter_deepmd(param) :
+    models = param["model_name"]
+    deepmd_version = param["deepmd_version"]
+    ret = "pair_style deepmd "
+    model_list = ""
+    for ii in models:
+        model_list += ii + " "
+    if LooseVersion(deepmd_version) < LooseVersion('1'):
+        ## DeePMD-kit version == 0.x
+        if len(models) > 1 :
+            ret += '%s 10 model_devi.out\n' % model_list
+        else :
+            ret += models[0] + '\n'
+    else:
+        ## DeePMD-kit version >= 1
+        if len(models) > 1:
+            ret += "%s out_freq 10 out_file model_devi.out\n" % model_list
+        else:
+            ret += models[0] + '\n'
+    ret += "pair_coeff\n"
     return ret
 
 def inter_meam(param) :
