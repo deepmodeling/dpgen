@@ -5,9 +5,10 @@ from aliyunsdkcore.acs_exception.exceptions import ServerException
 from aliyunsdkecs.request.v20140526.RunInstancesRequest import RunInstancesRequest
 from aliyunsdkecs.request.v20140526.DeleteInstancesRequest import DeleteInstancesRequest
 import time, json, os, glob
-from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks
+from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, JobRecord
 from os.path import join
 from dpgen  import dlog
+from hashlib import sha1
 
 def manual_delete(regionID):
     with open('machine-ali.json') as fp1:
@@ -43,45 +44,51 @@ class ALI():
         self.regionID = mdata_machine["regionID"]
         self.dispatchers = None
         self.job_handlers = None
+        self.task_chunks = None
         self.adata = adata
         self.mdata_resources = mdata_resources
         self.mdata_machine = mdata_machine
         self.nchunks = nchunks
 
-    def init(self):
-        if self.check_restart():
+
+    def init(self, work_path, tasks, group_size):
+        if self.check_restart(work_path, tasks, group_size):
             pass
         else:
             self.create_machine()
             self.dispatchers = self.make_dispatchers()
 
-    def check_restart(self):
-        dispatchers = []
-        instance_list = []
+    def check_restart(self, work_path, tasks, group_size):
         if os.path.exists('machine_record.json'):
-            with open('machine_record.json', 'r') as fp:
-                machine_record = json.load(fp)
-                for ii in range(self.nchunks):
-                    ip, instance_id = machine_record['ip'][ii], machine_record['instance_id'][ii]
-                    instance_list.append(instance_id)
-                    profile = self.mdata_machine.copy()
-                    profile['hostname'] = ip
-                    profile['instance_id'] = instance_id
-                    disp = Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
-                    max_check = 10
-                    cnt = 0
-                    while not disp.session._check_alive():
-                        cnt += 1
-                        if cnt == max_check:
-                            break
-                    if cnt != max_check:
-                         dispatchers.append(disp)
-            restart = False
-            if len(dispatchers) == self.nchunks:
-                restart = True
-                self.dispatchers = dispatchers
-                self.instance_list = instance_list
-            return restart
+            dispatchers = []
+            instance_list = []
+            ip_list = []
+            self.task_chunks = []
+            task_chunks = _split_tasks(tasks, group_size)
+            task_chunks_str = ['+'.join(ii) for ii in task_chunks]
+            task_hashes = [sha1(ii.encode('utf-8')).hexdigest() for ii in task_chunks_str]
+            nchunks = len(task_chunks)
+            for ii in range(nchunks):
+                job_record = JobRecord(work_path, task_chunks, fname = 'jr.%.06d.json' % ii)
+                cur_chunk = task_chunks[ii]
+                cur_hash = task_hashes[ii]
+                if not job_record.check_finished(cur_hash): 
+                    self.task_chunks.append(cur_chunk)
+                    with open(os.path.join(work_path, 'jr.%.06d.json' % ii)) as fp:
+                        jr = json.load(fp)
+                        ip = jr[cur_hash]['context'][3]
+                        instance_id = jr[cur_hash]['context'][4]
+                        ip_list.append(ip)
+                        instance_list.append(instance_id)
+                        profile = self.mdata_machine.copy()
+                        profile['hostname'] = ip
+                        profile['instance_id'] = instance_id
+                        disp = Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
+                        dispatchers.append(disp)
+            self.dispatchers = dispatchers
+            self.instance_list = instance_list
+            self.ip_list = ip_list
+            return True
         else:
             return False
 
@@ -97,13 +104,14 @@ class ALI():
                  forward_task_deference = True,
                  outlog = 'log',
                  errlog = 'err'):
-        task_chunks = _split_tasks(tasks, group_size)
+        if not self.task_chunks:
+            self.task_chunks = _split_tasks(tasks, group_size)
         self.job_handlers = []
-        for ii in range(self.nchunks):
+        for ii in range(len(self.dispatchers)):
             job_handler = self.dispatchers[ii].submit_jobs(resources,
                                                            command,
                                                            work_path,
-                                                           task_chunks[ii],
+                                                           self.task_chunks[ii],
                                                            group_size,
                                                            forward_common_files,
                                                            forward_task_files,
@@ -113,12 +121,11 @@ class ALI():
                                                            errlog)
             self.job_handlers.append(job_handler)
         while True:
-            for ii in range(self.nchunks):
+            for ii in range(len(self.dispatchers)):
                 if self.dispatchers[ii].all_finished(self.job_handlers[ii]):
                     self.delete(ii)
                     break
-            if self.nchunks == 0:
-                os.remove('machine_record.json')
+            if len(self.dispatchers) == 0:
                 break
             else:
                 time.sleep(10)
@@ -138,8 +145,11 @@ class ALI():
         self.ip_list.pop(ii)
         self.dispatchers.pop(ii)
         self.job_handlers.pop(ii)
-        with open('machine_record.json', 'w') as fp:
-            json.dump({'ip': self.ip_list, 'instance_id': self.instance_list}, fp, indent=4)
+        if len(self.ip_list) == 0:
+            os.remove('machine_record.json')
+        else:
+            with open('machine_record.json', 'w') as fp:
+                json.dump({'ip': self.ip_list, 'instance_id': self.instance_list}, fp, indent=4)
 
     def make_dispatchers(self):
         dispatchers = []

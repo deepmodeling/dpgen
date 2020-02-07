@@ -152,10 +152,17 @@ class Dispatcher(object):
                     dlog.info('restart from old submission %s for chunk %s' % (job_uuid, cur_hash))
                 # record job and its remote context
                 job_list.append(rjob)
+                ip = None
+                instance_id = None
+                if self.remote_profile['machine_type'] == 'ALI':
+                    ip = self.remote_profile['hostname']
+                    instance_id = self.remote_profile['instance_id']
                 job_record.record_remote_context(cur_hash,                                                 
                                                  context.local_root, 
                                                  context.remote_root, 
-                                                 job_uuid)
+                                                 job_uuid,
+                                                 ip,
+                                                 instance_id)
             else :
                 # finished job, append a None to list
                 job_list.append(None)
@@ -231,9 +238,11 @@ class JobRecord(object):
                               chunk_hash, 
                               local_root, 
                               remote_root, 
-                              job_uuid):
+                              job_uuid,
+                              ip=None,
+                              instance_id=None):
         self.valid_hash(chunk_hash)
-        self.record[chunk_hash]['context'] = [local_root, remote_root, job_uuid]
+        self.record[chunk_hash]['context'] = [local_root, remote_root, job_uuid, ip, instance_id]
 
     def get_uuid(self, chunk_hash):
         self.valid_hash(chunk_hash)
@@ -284,12 +293,12 @@ class JobRecord(object):
             }
 
 
-def make_dispatcher(mdata, mdata_resource=None, run_tasks=None, group_size=None):
+def make_dispatcher(mdata, mdata_resource=None, work_path=None, run_tasks=None, group_size=None):
     if 'ali_auth' in mdata:
         from dpgen.dispatcher.ALI import ALI
         nchunks = len(_split_tasks(run_tasks, group_size))
         dispatcher = ALI(mdata['ali_auth'], mdata_resource, mdata, nchunks)
-        dispatcher.init()
+        dispatcher.init(work_path, run_tasks, group_size)
         return dispatcher
     else:    
         try:
