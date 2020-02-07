@@ -43,6 +43,10 @@ from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
 from dpgen.generator.lib.vasp import incar_upper
 from dpgen.generator.lib.pwscf import make_pwscf_input
 #from dpgen.generator.lib.pwscf import cvt_1frame
+from dpgen.generator.lib.pwmat import make_pwmat_input_dict
+from dpgen.generator.lib.pwmat import write_input_dict
+from dpgen.generator.lib.pwmat import make_pwmat_input_user_dict
+from dpgen.generator.lib.pwmat import input_upper
 from dpgen.generator.lib.siesta import make_siesta_input
 from dpgen.generator.lib.gaussian import make_gaussian_input, take_cluster
 from dpgen.generator.lib.cp2k import make_cp2k_input, make_cp2k_xyz
@@ -53,11 +57,6 @@ from dpgen.remote.group_jobs import group_slurm_jobs
 from dpgen.remote.group_jobs import group_local_jobs
 from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
 from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, make_dispatcher
-try:
-    from dpgen.dispatcher.ALI import ALI
-except ImportError as e:
-    dlog.info(e)
-    pass
 from dpgen.util import sepline
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar,Kpoints,Potcar
@@ -430,17 +429,21 @@ def run_train (iter_index,
             for single_sys in os.listdir(os.path.join(ii)):
                 trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'set.*'))
                 trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type.raw'))
+                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'nopbc'))
         else:
             trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
             trans_comm_data += glob.glob(os.path.join(ii, 'type.raw'))
+            trans_comm_data += glob.glob(os.path.join(ii, 'nopbc'))
     for ii in fp_data :
         if jdata.get('use_clusters', False):
             for single_sys in os.listdir(os.path.join(ii)):
                 trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'set.*'))
                 trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type.raw'))
+                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'nopbc'))
         else:
             trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
             trans_comm_data += glob.glob(os.path.join(ii, 'type.raw'))
+            trans_comm_data += glob.glob(os.path.join(ii, 'nopbc'))
     os.chdir(cwd)
 
     try:
@@ -448,14 +451,7 @@ def run_train (iter_index,
     except:
         train_group_size = 1
 
-    task_chunks = _split_tasks(run_tasks, train_group_size)
-    nchunks = len(task_chunks)
-    if "ali_auth" in mdata:
-        dispatcher = ALI(mdata['ali_auth'], mdata['train_resources'], mdata['train_machine'], nchunks, work_path)
-        dispatcher.init()
-    else:
-        dispatcher = make_dispatcher(mdata['train_machine'])
-
+    dispatcher = make_dispatcher(mdata['train_machine'], mdata['train_resources'], run_tasks, train_group_size)
     dispatcher.run_jobs(mdata['train_resources'],
                         commands,
                         work_path,
@@ -660,6 +656,8 @@ def make_model_devi (iter_index,
             else:
                 fmt = 'vasp/poscar'
             system = dpdata.System(os.path.join(conf_path, poscar_name), fmt = fmt, type_map = jdata['type_map'])
+            if jdata.get('model_devi_nopbc', False):
+                system.remove_pbc()
             system.to_lammps_lmp(os.path.join(conf_path, lmp_name))
             conf_counter += 1
         sys_counter += 1
@@ -750,6 +748,10 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                 # dump input of lammps
                 with open('input.lammps', 'w') as fp:
                     fp.write(''.join(lmp_lines))
+                with open('job.json', 'w') as fp:
+                    job = {}
+                    for ii,jj in zip(rev_keys, rev_item) : job[ii] = jj
+                    json.dump(job, fp, indent = 4)
                 os.chdir(cwd_)
                 task_counter += 1
             conf_counter += 1
@@ -780,6 +782,7 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
     if 'model_devi_taup' in jdata :
         model_devi_taup = jdata['model_devi_taup']
     mass_map = jdata['mass_map']
+    nopbc = jdata.get('model_devi_nopbc', False)
 
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
@@ -851,6 +854,7 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
                                                pka_e = pka_e,
                                                ele_temp_f = te_f,
                                                ele_temp_a = te_a,
+                                               nopbc = nopbc,
                                                deepmd_version = deepmd_version)
                     job = {}
                     job["ensemble"] = ensemble
@@ -914,13 +918,7 @@ def run_model_devi (iter_index,
         backward_files += ['output.plumed']
 
     cwd = os.getcwd()
-    task_chunks = _split_tasks(run_tasks, model_devi_group_size)
-    nchunks = len(task_chunks)
-    if "ali_auth" in mdata:
-        dispatcher = ALI(mdata['ali_auth'], mdata['model_devi_resources'], mdata['model_devi_machine'], nchunks, work_path)
-        dispatcher.init()
-    else:
-        dispatcher = make_dispatcher(mdata['model_devi_machine'])
+    dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], run_tasks, model_devi_group_size)
     dispatcher.run_jobs(mdata['model_devi_resources'],
                         commands,
                         work_path,
@@ -1094,6 +1092,65 @@ def make_vasp_incar(jdata, filename):
         fp.write(incar)
     return incar    
 
+def make_pwmat_input(jdata, filename):
+    if 'fp_incar' in jdata.keys() :
+        fp_incar_path = jdata['fp_incar']
+        assert(os.path.exists(fp_incar_path))
+        fp_incar_path = os.path.abspath(fp_incar_path)
+        fr = open(fp_incar_path)
+        input = fr.read()
+        fr.close()
+    elif 'user_fp_params' in jdata.keys() :
+        fp_params = jdata['user_fp_params']
+        node1 = fp_params['node1']
+        node2 = fp_params['node2']
+        atom_config = fp_params['in.atom']
+        ecut = fp_params['ecut']
+        e_error = fp_params['e_error']
+        rho_error = fp_params['rho_error']
+        kspacing = fp_params['kspacing']
+        flag_symm = fp_params['flag_symm']
+        os.system("command -v poscar2config.x | wc -l > 1.txt")
+        fc = open('1.txt')
+        flag_command = fc.read()
+        fc.close()
+        if int(flag_command) == 1 :
+            os.system('poscar2config.x < POSCAR > tmp.config')
+        else:
+            os.system('cp ../../../out_data_post_fp_pwmat/02.fp/task.000.000000/poscar2config.x ./')
+            os.system('./poscar2config.x < POSCAR > tmp.config')
+        os.system('rm -rf tmp.config')
+        input_dict = make_pwmat_input_dict(node1, node2, atom_config, ecut, e_error,
+                                           rho_error, icmix = None, smearing = None,
+                                           sigma = None, kspacing = kspacing, 
+                                           flag_symm = flag_symm
+        )
+
+        input = write_input_dict(input_dict)
+    else:
+        input = make_pwmat_input_user_dict(jdata['fp_params'])
+    if 'IN.PSP' in input or 'in.psp' in input:
+        with open(filename, 'w') as fp:
+            fp.write(input)
+            fp.write('job=scf\n')
+            if 'OUT.MLMD' in input or 'out.mlmd' in input:
+                return input
+            else:
+                fp.write('OUT.MLMD = T')
+                return input
+    else:
+        with open(filename, 'w') as fp:
+            fp.write(input)
+            fp.write('job=scf\n')
+            fp_pp_files = jdata['fp_pp_files']
+            for idx, ii in enumerate(fp_pp_files) : 
+                fp.write('IN.PSP%d = %s\n' %(idx+1, ii))
+            if 'OUT.MLMD' in input or 'out.mlmd' in input:
+                return input
+            else:
+                fp.write('OUT.MLMD = T')
+                return input
+
 def make_vasp_incar_ele_temp(jdata, filename, ele_temp, nbands_esti = None):
     with open(filename) as fp:
         incar = fp.read()
@@ -1128,6 +1185,21 @@ def _make_fp_vasp_incar (iter_index,
                 make_vasp_incar_ele_temp(jdata, 'INCAR', 
                                          job_data['ele_temp'],
                                          nbands_esti = nbands_esti)
+        os.chdir(cwd)
+
+def _make_fp_pwmat_input (iter_index,
+                         jdata) :
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
+    fp_tasks.sort()
+    if len(fp_tasks) == 0 :
+        return
+    cwd = os.getcwd()
+    for ii in fp_tasks:
+        os.chdir(ii)
+        make_pwmat_input(jdata, 'etot.input')
+        os.system("sed -i '1,2c 4 1' etot.input")
         os.chdir(cwd)
 
 def _make_fp_vasp_kp (iter_index,jdata):
@@ -1402,6 +1474,21 @@ def make_fp_cp2k (iter_index,
     # link pp files
     _link_fp_vasp_pp(iter_index, jdata)
 
+def make_fp_pwmat (iter_index,
+                  jdata) :
+    # make config
+    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
+    if len(fp_tasks) == 0 :
+        return
+    # abs path for fp_incar if it exists
+    if 'fp_incar' in jdata:
+        jdata['fp_incar'] = os.path.abspath(jdata['fp_incar'])
+    # order is critical!
+    # 1, link pp files
+    _link_fp_vasp_pp(iter_index, jdata)
+    # 2, create pwmat input
+    _make_fp_pwmat_input(iter_index, jdata)
+
 def make_fp (iter_index,
              jdata,
              mdata) :
@@ -1417,6 +1504,8 @@ def make_fp (iter_index,
         make_fp_gaussian(iter_index, jdata)
     elif fp_style == "cp2k" :
         make_fp_cp2k(iter_index, jdata)
+    elif fp_style == "pwmat" :
+        make_fp_pwmat(iter_index, jdata)
     else :
         raise RuntimeError ("unsupported fp style")
 
@@ -1476,6 +1565,17 @@ def _cp2k_check_fin(ii):
         return False
     return True
 
+def _pwmat_check_fin (ii) :
+    if os.path.isfile(os.path.join(ii, 'REPORT')) :
+        with open(os.path.join(ii, 'REPORT'), 'r') as fp :
+            content = fp.read()
+            count = content.count('time')
+            if count != 1 :
+                return False
+    else :
+        return False
+    return True
+
 def run_fp_inner (iter_index,
                   jdata,
                   mdata,
@@ -1501,14 +1601,7 @@ def run_fp_inner (iter_index,
     #     if not check_fin(ii) :
     #         fp_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
-    cwd = os.getcwd()
-    task_chunks = _split_tasks(run_tasks, fp_group_size)
-    nchunks = len(task_chunks)
-    if "ali_auth" in mdata:
-        dispatcher = ALI(mdata['ali_auth'], mdata['fp_resources'], mdata['fp_machine'], nchunks, work_path)
-        dispatcher.init()
-    else:
-        dispatcher = make_dispatcher(mdata['fp_machine'])
+    dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], run_tasks, fp_group_size)
     dispatcher.run_jobs(mdata['fp_resources'],
                         [fp_command],
                         work_path,
@@ -1558,6 +1651,10 @@ def run_fp (iter_index,
         forward_files = ['input.inp', 'coord.xyz']
         backward_files = ['output']
         run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, _cp2k_check_fin, log_file = 'output')
+    elif fp_style == "pwmat" :
+        forward_files = ['atom.config', 'etot.input'] + fp_pp_files
+        backward_files = ['REPORT', 'OUT.MLMD', 'output']
+        run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, _pwmat_check_fin, log_file = 'output')
     else :
         raise RuntimeError ("unsupported fp style")
 
@@ -1822,6 +1919,59 @@ def post_fp_cp2k (iter_index,
         all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
 
 
+def post_fp_pwmat (iter_index,
+                  jdata,
+                  rfailed=None):
+
+    ratio_failed =  rfailed if rfailed else jdata.get('ratio_failed',0.05)
+    model_devi_jobs = jdata['model_devi_jobs']
+    assert (iter_index < len(model_devi_jobs))
+
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
+    fp_tasks.sort()
+    if len(fp_tasks) == 0 :
+        return
+
+    system_index = []
+    for ii in fp_tasks :
+        system_index.append(os.path.basename(ii).split('.')[1])
+    system_index.sort()
+    set_tmp = set(system_index)
+    system_index = list(set_tmp)
+    system_index.sort()
+
+    cwd = os.getcwd()
+
+    tcount=0
+    icount=0
+    for ss in system_index :
+        sys_output = glob.glob(os.path.join(work_path, "task.%s.*/OUT.MLMD"%ss))
+        sys_output.sort()
+        tcount += len(sys_output)
+        all_sys = None
+        for oo in sys_output :
+            _sys = dpdata.LabeledSystem(oo, type_map = jdata['type_map'])
+            if len(_sys) == 1:
+                if all_sys is None:
+                    all_sys = _sys
+                else:
+                    all_sys.append(_sys)
+            else:
+                icount+=1
+        if all_sys is not None:
+           sys_data_path = os.path.join(work_path, 'data.%s'%ss)
+           all_sys.to_deepmd_raw(sys_data_path)
+           all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
+    dlog.info("failed frame number: %s "%icount)
+    dlog.info("total frame number: %s "%tcount)
+    reff=icount/tcount
+    dlog.info('ratio of failed frame:  {:.2%}'.format(reff))
+
+    if reff>ratio_failed:
+       raise RuntimeError("find too many unsuccessfully terminated jobs")
+
 def post_fp (iter_index,
              jdata) :
     fp_style = jdata['fp_style']
@@ -1835,6 +1985,8 @@ def post_fp (iter_index,
         post_fp_gaussian(iter_index, jdata)
     elif fp_style == 'cp2k' :
         post_fp_cp2k(iter_index, jdata)
+    elif fp_style == 'pwmat' :
+        post_fp_pwmat(iter_index, jdata)
     else :
         raise RuntimeError ("unsupported fp style")
     # clean traj

@@ -25,6 +25,7 @@ from .comp_sys import test_atom_types
 from .comp_sys import test_coord
 from .comp_sys import test_cell
 from .comp_sys import CompLabeledSys
+from .context import param_pwmat_file
 
 
 class TestPostFPVasp(unittest.TestCase):
@@ -224,6 +225,22 @@ class TestPostCP2K(unittest.TestCase, CompLabeledSys):
         self.system_1 = dpdata.LabeledSystem('iter.000000/orig', fmt = 'deepmd/raw')
         self.system_2 = dpdata.LabeledSystem('iter.000000/02.fp/data.000', fmt = 'deepmd/raw')
 
+
+class TestPostFPPWmat(unittest.TestCase, CompLabeledSys):
+    def setUp(self):
+        self.places = 5
+        self.e_places = 5
+        self.f_places = 5
+        self.v_places = 2
+        assert os.path.isdir('out_data_post_fp_pwmat'), 'out data for post fp pwmat should exist'
+        if os.path.isdir('iter.000000') :
+            shutil.rmtree('iter.000000')
+        shutil.copytree('out_data_post_fp_pwmat', 'iter.000000')
+        with open (param_pwmat_file, 'r') as fp :
+            jdata = json.load (fp)
+        post_fp(0, jdata)
+        self.system_1 = dpdata.LabeledSystem('iter.000000/orig', fmt = 'deepmd/raw')
+        self.system_2 = dpdata.LabeledSystem('iter.000000/02.fp/data.000', fmt = 'deepmd/raw')
 
 
 if __name__ == '__main__':

@@ -475,6 +475,7 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | **model_devi_e_trust_lo**  | Float | 1e10                                                         | Lower bound of energies for the selection. Recommend to set them a high number, since forces provide more precise information. Special cases such as energy minimization may need this. |
 | **model_devi_e_trust_hi**  | Float | 1e10                                                         | Upper bound of energies for the selection. |
 | **model_devi_clean_traj**  | Boolean | true                                                         | Deciding whether to clean traj folders in MD since they are too large. |
+| **model_devi_nopbc**  | Boolean | False                                                         | Assume open boundary condition in MD simulations. |
 | **model_devi_jobs**        | [<br/>{<br/>"sys_idx": [0], <br/>"temps": <br/>[100],<br/>"press":<br/>[1],<br/>"trj_freq":<br/>10,<br/>"nsteps":<br/> 1000,<br/> "ensembles": <br/> "nvt" <br />},<br />...<br />] | List of dict | Settings for exploration in `01.model_devi`. Each dict in the list corresponds to one iteration. The index of `model_devi_jobs` exactly accord with index of iterations |
 | **model_devi_jobs["sys_idx"]**    | List of integer           | [0]                                                          | Systems to be selected as the initial structure of MD and be explored. The index corresponds exactly to the `sys_configs`. |
 | **model_devi_jobs["temps"]**  | List of integer | [50, 300] | Temperature (**K**) in MD
@@ -1079,7 +1080,9 @@ The following table gives explicit descriptions on keys in param.json.
 | # Followings are keys in resources
 | numb_node | Integer | 1 | Node count required for the job
 | task_per_node | Integer | 4 | Number of CPU cores required
-| numb_gpu | Integer | 4 | Number of GPUs required
+| numb_gpu | Integer | Integer | 4 | Number of GPUs required
+| manual_cuda_devices | Interger | 1 | Used with key "manual_cuda_multiplicity" specify the gpu number
+| manual_cuda_multiplicity |Interger | 5 | Used in 01.model_devi,used with key "manual_cuda_devices" specify the MD program number running on one GPU  at the same time,dpgen will  automatically allocate MD jobs on different GPU. This can improve GPU usage for GPU like V100.
 | node_cpu | Integer | 4 | Only for LSF. The number of CPU cores on each node that should be allocated to the job.
 | source_list | List of string | "....../vasp.env" | Environment needed for certain job. For example, if "env" is in the list, 'source env' will be written in the script.
 | module_list | List of string | [ "Intel/2018", "Anaconda3"] | For example, If "Intel/2018" is in the list, "module load Intel/2018" will be written in the script.

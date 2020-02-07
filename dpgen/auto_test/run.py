@@ -105,7 +105,7 @@ def run_equi(task_type,jdata,mdata):
     run_tasks = util.collect_task(all_task,task_type)
     if len(run_tasks)==0: return
     machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
-    disp = make_dispatcher(machine)
+    disp = make_dispatcher(machine, resources, run_tasks, group_size)
     disp.run_jobs(resources,
                   command,
                   work_path,
@@ -193,7 +193,7 @@ def run_eos(task_type,jdata,mdata):
     run_tasks = util.collect_task(all_task,task_type)
     if len(run_tasks)==0: return
     machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
-    disp = make_dispatcher(machine)
+    disp = make_dispatcher(machine, resources, run_tasks, group_size)
     disp.run_jobs(resources,
                   command,
                   work_path,
@@ -269,7 +269,7 @@ def run_elastic(task_type,jdata,mdata):
     run_tasks = util.collect_task(all_task,task_type)
     if len(run_tasks)==0: return
     machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
-    disp = make_dispatcher(machine)
+    disp = make_dispatcher(machine, resources, run_tasks, group_size)
     disp.run_jobs(resources,
                   command,
                   work_path,
@@ -344,7 +344,7 @@ def run_vacancy(task_type,jdata,mdata):
     run_tasks = util.collect_task(all_task,task_type)
     if len(run_tasks)==0: return
     machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
-    disp = make_dispatcher(machine)
+    disp = make_dispatcher(machine, resources, run_tasks, group_size)
     disp.run_jobs(resources,
                   command,
                   work_path,
@@ -441,14 +441,13 @@ def run_interstitial(task_type,jdata,mdata):
         raise RuntimeError ("unknow task %s, something wrong" % task_type)
 
     machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
-    disp = make_dispatcher(machine)
     if reprod_opt:
         for ii in work_path:
             run_tasks=[]
             for jj in run_tasks_:
                 if ii in jj:
                     run_tasks.append(os.path.basename(jj))
-
+            disp = make_dispatcher(machine, resources, run_tasks, group_size)
             disp.run_jobs(resources,
                           command,
                           ii,
@@ -462,6 +461,7 @@ def run_interstitial(task_type,jdata,mdata):
     else:
         run_tasks = util.collect_task(all_task,task_type)
         if len(run_tasks)==0: return
+        disp = make_dispatcher(machine, resources, run_tasks, group_size)
         disp.run_jobs(resources,
                       command,
                       work_path,
@@ -549,7 +549,7 @@ def run_surf(task_type,jdata,mdata):
     run_tasks = util.collect_task(all_task,task_type)
     if len(run_tasks)==0: return
     machine,machine_type,ssh_sess,resources,command,group_size=util.get_machine_info(mdata,task_type)
-    disp = make_dispatcher(machine)
+    disp = make_dispatcher(machine, resources, run_tasks, group_size)
     disp.run_jobs(resources,
                   command,
                   work_path,
@@ -608,7 +608,7 @@ def run_phonon(task_type,jdata,mdata):
         backward_files = ['OUTCAR',  'autotest.out' , 'OSZICAR','vasprun.xml']
         common_files=['POSCAR']
 
-        disp = make_dispatcher(machine)
+        disp = make_dispatcher(machine, resources, run_tasks, group_size)
         disp.run_jobs(resources,
                   command,
                   work_path,

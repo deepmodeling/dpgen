@@ -151,7 +151,7 @@ class Slurm(Batch) :
 
     def _check_status_inner(self, job_id):
         ret, stdin, stdout, stderr\
-            = self.context.block_call ("squeue --job " + job_id)
+            = self.context.block_call ('squeue -o "%.18i %.2t" -j ' + job_id)
         if (ret != 0) :
             err_str = stderr.read().decode('utf-8')
             if str("Invalid job id specified") in err_str :
@@ -163,7 +163,11 @@ class Slurm(Batch) :
                 raise RuntimeError\
                     ("status command squeue fails to execute\nerror message:%s\nreturn code %d\n" % (err_str, ret))
         status_line = stdout.read().decode('utf-8').split ('\n')[-2]
-        status_word = status_line.split ()[-4]
+        status_word = status_line.split ()[-1]
+        if not (len(status_line.split()) == 2 and status_word.isupper()): 
+            raise RuntimeError("Error in getting job status, " +
+                              f"status_line = {status_line}, " + 
+                              f"parsed status_word = {status_word}")
         if status_word in ["PD","CF","S"] :
             return JobStatus.waiting
         elif status_word in ["R"] :

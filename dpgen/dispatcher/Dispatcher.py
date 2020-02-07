@@ -1,5 +1,4 @@
 import os,sys,time,random,json,glob
-
 from dpgen.dispatcher.LocalContext import LocalSession
 from dpgen.dispatcher.LocalContext import LocalContext
 from dpgen.dispatcher.LazyLocalContext import LazyLocalContext
@@ -285,23 +284,30 @@ class JobRecord(object):
             }
 
 
-def make_dispatcher(mdata):
-    try:
-        hostname = mdata['hostname']
-        context_type = 'ssh'
-    except:
-        context_type = 'local'
-    try:
-        batch_type = mdata['batch']
-    except:
-        dlog.info('cannot find key "batch" in machine file, try to use deprecated key "machine_type"')
-        batch_type = mdata['machine_type']
-    try:
-        lazy_local = mdata['lazy_local']
-    except:
-        lazy_local = False
-    if lazy_local and context_type == 'local':
-        dlog.info('Dispatcher switches to the lazy local mode')
-        context_type = 'lazy-local'
-    disp = Dispatcher(mdata, context_type=context_type, batch_type=batch_type)
-    return disp
+def make_dispatcher(mdata, mdata_resource=None, run_tasks=None, group_size=None):
+    if 'ali_auth' in mdata:
+        from dpgen.dispatcher.ALI import ALI
+        nchunks = len(_split_tasks(run_tasks, group_size))
+        dispatcher = ALI(mdata['ali_auth'], mdata_resource, mdata, nchunks)
+        dispatcher.init()
+        return dispatcher
+    else:    
+        try:
+            hostname = mdata['hostname']
+            context_type = 'ssh'
+        except:
+            context_type = 'local'
+        try:
+            batch_type = mdata['batch']
+        except:
+            dlog.info('cannot find key "batch" in machine file, try to use deprecated key "machine_type"')
+            batch_type = mdata['machine_type']
+        try:
+            lazy_local = mdata['lazy_local']
+        except:
+            lazy_local = False
+        if lazy_local and context_type == 'local':
+            dlog.info('Dispatcher switches to the lazy local mode')
+            context_type = 'lazy-local'
+        disp = Dispatcher(mdata, context_type=context_type, batch_type=batch_type)
+        return disp
