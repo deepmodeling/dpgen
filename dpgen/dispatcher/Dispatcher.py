@@ -212,10 +212,10 @@ class Dispatcher(object):
                     rjob['batch'].submit(task_chunks[idx], command, res = resources, outlog=outlog, errlog=errlog,restart=True)
                 elif status == JobStatus.finished :
                     dlog.info('job %s finished' % job_uuid)
-                    #rjob['context'].download(task_chunks[idx], backward_task_files)
-                    #rjob['context'].clean()
-                    #job_record.record_finish(cur_hash)
-                    #job_record.dump()
+                    rjob['context'].download(task_chunks[idx], backward_task_files)
+                    rjob['context'].clean()
+                    job_record.record_finish(cur_hash)
+                    job_record.dump()
         job_record.dump()
         return job_record.check_all_finished()
 
