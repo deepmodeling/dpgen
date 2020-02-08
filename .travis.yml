@@ -14,6 +14,6 @@ install:
   - pip install .
 # command to run tests
 script:
-  - coverage run --source=./dpgen -m unittest && coverage report
+  - coverage run --source=./dpgen -m unittest -v && coverage report
 after_success:
   - codecov

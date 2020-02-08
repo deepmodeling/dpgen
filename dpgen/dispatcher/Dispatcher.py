@@ -154,7 +154,7 @@ class Dispatcher(object):
                 job_list.append(rjob)
                 ip = None
                 instance_id = None
-                if self.remote_profile['machine_type'] == 'ALI':
+                if self.remote_profile.get('machine_type') == 'ALI':
                     ip = self.remote_profile['hostname']
                     instance_id = self.remote_profile['instance_id']
                 job_record.record_remote_context(cur_hash,                                                 
