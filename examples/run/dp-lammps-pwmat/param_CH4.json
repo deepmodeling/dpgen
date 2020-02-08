@@ -1,0 +1,99 @@
+{
+    "type_map":		["H","C"],
+    "mass_map":		[1, 12],
+
+    "init_data_prefix":	"/home/test/software/dpgen/examples/run/dp-lammps-pwmat/",
+
+    "init_data_sys":	[
+	"ch4/00.data"
+			],
+    "init_batch_size":	[
+	8
+			],
+    "sys_configs_prefix":
+    "/home/test/software/dpgen/examples/run/dp-lammps-pwmat/",
+    "sys_configs":	[
+    ["/home/test/software/dpgen/examples/run/dp-lammps-pwmat/scale-1.000/00000*/POSCAR"],
+    ["/home/test/software/dpgen/examples/run/dp-lammps-pwmat/scale-1.000/00001*/POSCAR"]
+	],
+    
+    "sys_batch_size":	[
+	8, 8, 8, 8
+    ],
+
+
+    "_comment":		" 00.train ",
+    "numb_models":	4,
+    "default_training_param" : {
+	"_comment": " model parameters",
+	"use_smooth":		true,
+	"sel_a":		[16,4],
+	"rcut_smth":		0.50,
+	"rcut":			5,
+	"filter_neuron":	[10, 20, 40],
+	"filter_resnet_dt":	false,
+	"n_axis_neuron":	12,
+	"n_neuron":		[120,120,120],
+	"resnet_dt":		true,
+	"coord_norm":		true,
+	"type_fitting_net":	false,
+
+	"_comment": " traing controls",
+	"systems":		["./00.data/"],
+	"set_prefix":		"set",
+	"stop_batch":		2000,
+	"batch_size":		1,
+	"start_lr":		0.001,
+	"decay_steps":		100,
+	"decay_rate":		0.95,
+	"seed":			0,
+
+	"start_pref_e":		0.02,
+	"limit_pref_e":		2,
+	"start_pref_f":		1000,
+	"limit_pref_f":		1,
+	"start_pref_v":		0.0,
+	"limit_pref_v":		0.0,
+
+	"_comment": " display and restart",
+	"_comment": " frequencies counted in batch",
+	"disp_file":		"lcurve.out",
+	"disp_freq":		1000,
+	"numb_test":		4,
+	"save_freq":		1000,
+	"save_ckpt":		"model.ckpt",
+	"load_ckpt":		"model.ckpt",
+	"disp_training":	true,
+	"time_training":	true,
+	"profiling":		false,
+	"profiling_file":	"timeline.json",
+
+	"_comment":		"that's all"
+    },
+
+    "_comment":		" 01.model_devi ",
+    "_comment": "model_devi_skip: the first x of the recorded frames",
+    "model_devi_dt":		0.002,
+    "model_devi_skip":		0,
+    "model_devi_f_trust_lo":	0.05,
+    "model_devi_f_trust_hi":	0.15,
+    "model_devi_e_trust_lo":	1e10,
+    "model_devi_e_trust_hi":	1e10,
+    "model_devi_clean_traj":	true,
+    "model_devi_jobs":	[
+	{"sys_idx": [0],
+	"temps": [  300], "press": [0.0], "trj_freq": 10, "nsteps": 300,  "ensemble": "nvt", "_idx": "00"},
+	{"sys_idx": [1],
+	"temps": [  300], "press": [0.0], "trj_freq": 10, "nsteps": 3000,  "ensemble": "nvt", "_idx": "01"}
+	],
+
+    "_comment":		" 02.fp ",
+    "fp_style":		"pwmat",
+    "shuffle_poscar":	false,
+    "fp_task_max":	20,
+    "fp_task_min":	8,
+    "fp_pp_path":	".",
+    "fp_pp_files":	["C.SG15.PBE.UPF", "H.SG15.PBE.UPF"],
+    "fp_incar" : "etot.input",  
+    "_comment":		" that's all "
+}
