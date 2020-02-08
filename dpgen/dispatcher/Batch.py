@@ -142,12 +142,12 @@ class Batch(object) :
             allow_failure = False
         for ii,jj in zip(job_dirs, args) :
             ret += 'cd %s\n' % ii
-            ret += 'test $? -ne 0 && exit\n\n'
+            ret += 'test $? -ne 0 && exit 1\n\n'
             if self.manual_cuda_devices <= 0:
                 ret += 'if [ ! -f tag_%d_finished ] ;then\n' % idx
                 ret += '  %s 1>> %s 2>> %s \n' % (self.sub_script_cmd(cmd, jj, res), outlog, errlog)
                 if res['allow_failure'] is False:
-                    ret += '  if test $? -ne 0; then exit; else touch tag_%d_finished; fi \n' % idx
+                    ret += '  if test $? -ne 0; then exit 1; else touch tag_%d_finished; fi \n' % idx
                 else :
                     ret += '  touch tag_%d_finished \n' % idx
                 ret += 'fi\n\n'
@@ -157,7 +157,7 @@ class Batch(object) :
                 ret += 'CUDA_VISIBLE_DEVICES=%d %s &\n\n' % ((self.cmd_cnt % self.manual_cuda_devices), tmp_cmd)
                 self.cmd_cnt += 1
             ret += 'cd %s\n' % self.context.remote_root
-            ret += 'test $? -ne 0 && exit\n'
+            ret += 'test $? -ne 0 && exit 1\n'
             if self.manual_cuda_devices > 0 and self.cmd_cnt % (self.manual_cuda_devices * self.manual_cuda_multiplicity) == 0:
                 ret += '\nwait\n\n'
         ret += '\nwait\n\n'
