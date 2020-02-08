@@ -1,7 +1,7 @@
 import numpy as np
 import requests
 import os,re
-from dpgen.remote.RemoteJob import SSHSession
+from dpgen import dlog
 from dpgen.auto_test.lib import vasp
 from dpgen.auto_test.lib import lammps
 from dpgen.auto_test.lib.utils import cmd_append_log
@@ -60,6 +60,7 @@ def make_work_path(jdata,task,reprod_opt,static,user):
             if 'relax_incar' in jdata.keys():
                 task_type=task_type+'-reprod-relax_incar'
             else:
+                kspacing = jdata['vasp_params']['kspacing']
                 task_type=task_type+'-reprod-k%.2f'% (kspacing)
 
     work_path=os.path.join(task_path, task_type)
@@ -73,7 +74,6 @@ def get_machine_info(mdata,task_type):
         group_size = mdata['fp_group_size']
         resources = mdata['fp_resources']
         machine=mdata['fp_machine']
-        machine_type = mdata['fp_machine']['machine_type']
         command = vasp_exec
         command = cmd_append_log(command, "log")
     elif task_type in lammps_task_type:
@@ -81,14 +81,9 @@ def get_machine_info(mdata,task_type):
         group_size = mdata['model_devi_group_size']
         resources = mdata['model_devi_resources']
         machine=mdata['model_devi_machine']
-        machine_type = mdata['model_devi_machine']['machine_type']
         command = lmp_exec + " -i lammps.in"
         command = cmd_append_log(command, "model_devi.log")
-    if machine_type == 'ALI':
-        ssh_sess = None
-    else:
-        ssh_sess = SSHSession(machine)
-    return machine, machine_type,ssh_sess,resources, command, group_size
+    return machine, resources, command, group_size
 
 def collect_task(all_task,task_type):
 

@@ -2,6 +2,7 @@ import os,sys,json,glob,shutil
 import dpdata
 import numpy as np
 import unittest
+import importlib
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 __package__ = 'generator'
@@ -26,6 +27,7 @@ from .comp_sys import test_atom_types
 from .comp_sys import test_coord
 from .comp_sys import test_cell
 from pymatgen.io.vasp import Kpoints,Incar
+from .context import param_pwmat_file
 import scipy.constants as pc
 
 vasp_incar_ref = "PREC=A\n\
@@ -185,7 +187,23 @@ POTENTIAL GTH-PBE-q5\n\
 &FORCES ON\n\
 &END FORCES\n\
 &END PRINT\n\
-&END FORCE_EVAL\n"
+&END FORCE_EVAL\n";
+
+pwmat_input_ref = "4 1\n\
+in.atom=atom.config\n\
+ecut=50\n\
+e_error=0.0001\n\
+rho_error=0.0001\n\
+scf_iter0_1=6 4 3 0.0000 0.025 2\n\
+scf_iter0_2=94 4 3 1.0000 0.025 2\n\
+mp_n123=147 57 39 0 0 0 2\n\
+out.wg=F\n\
+out.rho=F\n\
+out.mlmd=T\n\
+job=scf\n\
+IN.PSP1 = C.SG15.PBE.UPF\n\
+IN.PSP2 = H.SG15.PBE.UPF\n\
+IN.PSP3 = N.SG15.PBE.UPF\n";
 
 
 
@@ -469,6 +487,18 @@ def _check_cp2k_input_head(testCase, idx) :
 
 
 
+def _check_pwmat_input(testCase, idx):
+    fp_path = os.path.join('iter.%06d' % idx, '02.fp')
+    tasks = glob.glob(os.path.join(fp_path, 'task.*'))
+    cwd = os.getcwd()
+    for ii in tasks :
+        os.chdir(ii)
+        os.system("sed -i '8c mp_n123=147 57 39 0 0 0 2' etot.input")
+        with open('etot.input') as fp:
+            lines = fp.read()
+            testCase.assertEqual(lines.strip(), pwmat_input_ref.strip())
+        os.chdir(cwd)
+
 class TestMakeFPPwscf(unittest.TestCase):
     def test_make_fp_pwscf(self):
         if os.path.isdir('iter.000000') :
@@ -710,11 +740,12 @@ class TestMakeFPVasp(unittest.TestCase):
 
 
 class TestMakeFPGaussian(unittest.TestCase):
-    def test_make_fp_gaussian(self):
+    def make_fp_gaussian(self, multiplicity="auto"):
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_gaussian_file, 'r') as fp :
             jdata = json.load (fp)
+        jdata['user_fp_params']['multiplicity'] = multiplicity
         with open (machine_file, 'r') as fp:
             mdata = json.load (fp)
         md_descript = []
@@ -735,6 +766,13 @@ class TestMakeFPGaussian(unittest.TestCase):
         _check_gaussian_input_head(self, 0)
         _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
+
+    @unittest.skipIf(importlib.util.find_spec("openbabel") is None, "requires openbabel")
+    def test_make_fp_gaussian(self):
+        self.make_fp_gaussian()
+
+    def test_make_fp_gaussian_multiplicity_one(self):
+        self.make_fp_gaussian(multiplicity=1)
 
     def test_detect_multiplicity(self):
         # oxygen O2 3
@@ -778,6 +816,33 @@ class TestMakeFPCP2K(unittest.TestCase):
         _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
 
+
+class TestMakeFPPWmat(unittest.TestCase):
+    def test_make_fp_pwmat(self):
+        if os.path.isdir('iter.000000') :
+            shutil.rmtree('iter.000000')
+        with open (param_pwmat_file, 'r') as fp :
+            jdata = json.load (fp)
+        with open (machine_file, 'r') as fp:
+            mdata = json.load (fp)
+        md_descript = []
+        nsys = 2
+        nmd = 3
+        n_frame = 10
+        for ii in range(nsys) :
+            tmp = []
+            for jj in range(nmd) :
+                tmp.append(np.arange(0, 0.29, 0.29/10))
+            md_descript.append(tmp)
+        atom_types = [0, 1, 2, 2, 0, 1]
+        type_map = jdata['type_map']
+        _make_fake_md(0, md_descript, atom_types, type_map)
+        make_fp(0, jdata, {})
+        _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
+        _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
+        _check_pwmat_input(self, 0)
+        _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
+        shutil.rmtree('iter.000000')
 
 if __name__ == '__main__':
     unittest.main()
