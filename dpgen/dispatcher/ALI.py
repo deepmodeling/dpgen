@@ -167,7 +167,10 @@ class ALI():
         strategy = self.adata["pay_strategy"]
         pwd = self.adata["password"]
         regionID = self.regionID
-        template_name = '%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['numb_gpu'], strategy)
+        if self.mdata_resources['partition'] == 'gpu':
+            template_name = '%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['numb_gpu'], strategy)
+        elif self.mdata_resources['partition'] == 'cpu':
+            template_name = '%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['task_per_node'], strategy)
         instance_name = self.adata["instance_name"]
         client = AcsClient(AccessKey_ID, AccessKey_Secret, regionID)
         self.instance_list = []
@@ -239,6 +242,9 @@ class ALI():
                     response = client.do_action_with_exception(request)
                     response = json.loads(response)
                     self.ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]['IpAddress'][0])
+        dlog.info('create machine successfully, following are the ip addresses')
+        for ip in self.ip_list:
+            dlog.info(ip)
         with open('machine_record.json', 'w') as fp:
             json.dump({'ip': self.ip_list, 'instance_id': self.instance_list}, fp, indent=4)
 
