@@ -242,7 +242,7 @@ class ALI():
                     response = client.do_action_with_exception(request)
                     response = json.loads(response)
                     self.ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]['IpAddress'][0])
-        dlog.info('create machine successfully, here is the ip addresses\n')
+        dlog.info('create machine successfully, following are the ip addresses')
         for ip in self.ip_list:
             dlog.info(ip)
         with open('machine_record.json', 'w') as fp:
