@@ -295,6 +295,7 @@ def make_train (iter_index,
         # 1.x
         jinput['training']['systems'] = init_data_sys
         jinput['training']['batch_size'] = init_batch_size
+        jinput['model']['type_map'] = jdata['type_map']
         # electron temperature
         if use_ele_temp == 0:
             pass
@@ -459,21 +460,21 @@ def run_train (iter_index,
         if jdata.get('init_multi_systems', False):
             for single_sys in os.listdir(os.path.join(ii)):
                 trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'set.*'))
-                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type.raw'))
+                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type*.raw'))
                 trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'nopbc'))
         else:
             trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
-            trans_comm_data += glob.glob(os.path.join(ii, 'type.raw'))
+            trans_comm_data += glob.glob(os.path.join(ii, 'type*.raw'))
             trans_comm_data += glob.glob(os.path.join(ii, 'nopbc'))
     for ii in fp_data :
         if jdata.get('use_clusters', False):
             for single_sys in os.listdir(os.path.join(ii)):
                 trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'set.*'))
-                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type.raw'))
+                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type*.raw'))
                 trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'nopbc'))
         else:
             trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
-            trans_comm_data += glob.glob(os.path.join(ii, 'type.raw'))
+            trans_comm_data += glob.glob(os.path.join(ii, 'type*.raw'))
             trans_comm_data += glob.glob(os.path.join(ii, 'nopbc'))
     os.chdir(cwd)
 
