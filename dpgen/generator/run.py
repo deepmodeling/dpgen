@@ -1237,6 +1237,7 @@ def _make_fp_pwmat_input (iter_index,
 def _make_fp_vasp_kp (iter_index,jdata):
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
+    fp_aniso_kspacing = jdata.get('fp_aniso_kspacing')
 
     fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
     fp_tasks.sort()
@@ -1250,10 +1251,13 @@ def _make_fp_vasp_kp (iter_index,jdata):
         with open('INCAR') as fp:
             incar = fp.read()
         standard_incar = incar_upper(Incar.from_string(incar))
-        try:
-            kspacing = standard_incar['KSPACING']
-        except:
-            raise RuntimeError ("KSPACING must be given in INCAR")
+        if fp_aniso_kspacing is None:
+            try:
+                kspacing = standard_incar['KSPACING']
+            except:
+                raise RuntimeError ("KSPACING must be given in INCAR")
+        else :
+            kspacing = fp_aniso_kspacing
         try:
             gamma = standard_incar['KGAMMA']
             if isinstance(gamma,bool):
