@@ -783,7 +783,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                     with open('input.plumed', 'w') as fp:
                         fp.write(''.join(plm_lines))
                     if use_plm_path:
-                       shutil.copyfile(plm_path_templ, 'mypath.pdb')
+                       shutil.copyfile(plm_path_templ, 'plmpath.pdb')
                 # dump input of lammps
                 with open('input.lammps', 'w') as fp:
                     fp.write(''.join(lmp_lines))
@@ -958,7 +958,7 @@ def run_model_devi (iter_index,
        # backward_files += ['output.plumed']
         backward_files += ['output.plumed','COLVAR','dump.0.xyz']
         if use_plm_path:
-            forward_files += ['mypath.pdb']
+            forward_files += ['plmpath.pdb']
 
     cwd = os.getcwd()
     dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], work_path, run_tasks, model_devi_group_size)
