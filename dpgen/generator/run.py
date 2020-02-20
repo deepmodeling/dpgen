@@ -377,6 +377,8 @@ def run_train (iter_index,
     training_reuse_iter = jdata.get('training_reuse_iter')
     if training_reuse_iter is not None and iter_index >= training_reuse_iter:
         reuse_old = True
+    else:
+        reuse_old = False    
     try:
         mdata["deepmd_version"]
     except:
