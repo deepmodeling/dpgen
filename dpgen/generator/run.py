@@ -378,6 +378,8 @@ def run_train (iter_index,
     reuse_old = False
     if training_reuse_iter is not None and iter_index >= training_reuse_iter:
         reuse_old = True
+    else:
+        reuse_old = False    
     try:
         mdata["deepmd_version"]
     except:
@@ -446,6 +448,7 @@ def run_train (iter_index,
                           os.path.join('old', 'model.ckpt.data-00000-of-00001')
         ]
     backward_files = ['frozen_model.pb', 'lcurve.out', 'train.log']
+    backward_files+= ['model.ckpt.meta', 'model.ckpt.index', 'model.ckpt.data-00000-of-00001']
     init_data_sys_ = jdata['init_data_sys']
     init_data_sys = []
     for ii in init_data_sys_ :
@@ -699,6 +702,7 @@ def make_model_devi (iter_index,
     if "template" in cur_job:
         input_mode = "revise_template"
     use_plm = jdata.get('model_devi_plumed', False)
+    use_plm_path = jdata.get('model_devi_plumed_path', False)
     if input_mode == "native":
         _make_model_devi_native(iter_index, jdata, mdata, conf_systems)
     elif input_mode == "revise_template":
@@ -719,6 +723,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
         raise RuntimeError("system index should be uniq")
     mass_map = jdata['mass_map']
     use_plm = jdata.get('model_devi_plumed', False)
+    use_plm_path = jdata.get('model_devi_plumed_path', False)
     trj_freq = _get_param_alias(cur_job, ['t_freq', 'trj_freq','traj_freq'])
 
     rev_keys, rev_mat, num_lmp = parse_cur_job_revmat(cur_job, use_plm = use_plm)
@@ -727,6 +732,9 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
     if use_plm:
         plm_templ = cur_job['template']['plm']
         plm_templ = os.path.abspath(plm_templ)    
+        if use_plm_path:
+            plm_path_templ = cur_job['template']['plm_path']
+            plm_path_templ = os.path.abspath(plm_path_templ) 
 
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
@@ -778,6 +786,8 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                     plm_lines = revise_by_keys(plm_lines, rev_keys[num_lmp:], rev_item[num_lmp:])
                     with open('input.plumed', 'w') as fp:
                         fp.write(''.join(plm_lines))
+                    if use_plm_path:
+                       shutil.copyfile(plm_path_templ, 'plmpath.pdb')
                 # dump input of lammps
                 with open('input.lammps', 'w') as fp:
                     fp.write(''.join(lmp_lines))
@@ -916,6 +926,7 @@ def run_model_devi (iter_index,
     model_devi_group_size = mdata['model_devi_group_size']
     model_devi_resources = mdata['model_devi_resources']
     use_plm = jdata.get('model_devi_plumed', False)
+    use_plm_path = jdata.get('model_devi_plumed_path', False)
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, model_devi_name)
@@ -948,7 +959,10 @@ def run_model_devi (iter_index,
     backward_files = ['model_devi.out', 'model_devi.log', 'traj']
     if use_plm:
         forward_files += ['input.plumed']
-        backward_files += ['output.plumed']
+       # backward_files += ['output.plumed']
+        backward_files += ['output.plumed','COLVAR','dump.0.xyz']
+        if use_plm_path:
+            forward_files += ['plmpath.pdb']
 
     cwd = os.getcwd()
     dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], work_path, run_tasks, model_devi_group_size)
