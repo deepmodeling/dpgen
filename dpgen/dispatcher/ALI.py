@@ -10,14 +10,6 @@ from os.path import join
 from dpgen  import dlog
 from hashlib import sha1
 
-real_name = {
-    'LTAI4Fo5VhHMJUcEUgazCRMf':'wanrun',
-    'LTAI4FeGeyPyxWiVZbTCS6Yq':'wanghan',
-    'LTAI4FmDHRx5aF1JcqMyquUW':'haidi',
-    'LTAI4FxNpH6hqE49XTmSzx8M':'zhaohan',
-    'LTAI4FdwHX2gfSbrPSDz3KKe':'linfeng',
-    'LTAI4FwFYYBi7MZs5KqSMzJf':'yuzhi',
-}
 def manual_delete(stage):
     with open('machine-ali.json') as fp1:
         mdata = json.load(fp1)
@@ -61,7 +53,7 @@ def manual_create(stage, machine_number):
             template_name = '%s_%s_%s' % (mdata_resources['partition'], mdata_resources['numb_gpu'], strategy)
         elif mdata_resources['partition'] == 'cpu':
             template_name = '%s_%s_%s' % (mdata_resources['partition'], mdata_resources['task_per_node'], strategy)
-        instance_name = real_name[AccessKey_ID] + '_' + adata['task_name']
+        instance_name = adata['instance_name']
         client = AcsClient(AccessKey_ID, AccessKey_Secret, regionID)
         instance_list = []
         ip_list = []
@@ -238,7 +230,7 @@ class ALI():
             template_name = '%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['numb_gpu'], strategy)
         elif self.mdata_resources['partition'] == 'cpu':
             template_name = '%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['task_per_node'], strategy)
-        instance_name = real_name[AccessKey_ID] + '_' + self.adata['task_name']
+        instance_name = self.adata['instance_name']
         client = AcsClient(AccessKey_ID, AccessKey_Secret, regionID)
         self.instance_list = []
         self.ip_list = []
