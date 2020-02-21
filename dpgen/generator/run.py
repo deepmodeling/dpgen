@@ -447,6 +447,7 @@ def run_train (iter_index,
                           os.path.join('old', 'model.ckpt.data-00000-of-00001')
         ]
     backward_files = ['frozen_model.pb', 'lcurve.out', 'train.log']
+    backward_files+= ['model.ckpt.meta', 'model.ckpt.index', 'model.ckpt.data-00000-of-00001']
     init_data_sys_ = jdata['init_data_sys']
     init_data_sys = []
     for ii in init_data_sys_ :
