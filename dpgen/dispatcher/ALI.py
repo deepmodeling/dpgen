@@ -18,11 +18,12 @@ real_name = {
     'LTAI4FdwHX2gfSbrPSDz3KKe':'linfeng',
     'LTAI4FwFYYBi7MZs5KqSMzJf':'yuzhi',
 }
-def manual_delete(regionID):
+def manual_delete(stage):
     with open('machine-ali.json') as fp1:
         mdata = json.load(fp1)
-        AccessKey_ID = mdata['train'][0]['machine']['ali_auth']['AccessKey_ID']
-        AccessKey_Secret = mdata['train'][0]['machine']['ali_auth']['AccessKey_Secret']
+        AccessKey_ID = mdata[stage][0]['machine']['ali_auth']['AccessKey_ID']
+        AccessKey_Secret = mdata[stage][0]['machine']['ali_auth']['AccessKey_Secret']
+        regionID = mdata[stage][0]['machine']['ali_auth']['regionID']
         with open('machine_record.json', 'r') as fp2:
             machine_record = json.load(fp2)
             instance_list = machine_record['instance_id']
@@ -47,7 +48,7 @@ def manual_delete(regionID):
 
 def manual_create(stage, machine_number):
     with open('machine-ali.json') as fp:
-        mdata = json.load(fp):
+        mdata = json.load(fp)
         adata = mdata[stage][0]['machine']['ali_auth']
         mdata_resources = mdata[stage][0]['resources']
         mdata_machine = mdata[stage][0]['machine']
