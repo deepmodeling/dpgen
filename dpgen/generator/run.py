@@ -375,7 +375,6 @@ def run_train (iter_index,
     # train_param = jdata['train_param']
     train_input_file = default_train_input_file
     training_reuse_iter = jdata.get('training_reuse_iter')
-    reuse_old = False
     if training_reuse_iter is not None and iter_index >= training_reuse_iter:
         reuse_old = True
     else:
