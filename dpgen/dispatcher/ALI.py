@@ -12,8 +12,11 @@ from hashlib import sha1
 
 real_name = {
     'LTAI4Fo5VhHMJUcEUgazCRMf':'wanrun',
-    'LTAI4FjBXrYPPTLhNGjJCUrQ':'haidi',
-    'LTAI4Fr876oV6kM9GR4ziXqQ':'zhaohan',
+    'LTAI4FeGeyPyxWiVZbTCS6Yq':'wanghan',
+    'LTAI4FmDHRx5aF1JcqMyquUW':'haidi',
+    'LTAI4FxNpH6hqE49XTmSzx8M':'zhaohan',
+    'LTAI4FdwHX2gfSbrPSDz3KKe':'linfeng',
+    'LTAI4FwFYYBi7MZs5KqSMzJf':'yuzhi',
 }
 def manual_delete(regionID):
     with open('machine-ali.json') as fp1:
