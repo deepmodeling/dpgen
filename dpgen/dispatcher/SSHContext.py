@@ -11,8 +11,8 @@ class SSHSession (object) :
         # with open(remote_profile) as fp :
         #     self.remote_profile = json.load(fp)
         self.remote_host = self.remote_profile['hostname']
-        self.remote_port = self.remote_profile['port']
         self.remote_uname = self.remote_profile['username']
+        self.remote_port = self.remote_profile.get('port', 22)
         self.remote_password = None
         if 'password' in self.remote_profile :
             self.remote_password = self.remote_profile['password']
