@@ -1,0 +1,99 @@
+{
+  "train": [
+    {
+      "machine": {
+        "batch": "shell",
+        "hostname": "",
+        "password": "set you pwd here",
+        "port": 22,
+        "username": "root",
+        "work_path": "/root/dpgen_work",
+        "ali_auth": {
+            "AccessKey_ID":"",
+            "AccessKey_Secret":"",
+            "regionID": "cn-beijing",
+            "task_name": "CH4", 
+            "pay_strategy": "spot",    
+        }
+      },
+      "resources": {
+        "numb_gpu": 1,              
+        "numb_node": 1,
+        "task_per_node": 12,
+        "partition": "gpu",         
+        "exclude_list": [],
+        "mem_limit": 32,
+        "source_list": [],
+        "module_list": [],
+        "time_limit": "23:0:0"
+      },
+      "command": "/root/deepmd-kit/bin/dp",
+      "group_size": 2
+    }
+  ],
+
+  "model_devi": [
+    {
+      "machine": {
+        "batch": "shell",
+        "hostname": "",
+        "password": "set your pwd here",
+        "port": 22,
+        "username": "root",
+        "work_path": "/root/dpgen_work",
+        "ali_auth": {
+            "AccessKey_ID":"",
+            "AccessKey_Secret":"",
+            "regionID": "cn-beijing",
+            "instance_name": "CH4",
+            "pay_strategy": "spot",
+        }
+      },
+      "resources": {
+        "numb_gpu": 1,
+        "task_per_node": 4,
+        "partition": "gpu",
+        "exclude_list": [],
+        "mem_limit": 11,
+        "source_list": [],
+        "module_list": [],
+        "time_limit": "23:0:0"
+      },
+      "command": "/root/deepmd-kit/bin/lmp",
+      "group_size": 2
+    }
+  ],
+
+  "fp": [
+    {
+      "machine": {
+        "batch": "shell",
+        "hostname": "",
+        "password": "set your pwd here",
+        "port": 22,
+        "username": "root",
+        "work_path": "/root/dpgen_work",
+        "ali_auth": {
+            "AccessKey_ID":"",
+            "AccessKey_Secret":"",
+            "regionID": "cn-huhehaote",
+            "instance_name": "CH4", 
+            "pay_strategy": "spot",    
+        }
+      },
+      "resources": {
+        "numb_gpu": 0,   
+        "task_per_node": 16,
+        "with_mpi": "false",
+        "source_list": ["/opt/intel/parallel_studio_xe_2018/psxevars.sh"],
+        "module_list": [],
+	      "partition": "cpu",
+        "envs" : {"PATH" : "/root/deepmd-pkg/vasp.5.4.4/bin:$PATH"}
+      },
+      "command": "mpirun -n 16 /root/deepmd-pkg/vasp.5.4.4/bin/vasp_std",
+      "group_size": 1
+    }
+  ]
+}
+
+

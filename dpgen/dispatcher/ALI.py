@@ -10,6 +10,11 @@ from os.path import join
 from dpgen  import dlog
 from hashlib import sha1
 
+real_name = {
+    'LTAI4Fo5VhHMJUcEUgazCRMf':'wanrun',
+    'LTAI4FjBXrYPPTLhNGjJCUrQ':'haidi',
+    'LTAI4Fr876oV6kM9GR4ziXqQ':'zhaohan',
+}
 def manual_delete(regionID):
     with open('machine-ali.json') as fp1:
         mdata = json.load(fp1)
@@ -37,15 +42,73 @@ def manual_delete(regionID):
                     response = client.do_action_with_exception(request)
             os.remove('machine_record.json')
 
+def manual_create(stage, machine_number):
+    with open('machine-ali.json') as fp:
+        mdata = json.load(fp):
+        adata = mdata[stage][0]['machine']['ali_auth']
+        mdata_resources = mdata[stage][0]['resources']
+        mdata_machine = mdata[stage][0]['machine']
+        AccessKey_ID = adata["AccessKey_ID"]
+        AccessKey_Secret = adata["AccessKey_Secret"]
+        strategy = adata["pay_strategy"]
+        pwd = mdata_machine["password"]
+        regionID = adata["regionID"]
+        if mdata_resources['partition'] == 'gpu':
+            template_name = '%s_%s_%s' % (mdata_resources['partition'], mdata_resources['numb_gpu'], strategy)
+        elif mdata_resources['partition'] == 'cpu':
+            template_name = '%s_%s_%s' % (mdata_resources['partition'], mdata_resources['task_per_node'], strategy)
+        instance_name = real_name[AccessKey_ID] + '_' + adata['task_name']
+        client = AcsClient(AccessKey_ID, AccessKey_Secret, regionID)
+        instance_list = []
+        ip_list = []
+        request = RunInstancesRequest()
+        request.set_accept_format('json')
+        request.set_UniqueSuffix(True)
+        request.set_Password(pwd)
+        request.set_InstanceName(instance_name)
+        request.set_LaunchTemplateName(template_name)
+        request.set_Amount(machine_number)
+        response = client.do_action_with_exception(request)
+        response = json.loads(response)
+        for instanceID in response["InstanceIdSets"]["InstanceIdSet"]:
+            instance_list.append(instanceID)
+        time.sleep(60)
+        request = DescribeInstancesRequest()
+        request.set_accept_format('json')
+        if len(instance_list) <= 10:
+            for i in range(len(instance_list)):
+                request.set_InstanceIds([instance_list[i]])
+                response = client.do_action_with_exception(request)
+                response = json.loads(response)
+                ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]['IpAddress'][0])
+        else:
+            iteration = len(instance_list) // 10
+            for i in range(iteration):
+                for j in range(10):
+                    request.set_InstanceIds([instance_list[i*10+j]])
+                    response = client.do_action_with_exception(request)
+                    response = json.loads(response)
+                    ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]['IpAddress'][0])
+            if len(instance_list) - iteration * 10 != 0:
+                for j in range(len(instance_list) - iteration * 10):
+                    request.set_InstanceIds([instance_list[iteration*10+j]])
+                    response = client.do_action_with_exception(request)
+                    response = json.loads(response)
+                    ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]['IpAddress'][0])
+        for ip in ip_list:
+            print(ip)
+        with open('machine_record.json', 'w') as fp:
+            json.dump({'ip': ip_list, 'instance_id': instance_list}, fp, indent=4)
+
 class ALI():
     def __init__(self, adata, mdata_resources, mdata_machine, nchunks):
         self.ip_list = None
         self.instance_list = None
-        self.regionID = mdata_machine["regionID"]
         self.dispatchers = None
         self.job_handlers = None
         self.task_chunks = None
         self.adata = adata
+        self.regionID = adata["regionID"]
         self.mdata_resources = mdata_resources
         self.mdata_machine = mdata_machine
         self.nchunks = nchunks
@@ -165,13 +228,13 @@ class ALI():
         AccessKey_ID = self.adata["AccessKey_ID"]
         AccessKey_Secret = self.adata["AccessKey_Secret"]
         strategy = self.adata["pay_strategy"]
-        pwd = self.adata["password"]
+        pwd = self.mdata_machine["password"]
         regionID = self.regionID
         if self.mdata_resources['partition'] == 'gpu':
             template_name = '%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['numb_gpu'], strategy)
         elif self.mdata_resources['partition'] == 'cpu':
             template_name = '%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['task_per_node'], strategy)
-        instance_name = self.adata["instance_name"]
+        instance_name = real_name[AccessKey_ID] + '_' + self.adata['task_name']
         client = AcsClient(AccessKey_ID, AccessKey_Secret, regionID)
         self.instance_list = []
         self.ip_list = []
@@ -251,7 +314,7 @@ class ALI():
     def delete_machine(self):
         AccessKey_ID = self.adata["AccessKey_ID"]
         AccessKey_Secret = self.adata["AccessKey_Secret"]
-        regionID = self.mdata_machine['regionID']
+        regionID = self.regionID
         client = AcsClient(AccessKey_ID,AccessKey_Secret, regionID)
         request = DeleteInstancesRequest()
         request.set_accept_format('json')
