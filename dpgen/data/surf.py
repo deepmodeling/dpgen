@@ -59,6 +59,8 @@ global_dirname_02 = '00.place_ele'
 global_dirname_03 = '01.scale_pert'
 global_dirname_04 = '02.md'
 
+max_layer_numb = 50
+
 def out_dir_name(jdata) :
     super_cell = jdata['super_cell']    
 
@@ -232,8 +234,14 @@ def make_super_cell_pymatgen (jdata) :
 
     all_millers = jdata['millers']
     path_sc = os.path.join(out_dir, global_dirname_02)
-    #z_min = jdata['z_min']
-    layer_numb = jdata['layer_numb']
+    
+    user_layer_numb = None # set default value
+    z_min = None  
+    if 'layer_numb' in jdata:
+        user_layer_numb = jdata['layer_numb']
+    else:
+        z_min = jdata['z_min']
+
     super_cell = jdata['super_cell']
 
     cwd = os.getcwd()    
@@ -247,7 +255,16 @@ def make_super_cell_pymatgen (jdata) :
         path_cur_surf = create_path('surf-'+miller_str)
         os.chdir(path_cur_surf)
         #slabgen = SlabGenerator(ss, miller, z_min, 1e-3)
-        slab=general_surface.surface(ss,indices=miller,vacuum=1e-3,layers=layer_numb)
+        if user_layer_numb:
+           slab=general_surface.surface(ss,indices=miller,vacuum=1e-3,layers=user_layer_numb)
+        else:
+           # build slab according to z_min value   
+           for layer_numb in range( 1,max_layer_numb+1):
+               slab=general_surface.surface(ss,indices=miller,vacuum=1e-3,layers=layer_numb)
+               if slab.cell.get_bravais_lattice().c >= z_min:
+                  break
+               if layer_numb == max_layer_numb:
+                  raise RuntimeError("can't build the required slab")
         #all_slabs = slabgen.get_slabs() 
         dlog.info(os.getcwd())
         #dlog.info("Miller %s: The slab has %s termination, use the first one" %(str(miller), len(all_slabs)))
