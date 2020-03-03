@@ -261,7 +261,7 @@ def make_super_cell_pymatgen (jdata) :
            # build slab according to z_min value   
            for layer_numb in range( 1,max_layer_numb+1):
                slab=general_surface.surface(ss,indices=miller,vacuum=1e-3,layers=layer_numb)
-               if slab.cell.get_bravais_lattice().c >= z_min:
+               if slab.cell.lengths()[-1] >= z_min:
                   break
                if layer_numb == max_layer_numb:
                   raise RuntimeError("can't build the required slab")
