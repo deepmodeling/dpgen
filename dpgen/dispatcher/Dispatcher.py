@@ -87,7 +87,7 @@ class Dispatcher(object):
                                        outlog,
                                        errlog)
         while not self.all_finished(job_handler) :
-            time.sleep(10)
+            time.sleep(60)
         # delete path map file when job finish
         # _pmap.delete()
 
