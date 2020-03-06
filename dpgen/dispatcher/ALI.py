@@ -50,9 +50,9 @@ def manual_create(stage, machine_number):
         pwd = mdata_machine["password"]
         regionID = adata["regionID"]
         if mdata_resources['partition'] == 'gpu':
-            template_name = '%s_%s_%s' % (mdata_resources['partition'], mdata_resources['numb_gpu'], strategy)
+            template_name = '%s_%s_%s_%s_%s' % (mdata_resources['partition'], mdata_resources['numb_gpu'], strategy, adata["avail_district"][0], adata["avail_instance_type"][0])
         elif mdata_resources['partition'] == 'cpu':
-            template_name = '%s_%s_%s' % (mdata_resources['partition'], mdata_resources['task_per_node'], strategy)
+            template_name = '%s_%s_%s_%s_%s' % (mdata_resources['partition'], mdata_resources['task_per_node'], strategy, adata["avail_district"][0], adata["avail_instance_type"][0])
         instance_name = adata['instance_name']
         client = AcsClient(AccessKey_ID, AccessKey_Secret, regionID)
         instance_list = []
@@ -226,10 +226,6 @@ class ALI():
         strategy = self.adata["pay_strategy"]
         pwd = self.mdata_machine["password"]
         regionID = self.regionID
-        if self.mdata_resources['partition'] == 'gpu':
-            template_name = '%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['numb_gpu'], strategy)
-        elif self.mdata_resources['partition'] == 'cpu':
-            template_name = '%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['task_per_node'], strategy)
         instance_name = self.adata['instance_name']
         client = AcsClient(AccessKey_ID, AccessKey_Secret, regionID)
         self.instance_list = []
@@ -239,45 +235,121 @@ class ALI():
         request.set_UniqueSuffix(True)
         request.set_Password(pwd)
         request.set_InstanceName(instance_name)
-        request.set_LaunchTemplateName(template_name)
-        if self.nchunks <= 100:
+        if self.nchunks <= 10:
             request.set_Amount(self.nchunks)
             try:
+                if self.mdata_resources['partition'] == 'gpu':
+                    template_name = '%s_%s_%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['numb_gpu'], strategy, self.adata["avail_district"][0], self.adata["avail_instance_type"][0])
+                elif self.mdata_resources['partition'] == 'cpu':
+                    template_name = '%s_%s_%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['task_per_node'], strategy, self.adata["avail_district"][0], self.adata["avail_instance_type"][0])
+                request.set_LaunchTemplateName(template_name)
                 response = client.do_action_with_exception(request)
                 response = json.loads(response)
                 for instanceID in response["InstanceIdSets"]["InstanceIdSet"]:
                     self.instance_list.append(instanceID)
             except:
-                dlog.info("Create failed, please check the console.")
-                if len(self.instance_list) > 0:
-                    self.delete_machine()
-                exit()
+                for ii in range(len(self.adata["avail_district"])):
+                    flag = False
+                    for jj in range(1, len(self.adata["avail_instance_type"])):
+                        if self.mdata_resources['partition'] == 'gpu':
+                            template_name = '%s_%s_%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['numb_gpu'], strategy, self.adata["avail_district"][ii], self.adata["avail_instance_type"][jj])
+                        elif self.mdata_resources['partition'] == 'cpu':
+                            template_name = '%s_%s_%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['task_per_node'], strategy, self.adata["avail_district"][ii], self.adata["avail_instance_type"][jj])
+                        request.set_LaunchTemplateName(template_name)
+                        try:
+                            response = client.do_action_with_exception(request)
+                            response = json.loads(response)
+                            for instanceID in response["InstanceIdSets"]["InstanceIdSet"]:
+                                self.instance_list.append(instanceID)
+                            flag = True
+                            break
+                        except:
+                            if ii == len(self.adata["avail_district"])-1 and jj == len(self.adata["avail_instance_type"]) - 1:
+                                dlog.info("create_failed, please check the console")
+                                if len(self.instance_list) > 0:
+                                    self.delete_machine()
+                                exit()
+                            else:
+                                pass
+                    if flag:
+                        break
         else:
-            iteration = self.nchunks // 100 
-            try:
-                for i in range(iteration):
-                    request.set_Amount(100)
-                    response = client.do_action_with_exception(request)
-                    response = json.loads(response)
-                    for instanceID in response["InstanceIdSets"]["InstanceIdSet"]:
-                        self.instance_list.append(instanceID)
-            except:
-                dlog.info("Create failed, please check the console.")
-                if len(self.instance_list) > 0:
-                    self.delete_machine()
-                exit()
-            if self.nchunks - iteration * 100 != 0:
+            iteration = self.nchunks // 10
+            for i in range(iteration):
+                request.set_Amount(10)
                 try:
-                    request.set_Amount(self.nchunks - iteration * 100)
+                    if self.mdata_resources['partition'] == 'gpu':
+                        template_name = '%s_%s_%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['numb_gpu'], strategy, self.adata["avail_district"][0], self.adata["avail_instance_type"][0])
+                    elif self.mdata_resources['partition'] == 'cpu':
+                        template_name = '%s_%s_%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['task_per_node'], strategy, self.adata["avail_district"][0], self.adata["avail_instance_type"][0])
+                    request.set_LaunchTemplateName(template_name)
                     response = client.do_action_with_exception(request)
                     response = json.loads(response)
                     for instanceID in response["InstanceIdSets"]["InstanceIdSet"]:
                         self.instance_list.append(instanceID)
                 except:
-                    dlog.info("Create failed, please check the console.")
-                    if len(self.instance_list) > 0:
-                        self.delete_machine()
-                    exit()
+                    for ii in range(len(self.adata["avail_district"])):
+                        flag = False
+                        for jj in range(1, len(self.adata["avail_instance_type"])):
+                            if self.mdata_resources['partition'] == 'gpu':
+                                template_name = '%s_%s_%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['numb_gpu'], strategy, self.adata["avail_district"][ii], self.adata["avail_instance_type"][jj])
+                            elif self.mdata_resources['partition'] == 'cpu':
+                                template_name = '%s_%s_%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['task_per_node'], strategy, self.adata["avail_district"][ii], self.adata["avail_instance_type"][jj])
+                            request.set_LaunchTemplateName(template_name)
+                            try:
+                                response = client.do_action_with_exception(request)
+                                response = json.loads(response)
+                                for instanceID in response["InstanceIdSets"]["InstanceIdSet"]:
+                                    self.instance_list.append(instanceID)
+                                flag = True
+                                break
+                            except:
+                                if ii == len(self.adata["avail_district"]) -  1 and jj == len(self.adata["avail_instance_type"]) - 1:
+                                    dlog.info("create_failed, please check the console")
+                                    if len(self.instance_list) > 0:
+                                        self.delete_machine()
+                                    exit()
+                                else:
+                                    pass
+                        if flag:
+                            break
+            if self.nchunks - iteration * 10 != 0:
+                try:
+                    if self.mdata_resources['partition'] == 'gpu':
+                        template_name = '%s_%s_%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['numb_gpu'], strategy, self.adata["avail_district"][0], self.adata["avail_instance_type"][0])
+                    elif self.mdata_resources['partition'] == 'cpu':
+                        template_name = '%s_%s_%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['task_per_node'], strategy, self.adata["avail_district"][0], self.adata["avail_instance_type"][0])
+                    request.set_LaunchTemplateName(template_name)
+                    response = client.do_action_with_exception(request)
+                    response = json.loads(response)
+                    for instanceID in response["InstanceIdSets"]["InstanceIdSet"]:
+                        self.instance_list.append(instanceID)
+                except:
+                    for ii in range(len(self.adata["avail_district"])):
+                        flag = False
+                        for jj in range(1, len(self.adata["avail_instance_type"])):
+                            if self.mdata_resources['partition'] == 'gpu':
+                                template_name = '%s_%s_%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['numb_gpu'], strategy, self.adata["avail_district"][ii], self.adata["avail_instance_type"][jj])
+                            elif self.mdata_resources['partition'] == 'cpu':
+                                template_name = '%s_%s_%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['task_per_node'], strategy, self.adata["avail_district"][ii], self.adata["avail_instance_type"][jj])
+                            request.set_LaunchTemplateName(template_name)
+                            try:
+                                response = client.do_action_with_exception(request)
+                                response = json.loads(response)
+                                for instanceID in response["InstanceIdSets"]["InstanceIdSet"]:
+                                    self.instance_list.append(instanceID)
+                                flag = True
+                                break
+                            except:
+                                if ii == len(self.adata["avail_district"]) - 1 and jj == len(self.adata["avail_instance_type"]) - 1:
+                                    dlog.info("create_failed, please check the console")
+                                    if len(self.instance_list) > 0:
+                                        self.delete_machine()
+                                    exit()
+                                else:
+                                    pass
+                        if flag:
+                            break
         time.sleep(60)
         request = DescribeInstancesRequest()
         request.set_accept_format('json')
