@@ -193,6 +193,12 @@ def make_train (iter_index,
     fp_task_min = jdata['fp_task_min']
     model_devi_jobs = jdata['model_devi_jobs']
     use_ele_temp = jdata.get('use_ele_temp', 0)    
+    training_reuse_iter = jdata.get('training_reuse_iter')
+    training_reuse_old_ratio = jdata.get('training_reuse_old_ratio', 0.8)
+    training_reuse_stop_batch = jdata.get('training_reuse_stop_batch', 400000)
+    training_reuse_start_lr = jdata.get('training_reuse_start_lr', 1e-4)
+    training_reuse_start_pref_e = jdata.get('training_reuse_start_pref_e', 0.1)
+    training_reuse_start_pref_f = jdata.get('training_reuse_start_pref_f', 100)
 
     if iter_index > 0 and _check_empty_iter(iter_index-1, fp_task_min) :
         log_task('prev data is empty, copy prev model')
@@ -242,8 +248,11 @@ def make_train (iter_index,
         else:
             init_data_sys.append(os.path.join('..', 'data.init', ii))
             init_batch_size.append(detect_batch_size(ss, os.path.join(work_path, 'data.init', ii)))
+    old_range = None
     if iter_index > 0 :
         for ii in range(iter_index) :
+            if ii == iter_index - 1:
+                old_range = len(init_data_sys)
             fp_path = os.path.join(make_iter_name(ii), fp_name)
             fp_data_sys = glob.glob(os.path.join(fp_path, "data.*"))
             for jj in fp_data_sys :
@@ -275,6 +284,7 @@ def make_train (iter_index,
         mdata["deepmd_version"]
     except:
         mdata = set_version(mdata)
+    # setup data systems
     if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
         # 0.x
         jinput['systems'] = init_data_sys
@@ -285,6 +295,7 @@ def make_train (iter_index,
         # 1.x
         jinput['training']['systems'] = init_data_sys
         jinput['training']['batch_size'] = init_batch_size
+        jinput['model']['type_map'] = jdata['type_map']
         # electron temperature
         if use_ele_temp == 0:
             pass
@@ -296,6 +307,18 @@ def make_train (iter_index,
             jinput['model']['fitting_net'].pop('numb_fparam', None)
         else:
             raise RuntimeError('invalid setting for use_ele_temp ' + str(use_ele_temp))
+    # set training reuse model
+    if training_reuse_iter is not None and iter_index >= training_reuse_iter:
+        jinput['training']['auto_prob_style'] \
+            ="prob_sys_size; 0:%d:%f; %d:%d:%f" \
+            %(old_range, training_reuse_old_ratio, old_range, len(init_data_sys), 1.-training_reuse_old_ratio)
+        if jinput['loss'].get('start_pref_e') is not None:
+            jinput['loss']['start_pref_e'] = training_reuse_start_pref_e
+        if jinput['loss'].get('start_pref_f') is not None:
+            jinput['loss']['start_pref_f'] = training_reuse_start_pref_f
+        jinput['learning_rate']['start_lr'] = training_reuse_start_lr
+        jinput['training']['stop_batch'] = training_reuse_stop_batch
+    # set random seed for each model, dump the input.json
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         create_path(task_path)
@@ -351,6 +374,11 @@ def run_train (iter_index,
     numb_models = jdata['numb_models']
     # train_param = jdata['train_param']
     train_input_file = default_train_input_file
+    training_reuse_iter = jdata.get('training_reuse_iter')
+    if training_reuse_iter is not None and iter_index >= training_reuse_iter:
+        reuse_old = True
+    else:
+        reuse_old = False    
     try:
         mdata["deepmd_version"]
     except:
@@ -387,6 +415,8 @@ def run_train (iter_index,
     elif python_path:
         # 1.x
         command =  '%s -m deepmd train %s' % (python_path, train_input_file)
+        if reuse_old:
+            command += ' --init-model old/model.ckpt'
         commands.append(command)
         command = '%s -m deepmd freeze' % python_path
         commands.append(command)
@@ -398,7 +428,6 @@ def run_train (iter_index,
         commands.append(command)
         command = '%s freeze' % train_command
         commands.append(command)
-
 
     #_tasks = [os.path.basename(ii) for ii in all_task]
     # run_tasks = []
@@ -412,7 +441,13 @@ def run_train (iter_index,
     run_tasks = [os.path.basename(ii) for ii in all_task]
 
     forward_files = [train_input_file]
+    if reuse_old:
+        forward_files += [os.path.join('old', 'model.ckpt.meta'), 
+                          os.path.join('old', 'model.ckpt.index'),
+                          os.path.join('old', 'model.ckpt.data-00000-of-00001')
+        ]
     backward_files = ['frozen_model.pb', 'lcurve.out', 'train.log']
+    backward_files+= ['model.ckpt.meta', 'model.ckpt.index', 'model.ckpt.data-00000-of-00001']
     init_data_sys_ = jdata['init_data_sys']
     init_data_sys = []
     for ii in init_data_sys_ :
@@ -428,21 +463,21 @@ def run_train (iter_index,
         if jdata.get('init_multi_systems', False):
             for single_sys in os.listdir(os.path.join(ii)):
                 trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'set.*'))
-                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type.raw'))
+                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type*.raw'))
                 trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'nopbc'))
         else:
             trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
-            trans_comm_data += glob.glob(os.path.join(ii, 'type.raw'))
+            trans_comm_data += glob.glob(os.path.join(ii, 'type*.raw'))
             trans_comm_data += glob.glob(os.path.join(ii, 'nopbc'))
     for ii in fp_data :
         if jdata.get('use_clusters', False):
             for single_sys in os.listdir(os.path.join(ii)):
                 trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'set.*'))
-                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type.raw'))
+                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type*.raw'))
                 trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'nopbc'))
         else:
             trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
-            trans_comm_data += glob.glob(os.path.join(ii, 'type.raw'))
+            trans_comm_data += glob.glob(os.path.join(ii, 'type*.raw'))
             trans_comm_data += glob.glob(os.path.join(ii, 'nopbc'))
     os.chdir(cwd)
 
@@ -666,6 +701,7 @@ def make_model_devi (iter_index,
     if "template" in cur_job:
         input_mode = "revise_template"
     use_plm = jdata.get('model_devi_plumed', False)
+    use_plm_path = jdata.get('model_devi_plumed_path', False)
     if input_mode == "native":
         _make_model_devi_native(iter_index, jdata, mdata, conf_systems)
     elif input_mode == "revise_template":
@@ -686,6 +722,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
         raise RuntimeError("system index should be uniq")
     mass_map = jdata['mass_map']
     use_plm = jdata.get('model_devi_plumed', False)
+    use_plm_path = jdata.get('model_devi_plumed_path', False)
     trj_freq = _get_param_alias(cur_job, ['t_freq', 'trj_freq','traj_freq'])
 
     rev_keys, rev_mat, num_lmp = parse_cur_job_revmat(cur_job, use_plm = use_plm)
@@ -694,6 +731,9 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
     if use_plm:
         plm_templ = cur_job['template']['plm']
         plm_templ = os.path.abspath(plm_templ)    
+        if use_plm_path:
+            plm_path_templ = cur_job['template']['plm_path']
+            plm_path_templ = os.path.abspath(plm_path_templ) 
 
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
@@ -745,6 +785,8 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                     plm_lines = revise_by_keys(plm_lines, rev_keys[num_lmp:], rev_item[num_lmp:])
                     with open('input.plumed', 'w') as fp:
                         fp.write(''.join(plm_lines))
+                    if use_plm_path:
+                       shutil.copyfile(plm_path_templ, 'plmpath.pdb')
                 # dump input of lammps
                 with open('input.lammps', 'w') as fp:
                     fp.write(''.join(lmp_lines))
@@ -883,6 +925,7 @@ def run_model_devi (iter_index,
     model_devi_group_size = mdata['model_devi_group_size']
     model_devi_resources = mdata['model_devi_resources']
     use_plm = jdata.get('model_devi_plumed', False)
+    use_plm_path = jdata.get('model_devi_plumed_path', False)
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, model_devi_name)
@@ -915,7 +958,10 @@ def run_model_devi (iter_index,
     backward_files = ['model_devi.out', 'model_devi.log', 'traj']
     if use_plm:
         forward_files += ['input.plumed']
-        backward_files += ['output.plumed']
+       # backward_files += ['output.plumed']
+        backward_files += ['output.plumed','COLVAR','dump.0.xyz']
+        if use_plm_path:
+            forward_files += ['plmpath.pdb']
 
     cwd = os.getcwd()
     dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], work_path, run_tasks, model_devi_group_size)
@@ -1205,6 +1251,7 @@ def _make_fp_pwmat_input (iter_index,
 def _make_fp_vasp_kp (iter_index,jdata):
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
+    fp_aniso_kspacing = jdata.get('fp_aniso_kspacing')
 
     fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
     fp_tasks.sort()
@@ -1218,10 +1265,13 @@ def _make_fp_vasp_kp (iter_index,jdata):
         with open('INCAR') as fp:
             incar = fp.read()
         standard_incar = incar_upper(Incar.from_string(incar))
-        try:
-            kspacing = standard_incar['KSPACING']
-        except:
-            raise RuntimeError ("KSPACING must be given in INCAR")
+        if fp_aniso_kspacing is None:
+            try:
+                kspacing = standard_incar['KSPACING']
+            except:
+                raise RuntimeError ("KSPACING must be given in INCAR")
+        else :
+            kspacing = fp_aniso_kspacing
         try:
             gamma = standard_incar['KGAMMA']
             if isinstance(gamma,bool):

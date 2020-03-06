@@ -102,6 +102,8 @@ def reciprocal_box(box) :
     return rbox
 
 def make_kspacing_kpoints(poscar, kspacing, kgamma) :
+    if type(kspacing) is not list:
+        kspacing = [kspacing, kspacing, kspacing]
     with open(poscar, 'r') as fp:
         lines = fp.read().split('\n')
     scale = float(lines[1])
@@ -111,7 +113,7 @@ def make_kspacing_kpoints(poscar, kspacing, kgamma) :
     box = np.array(box)
     box *= scale
     rbox = reciprocal_box(box)
-    kpoints = [(np.ceil(2 * np.pi * np.linalg.norm(ii) / kspacing).astype(int)) for ii in rbox]
+    kpoints = [(np.ceil(2 * np.pi * np.linalg.norm(ii) / ks).astype(int)) for ii,ks in zip(rbox,kspacing)]
     ret = make_vasp_kpoints(kpoints, kgamma)
     return ret
 

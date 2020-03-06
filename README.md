@@ -21,9 +21,14 @@
 ## About DP-GEN
 
 [![GitHub release](https://img.shields.io/github/release/deepmodeling/dpgen.svg?maxAge=86400)](https://github.com/deepmodeling/dpgen/releases/)
-[![arxiv:1910.12690](http://img.shields.io/badge/arXiv-1910.12690-B31B1B.svg?maxAge=86400)](https://arxiv.org/abs/1910.12690)
+[![doi:10.1016/j.cpc.2020.107206](https://zenodo.org/badge/DOI/10.1016/j.cpc.2020.107206.svg)](https://doi.org/10.1016/j.cpc.2020.107206)
 
-DP-GEN (Deep Generator)  is a software written in Python, delicately designed to generate a deep learning based model of interatomic potential energy and force field. DP-GEN is depedent on DeepMD-kit (https://github.com/deepmodeling/deepmd-kit/blob/master/README.md). With highly scalable interface with common softwares for molecular simulation, DP-GEN is capable to  automatically prepare scripts and maintain job queues on HPC machines (High Performance Cluster) and analyze results
+DP-GEN (Deep Generator)  is a software written in Python, delicately designed to generate a deep learning based model of interatomic potential energy and force field. DP-GEN is depedent on DeepMD-kit (https://github.com/deepmodeling/deepmd-kit/blob/master/README.md). With highly scalable interface with common softwares for molecular simulation, DP-GEN is capable to  automatically prepare scripts and maintain job queues on HPC machines (High Performance Cluster) and analyze results.
+
+If you use this software in any publication, please cite:
+
+Yuzhi Zhang, Haidi Wang, Weijie Chen, Jinzhe Zeng, Linfeng Zhang, Han Wang, and Weinan E, DP-GEN: A concurrent learning platform for the generation of reliable deep learning based potential energy models, Computer Physics Communications, 2020, 107206.
+
 ### Highlighted features
 + **Accurate and efficient**: DP-GEN is capable to sample more than tens of million structures and select only a few for first principles calculation. DP-GEN will finally obtain a uniformly accurate model.
 + **User-friendly and automatic**: Users may install and run DP-GEN easily. Once succusefully running, DP-GEN can dispatch and handle all jobs on HPCs, and thus there's no need for any personal effort.
@@ -55,7 +60,6 @@ Options for TASK:
 * `run` : Main process of Deep Generator.
 * `test`: Auto-test for Deep Potential.
 * `db`: Collecting data from DP-GEN.
-
 
 ## Download and Install
 One can download the source code of dpgen by
@@ -494,7 +498,8 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | *fp_style == VASP*
 | **fp_pp_path**   | String           | "/sharedext4/.../ch4/"                                       | Directory of psuedo-potential file to be used for 02.fp exists. |
 | **fp_pp_files**    | List of string         | ["POTCAR"]                                                   | Psuedo-potential file to be used for 02.fp. Note that the order of elements should correspond to the order in `type_map`. |
-|**fp_incar** | String | "/sharedext4/../ch4/INCAR" | Input file for VASP. INCAR must specify KSPACING.
+|**fp_incar** | String | "/sharedext4/../ch4/INCAR" | Input file for VASP. INCAR must specify KSPACING and KGAMMA.
+|**fp_aniso_kspacing** | List of integer | [1.0,1.0,1.0] | Set anisotropic kspacing. Usually useful for 1-D or 2-D materials. Only support VASP. If it is setting the KSPACING key in INCAR will be ignored.
 |cvasp| Boolean | true | If `cvasp` is true, DP-GEN will use Custodian to help control VASP calculation.
 | *fp_style == Gaussian*
 | **use_clusters** | Boolean | false | If set to `true`, clusters will be taken instead of the whole system. This option does not work with DeePMD-kit 0.x.
