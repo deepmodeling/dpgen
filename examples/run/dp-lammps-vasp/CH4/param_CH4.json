@@ -88,7 +88,7 @@
 	],
 
     "_comment":		" 02.fp ",
-    "cvasp":            true,
+    "cvasp":            false,
     "fp_style":		"vasp",
     "shuffle_poscar":	false,
     "fp_task_max":	20,
