@@ -13,30 +13,14 @@ from hashlib import sha1
 def manual_delete(stage):
     with open('machine-ali.json') as fp1:
         mdata = json.load(fp1)
-        AccessKey_ID = mdata[stage][0]['machine']['ali_auth']['AccessKey_ID']
-        AccessKey_Secret = mdata[stage][0]['machine']['ali_auth']['AccessKey_Secret']
-        regionID = mdata[stage][0]['machine']['ali_auth']['regionID']
+        adata = mdata[stage][0]['machine']['ali_auth']
+        mdata_resources = mdata[stage][0]['resources']
+        mdata_machine = mdata[stage][0]['machine']
+        ali = ALI(adata, mdata_resources, mdata_machine, machine_number)
         with open('machine_record.json', 'r') as fp2:
             machine_record = json.load(fp2)
-            instance_list = machine_record['instance_id']
-            client = AcsClient(AccessKey_ID, AccessKey_Secret, regionID)
-            request = DeleteInstancesRequest()
-            request.set_accept_format('json')
-            if len(instance_list) <= 100:
-                request.set_InstanceIds(instance_list)
-                request.set_Force(True)
-                response = client.do_action_with_exception(request)
-            else:
-                iteration = len(instance_list) // 100
-                for i in range(iteration):
-                    request.set_InstanceIds(instance_list[i*100:(i+1)*100])
-                    request.set_Force(True)
-                    response = client.do_action_with_exception(request)
-                if len(instance_list) - iteration * 100 != 0:
-                    request.set_InstanceIds(instance_list[iteration*100:])
-                    request.set_Force(True)
-                    response = client.do_action_with_exception(request)
-            os.remove('machine_record.json')
+            ali.instance_list = machine_record['instance_id']
+            ali.delete_machine()
 
 def manual_create(stage, machine_number):
     with open('machine-ali.json') as fp:
@@ -44,67 +28,20 @@ def manual_create(stage, machine_number):
         adata = mdata[stage][0]['machine']['ali_auth']
         mdata_resources = mdata[stage][0]['resources']
         mdata_machine = mdata[stage][0]['machine']
-        AccessKey_ID = adata["AccessKey_ID"]
-        AccessKey_Secret = adata["AccessKey_Secret"]
-        strategy = adata["pay_strategy"]
-        pwd = mdata_machine["password"]
-        regionID = adata["regionID"]
-        if mdata_resources['partition'] == 'gpu':
-            template_name = '%s_%s_%s_%s_%s' % (mdata_resources['partition'], mdata_resources['numb_gpu'], strategy, adata["avail_district"][0], adata["avail_instance_type"][0])
-        elif mdata_resources['partition'] == 'cpu':
-            template_name = '%s_%s_%s_%s_%s' % (mdata_resources['partition'], mdata_resources['task_per_node'], strategy, adata["avail_district"][0], adata["avail_instance_type"][0])
-        instance_name = adata['instance_name']
-        client = AcsClient(AccessKey_ID, AccessKey_Secret, regionID)
-        instance_list = []
-        ip_list = []
-        request = RunInstancesRequest()
-        request.set_accept_format('json')
-        request.set_UniqueSuffix(True)
-        request.set_Password(pwd)
-        request.set_InstanceName(instance_name)
-        request.set_LaunchTemplateName(template_name)
-        request.set_Amount(machine_number)
-        response = client.do_action_with_exception(request)
-        response = json.loads(response)
-        for instanceID in response["InstanceIdSets"]["InstanceIdSet"]:
-            instance_list.append(instanceID)
-        time.sleep(60)
-        request = DescribeInstancesRequest()
-        request.set_accept_format('json')
-        if len(instance_list) <= 10:
-            for i in range(len(instance_list)):
-                request.set_InstanceIds([instance_list[i]])
-                response = client.do_action_with_exception(request)
-                response = json.loads(response)
-                ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]['IpAddress'][0])
-        else:
-            iteration = len(instance_list) // 10
-            for i in range(iteration):
-                for j in range(10):
-                    request.set_InstanceIds([instance_list[i*10+j]])
-                    response = client.do_action_with_exception(request)
-                    response = json.loads(response)
-                    ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]['IpAddress'][0])
-            if len(instance_list) - iteration * 10 != 0:
-                for j in range(len(instance_list) - iteration * 10):
-                    request.set_InstanceIds([instance_list[iteration*10+j]])
-                    response = client.do_action_with_exception(request)
-                    response = json.loads(response)
-                    ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]['IpAddress'][0])
-        for ip in ip_list:
-            print(ip)
-        with open('machine_record.json', 'w') as fp:
-            json.dump({'ip': ip_list, 'instance_id': instance_list}, fp, indent=4)
+        ali = ALI(adata, mdata_resources, mdata_machine, machine_number)
+        ali.alloc_machine()
+        print(ali.ip_list)
 
 class ALI():
     def __init__(self, adata, mdata_resources, mdata_machine, nchunks):
-        self.ip_list = None
-        self.instance_list = None
+        self.ip_list = []
+        self.instance_list = []
         self.dispatchers = None
         self.job_handlers = None
         self.task_chunks = None
         self.adata = adata
         self.regionID = adata["regionID"]
+        self.clinet = AcsClient(adata["AccessKey_ID"], adata["AccessKey_Secret"], self.regionID)
         self.mdata_resources = mdata_resources
         self.mdata_machine = mdata_machine
         self.nchunks = nchunks
@@ -114,7 +51,7 @@ class ALI():
         if self.check_restart(work_path, tasks, group_size):
             pass
         else:
-            self.create_machine()
+            self.alloc_machine()
             self.dispatchers = self.make_dispatchers()
 
     def check_restart(self, work_path, tasks, group_size):
@@ -150,6 +87,79 @@ class ALI():
             return True
         else:
             return False
+
+    def alloc_machine(self):
+        for district, type_num in self.adata["avail_resources"].items():
+            for machine_type, number in type_num:
+                if self.nchunks > number:
+                    self.nchunks -= number
+                    self.create_machine(machine_type, number, district)
+                elif self.nchunks > 0:
+                    self.create_machine(machine_type, self.nchunks, district)
+        self.get_ip()
+
+    def create_machine(self, machine_type, number, district):
+        request = RunInstancesRequest()
+        request.set_accept_format('json')
+        request.set_UniqueSuffix(True)
+        request.set_Password(self.mdata_machine["password"])
+        request.set_InstanceName(self.adata['instance_name'])
+
+        if self.mdata_resources['partition'] == 'gpu':
+            template_name = 'gpu_%s_%s_%s_%s' % (self.mdata_resources['numb_gpu'], self.adata["pay_strategy"], district, machine_type)
+        elif self.mdata_resources['partition'] == 'cpu':
+            template_name = 'cpu_%s_%s_%s_%s' % (self.mdata_resources['task_per_node'], self.adata["pay_strategy"], district, machine_type)
+        request.set_LaunchTemplateName(template_name)
+
+        if number <= 100 and number > 0:
+            request.set_Amount(number)
+            response = self.client.do_action_with_exception(request)
+            response = json.loads(response)
+            for instanceID in response["InstanceIdSets"]["InstanceIdSet"]:
+                self.instance_list.append(instanceID)
+        else:
+            iteration = number // 100
+            for i in range(iteration):
+                request.set_Amount(100)
+                response = self.client.do_action_with_exception(request)
+                response = json.loads(response)
+                for instanceID in response["InstanceIdSets"]["InstanceIdSet"]:
+                    self.instance_list.append(instanceID)
+            if number - iteration * 100 != 0:
+                request.set_Amount(number - iteration * 100)
+                response = self.client.do_action_with_exception(request)
+                response = json.loads(response)
+                for instanceID in response["InstanceIdSets"]["InstanceIdSet"]:
+                    self.instance_list.append(instanceID)
+
+    def get_ip(self):
+        request = DescribeInstancesRequest()
+        request.set_accept_format('json')
+        if len(self.instance_list) <= 10:
+            for i in range(len(self.instance_list)):
+                request.set_InstanceIds([self.instance_list[i]])
+                response = self.client.do_action_with_exception(request)
+                response = json.loads(response)
+                self.ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]['IpAddress'][0])
+        else:
+            iteration = len(self.instance_list) // 10
+            for i in range(iteration):
+                for j in range(10):
+                    request.set_InstanceIds([self.instance_list[i*10+j]])
+                    response = self.client.do_action_with_exception(request)
+                    response = json.loads(response)
+                    self.ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]['IpAddress'][0])
+            if len(self.instance_list) - iteration * 10 != 0:
+                for j in range(len(self.instance_list) - iteration * 10):
+                    request.set_InstanceIds([self.instance_list[iteration*10+j]])
+                    response = self.client.do_action_with_exception(request)
+                    response = json.loads(response)
+                    self.ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]['IpAddress'][0])
+        dlog.info('create machine successfully, following are the ip addresses')
+        for ip in self.ip_list:
+            dlog.info(ip)
+        with open('machine_record.json', 'w') as fp:
+            json.dump({'ip': self.ip_list, 'instance_id': self.instance_list}, fp, indent=4)
 
     def run_jobs(self,
                  resources,
@@ -190,15 +200,11 @@ class ALI():
                 time.sleep(10)
 
     def delete(self, ii):
-        AccessKey_ID = self.adata["AccessKey_ID"]
-        AccessKey_Secret = self.adata["AccessKey_Secret"]
-        regionID = self.regionID
-        client = AcsClient(AccessKey_ID, AccessKey_Secret, regionID)
         request = DeleteInstancesRequest()
         request.set_accept_format('json')
         request.set_InstanceIds([self.instance_list[ii]])
         request.set_Force(True)
-        response = client.do_action_with_exception(request)
+        response = self.client.do_action_with_exception(request)
         self.nchunks -= 1
         self.instance_list.pop(ii)
         self.ip_list.pop(ii)
@@ -220,186 +226,24 @@ class ALI():
             dispatchers.append(disp)
         return dispatchers
 
-    def create_machine(self):
-        AccessKey_ID = self.adata["AccessKey_ID"]
-        AccessKey_Secret = self.adata["AccessKey_Secret"]
-        strategy = self.adata["pay_strategy"]
-        pwd = self.mdata_machine["password"]
-        regionID = self.regionID
-        instance_name = self.adata['instance_name']
-        client = AcsClient(AccessKey_ID, AccessKey_Secret, regionID)
-        self.instance_list = []
-        self.ip_list = []
-        request = RunInstancesRequest()
-        request.set_accept_format('json')
-        request.set_UniqueSuffix(True)
-        request.set_Password(pwd)
-        request.set_InstanceName(instance_name)
-        if self.nchunks <= 10:
-            request.set_Amount(self.nchunks)
-            try:
-                if self.mdata_resources['partition'] == 'gpu':
-                    template_name = '%s_%s_%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['numb_gpu'], strategy, self.adata["avail_district"][0], self.adata["avail_instance_type"][0])
-                elif self.mdata_resources['partition'] == 'cpu':
-                    template_name = '%s_%s_%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['task_per_node'], strategy, self.adata["avail_district"][0], self.adata["avail_instance_type"][0])
-                request.set_LaunchTemplateName(template_name)
-                response = client.do_action_with_exception(request)
-                response = json.loads(response)
-                for instanceID in response["InstanceIdSets"]["InstanceIdSet"]:
-                    self.instance_list.append(instanceID)
-            except:
-                for ii in range(len(self.adata["avail_district"])):
-                    flag = False
-                    for jj in range(1, len(self.adata["avail_instance_type"])):
-                        if self.mdata_resources['partition'] == 'gpu':
-                            template_name = '%s_%s_%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['numb_gpu'], strategy, self.adata["avail_district"][ii], self.adata["avail_instance_type"][jj])
-                        elif self.mdata_resources['partition'] == 'cpu':
-                            template_name = '%s_%s_%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['task_per_node'], strategy, self.adata["avail_district"][ii], self.adata["avail_instance_type"][jj])
-                        request.set_LaunchTemplateName(template_name)
-                        try:
-                            response = client.do_action_with_exception(request)
-                            response = json.loads(response)
-                            for instanceID in response["InstanceIdSets"]["InstanceIdSet"]:
-                                self.instance_list.append(instanceID)
-                            flag = True
-                            break
-                        except:
-                            if ii == len(self.adata["avail_district"])-1 and jj == len(self.adata["avail_instance_type"]) - 1:
-                                dlog.info("create_failed, please check the console")
-                                if len(self.instance_list) > 0:
-                                    self.delete_machine()
-                                exit()
-                            else:
-                                pass
-                    if flag:
-                        break
-        else:
-            iteration = self.nchunks // 10
-            for i in range(iteration):
-                request.set_Amount(10)
-                try:
-                    if self.mdata_resources['partition'] == 'gpu':
-                        template_name = '%s_%s_%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['numb_gpu'], strategy, self.adata["avail_district"][0], self.adata["avail_instance_type"][0])
-                    elif self.mdata_resources['partition'] == 'cpu':
-                        template_name = '%s_%s_%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['task_per_node'], strategy, self.adata["avail_district"][0], self.adata["avail_instance_type"][0])
-                    request.set_LaunchTemplateName(template_name)
-                    response = client.do_action_with_exception(request)
-                    response = json.loads(response)
-                    for instanceID in response["InstanceIdSets"]["InstanceIdSet"]:
-                        self.instance_list.append(instanceID)
-                except:
-                    for ii in range(len(self.adata["avail_district"])):
-                        flag = False
-                        for jj in range(1, len(self.adata["avail_instance_type"])):
-                            if self.mdata_resources['partition'] == 'gpu':
-                                template_name = '%s_%s_%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['numb_gpu'], strategy, self.adata["avail_district"][ii], self.adata["avail_instance_type"][jj])
-                            elif self.mdata_resources['partition'] == 'cpu':
-                                template_name = '%s_%s_%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['task_per_node'], strategy, self.adata["avail_district"][ii], self.adata["avail_instance_type"][jj])
-                            request.set_LaunchTemplateName(template_name)
-                            try:
-                                response = client.do_action_with_exception(request)
-                                response = json.loads(response)
-                                for instanceID in response["InstanceIdSets"]["InstanceIdSet"]:
-                                    self.instance_list.append(instanceID)
-                                flag = True
-                                break
-                            except:
-                                if ii == len(self.adata["avail_district"]) -  1 and jj == len(self.adata["avail_instance_type"]) - 1:
-                                    dlog.info("create_failed, please check the console")
-                                    if len(self.instance_list) > 0:
-                                        self.delete_machine()
-                                    exit()
-                                else:
-                                    pass
-                        if flag:
-                            break
-            if self.nchunks - iteration * 10 != 0:
-                try:
-                    if self.mdata_resources['partition'] == 'gpu':
-                        template_name = '%s_%s_%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['numb_gpu'], strategy, self.adata["avail_district"][0], self.adata["avail_instance_type"][0])
-                    elif self.mdata_resources['partition'] == 'cpu':
-                        template_name = '%s_%s_%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['task_per_node'], strategy, self.adata["avail_district"][0], self.adata["avail_instance_type"][0])
-                    request.set_LaunchTemplateName(template_name)
-                    response = client.do_action_with_exception(request)
-                    response = json.loads(response)
-                    for instanceID in response["InstanceIdSets"]["InstanceIdSet"]:
-                        self.instance_list.append(instanceID)
-                except:
-                    for ii in range(len(self.adata["avail_district"])):
-                        flag = False
-                        for jj in range(1, len(self.adata["avail_instance_type"])):
-                            if self.mdata_resources['partition'] == 'gpu':
-                                template_name = '%s_%s_%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['numb_gpu'], strategy, self.adata["avail_district"][ii], self.adata["avail_instance_type"][jj])
-                            elif self.mdata_resources['partition'] == 'cpu':
-                                template_name = '%s_%s_%s_%s_%s' % (self.mdata_resources['partition'], self.mdata_resources['task_per_node'], strategy, self.adata["avail_district"][ii], self.adata["avail_instance_type"][jj])
-                            request.set_LaunchTemplateName(template_name)
-                            try:
-                                response = client.do_action_with_exception(request)
-                                response = json.loads(response)
-                                for instanceID in response["InstanceIdSets"]["InstanceIdSet"]:
-                                    self.instance_list.append(instanceID)
-                                flag = True
-                                break
-                            except:
-                                if ii == len(self.adata["avail_district"]) - 1 and jj == len(self.adata["avail_instance_type"]) - 1:
-                                    dlog.info("create_failed, please check the console")
-                                    if len(self.instance_list) > 0:
-                                        self.delete_machine()
-                                    exit()
-                                else:
-                                    pass
-                        if flag:
-                            break
-        time.sleep(60)
-        request = DescribeInstancesRequest()
-        request.set_accept_format('json')
-        if len(self.instance_list) <= 10:
-            for i in range(len(self.instance_list)):
-                request.set_InstanceIds([self.instance_list[i]])
-                response = client.do_action_with_exception(request)
-                response = json.loads(response)
-                self.ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]['IpAddress'][0])
-        else:
-            iteration = len(self.instance_list) // 10
-            for i in range(iteration):
-                for j in range(10):
-                    request.set_InstanceIds([self.instance_list[i*10+j]])
-                    response = client.do_action_with_exception(request)
-                    response = json.loads(response)
-                    self.ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]['IpAddress'][0])
-            if len(self.instance_list) - iteration * 10 != 0:
-                for j in range(len(self.instance_list) - iteration * 10):
-                    request.set_InstanceIds([self.instance_list[iteration*10+j]])
-                    response = client.do_action_with_exception(request)
-                    response = json.loads(response)
-                    self.ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]['IpAddress'][0])
-        dlog.info('create machine successfully, following are the ip addresses')
-        for ip in self.ip_list:
-            dlog.info(ip)
-        with open('machine_record.json', 'w') as fp:
-            json.dump({'ip': self.ip_list, 'instance_id': self.instance_list}, fp, indent=4)
-
     def delete_machine(self):
-        AccessKey_ID = self.adata["AccessKey_ID"]
-        AccessKey_Secret = self.adata["AccessKey_Secret"]
-        regionID = self.regionID
-        client = AcsClient(AccessKey_ID,AccessKey_Secret, regionID)
         request = DeleteInstancesRequest()
         request.set_accept_format('json')
         if len(self.instance_list) <= 100:
             request.set_InstanceIds(self.instance_list)
             request.set_Force(True)
-            response = client.do_action_with_exception(request)
+            response = self.client.do_action_with_exception(request)
         else:
             iteration = len(self.instance_list) // 100
             for i in range(iteration):
                 request.set_InstanceIds(self.instance_list[i*100:(i+1)*100])
                 request.set_Force(True)
-                response = client.do_action_with_exception(request)
+                response = self.client.do_action_with_exception(request)
             if len(self.instance_list) - iteration * 100 != 0:
                 request.set_InstanceIds(self.instance_list[iteration*100:])
                 request.set_Force(True)
-                response = client.do_action_with_exception(request)
+                response = self.client.do_action_with_exception(request)
         self.instance_list = []
+        self.ip_list = []
         os.remove('machine_record.json')
         dlog.debug("Successfully free the machine!")
