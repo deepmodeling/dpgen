@@ -133,9 +133,9 @@ class Slurm(Batch) :
         _cmd = cmd.split('1>')[0].strip()
         if cvasp :
             if res['with_mpi']:
-                _cmd = 'python ../cvasp.py "srun %s %s" %s' % (_cmd, arg, fp_max_errors)
+                _cmd = 'python cvasp.py "srun %s %s" %s' % (_cmd, arg, fp_max_errors)
             else :
-                _cmd = 'python ../cvasp.py "%s %s" %s' % (_cmd, arg, fp_max_errors)
+                _cmd = 'python cvasp.py "%s %s" %s' % (_cmd, arg, fp_max_errors)
         else :
             if res['with_mpi']:
                 _cmd = 'srun %s %s' % (_cmd, arg)

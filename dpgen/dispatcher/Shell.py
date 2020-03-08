@@ -91,9 +91,9 @@ class Shell(Batch) :
         _cmd = cmd.split('1>')[0].strip()
         if cvasp :
             if res['with_mpi']:
-                _cmd = 'python ../cvasp.py "mpirun -n %d %s %s" %s' % (res['task_per_node'], _cmd, arg, fp_max_errors)
+                _cmd = 'python cvasp.py "mpirun -n %d %s %s" %s' % (res['task_per_node'], _cmd, arg, fp_max_errors)
             else :
-                _cmd = 'python ../cvasp.py "%s %s" %s' % (_cmd, arg, fp_max_errors)
+                _cmd = 'python cvasp.py "%s %s" %s' % (_cmd, arg, fp_max_errors)
         else :
             if res['with_mpi']:
                 _cmd = 'mpirun -n %d %s %s' % (res['task_per_node'],  _cmd, arg)
