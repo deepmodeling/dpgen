@@ -12,22 +12,16 @@
             "AccessKey_ID":"",
             "AccessKey_Secret":"",
             "regionID": "cn-beijing",
-            "avail_district":["H"],
-            "avail_instance_type":["v100"],
+            "avail_resources":{
+                "H": {"v100": 20}
+            },
             "instance_name": "CH4", 
             "pay_strategy": "spot"
         }
       },
       "resources": {
-        "numb_gpu": 1,              
-        "numb_node": 1,
-        "task_per_node": 12,
-        "partition": "gpu",         
-        "exclude_list": [],
-        "mem_limit": 32,
-        "source_list": [],
-        "module_list": [],
-        "time_limit": "23:0:0"
+        "numb_gpu": 1,            
+        "partition": "gpu"
       },
       "command": "/root/deepmd-kit/bin/dp",
       "group_size": 2
@@ -47,21 +41,16 @@
             "AccessKey_ID":"",
             "AccessKey_Secret":"",
             "regionID": "cn-beijing",
-            "avail_district":["H"],
-            "avail_instance_type":["v100"],
+            "avail_resources":{
+                "H": {"v100": 20}
+            },
             "instance_name": "CH4",
             "pay_strategy": "spot"
         }
       },
       "resources": {
         "numb_gpu": 1,
-        "task_per_node": 4,
-        "partition": "gpu",
-        "exclude_list": [],
-        "mem_limit": 11,
-        "source_list": [],
-        "module_list": [],
-        "time_limit": "23:0:0"
+        "partition": "gpu"
       },
       "command": "/root/deepmd-kit/bin/lmp",
       "group_size": 2
@@ -81,8 +70,10 @@
             "AccessKey_ID":"",
             "AccessKey_Secret":"",
             "regionID": "cn-huhehaote",
-            "avail_district":["A","B"],
-            "avail_instance_type":["c5","c6"],
+            "avail_resources":{
+                "A": {"c5": 500, "c6": 160},
+                "B": {"c6": 200}
+            },
             "instance_name": "CH4", 
             "pay_strategy": "spot"
         }
@@ -92,7 +83,6 @@
         "task_per_node": 16,
         "with_mpi": "false",
         "source_list": ["/opt/intel/parallel_studio_xe_2018/psxevars.sh"],
-        "module_list": [],
         "partition": "cpu",
         "envs" : {"PATH" : "/root/deepmd-pkg/vasp.5.4.4/bin:$PATH"}
       },
@@ -101,6 +91,4 @@
     }
   ]
 }
-
-
 
