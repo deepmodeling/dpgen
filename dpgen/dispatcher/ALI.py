@@ -16,7 +16,7 @@ def manual_delete(stage):
         adata = mdata[stage][0]['machine']['ali_auth']
         mdata_resources = mdata[stage][0]['resources']
         mdata_machine = mdata[stage][0]['machine']
-        ali = ALI(adata, mdata_resources, mdata_machine, machine_number)
+        ali = ALI(adata, mdata_resources, mdata_machine, 0)
         with open('machine_record.json', 'r') as fp2:
             machine_record = json.load(fp2)
             ali.instance_list = machine_record['instance_id']
