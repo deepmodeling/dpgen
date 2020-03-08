@@ -41,11 +41,10 @@ class ALI():
         self.task_chunks = None
         self.adata = adata
         self.regionID = adata["regionID"]
-        self.clinet = AcsClient(adata["AccessKey_ID"], adata["AccessKey_Secret"], self.regionID)
+        self.client = AcsClient(adata["AccessKey_ID"], adata["AccessKey_Secret"], self.regionID)
         self.mdata_resources = mdata_resources
         self.mdata_machine = mdata_machine
         self.nchunks = nchunks
-
 
     def init(self, work_path, tasks, group_size):
         if self.check_restart(work_path, tasks, group_size):
@@ -90,12 +89,13 @@ class ALI():
 
     def alloc_machine(self):
         for district, type_num in self.adata["avail_resources"].items():
-            for machine_type, number in type_num:
+            for machine_type, number in type_num.items():
                 if self.nchunks > number:
                     self.nchunks -= number
                     self.create_machine(machine_type, number, district)
                 elif self.nchunks > 0:
                     self.create_machine(machine_type, self.nchunks, district)
+        time.sleep(60)
         self.get_ip()
 
     def create_machine(self, machine_type, number, district):
