@@ -109,6 +109,8 @@ class ALI():
             template_name = 'gpu_%s_%s_%s_%s' % (self.mdata_resources['numb_gpu'], self.adata["pay_strategy"], district, machine_type)
         elif self.mdata_resources['partition'] == 'cpu':
             template_name = 'cpu_%s_%s_%s_%s' % (self.mdata_resources['task_per_node'], self.adata["pay_strategy"], district, machine_type)
+        elif self.mdata_resources['partition'] == 'gmx':
+            template_name = 'gmx_%s_%s_%s_%s' % (self.mdata_resources['numb_gpu'], self.adata["pay_strategy"], district, machine_type)
         request.set_LaunchTemplateName(template_name)
 
         if number <= 100 and number > 0:
