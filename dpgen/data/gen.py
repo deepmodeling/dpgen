@@ -653,7 +653,6 @@ def gen_init_bulk(args) :
             if "NSW" in standard_incar:
                     nsw_flag = True
                     nsw_steps = standard_incar['NSW']
-                    break
             #dlog.info("nsw_steps is", nsw_steps)
             #dlog.info("md_nstep_jdata is", md_nstep_jdata)
             if nsw_flag:
