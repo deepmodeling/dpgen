@@ -20,7 +20,9 @@ import dpgen.data.tools.fcc as fcc
 import dpgen.data.tools.bcc as bcc
 import dpgen.data.tools.diamond as diamond
 import dpgen.data.tools.sc as sc
+from dpgen.generator.lib.vasp import incar_upper
 from pymatgen import Structure
+from pymatgen.io.vasp import Incar
 from dpgen.remote.decide_machine import  decide_fp_machine
 from dpgen import ROOT_PATH
 from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher
@@ -646,14 +648,11 @@ def gen_init_bulk(args) :
     try:
         md_incar = jdata['md_incar']
         if os.path.isfile(md_incar):
-            with open(md_incar , "r") as fr:
-                md_incar_lines = fr.readlines()
+            standard_incar = incar_upper(Incar.from_file(md_incar))
             nsw_flag = False
-            for incar_line in md_incar_lines:
-                line = incar_line.split()
-                if "NSW" in line:
+            if "NSW" in standard_incar:
                     nsw_flag = True
-                    nsw_steps = int(incar_line.split()[-1])
+                    nsw_steps = standard_incar['NSW']
                     break
             #dlog.info("nsw_steps is", nsw_steps)
             #dlog.info("md_nstep_jdata is", md_nstep_jdata)
@@ -664,7 +663,7 @@ def gen_init_bulk(args) :
                     dlog.info("MD steps in md_incar is %d"%(nsw_steps))
                     dlog.info("DP-GEN will use settings in md_incar!")
                     jdata['md_nstep'] = nsw_steps
-    except:
+    except KeyError:
         pass
     ## correct element name 
     temp_elements = []
