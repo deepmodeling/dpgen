@@ -234,7 +234,7 @@ def make_train (iter_index,
     init_batch_size = []
     if 'init_batch_size' in jdata:
         init_batch_size_ = list(jdata['init_batch_size'])
-        if len(init_data_sys_) > len(init_batch_size):
+        if len(init_data_sys_) > len(init_batch_size_):
             warnings.warn("The batch sizes are not enough. Assume auto for those not spefified.")
             init_batch_size.extend(["auto" for aa in range(len(init_data_sys_)-len(init_batch_size))])
     else:
@@ -245,7 +245,7 @@ def make_train (iter_index,
         sys_batch_size = ["auto" for aa in range(len(jdata['sys_configs']))]
 
     # make sure all init_data_sys has the batch size -- for the following `zip`
-    assert (len(init_data_sys_) <= len(init_batch_size))
+    assert (len(init_data_sys_) <= len(init_batch_size_))
     for ii, ss in zip(init_data_sys_, init_batch_size_) :
         if jdata.get('init_multi_systems', False):
             for single_sys in os.listdir(os.path.join(work_path, 'data.init', ii)):
