@@ -982,6 +982,24 @@ def post_model_devi (iter_index,
                      mdata) :
     pass
 
+def check_bad_conf(conf_name, 
+                   criteria, 
+                   fmt = 'lammps/dump'):
+    all_c = criteria.split(';')
+    sys = dpdata.System(conf_name, fmt)
+    assert(sys.get_nframes() == 1)
+    is_bad = False
+    for ii in all_c:
+        [key, value] = ii.split(':')
+        if key == 'length_ratio':
+            lengths = np.linalg.norm(sys['cells'][0], axis = 1)
+            ratio = np.max(lengths) / np.min(lengths)
+            if ratio > float(value):
+                is_bad = True
+        else:
+            raise RuntimeError('unknow key', key)        
+    return is_bad
+
 def _make_fp_vasp_inner (modd_path,
                          work_path,
                          model_devi_skip,
@@ -1015,6 +1033,8 @@ def _make_fp_vasp_inner (modd_path,
     cluster_cutoff = jdata['cluster_cutoff'] if jdata.get('use_clusters', False) else None
     # skip save *.out if detailed_report_make_fp is False, default is True
     detailed_report_make_fp = jdata.get("detailed_report_make_fp", True)
+    # skip bad conf criteria
+    skip_bad_conf = jdata.get('fp_skip_bad_conf')
     for ss in system_index :
         fp_candidate = []
         if detailed_report_make_fp:
@@ -1081,6 +1101,7 @@ def _make_fp_vasp_inner (modd_path,
                 for ii in fp_rest_failed:
                     fp.write(" ".join([str(nn) for nn in ii]) + "\n")
         numb_task = min(fp_task_max, len(fp_candidate))
+        count_bad_conf = 0
         for cc in range(numb_task) :
             tt = fp_candidate[cc][0]
             ii = fp_candidate[cc][1]
@@ -1088,6 +1109,11 @@ def _make_fp_vasp_inner (modd_path,
             conf_name = os.path.join(tt, "traj")
             conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
             conf_name = os.path.abspath(conf_name)
+            if skip_bad_conf is not None:
+                skip = check_bad_conf(conf_name, skip_bad_conf)
+                if skip:
+                    count_bad_conf += 1
+                    continue
 
             # link job.json
             job_name = os.path.join(tt, "job.json")
@@ -1114,6 +1140,8 @@ def _make_fp_vasp_inner (modd_path,
             for pair in fp_link_files :
                 os.symlink(pair[0], pair[1])
             os.chdir(cwd)
+        if count_bad_conf > 0:
+            dlog.info("system {0:s} skipped {1:6d} bad confs, {2:6d} remains".format(ss, count_bad_conf, numb_task - count_bad_conf))
     if cluster_cutoff is None:
         cwd = os.getcwd()
         for ii in fp_tasks:
