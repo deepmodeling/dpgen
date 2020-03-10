@@ -1276,6 +1276,25 @@ def _make_fp_pwmat_input (iter_index,
         os.system("sed -i '1,2c 4 1' etot.input")
         os.chdir(cwd)
 
+def _copy_cvasp(iter_index,jdata):
+    # Move cvasp interface to jdata
+    if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+       pass
+    else:
+       return
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
+    fp_tasks.sort()
+    if len(fp_tasks) == 0 :
+        return
+    cwd = os.getcwd()
+    for ii in fp_tasks:
+        os.chdir(ii)
+        #copy cvasp.py
+        shutil.copyfile(cvasp_file, 'cvasp.py')
+        os.chdir(cwd)
+
 def _make_fp_vasp_kp (iter_index,jdata):
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -1296,7 +1315,7 @@ def _make_fp_vasp_kp (iter_index,jdata):
         if fp_aniso_kspacing is None:
             try:
                 kspacing = standard_incar['KSPACING']
-            except:
+            except KeyError:
                 raise RuntimeError ("KSPACING must be given in INCAR")
         else :
             kspacing = fp_aniso_kspacing
@@ -1309,7 +1328,7 @@ def _make_fp_vasp_kp (iter_index,jdata):
                     gamma=True
                 else:
                     gamma=False
-        except:
+        except KeyError:
             raise RuntimeError ("KGAMMA must be given in INCAR")
         # check poscar
         assert(os.path.exists('POSCAR'))
@@ -1395,10 +1414,6 @@ def _make_fp_vasp_configs(iter_index,
     work_path = os.path.join(iter_name, fp_name)
     create_path(work_path)
 
-    #copy cvasp.py
-    # Move cvasp interface to jdata
-    if ('cvasp' in jdata) and (jdata['cvasp'] == True):
-        shutil.copyfile(cvasp_file, os.path.join(work_path,'cvasp.py'))
 
     modd_path = os.path.join(iter_name, model_devi_name)
     task_min = -1
@@ -1438,6 +1453,8 @@ def make_fp_vasp (iter_index,
     _make_fp_vasp_incar(iter_index, jdata, nbands_esti = nbe)
     # 3, create kpoints
     _make_fp_vasp_kp(iter_index, jdata)
+    # 4, copy cvasp
+    _copy_cvasp(iter_index,jdata)
 
 
 def make_fp_pwscf(iter_index,
@@ -1700,15 +1717,15 @@ def run_fp (iter_index,
     fp_pp_files = jdata['fp_pp_files']
 
     if fp_style == "vasp" :
-        forward_files = ['POSCAR', 'INCAR', 'POTCAR']
+        forward_files = ['POSCAR', 'INCAR', 'POTCAR','KPOINTS']
         backward_files = ['OUTCAR','vasprun.xml']
         # Move cvasp interface to jdata
         if ('cvasp' in jdata) and (jdata['cvasp'] == True):
             mdata['fp_resources']['cvasp'] = True
         if ('cvasp' in  mdata["fp_resources"] ) and (mdata["fp_resources"]["cvasp"]==True):
-            #dlog.info("cvasp is on !")
-            forward_common_files=['cvasp.py']
-            forward_files.append('KPOINTS')
+            dlog.info("cvasp is on !")
+            forward_files.append('cvasp.py')
+            forward_common_files=[]
         else:
             forward_common_files=[]
         run_fp_inner(iter_index, jdata, mdata,  forward_files, backward_files, _vasp_check_fin,
