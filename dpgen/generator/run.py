@@ -1045,6 +1045,9 @@ def _make_fp_vasp_inner (modd_path,
         modd_system_task.sort()
         cc = 0
         counter = Counter()
+        counter['candidate'] = 0
+        counter['failed'] = 0
+        counter['accurate'] = 0
         for tt in modd_system_task :
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
