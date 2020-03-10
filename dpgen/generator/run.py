@@ -288,7 +288,7 @@ def make_train (iter_index,
     jinput = jdata['default_training_param']
     try:
         mdata["deepmd_version"]
-    except:
+    except KeyError:
         mdata = set_version(mdata)
     # setup data systems
     if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
@@ -387,14 +387,13 @@ def run_train (iter_index,
         reuse_old = False    
     try:
         mdata["deepmd_version"]
-    except:
+    except KeyError:
         mdata = set_version(mdata)
     if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
         # 0.x
         deepmd_path = mdata['deepmd_path']
     else:
         # 1.x
-        python_path = mdata.get('python_path', None)
         train_command = mdata.get('train_command', 'dp')
     train_resources = mdata['train_resources']
 
@@ -418,19 +417,14 @@ def run_train (iter_index,
         commands.append(command)
         command = os.path.join(deepmd_path, 'bin/dp_frz')
         commands.append(command)        
-    elif python_path:
-        # 1.x
-        command =  '%s -m deepmd train %s' % (python_path, train_input_file)
-        if reuse_old:
-            command += ' --init-model old/model.ckpt'
-        commands.append(command)
-        command = '%s -m deepmd freeze' % python_path
-        commands.append(command)
     else: 
+        # 1.x
         ## Commands are like `dp train` and `dp freeze`
         ## train_command should not be None
         assert(train_command)
         command =  '%s train %s' % (train_command, train_input_file)
+        if reuse_old:
+            command += ' --init-model old/model.ckpt'
         commands.append(command)
         command = '%s freeze' % train_command
         commands.append(command)
@@ -751,7 +745,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
     work_path = os.path.join(iter_name, model_devi_name)
     try:
         mdata["deepmd_version"]
-    except:
+    except KeyError:
         mdata = set_version(mdata)
     deepmd_version = mdata['deepmd_version']
 
@@ -883,7 +877,7 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
                     os.chdir(task_path)
                     try:
                         mdata["deepmd_version"]
-                    except:
+                    except KeyError:
                         mdata = set_version(mdata)
                     deepmd_version = mdata['deepmd_version']
                     file_c = make_lammps_input(ensemble,
