@@ -234,12 +234,18 @@ def make_train (iter_index,
     init_batch_size = []
     if 'init_batch_size' in jdata:
         init_batch_size_ = list(jdata['init_batch_size'])
+        if len(init_data_sys_) > len(init_batch_size_):
+            warnings.warn("The batch sizes are not enough. Assume auto for those not spefified.")
+            init_batch_size.extend(["auto" for aa in range(len(init_data_sys_)-len(init_batch_size))])
     else:
         init_batch_size_ = ["auto" for aa in range(len(jdata['init_data_sys']))]
     if 'sys_batch_size' in jdata:
         sys_batch_size = jdata['sys_batch_size']
     else:
         sys_batch_size = ["auto" for aa in range(len(jdata['sys_configs']))]
+
+    # make sure all init_data_sys has the batch size -- for the following `zip`
+    assert (len(init_data_sys_) <= len(init_batch_size_))
     for ii, ss in zip(init_data_sys_, init_batch_size_) :
         if jdata.get('init_multi_systems', False):
             for single_sys in os.listdir(os.path.join(work_path, 'data.init', ii)):
@@ -282,7 +288,7 @@ def make_train (iter_index,
     jinput = jdata['default_training_param']
     try:
         mdata["deepmd_version"]
-    except:
+    except KeyError:
         mdata = set_version(mdata)
     # setup data systems
     if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
@@ -381,14 +387,13 @@ def run_train (iter_index,
         reuse_old = False    
     try:
         mdata["deepmd_version"]
-    except:
+    except KeyError:
         mdata = set_version(mdata)
     if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
         # 0.x
         deepmd_path = mdata['deepmd_path']
     else:
         # 1.x
-        python_path = mdata.get('python_path', None)
         train_command = mdata.get('train_command', 'dp')
     train_resources = mdata['train_resources']
 
@@ -412,19 +417,14 @@ def run_train (iter_index,
         commands.append(command)
         command = os.path.join(deepmd_path, 'bin/dp_frz')
         commands.append(command)        
-    elif python_path:
-        # 1.x
-        command =  '%s -m deepmd train %s' % (python_path, train_input_file)
-        if reuse_old:
-            command += ' --init-model old/model.ckpt'
-        commands.append(command)
-        command = '%s -m deepmd freeze' % python_path
-        commands.append(command)
     else: 
+        # 1.x
         ## Commands are like `dp train` and `dp freeze`
         ## train_command should not be None
         assert(train_command)
         command =  '%s train %s' % (train_command, train_input_file)
+        if reuse_old:
+            command += ' --init-model old/model.ckpt'
         commands.append(command)
         command = '%s freeze' % train_command
         commands.append(command)
@@ -745,7 +745,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
     work_path = os.path.join(iter_name, model_devi_name)
     try:
         mdata["deepmd_version"]
-    except:
+    except KeyError:
         mdata = set_version(mdata)
     deepmd_version = mdata['deepmd_version']
 
@@ -877,7 +877,7 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
                     os.chdir(task_path)
                     try:
                         mdata["deepmd_version"]
-                    except:
+                    except KeyError:
                         mdata = set_version(mdata)
                     deepmd_version = mdata['deepmd_version']
                     file_c = make_lammps_input(ensemble,
@@ -982,6 +982,24 @@ def post_model_devi (iter_index,
                      mdata) :
     pass
 
+def check_bad_conf(conf_name, 
+                   criteria, 
+                   fmt = 'lammps/dump'):
+    all_c = criteria.split(';')
+    sys = dpdata.System(conf_name, fmt)
+    assert(sys.get_nframes() == 1)
+    is_bad = False
+    for ii in all_c:
+        [key, value] = ii.split(':')
+        if key == 'length_ratio':
+            lengths = np.linalg.norm(sys['cells'][0], axis = 1)
+            ratio = np.max(lengths) / np.min(lengths)
+            if ratio > float(value):
+                is_bad = True
+        else:
+            raise RuntimeError('unknow key', key)        
+    return is_bad
+
 def _make_fp_vasp_inner (modd_path,
                          work_path,
                          model_devi_skip,
@@ -1015,6 +1033,8 @@ def _make_fp_vasp_inner (modd_path,
     cluster_cutoff = jdata['cluster_cutoff'] if jdata.get('use_clusters', False) else None
     # skip save *.out if detailed_report_make_fp is False, default is True
     detailed_report_make_fp = jdata.get("detailed_report_make_fp", True)
+    # skip bad conf criteria
+    skip_bad_conf = jdata.get('fp_skip_bad_conf')
     for ss in system_index :
         fp_candidate = []
         if detailed_report_make_fp:
@@ -1025,6 +1045,9 @@ def _make_fp_vasp_inner (modd_path,
         modd_system_task.sort()
         cc = 0
         counter = Counter()
+        counter['candidate'] = 0
+        counter['failed'] = 0
+        counter['accurate'] = 0
         for tt in modd_system_task :
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
@@ -1081,6 +1104,7 @@ def _make_fp_vasp_inner (modd_path,
                 for ii in fp_rest_failed:
                     fp.write(" ".join([str(nn) for nn in ii]) + "\n")
         numb_task = min(fp_task_max, len(fp_candidate))
+        count_bad_conf = 0
         for cc in range(numb_task) :
             tt = fp_candidate[cc][0]
             ii = fp_candidate[cc][1]
@@ -1088,6 +1112,11 @@ def _make_fp_vasp_inner (modd_path,
             conf_name = os.path.join(tt, "traj")
             conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
             conf_name = os.path.abspath(conf_name)
+            if skip_bad_conf is not None:
+                skip = check_bad_conf(conf_name, skip_bad_conf)
+                if skip:
+                    count_bad_conf += 1
+                    continue
 
             # link job.json
             job_name = os.path.join(tt, "job.json")
@@ -1114,6 +1143,8 @@ def _make_fp_vasp_inner (modd_path,
             for pair in fp_link_files :
                 os.symlink(pair[0], pair[1])
             os.chdir(cwd)
+        if count_bad_conf > 0:
+            dlog.info("system {0:s} skipped {1:6d} bad confs, {2:6d} remains".format(ss, count_bad_conf, numb_task - count_bad_conf))
     if cluster_cutoff is None:
         cwd = os.getcwd()
         for ii in fp_tasks:
