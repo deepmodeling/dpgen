@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os, re, argparse, filecmp, json, glob
+import os, re, argparse, filecmp, json, glob, shutil
 import subprocess as sp
 import numpy as np
 import dpgen.auto_test.lib.vasp as vasp
@@ -8,7 +8,7 @@ import dpgen.auto_test.lib.lammps as lammps
 #
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar,Kpoints,Potcar
-from dpgen.auto_test.lib.vasp import make_kspacing_kpoints
+from dpgen.auto_test.lib.vasp import make_vasp_kpoints_from_incar
 cvasp_file=os.path.join(ROOT_PATH,'generator/lib/cvasp.py')
 
 global_task_name = '00.equi'
@@ -70,12 +70,22 @@ def make_vasp(jdata, conf_dir) :
     os.chdir(vasp_path)
     print(vasp_path)
 
+    # write incar
     with open('INCAR', 'w') as fp :
         fp.write(fc)
+
     # gen poscar
     if os.path.exists('POSCAR') :
         os.remove('POSCAR')
     os.symlink(os.path.relpath(to_poscar), 'POSCAR')
+
+    # write kp
+    make_vasp_kpoints_from_incar(vasp_path,jdata)
+
+    #copy cvasp
+    if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+       shutil.copyfile(cvasp_file, 'cvasp.py')
+
     # gen potcar
     with open('POTCAR', 'w') as outfile:
         for fname in potcar_list:

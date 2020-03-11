@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os, re, argparse, filecmp, json, glob, warnings
+import os, re, argparse, filecmp, json, glob, warnings, shutil
 import subprocess as sp
 import numpy as np
 import dpgen.auto_test.lib.vasp as vasp
@@ -8,6 +8,12 @@ import dpgen.auto_test.lib.lammps as lammps
 from pymatgen.core.structure import Structure
 from pymatgen.analysis.defects.core import Interstitial
 from pymatgen.analysis.defects.generators import InterstitialGenerator
+
+from dpgen import ROOT_PATH
+from pymatgen.io.vasp import Incar,Kpoints,Potcar
+from dpgen.auto_test.lib.vasp import make_vasp_kpoints_from_incar
+cvasp_file=os.path.join(ROOT_PATH,'generator/lib/cvasp.py')
+
 
 global_equi_name = '00.equi'
 global_task_name = '04.interstitial'
@@ -100,6 +106,13 @@ def _make_vasp(jdata, conf_dir, supercell, insert_ele) :
         os.symlink(os.path.relpath(os.path.join(task_path, 'INCAR')), 'INCAR')
         # save supercell
         np.savetxt('supercell.out', supercell, fmt='%d')
+
+        # write kp
+        make_vasp_kpoints_from_incar(struct_path,jdata)
+
+        #copy cvasp
+        if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+           shutil.copyfile(cvasp_file, os.path.join(struct_path,'cvasp.py'))
     os.chdir(cwd)
 
 

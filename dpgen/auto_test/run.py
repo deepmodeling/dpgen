@@ -72,7 +72,10 @@ def run_equi(task_type,jdata,mdata):
     if task_type=="vasp":
         mdata=decide_fp_machine(mdata)
 
-        forward_files = ['INCAR', 'POTCAR']
+        forward_files = ['INCAR', 'POTCAR', 'KPOINTS']
+        if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+           mdata['fp_resources']['cvasp'] = True
+           forward_files.append('cvasp.py')
         backward_files = ['OUTCAR', 'autotest.out' , 'CONTCAR','OSZICAR']
         common_files=['POSCAR']
 
@@ -162,9 +165,12 @@ def run_eos(task_type,jdata,mdata):
     if task_type=="vasp":
         mdata=decide_fp_machine(mdata)
 
-        forward_files = ['INCAR', 'POSCAR','POTCAR']
+        forward_files = ['INCAR', 'POSCAR','POTCAR','KPOINTS']
         backward_files = ['OUTCAR', 'autotest.out' , 'OSZICAR']
         common_files=['INCAR','POTCAR']
+        if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+           mdata['fp_resources']['cvasp'] = True
+           forward_files.append('cvasp.py')
 
     #lammps
     elif task_type in lammps_task_type:
@@ -241,6 +247,9 @@ def run_elastic(task_type,jdata,mdata):
         forward_files = ['INCAR', 'POSCAR','POTCAR','KPOINTS']
         backward_files = ['OUTCAR', 'autotest.out' , 'CONTCAR','OSZICAR']
         common_files=['INCAR','POTCAR','KPOINTS']
+        if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+           mdata['fp_resources']['cvasp'] = True
+           forward_files.append('cvasp.py')
 
     #lammps
     elif task_type in lammps_task_type:
@@ -312,9 +321,12 @@ def run_vacancy(task_type,jdata,mdata):
     if task_type == "vasp":
         mdata=decide_fp_machine(mdata)
 
-        forward_files = ['INCAR', 'POSCAR','POTCAR']
+        forward_files = ['INCAR', 'POSCAR','POTCAR','KPOINTS']
         backward_files = ['OUTCAR',  'autotest.out' , 'OSZICAR']
         common_files=['INCAR','POTCAR']
+        if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+           mdata['fp_resources']['cvasp'] = True
+           forward_files.append('cvasp.py')
 
     #lammps
     elif task_type in lammps_task_type:
@@ -396,9 +408,12 @@ def run_interstitial(task_type,jdata,mdata):
     if task_type == "vasp":
         mdata=decide_fp_machine(mdata)
 
-        forward_files = ['INCAR', 'POSCAR','POTCAR']
+        forward_files = ['INCAR', 'POSCAR','POTCAR',"KPOINTS"]
         backward_files = ['OUTCAR',  'autotest.out' , 'XDATCAR','OSZICAR']
         common_files=['INCAR']
+        if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+           mdata['fp_resources']['cvasp'] = True
+           forward_files.append('cvasp.py')
 
     #lammps
     elif task_type in lammps_task_type:
@@ -518,9 +533,12 @@ def run_surf(task_type,jdata,mdata):
     if task_type == "vasp":
         mdata=decide_fp_machine(mdata)
 
-        forward_files = ['INCAR', 'POSCAR','POTCAR']
+        forward_files = ['INCAR', 'POSCAR','POTCAR','KPOINTS']
         backward_files = ['OUTCAR',  'autotest.out' , 'OSZICAR']
         common_files=['INCAR','POTCAR']
+        if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+           mdata['fp_resources']['cvasp'] = True
+           forward_files.append('cvasp.py')
 
     #lammps
     elif task_type in lammps_task_type:
@@ -603,9 +621,12 @@ def run_phonon(task_type,jdata,mdata):
         machine,resources,command,group_size=util.get_machine_info(mdata,task_type)
 
         run_tasks = util.collect_task(all_task,task_type)
-        forward_files = ['INCAR', 'POTCAR','KPOINTS']
+        forward_files = ['INCAR', 'POTCAR','KPOINTS','KPOINTS']
         backward_files = ['OUTCAR',  'autotest.out' , 'OSZICAR','vasprun.xml']
         common_files=['POSCAR']
+        if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+           mdata['fp_resources']['cvasp'] = True
+           forward_files.append('cvasp.py')
 
         disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
         disp.run_jobs(resources,
