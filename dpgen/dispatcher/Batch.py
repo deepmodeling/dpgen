@@ -136,10 +136,7 @@ class Batch(object) :
                           outlog = 'log',
                           errlog = 'err') :
         ret = ""
-        try:
-            allow_failure = res['allow_failure']
-        except:
-            allow_failure = False
+        allow_failure = res.get('allow_failure', False)
         for ii,jj in zip(job_dirs, args) :
             ret += 'cd %s\n' % ii
             ret += 'test $? -ne 0 && exit 1\n\n'
@@ -150,6 +147,7 @@ class Batch(object) :
                     ret += '  if test $? -ne 0; then exit 1; else touch tag_%d_finished; fi \n' % idx
                 else :
                     ret += '  touch tag_%d_finished \n' % idx
+                    ret += '  touch tag_failure_%d \n' % idx
                 ret += 'fi\n\n'
             else :
                 # do not support task-wise restart

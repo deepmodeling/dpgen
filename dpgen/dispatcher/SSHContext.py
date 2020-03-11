@@ -121,6 +121,8 @@ class SSHContext (object):
     def download(self, 
                  job_dirs,
                  remote_down_files,
+                 check_exists = False,
+                 mark_failure = True,
                  back_error=False) :
         self.ssh_session.ensure_alive()
         cwd = os.getcwd()
@@ -128,7 +130,16 @@ class SSHContext (object):
         file_list = []
         for ii in job_dirs :
             for jj in remote_down_files :
-                file_list.append(os.path.join(ii,jj))
+                file_name = os.path.join(ii,jj)                
+                if check_exists:
+                    if self.check_file_exists(file_name):
+                        file_list.append(file_name)
+                    elif mark_failure :
+                        with open(os.path.join(self.local_root, ii, 'tag_failure_download_%s' % jj), 'w') as fp: pass
+                    else:
+                        pass
+                else:
+                    file_list.append(file_name)
             if back_error:
                errors=glob(os.path.join(ii,'error*'))
                file_list.extend(errors)

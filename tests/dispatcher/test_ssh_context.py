@@ -110,6 +110,87 @@ class TestSSHContext(unittest.TestCase):
                         cc += 1
 
 
+    def test_donwload_check_mark(self):
+        tasks = ['task0', 'task1']
+        self.job.upload(tasks, ['test0', 'dir0'])
+        # generate extra donwload files
+        record_uuid = []
+        for ii in tasks :
+            for jj in ['test6', 'test7'] :
+                if (ii == 'task1' and jj == 'test7') or \
+                   (ii == 'task0' and jj == 'test6'):
+                    continue
+                with open(os.path.join('rmt',self.job.job_uuid,ii,jj), 'w') as fp:
+                    tmp = str(uuid.uuid4())
+                    fp.write(tmp)
+                    record_uuid.append(tmp)
+        # donwload
+        files = ['test6', 'test7', 'dir1']
+        self.job.download(tasks, files, check_exists = True, mark_failure = True)
+        # check dlded
+        cc = 0
+        for ii in tasks :
+            for jj in ['test6', 'test7'] :
+                if (ii == 'task1' and jj == 'test7') or \
+                   (ii == 'task0' and jj == 'test6') :
+                    self.assertFalse(os.path.exists(os.path.join('loc', ii, jj)), 
+                                     msg = 'found ' + os.path.join('loc', ii, jj))
+                    self.assertTrue(os.path.exists(os.path.join('loc', ii, 'tag_failure_download_%s' % jj)), 
+                                    msg = 'failed to find ' + os.path.join('loc', ii, 'tag_failure_download_%s' % jj))
+                    continue
+                with open(os.path.join('loc',ii,jj), 'r') as fp:
+                    tmp = fp.read()
+                    self.assertEqual(tmp, record_uuid[cc])
+                    cc += 1
+        for ii in tasks :
+            for jj in ['dir1'] :
+                self.assertFalse(os.path.exists(os.path.join('loc', ii, jj)))
+                self.assertTrue(os.path.exists(os.path.join('loc', ii, 'tag_failure_download_%s' % jj)))
+
+
+    def test_donwload_check_nomark(self):
+        tasks = ['task0', 'task1']
+        self.job.upload(tasks, ['test0', 'dir0'])
+        # generate extra donwload files
+        record_uuid = []
+        for ii in tasks :
+            for jj in ['test6', 'test7'] :
+                if ii == 'task1' and jj == 'test7' :
+                    continue
+                if ii == 'task0' and jj == 'test6' :
+                    continue
+                with open(os.path.join('rmt',self.job.job_uuid,ii,jj), 'w') as fp:
+                    tmp = str(uuid.uuid4())
+                    fp.write(tmp)
+                    record_uuid.append(tmp)
+        # donwload
+        files = ['test6', 'test7', 'dir1']
+        self.job.download(tasks, files, check_exists = True, mark_failure = False)
+        # check dlded
+        cc = 0
+        for ii in tasks :
+            for jj in ['test6', 'test7'] :
+                if ii == 'task1' and jj == 'test7' :
+                    self.assertFalse(os.path.exists(os.path.join('loc', ii, jj)), 
+                                     msg = 'found ' + os.path.join('loc', ii, jj))
+                    self.assertFalse(os.path.exists(os.path.join('loc', ii, 'tag_failure_download_%s' % jj)), 
+                                     msg = 'found ' + os.path.join('loc', ii, 'tag_failure_download_%s' % jj))
+                    continue
+                if ii == 'task0' and jj == 'test6' :
+                    self.assertFalse(os.path.exists(os.path.join('loc', ii, jj)), 
+                                     msg = 'found ' + os.path.join('loc', ii, jj))
+                    self.assertFalse(os.path.exists(os.path.join('loc', ii, 'tag_failure_download_%s' % jj)), 
+                                     msg = 'found ' + os.path.join('loc', ii, 'tag_failure_download_%s' % jj))
+                    continue
+                with open(os.path.join('loc',ii,jj), 'r') as fp:
+                    tmp = fp.read()
+                    self.assertEqual(tmp, record_uuid[cc])
+                    cc += 1
+        for ii in tasks :
+            for jj in ['dir1'] :
+                self.assertFalse(os.path.exists(os.path.join('loc', ii, jj)))
+                self.assertFalse(os.path.exists(os.path.join('loc', ii, 'tag_failure_download_%s' % jj)))
+
     def test_block_call(self) :
         tasks = ['task0', 'task1']
         files = ['test0', 'test1']
@@ -146,4 +227,5 @@ class TestSSHContext(unittest.TestCase):
         self.assertTrue(self.job.check_file_exists('aaa'))
         tmp1 = self.job.read_file('aaa')
         self.assertEqual(tmp, tmp1)
+
 

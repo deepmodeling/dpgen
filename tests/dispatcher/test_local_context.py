@@ -217,6 +217,88 @@ class TestLocalContext(unittest.TestCase):
                     rmtf = os.path.join('rmt', self.job.job_uuid, ii, jj, kk)
                     self.assertEqual(os.path.realpath(locf),
                                      os.path.realpath(rmtf))
+
+    def test_download_check_mark(self):        
+        # upload files
+        work_profile = LocalSession({'work_path':'rmt'})
+        self.job  = LocalContext('loc', work_profile)
+        tasks = ['task0', 'task1']
+        self.job.upload(tasks, ['test0', 'dir0'])
+        # generate extra donwload files
+        record_uuid = []
+        for ii in tasks :
+            for jj in ['test7', 'test8'] :
+                if (ii == 'task1' and jj == 'test7') or \
+                   (ii == 'task0' and jj == 'test6') :
+                    continue
+                with open(os.path.join('rmt',self.job.job_uuid,ii,jj), 'w') as fp:
+                    tmp = str(uuid.uuid4())
+                    fp.write(tmp)
+                    record_uuid.append(tmp)
+        # donwload
+        files = ['test7', 'test8', 'dir1']
+        self.job.download(tasks, files, check_exists = True, mark_failure = True)
+        # check dlded
+        cc = 0
+        for ii in tasks :
+            for jj in ['test7', 'test8'] :
+                if (ii == 'task1' and jj == 'test7') or \
+                   (ii == 'task0' and jj == 'test6') :
+                    self.assertFalse(os.path.exists(os.path.join('loc', ii, jj)), 
+                                     msg = 'found ' + os.path.join('loc', ii, jj))
+                    self.assertTrue(os.path.exists(os.path.join('loc', ii, 'tag_failure_download_%s' % jj)), 
+                                    msg = 'failed to find ' + os.path.join('loc', ii, 'tag_failure_download_%s' % jj))
+                    continue
+                with open(os.path.join('loc',ii,jj), 'r') as fp:
+                    tmp = fp.read()
+                    self.assertEqual(tmp, record_uuid[cc])
+                    cc += 1
+        for ii in tasks :
+            for jj in ['dir1'] :
+                self.assertFalse(os.path.exists(os.path.join('loc', ii, jj)))
+                self.assertTrue(os.path.exists(os.path.join('loc', ii, 'tag_failure_download_%s' % jj)))
+
+
+    def test_download_check_nomark(self):        
+        # upload files
+        work_profile = LocalSession({'work_path':'rmt'})
+        self.job  = LocalContext('loc', work_profile)
+        tasks = ['task0', 'task1']
+        self.job.upload(tasks, ['test0', 'dir0'])
+        # generate extra donwload files
+        record_uuid = []
+        for ii in tasks :
+            for jj in ['test7', 'test8'] :
+                if (ii == 'task1' and jj == 'test7') or \
+                   (ii == 'task0' and jj == 'test6') :
+                    continue
+                with open(os.path.join('rmt',self.job.job_uuid,ii,jj), 'w') as fp:
+                    tmp = str(uuid.uuid4())
+                    fp.write(tmp)
+                    record_uuid.append(tmp)
+        # donwload
+        files = ['test7', 'test8', 'dir1']
+        self.job.download(tasks, files, check_exists = True, mark_failure = False)
+        # check dlded
+        cc = 0
+        for ii in tasks :
+            for jj in ['test7', 'test8'] :
+                if (ii == 'task1' and jj == 'test7') or \
+                   (ii == 'task0' and jj == 'test6') :
+                    self.assertFalse(os.path.exists(os.path.join('loc', ii, jj)), 
+                                     msg = 'found ' + os.path.join('loc', ii, jj))
+                    self.assertFalse(os.path.exists(os.path.join('loc', ii, 'tag_failure_download_%s' % jj)), 
+                                     msg = 'found ' + os.path.join('loc', ii, 'tag_failure_download_%s' % jj))
+                    continue
+                with open(os.path.join('loc',ii,jj), 'r') as fp:
+                    tmp = fp.read()
+                    self.assertEqual(tmp, record_uuid[cc])
+                    cc += 1
+        for ii in tasks :
+            for jj in ['dir1'] :
+                self.assertFalse(os.path.exists(os.path.join('loc', ii, jj)))
+                self.assertFalse(os.path.exists(os.path.join('loc', ii, 'tag_failure_download_%s' % jj)))
+
                 
     def test_block_call(self) :
         work_profile = LocalSession({'work_path':'rmt'})

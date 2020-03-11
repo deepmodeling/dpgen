@@ -189,6 +189,7 @@ class Dispatcher(object):
         job_list = job_handler['job_list']
         job_record = job_handler['job_record']
         command = job_handler['command']
+        tag_failure_list = ['tag_failure_%d' % ii for ii in range(len(command))]
         resources = job_handler['resources']
         outlog = job_handler['outlog']
         errlog = job_handler['errlog']
@@ -212,7 +213,8 @@ class Dispatcher(object):
                     rjob['batch'].submit(task_chunks[idx], command, res = resources, outlog=outlog, errlog=errlog,restart=True)
                 elif status == JobStatus.finished :
                     dlog.info('job %s finished' % job_uuid)
-                    rjob['context'].download(task_chunks[idx], backward_task_files)
+                    rjob['context'].download(task_chunks[idx], tag_failure_list, check_exists = True, mark_failure = False)
+                    rjob['context'].download(task_chunks[idx], backward_task_files, check_exists = True)
                     rjob['context'].clean()
                     job_record.record_finish(cur_hash)
                     job_record.dump()
