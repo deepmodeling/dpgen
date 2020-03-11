@@ -88,6 +88,8 @@ class LocalContext(object) :
     def download(self, 
                  job_dirs,
                  remote_down_files,
+                 check_exists = False,
+                 mark_failure = True,
                  back_error=False) :
         cwd = os.getcwd()
         for ii in job_dirs :
@@ -103,7 +105,13 @@ class LocalContext(object) :
                 lfile = os.path.join(local_job, jj)
                 if not os.path.realpath(rfile) == os.path.realpath(lfile) :
                     if (not os.path.exists(rfile)) and (not os.path.exists(lfile)):
-                        raise RuntimeError('do not find download file ' + rfile)
+                        if check_exists :
+                            if mark_failure:
+                                with open(os.path.join(self.local_root, ii, 'tag_failure_download_%s' % jj), 'w') as fp: pass
+                            else :
+                                pass
+                        else :
+                            raise RuntimeError('do not find download file ' + rfile)
                     elif (not os.path.exists(rfile)) and (os.path.exists(lfile)) :
                         # already downloaded
                         pass
