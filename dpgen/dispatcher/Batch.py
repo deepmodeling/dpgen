@@ -146,8 +146,8 @@ class Batch(object) :
                 if res['allow_failure'] is False:
                     ret += '  if test $? -ne 0; then exit 1; else touch tag_%d_finished; fi \n' % idx
                 else :
+                    ret += '  if test $? -ne 0; then touch tag_failure_%d; fi \n' % idx
                     ret += '  touch tag_%d_finished \n' % idx
-                    ret += '  touch tag_failure_%d \n' % idx
                 ret += 'fi\n\n'
             else :
                 # do not support task-wise restart
