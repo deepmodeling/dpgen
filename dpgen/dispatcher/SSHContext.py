@@ -143,7 +143,8 @@ class SSHContext (object):
             if back_error:
                errors=glob(os.path.join(ii,'error*'))
                file_list.extend(errors)
-        self._get_files(file_list)
+        if len(file_list) > 0:
+            self._get_files(file_list)
         os.chdir(cwd)
         
     def block_checkcall(self, 
