@@ -639,7 +639,7 @@ param.json in a dictionary.
 | conf_dir | path like string | "confs/Al/std-fcc" | the dir which contains vasp's POSCAR  |
 | key_id | string| "DZIwdXCXg1fiXXXXXX" |the API key of Material project|
 | task_type | string | "vasp" | task type, one of deepmd vasp meam |
-| task | string | "equi" | task, one of equi, eos, elastic, vacancy, interstitial, surf or all  |
+| task | string or list | "equi" | task, one or several tasks from { equi, eos, elastic, vacancy, interstitial, surf } or all stands for all tasks  |
 | vasp_params| dict | seeing below | params relating to vasp INCAR|
 | lammps_params | dict| seeing below| params relating to lammps |
 
