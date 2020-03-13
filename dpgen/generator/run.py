@@ -1685,6 +1685,7 @@ def run_fp_inner (iter_index,
     fp_command = mdata['fp_command']
     fp_group_size = mdata['fp_group_size']
     fp_resources = mdata['fp_resources']
+    mark_failure = fp_resources.get('mark_failure', False)
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -1708,6 +1709,7 @@ def run_fp_inner (iter_index,
                         forward_common_files,
                         forward_files,
                         backward_files,
+                        mark_failure = mark_failure,
                         outlog = log_file,
                         errlog = log_file)
 
