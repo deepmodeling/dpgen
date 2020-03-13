@@ -73,6 +73,7 @@ class Dispatcher(object):
                  forward_task_files,
                  backward_task_files,
                  forward_task_deference = True,
+                 mark_failure = False,
                  outlog = 'log',
                  errlog = 'err') :
         job_handler = self.submit_jobs(resources,
@@ -86,7 +87,7 @@ class Dispatcher(object):
                                        forward_task_deference,
                                        outlog,
                                        errlog)
-        while not self.all_finished(job_handler) :
+        while not self.all_finished(job_handler, mark_failure) :
             time.sleep(60)
         # delete path map file when job finish
         # _pmap.delete()
@@ -182,7 +183,8 @@ class Dispatcher(object):
 
 
     def all_finished(self, 
-                     job_handler):
+                     job_handler, 
+                     mark_failure):
         task_chunks = job_handler['task_chunks']
         task_chunks_str = ['+'.join(ii) for ii in task_chunks]
         task_hashes = [sha1(ii.encode('utf-8')).hexdigest() for ii in task_chunks_str]
@@ -213,8 +215,11 @@ class Dispatcher(object):
                     rjob['batch'].submit(task_chunks[idx], command, res = resources, outlog=outlog, errlog=errlog,restart=True)
                 elif status == JobStatus.finished :
                     dlog.info('job %s finished' % job_uuid)
-                    rjob['context'].download(task_chunks[idx], tag_failure_list, check_exists = True, mark_failure = False)
-                    rjob['context'].download(task_chunks[idx], backward_task_files, check_exists = True)
+                    if mark_failure:
+                        rjob['context'].download(task_chunks[idx], tag_failure_list, check_exists = True, mark_failure = False)
+                        rjob['context'].download(task_chunks[idx], backward_task_files, check_exists = True)
+                    else:
+                        rjob['context'].download(task_chunks[idx], backward_task_files)
                     rjob['context'].clean()
                     job_record.record_finish(cur_hash)
                     job_record.dump()
