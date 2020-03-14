@@ -982,6 +982,16 @@ def post_model_devi (iter_index,
                      mdata) :
     pass
 
+
+def _to_face_dist(box_):
+    box = np.reshape(box_, [3,3])
+    vol = np.abs(np.linalg.det(box))
+    dists = []
+    for [ii,jj] in [[0, 1], [1, 2], [2, 0]]:
+        vv = np.cross(box[ii], box[jj])
+        dists.append(vol / np.linalg.norm(vv))
+    return np.array(dists)        
+
 def check_bad_conf(conf_name, 
                    criteria, 
                    fmt = 'lammps/dump'):
@@ -996,6 +1006,12 @@ def check_bad_conf(conf_name,
             ratio = np.max(lengths) / np.min(lengths)
             if ratio > float(value):
                 is_bad = True
+        elif key == 'height_ratio':
+            lengths = np.linalg.norm(sys['cells'][0], axis = 1)
+            dists = _to_face_dist(sys['cells'][0])
+            ratio = np.max(lengths) / np.min(dists)
+            if ratio > float(value):
+                is_bad = True            
         else:
             raise RuntimeError('unknow key', key)        
     return is_bad
