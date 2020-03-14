@@ -1049,7 +1049,7 @@ def _make_fp_vasp_inner (modd_path,
     cluster_cutoff = jdata['cluster_cutoff'] if jdata.get('use_clusters', False) else None
     # skip save *.out if detailed_report_make_fp is False, default is True
     detailed_report_make_fp = jdata.get("detailed_report_make_fp", True)
-    # skip bad conf criteria
+    # skip bad box criteria
     skip_bad_box = jdata.get('fp_skip_bad_box')
     for ss in system_index :
         fp_candidate = []
@@ -1160,7 +1160,7 @@ def _make_fp_vasp_inner (modd_path,
                 os.symlink(pair[0], pair[1])
             os.chdir(cwd)
         if count_bad_box > 0:
-            dlog.info("system {0:s} skipped {1:6d} bad confs, {2:6d} remains".format(ss, count_bad_box, numb_task - count_bad_box))
+            dlog.info("system {0:s} skipped {1:6d} confs with bad box, {2:6d} remains".format(ss, count_bad_box, numb_task - count_bad_box))
     if cluster_cutoff is None:
         cwd = os.getcwd()
         for ii in fp_tasks:
