@@ -992,7 +992,7 @@ def _to_face_dist(box_):
         dists.append(vol / np.linalg.norm(vv))
     return np.array(dists)        
 
-def check_bad_conf(conf_name, 
+def check_bad_box(conf_name, 
                    criteria, 
                    fmt = 'lammps/dump'):
     all_c = criteria.split(';')
@@ -1050,7 +1050,7 @@ def _make_fp_vasp_inner (modd_path,
     # skip save *.out if detailed_report_make_fp is False, default is True
     detailed_report_make_fp = jdata.get("detailed_report_make_fp", True)
     # skip bad conf criteria
-    skip_bad_conf = jdata.get('fp_skip_bad_conf')
+    skip_bad_box = jdata.get('fp_skip_bad_box')
     for ss in system_index :
         fp_candidate = []
         if detailed_report_make_fp:
@@ -1120,7 +1120,7 @@ def _make_fp_vasp_inner (modd_path,
                 for ii in fp_rest_failed:
                     fp.write(" ".join([str(nn) for nn in ii]) + "\n")
         numb_task = min(fp_task_max, len(fp_candidate))
-        count_bad_conf = 0
+        count_bad_box = 0
         for cc in range(numb_task) :
             tt = fp_candidate[cc][0]
             ii = fp_candidate[cc][1]
@@ -1128,10 +1128,10 @@ def _make_fp_vasp_inner (modd_path,
             conf_name = os.path.join(tt, "traj")
             conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
             conf_name = os.path.abspath(conf_name)
-            if skip_bad_conf is not None:
-                skip = check_bad_conf(conf_name, skip_bad_conf)
+            if skip_bad_box is not None:
+                skip = check_bad_box(conf_name, skip_bad_box)
                 if skip:
-                    count_bad_conf += 1
+                    count_bad_box += 1
                     continue
 
             # link job.json
@@ -1159,8 +1159,8 @@ def _make_fp_vasp_inner (modd_path,
             for pair in fp_link_files :
                 os.symlink(pair[0], pair[1])
             os.chdir(cwd)
-        if count_bad_conf > 0:
-            dlog.info("system {0:s} skipped {1:6d} bad confs, {2:6d} remains".format(ss, count_bad_conf, numb_task - count_bad_conf))
+        if count_bad_box > 0:
+            dlog.info("system {0:s} skipped {1:6d} bad confs, {2:6d} remains".format(ss, count_bad_box, numb_task - count_bad_box))
     if cluster_cutoff is None:
         cwd = os.getcwd()
         for ii in fp_tasks:
