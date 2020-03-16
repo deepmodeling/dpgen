@@ -254,6 +254,8 @@ class ALI():
                             self.job_handlers.append(None)
             return True
         else:
+            self.task_chunks = _split_tasks(tasks, group_size)
+            self.job_handlers = [None for i in range(len(self.task_chunks))]
             return False
 
     def get_ip(self, instance_list):
@@ -307,8 +309,6 @@ class ALI():
                  mark_failure = False,
                  outlog = 'log',
                  errlog = 'err'):
-        if not self.task_chunks:
-            self.task_chunks = _split_tasks(tasks, group_size)
         for ii in range(self.nchunks):
             if self.dispatchers[ii][1] == "working":
                 job_handler = self.dispatchers[ii][0].submit_jobs(resources,
