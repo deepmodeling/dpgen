@@ -46,8 +46,8 @@ class ALI():
     def __init__(self, adata, mdata_resources, mdata_machine, nchunks):
         self.ip_list = []
         self.instance_list = []
-        self.dispatchers = None
-        self.job_handlers = None
+        self.dispatchers = []
+        self.job_handlers = []
         self.task_chunks = None
         self.adata = adata
         self.apg_id = None
@@ -201,8 +201,11 @@ class ALI():
                 return vpc["VSwitchIds"]["VSwitchId"]
 
     def change_apg_capasity(self, capasity):
+        if capasity == 0:
+            pass
         request = ModifyAutoProvisioningGroupRequest()
         request.set_accept_format('json')
+        request.set_AutoProvisioningGroupId(self.apg_id)
         request.set_TotalTargetCapacity(str(capasity))
         request.set_SpotTargetCapacity(str(capasity))
         response = self.client.do_action_with_exception(request)
@@ -212,40 +215,43 @@ class ALI():
 
     def check_restart(self, work_path, tasks, group_size):
         if os.path.exists('apg_id.json'):
-            dispatchers = []
-            instance_list = []
-            ip_list = []
-            self.task_chunks = []
-            task_chunks = _split_tasks(tasks, group_size)
-            task_chunks_str = ['+'.join(ii) for ii in task_chunks]
+            with open('apg_id.json') as fp:
+                apg = json.load(fp)
+                self.apg_id = apg["apg_id"] 
+            self.task_chunks = _split_tasks(tasks, group_size)
+            task_chunks_str = ['+'.join(ii) for ii in self.task_chunks]
             task_hashes = [sha1(ii.encode('utf-8')).hexdigest() for ii in task_chunks_str]
-            nchunks = len(task_chunks)
+            nchunks = len(self.task_chunks)
             for ii in range(nchunks):
                 fn = 'jr.%.06d.json' % ii
                 if not os.path.exists(os.path.join(os.path.abspath(work_path), fn)):
-                    dispatchers.append([None, "unalloc"])
+                    self.dispatchers.append([None, "unalloc"])
                 else:
-                    job_record = JobRecord(work_path, task_chunks, fname = fn)
-                    cur_chunk = task_chunks[ii]
+                    job_record = JobRecord(work_path, self.task_chunks, fname = fn)
+                    cur_chunk = self.task_chunks[ii]
                     cur_hash = task_hashes[ii]
                     if not job_record.check_finished(cur_hash): 
-                        self.task_chunks.append(cur_chunk)
                         with open(os.path.join(work_path, 'jr.%.06d.json' % ii)) as fp:
                             jr = json.load(fp)
                             ip = jr[cur_hash]['context'][3]
                             instance_id = jr[cur_hash]['context'][4]
-                            ip_list.append(ip)
-                            instance_list.append(instance_id)
+                            self.ip_list.append(ip)
+                            self.instance_list.append(instance_id)
                             profile = self.mdata_machine.copy()
                             profile['hostname'] = ip
                             profile['instance_id'] = instance_id
                             disp = Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
-                            dispatchers.append([disp, "working"])
+                            self.dispatchers.append([disp, "working"])
+                            self.job_handlers.append(None)
                     else:
-                        dispatchers.append([None, "finished"])
-            self.dispatchers = dispatchers
-            self.instance_list = instance_list
-            self.ip_list = ip_list
+                        with open(os.path.join(work_path, 'jr.%.06d.json' % ii)) as fp:
+                            jr = json.load(fp)
+                            ip = jr[cur_hash]['context'][3]
+                            instance_id = jr[cur_hash]['context'][4]
+                            self.ip_list.append(ip)
+                            self.instance_list.append(instance_id)
+                            self.dispatchers.append([None, "finished"])
+                            self.job_handlers.append(None)
             return True
         else:
             return False
@@ -303,7 +309,6 @@ class ALI():
                  errlog = 'err'):
         if not self.task_chunks:
             self.task_chunks = _split_tasks(tasks, group_size)
-        self.job_handlers = []
         for ii in range(self.nchunks):
             if self.dispatchers[ii][1] == "working":
                 job_handler = self.dispatchers[ii][0].submit_jobs(resources,
@@ -317,7 +322,7 @@ class ALI():
                                                                forward_task_deference,
                                                                outlog,
                                                                errlog)
-                self.job_handlers.append(job_handler)
+                self.job_handlers[ii] = job_handler
         while True:
             for ii in range(self.nchunks):
                 if self.dispatchers[ii][1] == "working" and self.dispatchers[ii][0].all_finished(self.job_handlers[ii], mark_failure):
