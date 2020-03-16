@@ -29,18 +29,24 @@ from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher
 
 
 
-def create_path (path) :
+def create_path (path,back=False) :
     if  path[-1] != "/":
         path += '/'
     if os.path.isdir(path) : 
-        dirname = os.path.dirname(path)        
-        counter = 0
-        while True :
-            bk_dirname = dirname + ".bk%03d" % counter
-            if not os.path.isdir(bk_dirname) : 
-                shutil.move (dirname, bk_dirname) 
-                break
-            counter += 1
+        if back:
+           dirname = os.path.dirname(path)        
+           counter = 0
+           while True :
+               bk_dirname = dirname + ".bk%03d" % counter
+               if not os.path.isdir(bk_dirname) : 
+                   shutil.move (dirname, bk_dirname) 
+                   break
+               counter += 1
+           os.makedirs (path)
+           return path
+        else:
+           return path
+
     os.makedirs (path)
     return path
 
@@ -240,7 +246,10 @@ def make_super_cell_poscar(jdata) :
     cwd = os.getcwd()
     to_file = os.path.abspath(to_file)
     os.chdir(path_work)
-    os.symlink(os.path.relpath(to_file), 'POSCAR')
+    try:
+        os.symlink(os.path.relpath(to_file), 'POSCAR')
+    except FileExistsError:
+        pass
     os.chdir(cwd)
 
 def make_combines (dim, natoms) :
@@ -319,9 +328,15 @@ def make_vasp_relax (jdata, mdata) :
     for ss in sys_list:
         os.chdir(ss)
         ln_src = os.path.relpath(os.path.join(work_dir,'INCAR'))
-        os.symlink(ln_src, 'INCAR')
+        try:
+           os.symlink(ln_src, 'INCAR')
+        except FileExistsError:
+           pass
         ln_src = os.path.relpath(os.path.join(work_dir,'POTCAR'))
-        os.symlink(ln_src, 'POTCAR')
+        try:
+           os.symlink(ln_src, 'POTCAR')
+        except FileExistsError:
+           pass
         os.chdir(work_dir)
     os.chdir(cwd)
 
@@ -454,8 +469,15 @@ def make_vasp_md(jdata) :
                 shutil.copy2 (init_pos, 'POSCAR')
                 file_incar = os.path.join(path_md, 'INCAR')
                 file_potcar = os.path.join(path_md, 'POTCAR')
-                os.symlink(os.path.relpath(file_incar), 'INCAR')
-                os.symlink(os.path.relpath(file_potcar), 'POTCAR')
+                try:
+                    os.symlink(os.path.relpath(file_incar), 'INCAR')
+                except FileExistsError:
+                    pass
+                try:
+                    os.symlink(os.path.relpath(file_potcar), 'POTCAR')
+                except FileExistsError:
+                    pass
+                 
                 os.chdir(cwd)                
 
 def coll_vasp_md(jdata) :
