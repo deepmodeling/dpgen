@@ -73,7 +73,7 @@ class ALI():
         self.vsw_id = self.get_vsw_id(vpc_id)
         self.apg_id = self.create_apg()
         dlog.info("begin to create ess")
-        time.sleep(60)
+        time.sleep(90)
         self.instance_list = self.describe_apg_instances()
         self.ip_list = self.get_ip(self.instance_list)
 
@@ -221,22 +221,28 @@ class ALI():
             task_hashes = [sha1(ii.encode('utf-8')).hexdigest() for ii in task_chunks_str]
             nchunks = len(task_chunks)
             for ii in range(nchunks):
-                job_record = JobRecord(work_path, task_chunks, fname = 'jr.%.06d.json' % ii)
-                cur_chunk = task_chunks[ii]
-                cur_hash = task_hashes[ii]
-                if not job_record.check_finished(cur_hash): 
-                    self.task_chunks.append(cur_chunk)
-                    with open(os.path.join(work_path, 'jr.%.06d.json' % ii)) as fp:
-                        jr = json.load(fp)
-                        ip = jr[cur_hash]['context'][3]
-                        instance_id = jr[cur_hash]['context'][4]
-                        ip_list.append(ip)
-                        instance_list.append(instance_id)
-                        profile = self.mdata_machine.copy()
-                        profile['hostname'] = ip
-                        profile['instance_id'] = instance_id
-                        disp = Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
-                        dispatchers.append(disp)
+                fn = 'jr.%.06d.json' % ii
+                if not os.path.exists(os.path.join(os.path.abspath(work_path), fn)):
+                    dispatchers.append([None, "unalloc"])
+                else:
+                    job_record = JobRecord(work_path, task_chunks, fname = fn)
+                    cur_chunk = task_chunks[ii]
+                    cur_hash = task_hashes[ii]
+                    if not job_record.check_finished(cur_hash): 
+                        self.task_chunks.append(cur_chunk)
+                        with open(os.path.join(work_path, 'jr.%.06d.json' % ii)) as fp:
+                            jr = json.load(fp)
+                            ip = jr[cur_hash]['context'][3]
+                            instance_id = jr[cur_hash]['context'][4]
+                            ip_list.append(ip)
+                            instance_list.append(instance_id)
+                            profile = self.mdata_machine.copy()
+                            profile['hostname'] = ip
+                            profile['instance_id'] = instance_id
+                            disp = Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
+                            dispatchers.append([disp, "working"])
+                    else:
+                        dispatchers.append([None, "finished"])
             self.dispatchers = dispatchers
             self.instance_list = instance_list
             self.ip_list = ip_list
@@ -292,6 +298,7 @@ class ALI():
                  forward_task_files,
                  backward_task_files,
                  forward_task_deference = True,
+                 mark_failure = False,
                  outlog = 'log',
                  errlog = 'err'):
         if not self.task_chunks:
@@ -313,7 +320,7 @@ class ALI():
                 self.job_handlers.append(job_handler)
         while True:
             for ii in range(self.nchunks):
-                if self.dispatchers[ii][1] == "working" and self.dispatchers[ii][0].all_finished(self.job_handlers[ii]):
+                if self.dispatchers[ii][1] == "working" and self.dispatchers[ii][0].all_finished(self.job_handlers[ii], mark_failure):
                     self.dispatchers[ii][1] = "finished"
                     self.change_apg_capasity(self.nchunks - self.get_finished_job_num())
                     self.delete(ii)
