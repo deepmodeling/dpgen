@@ -89,7 +89,7 @@ class ALI():
         request.set_accept_format('json')
         request.set_TotalTargetCapacity(str(self.nchunks))
         request.set_LaunchTemplateId(self.template_id)
-        request.set_AutoProvisioningGroupName(''.join(random.choice(string.ascii_uppercase) for _ in range(20)))
+        request.set_AutoProvisioningGroupName(self.adata["instance_name"] + ''.join(random.choice(string.ascii_uppercase) for _ in range(20)))
         request.set_AutoProvisioningGroupType("maintain")
         request.set_SpotAllocationStrategy("lowest-price")
         request.set_SpotInstanceInterruptionBehavior("terminate")
@@ -219,7 +219,7 @@ class ALI():
             with open('apg_id.json') as fp:
                 apg = json.load(fp)
                 self.apg_id = apg["apg_id"] 
-            dlog.info(self.apg_id)
+            #dlog.info(self.apg_id)
             self.task_chunks = _split_tasks(tasks, group_size)
             task_chunks_str = ['+'.join(ii) for ii in self.task_chunks]
             task_hashes = [sha1(ii.encode('utf-8')).hexdigest() for ii in task_chunks_str]
