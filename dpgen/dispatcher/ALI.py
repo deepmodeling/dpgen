@@ -108,21 +108,25 @@ class ALI():
 
     def update_instance_list(self):
         instance_list = self.describe_apg_instances()
-        ip_list = []
-        if len(set(instance_list) - set(self.instance_list)) > 0:
-            ip_list = self.get_ip(list(set(instance_list) - set(self.instance_list)))
-            self.instance_list += list(set(instance_list) - set(self.instance_list))
-            self.ip_list += ip_list
+        ip_list = self.get_ip(instance_list)
+        self.instance_list += list(set(instance_list) - set(self.instance_list))
+        self.ip_list += list(set(ip_list) - set(self.ip_list))
+        #dlog.info("%d,%d,%d,%d"%(len(instance_list), len(ip_list), len(self.instance_list), len(self.ip_list)))
 
     def describe_apg_instances(self):
         request = DescribeAutoProvisioningGroupInstancesRequest()
         request.set_accept_format('json')
         request.set_AutoProvisioningGroupId(self.apg_id)
-        response = self.client.do_action_with_exception(request)
-        response = json.loads(response)
+        request.set_PageSize(100)
+        iteration = self.nchunks // 100
         instance_list = []
-        for ins in response["Instances"]["Instance"]:
-            instance_list.append(ins["InstanceId"])
+        for i in range(iteration + 1):
+            request.set_PageNumber(i+1)
+            response = self.client.do_action_with_exception(request)
+            response = json.loads(response)
+            for ins in response["Instances"]["Instance"]:
+                instance_list.append(ins["InstanceId"])
+        #dlog.info(instance_list)
         return instance_list
 
     def generate_config(self):
@@ -215,6 +219,7 @@ class ALI():
             with open('apg_id.json') as fp:
                 apg = json.load(fp)
                 self.apg_id = apg["apg_id"] 
+            dlog.info(self.apg_id)
             self.task_chunks = _split_tasks(tasks, group_size)
             task_chunks_str = ['+'.join(ii) for ii in self.task_chunks]
             task_hashes = [sha1(ii.encode('utf-8')).hexdigest() for ii in task_chunks_str]
@@ -279,8 +284,8 @@ class ALI():
                     response = json.loads(response)
                     ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]['IpAddress'][0])
         #dlog.info('create machine successfully, following are the ip addresses')
-        for ip in ip_list:
-            dlog.info(ip)
+        # for ip in ip_list:
+            # dlog.info(ip)
         return ip_list
 
     def get_finished_job_num(self):
@@ -305,6 +310,7 @@ class ALI():
                  errlog = 'err'):
         for ii in range(self.nchunks):
             if self.dispatchers[ii][1] == "working":
+                dlog.info(self.ip_list[ii])
                 job_handler = self.dispatchers[ii][0].submit_jobs(resources,
                                                                command,
                                                                work_path,
@@ -327,14 +333,13 @@ class ALI():
                     continue
                 elif self.dispatchers[ii][1] == "unalloc":
                     self.update_instance_list()
-                    #dlog.info(self.instance_list)
-                    #dlog.info(self.ip_list)
                     if ii < len(self.ip_list):
                         profile = self.mdata_machine.copy()
                         profile["hostname"] = self.ip_list[ii]
                         profile["instance_id"] = self.instance_list[ii]
                         disp = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
                         self.dispatchers[ii] = disp
+                        dlog.info(self.ip_list[ii])
                         job_handler = self.dispatchers[ii][0].submit_jobs(resources,
                                                                command,
                                                                work_path,
