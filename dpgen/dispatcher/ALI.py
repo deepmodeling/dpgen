@@ -47,7 +47,7 @@ class ALI():
         self.ip_list = []
         self.instance_list = []
         self.dispatchers = []
-        self.job_handlers = []
+        self.job_handlers = [None for i in range(nchunks)]
         self.task_chunks = None
         self.adata = adata
         self.apg_id = None
@@ -110,11 +110,9 @@ class ALI():
         instance_list = self.describe_apg_instances()
         ip_list = []
         if len(set(instance_list) - set(self.instance_list)) > 0:
-            self.instance_list += list(set(instance_list) - set(self.instance_list))
             ip_list = self.get_ip(list(set(instance_list) - set(self.instance_list)))
+            self.instance_list += list(set(instance_list) - set(self.instance_list))
             self.ip_list += ip_list
-            return True
-        return False
 
     def describe_apg_instances(self):
         request = DescribeAutoProvisioningGroupInstancesRequest()
@@ -201,13 +199,12 @@ class ALI():
                 return vpc["VSwitchIds"]["VSwitchId"]
 
     def change_apg_capasity(self, capasity):
-        if capasity == 0:
-            pass
         request = ModifyAutoProvisioningGroupRequest()
         request.set_accept_format('json')
         request.set_AutoProvisioningGroupId(self.apg_id)
         request.set_TotalTargetCapacity(str(capasity))
         request.set_SpotTargetCapacity(str(capasity))
+        request.set_PayAsYouGoTargetCapacity("0")
         response = self.client.do_action_with_exception(request)
 
     def spot_data_callback():
@@ -242,7 +239,6 @@ class ALI():
                             profile['instance_id'] = instance_id
                             disp = Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
                             self.dispatchers.append([disp, "working"])
-                            self.job_handlers.append(None)
                     else:
                         with open(os.path.join(work_path, 'jr.%.06d.json' % ii)) as fp:
                             jr = json.load(fp)
@@ -251,11 +247,11 @@ class ALI():
                             self.ip_list.append(ip)
                             self.instance_list.append(instance_id)
                             self.dispatchers.append([None, "finished"])
-                            self.job_handlers.append(None)
+            #dlog.info(self.ip_list)
+            #dlog.info(self.dispatchers)
             return True
         else:
             self.task_chunks = _split_tasks(tasks, group_size)
-            self.job_handlers = [None for i in range(len(self.task_chunks))]
             return False
 
     def get_ip(self, instance_list):
@@ -282,12 +278,10 @@ class ALI():
                     response = self.client.do_action_with_exception(request)
                     response = json.loads(response)
                     ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]['IpAddress'][0])
-        dlog.info('create machine successfully, following are the ip addresses')
+        #dlog.info('create machine successfully, following are the ip addresses')
         for ip in ip_list:
             dlog.info(ip)
         return ip_list
-        # with open('machine_record.json', 'w') as fp:
-        #     json.dump({'ip': self.ip_list, 'instance_id': self.instance_list}, fp, indent=4)
 
     def get_finished_job_num(self):
         finished_num = 0
@@ -327,17 +321,20 @@ class ALI():
             for ii in range(self.nchunks):
                 if self.dispatchers[ii][1] == "working" and self.dispatchers[ii][0].all_finished(self.job_handlers[ii], mark_failure):
                     self.dispatchers[ii][1] = "finished"
-                    self.change_apg_capasity(self.nchunks - self.get_finished_job_num())
                     self.delete(ii)
+                    self.change_apg_capasity(self.nchunks - self.get_finished_job_num())
                 elif self.dispatchers[ii][1] == "finished":
                     continue
-                elif self.dispatchers[ii][1] == "unalloc" and self.update_instance_list():
+                elif self.dispatchers[ii][1] == "unalloc":
+                    self.update_instance_list()
+                    #dlog.info(self.instance_list)
+                    #dlog.info(self.ip_list)
                     if ii < len(self.ip_list):
                         profile = self.mdata_machine.copy()
                         profile["hostname"] = self.ip_list[ii]
-                        disp = Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
-                        self.dispatchers[ii][0] = disp
-                        self.dispatchers[ii][1] == "working"
+                        profile["instance_id"] = self.instance_list[ii]
+                        disp = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
+                        self.dispatchers[ii] = disp
                         job_handler = self.dispatchers[ii][0].submit_jobs(resources,
                                                                command,
                                                                work_path,
@@ -349,7 +346,7 @@ class ALI():
                                                                forward_task_deference,
                                                                outlog,
                                                                errlog)
-                        self.job_handlers.append(job_handler)
+                        self.job_handlers[ii] = job_handler
             if self.check_dispatcher_finished():
                 os.remove('apg_id.json')
                 self.delete_template()
