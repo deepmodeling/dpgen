@@ -47,6 +47,10 @@ class Dispatcher(object):
             self.session = SSHSession(remote_profile)
             self.context = SSHContext
             self.uuid_names = False
+        elif context_type == 'ssh-uuid':
+            self.session = SSHSession(remote_profile)
+            self.context = SSHContext
+            self.uuid_names = True
         else :
             raise RuntimeError('unknown context')
         if batch_type == 'slurm':
@@ -308,10 +312,14 @@ def make_dispatcher(mdata, mdata_resource=None, work_path=None, run_tasks=None, 
         dispatcher.init(work_path, run_tasks, group_size)
         return dispatcher
     else:    
-        try:
-            hostname = mdata['hostname']
-            context_type = 'ssh'
-        except:
+        hostname = mdata.get('hostname', None)
+        use_uuid = mdata.get('use_uuid', False)
+        if hostname:
+            if use_uuid:
+                context_type = 'ssh-uuid'
+            else:
+                context_type = 'ssh'
+        else:
             context_type = 'local'
         try:
             batch_type = mdata['batch']

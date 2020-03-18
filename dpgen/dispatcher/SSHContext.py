@@ -205,7 +205,18 @@ class SSHContext (object):
     
     def check_finish(self, cmd_pipes):
         return cmd_pipes['stdout'].channel.exit_status_ready()
-        
+    
+    def check_running_uuid(self, uuid_names):
+        ## Check if the uuid.sub is running on remote machine
+        cnt = 0
+        ret, stdin, stdout, stderr = self.block_call("ps aux | grep %s"%uuid_names)
+        response_list = stdout.read().decode('utf-8').split("\n")
+        for response in response_list:
+            if  uuid_names + ".sub" in response:
+                return True
+        return False
+
+
     def get_return(self, cmd_pipes):
         if not self.check_finish(cmd_pipes):
             return None, None, None

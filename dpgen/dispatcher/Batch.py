@@ -9,6 +9,7 @@ class Batch(object) :
                   context, 
                   uuid_names = False) :
         self.context = context
+        self.uuid_names = uuid_names
         if uuid_names:
             self.finish_tag_name = '%s_tag_finished' % self.context.job_uuid
             self.sub_script_name = '%s.sub' % self.context.job_uuid
