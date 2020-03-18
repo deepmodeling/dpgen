@@ -16,6 +16,7 @@ from aliyunsdkecs.request.v20140526.DescribeImagesRequest import DescribeImagesR
 from aliyunsdkecs.request.v20140526.DescribeSecurityGroupsRequest import DescribeSecurityGroupsRequest
 import time, json, os, glob, string, random
 from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, JobRecord
+from dpgen.dispatcher.SSHContext import SSHSession
 from os.path import join
 from dpgen  import dlog
 from hashlib import sha1
@@ -106,7 +107,7 @@ class ALI():
             json.dump({'apg_id': response["AutoProvisioningGroupId"]}, fp, indent=4)
         return response["AutoProvisioningGroupId"]
 
-    def update_instance_list(self):
+    def update_instance_ip_list(self):
         instance_list = self.describe_apg_instances()
         ip_list = self.get_ip(instance_list)
         self.instance_list += list(set(instance_list) - set(self.instance_list))
@@ -323,16 +324,60 @@ class ALI():
                                                                outlog,
                                                                errlog)
                 self.job_handlers[ii] = job_handler
+        machine_exception_num = 0
+        exception_task_chunks = []
+        exception_jr_name = []
         while True:
-            for ii in range(self.nchunks):
-                if self.dispatchers[ii][1] == "working" and self.dispatchers[ii][0].all_finished(self.job_handlers[ii], mark_failure):
-                    self.dispatchers[ii][1] = "finished"
-                    self.delete(ii)
-                    self.change_apg_capasity(self.nchunks - self.get_finished_job_num())
+            dlog.info(self.ip_list)
+            dlog.info(self.task_chunks)
+            dlog.info(exception_task_chunks)
+            if machine_exception_num / self.nchunks > 0.05:
+                self.update_instance_ip_list()
+                dlog.info(self.ip_list)
+                if len(self.ip_list) == len(self.task_chunks) + len(exception_task_chunks):
+                    available_machine_num = len(self.ip_list) - len(self.task_chunks)
+                    for ii in range(len(self.task_chunks), len(self.ip_list)):
+                        profile = self.mdata_machine.copy()
+                        profile["hostname"] = self.ip_list[ii]
+                        profile["instance_id"] = self.instance_list[ii]
+                        disp = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record=exception_jr_name[ii-len(self.task_chunks)]), "working"]
+                        self.dispatchers.append(disp)
+                        dlog.info(self.ip_list[ii])
+                        job_handler = disp[0].submit_jobs(resources,
+                                                        command,
+                                                        work_path,
+                                                        exception_task_chunks[ii-len(self.task_chunks)],
+                                                        group_size,
+                                                        forward_common_files,
+                                                        forward_task_files,
+                                                        backward_task_files,
+                                                        forward_task_deference,
+                                                        outlog,
+                                                        errlog)
+                        self.job_handlers.append(job_handler)
+                        exception_jr_name.pop(ii-len(self.task_chunks))
+                        self.task_chunks.append(exception_task_chunks.pop(ii-len(self.task_chunks)))
+            for ii in range(len(self.task_chunks)):
+                if self.dispatchers[ii][1] == "working":
+                    if self.check_server(self.dispatchers[ii][0]):
+                        if self.dispatchers[ii][0].all_finished(self.job_handlers[ii], mark_failure):
+                            self.dispatchers[ii][1] = "finished"
+                            self.delete(ii)
+                            self.change_apg_capasity(self.nchunks - self.get_finished_job_num())
+                    else:
+                        machine_exception_num += 1
+                        exception_task_chunks.append(self.task_chunks.pop(ii))
+                        exception_jr_name.append(self.job_handlers[ii]["job_record"].fname[-14:])
+                        self.dispatchers.pop(ii)
+                        self.ip_list.pop(ii)
+                        self.instance_list.pop(ii)
+                        self.job_handlers.pop(ii)
+                        os.remove(self.job_handlers[ii]["job_record"].fname)
+                        break
                 elif self.dispatchers[ii][1] == "finished":
                     continue
                 elif self.dispatchers[ii][1] == "unalloc":
-                    self.update_instance_list()
+                    self.update_instance_ip_list()
                     if ii < len(self.ip_list):
                         profile = self.mdata_machine.copy()
                         profile["hostname"] = self.ip_list[ii]
@@ -360,7 +405,37 @@ class ALI():
             else:
                 time.sleep(10)
 
-# status = ["unalloc", "working", "finished"]
+# status = ["unalloc", "working", "finished", "exception"]
+    def check_server(self, dispatcher):
+        dlog.info("check server")
+        #dlog.info(dispatcher.remote_profile)
+        try:
+            session = SSHSession(dispatcher.remote_profile)
+        except:
+            dlog.info(False)
+            return False
+        dlog.info(True)
+        return True
+
+    def dispatcher_finish(self, dispatcher, job_handler, mark_failure):
+        job_record = job_handler['job_record']
+        rjob = job_handler['job_list'][0]
+        status = rjob['batch'].check_status()
+        if status == JobStatus.terminated :
+            machine_status = True
+            ssh_active_count = 0
+            while True:
+                if rjob['context'].ssh_session._check_alive():
+                    break
+                if not rjob['context'].ssh_session._check_alive():
+                    ssh_active_count += 1
+                if ssh_active_count == 3:
+                    machine_status = False
+                    break
+        if machine_status == False:
+            pass
+        else:
+            return dispatcher.all_finished(job_handler, mark_failure)
 
     def check_dispatcher_finished(self):
         for ii in range(len(self.dispatchers)):
