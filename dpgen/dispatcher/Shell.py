@@ -1,6 +1,7 @@
 import os,getpass,time
 from dpgen.dispatcher.Batch import Batch
 from dpgen.dispatcher.JobStatus import JobStatus
+import datetime
 
 def _default_item(resources, key, value) :
     if key not in resources :
@@ -11,7 +12,15 @@ class Shell(Batch) :
 
     def check_status(self) :
         if not hasattr(self, 'proc'):
-            return JobStatus.unsubmitted
+            if (self.uuid_names):
+                if self.context.check_file_exists("%s_tag_finished"%self.context.job_uuid):
+                    return JobStatus.finished
+                elif self.context.check_running_uuid(self.context.job_uuid):
+                    return JobStatus.running
+                else:
+                    return JobStatus.terminated
+            else:
+                return JobStatus.unsubmitted
         if not self.context.check_finish(self.proc) :
             return JobStatus.running
         elif (self.context.get_return(self.proc))[0] == 0 :

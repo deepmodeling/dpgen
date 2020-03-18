@@ -4,6 +4,9 @@
     "python_path":	"/home/wanghan/local/deepmd/1.*/python",
     "train_machine":	{
 	"batch":	"shell",
+    "_comment" : "If use_uuid is True, the batch script will be named as UUID.sub",
+    "_comment" : "In this way , shell can be restarted if DP-GEN is terminated ",
+    "use_uuid" : false,
 	"work_path" :	"/home/wanghan/tmp/subs/"
     },	
     "train_resources":	{

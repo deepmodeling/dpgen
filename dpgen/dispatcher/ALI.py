@@ -243,7 +243,7 @@ class ALI():
                             profile = self.mdata_machine.copy()
                             profile['hostname'] = ip
                             profile['instance_id'] = instance_id
-                            disp = Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
+                            disp = Dispatcher(profile, context_type='ssh-uuid', batch_type='shell', job_record='jr.%.06d.json' % ii)
                             self.dispatchers.append([disp, "working"])
                     else:
                         with open(os.path.join(work_path, 'jr.%.06d.json' % ii)) as fp:
@@ -382,7 +382,7 @@ class ALI():
                         profile = self.mdata_machine.copy()
                         profile["hostname"] = self.ip_list[ii]
                         profile["instance_id"] = self.instance_list[ii]
-                        disp = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
+                        disp = [Dispatcher(profile, context_type='ssh-uuid', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
                         self.dispatchers[ii] = disp
                         dlog.info(self.ip_list[ii])
                         job_handler = self.dispatchers[ii][0].submit_jobs(resources,
@@ -461,7 +461,7 @@ class ALI():
                 profile = self.mdata_machine.copy()
                 profile['hostname'] = self.ip_list[ii]
                 profile['instance_id'] = self.instance_list[ii]
-                disp = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
+                disp = [Dispatcher(profile, context_type='ssh-uuid', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
             dispatchers.append(disp)
         return dispatchers
 
