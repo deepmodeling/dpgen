@@ -328,12 +328,12 @@ class ALI():
         exception_task_chunks = []
         exception_jr_name = []
         while True:
-            dlog.info(self.ip_list)
-            dlog.info(self.task_chunks)
-            dlog.info(exception_task_chunks)
+            #dlog.info(self.ip_list)
+            #dlog.info(self.task_chunks)
+            #dlog.info(exception_task_chunks)
             if machine_exception_num / self.nchunks > 0.05:
                 self.update_instance_ip_list()
-                dlog.info(self.ip_list)
+                #dlog.info(self.ip_list)
                 if len(self.ip_list) == len(self.task_chunks) + len(exception_task_chunks):
                     available_machine_num = len(self.ip_list) - len(self.task_chunks)
                     for ii in range(len(self.task_chunks), len(self.ip_list)):
@@ -407,14 +407,14 @@ class ALI():
 
 # status = ["unalloc", "working", "finished", "exception"]
     def check_server(self, dispatcher):
-        dlog.info("check server")
+        #dlog.info("check server")
         #dlog.info(dispatcher.remote_profile)
         try:
             session = SSHSession(dispatcher.remote_profile)
         except:
-            dlog.info(False)
+            #dlog.info(False)
             return False
-        dlog.info(True)
+        #dlog.info(True)
         return True
 
     def dispatcher_finish(self, dispatcher, job_handler, mark_failure):
