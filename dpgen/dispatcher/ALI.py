@@ -362,8 +362,8 @@ class ALI():
                                                         outlog,
                                                         errlog)
                         self.job_handlers.insert(pos, job_handler)
-                        exception_jr_name.pop(ii)
-                        self.task_chunks.insert(pos, exception_task_chunks.pop(ii))
+                        self.task_chunks.insert(pos, exception[ii][0])
+                        exception.pop(ii)
             for ii in range(len(self.task_chunks)):
                 if self.dispatchers[ii][1] == "working":
                     if self.check_server(self.dispatchers[ii][0]):
