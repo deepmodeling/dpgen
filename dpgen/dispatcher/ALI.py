@@ -243,8 +243,11 @@ class ALI():
                             profile = self.mdata_machine.copy()
                             profile['hostname'] = ip
                             profile['instance_id'] = instance_id
-                            disp = Dispatcher(profile, context_type='ssh-uuid', batch_type='shell', job_record='jr.%.06d.json' % ii)
-                            self.dispatchers.append([disp, "working"])
+                            if self.check_server(profile):
+                                disp = Dispatcher(profile, context_type='ssh-uuid', batch_type='shell', job_record='jr.%.06d.json' % ii)
+                                self.dispatchers.append([disp, "working"])
+                            else:
+                                self.dispatchers.append([None, "unalloc"])
                     else:
                         with open(os.path.join(work_path, 'jr.%.06d.json' % ii)) as fp:
                             jr = json.load(fp)
@@ -363,10 +366,10 @@ class ALI():
                                                         errlog)
                         self.job_handlers.insert(pos, job_handler)
                         self.task_chunks.insert(pos, exception[ii][0])
-                        exception.pop(ii)
+                    exception = []
             for ii in range(len(self.task_chunks)):
                 if self.dispatchers[ii][1] == "working":
-                    if self.check_server(self.dispatchers[ii][0]):
+                    if self.check_server(self.dispatchers[ii][0].remote_profile):
                         if self.dispatchers[ii][0].all_finished(self.job_handlers[ii], mark_failure):
                             self.dispatchers[ii][1] = "finished"
                             self.delete(ii)
@@ -413,11 +416,11 @@ class ALI():
                 time.sleep(10)
 
 # status = ["unalloc", "working", "finished", "exception"]
-    def check_server(self, dispatcher):
+    def check_server(self, profile):
         #dlog.info("check server")
         for ii in range(3):
             try:
-                session = SSHSession(dispatcher.remote_profile)
+                session = SSHSession(profile)
                 #dlog.info(True)
                 return True
             except:
