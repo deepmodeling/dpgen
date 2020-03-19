@@ -392,21 +392,31 @@ class ALI():
                         profile = self.mdata_machine.copy()
                         profile["hostname"] = self.ip_list[ii]
                         profile["instance_id"] = self.instance_list[ii]
-                        disp = [Dispatcher(profile, context_type='ssh-uuid', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
-                        self.dispatchers[ii] = disp
-                        dlog.info(self.ip_list[ii])
-                        job_handler = self.dispatchers[ii][0].submit_jobs(resources,
-                                                               command,
-                                                               work_path,
-                                                               self.task_chunks[ii],
-                                                               group_size,
-                                                               forward_common_files,
-                                                               forward_task_files,
-                                                               backward_task_files,
-                                                               forward_task_deference,
-                                                               outlog,
-                                                               errlog)
-                        self.job_handlers[ii] = job_handler
+                        if self.check_server(profile):
+                            disp = [Dispatcher(profile, context_type='ssh-uuid', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
+                            self.dispatchers[ii] = disp
+                            dlog.info(self.ip_list[ii])
+                            job_handler = self.dispatchers[ii][0].submit_jobs(resources,
+                                                                   command,
+                                                                   work_path,
+                                                                   self.task_chunks[ii],
+                                                                   group_size,
+                                                                   forward_common_files,
+                                                                   forward_task_files,
+                                                                   backward_task_files,
+                                                                   forward_task_deference,
+                                                                   outlog,
+                                                                   errlog)
+                            self.job_handlers[ii] = job_handler
+                        else:
+                            machine_exception_num += 1
+                            exception.append([self.task_chunks.pop(ii), self.job_handlers[ii]["job_record"].fname[-14:], ii])
+                            self.dispatchers.pop(ii)
+                            self.ip_list.pop(ii)
+                            self.instance_list.pop(ii)
+                            self.job_handlers.pop(ii)
+                            dlog.info("remove %s" % self.job_handlers[ii]["job_record"].fname[-14:])
+                            break
             if self.check_dispatcher_finished():
                 os.remove('apg_id.json')
                 self.delete_template()
