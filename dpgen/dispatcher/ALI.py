@@ -410,12 +410,11 @@ class ALI():
                             self.job_handlers[ii] = job_handler
                         else:
                             machine_exception_num += 1
-                            exception.append([self.task_chunks.pop(ii), self.job_handlers[ii]["job_record"].fname[-14:], ii])
+                            exception.append([self.task_chunks.pop(ii), "jr.%.06d.json" % ii, ii])
                             self.dispatchers.pop(ii)
                             self.ip_list.pop(ii)
                             self.instance_list.pop(ii)
                             self.job_handlers.pop(ii)
-                            dlog.info("remove %s" % self.job_handlers[ii]["job_record"].fname[-14:])
                             break
             if self.check_dispatcher_finished():
                 os.remove('apg_id.json')
