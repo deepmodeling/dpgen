@@ -325,8 +325,7 @@ class ALI():
                                                                errlog)
                 self.job_handlers[ii] = job_handler
         machine_exception_num = 0
-        exception_task_chunks = []
-        exception_jr_name = []
+        exception = []
         while True:
             #dlog.info(self.ip_list)
             #dlog.info(self.task_chunks)
@@ -335,17 +334,18 @@ class ALI():
             if machine_exception_num / self.nchunks > 0.05:
                 self.update_instance_ip_list()
                 #dlog.info(self.ip_list)
-                if len(self.ip_list) == len(self.task_chunks) + len(exception_task_chunks):
-                    restart_ip_list = self.ip_list[-len(exception_task_chunks):]
-                    restart_instance_list = self.instance_list[-len(exception_task_chunks):]
-                    for ii in range(len(exception_task_chunks)):
+                if len(self.ip_list) == len(self.task_chunks) + len(exception):
+                    exception = sorted(exception, key=lambda x:x[2])
+                    restart_ip_list = self.ip_list[-len(exception):]
+                    restart_instance_list = self.instance_list[-len(exception):]
+                    for ii in range(len(exception)):
                         #dlog.info(exception_task_chunks[ii])
                         #dlog.info(exception_jr_name[ii])
                         profile = self.mdata_machine.copy()
                         profile["hostname"] = restart_ip_list[ii]
                         profile["instance_id"] = restart_instance_list[ii]
-                        disp = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record=exception_jr_name[ii]), "working"]
-                        pos = int(exception_task_chunks[ii][0])
+                        disp = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record=exception[ii][1]), "working"]
+                        pos = exception[ii][2]
                         self.dispatchers.insert(pos, disp)
                         self.ip_list.insert(pos, self.ip_list.pop(self.ip_list.index(profile["hostname"])))
                         self.instance_list.insert(pos, self.instance_list.pop(self.instance_list.index(profile["instance_id"])))
@@ -353,7 +353,7 @@ class ALI():
                         job_handler = disp[0].submit_jobs(resources,
                                                         command,
                                                         work_path,
-                                                        exception_task_chunks[ii],
+                                                        exception[ii][0],
                                                         group_size,
                                                         forward_common_files,
                                                         forward_task_files,
@@ -373,8 +373,7 @@ class ALI():
                             self.change_apg_capasity(self.nchunks - self.get_finished_job_num())
                     else:
                         machine_exception_num += 1
-                        exception_task_chunks.append(self.task_chunks.pop(ii))
-                        exception_jr_name.append(self.job_handlers[ii]["job_record"].fname[-14:])
+                        exception.append([self.task_chunks.pop(ii), self.job_handlers[ii]["job_record"].fname[-14:], ii])
                         self.dispatchers.pop(ii)
                         self.ip_list.pop(ii)
                         self.instance_list.pop(ii)
