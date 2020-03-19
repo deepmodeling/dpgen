@@ -331,22 +331,29 @@ class ALI():
             #dlog.info(self.ip_list)
             #dlog.info(self.task_chunks)
             #dlog.info(exception_task_chunks)
+            #dlog.info(exception_jr_name)
             if machine_exception_num / self.nchunks > 0.05:
                 self.update_instance_ip_list()
                 #dlog.info(self.ip_list)
                 if len(self.ip_list) == len(self.task_chunks) + len(exception_task_chunks):
-                    available_machine_num = len(self.ip_list) - len(self.task_chunks)
-                    for ii in range(len(self.task_chunks), len(self.ip_list)):
+                    restart_ip_list = self.ip_list[-len(exception_task_chunks):]
+                    restart_instance_list = self.instance_list[-len(exception_task_chunks):]
+                    for ii in range(len(exception_task_chunks)):
+                        #dlog.info(exception_task_chunks[ii])
+                        #dlog.info(exception_jr_name[ii])
                         profile = self.mdata_machine.copy()
-                        profile["hostname"] = self.ip_list[ii]
-                        profile["instance_id"] = self.instance_list[ii]
-                        disp = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record=exception_jr_name[ii-len(self.task_chunks)]), "working"]
-                        self.dispatchers.append(disp)
-                        dlog.info(self.ip_list[ii])
+                        profile["hostname"] = restart_ip_list[ii]
+                        profile["instance_id"] = restart_instance_list[ii]
+                        disp = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record=exception_jr_name[ii]), "working"]
+                        pos = int(exception_task_chunks[ii][0])
+                        self.dispatchers.insert(pos, disp)
+                        self.ip_list.insert(pos, self.ip_list.pop(self.ip_list.index(profile["hostname"])))
+                        self.instance_list.insert(pos, self.instance_list.pop(self.instance_list.index(profile["instance_id"])))
+                        dlog.info(restart_ip_list[ii])
                         job_handler = disp[0].submit_jobs(resources,
                                                         command,
                                                         work_path,
-                                                        exception_task_chunks[ii-len(self.task_chunks)],
+                                                        exception_task_chunks[ii],
                                                         group_size,
                                                         forward_common_files,
                                                         forward_task_files,
@@ -354,9 +361,9 @@ class ALI():
                                                         forward_task_deference,
                                                         outlog,
                                                         errlog)
-                        self.job_handlers.append(job_handler)
-                        exception_jr_name.pop(ii-len(self.task_chunks))
-                        self.task_chunks.append(exception_task_chunks.pop(ii-len(self.task_chunks)))
+                        self.job_handlers.insert(pos, job_handler)
+                        exception_jr_name.pop(ii)
+                        self.task_chunks.insert(pos, exception_task_chunks.pop(ii))
             for ii in range(len(self.task_chunks)):
                 if self.dispatchers[ii][1] == "working":
                     if self.check_server(self.dispatchers[ii][0]):
@@ -372,6 +379,7 @@ class ALI():
                         self.ip_list.pop(ii)
                         self.instance_list.pop(ii)
                         self.job_handlers.pop(ii)
+                        dlog.info("remove %s" % self.job_handlers[ii]["job_record"].fname[-14:])
                         os.remove(self.job_handlers[ii]["job_record"].fname)
                         break
                 elif self.dispatchers[ii][1] == "finished":
@@ -408,14 +416,15 @@ class ALI():
 # status = ["unalloc", "working", "finished", "exception"]
     def check_server(self, dispatcher):
         #dlog.info("check server")
-        #dlog.info(dispatcher.remote_profile)
-        try:
-            session = SSHSession(dispatcher.remote_profile)
-        except:
-            #dlog.info(False)
-            return False
-        #dlog.info(True)
-        return True
+        for ii in range(3):
+            try:
+                session = SSHSession(dispatcher.remote_profile)
+                #dlog.info(True)
+                return True
+            except:
+                pass
+        #dlog.info(False)
+        return False
 
     def dispatcher_finish(self, dispatcher, job_handler, mark_failure):
         job_record = job_handler['job_record']
