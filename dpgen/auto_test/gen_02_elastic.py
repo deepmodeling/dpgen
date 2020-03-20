@@ -3,9 +3,10 @@
 import os, re, argparse, filecmp, json, glob
 import subprocess as sp
 import numpy as np
-from dpgen import dlog
 import dpgen.auto_test.lib.vasp as vasp
 import dpgen.auto_test.lib.lammps as lammps
+
+from dpgen import dlog
 from dpgen.generator.lib.vasp import incar_upper
 from pymatgen.core.structure import Structure
 from pymatgen.analysis.elasticity.strain import Deformation, DeformedStructureSet, Strain
@@ -22,13 +23,13 @@ def make_vasp(jdata, conf_dir) :
     conf_path = os.path.abspath(conf_dir)
     conf_poscar = os.path.join(conf_path, 'POSCAR')
 
-    # get equi poscar
     if 'relax_incar' in jdata.keys():
         vasp_str='vasp-relax_incar'
     else:
         kspacing = jdata['vasp_params']['kspacing']
         vasp_str='vasp-k%.2f' % kspacing
 
+    # get equi poscar
     equi_path = re.sub('confs', global_equi_name, conf_path)
     equi_path = os.path.join(equi_path, vasp_str)
     equi_contcar = os.path.join(equi_path, 'CONTCAR')
