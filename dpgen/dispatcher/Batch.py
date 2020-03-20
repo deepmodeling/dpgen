@@ -7,14 +7,16 @@ from dpgen import dlog
 class Batch(object) :
     def __init__ (self,
                   context, 
-                  uuid_names = False) :
+                  uuid_names = True) :
         self.context = context
         self.uuid_names = uuid_names
         if uuid_names:
+            self.upload_tag_name = '%s_tag_upload' % self.context.job_uuid
             self.finish_tag_name = '%s_tag_finished' % self.context.job_uuid
             self.sub_script_name = '%s.sub' % self.context.job_uuid
             self.job_id_name = '%s_job_id' % self.context.job_uuid
         else:
+            self.upload_tag_name = 'tag_upload'
             self.finish_tag_name = 'tag_finished'
             self.sub_script_name = 'run.sub'
             self.job_id_name = 'job_id'

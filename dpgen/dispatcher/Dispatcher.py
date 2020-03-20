@@ -39,7 +39,7 @@ class Dispatcher(object):
         if context_type == 'local':
             self.session = LocalSession(remote_profile)
             self.context = LocalContext
-            self.uuid_names = False
+            self.uuid_names = True
         elif context_type == 'lazy-local':
             self.session = None
             self.context = LazyLocalContext
@@ -135,13 +135,13 @@ class Dispatcher(object):
                 batch = self.batch(context, uuid_names = self.uuid_names)
                 rjob = {'context':context, 'batch':batch}
                 # upload files
-                if not rjob['context'].check_file_exists('tag_upload'):
+                if not rjob['context'].check_file_exists(rjob['batch'].upload_tag_name):
                     rjob['context'].upload('.',
                                            forward_common_files)
                     rjob['context'].upload(cur_chunk,
                                            forward_task_files, 
                                            dereference = forward_task_deference)
-                    rjob['context'].write_file('tag_upload', '')
+                    rjob['context'].write_file(rjob['batch'].upload_tag_name, '')
                     dlog.debug('uploaded files for %s' % task_chunks_str[ii])
                 # submit new or recover old submission
                 if not submitted:
