@@ -9,8 +9,8 @@ from phonopy.structure.atoms import PhonopyAtoms
 import yaml
 
 from dpgen import ROOT_PATH
-from pymatgen.io.vasp import Incar,Kpoints,Potcar
-from dpgen.auto_test.lib.vasp import make_vasp_kpoints_from_incar
+from pymatgen.io.vasp import Incar
+from dpgen.generator.lib.vasp import incar_upper
 cvasp_file=os.path.join(ROOT_PATH,'generator/lib/cvasp.py')
 
 
@@ -121,9 +121,10 @@ def make_vasp(jdata, conf_dir) :
         user_incar_path = jdata['user_incar']
         assert(os.path.exists(user_incar_path))
         user_incar_path = os.path.abspath(user_incar_path)
-        fc = open(user_incar_path).read()
-        kspacing =float(re.findall((r"KSPACING(.+?)\n"),fc)[0].replace('=',''))
-        kgamma =('T' in re.findall((r"KGAMMA(.+?)\n"),fc)[0])
+        incar = incar_upper(Incar.from_file(user_incar_path))
+        fc = incar.get_string()
+        kspacing = incar['KSPACING']
+        kgamma = incar['KGAMMA']
     else :
         fp_params = jdata['vasp_params']
         ecut = fp_params['ecut']
@@ -154,7 +155,8 @@ def make_vasp(jdata, conf_dir) :
 #        fp.write(fc)
 
     # write kp
-    make_vasp_kpoints_from_incar(task_path,jdata)
+    fc = vasp.make_kspacing_kpoints('POSCAR', kspacing, kgamma)
+    with open('KPOINTS', 'w') as fp: fp.write(fc)
     #copy cvasp
     if ('cvasp' in jdata) and (jdata['cvasp'] == True):
        shutil.copyfile(cvasp_file, os.path.join(task_path,'cvasp.py'))
