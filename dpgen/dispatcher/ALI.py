@@ -243,9 +243,9 @@ class ALI():
                             profile = self.mdata_machine.copy()
                             profile['hostname'] = ip
                             profile['instance_id'] = instance_id
-                            if self.check_server(profile)
-                            disp = Dispatcher(profile, context_type='ssh-uuid', batch_type='shell', job_record='jr.%.06d.json' % ii)
-                            self.dispatchers.append([disp, "working"])
+                            if self.check_server(profile):
+                                disp = Dispatcher(profile, context_type='ssh-uuid', batch_type='shell', job_record='jr.%.06d.json' % ii)
+                                self.dispatchers.append([disp, "working"])
                     else:
                         with open(os.path.join(work_path, 'jr.%.06d.json' % ii)) as fp:
                             jr = json.load(fp)
@@ -375,16 +375,16 @@ class ALI():
                             self.dispatchers[ii][1] = "finished"
                             self.delete(ii)
                             self.change_apg_capasity(self.nchunks - self.get_finished_job_num())
-                    # else:
-                    #     machine_exception_num += 1
-                    #     exception.append([self.task_chunks.pop(ii), self.job_handlers[ii]["job_record"].fname[-14:], ii])
-                    #     self.dispatchers.pop(ii)
-                    #     self.ip_list.pop(ii)
-                    #     self.instance_list.pop(ii)
-                    #     self.job_handlers.pop(ii)
-                    #     dlog.info("remove %s" % self.job_handlers[ii]["job_record"].fname[-14:])
-                    #     os.remove(self.job_handlers[ii]["job_record"].fname)
-                    #     break
+                    else:
+                        machine_exception_num += 1
+                        exception.append([self.task_chunks.pop(ii), self.job_handlers[ii]["job_record"].fname[-14:], ii])
+                        self.dispatchers.pop(ii)
+                        self.ip_list.pop(ii)
+                        self.instance_list.pop(ii)
+                        self.job_handlers.pop(ii)
+                        dlog.info("remove %s" % self.job_handlers[ii]["job_record"].fname[-14:])
+                        os.remove(self.job_handlers[ii]["job_record"].fname)
+                        break
                 elif self.dispatchers[ii][1] == "finished":
                     continue
                 elif self.dispatchers[ii][1] == "unalloc":
