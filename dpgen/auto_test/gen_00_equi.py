@@ -5,10 +5,10 @@ import subprocess as sp
 import numpy as np
 import dpgen.auto_test.lib.vasp as vasp
 import dpgen.auto_test.lib.lammps as lammps
-#
+
 from dpgen import ROOT_PATH
-from pymatgen.io.vasp import Incar,Kpoints,Potcar
-from dpgen.auto_test.lib.vasp import make_vasp_kpoints_from_incar
+from pymatgen.io.vasp import Incar
+
 cvasp_file=os.path.join(ROOT_PATH,'generator/lib/cvasp.py')
 
 global_task_name = '00.equi'
@@ -53,7 +53,14 @@ def make_vasp(jdata, conf_dir) :
         relax_incar_path = jdata['relax_incar']
         assert(os.path.exists(relax_incar_path))
         relax_incar_path = os.path.abspath(relax_incar_path)
-        fc = open(relax_incar_path).read()
+        incar = incar_upper(Incar.from_file(relax_incar_path))
+        isif = 3
+        if incar.get('ISIF') != isif:
+            dlog.info("%s:%s setting ISIF to %d" % (__file__, make_vasp.__name__, isif))
+            incar['ISIF'] = isif
+        fc = incar.get_string()
+        kspacing = incar['KSPACING']
+        kgamma = incar['KGAMMA']
         vasp_path = os.path.join(equi_path, 'vasp-relax_incar' )
     else :
         fp_params = jdata['vasp_params']
@@ -68,7 +75,6 @@ def make_vasp(jdata, conf_dir) :
 
     os.makedirs(vasp_path, exist_ok = True)
     os.chdir(vasp_path)
-    print(vasp_path)
 
     # write incar
     with open('INCAR', 'w') as fp :
@@ -79,8 +85,9 @@ def make_vasp(jdata, conf_dir) :
         os.remove('POSCAR')
     os.symlink(os.path.relpath(to_poscar), 'POSCAR')
 
-    # write kp
-    make_vasp_kpoints_from_incar(vasp_path,jdata)
+    # gen kpoints
+    fc = vasp.make_kspacing_kpoints('POSCAR', kspacing, kgamma)
+    with open('KPOINTS', 'w') as fp: fp.write(fc)
 
     #copy cvasp
     if ('cvasp' in jdata) and (jdata['cvasp'] == True):
