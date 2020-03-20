@@ -6,6 +6,8 @@ import numpy as np
 import dpgen.auto_test.lib.vasp as vasp
 import dpgen.auto_test.lib.lammps as lammps
 
+from dpgen import dlog
+from dpgen.generator.lib.vasp import incar_upper
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar
 
