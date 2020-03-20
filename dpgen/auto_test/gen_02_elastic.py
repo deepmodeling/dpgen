@@ -3,17 +3,22 @@
 import os, re, argparse, filecmp, json, glob
 import subprocess as sp
 import numpy as np
+from dpgen import dlog
 import dpgen.auto_test.lib.vasp as vasp
 import dpgen.auto_test.lib.lammps as lammps
+from dpgen.generator.lib.vasp import incar_upper
 from pymatgen.core.structure import Structure
 from pymatgen.analysis.elasticity.strain import Deformation, DeformedStructureSet, Strain
+from pymatgen.io.vasp import Incar
 
 global_equi_name = '00.equi'
 global_task_name = '02.elastic'
 
-def make_vasp(jdata, conf_dir, norm_def = 2e-3, shear_def = 5e-3) :
-    norm_def = jdata['norm_deform']
-    shear_def = jdata['shear_deform']
+def make_vasp(jdata, conf_dir) :
+    default_norm_def = 2e-3
+    default_shear_def = 5e-3
+    norm_def = jdata.get('norm_deform', default_norm_def)
+    shear_def = jdata.get('shear_deform', default_shear_def)
     conf_path = os.path.abspath(conf_dir)
     conf_poscar = os.path.join(conf_path, 'POSCAR')
 
@@ -55,10 +60,14 @@ def make_vasp(jdata, conf_dir, norm_def = 2e-3, shear_def = 5e-3) :
     if  'relax_incar' in jdata.keys():
         relax_incar_path = jdata['relax_incar']
         assert(os.path.exists(relax_incar_path))
-        relax_incar_path = os.path.abspath(relax_incar_path)
-        fc = open(relax_incar_path).read()
-        kspacing =float(re.findall((r"KSPACING(.+?)\n"),fc)[0].replace('=',''))
-        kgamma =('T' in re.findall((r"KGAMMA(.+?)\n"),fc)[0])
+        relax_incar_path = os.path.abspath(relax_incar_path)        
+        incar = incar_upper(Incar.from_file(relax_incar_path))
+        if incar.get('ISIF') != 2:
+            dlog.info("%s:%s setting ISIF to 2" % (__file__, make_vasp.__name__))
+            incar['ISIF'] = 2
+        fc = incar.get_string()
+        kspacing = incar['KSPACING']
+        kgamma = incar['KGAMMA']
     else :
         fp_params = jdata['vasp_params']
         ecut = fp_params['ecut']
@@ -107,7 +116,8 @@ def make_vasp(jdata, conf_dir, norm_def = 2e-3, shear_def = 5e-3) :
         os.symlink(os.path.relpath(os.path.join(task_path, 'INCAR')), 'INCAR')
         os.symlink(os.path.relpath(os.path.join(task_path, 'POTCAR')), 'POTCAR')
         os.symlink(os.path.relpath(os.path.join(task_path, 'KPOINTS')), 'KPOINTS')
-    cwd = os.getcwd()
+    os.chdir(cwd)
+
 
 def make_lammps(jdata, conf_dir,task_type) :
     fp_params = jdata['lammps_params']
