@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
 
-import os, re, argparse, filecmp, json, glob
+import os, re, argparse, filecmp, json, glob, shutil
 import subprocess as sp
 import numpy as np
 import dpgen.auto_test.lib.vasp as vasp
 import dpgen.auto_test.lib.lammps as lammps
 from pymatgen.core.surface import generate_all_slabs, Structure
+
+from dpgen import ROOT_PATH
+from pymatgen.io.vasp import Incar,Kpoints,Potcar
+from dpgen.auto_test.lib.vasp import make_vasp_kpoints_from_incar
+cvasp_file=os.path.join(ROOT_PATH,'generator/lib/cvasp.py')
+
 
 global_equi_name = '00.equi'
 global_task_name = '05.surf'
@@ -122,6 +128,13 @@ def make_vasp(jdata, conf_dir, max_miller = 2, relax_box = False, static = False
         # link incar, potcar, kpoints
         os.symlink(os.path.relpath(os.path.join(task_path, 'INCAR')), 'INCAR')
         os.symlink(os.path.relpath(os.path.join(task_path, 'POTCAR')), 'POTCAR')
+
+        # write kp
+        make_vasp_kpoints_from_incar(struct_path,jdata)
+
+        #copy cvasp
+        if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+           shutil.copyfile(cvasp_file, os.path.join(struct_path,'cvasp.py'))
     cwd = os.getcwd()
 
 def make_lammps(jdata, conf_dir, max_miller = 2, static = False, relax_box = False, task_type = 'wrong-task') :

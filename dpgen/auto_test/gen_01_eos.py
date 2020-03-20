@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os, re, argparse, filecmp, json, glob
+import os, re, argparse, filecmp, json, glob, shutil
 import subprocess as sp
 import numpy as np
 import dpgen.auto_test.lib.vasp as vasp
@@ -10,6 +10,9 @@ from dpgen import dlog
 from dpgen.generator.lib.vasp import incar_upper
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp import Incar
+from dpgen import ROOT_PATH
+
+cvasp_file=os.path.join(ROOT_PATH,'generator/lib/cvasp.py')
 
 global_equi_name = '00.equi'
 global_task_name = '01.eos'
@@ -83,6 +86,8 @@ def make_vasp(jdata, conf_dir) :
             dlog.info("%s:%s setting ISIF to %d" % (__file__, make_vasp.__name__, isif))
             incar['ISIF'] = isif
         fc = incar.get_string()
+        kspacing = incar['KSPACING']
+        kgamma = incar['KGAMMA']
     else :
         fp_params = jdata['vasp_params']
         ecut = fp_params['ecut']
@@ -119,7 +124,14 @@ def make_vasp(jdata, conf_dir) :
         # print(scale)
         vasp.poscar_scale('POSCAR.orig', 'POSCAR', scale)
         # print(vol_path, vasp.poscar_vol('POSCAR') / vasp.poscar_natoms('POSCAR'))
+        # gen kpoints
+        fc = vasp.make_kspacing_kpoints('POSCAR', kspacing, kgamma)
+        with open('KPOINTS', 'w') as fp: fp.write(fc)
+        #copy cvasp
+        if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+           shutil.copyfile(cvasp_file, os.path.join(vol_path,'cvasp.py'))
         os.chdir(cwd)
+
 
 def make_lammps (jdata, conf_dir,task_type) :
     fp_params = jdata['lammps_params']

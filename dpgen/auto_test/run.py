@@ -72,8 +72,11 @@ def run_equi(task_type,jdata,mdata):
     if task_type=="vasp":
         mdata=decide_fp_machine(mdata)
 
-        forward_files = ['INCAR', 'POTCAR']
-        backward_files = ['OUTCAR', 'autotest.out' , 'CONTCAR','OSZICAR']
+        forward_files = ['INCAR', 'POTCAR', 'KPOINTS']
+        if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+           mdata['fp_resources']['cvasp'] = True
+           forward_files.append('cvasp.py')
+        backward_files = ['OUTCAR', task_type+'.out' , 'CONTCAR','OSZICAR']
         common_files=['POSCAR']
 
     #lammps
@@ -81,7 +84,7 @@ def run_equi(task_type,jdata,mdata):
         mdata = decide_model_devi_machine(mdata)
 
         forward_files = ['conf.lmp', 'lammps.in']
-        backward_files = ['dump.relax','log.lammps', 'autotest.out']
+        backward_files = ['dump.relax','log.lammps', task_type+'.out']
 
         fp_params = jdata['lammps_params']
         model_dir = fp_params['model_dir']
@@ -104,7 +107,10 @@ def run_equi(task_type,jdata,mdata):
     if len(run_tasks)==0: return
     machine,resources,command,group_size=util.get_machine_info(mdata,task_type)
     disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
-
+    #debug#
+    #print(' '.join(common_files))
+    #print(' '.join(forward_files))
+    #print(' '.join(backward_files))
     disp.run_jobs(resources,
                   command,
                   work_path,
@@ -113,8 +119,8 @@ def run_equi(task_type,jdata,mdata):
                   common_files,
                   forward_files,
                   backward_files,
-                  outlog='autotest.out',
-                  errlog='autotest.err')
+                  outlog=task_type+'.out',
+                  errlog=task_type+'.err')
 
 
 def cmpt_equi(task_type,jdata,mdata):
@@ -162,9 +168,12 @@ def run_eos(task_type,jdata,mdata):
     if task_type=="vasp":
         mdata=decide_fp_machine(mdata)
 
-        forward_files = ['INCAR', 'POSCAR','POTCAR']
-        backward_files = ['OUTCAR', 'autotest.out' , 'OSZICAR']
+        forward_files = ['INCAR', 'POSCAR','POTCAR','KPOINTS']
+        backward_files = ['OUTCAR', task_type+'.out' , 'OSZICAR']
         common_files=['INCAR','POTCAR']
+        if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+           mdata['fp_resources']['cvasp'] = True
+           forward_files.append('cvasp.py')
 
     #lammps
     elif task_type in lammps_task_type:
@@ -180,7 +189,7 @@ def run_eos(task_type,jdata,mdata):
         else:
             models = [os.path.join(model_dir,ii) for ii in model_name]
         forward_files = ['conf.lmp', 'lammps.in']+model_name
-        backward_files = ['log.lammps', 'autotest.out']
+        backward_files = ['log.lammps', task_type+'.out']
         common_files=['lammps.in']+model_name
 
         if len(model_name)>1 and task_type == 'deepmd':
@@ -201,8 +210,8 @@ def run_eos(task_type,jdata,mdata):
                   common_files,
                   forward_files,
                   backward_files,
-                  outlog='autotest.out',
-                  errlog='autotest.err')
+                  outlog=task_type+'.out',
+                  errlog=task_type+'.err')
 
 def cmpt_eos(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
@@ -239,8 +248,11 @@ def run_elastic(task_type,jdata,mdata):
         mdata=decide_fp_machine(mdata)
 
         forward_files = ['INCAR', 'POSCAR','POTCAR','KPOINTS']
-        backward_files = ['OUTCAR', 'autotest.out' , 'CONTCAR','OSZICAR']
+        backward_files = ['OUTCAR', task_type+'.out' , 'CONTCAR','OSZICAR']
         common_files=['INCAR','POTCAR','KPOINTS']
+        if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+           mdata['fp_resources']['cvasp'] = True
+           forward_files.append('cvasp.py')
 
     #lammps
     elif task_type in lammps_task_type:
@@ -256,7 +268,7 @@ def run_elastic(task_type,jdata,mdata):
         else:
             models = [os.path.join(model_dir,ii) for ii in model_name]
         forward_files = ['conf.lmp', 'lammps.in','strain.out']+model_name
-        backward_files = ['log.lammps', 'autotest.out']
+        backward_files = ['log.lammps', task_type+'.out']
         common_files=['lammps.in']+model_name
 
         if len(model_name)>1 and task_type == 'deepmd':
@@ -277,8 +289,8 @@ def run_elastic(task_type,jdata,mdata):
                   common_files,
                   forward_files,
                   backward_files,
-                  outlog='autotest.out',
-                  errlog='autotest.err')
+                  outlog=task_type+'.out',
+                  errlog=task_type+'.err')
 
 def cmpt_elastic(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
@@ -312,9 +324,12 @@ def run_vacancy(task_type,jdata,mdata):
     if task_type == "vasp":
         mdata=decide_fp_machine(mdata)
 
-        forward_files = ['INCAR', 'POSCAR','POTCAR']
-        backward_files = ['OUTCAR',  'autotest.out' , 'OSZICAR']
+        forward_files = ['INCAR', 'POSCAR','POTCAR','KPOINTS']
+        backward_files = ['OUTCAR',  task_type+'.out' , 'OSZICAR']
         common_files=['INCAR','POTCAR']
+        if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+           mdata['fp_resources']['cvasp'] = True
+           forward_files.append('cvasp.py')
 
     #lammps
     elif task_type in lammps_task_type:
@@ -331,7 +346,7 @@ def run_vacancy(task_type,jdata,mdata):
             models = [os.path.join(model_dir,ii) for ii in model_name]
         common_files = model_name
         forward_files = ['conf.lmp', 'lammps.in']+model_name
-        backward_files = ['log.lammps','autotest.out']
+        backward_files = ['log.lammps',task_type+'.out']
         common_files=['lammps.in']+model_name
 
         if len(model_name)>1 and task_type == 'deepmd':
@@ -352,8 +367,8 @@ def run_vacancy(task_type,jdata,mdata):
                   common_files,
                   forward_files,
                   backward_files,
-                  outlog='autotest.out',
-                  errlog='autotest.err')
+                  outlog=task_type+'.out',
+                  errlog=task_type+'.err')
 
 def cmpt_vacancy(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
@@ -396,9 +411,12 @@ def run_interstitial(task_type,jdata,mdata):
     if task_type == "vasp":
         mdata=decide_fp_machine(mdata)
 
-        forward_files = ['INCAR', 'POSCAR','POTCAR']
-        backward_files = ['OUTCAR',  'autotest.out' , 'XDATCAR','OSZICAR']
+        forward_files = ['INCAR', 'POSCAR','POTCAR',"KPOINTS"]
+        backward_files = ['OUTCAR',  task_type+'.out' , 'XDATCAR','OSZICAR']
         common_files=['INCAR']
+        if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+           mdata['fp_resources']['cvasp'] = True
+           forward_files.append('cvasp.py')
 
     #lammps
     elif task_type in lammps_task_type:
@@ -430,7 +448,7 @@ def run_interstitial(task_type,jdata,mdata):
         else:
             models = [os.path.join(model_dir,ii) for ii in model_name]
         forward_files = ['conf.lmp', 'lammps.in']+model_name
-        backward_files = ['log.lammps', 'autotest.out']
+        backward_files = ['log.lammps', task_type+'.out']
         common_files=['lammps.in']+model_name
 
         if len(model_name)>1 and task_type == 'deepmd':
@@ -455,8 +473,8 @@ def run_interstitial(task_type,jdata,mdata):
                           common_files,
                           forward_files,
                           backward_files,
-                          outlog='autotest.out',
-                          errlog='autotest.err')
+                          outlog=task_type+'.out',
+                          errlog=task_type+'.err')
     else:
         run_tasks = util.collect_task(all_task,task_type)
         if len(run_tasks)==0: return
@@ -469,8 +487,8 @@ def run_interstitial(task_type,jdata,mdata):
                       common_files,
                       forward_files,
                       backward_files,
-                      outlog='autotest.out',
-                      errlog='autotest.err')
+                      outlog=task_type+'.out',
+                      errlog=task_type+'.err')
 
 def cmpt_interstitial(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
@@ -518,9 +536,12 @@ def run_surf(task_type,jdata,mdata):
     if task_type == "vasp":
         mdata=decide_fp_machine(mdata)
 
-        forward_files = ['INCAR', 'POSCAR','POTCAR']
-        backward_files = ['OUTCAR',  'autotest.out' , 'OSZICAR']
+        forward_files = ['INCAR', 'POSCAR','POTCAR','KPOINTS']
+        backward_files = ['OUTCAR',  task_type+'.out' , 'OSZICAR']
         common_files=['INCAR','POTCAR']
+        if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+           mdata['fp_resources']['cvasp'] = True
+           forward_files.append('cvasp.py')
 
     #lammps
     elif task_type in lammps_task_type:
@@ -536,7 +557,7 @@ def run_surf(task_type,jdata,mdata):
         else:
             models = [os.path.join(model_dir,ii) for ii in model_name]
         forward_files = ['conf.lmp', 'lammps.in']+model_name
-        backward_files = ['log.lammps','autotest.out']
+        backward_files = ['log.lammps',task_type+'.out']
         common_files=['lammps.in']+model_name
 
         if len(model_name)>1 and task_type == 'deepmd':
@@ -557,8 +578,8 @@ def run_surf(task_type,jdata,mdata):
                   common_files,
                   forward_files,
                   backward_files,
-                  outlog='autotest.out',
-                  errlog='autotest.err')
+                  outlog=task_type+'.out',
+                  errlog=task_type+'.err')
 
 def cmpt_surf(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
@@ -603,9 +624,12 @@ def run_phonon(task_type,jdata,mdata):
         machine,resources,command,group_size=util.get_machine_info(mdata,task_type)
 
         run_tasks = util.collect_task(all_task,task_type)
-        forward_files = ['INCAR', 'POTCAR','KPOINTS']
-        backward_files = ['OUTCAR',  'autotest.out' , 'OSZICAR','vasprun.xml']
+        forward_files = ['INCAR', 'POTCAR','KPOINTS','KPOINTS']
+        backward_files = ['OUTCAR',  task_type+'.out' , 'OSZICAR','vasprun.xml']
         common_files=['POSCAR']
+        if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+           mdata['fp_resources']['cvasp'] = True
+           forward_files.append('cvasp.py')
 
         disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
         disp.run_jobs(resources,
@@ -616,8 +640,8 @@ def run_phonon(task_type,jdata,mdata):
                   common_files,
                   forward_files,
                   backward_files,
-                  outlog='autotest.out',
-                  errlog='autotest.err')
+                  outlog=task_type+'.out',
+                  errlog=task_type+'.err')
     #lammps
     elif task_type in lammps_task_type:
         None
@@ -651,10 +675,29 @@ def run_task (json_file, machine_file) :
 
     ii = jdata['task_type']
     jj=jdata['task']
-    task_list=['equi','eos','elastic','vacancy','interstitial','surf','phonon','all']
+    task_list=['equi','eos','elastic','vacancy','interstitial','surf','phonon']
+
+    if isinstance(jj,str):
+       if jj=='all':
+          all_task_list=task_list.copy()
+       else:
+          try:
+             assert jj in task_list
+          except AssertionError:
+             raise RuntimeError ("unknow task %s, something wrong" % jj)
+          all_task_list=[jj]
+    elif isinstance(jj,list):
+       try:
+          assert set(jj).issubset(set(task_list))
+       except AssertionError:
+          raise RuntimeError ("unknow task %s, some tasks may not supported" % ' '.join(jj))
+       all_task_list=jj.copy()
+    else:
+       raise RuntimeError ('unknow format for task, it must be a string or list')
+
     task_type_list=['vasp']+lammps_task_type
-    if jj not in task_list :
-        raise RuntimeError ("unknow task %s, something wrong" % jj)
+    #if jj not in task_list :
+    #    raise RuntimeError ("unknow task %s, something wrong" % jj)
     if ii not in task_type_list :
         raise RuntimeError ("unknow task type %s, something wrong" % ii)
 
@@ -672,51 +715,52 @@ def run_task (json_file, machine_file) :
     run_equi  (ii, jdata, mdata)
     log_iter ("cmpt_equi", ii,"equi")
     cmpt_equi (ii, jdata, mdata)
-    if  jj == "eos" or jj=="all":
-        log_iter ("gen_eos", ii, "eos")
-        gen_eos (ii, jdata, mdata)
-        log_iter ("run_eos", ii, "eos")
-        run_eos  (ii, jdata, mdata)
-        log_iter ("cmpt_eos", ii, "eos")
-        cmpt_eos (ii, jdata, mdata)
-    if jj=="elastic" or jj=="all":
-        log_iter ("gen_elastic", ii, "elastic")
-        gen_elastic (ii, jdata, mdata)
-        log_iter ("run_elastic", ii, "elastic")
-        run_elastic  (ii, jdata, mdata)
-        log_iter ("cmpt_elastic", ii, "elastic")
-        cmpt_elastic (ii, jdata, mdata)
-    if jj=="vacancy" or jj=="all":
-        log_iter ("gen_vacancy", ii, "vacancy")
-        gen_vacancy (ii, jdata, mdata)
-        log_iter ("run_vacancy", ii, "vacancy")
-        run_vacancy  (ii, jdata, mdata)
-        log_iter ("cmpt_vacancy", ii, "vacancy")
-        cmpt_vacancy (ii, jdata, mdata)
-    if jj=="interstitial" or jj=="all":
-        log_iter ("gen_interstitial", ii, "interstitial")
-        gen_interstitial (ii, jdata, mdata)
-        log_iter ("run_interstitial", ii, "interstitial")
-        run_interstitial  (ii, jdata, mdata)
-        log_iter ("cmpt_interstitial", ii, "interstitial")
-        cmpt_interstitial (ii, jdata, mdata)
-    if jj=="surf" or jj=="all":
-        log_iter ("gen_surf", ii, "surf")
-        gen_surf (ii, jdata, mdata)
-        log_iter ("run_surf", ii, "surf")
-        run_surf  (ii, jdata, mdata)
-        log_iter ("cmpt_surf", ii, "surf")
-        cmpt_surf (ii, jdata, mdata)
-    '''
-    if jj=="phonon":
-        log_iter ("gen_phonon", ii, "phonon")
-        gen_phonon (ii, jdata, mdata)
-        log_iter ("run_phonon", ii, "phonon")
-        run_phonon  (ii, jdata, mdata)
-        log_iter ("cmpt_phonon", ii, "phonon")
-        cmpt_phonon (ii, jdata, mdata)
-    '''
-    record_iter (record, confs, ii, jj)
+    for jj in all_task_list:
+       if  jj == "eos":
+           log_iter ("gen_eos", ii, "eos")
+           gen_eos (ii, jdata, mdata)
+           log_iter ("run_eos", ii, "eos")
+           run_eos  (ii, jdata, mdata)
+           log_iter ("cmpt_eos", ii, "eos")
+           cmpt_eos (ii, jdata, mdata)
+       if jj=="elastic":
+           log_iter ("gen_elastic", ii, "elastic")
+           gen_elastic (ii, jdata, mdata)
+           log_iter ("run_elastic", ii, "elastic")
+           run_elastic  (ii, jdata, mdata)
+           log_iter ("cmpt_elastic", ii, "elastic")
+           cmpt_elastic (ii, jdata, mdata)
+       if jj=="vacancy":
+           log_iter ("gen_vacancy", ii, "vacancy")
+           gen_vacancy (ii, jdata, mdata)
+           log_iter ("run_vacancy", ii, "vacancy")
+           run_vacancy  (ii, jdata, mdata)
+           log_iter ("cmpt_vacancy", ii, "vacancy")
+           cmpt_vacancy (ii, jdata, mdata)
+       if jj=="interstitial":
+           log_iter ("gen_interstitial", ii, "interstitial")
+           gen_interstitial (ii, jdata, mdata)
+           log_iter ("run_interstitial", ii, "interstitial")
+           run_interstitial  (ii, jdata, mdata)
+           log_iter ("cmpt_interstitial", ii, "interstitial")
+           cmpt_interstitial (ii, jdata, mdata)
+       if jj=="surf":
+           log_iter ("gen_surf", ii, "surf")
+           gen_surf (ii, jdata, mdata)
+           log_iter ("run_surf", ii, "surf")
+           run_surf  (ii, jdata, mdata)
+           log_iter ("cmpt_surf", ii, "surf")
+           cmpt_surf (ii, jdata, mdata)
+       '''
+       if jj=="phonon":
+           log_iter ("gen_phonon", ii, "phonon")
+           gen_phonon (ii, jdata, mdata)
+           log_iter ("run_phonon", ii, "phonon")
+           run_phonon  (ii, jdata, mdata)
+           log_iter ("cmpt_phonon", ii, "phonon")
+           cmpt_phonon (ii, jdata, mdata)
+       '''
+       record_iter (record, confs, ii, jj)
 
 def gen_test(args):
     logging.info ("start auto-testing")

@@ -45,7 +45,7 @@ class Test01(unittest.TestCase):
         self.assertEqual(pot0, pot1)
         # check subdir
         for ii in dfm_dirs:
-            self.assertFalse(os.path.isfile(os.path.join(ii, 'KPOINTS')))
+            self.assertTrue(os.path.isfile(os.path.join(ii, 'KPOINTS')))
             self.assertEqual(os.path.realpath(os.path.join(ii, 'POSCAR.orig')),
                              os.path.realpath(os.path.join(equi_path, 'CONTCAR')))
             self.assertEqual(os.path.realpath(os.path.join(ii, 'INCAR')),

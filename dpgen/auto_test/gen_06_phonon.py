@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os, re, argparse, filecmp, json, glob
+import os, re, argparse, filecmp, json, glob, shutil
 import subprocess as sp
 import numpy as np
 import dpgen.auto_test.lib.vasp as vasp
@@ -8,6 +8,10 @@ import dpgen.auto_test.lib.lammps as lammps
 from phonopy.structure.atoms import PhonopyAtoms
 import yaml
 
+from dpgen import ROOT_PATH
+from pymatgen.io.vasp import Incar,Kpoints,Potcar
+from dpgen.auto_test.lib.vasp import make_vasp_kpoints_from_incar
+cvasp_file=os.path.join(ROOT_PATH,'generator/lib/cvasp.py')
 
 
 global_equi_name = '00.equi'
@@ -145,9 +149,16 @@ def make_vasp(jdata, conf_dir) :
             with open(fname) as infile:
                 outfile.write(infile.read())
     # gen kpoints
-    fc = vasp.make_kspacing_kpoints(task_poscar, kspacing, kgamma)
-    with open(os.path.join(task_path,'KPOINTS'), 'w') as fp:
-        fp.write(fc)
+#    fc = vasp.make_kspacing_kpoints(task_poscar, kspacing, kgamma)
+#    with open(os.path.join(task_path,'KPOINTS'), 'w') as fp:
+#        fp.write(fc)
+
+    # write kp
+    make_vasp_kpoints_from_incar(task_path,jdata)
+    #copy cvasp
+    if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+       shutil.copyfile(cvasp_file, os.path.join(task_path,'cvasp.py'))
+
     # gen band.conf
     os.chdir(task_path)
     with open('band.conf','w') as fp:

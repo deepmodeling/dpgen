@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os, re, argparse, filecmp, json, glob
+import os, re, argparse, filecmp, json, glob, shutil
 import subprocess as sp
 import numpy as np
 import dpgen.auto_test.lib.vasp as vasp
@@ -11,6 +11,9 @@ from dpgen.generator.lib.vasp import incar_upper
 from pymatgen.core.structure import Structure
 from pymatgen.analysis.elasticity.strain import Deformation, DeformedStructureSet, Strain
 from pymatgen.io.vasp import Incar
+from dpgen import ROOT_PATH
+
+cvasp_file=os.path.join(ROOT_PATH,'generator/lib/cvasp.py')
 
 global_equi_name = '00.equi'
 global_task_name = '02.elastic'
@@ -117,6 +120,9 @@ def make_vasp(jdata, conf_dir) :
         os.symlink(os.path.relpath(os.path.join(task_path, 'INCAR')), 'INCAR')
         os.symlink(os.path.relpath(os.path.join(task_path, 'POTCAR')), 'POTCAR')
         os.symlink(os.path.relpath(os.path.join(task_path, 'KPOINTS')), 'KPOINTS')
+        #copy cvasp
+        if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+           shutil.copyfile(cvasp_file, os.path.join(dfm_path,'cvasp.py'))
     os.chdir(cwd)
 
 
