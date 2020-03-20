@@ -8,6 +8,7 @@ import dpgen.auto_test.lib.lammps as lammps
 
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar
+from dpgen.generator.lib.vasp import incar_upper
 
 cvasp_file=os.path.join(ROOT_PATH,'generator/lib/cvasp.py')
 
