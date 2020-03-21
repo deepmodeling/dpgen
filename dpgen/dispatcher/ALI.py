@@ -463,7 +463,7 @@ class ALI():
 
     def check_dispatcher_finished(self):
         for ii in range(len(self.dispatchers)):
-            if self.dispatchers[ii][1] == "unalloc" or self.dispatchers[ii][1] == "working":
+            if self.dispatchers[ii][1] == "unalloc" or self.dispatchers[ii][1] == "working" or self.dispatchers[ii][1] == "exception":
                 return False
         return True
    
