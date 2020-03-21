@@ -65,7 +65,7 @@ class ALI():
             pass
         else:
             self.create_ess()
-            self.dispatchers = self.make_dispatchers()
+            self.make_dispatchers()
 
     def create_ess(self):
         img_id = self.get_image_id(self.adata["img_name"])
@@ -75,8 +75,11 @@ class ALI():
         self.apg_id = self.create_apg()
         dlog.info("begin to create ess")
         time.sleep(90)
-        self.instance_list = self.describe_apg_instances()
-        self.ip_list = self.get_ip(self.instance_list)
+        new_server_list = self.describe_apg_instances()
+        new_ip_list = self.get_ip(new_server_list)
+        for ii in range(len(new_server_list)):
+            self.instance_list[ii] = new_server_list[ii]
+            self.ip_list[ii] = new_ip_list[ii]
 
     def delete_apg(self):
         request = DeleteAutoProvisioningGroupRequest()
@@ -150,6 +153,7 @@ class ALI():
         request.set_ImageOwnerAlias("self")
         request.set_PasswordInherit(True)
         request.set_InstanceType("ecs.c6.large")
+        request.set_InstanceName(self.adata["instance_name"])
         request.set_SecurityGroupId(sg_id)
         request.set_VpcId(vpc_id)
         request.set_InternetMaxBandwidthIn(10)
@@ -455,19 +459,14 @@ class ALI():
         response = self.client.do_action_with_exception(request)
 
     def make_dispatchers(self):
-        dispatchers = []
-        if len(self.ip_list) < self.nchunks:
-            dlog.info("machine resources unsuffient, %d jobs are running, %d jobs are pending" %(len(self.ip_list), self.nchunks-len(self.ip_list)))
         for ii in range(self.nchunks):
             if ii >= len(self.ip_list):
-                disp = [None, "unalloc"]
+                break
             else:
                 profile = self.mdata_machine.copy()
                 profile['hostname'] = self.ip_list[ii]
                 profile['instance_id'] = self.instance_list[ii]
-                disp = [Dispatcher(profile, context_type='ssh-uuid', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
-            dispatchers.append(disp)
-        return dispatchers
+                self.dispatchers[ii] = [Dispatcher(profile, context_type='ssh-uuid', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
 
     def delete_machine(self):
         request = DeleteInstancesRequest()
