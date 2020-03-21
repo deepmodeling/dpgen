@@ -337,7 +337,7 @@ class ALI():
                 if len(new_server_list) + len(self.instance_list) == self.nchunks:
                     new_ip_list = self.get_ip(new_server_list)
                     for ii in range(self.nchunks):
-                        if self.dispatchers[ii][1] = "exception":
+                        if self.dispatchers[ii][1] == "exception":
                             self.ip_list[ii] = new_ip_list.pop()
                             self.instance_list[ii] = new_server_list.pop()
                             profile = self.mdata_machine.copy()
