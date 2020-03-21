@@ -435,7 +435,7 @@ class ALI():
                 #dlog.info(True)
                 return True
             except:
-                #time.sleep(60)
+                time.sleep(60)
                 dlog.info(False)
                 pass
         dlog.info(False)
