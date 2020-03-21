@@ -5,11 +5,13 @@ import subprocess as sp
 import numpy as np
 import dpgen.auto_test.lib.vasp as vasp
 import dpgen.auto_test.lib.lammps as lammps
-from pymatgen.core.structure import Structure
 
+from dpgen import dlog
+from dpgen.generator.lib.vasp import incar_upper
+from pymatgen.core.structure import Structure
+from pymatgen.io.vasp import Incar
 from dpgen import ROOT_PATH
-from pymatgen.io.vasp import Incar,Kpoints,Potcar
-from dpgen.auto_test.lib.vasp import make_vasp_kpoints_from_incar
+
 cvasp_file=os.path.join(ROOT_PATH,'generator/lib/cvasp.py')
 
 global_equi_name = '00.equi'
@@ -24,12 +26,26 @@ def make_vasp(jdata, conf_dir) :
     vol_start = jdata['vol_start']
     vol_end = jdata['vol_end']
     vol_step = jdata['vol_step']
-
+    eos_relax_cell_shape = jdata.get('eos_relax_cell_shape', True)
     conf_path = os.path.abspath(conf_dir)
+    conf_poscar = os.path.join(conf_path, 'POSCAR')
+
+    if 'relax_incar' in jdata.keys():
+        vasp_str='vasp-relax_incar'
+    else:
+        kspacing = jdata['vasp_params']['kspacing']
+        vasp_str='vasp-k%.2f' % kspacing
+
+    # get equi poscar
+    equi_path = re.sub('confs', global_equi_name, conf_path)
+    equi_path = os.path.join(equi_path, vasp_str)
+    equi_contcar = os.path.join(equi_path, 'CONTCAR')
     task_path = re.sub('confs', global_task_name, conf_path)
-    os.makedirs(task_path, exist_ok = True)
+    task_path = os.path.join(task_path, vasp_str)
+    os.makedirs(task_path, exist_ok = True)    
+    # link poscar
     cwd = os.getcwd()
-    from_poscar = os.path.join(conf_path, 'POSCAR')
+    from_poscar = os.path.join(equi_contcar)
     to_poscar = os.path.join(task_path, 'POSCAR')
     if os.path.exists(to_poscar) :
         assert(filecmp.cmp(from_poscar, to_poscar))
@@ -61,8 +77,17 @@ def make_vasp(jdata, conf_dir) :
         relax_incar_path = jdata['relax_incar']
         assert(os.path.exists(relax_incar_path))
         relax_incar_path = os.path.abspath(relax_incar_path)
-        fc = open(relax_incar_path).read()
-        vasp_path = os.path.join(task_path, 'vasp-relax_incar' )
+        incar = incar_upper(Incar.from_file(relax_incar_path))
+        if eos_relax_cell_shape:
+            isif = 4
+        else:
+            isif = 2
+        if incar.get('ISIF') != isif:
+            dlog.info("%s:%s setting ISIF to %d" % (__file__, make_vasp.__name__, isif))
+            incar['ISIF'] = isif
+        fc = incar.get_string()
+        kspacing = incar['KSPACING']
+        kgamma = incar['KGAMMA']
     else :
         fp_params = jdata['vasp_params']
         ecut = fp_params['ecut']
@@ -72,11 +97,8 @@ def make_vasp(jdata, conf_dir) :
         kspacing = fp_params['kspacing']
         kgamma = fp_params['kgamma']
         fc = vasp.make_vasp_relax_incar(ecut, ediff, is_alloy,  True, False, npar, kpar, kspacing, kgamma)
-        vasp_path = os.path.join(task_path, 'vasp-k%.2f' % kspacing)
 
-    os.makedirs(vasp_path, exist_ok = True)
-    os.chdir(vasp_path)
-    print(vasp_path)
+    os.chdir(task_path)
 
     with open('INCAR', 'w') as fp :
         fp.write(fc)
@@ -87,30 +109,29 @@ def make_vasp(jdata, conf_dir) :
                 outfile.write(infile.read())
     # loop over volumes
     for vol in np.arange(vol_start, vol_end, vol_step) :
-        vol_path = os.path.join(vasp_path, 'vol-%.2f' % vol)        
+        vol_path = os.path.join(task_path, 'vol-%.2f' % vol)        
         os.makedirs(vol_path, exist_ok = True)
         os.chdir(vol_path)
-        print(vol_path)
         for ii in ['INCAR', 'POTCAR', 'POSCAR.orig', 'POSCAR'] :
             if os.path.exists(ii) :
                 os.remove(ii)
         # link incar, potcar
-        os.symlink(os.path.relpath(os.path.join(vasp_path, 'INCAR')), 'INCAR')
-        os.symlink(os.path.relpath(os.path.join(vasp_path, 'POTCAR')), 'POTCAR')
+        os.symlink(os.path.relpath(os.path.join(task_path, 'INCAR')), 'INCAR')
+        os.symlink(os.path.relpath(os.path.join(task_path, 'POTCAR')), 'POTCAR')
         # gen poscar
         os.symlink(os.path.relpath(to_poscar), 'POSCAR.orig')
         scale = (vol / vol_to_poscar) ** (1./3.)
         # print(scale)
         vasp.poscar_scale('POSCAR.orig', 'POSCAR', scale)
         # print(vol_path, vasp.poscar_vol('POSCAR') / vasp.poscar_natoms('POSCAR'))
-        # write kp
-        make_vasp_kpoints_from_incar(vol_path,jdata)
-
+        # gen kpoints
+        fc = vasp.make_kspacing_kpoints('POSCAR', kspacing, kgamma)
+        with open('KPOINTS', 'w') as fp: fp.write(fc)
         #copy cvasp
         if ('cvasp' in jdata) and (jdata['cvasp'] == True):
            shutil.copyfile(cvasp_file, os.path.join(vol_path,'cvasp.py'))
-
         os.chdir(cwd)
+
 
 def make_lammps (jdata, conf_dir,task_type) :
     fp_params = jdata['lammps_params']

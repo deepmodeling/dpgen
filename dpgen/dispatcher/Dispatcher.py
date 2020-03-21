@@ -138,13 +138,14 @@ class Dispatcher(object):
                 batch = self.batch(context, uuid_names = self.uuid_names)
                 rjob = {'context':context, 'batch':batch}
                 # upload files
-                if not rjob['context'].check_file_exists('tag_upload'):
+                tag_upload = '%s_tag_upload' % rjob['context'].job_uuid
+                if not rjob['context'].check_file_exists(tag_upload):
                     rjob['context'].upload('.',
                                            forward_common_files)
                     rjob['context'].upload(cur_chunk,
                                            forward_task_files, 
                                            dereference = forward_task_deference)
-                    rjob['context'].write_file('tag_upload', '')
+                    rjob['context'].write_file(tag_upload, '')
                     dlog.debug('uploaded files for %s' % task_chunks_str[ii])
                 # submit new or recover old submission
                 if not submitted:
