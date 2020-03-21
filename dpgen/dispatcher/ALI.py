@@ -45,10 +45,10 @@ def manual_create(stage, machine_number):
 
 class ALI():
     def __init__(self, adata, mdata_resources, mdata_machine, nchunks):
-        self.ip_list = []
-        self.instance_list = []
-        self.dispatchers = []
-        self.job_handlers = [None for i in range(nchunks)]
+        self.ip_list = ["unalloc" for i in range(nchunks)]
+        self.instance_list = ["unalloc" for i in range(nchunks)]
+        self.dispatchers = [[None, "unalloc"] for i in range(nchunks)]
+        self.job_handlers = ["unalloc" for i in range(nchunks)]
         self.task_chunks = None
         self.adata = adata
         self.apg_id = None
@@ -107,12 +107,9 @@ class ALI():
             json.dump({'apg_id': response["AutoProvisioningGroupId"]}, fp, indent=4)
         return response["AutoProvisioningGroupId"]
 
-    def update_instance_ip_list(self):
+    def update_server_list(self):
         instance_list = self.describe_apg_instances()
-        ip_list = self.get_ip(instance_list)
-        self.instance_list += list(set(instance_list) - set(self.instance_list))
-        self.ip_list += list(set(ip_list) - set(self.ip_list))
-        #dlog.info("%d,%d,%d,%d"%(len(instance_list), len(ip_list), len(self.instance_list), len(self.ip_list)))
+        return list(set(instance_list) - set(self.instance_list))
 
     def describe_apg_instances(self):
         request = DescribeAutoProvisioningGroupInstancesRequest()
@@ -220,7 +217,6 @@ class ALI():
             with open('apg_id.json') as fp:
                 apg = json.load(fp)
                 self.apg_id = apg["apg_id"] 
-            #dlog.info(self.apg_id)
             self.task_chunks = _split_tasks(tasks, group_size)
             task_chunks_str = ['+'.join(ii) for ii in self.task_chunks]
             task_hashes = [sha1(ii.encode('utf-8')).hexdigest() for ii in task_chunks_str]
@@ -228,32 +224,38 @@ class ALI():
             for ii in range(nchunks):
                 fn = 'jr.%.06d.json' % ii
                 if not os.path.exists(os.path.join(os.path.abspath(work_path), fn)):
-                    self.dispatchers.append([None, "unalloc"])
+                    pass
                 else:
-                    job_record = JobRecord(work_path, self.task_chunks, fname = fn)
+                    job_record = JobRecord(work_path, self.task_chunks[ii], fname = fn)
                     cur_chunk = self.task_chunks[ii]
                     cur_hash = task_hashes[ii]
                     if not job_record.check_finished(cur_hash): 
-                        with open(os.path.join(work_path, 'jr.%.06d.json' % ii)) as fp:
+                        with open(os.path.join(work_path, fn)) as fp:
                             jr = json.load(fp)
                             ip = jr[cur_hash]['context'][3]
                             instance_id = jr[cur_hash]['context'][4]
-                            self.ip_list.append(ip)
-                            self.instance_list.append(instance_id)
                             profile = self.mdata_machine.copy()
                             profile['hostname'] = ip
                             profile['instance_id'] = instance_id
                             if self.check_server(profile):
                                 disp = Dispatcher(profile, context_type='ssh-uuid', batch_type='shell', job_record='jr.%.06d.json' % ii)
-                                self.dispatchers.append([disp, "working"])
+                                self.dispatchers[ii] = [disp, "working"]
+                                self.ip_list[ii] = ip
+                                self.instance_list[ii] = instance_id
+                            # spot callback
+                            else:
+                                os.remove(os.path.join(work_path, fn))
                     else:
-                        with open(os.path.join(work_path, 'jr.%.06d.json' % ii)) as fp:
-                            jr = json.load(fp)
-                            ip = jr[cur_hash]['context'][3]
-                            instance_id = jr[cur_hash]['context'][4]
-                            self.ip_list.append(ip)
-                            self.instance_list.append(instance_id)
-                            self.dispatchers.append([None, "finished"])
+                        self.ip_list[ii] = "finished"
+                        self.instance_list[ii] = "finished"
+                        self.dispatchers[ii] = [None, "finished"]
+                        # with open(os.path.join(work_path, fn)) as fp:
+                        #     jr = json.load(fp)
+                        #     ip = jr[cur_hash]['context'][3]
+                        #     instance_id = jr[cur_hash]['context'][4]
+                        #     self.ip_list.append("finished")
+                        #     self.instance_list.append("finished")
+                        #     self.dispatchers.append([None, "finished"])
             #dlog.info(self.ip_list)
             #dlog.info(self.dispatchers)
             return True
@@ -326,92 +328,78 @@ class ALI():
                                                                errlog)
                 self.job_handlers[ii] = job_handler
         machine_exception_num = 0
-        exception = []
         while True:
-            #dlog.info(self.ip_list)
-            #dlog.info(self.task_chunks)
-            #dlog.info(exception_task_chunks)
-            #dlog.info(exception_jr_name)
-            # if machine_exception_num / self.nchunks > 0.05:
-            #     try:
-            #         self.update_instance_ip_list()
-            #     except:
-            #         pass
-            #     #dlog.info(self.ip_list)
-            #     if len(self.ip_list) == len(self.task_chunks) + len(exception):
-            #         exception = sorted(exception, key=lambda x:x[2])
-            #         restart_ip_list = self.ip_list[-len(exception):]
-            #         restart_instance_list = self.instance_list[-len(exception):]
-            #         for ii in range(len(exception)):
-            #             #dlog.info(exception_task_chunks[ii])
-            #             #dlog.info(exception_jr_name[ii])
-            #             profile = self.mdata_machine.copy()
-            #             profile["hostname"] = restart_ip_list[ii]
-            #             profile["instance_id"] = restart_instance_list[ii]
-            #             disp = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record=exception[ii][1]), "working"]
-            #             pos = exception[ii][2]
-            #             self.dispatchers.insert(pos, disp)
-            #             self.ip_list.insert(pos, self.ip_list.pop(self.ip_list.index(profile["hostname"])))
-            #             self.instance_list.insert(pos, self.instance_list.pop(self.instance_list.index(profile["instance_id"])))
-            #             dlog.info(restart_ip_list[ii])
-            #             job_handler = disp[0].submit_jobs(resources,
-            #                                             command,
-            #                                             work_path,
-            #                                             exception[ii][0],
-            #                                             group_size,
-            #                                             forward_common_files,
-            #                                             forward_task_files,
-            #                                             backward_task_files,
-            #                                             forward_task_deference,
-            #                                             outlog,
-            #                                             errlog)
-            #             self.job_handlers.insert(pos, job_handler)
-            #             self.task_chunks.insert(pos, exception[ii][0])
-            #         exception = []
-            for ii in range(len(self.task_chunks)):
+            if machine_exception_num / self.nchunks > 0.05:
+                try:
+                    new_server_list = self.update_server_list()
+                except:
+                    pass
+                if len(new_server_list) + len(self.instance_list) == self.nchunks:
+                    new_ip_list = self.get_ip(new_server_list)
+                    for ii in range(self.nchunks):
+                        if self.dispatchers[ii][1] = "exception":
+                            self.ip_list[ii] = new_ip_list.pop()
+                            self.instance_list[ii] = new_server_list.pop()
+                            profile = self.mdata_machine.copy()
+                            profile["hostname"] = self.ip_list[ii]
+                            profile["instance_id"] = self.instance_list[ii]
+                            self.dispatchers[ii] = [Dispatcher(profile, context_type='ssh-uuid', batch_type='shell', job_record="jr.%.06d.json" % ii), "working"]
+                            dlog.info(self.ip_list[ii])
+                            job_handler = self.dispatchers[ii][0].submit_jobs(resources,
+                                                                              command,
+                                                                              work_path,
+                                                                              self.task_chunks[ii],
+                                                                              group_size,
+                                                                              forward_common_files,
+                                                                              forward_task_files,
+                                                                              backward_task_files,
+                                                                              forward_task_deference,
+                                                                              outlog,
+                                                                              errlog)
+                            self.job_handlers[ii] = job_handler
+            for ii in range(self.nchunks):
                 if self.dispatchers[ii][1] == "working":
                     if self.check_server(self.dispatchers[ii][0].remote_profile):
                         if self.dispatchers[ii][0].all_finished(self.job_handlers[ii], mark_failure):
                             self.dispatchers[ii][1] = "finished"
+                            self.ip_list[ii] = "finished"
+                            self.instance_list[ii] = "finished"
                             self.delete(ii)
                             self.change_apg_capasity(self.nchunks - self.get_finished_job_num())
                     else:
                         machine_exception_num += 1
-                        exception.append([self.task_chunks.pop(ii), self.job_handlers[ii]["job_record"].fname[-14:], ii])
-                        self.dispatchers.pop(ii)
-                        self.ip_list.pop(ii)
-                        self.instance_list.pop(ii)
-                        self.job_handlers.pop(ii)
-                        dlog.info("remove %s" % self.job_handlers[ii]["job_record"].fname[-14:])
+                        self.dispatchers[ii] = [None, "exception"]
+                        self.ip_list[ii] = "unalloc"
+                        self.instance_list[ii] = "unalloc"
                         os.remove(self.job_handlers[ii]["job_record"].fname)
-                        break
                 elif self.dispatchers[ii][1] == "finished":
                     continue
                 elif self.dispatchers[ii][1] == "unalloc":
-                    continue
-                    # try:
-                    #     self.update_instance_ip_list()
-                    # except:
-                    #     pass
-                    # if ii < len(self.ip_list):
-                    #     profile = self.mdata_machine.copy()
-                    #     profile["hostname"] = self.ip_list[ii]
-                    #     profile["instance_id"] = self.instance_list[ii]
-                    #     disp = [Dispatcher(profile, context_type='ssh-uuid', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
-                    #     self.dispatchers[ii] = disp
-                    #     dlog.info(self.ip_list[ii])
-                    #     job_handler = self.dispatchers[ii][0].submit_jobs(resources,
-                    #                                            command,
-                    #                                            work_path,
-                    #                                            self.task_chunks[ii],
-                    #                                            group_size,
-                    #                                            forward_common_files,
-                    #                                            forward_task_files,
-                    #                                            backward_task_files,
-                    #                                            forward_task_deference,
-                    #                                            outlog,
-                    #                                            errlog)
-                    #     self.job_handlers[ii] = job_handler
+                    try:
+                        new_server_list = self.update_server_list()
+                    except:
+                        pass
+                    if new_server_list:
+                        new_ip_list = self.get_ip(new_server_list)
+                        self.ip_list[ii] = new_ip_list.pop()
+                        self.instance_list[ii] = new_server_list.pop()
+                        profile = self.mdata_machine.copy()
+                        profile["hostname"] = self.ip_list[ii]
+                        profile["instance_id"] = self.instance_list[ii]
+                        self.dispatchers[ii] = [Dispatcher(profile, context_type='ssh-uuid', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
+                        dlog.info(self.ip_list[ii])
+                        job_handler = self.dispatchers[ii][0].submit_jobs(resources,
+                                                               command,
+                                                               work_path,
+                                                               self.task_chunks[ii],
+                                                               group_size,
+                                                               forward_common_files,
+                                                               forward_task_files,
+                                                               backward_task_files,
+                                                               forward_task_deference,
+                                                               outlog,
+                                                               errlog)
+                        self.job_handlers[ii] = job_handler
             if self.check_dispatcher_finished():
                 os.remove('apg_id.json')
                 self.delete_template()
@@ -430,28 +418,28 @@ class ALI():
                 return True
             except:
                 time.sleep(60)
-        #dlog.info(False)
+        dlog.info(False)
         return False
 
-    def dispatcher_finish(self, dispatcher, job_handler, mark_failure):
-        job_record = job_handler['job_record']
-        rjob = job_handler['job_list'][0]
-        status = rjob['batch'].check_status()
-        if status == JobStatus.terminated :
-            machine_status = True
-            ssh_active_count = 0
-            while True:
-                if rjob['context'].ssh_session._check_alive():
-                    break
-                if not rjob['context'].ssh_session._check_alive():
-                    ssh_active_count += 1
-                if ssh_active_count == 3:
-                    machine_status = False
-                    break
-        if machine_status == False:
-            pass
-        else:
-            return dispatcher.all_finished(job_handler, mark_failure)
+    # def dispatcher_finish(self, dispatcher, job_handler, mark_failure):
+    #     job_record = job_handler['job_record']
+    #     rjob = job_handler['job_list'][0]
+    #     status = rjob['batch'].check_status()
+    #     if status == JobStatus.terminated :
+    #         machine_status = True
+    #         ssh_active_count = 0
+    #         while True:
+    #             if rjob['context'].ssh_session._check_alive():
+    #                 break
+    #             if not rjob['context'].ssh_session._check_alive():
+    #                 ssh_active_count += 1
+    #             if ssh_active_count == 3:
+    #                 machine_status = False
+    #                 break
+    #     if machine_status == False:
+    #         pass
+    #     else:
+    #         return dispatcher.all_finished(job_handler, mark_failure)
 
     def check_dispatcher_finished(self):
         for ii in range(len(self.dispatchers)):
