@@ -205,7 +205,8 @@ class SSHContext (object):
     
     def check_finish(self, cmd_pipes):
         return cmd_pipes['stdout'].channel.exit_status_ready()
-        
+
+
     def get_return(self, cmd_pipes):
         if not self.check_finish(cmd_pipes):
             return None, None, None
