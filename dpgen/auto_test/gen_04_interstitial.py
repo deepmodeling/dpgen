@@ -10,8 +10,8 @@ from pymatgen.analysis.defects.core import Interstitial
 from pymatgen.analysis.defects.generators import InterstitialGenerator
 
 from dpgen import ROOT_PATH
-from pymatgen.io.vasp import Incar,Kpoints,Potcar
-from dpgen.auto_test.lib.vasp import make_vasp_kpoints_from_incar
+from pymatgen.io.vasp import Incar
+from dpgen.generator.lib.vasp import incar_upper
 cvasp_file=os.path.join(ROOT_PATH,'generator/lib/cvasp.py')
 
 
@@ -59,7 +59,11 @@ def _make_vasp(jdata, conf_dir, supercell, insert_ele) :
         relax_incar_path = jdata['relax_incar']
         assert(os.path.exists(relax_incar_path))
         relax_incar_path = os.path.abspath(relax_incar_path)
-        fc = open(relax_incar_path).read()
+        incar = incar_upper(Incar.from_file(relax_incar_path))
+        fc = incar.get_string()
+        kspacing = incar['KSPACING']
+        kgamma = incar['KGAMMA']
+
     else :
         fp_params = jdata['vasp_params']
         ecut = fp_params['ecut']
@@ -108,7 +112,8 @@ def _make_vasp(jdata, conf_dir, supercell, insert_ele) :
         np.savetxt('supercell.out', supercell, fmt='%d')
 
         # write kp
-        make_vasp_kpoints_from_incar(struct_path,jdata)
+        fc = vasp.make_kspacing_kpoints('POSCAR', kspacing, kgamma)
+        with open('KPOINTS', 'w') as fp: fp.write(fc)
 
         #copy cvasp
         if ('cvasp' in jdata) and (jdata['cvasp'] == True):

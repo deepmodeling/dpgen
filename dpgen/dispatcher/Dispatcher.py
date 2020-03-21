@@ -141,6 +141,7 @@ class Dispatcher(object):
                     rjob['context'].upload(cur_chunk,
                                            forward_task_files, 
                                            dereference = forward_task_deference)
+
                     rjob['context'].write_file(rjob['batch'].upload_tag_name, '')
                     dlog.debug('uploaded files for %s' % task_chunks_str[ii])
                 # submit new or recover old submission
