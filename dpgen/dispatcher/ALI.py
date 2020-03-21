@@ -338,7 +338,11 @@ class ALI():
                     new_server_list = self.update_server_list()
                 except:
                     pass
-                if len(new_server_list) + len(self.instance_list) == self.nchunks:
+                count = 0
+                for ii in range(self.nchunks):
+                    if self.instance_list[ii] == "exception":
+                        count += 1
+                if len(new_server_list) == count and len(new_server_list) > 0:
                     new_ip_list = self.get_ip(new_server_list)
                     for ii in range(self.nchunks):
                         if self.dispatchers[ii][1] == "exception":
@@ -361,21 +365,31 @@ class ALI():
                                                                               outlog,
                                                                               errlog)
                             self.job_handlers[ii] = job_handler
+            # dlog.info(self.ip_list)
+            # dlog.info(self.instance_list)
+            # dlog.info(self.dispatchers)
             for ii in range(self.nchunks):
                 if self.dispatchers[ii][1] == "working":
                     if self.check_server(self.dispatchers[ii][0].remote_profile):
+                        dlog.info(self.dispatchers)
                         if self.dispatchers[ii][0].all_finished(self.job_handlers[ii], mark_failure):
+                            self.delete(ii)
                             self.dispatchers[ii][1] = "finished"
                             self.ip_list[ii] = "finished"
                             self.instance_list[ii] = "finished"
-                            self.delete(ii)
                             self.change_apg_capasity(self.nchunks - self.get_finished_job_num())
                     else:
-                        machine_exception_num += 1
-                        self.dispatchers[ii] = [None, "exception"]
-                        self.ip_list[ii] = "unalloc"
-                        self.instance_list[ii] = "unalloc"
                         os.remove(self.job_handlers[ii]["job_record"].fname)
+                        machine_exception_num += 1
+                        dlog.info("exception")
+                        dlog.info("remove %s" % self.job_handlers[ii]["job_record"].fname)
+                        # dlog.info(self.ip_list)
+                        # dlog.info(self.instance_list)
+                        # dlog.info(self.dispatchers)
+                        self.dispatchers[ii] = [None, "exception"]
+                        self.job_handlers[ii] = "exception"
+                        self.ip_list[ii] = "exception"
+                        self.instance_list[ii] = "exception"
                 elif self.dispatchers[ii][1] == "finished":
                     continue
                 elif self.dispatchers[ii][1] == "unalloc":
@@ -421,7 +435,9 @@ class ALI():
                 #dlog.info(True)
                 return True
             except:
-                time.sleep(60)
+                #time.sleep(60)
+                dlog.info(False)
+                pass
         dlog.info(False)
         return False
 
@@ -460,9 +476,7 @@ class ALI():
 
     def make_dispatchers(self):
         for ii in range(self.nchunks):
-            if ii >= len(self.ip_list):
-                break
-            else:
+            if self.ip_list[ii] != "unalloc":
                 profile = self.mdata_machine.copy()
                 profile['hostname'] = self.ip_list[ii]
                 profile['instance_id'] = self.instance_list[ii]
