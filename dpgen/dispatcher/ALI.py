@@ -44,13 +44,12 @@ def manual_create(stage, machine_number):
         print(ali.ip_list)
 
 class ALI():
-    def __init__(self, adata, mdata_resources, mdata_machine, nchunks, stage):
+    def __init__(self, adata, mdata_resources, mdata_machine, nchunks):
         self.ip_list = ["unalloc" for i in range(nchunks)]
         self.instance_list = ["unalloc" for i in range(nchunks)]
         self.dispatchers = [[None, "unalloc"] for i in range(nchunks)]
         self.job_handlers = ["unalloc" for i in range(nchunks)]
         self.task_chunks = None
-        self.stage = stage
         self.adata = adata
         self.apg_id = None
         self.template_id = None
@@ -243,7 +242,7 @@ class ALI():
                             profile['hostname'] = ip
                             profile['instance_id'] = instance_id
                             if self.check_server(profile):
-                                disp = Dispatcher(profile, context_type='ssh-uuid', batch_type='shell', job_record='jr.%.06d.json' % ii)
+                                disp = Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
                                 self.dispatchers[ii] = [disp, "working"]
                                 self.ip_list[ii] = ip
                                 self.instance_list[ii] = instance_id
@@ -352,7 +351,7 @@ class ALI():
                             profile = self.mdata_machine.copy()
                             profile["hostname"] = self.ip_list[ii]
                             profile["instance_id"] = self.instance_list[ii]
-                            self.dispatchers[ii] = [Dispatcher(profile, context_type='ssh-uuid', batch_type='shell', job_record="jr.%.06d.json" % ii), "working"]
+                            self.dispatchers[ii] = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record="jr.%.06d.json" % ii), "working"]
                             dlog.info(self.ip_list[ii])
                             job_handler = self.dispatchers[ii][0].submit_jobs(resources,
                                                                               command,
@@ -409,7 +408,7 @@ class ALI():
                         profile = self.mdata_machine.copy()
                         profile["hostname"] = self.ip_list[ii]
                         profile["instance_id"] = self.instance_list[ii]
-                        self.dispatchers[ii] = [Dispatcher(profile, context_type='ssh-uuid', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
+                        self.dispatchers[ii] = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
                         dlog.info(self.ip_list[ii])
                         job_handler = self.dispatchers[ii][0].submit_jobs(resources,
                                                                command,
@@ -485,7 +484,7 @@ class ALI():
                 profile = self.mdata_machine.copy()
                 profile['hostname'] = self.ip_list[ii]
                 profile['instance_id'] = self.instance_list[ii]
-                self.dispatchers[ii] = [Dispatcher(profile, context_type='ssh-uuid', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
+                self.dispatchers[ii] = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
 
 
     def delete_machine(self):
