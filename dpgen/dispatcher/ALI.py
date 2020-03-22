@@ -397,6 +397,7 @@ class ALI():
                 elif self.dispatchers[ii][1] == "finished":
                     continue
                 elif self.dispatchers[ii][1] == "unalloc":
+                    new_ip_list = []
                     try:
                         new_server_list = self.update_server_list()
                         new_ip_list = self.get_ip(new_server_list)
