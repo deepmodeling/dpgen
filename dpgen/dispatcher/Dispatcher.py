@@ -35,19 +35,16 @@ class Dispatcher(object):
                   batch_type = 'slurm', 
                   job_record = 'jr.json'):
         self.remote_profile = remote_profile
+
         if context_type == 'local':
             self.session = LocalSession(remote_profile)
             self.context = LocalContext
-            self.uuid_names = False
+            self.uuid_names = True
         elif context_type == 'lazy-local':
             self.session = None
             self.context = LazyLocalContext
             self.uuid_names = True
         elif context_type == 'ssh':
-            self.session = SSHSession(remote_profile)
-            self.context = SSHContext
-            self.uuid_names = False
-        elif context_type == 'ssh-uuid':
             self.session = SSHSession(remote_profile)
             self.context = SSHContext
             self.uuid_names = True
@@ -138,14 +135,14 @@ class Dispatcher(object):
                 batch = self.batch(context, uuid_names = self.uuid_names)
                 rjob = {'context':context, 'batch':batch}
                 # upload files
-                tag_upload = '%s_tag_upload' % rjob['context'].job_uuid
-                if not rjob['context'].check_file_exists(tag_upload):
+                if not rjob['context'].check_file_exists(rjob['batch'].upload_tag_name):
                     rjob['context'].upload('.',
                                            forward_common_files)
                     rjob['context'].upload(cur_chunk,
                                            forward_task_files, 
                                            dereference = forward_task_deference)
-                    rjob['context'].write_file(tag_upload, '')
+
+                    rjob['context'].write_file(rjob['batch'].upload_tag_name, '')
                     dlog.debug('uploaded files for %s' % task_chunks_str[ii])
                 # submit new or recover old submission
                 if not submitted:
@@ -314,12 +311,9 @@ def make_dispatcher(mdata, mdata_resource=None, work_path=None, run_tasks=None, 
         return dispatcher
     else:    
         hostname = mdata.get('hostname', None)
-        use_uuid = mdata.get('use_uuid', False)
+        #use_uuid = mdata.get('use_uuid', False)
         if hostname:
-            if use_uuid:
-                context_type = 'ssh-uuid'
-            else:
-                context_type = 'ssh'
+            context_type = 'ssh'
         else:
             context_type = 'local'
         try:
@@ -327,10 +321,7 @@ def make_dispatcher(mdata, mdata_resource=None, work_path=None, run_tasks=None, 
         except:
             dlog.info('cannot find key "batch" in machine file, try to use deprecated key "machine_type"')
             batch_type = mdata['machine_type']
-        try:
-            lazy_local = mdata['lazy_local']
-        except:
-            lazy_local = False
+        lazy_local = (mdata.get('lazy-local', False)) or (mdata.get('lazy_local', False))
         if lazy_local and context_type == 'local':
             dlog.info('Dispatcher switches to the lazy local mode')
             context_type = 'lazy-local'

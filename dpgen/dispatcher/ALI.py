@@ -486,6 +486,7 @@ class ALI():
                 profile['instance_id'] = self.instance_list[ii]
                 self.dispatchers[ii] = [Dispatcher(profile, context_type='ssh-uuid', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
 
+
     def delete_machine(self):
         request = DeleteInstancesRequest()
         request.set_accept_format('json')
