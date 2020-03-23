@@ -128,6 +128,10 @@ def main():
                              help="the json file provides DP-GEN paramters, should be located in JOB_DIR")
     parser_coll.add_argument('-v',"--verbose", action = 'store_true',
                              help="print number of data in each system")
+    parser_coll.add_argument('-m',"--merge", action = 'store_true',
+                             help="merge the systems with the same chemical formula")
+    parser_coll.add_argument('-s',"--shuffle", action = 'store_true',
+                             help="shuffle the data systems")
     parser_coll.set_defaults(func=gen_collect)
 
     # simplify
