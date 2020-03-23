@@ -362,7 +362,8 @@ def make_train (iter_index,
             model_is = glob.glob(ii)
             model_is.sort()
             iter0_models += [os.path.abspath(ii) for ii in model_is]
-        assert(numb_models == len(iter0_models))
+        if len(iter0_models) > 0:
+            assert(numb_models == len(iter0_models))
         for ii in range(len(iter0_models)):
             old_model_files = glob.glob(os.path.join(iter0_models[ii], 'model.ckpt*'))
             _link_old_models(work_path, old_model_files, ii)
