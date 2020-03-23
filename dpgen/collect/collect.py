@@ -55,8 +55,12 @@ def collect_data(target_folder, param_file, output,
                              init_data[ii].get_nframes() ))            
         keys = list(coll_data.keys())
         keys.sort()
-        for idx,ii in enumerate(keys):
-            print(ptr_fmt % (str(sys_configs[idx]), 
+        for ii in keys:
+            if merge:
+                sys_str = ii
+            else :
+                sys_str = str(sys_configs[int(ii)])
+            print(ptr_fmt % (sys_str, 
                              coll_data[ii].formula,
                              coll_data[ii].get_natoms(),
                              coll_data[ii].get_nframes() ))
