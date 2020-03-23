@@ -194,6 +194,7 @@ def make_train (iter_index,
     model_devi_jobs = jdata['model_devi_jobs']
     use_ele_temp = jdata.get('use_ele_temp', 0)    
     training_iter0_model = jdata.get('training_iter0_model_path', [])
+    training_init_model = jdata.get('training_init_model', False)
     training_reuse_iter = jdata.get('training_reuse_iter')
     training_reuse_old_ratio = jdata.get('training_reuse_old_ratio', 0.2)
     training_reuse_stop_batch = jdata.get('training_reuse_stop_batch', 400000)
@@ -362,8 +363,8 @@ def make_train (iter_index,
             model_is = glob.glob(ii)
             model_is.sort()
             iter0_models += [os.path.abspath(ii) for ii in model_is]
-        if len(iter0_models) > 0:
-            assert(numb_models == len(iter0_models))
+        if training_init_model:
+            assert(numb_models == len(iter0_models)), "training_iter0_model should be provided, and the number of models should be equal to %d" % numb_models
         for ii in range(len(iter0_models)):
             old_model_files = glob.glob(os.path.join(iter0_models[ii], 'model.ckpt*'))
             _link_old_models(work_path, old_model_files, ii)
