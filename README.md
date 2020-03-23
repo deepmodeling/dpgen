@@ -471,6 +471,8 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | **sys_batch_size**      | List of integer   | [8, 8]                                                 | Each number  is the batch_size for training of corresponding system in `sys_configs`. If set to `auto`, batch size will be 32 divided by number of atoms. |
 | *#Training*
 | **numb_models**      | Integer      | 4 (recommend)                                                           | Number of models to be trained in `00.train`. |
+| training_iter0_model_path  | list of string  |  ["/path/to/model0_ckpt/", ...]  | The model used to init the first iter training. Number of element should be equal to `numb_models` |
+| training_init_model  | bool  |  False  | Iteration > 0, the model parameters will be initilized from the model trained at the previous iteration. Iteration == 0, the model parameters will be initialized from `training_iter0_model_path`.  |
 | **default_training_param** | Dict | {<br />... <br />"use_smooth": true, <br/>"sel_a": [16, 4], <br/>"rcut_smth": 0.5, <br/>"rcut": 5, <br/>"filter_neuron": [10, 20, 40], <br/>...<br />} | Training parameters for `deepmd-kit` in `00.train`. <br /> You can find instructions from here: (https://github.com/deepmodeling/deepmd-kit)..<br /> We commonly let `stop_batch` = 200 * `decay_steps`. |
 | *#Exploration*
 | **model_devi_dt** | Float | 0.002 (recommend) | Timestep for MD |
