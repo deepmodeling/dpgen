@@ -10,6 +10,7 @@ from dpgen.generator.run import gen_run
 from dpgen.data.gen import gen_init_bulk
 from dpgen.data.surf import gen_init_surf
 from dpgen.data.reaction import gen_init_reaction
+from dpgen.collect.collect import gen_collect
 from dpgen.simplify.simplify import gen_simplify
 from dpgen.auto_test.run import gen_test
 from dpgen.database.run import db_run
@@ -114,6 +115,20 @@ def main():
     parser_rr.add_argument('-v',"--verbose", action = 'store_true',
                            help="being loud")
     parser_rr.set_defaults(func=run_report)    
+
+    # collect
+    parser_coll = subparsers.add_parser(
+        "collect",
+        help="Collect data.")
+    parser_coll.add_argument("JOB_DIR", type=str, 
+                             help="the directory of the DP-GEN job")
+    parser_coll.add_argument("OUTPUT", type=str, 
+                             help="the output directory of data")
+    parser_coll.add_argument('-p',"--parameter", type=str, default = 'param.json',
+                             help="the json file provides DP-GEN paramters, should be located in JOB_DIR")
+    parser_coll.add_argument('-v',"--verbose", action = 'store_true',
+                             help="print number of data in each system")
+    parser_coll.set_defaults(func=gen_collect)
 
     # simplify
     parser_run = subparsers.add_parser(

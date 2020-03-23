@@ -42,6 +42,7 @@ setuptools.setup(
               'dpgen/database',
               'dpgen/tools',
               'dpgen/simplify',
+              'dpgen/collect',
     ],
     # data_files = [('dpgen/tools/', ['dpgen/tools/update_time.sh', ])],
     # package_data={'example':['*.json']},
