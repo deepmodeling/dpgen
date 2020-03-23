@@ -4,7 +4,10 @@ import os,sys,json,glob,argparse,dpdata
 import numpy as np
 from dpgen.generator.run import data_system_fmt
 
-def collect_data(target_folder, param_file, output, verbose = True, shuffle = True) :
+def collect_data(target_folder, param_file, output, 
+                 verbose = True, 
+                 shuffle = True, 
+                 merge = True) :
     target_folder = os.path.abspath(target_folder)
     output = os.path.abspath(output)
     # goto input    
@@ -35,7 +38,10 @@ def collect_data(target_folder, param_file, output, verbose = True, shuffle = Tr
         iter_data.sort()
         for jj in iter_data :
             sys = dpdata.LabeledSystem(jj, fmt = 'deepmd/npy')
-            sys_str = (os.path.basename(jj).split('.')[-1])            
+            if merge:
+                sys_str = sys.formula
+            else:
+                sys_str = (os.path.basename(jj).split('.')[-1])            
             if sys_str in coll_data.keys():
                 coll_data[sys_str].append(sys)
             else:
@@ -71,7 +77,10 @@ def collect_data(target_folder, param_file, output, verbose = True, shuffle = Tr
         coll_data[kk].to('deepmd/npy', os.path.join(output, out_dir))
 
 def gen_collect(args):
-    collect_data(args.JOB_DIR, args.parameter, args.OUTPUT, args.verbose)        
+    collect_data(args.JOB_DIR, args.parameter, args.OUTPUT, 
+                 verbose = args.verbose,
+                 shuffle = args.shuffle,
+                 merge = args.merge)
 
 def _main()   :
     parser = argparse.ArgumentParser(description='Collect data from DP-GEN iterations')
@@ -83,6 +92,10 @@ def _main()   :
                         help="the json file provides DP-GEN paramters, should be located in JOB_DIR")
     parser.add_argument('-v',"--verbose", action = 'store_true',
                         help="print number of data in each system")
+    parser.add_argument('-m',"--merge", action = 'store_true',
+                             help="merge the systems with the same chemical formula")
+    parser.add_argument('-s',"--shuffle", action = 'store_true',
+                             help="shuffle the data systems")
     args = parser.parse_args()
     gen_collect(args)
 
