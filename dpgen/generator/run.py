@@ -193,8 +193,9 @@ def make_train (iter_index,
     fp_task_min = jdata['fp_task_min']
     model_devi_jobs = jdata['model_devi_jobs']
     use_ele_temp = jdata.get('use_ele_temp', 0)    
+    training_iter0_model = jdata.get('training_iter0_model_path', [])
     training_reuse_iter = jdata.get('training_reuse_iter')
-    training_reuse_old_ratio = jdata.get('training_reuse_old_ratio', 0.8)
+    training_reuse_old_ratio = jdata.get('training_reuse_old_ratio', 0.2)
     training_reuse_stop_batch = jdata.get('training_reuse_stop_batch', 400000)
     training_reuse_start_lr = jdata.get('training_reuse_start_lr', 1e-4)
     training_reuse_start_pref_e = jdata.get('training_reuse_start_pref_e', 0.1)
@@ -352,16 +353,37 @@ def make_train (iter_index,
             prev_task_path =  os.path.join(prev_work_path, train_task_fmt%ii)
             old_model_files = glob.glob(
                 os.path.join(prev_task_path, "model.ckpt*"))
-            task_path = os.path.join(work_path, train_task_fmt % ii)
-            task_old_path = os.path.join(task_path, 'old')
-            create_path(task_old_path)
-            cwd = os.getcwd()
-            for jj in old_model_files:
-                absjj = os.path.abspath(jj)
-                basejj = os.path.basename(jj)
-                os.chdir(task_old_path)
-                os.symlink(os.path.relpath(absjj), basejj)
-                os.chdir(cwd)
+            _link_old_models(work_path, old_model_files, ii)
+    else:
+        if type(training_iter0_model) == str:
+            training_iter0_model = [training_iter0_model]
+        iter0_models = []
+        for ii in training_iter0_model:            
+            model_is = glob.glob(ii)
+            model_is.sort()
+            iter0_models += [os.path.abspath(ii) for ii in model_is]
+        assert(numb_models == len(iter0_models))
+        for ii in range(len(iter0_models)):
+            old_model_files = glob.glob(os.path.join(iter0_models[ii], 'model.ckpt*'))
+            _link_old_models(work_path, old_model_files, ii)
+
+
+def _link_old_models(work_path, old_model_files, ii):
+    """
+    link the `ii`th old model given by `old_model_files` to 
+    the `ii`th training task in `work_path`
+    """
+    task_path = os.path.join(work_path, train_task_fmt % ii)
+    task_old_path = os.path.join(task_path, 'old')
+    create_path(task_old_path)
+    cwd = os.getcwd()
+    for jj in old_model_files:
+        absjj = os.path.abspath(jj)
+        basejj = os.path.basename(jj)
+        os.chdir(task_old_path)
+        os.symlink(os.path.relpath(absjj), basejj)
+        os.chdir(cwd)            
+
 
 def detect_batch_size(batch_size, system=None):
     if type(batch_size) == int:
@@ -381,10 +403,9 @@ def run_train (iter_index,
     # train_param = jdata['train_param']
     train_input_file = default_train_input_file
     training_reuse_iter = jdata.get('training_reuse_iter')
+    training_init_model = jdata.get('training_init_model', False)
     if training_reuse_iter is not None and iter_index >= training_reuse_iter:
-        reuse_old = True
-    else:
-        reuse_old = False    
+        training_init_model = True
     try:
         mdata["deepmd_version"]
     except KeyError:
@@ -423,7 +444,7 @@ def run_train (iter_index,
         ## train_command should not be None
         assert(train_command)
         command =  '%s train %s' % (train_command, train_input_file)
-        if reuse_old:
+        if training_init_model:
             command += ' --init-model old/model.ckpt'
         commands.append(command)
         command = '%s freeze' % train_command
@@ -441,7 +462,7 @@ def run_train (iter_index,
     run_tasks = [os.path.basename(ii) for ii in all_task]
 
     forward_files = [train_input_file]
-    if reuse_old:
+    if training_init_model:
         forward_files += [os.path.join('old', 'model.ckpt.meta'), 
                           os.path.join('old', 'model.ckpt.index'),
                           os.path.join('old', 'model.ckpt.data-00000-of-00001')
