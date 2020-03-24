@@ -217,11 +217,14 @@ class ALI():
         request = DescribeInstancesRequest()
         request.set_accept_format('json')
         request.set_InstanceIds([instance_id])
-        response = self.client.do_action_with_exception(request)
-        response = json.loads(response)
-        if len(response["Instances"]["Instance"]) == 1 and "Recycling" in response["Instances"]["Instance"][0]["OperationLocks"]["LockReason"]:
-            return True
-        return False
+        try:
+            response = self.client.do_action_with_exception(request)
+            response = json.loads(response)
+            if len(response["Instances"]["Instance"]) == 1 and "Recycling" in response["Instances"]["Instance"][0]["OperationLocks"]["LockReason"]:
+                return True
+            return False
+        except:
+            return False
 
     def check_restart(self, work_path, tasks, group_size):
         if os.path.exists('apg_id.json'):
