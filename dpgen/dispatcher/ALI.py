@@ -213,8 +213,16 @@ class ALI():
         request.set_PayAsYouGoTargetCapacity("0")
         response = self.client.do_action_with_exception(request)
 
-    def spot_data_callback():
-        pass
+    def check_spot_callback(self, instance_id):
+        request = DescribeInstancesRequest()
+        request.set_accept_format('json')
+        request.set_InstanceIds([instance_id])
+        response = self.client.do_action_with_exception(request)
+        response = json.loads(response)
+        if "Recycling" in response["Instances"]["Instance"][0]["OperationLocks"]["LockReason"]:
+            return True
+        return False
+
 
     def check_restart(self, work_path, tasks, group_size):
         if os.path.exists('apg_id.json'):
@@ -303,6 +311,70 @@ class ALI():
                 finished_num += 1
         return finished_num
 
+    def resubmission(self):
+        if self.adata["img_name"] == "kit":
+            new_ip_list = []
+            try:
+                new_server_list = self.update_server_list()
+                new_ip_list = self.get_ip(new_server_list)
+            except:
+                pass
+            for ii in range(self.nchunks):
+                if len(new_ip_list) == 0:
+                    break
+                if self.dispatchers[ii][1] == "exception":
+                    self.ip_list[ii] = new_ip_list.pop()
+                    self.instance_list[ii] = new_server_list.pop()
+                    profile = self.mdata_machine.copy()
+                    profile["hostname"] = self.ip_list[ii]
+                    profile["instance_id"] = self.instance_list[ii]
+                    self.dispatchers[ii] = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record="jr.%.06d.json" % ii), "working"]
+                    dlog.info(self.ip_list[ii])
+                    job_handler = self.dispatchers[ii][0].submit_jobs(resources,
+                                                                      command,
+                                                                      work_path,
+                                                                      self.task_chunks[ii],
+                                                                      group_size,
+                                                                      forward_common_files,
+                                                                      forward_task_files,
+                                                                      backward_task_files,
+                                                                      forward_task_deference,
+                                                                      outlog,
+                                                                      errlog)
+                    self.job_handlers[ii] = job_handler
+        elif self.adata["img_name"] == "vasp":
+            if machine_exception_num / self.nchunks > 0.05:
+                self.change_apg_capasity(self.nchunks - self.get_finished_job_num() + machine_exception_num)
+                time.sleep(90)
+                new_ip_list = []
+                try:
+                    new_server_list = self.update_server_list()
+                    new_ip_list = self.get_ip(new_server_list)
+                except:
+                    pass
+                if len(new_ip_list) == machine_exception_num:
+                    dlog.info("new submission of callback machine")
+                    for ii in range(self.nchunks):
+                        self.ip_list[ii] = new_ip_list.pop()
+                        self.instance_list[ii] = new_server_list.pop()
+                        profile = self.mdata_machine.copy()
+                        profile["hostname"] = self.ip_list[ii]
+                        profile["instance_id"] = self.instance_list[ii]
+                        self.dispatchers[ii] = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record="jr.%.06d.json" % ii), "working"]
+                        dlog.info(self.ip_list[ii])
+                        job_handler = self.dispatchers[ii][0].submit_jobs(resources,
+                                                                          command,
+                                                                          work_path,
+                                                                          self.task_chunks[ii],
+                                                                          group_size,
+                                                                          forward_common_files,
+                                                                          forward_task_files,
+                                                                          backward_task_files,
+                                                                          forward_task_deference,
+                                                                          outlog,
+                                                                          errlog)
+                        self.job_handlers[ii] = job_handler
+
     def run_jobs(self,
                  resources,
                  command,
@@ -333,42 +405,20 @@ class ALI():
                 self.job_handlers[ii] = job_handler
         machine_exception_num = 0
         while True:
-            if machine_exception_num > 2:
-                try:
-                    new_server_list = self.update_server_list()
-                except:
-                    pass
-                count = 0
-                for ii in range(self.nchunks):
-                    if self.instance_list[ii] == "exception":
-                        count += 1
-                if len(new_server_list) == count and len(new_server_list) > 0:
-                    new_ip_list = self.get_ip(new_server_list)
-                    for ii in range(self.nchunks):
-                        if self.dispatchers[ii][1] == "exception":
-                            self.ip_list[ii] = new_ip_list.pop()
-                            self.instance_list[ii] = new_server_list.pop()
-                            profile = self.mdata_machine.copy()
-                            profile["hostname"] = self.ip_list[ii]
-                            profile["instance_id"] = self.instance_list[ii]
-                            self.dispatchers[ii] = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record="jr.%.06d.json" % ii), "working"]
-                            dlog.info(self.ip_list[ii])
-                            job_handler = self.dispatchers[ii][0].submit_jobs(resources,
-                                                                              command,
-                                                                              work_path,
-                                                                              self.task_chunks[ii],
-                                                                              group_size,
-                                                                              forward_common_files,
-                                                                              forward_task_files,
-                                                                              backward_task_files,
-                                                                              forward_task_deference,
-                                                                              outlog,
-                                                                              errlog)
-                            self.job_handlers[ii] = job_handler
+            if machine_exception_num > 0:
+                self.resubmission()
             # dlog.info(self.ip_list)
             # dlog.info(self.instance_list)
             # dlog.info(self.dispatchers)
             for ii in range(self.nchunks):
+                if self.check_spot_callback(self.instance_list[ii]):
+                    machine_exception_num += 1
+                    dlog.info("machine %s callback" % self.instance_list[ii])
+                    self.job_handlers[ii] = "exception"
+                    self.ip_list[ii] = "exception"
+                    self.instance_list[ii] = "exception"
+                    if self.adata["img_name"] == "vasp":
+                        self.change_apg_capasity(self.nchunks - self.get_finished_job_num() - 1)
                 if self.dispatchers[ii][1] == "working":
                     if self.check_server(self.dispatchers[ii][0].remote_profile):
                         #dlog.info(self.dispatchers)
@@ -379,20 +429,15 @@ class ALI():
                             self.instance_list[ii] = "finished"
                             self.change_apg_capasity(self.nchunks - self.get_finished_job_num())
                     else:
-                        try:
-                            self.delete(ii)
-                        except:
-                            pass
-                        os.remove(self.job_handlers[ii]["job_record"].fname)
-                        machine_exception_num += 1
-                        dlog.info("exception accured in %s, remove %s, %s" % (self.ip_list[ii], self.job_handlers[ii]["job_record"].fname,self.ip_list[ii]))
+                        #os.remove(self.job_handlers[ii]["job_record"].fname)
+                        #machine_exception_num += 1
+                        dlog.info("ssh exception accured in %s" % self.ip_list[ii])
                         # dlog.info(self.ip_list)
                         # dlog.info(self.instance_list)
                         # dlog.info(self.dispatchers)
-                        self.dispatchers[ii] = [None, "exception"]
-                        self.job_handlers[ii] = "exception"
-                        self.ip_list[ii] = "exception"
-                        self.instance_list[ii] = "exception"
+                        # self.job_handlers[ii] = "exception"
+                        # self.ip_list[ii] = "exception"
+                        # self.instance_list[ii] = "exception"
                 elif self.dispatchers[ii][1] == "finished":
                     continue
                 elif self.dispatchers[ii][1] == "unalloc":
