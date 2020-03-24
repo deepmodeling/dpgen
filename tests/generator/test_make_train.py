@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os,sys,json,glob,shutil
+import os,sys,json,glob,shutil,dpdata
 import numpy as np
 import unittest
 
@@ -155,13 +155,14 @@ def _make_fake_fp(iter_idx, sys_idx, nframes):
         os.makedirs(dirname, exist_ok = True)           
     dirname = os.path.join('iter.%06d' % iter_idx, 
                            '02.fp', 
-                           'data.%03d' % sys_idx)
+                           'data.%03d' % sys_idx)    
     os.makedirs(dirname, exist_ok = True)
-    box_str = ['0' for ii in range(9)]
-    box_str = ' '.join(box_str)
-    with open(os.path.join(dirname, 'box.raw'), 'w') as fp :
-        for ii in range(nframes) :
-            fp.write(box_str + '\n')
+    tmp_sys = dpdata.LabeledSystem('out_data_post_fp_vasp/02.fp/task.000.000000/OUTCAR')
+    tmp_sys1 = tmp_sys.sub_system([0])
+    tmp_sys2 = tmp_sys1
+    for ii in range(1, nframes):
+        tmp_sys2.append(tmp_sys1)
+    tmp_sys2.to('deepmd/npy', dirname)
 
 
 def _check_pb_link(testCase, iter_idx, numb_models) :

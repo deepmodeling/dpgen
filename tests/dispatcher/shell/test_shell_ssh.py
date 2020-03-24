@@ -59,7 +59,7 @@ class TestShell(unittest.TestCase) :
         self.assertTrue(os.path.isfile(os.path.join('rmt', self.shell.context.remote_root, 'task0/tag_1_finished')))
         self.assertTrue(os.path.isfile(os.path.join('rmt', self.shell.context.remote_root, 'task1/tag_0_finished')))
         self.assertTrue(os.path.isfile(os.path.join('rmt', self.shell.context.remote_root, 'task1/tag_1_finished')))
-        self.assertTrue(os.path.isfile(os.path.join('rmt', self.shell.context.remote_root, 'tag_finished')))
+        self.assertTrue(os.path.isfile(os.path.join('rmt', self.shell.context.remote_root, '%s_tag_finished' % self.shell.context.job_uuid)))
         self.assertTrue (os.path.isfile(os.path.join('rmt', self.shell.context.remote_root, 'task0/test1')))
         self.assertTrue (os.path.isfile(os.path.join('rmt', self.shell.context.remote_root, 'task1/test1')))
         self.assertTrue (os.path.isfile(os.path.join('rmt', self.shell.context.remote_root, 'task0/test2')))
