@@ -219,7 +219,7 @@ class ALI():
         request.set_InstanceIds([instance_id])
         response = self.client.do_action_with_exception(request)
         response = json.loads(response)
-        if "Recycling" in response["Instances"]["Instance"][0]["OperationLocks"]["LockReason"]:
+        if len(response["Instances"]["Instance"]) == 1 and "Recycling" in response["Instances"]["Instance"][0]["OperationLocks"]["LockReason"]:
             return True
         return False
 
@@ -260,15 +260,6 @@ class ALI():
                         self.ip_list[ii] = "finished"
                         self.instance_list[ii] = "finished"
                         self.dispatchers[ii] = [None, "finished"]
-                        # with open(os.path.join(work_path, fn)) as fp:
-                        #     jr = json.load(fp)
-                        #     ip = jr[cur_hash]['context'][3]
-                        #     instance_id = jr[cur_hash]['context'][4]
-                        #     self.ip_list.append("finished")
-                        #     self.instance_list.append("finished")
-                        #     self.dispatchers.append([None, "finished"])
-            #dlog.info(self.ip_list)
-            #dlog.info(self.dispatchers)
             return True
         else:
             self.task_chunks = _split_tasks(tasks, group_size)
@@ -298,9 +289,6 @@ class ALI():
                     response = self.client.do_action_with_exception(request)
                     response = json.loads(response)
                     ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]['IpAddress'][0])
-        #dlog.info('create machine successfully, following are the ip addresses')
-        # for ip in ip_list:
-            # dlog.info(ip)
         return ip_list
 
     def get_finished_job_num(self):
@@ -406,9 +394,6 @@ class ALI():
         while True:
             if machine_exception_num > 0:
                 self.resubmission()
-            # dlog.info(self.ip_list)
-            # dlog.info(self.instance_list)
-            # dlog.info(self.dispatchers)
             for ii in range(self.nchunks):
                 if self.check_spot_callback(self.instance_list[ii]):
                     machine_exception_num += 1
@@ -422,7 +407,6 @@ class ALI():
                         self.change_apg_capasity(self.nchunks - self.get_finished_job_num() - 1)
                 if self.dispatchers[ii][1] == "working":
                     if self.check_server(self.dispatchers[ii][0].remote_profile):
-                        #dlog.info(self.dispatchers)
                         if self.dispatchers[ii][0].all_finished(self.job_handlers[ii], mark_failure):
                             self.delete(ii)
                             self.dispatchers[ii][1] = "finished"
@@ -430,15 +414,7 @@ class ALI():
                             self.instance_list[ii] = "finished"
                             self.change_apg_capasity(self.nchunks - self.get_finished_job_num())
                     else:
-                        #os.remove(self.job_handlers[ii]["job_record"].fname)
-                        #machine_exception_num += 1
                         dlog.info("ssh exception accured in %s" % self.ip_list[ii])
-                        # dlog.info(self.ip_list)
-                        # dlog.info(self.instance_list)
-                        # dlog.info(self.dispatchers)
-                        # self.job_handlers[ii] = "exception"
-                        # self.ip_list[ii] = "exception"
-                        # self.instance_list[ii] = "exception"
                 elif self.dispatchers[ii][1] == "finished":
                     continue
                 elif self.dispatchers[ii][1] == "unalloc":
@@ -491,26 +467,6 @@ class ALI():
         #dlog.info(False)
         return False
 
-    # def dispatcher_finish(self, dispatcher, job_handler, mark_failure):
-    #     job_record = job_handler['job_record']
-    #     rjob = job_handler['job_list'][0]
-    #     status = rjob['batch'].check_status()
-    #     if status == JobStatus.terminated :
-    #         machine_status = True
-    #         ssh_active_count = 0
-    #         while True:
-    #             if rjob['context'].ssh_session._check_alive():
-    #                 break
-    #             if not rjob['context'].ssh_session._check_alive():
-    #                 ssh_active_count += 1
-    #             if ssh_active_count == 3:
-    #                 machine_status = False
-    #                 break
-    #     if machine_status == False:
-    #         pass
-    #     else:
-    #         return dispatcher.all_finished(job_handler, mark_failure)
-
     def check_dispatcher_finished(self):
         for ii in range(len(self.dispatchers)):
             if self.dispatchers[ii][1] == "unalloc" or self.dispatchers[ii][1] == "working" or self.dispatchers[ii][1] == "exception":
@@ -531,7 +487,6 @@ class ALI():
                 profile['hostname'] = self.ip_list[ii]
                 profile['instance_id'] = self.instance_list[ii]
                 self.dispatchers[ii] = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
-
 
     def delete_machine(self):
         request = DeleteInstancesRequest()
