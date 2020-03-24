@@ -278,9 +278,7 @@ def make_train (iter_index,
                         init_data_sys.append(os.path.join('..', 'data.iters', jj, sys_single))
                         init_batch_size.append(detect_batch_size(sys_batch_size[sys_idx], os.path.join(jj, sys_single)))
                 else:
-                    tmp_box = np.loadtxt(os.path.join(jj, 'box.raw'))
-                    tmp_box = np.reshape(tmp_box, [-1,9])
-                    nframes = tmp_box.shape[0]
+                    nframes = dpdata.System(jj, 'deepmd/npy').get_nframes()
                     if nframes < fp_task_min :
                         log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
                         continue
