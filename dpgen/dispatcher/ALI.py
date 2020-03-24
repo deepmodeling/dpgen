@@ -223,7 +223,6 @@ class ALI():
             return True
         return False
 
-
     def check_restart(self, work_path, tasks, group_size):
         if os.path.exists('apg_id.json'):
             with open('apg_id.json') as fp:
@@ -417,6 +416,8 @@ class ALI():
                     self.job_handlers[ii] = "exception"
                     self.ip_list[ii] = "exception"
                     self.instance_list[ii] = "exception"
+                    self.dispatchers[ii][1] = "exception"
+                    os.remove(self.job_handlers[ii]["job_record"].fname)
                     if self.adata["img_name"] == "vasp":
                         self.change_apg_capasity(self.nchunks - self.get_finished_job_num() - 1)
                 if self.dispatchers[ii][1] == "working":
