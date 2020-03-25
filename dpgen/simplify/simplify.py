@@ -92,7 +92,8 @@ def init_model(iter_index, jdata, mdata):
         model_is = glob.glob(ii)
         model_is.sort()
         iter0_models += [os.path.abspath(ii) for ii in model_is]
-    assert(jdata['numb_models'] == len(iter0_models)), "training_iter0_model should be provided, and the number of models should be equal to %d" % numb_models
+    numb_models = jdata['numb_models']
+    assert(numb_models == len(iter0_models)), "training_iter0_model_path should be provided, and the number of models should be equal to %d" % numb_models
     work_path = os.path.join(make_iter_name(iter_index), train_name)
     create_path(work_path)
     cwd = os.getcwd()
