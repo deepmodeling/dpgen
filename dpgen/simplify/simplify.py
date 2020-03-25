@@ -24,7 +24,7 @@ from dpgen import SHORT_CMD
 from dpgen.util import sepline
 from dpgen.remote.decide_machine import decide_train_machine
 from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher
-from dpgen.generator.run import make_train, run_train, post_train, run_fp, post_fp, fp_name, model_devi_name, train_name, sys_link_fp_vasp_pp, make_fp_vasp_incar, make_fp_vasp_kp, make_fp_vasp_cp_cvasp
+from dpgen.generator.run import make_train, run_train, post_train, run_fp, post_fp, fp_name, model_devi_name, train_name, train_task_fmt, sys_link_fp_vasp_pp, make_fp_vasp_incar, make_fp_vasp_kp, make_fp_vasp_cp_cvasp
 # TODO: maybe the following functions can be moved to dpgen.util
 from dpgen.generator.lib.utils import log_iter, make_iter_name, create_path, record_iter
 from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
@@ -80,6 +80,32 @@ def get_system_idx(path):
     return sys_idx_map
 
 
+def init_model(iter_index, jdata, mdata):
+    training_init_model = jdata.get('training_init_model', False)
+    if not training_init_model:
+        return
+    iter0_models = []
+    training_iter0_model = jdata.get('training_iter0_model_path', [])
+    if type(training_iter0_model) == str:
+        training_iter0_model = [training_iter0_model]
+    for ii in training_iter0_model:            
+        model_is = glob.glob(ii)
+        model_is.sort()
+        iter0_models += [os.path.abspath(ii) for ii in model_is]
+    assert(jdata['numb_models'] == len(iter0_models)), "training_iter0_model should be provided, and the number of models should be equal to %d" % numb_models
+    work_path = os.path.join(make_iter_name(iter_index), train_name)
+    create_path(work_path)
+    cwd = os.getcwd()
+    for ii in range(len(iter0_models)):
+        train_path = os.path.join(work_path, train_task_fmt % ii)
+        create_path(train_path)
+        os.chdir(train_path)
+        ckpt_files = glob.glob(os.path.join(iter0_models[ii], 'model.ckpt*'))
+        for jj in ckpt_files:
+            os.symlink(jj, os.path.basename(jj))
+        os.chdir(cwd)
+
+
 def init_pick(iter_index, jdata, mdata):
     """pick up init data from dataset randomly"""
     pick_data = jdata['pick_data']
@@ -103,7 +129,6 @@ def init_pick(iter_index, jdata, mdata):
 
     # random pick
     iter_name = make_iter_name(iter_index)
-    create_path(iter_name)
     work_path = os.path.join(iter_name, model_devi_name)
     create_path(work_path)
     idx = np.arange(len(labels))
@@ -603,6 +628,7 @@ def run_iter(param_file, machine_file):
             if ii == 0 and jj < 6:
                 if jj == 0:
                     log_iter("init_pick", ii, jj)
+                    init_model(ii, jdata, mdata)
                     init_pick(ii, jdata, mdata)
                 dlog.info("first iter, skip step 1-5")
             elif jj == 0:
