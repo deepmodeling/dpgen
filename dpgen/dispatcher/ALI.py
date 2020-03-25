@@ -277,7 +277,7 @@ class ALI():
                 request.set_InstanceIds([instance_list[i]])
                 response = self.client.do_action_with_exception(request)
                 response = json.loads(response)
-                ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]['IpAddress'][0])
+                ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
         else:
             iteration = len(instance_list) // 10
             for i in range(iteration):
@@ -285,13 +285,13 @@ class ALI():
                     request.set_InstanceIds([instance_list[i*10+j]])
                     response = self.client.do_action_with_exception(request)
                     response = json.loads(response)
-                    ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]['IpAddress'][0])
+                    ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
             if len(instance_list) - iteration * 10 != 0:
                 for j in range(len(instance_list) - iteration * 10):
                     request.set_InstanceIds([instance_list[iteration*10+j]])
                     response = self.client.do_action_with_exception(request)
                     response = json.loads(response)
-                    ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]['IpAddress'][0])
+                    ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
         return ip_list
 
     def get_finished_job_num(self):
