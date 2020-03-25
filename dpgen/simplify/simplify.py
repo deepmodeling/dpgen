@@ -24,7 +24,7 @@ from dpgen import SHORT_CMD
 from dpgen.util import sepline
 from dpgen.remote.decide_machine import decide_train_machine
 from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher
-from dpgen.generator.run import make_train, run_train, post_train, run_fp, post_fp, fp_name, model_devi_name, train_name, train_task_fmt, sys_link_fp_vasp_pp, make_fp_vasp_incar, make_fp_vasp_kp, make_fp_vasp_cp_cvasp
+from dpgen.generator.run import make_train, run_train, post_train, run_fp, post_fp, fp_name, model_devi_name, train_name, train_task_fmt, sys_link_fp_vasp_pp, make_fp_vasp_incar, make_fp_vasp_kp, make_fp_vasp_cp_cvasp, data_system_fmt, model_devi_task_fmt, fp_task_fmt
 # TODO: maybe the following functions can be moved to dpgen.util
 from dpgen.generator.lib.utils import log_iter, make_iter_name, create_path, record_iter
 from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
@@ -35,7 +35,7 @@ picked_data_name = "data.picked"
 rest_data_name = "data.rest"
 accurate_data_name = "data.accurate"
 detail_file_name_prefix = "details"
-sys_name_fmt = 'sys.%03d'
+sys_name_fmt = 'sys.' + data_system_fmt
 sys_name_pattern = 'sys.[0-9]*[0-9]'
 
 def expand_sys_str(root_dir):
@@ -205,7 +205,7 @@ def make_model_devi(iter_index, jdata, mdata):
         return False
     if use_clusters:
         for jj, subsystem in enumerate(os.listdir(rest_data_path)):
-            task_name = "task.%03d.%06d" % (0, jj)
+            task_name = "task." + model_devi_task_fmt % (0, jj)
             task_path = os.path.join(work_path, task_name)
             create_path(task_path)
             os.symlink(os.path.abspath(os.path.join(rest_data_path, subsystem)),
@@ -215,7 +215,7 @@ def make_model_devi(iter_index, jdata, mdata):
         sys_path = glob.glob(os.path.join(rest_data_path, sys_name_pattern))
         cwd = os.getcwd()
         for ii in sys_path:
-            task_name = "task.%s.%06d" % (os.path.basename(ii).split('.')[1], 0)
+            task_name = "task." + model_devi_task_fmt % (int(os.path.basename(ii).split('.')[1]), 0)
             task_path = os.path.join(work_path, task_name)
             create_path(task_path)            
             os.chdir(task_path)
@@ -448,9 +448,9 @@ def make_fp_labeled(iter_index, jdata):
     picked_data_path = os.path.join(iter_name, model_devi_name, picked_data_name)
     if use_clusters:
         os.symlink(os.path.abspath(picked_data_path), os.path.abspath(
-            os.path.join(work_path, "task.%03d" % 0)))
+            os.path.join(work_path, "task." + data_system_fmt % 0)))
         os.symlink(os.path.abspath(picked_data_path), os.path.abspath(
-            os.path.join(work_path, "data.%03d" % 0)))
+            os.path.join(work_path, "data." + data_system_fmt % 0)))
     else:
         picked_data_path = os.path.abspath(picked_data_path)
         sys_path = glob.glob(os.path.join(picked_data_path, sys_name_pattern))
@@ -458,8 +458,8 @@ def make_fp_labeled(iter_index, jdata):
         os.chdir(work_path)
         for ii in sys_path:
             sys_idx = os.path.basename(ii).split('.')[1]
-            data_dir = 'data.%s' % sys_idx
-            task_dir = 'task.%s' % sys_idx
+            data_dir = 'data.' + data_system_fmt % int(sys_idx)
+            task_dir = 'task.' + data_system_fmt % int(sys_idx)
             os.symlink(os.path.relpath(ii), data_dir)
             os.symlink(os.path.relpath(ii), task_dir)
         os.chdir(cwd)
@@ -477,7 +477,7 @@ def make_fp_configs(iter_index, jdata):
         jj = 0
         for system in systems:
             for subsys in system:
-                task_name = "task.%03d.%06d" % (0, jj)
+                task_name = "task." + fp_task_fmt % (0, jj)
                 task_path = os.path.join(work_path, task_name)
                 create_path(task_path)
                 subsys.to('vasp/poscar', os.path.join(task_path, 'POSCAR'))
@@ -490,7 +490,7 @@ def make_fp_configs(iter_index, jdata):
             sys_idx = os.path.basename(ii).split('.')[1]
             jj = 0
             for ss in tmp_sys:
-                task_name = "task.%s.%06d" % (sys_idx, jj)
+                task_name = "task." + fp_task_fmt % (int(sys_idx), jj)
                 task_path = os.path.join(work_path, task_name)
                 create_path(task_path)
                 ss.to('vasp/poscar', os.path.join(task_path, 'POSCAR'))
