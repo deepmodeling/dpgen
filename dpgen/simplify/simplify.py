@@ -344,6 +344,9 @@ def post_model_devi(iter_index, jdata, mdata):
             for ii in ['candidate', 'accurate', 'failed']:
                 counter[ii] += sys_counter[ii]
     
+    if counter['candidate'] == 0 and counter['failed'] > 0:
+        raise RuntimeError('no candidate but still have failed cases, stop. You may want to refine the training or to increase the trust level hi')
+
     # label the candidate system
     labels = []
     if use_clusters:
@@ -431,11 +434,8 @@ def make_fp_labeled(iter_index, jdata):
             sys_idx = os.path.basename(ii).split('.')[1]
             data_dir = 'data.%s' % sys_idx
             task_dir = 'task.%s' % sys_idx
-            r_fname = 'sys_path.%s' % sys_idx
             os.symlink(os.path.relpath(ii), data_dir)
             os.symlink(os.path.relpath(ii), task_dir)
-            with open(r_fname, 'w') as fp:
-                fp.write(ii)
         os.chdir(cwd)
 
 
@@ -476,7 +476,7 @@ def make_fp_configs(iter_index, jdata):
 
 def make_fp_gaussian(iter_index, jdata):
     work_path = os.path.join(make_iter_name(iter_index), fp_name)
-    fp_task = glob.glob(os.path.join(work_path, 'task.*'))
+    fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
     cwd = os.getcwd()
     if 'user_fp_params' in jdata.keys() :
         fp_params = jdata['user_fp_params']
