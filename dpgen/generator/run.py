@@ -278,9 +278,7 @@ def make_train (iter_index,
                         init_data_sys.append(os.path.join('..', 'data.iters', jj, sys_single))
                         init_batch_size.append(detect_batch_size(sys_batch_size[sys_idx], os.path.join(jj, sys_single)))
                 else:
-                    tmp_box = np.loadtxt(os.path.join(jj, 'box.raw'))
-                    tmp_box = np.reshape(tmp_box, [-1,9])
-                    nframes = tmp_box.shape[0]
+                    nframes = dpdata.System(jj, 'deepmd/npy').get_nframes()
                     if nframes < fp_task_min :
                         log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
                         continue
@@ -1281,7 +1279,7 @@ def make_vasp_incar_ele_temp(jdata, filename, ele_temp, nbands_esti = None):
         incar['NBANDS'] = nbands
         incar.write_file('INCAR')
 
-def _make_fp_vasp_incar (iter_index,
+def make_fp_vasp_incar (iter_index,
                          jdata,
                          nbands_esti = None) :
     iter_name = make_iter_name(iter_index)
@@ -1318,7 +1316,7 @@ def _make_fp_pwmat_input (iter_index,
         os.system("sed -i '1,2c 4 1' etot.input")
         os.chdir(cwd)
 
-def _copy_cvasp(iter_index,jdata):
+def make_fp_vasp_cp_cvasp(iter_index,jdata):
     # Move cvasp interface to jdata
     if ('cvasp' in jdata) and (jdata['cvasp'] == True):
        pass
@@ -1337,7 +1335,7 @@ def _copy_cvasp(iter_index,jdata):
         shutil.copyfile(cvasp_file, 'cvasp.py')
         os.chdir(cwd)
 
-def _make_fp_vasp_kp (iter_index,jdata):
+def make_fp_vasp_kp (iter_index,jdata):
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
     fp_aniso_kspacing = jdata.get('fp_aniso_kspacing')
@@ -1492,11 +1490,11 @@ def make_fp_vasp (iter_index,
     # 1, create potcar
     sys_link_fp_vasp_pp(iter_index, jdata)
     # 2, create incar
-    _make_fp_vasp_incar(iter_index, jdata, nbands_esti = nbe)
+    make_fp_vasp_incar(iter_index, jdata, nbands_esti = nbe)
     # 3, create kpoints
-    _make_fp_vasp_kp(iter_index, jdata)
+    make_fp_vasp_kp(iter_index, jdata)
     # 4, copy cvasp
-    _copy_cvasp(iter_index,jdata)
+    make_fp_vasp_cp_cvasp(iter_index,jdata)
 
 
 def make_fp_pwscf(iter_index,
