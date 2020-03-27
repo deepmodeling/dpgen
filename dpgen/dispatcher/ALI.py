@@ -365,6 +365,7 @@ class ALI():
                                                                           errlog)
                         self.job_handlers[ii] = job_handler
 
+    #@profile(precision=6)
     def run_jobs(self,
                  resources,
                  command,
@@ -417,7 +418,18 @@ class ALI():
                             self.instance_list[ii] = "finished"
                             self.change_apg_capasity(self.nchunks - self.get_finished_job_num())
                     else:
-                        dlog.info("ssh exception accured in %s" % self.ip_list[ii])
+                        if self.instance_list[ii] not in self.update_server_list():
+                            machine_exception_num += 1
+                            dlog.info("machine %s callback" % self.instance_list[ii])
+                            self.job_handlers[ii] = "exception"
+                            self.ip_list[ii] = "exception"
+                            self.instance_list[ii] = "exception"
+                            self.dispatchers[ii][1] = "exception"
+                            os.remove(self.job_handlers[ii]["job_record"].fname)
+                            if self.adata["img_name"] == "vasp":
+                                self.change_apg_capasity(self.nchunks - self.get_finished_job_num() - 1)
+                        else:
+                            dlog.info("ssh exception accured in %s" % self.ip_list[ii])
                 elif self.dispatchers[ii][1] == "finished":
                     continue
                 elif self.dispatchers[ii][1] == "unalloc":
@@ -457,18 +469,11 @@ class ALI():
 
 # status = ["unalloc", "working", "finished", "exception"]
     def check_server(self, profile):
-        #dlog.info("check server")
-        for ii in range(3):
-            try:
-                session = SSHSession(profile)
-                #dlog.info(True)
-                return True
-            except:
-                time.sleep(60)
-                #dlog.info(False)
-                pass
-        #dlog.info(False)
-        return False
+        try:
+            session = SSHSession(profile)
+            return True
+        except:
+            return False
 
     def check_dispatcher_finished(self):
         for ii in range(len(self.dispatchers)):
