@@ -402,11 +402,11 @@ class ALI():
                 if self.check_spot_callback(self.instance_list[ii]):
                     machine_exception_num += 1
                     dlog.info("machine %s callback" % self.instance_list[ii])
+                    os.remove(self.job_handlers[ii]["job_record"].fname)
                     self.job_handlers[ii] = "exception"
                     self.ip_list[ii] = "exception"
                     self.instance_list[ii] = "exception"
                     self.dispatchers[ii][1] = "exception"
-                    os.remove(self.job_handlers[ii]["job_record"].fname)
                     if self.adata["img_name"] == "vasp":
                         self.change_apg_capasity(self.nchunks - self.get_finished_job_num() - 1)
                 if self.dispatchers[ii][1] == "working":
