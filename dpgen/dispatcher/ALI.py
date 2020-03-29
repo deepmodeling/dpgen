@@ -62,7 +62,7 @@ class ALI():
 
     def init(self, work_path, tasks, group_size):
         if self.check_restart(work_path, tasks, group_size):
-            set_PasswordInherit
+            pass
         else:
             self.create_ess()
             self.make_dispatchers()
