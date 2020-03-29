@@ -62,7 +62,7 @@ class ALI():
 
     def init(self, work_path, tasks, group_size):
         if self.check_restart(work_path, tasks, group_size):
-            pass
+            set_PasswordInherit
         else:
             self.create_ess()
             self.make_dispatchers()
@@ -86,7 +86,12 @@ class ALI():
         request.set_accept_format('json')
         request.set_AutoProvisioningGroupId(self.apg_id)
         request.set_TerminateInstances(True)
-        response = self.client.do_action_with_exception(request)
+        try:
+            response = self.client.do_action_with_exception(request)
+        except ServerException as e:
+            dlog.info(e)
+        except ClientException as e:
+            dlog.info(e)
 
     def create_apg(self):
         request = CreateAutoProvisioningGroupRequest()
@@ -104,11 +109,17 @@ class ALI():
         request.set_SpotTargetCapacity(str(self.nchunks))
         config = self.generate_config()
         request.set_LaunchTemplateConfigs(config)
-        response = self.client.do_action_with_exception(request)
-        response = json.loads(response)
-        with open('apg_id.json', 'w') as fp:
-            json.dump({'apg_id': response["AutoProvisioningGroupId"]}, fp, indent=4)
-        return response["AutoProvisioningGroupId"]
+        try:
+            response = self.client.do_action_with_exception(request)
+            response = json.loads(response)
+            with open('apg_id.json', 'w') as fp:
+                json.dump({'apg_id': response["AutoProvisioningGroupId"]}, fp, indent=4)
+            return response["AutoProvisioningGroupId"]
+        except ServerException as e:
+            dlog.info(e)
+        except ClientException as e:
+            dlog.info(e)
+        
 
     def update_server_list(self):
         instance_list = self.describe_apg_instances()
@@ -123,12 +134,19 @@ class ALI():
         instance_list = []
         for i in range(iteration + 1):
             request.set_PageNumber(i+1)
-            response = self.client.do_action_with_exception(request)
-            response = json.loads(response)
-            for ins in response["Instances"]["Instance"]:
-                instance_list.append(ins["InstanceId"])
-        #dlog.info(instance_list)
-        return instance_list
+            try:
+                response = self.client.do_action_with_exception(request)
+                response = json.loads(response)
+                for ins in response["Instances"]["Instance"]:
+                    instance_list.append(ins["InstanceId"])
+                return instance_list
+            except ServerException as e:
+                dlog.info(e)
+                return "exception"
+            except ClientException as e:
+                dlog.info(e)
+                return "exception"
+        
 
     def generate_config(self):
         machine_config = self.adata["machine_type_price"]
@@ -165,10 +183,15 @@ class ALI():
         request.set_NetworkType("vpc")
         request.set_SpotStrategy("SpotWithPriceLimit")
         request.set_SpotPriceLimit(100)
-        response = self.client.do_action_with_exception(request)
-        response = json.loads(response)
-        return response["LaunchTemplateId"]
-
+        try:
+            response = self.client.do_action_with_exception(request)
+            response = json.loads(response)
+            return response["LaunchTemplateId"]
+        except ServerException as e:
+            dlog.info(e)
+        except ClientException as e:
+            dlog.info(e)
+            
     def delete_template(self):
         request = DeleteLaunchTemplateRequest()
         request.set_accept_format('json')
