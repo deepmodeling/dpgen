@@ -301,7 +301,7 @@ class ALI():
                 finished_num += 1
         return finished_num
 
-    def resubmission(self):
+    def resubmission(self, machine_exception_num):
         if self.adata["img_name"] == "kit":
             new_ip_list = []
             try:
@@ -397,7 +397,7 @@ class ALI():
         machine_exception_num = 0
         while True:
             if machine_exception_num > 0:
-                self.resubmission()
+                self.resubmission(machine_exception_num)
             for ii in range(self.nchunks):
                 if self.check_spot_callback(self.instance_list[ii]):
                     machine_exception_num += 1
