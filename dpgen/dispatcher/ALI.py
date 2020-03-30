@@ -120,7 +120,6 @@ class ALI():
         except ClientException as e:
             dlog.info(e)
         
-
     def update_server_list(self):
         instance_list = self.describe_apg_instances()
         return list(set(instance_list) - set(self.instance_list))
@@ -147,7 +146,6 @@ class ALI():
                 dlog.info(e)
                 return "exception"
         
-
     def generate_config(self):
         machine_config = self.adata["machine_type_price"]
         config = []
@@ -174,8 +172,6 @@ class ALI():
         request.set_InstanceName(self.adata["instance_name"])
         request.set_SecurityGroupId(sg_id)
         request.set_VpcId(vpc_id)
-        request.set_InternetMaxBandwidthIn(50)
-        request.set_InternetMaxBandwidthOut(50)
         request.set_SystemDiskCategory("cloud_efficiency")
         request.set_SystemDiskSize(40)
         request.set_IoOptimized("optimized")
@@ -240,14 +236,17 @@ class ALI():
         request = DescribeInstancesRequest()
         request.set_accept_format('json')
         request.set_InstanceIds([instance_id])
+        status = False
         try:
             response = self.client.do_action_with_exception(request)
             response = json.loads(response)
             if len(response["Instances"]["Instance"]) == 1 and "Recycling" in response["Instances"]["Instance"][0]["OperationLocks"]["LockReason"]:
-                return True
-            return False
+                status = True
+            if instance_id not in self.describe_apg_instances():
+                status = True
         except:
-            return False
+            pass
+        return status
 
     def check_restart(self, work_path, tasks, group_size):
         if os.path.exists('apg_id.json'):
@@ -422,17 +421,18 @@ class ALI():
             if machine_exception_num > 0:
                 self.resubmission(machine_exception_num)
             for ii in range(self.nchunks):
-                if self.check_spot_callback(self.instance_list[ii]):
-                    machine_exception_num += 1
-                    dlog.info("machine %s callback" % self.instance_list[ii])
-                    os.remove(self.job_handlers[ii]["job_record"].fname)
-                    self.job_handlers[ii] = "exception"
-                    self.ip_list[ii] = "exception"
-                    self.instance_list[ii] = "exception"
-                    self.dispatchers[ii][1] = "exception"
-                    if self.adata["img_name"] == "vasp":
-                        self.change_apg_capasity(self.nchunks - self.get_finished_job_num() - 1)
                 if self.dispatchers[ii][1] == "working":
+                    if self.check_spot_callback(self.instance_list[ii]):
+                        machine_exception_num += 1
+                        dlog.info("machine %s callback" % self.instance_list[ii])
+                        os.remove(self.job_handlers[ii]["job_record"].fname)
+                        self.job_handlers[ii] = "exception"
+                        self.ip_list[ii] = "exception"
+                        self.instance_list[ii] = "exception"
+                        self.dispatchers[ii][1] = "exception"
+                        if self.adata["img_name"] == "vasp":
+                            self.change_apg_capasity(self.nchunks - self.get_finished_job_num() - 1)
+                        continue
                     if self.check_server(self.dispatchers[ii][0].remote_profile):
                         if self.dispatchers[ii][0].all_finished(self.job_handlers[ii], mark_failure):
                             self.delete(ii)
@@ -441,19 +441,7 @@ class ALI():
                             self.instance_list[ii] = "finished"
                             self.change_apg_capasity(self.nchunks - self.get_finished_job_num())
                     else:
-                        try:
-                            if self.instance_list[ii] not in self.describe_apg_instances():
-                                machine_exception_num += 1
-                                dlog.info("machine %s callback" % self.instance_list[ii])
-                                os.remove(self.job_handlers[ii]["job_record"].fname)
-                                self.job_handlers[ii] = "exception"
-                                self.ip_list[ii] = "exception"
-                                self.instance_list[ii] = "exception"
-                                self.dispatchers[ii][1] = "exception"
-                                if self.adata["img_name"] == "vasp":
-                                    self.change_apg_capasity(self.nchunks - self.get_finished_job_num() - 1)
-                        except:
-                            dlog.info("ssh exception accured in %s" % self.ip_list[ii])
+                        dlog.info("ssh exception accured in %s" % self.ip_list[ii])
                 elif self.dispatchers[ii][1] == "finished":
                     continue
                 elif self.dispatchers[ii][1] == "unalloc":
