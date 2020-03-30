@@ -133,18 +133,11 @@ class ALI():
         instance_list = []
         for i in range(iteration + 1):
             request.set_PageNumber(i+1)
-            try:
-                response = self.client.do_action_with_exception(request)
-                response = json.loads(response)
-                for ins in response["Instances"]["Instance"]:
-                    instance_list.append(ins["InstanceId"])
-                return instance_list
-            except ServerException as e:
-                dlog.info(e)
-                return "exception"
-            except ClientException as e:
-                dlog.info(e)
-                return "exception"
+            response = self.client.do_action_with_exception(request)
+            response = json.loads(response)
+            for ins in response["Instances"]["Instance"]:
+                instance_list.append(ins["InstanceId"])
+        return instance_list
         
     def generate_config(self):
         machine_config = self.adata["machine_type_price"]
