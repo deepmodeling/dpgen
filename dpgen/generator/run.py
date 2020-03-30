@@ -1140,7 +1140,22 @@ def _make_fp_vasp_inner (modd_path,
             with open(os.path.join(work_path,'rest_failed.shuffled.%s.out'%ss), 'w') as fp:
                 for ii in fp_rest_failed:
                     fp.write(" ".join([str(nn) for nn in ii]) + "\n")
-        numb_task = min(fp_task_max, len(fp_candidate))
+
+        # set number of tasks
+        accurate_ratio = float(counter['accurate']) / float(fp_sum)
+        fp_accurate_threshold = jdata.get('fp_accurate_threshold', 1)
+        fp_accurate_soft_threshold = jdata.get('fp_accurate_soft_threshold', fp_accurate_threshold)
+        if accurate_ratio < fp_accurate_soft_threshold :
+            this_fp_task_max = fp_task_max
+        elif accurate_ratio >= fp_accurate_soft_threshold and accurate_ratio < fp_accurate_threshold:
+            this_fp_task_max = int(fp_task_max * (accurate_ratio - fp_accurate_threshold) / (fp_accurate_soft_threshold - fp_accurate_threshold))
+        else:
+            this_fp_task_max = 0
+        numb_task = min(this_fp_task_max, len(fp_candidate))
+        if (numb_task < fp_task_min):
+            numb_task = 0
+        dlog.info("system {0:s} accurate_ratio: {1:8.4f}    thresholds: {2:6.4f} and {3:6.4f}   eff. task min and max {4:4d} {5:4d}   number of fp tasks: {6:6d}".format(ss, accurate_ratio, fp_accurate_soft_threshold, fp_accurate_threshold, fp_task_min, this_fp_task_max, numb_task))
+        # make fp tasks
         count_bad_box = 0
         for cc in range(numb_task) :
             tt = fp_candidate[cc][0]
