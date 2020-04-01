@@ -27,17 +27,17 @@ class awsMachineJob(object):
             self.job_uuid=job_uuid
         else:
             self.job_uuid = str(uuid.uuid4())
-        
+
         dlog.info("local_root is %s"% self.local_root)
         dlog.info("remote_root is %s"% self.remote_root)
-        
+
     def upload(self,
                job_dir,
                local_up_files,
                dereference = True) :
         cwd = os.getcwd()
         print('cwd=',cwd)
-        os.chdir(self.local_root)       
+        os.chdir(self.local_root)
         for ii in local_up_files :
             print('self.local_root=',self.local_root,'remote_root=',self.remote_root,'job_dir=',job_dir,'ii=',ii)
             if os.path.isfile(os.path.join(job_dir,ii)):
@@ -110,13 +110,13 @@ class SSHSession (object) :
             self.remote_password = self.remote_profile['password']
         self.remote_workpath = self.remote_profile['work_path']
         self.ssh = self._setup_ssh(self.remote_host, self.remote_port, username = self.remote_uname,password=self.remote_password)
-        
+
     def _setup_ssh(self,
                    hostname,
-                   port, 
+                   port,
                    username = None,
                    password = None):
-        ssh_client = paramiko.SSHClient()        
+        ssh_client = paramiko.SSHClient()
         ssh_client.load_system_host_keys()
         ssh_client.set_missing_host_key_policy(paramiko.WarningPolicy)
         ssh_client.connect(hostname, port=port, username=username, password=password)
@@ -148,40 +148,40 @@ class RemoteJob (object):
         self.remote_root = os.path.join(ssh_session.get_session_root(), self.job_uuid)
         dlog.info("local_root is %s"% local_root)
         dlog.info("remote_root is %s"% self.remote_root)
-        self.ssh = ssh_session.get_ssh_client()        
+        self.ssh = ssh_session.get_ssh_client()
         # keep ssh alive
         transport = self.ssh.get_transport()
         transport.set_keepalive(60)
         try:
-           sftp = self.ssh.open_sftp()        
+           sftp = self.ssh.open_sftp()
            sftp.mkdir(self.remote_root)
            sftp.close()
-        except: 
+        except:
            pass
         # open('job_uuid', 'w').write(self.job_uuid)
 
     def get_job_root(self) :
         return self.remote_root
-        
+
     def upload(self,
                job_dirs,
                local_up_files,
                dereference = True) :
         cwd = os.getcwd()
-        os.chdir(self.local_root) 
+        os.chdir(self.local_root)
         file_list = []
         for ii in job_dirs :
             for jj in local_up_files :
-                file_list.append(os.path.join(ii,jj))        
+                file_list.append(os.path.join(ii,jj))
         self._put_files(file_list, dereference = dereference)
         os.chdir(cwd)
 
-    def download(self, 
+    def download(self,
                  job_dirs,
                  remote_down_files,
                  back_error=False) :
         cwd = os.getcwd()
-        os.chdir(self.local_root) 
+        os.chdir(self.local_root)
         file_list = []
         for ii in job_dirs :
             for jj in remote_down_files :
@@ -191,24 +191,24 @@ class RemoteJob (object):
                file_list.extend(errors)
         self._get_files(file_list)
         os.chdir(cwd)
-        
-    def block_checkcall(self, 
+
+    def block_checkcall(self,
                         cmd) :
         stdin, stdout, stderr = self.ssh.exec_command(('cd %s ;' % self.remote_root) + cmd)
-        exit_status = stdout.channel.recv_exit_status() 
+        exit_status = stdout.channel.recv_exit_status()
         if exit_status != 0:
             dlog.info("Error info: %s "%(stderr.readlines()[0]))
             raise RuntimeError("Get error code %d in calling %s through ssh with job: %s "% (exit_status, cmd, self.job_uuid))
-        return stdin, stdout, stderr    
+        return stdin, stdout, stderr
 
-    def block_call(self, 
+    def block_call(self,
                    cmd) :
         stdin, stdout, stderr = self.ssh.exec_command(('cd %s ;' % self.remote_root) + cmd)
-        exit_status = stdout.channel.recv_exit_status() 
+        exit_status = stdout.channel.recv_exit_status()
         return exit_status, stdin, stdout, stderr
 
-    def clean(self) :        
-        sftp = self.ssh.open_sftp()        
+    def clean(self) :
+        sftp = self.ssh.open_sftp()
         self._rmtree(sftp, self.remote_root)
         sftp.close()
 
@@ -249,7 +249,7 @@ class RemoteJob (object):
         sftp.remove(to_f)
         sftp.close()
 
-    def _get_files(self, 
+    def _get_files(self,
                    files) :
         of = self.job_uuid + '.tgz'
         flist = ""
@@ -269,18 +269,18 @@ class RemoteJob (object):
         os.chdir(self.local_root)
         with tarfile.open(of, "r:gz") as tar:
             tar.extractall()
-        os.chdir(cwd)        
+        os.chdir(cwd)
         # cleanup
         os.remove(to_f)
         sftp.remove(from_f)
 
 class CloudMachineJob (RemoteJob) :
-    def submit(self, 
+    def submit(self,
                job_dirs,
-               cmd, 
-               args = None, 
+               cmd,
+               args = None,
                resources = None) :
-        
+
         #dlog.info("Current path is",os.getcwd())
 
         #for ii in job_dirs :
@@ -302,14 +302,14 @@ class CloudMachineJob (RemoteJob) :
 
     def _check_finish(self, stdout) :
         return stdout.channel.exit_status_ready()
-    
+
     def _get_exit_status(self, stdout) :
-        return stdout.channel.recv_exit_status() 
-    
-    def _make_script(self, 
+        return stdout.channel.recv_exit_status()
+
+    def _make_script(self,
                      job_dirs,
-                     cmd, 
-                     args = None, 
+                     cmd,
+                     args = None,
                      resources = None) :
         _set_default_resource(resources)
         envs = resources['envs']
@@ -340,27 +340,27 @@ class CloudMachineJob (RemoteJob) :
                     fp.write('module load %s\n' % ii)
                 fp.write('\n')
             for ii,jj in zip(job_dirs, args) :
-                fp.write('cd %s\n' % ii)                
+                fp.write('cd %s\n' % ii)
                 fp.write('test $? -ne 0 && exit\n')
                 if resources['with_mpi'] == True :
-                    fp.write('mpirun -n %d %s %s\n' 
+                    fp.write('mpirun -n %d %s %s\n'
                              % (task_per_node, cmd, jj))
                 else :
                     fp.write('%s %s\n' % (cmd, jj))
                 if 'allow_failure' not in resources or resources['allow_failure'] is False:
                     fp.write('test $? -ne 0 && exit\n')
-                fp.write('cd %s\n' % self.remote_root)         
-                fp.write('test $? -ne 0 && exit\n')  
+                fp.write('cd %s\n' % self.remote_root)
+                fp.write('test $? -ne 0 && exit\n')
             fp.write('\ntouch tag_finished\n')
         sftp.close()
         return script_name
 
 
 class SlurmJob (RemoteJob) :
-    def submit(self, 
+    def submit(self,
                job_dirs,
                cmd,
-               args = None, 
+               args = None,
                resources = None,
                restart=False) :
 
@@ -370,7 +370,7 @@ class SlurmJob (RemoteJob) :
            subret = (stdout.readlines())
            job_id = subret[0].split()[-1]
            sftp = self.ssh.open_sftp()
-        
+
            with sftp.open(os.path.join(self.remote_root, 'job_id'), 'w') as fp:
              fp.write(job_id)
            sftp.close()
@@ -382,14 +382,14 @@ class SlurmJob (RemoteJob) :
                dlog.debug(status)
                if status in [  JobStatus.unsubmitted, JobStatus.unknown, JobStatus.terminated ]:
                   dlog.debug('task restart point !!!')
-                  _submit()    
+                  _submit()
                elif status==JobStatus.waiting:
                   dlog.debug('task is waiting')
                elif status==JobStatus.running:
                   dlog.debug('task is running')
                else:
                   dlog.debug('task is finished')
-                 
+
            except:
                dlog.debug('no job_id file')
                dlog.debug('task restart point !!!')
@@ -397,7 +397,7 @@ class SlurmJob (RemoteJob) :
         else:
            dlog.debug('new task!!!')
            _submit()
-   
+
     def check_status(self) :
         job_id = self._get_job_id()
         if job_id == "" :
@@ -427,10 +427,10 @@ class SlurmJob (RemoteJob) :
                 return JobStatus.terminated
         else :
             return JobStatus.unknown
-    
+
     def _get_job_id(self) :
         sftp = self.ssh.open_sftp()
-        with sftp.open(os.path.join(self.remote_root, 'job_id'), 'r') as fp:            
+        with sftp.open(os.path.join(self.remote_root, 'job_id'), 'r') as fp:
             ret = fp.read().decode('utf-8')
         sftp.close()
         return ret
@@ -438,7 +438,7 @@ class SlurmJob (RemoteJob) :
     def _check_finish_tag(self) :
         sftp = self.ssh.open_sftp()
         try:
-            sftp.stat(os.path.join(self.remote_root, 'tag_finished')) 
+            sftp.stat(os.path.join(self.remote_root, 'tag_finished'))
             ret =  True
         except IOError:
             ret = False
@@ -452,38 +452,38 @@ class SlurmJob (RemoteJob) :
         ret += '| grep PD'
         return ret
 
-    def _make_script(self, 
+    def _make_script(self,
                      job_dirs,
                      cmd,
-                     args = None, 
+                     args = None,
                      res = None) :
         _set_default_resource(res)
         ret = ''
         ret += "#!/bin/bash -l\n"
-        ret += "#SBATCH -N %d\n" % res['numb_node']
-        ret += "#SBATCH --ntasks-per-node %d\n" % res['task_per_node']
-        ret += "#SBATCH -t %s\n" % res['time_limit']
+        ret += "#SBATCH -N=%d\n" % res['numb_node']
+        ret += "#SBATCH --ntasks-per-node=%d\n" % res['task_per_node']
+        ret += "#SBATCH -t=%s\n" % res['time_limit']
         if res['mem_limit'] > 0 :
-            ret += "#SBATCH --mem %dG \n" % res['mem_limit']
+            ret += "#SBATCH --mem=%dG \n" % res['mem_limit']
         if len(res['account']) > 0 :
-            ret += "#SBATCH --account %s \n" % res['account']
+            ret += "#SBATCH --account=%s \n" % res['account']
         if len(res['partition']) > 0 :
-            ret += "#SBATCH --partition %s \n" % res['partition']
+            ret += "#SBATCH --partition=%s \n" % res['partition']
         if len(res['qos']) > 0 :
-            ret += "#SBATCH --qos %s \n" % res['qos']
+            ret += "#SBATCH --qos=%s \n" % res['qos']
         if res['numb_gpu'] > 0 :
             ret += "#SBATCH --gres=gpu:%d\n" % res['numb_gpu']
         for ii in res['constraint_list'] :
-            ret += '#SBATCH -C %s \n' % ii
+            ret += '#SBATCH -C=%s \n' % ii
         for ii in res['license_list'] :
-            ret += '#SBATCH -L %s \n' % ii
+            ret += '#SBATCH -L=%s \n' % ii
         if len(res['exclude_list']) >0:
             temp_exclude = ""
             for ii in res['exclude_list'] :
                 temp_exclude += ii
                 temp_exclude += ","
             temp_exclude = temp_exclude[:-1]
-            ret += '#SBATCH --exclude %s \n' % temp_exclude
+            ret += '#SBATCH --exclude=%s \n' % temp_exclude
         ret += "\n"
         # ret += 'set -euo pipefail\n\n'
         for ii in res['module_unload_list'] :
@@ -586,10 +586,10 @@ class SlurmJob (RemoteJob) :
 
 
 class PBSJob (RemoteJob) :
-    def submit(self, 
+    def submit(self,
                job_dirs,
                cmd,
-               args = None, 
+               args = None,
                resources = None) :
         script_name = self._make_script(job_dirs, cmd, args, res = resources)
         stdin, stdout, stderr = self.block_checkcall(('cd %s; qsub %s' % (self.remote_root, script_name)))
@@ -617,7 +617,7 @@ class PBSJob (RemoteJob) :
                 raise RuntimeError ("status command qstat fails to execute. erro info: %s return code %d"
                                     % (err_str, ret))
         status_line = stdout.read().decode('utf-8').split ('\n')[-2]
-        status_word = status_line.split ()[-2]        
+        status_word = status_line.split ()[-2]
         # dlog.info (status_word)
         if      status_word in ["Q","H"] :
             return JobStatus.waiting
@@ -630,7 +630,7 @@ class PBSJob (RemoteJob) :
                 return JobStatus.terminated
         else :
             return JobStatus.unknown
-    
+
     def _get_job_id(self) :
         sftp = self.ssh.open_sftp()
         with sftp.open(os.path.join(self.remote_root, 'job_id'), 'r') as fp:
@@ -641,17 +641,17 @@ class PBSJob (RemoteJob) :
     def _check_finish_tag(self) :
         sftp = self.ssh.open_sftp()
         try:
-            sftp.stat(os.path.join(self.remote_root, 'tag_finished')) 
+            sftp.stat(os.path.join(self.remote_root, 'tag_finished'))
             ret =  True
         except IOError:
             ret = False
         sftp.close()
         return ret
 
-    def _make_script(self, 
+    def _make_script(self,
                      job_dirs,
                      cmd,
-                     args = None, 
+                     args = None,
                      res = None) :
         _set_default_resource(res)
         ret = ''
@@ -692,7 +692,7 @@ class PBSJob (RemoteJob) :
             if res['with_mpi'] :
                 ret += 'mpirun -machinefile $PBS_NODEFILE -n %d %s %s\n' % (res['numb_node'] * res['task_per_node'], cmd, jj)
             else :
-                ret += '%s %s\n' % (cmd, jj)                
+                ret += '%s %s\n' % (cmd, jj)
             if 'allow_failure' not in res or res['allow_failure'] is False:
                 ret += 'test $? -ne 0 && exit\n'
             ret += 'cd %s\n' % self.remote_root
@@ -709,7 +709,7 @@ class PBSJob (RemoteJob) :
         return script_name
 
 
-# ssh_session = SSHSession('localhost.json')        
+# ssh_session = SSHSession('localhost.json')
 # rjob = CloudMachineJob(ssh_session, '.')
 # # can upload dirs and normal files
 # rjob.upload(['job0', 'job1'], ['batch_exec.py', 'test'])
@@ -757,10 +757,10 @@ class LSFJob (RemoteJob) :
             self._submit(job_dirs, cmd, args, resources)
         time.sleep(20) # For preventing the crash of the tasks while submitting.
 
-    def _submit(self, 
+    def _submit(self,
                job_dirs,
                cmd,
-               args = None, 
+               args = None,
                resources = None) :
         script_name = self._make_script(job_dirs, cmd, args, res = resources)
         stdin, stdout, stderr = self.block_checkcall(('cd %s; bsub < %s' % (self.remote_root, script_name)))
@@ -818,7 +818,7 @@ class LSFJob (RemoteJob) :
                 return JobStatus.terminated
         else :
             return JobStatus.unknown
-    
+
     def _get_job_id(self) :
         sftp = self.ssh.open_sftp()
         with sftp.open(os.path.join(self.remote_root, 'job_id'), 'r') as fp:
@@ -829,17 +829,17 @@ class LSFJob (RemoteJob) :
     def _check_finish_tag(self) :
         sftp = self.ssh.open_sftp()
         try:
-            sftp.stat(os.path.join(self.remote_root, 'tag_finished')) 
+            sftp.stat(os.path.join(self.remote_root, 'tag_finished'))
             ret =  True
         except IOError:
             ret = False
         sftp.close()
         return ret
 
-    def _make_script(self, 
+    def _make_script(self,
                      job_dirs,
                      cmd,
-                     args = None, 
+                     args = None,
                      res = None) :
         _set_default_resource(res)
         ret = ''
@@ -887,7 +887,7 @@ class LSFJob (RemoteJob) :
                 ret += 'mpirun -machinefile $LSB_DJOB_HOSTFILE -n %d %s %s\n' % (
                     res['numb_node'] * res['task_per_node'], cmd, jj)
             else :
-                ret += '%s %s\n' % (cmd, jj)                
+                ret += '%s %s\n' % (cmd, jj)
             if 'allow_failure' not in res or res['allow_failure'] is False:
                 ret += 'test $? -ne 0 && exit\n'
             ret += 'cd %s\n' % self.remote_root
