@@ -497,6 +497,8 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | **fp_style** | string                | "vasp"                                                       | Software for First Principles. **Options** include “vasp”, “pwscf”, “siesta” and “gaussian” up to now. |
 | **fp_task_max** | Integer            | 20                                                           | Maximum of  structures to be calculated in `02.fp` of each iteration. |
 | **fp_task_min**     | Integer        | 5                                                            | Minimum of structures to calculate in `02.fp` of each iteration. |
+| fp_accurate_threshold      | Float | 0.9999  | If the accurate ratio is larger than this number, no fp calculation will be performed, i.e. fp_task_max = 0. |
+| fp_accurate_soft_threshold | Float | 0.9999  | If the accurate ratio is between this number and `fp_accurate_threshold`, the fp_task_max linearly decays to zero. |
 | *fp_style == VASP*
 | **fp_pp_path**   | String           | "/sharedext4/.../ch4/"                                       | Directory of psuedo-potential file to be used for 02.fp exists. |
 | **fp_pp_files**    | List of string         | ["POTCAR"]                                                   | Psuedo-potential file to be used for 02.fp. Note that the order of elements should correspond to the order in `type_map`. |
