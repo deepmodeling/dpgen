@@ -73,8 +73,8 @@ class ALI():
         self.template_id = self.create_template(img_id, sg_id, vpc_id)
         self.vsw_id = self.get_vsw_id(vpc_id)
         self.apg_id = self.create_apg()
-        dlog.info("begin to create ess")
-        time.sleep(90)
+        dlog.info("begin to create ess, please wait two minutes")
+        time.sleep(120)
         new_server_list = self.describe_apg_instances()
         new_ip_list = self.get_ip(new_server_list)
         for ii in range(len(new_server_list)):
@@ -358,7 +358,7 @@ class ALI():
         elif self.adata["img_name"] == "vasp":
             if machine_exception_num / self.nchunks > 0.05:
                 self.change_apg_capasity(self.nchunks - self.get_finished_job_num() + machine_exception_num)
-                time.sleep(90)
+                time.sleep(120)
                 new_ip_list = []
                 try:
                     new_server_list = self.update_server_list()
@@ -434,7 +434,7 @@ class ALI():
                         self.change_apg_capasity(self.nchunks - self.get_finished_job_num() - 1)
                 if self.dispatchers[ii][1] == "working":
                     if self.check_server(self.dispatchers[ii][0].remote_profile):
-                        if self.dispatchers[ii][0].all_finished(self.job_handlers[ii], mark_failure):
+                        if self.dispatchers[ii][0].all_finished(self.job_handlers[ii], mark_failure, False):
                             self.delete(ii)
                             self.dispatchers[ii][1] = "finished"
                             self.ip_list[ii] = "finished"
@@ -495,15 +495,20 @@ class ALI():
     def check_server(self, profile):
         try:
             session = SSHSession(profile)
+            session.close()
             return True
         except:
             return False
 
     def check_dispatcher_finished(self):
+        count = 0
+        flag = True
         for ii in range(len(self.dispatchers)):
-            if self.dispatchers[ii][1] == "unalloc" or self.dispatchers[ii][1] == "working" or self.dispatchers[ii][1] == "exception":
-                return False
-        return True
+            if self.dispatchers[ii][1] == "unalloc" or self.dispatchers[ii][1] == "working": flag = False
+            if self.dispatchers[ii][1] == "exception": count += 1
+        if self.adata["img_name"] == "vasp" and count / self.nchunks > 0.05: flag = False
+        elif self.adata["img_name"] == "kit" and count > 0: flag = False
+        return flag
    
     def delete(self, ii):
         request = DeleteInstancesRequest()
