@@ -505,7 +505,11 @@ class ALI():
                 profile = self.mdata_machine.copy()
                 profile['hostname'] = self.ip_list[ii]
                 profile['instance_id'] = self.instance_list[ii]
-                self.dispatchers[ii] = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
+                if self.check_server(profile):
+                    self.dispatchers[ii] = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
+                else:
+                    time.sleep(120)
+                    self.dispatchers[ii] = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
 
     def delete_machine(self):
         request = DeleteInstancesRequest()
