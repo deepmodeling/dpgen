@@ -278,7 +278,9 @@ def make_train (iter_index,
                         init_data_sys.append(os.path.join('..', 'data.iters', jj, sys_single))
                         init_batch_size.append(detect_batch_size(sys_batch_size[sys_idx], os.path.join(jj, sys_single)))
                 else:
-                    nframes = dpdata.System(jj, 'deepmd/npy').get_nframes()
+                    tmp_box = np.loadtxt(os.path.join(jj, 'box.raw'))
+                    tmp_box = np.reshape(tmp_box, [-1,9])
+                    nframes = tmp_box.shape[0]
                     if nframes < fp_task_min :
                         log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
                         continue
@@ -1140,22 +1142,7 @@ def _make_fp_vasp_inner (modd_path,
             with open(os.path.join(work_path,'rest_failed.shuffled.%s.out'%ss), 'w') as fp:
                 for ii in fp_rest_failed:
                     fp.write(" ".join([str(nn) for nn in ii]) + "\n")
-
-        # set number of tasks
-        accurate_ratio = float(counter['accurate']) / float(fp_sum)
-        fp_accurate_threshold = jdata.get('fp_accurate_threshold', 1)
-        fp_accurate_soft_threshold = jdata.get('fp_accurate_soft_threshold', fp_accurate_threshold)
-        if accurate_ratio < fp_accurate_soft_threshold :
-            this_fp_task_max = fp_task_max
-        elif accurate_ratio >= fp_accurate_soft_threshold and accurate_ratio < fp_accurate_threshold:
-            this_fp_task_max = int(fp_task_max * (accurate_ratio - fp_accurate_threshold) / (fp_accurate_soft_threshold - fp_accurate_threshold))
-        else:
-            this_fp_task_max = 0
-        numb_task = min(this_fp_task_max, len(fp_candidate))
-        if (numb_task < fp_task_min):
-            numb_task = 0
-        dlog.info("system {0:s} accurate_ratio: {1:8.4f}    thresholds: {2:6.4f} and {3:6.4f}   eff. task min and max {4:4d} {5:4d}   number of fp tasks: {6:6d}".format(ss, accurate_ratio, fp_accurate_soft_threshold, fp_accurate_threshold, fp_task_min, this_fp_task_max, numb_task))
-        # make fp tasks
+        numb_task = min(fp_task_max, len(fp_candidate))
         count_bad_box = 0
         for cc in range(numb_task) :
             tt = fp_candidate[cc][0]
@@ -1294,7 +1281,7 @@ def make_vasp_incar_ele_temp(jdata, filename, ele_temp, nbands_esti = None):
         incar['NBANDS'] = nbands
         incar.write_file('INCAR')
 
-def make_fp_vasp_incar (iter_index,
+def _make_fp_vasp_incar (iter_index,
                          jdata,
                          nbands_esti = None) :
     iter_name = make_iter_name(iter_index)
@@ -1331,7 +1318,7 @@ def _make_fp_pwmat_input (iter_index,
         os.system("sed -i '1,2c 4 1' etot.input")
         os.chdir(cwd)
 
-def make_fp_vasp_cp_cvasp(iter_index,jdata):
+def _copy_cvasp(iter_index,jdata):
     # Move cvasp interface to jdata
     if ('cvasp' in jdata) and (jdata['cvasp'] == True):
        pass
@@ -1350,7 +1337,7 @@ def make_fp_vasp_cp_cvasp(iter_index,jdata):
         shutil.copyfile(cvasp_file, 'cvasp.py')
         os.chdir(cwd)
 
-def make_fp_vasp_kp (iter_index,jdata):
+def _make_fp_vasp_kp (iter_index,jdata):
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
     fp_aniso_kspacing = jdata.get('fp_aniso_kspacing')
@@ -1505,11 +1492,11 @@ def make_fp_vasp (iter_index,
     # 1, create potcar
     sys_link_fp_vasp_pp(iter_index, jdata)
     # 2, create incar
-    make_fp_vasp_incar(iter_index, jdata, nbands_esti = nbe)
+    _make_fp_vasp_incar(iter_index, jdata, nbands_esti = nbe)
     # 3, create kpoints
-    make_fp_vasp_kp(iter_index, jdata)
+    _make_fp_vasp_kp(iter_index, jdata)
     # 4, copy cvasp
-    make_fp_vasp_cp_cvasp(iter_index,jdata)
+    _copy_cvasp(iter_index,jdata)
 
 
 def make_fp_pwscf(iter_index,
