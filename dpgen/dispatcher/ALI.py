@@ -441,31 +441,30 @@ class ALI():
                     new_ip_list = []
                     try:
                         new_server_list = self.update_server_list()
-                        if new_server_list:
-                            time.sleep(120)
                         new_ip_list = self.get_ip(new_server_list)
                     except:
                         pass
                     if new_ip_list:
-                        self.ip_list[ii] = new_ip_list.pop()
-                        self.instance_list[ii] = new_server_list.pop()
                         profile = self.mdata_machine.copy()
-                        profile["hostname"] = self.ip_list[ii]
-                        profile["instance_id"] = self.instance_list[ii]
-                        self.dispatchers[ii] = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
-                        dlog.info(self.ip_list[ii])
-                        job_handler = self.dispatchers[ii][0].submit_jobs(resources,
-                                                               command,
-                                                               work_path,
-                                                               self.task_chunks[ii],
-                                                               group_size,
-                                                               forward_common_files,
-                                                               forward_task_files,
-                                                               backward_task_files,
-                                                               forward_task_deference,
-                                                               outlog,
-                                                               errlog)
-                        self.job_handlers[ii] = job_handler
+                        profile["hostname"] = new_ip_list.pop()
+                        profile["instance_id"] = new_server_list.pop()
+                        if self.check_server(profile):
+                            self.ip_list[ii] = profile["hostname"]
+                            self.instance_list[ii] = profile["instance_id"]
+                            self.dispatchers[ii] = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
+                            dlog.info(self.ip_list[ii])
+                            job_handler = self.dispatchers[ii][0].submit_jobs(resources,
+                                                                   command,
+                                                                   work_path,
+                                                                   self.task_chunks[ii],
+                                                                   group_size,
+                                                                   forward_common_files,
+                                                                   forward_task_files,
+                                                                   backward_task_files,
+                                                                   forward_task_deference,
+                                                                   outlog,
+                                                                   errlog)
+                            self.job_handlers[ii] = job_handler
             if self.check_dispatcher_finished():
                 os.remove('apg_id.json')
                 self.delete_template()
