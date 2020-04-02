@@ -441,6 +441,8 @@ class ALI():
                     new_ip_list = []
                     try:
                         new_server_list = self.update_server_list()
+                        if new_server_list:
+                            time.sleep(120)
                         new_ip_list = self.get_ip(new_server_list)
                     except:
                         pass
