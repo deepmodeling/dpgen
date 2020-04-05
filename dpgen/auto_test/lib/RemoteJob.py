@@ -348,23 +348,23 @@ class SlurmJob (RemoteJob) :
         _set_default_resource(res)
         ret = ''
         ret += "#!/bin/bash -l\n"
-        ret += "#SBATCH -N %d\n" % res['numb_node']
-        ret += "#SBATCH --ntasks-per-node %d\n" % res['task_per_node']
-        ret += "#SBATCH -t %s\n" % res['time_limit']
+        ret += "#SBATCH -N=%d\n" % res['numb_node']
+        ret += "#SBATCH --ntasks-per-node=%d\n" % res['task_per_node']
+        ret += "#SBATCH -t=%s\n" % res['time_limit']
         if res['mem_limit'] > 0 :
-            ret += "#SBATCH --mem %dG \n" % res['mem_limit']
+            ret += "#SBATCH --mem=%dG \n" % res['mem_limit']
         if len(res['account']) > 0 :
-            ret += "#SBATCH --account %s \n" % res['account']
+            ret += "#SBATCH --account=%s \n" % res['account']
         if len(res['partition']) > 0 :
-            ret += "#SBATCH --partition %s \n" % res['partition']
+            ret += "#SBATCH --partition=%s \n" % res['partition']
         if len(res['qos']) > 0 :
-            ret += "#SBATCH --qos %s \n" % res['qos']
+            ret += "#SBATCH --qos=%s \n" % res['qos']
         if res['numb_gpu'] > 0 :
             ret += "#SBATCH --gres=gpu:%d\n" % res['numb_gpu']
         for ii in res['constraint_list'] :
-            ret += '#SBATCH -C %s \n' % ii
+            ret += '#SBATCH -C=%s \n' % ii
         for ii in res['license_list'] :
-            ret += '#SBATCH -L %s \n' % ii
+            ret += '#SBATCH -L=%s \n' % ii
         for ii in res['exclude_list'] :
             ret += '#SBATCH --exclude %s \n' % ii
         ret += "\n"
