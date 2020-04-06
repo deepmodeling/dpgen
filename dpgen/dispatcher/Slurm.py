@@ -75,7 +75,8 @@ class Slurm(Batch) :
         ret = ''
         ret += "#!/bin/bash -l\n"
         ret += "#SBATCH -N %d\n" % res['numb_node']
-        ret += "#SBATCH --nodes=%d\n" % res['nodes']
+        if len(res['nodes']) > 0:
+            ret += "#SBATCH --nodes=%d\n" % res['nodes']
         ret += "#SBATCH --ntasks-per-node=%d\n" % res['task_per_node']
         if res['cpus_per_task'] > 0 :            
             ret += "#SBATCH --cpus-per-task=%d\n" % res['cpus_per_task']
