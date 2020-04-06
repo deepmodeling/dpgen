@@ -74,11 +74,12 @@ class Slurm(Batch) :
     def sub_script_head(self, res):
         ret = ''
         ret += "#!/bin/bash -l\n"
-        ret += "#SBATCH -N=%d\n" % res['numb_node']
+        ret += "#SBATCH -N %d\n" % res['numb_node']
+        ret += "#SBATCH --nodes=%d\n" % res['nodes']
         ret += "#SBATCH --ntasks-per-node=%d\n" % res['task_per_node']
         if res['cpus_per_task'] > 0 :            
             ret += "#SBATCH --cpus-per-task=%d\n" % res['cpus_per_task']
-        ret += "#SBATCH -t %s\n" % res['time_limit']
+        ret += "#SBATCH --time=%s\n" % res['time_limit']
         if res['mem_limit'] > 0 :
             ret += "#SBATCH --mem=%dG \n" % res['mem_limit']
         if len(res['account']) > 0 :
