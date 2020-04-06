@@ -349,8 +349,8 @@ class SlurmJob (RemoteJob) :
         ret = ''
         ret += "#!/bin/bash -l\n"
         ret += "#SBATCH -N %d\n" % res['numb_node']
-        if len(res['nodes']) > 0:
-            ret += "#SBATCH --nodes=%d\n" % res['nodes']
+        # if len(res['nodes']) > 0:
+        #     ret += "#SBATCH --nodes=%d\n" % res['nodes']
         ret += "#SBATCH --ntasks-per-node=%d\n" % res['task_per_node']
         ret += "#SBATCH --time=%s\n" % res['time_limit']
         if res['mem_limit'] > 0 :
