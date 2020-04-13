@@ -78,8 +78,12 @@ class ALI():
         new_server_list = self.describe_apg_instances()
         new_ip_list = self.get_ip(new_server_list)
         for ii in range(len(new_server_list)):
-            self.instance_list[ii] = new_server_list[ii]
-            self.ip_list[ii] = new_ip_list[ii]
+            profile = self.mdata_machine.copy()
+            profile['hostname'] = new_ip_list[ii]
+            profile['instance_id'] = new_server_list[ii]
+            if self.check_server(profile):
+                self.instance_list[ii] = new_server_list[ii]
+                self.ip_list[ii] = new_ip_list[ii]
 
     def delete_apg(self):
         request = DeleteAutoProvisioningGroupRequest()
@@ -411,6 +415,12 @@ class ALI():
                 self.job_handlers[ii] = job_handler
         machine_exception_num = 0
         while True:
+            new_ip_list = []
+            try:
+                new_server_list = self.update_server_list()
+                new_ip_list = self.get_ip(new_server_list)
+            except:
+                pass
             if machine_exception_num > 0:
                 self.resubmission(machine_exception_num)
             for ii in range(self.nchunks):
@@ -424,7 +434,7 @@ class ALI():
                         self.instance_list[ii] = "exception"
                         self.dispatchers[ii][1] = "exception"
                         if self.adata["img_name"] == "vasp":
-                            self.change_apg_capasity(self.nchunks - self.get_finished_job_num() - 1)
+                            self.change_apg_capasity(self.nchunks - self.get_finished_job_num() - machine_exception_num)
                         continue
                     if self.check_server(self.dispatchers[ii][0].remote_profile):
                         if self.dispatchers[ii][0].all_finished(self.job_handlers[ii], mark_failure, False):
@@ -438,19 +448,13 @@ class ALI():
                 elif self.dispatchers[ii][1] == "finished":
                     continue
                 elif self.dispatchers[ii][1] == "unalloc":
-                    new_ip_list = []
-                    try:
-                        new_server_list = self.update_server_list()
-                        new_ip_list = self.get_ip(new_server_list)
-                    except:
-                        pass
                     if new_ip_list:
                         profile = self.mdata_machine.copy()
-                        profile["hostname"] = new_ip_list.pop()
-                        profile["instance_id"] = new_server_list.pop()
+                        profile["hostname"] = new_ip_list[0]
+                        profile["instance_id"] = new_server_list[0]
                         if self.check_server(profile):
-                            self.ip_list[ii] = profile["hostname"]
-                            self.instance_list[ii] = profile["instance_id"]
+                            self.ip_list[ii] = new_ip_list.pop(0)
+                            self.instance_list[ii] = new_server_list.pop(0)
                             self.dispatchers[ii] = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
                             dlog.info(self.ip_list[ii])
                             job_handler = self.dispatchers[ii][0].submit_jobs(resources,
@@ -508,8 +512,8 @@ class ALI():
                 if self.check_server(profile):
                     self.dispatchers[ii] = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
                 else:
-                    time.sleep(120)
-                    self.dispatchers[ii] = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
+                    continue
+                    #self.dispatchers[ii] = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
 
     def delete_machine(self):
         request = DeleteInstancesRequest()
