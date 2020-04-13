@@ -75,18 +75,18 @@ class Slurm(Batch) :
         ret = ''
         ret += "#!/bin/bash -l\n"
         ret += "#SBATCH -N %d\n" % res['numb_node']
-        ret += "#SBATCH --ntasks-per-node %d\n" % res['task_per_node']
+        ret += "#SBATCH --ntasks-per-node=%d\n" % res['task_per_node']
         if res['cpus_per_task'] > 0 :            
-            ret += "#SBATCH --cpus-per-task %d\n" % res['cpus_per_task']
+            ret += "#SBATCH --cpus-per-task=%d\n" % res['cpus_per_task']
         ret += "#SBATCH -t %s\n" % res['time_limit']
         if res['mem_limit'] > 0 :
-            ret += "#SBATCH --mem %dG \n" % res['mem_limit']
+            ret += "#SBATCH --mem=%dG \n" % res['mem_limit']
         if len(res['account']) > 0 :
-            ret += "#SBATCH --account %s \n" % res['account']
+            ret += "#SBATCH --account=%s \n" % res['account']
         if len(res['partition']) > 0 :
-            ret += "#SBATCH --partition %s \n" % res['partition']
+            ret += "#SBATCH --partition=%s \n" % res['partition']
         if len(res['qos']) > 0 :
-            ret += "#SBATCH --qos %s \n" % res['qos']
+            ret += "#SBATCH --qos=%s \n" % res['qos']
         if res['numb_gpu'] > 0 :
             ret += "#SBATCH --gres=gpu:%d\n" % res['numb_gpu']
         for ii in res['constraint_list'] :
@@ -99,7 +99,7 @@ class Slurm(Batch) :
                 temp_exclude += ii
                 temp_exclude += ","
             temp_exclude = temp_exclude[:-1]
-            ret += '#SBATCH --exclude %s \n' % temp_exclude
+            ret += '#SBATCH --exclude=%s \n' % temp_exclude
         ret += "\n"
         for ii in res['module_unload_list'] :
             ret += "module unload %s\n" % ii
