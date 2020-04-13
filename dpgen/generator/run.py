@@ -201,6 +201,7 @@ def make_train (iter_index,
     training_reuse_start_lr = jdata.get('training_reuse_start_lr', 1e-4)
     training_reuse_start_pref_e = jdata.get('training_reuse_start_pref_e', 0.1)
     training_reuse_start_pref_f = jdata.get('training_reuse_start_pref_f', 100)
+    model_devi_activation_func = jdata.get('model_devi_activation_func', None)
 
     if iter_index > 0 and _check_empty_iter(iter_index-1, fp_task_min) :
         log_task('prev data is empty, copy prev model')
@@ -324,15 +325,16 @@ def make_train (iter_index,
             jinput['loss']['start_pref_f'] = training_reuse_start_pref_f
         jinput['learning_rate']['start_lr'] = training_reuse_start_lr
         jinput['training']['stop_batch'] = training_reuse_stop_batch
-    # set random seed for each model, dump the input.json
+
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         create_path(task_path)
         os.chdir(task_path)
-        for ii in init_data_sys :
-            if not os.path.isdir(ii) :
-                raise RuntimeError ("data sys %s does not exists, cwd is %s" % (ii, os.getcwd()))
+        for jj in init_data_sys :
+            if not os.path.isdir(jj) :
+                raise RuntimeError ("data sys %s does not exists, cwd is %s" % (jj, os.getcwd()))
         os.chdir(cwd)
+        # set random seed for each model
         if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
             # 0.x
             jinput['seed'] = random.randrange(sys.maxsize) % (2**32)
@@ -341,6 +343,14 @@ def make_train (iter_index,
             jinput['model']['descriptor']['seed'] = random.randrange(sys.maxsize) % (2**32)
             jinput['model']['fitting_net']['seed'] = random.randrange(sys.maxsize) % (2**32)
             jinput['training']['seed'] = random.randrange(sys.maxsize) % (2**32)
+        # set model activation function
+        if model_devi_activation_func is not None:
+            if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
+                raise RuntimeError('model_devi_activation_func does not suppport deepmd version', mdata['deepmd_version'])
+            assert(type(model_devi_activation_func) is list and len(model_devi_activation_func) == numb_models)
+            jinput['model']['descriptor']['activation_function'] = model_devi_activation_func[ii]
+            jinput['model']['fitting_net']['activation_function'] = model_devi_activation_func[ii]
+        # dump the input.json
         with open(os.path.join(task_path, train_input_file), 'w') as outfile:
             json.dump(jinput, outfile, indent = 4)
 
