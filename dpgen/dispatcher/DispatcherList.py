@@ -1,6 +1,11 @@
 from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, JobRecord
 
-class Entity()
+class Entity():
+    def __init__(self, ip, instance_id, job_handler):
+        self.ip = ip
+        self.instance_id = instance_id
+        self.job_handler = job_handler
+        
 class DispatcherList():
     def __init__(self, mdata_machine, mdata_resources, nchunks, cloud_resources=None):
         self.mdata_machine = mdata_machine
@@ -9,11 +14,11 @@ class DispatcherList():
         self.cloud_resources = cloud_resources
         self.dispatcher_list = list({"dispatcher": None, 
                                      "dispatcher_status": "unallocated",
-                                     "entity": Entity} for ii in range(nchunks))
+                                     "entity": None} for ii in range(nchunks))
     # Base
     def init(self):
         for dispatcher in self.dispatcher_list:
-            create()
+            self.create()
 
     # Base
     def run_jobs(self,
@@ -65,6 +70,7 @@ class DispatcherList():
     # Derivate
     def check_restart(self):
         '''use some methods to decide restart or not'''
+        pass
 
     # Derivate
     def create(self, num):
@@ -72,10 +78,12 @@ class DispatcherList():
            assignment the entities
            make dispatchers
            change status from unallocated to unsubmitted'''
+        pass
 
     # Derivate
     def delete(self):
         '''delete one machine'''
+        pass
 
     # Base
     def check_all_dispatchers_finished(self, ratio_failure=0):
@@ -100,6 +108,7 @@ class DispatcherList():
         '''create machines
            make dispatcher
            change status from terminated to unsubmitted'''
+        pass
 
     # Base
     def make_dispatcher(self, entity):
@@ -126,6 +135,7 @@ class DispatcherList():
 
     # Derivate
     def catch_dispatcher_exception(self):
+        pass
 
 
 
