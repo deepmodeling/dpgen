@@ -100,7 +100,7 @@ class DispatcherList():
             if self.dispatcher_list[ii]["dispatcher_status"] == "terminated":
                 exception_num += 1
         if exception_num / self.nchunks > ratio_failure: return False
-        else return True
+        else: return True
 
     # Base
     def exception_handling(self, ratio_failure):
