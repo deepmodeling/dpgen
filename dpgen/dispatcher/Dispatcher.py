@@ -186,7 +186,8 @@ class Dispatcher(object):
 
     def all_finished(self, 
                      job_handler, 
-                     mark_failure):
+                     mark_failure,
+                     clean=True):
         task_chunks = job_handler['task_chunks']
         task_chunks_str = ['+'.join(ii) for ii in task_chunks]
         task_hashes = [sha1(ii.encode('utf-8')).hexdigest() for ii in task_chunks_str]
@@ -222,7 +223,8 @@ class Dispatcher(object):
                         rjob['context'].download(task_chunks[idx], backward_task_files, check_exists = True)
                     else:
                         rjob['context'].download(task_chunks[idx], backward_task_files)
-                    rjob['context'].clean()
+                    if clean:
+                        rjob['context'].clean()
                     job_record.record_finish(cur_hash)
                     job_record.dump()
         job_record.dump()
