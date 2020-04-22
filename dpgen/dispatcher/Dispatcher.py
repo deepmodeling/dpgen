@@ -254,10 +254,15 @@ class JobRecord(object):
                               instance_id=None):
         self.valid_hash(chunk_hash)
         self.record[chunk_hash]['context'] = [local_root, remote_root, job_uuid, ip, instance_id]
+        self.record[chunk_hash]['context']['local_root'] = local_root
+        self.record[chunk_hash]['context']['remote_root'] = remote_root
+        self.record[chunk_hash]['context']['job_uuid'] = job_uuid
+        self.record[chunk_hash]['context']['ip'] = ip
+        self.record[chunk_hash]['context']['instance_id'] = instance_id
 
     def get_uuid(self, chunk_hash):
         self.valid_hash(chunk_hash)
-        return self.record[chunk_hash]['context'][2]
+        return self.record[chunk_hash]['context']['job_uuid']
 
     def check_finished(self, chunk_hash):
         self.valid_hash(chunk_hash)
@@ -297,7 +302,7 @@ class JobRecord(object):
         self.record = {}
         for ii,jj in zip(task_hash, self.task_chunks):
             self.record[ii] = {
-                'context': None,
+                'context': {},
                 'finished': False,
                 'fail_count': 0,
                 'task_chunk': jj,
@@ -307,9 +312,8 @@ class JobRecord(object):
 def make_dispatcher(mdata, mdata_resource=None, work_path=None, run_tasks=None, group_size=None):
     if 'ali_auth' in mdata:
         from dpgen.dispatcher.ALI import ALI
-        nchunks = len(_split_tasks(run_tasks, group_size))
-        dispatcher = ALI(mdata['ali_auth'], mdata_resource, mdata, nchunks)
-        dispatcher.init(work_path, run_tasks, group_size)
+        dispatcher = ALI(mdata['ali_auth'], mdata_resource, mdata, run_tasks, group_size, work_path)
+        dispatcher.init()
         return dispatcher
     else:    
         hostname = mdata.get('hostname', None)
