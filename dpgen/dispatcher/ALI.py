@@ -81,7 +81,7 @@ class ALI(DispatcherList):
             # job_record = JobRecord(self.work_path, self.task_chunks[ii], fname = "jr.%.06d.json" % ii)
             # self.dispatcher_list[ii]["entity"] = Entity(ip, instance_id, job_record)
             # self.make_dispatcher(ii)
-            if self.dispatcher_list[ii]["entity"].ip:
+            if self.dispatcher_list[ii]["entity"]:
                 self.make_dispatcher(ii)
             else:
                 if len(self.server_pool) > 0:
