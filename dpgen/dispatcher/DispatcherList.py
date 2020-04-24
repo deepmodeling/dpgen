@@ -114,11 +114,11 @@ class DispatcherList():
 
     # Base
     def check_all_dispatchers_finished(self, ratio_failure=0):
-        exception_num = 0
+        finished_num = 0
         for ii in range(self.nchunks):
-            if self.dispatcher_list[ii]["dispatcher_status"] == "terminated":
-                exception_num += 1
-        if exception_num / self.nchunks > ratio_failure: return False
+            if self.dispatcher_list[ii]["dispatcher_status"] == "finished":
+                finished_num += 1
+        if finished_num / self.nchunks < (1 - ratio_failure): return False
         else: return True
 
     # Base

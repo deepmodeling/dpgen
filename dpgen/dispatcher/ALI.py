@@ -22,28 +22,6 @@ from os.path import join
 from dpgen  import dlog
 from hashlib import sha1
 
-# def manual_delete(stage):
-#     with open('machine-ali.json') as fp1:
-#         mdata = json.load(fp1)
-#         adata = mdata[stage][0]['machine']['ali_auth']
-#         mdata_resources = mdata[stage][0]['resources']
-#         mdata_machine = mdata[stage][0]['machine']
-#         ali = ALI(adata, mdata_resources, mdata_machine, 0)
-#         with open('apg_id.json', 'r') as fp2:
-#             apg_id = json.load(fp2)
-#             ali.apg_id = apg_id['apg_id']
-#             ali.delete_apg()
-
-# def manual_create(stage, machine_number):
-#     with open('machine-ali.json') as fp:
-#         mdata = json.load(fp)
-#         adata = mdata[stage][0]['machine']['ali_auth']
-#         mdata_resources = mdata[stage][0]['resources']
-#         mdata_machine = mdata[stage][0]['machine']
-#         ali = ALI(adata, mdata_resources, mdata_machine, machine_number)
-#         ali.create_ess()
-#         print(ali.ip_list)
-
 # cloud_resources = {"AccessKey_ID":"",
 #                    "AccessKey_Secret":"",
 #                    "regionID": "cn-shenzhen",
