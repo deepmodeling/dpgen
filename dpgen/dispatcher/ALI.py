@@ -75,22 +75,12 @@ class ALI(DispatcherList):
         '''case1: jr.json existed and job not finished, use jr.json to rebuild dispatcher
            case2: create one machine, then make_dispatcher, change status from unallocated to unsubmitted
            case3: use existed machine(finish) to make_dispatcher'''
-        if not os.path.exists(os.path.join(os.path.abspath(self.work_path), "jr.%.06d.json" % ii)):
+        if  os.path.exists(os.path.join(os.path.abspath(self.work_path), "jr.%.06d.json" % ii)):
             # if entity has value -> case3
             # else create machine -> case2
             # job_record = JobRecord(self.work_path, self.task_chunks[ii], fname = "jr.%.06d.json" % ii)
             # self.dispatcher_list[ii]["entity"] = Entity(ip, instance_id, job_record)
             # self.make_dispatcher(ii)
-            if self.dispatcher_list[ii]["entity"]:
-                self.make_dispatcher(ii)
-            else:
-                if len(self.server_pool) > 0:
-                    self.dispatcher_list[ii]["entity"] = Entity(self.ip_pool.pop(0), self.server_pool.pop(0))
-                    self.make_dispatcher(ii)
-                else:
-                    self.server_pool = self.describe_apg_instances()
-                    self.ip_pool = self.get_ip(self.server_pool)
-        else:
             # case1
             task_chunks_str = ['+'.join(ii) for ii in self.task_chunks]
             task_hashes = [sha1(ii.encode('utf-8')).hexdigest() for ii in task_chunks_str]
@@ -100,6 +90,17 @@ class ALI(DispatcherList):
                     jr = json.load(fp)
                     self.dispatcher_list[ii]["entity"] = Entity(jr[cur_hash]['context']['ip'], jr[cur_hash]['context']['instance_id'], job_record)
                     self.make_dispatcher(ii)
+        else:
+            if self.dispatcher_list[ii]["entity"]:
+                self.make_dispatcher(ii)
+            else:
+                if len(self.server_pool) > 0:
+                    self.dispatcher_list[ii]["entity"] = Entity(self.ip_pool.pop(0), self.server_pool.pop(0))
+                    self.make_dispatcher(ii)
+                else:
+                    #self.server_pool = list(set(self.describe_apg_instances()-set(list(server for))))
+                    #self.ip_pool = self.get_ip(self.server_pool)
+                    pass
     
     # Derivate
     def delete(self, ii):
