@@ -137,7 +137,7 @@ class ALI(DispatcherList):
     def delete_apg(self):
         request = DeleteAutoProvisioningGroupRequest()
         request.set_accept_format('json')
-        request.set_AutoProvisioningGroupId(self.apg_id)
+        request.set_AutoProvisioningGroupId(self.cloud_resources["apg_id"])
         request.set_TerminateInstances(True)
         try:
             response = self.client.do_action_with_exception(request)
@@ -150,7 +150,7 @@ class ALI(DispatcherList):
         request = CreateAutoProvisioningGroupRequest()
         request.set_accept_format('json')
         request.set_TotalTargetCapacity(str(self.nchunks))
-        request.set_LaunchTemplateId(self.template_id)
+        request.set_LaunchTemplateId(self.cloud_resources["template_id"])
         request.set_AutoProvisioningGroupName(self.cloud_resources["instance_name"] + ''.join(random.choice(string.ascii_uppercase) for _ in range(20)))
         request.set_AutoProvisioningGroupType("maintain")
         request.set_SpotAllocationStrategy("lowest-price")
@@ -172,15 +172,11 @@ class ALI(DispatcherList):
             dlog.info(e)
         except ClientException as e:
             dlog.info(e)
-        
-    def update_server_list(self):
-        instance_list = self.describe_apg_instances()
-        return list(set(instance_list) - set(self.instance_list))
 
     def describe_apg_instances(self):
         request = DescribeAutoProvisioningGroupInstancesRequest()
         request.set_accept_format('json')
-        request.set_AutoProvisioningGroupId(self.apg_id)
+        request.set_AutoProvisioningGroupId(self.cloud_resources["apg_id"])
         request.set_PageSize(100)
         iteration = self.nchunks // 100
         instance_list = []
@@ -196,7 +192,7 @@ class ALI(DispatcherList):
         machine_config = self.cloud_resources["machine_type_price"]
         config = []
         for conf in machine_config:
-            for vsw in self.vsw_id:
+            for vsw in self.cloud_resources["vsw_id"]:
                 tmp = {
                     "InstanceType": conf["machine_type"],
                     "MaxPrice": str(conf["price_limit"] * conf["numb"]),
@@ -237,7 +233,7 @@ class ALI(DispatcherList):
     def delete_template(self):
         request = DeleteLaunchTemplateRequest()
         request.set_accept_format('json')
-        request.set_LaunchTemplateId(self.template_id)
+        request.set_LaunchTemplateId(self.cloud_resources["template_id"])
         response = self.client.do_action_with_exception(request)
         
     def get_image_id(self, img_name):
@@ -272,7 +268,7 @@ class ALI(DispatcherList):
     def change_apg_capasity(self, capasity):
         request = ModifyAutoProvisioningGroupRequest()
         request.set_accept_format('json')
-        request.set_AutoProvisioningGroupId(self.apg_id)
+        request.set_AutoProvisioningGroupId(self.cloud_resources["apg_id"])
         request.set_TotalTargetCapacity(str(capasity))
         request.set_SpotTargetCapacity(str(capasity))
         request.set_PayAsYouGoTargetCapacity("0")
