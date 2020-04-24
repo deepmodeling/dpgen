@@ -150,6 +150,8 @@ class DispatcherList():
         if self.dispatcher_list[ii]["dispatcher_status"] == "running":
             if not self.catch_dispatcher_exception():
                 # param clean: delete remote work_dir or not.
+                mark_failure = self.mdata_resources.get("mark_failure", False)
+                clean = self.mdata_resources.get("clean", False)
                 if self.dispatcher_list[ii]["dispatcher"].all_finished(self.dispatcher_list[ii]["entity"].job_handler, mark_failure, clean):
                     self.dispatcher_list[ii]["dispatcher_status"] = "finished"
             else:
