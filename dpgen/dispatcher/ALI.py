@@ -17,73 +17,122 @@ from aliyunsdkecs.request.v20140526.DescribeSecurityGroupsRequest import Describ
 import time, json, os, glob, string, random
 from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, JobRecord
 from dpgen.dispatcher.SSHContext import SSHSession
+from dpgen.dispatcher.DispatcherList import DispatcherList
 from os.path import join
 from dpgen  import dlog
 from hashlib import sha1
 
-def manual_delete(stage):
-    with open('machine-ali.json') as fp1:
-        mdata = json.load(fp1)
-        adata = mdata[stage][0]['machine']['ali_auth']
-        mdata_resources = mdata[stage][0]['resources']
-        mdata_machine = mdata[stage][0]['machine']
-        ali = ALI(adata, mdata_resources, mdata_machine, 0)
-        with open('apg_id.json', 'r') as fp2:
-            apg_id = json.load(fp2)
-            ali.apg_id = apg_id['apg_id']
-            ali.delete_apg()
+# def manual_delete(stage):
+#     with open('machine-ali.json') as fp1:
+#         mdata = json.load(fp1)
+#         adata = mdata[stage][0]['machine']['ali_auth']
+#         mdata_resources = mdata[stage][0]['resources']
+#         mdata_machine = mdata[stage][0]['machine']
+#         ali = ALI(adata, mdata_resources, mdata_machine, 0)
+#         with open('apg_id.json', 'r') as fp2:
+#             apg_id = json.load(fp2)
+#             ali.apg_id = apg_id['apg_id']
+#             ali.delete_apg()
 
-def manual_create(stage, machine_number):
-    with open('machine-ali.json') as fp:
-        mdata = json.load(fp)
-        adata = mdata[stage][0]['machine']['ali_auth']
-        mdata_resources = mdata[stage][0]['resources']
-        mdata_machine = mdata[stage][0]['machine']
-        ali = ALI(adata, mdata_resources, mdata_machine, machine_number)
-        ali.create_ess()
-        print(ali.ip_list)
+# def manual_create(stage, machine_number):
+#     with open('machine-ali.json') as fp:
+#         mdata = json.load(fp)
+#         adata = mdata[stage][0]['machine']['ali_auth']
+#         mdata_resources = mdata[stage][0]['resources']
+#         mdata_machine = mdata[stage][0]['machine']
+#         ali = ALI(adata, mdata_resources, mdata_machine, machine_number)
+#         ali.create_ess()
+#         print(ali.ip_list)
 
-class ALI():
-    def __init__(self, adata, mdata_resources, mdata_machine, nchunks):
-        self.ip_list = ["unalloc" for i in range(nchunks)]
-        self.instance_list = ["unalloc" for i in range(nchunks)]
-        self.dispatchers = [[None, "unalloc"] for i in range(nchunks)]
-        self.job_handlers = ["unalloc" for i in range(nchunks)]
-        self.task_chunks = None
-        self.adata = adata
-        self.apg_id = None
-        self.template_id = None
-        self.vsw_id = None
-        self.regionID = adata["regionID"]
-        self.client = AcsClient(adata["AccessKey_ID"], adata["AccessKey_Secret"], self.regionID)
-        self.mdata_resources = mdata_resources
-        self.mdata_machine = mdata_machine
-        self.nchunks = nchunks
+# cloud_resources = {"AccessKey_ID":"",
+#                    "AccessKey_Secret":"",
+#                    "regionID": "cn-shenzhen",
+#                    "img_name": "kit",
+#                    "machine_type_price": [
+#                        {"machine_type": "ecs.gn6v-c8g1.2xlarge", "price_limit": 20.00, "numb": 1, "priority": 0},
+#                        {"machine_type": "ecs.gn5-c4g1.xlarge",   "price_limit": 20.00, "numb": 1, "priority": 1}
+#                    ],
+#                    "instance_name": "CH4", 
+#                    "pay_strategy": "spot"
+#                    "apg_id": apg_id, 
+#                    "template_id": template_id, 
+#                    "vsw_id": vsw_id, 
+#                    "region_id": region_id,
+#                    "client": client}
 
-    def init(self, work_path, tasks, group_size):
-        if self.check_restart(work_path, tasks, group_size):
-            pass
+
+class ALI(DispatcherList):
+    def __init__(self, mdata_machine, mdata_resources, run_tasks, group_size, work_path, cloud_resources=None):
+        super().__init__()
+        self.cloud_resources["client"] = AcsClient(cloud_resources["AccessKey_ID"], cloud_resources["AccessKey_Secret"], cloud_resources["regionID"])
+
+    def init(self):
+        self.prepare()
+        for ii in range(self.nchunks):
+            self.create(ii)
+
+    def create(self, ii):
+        '''case1: jr.json existed and job not finished, use jr.json to rebuild dispatcher
+           case2: create one machine, then make_dispatcher, change status from unallocated to unsubmitted
+           case3: use existed machine(finish) to make_dispatcher'''
+        if not os.path.exists(os.path.join(os.path.abspath(self.work_path), "jr.%.06d.json" % ii)):
+            # if entity has value -> case3
+            # else create machine -> case2
+            # job_record = JobRecord(self.work_path, self.task_chunks[ii], fname = "jr.%.06d.json" % ii)
+            # self.dispatcher_list[ii]["entity"] = Entity(ip, instance_id, job_record)
+            # self.make_dispatcher(ii)
+            if self.dispatcher_list[ii]["entity"].ip:
+                self.make_dispatcher(ii)
+            else:
+                if len(self.server_pool) > 0:
+                    self.dispatcher_list[ii]["entity"] = Entity(self.ip_pool.pop(0), self.server_pool.pop(0))
+                    self.make_dispatcher(ii)
+                else:
+                    self.server_pool = self.describe_apg_instances()
+                    self.ip_pool = self.get_ip(self.server_pool)
         else:
-            self.create_ess()
-            self.make_dispatchers()
+            # case1
+            task_chunks_str = ['+'.join(ii) for ii in self.task_chunks]
+            task_hashes = [sha1(ii.encode('utf-8')).hexdigest() for ii in task_chunks_str]
+            job_record = JobRecord(self.work_path, self.task_chunks[ii], fname = "jr.%.06d.json" % ii)
+            if not job_record.check_finished(task_hashes[ii]): 
+                with open(os.path.join(self.work_path, "jr.%.06d.json" % ii)) as fp:
+                    jr = json.load(fp)
+                    self.dispatcher_list[ii]["entity"] = Entity(jr[cur_hash]['context']['ip'], jr[cur_hash]['context']['instance_id'], job_record)
+                    self.make_dispatcher(ii)
+    
+    # Derivate
+    def delete(self, ii):
+        '''delete one machine'''
+        request = DeleteInstancesRequest()
+        request.set_accept_format('json')
+        request.set_InstanceIds([self.dispatcher_list[ii]["entity"].instance_id])
+        request.set_Force(True)
+        response = self.client.do_action_with_exception(request)
+        running_num = 0
+        for jj in range(self.nchunks):
+            if self.dispatcher_list[jj]["dispatcher_status"] == "running":
+                running_num += 1
+        self.change_apg_capasity(running_num)
 
-    def create_ess(self):
-        img_id = self.get_image_id(self.adata["img_name"])
+    def clean(self):
+        self.delete_apg()
+        self.delete_template()
+
+    # Derivate
+    def catch_dispatcher_exception(self):
+        pass
+
+    def prepare(self):
+        img_id = self.get_image_id(self.cloud_resources["img_name"])
         sg_id, vpc_id = self.get_sg_vpc_id()
-        self.template_id = self.create_template(img_id, sg_id, vpc_id)
-        self.vsw_id = self.get_vsw_id(vpc_id)
-        self.apg_id = self.create_apg()
-        dlog.info("begin to create ess, please wait two minutes")
+        self.cloud_resources["template_id"] = self.create_template(img_id, sg_id, vpc_id)
+        self.cloud_resources["vsw_id"] = self.get_vsw_id(vpc_id)
+        self.cloud_resources["apg_id"] = self.create_apg()
+        dlog.info("begin to create apg, please wait")
         time.sleep(120)
-        new_server_list = self.describe_apg_instances()
-        new_ip_list = self.get_ip(new_server_list)
-        for ii in range(len(new_server_list)):
-            profile = self.mdata_machine.copy()
-            profile['hostname'] = new_ip_list[ii]
-            profile['instance_id'] = new_server_list[ii]
-            if self.check_server(profile):
-                self.instance_list[ii] = new_server_list[ii]
-                self.ip_list[ii] = new_ip_list[ii]
+        self.server_pool = self.describe_apg_instances()
+        self.ip_pool = self.get_ip(self.server_pool)
 
     def delete_apg(self):
         request = DeleteAutoProvisioningGroupRequest()
@@ -245,294 +294,33 @@ class ALI():
             pass
         return status
 
-    def check_restart(self, work_path, tasks, group_size):
-        if os.path.exists('apg_id.json'):
-            with open('apg_id.json') as fp:
-                apg = json.load(fp)
-                self.apg_id = apg["apg_id"] 
-            self.task_chunks = _split_tasks(tasks, group_size)
-            task_chunks_str = ['+'.join(ii) for ii in self.task_chunks]
-            task_hashes = [sha1(ii.encode('utf-8')).hexdigest() for ii in task_chunks_str]
-            nchunks = len(self.task_chunks)
-            for ii in range(nchunks):
-                fn = 'jr.%.06d.json' % ii
-                if not os.path.exists(os.path.join(os.path.abspath(work_path), fn)):
-                    pass
-                else:
-                    job_record = JobRecord(work_path, self.task_chunks[ii], fname = fn)
-                    cur_chunk = self.task_chunks[ii]
-                    cur_hash = task_hashes[ii]
-                    if not job_record.check_finished(cur_hash): 
-                        with open(os.path.join(work_path, fn)) as fp:
-                            jr = json.load(fp)
-                            ip = jr[cur_hash]['context'][3]
-                            instance_id = jr[cur_hash]['context'][4]
-                            profile = self.mdata_machine.copy()
-                            profile['hostname'] = ip
-                            profile['instance_id'] = instance_id
-                            if self.check_server(profile):
-                                disp = Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
-                                self.dispatchers[ii] = [disp, "working"]
-                                self.ip_list[ii] = ip
-                                self.instance_list[ii] = instance_id
-                            # spot callback
-                            else:
-                                os.remove(os.path.join(work_path, fn))
-                    else:
-                        self.ip_list[ii] = "finished"
-                        self.instance_list[ii] = "finished"
-                        self.dispatchers[ii] = [None, "finished"]
-            return True
-        else:
-            self.task_chunks = _split_tasks(tasks, group_size)
-            return False
 
-    def get_ip(self, instance_list):
-        request = DescribeInstancesRequest()
-        request.set_accept_format('json')
-        ip_list = []
-        if len(instance_list) <= 10:
-            for i in range(len(instance_list)):
-                request.set_InstanceIds([instance_list[i]])
-                response = self.client.do_action_with_exception(request)
-                response = json.loads(response)
-                ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
-        else:
-            iteration = len(instance_list) // 10
-            for i in range(iteration):
-                for j in range(10):
-                    request.set_InstanceIds([instance_list[i*10+j]])
-                    response = self.client.do_action_with_exception(request)
-                    response = json.loads(response)
-                    ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
-            if len(instance_list) - iteration * 10 != 0:
-                for j in range(len(instance_list) - iteration * 10):
-                    request.set_InstanceIds([instance_list[iteration*10+j]])
-                    response = self.client.do_action_with_exception(request)
-                    response = json.loads(response)
-                    ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
-        return ip_list
 
-    def get_finished_job_num(self):
-        finished_num = 0
-        for ii in range(len(self.dispatchers)):
-            if self.dispatchers[ii][1] == "finished":
-                finished_num += 1
-        return finished_num
 
-    def resubmission(self, machine_exception_num):
-        if self.adata["img_name"] == "kit":
-            new_ip_list = []
-            try:
-                new_server_list = self.update_server_list()
-                new_ip_list = self.get_ip(new_server_list)
-            except:
-                pass
-            for ii in range(self.nchunks):
-                if len(new_ip_list) == 0:
-                    break
-                if self.dispatchers[ii][1] == "exception":
-                    self.ip_list[ii] = new_ip_list.pop()
-                    self.instance_list[ii] = new_server_list.pop()
-                    profile = self.mdata_machine.copy()
-                    profile["hostname"] = self.ip_list[ii]
-                    profile["instance_id"] = self.instance_list[ii]
-                    self.dispatchers[ii] = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record="jr.%.06d.json" % ii), "working"]
-                    dlog.info(self.ip_list[ii])
-                    job_handler = self.dispatchers[ii][0].submit_jobs(resources,
-                                                                      command,
-                                                                      work_path,
-                                                                      self.task_chunks[ii],
-                                                                      group_size,
-                                                                      forward_common_files,
-                                                                      forward_task_files,
-                                                                      backward_task_files,
-                                                                      forward_task_deference,
-                                                                      outlog,
-                                                                      errlog)
-                    self.job_handlers[ii] = job_handler
-        elif self.adata["img_name"] == "vasp":
-            if machine_exception_num / self.nchunks > 0.05:
-                self.change_apg_capasity(self.nchunks - self.get_finished_job_num() + machine_exception_num)
-                time.sleep(120)
-                new_ip_list = []
-                try:
-                    new_server_list = self.update_server_list()
-                    new_ip_list = self.get_ip(new_server_list)
-                except:
-                    pass
-                if len(new_ip_list) == machine_exception_num:
-                    dlog.info("new submission of callback machine")
-                    for ii in range(self.nchunks):
-                        self.ip_list[ii] = new_ip_list.pop()
-                        self.instance_list[ii] = new_server_list.pop()
-                        profile = self.mdata_machine.copy()
-                        profile["hostname"] = self.ip_list[ii]
-                        profile["instance_id"] = self.instance_list[ii]
-                        self.dispatchers[ii] = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record="jr.%.06d.json" % ii), "working"]
-                        dlog.info(self.ip_list[ii])
-                        job_handler = self.dispatchers[ii][0].submit_jobs(resources,
-                                                                          command,
-                                                                          work_path,
-                                                                          self.task_chunks[ii],
-                                                                          group_size,
-                                                                          forward_common_files,
-                                                                          forward_task_files,
-                                                                          backward_task_files,
-                                                                          forward_task_deference,
-                                                                          outlog,
-                                                                          errlog)
-                        self.job_handlers[ii] = job_handler
 
-    #@profile(precision=6)
-    def run_jobs(self,
-                 resources,
-                 command,
-                 work_path,
-                 tasks,
-                 group_size,
-                 forward_common_files,
-                 forward_task_files,
-                 backward_task_files,
-                 forward_task_deference = True,
-                 mark_failure = False,
-                 outlog = 'log',
-                 errlog = 'err'):
-        for ii in range(self.nchunks):
-            if self.dispatchers[ii][1] == "working":
-                dlog.info(self.ip_list[ii])
-                job_handler = self.dispatchers[ii][0].submit_jobs(resources,
-                                                               command,
-                                                               work_path,
-                                                               self.task_chunks[ii],
-                                                               group_size,
-                                                               forward_common_files,
-                                                               forward_task_files,
-                                                               backward_task_files,
-                                                               forward_task_deference,
-                                                               outlog,
-                                                               errlog)
-                self.job_handlers[ii] = job_handler
-        machine_exception_num = 0
-        while True:
-            new_ip_list = []
-            try:
-                new_server_list = self.update_server_list()
-                new_ip_list = self.get_ip(new_server_list)
-            except:
-                pass
-            if machine_exception_num > 0:
-                self.resubmission(machine_exception_num)
-            for ii in range(self.nchunks):
-                if self.dispatchers[ii][1] == "working":
-                    if self.check_spot_callback(self.instance_list[ii]):
-                        machine_exception_num += 1
-                        dlog.info("machine %s callback" % self.instance_list[ii])
-                        os.remove(self.job_handlers[ii]["job_record"].fname)
-                        self.job_handlers[ii] = "exception"
-                        self.ip_list[ii] = "exception"
-                        self.instance_list[ii] = "exception"
-                        self.dispatchers[ii][1] = "exception"
-                        if self.adata["img_name"] == "vasp":
-                            self.change_apg_capasity(self.nchunks - self.get_finished_job_num() - machine_exception_num)
-                        continue
-                    if self.check_server(self.dispatchers[ii][0].remote_profile):
-                        if self.dispatchers[ii][0].all_finished(self.job_handlers[ii], mark_failure, False):
-                            self.delete(ii)
-                            self.dispatchers[ii][1] = "finished"
-                            self.ip_list[ii] = "finished"
-                            self.instance_list[ii] = "finished"
-                            self.change_apg_capasity(self.nchunks - self.get_finished_job_num())
-                    else:
-                        dlog.info("ssh exception accured in %s" % self.ip_list[ii])
-                elif self.dispatchers[ii][1] == "finished":
-                    continue
-                elif self.dispatchers[ii][1] == "unalloc":
-                    if new_ip_list:
-                        profile = self.mdata_machine.copy()
-                        profile["hostname"] = new_ip_list[0]
-                        profile["instance_id"] = new_server_list[0]
-                        if self.check_server(profile):
-                            self.ip_list[ii] = new_ip_list.pop(0)
-                            self.instance_list[ii] = new_server_list.pop(0)
-                            self.dispatchers[ii] = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
-                            dlog.info(self.ip_list[ii])
-                            job_handler = self.dispatchers[ii][0].submit_jobs(resources,
-                                                                   command,
-                                                                   work_path,
-                                                                   self.task_chunks[ii],
-                                                                   group_size,
-                                                                   forward_common_files,
-                                                                   forward_task_files,
-                                                                   backward_task_files,
-                                                                   forward_task_deference,
-                                                                   outlog,
-                                                                   errlog)
-                            self.job_handlers[ii] = job_handler
-            if self.check_dispatcher_finished():
-                os.remove('apg_id.json')
-                self.delete_template()
-                self.delete_apg()
-                break
-            else:
-                time.sleep(10)
 
-# status = ["unalloc", "working", "finished", "exception"]
-    def check_server(self, profile):
-        try:
-            session = SSHSession(profile)
-            session.close()
-            return True
-        except:
-            return False
 
-    def check_dispatcher_finished(self):
-        count = 0
-        flag = True
-        for ii in range(len(self.dispatchers)):
-            if self.dispatchers[ii][1] == "unalloc" or self.dispatchers[ii][1] == "working": flag = False
-            if self.dispatchers[ii][1] == "exception": count += 1
-        if self.adata["img_name"] == "vasp" and count / self.nchunks > 0.05: flag = False
-        elif self.adata["img_name"] == "kit" and count > 0: flag = False
-        return flag
-   
-    def delete(self, ii):
-        request = DeleteInstancesRequest()
-        request.set_accept_format('json')
-        request.set_InstanceIds([self.instance_list[ii]])
-        request.set_Force(True)
-        response = self.client.do_action_with_exception(request)
 
-    def make_dispatchers(self):
-        for ii in range(self.nchunks):
-            if self.ip_list[ii] != "unalloc":
-                profile = self.mdata_machine.copy()
-                profile['hostname'] = self.ip_list[ii]
-                profile['instance_id'] = self.instance_list[ii]
-                if self.check_server(profile):
-                    self.dispatchers[ii] = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
-                else:
-                    continue
-                    #self.dispatchers[ii] = [Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii), "working"]
 
-    def delete_machine(self):
-        request = DeleteInstancesRequest()
-        request.set_accept_format('json')
-        if len(self.instance_list) <= 100:
-            request.set_InstanceIds(self.instance_list)
-            request.set_Force(True)
-            response = self.client.do_action_with_exception(request)
-        else:
-            iteration = len(self.instance_list) // 100
-            for i in range(iteration):
-                request.set_InstanceIds(self.instance_list[i*100:(i+1)*100])
-                request.set_Force(True)
-                response = self.client.do_action_with_exception(request)
-            if len(self.instance_list) - iteration * 100 != 0:
-                request.set_InstanceIds(self.instance_list[iteration*100:])
-                request.set_Force(True)
-                response = self.client.do_action_with_exception(request)
-        self.instance_list = []
-        self.ip_list = []
-        os.remove('machine_record.json')
-        dlog.debug("Successfully free the machine!")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

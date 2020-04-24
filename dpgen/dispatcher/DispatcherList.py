@@ -18,8 +18,9 @@ class DispatcherList():
         self.dispatcher_list = list({"dispatcher": None, 
                                      "dispatcher_status": "unallocated",
                                      "entity": None} for ii in range(nchunks))
-    # Base
+    # Derivate
     def init(self):
+        # do something necessary
         for ii in range(self.nchunks):
             self.create(ii)
 
@@ -39,6 +40,7 @@ class DispatcherList():
                  errlog = 'err'):
         while True:
             if self.check_all_dispatchers_finished():
+                self.clean()
                 break
             ratio_failure = self.mdata_resources["ratio_failure"]
             self.exception_handling(ratio_failure)
@@ -106,6 +108,9 @@ class DispatcherList():
         '''delete one machine'''
         pass
 
+    # Derivate
+    def clean(self):
+        pass
     # Base
     def check_all_dispatchers_finished(self, ratio_failure=0):
         exception_num = 0

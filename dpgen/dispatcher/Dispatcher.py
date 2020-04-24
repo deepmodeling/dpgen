@@ -253,7 +253,7 @@ class JobRecord(object):
                               ip=None,
                               instance_id=None):
         self.valid_hash(chunk_hash)
-        self.record[chunk_hash]['context'] = [local_root, remote_root, job_uuid, ip, instance_id]
+        # self.record[chunk_hash]['context'] = [local_root, remote_root, job_uuid, ip, instance_id]
         self.record[chunk_hash]['context']['local_root'] = local_root
         self.record[chunk_hash]['context']['remote_root'] = remote_root
         self.record[chunk_hash]['context']['job_uuid'] = job_uuid
@@ -310,11 +310,14 @@ class JobRecord(object):
 
 
 def make_dispatcher(mdata, mdata_resource=None, work_path=None, run_tasks=None, group_size=None):
-    if 'ali_auth' in mdata:
-        from dpgen.dispatcher.ALI import ALI
-        dispatcher = ALI(mdata['ali_auth'], mdata_resource, mdata, run_tasks, group_size, work_path)
-        dispatcher.init()
-        return dispatcher
+    if 'cloud_resources' in mdata:
+        if mdata['cloud_resources']['cloud_platform'] == 'ali':
+            from dpgen.dispatcher.ALI import ALI
+            dispatcher = ALI(mdata['ali_auth'], mdata_resource, mdata, run_tasks, group_size, work_path)
+            dispatcher.init()
+            return dispatcher
+        elif mdata['cloud_resources']['cloud_platform'] == 'ucloud':
+            pass
     else:    
         hostname = mdata.get('hostname', None)
         #use_uuid = mdata.get('use_uuid', False)

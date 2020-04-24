@@ -8,7 +8,8 @@
         "port": 22,
         "username": "root",
         "work_path": "/root/dpgen_work",
-        "ali_auth": {
+        "cloud_resources": {
+            "cloud": "ali",
             "AccessKey_ID":"",
             "AccessKey_Secret":"",
             "regionID": "cn-shenzhen",
