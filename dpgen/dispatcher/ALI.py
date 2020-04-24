@@ -64,7 +64,7 @@ from hashlib import sha1
 class ALI(DispatcherList):
     def __init__(self, mdata_machine, mdata_resources, run_tasks, group_size, work_path, cloud_resources=None):
         super().__init__(mdata_machine, mdata_resources, run_tasks, group_size, work_path, cloud_resources)
-        self.cloud_resources["client"] = AcsClient(cloud_resources["AccessKey_ID"], cloud_resources["AccessKey_Secret"], cloud_resources["regionID"])
+        self.client = AcsClient(cloud_resources["AccessKey_ID"], cloud_resources["AccessKey_Secret"], cloud_resources["regionID"])
 
     def init(self):
         self.prepare()
