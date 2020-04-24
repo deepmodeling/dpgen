@@ -17,7 +17,7 @@ class DispatcherList():
         self.cloud_resources = cloud_resources
         self.dispatcher_list = list({"dispatcher": None, 
                                      "dispatcher_status": "unallocated",
-                                     "entity": None} for ii in range(nchunks))
+                                     "entity": None} for ii in range(self.nchunks))
     # Derivate
     def init(self):
         # do something necessary
