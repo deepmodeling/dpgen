@@ -313,7 +313,7 @@ def make_dispatcher(mdata, mdata_resource=None, work_path=None, run_tasks=None, 
     if 'cloud_resources' in mdata:
         if mdata['cloud_resources']['cloud_platform'] == 'ali':
             from dpgen.dispatcher.ALI import ALI
-            dispatcher = ALI(mdata['ali_auth'], mdata_resource, mdata, run_tasks, group_size, work_path)
+            dispatcher = ALI(mdata, mdata_resource, run_tasks, group_size, work_path, mdata['cloud_resources'])
             dispatcher.init()
             return dispatcher
         elif mdata['cloud_resources']['cloud_platform'] == 'ucloud':

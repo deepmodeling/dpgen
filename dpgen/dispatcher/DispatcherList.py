@@ -111,6 +111,7 @@ class DispatcherList():
     # Derivate
     def clean(self):
         pass
+        
     # Base
     def check_all_dispatchers_finished(self, ratio_failure=0):
         exception_num = 0
