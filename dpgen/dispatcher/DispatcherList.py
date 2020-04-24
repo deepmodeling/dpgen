@@ -58,7 +58,7 @@ class DispatcherList():
                                                                                                                         forward_task_deference,
                                                                                                                         outlog,
                                                                                                                         errlog)
-                    self.dispatcher_list[ii]["dispatcher_status"] == "running"
+                    self.dispatcher_list[ii]["dispatcher_status"] = "running"
                 elif dispatcher_status == "finished":
                     # to do 
                     # no jobs in queue, delete current machine
@@ -158,7 +158,7 @@ class DispatcherList():
 
     # Derivate
     def catch_dispatcher_exception(self):
-        pass
+        return False
 
 
 
