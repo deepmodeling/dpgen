@@ -151,7 +151,7 @@ class ALI(DispatcherList):
         request.set_accept_format('json')
         request.set_TotalTargetCapacity(str(self.nchunks))
         request.set_LaunchTemplateId(self.template_id)
-        request.set_AutoProvisioningGroupName(self.adata["instance_name"] + ''.join(random.choice(string.ascii_uppercase) for _ in range(20)))
+        request.set_AutoProvisioningGroupName(self.cloud_resources["instance_name"] + ''.join(random.choice(string.ascii_uppercase) for _ in range(20)))
         request.set_AutoProvisioningGroupType("maintain")
         request.set_SpotAllocationStrategy("lowest-price")
         request.set_SpotInstanceInterruptionBehavior("terminate")
@@ -193,7 +193,7 @@ class ALI(DispatcherList):
         return instance_list
         
     def generate_config(self):
-        machine_config = self.adata["machine_type_price"]
+        machine_config = self.cloud_resources["machine_type_price"]
         config = []
         for conf in machine_config:
             for vsw in self.vsw_id:
@@ -215,7 +215,7 @@ class ALI(DispatcherList):
         request.set_ImageOwnerAlias("self")
         request.set_PasswordInherit(True)
         request.set_InstanceType("ecs.c6.large")
-        request.set_InstanceName(self.adata["instance_name"])
+        request.set_InstanceName(self.cloud_resources["instance_name"])
         request.set_SecurityGroupId(sg_id)
         request.set_VpcId(vpc_id)
         request.set_SystemDiskCategory("cloud_efficiency")
