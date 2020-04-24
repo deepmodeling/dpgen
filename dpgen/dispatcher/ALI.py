@@ -62,6 +62,7 @@ class ALI(DispatcherList):
             # case1
             task_chunks_str = ['+'.join(ii) for ii in self.task_chunks]
             task_hashes = [sha1(ii.encode('utf-8')).hexdigest() for ii in task_chunks_str]
+            cur_hash = task_hashes[ii]
             job_record = JobRecord(self.work_path, self.task_chunks[ii], fname = "jr.%.06d.json" % ii)
             if not job_record.check_finished(task_hashes[ii]): 
                 with open(os.path.join(self.work_path, "jr.%.06d.json" % ii)) as fp:
