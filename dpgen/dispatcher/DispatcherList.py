@@ -12,7 +12,7 @@ class DispatcherList():
         self.mdata_machine = mdata_machine
         self.mdata_resources = mdata_resources
         self.task_chunks = _split_tasks(run_tasks, group_size)
-        self.nchunks = len(task_chunks)
+        self.nchunks = len(self.task_chunks)
         self.work_path = work_path
         self.cloud_resources = cloud_resources
         self.dispatcher_list = list({"dispatcher": None, 
@@ -111,7 +111,7 @@ class DispatcherList():
     # Derivate
     def clean(self):
         pass
-        
+
     # Base
     def check_all_dispatchers_finished(self, ratio_failure=0):
         exception_num = 0
