@@ -98,10 +98,9 @@ class ALI(DispatcherList):
                     self.dispatcher_list[ii]["entity"] = Entity(self.ip_pool.pop(0), self.server_pool.pop(0))
                     self.make_dispatcher(ii)
                 else:
-                    #self.server_pool = list(set(self.describe_apg_instances()-set(list(server for))))
-                    #self.ip_pool = self.get_ip(self.server_pool)
-                    pass
-    
+                    self.server_pool = self.get_server_pool()
+                    self.ip_pool = self.get_ip(self.server_pool)
+
     # Derivate
     def delete(self, ii):
         '''delete one machine'''
@@ -115,6 +114,11 @@ class ALI(DispatcherList):
             if self.dispatcher_list[jj]["dispatcher_status"] == "running":
                 running_num += 1
         self.change_apg_capasity(running_num)
+
+    def get_server_pool(self):
+        running_server = self.describe_apg_instances()
+        allocated_server = list(item["entity"]["instance_id"] for item in self.dispatcher_list if item["entity"])
+        return list(set(running_server) - set(allocated_server))
 
     def clean(self):
         self.delete_apg()
@@ -136,13 +140,13 @@ class ALI(DispatcherList):
         sg_id, vpc_id = self.get_sg_vpc_id()
         self.cloud_resources["template_id"] = self.create_template(img_id, sg_id, vpc_id)
         self.cloud_resources["vsw_id"] = self.get_vsw_id(vpc_id)
-        self.cloud_resources["apg_id"] = self.create_apg()
         if not restart:
             dlog.info("begin to create apg, please wait")
+            self.cloud_resources["apg_id"] = self.create_apg()
             time.sleep(120)
-            self.server_pool = self.describe_apg_instances()
-            self.ip_pool = self.get_ip(self.server_pool)
         else: dlog.info("restart dpgen")
+        self.server_pool = self.get_server_pool()
+        self.ip_pool = self.get_ip(self.server_pool)
 
     def delete_apg(self):
         request = DeleteAutoProvisioningGroupRequest()
