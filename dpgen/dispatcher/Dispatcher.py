@@ -157,7 +157,7 @@ class Dispatcher(object):
                 job_list.append(rjob)
                 ip = None
                 instance_id = None
-                if 'ali_auth' in self.remote_profile:
+                if 'cloud_resources' in self.remote_profile:
                     ip = self.remote_profile['hostname']
                     instance_id = self.remote_profile['instance_id']
                 job_record.record_remote_context(cur_hash,                                                 
@@ -254,6 +254,7 @@ class JobRecord(object):
                               instance_id=None):
         self.valid_hash(chunk_hash)
         # self.record[chunk_hash]['context'] = [local_root, remote_root, job_uuid, ip, instance_id]
+        self.record[chunk_hash]['context'] = {}
         self.record[chunk_hash]['context']['local_root'] = local_root
         self.record[chunk_hash]['context']['remote_root'] = remote_root
         self.record[chunk_hash]['context']['job_uuid'] = job_uuid
@@ -302,7 +303,7 @@ class JobRecord(object):
         self.record = {}
         for ii,jj in zip(task_hash, self.task_chunks):
             self.record[ii] = {
-                'context': {},
+                'context': None,
                 'finished': False,
                 'fail_count': 0,
                 'task_chunk': jj,

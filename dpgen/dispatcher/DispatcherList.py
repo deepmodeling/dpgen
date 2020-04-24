@@ -42,7 +42,7 @@ class DispatcherList():
             if self.check_all_dispatchers_finished():
                 self.clean()
                 break
-            ratio_failure = self.mdata_resources["ratio_failure"]
+            ratio_failure = self.mdata_resources.get("ratio_failure", 0)
             self.exception_handling(ratio_failure)
             for ii in range(self.nchunks):
                 dispatcher_status = self.check_dispatcher_status(ii)
