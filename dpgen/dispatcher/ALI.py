@@ -119,6 +119,7 @@ class ALI(DispatcherList):
     def clean(self):
         self.delete_apg()
         self.delete_template()
+        os.remove("apg_id.json")
 
     # Derivate
     def catch_dispatcher_exception(self):
