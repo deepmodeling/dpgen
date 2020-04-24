@@ -124,15 +124,23 @@ class ALI(DispatcherList):
         pass
 
     def prepare(self):
+        restart = False
+        if os.path.exists('apg_id.json'):
+            with open('apg_id.json') as fp:
+                apg = json.load(fp)
+                self.cloud_resources["apg_id"] = apg["apg_id"]
+            restart = True
         img_id = self.get_image_id(self.cloud_resources["img_name"])
         sg_id, vpc_id = self.get_sg_vpc_id()
         self.cloud_resources["template_id"] = self.create_template(img_id, sg_id, vpc_id)
         self.cloud_resources["vsw_id"] = self.get_vsw_id(vpc_id)
         self.cloud_resources["apg_id"] = self.create_apg()
-        dlog.info("begin to create apg, please wait")
-        time.sleep(120)
-        self.server_pool = self.describe_apg_instances()
-        self.ip_pool = self.get_ip(self.server_pool)
+        if not restart:
+            dlog.info("begin to create apg, please wait")
+            time.sleep(120)
+            self.server_pool = self.describe_apg_instances()
+            self.ip_pool = self.get_ip(self.server_pool)
+        else: dlog.info("restart dpgen")
 
     def delete_apg(self):
         request = DeleteAutoProvisioningGroupRequest()
@@ -290,7 +298,31 @@ class ALI(DispatcherList):
             pass
         return status
 
-
+    def get_ip(self, instance_list):
+        request = DescribeInstancesRequest()
+        request.set_accept_format('json')
+        ip_list = []
+        if len(instance_list) <= 10:
+            for i in range(len(instance_list)):
+                request.set_InstanceIds([instance_list[i]])
+                response = self.client.do_action_with_exception(request)
+                response = json.loads(response)
+                ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
+        else:
+            iteration = len(instance_list) // 10
+            for i in range(iteration):
+                for j in range(10):
+                    request.set_InstanceIds([instance_list[i*10+j]])
+                    response = self.client.do_action_with_exception(request)
+                    response = json.loads(response)
+                    ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
+            if len(instance_list) - iteration * 10 != 0:
+                for j in range(len(instance_list) - iteration * 10):
+                    request.set_InstanceIds([instance_list[iteration*10+j]])
+                    response = self.client.do_action_with_exception(request)
+                    response = json.loads(response)
+                    ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
+        return ip_list
 
 
 
