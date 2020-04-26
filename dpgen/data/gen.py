@@ -556,7 +556,7 @@ def _vasp_check_fin (ii) :
         return False
     return True
 
-def run_vasp_relax(jdata, mdata, dispatcher):
+def run_vasp_relax(jdata, mdata):
     fp_command = mdata['fp_command']
     fp_group_size = mdata['fp_group_size']
     fp_resources = mdata['fp_resources']
@@ -581,7 +581,7 @@ def run_vasp_relax(jdata, mdata, dispatcher):
     #    if not _vasp_check_fin(ii):
     #        relax_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in relax_run_tasks]
-
+    dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_dir, run_tasks, fp_group_size)
     #dlog.info(run_tasks)
     dispatcher.run_jobs(fp_resources,
                        [fp_command],
@@ -592,7 +592,7 @@ def run_vasp_relax(jdata, mdata, dispatcher):
                        forward_files,
                        backward_files)
 
-def run_vasp_md(jdata, mdata, dispatcher):
+def run_vasp_md(jdata, mdata):
     fp_command = mdata['fp_command']
     fp_group_size = mdata['fp_group_size']
     fp_resources = mdata['fp_resources']
@@ -627,7 +627,7 @@ def run_vasp_md(jdata, mdata, dispatcher):
     run_tasks = [ii.replace(work_dir+"/", "") for ii in md_run_tasks]
     #dlog.info("md_work_dir", work_dir)
     #dlog.info("run_tasks",run_tasks)
-
+    dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_dir, run_tasks, fp_group_size)
     dispatcher.run_jobs(fp_resources,
                        [fp_command],
                        work_dir,
@@ -655,7 +655,7 @@ def gen_init_bulk(args) :
     if args.MACHINE is not None:
        # Selecting a proper machine
        mdata = decide_fp_machine(mdata)
-       disp = make_dispatcher(mdata["fp_machine"])
+       #disp = make_dispatcher(mdata["fp_machine"])
 
     # Decide work path
     out_dir = out_dir_name(jdata)
@@ -708,7 +708,7 @@ def gen_init_bulk(args) :
                 place_element(jdata)
             if args.MACHINE is not None:
                make_vasp_relax(jdata, mdata)
-               run_vasp_relax(jdata, mdata, disp)
+               run_vasp_relax(jdata, mdata)
             else:
                make_vasp_relax(jdata, {"fp_resources":{}})
         elif stage == 2 :
@@ -719,7 +719,7 @@ def gen_init_bulk(args) :
             dlog.info("Current stage is 3, run a short md")
             make_vasp_md(jdata)
             if args.MACHINE is not None:
-               run_vasp_md(jdata, mdata, disp)
+               run_vasp_md(jdata, mdata)
         elif stage == 4 :
             dlog.info("Current stage is 4, collect data")
             coll_vasp_md(jdata)
