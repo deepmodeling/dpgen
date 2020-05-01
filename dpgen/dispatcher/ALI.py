@@ -96,7 +96,7 @@ class ALI(DispatcherList):
 
     def get_server_pool(self):
         running_server = self.describe_apg_instances()
-        allocated_server = list(item["entity"]["instance_id"] for item in self.dispatcher_list if item["entity"])
+        allocated_server = list(item["entity"].instance_id for item in self.dispatcher_list if item["entity"])
         return list(set(running_server) - set(allocated_server))
 
     def clean(self):
@@ -281,7 +281,6 @@ class ALI(DispatcherList):
                 status = True
         except:
             pass
-        return status
 
     def get_ip(self, instance_list):
         request = DescribeInstancesRequest()
@@ -308,32 +307,4 @@ class ALI(DispatcherList):
                     response = json.loads(response)
                     ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
         return ip_list
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
