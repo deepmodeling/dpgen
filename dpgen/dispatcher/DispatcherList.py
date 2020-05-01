@@ -38,11 +38,11 @@ class DispatcherList():
                  mark_failure = False,
                  outlog = 'log',
                  errlog = 'err'):
+        ratio_failure = self.mdata_resources.get("ratio_failue", 0)
         while True:
-            if self.check_all_dispatchers_finished():
+            if self.check_all_dispatchers_finished(ratio_failue):
                 self.clean()
                 break
-            ratio_failure = self.mdata_resources.get("ratio_failure", 0)
             self.exception_handling(ratio_failure)
             for ii in range(self.nchunks):
                 dispatcher_status = self.check_dispatcher_status(ii)
@@ -58,6 +58,7 @@ class DispatcherList():
                                                                                                                         forward_task_deference,
                                                                                                                         outlog,
                                                                                                                         errlog)
+                    self.dispatcher_list[ii]["entity"].job_record = self.dispatcher_list[ii]["entity"].job_handler["job_record"]
                     self.dispatcher_list[ii]["dispatcher_status"] = "running"
                 elif dispatcher_status == "finished":
                     # to do 
@@ -108,12 +109,12 @@ class DispatcherList():
         '''delete one machine'''
         pass
 
-    # Derivate
+    # Derivate, delete config like templates, etc.
     def clean(self):
         pass
 
     # Base
-    def check_all_dispatchers_finished(self, ratio_failure=0):
+    def check_all_dispatchers_finished(self, ratio_failure):
         finished_num = 0
         for ii in range(self.nchunks):
             if self.dispatcher_list[ii]["dispatcher_status"] == "finished":
@@ -128,7 +129,8 @@ class DispatcherList():
             if self.dispatcher_list[ii]["dispatcher_status"] == "terminated":
                 terminated_num += 1
                 if terminated_num / self.nchunks > ratio_failure:
-                    os.remove(os.path.join(self.work_path, "jr.%.06d.json" % ii))
+
+                    # os.remove(os.path.join(self.work_path, "jr.%.06d.json" % ii))
                     self.create(ii)
 
     # Base
@@ -144,23 +146,29 @@ class DispatcherList():
             self.dispatcher_list[ii]["dispatcher_status"] = "unsubmitted"
 
     # Base
-    def check_dispatcher_status(self, ii):
+    def check_dispatcher_status(self, ii, allow_failue=False):
         '''catch running dispatcher exception
            if no exception occured, check finished'''
         if self.dispatcher_list[ii]["dispatcher_status"] == "running":
-            if not self.catch_dispatcher_exception():
+            if self.catch_dispatcher_exception(ii) == 0:
                 # param clean: delete remote work_dir or not.
-                mark_failure = self.mdata_resources.get("mark_failure", False)
                 clean = self.mdata_resources.get("clean", False)
                 if self.dispatcher_list[ii]["dispatcher"].all_finished(self.dispatcher_list[ii]["entity"].job_handler, mark_failure, clean):
                     self.dispatcher_list[ii]["dispatcher_status"] = "finished"
-            else:
+            elif self.catch_dispatcher_exception(ii) == 1:
+                # self.dispatcher_list[ii]["dispatcher_status"] = "terminated"
+                pass
+            elif self.catch_dispatcher_exception(ii) == 2:
                 self.dispatcher_list[ii]["dispatcher_status"] = "terminated"
+                os.remove(os.path.join(self.work_path, "jr.%.06d.json" % ii))
         return self.dispatcher_list[ii]["dispatcher_status"]
 
     # Derivate
-    def catch_dispatcher_exception(self):
-        return False
+    def catch_dispatcher_exception(self, ii):
+        '''everything is okay: return 0
+           ssh not active    : return 1
+           machine callback  : return 2'''
+        pass
 
 
 

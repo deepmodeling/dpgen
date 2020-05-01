@@ -1785,7 +1785,7 @@ def run_fp (iter_index,
 
     if fp_style == "vasp" :
         forward_files = ['POSCAR', 'INCAR', 'POTCAR','KPOINTS']
-        backward_files = ['OUTCAR','vasprun.xml']
+        backward_files = ['OUTCAR','vasprun.xml', 'fp.log']
         # Move cvasp interface to jdata
         if ('cvasp' in jdata) and (jdata['cvasp'] == True):
             mdata['fp_resources']['cvasp'] = True

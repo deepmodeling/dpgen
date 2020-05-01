@@ -51,24 +51,16 @@ class ALI(DispatcherList):
 
     def create(self, ii):
         '''case1: jr.json existed and job not finished, use jr.json to rebuild dispatcher
-           case2: create one machine, then make_dispatcher, change status from unallocated to unsubmitted
-           case3: use existed machine(finish) to make_dispatcher'''
+           case2: use existed machine(finish) to make_dispatcher
+           case3: create one machine, then make_dispatcher, change status from unallocated to unsubmitted'''
         if  os.path.exists(os.path.join(os.path.abspath(self.work_path), "jr.%.06d.json" % ii)):
-            # if entity has value -> case3
-            # else create machine -> case2
-            # job_record = JobRecord(self.work_path, self.task_chunks[ii], fname = "jr.%.06d.json" % ii)
-            # self.dispatcher_list[ii]["entity"] = Entity(ip, instance_id, job_record)
-            # self.make_dispatcher(ii)
-            # case1
             task_chunks_str = ['+'.join(ii) for ii in self.task_chunks]
             task_hashes = [sha1(ii.encode('utf-8')).hexdigest() for ii in task_chunks_str]
             cur_hash = task_hashes[ii]
             job_record = JobRecord(self.work_path, self.task_chunks[ii], fname = "jr.%.06d.json" % ii)
             if not job_record.check_finished(task_hashes[ii]): 
-                with open(os.path.join(self.work_path, "jr.%.06d.json" % ii)) as fp:
-                    jr = json.load(fp)
-                    self.dispatcher_list[ii]["entity"] = Entity(jr[cur_hash]['context']['ip'], jr[cur_hash]['context']['instance_id'], job_record)
-                    self.make_dispatcher(ii)
+                self.dispatcher_list[ii]["entity"] = Entity(job_record.record[cur_hash]['context']['ip'], job_record.record[cur_hash]['context']['instance_id'], job_record)
+                self.make_dispatcher(ii)
         else:
             if self.dispatcher_list[ii]["entity"]:
                 self.make_dispatcher(ii)
@@ -94,6 +86,17 @@ class ALI(DispatcherList):
                 running_num += 1
         self.change_apg_capasity(running_num)
 
+    # Derivate
+    def catch_dispatcher_exception(self, ii):
+        '''everything is okay: return 0
+           ssh not active    : return 1
+           machine callback  : return 2'''
+        if self.check_spot_callback(self.dispatcher_list[ii]["entity"].instance_id): 
+            return 2
+        elif not self.dispatcher_list[ii]["dispatcher"].session._check_alive():      
+            return 1
+        else: return 0
+        
     def get_server_pool(self):
         running_server = self.describe_apg_instances()
         allocated_server = list(item["entity"].instance_id for item in self.dispatcher_list if item["entity"])
@@ -103,10 +106,6 @@ class ALI(DispatcherList):
         self.delete_apg()
         self.delete_template()
         os.remove("apg_id.json")
-
-    # Derivate
-    def catch_dispatcher_exception(self):
-        pass
 
     def prepare(self):
         restart = False
@@ -179,10 +178,15 @@ class ALI(DispatcherList):
         instance_list = []
         for i in range(iteration + 1):
             request.set_PageNumber(i+1)
-            response = self.client.do_action_with_exception(request)
-            response = json.loads(response)
-            for ins in response["Instances"]["Instance"]:
-                instance_list.append(ins["InstanceId"])
+            try:
+                response = self.client.do_action_with_exception(request)
+                response = json.loads(response)
+                for ins in response["Instances"]["Instance"]:
+                    instance_list.append(ins["InstanceId"])
+            except ServerException as e:
+                dlog.info(e)
+            except ClientException as e:
+                dlog.info(e)
         return instance_list
         
     def generate_config(self):
@@ -283,8 +287,11 @@ class ALI(DispatcherList):
                 status = True
             if instance_id not in self.describe_apg_instances():
                 status = True
-        except:
-            pass
+        except ServerException as e:
+            dlog.info(e)
+        except ClientException as e:
+            dlog.info(e)
+        return status
 
     def get_ip(self, instance_list):
         request = DescribeInstancesRequest()
