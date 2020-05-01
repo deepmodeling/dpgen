@@ -478,7 +478,7 @@ def run_train (iter_index,
                           os.path.join('old', 'model.ckpt.data-00000-of-00001')
         ]
     backward_files = ['frozen_model.pb', 'lcurve.out', 'train.log']
-    backward_files+= ['model.ckpt.meta', 'model.ckpt.index', 'model.ckpt.data-00000-of-00001']
+    backward_files+= ['model.ckpt.meta', 'model.ckpt.index', 'model.ckpt.data-00000-of-00001', 'checkpoint']
     init_data_sys_ = jdata['init_data_sys']
     init_data_sys = []
     for ii in init_data_sys_ :
@@ -517,7 +517,7 @@ def run_train (iter_index,
     except:
         train_group_size = 1
 
-    dispatcher = make_dispatcher(mdata['train_machine'], mdata['train_resources'], work_path, run_tasks, train_group_size)
+    dispatcher = make_dispatcher(mdata['train_machine'], mdata['train_resources'], run_tasks, train_group_size, work_path)
     dispatcher.run_jobs(mdata['train_resources'],
                         commands,
                         work_path,

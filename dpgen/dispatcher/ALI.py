@@ -114,6 +114,10 @@ class ALI(DispatcherList):
             with open('apg_id.json') as fp:
                 apg = json.load(fp)
                 self.cloud_resources["apg_id"] = apg["apg_id"]
+            for ii in range(self.nchunks):
+                fn = 'jr.%.06d.json' % ii
+                if os.path.exists(os.path.join(os.path.abspath(self.work_path), fn)):
+                    job_record = JobRecord(self.work_path, self.task_chunks[ii], fn)
             restart = True
         img_id = self.get_image_id(self.cloud_resources["img_name"])
         sg_id, vpc_id = self.get_sg_vpc_id()
@@ -291,7 +295,8 @@ class ALI(DispatcherList):
                 request.set_InstanceIds([instance_list[i]])
                 response = self.client.do_action_with_exception(request)
                 response = json.loads(response)
-                ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
+                # ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]["PrivateIpAddress"]['IpAddress'][0])
+                ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]["IpAddress"][0])
         else:
             iteration = len(instance_list) // 10
             for i in range(iteration):
@@ -299,12 +304,14 @@ class ALI(DispatcherList):
                     request.set_InstanceIds([instance_list[i*10+j]])
                     response = self.client.do_action_with_exception(request)
                     response = json.loads(response)
-                    ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
+                    # ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
+                    ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]["IpAddress"][0])
             if len(instance_list) - iteration * 10 != 0:
                 for j in range(len(instance_list) - iteration * 10):
                     request.set_InstanceIds([instance_list[iteration*10+j]])
                     response = self.client.do_action_with_exception(request)
                     response = json.loads(response)
-                    ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
+                    # ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
+                    ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]["IpAddress"][0])
         return ip_list
 
