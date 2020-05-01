@@ -517,7 +517,7 @@ def run_train (iter_index,
     except:
         train_group_size = 1
 
-    dispatcher = make_dispatcher(mdata['train_machine'], mdata['train_resources'], work_path, run_tasks, train_group_size)
+    dispatcher = make_dispatcher(mdata['train_machine'], mdata['train_resources'], run_tasks, train_group_size, work_path)
     dispatcher.run_jobs(mdata['train_resources'],
                         commands,
                         work_path,

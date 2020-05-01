@@ -190,6 +190,7 @@ def decide_model_devi_machine(mdata):
 
 	            json.dump(profile, _outfile, indent = 4)
 	return mdata
+	
 def decide_fp_machine(mdata):
 
 	if 'fp' in mdata:

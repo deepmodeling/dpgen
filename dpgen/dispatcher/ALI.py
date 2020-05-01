@@ -96,7 +96,7 @@ class ALI(DispatcherList):
 
     def get_server_pool(self):
         running_server = self.describe_apg_instances()
-        allocated_server = list(item["entity"]["instance_id"] for item in self.dispatcher_list if item["entity"])
+        allocated_server = list(item["entity"].instance_id for item in self.dispatcher_list if item["entity"])
         return list(set(running_server) - set(allocated_server))
 
     def clean(self):
@@ -114,6 +114,10 @@ class ALI(DispatcherList):
             with open('apg_id.json') as fp:
                 apg = json.load(fp)
                 self.cloud_resources["apg_id"] = apg["apg_id"]
+            for ii in range(self.nchunks):
+                fn = 'jr.%.06d.json' % ii
+                if os.path.exists(os.path.join(os.path.abspath(self.work_path), fn)):
+                    job_record = JobRecord(self.work_path, self.task_chunks[ii], fn)
             restart = True
         img_id = self.get_image_id(self.cloud_resources["img_name"])
         sg_id, vpc_id = self.get_sg_vpc_id()

@@ -9,7 +9,7 @@
         "username": "root",
         "work_path": "/root/dpgen_work",
         "cloud_resources": {
-            "cloud": "ali",
+            "cloud_platform": "ali",
             "AccessKey_ID":"",
             "AccessKey_Secret":"",
             "regionID": "cn-shenzhen",
