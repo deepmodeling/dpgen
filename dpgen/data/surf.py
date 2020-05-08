@@ -12,11 +12,12 @@ from dpgen import dlog
 import time
 from dpgen import ROOT_PATH
 from dpgen.remote.decide_machine import  decide_fp_machine
-from pymatgen.core.surface import SlabGenerator,generate_all_slabs, Structure
+from pymatgen.core.surface import SlabGenerator,generate_all_slabs
 from pymatgen.io.vasp import Poscar
 from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher
 #-----ASE-------
 from pymatgen.io.ase import AseAtomsAdaptor
+from pymatgen import Structure
 from ase.io import read
 from ase.build import general_surface
 
@@ -176,7 +177,7 @@ def poscar_scale (poscar_in, poscar_out, scale) :
     with open(poscar_out, 'w') as fout:
         fout.write("".join(lines))
 
-def poscar_elong (poscar_in, poscar_out, elong) :
+def poscar_elong (poscar_in, poscar_out, elong, shift_center=True) :
     with open(poscar_in, 'r') as fin :
         lines = list(fin)
     if lines[7][0].upper() != 'C' :
@@ -187,8 +188,18 @@ def poscar_elong (poscar_in, poscar_out, elong) :
     elong_ratio = elong / boxzl
     boxz = boxz * (1. + elong_ratio)
     lines[4] = '%.16e %.16e %.16e\n' % (boxz[0],boxz[1],boxz[2])
-    with open(poscar_out, 'w') as fout:
-        fout.write("".join(lines))
+    if shift_center:
+       poscar_str="".join(lines)
+       st=Structure.from_str(poscar_str,fmt='poscar')
+       cart_coords=st.cart_coords
+       z_mean=cart_coords[:,2].mean()
+       z_shift=st.lattice.c/2-z_mean
+       cart_coords[:,2]=cart_coords[:,2]+z_shift
+       nst=Structure(st.lattice,st.species,coords=cart_coords,coords_are_cartesian=True)
+       nst.to('poscar',poscar_out)
+    else:
+       with open(poscar_out, 'w') as fout:
+            fout.write("".join(lines))
 
 def make_unit_cell (jdata) :
 
