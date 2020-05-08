@@ -122,7 +122,7 @@ class LocalContext(object) :
                         # both exists, replace!
                         dlog.info('find existing %s, replacing by %s' % (lfile, rfile))
                         if os.path.isdir(lfile):
-                            shutil.rmtree(lfile)
+                            shutil.rmtree(lfile, ignore_errors=True)
                         elif os.path.isfile(lfile) or os.path.islink(lfile):
                             os.remove(lfile)
                         shutil.move(rfile, lfile)
@@ -160,7 +160,7 @@ class LocalContext(object) :
         return code, None, stdout, stderr
 
     def clean(self) :
-        shutil.rmtree(self.remote_root)
+        shutil.rmtree(self.remote_root, ignore_errors=True)
 
     def write_file(self, fname, write_str):
         with open(os.path.join(self.remote_root, fname), 'w') as fp :
