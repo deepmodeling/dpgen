@@ -309,8 +309,7 @@ def make_vasp_relax_incar (ecut, ediff,
     ret += 'ISIF=%d\n' % isif
     ret += 'IBRION=2\n'
     ret += "\n"
-    ret += 'NSW=100\n'
-    ret += 'POTIM=0.3\n'
+    ret += 'NSW=50\n'
     ret += "\n"
     ret += 'LWAVE=F\n'
     ret += 'LCHARG=F\n'
