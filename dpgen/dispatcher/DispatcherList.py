@@ -40,7 +40,7 @@ class DispatcherList():
                  errlog = 'err'):
         ratio_failure = self.mdata_resources.get("ratio_failue", 0)
         while True:
-            if self.check_all_dispatchers_finished(ratio_failue):
+            if self.check_all_dispatchers_finished(ratio_failure):
                 self.clean()
                 break
             self.exception_handling(ratio_failure)
@@ -129,8 +129,6 @@ class DispatcherList():
             if self.dispatcher_list[ii]["dispatcher_status"] == "terminated":
                 terminated_num += 1
                 if terminated_num / self.nchunks > ratio_failure:
-
-                    # os.remove(os.path.join(self.work_path, "jr.%.06d.json" % ii))
                     self.create(ii)
 
     # Base
@@ -153,13 +151,15 @@ class DispatcherList():
             if self.catch_dispatcher_exception(ii) == 0:
                 # param clean: delete remote work_dir or not.
                 clean = self.mdata_resources.get("clean", False)
-                if self.dispatcher_list[ii]["dispatcher"].all_finished(self.dispatcher_list[ii]["entity"].job_handler, mark_failure, clean):
+                if self.dispatcher_list[ii]["dispatcher"].all_finished(self.dispatcher_list[ii]["entity"].job_handler, allow_failue, clean):
                     self.dispatcher_list[ii]["dispatcher_status"] = "finished"
             elif self.catch_dispatcher_exception(ii) == 1:
                 # self.dispatcher_list[ii]["dispatcher_status"] = "terminated"
                 pass
             elif self.catch_dispatcher_exception(ii) == 2:
+                self.dispatcher_list[ii]["dispatcher"] = None
                 self.dispatcher_list[ii]["dispatcher_status"] = "terminated"
+                self.dispatcher_list[ii]["entity"] = None
                 os.remove(os.path.join(self.work_path, "jr.%.06d.json" % ii))
         return self.dispatcher_list[ii]["dispatcher_status"]
 

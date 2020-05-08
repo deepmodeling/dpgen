@@ -995,7 +995,7 @@ def run_model_devi (iter_index,
             forward_files += ['plmpath.pdb']
 
     cwd = os.getcwd()
-    dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], work_path, run_tasks, model_devi_group_size)
+    dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], run_tasks, model_devi_group_size, work_path)
     dispatcher.run_jobs(mdata['model_devi_resources'],
                         commands,
                         work_path,
@@ -1762,7 +1762,7 @@ def run_fp_inner (iter_index,
     #     if not check_fin(ii) :
     #         fp_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
-    dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_path, run_tasks, fp_group_size)
+    dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], run_tasks, fp_group_size, work_path)
     dispatcher.run_jobs(mdata['fp_resources'],
                         [fp_command],
                         work_path,

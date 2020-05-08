@@ -50,27 +50,17 @@ class ALI(DispatcherList):
             self.create(ii)
 
     def create(self, ii):
-        '''case1: jr.json existed and job not finished, use jr.json to rebuild dispatcher
-           case2: use existed machine(finish) to make_dispatcher
-           case3: create one machine, then make_dispatcher, change status from unallocated to unsubmitted'''
-        if  os.path.exists(os.path.join(os.path.abspath(self.work_path), "jr.%.06d.json" % ii)):
-            task_chunks_str = ['+'.join(ii) for ii in self.task_chunks]
-            task_hashes = [sha1(ii.encode('utf-8')).hexdigest() for ii in task_chunks_str]
-            cur_hash = task_hashes[ii]
-            job_record = JobRecord(self.work_path, self.task_chunks[ii], fname = "jr.%.06d.json" % ii)
-            if not job_record.check_finished(task_hashes[ii]): 
-                self.dispatcher_list[ii]["entity"] = Entity(job_record.record[cur_hash]['context']['ip'], job_record.record[cur_hash]['context']['instance_id'], job_record)
-                self.make_dispatcher(ii)
+        '''case1: use existed machine(finish) to make_dispatcher
+           case2: create one machine, then make_dispatcher, change status from unallocated to unsubmitted'''
+        if self.dispatcher_list[ii]["dispatcher_status"] == "ubsubmitted": return # void build twice(in restart situation)
+        if self.dispatcher_list[ii]["entity"]: self.make_dispatcher(ii)
         else:
-            if self.dispatcher_list[ii]["entity"]:
+            if len(self.server_pool) > 0:
+                self.dispatcher_list[ii]["entity"] = Entity(self.ip_pool.pop(0), self.server_pool.pop(0))
                 self.make_dispatcher(ii)
             else:
-                if len(self.server_pool) > 0:
-                    self.dispatcher_list[ii]["entity"] = Entity(self.ip_pool.pop(0), self.server_pool.pop(0))
-                    self.make_dispatcher(ii)
-                else:
-                    self.server_pool = self.get_server_pool()
-                    self.ip_pool = self.get_ip(self.server_pool)
+                self.server_pool = self.get_server_pool()
+                self.ip_pool = self.get_ip(self.server_pool)
 
     # Derivate
     def delete(self, ii):
@@ -92,6 +82,7 @@ class ALI(DispatcherList):
            ssh not active    : return 1
            machine callback  : return 2'''
         if self.check_spot_callback(self.dispatcher_list[ii]["entity"].instance_id): 
+            dlog.info("machine callback")
             return 2
         elif not self.dispatcher_list[ii]["dispatcher"].session._check_alive():      
             return 1
@@ -113,22 +104,35 @@ class ALI(DispatcherList):
             with open('apg_id.json') as fp:
                 apg = json.load(fp)
                 self.cloud_resources["apg_id"] = apg["apg_id"]
+            running_server_pool = []
             for ii in range(self.nchunks):
                 fn = 'jr.%.06d.json' % ii
                 if os.path.exists(os.path.join(os.path.abspath(self.work_path), fn)):
+                    task_chunks_str = ['+'.join(ii) for ii in self.task_chunks]
+                    task_hashes = [sha1(ii.encode('utf-8')).hexdigest() for ii in task_chunks_str]
+                    cur_hash = task_hashes[ii]
                     job_record = JobRecord(self.work_path, self.task_chunks[ii], fn)
+                    if not job_record.check_finished(task_hashes[ii]): 
+                        self.dispatcher_list[ii]["entity"] = Entity(job_record.record[cur_hash]['context']['ip'], job_record.record[cur_hash]['context']['instance_id'], job_record)
+                        self.make_dispatcher(ii)
+                        running_server_pool.append(self.dispatcher_list[ii]["entity"].instance_id)
+                    else:
+                        self.dispatcher_list[ii]["dispatcher_status"] = "finished"
+            self.server_pool = list(set(self.get_server_pool()) - set(running_server_pool))
+            self.ip_pool = self.get_ip(self.server_pool)
             restart = True
         img_id = self.get_image_id(self.cloud_resources["img_name"])
         sg_id, vpc_id = self.get_sg_vpc_id()
         self.cloud_resources["template_id"] = self.create_template(img_id, sg_id, vpc_id)
         self.cloud_resources["vsw_id"] = self.get_vsw_id(vpc_id)
         if not restart:
-            dlog.info("begin to create apg, please wait")
+            dlog.info("begin to create apg")
             self.cloud_resources["apg_id"] = self.create_apg()
             time.sleep(120)
+            self.server_pool = self.get_server_pool()
+            self.ip_pool = self.get_ip(self.server_pool)
         else: dlog.info("restart dpgen")
-        self.server_pool = self.get_server_pool()
-        self.ip_pool = self.get_ip(self.server_pool)
+        
 
     def delete_apg(self):
         request = DeleteAutoProvisioningGroupRequest()
@@ -302,8 +306,8 @@ class ALI(DispatcherList):
                 request.set_InstanceIds([instance_list[i]])
                 response = self.client.do_action_with_exception(request)
                 response = json.loads(response)
-                # ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]["PrivateIpAddress"]['IpAddress'][0])
-                ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]["IpAddress"][0])
+                ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
+                # ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]["IpAddress"][0])
         else:
             iteration = len(instance_list) // 10
             for i in range(iteration):
@@ -311,14 +315,14 @@ class ALI(DispatcherList):
                     request.set_InstanceIds([instance_list[i*10+j]])
                     response = self.client.do_action_with_exception(request)
                     response = json.loads(response)
-                    # ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
-                    ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]["IpAddress"][0])
+                    ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
+                    # ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]["IpAddress"][0])
             if len(instance_list) - iteration * 10 != 0:
                 for j in range(len(instance_list) - iteration * 10):
                     request.set_InstanceIds([instance_list[iteration*10+j]])
                     response = self.client.do_action_with_exception(request)
                     response = json.loads(response)
-                    # ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
-                    ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]["IpAddress"][0])
+                    ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
+                    # ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]["IpAddress"][0])
         return ip_list
 
