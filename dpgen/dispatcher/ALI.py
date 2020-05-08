@@ -301,7 +301,8 @@ class ALI(DispatcherList):
         request = DescribeInstancesRequest()
         request.set_accept_format('json')
         ip_list = []
-        if len(instance_list) <= 10 and len(instance_list) > 0:
+        if len(instance_list) == 0: return ip_list
+        if len(instance_list) <= 10:
             for i in range(len(instance_list)):
                 request.set_InstanceIds([instance_list[i]])
                 response = self.client.do_action_with_exception(request)
