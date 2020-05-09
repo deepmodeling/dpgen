@@ -225,7 +225,7 @@ def make_model_devi(iter_index, jdata, mdata):
     return True
 
 
-def run_model_devi(iter_index, jdata, mdata, dispatcher):
+def run_model_devi(iter_index, jdata, mdata):
     """submit dp test tasks"""
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, model_devi_name)
@@ -269,6 +269,7 @@ def run_model_devi(iter_index, jdata, mdata, dispatcher):
     forward_files = [rest_data_name]
     backward_files = sum([[pf+".e.out", pf+".f.out", pf+".v.out"] for pf in detail_file_names], [])
 
+    dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], work_path, run_tasks, model_devi_group_size)
     dispatcher.run_jobs(mdata['model_devi_resources'],
                         commands,
                         work_path,
@@ -638,7 +639,7 @@ def run_iter(param_file, machine_file):
             elif jj == 1:
                 log_iter("run_train", ii, jj)
                 mdata = decide_train_machine(mdata)
-                disp = make_dispatcher(mdata['train_machine'])
+                #disp = make_dispatcher(mdata['train_machine'])
                 run_train(ii, jdata, mdata)
             elif jj == 2:
                 log_iter("post_train", ii, jj)
@@ -651,8 +652,8 @@ def run_iter(param_file, machine_file):
             elif jj == 4:
                 log_iter("run_model_devi", ii, jj)
                 mdata = decide_model_devi_machine(mdata)
-                disp = make_dispatcher(mdata['model_devi_machine'])
-                run_model_devi(ii, jdata, mdata, disp)
+                #disp = make_dispatcher(mdata['model_devi_machine'])
+                run_model_devi(ii, jdata, mdata)
             elif jj == 5:
                 log_iter("post_model_devi", ii, jj)
                 post_model_devi(ii, jdata, mdata)
@@ -665,7 +666,7 @@ def run_iter(param_file, machine_file):
                     dlog.info("already have labeled data, skip run_fp")
                 else:
                     mdata = decide_fp_machine(mdata)
-                    disp = make_dispatcher(mdata['fp_machine'])
+                    #disp = make_dispatcher(mdata['fp_machine'])
                     run_fp(ii, jdata, mdata)
             elif jj == 8:
                 log_iter("post_fp", ii, jj)
