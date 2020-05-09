@@ -1,5 +1,5 @@
 from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, JobRecord
-
+import os
 class Entity():
     def __init__(self, ip, instance_id, job_record=None, job_handler=None):
         self.ip = ip

@@ -30,7 +30,7 @@ from hashlib import sha1
 #                        {"machine_type": "ecs.gn6v-c8g1.2xlarge", "price_limit": 20.00, "numb": 1, "priority": 0},
 #                        {"machine_type": "ecs.gn5-c4g1.xlarge",   "price_limit": 20.00, "numb": 1, "priority": 1}
 #                    ],
-#                    "instance_name": "CH4", 
+#                    "instance_name": "CH4_test_username", 
 #                    "pay_strategy": "spot"
 #                    "apg_id": apg_id, 
 #                    "template_id": template_id, 
@@ -55,7 +55,7 @@ class ALI(DispatcherList):
         if self.dispatcher_list[ii]["dispatcher_status"] == "ubsubmitted": return # void build twice(in restart situation)
         if self.dispatcher_list[ii]["entity"]: self.make_dispatcher(ii)
         else:
-            if len(self.server_pool) > 0:
+            if len(self.ip_pool) > 0:
                 self.dispatcher_list[ii]["entity"] = Entity(self.ip_pool.pop(0), self.server_pool.pop(0))
                 self.make_dispatcher(ii)
             else:
@@ -84,7 +84,8 @@ class ALI(DispatcherList):
         if self.check_spot_callback(self.dispatcher_list[ii]["entity"].instance_id): 
             dlog.info("machine callback")
             return 2
-        elif not self.dispatcher_list[ii]["dispatcher"].session._check_alive():      
+        elif not self.dispatcher_list[ii]["dispatcher"].session._check_alive():
+            dlog.info("ssh not active")      
             return 1
         else: return 0
         
@@ -115,10 +116,11 @@ class ALI(DispatcherList):
                     if not job_record.check_finished(task_hashes[ii]): 
                         self.dispatcher_list[ii]["entity"] = Entity(job_record.record[cur_hash]['context']['ip'], job_record.record[cur_hash]['context']['instance_id'], job_record)
                         self.make_dispatcher(ii)
-                        running_server_pool.append(self.dispatcher_list[ii]["entity"].instance_id)
+                        # running_server_pool.append(self.dispatcher_list[ii]["entity"].instance_id)
                     else:
                         self.dispatcher_list[ii]["dispatcher_status"] = "finished"
-            self.server_pool = list(set(self.get_server_pool()) - set(running_server_pool))
+            # self.server_pool = list(set(self.get_server_pool()) - set(running_server_pool))
+            self.server_pool = self.get_server_pool()
             self.ip_pool = self.get_ip(self.server_pool)
             restart = True
         img_id = self.get_image_id(self.cloud_resources["img_name"])
@@ -128,12 +130,11 @@ class ALI(DispatcherList):
         if not restart:
             dlog.info("begin to create apg")
             self.cloud_resources["apg_id"] = self.create_apg()
-            time.sleep(120)
+            time.sleep(150)
             self.server_pool = self.get_server_pool()
             self.ip_pool = self.get_ip(self.server_pool)
         else: dlog.info("restart dpgen")
         
-
     def delete_apg(self):
         request = DeleteAutoProvisioningGroupRequest()
         request.set_accept_format('json')
@@ -302,28 +303,30 @@ class ALI(DispatcherList):
         request.set_accept_format('json')
         ip_list = []
         if len(instance_list) == 0: return ip_list
-        if len(instance_list) <= 10:
-            for i in range(len(instance_list)):
-                request.set_InstanceIds([instance_list[i]])
-                response = self.client.do_action_with_exception(request)
-                response = json.loads(response)
-                ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
-                # ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]["IpAddress"][0])
-        else:
-            iteration = len(instance_list) // 10
-            for i in range(iteration):
-                for j in range(10):
-                    request.set_InstanceIds([instance_list[i*10+j]])
+        try:
+            if len(instance_list) <= 10:
+                for i in range(len(instance_list)):
+                    request.set_InstanceIds([instance_list[i]])
                     response = self.client.do_action_with_exception(request)
                     response = json.loads(response)
                     ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
                     # ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]["IpAddress"][0])
-            if len(instance_list) - iteration * 10 != 0:
-                for j in range(len(instance_list) - iteration * 10):
-                    request.set_InstanceIds([instance_list[iteration*10+j]])
-                    response = self.client.do_action_with_exception(request)
-                    response = json.loads(response)
-                    ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
-                    # ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]["IpAddress"][0])
-        return ip_list
+            else:
+                iteration = len(instance_list) // 10
+                for i in range(iteration):
+                    for j in range(10):
+                        request.set_InstanceIds([instance_list[i*10+j]])
+                        response = self.client.do_action_with_exception(request)
+                        response = json.loads(response)
+                        ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
+                        # ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]["IpAddress"][0])
+                if len(instance_list) - iteration * 10 != 0:
+                    for j in range(len(instance_list) - iteration * 10):
+                        request.set_InstanceIds([instance_list[iteration*10+j]])
+                        response = self.client.do_action_with_exception(request)
+                        response = json.loads(response)
+                        ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
+                        # ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]["IpAddress"][0])
+            return ip_list
+        except: return []
 
