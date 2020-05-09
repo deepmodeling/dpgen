@@ -50,17 +50,18 @@ class ALI(DispatcherList):
             self.create(ii)
 
     def create(self, ii):
-        '''case1: use existed machine(finish) to make_dispatcher
+        '''case1: use existed machine(finished) to make_dispatcher
            case2: create one machine, then make_dispatcher, change status from unallocated to unsubmitted'''
         if self.dispatcher_list[ii]["dispatcher_status"] == "ubsubmitted": return # void build twice(in restart situation)
-        if self.dispatcher_list[ii]["entity"]: self.make_dispatcher(ii)
-        else:
+        if self.dispatcher_list[ii]["entity"]: self.make_dispatcher(ii) # case1
+        else: # case2
             if len(self.ip_pool) > 0:
                 self.dispatcher_list[ii]["entity"] = Entity(self.ip_pool.pop(0), self.server_pool.pop(0))
                 self.make_dispatcher(ii)
             else:
                 self.server_pool = self.get_server_pool()
                 self.ip_pool = self.get_ip(self.server_pool)
+                time.sleep(120)
 
     # Derivate
     def delete(self, ii):

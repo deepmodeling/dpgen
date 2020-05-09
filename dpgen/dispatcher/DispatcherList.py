@@ -60,8 +60,7 @@ class DispatcherList():
                                                                                                                         errlog)
                     self.dispatcher_list[ii]["entity"].job_record = self.dispatcher_list[ii]["entity"].job_handler["job_record"]
                     self.dispatcher_list[ii]["dispatcher_status"] = "running"
-                elif dispatcher_status == "finished":
-                    # to do 
+                elif dispatcher_status == "finished": 
                     # no jobs in queue, delete current machine
                     # else allocate current machine to unalloc dispatcher
                     flag = True
@@ -84,26 +83,10 @@ class DispatcherList():
 
     # Derivate
     def create(self, ii):
-        '''case1: jr.json existed and job not finished, use jr.json to rebuild dispatcher
-           case2: create one machine, then make_dispatcher, change status from unallocated to unsubmitted
-           case3: use existed machine(finish) to make_dispatcher'''
-        if not os.path.exists(os.path.join(os.path.abspath(self.work_path), "jr.%.06d.json" % ii)):
-            # if entity has value -> case3
-            # else create machine -> case2
-            # job_record = JobRecord(self.work_path, self.task_chunks[ii], fname = "jr.%.06d.json" % ii)
-            # self.dispatcher_list[ii]["entity"] = Entity(ip, instance_id, job_record)
-            # self.make_dispatcher(ii)
-            pass
-        else:
-            # case1
-            task_chunks_str = ['+'.join(ii) for ii in self.task_chunks]
-            task_hashes = [sha1(ii.encode('utf-8')).hexdigest() for ii in task_chunks_str]
-            job_record = JobRecord(self.work_path, self.task_chunks[ii], fname = "jr.%.06d.json" % ii)
-            if not job_record.check_finished(task_hashes[ii]): 
-                with open(os.path.join(self.work_path, "jr.%.06d.json" % ii)) as fp:
-                    jr = json.load(fp)
-                    self.dispatcher_list[ii]["entity"] = Entity(jr[cur_hash]['context']['ip'], jr[cur_hash]['context']['instance_id'], job_record)
-                    self.make_dispatcher(ii)
+        '''case1: use existed machine(finished) to make_dispatcher
+           case2: create one machine, then make_dispatcher, change status from unallocated to unsubmitted'''
+        pass
+    
     # Derivate
     def delete(self, ii):
         '''delete one machine'''
