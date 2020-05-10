@@ -68,6 +68,7 @@ class DispatcherList():
                         if self.dispatcher_list[jj]["dispatcher_status"] == "unallocated":
                             flag = False
                             entity = self.dispatcher_list[ii]["entity"]
+                            self.dispatcher_list[ii]["entity"] = None
                             self.dispatcher_list[jj]["entity"] = Entity(entity.ip, entity.instance_id)
                             self.create(ii)
                             break
@@ -89,7 +90,8 @@ class DispatcherList():
     
     # Derivate
     def delete(self, ii):
-        '''delete one machine'''
+        '''delete one machine
+            if entity is none, means this machine is used by another dispatcher, shouldn't be deleted'''
         pass
 
     # Derivate, delete config like templates, etc.

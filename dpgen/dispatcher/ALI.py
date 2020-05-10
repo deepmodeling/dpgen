@@ -65,18 +65,20 @@ class ALI(DispatcherList):
 
     # Derivate
     def delete(self, ii):
-        '''delete one machine'''
-        request = DeleteInstancesRequest()
-        request.set_accept_format('json')
-        request.set_InstanceIds([self.dispatcher_list[ii]["entity"].instance_id])
-        request.set_Force(True)
-        response = self.client.do_action_with_exception(request)
-        running_num = 0
-        for jj in range(self.nchunks):
-            if self.dispatcher_list[jj]["dispatcher_status"] == "running":
-                running_num += 1
-        self.change_apg_capasity(running_num)
-
+        '''delete one machine
+           if entity is none, means this machine is used by another dispatcher, shouldn't be deleted'''
+        if self.dispatcher_list[ii]["entity"]:
+            request = DeleteInstancesRequest()
+            request.set_accept_format('json')
+            request.set_InstanceIds([self.dispatcher_list[ii]["entity"].instance_id])
+            request.set_Force(True)
+            response = self.client.do_action_with_exception(request)
+            running_num = 0
+            for jj in range(self.nchunks):
+                if self.dispatcher_list[jj]["dispatcher_status"] == "running":
+                    running_num += 1
+            self.change_apg_capasity(running_num)
+        else: pass
     # Derivate
     def catch_dispatcher_exception(self, ii):
         '''everything is okay: return 0
