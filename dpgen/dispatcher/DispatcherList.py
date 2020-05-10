@@ -60,7 +60,7 @@ class DispatcherList():
                                                                                                                         errlog)
                     self.dispatcher_list[ii]["entity"].job_record = self.dispatcher_list[ii]["entity"].job_handler["job_record"]
                     self.dispatcher_list[ii]["dispatcher_status"] = "running"
-                elif dispatcher_status == "finished": 
+                elif dispatcher_status == "finished" and self.dispatcher_list[ii]["entity"]: 
                     # no jobs in queue, delete current machine
                     # else allocate current machine to unalloc dispatcher
                     flag = True
