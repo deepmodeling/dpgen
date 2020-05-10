@@ -86,8 +86,12 @@ class ALI(DispatcherList):
             dlog.info("machine callback")
             return 2
         elif not self.dispatcher_list[ii]["dispatcher"].session._check_alive():
-            dlog.info("ssh not active")      
-            return 1
+            try:
+                self.dispatcher_list[ii]["dispatcher"].session.ensure_alive()
+                return 0
+            except RuntimeError:
+                # dlog.info("ssh not active")
+                return 1
         else: return 0
         
     def get_server_pool(self):
