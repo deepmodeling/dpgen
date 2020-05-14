@@ -155,7 +155,7 @@ class ALI(DispatcherList):
     def create_apg(self):
         request = CreateAutoProvisioningGroupRequest()
         request.set_accept_format('json')
-        request.set_TotalTargetCapacity(str(self.nchunks))
+        request.set_TotalTargetCapacity(str(self.nchunks_limit))
         request.set_LaunchTemplateId(self.cloud_resources["template_id"])
         request.set_AutoProvisioningGroupName(self.cloud_resources["instance_name"] + ''.join(random.choice(string.ascii_uppercase) for _ in range(20)))
         request.set_AutoProvisioningGroupType("maintain")
@@ -165,7 +165,7 @@ class ALI(DispatcherList):
         request.set_ExcessCapacityTerminationPolicy("termination")
         request.set_TerminateInstances(True)
         request.set_PayAsYouGoTargetCapacity("0")
-        request.set_SpotTargetCapacity(str(self.nchunks))
+        request.set_SpotTargetCapacity(str(self.nchunks_limit))
         config = self.generate_config()
         request.set_LaunchTemplateConfigs(config)
         try:

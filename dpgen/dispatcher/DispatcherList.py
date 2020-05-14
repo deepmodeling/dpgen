@@ -1,4 +1,5 @@
 from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, JobRecord
+from paramiko.ssh_exception import NoValidConnectionsError
 import os
 class Entity():
     def __init__(self, ip, instance_id, job_record=None, job_handler=None):
@@ -13,6 +14,7 @@ class DispatcherList():
         self.mdata_resources = mdata_resources
         self.task_chunks = _split_tasks(run_tasks, group_size)
         self.nchunks = len(self.task_chunks)
+        self.nchunks_limit = int(self.mdata_machine.get("machine_upper_bound", self.nchunks))
         self.work_path = work_path
         self.cloud_resources = cloud_resources
         self.dispatcher_list = list({"dispatcher": None, 
@@ -125,8 +127,15 @@ class DispatcherList():
             profile = self.mdata_machine.copy()
             profile['hostname'] = entity.ip
             profile['instance_id'] = entity.instance_id
-            self.dispatcher_list[ii]["dispatcher"] = Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
-            self.dispatcher_list[ii]["dispatcher_status"] = "unsubmitted"
+            try:
+                self.dispatcher_list[ii]["dispatcher"] = Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
+                self.dispatcher_list[ii]["dispatcher_status"] = "unsubmitted"
+            except NoValidConnectionsError as e:
+                dlog.info(e)
+                dlog.info("try to reconnect")
+                time.sleep(120)
+                self.dispatcher_list[ii]["dispatcher"] = Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
+                self.dispatcher_list[ii]["dispatcher_status"] = "unsubmitted"
 
     # Base
     def check_dispatcher_status(self, ii, allow_failue=False):
