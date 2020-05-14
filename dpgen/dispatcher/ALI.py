@@ -52,7 +52,7 @@ class ALI(DispatcherList):
     def create(self, ii):
         '''case1: use existed machine(finished) to make_dispatcher
            case2: create one machine, then make_dispatcher, change status from unallocated to unsubmitted'''
-        if self.dispatcher_list[ii]["dispatcher_status"] == "ubsubmitted": return # void build twice(in restart situation)
+        if self.dispatcher_list[ii]["dispatcher_status"] == "unsubmitted": return # void build twice(in restart situation)
         if self.dispatcher_list[ii]["entity"]: self.make_dispatcher(ii) # case1
         else: # case2
             if len(self.ip_pool) > 0:
@@ -61,7 +61,7 @@ class ALI(DispatcherList):
             else:
                 self.server_pool = self.get_server_pool()
                 self.ip_pool = self.get_ip(self.server_pool)
-                time.sleep(120)
+                # time.sleep(120)
 
     # Derivate
     def delete(self, ii):
@@ -90,7 +90,6 @@ class ALI(DispatcherList):
                 self.dispatcher_list[ii]["dispatcher"].session.ensure_alive()
                 return 0
             except RuntimeError:
-                # dlog.info("ssh not active")
                 return 1
         else: return 0
         
@@ -128,6 +127,7 @@ class ALI(DispatcherList):
             self.server_pool = self.get_server_pool()
             self.ip_pool = self.get_ip(self.server_pool)
             restart = True
+            time.sleep(120)
         img_id = self.get_image_id(self.cloud_resources["img_name"])
         sg_id, vpc_id = self.get_sg_vpc_id()
         self.cloud_resources["template_id"] = self.create_template(img_id, sg_id, vpc_id)
