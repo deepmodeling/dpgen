@@ -520,7 +520,7 @@ def _vasp_check_fin (ii) :
         return False
     return True
 
-def run_vasp_relax(jdata, mdata, dispatcher):
+def run_vasp_relax(jdata, mdata):
     fp_command = mdata['fp_command']
     fp_group_size = mdata['fp_group_size']
     fp_resources = mdata['fp_resources']
@@ -545,7 +545,7 @@ def run_vasp_relax(jdata, mdata, dispatcher):
         if not _vasp_check_fin(ii):
             relax_run_tasks.append(ii)
     run_tasks = [ii.replace(work_dir+"/", "") for ii in relax_run_tasks]
-
+    dispatcher = make_dispatcher(mdata["fp_machine"], mdata["fp_resources"], work_dir, run_tasks, fp_group_size)
     #dlog.info(run_tasks)
     dispatcher.run_jobs(fp_resources,
                        [fp_command],
@@ -578,7 +578,7 @@ def gen_init_surf(args):
     if args.MACHINE is not None:
        # Decide a proper machine
        mdata = decide_fp_machine(mdata)
-       disp = make_dispatcher(mdata["fp_machine"])
+       # disp = make_dispatcher(mdata["fp_machine"])
 
     #stage = args.STAGE
     stage_list = [int(i) for i in jdata['stages']]
@@ -589,7 +589,7 @@ def gen_init_surf(args):
             place_element(jdata)
             make_vasp_relax(jdata)
             if args.MACHINE is not None:
-               run_vasp_relax(jdata, mdata, disp)
+               run_vasp_relax(jdata, mdata)
         elif stage == 2 :
             make_scale(jdata)
             pert_scaled(jdata)

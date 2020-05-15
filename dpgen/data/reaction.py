@@ -73,13 +73,13 @@ run	{nstep}
     return lmp_string
 
 
-def run_reaxff(jdata, mdata, dispatcher, log_file="reaxff_log"):
+def run_reaxff(jdata, mdata, log_file="reaxff_log"):
     work_path = reaxff_path
     reaxff_command = "{} -in {}".format(mdata["reaxff_command"], lmp_path)
     run_tasks = glob.glob(os.path.join(work_path, 'task.*'))
     run_tasks.sort()
     run_tasks = [os.path.basename(ii) for ii in run_tasks]
-
+    dispatcher = make_dispatcher(mdata["reaxff_machine"], mdata["reaxff_resources"], work_path, run_tasks, 1)
     dispatcher.run_jobs(mdata['reaxff_resources'],
                         [reaxff_command],
                         work_path,
@@ -102,7 +102,7 @@ def link_trj(jdata):
         os.path.join(task_path, trj_path)))
 
 
-def run_build_dataset(jdata, mdata, dispatcher, log_file="build_log"):
+def run_build_dataset(jdata, mdata, log_file="build_log"):
     work_path = build_path
     build_command = "{cmd} -n {dataset_name} -a {type_map} -d {lammpstrj} -c {cutoff} -s {dataset_size} -k \"{qmkeywords}\" --nprocjob {nprocjob} --nproc {nproc}".format(
         cmd=mdata["build_command"],
@@ -118,7 +118,7 @@ def run_build_dataset(jdata, mdata, dispatcher, log_file="build_log"):
     run_tasks = glob.glob(os.path.join(work_path, 'task.*'))
     run_tasks.sort()
     run_tasks = [os.path.basename(ii) for ii in run_tasks]
-
+    dispatcher = make_dispatcher(mdata["build_machine"], mdata["build_resources"], work_path, run_tasks, 1)
     dispatcher.run_jobs(mdata['build_resources'],
                         [build_command],
                         work_path,
@@ -146,7 +146,6 @@ def link_fp_input():
 
 def run_fp(jdata,
            mdata,
-           dispatcher,
            log_file="output",
            forward_common_files=[]):
     fp_command = mdata['fp_command']
@@ -161,7 +160,7 @@ def run_fp(jdata,
     fp_run_tasks = fp_tasks
 
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
-
+    dispatcher = make_dispatcher(mdata["fp_machine"], mdata["fp_resources"], work_path, run_tasks, fp_group_size)
     dispatcher.run_jobs(mdata['fp_resources'],
                         [fp_command],
                         work_path,
@@ -213,18 +212,18 @@ def gen_init_reaction(args):
         elif ii == 0:
             link_reaxff(jdata)
         elif ii == 1:
-            dispatcher = make_dispatcher(mdata["reaxff_machine"])
-            run_reaxff(jdata, mdata, dispatcher)
+            # dispatcher = make_dispatcher(mdata["reaxff_machine"])
+            run_reaxff(jdata, mdata)
         elif ii == 2:
             link_trj(jdata)
         elif ii == 3:
-            dispatcher = make_dispatcher(mdata["build_machine"])
-            run_build_dataset(jdata, mdata, dispatcher)
+            # dispatcher = make_dispatcher(mdata["build_machine"])
+            run_build_dataset(jdata, mdata)
         elif ii == 4:
             link_fp_input()
         elif ii == 5:
-            dispatcher = make_dispatcher(mdata["fp_machine"])
-            run_fp(jdata, mdata, dispatcher)
+            #dispatcher = make_dispatcher(mdata["fp_machine"])
+            run_fp(jdata, mdata)
         elif ii == 6:
             convert_data(jdata)
         with open(record, "a") as frec:

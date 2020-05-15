@@ -310,11 +310,11 @@ class JobRecord(object):
             }
 
 
-def make_dispatcher(mdata, mdata_resource=None, run_tasks=None, group_size=None, work_path=None):
+def make_dispatcher(mdata, mdata_resource=None, work_path=None, run_tasks=None, group_size=None):
     if 'cloud_resources' in mdata:
         if mdata['cloud_resources']['cloud_platform'] == 'ali':
             from dpgen.dispatcher.ALI import ALI
-            dispatcher = ALI(mdata, mdata_resource, run_tasks, group_size, work_path, mdata['cloud_resources'])
+            dispatcher = ALI(mdata, mdata_resource, work_path, run_tasks, group_size, mdata['cloud_resources'])
             dispatcher.init()
             return dispatcher
         elif mdata['cloud_resources']['cloud_platform'] == 'ucloud':

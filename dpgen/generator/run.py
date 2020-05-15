@@ -517,7 +517,7 @@ def run_train (iter_index,
     except:
         train_group_size = 1
 
-    dispatcher = make_dispatcher(mdata['train_machine'], mdata['train_resources'], run_tasks, train_group_size, work_path)
+    dispatcher = make_dispatcher(mdata['train_machine'], mdata['train_resources'], work_path, run_tasks, train_group_size)
     dispatcher.run_jobs(mdata['train_resources'],
                         commands,
                         work_path,
@@ -995,7 +995,7 @@ def run_model_devi (iter_index,
             forward_files += ['plmpath.pdb']
 
     cwd = os.getcwd()
-    dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], run_tasks, model_devi_group_size, work_path)
+    dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'],work_path, run_tasks, model_devi_group_size)
     dispatcher.run_jobs(mdata['model_devi_resources'],
                         commands,
                         work_path,
@@ -1762,7 +1762,7 @@ def run_fp_inner (iter_index,
     #     if not check_fin(ii) :
     #         fp_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
-    dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], run_tasks, fp_group_size, work_path)
+    dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_path, run_tasks, fp_group_size)
     dispatcher.run_jobs(mdata['fp_resources'],
                         [fp_command],
                         work_path,

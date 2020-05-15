@@ -9,7 +9,7 @@ class Entity():
         self.job_handler = job_handler
 
 class DispatcherList():
-    def __init__(self, mdata_machine, mdata_resources, run_tasks, group_size, work_path, cloud_resources=None):
+    def __init__(self, mdata_machine, mdata_resources, work_path, run_tasks, group_size, cloud_resources=None):
         self.mdata_machine = mdata_machine
         self.mdata_resources = mdata_resources
         self.task_chunks = _split_tasks(run_tasks, group_size)

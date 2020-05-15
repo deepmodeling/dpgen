@@ -40,8 +40,8 @@ from hashlib import sha1
 
 
 class ALI(DispatcherList):
-    def __init__(self, mdata_machine, mdata_resources, run_tasks, group_size, work_path, cloud_resources=None):
-        super().__init__(mdata_machine, mdata_resources, run_tasks, group_size, work_path, cloud_resources)
+    def __init__(self, mdata_machine, mdata_resources, work_path, run_tasks, group_size, cloud_resources=None):
+        super().__init__(mdata_machine, mdata_resources, work_path, run_tasks, group_size, cloud_resources)
         self.client = AcsClient(cloud_resources["AccessKey_ID"], cloud_resources["AccessKey_Secret"], cloud_resources["regionID"])
 
     def init(self):
