@@ -12,14 +12,11 @@
     1
   ],
   "layer_numb": 3,
-  "vacuum_max": 9,
-  "vacuum_resol": [
-    0.5,
-    1
-  ],
-  "mid_point": 4.0,
-  "head_ratio": 0.6,
-  "vacuum_numb": 20,
+  "vacuum_max": 5,
+  "vacuum_resol": [0.5,2],
+  "mid_point": 2.0,
+  "_head_ratio": 0.6,
+  "_vacuum_numb": 20,
   "millers": [
     [
       1,
