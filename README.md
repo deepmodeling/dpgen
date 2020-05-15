@@ -268,6 +268,52 @@ Following is an example for `PARAM`, which generates data from a typical structu
 }
 ```
 
+Another example is `from_poscar` method. Here you need to specify the POSCAR file. 
+
+```
+{
+  "stages": [
+    1,
+    2
+  ],
+  "cell_type": "fcc",
+  "from_poscar":	true,
+  "from_poscar_path":	"POSCAR",
+  "super_cell": [
+    1,
+    1,
+    1
+  ],
+  "layer_numb": 3,
+  "vacuum_max": 5,
+  "vacuum_resol": [0.5,2],
+  "mid_point": 2.0,
+  "millers": [
+    [
+      1,
+      0,
+      0
+    ]
+  ],
+  "elements": [
+    "Al"
+  ],
+  "potcars": [
+    "./POTCAR"
+  ],
+  "relax_incar" : "INCAR_metal_rlx_low",
+  "scale": [
+    1.0
+  ],
+  "skip_relax": true,
+  "pert_numb": 5,
+  "pert_box": 0.03,
+  "pert_atom": 0.01,
+  "coll_ndata": 5000,
+  "_comment": "that's all"
+}
+```
+
 The following table gives explicit descriptions on keys in `PARAM`.
 
 The bold notation of key (such as **Elements**) means that it's a necessary key.
