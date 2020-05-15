@@ -251,7 +251,7 @@ class SSHContext (object):
         try:
            sftp.put(from_f, to_f)
         except FileNotFoundError:
-           raise RuntimeError("from %s to %s Error!"%(from_f,to_f))
+           raise FileNotFoundError("from %s to %s Error!"%(from_f,to_f))
         # remote extract
         self.block_checkcall('tar xf %s' % of)
         # clean up
