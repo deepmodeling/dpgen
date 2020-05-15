@@ -49,6 +49,7 @@ class DispatcherList():
             for ii in range(self.nchunks):
                 dispatcher_status = self.check_dispatcher_status(ii)
                 if dispatcher_status == "unsubmitted":
+                    dlog.info(self.dispatcher_list[ii]["entity"].ip)
                     self.dispatcher_list[ii]["entity"].job_handler = self.dispatcher_list[ii]["dispatcher"].submit_jobs(resources,
                                                                                                                         command,
                                                                                                                         work_path,
