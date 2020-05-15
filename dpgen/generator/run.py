@@ -456,6 +456,7 @@ def run_train (iter_index,
         command =  '%s train %s' % (train_command, train_input_file)
         if training_init_model:
             command += ' --init-model old/model.ckpt'
+        command = "{ if [ ! -f model.ckpt.index ]; then %s; else %s --restart model.ckpt; fi }" % (command, command)
         commands.append(command)
         command = '%s freeze' % train_command
         commands.append(command)
