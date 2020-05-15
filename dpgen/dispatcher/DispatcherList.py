@@ -1,6 +1,6 @@
 from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, JobRecord
 from paramiko.ssh_exception import NoValidConnectionsError
-import os
+import os, time
 from dpgen import dlog
 class Entity():
     def __init__(self, ip, instance_id, job_record=None, job_handler=None):
@@ -103,23 +103,21 @@ class DispatcherList():
         pass
 
     # Base
-    def check_all_dispatchers_finished(self, ratio_failure):
-        finished_num = 0
-        for ii in range(self.nchunks):
-            if self.dispatcher_list[ii]["dispatcher_status"] == "finished":
-                finished_num += 1
+    def check_all_dispatchers_finished(self, ratio_failure):    
+        status_list = [item["dispatcher_status"] for item in self.dispatcher_list]
+        finished_num = status_list.count("finished")
         if finished_num / self.nchunks < (1 - ratio_failure): return False
         else: return True
 
     # Base
     def exception_handling(self, ratio_failure):
-        terminated_num = 0
-        for ii in range(self.nchunks):
-            if self.dispatcher_list[ii]["dispatcher_status"] == "terminated":
-                terminated_num += 1
-                if terminated_num / self.nchunks > ratio_failure:
-                    self.create(ii)
-
+        status_list = [item["dispatcher_status"] for item in self.dispatcher_list]
+        terminated_num = status_list.count("terminated")
+        if terminated_num / self.nchunks > ratio_failure:
+            # self.dispatcher_list = [lambda item["dispatcher_status"]: "finished" for item in self.dispatcher_list if item["dispatcher_status"] == "terminated"]
+            for ii in range(self.nchunks):
+                if self.dispatcher_list[ii]["dispatcher_status"] == "terminated":
+                    self.dispatcher_list[ii]["dispatcher_status"] = "unallocated"
     # Base
     def make_dispatcher(self, ii):
         '''use entity to distinguish machine, for example if ip isn't None, means we can make_dispatcher
@@ -132,8 +130,8 @@ class DispatcherList():
             try:
                 self.dispatcher_list[ii]["dispatcher"] = Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
                 self.dispatcher_list[ii]["dispatcher_status"] = "unsubmitted"
-            except NoValidConnectionsError as e:
-                dlog.info(e)
+            except:
+                #dlog.info(e)
                 dlog.info("try to reconnect")
                 time.sleep(120)
                 self.dispatcher_list[ii]["dispatcher"] = Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
@@ -144,15 +142,16 @@ class DispatcherList():
         '''catch running dispatcher exception
            if no exception occured, check finished'''
         if self.dispatcher_list[ii]["dispatcher_status"] == "running":
-            if self.catch_dispatcher_exception(ii) == 0:
+            status = self.catch_dispatcher_exception(ii)
+            if status == 0:
                 # param clean: delete remote work_dir or not.
                 clean = self.mdata_resources.get("clean", False)
                 if self.dispatcher_list[ii]["dispatcher"].all_finished(self.dispatcher_list[ii]["entity"].job_handler, allow_failue, clean):
                     self.dispatcher_list[ii]["dispatcher_status"] = "finished"
-            elif self.catch_dispatcher_exception(ii) == 1:
+            elif status == 1:
                 # self.dispatcher_list[ii]["dispatcher_status"] = "terminated"
                 pass
-            elif self.catch_dispatcher_exception(ii) == 2:
+            elif status == 2:
                 self.dispatcher_list[ii]["dispatcher"] = None
                 self.dispatcher_list[ii]["dispatcher_status"] = "terminated"
                 self.dispatcher_list[ii]["entity"] = None

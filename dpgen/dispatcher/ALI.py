@@ -73,7 +73,7 @@ class ALI(DispatcherList):
         response = self.client.do_action_with_exception(request)
         running_num = 0
         for jj in range(self.nchunks):
-            if self.dispatcher_list[jj]["dispatcher_status"] == "running":
+            if self.dispatcher_list[jj]["dispatcher_status"] == "running" or self.dispatcher_list[jj]["dispatcher_status"] == "unsubmitted":
                 running_num += 1
         self.change_apg_capasity(running_num)
 
@@ -83,7 +83,7 @@ class ALI(DispatcherList):
            ssh not active    : return 1
            machine callback  : return 2'''
         if self.check_spot_callback(self.dispatcher_list[ii]["entity"].instance_id): 
-            dlog.info("machine callback")
+            dlog.info("machine %s callback, ip: %s" % (self.dispatcher_list[ii]["entity"].instance_id, self.dispatcher_list[ii]["entity"].ip))
             return 2
         elif not self.dispatcher_list[ii]["dispatcher"].session._check_alive():
             try:
@@ -118,14 +118,20 @@ class ALI(DispatcherList):
                     cur_hash = task_hashes[ii]
                     job_record = JobRecord(self.work_path, self.task_chunks[ii], fn)
                     if not job_record.check_finished(task_hashes[ii]): 
-                        self.dispatcher_list[ii]["entity"] = Entity(job_record.record[cur_hash]['context']['ip'], job_record.record[cur_hash]['context']['instance_id'], job_record)
-                        self.make_dispatcher(ii)
-                        # running_server_pool.append(self.dispatcher_list[ii]["entity"].instance_id)
+                        if not self.check_spot_callback(job_record.record[cur_hash]['context']['instance_id']):
+                            self.dispatcher_list[ii]["entity"] = Entity(job_record.record[cur_hash]['context']['ip'], job_record.record[cur_hash]['context']['instance_id'], job_record)
+                            dlog.info("prepare: make_dispatcher")
+                            self.make_dispatcher(ii)
+                        else:
+                            # dlog.info("prepare: callback")
+                            # self.dispatcher_list[ii]["dispatcher_status"] == "unallocated"
+                            os.remove(os.path.join(os.path.abspath(self.work_path), fn))
                     else:
                         self.dispatcher_list[ii]["dispatcher_status"] = "finished"
             # self.server_pool = list(set(self.get_server_pool()) - set(running_server_pool))
             self.server_pool = self.get_server_pool()
             self.ip_pool = self.get_ip(self.server_pool)
+            print(self.ip_pool)
             restart = True
             time.sleep(120)
         img_id = self.get_image_id(self.cloud_resources["img_name"])
