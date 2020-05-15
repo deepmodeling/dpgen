@@ -281,7 +281,7 @@ The bold notation of key (such as **Elements**) means that it's a necessary key.
 | **layer_numb** | Integer | 3 | Number of equavilent layers of slab.
 | **z__min** | Float | 9.0 | Thickness of slab without vacuum (Angstrom). If the `layer_numb` and `z_min` are all setted, the `z_min` value will be ignored.
 | **vacuum_max** | Float | 9 | Maximal thickness of vacuum (Angstrom).
-| vacuum_min | Float | 2xR_(atom) | Minimal thickness of vacuum (Angstrom).
+| vacuum_min | Float | 2xR_(atom) | Minimal thickness of vacuum (Angstrom). Default value is 2 times atomic radius.
 | **vacuum_resol** | List of float | [0.5, 1 ] | Interval of thichness of vacuum. If size of `vacuum_resol` is 1, the interval is fixed to its value. If size of `vacuum_resol` is 2, the interval is `vacuum_resol[0]` before `mid_point`, otherwise `vacuum_resol[1]` after `mid_point`.
 | **millers** | List of list of Integer | [[1,0,0]] | Miller indices.
 | relax_incar | String | "....../INCAR" | Path of INCAR for relaxation in VASP. **Necessary** if `stages` include 1.
