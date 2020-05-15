@@ -248,7 +248,10 @@ class SSHContext (object):
         from_f = os.path.join(self.local_root, of)
         to_f = os.path.join(self.remote_root, of)
         sftp = self.ssh.open_sftp()
-        sftp.put(from_f, to_f)
+        try:
+           sftp.put(from_f, to_f)
+        except FileNotFoundError:
+           raise FileNotFoundError("from %s to %s Error!"%(from_f,to_f))
         # remote extract
         self.block_checkcall('tar xf %s' % of)
         # clean up
