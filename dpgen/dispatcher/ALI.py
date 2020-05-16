@@ -110,17 +110,17 @@ class ALI(DispatcherList):
                 apg = json.load(fp)
                 self.cloud_resources["apg_id"] = apg["apg_id"]
             running_server_pool = []
+            task_chunks_str = ['+'.join(ii) for ii in self.task_chunks]
+            task_hashes = [sha1(ii.encode('utf-8')).hexdigest() for ii in task_chunks_str]
             for ii in range(self.nchunks):
                 fn = 'jr.%.06d.json' % ii
                 if os.path.exists(os.path.join(os.path.abspath(self.work_path), fn)):
-                    task_chunks_str = ['+'.join(ii) for ii in self.task_chunks]
-                    task_hashes = [sha1(ii.encode('utf-8')).hexdigest() for ii in task_chunks_str]
                     cur_hash = task_hashes[ii]
                     job_record = JobRecord(self.work_path, self.task_chunks[ii], fn)
-                    if not job_record.check_finished(task_hashes[ii]): 
+                    if not job_record.check_finished(cur_hash): 
                         if not self.check_spot_callback(job_record.record[cur_hash]['context']['instance_id']):
                             self.dispatcher_list[ii]["entity"] = Entity(job_record.record[cur_hash]['context']['ip'], job_record.record[cur_hash]['context']['instance_id'], job_record)
-                            dlog.info("prepare: make_dispatcher")
+                            # dlog.info("prepare: make_dispatcher")
                             self.make_dispatcher(ii)
                         else:
                             # dlog.info("prepare: callback")

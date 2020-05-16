@@ -46,6 +46,7 @@ from dpgen.remote.decide_machine import decide_fp_machine, decide_model_devi_mac
 from dpgen.auto_test import gen_confs
 import requests
 from hashlib import sha1
+from dpgen import dlog
 
 lammps_task_type=['deepmd','meam','eam']
 

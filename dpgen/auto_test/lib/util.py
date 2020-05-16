@@ -97,11 +97,11 @@ def collect_task(all_task,task_type):
     run_tasks_ = []
     for ii in all_task:
         fres = os.path.join(ii, output_file)
-        if os.path.isfile(fres) :
-            if not check_finished(fres):
-                run_tasks_.append(ii)
-        else :
-            run_tasks_.append(ii)
-
+        # if os.path.isfile(fres) :
+        #     if not check_finished(fres):
+        #         run_tasks_.append(ii)
+        # else :
+        #     run_tasks_.append(ii)
+        run_tasks_.append(ii)
     run_tasks = [os.path.basename(ii) for ii in run_tasks_]
     return run_tasks

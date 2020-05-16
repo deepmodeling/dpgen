@@ -76,7 +76,9 @@ class DispatcherList():
                             self.dispatcher_list[jj]["entity"] = Entity(entity.ip, entity.instance_id)
                             self.create(ii)
                             break
-                    if flag: self.delete(ii)
+                    if flag: 
+                        self.delete(ii)
+                        time.sleep(1)
                 elif dispatcher_status == "running":
                     pass
                 elif dispatcher_status == "unallocated":
