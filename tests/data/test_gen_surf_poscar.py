@@ -1,6 +1,6 @@
 import os,sys,json,glob,shutil
 import unittest
-from pymatgen import Structure
+from pymatgen import Structure,Element
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 __package__ = 'data'
@@ -10,9 +10,8 @@ from .context_surf_poscar import *
 class TestGenSurfPOSCAR(unittest.TestCase):
     def setUp(self):
         self.surfs=["surf-100"] 
-        self.elongs=["elong-0.500", "elong-1.000", "elong-1.500", "elong-2.000", "elong-2.500",\
-             "elong-3.000", "elong-3.500", "elong-4.000", "elong-5.000", "elong-6.000",\
-             "elong-7.000", "elong-8.000" ]
+        self.elongs=["elong-0.500", "elong-1.000",  "elong-1.500",
+                     "elong-2.000",  "elong-4.000"]
         with open (param_file, 'r') as fp :
             jdata = json.load (fp)
         out_dir = out_dir_name(jdata)
@@ -24,6 +23,7 @@ class TestGenSurfPOSCAR(unittest.TestCase):
         make_vasp_relax(jdata)
         make_scale(jdata)
         pert_scaled(jdata)
+        self.jdata=jdata
 
     def tearDown(self):
         shutil.rmtree(self.root_dir)
@@ -38,7 +38,9 @@ class TestGenSurfPOSCAR(unittest.TestCase):
             surf=poscar.split('/')[-3]
             st1=Structure.from_file(surf+'.POSCAR')
             st2=Structure.from_file(poscar)
-            self.assertEqual(st1,st2)
+            vacuum_size=float(Element(self.jdata['elements'][0]).atomic_radius*2)
+            self.assertTrue(st1.lattice.c+vacuum_size-st2.lattice.c<0.01)
+
         
         for surf in self.surfs:
             elongs=glob.glob("POSCAR.01x01x01/01.scale_pert/"+surf+"/sys-*/scale-1.000/el*")

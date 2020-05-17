@@ -1,6 +1,6 @@
 import os,sys,json,glob,shutil
 import unittest
-from pymatgen import Structure
+from pymatgen import Structure,Element
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 __package__ = 'data'
@@ -24,6 +24,7 @@ class TestGenSurf(unittest.TestCase):
         make_vasp_relax(jdata)
         make_scale(jdata)
         pert_scaled(jdata)
+        self.jdata=jdata
 
     def tearDown(self):
         shutil.rmtree(self.root_dir)
@@ -38,7 +39,8 @@ class TestGenSurf(unittest.TestCase):
             surf=poscar.split('/')[-3]
             st1=Structure.from_file(surf+'.POSCAR')
             st2=Structure.from_file(poscar)
-            self.assertEqual(st1,st2)
+            vacuum_size=float(Element(self.jdata['elements'][0]).atomic_radius*2)
+            self.assertTrue(st1.lattice.c+vacuum_size-st2.lattice.c<0.01)
         
         for surf in self.surfs:
             elongs=glob.glob("surf.al.fcc.01x01x01/01.scale_pert/"+surf+"/sys-*/scale-1.000/el*")
