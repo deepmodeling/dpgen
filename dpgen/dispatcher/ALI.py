@@ -70,7 +70,12 @@ class ALI(DispatcherList):
         request.set_accept_format('json')
         request.set_InstanceIds([self.dispatcher_list[ii]["entity"].instance_id])
         request.set_Force(True)
-        response = self.client.do_action_with_exception(request)
+        try:
+            response = self.client.do_action_with_exception(request)
+        except ServerException as e:
+            dlog.info(e)
+            time.sleep(60)
+            response = self.cliend.do_action_with_exception(request)
         running_num = 0
         for jj in range(self.nchunks):
             if self.dispatcher_list[jj]["dispatcher_status"] == "running" or self.dispatcher_list[jj]["dispatcher_status"] == "unsubmitted":
@@ -120,20 +125,15 @@ class ALI(DispatcherList):
                     if not job_record.check_finished(cur_hash): 
                         if not self.check_spot_callback(job_record.record[cur_hash]['context']['instance_id']):
                             self.dispatcher_list[ii]["entity"] = Entity(job_record.record[cur_hash]['context']['ip'], job_record.record[cur_hash]['context']['instance_id'], job_record)
-                            # dlog.info("prepare: make_dispatcher")
                             self.make_dispatcher(ii)
                         else:
-                            # dlog.info("prepare: callback")
-                            # self.dispatcher_list[ii]["dispatcher_status"] == "unallocated"
                             os.remove(os.path.join(os.path.abspath(self.work_path), fn))
                     else:
                         self.dispatcher_list[ii]["dispatcher_status"] = "finished"
-            # self.server_pool = list(set(self.get_server_pool()) - set(running_server_pool))
             self.server_pool = self.get_server_pool()
             self.ip_pool = self.get_ip(self.server_pool)
-            print(self.ip_pool)
             restart = True
-            time.sleep(120)
+            # time.sleep(120)
         img_id = self.get_image_id(self.cloud_resources["img_name"])
         sg_id, vpc_id = self.get_sg_vpc_id()
         self.cloud_resources["template_id"] = self.create_template(img_id, sg_id, vpc_id)
@@ -141,7 +141,7 @@ class ALI(DispatcherList):
         if not restart:
             dlog.info("begin to create apg")
             self.cloud_resources["apg_id"] = self.create_apg()
-            time.sleep(150)
+            time.sleep(120)
             self.server_pool = self.get_server_pool()
             self.ip_pool = self.get_ip(self.server_pool)
         else: dlog.info("restart dpgen")

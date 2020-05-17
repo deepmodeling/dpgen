@@ -76,9 +76,7 @@ class DispatcherList():
                             self.dispatcher_list[jj]["entity"] = Entity(entity.ip, entity.instance_id)
                             self.create(ii)
                             break
-                    if flag: 
-                        self.delete(ii)
-                        time.sleep(1)
+                    if flag: self.delete(ii)
                 elif dispatcher_status == "running":
                     pass
                 elif dispatcher_status == "unallocated":
@@ -133,8 +131,7 @@ class DispatcherList():
                 self.dispatcher_list[ii]["dispatcher"] = Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
                 self.dispatcher_list[ii]["dispatcher_status"] = "unsubmitted"
             except:
-                #dlog.info(e)
-                dlog.info("try to reconnect")
+                dlog.info("try to reconnect %s" % entity.ip)
                 time.sleep(120)
                 self.dispatcher_list[ii]["dispatcher"] = Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
                 self.dispatcher_list[ii]["dispatcher_status"] = "unsubmitted"
