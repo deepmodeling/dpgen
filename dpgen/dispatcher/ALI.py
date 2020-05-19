@@ -38,6 +38,48 @@ from hashlib import sha1
 #                    "region_id": region_id,
 #                    "client": client}
 
+def manual_create(stage, num):
+    '''running this function in your project root path, which contains machine-ali.json.
+       please ensure your machine name is machine-ali.json 
+       This will create a subdir named manual, which includes apg_id.json'''
+    root_path = os.getcwd()
+    fp = open("machine-ali.json")
+    data = json.load(fp)
+    if not os.path.exists("manual"):
+        os.mkdir("manual")
+    os.chdir("manual")
+    mdata_machine = data[stage][0]["machine"]
+    mdata_resources = data[stage][0]["resources"]
+    cloud_resources = mdata_machine["cloud_resources"]
+    ali = ALI(mdata_machine, mdata_resources, "work_path", [1], 1, cloud_resources)
+    img_id = ali.get_image_id(ali.cloud_resources["img_name"])
+    sg_id, vpc_id = ali.get_sg_vpc_id()
+    ali.cloud_resources["template_id"] = ali.create_template(img_id, sg_id, vpc_id)
+    ali.cloud_resources["vsw_id"] = ali.get_vsw_id(vpc_id)
+    ali.nchunks_limit = num 
+    ali.cloud_resources["apg_id"] = ali.create_apg()
+    time.sleep(90)
+    instance_list = ali.describe_apg_instances()
+    ip_list = ali.get_ip(instance_list)
+    print(instance_list)
+    print(ip_list)
+
+def manual_delete(stage):
+    '''running this function in your project root path, which contains machine-ali.json. '''
+    if os.path.exists("manual"):
+        fp = open("machine-ali.json")
+        data = json.load(fp)
+        mdata_machine = data[stage][0]["machine"]
+        mdata_resources = data[stage][0]["resources"]
+        cloud_resources = mdata_machine["cloud_resources"]
+        ali = ALI(mdata_machine, mdata_resources, "work_path", [1], 1, cloud_resources)
+        os.chdir("manual")
+        fp = open("apg_id.json")
+        data = json.load(fp)
+        ali.cloud_resources["apg_id"] = data["apg_id"]
+        ali.delete_apg()
+        os.remove("apg_id.json")
+        print("delete successfully!")
 
 class ALI(DispatcherList):
     def __init__(self, mdata_machine, mdata_resources, work_path, run_tasks, group_size, cloud_resources=None):
@@ -75,7 +117,7 @@ class ALI(DispatcherList):
         except ServerException as e:
             dlog.info(e)
             time.sleep(60)
-            response = self.cliend.do_action_with_exception(request)
+            response = self.client.do_action_with_exception(request)
         running_num = 0
         for jj in range(self.nchunks):
             if self.dispatcher_list[jj]["dispatcher_status"] == "running" or self.dispatcher_list[jj]["dispatcher_status"] == "unsubmitted":
