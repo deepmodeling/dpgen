@@ -343,8 +343,8 @@ class ALI(DispatcherList):
             response = json.loads(response)
             if len(response["Instances"]["Instance"]) == 1 and "Recycling" in response["Instances"]["Instance"][0]["OperationLocks"]["LockReason"]:
                 status = True
-            if instance_id not in self.describe_apg_instances():
-                status = True
+            #if instance_id not in self.describe_apg_instances():
+                #status = True
         except ServerException as e:
             dlog.info(e)
         except ClientException as e:
