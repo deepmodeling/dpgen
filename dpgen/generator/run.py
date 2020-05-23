@@ -564,7 +564,7 @@ def parse_cur_job(cur_job) :
     if 'npt' in ensemble :
         temps = _get_param_alias(cur_job, ['Ts','temps'])
         press = _get_param_alias(cur_job, ['Ps','press'])
-    elif 'nvt' == ensemble :
+    elif 'nvt' == ensemble or 'nve' == ensemble:
         temps = _get_param_alias(cur_job, ['Ts','temps'])
     nsteps = _get_param_alias(cur_job, ['nsteps'])
     trj_freq = _get_param_alias(cur_job, ['t_freq', 'trj_freq','traj_freq'])
