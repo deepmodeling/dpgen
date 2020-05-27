@@ -189,7 +189,7 @@ class Slurm(Batch) :
         username = getpass.getuser()
         stdin, stdout, stderr = self.context.block_checkcall('squeue -u %s -h' % username)
         nj = len(stdout.readlines())
-        return nj < task_max
+        return nj >= task_max
 
     def _make_squeue(self,mdata1, res):
         ret = ''
