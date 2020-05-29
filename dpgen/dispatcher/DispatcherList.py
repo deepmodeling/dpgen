@@ -18,6 +18,8 @@ class DispatcherList():
         self.nchunks_limit = int(self.mdata_machine.get("machine_upper_bound", self.nchunks))
         self.work_path = work_path
         self.cloud_resources = cloud_resources
+        self.server_pool = []
+        self.ip_pool = []
         self.dispatcher_list = list({"dispatcher": None, 
                                      "dispatcher_status": "unallocated",
                                      "entity": None} for ii in range(self.nchunks))
@@ -66,25 +68,27 @@ class DispatcherList():
                     self.dispatcher_list[ii]["dispatcher_status"] = "running"
                 elif dispatcher_status == "finished" and self.dispatcher_list[ii]["entity"]: 
                     # no jobs in queue, delete current machine
-                    # else allocate current machine to unalloc dispatcher
+                    # else add current machine to server_pool
+                    entity = self.dispatcher_list[ii]["entity"]
                     flag = True
-                    for jj in range(ii, self.nchunks):
+                    for jj in range(self.nchunks):
                         if self.dispatcher_list[jj]["dispatcher_status"] == "unallocated":
                             flag = False
-                            entity = self.dispatcher_list[ii]["entity"]
-                            self.dispatcher_list[ii]["entity"] = None
-                            self.dispatcher_list[jj]["entity"] = Entity(entity.ip, entity.instance_id)
-                            self.create(ii)
                             break
                     if flag: self.delete(ii)
+                    else:
+                        self.dispatcher_list[ii]["entity"] = None
+                        self.server_pool.append(entity.instance_id)
+                        self.ip_pool.append(entity.ip)
                 elif dispatcher_status == "running":
                     pass
                 elif dispatcher_status == "unallocated":
-                    # to do: if we can create machine, then make dispatcher
-                    #        else pass
+                    # if len(server_pool) > 0: make_dispatcher
+                    # else: pass
                     self.create(ii)
                 elif dispatcher_status == "terminated":
                     pass
+            self.update()
 
     # Derivate
     def create(self, ii):
@@ -100,6 +104,10 @@ class DispatcherList():
 
     # Derivate, delete config like templates, etc.
     def clean(self):
+        pass
+
+    # Derivate
+    def update():
         pass
 
     # Base
@@ -120,21 +128,18 @@ class DispatcherList():
                     self.dispatcher_list[ii]["dispatcher_status"] = "unallocated"
     # Base
     def make_dispatcher(self, ii):
-        '''use entity to distinguish machine, for example if ip isn't None, means we can make_dispatcher
-           change status from unallocated to unsubmitted'''
         entity = self.dispatcher_list[ii]["entity"]
-        if entity.ip:
-            profile = self.mdata_machine.copy()
-            profile['hostname'] = entity.ip
-            profile['instance_id'] = entity.instance_id
-            try:
-                self.dispatcher_list[ii]["dispatcher"] = Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
-                self.dispatcher_list[ii]["dispatcher_status"] = "unsubmitted"
-            except:
-                dlog.info("try to reconnect %s" % entity.ip)
-                time.sleep(120)
-                self.dispatcher_list[ii]["dispatcher"] = Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
-                self.dispatcher_list[ii]["dispatcher_status"] = "unsubmitted"
+        profile = self.mdata_machine.copy()
+        profile['hostname'] = entity.ip
+        profile['instance_id'] = entity.instance_id
+        try:
+            self.dispatcher_list[ii]["dispatcher"] = Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
+            self.dispatcher_list[ii]["dispatcher_status"] = "unsubmitted"
+        except:
+            dlog.info("try to reconnect %s" % entity.ip)
+            time.sleep(120)
+            self.dispatcher_list[ii]["dispatcher"] = Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
+            self.dispatcher_list[ii]["dispatcher_status"] = "unsubmitted"
 
     # Base
     def check_dispatcher_status(self, ii, allow_failue=False):

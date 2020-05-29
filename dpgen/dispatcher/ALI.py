@@ -92,18 +92,9 @@ class ALI(DispatcherList):
             self.create(ii)
 
     def create(self, ii):
-        '''case1: use existed machine(finished) to make_dispatcher
-           case2: create one machine, then make_dispatcher, change status from unallocated to unsubmitted'''
-        if self.dispatcher_list[ii]["dispatcher_status"] == "unsubmitted": return # void build twice(in restart situation)
-        if self.dispatcher_list[ii]["entity"]: self.make_dispatcher(ii) # case1
-        else: # case2
-            if len(self.ip_pool) > 0:
-                self.dispatcher_list[ii]["entity"] = Entity(self.ip_pool.pop(0), self.server_pool.pop(0))
-                self.make_dispatcher(ii)
-            else:
-                self.server_pool = self.get_server_pool()
-                self.ip_pool = self.get_ip(self.server_pool)
-                # time.sleep(120)
+        if self.dispatcher_list[ii]["dispatcher_status"] == "unallocated" and len(self.ip_pool) > 0:
+            self.dispatcher_list[ii]["entity"] = Entity(self.ip_pool.pop(0), self.server_pool.pop(0))
+            self.make_dispatcher(ii)
 
     # Derivate
     def delete(self, ii):
@@ -115,14 +106,22 @@ class ALI(DispatcherList):
         try:
             response = self.client.do_action_with_exception(request)
         except ServerException as e:
-            dlog.info(e)
+            dlog.info("%s, delete failed", e)
             time.sleep(60)
+            dlog.info("try delete again")
             response = self.client.do_action_with_exception(request)
+            dlog.info("delete successfully")
         running_num = 0
         for jj in range(self.nchunks):
             if self.dispatcher_list[jj]["dispatcher_status"] == "running" or self.dispatcher_list[jj]["dispatcher_status"] == "unsubmitted":
                 running_num += 1
         self.change_apg_capasity(running_num)
+
+    def update(self):
+        if len(self.server_pool) == 0:
+            self.server_pool = self.get_server_pool()
+            self.ip_pool = self.get_ip(self.server_pool)
+        else: pass
 
     # Derivate
     def catch_dispatcher_exception(self, ii):
@@ -142,7 +141,10 @@ class ALI(DispatcherList):
         
     def get_server_pool(self):
         running_server = self.describe_apg_instances()
-        allocated_server = list(item["entity"].instance_id for item in self.dispatcher_list if item["entity"])
+        allocated_server = []
+        for ii range(len(self.nchunks)):
+            if self.dispatcher_list[ii]["dispatcher_status"] == "running" or self.dispatcher_list[ii]["dispatcher_status"] == "unsubmitted":
+                allocated_server.append(self.dispatcher_list[ii]["entity"].instance_id)
         return list(set(running_server) - set(allocated_server))
 
     def clean(self):
@@ -156,7 +158,6 @@ class ALI(DispatcherList):
             with open('apg_id.json') as fp:
                 apg = json.load(fp)
                 self.cloud_resources["apg_id"] = apg["apg_id"]
-            running_server_pool = []
             task_chunks_str = ['+'.join(ii) for ii in self.task_chunks]
             task_hashes = [sha1(ii.encode('utf-8')).hexdigest() for ii in task_chunks_str]
             for ii in range(self.nchunks):
@@ -168,6 +169,7 @@ class ALI(DispatcherList):
                         if not self.check_spot_callback(job_record.record[cur_hash]['context']['instance_id']):
                             self.dispatcher_list[ii]["entity"] = Entity(job_record.record[cur_hash]['context']['ip'], job_record.record[cur_hash]['context']['instance_id'], job_record)
                             self.make_dispatcher(ii)
+                            self.dispatcher_list[ii]["dispatcher_status"] = "runnning"
                         else:
                             os.remove(os.path.join(os.path.abspath(self.work_path), fn))
                     else:
@@ -175,7 +177,6 @@ class ALI(DispatcherList):
             self.server_pool = self.get_server_pool()
             self.ip_pool = self.get_ip(self.server_pool)
             restart = True
-            # time.sleep(120)
         img_id = self.get_image_id(self.cloud_resources["img_name"])
         sg_id, vpc_id = self.get_sg_vpc_id()
         self.cloud_resources["template_id"] = self.create_template(img_id, sg_id, vpc_id)
@@ -274,7 +275,7 @@ class ALI(DispatcherList):
         request.set_SecurityGroupId(sg_id)
         request.set_VpcId(vpc_id)
         request.set_SystemDiskCategory("cloud_efficiency")
-        request.set_SystemDiskSize(40)
+        request.set_SystemDiskSize(50)
         request.set_IoOptimized("optimized")
         request.set_InstanceChargeType("PostPaid")
         request.set_NetworkType("vpc")
@@ -343,8 +344,8 @@ class ALI(DispatcherList):
             response = json.loads(response)
             if len(response["Instances"]["Instance"]) == 1 and "Recycling" in response["Instances"]["Instance"][0]["OperationLocks"]["LockReason"]:
                 status = True
-            #if instance_id not in self.describe_apg_instances():
-                #status = True
+            if instance_id not in self.describe_apg_instances():
+                status = True
         except ServerException as e:
             dlog.info(e)
         except ClientException as e:
