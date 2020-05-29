@@ -455,7 +455,9 @@ def run_train (iter_index,
         assert(train_command)
         command =  '%s train %s' % (train_command, train_input_file)
         if training_init_model:
-            command += ' --init-model old/model.ckpt'
+            command = "{ if [ ! -f model.ckpt.index ]; then %s --init-model old/model.ckpt; else %s --restart model.ckpt; fi }" % (command, command)
+        else:
+            command = "{ if [ ! -f model.ckpt.index ]; then %s; else %s --restart model.ckpt; fi }" % (command, command)
         commands.append(command)
         command = '%s freeze' % train_command
         commands.append(command)
@@ -564,7 +566,7 @@ def parse_cur_job(cur_job) :
     if 'npt' in ensemble :
         temps = _get_param_alias(cur_job, ['Ts','temps'])
         press = _get_param_alias(cur_job, ['Ps','press'])
-    elif 'nvt' == ensemble :
+    elif 'nvt' == ensemble or 'nve' == ensemble:
         temps = _get_param_alias(cur_job, ['Ts','temps'])
     nsteps = _get_param_alias(cur_job, ['nsteps'])
     trj_freq = _get_param_alias(cur_job, ['t_freq', 'trj_freq','traj_freq'])
