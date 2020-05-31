@@ -70,11 +70,8 @@ class DispatcherList():
                     # no jobs in queue, delete current machine
                     # else add current machine to server_pool
                     entity = self.dispatcher_list[ii]["entity"]
-                    flag = True
-                    for jj in range(self.nchunks):
-                        if self.dispatcher_list[jj]["dispatcher_status"] == "unallocated":
-                            flag = False
-                            break
+                    status_list = [item["dispatcher_status"] for item in self.dispatcher_list]
+                    flag = "unallocated" in status_list
                     if flag: self.delete(ii)
                     else:
                         self.dispatcher_list[ii]["entity"] = None

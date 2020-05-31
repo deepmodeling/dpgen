@@ -111,10 +111,9 @@ class ALI(DispatcherList):
             dlog.info("try delete again")
             response = self.client.do_action_with_exception(request)
             dlog.info("delete successfully")
-        running_num = 0
-        for jj in range(self.nchunks):
-            if self.dispatcher_list[jj]["dispatcher_status"] == "running" or self.dispatcher_list[jj]["dispatcher_status"] == "unsubmitted":
-                running_num += 1
+        status_list = [item["dispatcher_status"] for item in self.dispatcher_list]
+        running_num = status_list.count("running")
+        running_num += status_list.count("unsubmitted")
         self.change_apg_capasity(running_num)
 
     def update(self):
