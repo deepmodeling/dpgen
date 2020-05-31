@@ -142,7 +142,7 @@ class ALI(DispatcherList):
     def get_server_pool(self):
         running_server = self.describe_apg_instances()
         allocated_server = []
-        for ii range(len(self.nchunks)):
+        for ii in range(self.nchunks):
             if self.dispatcher_list[ii]["dispatcher_status"] == "running" or self.dispatcher_list[ii]["dispatcher_status"] == "unsubmitted":
                 allocated_server.append(self.dispatcher_list[ii]["entity"].instance_id)
         return list(set(running_server) - set(allocated_server))
@@ -169,7 +169,7 @@ class ALI(DispatcherList):
                         if not self.check_spot_callback(job_record.record[cur_hash]['context']['instance_id']):
                             self.dispatcher_list[ii]["entity"] = Entity(job_record.record[cur_hash]['context']['ip'], job_record.record[cur_hash]['context']['instance_id'], job_record)
                             self.make_dispatcher(ii)
-                            self.dispatcher_list[ii]["dispatcher_status"] = "runnning"
+                            self.dispatcher_list[ii]["dispatcher_status"] = "unsubmitted"
                         else:
                             os.remove(os.path.join(os.path.abspath(self.work_path), fn))
                     else:
@@ -275,7 +275,7 @@ class ALI(DispatcherList):
         request.set_SecurityGroupId(sg_id)
         request.set_VpcId(vpc_id)
         request.set_SystemDiskCategory("cloud_efficiency")
-        request.set_SystemDiskSize(50)
+        request.set_SystemDiskSize(70)
         request.set_IoOptimized("optimized")
         request.set_InstanceChargeType("PostPaid")
         request.set_NetworkType("vpc")
