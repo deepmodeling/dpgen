@@ -243,8 +243,10 @@ class ALI(DispatcherList):
                     instance_list.append(ins["InstanceId"])
             except ServerException as e:
                 dlog.info(e)
+                sys.exit()
             except ClientException as e:
                 dlog.info(e)
+                sys.exit()
         return instance_list
         
     def generate_config(self):
@@ -286,8 +288,10 @@ class ALI(DispatcherList):
             return response["LaunchTemplateId"]
         except ServerException as e:
             dlog.info(e)
+            sys.exit()
         except ClientException as e:
             dlog.info(e)
+            sys.exit()
             
     def delete_template(self):
         request = DeleteLaunchTemplateRequest()
