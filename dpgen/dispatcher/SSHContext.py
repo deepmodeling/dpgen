@@ -148,11 +148,19 @@ class SSHContext (object):
         os.chdir(cwd)
         
     def block_checkcall(self, 
-                        cmd) :
+                        cmd,
+                        retry=0) :
         self.ssh_session.ensure_alive()
         stdin, stdout, stderr = self.ssh.exec_command(('cd %s ;' % self.remote_root) + cmd)
         exit_status = stdout.channel.recv_exit_status() 
         if exit_status != 0:
+            if retry<3:
+                # sleep 60 s
+                dlog.warning("Get error code %d in calling %s through ssh with job: %s . message: %s" %
+                        (exit_status, cmd, self.job_uuid, stderr.read().decode('utf-8')))
+                dlog.warning("Sleep 60 s and retry the command...")
+                time.sleep(60)
+                return self.block_checkcall(cmd, retry=retry+1)
             raise RuntimeError("Get error code %d in calling %s through ssh with job: %s . message: %s" %
                                (exit_status, cmd, self.job_uuid, stderr.read().decode('utf-8')))
         return stdin, stdout, stderr    
