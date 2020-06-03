@@ -1,5 +1,6 @@
 #!/usr/bin/env python3 
 
+import time
 import os,json,shutil,re,glob,argparse
 import numpy as np
 import subprocess as sp
@@ -9,16 +10,17 @@ import dpgen.data.tools.diamond as diamond
 import dpgen.data.tools.sc as sc
 import dpgen.data.tools.bcc as bcc
 from dpgen import dlog
-import time
 from dpgen import ROOT_PATH
 from dpgen.remote.decide_machine import  decide_fp_machine
-from pymatgen.core.surface import SlabGenerator,generate_all_slabs, Structure
-from pymatgen.io.vasp import Poscar
 from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher
-#-----ASE-------
+#-----PMG---------
+from pymatgen.io.vasp import Poscar
+from pymatgen import Structure,Element
 from pymatgen.io.ase import AseAtomsAdaptor
+#-----ASE-------
 from ase.io import read
 from ase.build import general_surface
+
 
 def create_path (path) :
     path += '/'
@@ -58,6 +60,8 @@ def replace (file_name, pattern, subst) :
 global_dirname_02 = '00.place_ele'
 global_dirname_03 = '01.scale_pert'
 global_dirname_04 = '02.md'
+
+max_layer_numb = 50
 
 def out_dir_name(jdata) :
     super_cell = jdata['super_cell']    
@@ -174,7 +178,7 @@ def poscar_scale (poscar_in, poscar_out, scale) :
     with open(poscar_out, 'w') as fout:
         fout.write("".join(lines))
 
-def poscar_elong (poscar_in, poscar_out, elong) :
+def poscar_elong (poscar_in, poscar_out, elong, shift_center=True) :
     with open(poscar_in, 'r') as fin :
         lines = list(fin)
     if lines[7][0].upper() != 'C' :
@@ -185,8 +189,18 @@ def poscar_elong (poscar_in, poscar_out, elong) :
     elong_ratio = elong / boxzl
     boxz = boxz * (1. + elong_ratio)
     lines[4] = '%.16e %.16e %.16e\n' % (boxz[0],boxz[1],boxz[2])
-    with open(poscar_out, 'w') as fout:
-        fout.write("".join(lines))
+    if shift_center:
+       poscar_str="".join(lines)
+       st=Structure.from_str(poscar_str,fmt='poscar')
+       cart_coords=st.cart_coords
+       z_mean=cart_coords[:,2].mean()
+       z_shift=st.lattice.c/2-z_mean
+       cart_coords[:,2]=cart_coords[:,2]+z_shift
+       nst=Structure(st.lattice,st.species,coords=cart_coords,coords_are_cartesian=True)
+       nst.to('poscar',poscar_out)
+    else:
+       with open(poscar_out, 'w') as fout:
+            fout.write("".join(lines))
 
 def make_unit_cell (jdata) :
 
@@ -213,6 +227,12 @@ def make_super_cell_pymatgen (jdata) :
     make_unit_cell(jdata)
     out_dir = jdata['out_dir']
     path_uc = os.path.join(out_dir, global_dirname_02)
+    
+    elements=[Element(ii) for ii in jdata['elements']]
+    if 'vacuum_min' in jdata:
+        vacuum_min=jdata['vacuum_min']
+    else:
+        vacuum_min=max([float(ii.atomic_radius) for ii in elements])
 
     from_poscar= jdata.get('from_poscar',False)
 
@@ -232,8 +252,14 @@ def make_super_cell_pymatgen (jdata) :
 
     all_millers = jdata['millers']
     path_sc = os.path.join(out_dir, global_dirname_02)
-    #z_min = jdata['z_min']
-    layer_numb = jdata['layer_numb']
+    
+    user_layer_numb = None # set default value
+    z_min = None  
+    if 'layer_numb' in jdata:
+        user_layer_numb = jdata['layer_numb']
+    else:
+        z_min = jdata['z_min']
+
     super_cell = jdata['super_cell']
 
     cwd = os.getcwd()    
@@ -247,7 +273,16 @@ def make_super_cell_pymatgen (jdata) :
         path_cur_surf = create_path('surf-'+miller_str)
         os.chdir(path_cur_surf)
         #slabgen = SlabGenerator(ss, miller, z_min, 1e-3)
-        slab=general_surface.surface(ss,indices=miller,vacuum=1e-3,layers=layer_numb)
+        if user_layer_numb:
+            slab=general_surface.surface(ss,indices=miller,vacuum=vacuum_min,layers=user_layer_numb)
+        else:
+           # build slab according to z_min value   
+           for layer_numb in range( 1,max_layer_numb+1):
+               slab=general_surface.surface(ss,indices=miller,vacuum=vacuum_min,layers=layer_numb)
+               if slab.cell.lengths()[-1] >= z_min:
+                  break
+               if layer_numb == max_layer_numb:
+                  raise RuntimeError("can't build the required slab")
         #all_slabs = slabgen.get_slabs() 
         dlog.info(os.getcwd())
         #dlog.info("Miller %s: The slab has %s termination, use the first one" %(str(miller), len(all_slabs)))

@@ -7,13 +7,16 @@ from dpgen import dlog
 class Batch(object) :
     def __init__ (self,
                   context, 
-                  uuid_names = False) :
+                  uuid_names = True) :
         self.context = context
+        self.uuid_names = uuid_names
         if uuid_names:
+            self.upload_tag_name = '%s_tag_upload' % self.context.job_uuid
             self.finish_tag_name = '%s_tag_finished' % self.context.job_uuid
             self.sub_script_name = '%s.sub' % self.context.job_uuid
             self.job_id_name = '%s_job_id' % self.context.job_uuid
         else:
+            self.upload_tag_name = 'tag_upload'
             self.finish_tag_name = 'tag_finished'
             self.sub_script_name = 'run.sub'
             self.job_id_name = 'job_id'
@@ -99,7 +102,6 @@ class Batch(object) :
                args = None,
                res = None,
                restart = False,
-               sleep = 0,
                outlog = 'log',
                errlog = 'err'):
         if restart:
@@ -119,7 +121,11 @@ class Batch(object) :
         else:
             dlog.debug('new task')
             self.do_submit(job_dirs, cmd, args, res, outlog=outlog, errlog=errlog)
-        time.sleep(sleep) # For preventing the crash of the tasks while submitting        
+        if res is None:
+            sleep = 0
+        else:
+            sleep = res.get('submit_wait_time', 0)
+        time.sleep(sleep) # For preventing the crash of the tasks while submitting
 
     def check_finish_tag(self) :
         return self.context.check_file_exists(self.finish_tag_name)
@@ -133,19 +139,17 @@ class Batch(object) :
                           outlog = 'log',
                           errlog = 'err') :
         ret = ""
-        try:
-            allow_failure = res['allow_failure']
-        except:
-            allow_failure = False
+        allow_failure = res.get('allow_failure', False)
         for ii,jj in zip(job_dirs, args) :
             ret += 'cd %s\n' % ii
-            ret += 'test $? -ne 0 && exit\n\n'
+            ret += 'test $? -ne 0 && exit 1\n\n'
             if self.manual_cuda_devices <= 0:
                 ret += 'if [ ! -f tag_%d_finished ] ;then\n' % idx
                 ret += '  %s 1>> %s 2>> %s \n' % (self.sub_script_cmd(cmd, jj, res), outlog, errlog)
                 if res['allow_failure'] is False:
-                    ret += '  if test $? -ne 0; then exit; else touch tag_%d_finished; fi \n' % idx
+                    ret += '  if test $? -ne 0; then exit 1; else touch tag_%d_finished; fi \n' % idx
                 else :
+                    ret += '  if test $? -ne 0; then touch tag_failure_%d; fi \n' % idx
                     ret += '  touch tag_%d_finished \n' % idx
                 ret += 'fi\n\n'
             else :
@@ -154,7 +158,7 @@ class Batch(object) :
                 ret += 'CUDA_VISIBLE_DEVICES=%d %s &\n\n' % ((self.cmd_cnt % self.manual_cuda_devices), tmp_cmd)
                 self.cmd_cnt += 1
             ret += 'cd %s\n' % self.context.remote_root
-            ret += 'test $? -ne 0 && exit\n'
+            ret += 'test $? -ne 0 && exit 1\n'
             if self.manual_cuda_devices > 0 and self.cmd_cnt % (self.manual_cuda_devices * self.manual_cuda_multiplicity) == 0:
                 ret += '\nwait\n\n'
         ret += '\nwait\n\n'

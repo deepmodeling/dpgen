@@ -21,9 +21,14 @@
 ## About DP-GEN
 
 [![GitHub release](https://img.shields.io/github/release/deepmodeling/dpgen.svg?maxAge=86400)](https://github.com/deepmodeling/dpgen/releases/)
-[![arxiv:1910.12690](http://img.shields.io/badge/arXiv-1910.12690-B31B1B.svg?maxAge=86400)](https://arxiv.org/abs/1910.12690)
+[![doi:10.1016/j.cpc.2020.107206](https://zenodo.org/badge/DOI/10.1016/j.cpc.2020.107206.svg)](https://doi.org/10.1016/j.cpc.2020.107206)
 
-DP-GEN (Deep Generator)  is a software written in Python, delicately designed to generate a deep learning based model of interatomic potential energy and force field. DP-GEN is depedent on DeepMD-kit (https://github.com/deepmodeling/deepmd-kit/blob/master/README.md). With highly scalable interface with common softwares for molecular simulation, DP-GEN is capable to  automatically prepare scripts and maintain job queues on HPC machines (High Performance Cluster) and analyze results
+DP-GEN (Deep Generator)  is a software written in Python, delicately designed to generate a deep learning based model of interatomic potential energy and force field. DP-GEN is depedent on DeepMD-kit (https://github.com/deepmodeling/deepmd-kit/blob/master/README.md). With highly scalable interface with common softwares for molecular simulation, DP-GEN is capable to  automatically prepare scripts and maintain job queues on HPC machines (High Performance Cluster) and analyze results.
+
+If you use this software in any publication, please cite:
+
+Yuzhi Zhang, Haidi Wang, Weijie Chen, Jinzhe Zeng, Linfeng Zhang, Han Wang, and Weinan E, DP-GEN: A concurrent learning platform for the generation of reliable deep learning based potential energy models, Computer Physics Communications, 2020, 107206.
+
 ### Highlighted features
 + **Accurate and efficient**: DP-GEN is capable to sample more than tens of million structures and select only a few for first principles calculation. DP-GEN will finally obtain a uniformly accurate model.
 + **User-friendly and automatic**: Users may install and run DP-GEN easily. Once succusefully running, DP-GEN can dispatch and handle all jobs on HPCs, and thus there's no need for any personal effort.
@@ -55,7 +60,6 @@ Options for TASK:
 * `run` : Main process of Deep Generator.
 * `test`: Auto-test for Deep Potential.
 * `db`: Collecting data from DP-GEN.
-
 
 ## Download and Install
 One can download the source code of dpgen by
@@ -264,6 +268,52 @@ Following is an example for `PARAM`, which generates data from a typical structu
 }
 ```
 
+Another example is `from_poscar` method. Here you need to specify the POSCAR file. 
+
+```
+{
+  "stages": [
+    1,
+    2
+  ],
+  "cell_type": "fcc",
+  "from_poscar":	true,
+  "from_poscar_path":	"POSCAR",
+  "super_cell": [
+    1,
+    1,
+    1
+  ],
+  "layer_numb": 3,
+  "vacuum_max": 5,
+  "vacuum_resol": [0.5,2],
+  "mid_point": 2.0,
+  "millers": [
+    [
+      1,
+      0,
+      0
+    ]
+  ],
+  "elements": [
+    "Al"
+  ],
+  "potcars": [
+    "./POTCAR"
+  ],
+  "relax_incar" : "INCAR_metal_rlx_low",
+  "scale": [
+    1.0
+  ],
+  "skip_relax": true,
+  "pert_numb": 5,
+  "pert_box": 0.03,
+  "pert_atom": 0.01,
+  "coll_ndata": 5000,
+  "_comment": "that's all"
+}
+```
+
 The following table gives explicit descriptions on keys in `PARAM`.
 
 The bold notation of key (such as **Elements**) means that it's a necessary key.
@@ -275,7 +325,9 @@ The bold notation of key (such as **Elements**) means that it's a necessary key.
 |  **cell_type** | String  | "hcp" | Specifying which typical structure to be generated. **Options** include fcc, hcp, bcc, sc, diamond.
 | **latt** | Float | 4.479 | Lattice constant for single cell.
 | **layer_numb** | Integer | 3 | Number of equavilent layers of slab.
+| **z__min** | Float | 9.0 | Thickness of slab without vacuum (Angstrom). If the `layer_numb` and `z_min` are all setted, the `z_min` value will be ignored.
 | **vacuum_max** | Float | 9 | Maximal thickness of vacuum (Angstrom).
+| vacuum_min | Float | 3.0 | Minimal thickness of vacuum (Angstrom). Default value is 2 times atomic radius.
 | **vacuum_resol** | List of float | [0.5, 1 ] | Interval of thichness of vacuum. If size of `vacuum_resol` is 1, the interval is fixed to its value. If size of `vacuum_resol` is 2, the interval is `vacuum_resol[0]` before `mid_point`, otherwise `vacuum_resol[1]` after `mid_point`.
 | **millers** | List of list of Integer | [[1,0,0]] | Miller indices.
 | relax_incar | String | "....../INCAR" | Path of INCAR for relaxation in VASP. **Necessary** if `stages` include 1.
@@ -466,6 +518,8 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | **sys_batch_size**      | List of integer   | [8, 8]                                                 | Each number  is the batch_size for training of corresponding system in `sys_configs`. If set to `auto`, batch size will be 32 divided by number of atoms. |
 | *#Training*
 | **numb_models**      | Integer      | 4 (recommend)                                                           | Number of models to be trained in `00.train`. |
+| training_iter0_model_path  | list of string  |  ["/path/to/model0_ckpt/", ...]  | The model used to init the first iter training. Number of element should be equal to `numb_models` |
+| training_init_model  | bool  |  False  | Iteration > 0, the model parameters will be initilized from the model trained at the previous iteration. Iteration == 0, the model parameters will be initialized from `training_iter0_model_path`.  |
 | **default_training_param** | Dict | {<br />... <br />"use_smooth": true, <br/>"sel_a": [16, 4], <br/>"rcut_smth": 0.5, <br/>"rcut": 5, <br/>"filter_neuron": [10, 20, 40], <br/>...<br />} | Training parameters for `deepmd-kit` in `00.train`. <br /> You can find instructions from here: (https://github.com/deepmodeling/deepmd-kit)..<br /> We commonly let `stop_batch` = 200 * `decay_steps`. |
 | *#Exploration*
 | **model_devi_dt** | Float | 0.002 (recommend) | Timestep for MD |
@@ -475,6 +529,8 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | **model_devi_e_trust_lo**  | Float | 1e10                                                         | Lower bound of energies for the selection. Recommend to set them a high number, since forces provide more precise information. Special cases such as energy minimization may need this. |
 | **model_devi_e_trust_hi**  | Float | 1e10                                                         | Upper bound of energies for the selection. |
 | **model_devi_clean_traj**  | Boolean | true                                                         | Deciding whether to clean traj folders in MD since they are too large. |
+| **model_devi_nopbc**  | Boolean | False                                                         | Assume open boundary condition in MD simulations. |
+| model_devi_activation_func | List of String | ["tanh", "tanh", "tanh", "tanh"]	| Set activation functions for models, length of the list should be the same as `numb_models` |
 | **model_devi_jobs**        | [<br/>{<br/>"sys_idx": [0], <br/>"temps": <br/>[100],<br/>"press":<br/>[1],<br/>"trj_freq":<br/>10,<br/>"nsteps":<br/> 1000,<br/> "ensembles": <br/> "nvt" <br />},<br />...<br />] | List of dict | Settings for exploration in `01.model_devi`. Each dict in the list corresponds to one iteration. The index of `model_devi_jobs` exactly accord with index of iterations |
 | **model_devi_jobs["sys_idx"]**    | List of integer           | [0]                                                          | Systems to be selected as the initial structure of MD and be explored. The index corresponds exactly to the `sys_configs`. |
 | **model_devi_jobs["temps"]**  | List of integer | [50, 300] | Temperature (**K**) in MD
@@ -489,10 +545,13 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | **fp_style** | string                | "vasp"                                                       | Software for First Principles. **Options** include “vasp”, “pwscf”, “siesta” and “gaussian” up to now. |
 | **fp_task_max** | Integer            | 20                                                           | Maximum of  structures to be calculated in `02.fp` of each iteration. |
 | **fp_task_min**     | Integer        | 5                                                            | Minimum of structures to calculate in `02.fp` of each iteration. |
+| fp_accurate_threshold      | Float | 0.9999  | If the accurate ratio is larger than this number, no fp calculation will be performed, i.e. fp_task_max = 0. |
+| fp_accurate_soft_threshold | Float | 0.9999  | If the accurate ratio is between this number and `fp_accurate_threshold`, the fp_task_max linearly decays to zero. |
 | *fp_style == VASP*
 | **fp_pp_path**   | String           | "/sharedext4/.../ch4/"                                       | Directory of psuedo-potential file to be used for 02.fp exists. |
 | **fp_pp_files**    | List of string         | ["POTCAR"]                                                   | Psuedo-potential file to be used for 02.fp. Note that the order of elements should correspond to the order in `type_map`. |
-|**fp_incar** | String | "/sharedext4/../ch4/INCAR" | Input file for VASP. INCAR must specify KSPACING.
+|**fp_incar** | String | "/sharedext4/../ch4/INCAR" | Input file for VASP. INCAR must specify KSPACING and KGAMMA.
+|**fp_aniso_kspacing** | List of integer | [1.0,1.0,1.0] | Set anisotropic kspacing. Usually useful for 1-D or 2-D materials. Only support VASP. If it is setting the KSPACING key in INCAR will be ignored.
 |cvasp| Boolean | true | If `cvasp` is true, DP-GEN will use Custodian to help control VASP calculation.
 | *fp_style == Gaussian*
 | **use_clusters** | Boolean | false | If set to `true`, clusters will be taken instead of the whole system. This option does not work with DeePMD-kit 0.x.
@@ -632,7 +691,7 @@ param.json in a dictionary.
 | conf_dir | path like string | "confs/Al/std-fcc" | the dir which contains vasp's POSCAR  |
 | key_id | string| "DZIwdXCXg1fiXXXXXX" |the API key of Material project|
 | task_type | string | "vasp" | task type, one of deepmd vasp meam |
-| task | string | "equi" | task, one of equi, eos, elastic, vacancy, interstitial, surf or all  |
+| task | string or list | "equi" | task, one or several tasks from { equi, eos, elastic, vacancy, interstitial, surf } or all stands for all tasks  |
 | vasp_params| dict | seeing below | params relating to vasp INCAR|
 | lammps_params | dict| seeing below| params relating to lammps |
 

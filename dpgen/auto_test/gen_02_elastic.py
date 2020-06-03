@@ -1,29 +1,38 @@
 #!/usr/bin/env python3
 
-import os, re, argparse, filecmp, json, glob
+import os, re, argparse, filecmp, json, glob, shutil
 import subprocess as sp
 import numpy as np
 import dpgen.auto_test.lib.vasp as vasp
 import dpgen.auto_test.lib.lammps as lammps
+
+from dpgen import dlog
+from dpgen.generator.lib.vasp import incar_upper
 from pymatgen.core.structure import Structure
 from pymatgen.analysis.elasticity.strain import Deformation, DeformedStructureSet, Strain
+from pymatgen.io.vasp import Incar
+from dpgen import ROOT_PATH
+
+cvasp_file=os.path.join(ROOT_PATH,'generator/lib/cvasp.py')
 
 global_equi_name = '00.equi'
 global_task_name = '02.elastic'
 
-def make_vasp(jdata, conf_dir, norm_def = 2e-3, shear_def = 5e-3) :
-    norm_def = jdata['norm_deform']
-    shear_def = jdata['shear_deform']
+def make_vasp(jdata, conf_dir) :
+    default_norm_def = 2e-3
+    default_shear_def = 5e-3
+    norm_def = jdata.get('norm_deform', default_norm_def)
+    shear_def = jdata.get('shear_deform', default_shear_def)
     conf_path = os.path.abspath(conf_dir)
     conf_poscar = os.path.join(conf_path, 'POSCAR')
 
-    # get equi poscar
     if 'relax_incar' in jdata.keys():
         vasp_str='vasp-relax_incar'
     else:
         kspacing = jdata['vasp_params']['kspacing']
         vasp_str='vasp-k%.2f' % kspacing
 
+    # get equi poscar
     equi_path = re.sub('confs', global_equi_name, conf_path)
     equi_path = os.path.join(equi_path, vasp_str)
     equi_contcar = os.path.join(equi_path, 'CONTCAR')
@@ -55,10 +64,14 @@ def make_vasp(jdata, conf_dir, norm_def = 2e-3, shear_def = 5e-3) :
     if  'relax_incar' in jdata.keys():
         relax_incar_path = jdata['relax_incar']
         assert(os.path.exists(relax_incar_path))
-        relax_incar_path = os.path.abspath(relax_incar_path)
-        fc = open(relax_incar_path).read()
-        kspacing =float(re.findall((r"KSPACING(.+?)\n"),fc)[0].replace('=',''))
-        kgamma =('T' in re.findall((r"KGAMMA(.+?)\n"),fc)[0])
+        relax_incar_path = os.path.abspath(relax_incar_path)        
+        incar = incar_upper(Incar.from_file(relax_incar_path))
+        if incar.get('ISIF') != 2:
+            dlog.info("%s:%s setting ISIF to 2" % (__file__, make_vasp.__name__))
+            incar['ISIF'] = 2
+        fc = incar.get_string()
+        kspacing = incar['KSPACING']
+        kgamma = incar['KGAMMA']
     else :
         fp_params = jdata['vasp_params']
         ecut = fp_params['ecut']
@@ -107,7 +120,11 @@ def make_vasp(jdata, conf_dir, norm_def = 2e-3, shear_def = 5e-3) :
         os.symlink(os.path.relpath(os.path.join(task_path, 'INCAR')), 'INCAR')
         os.symlink(os.path.relpath(os.path.join(task_path, 'POTCAR')), 'POTCAR')
         os.symlink(os.path.relpath(os.path.join(task_path, 'KPOINTS')), 'KPOINTS')
-    cwd = os.getcwd()
+        #copy cvasp
+        if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+           shutil.copyfile(cvasp_file, os.path.join(dfm_path,'cvasp.py'))
+    os.chdir(cwd)
+
 
 def make_lammps(jdata, conf_dir,task_type) :
     fp_params = jdata['lammps_params']
@@ -115,6 +132,7 @@ def make_lammps(jdata, conf_dir,task_type) :
     type_map = fp_params['type_map'] 
     model_dir = os.path.abspath(model_dir)
     model_name =fp_params['model_name']
+    deepmd_version = fp_params.get("deepmd_version", "0.12")
     if not model_name and task_type =='deepmd':
         models = glob.glob(os.path.join(model_dir, '*pb'))
         model_name = [os.path.basename(ii) for ii in models]
@@ -122,8 +140,9 @@ def make_lammps(jdata, conf_dir,task_type) :
     else:
         models = [os.path.join(model_dir,ii) for ii in model_name]
 
-    model_param = {'model_name' :      fp_params['model_name'],
-                  'param_type':          fp_params['model_param_type']}
+    model_param = {'model_name' :      model_name,
+                  'param_type':          fp_params['model_param_type'],
+                  'deepmd_version' : deepmd_version}
     
     ntypes = len(type_map)
 
@@ -168,7 +187,7 @@ def make_lammps(jdata, conf_dir,task_type) :
         fc = lammps.make_lammps_elastic('conf.lmp', 
                                     ntypes, 
                                     lammps.inter_deepmd,
-                                    model_name)  
+                                    model_param)  
     elif task_type=='meam':
         fc = lammps.make_lammps_elastic('conf.lmp', 
                                     ntypes, 

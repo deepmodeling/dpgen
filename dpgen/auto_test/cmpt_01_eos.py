@@ -12,7 +12,7 @@ def comput_lmp_eos(jdata,conf_dir, task_name) :
     conf_path = os.path.abspath(conf_path)
     conf_path = os.path.join(conf_path, task_name)
     vol_paths = glob.glob(os.path.join(conf_path, 'vol-*'))
-    vol_paths.sort()
+    vol_paths.sort(key=lambda k : float(k.split('-')[-1]))
     result = os.path.join(conf_path,'result')
     print('Vpa(A^3)\tEpA(eV)')
     with open(result,'w') as fp:
@@ -38,7 +38,7 @@ def comput_vasp_eos(jdata, conf_dir) :
         vasp_str='vasp-k%.2f' % kspacing
     task_path = os.path.join(conf_path, vasp_str)
     vol_paths = glob.glob(os.path.join(task_path, 'vol-*'))
-    vol_paths.sort()
+    vol_paths.sort(key=lambda k : float(k.split('-')[-1]))
     result = os.path.join(task_path,'result')
     print('Vpa(A^3)\tEpA(eV)')
     with open(result,'w') as fp:

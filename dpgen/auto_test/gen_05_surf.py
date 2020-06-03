@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
 
-import os, re, argparse, filecmp, json, glob
+import os, re, argparse, filecmp, json, glob, shutil
 import subprocess as sp
 import numpy as np
 import dpgen.auto_test.lib.vasp as vasp
 import dpgen.auto_test.lib.lammps as lammps
 from pymatgen.core.surface import generate_all_slabs, Structure
+
+from dpgen import ROOT_PATH
+from pymatgen.io.vasp import Incar
+from dpgen.generator.lib.vasp import incar_upper
+cvasp_file=os.path.join(ROOT_PATH,'generator/lib/cvasp.py')
+
 
 global_equi_name = '00.equi'
 global_task_name = '05.surf'
@@ -59,7 +65,10 @@ def make_vasp(jdata, conf_dir, max_miller = 2, relax_box = False, static = False
             scf_incar_path = jdata['scf_incar']
             assert(os.path.exists(scf_incar_path))
             scf_incar_path = os.path.abspath(scf_incar_path)
-            fc = open(scf_incar_path).read()
+            incar = incar_upper(Incar.from_file(scf_incar_path))
+            fc = incar.get_string()
+            kspacing = incar['KSPACING']
+            kgamma = incar['KGAMMA']
         else :
             fp_params = jdata['vasp_params']
             ecut = fp_params['ecut']
@@ -74,7 +83,10 @@ def make_vasp(jdata, conf_dir, max_miller = 2, relax_box = False, static = False
             relax_incar_path = jdata['relax_incar']
             assert(os.path.exists(relax_incar_path))
             relax_incar_path = os.path.abspath(relax_incar_path)
-            fc = open(relax_incar_path).read()
+            incar = incar_upper(Incar.from_file(relax_incar_path))
+            fc = incar.get_string()
+            kspacing = incar['KSPACING']
+            kgamma = incar['KGAMMA']
         else :
             fp_params = jdata['vasp_params']
             ecut = fp_params['ecut']
@@ -122,6 +134,14 @@ def make_vasp(jdata, conf_dir, max_miller = 2, relax_box = False, static = False
         # link incar, potcar, kpoints
         os.symlink(os.path.relpath(os.path.join(task_path, 'INCAR')), 'INCAR')
         os.symlink(os.path.relpath(os.path.join(task_path, 'POTCAR')), 'POTCAR')
+
+        # write kp
+        fc = vasp.make_kspacing_kpoints('POSCAR', kspacing, kgamma)
+        with open('KPOINTS', 'w') as fp: fp.write(fc)
+
+        #copy cvasp
+        if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+           shutil.copyfile(cvasp_file, os.path.join(struct_path,'cvasp.py'))
     cwd = os.getcwd()
 
 def make_lammps(jdata, conf_dir, max_miller = 2, static = False, relax_box = False, task_type = 'wrong-task') :
@@ -131,6 +151,7 @@ def make_lammps(jdata, conf_dir, max_miller = 2, static = False, relax_box = Fal
     type_map = fp_params['type_map']
     model_dir = os.path.abspath(model_dir)
     model_name =fp_params['model_name']
+    deepmd_version = fp_params.get("deepmd_version", "0.12")
     if not model_name and task_type=='deepmd':
         models = glob.glob(os.path.join(model_dir, '*pb'))
         model_name = [os.path.basename(ii) for ii in models]
@@ -138,8 +159,9 @@ def make_lammps(jdata, conf_dir, max_miller = 2, static = False, relax_box = Fal
     else:
         models = [os.path.join(model_dir,ii) for ii in model_name]
 
-    model_param = {'model_name' :      fp_params['model_name'],
-                  'param_type':          fp_params['model_param_type']}
+    model_param = {'model_name' :      model_name,
+                  'param_type':          fp_params['model_param_type'],
+                  'deepmd_version' : deepmd_version}
 
     ntypes = len(type_map)
 
@@ -184,12 +206,12 @@ def make_lammps(jdata, conf_dir, max_miller = 2, static = False, relax_box = Fal
             fc = lammps.make_lammps_eval('conf.lmp',
                                      ntypes,
                                      lammps.inter_deepmd,
-                                     model_name)
+                                     model_param)
         else :
             fc = lammps.make_lammps_equi('conf.lmp',
                                      ntypes,
                                      lammps.inter_deepmd,
-                                     model_name,
+                                     model_param,
                                      change_box = relax_box)
     elif task_type =='meam':
         if static :

@@ -20,25 +20,33 @@ import dpgen.data.tools.fcc as fcc
 import dpgen.data.tools.bcc as bcc
 import dpgen.data.tools.diamond as diamond
 import dpgen.data.tools.sc as sc
+from dpgen.generator.lib.vasp import incar_upper
 from pymatgen import Structure
+from pymatgen.io.vasp import Incar
 from dpgen.remote.decide_machine import  decide_fp_machine
 from dpgen import ROOT_PATH
 from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher
 
 
 
-def create_path (path) :
+def create_path (path,back=False) :
     if  path[-1] != "/":
         path += '/'
     if os.path.isdir(path) : 
-        dirname = os.path.dirname(path)        
-        counter = 0
-        while True :
-            bk_dirname = dirname + ".bk%03d" % counter
-            if not os.path.isdir(bk_dirname) : 
-                shutil.move (dirname, bk_dirname) 
-                break
-            counter += 1
+        if back:
+           dirname = os.path.dirname(path)        
+           counter = 0
+           while True :
+               bk_dirname = dirname + ".bk%03d" % counter
+               if not os.path.isdir(bk_dirname) : 
+                   shutil.move (dirname, bk_dirname) 
+                   break
+               counter += 1
+           os.makedirs (path)
+           return path
+        else:
+           return path
+
     os.makedirs (path)
     return path
 
@@ -238,7 +246,10 @@ def make_super_cell_poscar(jdata) :
     cwd = os.getcwd()
     to_file = os.path.abspath(to_file)
     os.chdir(path_work)
-    os.symlink(os.path.relpath(to_file), 'POSCAR')
+    try:
+        os.symlink(os.path.relpath(to_file), 'POSCAR')
+    except FileExistsError:
+        pass
     os.chdir(cwd)
 
 def make_combines (dim, natoms) :
@@ -317,9 +328,15 @@ def make_vasp_relax (jdata, mdata) :
     for ss in sys_list:
         os.chdir(ss)
         ln_src = os.path.relpath(os.path.join(work_dir,'INCAR'))
-        os.symlink(ln_src, 'INCAR')
+        try:
+           os.symlink(ln_src, 'INCAR')
+        except FileExistsError:
+           pass
         ln_src = os.path.relpath(os.path.join(work_dir,'POTCAR'))
-        os.symlink(ln_src, 'POTCAR')
+        try:
+           os.symlink(ln_src, 'POTCAR')
+        except FileExistsError:
+           pass
         os.chdir(work_dir)
     os.chdir(cwd)
 
@@ -452,8 +469,15 @@ def make_vasp_md(jdata) :
                 shutil.copy2 (init_pos, 'POSCAR')
                 file_incar = os.path.join(path_md, 'INCAR')
                 file_potcar = os.path.join(path_md, 'POTCAR')
-                os.symlink(os.path.relpath(file_incar), 'INCAR')
-                os.symlink(os.path.relpath(file_potcar), 'POTCAR')
+                try:
+                    os.symlink(os.path.relpath(file_incar), 'INCAR')
+                except FileExistsError:
+                    pass
+                try:
+                    os.symlink(os.path.relpath(file_potcar), 'POTCAR')
+                except FileExistsError:
+                    pass
+                 
                 os.chdir(cwd)                
 
 def coll_vasp_md(jdata) :
@@ -532,7 +556,7 @@ def _vasp_check_fin (ii) :
         return False
     return True
 
-def run_vasp_relax(jdata, mdata, dispatcher):
+def run_vasp_relax(jdata, mdata):
     fp_command = mdata['fp_command']
     fp_group_size = mdata['fp_group_size']
     fp_resources = mdata['fp_resources']
@@ -557,7 +581,7 @@ def run_vasp_relax(jdata, mdata, dispatcher):
     #    if not _vasp_check_fin(ii):
     #        relax_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in relax_run_tasks]
-
+    dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_dir, run_tasks, fp_group_size)
     #dlog.info(run_tasks)
     dispatcher.run_jobs(fp_resources,
                        [fp_command],
@@ -568,7 +592,7 @@ def run_vasp_relax(jdata, mdata, dispatcher):
                        forward_files,
                        backward_files)
 
-def run_vasp_md(jdata, mdata, dispatcher):
+def run_vasp_md(jdata, mdata):
     fp_command = mdata['fp_command']
     fp_group_size = mdata['fp_group_size']
     fp_resources = mdata['fp_resources']
@@ -603,7 +627,7 @@ def run_vasp_md(jdata, mdata, dispatcher):
     run_tasks = [ii.replace(work_dir+"/", "") for ii in md_run_tasks]
     #dlog.info("md_work_dir", work_dir)
     #dlog.info("run_tasks",run_tasks)
-
+    dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_dir, run_tasks, fp_group_size)
     dispatcher.run_jobs(fp_resources,
                        [fp_command],
                        work_dir,
@@ -631,7 +655,7 @@ def gen_init_bulk(args) :
     if args.MACHINE is not None:
        # Selecting a proper machine
        mdata = decide_fp_machine(mdata)
-       disp = make_dispatcher(mdata["fp_machine"])
+       #disp = make_dispatcher(mdata["fp_machine"])
 
     # Decide work path
     out_dir = out_dir_name(jdata)
@@ -646,15 +670,11 @@ def gen_init_bulk(args) :
     try:
         md_incar = jdata['md_incar']
         if os.path.isfile(md_incar):
-            with open(md_incar , "r") as fr:
-                md_incar_lines = fr.readlines()
+            standard_incar = incar_upper(Incar.from_file(md_incar))
             nsw_flag = False
-            for incar_line in md_incar_lines:
-                line = incar_line.split()
-                if "NSW" in line:
+            if "NSW" in standard_incar:
                     nsw_flag = True
-                    nsw_steps = int(incar_line.split()[-1])
-                    break
+                    nsw_steps = standard_incar['NSW']
             #dlog.info("nsw_steps is", nsw_steps)
             #dlog.info("md_nstep_jdata is", md_nstep_jdata)
             if nsw_flag:
@@ -664,7 +684,7 @@ def gen_init_bulk(args) :
                     dlog.info("MD steps in md_incar is %d"%(nsw_steps))
                     dlog.info("DP-GEN will use settings in md_incar!")
                     jdata['md_nstep'] = nsw_steps
-    except:
+    except KeyError:
         pass
     ## correct element name 
     temp_elements = []
@@ -688,7 +708,7 @@ def gen_init_bulk(args) :
                 place_element(jdata)
             if args.MACHINE is not None:
                make_vasp_relax(jdata, mdata)
-               run_vasp_relax(jdata, mdata, disp)
+               run_vasp_relax(jdata, mdata)
             else:
                make_vasp_relax(jdata, {"fp_resources":{}})
         elif stage == 2 :
@@ -699,7 +719,7 @@ def gen_init_bulk(args) :
             dlog.info("Current stage is 3, run a short md")
             make_vasp_md(jdata)
             if args.MACHINE is not None:
-               run_vasp_md(jdata, mdata, disp)
+               run_vasp_md(jdata, mdata)
         elif stage == 4 :
             dlog.info("Current stage is 4, collect data")
             coll_vasp_md(jdata)

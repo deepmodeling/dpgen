@@ -1,10 +1,18 @@
 #!/usr/bin/env python3
 
-import os, re, argparse, filecmp, json, glob
+import os, re, argparse, filecmp, json, glob, shutil
 import subprocess as sp
 import numpy as np
 import dpgen.auto_test.lib.vasp as vasp
 import dpgen.auto_test.lib.lammps as lammps
+
+from dpgen import dlog
+from dpgen.generator.lib.vasp import incar_upper
+from dpgen import ROOT_PATH
+from pymatgen.io.vasp import Incar
+from dpgen.generator.lib.vasp import incar_upper
+
+cvasp_file=os.path.join(ROOT_PATH,'generator/lib/cvasp.py')
 
 global_task_name = '00.equi'
 
@@ -48,7 +56,14 @@ def make_vasp(jdata, conf_dir) :
         relax_incar_path = jdata['relax_incar']
         assert(os.path.exists(relax_incar_path))
         relax_incar_path = os.path.abspath(relax_incar_path)
-        fc = open(relax_incar_path).read()
+        incar = incar_upper(Incar.from_file(relax_incar_path))
+        isif = 3
+        if incar.get('ISIF') != isif:
+            dlog.info("%s:%s setting ISIF to %d" % (__file__, make_vasp.__name__, isif))
+            incar['ISIF'] = isif
+        fc = incar.get_string()
+        kspacing = incar['KSPACING']
+        kgamma = incar['KGAMMA']
         vasp_path = os.path.join(equi_path, 'vasp-relax_incar' )
     else :
         fp_params = jdata['vasp_params']
@@ -63,14 +78,24 @@ def make_vasp(jdata, conf_dir) :
 
     os.makedirs(vasp_path, exist_ok = True)
     os.chdir(vasp_path)
-    print(vasp_path)
 
+    # write incar
     with open('INCAR', 'w') as fp :
         fp.write(fc)
+
     # gen poscar
     if os.path.exists('POSCAR') :
         os.remove('POSCAR')
     os.symlink(os.path.relpath(to_poscar), 'POSCAR')
+
+    # gen kpoints
+    fc = vasp.make_kspacing_kpoints('POSCAR', kspacing, kgamma)
+    with open('KPOINTS', 'w') as fp: fp.write(fc)
+
+    #copy cvasp
+    if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+       shutil.copyfile(cvasp_file, 'cvasp.py')
+
     # gen potcar
     with open('POTCAR', 'w') as outfile:
         for fname in potcar_list:
@@ -84,6 +109,7 @@ def make_lammps (jdata, conf_dir,task_type) :
     type_map = fp_params['type_map'] 
     model_dir = os.path.abspath(model_dir)
     model_name =fp_params['model_name']
+    deepmd_version = fp_params.get("deepmd_version", "0.12")
     if not model_name and task_type =='deepmd':
         models = glob.glob(os.path.join(model_dir, '*pb'))
         model_name = [os.path.basename(ii) for ii in models]
@@ -91,8 +117,9 @@ def make_lammps (jdata, conf_dir,task_type) :
     else:
         models = [os.path.join(model_dir,ii) for ii in model_name]
 
-    model_param = {'model_name' :      fp_params['model_name'],
-                  'param_type':          fp_params['model_param_type']}
+    model_param = {'model_name' :      model_name,
+                  'param_type':          fp_params['model_param_type'],
+                  'deepmd_version' : deepmd_version}
     
     ntypes = len(type_map)
     conf_path = os.path.abspath(conf_dir)
@@ -121,7 +148,7 @@ def make_lammps (jdata, conf_dir,task_type) :
         fc = lammps.make_lammps_equi(os.path.basename(conf_file), 
                                  ntypes, 
                                  lammps.inter_deepmd, 
-                                 model_name)
+                                 model_param)
     elif task_type=='meam':
         fc = lammps.make_lammps_equi(os.path.basename(conf_file), 
                                  ntypes, 

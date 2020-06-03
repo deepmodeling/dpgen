@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os, re, argparse, filecmp, json, glob
+import os, re, argparse, filecmp, json, glob, shutil
 import subprocess as sp
 import numpy as np
 import dpgen.auto_test.lib.vasp as vasp
@@ -8,6 +8,10 @@ import dpgen.auto_test.lib.lammps as lammps
 from phonopy.structure.atoms import PhonopyAtoms
 import yaml
 
+from dpgen import ROOT_PATH
+from pymatgen.io.vasp import Incar
+from dpgen.generator.lib.vasp import incar_upper
+cvasp_file=os.path.join(ROOT_PATH,'generator/lib/cvasp.py')
 
 
 global_equi_name = '00.equi'
@@ -117,9 +121,10 @@ def make_vasp(jdata, conf_dir) :
         user_incar_path = jdata['user_incar']
         assert(os.path.exists(user_incar_path))
         user_incar_path = os.path.abspath(user_incar_path)
-        fc = open(user_incar_path).read()
-        kspacing =float(re.findall((r"KSPACING(.+?)\n"),fc)[0].replace('=',''))
-        kgamma =('T' in re.findall((r"KGAMMA(.+?)\n"),fc)[0])
+        incar = incar_upper(Incar.from_file(user_incar_path))
+        fc = incar.get_string()
+        kspacing = incar['KSPACING']
+        kgamma = incar['KGAMMA']
     else :
         fp_params = jdata['vasp_params']
         ecut = fp_params['ecut']
@@ -145,9 +150,17 @@ def make_vasp(jdata, conf_dir) :
             with open(fname) as infile:
                 outfile.write(infile.read())
     # gen kpoints
-    fc = vasp.make_kspacing_kpoints(task_poscar, kspacing, kgamma)
-    with open(os.path.join(task_path,'KPOINTS'), 'w') as fp:
-        fp.write(fc)
+#    fc = vasp.make_kspacing_kpoints(task_poscar, kspacing, kgamma)
+#    with open(os.path.join(task_path,'KPOINTS'), 'w') as fp:
+#        fp.write(fc)
+
+    # write kp
+    fc = vasp.make_kspacing_kpoints('POSCAR', kspacing, kgamma)
+    with open('KPOINTS', 'w') as fp: fp.write(fc)
+    #copy cvasp
+    if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+       shutil.copyfile(cvasp_file, os.path.join(task_path,'cvasp.py'))
+
     # gen band.conf
     os.chdir(task_path)
     with open('band.conf','w') as fp:
@@ -169,14 +182,16 @@ def make_lammps(jdata, conf_dir,task_type) :
     type_map = fp_params['type_map'] 
     model_dir = os.path.abspath(model_dir)
     model_name =fp_params['model_name']
+    deepmd_version = fp_params.get("deepmd_version", "0.12")
     if not model_name :
         models = glob.glob(os.path.join(model_dir, '*pb'))
         model_name = [os.path.basename(ii) for ii in models]
     else:
         models = [os.path.join(model_dir,ii) for ii in model_name]
 
-    model_param = {'model_name' :      fp_params['model_name'],
-                  'param_type':          fp_params['model_param_type']}
+    model_param = {'model_name' :      model_name,
+                  'param_type':          fp_params['model_param_type'],
+                  'deepmd_version' : deepmd_version}
 
     supercell_matrix=jdata['supercell_matrix']
     band_path=jdata['band']
@@ -214,7 +229,7 @@ def make_lammps(jdata, conf_dir,task_type) :
         fc = lammps.make_lammps_phonon('conf.lmp', 
                                     unitcell.masses, 
                                     lammps.inter_deepmd,
-                                    model_name)
+                                    model_param)
     if task_type=='meam':
         fc = lammps.make_lammps_phonon('conf.lmp', 
                                     unitcell.masses, 

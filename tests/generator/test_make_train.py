@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os,sys,json,glob,shutil
+import os,sys,json,glob,shutil,dpdata
 import numpy as np
 import unittest
 
@@ -101,7 +101,7 @@ def _check_model_input_dict(testCase, input_dict, init_data_sys, init_batch_size
             testCase.assertEqual(input_dict[ii], default_training_param[ii])
 
 
-def _check_model_inputs_v1(testCase, iter_idx, jdata) :
+def _check_model_inputs_v1(testCase, iter_idx, jdata, reuse = False) :
     train_param = jdata.get('train_param', 'input.json')
     numb_models = jdata['numb_models']
     use_ele_temp = jdata.get('use_ele_temp', 0)
@@ -133,6 +133,18 @@ def _check_model_inputs_v1(testCase, iter_idx, jdata) :
         _check_model_input_dict(testCase, jdata0['loss'], init_data_sys, init_batch_size, default_training_param['loss'])
         _check_model_input_dict(testCase, jdata0['learning_rate'], init_data_sys, init_batch_size, default_training_param['learning_rate'])
         _check_model_input_dict(testCase, jdata0['training'], init_data_sys, init_batch_size, default_training_param['training'])
+        if reuse:
+            testCase.assertEqual(jdata['training_reuse_stop_batch'], 
+                                 jdata0['training']['stop_batch'])
+            testCase.assertEqual(jdata['training_reuse_start_lr'], 
+                                 jdata0['learning_rate']['start_lr'])
+            testCase.assertEqual(jdata['training_reuse_start_pref_e'], 
+                                 jdata0['loss']['start_pref_e'])
+            testCase.assertEqual(jdata['training_reuse_start_pref_f'], 
+                                 jdata0['loss']['start_pref_f'])
+            old_ratio = jdata['training_reuse_old_ratio']
+            testCase.assertEqual(jdata0['training']['auto_prob_style'], 
+                                 "prob_sys_size; 0:1:%f; 1:2:%f" % (old_ratio, 1-old_ratio))
 
 
 def _make_fake_fp(iter_idx, sys_idx, nframes):
@@ -143,13 +155,14 @@ def _make_fake_fp(iter_idx, sys_idx, nframes):
         os.makedirs(dirname, exist_ok = True)           
     dirname = os.path.join('iter.%06d' % iter_idx, 
                            '02.fp', 
-                           'data.%03d' % sys_idx)
+                           'data.%03d' % sys_idx)    
     os.makedirs(dirname, exist_ok = True)
-    box_str = ['0' for ii in range(9)]
-    box_str = ' '.join(box_str)
-    with open(os.path.join(dirname, 'box.raw'), 'w') as fp :
-        for ii in range(nframes) :
-            fp.write(box_str + '\n')
+    tmp_sys = dpdata.LabeledSystem('out_data_post_fp_vasp/02.fp/task.000.000000/OUTCAR')
+    tmp_sys1 = tmp_sys.sub_system([0])
+    tmp_sys2 = tmp_sys1
+    for ii in range(1, nframes):
+        tmp_sys2.append(tmp_sys1)
+    tmp_sys2.to('deepmd/npy', dirname)
 
 
 def _check_pb_link(testCase, iter_idx, numb_models) :
@@ -235,6 +248,38 @@ class TestMakeTrain(unittest.TestCase):
         # remove testing dirs
         shutil.rmtree('iter.000001')
         shutil.rmtree('iter.000000')
+
+
+    def test_1_data_reuse_v1(self) :
+        with open (param_file_v1, 'r') as fp :
+            jdata = json.load (fp)
+            jdata.pop('use_ele_temp', None)
+            jdata['training_reuse_iter'] = 1
+            jdata['training_reuse_old_ratio'] = 0.8
+            jdata['training_reuse_stop_batch'] = 400000
+            jdata['training_reuse_start_lr'] = 1e-4
+            jdata['training_reuse_start_pref_e'] = 0.1
+            jdata['training_reuse_start_pref_f'] = 100
+        with open (machine_file_v1, 'r') as fp:
+            mdata = json.load (fp)
+        make_train(0, jdata, mdata)
+        # make fake fp results #data == fp_task_min
+        _make_fake_fp(0, 0, jdata['fp_task_min'])
+        # make iter1 train
+        make_train(1, jdata, mdata)
+        # check data is linked
+        self.assertTrue(os.path.isdir(os.path.join('iter.000001', '00.train', 'data.iters', 'iter.000000', '02.fp')))
+        # check old models are linked
+        self.assertTrue(os.path.isdir(os.path.join('iter.000001', '00.train', '000', 'old')))
+        self.assertTrue(os.path.isdir(os.path.join('iter.000001', '00.train', '001', 'old')))
+        self.assertTrue(os.path.isdir(os.path.join('iter.000001', '00.train', '002', 'old')))
+        self.assertTrue(os.path.isdir(os.path.join('iter.000001', '00.train', '003', 'old')))
+        # check models inputs
+        _check_model_inputs_v1(self, 1, jdata, reuse = True)
+        # remove testing dirs
+        shutil.rmtree('iter.000001')
+        shutil.rmtree('iter.000000')
+
         
     def test_1_data_v1_eletron_temp(self) :
         with open (param_file_v1_et, 'r') as fp :

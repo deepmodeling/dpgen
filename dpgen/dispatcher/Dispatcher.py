@@ -1,5 +1,4 @@
 import os,sys,time,random,json,glob
-
 from dpgen.dispatcher.LocalContext import LocalSession
 from dpgen.dispatcher.LocalContext import LocalContext
 from dpgen.dispatcher.LazyLocalContext import LazyLocalContext
@@ -36,10 +35,11 @@ class Dispatcher(object):
                   batch_type = 'slurm', 
                   job_record = 'jr.json'):
         self.remote_profile = remote_profile
+
         if context_type == 'local':
             self.session = LocalSession(remote_profile)
             self.context = LocalContext
-            self.uuid_names = False
+            self.uuid_names = True
         elif context_type == 'lazy-local':
             self.session = None
             self.context = LazyLocalContext
@@ -47,7 +47,7 @@ class Dispatcher(object):
         elif context_type == 'ssh':
             self.session = SSHSession(remote_profile)
             self.context = SSHContext
-            self.uuid_names = False
+            self.uuid_names = True
         else :
             raise RuntimeError('unknown context')
         if batch_type == 'slurm':
@@ -74,6 +74,7 @@ class Dispatcher(object):
                  forward_task_files,
                  backward_task_files,
                  forward_task_deference = True,
+                 mark_failure = False,
                  outlog = 'log',
                  errlog = 'err') :
         job_handler = self.submit_jobs(resources,
@@ -87,8 +88,8 @@ class Dispatcher(object):
                                        forward_task_deference,
                                        outlog,
                                        errlog)
-        while not self.all_finished(job_handler) :
-            time.sleep(10)
+        while not self.all_finished(job_handler, mark_failure) :
+            time.sleep(60)
         # delete path map file when job finish
         # _pmap.delete()
 
@@ -134,13 +135,14 @@ class Dispatcher(object):
                 batch = self.batch(context, uuid_names = self.uuid_names)
                 rjob = {'context':context, 'batch':batch}
                 # upload files
-                if not rjob['context'].check_file_exists('tag_upload'):
+                if not rjob['context'].check_file_exists(rjob['batch'].upload_tag_name):
                     rjob['context'].upload('.',
                                            forward_common_files)
                     rjob['context'].upload(cur_chunk,
                                            forward_task_files, 
                                            dereference = forward_task_deference)
-                    rjob['context'].write_file('tag_upload', '')
+
+                    rjob['context'].write_file(rjob['batch'].upload_tag_name, '')
                     dlog.debug('uploaded files for %s' % task_chunks_str[ii])
                 # submit new or recover old submission
                 if not submitted:
@@ -155,10 +157,9 @@ class Dispatcher(object):
                 job_list.append(rjob)
                 ip = None
                 instance_id = None
-                if "type" in self.remote_profile:
-                    if self.remote_profile['type'] == 'ALI':
-                        ip = self.remote_profile['hostname']
-                        instance_id = self.remote_profile['instance_id']
+                if 'ali_auth' in self.remote_profile:
+                    ip = self.remote_profile['hostname']
+                    instance_id = self.remote_profile['instance_id']
                 job_record.record_remote_context(cur_hash,                                                 
                                                  context.local_root, 
                                                  context.remote_root, 
@@ -184,13 +185,16 @@ class Dispatcher(object):
 
 
     def all_finished(self, 
-                     job_handler):
+                     job_handler, 
+                     mark_failure,
+                     clean=True):
         task_chunks = job_handler['task_chunks']
         task_chunks_str = ['+'.join(ii) for ii in task_chunks]
         task_hashes = [sha1(ii.encode('utf-8')).hexdigest() for ii in task_chunks_str]
         job_list = job_handler['job_list']
         job_record = job_handler['job_record']
         command = job_handler['command']
+        tag_failure_list = ['tag_failure_%d' % ii for ii in range(len(command))]
         resources = job_handler['resources']
         outlog = job_handler['outlog']
         errlog = job_handler['errlog']
@@ -214,8 +218,13 @@ class Dispatcher(object):
                     rjob['batch'].submit(task_chunks[idx], command, res = resources, outlog=outlog, errlog=errlog,restart=True)
                 elif status == JobStatus.finished :
                     dlog.info('job %s finished' % job_uuid)
-                    rjob['context'].download(task_chunks[idx], backward_task_files)
-                    rjob['context'].clean()
+                    if mark_failure:
+                        rjob['context'].download(task_chunks[idx], tag_failure_list, check_exists = True, mark_failure = False)
+                        rjob['context'].download(task_chunks[idx], backward_task_files, check_exists = True)
+                    else:
+                        rjob['context'].download(task_chunks[idx], backward_task_files)
+                    if clean:
+                        rjob['context'].clean()
                     job_record.record_finish(cur_hash)
                     job_record.dump()
         job_record.dump()
@@ -295,23 +304,28 @@ class JobRecord(object):
             }
 
 
-def make_dispatcher(mdata):
-    try:
-        hostname = mdata['hostname']
-        context_type = 'ssh'
-    except:
-        context_type = 'local'
-    try:
-        batch_type = mdata['batch']
-    except:
-        dlog.info('cannot find key "batch" in machine file, try to use deprecated key "machine_type"')
-        batch_type = mdata['machine_type']
-    try:
-        lazy_local = mdata['lazy_local']
-    except:
-        lazy_local = False
-    if lazy_local and context_type == 'local':
-        dlog.info('Dispatcher switches to the lazy local mode')
-        context_type = 'lazy-local'
-    disp = Dispatcher(mdata, context_type=context_type, batch_type=batch_type)
-    return disp
+def make_dispatcher(mdata, mdata_resource=None, work_path=None, run_tasks=None, group_size=None):
+    if 'ali_auth' in mdata:
+        from dpgen.dispatcher.ALI import ALI
+        nchunks = len(_split_tasks(run_tasks, group_size))
+        dispatcher = ALI(mdata['ali_auth'], mdata_resource, mdata, nchunks)
+        dispatcher.init(work_path, run_tasks, group_size)
+        return dispatcher
+    else:    
+        hostname = mdata.get('hostname', None)
+        #use_uuid = mdata.get('use_uuid', False)
+        if hostname:
+            context_type = 'ssh'
+        else:
+            context_type = 'local'
+        try:
+            batch_type = mdata['batch']
+        except:
+            dlog.info('cannot find key "batch" in machine file, try to use deprecated key "machine_type"')
+            batch_type = mdata['machine_type']
+        lazy_local = (mdata.get('lazy-local', False)) or (mdata.get('lazy_local', False))
+        if lazy_local and context_type == 'local':
+            dlog.info('Dispatcher switches to the lazy local mode')
+            context_type = 'lazy-local'
+        disp = Dispatcher(mdata, context_type=context_type, batch_type=batch_type)
+        return disp

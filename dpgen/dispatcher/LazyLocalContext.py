@@ -47,8 +47,22 @@ class LazyLocalContext(object) :
     def download(self, 
                  job_dirs,
                  remote_down_files,
+                 check_exists = False,
+                 mark_failure = True,
                  back_error=False) :
-        pass
+        for ii in job_dirs :
+            for jj in remote_down_files :
+                fname = os.path.join(self.local_root, ii, jj)
+                exists = os.path.exists(fname)
+                if not exists:
+                    if check_exists:
+                        if mark_failure:
+                            with open(os.path.join(self.local_root, ii, 'tag_failure_download_%s' % jj), 'w') as fp: pass
+                        else:
+                            pass
+                    else:
+                        raise RuntimeError('do not find download file ' + fname)
+
 
     def block_checkcall(self,
                         cmd) :

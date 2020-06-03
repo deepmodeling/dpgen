@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os, re, argparse, filecmp, json, glob
+import os, re, argparse, filecmp, json, glob, shutil
 import subprocess as sp
 import numpy as np
 import dpgen.auto_test.lib.vasp as vasp
@@ -8,6 +8,12 @@ import dpgen.auto_test.lib.lammps as lammps
 from pymatgen.core.structure import Structure
 from pymatgen.analysis.defects.core import Vacancy
 from pymatgen.analysis.defects.generators import VacancyGenerator
+
+from dpgen import ROOT_PATH
+from pymatgen.io.vasp import Incar
+from dpgen.generator.lib.vasp import incar_upper
+cvasp_file=os.path.join(ROOT_PATH,'generator/lib/cvasp.py')
+
 
 global_equi_name = '00.equi'
 global_task_name = '03.vacancy'
@@ -48,7 +54,10 @@ def make_vasp(jdata, conf_dir, supercell = [1,1,1]) :
         relax_incar_path = jdata['relax_incar']
         assert(os.path.exists(relax_incar_path))
         relax_incar_path = os.path.abspath(relax_incar_path)
-        fc = open(relax_incar_path).read()
+        incar = incar_upper(Incar.from_file(relax_incar_path))
+        fc = incar.get_string()
+        kspacing = incar['KSPACING']
+        kgamma = incar['KGAMMA']
     else :
         fp_params = jdata['vasp_params']
         ecut = fp_params['ecut']
@@ -91,6 +100,14 @@ def make_vasp(jdata, conf_dir, supercell = [1,1,1]) :
         os.symlink(os.path.relpath(os.path.join(task_path, 'POTCAR')), 'POTCAR')
         # save supercell
         np.savetxt('supercell.out', supercell, fmt='%d')
+        
+        # write kp
+        fc = vasp.make_kspacing_kpoints('POSCAR', kspacing, kgamma)
+        with open('KPOINTS', 'w') as fp: fp.write(fc)
+
+        #copy cvasp
+        if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+           shutil.copyfile(cvasp_file, os.path.join(struct_path,'cvasp.py'))
     os.chdir(cwd)
 
 def make_lammps(jdata, conf_dir, task_type, supercell) :
@@ -100,6 +117,7 @@ def make_lammps(jdata, conf_dir, task_type, supercell) :
     type_map = fp_params['type_map']
     model_dir = os.path.abspath(model_dir)
     model_name =fp_params['model_name']
+    deepmd_version = fp_params.get("deepmd_version", "0.12")
     if not model_name and task_type =='deepmd':
         models = glob.glob(os.path.join(model_dir, '*pb'))
         model_name = [os.path.basename(ii) for ii in models]
@@ -107,8 +125,9 @@ def make_lammps(jdata, conf_dir, task_type, supercell) :
     else:
         models = [os.path.join(model_dir,ii) for ii in model_name]
 
-    model_param = {'model_name' :      fp_params['model_name'],
-                  'param_type':          fp_params['model_param_type']}
+    model_param = {'model_name' :      model_name,
+                  'param_type':          fp_params['model_param_type'],
+                  'deepmd_version' : deepmd_version}
 
     ntypes = len(type_map)
 
@@ -154,7 +173,7 @@ def make_lammps(jdata, conf_dir, task_type, supercell) :
                                         ntypes,
                                         1,
                                         lammps.inter_deepmd,
-                                        model_name)
+                                        model_param)
     elif task_type =='meam':
         fc = lammps.make_lammps_press_relax('conf.lmp',
                                         ntypes,

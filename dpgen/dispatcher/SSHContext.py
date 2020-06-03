@@ -11,8 +11,8 @@ class SSHSession (object) :
         # with open(remote_profile) as fp :
         #     self.remote_profile = json.load(fp)
         self.remote_host = self.remote_profile['hostname']
-        self.remote_port = self.remote_profile['port']
         self.remote_uname = self.remote_profile['username']
+        self.remote_port = self.remote_profile.get('port', 22)
         self.remote_password = None
         if 'password' in self.remote_profile :
             self.remote_password = self.remote_profile['password']
@@ -86,14 +86,17 @@ class SSHContext (object):
            self.job_uuid = str(uuid.uuid4())
         self.remote_root = os.path.join(ssh_session.get_session_root(), self.job_uuid)
         self.ssh_session = ssh_session
-        self.ssh = self.ssh_session.get_ssh_client()        
         self.ssh_session.ensure_alive()
         try:
-           sftp = self.ssh.open_sftp() 
+           sftp = self.ssh_session.ssh.open_sftp() 
            sftp.mkdir(self.remote_root)
            sftp.close()
         except: 
            pass
+    
+    @property
+    def ssh(self):
+        return self.ssh_session.get_ssh_client()  
 
     def close(self):
         self.ssh_session.close()
@@ -118,6 +121,8 @@ class SSHContext (object):
     def download(self, 
                  job_dirs,
                  remote_down_files,
+                 check_exists = False,
+                 mark_failure = True,
                  back_error=False) :
         self.ssh_session.ensure_alive()
         cwd = os.getcwd()
@@ -125,19 +130,37 @@ class SSHContext (object):
         file_list = []
         for ii in job_dirs :
             for jj in remote_down_files :
-                file_list.append(os.path.join(ii,jj))
+                file_name = os.path.join(ii,jj)                
+                if check_exists:
+                    if self.check_file_exists(file_name):
+                        file_list.append(file_name)
+                    elif mark_failure :
+                        with open(os.path.join(self.local_root, ii, 'tag_failure_download_%s' % jj), 'w') as fp: pass
+                    else:
+                        pass
+                else:
+                    file_list.append(file_name)
             if back_error:
                errors=glob(os.path.join(ii,'error*'))
                file_list.extend(errors)
-        self._get_files(file_list)
+        if len(file_list) > 0:
+            self._get_files(file_list)
         os.chdir(cwd)
         
     def block_checkcall(self, 
-                        cmd) :
+                        cmd,
+                        retry=0) :
         self.ssh_session.ensure_alive()
         stdin, stdout, stderr = self.ssh.exec_command(('cd %s ;' % self.remote_root) + cmd)
         exit_status = stdout.channel.recv_exit_status() 
         if exit_status != 0:
+            if retry<3:
+                # sleep 60 s
+                dlog.warning("Get error code %d in calling %s through ssh with job: %s . message: %s" %
+                        (exit_status, cmd, self.job_uuid, stderr.read().decode('utf-8')))
+                dlog.warning("Sleep 60 s and retry the command...")
+                time.sleep(60)
+                return self.block_checkcall(cmd, retry=retry+1)
             raise RuntimeError("Get error code %d in calling %s through ssh with job: %s . message: %s" %
                                (exit_status, cmd, self.job_uuid, stderr.read().decode('utf-8')))
         return stdin, stdout, stderr    
@@ -190,7 +213,8 @@ class SSHContext (object):
     
     def check_finish(self, cmd_pipes):
         return cmd_pipes['stdout'].channel.exit_status_ready()
-        
+
+
     def get_return(self, cmd_pipes):
         if not self.check_finish(cmd_pipes):
             return None, None, None
@@ -232,7 +256,10 @@ class SSHContext (object):
         from_f = os.path.join(self.local_root, of)
         to_f = os.path.join(self.remote_root, of)
         sftp = self.ssh.open_sftp()
-        sftp.put(from_f, to_f)
+        try:
+           sftp.put(from_f, to_f)
+        except FileNotFoundError:
+           raise FileNotFoundError("from %s to %s Error!"%(from_f,to_f))
         # remote extract
         self.block_checkcall('tar xf %s' % of)
         # clean up

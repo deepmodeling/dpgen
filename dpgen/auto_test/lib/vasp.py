@@ -1,9 +1,11 @@
 #!/usr/bin/python3
-
+import os
 import warnings
 import numpy as np
 import dpgen.auto_test.lib.lammps as lammps
 import dpgen.auto_test.lib.util as util
+from dpgen.generator.lib.vasp import incar_upper
+from pymatgen.io.vasp import Incar,Kpoints,Potcar
 
 class OutcarItemError(Exception):
     pass
@@ -102,6 +104,8 @@ def reciprocal_box(box) :
     return rbox
 
 def make_kspacing_kpoints(poscar, kspacing, kgamma) :
+    if type(kspacing) is not list:
+        kspacing = [kspacing, kspacing, kspacing]
     with open(poscar, 'r') as fp:
         lines = fp.read().split('\n')
     scale = float(lines[1])
@@ -111,7 +115,7 @@ def make_kspacing_kpoints(poscar, kspacing, kgamma) :
     box = np.array(box)
     box *= scale
     rbox = reciprocal_box(box)
-    kpoints = [(np.ceil(2 * np.pi * np.linalg.norm(ii) / kspacing).astype(int)) for ii in rbox]
+    kpoints = [max(1,(np.ceil(2 * np.pi * np.linalg.norm(ii) / ks).astype(int))) for ii,ks in zip(rbox,kspacing)]
     ret = make_vasp_kpoints(kpoints, kgamma)
     return ret
 
@@ -247,7 +251,7 @@ def make_vasp_static_incar (ecut, ediff,
     ret += 'PREC=A\n'
     ret += 'ENCUT=%d\n' % ecut
     ret += '# ISYM=0\n'
-    ret += 'ALGO=fast\n'
+    ret += 'ALGO=normal\n'
     ret += 'EDIFF=%e\n' % ediff
     ret += 'EDIFFG=-0.01\n'
     ret += 'LREAL=A\n'
@@ -288,7 +292,7 @@ def make_vasp_relax_incar (ecut, ediff,
     ret += 'PREC=A\n'
     ret += 'ENCUT=%d\n' % ecut
     ret += '# ISYM=0\n'
-    ret += 'ALGO=fast\n'
+    ret += 'ALGO=normal\n'
     ret += 'EDIFF=%e\n' % ediff
     ret += 'EDIFFG=-0.01\n'
     ret += 'LREAL=A\n'
@@ -329,7 +333,7 @@ def make_vasp_phonon_incar (ecut, ediff,
     ret += 'PREC=A\n'
     ret += 'ENCUT=%d\n' % ecut
     ret += '# ISYM=0\n'
-    ret += 'ALGO=fast\n'
+    ret += 'ALGO=normal\n'
     ret += 'EDIFF=%e\n' % ediff
     ret += 'EDIFFG=-0.01\n'
     ret += 'LREAL=A\n'
@@ -456,3 +460,38 @@ def make_vasp_kpoints (kpoints, kgamma = False) :
         ret = _make_vasp_kp_mp(kpoints)
     return ret
 
+
+def make_vasp_kpoints_from_incar(work_dir,jdata):
+    cwd=os.getcwd()
+    fp_aniso_kspacing = jdata.get('fp_aniso_kspacing')
+    os.chdir(work_dir)
+    # get kspacing and kgamma from incar
+    assert(os.path.exists('INCAR'))
+    with open('INCAR') as fp:
+        incar = fp.read()
+    standard_incar = incar_upper(Incar.from_string(incar))
+    if fp_aniso_kspacing is None:
+        try:
+            kspacing = standard_incar['KSPACING']
+        except KeyError:
+            raise RuntimeError ("KSPACING must be given in INCAR")
+    else :
+        kspacing = fp_aniso_kspacing
+    try:
+        gamma = standard_incar['KGAMMA']
+        if isinstance(gamma,bool):
+            pass
+        else:
+            if gamma[0].upper()=="T":
+                gamma=True
+            else:
+                gamma=False
+    except KeyError:
+        raise RuntimeError ("KGAMMA must be given in INCAR")
+    # check poscar
+    assert(os.path.exists('POSCAR'))
+    # make kpoints
+    ret=make_kspacing_kpoints('POSCAR', kspacing, gamma)
+    kp=Kpoints.from_string(ret)
+    kp.write_file("KPOINTS")
+    os.chdir(cwd)
