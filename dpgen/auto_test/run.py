@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+=#!/usr/bin/env python3
 
 """
 init: crystal configuration
@@ -46,6 +46,7 @@ from dpgen.remote.decide_machine import decide_fp_machine, decide_model_devi_mac
 from dpgen.auto_test import gen_confs
 import requests
 from hashlib import sha1
+from dpgen import dlog
 
 lammps_task_type=['deepmd','meam','eam']
 
@@ -105,22 +106,20 @@ def run_equi(task_type,jdata,mdata):
 
     run_tasks = util.collect_task(all_task,task_type)
     if len(run_tasks)==0: return
-    machine,resources,command,group_size=util.get_machine_info(mdata,task_type)
-    disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
-    #debug#
-    #print(' '.join(common_files))
-    #print(' '.join(forward_files))
-    #print(' '.join(backward_files))
-    disp.run_jobs(resources,
-                  command,
-                  work_path,
-                  run_tasks,
-                  group_size,
-                  common_files,
-                  forward_files,
-                  backward_files,
-                  outlog=task_type+'.out',
-                  errlog=task_type+'.err')
+    else:
+        run_tasks = [os.path.basename(ii) for ii in all_task]
+        machine,resources,command,group_size=util.get_machine_info(mdata,task_type)
+        disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
+        disp.run_jobs(resources,
+                    command,
+                    work_path,
+                    run_tasks,
+                    group_size,
+                    common_files,
+                    forward_files,
+                    backward_files,
+                    outlog=task_type+'.out',
+                    errlog=task_type+'.err')
 
 
 def cmpt_equi(task_type,jdata,mdata):
@@ -200,18 +199,20 @@ def run_eos(task_type,jdata,mdata):
 
     run_tasks = util.collect_task(all_task,task_type)
     if len(run_tasks)==0: return
-    machine,resources,command,group_size=util.get_machine_info(mdata,task_type)
-    disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
-    disp.run_jobs(resources,
-                  command,
-                  work_path,
-                  run_tasks,
-                  group_size,
-                  common_files,
-                  forward_files,
-                  backward_files,
-                  outlog=task_type+'.out',
-                  errlog=task_type+'.err')
+    else:
+        run_tasks = [os.path.basename(ii) for ii in all_task]
+        machine,resources,command,group_size=util.get_machine_info(mdata,task_type)
+        disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
+        disp.run_jobs(resources,
+                    command,
+                    work_path,
+                    run_tasks,
+                    group_size,
+                    common_files,
+                    forward_files,
+                    backward_files,
+                    outlog=task_type+'.out',
+                    errlog=task_type+'.err')
 
 def cmpt_eos(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
@@ -246,7 +247,6 @@ def run_elastic(task_type,jdata,mdata):
     #vasp
     if task_type == "vasp":
         mdata=decide_fp_machine(mdata)
-
         forward_files = ['INCAR', 'POSCAR','POTCAR','KPOINTS']
         backward_files = ['OUTCAR', task_type+'.out' , 'CONTCAR','OSZICAR']
         common_files=['INCAR','POTCAR','KPOINTS']
@@ -279,18 +279,20 @@ def run_elastic(task_type,jdata,mdata):
 
     run_tasks = util.collect_task(all_task,task_type)
     if len(run_tasks)==0: return
-    machine,resources,command,group_size=util.get_machine_info(mdata,task_type)
-    disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
-    disp.run_jobs(resources,
-                  command,
-                  work_path,
-                  run_tasks,
-                  group_size,
-                  common_files,
-                  forward_files,
-                  backward_files,
-                  outlog=task_type+'.out',
-                  errlog=task_type+'.err')
+    else:
+        run_tasks = [os.path.basename(ii) for ii in all_task]
+        machine,resources,command,group_size=util.get_machine_info(mdata,task_type)
+        disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
+        disp.run_jobs(resources,
+                    command,
+                    work_path,
+                    run_tasks,
+                    group_size,
+                    common_files,
+                    forward_files,
+                    backward_files,
+                    outlog=task_type+'.out',
+                    errlog=task_type+'.err')
 
 def cmpt_elastic(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
@@ -357,18 +359,20 @@ def run_vacancy(task_type,jdata,mdata):
 
     run_tasks = util.collect_task(all_task,task_type)
     if len(run_tasks)==0: return
-    machine,resources,command,group_size=util.get_machine_info(mdata,task_type)
-    disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
-    disp.run_jobs(resources,
-                  command,
-                  work_path,
-                  run_tasks,
-                  group_size,
-                  common_files,
-                  forward_files,
-                  backward_files,
-                  outlog=task_type+'.out',
-                  errlog=task_type+'.err')
+    else:
+        run_tasks = [os.path.basename(ii) for ii in all_task]
+        machine,resources,command,group_size=util.get_machine_info(mdata,task_type)
+        disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
+        disp.run_jobs(resources,
+                    command,
+                    work_path,
+                    run_tasks,
+                    group_size,
+                    common_files,
+                    forward_files,
+                    backward_files,
+                    outlog=task_type+'.out',
+                    errlog=task_type+'.err')
 
 def cmpt_vacancy(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
@@ -431,12 +435,13 @@ def run_interstitial(task_type,jdata,mdata):
 
         run_tasks_ = []
         for ii in all_task:
-            fres = os.path.join(ii, 'log.lammps')
-            if os.path.isfile(fres) :
-                if not lammps.check_finished(fres):
-                    run_tasks_.append(ii)
-            else :
-                run_tasks_.append(ii)
+            # fres = os.path.join(ii, 'log.lammps')
+            # if os.path.isfile(fres) :
+            #     if not lammps.check_finished(fres):
+            #         run_tasks_.append(ii)
+            # else :
+            #     run_tasks_.append(ii)
+            run_tasks_.append(ii)
 
         fp_params = jdata['lammps_params']
         model_dir = fp_params['model_dir']
@@ -478,17 +483,19 @@ def run_interstitial(task_type,jdata,mdata):
     else:
         run_tasks = util.collect_task(all_task,task_type)
         if len(run_tasks)==0: return
-        disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
-        disp.run_jobs(resources,
-                      command,
-                      work_path,
-                      run_tasks,
-                      group_size,
-                      common_files,
-                      forward_files,
-                      backward_files,
-                      outlog=task_type+'.out',
-                      errlog=task_type+'.err')
+        else:
+            run_tasks = [os.path.basename(ii) for ii in all_task]
+            disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
+            disp.run_jobs(resources,
+                        command,
+                        work_path,
+                        run_tasks,
+                        group_size,
+                        common_files,
+                        forward_files,
+                        backward_files,
+                        outlog=task_type+'.out',
+                        errlog=task_type+'.err')
 
 def cmpt_interstitial(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
@@ -568,18 +575,20 @@ def run_surf(task_type,jdata,mdata):
 
     run_tasks = util.collect_task(all_task,task_type)
     if len(run_tasks)==0: return
-    machine,resources,command,group_size=util.get_machine_info(mdata,task_type)
-    disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
-    disp.run_jobs(resources,
-                  command,
-                  work_path,
-                  run_tasks,
-                  group_size,
-                  common_files,
-                  forward_files,
-                  backward_files,
-                  outlog=task_type+'.out',
-                  errlog=task_type+'.err')
+    else:
+        run_tasks = [os.path.basename(ii) for ii in all_task]
+        machine,resources,command,group_size=util.get_machine_info(mdata,task_type)
+        disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
+        disp.run_jobs(resources,
+                    command,
+                    work_path,
+                    run_tasks,
+                    group_size,
+                    common_files,
+                    forward_files,
+                    backward_files,
+                    outlog=task_type+'.out',
+                    errlog=task_type+'.err')
 
 def cmpt_surf(task_type,jdata,mdata):
     conf_dir=jdata['conf_dir']
@@ -630,18 +639,20 @@ def run_phonon(task_type,jdata,mdata):
         if ('cvasp' in jdata) and (jdata['cvasp'] == True):
            mdata['fp_resources']['cvasp'] = True
            forward_files.append('cvasp.py')
-
-        disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
-        disp.run_jobs(resources,
-                  command,
-                  work_path,
-                  run_tasks,
-                  group_size,
-                  common_files,
-                  forward_files,
-                  backward_files,
-                  outlog=task_type+'.out',
-                  errlog=task_type+'.err')
+        if len(run_tasks) == 0: return 
+        else:
+            run_tasks  = all_task
+            disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
+            disp.run_jobs(resources,
+                    command,
+                    work_path,
+                    run_tasks,
+                    group_size,
+                    common_files,
+                    forward_files,
+                    backward_files,
+                    outlog=task_type+'.out',
+                    errlog=task_type+'.err')
     #lammps
     elif task_type in lammps_task_type:
         None
@@ -709,58 +720,65 @@ def run_task (json_file, machine_file) :
         else :
                 gen_confs.gen_alloy(ele_list,key_id)
     #default task
-    log_iter ("gen_equi", ii, "equi")
-    gen_equi (ii, jdata, mdata)
-    log_iter ("run_equi", ii, "equi")
-    run_equi  (ii, jdata, mdata)
-    log_iter ("cmpt_equi", ii,"equi")
-    cmpt_equi (ii, jdata, mdata)
+    # log_iter ("gen_equi", ii, "equi")
+    # gen_equi (ii, jdata, mdata)
+    # log_iter ("run_equi", ii, "equi")
+    # run_equi  (ii, jdata, mdata)
+    # log_iter ("cmpt_equi", ii,"equi")
+    # cmpt_equi (ii, jdata, mdata)
     for jj in all_task_list:
-       if  jj == "eos":
-           log_iter ("gen_eos", ii, "eos")
-           gen_eos (ii, jdata, mdata)
-           log_iter ("run_eos", ii, "eos")
-           run_eos  (ii, jdata, mdata)
-           log_iter ("cmpt_eos", ii, "eos")
-           cmpt_eos (ii, jdata, mdata)
-       if jj=="elastic":
-           log_iter ("gen_elastic", ii, "elastic")
-           gen_elastic (ii, jdata, mdata)
-           log_iter ("run_elastic", ii, "elastic")
-           run_elastic  (ii, jdata, mdata)
-           log_iter ("cmpt_elastic", ii, "elastic")
-           cmpt_elastic (ii, jdata, mdata)
-       if jj=="vacancy":
-           log_iter ("gen_vacancy", ii, "vacancy")
-           gen_vacancy (ii, jdata, mdata)
-           log_iter ("run_vacancy", ii, "vacancy")
-           run_vacancy  (ii, jdata, mdata)
-           log_iter ("cmpt_vacancy", ii, "vacancy")
-           cmpt_vacancy (ii, jdata, mdata)
-       if jj=="interstitial":
-           log_iter ("gen_interstitial", ii, "interstitial")
-           gen_interstitial (ii, jdata, mdata)
-           log_iter ("run_interstitial", ii, "interstitial")
-           run_interstitial  (ii, jdata, mdata)
-           log_iter ("cmpt_interstitial", ii, "interstitial")
-           cmpt_interstitial (ii, jdata, mdata)
-       if jj=="surf":
-           log_iter ("gen_surf", ii, "surf")
-           gen_surf (ii, jdata, mdata)
-           log_iter ("run_surf", ii, "surf")
-           run_surf  (ii, jdata, mdata)
-           log_iter ("cmpt_surf", ii, "surf")
-           cmpt_surf (ii, jdata, mdata)
-       '''
-       if jj=="phonon":
-           log_iter ("gen_phonon", ii, "phonon")
-           gen_phonon (ii, jdata, mdata)
-           log_iter ("run_phonon", ii, "phonon")
-           run_phonon  (ii, jdata, mdata)
-           log_iter ("cmpt_phonon", ii, "phonon")
-           cmpt_phonon (ii, jdata, mdata)
-       '''
-       record_iter (record, confs, ii, jj)
+        if jj == "equi":
+            log_iter ("gen_equi", ii, "equi")
+            gen_equi (ii, jdata, mdata)
+            log_iter ("run_equi", ii, "equi")
+            run_equi  (ii, jdata, mdata)
+            log_iter ("cmpt_equi", ii,"equi")
+            cmpt_equi (ii, jdata, mdata)
+        if jj == "eos":
+            log_iter ("gen_eos", ii, "eos")
+            gen_eos (ii, jdata, mdata)
+            log_iter ("run_eos", ii, "eos")
+            run_eos  (ii, jdata, mdata)
+            log_iter ("cmpt_eos", ii, "eos")
+            cmpt_eos (ii, jdata, mdata)
+        if jj=="elastic":
+            log_iter ("gen_elastic", ii, "elastic")
+            gen_elastic (ii, jdata, mdata)
+            log_iter ("run_elastic", ii, "elastic")
+            run_elastic  (ii, jdata, mdata)
+            log_iter ("cmpt_elastic", ii, "elastic")
+            cmpt_elastic (ii, jdata, mdata)
+        if jj=="vacancy":
+            log_iter ("gen_vacancy", ii, "vacancy")
+            gen_vacancy (ii, jdata, mdata)
+            log_iter ("run_vacancy", ii, "vacancy")
+            run_vacancy  (ii, jdata, mdata)
+            log_iter ("cmpt_vacancy", ii, "vacancy")
+            cmpt_vacancy (ii, jdata, mdata)
+        if jj=="interstitial":
+            log_iter ("gen_interstitial", ii, "interstitial")
+            gen_interstitial (ii, jdata, mdata)
+            log_iter ("run_interstitial", ii, "interstitial")
+            run_interstitial  (ii, jdata, mdata)
+            log_iter ("cmpt_interstitial", ii, "interstitial")
+            cmpt_interstitial (ii, jdata, mdata)
+        if jj=="surf":
+            log_iter ("gen_surf", ii, "surf")
+            gen_surf (ii, jdata, mdata)
+            log_iter ("run_surf", ii, "surf")
+            run_surf  (ii, jdata, mdata)
+            log_iter ("cmpt_surf", ii, "surf")
+            cmpt_surf (ii, jdata, mdata)
+        
+        # if jj=="phonon":
+        #     log_iter ("gen_phonon", ii, "phonon")
+        #     gen_phonon (ii, jdata, mdata)
+        #     log_iter ("run_phonon", ii, "phonon")
+        #     run_phonon  (ii, jdata, mdata)
+        #     log_iter ("cmpt_phonon", ii, "phonon")
+        #     cmpt_phonon (ii, jdata, mdata)
+        
+        record_iter (record, confs, ii, jj)
 
 def gen_test(args):
     logging.info ("start auto-testing")
