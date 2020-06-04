@@ -303,6 +303,7 @@ class ALI(DispatcherList):
         request = DescribeImagesRequest()
         request.set_accept_format('json')
         request.set_ImageOwnerAlias("self")
+        request.set_PageSize(100)
         response = self.client.do_action_with_exception(request)
         response = json.loads(response)
         for img in response["Images"]["Image"]:
