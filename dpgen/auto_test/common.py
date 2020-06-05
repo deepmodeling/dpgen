@@ -67,7 +67,7 @@ def make_equi(confs,
         poscar = os.path.join(ii, 'POSCAR')
         inter = make_interaction(inter_param, poscar)
         inter.make_potential_files(ii)
-        inter.make_interaction(ii, 'relaxation', relax_param)
+        inter.make_input_file(ii, 'relaxation', relax_param)
 
 
 def run_equi(confs, 
