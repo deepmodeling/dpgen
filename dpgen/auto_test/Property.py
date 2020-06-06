@@ -48,6 +48,7 @@ class Property (ABC) :
         """
         Return the type of each computational task, for example, 'relaxation', 'static'....
         """
+        pass
 
     @property
     @abstractmethod
@@ -55,11 +56,12 @@ class Property (ABC) :
         """
         Return the parameter of each computational task, for example, {'ediffg': 1e-4}
         """
+        pass
 
-    def post(self,
-             output_file,
-             print_file,
-             path_to_work):
+    def compute(self,
+                output_file,
+                print_file,
+                path_to_work):
         """
         Postprocess the finished tasks to compute the property. 
         Output the result to a json database
@@ -76,11 +78,11 @@ class Property (ABC) :
         task_dirs.sort()        
         all_res = []
         for ii in task_dirs:
-            with open(os.path.join(ii, 'interaction.json')) as fp:
+            with open(os.path.join(ii, 'task.json')) as fp:
                 idata = json.load(fp)
             poscar = os.path.join(ii, 'POSCAR')
-            inter = make_interaction(idata, poscar)
-            res = inter.post()
+            task = make_task(idata, poscar)
+            res = task.compute()
             all_res.append(res)
         res, ptr = self.cmpt(task_dirs, all_res)
         with open(output_file, 'w') as fp:
@@ -90,10 +92,10 @@ class Property (ABC) :
 
         
     @abstractmethod
-    def _cmpt(self, 
-              output_file,
-              all_tasks,
-              all_res):
+    def _compute_lower(self, 
+                       output_file,
+                       all_tasks,
+                       all_res):
         """
         Compute the property.
 

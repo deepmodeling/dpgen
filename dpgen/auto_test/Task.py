@@ -1,6 +1,6 @@
 from abc import ABC,abstractmethod
 
-class Interaction(ABC):
+class Task(ABC):
     @abstractmethod
     def __init__ (self, 
                   paramters, 
@@ -13,7 +13,7 @@ class Interaction(ABC):
         parameters : dict
                 A dict that specifies the interaction.
         path_to_poscar : str
-                The path to POSCAR. Indicating in which system the interaction will be initialized.
+                The path to POSCAR. Indicating in which system the task will be initialized.
         """
         pass
 
@@ -21,9 +21,9 @@ class Interaction(ABC):
     def make_potential_files(self, 
                              output_dir):
         """
-        Prepare potential files for a computational task using this interaction. 
-        For example, the VASP interaction prepares POTCAR. 
-        DeePMD interaction prepares frozen model(s).
+        Prepare potential files for a computational task.
+        For example, the VASP prepares POTCAR. 
+        DeePMD prepares frozen model(s).
 
         Parameters
         ----------
@@ -38,10 +38,10 @@ class Interaction(ABC):
                         task_type, 
                         task_param):
         """
-        Prepare input files for a computational task using this  interaction.
-        For example, the VASP interaction prepares INCAR.
-        LAMMPS interaction (including DeePMD, MEAM...) prepares in.lammps.
-        The parameter of this interaction will be stored in 'output_dir/interaction.json'
+        Prepare input files for a computational task
+        For example, the VASP prepares INCAR.
+        LAMMPS (including DeePMD, MEAM...) prepares in.lammps.
+        IMPORTANT: Task parameters should be stored in output_dir/task.json
 
         Parameters
         ----------
@@ -59,9 +59,9 @@ class Interaction(ABC):
         pass
 
     @abstractmethod
-    def post (self):
+    def compute (self):
         """
-        Postprocess the task after the computation. 
+        Compute output of the task. 
         IMPORTANT: The output configuration should be converted and stored in a CONTCAR file.
 
         Returns

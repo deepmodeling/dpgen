@@ -3,10 +3,10 @@ from VASP import VASP
 from DEEPMD_LMP import DEEPMD_LMP
 from MEAM_LMP import MEAM_LMP
 
-def make_interaction(paramters, 
+def make_task(paramters, 
                      path_to_poscar) :
     """
-    Make an instance of Interaction
+    Make an instance of Task
     """
     inter_type = paramters['type']
     if inter_type == 'vasp':
@@ -16,11 +16,11 @@ def make_interaction(paramters,
     elif inter_type == 'meam':
         return MEAM_LMP(paramters, path_to_poscar)
     else:
-        raise RuntimeError(f'unknow interaction type {inter_type}')
+        raise RuntimeError(f'unknow interaction {inter_type}')
 
-def make_interaction_files(paramters) :
+def make_task_trans_files(paramters) :
     """
-    Make the forward and backward file of an Interaction
+    Make the forward and backward file of an Task
     """
     inter_type = paramters['type']
     if inter_type == 'vasp':
@@ -30,7 +30,7 @@ def make_interaction_files(paramters) :
     elif inter_type == 'meam':
         return MEAM_LMP.forward_files, MEAM_LMP.forward_common_files, MEAM_LMP.backward_files
     else:
-        raise RuntimeError(f'unknow interaction type {inter_type}')
+        raise RuntimeError(f'unknow interaction {inter_type}')
 
 def make_property(paramters) :
     """
@@ -65,9 +65,9 @@ def make_equi(confs,
     # generate task files
     for ii in task_dirs:
         poscar = os.path.join(ii, 'POSCAR')
-        inter = make_interaction(inter_param, poscar)
+        inter = make_task(inter_param, poscar)
         inter.make_potential_files(ii)
-        inter.make_interaction(ii, 'relaxation', relax_param)
+        inter.make_input_file(ii, 'relaxation', relax_param)
 
 
 def run_equi(confs, 
@@ -79,7 +79,7 @@ def run_equi(confs,
     # ...
 
     # dispatch the tasks
-    forward_files, forward_common_files, backward_files = make_interaction_files(inter_param)
+    forward_files, forward_common_files, backward_files = make_task_trans_files(inter_param)
     backward_files += logs
     # ...
     pass
@@ -95,8 +95,8 @@ def post_equi(confs):
     # dump the relaxation result.
     for ii in task_dirs:
         poscar = os.path.join(ii, 'POSCAR')
-        inter = make_interaction(inter_param, poscar)
-        res = inter.post()
+        inter = make_task(inter_param, poscar)
+        res = inter.compute()
         with open('result.json', 'w') as fp:
             json.dump(fp, res, indent=4)
         
@@ -124,7 +124,7 @@ def make_property(confs,
             
             for kk in task_list:
                 poscar = os.path.join(kk, 'POSCAR')                
-                inter = make_interaction(inter_param, poscar)
+                inter = make_task(inter_param, poscar)
                 inter.make_potential_files(kk)
                 inter.make_input_file(kk, prop.task_type, prop.task.pararm)
 
@@ -147,7 +147,7 @@ def run_property(confs,
             task_list.append(tmp_task_list)
     
     # dispatch the tasks
-    forward_files, forward_common_files, backward_files = make_interaction_files(inter_param)
+    forward_files, forward_common_files, backward_files = make_task_trans_files(inter_param)
     backward_files += logs
     # ...
     pass
@@ -165,4 +165,4 @@ def post_property(confs,
             property_type = jj['type']
             path_to_work = os.path.join(ii, property_type + '_' + suffix)
             prop = make_property(jj)
-            prop.post('result.json', 'result.out', path_to_work)
+            prop.compute('result.json', 'result.out', path_to_work)
