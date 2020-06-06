@@ -129,14 +129,22 @@ class DispatcherList():
         profile = self.mdata_machine.copy()
         profile['hostname'] = entity.ip
         profile['instance_id'] = entity.instance_id
-        try:
-            self.dispatcher_list[ii]["dispatcher"] = Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
-            self.dispatcher_list[ii]["dispatcher_status"] = "unsubmitted"
-        except:
-            dlog.info("try to reconnect %s" % entity.ip)
-            time.sleep(120)
-            self.dispatcher_list[ii]["dispatcher"] = Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
-            self.dispatcher_list[ii]["dispatcher_status"] = "unsubmitted"
+        count = 0
+        flag = 0
+        while count < 3:
+            try:
+                self.dispatcher_list[ii]["dispatcher"] = Dispatcher(profile, context_type='ssh', batch_type='shell', job_record='jr.%.06d.json' % ii)
+                self.dispatcher_list[ii]["dispatcher_status"] = "unsubmitted"
+                flag = 1
+                break
+            except:
+                count += 1
+                time.sleep(60)
+        if not flag:
+            # give up this machine, wait other machine in sever_pool.
+            # this machine will be append into server_pool next time when update apg_instances.
+            self.dispatcher_list[ii]["entity"] = None
+
 
     # Base
     def check_dispatcher_status(self, ii, allow_failue=False):
