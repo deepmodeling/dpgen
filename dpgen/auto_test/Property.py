@@ -11,7 +11,7 @@ class Property (ABC) :
         Parameters
         ----------
         parameters : dict
-                A dict that specifies the interaction.
+                A dict that defines the property.
         """
         pass        
 
@@ -69,7 +69,9 @@ class Property (ABC) :
         Parameters
         ----------
         output_file:
-                The file to output the property
+                The file to output the property in json format
+        print_file:
+                The file to output the property in txt format
         path_to_work:
                 The working directory where the computational tasks locate.
         """
@@ -78,11 +80,11 @@ class Property (ABC) :
         task_dirs.sort()        
         all_res = []
         for ii in task_dirs:
-            with open(os.path.join(ii, 'task.json')) as fp:
+            with open(os.path.join(ii, 'inter.json')) as fp:
                 idata = json.load(fp)
             poscar = os.path.join(ii, 'POSCAR')
             task = make_task(idata, poscar)
-            res = task.compute()
+            res = task.compute(ii)
             all_res.append(res)
         res, ptr = self.cmpt(task_dirs, all_res)
         with open(output_file, 'w') as fp:

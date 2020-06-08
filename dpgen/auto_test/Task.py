@@ -3,14 +3,14 @@ from abc import ABC,abstractmethod
 class Task(ABC):
     @abstractmethod
     def __init__ (self, 
-                  paramters, 
+                  inter_paramter,
                   path_to_poscar) :
         """
         Constructor
 
         Parameters
         ----------
-        parameters : dict
+        inter_parameter : dict
                 A dict that specifies the interaction.
         path_to_poscar : str
                 The path to POSCAR. Indicating in which system the task will be initialized.
@@ -24,11 +24,16 @@ class Task(ABC):
         Prepare potential files for a computational task.
         For example, the VASP prepares POTCAR. 
         DeePMD prepares frozen model(s).
+        IMPORTANT: Interaction should be stored in output_dir/inter.json
 
         Parameters
         ----------
         output_dir : str
                 The directory storing the potential files.
+        Outputs
+        -------
+        inter.json: output file
+                The task information is stored in `output_dir/inter.json`
         """
         pass
 
@@ -41,7 +46,6 @@ class Task(ABC):
         Prepare input files for a computational task
         For example, the VASP prepares INCAR.
         LAMMPS (including DeePMD, MEAM...) prepares in.lammps.
-        IMPORTANT: Task parameters should be stored in output_dir/task.json
 
         Parameters
         ----------
@@ -54,21 +58,32 @@ class Task(ABC):
         task_parame: dict
                 The parameters of the task.
                 For example the VASP interaction can be provided with
-                { "ediff": 1e-6, "ediffg": 1e-5 }        
+                { "ediff": 1e-6, "ediffg": 1e-5 }
         """
         pass
 
     @abstractmethod
-    def compute (self):
+    def compute (self, 
+                 output_dir):
         """
         Compute output of the task. 
         IMPORTANT: The output configuration should be converted and stored in a CONTCAR file.
+
+        Parameters
+        ----------
+        output_dir : str
+                The directory storing the input and output files.
 
         Returns
         -------
         result_dict: dict
                 A dict that storing the result. For example:
                 { "energy": xxx, "force": [xxx] }
+
+        Outputs
+        -------
+        CONTCAR: output file
+                The output configuration is converted to CONTCAR and stored in the `output_dir`
         """
         pass
 

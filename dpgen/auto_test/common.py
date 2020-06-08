@@ -3,26 +3,26 @@ from VASP import VASP
 from DEEPMD_LMP import DEEPMD_LMP
 from MEAM_LMP import MEAM_LMP
 
-def make_task(paramters, 
-                     path_to_poscar) :
+def make_task(inter_parameter, 
+              path_to_poscar) :
     """
     Make an instance of Task
     """
-    inter_type = paramters['type']
+    inter_type = inter_parameter['type']
     if inter_type == 'vasp':
-        return VASP(paramters, path_to_poscar)
+        return VASP(inter_parameter, path_to_poscar)
     elif inter_type == 'deepmd':
-        return DEEPMD_LMP(paramters, path_to_poscar)
+        return DEEPMD_LMP(inter_parameter, path_to_poscar)
     elif inter_type == 'meam':
-        return MEAM_LMP(paramters, path_to_poscar)
+        return MEAM_LMP(inter_parameter, path_to_poscar)
     else:
         raise RuntimeError(f'unknow interaction {inter_type}')
 
-def make_task_trans_files(paramters) :
+def make_task_trans_files(inter_parameter) :
     """
     Make the forward and backward file of an Task
     """
-    inter_type = paramters['type']
+    inter_type = inter_parameter['type']
     if inter_type == 'vasp':
         return VASP.forward_files, VASP.forward_common_files, VASP.backward_files
     elif inter_type == 'deepmd':
@@ -82,7 +82,6 @@ def run_equi(confs,
     forward_files, forward_common_files, backward_files = make_task_trans_files(inter_param)
     backward_files += logs
     # ...
-    pass
 
 
 def post_equi(confs):
@@ -96,8 +95,8 @@ def post_equi(confs):
     for ii in task_dirs:
         poscar = os.path.join(ii, 'POSCAR')
         inter = make_task(inter_param, poscar)
-        res = inter.compute()
-        with open('result.json', 'w') as fp:
+        res = inter.compute(ii)
+        with open(os.path.join(ii, 'result.json'), 'w') as fp:
             json.dump(fp, res, indent=4)
         
     
