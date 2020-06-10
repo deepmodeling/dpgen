@@ -1,5 +1,7 @@
 from aliyunsdkecs.request.v20140526.DescribeInstancesRequest import DescribeInstancesRequest
 from aliyunsdkcore.client import AcsClient
+import aliyunsdkcore.request
+aliyunsdkcore.request.set_default_protocol_type("https")
 from aliyunsdkcore.acs_exception.exceptions import ClientException
 from aliyunsdkcore.acs_exception.exceptions import ServerException
 from aliyunsdkecs.request.v20140526.RunInstancesRequest import RunInstancesRequest
@@ -103,18 +105,25 @@ class ALI(DispatcherList):
         request.set_accept_format('json')
         request.set_InstanceIds([self.dispatcher_list[ii]["entity"].instance_id])
         request.set_Force(True)
-        try:
-            response = self.client.do_action_with_exception(request)
-        except ServerException as e:
-            dlog.info("%s, delete failed", e)
-            time.sleep(60)
-            dlog.info("try delete again")
-            response = self.client.do_action_with_exception(request)
-            dlog.info("delete successfully")
-        status_list = [item["dispatcher_status"] for item in self.dispatcher_list]
-        running_num = status_list.count("running")
-        running_num += status_list.count("unsubmitted")
-        self.change_apg_capasity(running_num)
+        count = 0
+        flag = 0
+        while count < 10:
+            try:
+                response = self.client.do_action_with_exception(request)
+                flag = 1
+                break
+            except ServerException as e:
+                time.sleep(10)
+                count += 1
+                
+        if flag:
+            status_list = [item["dispatcher_status"] for item in self.dispatcher_list]
+            running_num = status_list.count("running")
+            running_num += status_list.count("unsubmitted")
+            self.change_apg_capasity(running_num)
+        else:
+            dlog.info("delete failed, exit")
+            sys.exit()
 
     def update(self):
         if len(self.server_pool) == 0:
@@ -193,13 +202,21 @@ class ALI(DispatcherList):
         request.set_accept_format('json')
         request.set_AutoProvisioningGroupId(self.cloud_resources["apg_id"])
         request.set_TerminateInstances(True)
-        try:
-            response = self.client.do_action_with_exception(request)
-        except ServerException as e:
-            dlog.info(e)
-        except ClientException as e:
-            dlog.info(e)
+        count = 0
+        flag = 0
+        while count < 10:
+            try:
+                response = self.client.do_action_with_exception(request)
+                flag = 1
+                break
+            except ServerException as e:
+                time.sleep(10)
+                count += 1
+        if not flag:
+            dlog.info("delete apg failed, exit")
+            sys.exit()
 
+        
     def create_apg(self):
         request = CreateAutoProvisioningGroupRequest()
         request.set_accept_format('json')
@@ -216,6 +233,7 @@ class ALI(DispatcherList):
         request.set_SpotTargetCapacity(str(self.nchunks_limit))
         config = self.generate_config()
         request.set_LaunchTemplateConfigs(config)
+
         try:
             response = self.client.do_action_with_exception(request)
             response = json.loads(response)
@@ -223,9 +241,11 @@ class ALI(DispatcherList):
                 json.dump({'apg_id': response["AutoProvisioningGroupId"]}, fp, indent=4)
             return response["AutoProvisioningGroupId"]
         except ServerException as e:
-            dlog.info(e)
+            dlog.info("create apg failed, err msg: %s" % e)
+            sys.exit()
         except ClientException as e:
-            dlog.info(e)
+            dlog.info("create apg failed, err msg: %s" % e)
+            sys.exit()
 
     def describe_apg_instances(self):
         request = DescribeAutoProvisioningGroupInstancesRequest()
@@ -236,16 +256,27 @@ class ALI(DispatcherList):
         instance_list = []
         for i in range(iteration + 1):
             request.set_PageNumber(i+1)
-            try:
-                response = self.client.do_action_with_exception(request)
-                response = json.loads(response)
-                for ins in response["Instances"]["Instance"]:
-                    instance_list.append(ins["InstanceId"])
-            except ServerException as e:
-                dlog.info(e)
-                sys.exit()
-            except ClientException as e:
-                dlog.info(e)
+            count = 0
+            flag = 0
+            err_msg = 0
+            while count < 10:
+                try:
+                    response = self.client.do_action_with_exception(request)
+                    response = json.loads(response)
+                    for ins in response["Instances"]["Instance"]:
+                        instance_list.append(ins["InstanceId"])
+                    flag = 1
+                    break
+                except ServerException as e:
+                    # dlog.info(e)
+                    err_msg = e
+                    count += 1
+                except ClientException as e:
+                    # dlog.info(e)
+                    err_msg = e
+                    count += 1
+            if not flag:
+                dlog.info("describe_apg_instances failed, err msg: %s" %err_msg)
                 sys.exit()
         return instance_list
         
@@ -296,19 +327,40 @@ class ALI(DispatcherList):
     def delete_template(self):
         request = DeleteLaunchTemplateRequest()
         request.set_accept_format('json')
-        request.set_LaunchTemplateId(self.cloud_resources["template_id"])
-        response = self.client.do_action_with_exception(request)
-        
+        count = 0
+        flag = 0
+        while count < 10:
+            try:
+                request.set_LaunchTemplateId(self.cloud_resources["template_id"])
+                response = self.client.do_action_with_exception(request)
+                flag = 1
+                break
+            except:
+                count += 1
+        # count = 10 and still failed, continue
+
     def get_image_id(self, img_name):
         request = DescribeImagesRequest()
         request.set_accept_format('json')
         request.set_ImageOwnerAlias("self")
         request.set_PageSize(100)
-        response = self.client.do_action_with_exception(request)
-        response = json.loads(response)
-        for img in response["Images"]["Image"]:
-            if img["ImageName"] == img_name:
-                return img["ImageId"]
+        count = 0
+        flag = 0
+        while count < 10:
+            try:
+                response = self.client.do_action_with_exception(request)
+                response = json.loads(response)
+                for img in response["Images"]["Image"]:
+                    if img["ImageName"] == img_name:
+                        return img["ImageId"]
+                flag = 1
+                break
+            except:
+                count += 1
+                time.sleep(10)
+        if not flag:
+            dlog.info("get image failed, exit")
+            sys.exit()
 
     def get_sg_vpc_id(self):
         request = DescribeSecurityGroupsRequest()
@@ -336,24 +388,43 @@ class ALI(DispatcherList):
         request.set_TotalTargetCapacity(str(capasity))
         request.set_SpotTargetCapacity(str(capasity))
         request.set_PayAsYouGoTargetCapacity("0")
-        response = self.client.do_action_with_exception(request)
+        count = 0
+        flag = 0
+        while count < 10:
+            try:
+                response = self.client.do_action_with_exception(request)
+                flag = 1
+                break
+            except:
+                count += 1
+                time.sleep(10)
+        if not flag:
+            dlog.info("change_apg_capasity failed, exit")
+            sys.exit()
 
     def check_spot_callback(self, instance_id):
         request = DescribeInstancesRequest()
         request.set_accept_format('json')
         request.set_InstanceIds([instance_id])
         status = False
-        try:
-            response = self.client.do_action_with_exception(request)
-            response = json.loads(response)
-            if len(response["Instances"]["Instance"]) == 1 and "Recycling" in response["Instances"]["Instance"][0]["OperationLocks"]["LockReason"]:
-                status = True
-            if instance_id not in self.describe_apg_instances():
-                status = True
-        except ServerException as e:
-            dlog.info(e)
-        except ClientException as e:
-            dlog.info(e)
+        count = 0
+        while count < 10:
+            try:
+                response = self.client.do_action_with_exception(request)
+                response = json.loads(response)
+                if len(response["Instances"]["Instance"]) == 1 and "Recycling" in response["Instances"]["Instance"][0]["OperationLocks"]["LockReason"]:
+                    status = True
+                if instance_id not in self.describe_apg_instances():
+                    status = True
+                break
+            except ServerException as e:
+                # dlog.info(e)
+                count += 1
+                time.sleep(10)
+            except ClientException as e:
+                # dlog.info(e)
+                count += 1
+                time.sleep(10)
         return status
 
     def get_ip(self, instance_list):
