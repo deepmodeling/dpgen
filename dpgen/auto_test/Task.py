@@ -3,7 +3,7 @@ from abc import ABC,abstractmethod
 class Task(ABC):
     @abstractmethod
     def __init__ (self, 
-                  inter_paramter,
+                  inter_parameter,
                   path_to_poscar) :
         """
         Constructor

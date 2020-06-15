@@ -6,7 +6,7 @@ from dpgen.auto_test.lib import vasp
 from dpgen.auto_test.lib import lammps
 from dpgen.auto_test.lib.utils import cmd_append_log
 
-lammps_task_type=['deepmd','meam','eam']
+lammps_task_type=['deepmd','meam','eam_fs','eam_alloy']   # 06/13 revised
 
 def voigt_to_stress(inpt) :
     ret = np.zeros((3,3))
