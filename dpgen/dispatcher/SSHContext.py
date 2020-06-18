@@ -16,12 +16,24 @@ class SSHSession (object) :
         self.remote_password = None
         if 'password' in self.remote_profile :
             self.remote_password = self.remote_profile['password']
+        self.local_key_filename = None
+        if 'key_filename' in self.remote_profile:
+            self.local_key_filename = self.remote_profile['key_filename']
+        self.remote_timeout = None
+        if 'timeout' in self.remote_profile:
+            self.remote_timeout = self.remote_profile['timeout']
+        self.local_key_passphrase = None
+        if 'passphrase' in self.remote_profile:
+            self.local_key_passphrase = self.remote_profile['passphrase']
         self.remote_workpath = self.remote_profile['work_path']
         self.ssh = None
-        self._setup_ssh(self.remote_host,
-                        self.remote_port,
-                        username=self.remote_uname,
-                        password=self.remote_password)
+        self.ssh = self._setup_ssh(hostname=self.remote_host,
+                                   port=self.remote_port,
+                                   username=self.remote_uname,
+                                   password=self.remote_password,
+                                   key_filename=self.local_key_filename,
+                                   timeout=self.remote_timeout,
+                                   passphrase=self.local_key_passphrase)
 
     def ensure_alive(self,
                      max_check = 10,
@@ -32,12 +44,15 @@ class SSHSession (object) :
                 raise RuntimeError('cannot connect ssh after %d failures at interval %d s' %
                                    (max_check, sleep_time))
             dlog.info('connection check failed, try to reconnect to ' + self.remote_host)
-            self._setup_ssh(self.remote_host,
-                            self.remote_port,
-                            username=self.remote_uname,
-                            password=self.remote_password)
+            self.ssh = self._setup_ssh(hostname=self.remote_host,
+                                   port=self.remote_port,
+                                   username=self.remote_uname,
+                                   password=self.remote_password,
+                                   key_filename=self.local_key_filename, 
+                                   timeout=self.remote_timeout,
+                                   passphrase=self.local_key_passphrase)
             count += 1
-            time.sleep(sleep)
+            time.sleep(sleep_time)
 
     def _check_alive(self):
         if self.ssh == None:
@@ -51,13 +66,17 @@ class SSHSession (object) :
 
     def _setup_ssh(self,
                    hostname,
-                   port, 
-                   username = None,
-                   password = None):
-        self.ssh = paramiko.SSHClient()        
-        # ssh_client.load_system_host_keys()        
+                   port=22,
+                   username=None,
+                   password=None,
+                   key_filename=None,
+                   timeout=None,
+                   passphrase=None):
+        self.ssh = paramiko.SSHClient()
+        # ssh_client.load_system_host_keys()
         self.ssh.set_missing_host_key_policy(paramiko.WarningPolicy)
-        self.ssh.connect(hostname, port=port, username=username, password=password)
+        self.ssh.connect(hostname, port, username, password,
+                         key_filename, timeout, passphrase)
         assert(self.ssh.get_transport().is_active())
         transport = self.ssh.get_transport()
         transport.set_keepalive(60)
