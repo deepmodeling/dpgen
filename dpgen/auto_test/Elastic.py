@@ -96,7 +96,7 @@ class Elastic(Property):
                        all_res):
         output_file = os.path.abspath(output_file)
         res_data = {}
-        ptr_data = output_file + '\n'
+        ptr_data = os.path.dirname(output_file) + '\n'
         equi_stress = Stress(np.loadtxt(os.path.join(os.path.dirname(output_file), 'equi.stress.out')))
         lst_strain = []
         lst_stress = []

@@ -65,8 +65,6 @@ class VASP(Task):
         if task_type in ['relaxation', 'vacancy', 'interstitial']:
             isif = 3
 
-        if task_type == 'static':
-            nsw = 0
 
         if task_type == 'eos':
             if 'change_box' in task_param and not task_param['change_box']:
@@ -84,6 +82,10 @@ class VASP(Task):
                 isif = 4
             else:
                 isif = 2
+
+        if task_type == 'static' \
+                or ('reprod_opt' in task_param and task_param['reprod_opt']):
+            nsw = 0
 
         if not ('ISIF' in incar and incar.get('ISIF') == isif):
             dlog.info("%s:%s setting ISIF to %d" % (__file__, self.make_input_file.__name__, isif))
@@ -156,9 +158,9 @@ class VASP(Task):
                                 force[-1].append(float(ss[5]))
                         elif 'free  energy   TOTEN' in line:
                             energy.append(float(line.split()[4]))
-            if len(force) > 0 and len(energy) > 0:
-                result_dict = {"energy": energy[-1], "force": force[-1]}
-                return result_dict
+        if len(force) > 0 and len(energy) > 0:
+            result_dict = {"energy": energy[-1], "force": force[-1]}
+            return result_dict
 
     def forward_files(self):
         return ['INCAR', 'POSCAR', 'POTCAR']

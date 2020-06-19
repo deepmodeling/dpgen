@@ -28,13 +28,13 @@ class EOS(Property):
             task_list = make_refine(self.parameter['init_from_suffix'],
                                     self.parameter['output_suffix'],
                                     path_to_work,
-                                    (self.vol_end-self.vol_start)/self.vol_step)
+                                    (self.vol_end - self.vol_start) / self.vol_step)
             os.chdir(cwd)
         if self.reprod:
-            if 'vasp_path' not in self.parameter:
-                raise RuntimeError("please provide the vasp_path for reproduction")
-            vasp_path = os.path.abspath(self.parameter['vasp_path'])
-            task_list = reproduce.make_repro(vasp_path, path_to_work)
+            if 'vasp_lmp_path' not in self.parameter:
+                raise RuntimeError("please provide the vasp_lmp_path for reproduction")
+            vasp_lmp_path = os.path.abspath(self.parameter['vasp_lmp_path'])
+            task_list = reproduce.make_repro(vasp_lmp_path, path_to_work)
             os.chdir(cwd)
         else:
             equi_contcar = os.path.join(path_to_equi, 'CONTCAR')
@@ -69,19 +69,19 @@ class EOS(Property):
                        all_res):
         output_file = os.path.abspath(output_file)
         res_data = {}
-        ptr_data = "output_file\n"
+        ptr_data = "conf_dir: " + os.path.dirname(output_file) + "\n"
         if not self.reprod:
             ptr_data += ' VpA(A^3)  EpA(eV)\n'
             for ii in range(len(all_tasks)):
                 vol = self.vol_start + ii * self.vol_step
-                res_data[vol] = all_res[ii]['energy']
-                ptr_data += '%7.3f  %8.4f \n' % (vol, all_res[ii]['energy'])
+                res_data[vol] = all_res[ii]['energy'] / len(all_res[ii]['force']) * 3
+                ptr_data += '%7.3f  %8.4f \n' % (vol, all_res[ii]['energy'] / len(all_res[ii]['force']) * 3)
 
         else:
-            if 'vasp_path' not in self.parameter:
-                raise RuntimeError("please provide the vasp_path for reproduction")
-            vasp_path = os.path.abspath(self.parameter['vasp_path'])
-            res_data, ptr_data = reproduce.post_repro(vasp_path,all_tasks,ptr_data)
+            if 'vasp_lmp_path' not in self.parameter:
+                raise RuntimeError("please provide the vasp_lmp_path for reproduction")
+            vasp_lmp_path = os.path.abspath(self.parameter['vasp_lmp_path'])
+            res_data, ptr_data = reproduce.post_repro(vasp_lmp_path, all_tasks, ptr_data)
 
         with open(output_file, 'w') as fp:
             json.dump(res_data, fp, indent=4)

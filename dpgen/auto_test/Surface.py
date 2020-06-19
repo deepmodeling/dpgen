@@ -53,10 +53,10 @@ class Surface(Property):
             os.chdir(cwd)
 
         if self.reprod:
-            if 'vasp_path' not in self.parameter:
-                raise RuntimeError("please provide the vasp_path for reproduction")
-            vasp_path = os.path.abspath(self.parameter['vasp_path'])
-            task_list = reproduce.make_repro(vasp_path, path_to_work)
+            if 'vasp_lmp_path' not in self.parameter:
+                raise RuntimeError("please provide the vasp_lmp_path for reproduction")
+            vasp_lmp_path = os.path.abspath(self.parameter['vasp_lmp_path'])
+            task_list = reproduce.make_repro(vasp_lmp_path, path_to_work)
             os.chdir(cwd)
 
         else:
@@ -99,6 +99,7 @@ class Surface(Property):
         res_data = {}
         ptr_data = os.path.dirname(output_file) + '\n'
 
+
         if not self.reprod:
             ptr_data += "Miller_Indices: \tSurf_E(J/m^2) EpA(eV) equi_EpA(eV)\n"
             for ii in all_tasks:
@@ -130,14 +131,19 @@ class Surface(Property):
 
                 Cf = 1.60217657e-16 / (1e-20 * 2) * 0.001
                 evac = (epa * natoms - equi_epa * natoms) / AA * Cf
-                ptr_data += "%s: \t%7.3f    %8.3f %8.3f\n" % (structure_dir, evac, epa, equi_epa)
-                res_data[structure_dir] = [evac, epa, equi_epa]
+                miller_index = []
+                with open(os.path.join(ii,'miller.out'),'r') as fin:
+                    ss = int(fin.readline().split()[0])
+                    miller_index.append(ss)
+
+                ptr_data += "%s: \t%7.3f    %8.3f %8.3f\n" % (miller_index, evac, epa, equi_epa)
+                res_data[miller_index] = [evac, epa, equi_epa]
 
         else:
-            if 'vasp_path' not in self.parameter:
-                raise RuntimeError("please provide the vasp_path for reproduction")
-            vasp_path = os.path.abspath(self.parameter['vasp_path'])
-            res_data, ptr_data = reproduce.post_repro(vasp_path, all_tasks, ptr_data)
+            if 'vasp_lmp_path' not in self.parameter:
+                raise RuntimeError("please provide the vasp_lmp_path for reproduction")
+            vasp_lmp_path = os.path.abspath(self.parameter['vasp_lmp_path'])
+            res_data, ptr_data = reproduce.post_repro(vasp_lmp_path, all_tasks, ptr_data)
 
         with open(output_file, 'w') as fp:
             json.dump(res_data, fp, indent=4)

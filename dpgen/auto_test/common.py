@@ -151,7 +151,7 @@ def run_equi(confs,
     # ...
     work_path_list = []
     for ii in conf_dirs:
-        work_path_list.append(os.path.join(ii, 'relaxation'))
+        work_path_list.append(os.path.abspath(os.path.join(ii, 'relaxation')))
     all_task = []
     for ii in work_path_list:
         all_task.append(os.path.join(ii, '.'))
@@ -163,7 +163,7 @@ def run_equi(confs,
     elif inter_type in lammps_task_type:
         mdata = decide_model_devi_machine(mdata)
     else:
-        raise RuntimeError("unknown task %s, something wrong" % task_type)
+        raise RuntimeError("unknown task %s, something wrong" % inter_type)
 
     # dispatch the tasks
     forward_files, forward_common_files, backward_files = make_task_trans_files(inter_param)
@@ -224,9 +224,12 @@ def make_property(confs,
             if 'init_from_suffix' and 'output_suffix' in jj:
                 do_refine = True
                 suffix = jj['output_suffix']
+            elif 'reprod-opt' in jj and jj['reprod-opt']:
+                do_refine = False
+                suffix = 'reprod'
             else:
                 do_refine = False
-                suffix = 0
+                suffix = '00'
             # generate working directory like mp-xxx/eos_00 if jj['type'] == 'eos'
             # handel the exception that the working directory exists
             # ...
@@ -269,6 +272,8 @@ def run_property(confs,
             # ...
             if 'init_from_suffix' and 'output_suffix' in jj:
                 suffix = jj['output_suffix']
+            elif 'reprod-opt' in jj and jj['reprod-opt']:
+                suffix = 'reprod'
             else:
                 suffix = 0
 
@@ -284,24 +289,24 @@ def run_property(confs,
     forward_files, forward_common_files, backward_files = make_task_trans_files(inter_param)
     #    backward_files += logs
     # ...
-    task_type = inter_param['type']
+    inter_type = inter_param['type']
     # vasp
-    if task_type == "vasp":
+    if inter_type == "vasp":
         mdata = decide_fp_machine(mdata)
-    elif task_type in lammps_task_type:
+    elif inter_type in lammps_task_type:
         mdata = decide_model_devi_machine(mdata)
     else:
-        raise RuntimeError("unknown task %s, something wrong" % task_type)
+        raise RuntimeError("unknown task %s, something wrong" % inter_type)
 
     for ii in range(len(work_path_list)):
         work_path = work_path_list[ii]
         all_task = task_list[ii]
-        run_tasks = util.collect_task(all_task, task_type)
+        run_tasks = util.collect_task(all_task, inter_type)
         if len(run_tasks) == 0:
             return
         else:
             run_tasks = [os.path.basename(ii) for ii in all_task]
-            machine, resources, command, group_size = util.get_machine_info(mdata, task_type)
+            machine, resources, command, group_size = util.get_machine_info(mdata, inter_type)
             disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
             disp.run_jobs(resources,
                           command,
@@ -311,8 +316,8 @@ def run_property(confs,
                           forward_common_files,
                           forward_files,
                           backward_files,
-                          outlog=task_type + '.out',
-                          errlog=task_type + '.err')
+                          outlog=inter_type + '.out',
+                          errlog=inter_type + '.err')
 
 
 def post_property(confs,
@@ -329,6 +334,8 @@ def post_property(confs,
             # ...
             if 'init_from_suffix' and 'output_suffix' in jj:
                 suffix = jj['output_suffix']
+            elif 'reprod-opt' in jj and jj['reprod-opt']:
+                suffix = 'reprod'
             else:
                 suffix = 0
             property_type = jj['type']

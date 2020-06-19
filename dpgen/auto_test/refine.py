@@ -3,7 +3,7 @@ import os,re,glob
 def make_refine(init_from_suffix, output_suffix, path_to_work, task_num):
     init_from = re.sub(output_suffix, init_from_suffix, path_to_work)
     if not os.path.exists(init_from):
-        raise FileNotFoundError("the init_from directory not existed for refine")
+        raise FileNotFoundError("the init_from directory does not exist for refine")
 
     output = path_to_work
     init_from_task_tot = glob.glob(os.path.join(init_from, 'task.[0-9]*[0-9]'))
@@ -22,7 +22,7 @@ def make_refine(init_from_suffix, output_suffix, path_to_work, task_num):
         task_list.append(output_task)
         init_from_task = os.path.join(init_from, 'task.%06d' % ii)
         if not os.path.exists(init_from_task):
-            raise FileNotFoundError("the init_from_task directory not existed for refine")
+            raise FileNotFoundError("the init_from_task directory does not exist for refine")
         contcar = os.path.join(init_from_task, 'CONTCAR')
         init_poscar = os.path.join(init_from_task, 'POSCAR')
         if os.path.exists(contcar):
