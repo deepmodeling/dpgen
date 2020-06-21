@@ -16,7 +16,10 @@ def make_equi(confs,
     # find all POSCARs and their name like mp-xxx
     # ...
     dlog.debug('debug info make equi')
-    ele_list = [key for key in inter_param['type_map'].keys()]
+    if 'type_map' in inter_param:
+        ele_list = [key for key in inter_param['type_map'].keys()]
+    else:
+        ele_list = [key for key in inter_param['potcars'].keys()]
     dlog.debug("ele_list %s"%':'.join(ele_list))
     conf_dirs =[]
     for conf in confs:
