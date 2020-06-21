@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 
 import argparse, json
-import logging
 from dpgen.auto_test.common_prop import make_property
 from dpgen.auto_test.common_equi import make_equi,run_equi,post_equi
 
-lammps_task_type = ['deepmd', 'meam', 'eam_fs', 'eam_alloy']
-
+#lammps_task_type = ['deepmd', 'meam', 'eam_fs', 'eam_alloy']
 
 def run_task(step, json_file, machine_file=''):
     with open(json_file, 'r') as fp:
@@ -43,7 +41,6 @@ def run_task(step, json_file, machine_file=''):
 
     else:
         raise RuntimeError('unknown tasks')
-
 
 def gen_test(args):
     logging.info("start auto-testing")

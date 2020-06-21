@@ -117,11 +117,7 @@ class VASP(Task):
             dlog.info("%s setting kgamma to %s" % (  self.make_input_file.__name__, task_param['kgamma']))
             incar['KGAMMA'] = task_param['kgamma']
 
-        fc = incar.get_string()
-        # write incar
-        with open(os.path.join(output_dir, 'INCAR'), 'w') as fp:
-            fp.write(fc)
-
+        incar.write_file(os.path.join(output_dir,'INCAR'))
         ret = vasp.make_kspacing_kpoints(self.path_to_poscar, kspacing, kgamma)
         kp = Kpoints.from_string(ret)
         kp.write_file(os.path.join(output_dir, "KPOINTS"))
