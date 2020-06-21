@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse, json
+import logging
 from dpgen import dlog
 from dpgen.auto_test.common_prop import make_property
 from dpgen.auto_test.common_equi import make_equi,run_equi,post_equi
@@ -45,6 +46,8 @@ def run_task(step, json_file, machine_file=''):
 
 def gen_test(args):
     dlog.info("start auto-testing")
+    if args.debug:
+        dlog.setLevel(logging.DEBUG)
     run_task(args.TASK, args.PARAM, args.MACHINE)
     dlog.info("finished!")
 

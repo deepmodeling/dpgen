@@ -143,6 +143,8 @@ def main():
                         help="parameter file, json/yaml format")
     parser_test.add_argument('MACHINE', type=str,default=None,nargs="?",
                         help="machine file, json/yaml format")
+    parser_test.add_argument('-d','--debug', action='store_true',
+                        help="log debug info")
     parser_test.set_defaults(func=gen_test)    
 
     # db 

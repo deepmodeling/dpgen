@@ -14,8 +14,12 @@ def make_equi(confs,
               relax_param):
     # find all POSCARs and their name like mp-xxx
     # ...
+    dlog.debug('debug info make equi')
     ele_list = [key for key in inter_param['type_map'].keys()]
-    conf_dirs = glob.glob(confs)
+    dlog.debug("ele_list %s"%':'.join(ele_list))
+    conf_dirs =[]
+    for conf in confs:
+        conf_dirs.extend(glob.glob(conf))
     conf_dirs.sort()
 
     # generate a list of task names like mp-xxx/relaxation
@@ -25,23 +29,25 @@ def make_equi(confs,
     if len(ele_list) == 1:
         for ii in conf_dirs:
             os.chdir(ii)
-            crys_type = ii[3:]
-            if crys_type == 'fcc':
+            crys_type = ii.split('/')[-1]
+            dlog.debug('crys_type: %s'%crys_type)
+            dlog.debug('pwd: %s'%os.getcwd())
+            if crys_type == 'std-fcc':
                 if not os.path.exists('POSCAR'):
                     crys.fcc(ele_list[0]).to('POSCAR', 'POSCAR')
-            elif crys_type == 'hcp':
+            elif crys_type == 'std-hcp':
                 if not os.path.exists('POSCAR'):
                     crys.hcp(ele_list[0]).to('POSCAR', 'POSCAR')
-            elif crys_type == 'dhcp':
+            elif crys_type == 'std-dhcp':
                 if not os.path.exists('POSCAR'):
                     crys.dhcp(ele_list[0]).to('POSCAR', 'POSCAR')
-            elif crys_type == 'bcc':
+            elif crys_type == 'std-bcc':
                 if not os.path.exists('POSCAR'):
                     crys.bcc(ele_list[0]).to('POSCAR', 'POSCAR')
-            elif crys_type == 'diamond':
+            elif crys_type == 'std-diamond':
                 if not os.path.exists('POSCAR'):
                     crys.diamond(ele_list[0]).to('POSCAR', 'POSCAR')
-            elif crys_type == 'sc':
+            elif crys_type == 'std-sc':
                 if not os.path.exists('POSCAR'):
                     crys.sc(ele_list[0]).to('POSCAR', 'POSCAR')
             os.chdir(cwd)
@@ -68,6 +74,7 @@ def make_equi(confs,
     # generate task files
     for ii in task_dirs:
         poscar = os.path.join(ii, 'POSCAR')
+        dlog.debug('task_dir %s'%ii)
         inter = make_task(inter_param, poscar)
         inter.make_potential_files(ii)
         inter.make_input_file(ii, 'relaxation', relax_param)
