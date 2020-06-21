@@ -1,11 +1,10 @@
 import os
 import json
-import warnings
-from Task import Task
-from dpgen.generator.lib.vasp import incar_upper
-from pymatgen.io.vasp import Incar, Kpoints
 from dpgen import dlog
 import dpgen.auto_test.lib.vasp as vasp
+from dpgen.auto_test.Task import Task
+from dpgen.generator.lib.vasp import incar_upper
+from pymatgen.io.vasp import Incar, Kpoints
 
 
 class VASP(Task):
@@ -129,7 +128,7 @@ class VASP(Task):
                 output_dir):
         outcar = os.path.join(output_dir, 'OUTCAR')
         if not os.path.isfile(outcar):
-            warnings.warn("cannot find OUTCAR in " + output_dir + " skip")
+            dlog.warning("cannot find OUTCAR in " + output_dir + " skip")
             return None
         else:
             force = []
@@ -137,7 +136,7 @@ class VASP(Task):
             energy = []
             with open(outcar, 'r') as fp:
                 if 'Elapsed time (sec):' not in fp.read():
-                    warnings.warn("incomplete job " + outcar+ " skip")
+                    dlog.warning("incomplete job " + outcar+ " skip")
                     return None
                 else:
                     fp.seek(0)

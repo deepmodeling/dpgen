@@ -65,19 +65,8 @@ def main():
     parser_auto_gen_param.add_argument('PARAM', type=str, 
                         help="parameter file, json/yaml format")
     parser_auto_gen_param.set_defaults(func=auto_gen_param)
-    # parser_init.add_argument("-p",'--parameter', type=str, dest='param',
-    #                     help="parameter file, json/yaml format")
-    # parser_init.add_argument("-s","--stage", type=int, dest='stage',
-    #                     help="the stage of init, can be 1, 2, 3 or 4. "
-    #                     "1: Setup vasp jobs for relaxation. "
-    #                     "2: Collect vasp relaxed confs (if relax is not skiped). Perturb system. "
-    #                     "3: Setup vasp jobs for MD of perturbed system. "
-    #                     "4: Collect vasp md confs, make deepmd data. ")
-    # parser_init.add_argument("directories", metavar="dir", default=".",
-    #                             type=str, nargs="*",
-    #                             help="directory to process (default to .)")
-    # parser_init.set_defaults(func=gen_data)
 
+    # parser_init_reaction
     parser_init_reaction = subparsers.add_parser(
         "init_reaction", help="Generating initial data for reactive systems.")
     parser_init_reaction.add_argument('PARAM', type=str, 
@@ -147,10 +136,12 @@ def main():
     parser_run.set_defaults(func=gen_simplify)
 
     # test 
-    parser_test = subparsers.add_parser("test", help="Auto-test for Deep Potential.")
+    parser_test = subparsers.add_parser("autotest", help="Auto-test for Deep Potential.")
+    parser_test.add_argument('TASK', type=str,
+                        help="task can be make, run or post")
     parser_test.add_argument('PARAM', type=str,
                         help="parameter file, json/yaml format")
-    parser_test.add_argument('MACHINE', type=str,
+    parser_test.add_argument('MACHINE', type=str,default=None,nargs="?",
                         help="machine file, json/yaml format")
     parser_test.set_defaults(func=gen_test)    
 

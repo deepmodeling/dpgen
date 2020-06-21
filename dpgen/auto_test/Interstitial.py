@@ -1,8 +1,8 @@
-from Property import Property
-from refine import make_refine
-import reproduce
+from   dpgen.auto_test.Property import Property
 import dpgen.auto_test.lib.vasp as vasp
 import dpgen.auto_test.lib.lammps as lammps
+from dpgen.auto_test.refine import make_refine
+from dpgen.auto_test.reproduce import make_repro
 from pymatgen.core.structure import Structure
 from pymatgen.analysis.defects.generators import InterstitialGenerator
 import numpy as np
@@ -63,7 +63,7 @@ class Interstitial(Property):
             if 'vasp_lmp_path' not in self.parameter:
                 raise RuntimeError("please provide the vasp_lmp_path for reproduction")
             vasp_lmp_path = os.path.abspath(self.parameter['vasp_lmp_path'])
-            task_list = reproduce.make_repro(vasp_lmp_path,path_to_work)
+            task_list = make_repro(vasp_lmp_path,path_to_work)
             os.chdir(cwd)
 
         else:
@@ -132,7 +132,7 @@ class Interstitial(Property):
             if 'vasp_lmp_path' not in self.parameter:
                 raise RuntimeError("please provide the vasp_lmp_path for reproduction")
             vasp_lmp_path = os.path.abspath(self.parameter['vasp_lmp_path'])
-            res_data, ptr_data = reproduce.post_repro(vasp_lmp_path,all_tasks,ptr_data)
+            res_data, ptr_data = post_repro(vasp_lmp_path,all_tasks,ptr_data)
 
         with open(output_file, 'w') as fp:
             json.dump(res_data, fp, indent=4)
