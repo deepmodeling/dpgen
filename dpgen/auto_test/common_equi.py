@@ -6,6 +6,7 @@ from dpgen import dlog
 from dpgen.dispatcher.Dispatcher import make_dispatcher
 from dpgen.auto_test.common_task import make_task,make_task_trans_files
 from dpgen.remote.decide_machine import decide_fp_machine, decide_model_devi_machine
+from dpgen.auto_test.mpdb import get_structure
 
 lammps_task_type = ['deepmd', 'meam', 'eam_fs', 'eam_alloy']
 
@@ -50,6 +51,10 @@ def make_equi(confs,
             elif crys_type == 'std-sc':
                 if not os.path.exists('POSCAR'):
                     crys.sc(ele_list[0]).to('POSCAR', 'POSCAR')
+            elif 'mp-' in crys_type:
+                if not os.path.exists('POSCAR'):
+                    get_structure(crys_type).to('POSCAR', 'POSCAR')
+
             os.chdir(cwd)
     task_dirs = []
     # make task directories like mp-xxx/relaxation
