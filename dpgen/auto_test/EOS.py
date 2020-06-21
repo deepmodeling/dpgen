@@ -1,6 +1,6 @@
-from Property import Property
-from refine import make_refine
-import reproduce
+from dpgen.auto_test.Property import Property
+from dpgen.auto_test.refine import make_refine
+from dpgen.auto_test import reproduce
 import dpgen.auto_test.lib.vasp as vasp
 import numpy as np
 import os, json

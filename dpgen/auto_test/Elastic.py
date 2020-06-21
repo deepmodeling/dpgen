@@ -1,5 +1,5 @@
-from Property import Property
-from refine import make_refine
+from dpgen.auto_test.Property import Property
+from dpgen.auto_test.refine import make_refine
 import dpgen.auto_test.lib.vasp as vasp
 import dpgen.auto_test.lib.lammps as lammps
 from pymatgen.core.structure import Structure

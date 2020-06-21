@@ -1,6 +1,6 @@
 import os,glob,json
 from abc import ABC,abstractmethod
-from common import make_task
+from dpgen.auto_test.common_task import make_task
 
 class Property (ABC) :
     @abstractmethod

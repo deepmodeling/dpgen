@@ -1,9 +1,9 @@
 import os
 import warnings
 import json
-from Task import Task
 import dpdata
 import dpgen.auto_test.lib.lammps as lammps
+from dpgen.auto_test.Task import Task
 
 
 class DEEPMD_LMP(Task):
@@ -42,7 +42,7 @@ class DEEPMD_LMP(Task):
         # lines in lammps.in related to model
         #        line_model = lammps.inter_deepmd(self.inter)
         #        line_model = "pair_style deepmd %s \n" % (os.path.basename(self.model))
-        #        line_model += "pair_coeff\n"
+        #        line_model += "pair_coeff\n
 
         etol = 1e-12
         ftol = 1e-6
@@ -74,7 +74,7 @@ class DEEPMD_LMP(Task):
             static = task_param['static-opt']
 
         model_name = os.path.basename(self.model)
-        deepmd_version = self.model.get("deepmd_version", "0.12")
+        deepmd_version = self.inter.get("deepmd_version", "0.12")
 
         model_param = {'model_name': [model_name],
                        'param_type': self.type_map,

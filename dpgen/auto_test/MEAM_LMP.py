@@ -1,9 +1,9 @@
 import os
 import warnings
 import json
-from Task import Task
 import dpdata
 import dpgen.auto_test.lib.lammps as lammps
+from dpgen.auto_test.Task import Task
 
 
 class MEAM_LMP(Task):
