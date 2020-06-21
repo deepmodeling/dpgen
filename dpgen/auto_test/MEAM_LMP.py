@@ -46,7 +46,7 @@ class MEAM_LMP(Task):
                         output_dir,
                         task_type,
                         task_param):
-        lammps.cvt_lammps_conf(os.path.join(output_dir, 'POSCAR'), 'conf.lmp')
+        lammps.cvt_lammps_conf(os.path.join(output_dir, 'POSCAR'), os.path.join(output_dir,'conf.lmp'))
         with open(os.path.join(output_dir, 'task.json'), 'w') as fp:
             json.dump(task_param, fp, indent=4)
         # lines in lammps.in related to model
