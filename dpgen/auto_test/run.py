@@ -1,19 +1,21 @@
 #!/usr/bin/env python3
 
-import argparse, json
+import argparse
 import logging
 from dpgen import dlog
+from monty.serialization import loadfn,dumpfn
 from dpgen.auto_test.common_prop import make_property
 from dpgen.auto_test.common_equi import make_equi,run_equi,post_equi
 
 #lammps_task_type = ['deepmd', 'meam', 'eam_fs', 'eam_alloy']
 
-def run_task(step, json_file, machine_file=''):
-    with open(json_file, 'r') as fp:
-        jdata = json.load(fp)
-
+def run_task(step, param_file, machine_file=None):
+    jdata=loadfn(param_file)
     confs = jdata['structures']
     inter_parameter = jdata['interaction']
+
+    if machine_file:
+       mdata=loadfn(machine_file)
 
     if step == 'make' and 'relaxation' in jdata:
         relax_param = jdata['relaxation']
@@ -24,13 +26,9 @@ def run_task(step, json_file, machine_file=''):
         make_property(confs, inter_parameter, property_list)
 
     elif step == 'run' and 'relaxation' in jdata:
-        with open(machine_file, 'r') as fp:
-            mdata = json.load(fp)
         run_equi(confs, inter_parameter, mdata)
 
     elif step == 'run' and 'properties' in jdata:
-        with open(machine_file, 'r') as fp:
-            mdata = json.load(fp)
         property_list = jdata['properties']
         run_property(confs, inter_parameter, property_list, mdata)
 
