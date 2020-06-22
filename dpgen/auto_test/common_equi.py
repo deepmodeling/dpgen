@@ -10,6 +10,7 @@ from dpgen.auto_test.mpdb import get_structure
 
 lammps_task_type = ['deepmd', 'meam', 'eam_fs', 'eam_alloy']
 
+
 def make_equi(confs,
               inter_param,
               relax_param):
@@ -20,8 +21,8 @@ def make_equi(confs,
         ele_list = [key for key in inter_param['type_map'].keys()]
     else:
         ele_list = [key for key in inter_param['potcars'].keys()]
-    dlog.debug("ele_list %s"%':'.join(ele_list))
-    conf_dirs =[]
+    dlog.debug("ele_list %s" % ':'.join(ele_list))
+    conf_dirs = []
     for conf in confs:
         conf_dirs.extend(glob.glob(conf))
     conf_dirs.sort()
@@ -34,8 +35,8 @@ def make_equi(confs,
         for ii in conf_dirs:
             os.chdir(ii)
             crys_type = ii.split('/')[-1]
-            dlog.debug('crys_type: %s'%crys_type)
-            dlog.debug('pwd: %s'%os.getcwd())
+            dlog.debug('crys_type: %s' % crys_type)
+            dlog.debug('pwd: %s' % os.getcwd())
             if crys_type == 'std-fcc':
                 if not os.path.exists('POSCAR'):
                     crys.fcc(ele_list[0]).to('POSCAR', 'POSCAR')
@@ -54,9 +55,6 @@ def make_equi(confs,
             elif crys_type == 'std-sc':
                 if not os.path.exists('POSCAR'):
                     crys.sc(ele_list[0]).to('POSCAR', 'POSCAR')
-            elif 'mp-' in crys_type:
-                if not os.path.exists('POSCAR'):
-                    get_structure(crys_type).to('POSCAR', 'POSCAR')
 
             os.chdir(cwd)
     task_dirs = []
@@ -64,6 +62,12 @@ def make_equi(confs,
     # if mp-xxx/exists then print a warning and exit.
     # ...
     for ii in conf_dirs:
+        crys_type = ii.split('/')[-1]
+        dlog.debug('crys_type: %s' % crys_type)
+        
+        if 'mp-' in crys_type and not os.path.exists(os.path.join(ii, 'POSCAR')):
+            get_structure(crys_type).to('POSCAR', os.path.join(ii, 'POSCAR'))
+
         poscar = os.path.abspath(os.path.join(ii, 'POSCAR'))
         if not os.path.exists(poscar):
             raise FileNotFoundError('no configuration for autotest')
@@ -82,7 +86,7 @@ def make_equi(confs,
     # generate task files
     for ii in task_dirs:
         poscar = os.path.join(ii, 'POSCAR')
-        dlog.debug('task_dir %s'%ii)
+        dlog.debug('task_dir %s' % ii)
         inter = make_task(inter_param, poscar)
         inter.make_potential_files(ii)
         inter.make_input_file(ii, 'relaxation', relax_param)
@@ -163,6 +167,6 @@ def post_equi(confs, inter_param):
     for ii in task_dirs:
         poscar = os.path.join(ii, 'POSCAR')
         inter = make_task(inter_param, poscar)
-        res = inter.compute(ii,inter_param)
+        res = inter.compute(ii, inter_param)
         with open(os.path.join(ii, 'result.json'), 'w') as fp:
             json.dump(res, fp, indent=4)
