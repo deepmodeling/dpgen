@@ -168,6 +168,7 @@ def post_equi(confs, inter_param):
     for ii in task_dirs:
         poscar = os.path.join(ii, 'POSCAR')
         inter = make_calculator(inter_param, poscar)
-        res = inter.compute(ii, inter_param)
+        res = inter.compute(ii,inter_param)
+          
+        dumpfn(res,os.path.join(ii, 'result.json'),indent=4)
 
-        dumpfn(res, os.path.join(ii, 'result.json'), indent=4)

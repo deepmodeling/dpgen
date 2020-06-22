@@ -4,7 +4,7 @@ import json
 import dpdata
 import dpgen.auto_test.lib.lammps as lammps
 from dpgen import dlog
-from monty.serialization import loadfn, dumpfn
+from monty.serialization import loadfn,dumpfn
 from dpgen.auto_test.Task import Task
 from dpgen.auto_test.lib.lammps import inter_deepmd, inter_meam, inter_eam_fs, inter_eam_alloy
 
