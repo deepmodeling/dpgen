@@ -4,7 +4,7 @@ import argparse
 import logging
 from dpgen import dlog
 from monty.serialization import loadfn,dumpfn
-from dpgen.auto_test.common_prop import make_property
+from dpgen.auto_test.common_prop import make_property,run_property,post_property
 from dpgen.auto_test.common_equi import make_equi,run_equi,post_equi
 
 #lammps_task_type = ['deepmd', 'meam', 'eam_fs', 'eam_alloy']

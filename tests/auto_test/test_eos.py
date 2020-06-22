@@ -12,6 +12,26 @@ from pymatgen.io.vasp import Incar
 from dpgen.auto_test.gen_01_eos import make_vasp
 
 class Test01(unittest.TestCase):
+    jdata={
+              "structures":    ["confs/hp-Li"],
+              "interaction": {
+                  "type":      "vasp",
+                  "incar":     "vasp_input/INCAR.rlx",
+                  "potcar_prefix":".",
+                  "potcars":    {"Si": "vasp_input/POTCAR"}
+              },
+              "relaxation": {
+                         "ediff": 1e-7,
+                         "ediffg": -0.01,
+                         "encut": 650,
+                         "kspacing": 0.1,
+                         "kgamma": False
+              }
+             }
+    def tearDown(self):
+        if os.path.exists('confs/hp-Li/relaxation'):
+            shutil.rmtree('confs/hp-Li/relaxation')
+
     def tearDown(self):
         if os.path.exists('01.eos'):
             shutil.rmtree('01.eos')
