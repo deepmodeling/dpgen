@@ -78,7 +78,7 @@ def make_property(confs,
                 poscar = os.path.join(kk, 'POSCAR')
                 inter = make_task(inter_param, poscar)
                 inter.make_potential_files(kk)
-                inter.make_input_file(kk, prop.task_type, prop.task.pararm)
+                inter.make_input_file(kk, prop.task_type, prop.task_param)
 
 
 def run_property(confs,
