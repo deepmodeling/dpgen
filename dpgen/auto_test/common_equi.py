@@ -93,7 +93,9 @@ def run_equi(confs,
              mdata):
     # find all POSCARs and their name like mp-xxx
     # ...
-    conf_dirs = glob.glob(confs)
+    conf_dirs = []
+    for conf in confs:
+        conf_dirs.extend(glob.glob(conf))
     conf_dirs.sort()
     # generate a list of task names like mp-xxx/relaxation
     # ...
@@ -141,7 +143,9 @@ def run_equi(confs,
 def post_equi(confs, inter_param):
     # find all POSCARs and their name like mp-xxx
     # ...
-    conf_dirs = glob.glob(confs)
+    conf_dirs = []
+    for conf in confs:
+        conf_dirs.extend(glob.glob(conf))
     conf_dirs.sort()
     task_dirs = []
     for ii in conf_dirs:
