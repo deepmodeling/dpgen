@@ -5,6 +5,7 @@ from dpgen.util import sepline
 import dpgen.auto_test.lib.vasp as vasp
 from dpgen.auto_test.Task import Task
 from dpgen.generator.lib.vasp import incar_upper
+from dpdata import LabeledSystem
 from pymatgen.io.vasp import Incar, Kpoints
 
 
@@ -129,35 +130,12 @@ class VASP(Task):
             dlog.warning("cannot find OUTCAR in " + output_dir + " skip")
             return None
         else:
-            force = []
-            position = []
-            energy = []
-            with open(outcar, 'r') as fp:
-                if 'Elapsed time (sec):' not in fp.read():
-                    dlog.warning("incomplete job " + outcar+ " skip")
-                    return None
-                else:
-                    fp.seek(0)
-                    for line in fp:
-                        if 'TOTAL-FORCE' in line:
-                            position.append([])
-                            force.append([])
-                            fp.readline()
-                            while True:
-                                ss = fp.readline().split()
-                                if len(ss) != 6:
-                                    break
-                                position[-1].append(float(ss[0]))
-                                force[-1].append(float(ss[3]))
-                                position[-1].append(float(ss[1]))
-                                force[-1].append(float(ss[4]))
-                                position[-1].append(float(ss[2]))
-                                force[-1].append(float(ss[5]))
-                        elif 'free  energy   TOTEN' in line:
-                            energy.append(float(line.split()[4]))
-        if len(force) > 0 and len(energy) > 0:
-            result_dict = {"energy": energy[-1], "force": force[-1]}
-            return result_dict
+            ls=LabeledSystem(outcar)
+            if len(ls)>0:
+               force  = ls.sub_system([-1]).data['forces'][0].tolist()
+               energy = ls.sub_system([-1]).data['energies'][0].tolist()
+               virials= ls.sub_system([-1]).data['virials'][0].tolist()
+               return {"energy": energy, "force": force, "virials":virials}
 
     def forward_files(self):
         return ['INCAR', 'POSCAR', 'POTCAR']
