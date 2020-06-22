@@ -3,6 +3,7 @@ import warnings
 import json
 import dpdata
 import dpgen.auto_test.lib.lammps as lammps
+from dpgen import dlog
 from monty.serialization import loadfn,dumpfn
 from dpgen.auto_test.Task import Task
 from dpgen.auto_test.lib.lammps import inter_deepmd,inter_meam,inter_eam_fs,inter_eam_alloy
@@ -155,12 +156,22 @@ class Lammps(Task):
                             epa = float(ii.split('=')[1].split()[0])
 
                     dump = os.path.join(output_dir, 'dump.relax')
+                    _tmp=inter_param['type_map']
+                    dlog.debug(_tmp)
+                    type_map={k:v for v,k in _tmp.items()}
+                    dlog.debug(type_map)
+                    type_map_list=[]
+                    for ii in range(len(type_map)):
+                        type_map_list.append(type_map[ii])
                     contcar = os.path.join(output_dir, 'CONTCAR')
-                    d_dump = dpdata.System(dump, fmt='lammps/dump',)
+                    d_dump = dpdata.System(dump, fmt='lammps/dump',type_map=type_map_list)
                     d_dump.to('vasp/poscar', contcar, frame_idx=-1)
-                    force = d_dump['forces']
 
-                    result_dict = {"energy": natoms * epa, "force": list(force[-1].reshape(natoms * 3))}
+                    #TODO parsing force via dpdata
+                    #force = d_dump['forces']
+                    force=[]
+
+                    result_dict = {"energy": natoms * epa, "force":force}
                     return result_dict
 
     def forward_files(self):
@@ -176,4 +187,4 @@ class Lammps(Task):
            return ['in.lammps', os.path.basename(self.model)]
 
     def backward_files(self):
-        return ['log.lammps', 'lmp.out', 'dump.relax']
+        return ['log.lammps', 'outlog', 'dump.relax']

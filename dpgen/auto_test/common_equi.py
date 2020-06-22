@@ -4,7 +4,7 @@ import glob, warnings, json
 import dpgen.auto_test.lib.util as util
 from dpgen import dlog
 from dpgen.dispatcher.Dispatcher import make_dispatcher
-from dpgen.auto_test.common_task import make_task
+from dpgen.auto_test.calculator import  make_calculator
 from dpgen.remote.decide_machine import decide_fp_machine, decide_model_devi_machine
 from dpgen.auto_test.mpdb import get_structure
 
@@ -83,7 +83,7 @@ def make_equi(confs,
     for ii in task_dirs:
         poscar = os.path.join(ii, 'POSCAR')
         dlog.debug('task_dir %s'%ii)
-        inter = make_task(inter_param, poscar)
+        inter = make_calculator(inter_param, poscar)
         inter.make_potential_files(ii)
         inter.make_input_file(ii, 'relaxation', relax_param)
 
@@ -117,10 +117,10 @@ def run_equi(confs,
 
     # dispatch the tasks
     # POSCAR here is useless
-    virtual_task = make_task(inter_param, "POSCAR")
-    forward_files = virtual_task.forward_files()
-    forward_common_files = virtual_task.forward_common_files()
-    backward_files = virtual_task.backward_files()
+    virutual_calculator = make_calculator(inter_param, "POSCAR")
+    forward_files = virutual_calculator.forward_files()
+    forward_common_files = virutual_calculator.forward_common_files()
+    backward_files = virutual_calculator.backward_files()
     #    backward_files += logs
     # ...
     run_tasks = util.collect_task(all_task, inter_type)
@@ -140,8 +140,8 @@ def run_equi(confs,
                           forward_common_files,
                           forward_files,
                           backward_files,
-                          outlog='lmp.out',
-                          errlog='lmp.err')
+                          outlog='outlog',
+                          errlog='errlog')
 
 
 def post_equi(confs, inter_param):
@@ -162,7 +162,7 @@ def post_equi(confs, inter_param):
     # dump the relaxation result.
     for ii in task_dirs:
         poscar = os.path.join(ii, 'POSCAR')
-        inter = make_task(inter_param, poscar)
+        inter = make_calculator(inter_param, poscar)
         res = inter.compute(ii,inter_param)
         with open(os.path.join(ii, 'result.json'), 'w') as fp:
             json.dump(res, fp, indent=4)
