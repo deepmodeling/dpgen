@@ -38,7 +38,11 @@ def make_property(confs,
                   property_list):
     # find all POSCARs and their name like mp-xxx
     # ...
-    conf_dirs = glob.glob(confs)
+    #conf_dirs = glob.glob(confs)
+    #conf_dirs.sort()
+    conf_dirs = []
+    for conf in confs:
+        conf_dirs.extend(glob.glob(conf))
     conf_dirs.sort()
     for ii in conf_dirs:
         for jj in property_list:
@@ -83,7 +87,11 @@ def run_property(confs,
                  mdata):
     # find all POSCARs and their name like mp-xxx
     # ...
-    conf_dirs = glob.glob(confs)
+    #conf_dirs = glob.glob(confs)
+    #conf_dirs.sort()
+    conf_dirs = []
+    for conf in confs:
+        conf_dirs.extend(glob.glob(conf))
     conf_dirs.sort()
     task_list = []
     work_path_list = []
@@ -147,7 +155,11 @@ def post_property(confs,
     # find all POSCARs and their name like mp-xxx
     # ...
     #    task_list = []
-    conf_dirs = glob.glob(confs)
+    #conf_dirs = glob.glob(confs)
+    #conf_dirs.sort()
+    conf_dirs = []
+    for conf in confs:
+        conf_dirs.extend(glob.glob(conf))
     conf_dirs.sort()
     for ii in conf_dirs:
         for jj in property_list:
