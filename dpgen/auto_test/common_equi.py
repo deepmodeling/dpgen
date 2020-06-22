@@ -64,7 +64,7 @@ def make_equi(confs,
     for ii in conf_dirs:
         crys_type = ii.split('/')[-1]
         dlog.debug('crys_type: %s' % crys_type)
-        
+
         if 'mp-' in crys_type and not os.path.exists(os.path.join(ii, 'POSCAR')):
             get_structure(crys_type).to('POSCAR', os.path.join(ii, 'POSCAR'))
 
