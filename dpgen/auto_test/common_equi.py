@@ -166,4 +166,4 @@ def post_equi(confs, inter_param):
         inter = make_calculator(inter_param, poscar)
         res = inter.compute(ii,inter_param)
           
-        dumpfn(ret,os.path.join(ii, 'result.json'),indent=4)
+        dumpfn(res,os.path.join(ii, 'result.json'),indent=4)
