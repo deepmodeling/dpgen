@@ -4,7 +4,7 @@ from dpgen.auto_test.Elastic import Elastic
 from dpgen.auto_test.Vacancy import Vacancy
 from dpgen.auto_test.Interstitial import Interstitial
 from dpgen.auto_test.Surface import Surface
-from dpgen.auto_test.common_task import make_task,make_task_trans_files
+from dpgen.auto_test.common_task import make_task
 
 import dpgen.auto_test.lib.crys as crys
 import glob, warnings, json
@@ -115,7 +115,11 @@ def run_property(confs,
             task_list.append(tmp_task_list)
 
     # dispatch the tasks
-    forward_files, forward_common_files, backward_files = make_task_trans_files(inter_param)
+    # POSCAR here is useless  
+    virtual_task = make_task(inter_param, "POSCAR")
+    forward_files= virtual_task.forward_files()
+    forward_common_files = virtual_task.forward_common_files()
+    backward_files = virtual_task.backward_files()
     #    backward_files += logs
     # ...
     inter_type = inter_param['type']
@@ -145,8 +149,8 @@ def run_property(confs,
                           forward_common_files,
                           forward_files,
                           backward_files,
-                          outlog=inter_type + '.out',
-                          errlog=inter_type + '.err')
+                          outlog='lmp.out',
+                          errlog='lmp.err')
 
 
 def post_property(confs,
