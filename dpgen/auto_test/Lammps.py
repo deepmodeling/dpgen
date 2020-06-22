@@ -75,7 +75,7 @@ class Lammps(Task):
                         task_param):
         lammps.cvt_lammps_conf(os.path.join(output_dir, 'POSCAR'), os.path.join(output_dir,'conf.lmp'))
        
-        dumpfn(os.path.join(output_dir, 'task.json'),indent=4)
+        dumpfn(task_param, os.path.join(output_dir, 'task.json'),indent=4)
 
         etol = 1e-12
         ftol = 1e-6

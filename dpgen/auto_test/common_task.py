@@ -15,10 +15,9 @@ def make_task(inter_parameter,
     inter_type = inter_parameter['type']
     if inter_type == 'vasp':
         return VASP(inter_parameter, path_to_poscar)
-    elif inter_type in ['deepmd','meam','eam_fs','eam_alloy']:
+    elif inter_type in ['deepmd', 'meam', 'eam_fs', 'eam_alloy']:
         return Lammps(inter_parameter, path_to_poscar)
     else:
         raise RuntimeError(f'unsupported interaction {inter_type}')
-
 
 

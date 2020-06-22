@@ -38,7 +38,7 @@ class Surface(Property):
         # gen structure
         ss = Structure.from_file(equi_contcar)
         # gen slabs
-        all_slabs = generate_all_slabs(ss, self.max_miller, self.min_slab_size, self.min_vacuum_size)
+        all_slabs = generate_all_slabs(ss, self.miller, self.min_slab_size, self.min_vacuum_size)
 
 
         if refine:

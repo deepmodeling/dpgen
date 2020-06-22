@@ -116,9 +116,9 @@ def run_equi(confs,
         raise RuntimeError("unknown task %s, something wrong" % inter_type)
 
     # dispatch the tasks
-    # POSCAR here is useless  
+    # POSCAR here is useless
     virtual_task = make_task(inter_param, "POSCAR")
-    forward_files= virtual_task.forward_files()
+    forward_files = virtual_task.forward_files()
     forward_common_files = virtual_task.forward_common_files()
     backward_files = virtual_task.backward_files()
     #    backward_files += logs

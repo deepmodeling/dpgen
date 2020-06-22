@@ -5,6 +5,10 @@ from dpgen.auto_test.Vacancy import Vacancy
 from dpgen.auto_test.Interstitial import Interstitial
 from dpgen.auto_test.Surface import Surface
 from dpgen.auto_test.common_task import make_task
+<<<<<<< HEAD
+=======
+from dpgen import dlog
+>>>>>>> 02f77a90248299ea647a8668f4ccff31eb9a2676
 
 import dpgen.auto_test.lib.crys as crys
 import glob, warnings, json
@@ -78,7 +82,8 @@ def make_property(confs,
                 poscar = os.path.join(kk, 'POSCAR')
                 inter = make_task(inter_param, poscar)
                 inter.make_potential_files(kk)
-                inter.make_input_file(kk, prop.task_type, prop.task.pararm)
+                dlog.debug(prop.task_type())  ### debug
+                inter.make_input_file(kk, prop.task_type(), prop.task_param())
 
 
 def run_property(confs,
@@ -115,9 +120,9 @@ def run_property(confs,
             task_list.append(tmp_task_list)
 
     # dispatch the tasks
-    # POSCAR here is useless  
+    # POSCAR here is useless
     virtual_task = make_task(inter_param, "POSCAR")
-    forward_files= virtual_task.forward_files()
+    forward_files = virtual_task.forward_files()
     forward_common_files = virtual_task.forward_common_files()
     backward_files = virtual_task.backward_files()
     #    backward_files += logs
