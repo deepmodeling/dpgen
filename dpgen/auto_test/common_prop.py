@@ -1,4 +1,4 @@
-import os
+import os,glob
 from dpgen.auto_test.EOS import EOS
 from dpgen.auto_test.Elastic import Elastic
 from dpgen.auto_test.Vacancy import Vacancy
@@ -7,11 +7,9 @@ from dpgen.auto_test.Surface import Surface
 from dpgen.auto_test.calculator import make_calculator
 from dpgen import dlog
 
-import dpgen.auto_test.lib.crys as crys
-import glob, warnings, json
-from dpgen.remote.decide_machine import decide_fp_machine, decide_model_devi_machine
 import dpgen.auto_test.lib.util as util
 from dpgen.dispatcher.Dispatcher import make_dispatcher
+from dpgen.remote.decide_machine import decide_fp_machine, decide_model_devi_machine
 
 lammps_task_type = ['deepmd', 'meam', 'eam_fs', 'eam_alloy']
 
@@ -68,7 +66,7 @@ def make_property(confs,
             path_to_work = os.path.join(ii, property_type + '_' + suffix)
 
             if os.path.exists(path_to_work):
-                warnings.warn('%s already exists' % path_to_work)
+                dlog.warning('%s already exists' % path_to_work)
             else:
                 os.makedirs(path_to_work)
 

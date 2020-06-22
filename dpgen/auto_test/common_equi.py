@@ -7,6 +7,7 @@ from dpgen.dispatcher.Dispatcher import make_dispatcher
 from dpgen.auto_test.calculator import  make_calculator
 from dpgen.remote.decide_machine import decide_fp_machine, decide_model_devi_machine
 from dpgen.auto_test.mpdb import get_structure
+from monty.serialization import loadfn,dumpfn
 
 lammps_task_type = ['deepmd', 'meam', 'eam_fs', 'eam_alloy']
 
@@ -164,5 +165,5 @@ def post_equi(confs, inter_param):
         poscar = os.path.join(ii, 'POSCAR')
         inter = make_calculator(inter_param, poscar)
         res = inter.compute(ii,inter_param)
-        with open(os.path.join(ii, 'result.json'), 'w') as fp:
-            json.dump(res, fp, indent=4)
+          
+        dumpfn(ret,os.path.join(ii, 'result.json'),indent=4)
