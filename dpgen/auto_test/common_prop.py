@@ -5,6 +5,7 @@ from dpgen.auto_test.Vacancy import Vacancy
 from dpgen.auto_test.Interstitial import Interstitial
 from dpgen.auto_test.Surface import Surface
 from dpgen.auto_test.common_task import make_task,make_task_trans_files
+from dpgen import dlog
 
 import dpgen.auto_test.lib.crys as crys
 import glob, warnings, json
@@ -78,7 +79,8 @@ def make_property(confs,
                 poscar = os.path.join(kk, 'POSCAR')
                 inter = make_task(inter_param, poscar)
                 inter.make_potential_files(kk)
-                inter.make_input_file(kk, prop.task_type, prop.task_param)
+                dlog.debug(prop.task_type())  ### debug
+                inter.make_input_file(kk, prop.task_type(), prop.task_param())
 
 
 def run_property(confs,
