@@ -147,9 +147,12 @@ class Lammps(Task):
                                             etol, ftol, maxiter, maxeval)
 
         if task_type == 'vacancy' \
-                or (task_type == 'eos' and change_box) \
                 or (task_type == 'interstitial'):
             fc = lammps.make_lammps_press_relax('conf.lmp', ntypes, scale2equi, self.inter_func,
+                                                self.model_param, B0, bp, etol, ftol, maxiter, maxeval)
+
+        if task_type == 'eos' and change_box:
+            fc = lammps.make_lammps_press_relax('conf.lmp', ntypes, scale2equi[int(output_dir[-6])], self.inter_func,
                                                 self.model_param, B0, bp, etol, ftol, maxiter, maxeval)
         if reprod_opt:
             fc = lammps.make_lammps_eval('conf.lmp', ntypes, self.inter_func, self.model_param)
