@@ -41,6 +41,7 @@ class EOS(Property):
             if not os.path.exists(equi_contcar):
                 raise RuntimeError("please do relaxation first")
             vol_to_poscar = vasp.poscar_vol(equi_contcar) / vasp.poscar_natoms(equi_contcar)
+            self.parameter['scale2equi'] = []
             for vol in np.arange(self.vol_start, self.vol_end, self.vol_step):
                 task_num = (vol - self.vol_start) / self.vol_step
                 output_task = os.path.join(path_to_work, 'task.%06d' % task_num)
@@ -52,7 +53,7 @@ class EOS(Property):
                 task_list.append(output_task)
                 os.symlink(os.path.relpath(equi_contcar), 'POSCAR.orig')
                 scale = (vol / vol_to_poscar) ** (1. / 3.)
-                self.parameter['scale2equi'] = scale  # 06/14
+                self.parameter['scale2equi'].append(scale)  # 06/22
                 vasp.poscar_scale('POSCAR.orig', 'POSCAR', scale)
             os.chdir(cwd)
         return task_list
