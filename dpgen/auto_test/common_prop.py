@@ -1,17 +1,15 @@
-import os
+import os,glob
 from dpgen.auto_test.EOS import EOS
 from dpgen.auto_test.Elastic import Elastic
 from dpgen.auto_test.Vacancy import Vacancy
 from dpgen.auto_test.Interstitial import Interstitial
 from dpgen.auto_test.Surface import Surface
-from dpgen.auto_test.common_task import make_task
+from dpgen.auto_test.calculator import make_calculator
 from dpgen import dlog
 
-import dpgen.auto_test.lib.crys as crys
-import glob, warnings, json
-from dpgen.remote.decide_machine import decide_fp_machine, decide_model_devi_machine
 import dpgen.auto_test.lib.util as util
 from dpgen.dispatcher.Dispatcher import make_dispatcher
+from dpgen.remote.decide_machine import decide_fp_machine, decide_model_devi_machine
 
 lammps_task_type = ['deepmd', 'meam', 'eam_fs', 'eam_alloy']
 
@@ -68,7 +66,7 @@ def make_property(confs,
             path_to_work = os.path.join(ii, property_type + '_' + suffix)
 
             if os.path.exists(path_to_work):
-                warnings.warn('%s already exists' % path_to_work)
+                dlog.warning('%s already exists' % path_to_work)
             else:
                 os.makedirs(path_to_work)
 
@@ -77,7 +75,7 @@ def make_property(confs,
 
             for kk in task_list:
                 poscar = os.path.join(kk, 'POSCAR')
-                inter = make_task(inter_param, poscar)
+                inter = make_calculator(inter_param, poscar)
                 inter.make_potential_files(kk)
                 dlog.debug(prop.task_type())  ### debug
                 inter.make_input_file(kk, prop.task_type(), prop.task_param())
@@ -118,10 +116,10 @@ def run_property(confs,
 
     # dispatch the tasks
     # POSCAR here is useless
-    virtual_task = make_task(inter_param, "POSCAR")
-    forward_files = virtual_task.forward_files()
-    forward_common_files = virtual_task.forward_common_files()
-    backward_files = virtual_task.backward_files()
+    virutual_calculator = make_calculator(inter_param, "POSCAR")
+    forward_files = virutual_calculator.forward_files()
+    forward_common_files = virutual_calculator.forward_common_files()
+    backward_files = virutual_calculator.backward_files()
     #    backward_files += logs
     # ...
     inter_type = inter_param['type']
@@ -151,8 +149,8 @@ def run_property(confs,
                           forward_common_files,
                           forward_files,
                           backward_files,
-                          outlog='lmp.out',
-                          errlog='lmp.err')
+                          outlog='outlog',
+                          errlog='errlog')
 
 
 def post_property(confs,

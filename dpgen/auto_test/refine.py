@@ -1,4 +1,5 @@
-import os,re,glob
+import os, re, glob
+
 
 def make_refine(init_from_suffix, output_suffix, path_to_work, task_num):
     init_from = re.sub(output_suffix, init_from_suffix, path_to_work)

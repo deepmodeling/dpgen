@@ -124,7 +124,7 @@ class VASP(Task):
         kp.write_file(os.path.join(output_dir, "KPOINTS"))
 
     def compute(self,
-                output_dir):
+                output_dir,inter_param=None):
         outcar = os.path.join(output_dir, 'OUTCAR')
         if not os.path.isfile(outcar):
             dlog.warning("cannot find OUTCAR in " + output_dir + " skip")
@@ -144,4 +144,4 @@ class VASP(Task):
         return ['INCAR', 'POTCAR']
 
     def backward_files(self):
-        return ['OUTCAR', 'VASP.out', 'CONTCAR', 'OSZICAR']
+        return ['OUTCAR', 'outlog', 'CONTCAR', 'OSZICAR']

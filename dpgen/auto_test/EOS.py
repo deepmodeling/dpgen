@@ -28,7 +28,7 @@ class EOS(Property):
             task_list = make_refine(self.parameter['init_from_suffix'],
                                     self.parameter['output_suffix'],
                                     path_to_work,
-                                    (self.vol_end - self.vol_start) / self.vol_step)
+                                    int((self.vol_end - self.vol_start) / self.vol_step))
             os.chdir(cwd)
         if self.reprod:
             if 'vasp_lmp_path' not in self.parameter:

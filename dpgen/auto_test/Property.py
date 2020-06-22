@@ -1,6 +1,6 @@
 import os,glob,json
 from abc import ABC,abstractmethod
-from dpgen.auto_test.common_task import make_task
+from dpgen.auto_test.calculator import make_calculator
 
 class Property (ABC) :
     @abstractmethod
@@ -84,7 +84,7 @@ class Property (ABC) :
             with open(os.path.join(ii, 'inter.json')) as fp:
                 idata = json.load(fp)
             poscar = os.path.join(ii, 'POSCAR')
-            task = make_task(idata, poscar)
+            task = make_calculator(idata, poscar)
             res = task.compute(ii)
             all_res.append(res)
 
