@@ -78,7 +78,3 @@ class TestMakeProperty(unittest.TestCase):
             with open(os.path.join(ii, 'POTCAR')) as fp:
                 poti = fp.read()
             self.assertEqual(pot0, poti)
-     #       sys = dpdata.System(os.path.join(ii, 'POSCAR'))
-     #       vol = float(ii.split('/')[-1].split('-')[1])
-     #       natoms = sys.get_natoms()
-     #       self.assertAlmostEqual(vol, np.linalg.det(sys['cells'][0]) / natoms)
