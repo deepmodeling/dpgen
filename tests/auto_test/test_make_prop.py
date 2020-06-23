@@ -12,7 +12,7 @@ from .context import setUpModule
 from pymatgen.io.vasp import Incar
 from dpgen.auto_test.common_prop import make_property
 
-class TestEOS(unittest.TestCase):
+class TestMakeProperty(unittest.TestCase):
     jdata={
     "structures":    ["confs/hp-*"],
     "interaction": {

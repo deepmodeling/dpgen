@@ -57,7 +57,6 @@ class TestVASP(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(self.equi_path,"POTCAR")))
         self.assertTrue(os.path.isfile(os.path.join(self.equi_path,'inter.json')))
  
-
     def test_backward_files(self):
         backward_files=['OUTCAR', 'outlog', 'CONTCAR', 'OSZICAR']
         self.assertEqual(self.VASP.backward_files(),backward_files)
