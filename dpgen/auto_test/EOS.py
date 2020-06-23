@@ -5,6 +5,7 @@ import dpgen.auto_test.lib.vasp as vasp
 from monty.serialization import loadfn,dumpfn
 import numpy as np
 import os, json
+from dpgen import dlog
 
 
 class EOS(Property):
@@ -22,6 +23,10 @@ class EOS(Property):
                    path_to_equi,
                    refine=False):
         path_to_work = os.path.abspath(path_to_work)
+        if os.path.exists(path_to_work):
+             dlog.warning('%s already exists' % path_to_work)
+        else:
+             os.makedirs(path_to_work)
         path_to_equi = os.path.abspath(path_to_equi)
         cwd = os.getcwd()
         task_list = []
