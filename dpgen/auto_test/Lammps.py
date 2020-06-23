@@ -181,13 +181,15 @@ class Lammps(Task):
                             epa = float(ii.split('=')[1].split()[0])
 
                     dump = os.path.join(output_dir, 'dump.relax')
-                    _tmp = inter_param['type_map']
-                    dlog.debug(_tmp)
-                    type_map = {k: v for v, k in _tmp.items()}
-                    dlog.debug(type_map)
-                    type_map_list = []
-                    for ii in range(len(type_map)):
-                        type_map_list.append(type_map[ii])
+                    type_map_list = inter_param['type_map']
+                    dlog.debug(type_map_list)
+                    #_tmp = inter_param['type_map']
+                    #dlog.debug(_tmp)
+                    #type_map = {k: v for v, k in _tmp.items()}
+                    #dlog.debug(type_map)
+                    #type_map_list = []
+                    #for ii in range(len(type_map)):
+                    #    type_map_list.append(type_map[ii])
                     contcar = os.path.join(output_dir, 'CONTCAR')
                     d_dump = dpdata.System(dump, fmt='lammps/dump', type_map=type_map_list)
                     d_dump.to('vasp/poscar', contcar, frame_idx=-1)
