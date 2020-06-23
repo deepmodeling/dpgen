@@ -1,3 +1,4 @@
+from dpgen import dlog
 from dpgen.auto_test.Property import Property
 from dpgen.auto_test.refine import make_refine
 import dpgen.auto_test.lib.vasp as vasp
@@ -6,8 +7,9 @@ from pymatgen.core.structure import Structure
 from pymatgen.analysis.elasticity.strain import DeformedStructureSet, Strain
 from pymatgen.analysis.elasticity.stress import Stress
 from pymatgen.analysis.elasticity.elastic import ElasticTensor
+from monty.serialization import loadfn,dumpfn
 import numpy as np
-import os, json
+import os
 
 
 class Elastic(Property):
@@ -24,6 +26,10 @@ class Elastic(Property):
                    path_to_equi,
                    refine=False):
         path_to_work = os.path.abspath(path_to_work)
+        if os.path.exists(path_to_work):
+            dlog.warning('%s already exists' % path_to_work)
+        else:
+            os.makedirs(path_to_work)
         path_to_equi = os.path.abspath(path_to_equi)
         task_list = []
         cwd = os.getcwd()
@@ -79,8 +85,8 @@ class Elastic(Property):
                 task_list.append(output_task)
                 dfm_ss.deformed_structures[ii].to('POSCAR', 'POSCAR')
                 # record strain
-                strain = Strain.from_deformation(dfm_ss.deformations[ii])
-                np.savetxt('strain.out', strain)
+                df=dfm_ss.deformations[ii]
+                dumpfn(df.as_dict(),'strain.json',indent=4)
             os.chdir(cwd)
         return task_list
 
@@ -101,8 +107,7 @@ class Elastic(Property):
         lst_strain = []
         lst_stress = []
         for ii in all_tasks:
-            with open(os.path.join(ii, 'inter.json')) as fp:
-                idata = json.load(fp)
+            dumpfn(fp,os.path.join(ii, 'inter.json'),indent=4)
             inter_type = idata['type']
             strain = np.loadtxt(os.path.join(ii, 'strain.out'))
             if inter_type == 'vasp':
@@ -139,7 +144,6 @@ class Elastic(Property):
         ptr_data += "# Youngs Modulus EV = %.2f GPa\n" % EV
         ptr_data += "# Poission Ratio uV = %.2f " % uV
 
-        with open(output_file, 'w') as fp:
-            json.dump(res_data, fp, indent=4)
+        dumpfn(res_data,out_file,indent=4)
 
         return res_data, ptr_data

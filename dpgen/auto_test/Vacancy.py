@@ -5,6 +5,8 @@ from pymatgen.core.structure import Structure
 from pymatgen.analysis.defects.generators import VacancyGenerator
 import dpgen.auto_test.lib.vasp as vasp
 import dpgen.auto_test.lib.lammps as lammps
+from monty.serialization import loadfn,dumpfn
+from dpgen import dlog
 import numpy as np
 import os,json
 
@@ -22,6 +24,10 @@ class Vacancy (Property) :
                    path_to_equi,
                    refine=False):
         path_to_work = os.path.abspath(path_to_work)
+        if os.path.exists(path_to_work):
+            dlog.warning('%s already exists' % path_to_work)
+        else:
+            os.makedirs(path_to_work)
         path_to_equi = os.path.abspath(path_to_equi)
         task_list = []
         cwd = os.getcwd()

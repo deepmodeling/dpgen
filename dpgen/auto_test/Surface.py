@@ -5,6 +5,8 @@ import dpgen.auto_test.lib.vasp as vasp
 import dpgen.auto_test.lib.lammps as lammps
 from pymatgen.core.structure import Structure
 from pymatgen.core.surface import generate_all_slabs
+from monty.serialization import loadfn,dumpfn
+from dpgen import dlog
 import numpy as np
 import os,json
 
@@ -27,14 +29,18 @@ class Surface(Property):
                    path_to_equi,
                    refine=False):
         path_to_work = os.path.abspath(path_to_work)
+        if os.path.exists(path_to_work):
+             dlog.warning('%s already exists' % path_to_work)
+        else:
+             os.makedirs(path_to_work)
         path_to_equi = os.path.abspath(path_to_equi)
         task_list = []
         cwd = os.getcwd()
 
         equi_contcar = os.path.join(path_to_equi, 'CONTCAR')
-        ptypes = vasp.get_poscar_types(equi_contcar)
         if not os.path.exists(equi_contcar):
             raise RuntimeError("please do relaxation first")
+        ptypes = vasp.get_poscar_types(equi_contcar)
         # gen structure
         ss = Structure.from_file(equi_contcar)
         # gen slabs
@@ -80,7 +86,7 @@ class Surface(Property):
                 vasp.sort_poscar('POSCAR', 'POSCAR', ptypes)
                 vasp.perturb_xz('POSCAR', 'POSCAR', self.pert_xz)
                 # record miller
-                np.savetxt('miller.out', all_slabs[ii].miller_index, fmt='%d')
+                dumpfn(all_slabs[ii].miller_index,'miller.json')
             os.chdir(cwd)
 
         return task_list

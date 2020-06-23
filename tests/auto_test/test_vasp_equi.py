@@ -13,14 +13,15 @@ from pymatgen.io.vasp import Incar
 from dpgen.auto_test.common_equi import make_equi,post_equi
 from dpgen.auto_test.calculator import make_calculator
 
-class Test01(unittest.TestCase):
+class TestEqui(unittest.TestCase):
     jdata={
               "structures":    ["confs/hp-Li"],
               "interaction": {
                   "type":      "vasp",
                   "incar":     "vasp_input/INCAR.rlx",
                   "potcar_prefix":".",
-                  "potcars":    {"Si": "vasp_input/POTCAR"}
+                  "type_map": ["Li"],
+                  "potcars":    {"Li": "vasp_input/POTCAR"}
               },
               "relaxation": {
                          "ediff": 1e-7,
