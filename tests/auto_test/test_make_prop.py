@@ -19,6 +19,7 @@ class TestMakeProperty(unittest.TestCase):
         "type":      "vasp",
         "incar":     "vasp_input/INCAR.rlx",
         "potcar_prefix":".",
+        "type_map": ['Li'],
         "potcars":  {"Li": "vasp_input/POTCAR"}
     },
     "properties": [

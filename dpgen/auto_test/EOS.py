@@ -2,6 +2,7 @@ from dpgen.auto_test.Property import Property
 from dpgen.auto_test.refine import make_refine
 from dpgen.auto_test import reproduce
 import dpgen.auto_test.lib.vasp as vasp
+from monty.serialization import loadfn,dumpfn
 import numpy as np
 import os, json
 
@@ -53,6 +54,8 @@ class EOS(Property):
                 task_list.append(output_task)
                 os.symlink(os.path.relpath(equi_contcar), 'POSCAR.orig')
                 scale = (vol / vol_to_poscar) ** (1. / 3.)
+                eos_params={'volume':vol,'scale':scale}
+                dumpfn(eos_params,'eos.json',indent=4)
                 self.parameter['scale2equi'].append(scale)  # 06/22
                 vasp.poscar_scale('POSCAR.orig', 'POSCAR', scale)
             os.chdir(cwd)

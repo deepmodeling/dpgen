@@ -20,6 +20,7 @@ class TestVASP(unittest.TestCase):
                           "type":      "vasp",
                           "incar":     "vasp_input/INCAR",
                           "potcar_prefix":".",
+                          "type_map": ['Li'],
                           "potcars":    {"Li": "vasp_input/POTCAR"}
                       },
                       "relaxation": {

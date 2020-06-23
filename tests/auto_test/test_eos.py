@@ -3,6 +3,7 @@ import dpdata
 import numpy as np
 import unittest
 from monty.serialization import loadfn,dumpfn
+from pymatgen.io.vasp import Incar
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 __package__ = 'auto_test'
@@ -20,6 +21,7 @@ class TestEOS(unittest.TestCase):
             "type":      "vasp",
             "incar":     "vasp_input/INCAR.rlx",
             "potcar_prefix":".",
+            "type_map": ['Li'],
             "potcars":  {"Li": "vasp_input/POTCAR"}
         },
         "properties": [
@@ -46,7 +48,6 @@ class TestEOS(unittest.TestCase):
         self.eos=EOS(_jdata['properties'][0])
 
     def tearDown(self):
-        #return
         if os.path.exists('confs/hp-Li/relaxation'):
             shutil.rmtree('confs/hp-Li/relaxation')
         if os.path.exists('frozen_model.pb'):
@@ -62,7 +63,19 @@ class TestEOS(unittest.TestCase):
 
 
     def test_make_confs(self):
-        with self.assertRaises(RuntimeError):
-             self.eos.make_confs(self.target_path,self.equi_path)
+        if not os.path.exists(os.path.join(self.equi_path,'CONTCAR')):
+           with self.assertRaises(RuntimeError):
+                self.eos.make_confs(self.target_path,self.equi_path)
         shutil.copy(os.path.join(self.source_path,'CONTCAR'),os.path.join(self.equi_path,'CONTCAR'))
-        self.eos.make_confs(self.target_path,self.equi_path)
+        task_list=self.eos.make_confs(self.target_path,self.equi_path)
+        dfm_dirs = glob.glob(os.path.join(self.target_path, 'task.*'))
+
+        incar0 = Incar.from_file(os.path.join('vasp_input', 'INCAR.rlx'))
+        incar0['ISIF'] = 4
+
+        with open(os.path.join('vasp_input', 'POTCAR')) as fp:
+             pot0 = fp.read()
+        for ii in dfm_dirs:
+            self.assertTrue(os.path.isfile(os.path.join(ii, 'POSCAR')))
+            self.assertEqual(os.path.realpath(os.path.join(ii, 'POSCAR.orig')),
+                             os.path.realpath(os.path.join(self.equi_path, 'CONTCAR')))
