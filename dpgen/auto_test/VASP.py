@@ -15,16 +15,17 @@ class VASP(Task):
                  path_to_poscar):
         self.inter = inter_parameter
         self.incar = inter_parameter['incar']
+        self.type_map = inter_parameter['type_map']
         self.potcars = inter_parameter['potcars']
-        default_potcar_prefix = ''
-        self.potcar_prefix = inter_parameter.get('potcar_prefix',default_potcar_prefix)
+        #default_potcar_prefix = ''
+        #self.potcar_prefix = inter_parameter.get('potcar_prefix',default_potcar_prefix)
         self.path_to_poscar = path_to_poscar
 
     def make_potential_files(self,
                              output_dir):
         with open(os.path.join(output_dir, 'POTCAR'), 'w') as fp:
             for ii in self.potcars:
-                with open(os.path.join(self.potcar_prefix, self.potcars[ii]), 'r') as fin:
+                with open(self.potcars[ii], 'r') as fin:
                     for line in fin:
                         print(line.strip('\n'), file=fp)
 
