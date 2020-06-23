@@ -1,5 +1,6 @@
 import os,glob,json
 from abc import ABC,abstractmethod
+from dpgen.auto_test.calculator import make_calculator
 
 class Property (ABC) :
     @abstractmethod
@@ -63,9 +64,9 @@ class Property (ABC) :
                 print_file,
                 path_to_work):
         """
-        Postprocess the finished tasks to compute the property. 
+        Postprocess the finished tasks to compute the property.
         Output the result to a json database
-        
+
         Parameters
         ----------
         output_file:
@@ -75,22 +76,26 @@ class Property (ABC) :
         path_to_work:
                 The working directory where the computational tasks locate.
         """
-        path_to_work = os.path.abs_path(path_to_work)
-        task_dirs = os.path.join(path_to_work, 'task.[0-9]*[0-9]')
-        task_dirs.sort()        
+        path_to_work = os.path.abspath(path_to_work)
+        task_dirs = glob.glob(os.path.join(path_to_work, 'task.[0-9]*[0-9]'))
+        task_dirs.sort()
         all_res = []
         for ii in task_dirs:
             with open(os.path.join(ii, 'inter.json')) as fp:
                 idata = json.load(fp)
             poscar = os.path.join(ii, 'POSCAR')
-            task = make_task(idata, poscar)
+            task = make_calculator(idata, poscar)
             res = task.compute(ii)
             all_res.append(res)
-        res, ptr = self.cmpt(task_dirs, all_res)
-        with open(output_file, 'w') as fp:
-            json.dump(fp, res, indent=4)
+
+        cwd = os.getcwd()
+        os.chdir(path_to_work)
+        res, ptr = self._compute_lower(output_file, task_dirs, all_res)
+        #        with open(output_file, 'w') as fp:
+        #            json.dump(fp, res, indent=4)
         with open(print_file, 'w') as fp:
             fp.write(ptr)
+        os.chdir(cwd)
 
         
     @abstractmethod

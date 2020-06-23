@@ -125,6 +125,26 @@ def inter_meam(param) :
     ret += line
     return ret
 
+def inter_eam_fs(param) :  #06/08 eam.fs interaction
+    ret = ""
+    line = "pair_style      eam/fs \n"
+    line += "pair_coeff      * * %s " % param['model_name']
+    for ii in param['param_type']:
+        line += ii + ' '
+    line += '\n'
+    ret += line
+    return ret
+
+def inter_eam_alloy(param) :  #06/08 eam.alloy interaction
+    ret = ""
+    line = "pair_style      eam/alloy \n"
+    line += "pair_coeff      * * %s " % param['model_name']
+    for ii in param['param_type']:
+        line += ii + ' '
+    line += '\n'
+    ret += line
+    return ret
+
 def make_lammps_eval(conf, ntypes, interaction, param) :
     """
     make lammps input for equilibritation
@@ -144,6 +164,7 @@ def make_lammps_eval(conf, ntypes, interaction, param) :
     ret += "compute         mype all pe\n"
     ret += "thermo          100\n"
     ret += "thermo_style    custom step pe pxx pyy pzz pxy pxz pyz lx ly lz vol c_mype\n"
+    ret += "dump            1 all custom 100 dump.relax id type xs ys zs fx fy fz\n"     #06/09 give dump.relax
     ret += "run    0\n"
     ret += "variable        N equal count(all)\n"
     ret += "variable        V equal vol\n"
