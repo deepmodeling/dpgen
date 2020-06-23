@@ -6,20 +6,21 @@ import dpdata
 from monty.serialization import loadfn,dumpfn
 from pymatgen import Structure
 from pymatgen.io.vasp import Incar
-from pymatgen.core.surface import SlabGenerator
+from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+from pymatgen.analysis.defects.core import Vacancy as pmg_Vacancy
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 __package__ = 'auto_test'
 from .context import make_kspacing_kpoints
 from .context import setUpModule
 
-from dpgen.auto_test.Surface import Surface
+from dpgen.auto_test.Vacancy import Vacancy
 
-class TestSurface(unittest.TestCase):
+class TestVacancy(unittest.TestCase):
 
     def setUp(self):
         _jdata={
-        "structures":    ["confs/mp-141"],
+        "structures":    ["confs/hp-Li"],
         "interaction": {
             "type":      "vasp",
             "incar":     "vasp_input/INCAR.rlx",
@@ -29,19 +30,15 @@ class TestSurface(unittest.TestCase):
         },
         "properties": [
             {
-             "type":           "surface",
-             "min_slab_size":  10,
-             "min_vacuum_size":11,
-             "pert_xz":        0.01,
-             "max_miller":     1,
-             "static-opt":     False
+             "type":           "vacancy",
+             "supercell":    [1, 1, 1]
             }
         ]
         }
                  
-        self.equi_path =   'confs/mp-141/relaxation'
+        self.equi_path =   'confs/hp-Li/relaxation'
         self.source_path = 'equi/vasp'
-        self.target_path = 'confs/mp-141/surface_00'
+        self.target_path = 'confs/hp-Li/vacancy_00'
         if not os.path.exists(self.equi_path):
            os.mkdir(self.equi_path)
 
@@ -49,33 +46,28 @@ class TestSurface(unittest.TestCase):
         self.inter_param=_jdata["interaction"]
         self.prop_param=_jdata['properties']
         
-        self.surface=Surface(_jdata['properties'][0])
+        self.vacancy=Vacancy(_jdata['properties'][0])
 
     def tearDown(self):
         if os.path.exists(self.equi_path):
             shutil.rmtree(self.equi_path)
         if os.path.exists(self.target_path):
             shutil.rmtree(self.target_path)
-        if os.path.exists('frozen_model.pb'):
-           os.remove('frozen_model.pb')
-        if os.path.exists('inter.json'):
-           os.remove('inter.json')
 
     def test_task_type (self):
-        self.assertEqual('surface',self.surface.task_type() )
+        self.assertEqual('vacancy',self.vacancy.task_type() )
 
     def test_task_param (self):
-        self.assertEqual(self.prop_param[0],self.surface.task_param() )
-
+        self.assertEqual(self.prop_param[0],self.vacancy.task_param() )
 
     def test_make_confs_0(self):
         if not os.path.exists(os.path.join(self.equi_path,'CONTCAR')):
            with self.assertRaises(RuntimeError):
-                self.surface.make_confs(self.target_path,self.equi_path)
-        shutil.copy(os.path.join(self.source_path,'mp-141.vasp'),os.path.join(self.equi_path,'CONTCAR'))
-        task_list=self.surface.make_confs(self.target_path,self.equi_path)
-        self.assertEqual(len(task_list),7)
+                self.vacancy.make_confs(self.target_path,self.equi_path)
+        shutil.copy(os.path.join(self.source_path,'CONTCAR'),os.path.join(self.equi_path,'CONTCAR'))
+        task_list=self.vacancy.make_confs(self.target_path,self.equi_path)
         dfm_dirs = glob.glob(os.path.join(self.target_path, 'task.*'))
+        self.assertEqual(len(dfm_dirs),5)
 
         incar0 = Incar.from_file(os.path.join('vasp_input', 'INCAR.rlx'))
         incar0['ISIF'] = 4
@@ -83,22 +75,15 @@ class TestSurface(unittest.TestCase):
         self.assertEqual(os.path.realpath(os.path.join(self.equi_path, 'CONTCAR')),
                              os.path.realpath(os.path.join(self.target_path, 'POSCAR')))
         ref_st=Structure.from_file(os.path.join(self.target_path, 'POSCAR'))
+        sga = SpacegroupAnalyzer(ref_st)
+        sym_st=sga.get_symmetrized_structure()
+        equiv_site_seq = list(sym_st.equivalent_sites)
         dfm_dirs.sort()
         for ii in dfm_dirs:
             st_file=os.path.join(ii, 'POSCAR')
             self.assertTrue(os.path.isfile(st_file))
             st0=Structure.from_file(st_file)
-            st1_file=os.path.join(ii, 'POSCAR.tmp')
-            self.assertTrue(os.path.isfile(st1_file))
-            st1=Structure.from_file(st1_file)
-            miller_json_file=os.path.join(ii, 'miller.json')
-            self.assertTrue(os.path.isfile(miller_json_file))
-            miller_json=loadfn(miller_json_file)
-            sl=SlabGenerator(ref_st,
-                          miller_json,
-                          self.prop_param[0]["min_slab_size"],
-                          self.prop_param[0]["min_vacuum_size"])
-            slb=sl.get_slab()
-            st2=Structure(slb.lattice,slb.species,slb.frac_coords)
-            self.assertEqual(len(st1),len(st2))
-            
+            vac_site = equiv_site_seq.pop(0)
+            vac=pmg_Vacancy(ref_st, vac_site[0],charge=0.0)
+            st1=vac.generate_defect_structure(self.prop_param[0]['supercell'])
+            self.assertEqual(st0,st1)
