@@ -7,7 +7,7 @@ from pymatgen.core.structure import Structure
 from pymatgen.analysis.elasticity.strain import DeformedStructureSet, Strain
 from pymatgen.analysis.elasticity.stress import Stress
 from pymatgen.analysis.elasticity.elastic import ElasticTensor
-from monty.serialization import loadfn,dumpfn
+from monty.serialization import loadfn, dumpfn
 import numpy as np
 import os
 
@@ -85,8 +85,8 @@ class Elastic(Property):
                 task_list.append(output_task)
                 dfm_ss.deformed_structures[ii].to('POSCAR', 'POSCAR')
                 # record strain
-                df=dfm_ss.deformations[ii]
-                dumpfn(df.as_dict(),'strain.json',indent=4)
+                df = Strain.from_deformation(dfm_ss.deformations[ii])
+                dumpfn(df.as_dict(), 'strain.json', indent=4)
             os.chdir(cwd)
         return task_list
 
@@ -107,20 +107,20 @@ class Elastic(Property):
         lst_strain = []
         lst_stress = []
         for ii in all_tasks:
-            dumpfn(fp,os.path.join(ii, 'inter.json'),indent=4)
+            idata = loadfn(os.path.join(ii, 'inter.json'))
             inter_type = idata['type']
-            strain = np.loadtxt(os.path.join(ii, 'strain.out'))
+            strain = loadfn(os.path.join(ii, 'strain.json'))
             if inter_type == 'vasp':
                 stress = vasp.get_stress(os.path.join(ii, 'OUTCAR'))
                 # convert from pressure in kB to stress
                 stress *= -1000
-                lst_strain.append(Strain(strain))
+                lst_strain.append(strain)
                 lst_stress.append(Stress(stress))
             elif inter_type in ['deepmd', 'meam', 'eam_fs', 'eam_alloy']:
                 stress = lammps.get_stress(os.path.join(ii, 'log.lammps'))
                 # convert from pressure to stress
                 stress = -stress
-                lst_strain.append(Strain(strain))
+                lst_strain.append(strain)
                 lst_stress.append(Stress(stress))
         et = ElasticTensor.from_independent_strains(lst_strain, lst_stress, eq_stress=equi_stress, vasp=False)
         res_data['elastic_tensor'] = []
@@ -144,6 +144,6 @@ class Elastic(Property):
         ptr_data += "# Youngs Modulus EV = %.2f GPa\n" % EV
         ptr_data += "# Poission Ratio uV = %.2f " % uV
 
-        dumpfn(res_data,out_file,indent=4)
+        dumpfn(res_data, output_file, indent=4)
 
         return res_data, ptr_data
