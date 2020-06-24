@@ -4,7 +4,7 @@ import json
 import dpdata
 import dpgen.auto_test.lib.lammps as lammps
 from dpgen import dlog
-from monty.serialization import loadfn,dumpfn
+from monty.serialization import loadfn, dumpfn
 from dpgen.auto_test.Task import Task
 from dpgen.auto_test.lib.lammps import inter_deepmd, inter_meam, inter_eam_fs, inter_eam_alloy
 
@@ -17,11 +17,14 @@ class Lammps(Task):
                  path_to_poscar):
         self.inter = inter_parameter
         self.inter_type = inter_parameter['type']
+        self.type_map = inter_parameter['type_map']
+        if self.type_map == 'meam':
+            self.model = list(map(os.path.abspath, inter_parameter['model']))
+        else:
+            self.model = os.path.abspath(inter_parameter['model'])
+        self.path_to_poscar = path_to_poscar
         assert self.inter_type in supported_inter
         self.set_inter_type_func()
-        self.model = os.path.abspath(inter_parameter['model'])
-        self.type_map = inter_parameter['type_map']
-        self.path_to_poscar = path_to_poscar
 
     def set_inter_type_func(self):
 
@@ -47,11 +50,11 @@ class Lammps(Task):
                                 'deepmd_version': deepmd_version}
         elif self.inter_type == 'meam':
             model_name = list(map(os.path.basename, self.model))
-            self.model_param = {'model_name': model_name,
+            self.model_param = {'model_name': [model_name],
                                 'param_type': self.type_map}
         else:
             model_name = os.path.basename(self.model)
-            self.model_param = {'model_name': model_name,
+            self.model_param = {'model_name': [model_name],
                                 'param_type': self.type_map}
 
     def make_potential_files(self,
@@ -104,64 +107,58 @@ class Lammps(Task):
         ftol = 1e-6
         maxiter = 5000
         maxeval = 500000
-        change_box = True
         B0 = 70
         bp = 0
-        scale2equi = 1
         ntypes = len(self.type_map)
-        reprod_opt = False
-        static = False
 
-        if 'etol' in task_param:
-            etol = task_param['etol']
-        if 'ftol' in task_param:
-            ftol = task_param['ftol']
-        if 'maxiter' in task_param:
-            maxiter = task_param['maxiter']
-        if 'maxeval' in task_param:
-            maxeval = task_param['maxeval']
-        if 'change_box' in task_param:
-            change_box = task_param['change_box']
-        if 'scale2equi' in task_param:
-            scale2equi = task_param['scale2equi']
-        if 'reprod_opt' in task_param:
-            reprod_opt = task_param['reprod_opt']
-        if 'static-opt' in task_param:
-            static = task_param['static-opt']
+        cal_type = task_param['cal_type']
+        cal_setting = task_param['cal_setting']
 
         self.set_model_param()
 
-        fc = ''
-        if task_type == 'relaxation' \
-                or (task_type == 'eos' and not change_box) \
-                or (task_type == 'surface' and not static):
-            fc = lammps.make_lammps_equi('conf.lmp', ntypes, self.inter_func, self.model_param,
-                                         etol, ftol, maxiter, maxeval, change_box)
+        # user input in.lammps for property calculation
+        if 'input_prop' in cal_setting and os.path.isfile(cal_setting['input_prop']):
+            with open(os.path.abspath(cal_setting['input_prop']), 'r') as fin:
+                fc = fin.read()
 
-        if task_type == 'static' \
-                or (task_type == 'surface' and static):
-            fc = lammps.make_lammps_eval('conf.lmp', ntypes, self.inter_func, self.model_param)
+        else:
+            if cal_type == 'relaxation':
+                relax_pos = cal_setting['relax_pos']
+                relax_shape = cal_setting['relax_shape']
+                relax_vol = cal_setting['relax_vol']
 
-        if task_type == 'elastic':
-            fc = lammps.make_lammps_elastic('conf.lmp', ntypes, self.inter_func, self.model_param,
-                                            etol, ftol, maxiter, maxeval)
+                if [relax_pos, relax_shape, relax_vol] == [True, False, False]:
+                    fc = lammps.make_lammps_equi('conf.lmp', ntypes, self.inter_func, self.model_param,
+                                                 etol, ftol, maxiter, maxeval, False)
+                elif [relax_pos, relax_shape, relax_vol] == [True, True, True]:
+                    fc = lammps.make_lammps_equi('conf.lmp', ntypes, self.inter_func, self.model_param,
+                                                 etol, ftol, maxiter, maxeval, True)
+                elif [relax_pos, relax_shape, relax_vol] == [True, True, False]:
+                    if 'scale2equi' in task_param:
+                        scale2equi = task_param['scale2equi']
+                        fc = lammps.make_lammps_press_relax('conf.lmp', ntypes, scale2equi[int(output_dir[-6:])],
+                                                            self.inter_func,
+                                                            self.model_param, B0, bp, etol, ftol, maxiter, maxeval)
+                    else:
+                        fc = lammps.make_lammps_equi('conf.lmp', ntypes, self.inter_func, self.model_param,
+                                                     etol, ftol, maxiter, maxeval, True)
+                elif [relax_pos, relax_shape, relax_vol] == [False, False, False]:
+                    fc = lammps.make_lammps_eval('conf.lmp', ntypes, self.inter_func, self.model_param)
 
-        if task_type == 'vacancy' \
-                or (task_type == 'interstitial'):
-            fc = lammps.make_lammps_press_relax('conf.lmp', ntypes, scale2equi, self.inter_func,
-                                                self.model_param, B0, bp, etol, ftol, maxiter, maxeval)
+                else:
+                    raise RuntimeError("not supported calculation setting for LAMMPS")
 
-        if task_type == 'eos' and change_box:
-            fc = lammps.make_lammps_press_relax('conf.lmp', ntypes, scale2equi[int(output_dir[-6:])], self.inter_func,
-                                                self.model_param, B0, bp, etol, ftol, maxiter, maxeval)
-        if reprod_opt:
-            fc = lammps.make_lammps_eval('conf.lmp', ntypes, self.inter_func, self.model_param)
+            elif cal_type == 'static':
+                fc = lammps.make_lammps_eval('conf.lmp', ntypes, self.inter_func, self.model_param)
+
+            else:
+                raise RuntimeError("not supported calculation type for LAMMPS")
 
         with open(os.path.join(output_dir, 'in.lammps'), 'w') as fp:
             fp.write(fc)
 
     def compute(self,
-                output_dir, inter_param):
+                output_dir):
         log_lammps = os.path.join(output_dir, 'log.lammps')
         if not os.path.isfile(log_lammps):
             warnings.warn("cannot find log.lammps in " + output_dir + " skip")
@@ -181,15 +178,15 @@ class Lammps(Task):
                             epa = float(ii.split('=')[1].split()[0])
 
                     dump = os.path.join(output_dir, 'dump.relax')
-                    type_map_list = inter_param['type_map']
-                    dlog.debug(type_map_list)
-                    #_tmp = inter_param['type_map']
-                    #dlog.debug(_tmp)
-                    #type_map = {k: v for v, k in _tmp.items()}
-                    #dlog.debug(type_map)
-                    #type_map_list = []
-                    #for ii in range(len(type_map)):
-                    #    type_map_list.append(type_map[ii])
+                    #type_map_list = inter_param['type_map']
+                    #dlog.debug(type_map_list)
+                    _tmp = self.type_map
+                    dlog.debug(_tmp)
+                    type_map = {k: v for v, k in _tmp.items()}
+                    dlog.debug(type_map)
+                    type_map_list = []
+                    for ii in range(len(type_map)):
+                        type_map_list.append(type_map[ii])
                     contcar = os.path.join(output_dir, 'CONTCAR')
                     d_dump = dpdata.System(dump, fmt='lammps/dump', type_map=type_map_list)
                     d_dump.to('vasp/poscar', contcar, frame_idx=-1)
@@ -198,7 +195,7 @@ class Lammps(Task):
                     # force = d_dump['forces']
                     force = ['tmp']
 
-                    result_dict = {"energy": natoms * epa, "force": force*natoms*3}  # deal with dpdata bug
+                    result_dict = {"energy": natoms * epa, "force": force * natoms * 3}  # deal with dpdata bug
                     return result_dict
 
     def forward_files(self):

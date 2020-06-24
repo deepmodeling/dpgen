@@ -18,6 +18,11 @@ class Vacancy (Property) :
         default_supercell = [1, 1, 1]
         self.supercell = parameter.get('supercell', default_supercell)
         self.reprod = parameter.get('reprod-opt', False)
+        self.cal_type = parameter.get('cal_type', 'relaxation')
+        default_cal_setting = {"relax_pos": True,
+                               "relax_shape": True,
+                               "relax_vol": True}
+        self.cal_setting = parameter.get('cal_setting', default_cal_setting)
 
     def make_confs(self,
                    path_to_work,
@@ -55,6 +60,7 @@ class Vacancy (Property) :
             os.chdir(cwd)
 
         if self.reprod:
+            self.cal_type = 'static'
             if 'vasp_lmp_path' not in self.parameter:
                 raise RuntimeError("please provide the vasp_lmp_path for reproduction")
             vasp_lmp_path = os.path.abspath(self.parameter['vasp_lmp_path'])

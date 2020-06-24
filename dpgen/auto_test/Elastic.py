@@ -20,6 +20,11 @@ class Elastic(Property):
         default_shear_def = 5e-3
         self.norm_deform = parameter.get('norm_deform', default_norm_def)
         self.shear_deform = parameter.get('shear_deform', default_shear_def)
+        self.cal_type = parameter.get('cal_type', 'relaxation')
+        default_cal_setting = {"relax_pos": True,
+                               "relax_shape": False,
+                               "relax_vol": False}
+        self.cal_setting = parameter.get('cal_setting', default_cal_setting)
 
     def make_confs(self,
                    path_to_work,

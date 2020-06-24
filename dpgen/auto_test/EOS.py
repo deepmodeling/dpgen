@@ -15,7 +15,11 @@ class EOS(Property):
         self.vol_start = parameter['vol_start']
         self.vol_end = parameter['vol_end']
         self.vol_step = parameter['vol_step']
-        self.change_box = parameter.get('change_box', True)
+        self.cal_type = parameter.get('cal_type', 'relaxation')
+        default_cal_setting = {"relax_pos": True,
+                               "relax_shape": True,
+                               "relax_vol": False}
+        self.cal_setting = parameter.get('cal_setting', default_cal_setting)
         self.reprod = parameter.get('reprod-opt', False)
 
     def make_confs(self,
@@ -37,6 +41,7 @@ class EOS(Property):
                                     int((self.vol_end - self.vol_start) / self.vol_step))
             os.chdir(cwd)
         if self.reprod:
+            self.cal_type = 'static'
             if 'vasp_lmp_path' not in self.parameter:
                 raise RuntimeError("please provide the vasp_lmp_path for reproduction")
             vasp_lmp_path = os.path.abspath(self.parameter['vasp_lmp_path'])
