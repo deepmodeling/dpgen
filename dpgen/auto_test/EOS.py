@@ -11,16 +11,19 @@ from dpgen import dlog
 class EOS(Property):
     def __init__(self,
                  parameter):
-        self.parameter = parameter
         self.vol_start = parameter['vol_start']
         self.vol_end = parameter['vol_end']
         self.vol_step = parameter['vol_step']
-        self.cal_type = parameter.get('cal_type', 'relaxation')
+        parameter['cal_type'] = parameter.get('cal_type', 'relaxation')
+        self.cal_type = parameter['cal_type']
         default_cal_setting = {"relax_pos": True,
                                "relax_shape": True,
                                "relax_vol": False}
-        self.cal_setting = parameter.get('cal_setting', default_cal_setting)
-        self.reprod = parameter.get('reprod-opt', False)
+        parameter['cal_setting'] = parameter.get('cal_setting', default_cal_setting)
+        self.cal_setting = parameter['cal_setting']
+        parameter['reprod-opt'] = parameter.get('reprod-opt', False)
+        self.reprod = parameter['reprod-opt']
+        self.parameter = parameter
 
     def make_confs(self,
                    path_to_work,

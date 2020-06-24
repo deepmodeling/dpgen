@@ -86,15 +86,15 @@ class VASP(Task):
                     isif = 7
                 elif [relax_pos, relax_shape, relax_vol] == [False, False, False]:
                     nsw = 0
+                    if not ('NSW' in incar and incar.get('NSW') == nsw):
+                        dlog.info("%s setting NSW to %d" % (self.make_input_file.__name__, nsw))
+                        incar['NSW'] = nsw
                 else:
                     raise RuntimeError("not supported calculation setting for VASP")
 
                 if not ('ISIF' in incar and incar.get('ISIF') == isif):
                     dlog.info("%s setting ISIF to %d" % (self.make_input_file.__name__, isif))
                     incar['ISIF'] = isif
-                if not ('NSW' in incar and incar.get('NSW') == nsw):
-                    dlog.info("%s setting ISIF to %d" % (self.make_input_file.__name__, nsw))
-                    incar['NSW'] = nsw
 
             elif cal_type == 'static':
                 nsw = 0

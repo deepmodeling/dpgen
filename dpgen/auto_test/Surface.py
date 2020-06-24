@@ -20,12 +20,16 @@ class Surface(Property):
         self.pert_xz = parameter['pert_xz']
         default_max_miller = 2
         self.miller = parameter.get('max_miller', default_max_miller)
-        self.cal_type = parameter.get('cal_type', 'relaxation')
+        parameter['cal_type'] = parameter.get('cal_type', 'relaxation')
+        self.cal_type = parameter['cal_type']
         default_cal_setting = {"relax_pos": True,
                                "relax_shape": True,
                                "relax_vol": False}
-        self.cal_setting = parameter.get('cal_setting', default_cal_setting)
-        self.reprod = parameter.get('reprod-opt', False)
+        parameter['cal_setting'] = parameter.get('cal_setting', default_cal_setting)
+        self.cal_setting = parameter['cal_setting']
+        parameter['reprod-opt'] = parameter.get('reprod-opt', False)
+        self.reprod = parameter['reprod-opt']
+        self.parameter = parameter
 
     def make_confs(self,
                    path_to_work,

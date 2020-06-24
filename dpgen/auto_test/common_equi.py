@@ -18,11 +18,11 @@ def make_equi(confs,
     # find all POSCARs and their name like mp-xxx
     # ...
     dlog.debug('debug info make equi')
-    # if 'type_map' in inter_param:
-    #    ele_list = [key for key in inter_param['type_map'].keys()]
-    # else:
-    #    ele_list = [key for key in inter_param['potcars'].keys()]
-    ele_list = inter_param['type_map']
+    if 'type_map' in inter_param:
+        ele_list = [key for key in inter_param['type_map'].keys()]
+    else:
+        ele_list = [key for key in inter_param['potcars'].keys()]
+    # ele_list = inter_param['type_map']
     dlog.debug("ele_list %s" % ':'.join(ele_list))
     conf_dirs = []
     for conf in confs:
@@ -87,9 +87,10 @@ def make_equi(confs,
     task_dirs.sort()
     # generate task files
     relax_param['cal_type'] = 'relaxation'
-    relax_param['cal_setting'] = {"relax_pos": True,
-                                  "relax_shape": True,
-                                  "relax_vol": True}
+    if 'cal_setting' not in relax_param:
+        relax_param['cal_setting'] = {"relax_pos": True,
+                                      "relax_shape": True,
+                                      "relax_vol": True}
     for ii in task_dirs:
         poscar = os.path.join(ii, 'POSCAR')
         dlog.debug('task_dir %s' % ii)
