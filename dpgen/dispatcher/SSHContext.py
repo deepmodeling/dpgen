@@ -27,13 +27,13 @@ class SSHSession (object) :
             self.local_key_passphrase = self.remote_profile['passphrase']
         self.remote_workpath = self.remote_profile['work_path']
         self.ssh = None
-        self.ssh = self._setup_ssh(hostname=self.remote_host,
-                                   port=self.remote_port,
-                                   username=self.remote_uname,
-                                   password=self.remote_password,
-                                   key_filename=self.local_key_filename,
-                                   timeout=self.remote_timeout,
-                                   passphrase=self.local_key_passphrase)
+        self._setup_ssh(hostname=self.remote_host,
+                        port=self.remote_port,
+                        username=self.remote_uname,
+                        password=self.remote_password,
+                        key_filename=self.local_key_filename,
+                        timeout=self.remote_timeout,
+                        passphrase=self.local_key_passphrase)
 
     def ensure_alive(self,
                      max_check = 10,
@@ -44,13 +44,13 @@ class SSHSession (object) :
                 raise RuntimeError('cannot connect ssh after %d failures at interval %d s' %
                                    (max_check, sleep_time))
             dlog.info('connection check failed, try to reconnect to ' + self.remote_host)
-            self.ssh = self._setup_ssh(hostname=self.remote_host,
-                                   port=self.remote_port,
-                                   username=self.remote_uname,
-                                   password=self.remote_password,
-                                   key_filename=self.local_key_filename, 
-                                   timeout=self.remote_timeout,
-                                   passphrase=self.local_key_passphrase)
+            self._setup_ssh(hostname=self.remote_host,
+                            port=self.remote_port,
+                            username=self.remote_uname,
+                            password=self.remote_password,
+                            key_filename=self.local_key_filename,
+                            timeout=self.remote_timeout,
+                            passphrase=self.local_key_passphrase)
             count += 1
             time.sleep(sleep_time)
 
