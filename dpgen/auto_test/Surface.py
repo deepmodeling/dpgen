@@ -1,14 +1,14 @@
 from dpgen.auto_test.Property import Property
 from dpgen.auto_test.refine import make_refine
-from dpgen.auto_test  import reproduce
+from dpgen.auto_test import reproduce
 import dpgen.auto_test.lib.vasp as vasp
 import dpgen.auto_test.lib.lammps as lammps
 from pymatgen.core.structure import Structure
 from pymatgen.core.surface import generate_all_slabs
-from monty.serialization import loadfn,dumpfn
+from monty.serialization import loadfn, dumpfn
 from dpgen import dlog
 import numpy as np
-import os,json
+import os, json
 
 
 class Surface(Property):
@@ -37,9 +37,9 @@ class Surface(Property):
                    refine=False):
         path_to_work = os.path.abspath(path_to_work)
         if os.path.exists(path_to_work):
-             dlog.warning('%s already exists' % path_to_work)
+            dlog.warning('%s already exists' % path_to_work)
         else:
-             os.makedirs(path_to_work)
+            os.makedirs(path_to_work)
         path_to_equi = os.path.abspath(path_to_equi)
         task_list = []
         cwd = os.getcwd()
@@ -52,7 +52,6 @@ class Surface(Property):
         ss = Structure.from_file(equi_contcar)
         # gen slabs
         all_slabs = generate_all_slabs(ss, self.miller, self.min_slab_size, self.min_vacuum_size)
-
 
         if refine:
             task_list = make_refine(self.parameter['init_from_suffix'],
@@ -94,7 +93,7 @@ class Surface(Property):
                 vasp.sort_poscar('POSCAR', 'POSCAR', ptypes)
                 vasp.perturb_xz('POSCAR', 'POSCAR', self.pert_xz)
                 # record miller
-                dumpfn(all_slabs[ii].miller_index,'miller.json')
+                dumpfn(all_slabs[ii].miller_index, 'miller.json')
             os.chdir(cwd)
 
         return task_list
@@ -113,7 +112,6 @@ class Surface(Property):
         res_data = {}
         ptr_data = os.path.dirname(output_file) + '\n'
 
-
         if not self.reprod:
             ptr_data += "Miller_Indices: \tSurf_E(J/m^2) EpA(eV) equi_EpA(eV)\n"
             for ii in all_tasks:
@@ -127,7 +125,7 @@ class Surface(Property):
                     equi_natoms, equi_epa, equi_vpa = vasp.get_nev(equi_outcar)
                     outcar = os.path.join(ii, 'OUTCAR')
                     natoms, epa, vpa = vasp.get_nev(outcar)
-                    if self.static:
+                    if self.cal_type == 'static':
                         e0 = np.array(vasp.get_energies(outcar)) / natoms
                         epa = e0[0]
                     boxes = vasp.get_boxes(outcar)
@@ -145,13 +143,10 @@ class Surface(Property):
 
                 Cf = 1.60217657e-16 / (1e-20 * 2) * 0.001
                 evac = (epa * natoms - equi_epa * natoms) / AA * Cf
-                miller_index = []
-                with open(os.path.join(ii,'miller.out'),'r') as fin:
-                    ss = int(fin.readline().split()[0])
-                    miller_index.append(ss)
 
+                miller_index = loadfn(os.path.join(ii, 'miller.json'))
                 ptr_data += "%s: \t%7.3f    %8.3f %8.3f\n" % (miller_index, evac, epa, equi_epa)
-                res_data[miller_index] = [evac, epa, equi_epa]
+                res_data[str(miller_index)] = [evac, epa, equi_epa]
 
         else:
             if 'vasp_lmp_path' not in self.parameter:

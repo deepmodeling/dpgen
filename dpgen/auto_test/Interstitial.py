@@ -1,12 +1,14 @@
-from   dpgen.auto_test.Property import Property
+from dpgen.auto_test.Property import Property
 import dpgen.auto_test.lib.vasp as vasp
 import dpgen.auto_test.lib.lammps as lammps
 from dpgen.auto_test.refine import make_refine
 from dpgen.auto_test.reproduce import make_repro
+from dpgen.auto_test.reproduce import post_repro
 from pymatgen.core.structure import Structure
 from pymatgen.analysis.defects.generators import InterstitialGenerator
 import numpy as np
-import os,json
+import os, json
+from monty.serialization import loadfn,dumpfn
 
 
 class Interstitial(Property):
@@ -65,7 +67,8 @@ class Interstitial(Property):
                                     len(dss))
             for ii in task_list:
                 os.chdir(ii)
-                np.savetxt('supercell.out', self.supercell, fmt='%d')
+                # np.savetxt('supercell.out', self.supercell, fmt='%d')
+                dumpfn(self.supercell, 'supercell.json')
             os.chdir(cwd)
 
         if self.reprod:
@@ -73,7 +76,7 @@ class Interstitial(Property):
             if 'vasp_lmp_path' not in self.parameter:
                 raise RuntimeError("please provide the vasp_lmp_path for reproduction")
             vasp_lmp_path = os.path.abspath(self.parameter['vasp_lmp_path'])
-            task_list = make_repro(vasp_lmp_path,path_to_work)
+            task_list = make_repro(vasp_lmp_path, path_to_work)
             os.chdir(cwd)
 
         else:
@@ -92,7 +95,8 @@ class Interstitial(Property):
                         os.remove(jj)
                 task_list.append(output_task)
                 dss[ii].to('POSCAR', 'POSCAR')
-                np.savetxt('supercell.out', self.supercell, fmt='%d')
+                #np.savetxt('supercell.out', self.supercell, fmt='%d')
+                dumpfn(self.supercell, 'supercell.json')
             os.chdir(cwd)
 
         return task_list
@@ -111,10 +115,11 @@ class Interstitial(Property):
         res_data = {}
         ptr_data = os.path.dirname(output_file) + '\n'
 
-
         if not self.reprod:
             ptr_data += "Insert_ele-Struct: Inter_E(eV)  E(eV) equi_E(eV)\n"
+            idid = -1
             for ii in all_tasks:
+                idid += 1
                 with open(os.path.join(ii, 'inter.json')) as fp:
                     idata = json.load(fp)
                 inter_type = idata['type']
@@ -132,17 +137,19 @@ class Interstitial(Property):
                 else:
                     raise RuntimeError('interaction type not supported')
 
-                natoms = len(all_res[ii]['force']) / 3
-                epa = all_res[ii]['energy'] / natoms
+                natoms = len(all_res[idid]['force'])
+                epa = all_res[idid]['energy'] / natoms
                 evac = epa * natoms - equi_epa * natoms
-                ptr_data += "%s: %7.3f  %7.3f %7.3f \n" % (structure_dir, evac, epa * natoms, equi_epa * natoms)
-                res_data[structure_dir] = [evac, epa * natoms, equi_epa * natoms]
+                supercell_index = loadfn(os.path.join(ii, 'supercell.json'))
+                ptr_data += "%s: %7.3f  %7.3f %7.3f \n" % (structure_dir+'-'+str(supercell_index),
+                                                           evac, epa * natoms, equi_epa * natoms)
+                res_data[structure_dir+'-'+str(supercell_index)] = [evac, epa * natoms, equi_epa * natoms]
 
         else:
             if 'vasp_lmp_path' not in self.parameter:
                 raise RuntimeError("please provide the vasp_lmp_path for reproduction")
             vasp_lmp_path = os.path.abspath(self.parameter['vasp_lmp_path'])
-            res_data, ptr_data = post_repro(vasp_lmp_path,all_tasks,ptr_data)
+            res_data, ptr_data = post_repro(vasp_lmp_path, all_tasks, ptr_data)
 
         with open(output_file, 'w') as fp:
             json.dump(res_data, fp, indent=4)

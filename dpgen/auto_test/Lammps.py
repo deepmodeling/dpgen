@@ -178,8 +178,8 @@ class Lammps(Task):
                             epa = float(ii.split('=')[1].split()[0])
 
                     dump = os.path.join(output_dir, 'dump.relax')
-                    #type_map_list = inter_param['type_map']
-                    #dlog.debug(type_map_list)
+                    # type_map_list = inter_param['type_map']
+                    # dlog.debug(type_map_list)
                     _tmp = self.type_map
                     dlog.debug(_tmp)
                     type_map = {k: v for v, k in _tmp.items()}
@@ -193,9 +193,9 @@ class Lammps(Task):
 
                     # TODO parsing force via dpdata
                     # force = d_dump['forces']
-                    force = ['tmp']
+                    force = [['tmp', 'tmp', 'tmp']]
 
-                    result_dict = {"energy": natoms * epa, "force": force * natoms * 3}  # deal with dpdata bug
+                    result_dict = {"energy": natoms * epa, "force": force * natoms}  # deal with dpdata bug
                     return result_dict
 
     def forward_files(self):

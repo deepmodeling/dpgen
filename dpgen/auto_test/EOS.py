@@ -91,8 +91,8 @@ class EOS(Property):
             ptr_data += ' VpA(A^3)  EpA(eV)\n'
             for ii in range(len(all_tasks)):
                 vol = self.vol_start + ii * self.vol_step
-                res_data[vol] = all_res[ii]['energy'] / len(all_res[ii]['force']) * 3
-                ptr_data += '%7.3f  %8.4f \n' % (vol, all_res[ii]['energy'] / len(all_res[ii]['force']) * 3)
+                res_data[vol] = all_res[ii]['energy'] / len(all_res[ii]['force'])
+                ptr_data += '%7.3f  %8.4f \n' % (vol, all_res[ii]['energy'] / len(all_res[ii]['force']))
 
         else:
             if 'vasp_lmp_path' not in self.parameter:
