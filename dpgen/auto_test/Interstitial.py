@@ -141,9 +141,10 @@ class Interstitial(Property):
                 epa = all_res[idid]['energy'] / natoms
                 evac = epa * natoms - equi_epa * natoms
                 supercell_index = loadfn(os.path.join(ii, 'supercell.json'))
-                ptr_data += "%s: %7.3f  %7.3f %7.3f \n" % (structure_dir+'-'+str(supercell_index),
+                insert_ele = loadfn(os.path.join(ii, 'task.json'))['insert_ele'][0]
+                ptr_data += "%s: %7.3f  %7.3f %7.3f \n" % (insert_ele+'-'+str(supercell_index)+'-'+structure_dir,
                                                            evac, epa * natoms, equi_epa * natoms)
-                res_data[structure_dir+'-'+str(supercell_index)] = [evac, epa * natoms, equi_epa * natoms]
+                res_data[insert_ele+'-'+str(supercell_index)+'-'+structure_dir] = [evac, epa * natoms, equi_epa * natoms]
 
         else:
             if 'vasp_lmp_path' not in self.parameter:

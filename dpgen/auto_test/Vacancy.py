@@ -134,9 +134,9 @@ class Vacancy (Property) :
                 epa = all_res[idid]['energy'] / natoms
                 evac = epa * natoms - equi_epa * natoms
                 supercell_index = loadfn(os.path.join(ii, 'supercell.json'))
-                ptr_data += "%s: %7.3f  %7.3f %7.3f \n" % (structure_dir+'-'+str(supercell_index),
+                ptr_data += "%s: %7.3f  %7.3f %7.3f \n" % (str(supercell_index)+'-'+structure_dir,
                                                            evac, epa * natoms, equi_epa * natoms)
-                res_data[structure_dir+'-'+str(supercell_index)] = [evac, epa * natoms, equi_epa * natoms]
+                res_data[str(supercell_index)+'-'+structure_dir] = [evac, epa * natoms, equi_epa * natoms]
 
         else:
             if 'vasp_lmp_path' not in self.parameter:

@@ -152,7 +152,7 @@ class Elastic(Property):
         ptr_data += "# Bulk   Modulus BV = %.2f GPa\n" % BV
         ptr_data += "# Shear  Modulus GV = %.2f GPa\n" % GV
         ptr_data += "# Youngs Modulus EV = %.2f GPa\n" % EV
-        ptr_data += "# Poission Ratio uV = %.2f " % uV
+        ptr_data += "# Poission Ratio uV = %.2f\n " % uV
 
         dumpfn(res_data, output_file, indent=4)
 
