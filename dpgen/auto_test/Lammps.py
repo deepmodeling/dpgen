@@ -173,7 +173,7 @@ class Lammps(Task):
             vol = []
             energy = []
             force = []
-            stress = []
+            virial = []
             with open(dump_lammps, 'r') as fin:
                 dump = fin.read().split('\n')
             dumptime = []
@@ -181,7 +181,6 @@ class Lammps(Task):
                 if ii == 'ITEM: TIMESTEP':
                     box.append([])
                     coord.append([])
-                    vol.append([])
                     force.append([])
                     dumptime.append(int(dump[idx + 1]))
                     natom = int(dump[idx + 3])
@@ -194,25 +193,29 @@ class Lammps(Task):
                     zlow = float(dump[idx + 7].split()[0])
                     zz = float(dump[idx + 7].split()[1])
                     yz = float(dump[idx + 7].split()[2])
-                    box[-1].extend([(xx - xlow + xy + xz), 0.0, 0.0, xy, (yy - ylow + yz), 0.0, xz, yz, (zz - zlow)])
-                    vol[-1].extend([(xx - xlow + xy + xz) * (yy - ylow + yz) * (zz - zlow)])
+                    box[-1].append([(xx - xlow + xy + xz), 0.0, 0.0])
+                    box[-1].append([xy, (yy - ylow + yz), 0.0])
+                    box[-1].append([xz, yz, (zz - zlow)])
+                    vol.append((xx - xlow + xy + xz) * (yy - ylow + yz) * (zz - zlow))
+                    type_list = []
                     for jj in range(natom):
+                        type_list.append(int(dump[idx + 9 + jj].split()[1]) - 1)
                         if 'xs ys zs' in dump[idx + 8]:
                             a_x = float(dump[idx + 9 + jj].split()[2]) * (xx - xlow + xy + xz) + float(
-                                dump[idx + 9].split()[3]) * xy \
-                                  + float(dump[idx + 9].split()[4]) * xz
+                                dump[idx + 9 + jj].split()[3]) * xy \
+                                  + float(dump[idx + 9 + jj].split()[4]) * xz
                             a_y = float(dump[idx + 9 + jj].split()[3]) * (yy - ylow + yz) + float(
-                                dump[idx + 9].split()[4]) * yz
+                                dump[idx + 9 + jj].split()[4]) * yz
                             a_z = float(dump[idx + 9 + jj].split()[4]) * (zz - zlow)
                         else:
                             a_x = float(dump[idx + 9 + jj].split()[2])
                             a_y = float(dump[idx + 9 + jj].split()[3])
                             a_z = float(dump[idx + 9 + jj].split()[4])
-                        coord[-1].extend([a_x, a_y, a_z])
+                        coord[-1].append([a_x, a_y, a_z])
                         fx = float(dump[idx + 9 + jj].split()[5])
                         fy = float(dump[idx + 9 + jj].split()[6])
                         fz = float(dump[idx + 9 + jj].split()[7])
-                        force[-1].extend([fx, fy, fz])
+                        force[-1].append([fx, fy, fz])
 
             with open(log_lammps, 'r') as fp:
                 if 'Total wall time:' not in fp.read():
@@ -221,19 +224,23 @@ class Lammps(Task):
                 else:
                     fp.seek(0)
                     lines = fp.read().split('\n')
+                    idid = -1
                     for ii in dumptime:
+                        idid += 1
                         for jj in lines:
                             line = jj.split()
                             if len(line) and str(ii) == line[0]:
-                                energy.append([])
-                                stress.append([])
-                                energy[-1].extend([float(line[1])])
-                                stress[-1].extend([float(line[2]), float(line[3]), float(line[4]),
-                                                   float(line[5]), float(line[6]), float(line[7])])
+                                virial.append([])
+                                energy.append(float(line[1]))
+                                # virials = stress * vol * 1e5 *1e-30 * 1e19/1.6021766208
+                                stress_to_virial = vol[idid] * 1e5 * 1e-30 * 1e19 / 1.6021766208
+                                virial[-1].append([float(line[2]) * stress_to_virial, float(line[5]) * stress_to_virial,
+                                                   float(line[6]) * stress_to_virial])
+                                virial[-1].append([float(line[5]) * stress_to_virial, float(line[3]) * stress_to_virial,
+                                                   float(line[7]) * stress_to_virial])
+                                virial[-1].append([float(line[6]) * stress_to_virial, float(line[7]) * stress_to_virial,
+                                                   float(line[4]) * stress_to_virial])
                                 break
-
-            result_dict = {"box": box, "coord": coord, "vol": vol,
-                           "energy": energy, "force": force, "stress": stress}
 
             _tmp = self.type_map
             dlog.debug(_tmp)
@@ -242,8 +249,48 @@ class Lammps(Task):
             type_map_list = []
             for ii in range(len(type_map)):
                 type_map_list.append(type_map[ii])
+
+            #d_dump = dpdata.System(dump_lammps, fmt='lammps/dump', type_map=type_map_list)
+            #d_dump.to('vasp/poscar', contcar, frame_idx=-1)
+
+            result_dict = {"@module": "dpdata.system", "@class": "LabeledSystem", "data": {"atom_numbs": [natom],
+                                                                                           "atom_names": type_map_list,
+                                                                                           "atom_types": {
+                                                                                               "@module": "numpy",
+                                                                                               "@class": "array",
+                                                                                               "dtype": "int64",
+                                                                                               "data": type_list},
+                                                                                           "orig": {"@module": "numpy",
+                                                                                                    "@class": "array",
+                                                                                                    "dtype": "int64",
+                                                                                                    "data": [0, 0, 0]},
+                                                                                           "cells": {"@module": "numpy",
+                                                                                                     "@class": "array",
+                                                                                                     "dtype": "float64",
+                                                                                                     "data": box},
+                                                                                           "coords": {
+                                                                                               "@module": "numpy",
+                                                                                               "@class": "array",
+                                                                                               "dtype": "float64",
+                                                                                               "data": coord},
+                                                                                           "energies": {
+                                                                                               "@module": "numpy",
+                                                                                               "@class": "array",
+                                                                                               "dtype": "float64",
+                                                                                               "data": energy},
+                                                                                           "forces": {
+                                                                                               "@module": "numpy",
+                                                                                               "@class": "array",
+                                                                                               "dtype": "float64",
+                                                                                               "data": force},
+                                                                                           "virials": {
+                                                                                               "@module": "numpy",
+                                                                                               "@class": "array",
+                                                                                               "dtype": "float64",
+                                                                                               "data": virial}}}
             contcar = os.path.join(output_dir, 'CONTCAR')
-            d_dump = dpdata.System(dump_lammps, fmt='lammps/dump', type_map=type_map_list)
+            dumpfn(result_dict, contcar, indent=4)
+            d_dump = loadfn(contcar)
             d_dump.to('vasp/poscar', contcar, frame_idx=-1)
 
             return result_dict
