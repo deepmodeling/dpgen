@@ -13,7 +13,9 @@ def make_repro(vasp_lmp_path, path_to_work):
     vasp_lmp_task.sort()
     task_num = 0
     task_list = []
+    idid = -1
     for ii in vasp_lmp_task:
+        idid += 1
         # get vasp or lmp energy
         outcar = os.path.join(ii, 'OUTCAR')
         log_lmp = os.path.join(ii, 'log.lammps')
@@ -24,9 +26,9 @@ def make_repro(vasp_lmp_path, path_to_work):
             os.chdir(path_to_work)
             if os.path.exists('XDATCAR'):
                 os.remove('XDATCAR')
-            os.symlink(os.path.relpath(xdatcar), 'XDATCAR')
-            xdat_lines = open('XDATCAR', 'r').read().split('\n')
-            natoms = vasp.poscar_natoms('XDATCAR')
+            os.symlink(os.path.relpath(xdatcar), 'XDATCAR_'+str('%06d' % idid))
+            xdat_lines = open('XDATCAR_'+str('%06d' % idid), 'r').read().split('\n')
+            natoms = vasp.poscar_natoms('XDATCAR_'+str('%06d' % idid))
             xdat_secsize = natoms + 8
             xdat_nframes = len(xdat_lines) // xdat_secsize
             if xdat_nframes > len(energies):

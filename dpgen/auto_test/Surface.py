@@ -14,21 +14,28 @@ import os, json
 class Surface(Property):
     def __init__(self,
                  parameter):
-        self.parameter = parameter
-        self.min_slab_size = parameter['min_slab_size']
-        self.min_vacuum_size = parameter['min_vacuum_size']
-        self.pert_xz = parameter['pert_xz']
-        default_max_miller = 2
-        self.miller = parameter.get('max_miller', default_max_miller)
-        parameter['cal_type'] = parameter.get('cal_type', 'relaxation')
-        self.cal_type = parameter['cal_type']
-        default_cal_setting = {"relax_pos": True,
-                               "relax_shape": True,
-                               "relax_vol": False}
-        parameter['cal_setting'] = parameter.get('cal_setting', default_cal_setting)
-        self.cal_setting = parameter['cal_setting']
         parameter['reprod-opt'] = parameter.get('reprod-opt', False)
         self.reprod = parameter['reprod-opt']
+        if not self.reprod:
+            self.min_slab_size = parameter['min_slab_size']
+            self.min_vacuum_size = parameter['min_vacuum_size']
+            self.pert_xz = parameter['pert_xz']
+            default_max_miller = 2
+            self.miller = parameter.get('max_miller', default_max_miller)
+            parameter['cal_type'] = parameter.get('cal_type', 'relaxation')
+            self.cal_type = parameter['cal_type']
+            default_cal_setting = {"relax_pos": True,
+                               "relax_shape": True,
+                               "relax_vol": False}
+            parameter['cal_setting'] = parameter.get('cal_setting', default_cal_setting)
+            self.cal_setting = parameter['cal_setting']
+        else:
+            parameter['cal_type'] = 'static'
+            self.cal_type = parameter['cal_type']
+            parameter['cal_setting'] = {"relax_pos": False,
+                                        "relax_shape": False,
+                                        "relax_vol": False}
+            self.cal_setting = parameter['cal_setting']
         self.parameter = parameter
 
     def make_confs(self,
@@ -44,28 +51,8 @@ class Surface(Property):
         task_list = []
         cwd = os.getcwd()
 
-        equi_contcar = os.path.join(path_to_equi, 'CONTCAR')
-        if not os.path.exists(equi_contcar):
-            raise RuntimeError("please do relaxation first")
-        ptypes = vasp.get_poscar_types(equi_contcar)
-        # gen structure
-        ss = Structure.from_file(equi_contcar)
-        # gen slabs
-        all_slabs = generate_all_slabs(ss, self.miller, self.min_slab_size, self.min_vacuum_size)
-
-        if refine:
-            task_list = make_refine(self.parameter['init_from_suffix'],
-                                    self.parameter['output_suffix'],
-                                    path_to_work,
-                                    len(all_slabs))
-            # record miller
-            for ii in range(len(task_list)):
-                os.chdir(task_list[ii])
-                np.savetxt('miller.out', all_slabs[ii].miller_index, fmt='%d')
-            os.chdir(cwd)
-
         if self.reprod:
-            self.cal_type = 'static'
+            print('surface reproduce starts')
             if 'vasp_lmp_path' not in self.parameter:
                 raise RuntimeError("please provide the vasp_lmp_path for reproduction")
             vasp_lmp_path = os.path.abspath(self.parameter['vasp_lmp_path'])
@@ -73,28 +60,50 @@ class Surface(Property):
             os.chdir(cwd)
 
         else:
-            os.chdir(path_to_work)
-            if os.path.isfile('POSCAR'):
-                os.remove('POSCAR')
-            os.symlink(os.path.relpath(equi_contcar), 'POSCAR')
-            #           task_poscar = os.path.join(output, 'POSCAR')
-            for ii in range(len(all_slabs)):
-                output_task = os.path.join(path_to_work, 'task.%06d' % ii)
-                os.makedirs(output_task, exist_ok=True)
-                os.chdir(output_task)
-                for jj in ['INCAR', 'POTCAR', 'POSCAR', 'conf.lmp', 'in.lammps']:
-                    if os.path.exists(jj):
-                        os.remove(jj)
-                task_list.append(output_task)
-                print("# %03d generate " % ii, output_task, " \t %d atoms" % len(all_slabs[ii].sites))
-                # make confs
-                all_slabs[ii].to('POSCAR', 'POSCAR.tmp')
-                vasp.regulate_poscar('POSCAR.tmp', 'POSCAR')
-                vasp.sort_poscar('POSCAR', 'POSCAR', ptypes)
-                vasp.perturb_xz('POSCAR', 'POSCAR', self.pert_xz)
+            equi_contcar = os.path.join(path_to_equi, 'CONTCAR')
+            if not os.path.exists(equi_contcar):
+                raise RuntimeError("please do relaxation first")
+            ptypes = vasp.get_poscar_types(equi_contcar)
+            # gen structure
+            ss = Structure.from_file(equi_contcar)
+            # gen slabs
+            all_slabs = generate_all_slabs(ss, self.miller, self.min_slab_size, self.min_vacuum_size)
+
+            if refine:
+                print('surface refine starts')
+                task_list = make_refine(self.parameter['init_from_suffix'],
+                                    self.parameter['output_suffix'],
+                                    path_to_work,
+                                    len(all_slabs))
                 # record miller
-                dumpfn(all_slabs[ii].miller_index, 'miller.json')
-            os.chdir(cwd)
+                for ii in range(len(task_list)):
+                    os.chdir(task_list[ii])
+                    dumpfn(all_slabs[ii].miller_index, 'miller.json')
+                os.chdir(cwd)
+
+            else:
+                os.chdir(path_to_work)
+                if os.path.isfile('POSCAR'):
+                    os.remove('POSCAR')
+                os.symlink(os.path.relpath(equi_contcar), 'POSCAR')
+                #           task_poscar = os.path.join(output, 'POSCAR')
+                for ii in range(len(all_slabs)):
+                    output_task = os.path.join(path_to_work, 'task.%06d' % ii)
+                    os.makedirs(output_task, exist_ok=True)
+                    os.chdir(output_task)
+                    for jj in ['INCAR', 'POTCAR', 'POSCAR', 'conf.lmp', 'in.lammps']:
+                        if os.path.exists(jj):
+                            os.remove(jj)
+                    task_list.append(output_task)
+                    print("# %03d generate " % ii, output_task, " \t %d atoms" % len(all_slabs[ii].sites))
+                    # make confs
+                    all_slabs[ii].to('POSCAR', 'POSCAR.tmp')
+                    vasp.regulate_poscar('POSCAR.tmp', 'POSCAR')
+                    vasp.sort_poscar('POSCAR', 'POSCAR', ptypes)
+                    vasp.perturb_xz('POSCAR', 'POSCAR', self.pert_xz)
+                    # record miller
+                    dumpfn(all_slabs[ii].miller_index, 'miller.json')
+                os.chdir(cwd)
 
         return task_list
 

@@ -79,6 +79,7 @@ class Elastic(Property):
         os.chdir(cwd)
 
         if refine:
+            print('elastic refine starts')
             task_list = make_refine(self.parameter['init_from_suffix'],
                                     self.parameter['output_suffix'],
                                     path_to_work,

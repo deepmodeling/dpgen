@@ -11,18 +11,26 @@ from dpgen import dlog
 class EOS(Property):
     def __init__(self,
                  parameter):
-        self.vol_start = parameter['vol_start']
-        self.vol_end = parameter['vol_end']
-        self.vol_step = parameter['vol_step']
-        parameter['cal_type'] = parameter.get('cal_type', 'relaxation')
-        self.cal_type = parameter['cal_type']
-        default_cal_setting = {"relax_pos": True,
-                               "relax_shape": True,
-                               "relax_vol": False}
-        parameter['cal_setting'] = parameter.get('cal_setting', default_cal_setting)
-        self.cal_setting = parameter['cal_setting']
         parameter['reprod-opt'] = parameter.get('reprod-opt', False)
         self.reprod = parameter['reprod-opt']
+        if not self.reprod:
+            self.vol_start = parameter['vol_start']
+            self.vol_end = parameter['vol_end']
+            self.vol_step = parameter['vol_step']
+            parameter['cal_type'] = parameter.get('cal_type', 'relaxation')
+            self.cal_type = parameter['cal_type']
+            default_cal_setting = {"relax_pos": True,
+                               "relax_shape": True,
+                               "relax_vol": False}
+            parameter['cal_setting'] = parameter.get('cal_setting', default_cal_setting)
+            self.cal_setting = parameter['cal_setting']
+        else:
+            parameter['cal_type'] = 'static'
+            self.cal_type = parameter['cal_type']
+            parameter['cal_setting'] = {"relax_pos": False,
+                                        "relax_shape": False,
+                                        "relax_vol": False}
+            self.cal_setting = parameter['cal_setting']
         self.parameter = parameter
 
     def make_confs(self,
@@ -44,7 +52,7 @@ class EOS(Property):
                                     int((self.vol_end - self.vol_start) / self.vol_step))
             os.chdir(cwd)
         if self.reprod:
-            self.cal_type = 'static'
+            print('eos reproduce starts')
             if 'vasp_lmp_path' not in self.parameter:
                 raise RuntimeError("please provide the vasp_lmp_path for reproduction")
             vasp_lmp_path = os.path.abspath(self.parameter['vasp_lmp_path'])

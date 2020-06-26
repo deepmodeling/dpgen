@@ -160,10 +160,60 @@ class Lammps(Task):
     def compute(self,
                 output_dir):
         log_lammps = os.path.join(output_dir, 'log.lammps')
+        dump_lammps = os.path.join(output_dir, 'dump.relax')
         if not os.path.isfile(log_lammps):
             warnings.warn("cannot find log.lammps in " + output_dir + " skip")
             return None
+        if not os.path.isfile(dump_lammps):
+            warnings.warn("cannot find dump.relax in " + output_dir + " skip")
+            return None
         else:
+            box = []
+            coord = []
+            vol = []
+            energy = []
+            force = []
+            stress = []
+            with open(dump_lammps, 'r') as fin:
+                dump = fin.read().split('\n')
+            dumptime = []
+            for idx, ii in enumerate(dump):
+                if ii == 'ITEM: TIMESTEP':
+                    box.append([])
+                    coord.append([])
+                    vol.append([])
+                    force.append([])
+                    dumptime.append(int(dump[idx + 1]))
+                    natom = int(dump[idx + 3])
+                    xlow = float(dump[idx + 5].split()[0])
+                    xx = float(dump[idx + 5].split()[1])
+                    xy = float(dump[idx + 5].split()[2])
+                    ylow = float(dump[idx + 6].split()[0])
+                    yy = float(dump[idx + 6].split()[1])
+                    xz = float(dump[idx + 6].split()[2])
+                    zlow = float(dump[idx + 7].split()[0])
+                    zz = float(dump[idx + 7].split()[1])
+                    yz = float(dump[idx + 7].split()[2])
+                    box[-1].extend([(xx - xlow + xy + xz), 0.0, 0.0, xy, (yy - ylow + yz), 0.0, xz, yz, (zz - zlow)])
+                    vol[-1].extend([(xx - xlow + xy + xz) * (yy - ylow + yz) * (zz - zlow)])
+                    for jj in range(natom):
+                        if 'xs ys zs' in dump[idx + 8]:
+                            a_x = float(dump[idx + 9 + jj].split()[2]) * (xx - xlow + xy + xz) + float(
+                                dump[idx + 9].split()[3]) * xy \
+                                  + float(dump[idx + 9].split()[4]) * xz
+                            a_y = float(dump[idx + 9 + jj].split()[3]) * (yy - ylow + yz) + float(
+                                dump[idx + 9].split()[4]) * yz
+                            a_z = float(dump[idx + 9 + jj].split()[4]) * (zz - zlow)
+                        else:
+                            a_x = float(dump[idx + 9 + jj].split()[2])
+                            a_y = float(dump[idx + 9 + jj].split()[3])
+                            a_z = float(dump[idx + 9 + jj].split()[4])
+                        coord[-1].extend([a_x, a_y, a_z])
+                        fx = float(dump[idx + 9 + jj].split()[5])
+                        fy = float(dump[idx + 9 + jj].split()[6])
+                        fz = float(dump[idx + 9 + jj].split()[7])
+                        force[-1].extend([fx, fy, fz])
+
             with open(log_lammps, 'r') as fp:
                 if 'Total wall time:' not in fp.read():
                     warnings.warn("lammps not finished " + log_lammps + " skip")
@@ -171,32 +221,32 @@ class Lammps(Task):
                 else:
                     fp.seek(0)
                     lines = fp.read().split('\n')
-                    for ii in lines:
-                        if ("Total number of atoms" in ii) and (not 'print' in ii):
-                            natoms = int(ii.split('=')[1].split()[0])
-                        if ("Final energy per atoms" in ii) and (not 'print' in ii):
-                            epa = float(ii.split('=')[1].split()[0])
+                    for ii in dumptime:
+                        for jj in lines:
+                            line = jj.split()
+                            if len(line) and str(ii) == line[0]:
+                                energy.append([])
+                                stress.append([])
+                                energy[-1].extend([float(line[1])])
+                                stress[-1].extend([float(line[2]), float(line[3]), float(line[4]),
+                                                   float(line[5]), float(line[6]), float(line[7])])
+                                break
 
-                    dump = os.path.join(output_dir, 'dump.relax')
-                    # type_map_list = inter_param['type_map']
-                    # dlog.debug(type_map_list)
-                    _tmp = self.type_map
-                    dlog.debug(_tmp)
-                    type_map = {k: v for v, k in _tmp.items()}
-                    dlog.debug(type_map)
-                    type_map_list = []
-                    for ii in range(len(type_map)):
-                        type_map_list.append(type_map[ii])
-                    contcar = os.path.join(output_dir, 'CONTCAR')
-                    d_dump = dpdata.System(dump, fmt='lammps/dump', type_map=type_map_list)
-                    d_dump.to('vasp/poscar', contcar, frame_idx=-1)
+            result_dict = {"box": box, "coord": coord, "vol": vol,
+                           "energy": energy, "force": force, "stress": stress}
 
-                    # TODO parsing force via dpdata
-                    # force = d_dump['forces']
-                    force = [['tmp', 'tmp', 'tmp']]
+            _tmp = self.type_map
+            dlog.debug(_tmp)
+            type_map = {k: v for v, k in _tmp.items()}
+            dlog.debug(type_map)
+            type_map_list = []
+            for ii in range(len(type_map)):
+                type_map_list.append(type_map[ii])
+            contcar = os.path.join(output_dir, 'CONTCAR')
+            d_dump = dpdata.System(dump_lammps, fmt='lammps/dump', type_map=type_map_list)
+            d_dump.to('vasp/poscar', contcar, frame_idx=-1)
 
-                    result_dict = {"energy": natoms * epa, "force": force * natoms}  # deal with dpdata bug
-                    return result_dict
+            return result_dict
 
     def forward_files(self):
         if self.inter_type == 'meam':
