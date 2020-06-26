@@ -129,11 +129,7 @@ class VASP(Task):
             return None
         else:
             ls = LabeledSystem(outcar)
-            if len(ls) > 0:
-                force = ls.sub_system([-1]).data['forces'][0].tolist()
-                energy = ls.sub_system([-1]).data['energies'][0].tolist()
-                virials = ls.sub_system([-1]).data['virials'][0].tolist()
-                return {"energy": energy, "force": force, "virials": virials}
+            return ls.as_dict()
 
     def forward_files(self):
         return ['INCAR', 'POSCAR', 'POTCAR']
