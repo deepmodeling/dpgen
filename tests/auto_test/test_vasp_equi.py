@@ -43,11 +43,8 @@ class TestEqui(unittest.TestCase):
         target_path = 'confs/hp-Li/relaxation'
         source_path = 'vasp_input'
 
-        incar0 = Incar.from_file(os.path.join('vasp_input', 'INCAR.rlx'))
+        incar0 = Incar.from_file(os.path.join('vasp_input', 'INCAR'))
         incar1 = Incar.from_file(os.path.join(target_path, 'INCAR'))
-        self.assertFalse(incar0 == incar1)
-        incar0['KSPACING'] = 0.1
-        incar0['EDIFF'] = 1e-6
         self.assertTrue(incar0 == incar1)
 
         with open(os.path.join('vasp_input', 'POTCAR')) as fp:
@@ -86,5 +83,3 @@ class TestEqui(unittest.TestCase):
         result_json_file = os.path.join(target_path, 'result.json')
         result_json = loadfn(result_json_file)
         self.assertTrue(os.path.isfile(result_json_file))
-        # self.assertEqual(inter_json,inter_param)
-        # calc=make_calculator(inter_param, poscar)

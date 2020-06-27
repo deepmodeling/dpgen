@@ -79,13 +79,10 @@ class TestElastic(unittest.TestCase):
         self.assertEqual(os.path.realpath(os.path.join(self.equi_path, 'CONTCAR')),
                          os.path.realpath(os.path.join(self.target_path, 'POSCAR')))
         ref_st = Structure.from_file(os.path.join(self.target_path, 'POSCAR'))
+        dfm_dirs.sort()
         for ii in dfm_dirs:
             st_file = os.path.join(ii, 'POSCAR')
             self.assertTrue(os.path.isfile(st_file))
-            st0 = Structure.from_file(st_file)
             strain_json_file = os.path.join(ii, 'strain.json')
             self.assertTrue(os.path.isfile(strain_json_file))
             strain_json = loadfn(strain_json_file)
-            df = Deformation(strain_json)
-            st1 = df.apply_to_structure(ref_st)
-            self.assertEqual(st0, st1)
