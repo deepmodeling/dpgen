@@ -23,12 +23,12 @@ import shutil
 import time
 import copy
 import dpdata
-import miniball
 import numpy as np
 import subprocess as sp
 import scipy.constants as pc
 from collections import Counter
 from distutils.version import LooseVersion
+from numpy.linalg  import norm
 from dpgen import dlog
 from dpgen import SHORT_CMD
 from dpgen.generator.lib.utils import make_iter_name
@@ -1031,10 +1031,17 @@ def check_cluster(conf_name,
                   fmt='lammps/dump'):
     sys = dpdata.System(conf_name, fmt)
     assert(sys.get_nframes() == 1)
-    st=sys.to_pymatgen_structure()[0]
-    min_lat=min(st.lattice.abc)
-    _,r3d=miniball.get_bounding_ball(st.cart_coords)
-    if min_lat-r3d < fp_cluster_vacuum:
+    cell=sys.data['cells'][0]
+    coord=sys.data['coords'][0]
+    xlim=max(coord[:,0])-min(coord[:,0])
+    ylim=max(coord[:,1])-min(coord[:,1])
+    zlim=max(coord[:,2])-min(coord[:,2])
+    clim=max([xlim,ylim,zlim])
+    a,b,c=map(norm,[cell[0,:],cell[1,:],cell[2,:]])
+    min_lat=min([a,b,c])
+    #_,r3d=miniball.get_bounding_ball(coord) 
+    
+    if min_lat-clim < fp_cluster_vacuum:
        is_bad = True
     else:
        is_bad = False
