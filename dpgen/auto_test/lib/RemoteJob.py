@@ -482,9 +482,9 @@ class PBSJob (RemoteJob) :
         _set_default_resource(res)
         ret = ''
         ret += "#!/bin/bash -l\n"
-        if len(res['ncpus']) > 0:
+        if res['ncpus'] > 0:
             ret += '#PBS -l ncpus=%s\n' % (res['ncpus'])
-        if len(res['ngpus'])>0:
+        if res['ngpus']>0:
             ret += '#PBS -l ngpus=%s\n' % (res['ngpus'])
         # if res['numb_gpu'] == 0:
         #     ret += '#PBS -l nodes=%d:ppn=%d\n' % (res['numb_node'], res['task_per_node'])
