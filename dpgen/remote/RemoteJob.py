@@ -663,7 +663,7 @@ class PBSJob (RemoteJob) :
         if 'ngpus' in res:
             ret += '#PBS -l ngpus=%s\n' % (res['ngpus'])
         if 'account' in res:
-            ret += '#PBS -p %s\n' % (res['account'])
+            ret += '#PBS -P %s\n' % (res['account'])
         if 'mem' in res:
             ret += '#PBS -l mem=%s\n' % (res['mem'])
         if 'jobfs' in res:
