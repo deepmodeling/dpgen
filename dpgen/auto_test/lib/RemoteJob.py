@@ -486,6 +486,8 @@ class PBSJob (RemoteJob) :
             ret += '#PBS -l ncpus=%s\n' % (res['ncpus'])
         if 'ngpus' in res:
             ret += '#PBS -l ngpus=%s\n' % (res['ngpus'])
+        if 'account' in res:
+            ret += '#PBS -p %s\n' % (res['account'])
         # if res['numb_gpu'] == 0:
         #     ret += '#PBS -l nodes=%d:ppn=%d\n' % (res['numb_node'], res['task_per_node'])
         # else :
