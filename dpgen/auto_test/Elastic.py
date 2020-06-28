@@ -67,11 +67,11 @@ class Elastic(Property):
         #           task_poscar = os.path.join(output, 'POSCAR')
 
         # stress, deal with unsupported stress in dpdata
-        with open(os.path.join(path_to_equi, 'result.json')) as fin:
-            equi_result = json.load(fin)
-        equi_stress = np.array(equi_result['stress']['data'])[-1]
-        # equi_result = loadfn(os.path.join(path_to_equi, 'result.json'))
-        # equi_stress = equi_result['stress'][-1]
+        #with open(os.path.join(path_to_equi, 'result.json')) as fin:
+        #    equi_result = json.load(fin)
+        #equi_stress = np.array(equi_result['stress']['data'])[-1]
+        equi_result = loadfn(os.path.join(path_to_equi, 'result.json'))
+        equi_stress = equi_result['stress'][-1]
         dumpfn(equi_stress, 'equi.stress.json', indent=4)
 
         if refine:
@@ -131,10 +131,10 @@ class Elastic(Property):
         for ii in all_tasks:
             strain = loadfn(os.path.join(ii, 'strain.json'))
             # stress, deal with unsupported stress in dpdata
-            with open(os.path.join(ii, 'result_task.json')) as fin:
-                task_result = json.load(fin)
-            stress = np.array(task_result['stress']['data'])[-1]
-            # stress = loadfn(os.path.join(ii, 'result_task.json'))['stress'][-1]
+            #with open(os.path.join(ii, 'result_task.json')) as fin:
+            #    task_result = json.load(fin)
+            #stress = np.array(task_result['stress']['data'])[-1]
+            stress = loadfn(os.path.join(ii, 'result_task.json'))['stress'][-1]
             lst_strain.append(strain)
             lst_stress.append(Stress(stress * -1000))
 

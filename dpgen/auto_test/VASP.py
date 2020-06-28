@@ -146,7 +146,7 @@ class VASP(Task):
                     stress[-1].append([stress_zx, stress_yz, stress_zz])
 
             outcar_dict = ls.as_dict()
-            outcar_dict['stress'] = {"@module": "numpy", "@class": "array", "dtype": "float64", "data": stress}
+            outcar_dict['data']['stress'] = {"@module": "numpy", "@class": "array", "dtype": "float64", "data": stress}
 
             return outcar_dict
 

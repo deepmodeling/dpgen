@@ -3,6 +3,7 @@ import dpgen.auto_test.lib.vasp as vasp
 import dpgen.auto_test.lib.lammps as lammps
 import numpy as np
 import dpdata
+from monty.serialization import loadfn, dumpfn
 
 
 def make_repro(vasp_lmp_path, path_to_work):
@@ -16,7 +17,11 @@ def make_repro(vasp_lmp_path, path_to_work):
     idid = -1
     for ii in vasp_lmp_task:
         idid += 1
-        # get vasp or lmp energy
+        # get energy
+        task_result = loadfn(os.path.join(ii, 'result_task.json'))
+
+
+
         outcar = os.path.join(ii, 'OUTCAR')
         log_lmp = os.path.join(ii, 'log.lammps')
         if os.path.exists(outcar):
