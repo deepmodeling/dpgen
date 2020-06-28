@@ -104,7 +104,7 @@ def run_property(confs,
             elif 'reprod-opt' in jj and jj['reprod-opt']:
                 suffix = 'reprod'
             else:
-                suffix = 0
+                suffix = '00'
 
             property_type = jj['type']
             path_to_work = os.path.join(ii, property_type + '_' + suffix)

@@ -129,7 +129,26 @@ class VASP(Task):
             return None
         else:
             ls = LabeledSystem(outcar)
-            return ls.as_dict()
+            stress = []
+            with open(outcar, 'r') as fin:
+                lines = fin.read().split('\n')
+            for line in lines:
+                if 'in kB' in line:
+                    stress_xx = float(line.split()[2])
+                    stress_yy = float(line.split()[3])
+                    stress_zz = float(line.split()[4])
+                    stress_xy = float(line.split()[5])
+                    stress_yz = float(line.split()[6])
+                    stress_zx = float(line.split()[7])
+                    stress.append([])
+                    stress[-1].append([stress_xx, stress_xy, stress_zx])
+                    stress[-1].append([stress_xy, stress_yy, stress_yz])
+                    stress[-1].append([stress_zx, stress_yz, stress_zz])
+
+            outcar_dict = ls.as_dict()
+            outcar_dict['stress'] = {"@module": "numpy", "@class": "array", "dtype": "float64", "data": stress}
+
+            return outcar_dict
 
     def forward_files(self):
         return ['INCAR', 'POSCAR', 'POTCAR']

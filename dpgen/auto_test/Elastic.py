@@ -9,7 +9,7 @@ from pymatgen.analysis.elasticity.stress import Stress
 from pymatgen.analysis.elasticity.elastic import ElasticTensor
 from monty.serialization import loadfn, dumpfn
 import numpy as np
-import os
+import os, json, re
 
 
 class Elastic(Property):
@@ -48,8 +48,6 @@ class Elastic(Property):
         shear_def = self.shear_deform
         norm_strains = [-norm_def, -0.5 * norm_def, 0.5 * norm_def, norm_def]
         shear_strains = [-shear_def, -0.5 * shear_def, 0.5 * shear_def, shear_def]
-        print('gen with norm ' + str(norm_strains))
-        print('gen with shear ' + str(shear_strains))
 
         equi_contcar = os.path.join(path_to_equi, 'CONTCAR')
         if not os.path.exists(equi_contcar):
@@ -67,25 +65,38 @@ class Elastic(Property):
             os.remove('POSCAR')
         os.symlink(os.path.relpath(equi_contcar), 'POSCAR')
         #           task_poscar = os.path.join(output, 'POSCAR')
-        # stress
-        equi_outcar = os.path.join(path_to_equi, 'OUTCAR')
-        equi_log = os.path.join(path_to_equi, 'log.lammps')
-        if os.path.exists(equi_outcar):
-            stress = vasp.get_stress(equi_outcar)
-            np.savetxt('equi.stress.out', stress)
-        elif os.path.exists(equi_log):
-            stress = lammps.get_stress(equi_log)
-            np.savetxt('equi.stress.out', stress)
-        os.chdir(cwd)
+
+        # stress, deal with unsupported stress in dpdata
+        with open(os.path.join(path_to_equi, 'result.json')) as fin:
+            equi_result = json.load(fin)
+        equi_stress = np.array(equi_result['stress']['data'])[-1]
+        # equi_result = loadfn(os.path.join(path_to_equi, 'result.json'))
+        # equi_stress = equi_result['stress'][-1]
+        dumpfn(equi_stress, 'equi.stress.json', indent=4)
 
         if refine:
             print('elastic refine starts')
             task_list = make_refine(self.parameter['init_from_suffix'],
                                     self.parameter['output_suffix'],
-                                    path_to_work,
-                                    n_dfm)
+                                    path_to_work)
+            idid = -1
+            for ii in task_list:
+                idid += 1
+                os.chdir(ii)
+                if os.path.isfile('strain.json'):
+                    os.remove('strain.json')
+
+                # record strain
+                df = Strain.from_deformation(dfm_ss.deformations[idid])
+                dumpfn(df.as_dict(), 'strain.json', indent=4)
+                #os.symlink(os.path.relpath(
+                #    os.path.join((re.sub(self.parameter['output_suffix'], self.parameter['init_from_suffix'], ii)),
+                #                 'strain.json')),
+                #           'strain.json')
             os.chdir(cwd)
         else:
+            print('gen with norm ' + str(norm_strains))
+            print('gen with shear ' + str(shear_strains))
             for ii in range(n_dfm):
                 output_task = os.path.join(path_to_work, 'task.%06d' % ii)
                 os.makedirs(output_task, exist_ok=True)
@@ -114,25 +125,19 @@ class Elastic(Property):
         output_file = os.path.abspath(output_file)
         res_data = {}
         ptr_data = os.path.dirname(output_file) + '\n'
-        equi_stress = Stress(np.loadtxt(os.path.join(os.path.dirname(output_file), 'equi.stress.out')))
+        equi_stress = Stress(loadfn(os.path.join(os.path.dirname(output_file), 'equi.stress.json')))
         lst_strain = []
         lst_stress = []
         for ii in all_tasks:
-            idata = loadfn(os.path.join(ii, 'inter.json'))
-            inter_type = idata['type']
             strain = loadfn(os.path.join(ii, 'strain.json'))
-            if inter_type == 'vasp':
-                stress = vasp.get_stress(os.path.join(ii, 'OUTCAR'))
-                # convert from pressure in kB to stress
-                stress *= -1000
-                lst_strain.append(strain)
-                lst_stress.append(Stress(stress))
-            elif inter_type in ['deepmd', 'meam', 'eam_fs', 'eam_alloy']:
-                stress = lammps.get_stress(os.path.join(ii, 'log.lammps'))
-                # convert from pressure to stress
-                stress = -stress
-                lst_strain.append(strain)
-                lst_stress.append(Stress(stress))
+            # stress, deal with unsupported stress in dpdata
+            with open(os.path.join(ii, 'result_task.json')) as fin:
+                task_result = json.load(fin)
+            stress = np.array(task_result['stress']['data'])[-1]
+            # stress = loadfn(os.path.join(ii, 'result_task.json'))['stress'][-1]
+            lst_strain.append(strain)
+            lst_stress.append(Stress(stress * -1000))
+
         et = ElasticTensor.from_independent_strains(lst_strain, lst_stress, eq_stress=equi_stress, vasp=False)
         res_data['elastic_tensor'] = []
         for ii in range(6):

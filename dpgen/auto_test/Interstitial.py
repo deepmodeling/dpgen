@@ -78,8 +78,7 @@ class Interstitial(Property):
                 print('interstitial refine starts')
                 task_list = make_refine(self.parameter['init_from_suffix'],
                                         self.parameter['output_suffix'],
-                                        path_to_work,
-                                        len(dss))
+                                        path_to_work)
                 for ii in task_list:
                     os.chdir(ii)
                     # np.savetxt('supercell.out', self.supercell, fmt='%d')
@@ -128,31 +127,19 @@ class Interstitial(Property):
             idid = -1
             for ii in all_tasks:
                 idid += 1
-                with open(os.path.join(ii, 'inter.json')) as fp:
-                    idata = json.load(fp)
-                inter_type = idata['type']
-                equi_path = os.path.abspath(os.path.join(os.path.dirname(output_file), '../relaxation'))
                 structure_dir = os.path.basename(ii)
+                task_result = loadfn(all_res[idid])
+                natoms = task_result['atom_numbs'][0]
+                equi_path = os.path.abspath(os.path.join(os.path.dirname(output_file), '../relaxation'))
+                equi_result = loadfn(os.path.join(equi_path, 'result.json'))
+                equi_epa = equi_result['energies'][-1] / equi_result['atom_numbs'][0]
+                evac = task_result['energies'][-1] - equi_epa * natoms
 
-                if inter_type == 'vasp':
-                    equi_outcar = os.path.join(equi_path, 'OUTCAR')
-                    equi_natoms, equi_epa, equi_vpa = vasp.get_nev(equi_outcar)
-
-                elif inter_type in ['deepmd', 'meam', 'eam_fs', 'eam_alloy']:
-                    equi_log = os.path.join(equi_path, 'log.lammps')
-                    equi_natoms, equi_epa, equi_vpa = lammps.get_nev(equi_log)
-
-                else:
-                    raise RuntimeError('interaction type not supported')
-
-                natoms = len(all_res[idid]['force'])
-                epa = all_res[idid]['energy'] / natoms
-                evac = epa * natoms - equi_epa * natoms
                 supercell_index = loadfn(os.path.join(ii, 'supercell.json'))
                 insert_ele = loadfn(os.path.join(ii, 'task.json'))['insert_ele'][0]
                 ptr_data += "%s: %7.3f  %7.3f %7.3f \n" % (insert_ele+'-'+str(supercell_index)+'-'+structure_dir, evac,
-                                                           epa * natoms, equi_epa * natoms)
-                res_data[insert_ele+'-'+str(supercell_index)+'-'+structure_dir] = [evac, epa * natoms, equi_epa * natoms]
+                                                           task_result['energies'][-1], equi_epa * natoms)
+                res_data[insert_ele+'-'+str(supercell_index)+'-'+structure_dir] = [evac, task_result['energies'][-1], equi_epa * natoms]
 
         else:
             if 'vasp_lmp_path' not in self.parameter:

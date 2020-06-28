@@ -1,6 +1,7 @@
 import os,glob,json
 from abc import ABC,abstractmethod
 from dpgen.auto_test.calculator import make_calculator
+from monty.serialization import loadfn, dumpfn
 
 class Property (ABC) :
     @abstractmethod
@@ -86,7 +87,9 @@ class Property (ABC) :
             poscar = os.path.join(ii, 'POSCAR')
             task = make_calculator(idata, poscar)
             res = task.compute(ii)
-            all_res.append(res)
+            dumpfn(res, os.path.join(ii, 'result_task.json'), indent=4)
+            #all_res.append(res)
+            all_res.append(os.path.join(ii, 'result_task.json'))
 
         cwd = os.getcwd()
         os.chdir(path_to_work)

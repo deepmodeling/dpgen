@@ -25,8 +25,8 @@ class Surface(Property):
             parameter['cal_type'] = parameter.get('cal_type', 'relaxation')
             self.cal_type = parameter['cal_type']
             default_cal_setting = {"relax_pos": True,
-                               "relax_shape": True,
-                               "relax_vol": False}
+                                   "relax_shape": True,
+                                   "relax_vol": False}
             parameter['cal_setting'] = parameter.get('cal_setting', default_cal_setting)
             self.cal_setting = parameter['cal_setting']
         else:
@@ -72,9 +72,8 @@ class Surface(Property):
             if refine:
                 print('surface refine starts')
                 task_list = make_refine(self.parameter['init_from_suffix'],
-                                    self.parameter['output_suffix'],
-                                    path_to_work,
-                                    len(all_slabs))
+                                        self.parameter['output_suffix'],
+                                        path_to_work)
                 # record miller
                 for ii in range(len(task_list)):
                     os.chdir(task_list[ii])
@@ -124,38 +123,23 @@ class Surface(Property):
         if not self.reprod:
             ptr_data += "Miller_Indices: \tSurf_E(J/m^2) EpA(eV) equi_EpA(eV)\n"
             for ii in all_tasks:
-                with open(os.path.join(ii, 'inter.json')) as fp:
-                    idata = json.load(fp)
-                inter_type = idata['type']
+                task_result = loadfn(os.path.join(ii, 'result_task.json'))
+                natoms = task_result['atom_numbs'][0]
+                epa = task_result['energies'][-1] / task_result['atom_numbs'][0]
+                AA = np.linalg.norm(np.cross(task_result['cells'][0][0], task_result['cells'][0][1]))
+
                 equi_path = os.path.abspath(os.path.join(os.path.dirname(output_file), '../relaxation'))
+                equi_result = loadfn(os.path.join(equi_path, 'result.json'))
+                equi_epa = equi_result['energies'][-1] / equi_result['atom_numbs'][0]
                 structure_dir = os.path.basename(ii)
-                if inter_type == 'vasp':
-                    equi_outcar = os.path.join(equi_path, 'OUTCAR')
-                    equi_natoms, equi_epa, equi_vpa = vasp.get_nev(equi_outcar)
-                    outcar = os.path.join(ii, 'OUTCAR')
-                    natoms, epa, vpa = vasp.get_nev(outcar)
-                    if self.cal_type == 'static':
-                        e0 = np.array(vasp.get_energies(outcar)) / natoms
-                        epa = e0[0]
-                    boxes = vasp.get_boxes(outcar)
-                    AA = np.linalg.norm(np.cross(boxes[0][0], boxes[0][1]))
-
-                elif inter_type in ['deepmd', 'meam', 'eam_fs', 'eam_alloy']:
-                    equi_log = os.path.join(equi_path, 'log.lammps')
-                    equi_natoms, equi_epa, equi_vpa = lammps.get_nev(equi_log)
-                    lmp_log = os.path.join(ii, 'log.lammps')
-                    natoms, epa, vpa = lammps.get_nev(lmp_log)
-                    AA = lammps.get_base_area(lmp_log)
-
-                else:
-                    raise RuntimeError('interaction type not supported')
 
                 Cf = 1.60217657e-16 / (1e-20 * 2) * 0.001
-                evac = (epa * natoms - equi_epa * natoms) / AA * Cf
+                evac = (task_result['energies'][-1] - equi_epa * natoms) / AA * Cf
 
                 miller_index = loadfn(os.path.join(ii, 'miller.json'))
-                ptr_data += "%s: \t%7.3f    %8.3f %8.3f\n" % (miller_index, evac, epa, equi_epa)
-                res_data[str(miller_index)] = [evac, epa, equi_epa]
+                ptr_data += "%-25s     %7.3f    %8.3f %8.3f\n" % (
+                    str(miller_index) + '-' + structure_dir + ':', evac, epa, equi_epa)
+                res_data[str(miller_index) + '-' + structure_dir] = [evac, epa, equi_epa]
 
         else:
             if 'vasp_lmp_path' not in self.parameter:

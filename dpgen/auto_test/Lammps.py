@@ -174,6 +174,7 @@ class Lammps(Task):
             energy = []
             force = []
             virial = []
+            stress = []
             with open(dump_lammps, 'r') as fin:
                 dump = fin.read().split('\n')
             dumptime = []
@@ -230,9 +231,13 @@ class Lammps(Task):
                         for jj in lines:
                             line = jj.split()
                             if len(line) and str(ii) == line[0]:
+                                stress.append([])
                                 virial.append([])
                                 energy.append(float(line[1]))
                                 # virials = stress * vol * 1e5 *1e-30 * 1e19/1.6021766208
+                                stress[-1].append([float(line[2]), float(line[5]), float(line[6])])
+                                stress[-1].append([float(line[5]), float(line[3]), float(line[7])])
+                                stress[-1].append([float(line[6]), float(line[7]), float(line[4])])
                                 stress_to_virial = vol[idid] * 1e5 * 1e-30 * 1e19 / 1.6021766208
                                 virial[-1].append([float(line[2]) * stress_to_virial, float(line[5]) * stress_to_virial,
                                                    float(line[6]) * stress_to_virial])
@@ -250,8 +255,8 @@ class Lammps(Task):
             for ii in range(len(type_map)):
                 type_map_list.append(type_map[ii])
 
-            #d_dump = dpdata.System(dump_lammps, fmt='lammps/dump', type_map=type_map_list)
-            #d_dump.to('vasp/poscar', contcar, frame_idx=-1)
+            # d_dump = dpdata.System(dump_lammps, fmt='lammps/dump', type_map=type_map_list)
+            # d_dump.to('vasp/poscar', contcar, frame_idx=-1)
 
             result_dict = {"@module": "dpdata.system", "@class": "LabeledSystem", "data": {"atom_numbs": [natom],
                                                                                            "atom_names": type_map_list,
@@ -287,7 +292,13 @@ class Lammps(Task):
                                                                                                "@module": "numpy",
                                                                                                "@class": "array",
                                                                                                "dtype": "float64",
-                                                                                               "data": virial}}}
+                                                                                               "data": virial},
+                                                                                           "stress": {
+                                                                                               "@module": "numpy",
+                                                                                               "@class": "array",
+                                                                                               "dtype": "float64",
+                                                                                               "data": stress}}}
+
             contcar = os.path.join(output_dir, 'CONTCAR')
             dumpfn(result_dict, contcar, indent=4)
             d_dump = loadfn(contcar)
