@@ -1,7 +1,5 @@
 import os
 import warnings
-import json
-import dpdata
 import dpgen.auto_test.lib.lammps as lammps
 from dpgen import dlog
 from monty.serialization import loadfn, dumpfn

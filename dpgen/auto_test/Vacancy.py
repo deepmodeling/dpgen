@@ -4,11 +4,8 @@ from dpgen.auto_test.reproduce import make_repro
 from dpgen.auto_test.reproduce import post_repro
 from pymatgen.core.structure import Structure
 from pymatgen.analysis.defects.generators import VacancyGenerator
-import dpgen.auto_test.lib.vasp as vasp
-import dpgen.auto_test.lib.lammps as lammps
 from monty.serialization import loadfn, dumpfn
 from dpgen import dlog
-import numpy as np
 import os, json
 
 

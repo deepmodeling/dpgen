@@ -1,15 +1,12 @@
 from dpgen import dlog
 from dpgen.auto_test.Property import Property
 from dpgen.auto_test.refine import make_refine
-import dpgen.auto_test.lib.vasp as vasp
-import dpgen.auto_test.lib.lammps as lammps
 from pymatgen.core.structure import Structure
 from pymatgen.analysis.elasticity.strain import DeformedStructureSet, Strain
 from pymatgen.analysis.elasticity.stress import Stress
 from pymatgen.analysis.elasticity.elastic import ElasticTensor
 from monty.serialization import loadfn, dumpfn
-import numpy as np
-import os, json, re
+import os
 
 
 class Elastic(Property):

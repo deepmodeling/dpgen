@@ -78,12 +78,14 @@ def make_equi(confs,
             dlog.warning('%s already exists' % relax_dirs)
         else:
             os.makedirs(relax_dirs)
-            task_dirs.append(relax_dirs)
-            os.chdir(relax_dirs)
-            # copy POSCARs to mp-xxx/relaxation
-            # ...
-            os.symlink(os.path.relpath(poscar), 'POSCAR')
-            os.chdir(cwd)
+        task_dirs.append(relax_dirs)
+        os.chdir(relax_dirs)
+        # copy POSCARs to mp-xxx/relaxation
+        # ...
+        if os.path.isfile('POSCAR'):
+            os.remove('POSCAR')
+        os.symlink(os.path.relpath(poscar), 'POSCAR')
+        os.chdir(cwd)
     task_dirs.sort()
     # generate task files
     relax_param['cal_type'] = 'relaxation'
@@ -142,11 +144,11 @@ def run_equi(confs,
         machine, resources, command, group_size = util.get_machine_info(mdata, inter_type)
         for ii in range(len(work_path_list)):
             work_path = work_path_list[ii]
-            disp = make_dispatcher(machine, resources, work_path, run_tasks[ii], group_size)
+            disp = make_dispatcher(machine, resources, work_path, [run_tasks[ii]], group_size)
             disp.run_jobs(resources,
                           command,
                           work_path,
-                          run_tasks[ii],
+                          [run_tasks[ii]],
                           group_size,
                           forward_common_files,
                           forward_files,

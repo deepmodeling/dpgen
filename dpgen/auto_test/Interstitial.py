@@ -1,12 +1,9 @@
 from dpgen.auto_test.Property import Property
-import dpgen.auto_test.lib.vasp as vasp
-import dpgen.auto_test.lib.lammps as lammps
 from dpgen.auto_test.refine import make_refine
 from dpgen.auto_test.reproduce import make_repro
 from dpgen.auto_test.reproduce import post_repro
 from pymatgen.core.structure import Structure
 from pymatgen.analysis.defects.generators import InterstitialGenerator
-import numpy as np
 import os, json
 from monty.serialization import loadfn,dumpfn
 

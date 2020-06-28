@@ -91,14 +91,14 @@ class Property (ABC) :
             #all_res.append(res)
             all_res.append(os.path.join(ii, 'result_task.json'))
 
-        cwd = os.getcwd()
-        os.chdir(path_to_work)
+        #cwd = os.getcwd()
+        #os.chdir(path_to_work)
         res, ptr = self._compute_lower(output_file, task_dirs, all_res)
         #        with open(output_file, 'w') as fp:
         #            json.dump(fp, res, indent=4)
         with open(print_file, 'w') as fp:
             fp.write(ptr)
-        os.chdir(cwd)
+        #os.chdir(cwd)
 
         
     @abstractmethod

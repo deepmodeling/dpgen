@@ -2,7 +2,6 @@ from dpgen.auto_test.Property import Property
 from dpgen.auto_test.refine import make_refine
 from dpgen.auto_test import reproduce
 import dpgen.auto_test.lib.vasp as vasp
-import dpgen.auto_test.lib.lammps as lammps
 from pymatgen.core.structure import Structure
 from pymatgen.core.surface import generate_all_slabs
 from monty.serialization import loadfn, dumpfn
