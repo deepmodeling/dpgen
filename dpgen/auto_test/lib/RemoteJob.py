@@ -482,16 +482,22 @@ class PBSJob (RemoteJob) :
         _set_default_resource(res)
         ret = ''
         ret += "#!/bin/bash -l\n"
-        if res['numb_gpu'] == 0:
-            ret += '#PBS -l nodes=%d:ppn=%d\n' % (res['numb_node'], res['task_per_node'])
-        else :
-            ret += '#PBS -l nodes=%d:ppn=%d:gpus=%d\n' % (res['numb_node'], res['task_per_node'], res['numb_gpu'])
+        if len(res['ncpus']) > 0:
+            ret += '#PBS -l ncpus=%s\n' % (res['ncpus'])
+        if len(res['ngpus'])>0:
+            ret += '#PBS -l ngpus=%s\n' % (res['ngpus'])
+        # if res['numb_gpu'] == 0:
+        #     ret += '#PBS -l nodes=%d:ppn=%d\n' % (res['numb_node'], res['task_per_node'])
+        # else :
+        #     ret += '#PBS -l nodes=%d:ppn=%d:gpus=%d\n' % (res['numb_node'], res['task_per_node'], res['numb_gpu'])
         ret += '#PBS -l walltime=%s\n' % (res['time_limit'])
         if res['mem_limit'] > 0 :
             ret += "#PBS -l mem=%dG \n" % res['mem_limit']
         ret += '#PBS -j oe\n'
         if len(res['partition']) > 0 :
             ret += '#PBS -q %s\n' % res['partition']
+        if len(res['storage'])>0:
+            ret+='#PBS -l storage=%s\n'%res['storage']
         ret += "\n"
         for ii in res['module_unload_list'] :
             ret += "module unload %s\n" % ii
