@@ -1,13 +1,14 @@
-import os, glob
-from dpgen.auto_test.EOS import EOS
-from dpgen.auto_test.Elastic import Elastic
-from dpgen.auto_test.Vacancy import Vacancy
-from dpgen.auto_test.Interstitial import Interstitial
-from dpgen.auto_test.Surface import Surface
-from dpgen.auto_test.calculator import make_calculator
-from dpgen import dlog
+import glob
+import os
 
 import dpgen.auto_test.lib.util as util
+from dpgen import dlog
+from dpgen.auto_test.EOS import EOS
+from dpgen.auto_test.Elastic import Elastic
+from dpgen.auto_test.Interstitial import Interstitial
+from dpgen.auto_test.Surface import Surface
+from dpgen.auto_test.Vacancy import Vacancy
+from dpgen.auto_test.calculator import make_calculator
 from dpgen.dispatcher.Dispatcher import make_dispatcher
 from dpgen.remote.decide_machine import decide_fp_machine, decide_model_devi_machine
 
@@ -74,9 +75,13 @@ def make_property(confs,
             prop = make_property_instance(jj)
             task_list = prop.make_confs(path_to_work, path_to_equi, do_refine)
 
+            inter_param_prop = inter_param
+            if 'cal_setting' in jj and 'overwrite_interaction' in jj['cal_setting']:
+                inter_param_prop = jj['cal_setting']['overwrite_interaction']
+
             for kk in task_list:
                 poscar = os.path.join(kk, 'POSCAR')
-                inter = make_calculator(inter_param, poscar)
+                inter = make_calculator(inter_param_prop, poscar)
                 inter.make_potential_files(kk)
                 dlog.debug(prop.task_type())  ### debug
                 inter.make_input_file(kk, prop.task_type(), prop.task_param())

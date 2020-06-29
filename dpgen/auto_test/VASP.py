@@ -1,12 +1,11 @@
 import os
-import json
 from dpgen import dlog
 from dpgen.util import sepline
 import dpgen.auto_test.lib.vasp as vasp
 from dpgen.auto_test.Task import Task
 from dpgen.generator.lib.vasp import incar_upper
 from dpdata import LabeledSystem
-from monty.serialization import loadfn, dumpfn
+from monty.serialization import dumpfn
 from pymatgen.io.vasp import Incar, Kpoints
 from pymatgen.core.structure import Structure
 
@@ -105,6 +104,26 @@ class VASP(Task):
 
             else:
                 raise RuntimeError("not supported calculation type for VASP")
+
+            if 'ediff' in cal_setting:
+                dlog.info("%s setting EDIFF to %s" % (self.make_input_file.__name__, cal_setting['ediff']))
+                incar['EDIFF'] = cal_setting['ediff']
+
+            if 'ediffg' in cal_setting:
+                dlog.info("%s setting EDIFFG to %s" % (self.make_input_file.__name__, cal_setting['ediffg']))
+                incar['EDIFFG'] = cal_setting['ediffg']
+
+            if 'encut' in cal_setting:
+                dlog.info("%s setting ENCUT to %s" % (self.make_input_file.__name__, cal_setting['encut']))
+                incar['ENCUT'] = cal_setting['encut']
+
+            if 'kspacing' in cal_setting:
+                dlog.info("%s setting KSAPCING to %s" % (self.make_input_file.__name__, cal_setting['kspacing']))
+                incar['KSAPCING'] = cal_setting['kspacing']
+
+            if 'kgamma' in cal_setting:
+                dlog.info("%s setting KGAMMA to %s" % (self.make_input_file.__name__, cal_setting['kgamma']))
+                incar['KGAMMA'] = cal_setting['kgamma']
 
         try:
             kspacing = incar.get('KSPACING')

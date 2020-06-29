@@ -1,13 +1,15 @@
+import glob
 import os
+
+from monty.serialization import dumpfn
+
 import dpgen.auto_test.lib.crys as crys
-import glob, warnings, json
 import dpgen.auto_test.lib.util as util
 from dpgen import dlog
-from dpgen.dispatcher.Dispatcher import make_dispatcher
 from dpgen.auto_test.calculator import make_calculator
-from dpgen.remote.decide_machine import decide_fp_machine, decide_model_devi_machine
 from dpgen.auto_test.mpdb import get_structure
-from monty.serialization import loadfn, dumpfn
+from dpgen.dispatcher.Dispatcher import make_dispatcher
+from dpgen.remote.decide_machine import decide_fp_machine, decide_model_devi_machine
 
 lammps_task_type = ['deepmd', 'meam', 'eam_fs', 'eam_alloy']
 

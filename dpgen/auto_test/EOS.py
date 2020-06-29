@@ -1,11 +1,16 @@
+import glob
+import json
+import os
+
+import numpy as np
+from monty.serialization import loadfn, dumpfn
+
+import dpgen.auto_test.lib.vasp as vasp
+from dpgen import dlog
 from dpgen.auto_test.Property import Property
 from dpgen.auto_test.refine import make_refine
-from dpgen.auto_test import reproduce
-import dpgen.auto_test.lib.vasp as vasp
-from monty.serialization import loadfn, dumpfn
-import numpy as np
-import os, json
-from dpgen import dlog
+from dpgen.auto_test.reproduce import make_repro
+from dpgen.auto_test.reproduce import post_repro
 
 
 class EOS(Property):
@@ -22,15 +27,32 @@ class EOS(Property):
             default_cal_setting = {"relax_pos": True,
                                    "relax_shape": True,
                                    "relax_vol": False}
-            parameter['cal_setting'] = parameter.get('cal_setting', default_cal_setting)
+            if 'cal_setting' not in parameter:
+                parameter['cal_setting'] = default_cal_setting
+            elif "relax_pos" not in parameter['cal_setting']:
+                parameter['cal_setting']['relax_pos'] = default_cal_setting['relax_pos']
+            elif "relax_shape" not in parameter['cal_setting']:
+                parameter['cal_setting']['relax_shape'] = default_cal_setting['relax_shape']
+            elif "relax_vol" not in parameter['cal_setting']:
+                parameter['cal_setting']['relax_vol'] = default_cal_setting['relax_vol']
             self.cal_setting = parameter['cal_setting']
         else:
             parameter['cal_type'] = 'static'
             self.cal_type = parameter['cal_type']
-            parameter['cal_setting'] = {"relax_pos": False,
-                                        "relax_shape": False,
-                                        "relax_vol": False}
+            default_cal_setting = {"relax_pos": False,
+                                   "relax_shape": False,
+                                   "relax_vol": False}
+            if 'cal_setting' not in parameter:
+                parameter['cal_setting'] = default_cal_setting
+            elif "relax_pos" not in parameter['cal_setting']:
+                parameter['cal_setting']['relax_pos'] = default_cal_setting['relax_pos']
+            elif "relax_shape" not in parameter['cal_setting']:
+                parameter['cal_setting']['relax_shape'] = default_cal_setting['relax_shape']
+            elif "relax_vol" not in parameter['cal_setting']:
+                parameter['cal_setting']['relax_vol'] = default_cal_setting['relax_vol']
             self.cal_setting = parameter['cal_setting']
+            parameter['init_from_suffix'] = parameter.get('init_from_suffix', '00')
+            self.init_from_suffix = parameter['init_from_suffix']
         self.parameter = parameter
 
     def make_confs(self,
@@ -43,8 +65,16 @@ class EOS(Property):
         else:
             os.makedirs(path_to_work)
         path_to_equi = os.path.abspath(path_to_equi)
+
         if 'start_confs_path' in self.parameter and os.path.exists(self.parameter['start_confs_path']):
-            path_to_equi = os.path.abspath(self.parameter['start_confs_path'])
+            init_path_list = glob.glob(os.path.join(self.parameter['start_confs_path'], '*'))
+            struct_init_name_list = []
+            for ii in init_path_list:
+                struct_init_name_list.append(ii.split('/')[-1])
+            struct_output_name = path_to_work.split('/')[-2]
+            assert struct_output_name in struct_init_name_list
+            path_to_equi = os.path.abspath(os.path.join(self.parameter['start_confs_path'],
+                                                        struct_output_name, 'relaxation'))
 
         cwd = os.getcwd()
         task_list = []
@@ -59,7 +89,7 @@ class EOS(Property):
             if 'vasp_lmp_path' not in self.parameter:
                 raise RuntimeError("please provide the vasp_lmp_path for reproduction")
             vasp_lmp_path = os.path.abspath(self.parameter['vasp_lmp_path'])
-            task_list = reproduce.make_repro(vasp_lmp_path, path_to_work)
+            task_list = make_repro(vasp_lmp_path, self.init_from_suffix, path_to_work)
             os.chdir(cwd)
         else:
             print('gen eos from ' + str(self.vol_start) + ' to ' + str(self.vol_end) + ' by every ' + str(self.vol_step))
@@ -106,7 +136,7 @@ class EOS(Property):
         if not self.reprod:
             ptr_data += ' VpA(A^3)  EpA(eV)\n'
             for ii in range(len(all_tasks)):
-                #vol = self.vol_start + ii * self.vol_step
+                # vol = self.vol_start + ii * self.vol_step
                 vol = loadfn(os.path.join(all_tasks[ii], 'eos.json'))['volume']
                 task_result = loadfn(all_res[ii])
                 res_data[vol] = task_result['energies'][-1] / task_result['atom_numbs'][0]
@@ -118,7 +148,7 @@ class EOS(Property):
             if 'vasp_lmp_path' not in self.parameter:
                 raise RuntimeError("please provide the vasp_lmp_path for reproduction")
             vasp_lmp_path = os.path.abspath(self.parameter['vasp_lmp_path'])
-            res_data, ptr_data = reproduce.post_repro(vasp_lmp_path, all_tasks, ptr_data)
+            res_data, ptr_data = post_repro(vasp_lmp_path, self.parameter['init_from_suffix'], all_tasks, ptr_data)
 
         with open(output_file, 'w') as fp:
             json.dump(res_data, fp, indent=4)

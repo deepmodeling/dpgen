@@ -1,4 +1,6 @@
-import os, re, glob
+import glob
+import os
+import re
 
 
 def make_refine(init_from_suffix, output_suffix, path_to_work):

@@ -120,6 +120,19 @@ class Lammps(Task):
                 fc = fin.read()
 
         else:
+            if 'etol' in cal_setting:
+                dlog.info("%s setting etol to %s" % (self.make_input_file.__name__, cal_setting['etol']))
+                etol = cal_setting['etol']
+            if 'ftol' in cal_setting:
+                dlog.info("%s setting ftol to %s" % (self.make_input_file.__name__, cal_setting['ftol']))
+                ftol = cal_setting['ftol']
+            if 'maxiter' in cal_setting:
+                dlog.info("%s setting maxiter to %s" % (self.make_input_file.__name__, cal_setting['maxiter']))
+                maxiter = cal_setting['maxiter']
+            if 'maxeval' in cal_setting:
+                dlog.info("%s setting maxeval to %s" % (self.make_input_file.__name__, cal_setting['maxeval']))
+                maxeval = cal_setting['maxeval']
+
             if cal_type == 'relaxation':
                 relax_pos = cal_setting['relax_pos']
                 relax_shape = cal_setting['relax_shape']

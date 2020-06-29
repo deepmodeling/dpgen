@@ -1,13 +1,14 @@
-import os, glob, warnings
-import dpgen.auto_test.lib.vasp as vasp
-import dpgen.auto_test.lib.lammps as lammps
+import glob
+import os
+
 import numpy as np
-import dpdata
-from monty.serialization import loadfn, dumpfn
+from monty.serialization import loadfn
 
 
-def make_repro(vasp_lmp_path, path_to_work):
+def make_repro(vasp_lmp_path, init_from_suffix, path_to_work):
     path_to_work = os.path.abspath(path_to_work)
+    property_type = path_to_work.split('/')[-1].split('_')[0]
+    vasp_lmp_path = os.path.join(vasp_lmp_path, '*', property_type + '_' + init_from_suffix)
     vasp_lmp_path_list = glob.glob(vasp_lmp_path)
     vasp_lmp_path_list.sort()
     cwd = os.getcwd()
@@ -53,9 +54,12 @@ def make_repro(vasp_lmp_path, path_to_work):
 
     return task_list
 
-def post_repro(vasp_lmp_path, all_tasks, ptr_data):
+
+def post_repro(vasp_lmp_path, init_from_suffix, all_tasks, ptr_data):
     ptr_data += "Reproduce: Initial_path Init_E(eV/atom)  Reprod_E(eV/atom)  Difference(eV/atom)\n"
     struct_output_name = all_tasks[0].split('/')[-3]
+    property_type = all_tasks[0].split('/')[-2].split('_')[0]
+    vasp_lmp_path = os.path.join(vasp_lmp_path, '*', property_type + '_' + init_from_suffix)
     vasp_lmp_path_list = glob.glob(vasp_lmp_path)
     vasp_lmp_path_list.sort()
     # cwd = os.getcwd()
@@ -105,7 +109,7 @@ def post_repro(vasp_lmp_path, all_tasks, ptr_data):
         output_ener -= output_ener[-1] - init_ener[-1]
         diff = output_ener - init_ener
         diff = diff[error_start:]
-        error = np.linalg.norm(diff) / np.sqrt(np.size(output_ener)-1)
+        error = np.linalg.norm(diff) / np.sqrt(np.size(output_ener) - 1)
         res_data[ii] = {'nframes': len(init_ener), 'error': error}
 
     if not len(init_ener_tot) == len(output_ener_tot):

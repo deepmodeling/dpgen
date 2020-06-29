@@ -1,31 +1,42 @@
+import glob
+import os
+
+from monty.serialization import loadfn, dumpfn
+from pymatgen.analysis.elasticity.elastic import ElasticTensor
+from pymatgen.analysis.elasticity.strain import DeformedStructureSet, Strain
+from pymatgen.analysis.elasticity.stress import Stress
+from pymatgen.core.structure import Structure
+from pymatgen.io.vasp import Incar, Kpoints
+
+import dpgen.auto_test.lib.vasp as vasp
 from dpgen import dlog
 from dpgen.auto_test.Property import Property
 from dpgen.auto_test.refine import make_refine
-from pymatgen.core.structure import Structure
-from pymatgen.analysis.elasticity.strain import DeformedStructureSet, Strain
-from pymatgen.analysis.elasticity.stress import Stress
-from pymatgen.analysis.elasticity.elastic import ElasticTensor
-from monty.serialization import loadfn, dumpfn
-import os
-from pymatgen.io.vasp import Incar, Kpoints
 from dpgen.generator.lib.vasp import incar_upper
-import dpgen.auto_test.lib.vasp as vasp
 
 
 class Elastic(Property):
     def __init__(self,
                  parameter):
-        self.parameter = parameter
         default_norm_def = 2e-3
         default_shear_def = 5e-3
-        self.norm_deform = parameter.get('norm_deform', default_norm_def)
-        self.shear_deform = parameter.get('shear_deform', default_shear_def)
+        parameter['norm_deform'] = parameter.get('norm_deform', default_norm_def)
+        self.norm_deform = parameter['norm_deform']
+        parameter['shear_deform'] = parameter.get('shear_deform', default_shear_def)
+        self.shear_deform = parameter['shear_deform']
         parameter['cal_type'] = parameter.get('cal_type', 'relaxation')
         self.cal_type = parameter['cal_type']
         default_cal_setting = {"relax_pos": True,
                                "relax_shape": False,
                                "relax_vol": False}
-        parameter['cal_setting'] = parameter.get('cal_setting', default_cal_setting)
+        if 'cal_setting' not in parameter:
+            parameter['cal_setting'] = default_cal_setting
+        elif "relax_pos" not in parameter['cal_setting']:
+            parameter['cal_setting']['relax_pos'] = default_cal_setting['relax_pos']
+        elif "relax_shape" not in parameter['cal_setting']:
+            parameter['cal_setting']['relax_shape'] = default_cal_setting['relax_shape']
+        elif "relax_vol" not in parameter['cal_setting']:
+            parameter['cal_setting']['relax_vol'] = default_cal_setting['relax_vol']
         self.cal_setting = parameter['cal_setting']
         parameter['reprod-opt'] = False
         self.reprod = parameter['reprod-opt']
@@ -41,8 +52,16 @@ class Elastic(Property):
         else:
             os.makedirs(path_to_work)
         path_to_equi = os.path.abspath(path_to_equi)
+
         if 'start_confs_path' in self.parameter and os.path.exists(self.parameter['start_confs_path']):
-            path_to_equi = os.path.abspath(self.parameter['start_confs_path'])
+            init_path_list = glob.glob(os.path.join(self.parameter['start_confs_path'], '*'))
+            struct_init_name_list = []
+            for ii in init_path_list:
+                struct_init_name_list.append(ii.split('/')[-1])
+            struct_output_name = path_to_work.split('/')[-2]
+            assert struct_output_name in struct_init_name_list
+            path_to_equi = os.path.abspath(os.path.join(self.parameter['start_confs_path'],
+                                                        struct_output_name, 'relaxation'))
 
         task_list = []
         cwd = os.getcwd()
