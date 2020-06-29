@@ -481,7 +481,7 @@ class PBSJob (RemoteJob) :
                      res = None) :
         _set_default_resource(res)
         ret = ''
-        ret += "#!/bin/bash -l\n"
+        ret += "#!/bin/bash\n"
         if 'ncpus' in res:
             ret += '#PBS -l ncpus=%s\n' % (res['ncpus'])
         if 'ngpus' in res:
