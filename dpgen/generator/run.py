@@ -1036,12 +1036,12 @@ def check_cluster(conf_name,
     xlim=max(coord[:,0])-min(coord[:,0])
     ylim=max(coord[:,1])-min(coord[:,1])
     zlim=max(coord[:,2])-min(coord[:,2])
-    clim=max([xlim,ylim,zlim])
     a,b,c=map(norm,[cell[0,:],cell[1,:],cell[2,:]])
-    min_lat=min([a,b,c])
+    min_vac=min([a-xlim,b-ylim,c-zlim])
+    #print([a-xlim,b-ylim,c-zlim])
     #_,r3d=miniball.get_bounding_ball(coord) 
     
-    if min_lat-clim < fp_cluster_vacuum:
+    if min_vac < fp_cluster_vacuum:
        is_bad = True
     else:
        is_bad = False
