@@ -43,6 +43,9 @@ class Vacancy(Property):
         else:
             os.makedirs(path_to_work)
         path_to_equi = os.path.abspath(path_to_equi)
+        if 'start_confs_path' in self.parameter and os.path.exists(self.parameter['start_confs_path']):
+            path_to_equi = os.path.abspath(self.parameter['start_confs_path'])
+
         task_list = []
         cwd = os.getcwd()
 
@@ -97,6 +100,9 @@ class Vacancy(Property):
                     dumpfn(self.supercell, 'supercell.json')
                 os.chdir(cwd)
         return task_list
+
+    def post_process(self, task_list):
+        pass
 
     def task_type(self):
         return self.parameter['type']

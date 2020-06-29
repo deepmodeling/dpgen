@@ -7,6 +7,9 @@ from pymatgen.analysis.elasticity.stress import Stress
 from pymatgen.analysis.elasticity.elastic import ElasticTensor
 from monty.serialization import loadfn, dumpfn
 import os
+from pymatgen.io.vasp import Incar, Kpoints
+from dpgen.generator.lib.vasp import incar_upper
+import dpgen.auto_test.lib.vasp as vasp
 
 
 class Elastic(Property):
@@ -38,6 +41,9 @@ class Elastic(Property):
         else:
             os.makedirs(path_to_work)
         path_to_equi = os.path.abspath(path_to_equi)
+        if 'start_confs_path' in self.parameter and os.path.exists(self.parameter['start_confs_path']):
+            path_to_equi = os.path.abspath(self.parameter['start_confs_path'])
+
         task_list = []
         cwd = os.getcwd()
 
@@ -108,6 +114,28 @@ class Elastic(Property):
                 dumpfn(df.as_dict(), 'strain.json', indent=4)
             os.chdir(cwd)
         return task_list
+
+    def post_process(self, task_list):
+        cwd = os.getcwd()
+        poscar_start = os.path.abspath(os.path.join(task_list[0], '..', 'POSCAR'))
+        os.chdir(os.path.join(task_list[0], '..'))
+        if os.path.isfile(os.path.join(task_list[0], 'INCAR')):
+            incar = incar_upper(Incar.from_file(os.path.join(task_list[0], 'INCAR')))
+            kspacing = incar.get('KSPACING')
+            kgamma = incar.get('KGAMMA', False)
+            ret = vasp.make_kspacing_kpoints(poscar_start, kspacing, kgamma)
+            kp = Kpoints.from_string(ret)
+            if os.path.isfile('KPOINTS'):
+                os.remove('KPOINTS')
+            kp.write_file("KPOINTS")
+            os.chdir(cwd)
+            kpoints_universal = os.path.abspath(os.path.join(task_list[0], '..', 'KPOINTS'))
+            for ii in task_list:
+                if os.path.isfile(os.path.join(ii, 'KPOINTS')):
+                    os.remove(os.path.join(ii, 'KPOINTS'))
+                os.chdir(ii)
+                os.symlink(os.path.relpath(kpoints_universal), 'KPOINTS')
+        os.chdir(cwd)
 
     def task_type(self):
         return self.parameter['type']

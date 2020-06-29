@@ -151,7 +151,7 @@ class VASP(Task):
             return outcar_dict
 
     def forward_files(self):
-        return ['INCAR', 'POSCAR', 'POTCAR']
+        return ['INCAR', 'POSCAR', 'KPOINTS', 'POTCAR']
 
     def forward_common_files(self):
         return ['INCAR', 'POTCAR']

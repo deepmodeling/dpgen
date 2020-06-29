@@ -81,6 +81,8 @@ def make_property(confs,
                 dlog.debug(prop.task_type())  ### debug
                 inter.make_input_file(kk, prop.task_type(), prop.task_param())
 
+            prop.post_process(task_list)  # generate same KPOINTS file for elastic when doing VASP
+
 
 def run_property(confs,
                  inter_param,

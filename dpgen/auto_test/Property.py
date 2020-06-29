@@ -15,12 +15,12 @@ class Property (ABC) :
         parameters : dict
                 A dict that defines the property.
         """
-        pass        
+        pass
 
     @abstractmethod
-    def make_confs(self, 
+    def make_confs(self,
                    path_to_work,
-                   path_to_equi, 
+                   path_to_equi,
                    refine = False):
         """
         Make configurations needed to compute the property. 
@@ -41,6 +41,14 @@ class Property (ABC) :
         -------
         task_list: list of str
                 The list of task directories.
+        """
+        pass
+
+
+    @abstractmethod
+    def post_process(self, task_list):
+        """
+        post_process the KPOINTS file in elastic.
         """
         pass
 
@@ -100,9 +108,9 @@ class Property (ABC) :
             fp.write(ptr)
         #os.chdir(cwd)
 
-        
+
     @abstractmethod
-    def _compute_lower(self, 
+    def _compute_lower(self,
                        output_file,
                        all_tasks,
                        all_res):
