@@ -22,6 +22,7 @@ def make_equi(confs,
         ele_list = [key for key in inter_param['type_map'].keys()]
     else:
         ele_list = [key for key in inter_param['potcars'].keys()]
+    # ele_list = inter_param['type_map']
     dlog.debug("ele_list %s" % ':'.join(ele_list))
     conf_dirs = []
     for conf in confs:
@@ -77,14 +78,21 @@ def make_equi(confs,
             dlog.warning('%s already exists' % relax_dirs)
         else:
             os.makedirs(relax_dirs)
-            task_dirs.append(relax_dirs)
-            os.chdir(relax_dirs)
-            # copy POSCARs to mp-xxx/relaxation
-            # ...
-            os.symlink(os.path.relpath(poscar), 'POSCAR')
-            os.chdir(cwd)
+        task_dirs.append(relax_dirs)
+        os.chdir(relax_dirs)
+        # copy POSCARs to mp-xxx/relaxation
+        # ...
+        if os.path.isfile('POSCAR'):
+            os.remove('POSCAR')
+        os.symlink(os.path.relpath(poscar), 'POSCAR')
+        os.chdir(cwd)
     task_dirs.sort()
     # generate task files
+    relax_param['cal_type'] = 'relaxation'
+    if 'cal_setting' not in relax_param:
+        relax_param['cal_setting'] = {"relax_pos": True,
+                                      "relax_shape": True,
+                                      "relax_vol": True}
     for ii in task_dirs:
         poscar = os.path.join(ii, 'POSCAR')
         dlog.debug('task_dir %s' % ii)
@@ -136,11 +144,11 @@ def run_equi(confs,
         machine, resources, command, group_size = util.get_machine_info(mdata, inter_type)
         for ii in range(len(work_path_list)):
             work_path = work_path_list[ii]
-            disp = make_dispatcher(machine, resources, work_path, run_tasks[ii], group_size)
+            disp = make_dispatcher(machine, resources, work_path, [run_tasks[ii]], group_size)
             disp.run_jobs(resources,
                           command,
                           work_path,
-                          run_tasks[ii],
+                          [run_tasks[ii]],
                           group_size,
                           forward_common_files,
                           forward_files,
@@ -168,7 +176,5 @@ def post_equi(confs, inter_param):
     for ii in task_dirs:
         poscar = os.path.join(ii, 'POSCAR')
         inter = make_calculator(inter_param, poscar)
-        res = inter.compute(ii,inter_param)
-          
-        dumpfn(res,os.path.join(ii, 'result.json'),indent=4)
-
+        res = inter.compute(ii)
+        dumpfn(res, os.path.join(ii, 'result.json'), indent=4)

@@ -2,41 +2,67 @@ from dpgen.auto_test.Property import Property
 from dpgen.auto_test.refine import make_refine
 from dpgen.auto_test import reproduce
 import dpgen.auto_test.lib.vasp as vasp
+from monty.serialization import loadfn, dumpfn
 import numpy as np
 import os, json
+from dpgen import dlog
 
 
 class EOS(Property):
     def __init__(self,
                  parameter):
+        parameter['reprod-opt'] = parameter.get('reprod-opt', False)
+        self.reprod = parameter['reprod-opt']
+        if not self.reprod:
+            self.vol_start = parameter['vol_start']
+            self.vol_end = parameter['vol_end']
+            self.vol_step = parameter['vol_step']
+            parameter['cal_type'] = parameter.get('cal_type', 'relaxation')
+            self.cal_type = parameter['cal_type']
+            default_cal_setting = {"relax_pos": True,
+                                   "relax_shape": True,
+                                   "relax_vol": False}
+            parameter['cal_setting'] = parameter.get('cal_setting', default_cal_setting)
+            self.cal_setting = parameter['cal_setting']
+        else:
+            parameter['cal_type'] = 'static'
+            self.cal_type = parameter['cal_type']
+            parameter['cal_setting'] = {"relax_pos": False,
+                                        "relax_shape": False,
+                                        "relax_vol": False}
+            self.cal_setting = parameter['cal_setting']
         self.parameter = parameter
-        self.vol_start = parameter['vol_start']
-        self.vol_end = parameter['vol_end']
-        self.vol_step = parameter['vol_step']
-        self.change_box = parameter.get('change_box', True)
-        self.reprod = parameter.get('reprod-opt', False)
 
     def make_confs(self,
                    path_to_work,
                    path_to_equi,
                    refine=False):
         path_to_work = os.path.abspath(path_to_work)
+        if os.path.exists(path_to_work):
+            dlog.warning('%s already exists' % path_to_work)
+        else:
+            os.makedirs(path_to_work)
         path_to_equi = os.path.abspath(path_to_equi)
+        if 'start_confs_path' in self.parameter and os.path.exists(self.parameter['start_confs_path']):
+            path_to_equi = os.path.abspath(self.parameter['start_confs_path'])
+
         cwd = os.getcwd()
         task_list = []
         if refine:
+            print('EOS refine starts')
             task_list = make_refine(self.parameter['init_from_suffix'],
                                     self.parameter['output_suffix'],
-                                    path_to_work,
-                                    int((self.vol_end - self.vol_start) / self.vol_step))
+                                    path_to_work)
             os.chdir(cwd)
         if self.reprod:
+            print('eos reproduce starts')
             if 'vasp_lmp_path' not in self.parameter:
                 raise RuntimeError("please provide the vasp_lmp_path for reproduction")
             vasp_lmp_path = os.path.abspath(self.parameter['vasp_lmp_path'])
             task_list = reproduce.make_repro(vasp_lmp_path, path_to_work)
             os.chdir(cwd)
         else:
+            print('gen eos from ' + str(self.vol_start) + ' to ' + str(self.vol_end) + ' by every ' + str(self.vol_step))
             equi_contcar = os.path.join(path_to_equi, 'CONTCAR')
             if not os.path.exists(equi_contcar):
                 raise RuntimeError("please do relaxation first")
@@ -52,11 +78,17 @@ class EOS(Property):
                         os.remove(ii)
                 task_list.append(output_task)
                 os.symlink(os.path.relpath(equi_contcar), 'POSCAR.orig')
-                scale = (vol / vol_to_poscar) ** (1. / 3.)
+                # scale = (vol / vol_to_poscar) ** (1. / 3.)
+                scale = vol ** (1. / 3.)
+                eos_params = {'volume': vol * vol_to_poscar, 'scale': scale}
+                dumpfn(eos_params, 'eos.json', indent=4)
                 self.parameter['scale2equi'].append(scale)  # 06/22
                 vasp.poscar_scale('POSCAR.orig', 'POSCAR', scale)
             os.chdir(cwd)
         return task_list
+
+    def post_process(self, task_list):
+        pass
 
     def task_type(self):
         return self.parameter['type']
@@ -74,9 +106,13 @@ class EOS(Property):
         if not self.reprod:
             ptr_data += ' VpA(A^3)  EpA(eV)\n'
             for ii in range(len(all_tasks)):
-                vol = self.vol_start + ii * self.vol_step
-                res_data[vol] = all_res[ii]['energy'] / len(all_res[ii]['force']) * 3
-                ptr_data += '%7.3f  %8.4f \n' % (vol, all_res[ii]['energy'] / len(all_res[ii]['force']) * 3)
+                #vol = self.vol_start + ii * self.vol_step
+                vol = loadfn(os.path.join(all_tasks[ii], 'eos.json'))['volume']
+                task_result = loadfn(all_res[ii])
+                res_data[vol] = task_result['energies'][-1] / task_result['atom_numbs'][0]
+                ptr_data += '%7.3f  %8.4f \n' % (vol, task_result['energies'][-1] / task_result['atom_numbs'][0])
+                # res_data[vol] = all_res[ii]['energy'] / len(all_res[ii]['force'])
+                # ptr_data += '%7.3f  %8.4f \n' % (vol, all_res[ii]['energy'] / len(all_res[ii]['force']))
 
         else:
             if 'vasp_lmp_path' not in self.parameter:

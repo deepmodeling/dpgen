@@ -1,13 +1,15 @@
+from dpgen import dlog
 from dpgen.auto_test.Property import Property
 from dpgen.auto_test.refine import make_refine
-import dpgen.auto_test.lib.vasp as vasp
-import dpgen.auto_test.lib.lammps as lammps
 from pymatgen.core.structure import Structure
 from pymatgen.analysis.elasticity.strain import DeformedStructureSet, Strain
 from pymatgen.analysis.elasticity.stress import Stress
 from pymatgen.analysis.elasticity.elastic import ElasticTensor
-import numpy as np
-import os, json
+from monty.serialization import loadfn, dumpfn
+import os
+from pymatgen.io.vasp import Incar, Kpoints
+from dpgen.generator.lib.vasp import incar_upper
+import dpgen.auto_test.lib.vasp as vasp
 
 
 class Elastic(Property):
@@ -18,13 +20,30 @@ class Elastic(Property):
         default_shear_def = 5e-3
         self.norm_deform = parameter.get('norm_deform', default_norm_def)
         self.shear_deform = parameter.get('shear_deform', default_shear_def)
+        parameter['cal_type'] = parameter.get('cal_type', 'relaxation')
+        self.cal_type = parameter['cal_type']
+        default_cal_setting = {"relax_pos": True,
+                               "relax_shape": False,
+                               "relax_vol": False}
+        parameter['cal_setting'] = parameter.get('cal_setting', default_cal_setting)
+        self.cal_setting = parameter['cal_setting']
+        parameter['reprod-opt'] = False
+        self.reprod = parameter['reprod-opt']
+        self.parameter = parameter
 
     def make_confs(self,
                    path_to_work,
                    path_to_equi,
                    refine=False):
         path_to_work = os.path.abspath(path_to_work)
+        if os.path.exists(path_to_work):
+            dlog.warning('%s already exists' % path_to_work)
+        else:
+            os.makedirs(path_to_work)
         path_to_equi = os.path.abspath(path_to_equi)
+        if 'start_confs_path' in self.parameter and os.path.exists(self.parameter['start_confs_path']):
+            path_to_equi = os.path.abspath(self.parameter['start_confs_path'])
+
         task_list = []
         cwd = os.getcwd()
 
@@ -32,8 +51,6 @@ class Elastic(Property):
         shear_def = self.shear_deform
         norm_strains = [-norm_def, -0.5 * norm_def, 0.5 * norm_def, norm_def]
         shear_strains = [-shear_def, -0.5 * shear_def, 0.5 * shear_def, shear_def]
-        print('gen with norm ' + str(norm_strains))
-        print('gen with shear ' + str(shear_strains))
 
         equi_contcar = os.path.join(path_to_equi, 'CONTCAR')
         if not os.path.exists(equi_contcar):
@@ -51,24 +68,38 @@ class Elastic(Property):
             os.remove('POSCAR')
         os.symlink(os.path.relpath(equi_contcar), 'POSCAR')
         #           task_poscar = os.path.join(output, 'POSCAR')
-        # stress
-        equi_outcar = os.path.join(path_to_equi, 'OUTCAR')
-        equi_log = os.path.join(path_to_equi, 'log.lammps')
-        if os.path.exists(equi_outcar):
-            stress = vasp.get_stress(equi_outcar)
-            np.savetxt('equi.stress.out', stress)
-        elif os.path.exists(equi_log):
-            stress = lammps.get_stress(equi_log)
-            np.savetxt('equi.stress.out', stress)
-        os.chdir(cwd)
+
+        # stress, deal with unsupported stress in dpdata
+        #with open(os.path.join(path_to_equi, 'result.json')) as fin:
+        #    equi_result = json.load(fin)
+        #equi_stress = np.array(equi_result['stress']['data'])[-1]
+        equi_result = loadfn(os.path.join(path_to_equi, 'result.json'))
+        equi_stress = equi_result['stress'][-1]
+        dumpfn(equi_stress, 'equi.stress.json', indent=4)
 
         if refine:
+            print('elastic refine starts')
             task_list = make_refine(self.parameter['init_from_suffix'],
                                     self.parameter['output_suffix'],
-                                    path_to_work,
-                                    n_dfm)
+                                    path_to_work)
+            idid = -1
+            for ii in task_list:
+                idid += 1
+                os.chdir(ii)
+                if os.path.isfile('strain.json'):
+                    os.remove('strain.json')
+
+                # record strain
+                df = Strain.from_deformation(dfm_ss.deformations[idid])
+                dumpfn(df.as_dict(), 'strain.json', indent=4)
+                #os.symlink(os.path.relpath(
+                #    os.path.join((re.sub(self.parameter['output_suffix'], self.parameter['init_from_suffix'], ii)),
+                #                 'strain.json')),
+                #           'strain.json')
             os.chdir(cwd)
         else:
+            print('gen with norm ' + str(norm_strains))
+            print('gen with shear ' + str(shear_strains))
             for ii in range(n_dfm):
                 output_task = os.path.join(path_to_work, 'task.%06d' % ii)
                 os.makedirs(output_task, exist_ok=True)
@@ -79,10 +110,32 @@ class Elastic(Property):
                 task_list.append(output_task)
                 dfm_ss.deformed_structures[ii].to('POSCAR', 'POSCAR')
                 # record strain
-                strain = Strain.from_deformation(dfm_ss.deformations[ii])
-                np.savetxt('strain.out', strain)
+                df = Strain.from_deformation(dfm_ss.deformations[ii])
+                dumpfn(df.as_dict(), 'strain.json', indent=4)
             os.chdir(cwd)
         return task_list
+
+    def post_process(self, task_list):
+        cwd = os.getcwd()
+        poscar_start = os.path.abspath(os.path.join(task_list[0], '..', 'POSCAR'))
+        os.chdir(os.path.join(task_list[0], '..'))
+        if os.path.isfile(os.path.join(task_list[0], 'INCAR')):
+            incar = incar_upper(Incar.from_file(os.path.join(task_list[0], 'INCAR')))
+            kspacing = incar.get('KSPACING')
+            kgamma = incar.get('KGAMMA', False)
+            ret = vasp.make_kspacing_kpoints(poscar_start, kspacing, kgamma)
+            kp = Kpoints.from_string(ret)
+            if os.path.isfile('KPOINTS'):
+                os.remove('KPOINTS')
+            kp.write_file("KPOINTS")
+            os.chdir(cwd)
+            kpoints_universal = os.path.abspath(os.path.join(task_list[0], '..', 'KPOINTS'))
+            for ii in task_list:
+                if os.path.isfile(os.path.join(ii, 'KPOINTS')):
+                    os.remove(os.path.join(ii, 'KPOINTS'))
+                os.chdir(ii)
+                os.symlink(os.path.relpath(kpoints_universal), 'KPOINTS')
+        os.chdir(cwd)
 
     def task_type(self):
         return self.parameter['type']
@@ -97,26 +150,19 @@ class Elastic(Property):
         output_file = os.path.abspath(output_file)
         res_data = {}
         ptr_data = os.path.dirname(output_file) + '\n'
-        equi_stress = Stress(np.loadtxt(os.path.join(os.path.dirname(output_file), 'equi.stress.out')))
+        equi_stress = Stress(loadfn(os.path.join(os.path.dirname(output_file), 'equi.stress.json')))
         lst_strain = []
         lst_stress = []
         for ii in all_tasks:
-            with open(os.path.join(ii, 'inter.json')) as fp:
-                idata = json.load(fp)
-            inter_type = idata['type']
-            strain = np.loadtxt(os.path.join(ii, 'strain.out'))
-            if inter_type == 'vasp':
-                stress = vasp.get_stress(os.path.join(ii, 'OUTCAR'))
-                # convert from pressure in kB to stress
-                stress *= -1000
-                lst_strain.append(Strain(strain))
-                lst_stress.append(Stress(stress))
-            elif inter_type in ['deepmd', 'meam', 'eam_fs', 'eam_alloy']:
-                stress = lammps.get_stress(os.path.join(ii, 'log.lammps'))
-                # convert from pressure to stress
-                stress = -stress
-                lst_strain.append(Strain(strain))
-                lst_stress.append(Stress(stress))
+            strain = loadfn(os.path.join(ii, 'strain.json'))
+            # stress, deal with unsupported stress in dpdata
+            #with open(os.path.join(ii, 'result_task.json')) as fin:
+            #    task_result = json.load(fin)
+            #stress = np.array(task_result['stress']['data'])[-1]
+            stress = loadfn(os.path.join(ii, 'result_task.json'))['stress'][-1]
+            lst_strain.append(strain)
+            lst_stress.append(Stress(stress * -1000))
+
         et = ElasticTensor.from_independent_strains(lst_strain, lst_stress, eq_stress=equi_stress, vasp=False)
         res_data['elastic_tensor'] = []
         for ii in range(6):
@@ -137,9 +183,8 @@ class Elastic(Property):
         ptr_data += "# Bulk   Modulus BV = %.2f GPa\n" % BV
         ptr_data += "# Shear  Modulus GV = %.2f GPa\n" % GV
         ptr_data += "# Youngs Modulus EV = %.2f GPa\n" % EV
-        ptr_data += "# Poission Ratio uV = %.2f " % uV
+        ptr_data += "# Poission Ratio uV = %.2f\n " % uV
 
-        with open(output_file, 'w') as fp:
-            json.dump(res_data, fp, indent=4)
+        dumpfn(res_data, output_file, indent=4)
 
         return res_data, ptr_data

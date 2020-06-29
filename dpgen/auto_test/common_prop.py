@@ -1,4 +1,4 @@
-import os,glob
+import os, glob
 from dpgen.auto_test.EOS import EOS
 from dpgen.auto_test.Elastic import Elastic
 from dpgen.auto_test.Vacancy import Vacancy
@@ -12,6 +12,7 @@ from dpgen.dispatcher.Dispatcher import make_dispatcher
 from dpgen.remote.decide_machine import decide_fp_machine, decide_model_devi_machine
 
 lammps_task_type = ['deepmd', 'meam', 'eam_fs', 'eam_alloy']
+
 
 def make_property_instance(paramters):
     """
@@ -37,8 +38,8 @@ def make_property(confs,
                   property_list):
     # find all POSCARs and their name like mp-xxx
     # ...
-    #conf_dirs = glob.glob(confs)
-    #conf_dirs.sort()
+    # conf_dirs = glob.glob(confs)
+    # conf_dirs.sort()
     conf_dirs = []
     for conf in confs:
         conf_dirs.extend(glob.glob(conf))
@@ -80,6 +81,8 @@ def make_property(confs,
                 dlog.debug(prop.task_type())  ### debug
                 inter.make_input_file(kk, prop.task_type(), prop.task_param())
 
+            prop.post_process(task_list)  # generate same KPOINTS file for elastic when doing VASP
+
 
 def run_property(confs,
                  inter_param,
@@ -87,8 +90,8 @@ def run_property(confs,
                  mdata):
     # find all POSCARs and their name like mp-xxx
     # ...
-    #conf_dirs = glob.glob(confs)
-    #conf_dirs.sort()
+    # conf_dirs = glob.glob(confs)
+    # conf_dirs.sort()
     conf_dirs = []
     for conf in confs:
         conf_dirs.extend(glob.glob(conf))
@@ -104,7 +107,7 @@ def run_property(confs,
             elif 'reprod-opt' in jj and jj['reprod-opt']:
                 suffix = 'reprod'
             else:
-                suffix = 0
+                suffix = '00'
 
             property_type = jj['type']
             path_to_work = os.path.join(ii, property_type + '_' + suffix)
@@ -159,8 +162,8 @@ def post_property(confs,
     # find all POSCARs and their name like mp-xxx
     # ...
     #    task_list = []
-    #conf_dirs = glob.glob(confs)
-    #conf_dirs.sort()
+    # conf_dirs = glob.glob(confs)
+    # conf_dirs.sort()
     conf_dirs = []
     for conf in confs:
         conf_dirs.extend(glob.glob(conf))
@@ -174,8 +177,9 @@ def post_property(confs,
             elif 'reprod-opt' in jj and jj['reprod-opt']:
                 suffix = 'reprod'
             else:
-                suffix = 0
+                suffix = '00'
             property_type = jj['type']
             path_to_work = os.path.join(ii, property_type + '_' + suffix)
             prop = make_property_instance(jj)
-            prop.compute('result.json', 'result.out', path_to_work)
+            prop.compute(os.path.join(path_to_work, 'result.json'), os.path.join(path_to_work, 'result.out'),
+                         path_to_work)
