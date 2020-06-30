@@ -11,6 +11,12 @@ from .context import make_kspacing_kpoints
 from .context import setUpModule
 
 from dpgen.auto_test.mpdb import get_structure
+try:
+   os.environ['MAPI_KEY']
+   exist_key=True
+except:
+   exist_key=False
+
 
 def fit(struct0,struct1) :
     m = StructureMatcher() 
@@ -18,6 +24,7 @@ def fit(struct0,struct1) :
        return True
     return False
 
+@unittest.skipIf(not exist_key,"skip mpdb")
 class TestMpdb(unittest.TestCase):
 
     def setUp(self):
@@ -35,10 +42,6 @@ class TestMpdb(unittest.TestCase):
            os.remove(self.st_file)
 
     def test_get_structure (self):
-        if self.key:
-           st1=get_structure(self.mpid)
-           st0=Structure.from_file(self.st0_file)
-           self.assertTrue(fit(st0,st1))
-        else:
-           with self.assertRaises(RuntimeError):
-                self.assertError(get_structure(self.mpid))
+        st1=get_structure(self.mpid)
+        st0=Structure.from_file(self.st0_file)
+        self.assertTrue(fit(st0,st1))

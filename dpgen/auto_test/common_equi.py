@@ -151,9 +151,11 @@ def run_equi(confs,
     else:
         run_tasks = [os.path.basename(ii) for ii in all_task]
         machine, resources, command, group_size = util.get_machine_info(mdata, inter_type)
+        print('%d tasks will be submited '%len(run_tasks))
         for ii in range(len(work_path_list)):
             work_path = work_path_list[ii]
             disp = make_dispatcher(machine, resources, work_path, [run_tasks[ii]], group_size)
+            print("%s --> Runing... "%(work_path))
             disp.run_jobs(resources,
                           command,
                           work_path,
