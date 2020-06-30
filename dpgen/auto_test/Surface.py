@@ -25,7 +25,8 @@ class Surface(Property):
             self.min_vacuum_size = parameter['min_vacuum_size']
             self.pert_xz = parameter['pert_xz']
             default_max_miller = 2
-            self.miller = parameter.get('max_miller', default_max_miller)
+            parameter['max_miller'] = parameter.get('max_miller', default_max_miller)
+            self.miller = parameter['max_miller']
             parameter['cal_type'] = parameter.get('cal_type', 'relaxation')
             self.cal_type = parameter['cal_type']
             default_cal_setting = {"relax_pos": True,

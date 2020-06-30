@@ -115,51 +115,53 @@ def run_property(confs,
                 suffix = '00'
 
             property_type = jj['type']
-            path_to_work = os.path.join(ii, property_type + '_' + suffix)
+            path_to_work = os.path.abspath(os.path.join(ii, property_type + '_' + suffix))
 
             work_path_list.append(path_to_work)
             tmp_task_list = glob.glob(os.path.join(path_to_work, 'task.[0-9]*[0-9]'))
             tmp_task_list.sort()
             task_list.append(tmp_task_list)
 
-    # dispatch the tasks
-    # POSCAR here is useless
-    virutual_calculator = make_calculator(inter_param, "POSCAR")
-    forward_files = virutual_calculator.forward_files()
-    forward_common_files = virutual_calculator.forward_common_files()
-    backward_files = virutual_calculator.backward_files()
-    #    backward_files += logs
-    # ...
-    inter_type = inter_param['type']
-    # vasp
-    if inter_type == "vasp":
-        mdata = decide_fp_machine(mdata)
-    elif inter_type in lammps_task_type:
-        mdata = decide_model_devi_machine(mdata)
-    else:
-        raise RuntimeError("unknown task %s, something wrong" % inter_type)
+            inter_param_prop = inter_param
+            if 'cal_setting' in jj and 'overwrite_interaction' in jj['cal_setting']:
+                inter_param_prop = jj['cal_setting']['overwrite_interaction']
 
-    for ii in range(len(work_path_list)):
-        work_path = work_path_list[ii]
-        all_task = task_list[ii]
-        run_tasks = util.collect_task(all_task, inter_type)
-        if len(run_tasks) == 0:
-            return
-        else:
-            run_tasks = [os.path.basename(ii) for ii in all_task]
-            machine, resources, command, group_size = util.get_machine_info(mdata, inter_type)
-            disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
-            disp.run_jobs(resources,
-                          command,
-                          work_path,
-                          run_tasks,
-                          group_size,
-                          forward_common_files,
-                          forward_files,
-                          backward_files,
-                          outlog='outlog',
-                          errlog='errlog')
+            # dispatch the tasks
+            # POSCAR here is useless
+            virtual_calculator = make_calculator(inter_param_prop, "POSCAR")
+            forward_files = virtual_calculator.forward_files()
+            forward_common_files = virtual_calculator.forward_common_files()
+            backward_files = virtual_calculator.backward_files()
+            #    backward_files += logs
+            # ...
+            inter_type = inter_param_prop['type']
+            # vasp
+            if inter_type == "vasp":
+                mdata = decide_fp_machine(mdata)
+            elif inter_type in lammps_task_type:
+                mdata = decide_model_devi_machine(mdata)
+            else:
+                raise RuntimeError("unknown task %s, something wrong" % inter_type)
 
+            work_path = path_to_work
+            all_task = tmp_task_list
+            run_tasks = util.collect_task(all_task, inter_type)
+            if len(run_tasks) == 0:
+                return
+            else:
+                run_tasks = [os.path.basename(ii) for ii in all_task]
+                machine, resources, command, group_size = util.get_machine_info(mdata, inter_type)
+                disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
+                disp.run_jobs(resources,
+                              command,
+                              work_path,
+                              run_tasks,
+                              group_size,
+                              forward_common_files,
+                              forward_files,
+                              backward_files,
+                              outlog='outlog',
+                              errlog='errlog')
 
 def post_property(confs,
                   #                  inter_param,

@@ -95,6 +95,13 @@ def make_equi(confs,
         relax_param['cal_setting'] = {"relax_pos": True,
                                       "relax_shape": True,
                                       "relax_vol": True}
+    elif "relax_pos" not in relax_param['cal_setting']:
+        relax_param['cal_setting']['relax_pos'] = True
+    elif "relax_shape" not in relax_param['cal_setting']:
+        relax_param['cal_setting']['relax_shape'] = True
+    elif "relax_vol" not in relax_param['cal_setting']:
+        relax_param['cal_setting']['relax_vol'] = True
+
     for ii in task_dirs:
         poscar = os.path.join(ii, 'POSCAR')
         dlog.debug('task_dir %s' % ii)
@@ -132,10 +139,10 @@ def run_equi(confs,
 
     # dispatch the tasks
     # POSCAR here is useless
-    virutual_calculator = make_calculator(inter_param, "POSCAR")
-    forward_files = virutual_calculator.forward_files()
-    forward_common_files = virutual_calculator.forward_common_files()
-    backward_files = virutual_calculator.backward_files()
+    virtual_calculator = make_calculator(inter_param, "POSCAR")
+    forward_files = virtual_calculator.forward_files()
+    forward_common_files = virtual_calculator.forward_common_files()
+    backward_files = virtual_calculator.backward_files()
     #    backward_files += logs
     # ...
     run_tasks = util.collect_task(all_task, inter_type)

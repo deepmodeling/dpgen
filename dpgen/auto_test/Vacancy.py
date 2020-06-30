@@ -20,7 +20,8 @@ class Vacancy(Property):
         self.reprod = parameter['reprod-opt']
         if not self.reprod:
             default_supercell = [1, 1, 1]
-            self.supercell = parameter.get('supercell', default_supercell)
+            parameter['supercell'] = parameter.get('supercell', default_supercell)
+            self.supercell = parameter['supercell']
             parameter['cal_type'] = parameter.get('cal_type', 'relaxation')
             self.cal_type = parameter['cal_type']
             default_cal_setting = {"relax_pos": True,
