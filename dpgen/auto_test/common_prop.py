@@ -3,6 +3,7 @@ import os
 
 import dpgen.auto_test.lib.util as util
 from dpgen import dlog
+from dpgen.util import sepline
 from dpgen.auto_test.EOS import EOS
 from dpgen.auto_test.Elastic import Elastic
 from dpgen.auto_test.Interstitial import Interstitial
@@ -46,6 +47,7 @@ def make_property(confs,
         conf_dirs.extend(glob.glob(conf))
     conf_dirs.sort()
     for ii in conf_dirs:
+        sepline(ch=ii,screen=True)
         for jj in property_list:
             if 'init_from_suffix' and 'output_suffix' in jj:
                 do_refine = True
