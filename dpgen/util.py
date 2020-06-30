@@ -10,12 +10,14 @@ some common utilities for generator, auto_test and data
 # constants define
 MaxLength=70
 
-
-def sepline(ch='-',sp='-'):
+def sepline(ch='-',sp='-',screen=False):
     r'''
     seperate the output by '-'
     '''
-    dlog.info(ch.center(MaxLength,sp))
+    if screen:
+       print(ch.center(MaxLength,sp))
+    else:
+       dlog.info(ch.center(MaxLength,sp))
 
 def box_center(ch='',fill=' ',sp="|"):
     r'''
