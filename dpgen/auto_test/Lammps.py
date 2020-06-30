@@ -16,6 +16,7 @@ class Lammps(Task):
         self.inter = inter_parameter
         self.inter_type = inter_parameter['type']
         self.type_map = inter_parameter['type_map']
+        self.in_lammps = inter_parameter.get('in_lammps', 'auto')
         if self.type_map == 'meam':
             self.model = list(map(os.path.abspath, inter_parameter['model']))
         else:
@@ -114,6 +115,10 @@ class Lammps(Task):
 
         self.set_model_param()
 
+        # deal with user input in.lammps for relaxation
+        if os.path.isfile(self.in_lammps) and task_type == 'relaxation':
+            with open(self.in_lammps, 'r') as fin:
+                fc = fin.read()
         # user input in.lammps for property calculation
         if 'input_prop' in cal_setting and os.path.isfile(cal_setting['input_prop']):
             with open(os.path.abspath(cal_setting['input_prop']), 'r') as fin:
