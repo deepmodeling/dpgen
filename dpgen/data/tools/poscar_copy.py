@@ -20,7 +20,7 @@ def copy_system (ncopy, fin, fout) :
                                      replicate_z = True
     )
     node.modifiers.append(pbc)
-    node.compute(,
+    node.compute()
     export_file(node, fout, 'vasp')
 
 parser = argparse.ArgumentParser(
