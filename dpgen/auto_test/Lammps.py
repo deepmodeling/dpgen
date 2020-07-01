@@ -353,7 +353,10 @@ class Lammps(Task):
             return result_dict
 
     def forward_files(self, property_type='relaxation'):
-        return ['conf.lmp']
+        if self.inter_type == 'meam':
+            return ['conf.lmp','in.lammps', list(map(os.path.basename, self.model))]
+        else:
+            return ['conf.lmp','in.lammps', os.path.basename(self.model)]
 
     def forward_common_files(self, property_type='relaxation'):
         if self.inter_type == 'meam':
