@@ -31,7 +31,7 @@ def make_equi(confs,
         conf_dirs.extend(glob.glob(conf))
     conf_dirs.sort()
 
-    # generate a list of task names like mp-xxx/relaxation
+    # generate a list of task names like mp-xxx/relaxation/relax_task
     # ...
     cwd = os.getcwd()
     # generate poscar for single element crystal
@@ -62,7 +62,7 @@ def make_equi(confs,
 
             os.chdir(cwd)
     task_dirs = []
-    # make task directories like mp-xxx/relaxation
+    # make task directories like mp-xxx/relaxation/relax_task
     # if mp-xxx/exists then print a warning and exit.
     # ...
     for ii in conf_dirs:
@@ -75,14 +75,14 @@ def make_equi(confs,
         poscar = os.path.abspath(os.path.join(ii, 'POSCAR'))
         if not os.path.exists(poscar):
             raise FileNotFoundError('no configuration for autotest')
-        relax_dirs = os.path.abspath(os.path.join(ii, 'relaxation'))
+        relax_dirs = os.path.abspath(os.path.join(ii, 'relaxation', 'relax_task'))    # to be consistent with property in make dispatcher
         if os.path.exists(relax_dirs):
             dlog.warning('%s already exists' % relax_dirs)
         else:
             os.makedirs(relax_dirs)
         task_dirs.append(relax_dirs)
         os.chdir(relax_dirs)
-        # copy POSCARs to mp-xxx/relaxation
+        # copy POSCARs to mp-xxx/relaxation/relax_task
         # ...
         if os.path.isfile('POSCAR'):
             os.remove('POSCAR')
@@ -119,14 +119,14 @@ def run_equi(confs,
     for conf in confs:
         conf_dirs.extend(glob.glob(conf))
     conf_dirs.sort()
-    # generate a list of task names like mp-xxx/relaxation
+    # generate a list of task names like mp-xxx/relaxation/relax_task
     # ...
     work_path_list = []
     for ii in conf_dirs:
         work_path_list.append(os.path.abspath(os.path.join(ii, 'relaxation')))
     all_task = []
     for ii in work_path_list:
-        all_task.append(os.path.join(ii, '.'))
+        all_task.append(os.path.join(ii, 'relax_task'))
 
     inter_type = inter_param['type']
     # vasp
@@ -175,7 +175,7 @@ def post_equi(confs, inter_param):
     conf_dirs.sort()
     task_dirs = []
     for ii in conf_dirs:
-        task_dirs.append(os.path.abspath(os.path.join(ii, 'relaxation')))
+        task_dirs.append(os.path.abspath(os.path.join(ii, 'relaxation', 'relax_task')))
     task_dirs.sort()
 
     # generate a list of task names like mp-xxx/relaxation
