@@ -281,9 +281,9 @@ class Lammps(Task):
                                 virial.append([])
                                 energy.append(float(line[1]))
                                 # virials = stress * vol * 1e5 *1e-30 * 1e19/1.6021766208
-                                stress[-1].append([float(line[2]), float(line[5]), float(line[6])])
-                                stress[-1].append([float(line[5]), float(line[3]), float(line[7])])
-                                stress[-1].append([float(line[6]), float(line[7]), float(line[4])])
+                                stress[-1].append([float(line[2])/1000, float(line[5])/1000, float(line[6])/1000])
+                                stress[-1].append([float(line[5])/1000, float(line[3])/1000, float(line[7])/1000])
+                                stress[-1].append([float(line[6])/1000, float(line[7])/1000, float(line[4])/1000])
                                 stress_to_virial = vol[idid] * 1e5 * 1e-30 * 1e19 / 1.6021766208
                                 virial[-1].append([float(line[2]) * stress_to_virial, float(line[5]) * stress_to_virial,
                                                    float(line[6]) * stress_to_virial])
