@@ -81,7 +81,7 @@ def get_machine_info(mdata,task_type):
         group_size = mdata['model_devi_group_size']
         resources = mdata['model_devi_resources']
         machine=mdata['model_devi_machine']
-        command = lmp_exec + " -i lammps.in"
+        command = lmp_exec + " -i in.lammps"
         command = cmd_append_log(command, "model_devi.log")
     return machine, resources, command, group_size
 
