@@ -49,6 +49,8 @@ def make_property(confs,
     for ii in conf_dirs:
         sepline(ch=ii,screen=True)
         for jj in property_list:
+            if jj.get("skip", False):
+                continue
             if 'init_from_suffix' and 'output_suffix' in jj:
                 do_refine = True
                 suffix = jj['output_suffix']
@@ -66,7 +68,7 @@ def make_property(confs,
             # ...
 
             property_type = jj['type']
-            path_to_equi = os.path.join(ii, 'relaxation')
+            path_to_equi = os.path.join(ii, 'relaxation', 'relax_task')
             path_to_work = os.path.join(ii, property_type + '_' + suffix)
 
             if os.path.exists(path_to_work):
@@ -109,6 +111,8 @@ def run_property(confs,
         for jj in property_list:
             # determine the suffix: from scratch or refine
             # ...
+            if jj.get("skip", False):
+                continue
             if 'init_from_suffix' and 'output_suffix' in jj:
                 suffix = jj['output_suffix']
             elif 'reprod-opt' in jj and jj['reprod-opt']:
@@ -131,9 +135,9 @@ def run_property(confs,
             # dispatch the tasks
             # POSCAR here is useless
             virtual_calculator = make_calculator(inter_param_prop, "POSCAR")
-            forward_files = virtual_calculator.forward_files()
-            forward_common_files = virtual_calculator.forward_common_files()
-            backward_files = virtual_calculator.backward_files()
+            forward_files = virtual_calculator.forward_files(property_type)
+            forward_common_files = virtual_calculator.forward_common_files(property_type)
+            backward_files = virtual_calculator.backward_files(property_type)
             #    backward_files += logs
             # ...
             inter_type = inter_param_prop['type']
@@ -181,6 +185,8 @@ def post_property(confs,
         for jj in property_list:
             # determine the suffix: from scratch or refine
             # ...
+            if jj.get("skip", False):
+                continue
             if 'init_from_suffix' and 'output_suffix' in jj:
                 suffix = jj['output_suffix']
             elif 'reprod-opt' in jj and jj['reprod-opt']:

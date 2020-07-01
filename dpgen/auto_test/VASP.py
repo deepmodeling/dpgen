@@ -23,6 +23,9 @@ class VASP(Task):
 
     def make_potential_files(self,
                              output_dir):
+        potcar_not_link_list = ['vacancy', 'interstitial']
+        task_type = output_dir.split('/')[-2].split('_')[0]
+
         ele_pot_list = [key for key in self.potcars.keys()]
         poscar = os.path.abspath(os.path.join(output_dir, 'POSCAR'))
         pos_str = Structure.from_file(poscar)
@@ -33,13 +36,32 @@ class VASP(Task):
             if not ele_pos_list_tmp[ii] == ele_pos_list_tmp[ii - 1]:
                 ele_pos_list.append(ele_pos_list_tmp[ii])
 
-        with open(os.path.join(output_dir, 'POTCAR'), 'w') as fp:
-            for ii in ele_pos_list:
-                for jj in ele_pot_list:
-                    if ii == jj:
-                        with open(os.path.join(self.potcar_prefix, self.potcars[jj]), 'r') as fin:
-                            for line in fin:
-                                print(line.strip('\n'), file=fp)
+        if task_type in potcar_not_link_list:
+            with open(os.path.join(output_dir, 'POTCAR'), 'w') as fp:
+                for ii in ele_pos_list:
+                    for jj in ele_pot_list:
+                        if ii == jj:
+                            with open(os.path.join(self.potcar_prefix, self.potcars[jj]), 'r') as fin:
+                                for line in fin:
+                                    print(line.strip('\n'), file=fp)
+
+        else:
+            if not os.path.isfile(os.path.join(output_dir, '../POTCAR')):
+                with open(os.path.join(output_dir, '../POTCAR'), 'w') as fp:
+                    for ii in ele_pos_list:
+                        for jj in ele_pot_list:
+                            if ii == jj:
+                                with open(os.path.join(self.potcar_prefix, self.potcars[jj]), 'r') as fin:
+                                    for line in fin:
+                                        print(line.strip('\n'), file=fp)
+            cwd = os.getcwd()
+            os.chdir(output_dir)
+            if not os.path.islink('POTCAR'):
+                os.symlink('../POTCAR', 'POTCAR')
+            elif not '../POTCAR' == os.readlink('POTCAR'):
+                os.remove('POTCAR')
+                os.symlink('../POTCAR', 'POTCAR')
+            os.chdir(cwd)
 
         dumpfn(self.inter, os.path.join(output_dir, 'inter.json'), indent=4)
 
@@ -135,7 +157,15 @@ class VASP(Task):
         else:
             kgamma = False
 
-        incar.write_file(os.path.join(output_dir, 'INCAR'))
+        incar.write_file(os.path.join(output_dir, '../INCAR'))
+        cwd = os.getcwd()
+        os.chdir(output_dir)
+        if not os.path.islink('INCAR'):
+            os.symlink('../INCAR', 'INCAR')
+        elif not '../INCAR' == os.readlink('INCAR'):
+            os.remove('INCAR')
+            os.symlink('../INCAR', 'INCAR')
+        os.chdir(cwd)
         ret = vasp.make_kspacing_kpoints(self.path_to_poscar, kspacing, kgamma)
         kp = Kpoints.from_string(ret)
         kp.write_file(os.path.join(output_dir, "KPOINTS"))
@@ -169,11 +199,23 @@ class VASP(Task):
 
             return outcar_dict
 
-    def forward_files(self):
-        return ['INCAR', 'POSCAR', 'KPOINTS', 'POTCAR']
+    def forward_files(self, property_type='relaxation'):
+        potcar_not_link_list = ['vacancy', 'interstitial']
+        if property_type == 'elastic':
+            return ['POSCAR']
+        elif property_type in potcar_not_link_list:
+            return ['POSCAR', 'KPOINTS', 'POTCAR']
+        else:
+            return ['POSCAR', 'KPOINTS']
 
-    def forward_common_files(self):
-        return ['INCAR', 'POTCAR']
+    def forward_common_files(self, property_type='relaxation'):
+        potcar_not_link_list = ['vacancy', 'interstitial']
+        if property_type == 'elastic':
+            return ['INCAR', 'KPOINTS', 'POTCAR']
+        elif property_type in potcar_not_link_list:
+            return ['INCAR']
+        else:
+            return ['INCAR', 'POTCAR']
 
     def backward_files(self):
         return ['OUTCAR', 'outlog', 'CONTCAR', 'OSZICAR', 'XDATCAR']

@@ -74,7 +74,7 @@ class Vacancy(Property):
             struct_output_name = path_to_work.split('/')[-2]
             assert struct_output_name in struct_init_name_list
             path_to_equi = os.path.abspath(os.path.join(self.parameter['start_confs_path'],
-                                                        struct_output_name, 'relaxation'))
+                                                        struct_output_name, 'relaxation', 'relax_task'))
 
         task_list = []
         cwd = os.getcwd()
@@ -156,7 +156,7 @@ class Vacancy(Property):
                 structure_dir = os.path.basename(ii)
                 task_result = loadfn(all_res[idid])
                 natoms = task_result['atom_numbs'][0]
-                equi_path = os.path.abspath(os.path.join(os.path.dirname(output_file), '../relaxation'))
+                equi_path = os.path.abspath(os.path.join(os.path.dirname(output_file), '../relaxation/relax_task'))
                 equi_result = loadfn(os.path.join(equi_path, 'result.json'))
                 equi_epa = equi_result['energies'][-1] / equi_result['atom_numbs'][0]
                 evac = task_result['energies'][-1] - equi_epa * natoms

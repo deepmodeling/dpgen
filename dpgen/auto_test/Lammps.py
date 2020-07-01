@@ -16,6 +16,7 @@ class Lammps(Task):
         self.inter = inter_parameter
         self.inter_type = inter_parameter['type']
         self.type_map = inter_parameter['type_map']
+        self.in_lammps = inter_parameter.get('in_lammps', 'auto')
         if self.type_map == 'meam':
             self.model = list(map(os.path.abspath, inter_parameter['model']))
         else:
@@ -61,7 +62,7 @@ class Lammps(Task):
         if self.inter_type == 'meam':
             model_lib = os.path.basename(self.model[0])
             model_file = os.path.basename(self.model[1])
-            os.chdir(output_dir)
+            os.chdir(os.path.join(output_dir, '../'))
             if os.path.islink(model_lib):
                 link_lib = os.readlink(model_lib)
                 if not os.path.abspath(link_lib) == self.model[0]:
@@ -77,11 +78,23 @@ class Lammps(Task):
                     os.symlink(os.path.relpath(self.model[1]), model_file)
             else:
                 os.symlink(os.path.relpath(self.model[1]), model_file)
+            os.chdir(output_dir)
+            if not os.path.islink(model_lib):
+                os.symlink(os.path.join('..', model_lib), model_lib)
+            elif not os.path.join('..', model_lib) == os.readlink(model_lib):
+                os.remove(model_lib)
+                os.symlink(os.path.join('..', model_lib), model_lib)
 
+            if not os.path.islink(model_file):
+                os.symlink(os.path.join('..', model_file), model_file)
+            elif not os.path.join('..', model_file) == os.readlink(model_file):
+                os.remove(model_file)
+                os.symlink(os.path.join('..', model_file), model_file)
             os.chdir(cwd)
+
         else:
             model_file = os.path.basename(self.model)
-            os.chdir(output_dir)
+            os.chdir(os.path.join(output_dir, '../'))
             if os.path.islink(model_file):
                 link_file = os.readlink(model_file)
                 if not os.path.abspath(link_file) == self.model:
@@ -89,6 +102,12 @@ class Lammps(Task):
                     os.symlink(os.path.relpath(self.model), model_file)
             else:
                 os.symlink(os.path.relpath(self.model), model_file)
+            os.chdir(output_dir)
+            if not os.path.islink(model_file):
+                os.symlink(os.path.join('..', model_file), model_file)
+            elif not os.path.join('..', model_file) == os.readlink(model_file):
+                os.remove(model_file)
+                os.symlink(os.path.join('..', model_file), model_file)
             os.chdir(cwd)
 
         dumpfn(self.inter, os.path.join(output_dir, 'inter.json'), indent=4)
@@ -114,6 +133,10 @@ class Lammps(Task):
 
         self.set_model_param()
 
+        # deal with user input in.lammps for relaxation
+        if os.path.isfile(self.in_lammps) and task_type == 'relaxation':
+            with open(self.in_lammps, 'r') as fin:
+                fc = fin.read()
         # user input in.lammps for property calculation
         if 'input_prop' in cal_setting and os.path.isfile(cal_setting['input_prop']):
             with open(os.path.abspath(cal_setting['input_prop']), 'r') as fin:
@@ -165,8 +188,16 @@ class Lammps(Task):
             else:
                 raise RuntimeError("not supported calculation type for LAMMPS")
 
-        with open(os.path.join(output_dir, 'in.lammps'), 'w') as fp:
+        with open(os.path.join(output_dir, '../in.lammps'), 'w') as fp:
             fp.write(fc)
+        cwd = os.getcwd()
+        os.chdir(output_dir)
+        if not os.path.islink('in.lammps'):
+            os.symlink('../in.lammps', 'in.lammps')
+        elif not '../in.lammps' == os.readlink('in.lammps'):
+            os.remove('in.lammps')
+            os.symlink('../in.lammps', 'in.lammps')
+        os.chdir(cwd)
 
     def compute(self,
                 output_dir):
@@ -242,6 +273,10 @@ class Lammps(Task):
                         for jj in lines:
                             line = jj.split()
                             if len(line) and str(ii) == line[0]:
+                                try:
+                                    [float(kk) for kk in line]
+                                except:
+                                    continue
                                 stress.append([])
                                 virial.append([])
                                 energy.append(float(line[1]))
@@ -317,17 +352,14 @@ class Lammps(Task):
 
             return result_dict
 
-    def forward_files(self):
-        if self.inter_type == 'meam':
-            return ['conf.lmp', 'in.lammps', list(map(os.path.basename, self.model))]
-        else:
-            return ['conf.lmp', 'in.lammps', os.path.basename(self.model)]
+    def forward_files(self, property_type='relaxation'):
+        return ['conf.lmp']
 
-    def forward_common_files(self):
+    def forward_common_files(self, property_type='relaxation'):
         if self.inter_type == 'meam':
             return ['in.lammps', list(map(os.path.basename, self.model))]
         else:
             return ['in.lammps', os.path.basename(self.model)]
 
-    def backward_files(self):
+    def backward_files(self, property_type='relaxation'):
         return ['log.lammps', 'outlog', 'dump.relax']

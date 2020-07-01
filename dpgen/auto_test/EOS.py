@@ -74,7 +74,7 @@ class EOS(Property):
             struct_output_name = path_to_work.split('/')[-2]
             assert struct_output_name in struct_init_name_list
             path_to_equi = os.path.abspath(os.path.join(self.parameter['start_confs_path'],
-                                                        struct_output_name, 'relaxation'))
+                                                        struct_output_name, 'relaxation', 'relax_task'))
 
         cwd = os.getcwd()
         task_list = []

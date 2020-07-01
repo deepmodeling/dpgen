@@ -4,7 +4,7 @@ import re
 
 
 def make_refine(init_from_suffix, output_suffix, path_to_work):
-    init_from = re.sub(output_suffix, init_from_suffix, path_to_work)
+    init_from = re.sub(output_suffix[::-1], init_from_suffix[::-1], path_to_work[::-1], count=1)[::-1]
     if not os.path.exists(init_from):
         raise FileNotFoundError("the initial directory does not exist for refine")
 
