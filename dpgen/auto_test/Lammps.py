@@ -188,16 +188,22 @@ class Lammps(Task):
             else:
                 raise RuntimeError("not supported calculation type for LAMMPS")
 
-        with open(os.path.join(output_dir, '../in.lammps'), 'w') as fp:
-            fp.write(fc)
-        cwd = os.getcwd()
-        os.chdir(output_dir)
-        if not os.path.islink('in.lammps'):
-            os.symlink('../in.lammps', 'in.lammps')
-        elif not '../in.lammps' == os.readlink('in.lammps'):
-            os.remove('in.lammps')
-            os.symlink('../in.lammps', 'in.lammps')
-        os.chdir(cwd)
+        in_lammps_not_link_list = ['eos']
+        if task_type not in in_lammps_not_link_list:
+            with open(os.path.join(output_dir, '../in.lammps'), 'w') as fp:
+                fp.write(fc)
+            cwd = os.getcwd()
+            os.chdir(output_dir)
+            if not (os.path.islink('in.lammps') or os.path.isfile('in.lammps')):
+                os.symlink('../in.lammps', 'in.lammps')
+            else:
+                os.remove('in.lammps')
+                os.symlink('../in.lammps', 'in.lammps')
+            os.chdir(cwd)
+        else:
+            with open(os.path.join(output_dir, 'in.lammps'), 'w') as fp:
+                fp.write(fc)
+
 
     def compute(self,
                 output_dir):
@@ -227,29 +233,32 @@ class Lammps(Task):
                     force.append([])
                     dumptime.append(int(dump[idx + 1]))
                     natom = int(dump[idx + 3])
-                    xlow = float(dump[idx + 5].split()[0])
-                    xx = float(dump[idx + 5].split()[1])
+                    xlo_bound = float(dump[idx + 5].split()[0])
+                    xhi_bound = float(dump[idx + 5].split()[1])
                     xy = float(dump[idx + 5].split()[2])
-                    ylow = float(dump[idx + 6].split()[0])
-                    yy = float(dump[idx + 6].split()[1])
+                    ylo_bound = float(dump[idx + 6].split()[0])
+                    yhi_bound = float(dump[idx + 6].split()[1])
                     xz = float(dump[idx + 6].split()[2])
-                    zlow = float(dump[idx + 7].split()[0])
-                    zz = float(dump[idx + 7].split()[1])
+                    zlo = float(dump[idx + 7].split()[0])
+                    zhi = float(dump[idx + 7].split()[1])
                     yz = float(dump[idx + 7].split()[2])
-                    box[-1].append([(xx - xlow + xy + xz), 0.0, 0.0])
-                    box[-1].append([xy, (yy - ylow + yz), 0.0])
-                    box[-1].append([xz, yz, (zz - zlow)])
-                    vol.append((xx - xlow + xy + xz) * (yy - ylow + yz) * (zz - zlow))
+                    xx = xhi_bound - max([0, xy, xz, xy + xz]) - (xlo_bound - min([0, xy, xz, xy + xz]))
+                    yy = yhi_bound - max([0, yz]) - (ylo_bound - min([0, yz]))
+                    zz = zhi - zlo
+                    box[-1].append([xx, 0.0, 0.0])
+                    box[-1].append([xy, yy, 0.0])
+                    box[-1].append([xz, yz, zz])
+                    vol.append(xx * yy * zz)
                     type_list = []
                     for jj in range(natom):
                         type_list.append(int(dump[idx + 9 + jj].split()[1]) - 1)
                         if 'xs ys zs' in dump[idx + 8]:
-                            a_x = float(dump[idx + 9 + jj].split()[2]) * (xx - xlow + xy + xz) + float(
+                            a_x = float(dump[idx + 9 + jj].split()[2]) * xx + float(
                                 dump[idx + 9 + jj].split()[3]) * xy \
                                   + float(dump[idx + 9 + jj].split()[4]) * xz
-                            a_y = float(dump[idx + 9 + jj].split()[3]) * (yy - ylow + yz) + float(
+                            a_y = float(dump[idx + 9 + jj].split()[3]) * yy + float(
                                 dump[idx + 9 + jj].split()[4]) * yz
-                            a_z = float(dump[idx + 9 + jj].split()[4]) * (zz - zlow)
+                            a_z = float(dump[idx + 9 + jj].split()[4]) * zz
                         else:
                             a_x = float(dump[idx + 9 + jj].split()[2])
                             a_y = float(dump[idx + 9 + jj].split()[3])
@@ -281,9 +290,9 @@ class Lammps(Task):
                                 virial.append([])
                                 energy.append(float(line[1]))
                                 # virials = stress * vol * 1e5 *1e-30 * 1e19/1.6021766208
-                                stress[-1].append([float(line[2])/1000.0, float(line[5])/1000.0, float(line[6])/1000.0])
-                                stress[-1].append([float(line[5])/1000.0, float(line[3])/1000.0, float(line[7])/1000.0])
-                                stress[-1].append([float(line[6])/1000.0, float(line[7])/1000.0, float(line[4])/1000.0])
+                                stress[-1].append([float(line[2]) / 1000.0, float(line[5]) / 1000.0, float(line[6]) / 1000.0])
+                                stress[-1].append([float(line[5]) / 1000.0, float(line[3]) / 1000.0, float(line[7]) / 1000.0])
+                                stress[-1].append([float(line[6]) / 1000.0, float(line[7]) / 1000.0, float(line[4]) / 1000.0])
                                 stress_to_virial = vol[idid] * 1e5 * 1e-30 * 1e19 / 1.6021766208
                                 virial[-1].append([float(line[2]) * stress_to_virial, float(line[5]) * stress_to_virial,
                                                    float(line[6]) * stress_to_virial])
@@ -354,15 +363,21 @@ class Lammps(Task):
 
     def forward_files(self, property_type='relaxation'):
         if self.inter_type == 'meam':
-            return ['conf.lmp','in.lammps', list(map(os.path.basename, self.model))]
+            return ['conf.lmp', 'in.lammps'] + list(map(os.path.basename, self.model))
         else:
-            return ['conf.lmp','in.lammps', os.path.basename(self.model)]
+            return ['conf.lmp', 'in.lammps', os.path.basename(self.model)]
 
     def forward_common_files(self, property_type='relaxation'):
-        if self.inter_type == 'meam':
-            return ['in.lammps', list(map(os.path.basename, self.model))]
+        if property_type not in ['eos']:
+            if self.inter_type == 'meam':
+                return ['in.lammps'] + list(map(os.path.basename, self.model))
+            else:
+                return ['in.lammps', os.path.basename(self.model)]
         else:
-            return ['in.lammps', os.path.basename(self.model)]
+            if self.inter_type == 'meam':
+                return list(map(os.path.basename, self.model))
+            else:
+                return [os.path.basename(self.model)]
 
     def backward_files(self, property_type='relaxation'):
         return ['log.lammps', 'outlog', 'dump.relax']

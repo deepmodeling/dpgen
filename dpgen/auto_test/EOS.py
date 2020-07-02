@@ -119,8 +119,13 @@ class EOS(Property):
                     raise RuntimeError("please do relaxation first")
                 vol_to_poscar = vasp.poscar_vol(equi_contcar) / vasp.poscar_natoms(equi_contcar)
                 self.parameter['scale2equi'] = []
-                for vol in np.arange(self.vol_start, self.vol_end, self.vol_step):
-                    task_num = (vol - self.vol_start) / self.vol_step
+
+                task_num = 0
+                while self.vol_start + self.vol_step * task_num < self.vol_end:
+                # for vol in np.arange(int(self.vol_start * 100), int(self.vol_end * 100), int(self.vol_step * 100)):
+                    # vol = vol / 100.0
+                    vol = self.vol_start + task_num * self.vol_step
+                    #task_num = int((vol - self.vol_start) / self.vol_step)
                     output_task = os.path.join(path_to_work, 'task.%06d' % task_num)
                     os.makedirs(output_task, exist_ok=True)
                     os.chdir(output_task)
@@ -135,6 +140,7 @@ class EOS(Property):
                     dumpfn(eos_params, 'eos.json', indent=4)
                     self.parameter['scale2equi'].append(scale)  # 06/22
                     vasp.poscar_scale('POSCAR.orig', 'POSCAR', scale)
+                    task_num += 1
                 os.chdir(cwd)
         return task_list
 
