@@ -108,6 +108,7 @@ def run_property(confs,
     task_list = []
     work_path_list = []
     for ii in conf_dirs:
+        sepline(ch=ii,screen=True)
         for jj in property_list:
             # determine the suffix: from scratch or refine
             # ...

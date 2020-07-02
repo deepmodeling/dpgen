@@ -28,9 +28,15 @@ def run_task(step, param_file, machine_file=None):
         make_property(confs, inter_parameter, property_list)
 
     elif step == 'run' and 'relaxation' in jdata:
+        if machine_file is None:
+           print('Please supply the machine.json, exit now!')  
+           return
         run_equi(confs, inter_parameter, mdata)
 
     elif step == 'run' and 'properties' in jdata:
+        if machine_file is None:
+           print('Please supply the machine.json, exit now!')  
+           return
         property_list = jdata['properties']
         run_property(confs, inter_parameter, property_list, mdata)
 

@@ -200,7 +200,7 @@ class VASP(Task):
             return outcar_dict
 
     def forward_files(self, property_type='relaxation'):
-        return ['INCAR, POSCAR', 'KPOINTS', 'POTCAR']
+        return ['INCAR', 'POSCAR', 'KPOINTS', 'POTCAR']
 
     def forward_common_files(self, property_type='relaxation'):
         potcar_not_link_list = ['vacancy', 'interstitial']
