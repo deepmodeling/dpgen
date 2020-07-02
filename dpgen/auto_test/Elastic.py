@@ -1,5 +1,7 @@
 import glob
 import os
+from shutil import copyfile
+import re
 
 from monty.serialization import loadfn, dumpfn
 from pymatgen.analysis.elasticity.elastic import ElasticTensor
@@ -18,12 +20,13 @@ from dpgen.generator.lib.vasp import incar_upper
 class Elastic(Property):
     def __init__(self,
                  parameter):
-        default_norm_def = 2e-3
-        default_shear_def = 5e-3
-        parameter['norm_deform'] = parameter.get('norm_deform', default_norm_def)
-        self.norm_deform = parameter['norm_deform']
-        parameter['shear_deform'] = parameter.get('shear_deform', default_shear_def)
-        self.shear_deform = parameter['shear_deform']
+        if not ('init_from_suffix' in parameter and 'output_suffix' in parameter):
+            default_norm_def = 2e-3
+            default_shear_def = 5e-3
+            parameter['norm_deform'] = parameter.get('norm_deform', default_norm_def)
+            self.norm_deform = parameter['norm_deform']
+            parameter['shear_deform'] = parameter.get('shear_deform', default_shear_def)
+            self.shear_deform = parameter['shear_deform']
         parameter['cal_type'] = parameter.get('cal_type', 'relaxation')
         self.cal_type = parameter['cal_type']
         default_cal_setting = {"relax_pos": True,
@@ -65,25 +68,12 @@ class Elastic(Property):
 
         task_list = []
         cwd = os.getcwd()
-
-        norm_def = self.norm_deform
-        shear_def = self.shear_deform
-        norm_strains = [-norm_def, -0.5 * norm_def, 0.5 * norm_def, norm_def]
-        shear_strains = [-shear_def, -0.5 * shear_def, 0.5 * shear_def, shear_def]
-
         equi_contcar = os.path.join(path_to_equi, 'CONTCAR')
-        if not os.path.exists(equi_contcar):
-            raise RuntimeError("please do relaxation first")
-
-        ss = Structure.from_file(equi_contcar)
-        dfm_ss = DeformedStructureSet(ss,
-                                      symmetry=False,
-                                      norm_strains=norm_strains,
-                                      shear_strains=shear_strains)
-        n_dfm = len(dfm_ss)
 
         os.chdir(path_to_work)
         if os.path.isfile('POSCAR'):
+            os.remove('POSCAR')
+        if os.path.islink('POSCAR'):
             os.remove('POSCAR')
         os.symlink(os.path.relpath(equi_contcar), 'POSCAR')
         #           task_poscar = os.path.join(output, 'POSCAR')
@@ -95,28 +85,50 @@ class Elastic(Property):
         equi_result = loadfn(os.path.join(path_to_equi, 'result.json'))
         equi_stress = equi_result['stress'][-1]
         dumpfn(equi_stress, 'equi.stress.json', indent=4)
+        os.chdir(cwd)
 
         if refine:
             print('elastic refine starts')
             task_list = make_refine(self.parameter['init_from_suffix'],
                                     self.parameter['output_suffix'],
                                     path_to_work)
-            idid = -1
-            for ii in task_list:
-                idid += 1
-                os.chdir(ii)
+
+            # record strain
+            # df = Strain.from_deformation(dfm_ss.deformations[idid])
+            # dumpfn(df.as_dict(), 'strain.json', indent=4)
+            init_from_path = re.sub(self.parameter['output_suffix'][::-1],
+                                    self.parameter['init_from_suffix'][::-1],
+                                    path_to_work[::-1], count=1)[::-1]
+            task_list_basename = list(map(os.path.basename, task_list))
+
+            for ii in task_list_basename:
+                init_from_task = os.path.join(init_from_path, ii)
+                output_task = os.path.join(path_to_work, ii)
+                os.chdir(output_task)
                 if os.path.isfile('strain.json'):
                     os.remove('strain.json')
-
-                # record strain
-                df = Strain.from_deformation(dfm_ss.deformations[idid])
-                dumpfn(df.as_dict(), 'strain.json', indent=4)
+                copyfile(os.path.join(init_from_task, 'strain.json'), 'strain.json')
                 #os.symlink(os.path.relpath(
                 #    os.path.join((re.sub(self.parameter['output_suffix'], self.parameter['init_from_suffix'], ii)),
                 #                 'strain.json')),
                 #           'strain.json')
             os.chdir(cwd)
         else:
+            norm_def = self.norm_deform
+            shear_def = self.shear_deform
+            norm_strains = [-norm_def, -0.5 * norm_def, 0.5 * norm_def, norm_def]
+            shear_strains = [-shear_def, -0.5 * shear_def, 0.5 * shear_def, shear_def]
+
+            if not os.path.exists(equi_contcar):
+                raise RuntimeError("please do relaxation first")
+
+            ss = Structure.from_file(equi_contcar)
+            dfm_ss = DeformedStructureSet(ss,
+                                          symmetry=False,
+                                          norm_strains=norm_strains,
+                                          shear_strains=shear_strains)
+            n_dfm = len(dfm_ss)
+
             print('gen with norm ' + str(norm_strains))
             print('gen with shear ' + str(shear_strains))
             for ii in range(n_dfm):
@@ -151,6 +163,8 @@ class Elastic(Property):
             kpoints_universal = os.path.abspath(os.path.join(task_list[0], '..', 'KPOINTS'))
             for ii in task_list:
                 if os.path.isfile(os.path.join(ii, 'KPOINTS')):
+                    os.remove(os.path.join(ii, 'KPOINTS'))
+                if os.path.islink(os.path.join(ii, 'KPOINTS')):
                     os.remove(os.path.join(ii, 'KPOINTS'))
                 os.chdir(ii)
                 os.symlink(os.path.relpath(kpoints_universal), 'KPOINTS')

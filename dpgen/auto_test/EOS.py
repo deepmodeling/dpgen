@@ -20,9 +20,10 @@ class EOS(Property):
         parameter['reprod-opt'] = parameter.get('reprod-opt', False)
         self.reprod = parameter['reprod-opt']
         if not self.reprod:
-            self.vol_start = parameter['vol_start']
-            self.vol_end = parameter['vol_end']
-            self.vol_step = parameter['vol_step']
+            if not ('init_from_suffix' in parameter and 'output_suffix' in parameter):
+                self.vol_start = parameter['vol_start']
+                self.vol_end = parameter['vol_end']
+                self.vol_step = parameter['vol_step']
             parameter['cal_type'] = parameter.get('cal_type', 'relaxation')
             self.cal_type = parameter['cal_type']
             default_cal_setting = {"relax_pos": True,
@@ -104,6 +105,10 @@ class EOS(Property):
                     init_from_task = os.path.join(init_from_path, ii)
                     output_task = os.path.join(path_to_work, ii)
                     os.chdir(output_task)
+                    if os.path.isfile('eos.json'):
+                        os.remove('eos.json')
+                    if os.path.islink('eos.json'):
+                        os.remove('eos.json')
                     os.symlink(os.path.relpath(os.path.join(init_from_task, 'eos.json')), 'eos.json')
                 os.chdir(cwd)
 

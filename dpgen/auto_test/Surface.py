@@ -22,12 +22,14 @@ class Surface(Property):
         parameter['reprod-opt'] = parameter.get('reprod-opt', False)
         self.reprod = parameter['reprod-opt']
         if not self.reprod:
-            self.min_slab_size = parameter['min_slab_size']
-            self.min_vacuum_size = parameter['min_vacuum_size']
-            self.pert_xz = parameter['pert_xz']
-            default_max_miller = 2
-            parameter['max_miller'] = parameter.get('max_miller', default_max_miller)
-            self.miller = parameter['max_miller']
+            if not ('init_from_suffix' in parameter and 'output_suffix' in parameter):
+                self.min_slab_size = parameter['min_slab_size']
+                self.min_vacuum_size = parameter['min_vacuum_size']
+                parameter['pert_xz'] = parameter.get('pert_xz', 0.01)
+                self.pert_xz = parameter['pert_xz']
+                default_max_miller = 2
+                parameter['max_miller'] = parameter.get('max_miller', default_max_miller)
+                self.miller = parameter['max_miller']
             parameter['cal_type'] = parameter.get('cal_type', 'relaxation')
             self.cal_type = parameter['cal_type']
             default_cal_setting = {"relax_pos": True,
@@ -110,6 +112,10 @@ class Surface(Property):
                     init_from_task = os.path.join(init_from_path, ii)
                     output_task = os.path.join(path_to_work, ii)
                     os.chdir(output_task)
+                    if os.path.isfile('miller.json'):
+                        os.remove('miller.json')
+                    if os.path.islink('miller.json'):
+                        os.remove('miller.json')
                     os.symlink(os.path.relpath(os.path.join(init_from_task, 'miller.json')), 'miller.json')
                 os.chdir(cwd)
 
@@ -125,6 +131,8 @@ class Surface(Property):
 
                 os.chdir(path_to_work)
                 if os.path.isfile('POSCAR'):
+                    os.remove('POSCAR')
+                if os.path.islink('POSCAR'):
                     os.remove('POSCAR')
                 os.symlink(os.path.relpath(equi_contcar), 'POSCAR')
                 #           task_poscar = os.path.join(output, 'POSCAR')

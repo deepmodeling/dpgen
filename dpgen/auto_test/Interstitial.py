@@ -1,6 +1,7 @@
 import glob
 import json
 import os
+import re
 
 from monty.serialization import loadfn, dumpfn
 from pymatgen.analysis.defects.generators import InterstitialGenerator
@@ -18,10 +19,11 @@ class Interstitial(Property):
         parameter['reprod-opt'] = parameter.get('reprod-opt', False)
         self.reprod = parameter['reprod-opt']
         if not self.reprod:
-            default_supercell = [1, 1, 1]
-            parameter['supercell'] = parameter.get('supercell', default_supercell)
-            self.supercell = parameter['supercell']
-            self.insert_ele = parameter['insert_ele']
+            if not ('init_from_suffix' in parameter and 'output_suffix' in parameter):
+                default_supercell = [1, 1, 1]
+                parameter['supercell'] = parameter.get('supercell', default_supercell)
+                self.supercell = parameter['supercell']
+                self.insert_ele = parameter['insert_ele']
             parameter['cal_type'] = parameter.get('cal_type', 'relaxation')
             self.cal_type = parameter['cal_type']
             default_cal_setting = {"relax_pos": True,
@@ -89,10 +91,29 @@ class Interstitial(Property):
                 task_list = make_refine(self.parameter['init_from_suffix'],
                                         self.parameter['output_suffix'],
                                         path_to_work)
-                for ii in task_list:
-                    os.chdir(ii)
-                    # np.savetxt('supercell.out', self.supercell, fmt='%d')
-                    dumpfn(self.supercell, 'supercell.json')
+
+                init_from_path = re.sub(self.parameter['output_suffix'][::-1],
+                                        self.parameter['init_from_suffix'][::-1],
+                                        path_to_work[::-1], count=1)[::-1]
+                task_list_basename = list(map(os.path.basename, task_list))
+
+                os.chdir(path_to_work)
+                if os.path.isfile('element.out'):
+                    os.remove('element.out')
+                if os.path.islink('element.out'):
+                    os.remove('element.out')
+                os.symlink(os.path.relpath(os.path.join(init_from_path, 'element.out')), 'element.out')
+                os.chdir(cwd)
+
+                for ii in task_list_basename:
+                    init_from_task = os.path.join(init_from_path, ii)
+                    output_task = os.path.join(path_to_work, ii)
+                    os.chdir(output_task)
+                    if os.path.isfile('supercell.json'):
+                        os.remove('supercell.json')
+                    if os.path.islink('supercell.json'):
+                        os.remove('supercell.json')
+                    os.symlink(os.path.relpath(os.path.join(init_from_task, 'supercell.json')), 'supercell.json')
                 os.chdir(cwd)
 
             else:
@@ -103,6 +124,10 @@ class Interstitial(Property):
                 ss = Structure.from_file(equi_contcar)
                 # gen defects
                 dss = []
+                insert_element_task = os.path.join(path_to_work, 'element.out')
+                if os.path.isfile(insert_element_task):
+                    os.remove(insert_element_task)
+
                 for ii in self.insert_ele:
                     vds = InterstitialGenerator(ss, ii)
                     for jj in vds:
@@ -112,13 +137,19 @@ class Interstitial(Property):
                             min_dist = self.parameter['conf_filters']['min_dist']
                             if smallest_distance >= min_dist:
                                 dss.append(temp)
+                                with open(insert_element_task, 'a+') as fout:
+                                    print(ii, file=fout)
                         else:
                             dss.append(temp)
-            #            dss.append(jj.generate_defect_structure(self.supercell))
+                            with open(insert_element_task, 'a+') as fout:
+                                print(ii, file=fout)
+                #            dss.append(jj.generate_defect_structure(self.supercell))
 
                 print('gen interstitial with supercell ' + str(self.supercell) + ' with element ' + str(self.insert_ele))
                 os.chdir(path_to_work)
                 if os.path.isfile('POSCAR'):
+                    os.remove('POSCAR')
+                if os.path.islink('POSCAR'):
                     os.remove('POSCAR')
                 os.symlink(os.path.relpath(equi_contcar), 'POSCAR')
                 #           task_poscar = os.path.join(output, 'POSCAR')
@@ -156,6 +187,8 @@ class Interstitial(Property):
         ptr_data = os.path.dirname(output_file) + '\n'
 
         if not self.reprod:
+            with open(os.path.join(os.path.dirname(output_file), 'element.out'), 'r') as fin:
+                fc = fin.read().split('\n')
             ptr_data += "Insert_ele-Struct: Inter_E(eV)  E(eV) equi_E(eV)\n"
             idid = -1
             for ii in all_tasks:
@@ -169,7 +202,8 @@ class Interstitial(Property):
                 evac = task_result['energies'][-1] - equi_epa * natoms
 
                 supercell_index = loadfn(os.path.join(ii, 'supercell.json'))
-                insert_ele = loadfn(os.path.join(ii, 'task.json'))['insert_ele'][0]
+                # insert_ele = loadfn(os.path.join(ii, 'task.json'))['insert_ele'][0]
+                insert_ele = fc[idid]
                 ptr_data += "%s: %7.3f  %7.3f %7.3f \n" % (
                     insert_ele + '-' + str(supercell_index) + '-' + structure_dir, evac,
                     task_result['energies'][-1], equi_epa * natoms)
