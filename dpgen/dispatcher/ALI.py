@@ -379,7 +379,26 @@ class ALI(DispatcherList):
         response = json.loads(response)
         for vpc in response["Vpcs"]["Vpc"]:
             if vpc["VpcId"] == vpc_id:
-                return vpc["VSwitchIds"]["VSwitchId"]
+                vswitchids = vpc["VSwitchIds"]["VSwitchId"]
+                break
+        vswitchid_option = []
+        if "zone" in self.cloud_resources and self.cloud_resources['zone']:
+            for zone in self.cloud_resources['zone']:
+                for vswitchid in vswitchids:
+                    request = DescribeVSwitchesRequest()
+                    request.set_accept_format('json')
+                    request.set_VSwitchId(vswitchid)
+                    zoneid = self.cloud_resources['regionID']+"-"+zone
+                    request.set_ZoneId(zoneid)
+                    response = self.client.do_action_with_exception(request)
+                    response = json.loads(response)
+                    if(response["TotalCount"] == 1):
+                        vswitchid_option.append(vswitchid)
+                        continue
+        if(vswitchid_option):
+            return vswitchid_option
+        else:
+            return  vswitchids
 
     def change_apg_capasity(self, capasity):
         request = ModifyAutoProvisioningGroupRequest()
