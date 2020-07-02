@@ -16,6 +16,7 @@ from aliyunsdkecs.request.v20140526.DescribeLaunchTemplatesRequest import Descri
 from aliyunsdkecs.request.v20140526.CreateLaunchTemplateRequest import CreateLaunchTemplateRequest
 from aliyunsdkecs.request.v20140526.DescribeImagesRequest import DescribeImagesRequest
 from aliyunsdkecs.request.v20140526.DescribeSecurityGroupsRequest import DescribeSecurityGroupsRequest
+from aliyunsdkvpc.request.v20160428.DescribeVSwitchesRequest import DescribeVSwitchesRequest
 import time, json, os, glob, string, random, sys
 from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, JobRecord
 from dpgen.dispatcher.SSHContext import SSHSession
