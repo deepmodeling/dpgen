@@ -1,6 +1,7 @@
 import glob
 import json
 import os
+import re
 
 import numpy as np
 from monty.serialization import loadfn, dumpfn
@@ -93,27 +94,35 @@ class Surface(Property):
             os.chdir(cwd)
 
         else:
-            equi_contcar = os.path.join(path_to_equi, 'CONTCAR')
-            if not os.path.exists(equi_contcar):
-                raise RuntimeError("please do relaxation first")
-            ptypes = vasp.get_poscar_types(equi_contcar)
-            # gen structure
-            ss = Structure.from_file(equi_contcar)
-            # gen slabs
-            all_slabs = generate_all_slabs(ss, self.miller, self.min_slab_size, self.min_vacuum_size)
-
             if refine:
                 print('surface refine starts')
                 task_list = make_refine(self.parameter['init_from_suffix'],
                                         self.parameter['output_suffix'],
                                         path_to_work)
+                os.chdir(cwd)
                 # record miller
-                for ii in range(len(task_list)):
-                    os.chdir(task_list[ii])
-                    dumpfn(all_slabs[ii].miller_index, 'miller.json')
+                init_from_path = re.sub(self.parameter['output_suffix'][::-1],
+                                        self.parameter['init_from_suffix'][::-1],
+                                        path_to_work[::-1], count=1)[::-1]
+                task_list_basename = list(map(os.path.basename, task_list))
+
+                for ii in task_list_basename:
+                    init_from_task = os.path.join(init_from_path, ii)
+                    output_task = os.path.join(path_to_work, ii)
+                    os.chdir(output_task)
+                    os.symlink(os.path.relpath(os.path.join(init_from_task, 'miller.json')), 'miller.json')
                 os.chdir(cwd)
 
             else:
+                equi_contcar = os.path.join(path_to_equi, 'CONTCAR')
+                if not os.path.exists(equi_contcar):
+                    raise RuntimeError("please do relaxation first")
+                ptypes = vasp.get_poscar_types(equi_contcar)
+                # gen structure
+                ss = Structure.from_file(equi_contcar)
+                # gen slabs
+                all_slabs = generate_all_slabs(ss, self.miller, self.min_slab_size, self.min_vacuum_size)
+
                 os.chdir(path_to_work)
                 if os.path.isfile('POSCAR'):
                     os.remove('POSCAR')

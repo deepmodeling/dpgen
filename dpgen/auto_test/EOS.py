@@ -1,6 +1,7 @@
 import glob
 import json
 import os
+import re
 
 import numpy as np
 from monty.serialization import loadfn, dumpfn
@@ -78,12 +79,6 @@ class EOS(Property):
 
         cwd = os.getcwd()
         task_list = []
-        if refine:
-            print('EOS refine starts')
-            task_list = make_refine(self.parameter['init_from_suffix'],
-                                    self.parameter['output_suffix'],
-                                    path_to_work)
-            os.chdir(cwd)
         if self.reprod:
             print('eos reproduce starts')
             if 'vasp_lmp_path' not in self.parameter:
@@ -91,30 +86,51 @@ class EOS(Property):
             vasp_lmp_path = os.path.abspath(self.parameter['vasp_lmp_path'])
             task_list = make_repro(vasp_lmp_path, self.init_from_suffix, path_to_work)
             os.chdir(cwd)
+
         else:
-            print('gen eos from ' + str(self.vol_start) + ' to ' + str(self.vol_end) + ' by every ' + str(self.vol_step))
-            equi_contcar = os.path.join(path_to_equi, 'CONTCAR')
-            if not os.path.exists(equi_contcar):
-                raise RuntimeError("please do relaxation first")
-            vol_to_poscar = vasp.poscar_vol(equi_contcar) / vasp.poscar_natoms(equi_contcar)
-            self.parameter['scale2equi'] = []
-            for vol in np.arange(self.vol_start, self.vol_end, self.vol_step):
-                task_num = (vol - self.vol_start) / self.vol_step
-                output_task = os.path.join(path_to_work, 'task.%06d' % task_num)
-                os.makedirs(output_task, exist_ok=True)
-                os.chdir(output_task)
-                for ii in ['INCAR', 'POTCAR', 'POSCAR.orig', 'POSCAR', 'conf.lmp', 'in.lammps']:
-                    if os.path.exists(ii):
-                        os.remove(ii)
-                task_list.append(output_task)
-                os.symlink(os.path.relpath(equi_contcar), 'POSCAR.orig')
-                # scale = (vol / vol_to_poscar) ** (1. / 3.)
-                scale = vol ** (1. / 3.)
-                eos_params = {'volume': vol * vol_to_poscar, 'scale': scale}
-                dumpfn(eos_params, 'eos.json', indent=4)
-                self.parameter['scale2equi'].append(scale)  # 06/22
-                vasp.poscar_scale('POSCAR.orig', 'POSCAR', scale)
-            os.chdir(cwd)
+            if refine:
+                print('eos refine starts')
+                task_list = make_refine(self.parameter['init_from_suffix'],
+                                        self.parameter['output_suffix'],
+                                        path_to_work)
+                os.chdir(cwd)
+
+                init_from_path = re.sub(self.parameter['output_suffix'][::-1],
+                                        self.parameter['init_from_suffix'][::-1],
+                                        path_to_work[::-1], count=1)[::-1]
+                task_list_basename = list(map(os.path.basename, task_list))
+
+                for ii in task_list_basename:
+                    init_from_task = os.path.join(init_from_path, ii)
+                    output_task = os.path.join(path_to_work, ii)
+                    os.chdir(output_task)
+                    os.symlink(os.path.relpath(os.path.join(init_from_task, 'eos.json')), 'eos.json')
+                os.chdir(cwd)
+
+            else:
+                print('gen eos from ' + str(self.vol_start) + ' to ' + str(self.vol_end) + ' by every ' + str(self.vol_step))
+                equi_contcar = os.path.join(path_to_equi, 'CONTCAR')
+                if not os.path.exists(equi_contcar):
+                    raise RuntimeError("please do relaxation first")
+                vol_to_poscar = vasp.poscar_vol(equi_contcar) / vasp.poscar_natoms(equi_contcar)
+                self.parameter['scale2equi'] = []
+                for vol in np.arange(self.vol_start, self.vol_end, self.vol_step):
+                    task_num = (vol - self.vol_start) / self.vol_step
+                    output_task = os.path.join(path_to_work, 'task.%06d' % task_num)
+                    os.makedirs(output_task, exist_ok=True)
+                    os.chdir(output_task)
+                    for ii in ['INCAR', 'POTCAR', 'POSCAR.orig', 'POSCAR', 'conf.lmp', 'in.lammps']:
+                        if os.path.exists(ii):
+                            os.remove(ii)
+                    task_list.append(output_task)
+                    os.symlink(os.path.relpath(equi_contcar), 'POSCAR.orig')
+                    # scale = (vol / vol_to_poscar) ** (1. / 3.)
+                    scale = vol ** (1. / 3.)
+                    eos_params = {'volume': vol * vol_to_poscar, 'scale': scale}
+                    dumpfn(eos_params, 'eos.json', indent=4)
+                    self.parameter['scale2equi'].append(scale)  # 06/22
+                    vasp.poscar_scale('POSCAR.orig', 'POSCAR', scale)
+                os.chdir(cwd)
         return task_list
 
     def post_process(self, task_list):

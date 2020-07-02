@@ -88,16 +88,6 @@ class Vacancy(Property):
             os.chdir(cwd)
 
         else:
-            equi_contcar = os.path.join(path_to_equi, 'CONTCAR')
-            if not os.path.exists(equi_contcar):
-                raise RuntimeError("please do relaxation first")
-
-            ss = Structure.from_file(equi_contcar)
-            vds = VacancyGenerator(ss)
-            dss = []
-            for jj in vds:
-                dss.append(jj.generate_defect_structure(self.supercell))
-
             if refine:
                 print('vacancy refine starts')
                 task_list = make_refine(self.parameter['init_from_suffix'],
@@ -108,8 +98,17 @@ class Vacancy(Property):
                     # np.savetxt('supercell.out', self.supercell, fmt='%d')
                     dumpfn(self.supercell, 'supercell.json')
                 os.chdir(cwd)
-
             else:
+                equi_contcar = os.path.join(path_to_equi, 'CONTCAR')
+                if not os.path.exists(equi_contcar):
+                    raise RuntimeError("please do relaxation first")
+
+                ss = Structure.from_file(equi_contcar)
+                vds = VacancyGenerator(ss)
+                dss = []
+                for jj in vds:
+                    dss.append(jj.generate_defect_structure(self.supercell))
+
                 print('gen vacancy with supercell ' + str(self.supercell))
                 os.chdir(path_to_work)
                 if os.path.isfile('POSCAR'):

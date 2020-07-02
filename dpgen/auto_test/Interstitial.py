@@ -84,26 +84,6 @@ class Interstitial(Property):
             os.chdir(cwd)
 
         else:
-            equi_contcar = os.path.join(path_to_equi, 'CONTCAR')
-            if not os.path.exists(equi_contcar):
-                raise RuntimeError("please do relaxation first")
-
-            ss = Structure.from_file(equi_contcar)
-            # gen defects
-            dss = []
-            for ii in self.insert_ele:
-                vds = InterstitialGenerator(ss, ii)
-                for jj in vds:
-                    temp = jj.generate_defect_structure(self.supercell)
-                    smallest_distance = list(set(temp.distance_matrix.ravel()))[1]
-                    if 'conf_filters' in self.parameter and 'min_dist' in self.parameter['conf_filters']:
-                        min_dist = self.parameter['conf_filters']['min_dist']
-                        if smallest_distance >= min_dist:
-                            dss.append(temp)
-                    else:
-                        dss.append(temp)
-            #            dss.append(jj.generate_defect_structure(self.supercell))
-
             if refine:
                 print('interstitial refine starts')
                 task_list = make_refine(self.parameter['init_from_suffix'],
@@ -116,6 +96,26 @@ class Interstitial(Property):
                 os.chdir(cwd)
 
             else:
+                equi_contcar = os.path.join(path_to_equi, 'CONTCAR')
+                if not os.path.exists(equi_contcar):
+                    raise RuntimeError("please do relaxation first")
+
+                ss = Structure.from_file(equi_contcar)
+                # gen defects
+                dss = []
+                for ii in self.insert_ele:
+                    vds = InterstitialGenerator(ss, ii)
+                    for jj in vds:
+                        temp = jj.generate_defect_structure(self.supercell)
+                        smallest_distance = list(set(temp.distance_matrix.ravel()))[1]
+                        if 'conf_filters' in self.parameter and 'min_dist' in self.parameter['conf_filters']:
+                            min_dist = self.parameter['conf_filters']['min_dist']
+                            if smallest_distance >= min_dist:
+                                dss.append(temp)
+                        else:
+                            dss.append(temp)
+            #            dss.append(jj.generate_defect_structure(self.supercell))
+
                 print('gen interstitial with supercell ' + str(self.supercell) + ' with element ' + str(self.insert_ele))
                 os.chdir(path_to_work)
                 if os.path.isfile('POSCAR'):
