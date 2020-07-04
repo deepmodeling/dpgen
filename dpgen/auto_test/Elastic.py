@@ -41,8 +41,8 @@ class Elastic(Property):
         elif "relax_vol" not in parameter['cal_setting']:
             parameter['cal_setting']['relax_vol'] = default_cal_setting['relax_vol']
         self.cal_setting = parameter['cal_setting']
-        parameter['reprod-opt'] = False
-        self.reprod = parameter['reprod-opt']
+        # parameter['reproduce'] = False
+        # self.reprod = parameter['reproduce']
         self.parameter = parameter
 
     def make_confs(self,

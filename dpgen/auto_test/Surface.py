@@ -19,8 +19,8 @@ from dpgen.auto_test.reproduce import post_repro
 class Surface(Property):
     def __init__(self,
                  parameter):
-        parameter['reprod-opt'] = parameter.get('reprod-opt', False)
-        self.reprod = parameter['reprod-opt']
+        parameter['reproduce'] = parameter.get('reproduce', False)
+        self.reprod = parameter['reproduce']
         if not self.reprod:
             if not ('init_from_suffix' in parameter and 'output_suffix' in parameter):
                 self.min_slab_size = parameter['min_slab_size']
@@ -89,10 +89,11 @@ class Surface(Property):
 
         if self.reprod:
             print('surface reproduce starts')
-            if 'vasp_lmp_path' not in self.parameter:
-                raise RuntimeError("please provide the vasp_lmp_path for reproduction")
-            vasp_lmp_path = os.path.abspath(self.parameter['vasp_lmp_path'])
-            task_list = make_repro(vasp_lmp_path, self.init_from_suffix, path_to_work)
+            if 'init_data_path' not in self.parameter:
+                raise RuntimeError("please provide the initial data path to reproduce")
+            init_data_path = os.path.abspath(self.parameter['init_data_path'])
+            task_list = make_repro(init_data_path, self.init_from_suffix,
+                                   path_to_work, self.parameter.get('last_frame', True))
             os.chdir(cwd)
 
         else:
@@ -195,10 +196,11 @@ class Surface(Property):
                 res_data[str(miller_index) + '-' + structure_dir] = [evac, epa, equi_epa]
 
         else:
-            if 'vasp_lmp_path' not in self.parameter:
-                raise RuntimeError("please provide the vasp_lmp_path for reproduction")
-            vasp_lmp_path = os.path.abspath(self.parameter['vasp_lmp_path'])
-            res_data, ptr_data = post_repro(vasp_lmp_path, self.parameter['init_from_suffix'], all_tasks, ptr_data)
+            if 'init_data_path' not in self.parameter:
+                raise RuntimeError("please provide the initial data path to reproduce")
+            init_data_path = os.path.abspath(self.parameter['init_data_path'])
+            res_data, ptr_data = post_repro(init_data_path, self.parameter['init_from_suffix'],
+                                            all_tasks, ptr_data, self.parameter.get('last_frame', True))
 
         with open(output_file, 'w') as fp:
             json.dump(res_data, fp, indent=4)

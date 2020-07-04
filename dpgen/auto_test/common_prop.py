@@ -47,14 +47,14 @@ def make_property(confs,
         conf_dirs.extend(glob.glob(conf))
     conf_dirs.sort()
     for ii in conf_dirs:
-        sepline(ch=ii,screen=True)
+        sepline(ch=ii, screen=True)
         for jj in property_list:
             if jj.get("skip", False):
                 continue
             if 'init_from_suffix' and 'output_suffix' in jj:
                 do_refine = True
                 suffix = jj['output_suffix']
-            elif 'reprod-opt' in jj and jj['reprod-opt']:
+            elif 'reproduce' in jj and jj['reproduce']:
                 do_refine = False
                 suffix = 'reprod'
             else:
@@ -108,7 +108,7 @@ def run_property(confs,
     task_list = []
     work_path_list = []
     for ii in conf_dirs:
-        sepline(ch=ii,screen=True)
+        sepline(ch=ii, screen=True)
         for jj in property_list:
             # determine the suffix: from scratch or refine
             # ...
@@ -116,7 +116,7 @@ def run_property(confs,
                 continue
             if 'init_from_suffix' and 'output_suffix' in jj:
                 suffix = jj['output_suffix']
-            elif 'reprod-opt' in jj and jj['reprod-opt']:
+            elif 'reproduce' in jj and jj['reproduce']:
                 suffix = 'reprod'
             else:
                 suffix = '00'
@@ -170,6 +170,7 @@ def run_property(confs,
                               outlog='outlog',
                               errlog='errlog')
 
+
 def post_property(confs,
                   #                  inter_param,
                   property_list):
@@ -190,7 +191,7 @@ def post_property(confs,
                 continue
             if 'init_from_suffix' and 'output_suffix' in jj:
                 suffix = jj['output_suffix']
-            elif 'reprod-opt' in jj and jj['reprod-opt']:
+            elif 'reproduce' in jj and jj['reproduce']:
                 suffix = 'reprod'
             else:
                 suffix = '00'
