@@ -1,6 +1,6 @@
 import glob
 import os
-
+from multiprocessing import Pool
 import dpgen.auto_test.lib.util as util
 from dpgen import dlog
 from dpgen.util import sepline
@@ -96,11 +96,14 @@ def make_property(confs,
 def run_property(confs,
                  inter_param,
                  property_list,
-                 mdata):
+                 mdata,
+                 processes=2):
     # find all POSCARs and their name like mp-xxx
     # ...
     # conf_dirs = glob.glob(confs)
     # conf_dirs.sort()
+    pool=Pool(processes=processes)
+    print("Submit job via %d processes"%processes)
     conf_dirs = []
     for conf in confs:
         conf_dirs.extend(glob.glob(conf))
@@ -156,19 +159,52 @@ def run_property(confs,
             if len(run_tasks) == 0:
                 return
             else:
-                run_tasks = [os.path.basename(ii) for ii in all_task]
-                machine, resources, command, group_size = util.get_machine_info(mdata, inter_type)
-                disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
-                disp.run_jobs(resources,
-                              command,
-                              work_path,
-                              run_tasks,
-                              group_size,
-                              forward_common_files,
-                              forward_files,
-                              backward_files,
-                              outlog='outlog',
-                              errlog='errlog')
+                ret=pool.apply_async(worker,(work_path,
+                                           all_task,
+                                           forward_common_files,
+                                           forward_files,
+                                           backward_files,
+                                           mdata,
+                                           inter_type,
+                                    ))
+               # run_tasks = [os.path.basename(ii) for ii in all_task]
+               # machine, resources, command, group_size = util.get_machine_info(mdata, inter_type)
+               # disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
+               # disp.run_jobs(resources,
+               #               command,
+               #               work_path,
+               #               run_tasks,
+               #               group_size,
+               #               forward_common_files,
+               #               forward_files,
+               #               backward_files,
+               #               outlog='outlog',
+               #               errlog='errlog')
+    pool.close()
+    pool.join()
+    if ret.successful():
+       print('finished')
+
+def worker(work_path,
+           all_task,
+           forward_common_files,
+           forward_files,
+           backward_files,
+           mdata,
+           inter_type):
+    run_tasks = [os.path.basename(ii) for ii in all_task]
+    machine, resources, command, group_size = util.get_machine_info(mdata, inter_type)
+    disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
+    disp.run_jobs(resources,
+                  command,
+                  work_path,
+                  run_tasks,
+                  group_size,
+                  forward_common_files,
+                  forward_files,
+                  backward_files,
+                  outlog='outlog',
+                  errlog='errlog')
 
 
 def post_property(confs,
