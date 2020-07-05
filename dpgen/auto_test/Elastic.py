@@ -34,12 +34,13 @@ class Elastic(Property):
                                "relax_vol": False}
         if 'cal_setting' not in parameter:
             parameter['cal_setting'] = default_cal_setting
-        elif "relax_pos" not in parameter['cal_setting']:
-            parameter['cal_setting']['relax_pos'] = default_cal_setting['relax_pos']
-        elif "relax_shape" not in parameter['cal_setting']:
-            parameter['cal_setting']['relax_shape'] = default_cal_setting['relax_shape']
-        elif "relax_vol" not in parameter['cal_setting']:
-            parameter['cal_setting']['relax_vol'] = default_cal_setting['relax_vol']
+        else:
+            if "relax_pos" not in parameter['cal_setting']:
+                parameter['cal_setting']['relax_pos'] = default_cal_setting['relax_pos']
+            if "relax_shape" not in parameter['cal_setting']:
+                parameter['cal_setting']['relax_shape'] = default_cal_setting['relax_shape']
+            if "relax_vol" not in parameter['cal_setting']:
+                parameter['cal_setting']['relax_vol'] = default_cal_setting['relax_vol']
         self.cal_setting = parameter['cal_setting']
         # parameter['reproduce'] = False
         # self.reprod = parameter['reproduce']
