@@ -162,28 +162,28 @@ class Lammps(Task):
                 relax_vol = cal_setting['relax_vol']
 
                 if [relax_pos, relax_shape, relax_vol] == [True, False, False]:
-                    fc = lammps.make_lammps_equi('conf.lmp', ntypes, self.inter_func, self.model_param,
+                    fc = lammps.make_lammps_equi('conf.lmp', self.type_map, self.inter_func, self.model_param,
                                                  etol, ftol, maxiter, maxeval, False)
                 elif [relax_pos, relax_shape, relax_vol] == [True, True, True]:
-                    fc = lammps.make_lammps_equi('conf.lmp', ntypes, self.inter_func, self.model_param,
+                    fc = lammps.make_lammps_equi('conf.lmp', self.type_map, self.inter_func, self.model_param,
                                                  etol, ftol, maxiter, maxeval, True)
                 elif [relax_pos, relax_shape, relax_vol] == [True, True, False]:
                     if 'scale2equi' in task_param:
                         scale2equi = task_param['scale2equi']
-                        fc = lammps.make_lammps_press_relax('conf.lmp', ntypes, scale2equi[int(output_dir[-6:])],
+                        fc = lammps.make_lammps_press_relax('conf.lmp', self.type_map, scale2equi[int(output_dir[-6:])],
                                                             self.inter_func,
                                                             self.model_param, B0, bp, etol, ftol, maxiter, maxeval)
                     else:
-                        fc = lammps.make_lammps_equi('conf.lmp', ntypes, self.inter_func, self.model_param,
+                        fc = lammps.make_lammps_equi('conf.lmp', self.type_map, self.inter_func, self.model_param,
                                                      etol, ftol, maxiter, maxeval, True)
                 elif [relax_pos, relax_shape, relax_vol] == [False, False, False]:
-                    fc = lammps.make_lammps_eval('conf.lmp', ntypes, self.inter_func, self.model_param)
+                    fc = lammps.make_lammps_eval('conf.lmp', self.type_map, self.inter_func, self.model_param)
 
                 else:
                     raise RuntimeError("not supported calculation setting for LAMMPS")
 
             elif cal_type == 'static':
-                fc = lammps.make_lammps_eval('conf.lmp', ntypes, self.inter_func, self.model_param)
+                fc = lammps.make_lammps_eval('conf.lmp', self.type_map, self.inter_func, self.model_param)
 
             else:
                 raise RuntimeError("not supported calculation type for LAMMPS")
@@ -203,7 +203,6 @@ class Lammps(Task):
         else:
             with open(os.path.join(output_dir, 'in.lammps'), 'w') as fp:
                 fp.write(fc)
-
 
     def compute(self,
                 output_dir):
@@ -304,11 +303,7 @@ class Lammps(Task):
 
             _tmp = self.type_map
             dlog.debug(_tmp)
-            type_map = {k: v for v, k in _tmp.items()}
-            dlog.debug(type_map)
-            type_map_list = []
-            for ii in range(len(type_map)):
-                type_map_list.append(type_map[ii])
+            type_map_list = lammps.element_list(self.type_map)
 
             # d_dump = dpdata.System(dump_lammps, fmt='lammps/dump', type_map=type_map_list)
             # d_dump.to('vasp/poscar', contcar, frame_idx=-1)
