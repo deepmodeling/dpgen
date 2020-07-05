@@ -40,7 +40,7 @@ class TestEqui(unittest.TestCase):
         relax_param = self.jdata["relaxation"]
         make_equi(confs, inter_param, relax_param)
 
-        target_path = 'confs/hp-Li/relaxation'
+        target_path = 'confs/hp-Li/relaxation/relax_task'
         source_path = 'vasp_input'
 
         incar0 = Incar.from_file(os.path.join('vasp_input', 'INCAR'))
@@ -71,7 +71,7 @@ class TestEqui(unittest.TestCase):
         confs = self.jdata["structures"]
         inter_param = self.jdata["interaction"]
         relax_param = self.jdata["relaxation"]
-        target_path = 'confs/hp-Li/relaxation'
+        target_path = 'confs/hp-Li/relaxation/relax_task'
         source_path = 'equi/vasp'
 
         poscar = os.path.join(source_path, 'POSCAR')

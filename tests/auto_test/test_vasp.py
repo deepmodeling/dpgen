@@ -2,7 +2,6 @@ import os, sys, json, glob, shutil
 import dpdata
 import numpy as np
 import unittest
-from dpgen.generator.lib.vasp import incar_upper
 from dpdata import LabeledSystem
 from pymatgen.io.vasp import Incar
 from monty.serialization import loadfn, dumpfn
@@ -13,7 +12,8 @@ __package__ = 'auto_test'
 from .context import make_kspacing_kpoints
 from .context import setUpModule
 
-from dpgen.auto_test.VASP import VASP
+from dpgen.auto_test.VASP import  VASP
+from dpgen.generator.lib.vasp import incar_upper
 
 
 class TestVASP(unittest.TestCase):
@@ -36,14 +36,14 @@ class TestVASP(unittest.TestCase):
         }
 
         self.conf_path = 'confs/hp-Li'
-        self.equi_path = 'confs/hp-Li/relaxation'
+        self.equi_path = 'confs/hp-Li/relaxation/relax_task'
         self.source_path = 'equi/vasp'
         if not os.path.exists(self.equi_path):
-            os.mkdir(self.equi_path)
+            os.makedirs(self.equi_path)
 
         self.confs = self.jdata["structures"]
         inter_param = self.jdata["interaction"]
-        self.tasl_param = self.jdata["relaxation"]
+        self.task_param = self.jdata["relaxation"]
         self.VASP = VASP(inter_param, os.path.join(self.conf_path, 'POSCAR'))
 
     def tearDown(self):
@@ -63,20 +63,67 @@ class TestVASP(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(self.equi_path, "POTCAR")))
         self.assertTrue(os.path.isfile(os.path.join(self.equi_path, 'inter.json')))
 
-    def test_make_input_file(self):
-        self.VASP.make_input_file(self.equi_path,'relaxation',self.tasl_param)
+    def test_make_input_file_1(self):
+        param=self.task_param.copy()
+        param["cal_setting"]= {"relax_pos":True,
+                         "relax_shape":True,
+                         "relax_vol":False}
+        self.VASP.make_input_file(self.equi_path,'relaxation',param)
+        incar=incar_upper(Incar.from_file(os.path.join(self.equi_path, "INCAR")))
+        self.assertTrue(incar['ISIF'],4)
+
+    def test_make_input_file_2(self):
+        self.VASP.make_input_file(self.equi_path,'relaxation',self.task_param)
         self.assertTrue(os.path.isfile(os.path.join(self.equi_path, "task.json")))   
         self.assertTrue(os.path.isfile(os.path.join(self.equi_path, "KPOINTS")))   
         self.assertTrue(os.path.isfile(os.path.join(self.equi_path, "INCAR")))   
         incar=incar_upper(Incar.from_file(os.path.join(self.equi_path, "INCAR")))
         self.assertTrue(incar['ISIF'],3)
 
+    def test_make_input_file_3(self):
+        param=self.task_param.copy()
+        param["cal_setting"]= {"relax_pos":True,
+                         "relax_shape":False,
+                         "relax_vol":False}
+        self.VASP.make_input_file(self.equi_path,'relaxation',param)
+        incar=incar_upper(Incar.from_file(os.path.join(self.equi_path, "INCAR")))
+        self.assertTrue(incar['ISIF'],2)
+
+    def test_make_input_file_4(self):
+        param=self.task_param.copy()
+        param["cal_setting"]= {"relax_pos":False,
+                         "relax_shape":True,
+                         "relax_vol":False}
+        self.VASP.make_input_file(self.equi_path,'relaxation',param)
+        incar=incar_upper(Incar.from_file(os.path.join(self.equi_path, "INCAR")))
+        self.assertTrue(incar['ISIF'],5)
+
+    def test_make_input_file_5(self):
+        param=self.task_param.copy()
+        param["cal_setting"]= {"relax_pos":False,
+                         "relax_shape":True,
+                         "relax_vol":True}
+        self.VASP.make_input_file(self.equi_path,'relaxation',param)
+        incar=incar_upper(Incar.from_file(os.path.join(self.equi_path, "INCAR")))
+        self.assertTrue(incar['ISIF'],6)
+
+    def test_make_input_file_5(self):
+        param=self.task_param.copy()
+        param["cal_setting"]= {"relax_pos":False,
+                         "relax_shape":True,
+                         "relax_vol":True,
+                         "kspacing":0.01}
+        self.VASP.make_input_file(self.equi_path,'relaxation',param)
+        incar=incar_upper(Incar.from_file(os.path.join(self.equi_path, "INCAR")))
+        self.assertTrue(incar['ISIF'],6)
+        self.assertTrue(incar['KSPACING'],0.01)
+
     def test_compuate(self):
         ret=self.VASP.compute(os.path.join(self.conf_path,'relaxation'))
         self.assertIsNone(ret)
         shutil.copy(os.path.join(self.source_path, 'OUTCAR'), os.path.join(self.equi_path, 'OUTCAR'))
-        ret=self.VASP.compute(os.path.join(self.conf_path,'relaxation'))
-        ret_ref=LabeledSystem(os.path.join(self.source_path, 'OUTCAR'))
+        ret=self.VASP.compute(self.equi_path)
+        ret_ref=loadfn(os.path.join(self.source_path, 'outcar.json'))
         self.assertTrue(ret,ret_ref.as_dict())
         
     def test_backward_files(self):
