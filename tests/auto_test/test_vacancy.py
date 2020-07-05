@@ -37,11 +37,11 @@ class TestVacancy(unittest.TestCase):
             ]
         }
 
-        self.equi_path = 'confs/hp-Li/relaxation'
+        self.equi_path = 'confs/hp-Li/relaxation/relax_task'
         self.source_path = 'equi/vasp'
         self.target_path = 'confs/hp-Li/vacancy_00'
         if not os.path.exists(self.equi_path):
-            os.mkdir(self.equi_path)
+            os.makedirs(self.equi_path)
 
         self.confs = _jdata["structures"]
         self.inter_param = _jdata["interaction"]

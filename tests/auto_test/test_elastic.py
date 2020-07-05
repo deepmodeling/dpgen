@@ -21,15 +21,16 @@ class TestElastic(unittest.TestCase):
 
     def setUp(self):
         _jdata = {
-            "structures": ["confs/hp-*"],
+            "structures": ["confs/std-fcc"],
             "interaction": {
                 "type": "vasp",
                 "incar": "vasp_input/INCAR.rlx",
                 "potcar_prefix": ".",
-                "potcars": {"Li": "vasp_input/POTCAR"}
+                "potcars": {"Al": "vasp_input/POT_Al"}
             },
             "properties": [
                 {
+                    "skip":False,
                     "type": "elastic",
                     "norm_deform": 2e-2,
                     "shear_deform": 5e-2
@@ -37,11 +38,11 @@ class TestElastic(unittest.TestCase):
             ]
         }
 
-        self.equi_path = 'confs/hp-Li/relaxation'
+        self.equi_path = 'confs/std-fcc/relaxation/task_relax'
         self.source_path = 'equi/vasp'
-        self.target_path = 'confs/hp-Li/elastic_00'
+        self.target_path = 'confs/std-fcc/elastic_00'
         if not os.path.exists(self.equi_path):
-            os.mkdir(self.equi_path)
+            os.makedirs(self.equi_path)
 
         self.confs = _jdata["structures"]
         self.inter_param = _jdata["interaction"]
@@ -50,14 +51,12 @@ class TestElastic(unittest.TestCase):
         self.elastic = Elastic(_jdata['properties'][0])
 
     def tearDown(self):
+        if os.path.exists(os.path.join(self.equi_path,'..')):
+            shutil.rmtree(self.equi_path)
         if os.path.exists(self.equi_path):
             shutil.rmtree(self.equi_path)
         if os.path.exists(self.target_path):
             shutil.rmtree(self.target_path)
-        if os.path.exists('frozen_model.pb'):
-            os.remove('frozen_model.pb')
-        if os.path.exists('inter.json'):
-            os.remove('inter.json')
 
     def test_task_type(self):
         self.assertEqual('elastic', self.elastic.task_type())
@@ -65,11 +64,13 @@ class TestElastic(unittest.TestCase):
     def test_task_param(self):
         self.assertEqual(self.prop_param[0], self.elastic.task_param())
 
-    def test_make_confs_0(self):
+    def test_make_confs(self):
+
+        shutil.copy(os.path.join(self.source_path, 'Al-fcc.json'), os.path.join(self.equi_path, 'result.json'))
         if not os.path.exists(os.path.join(self.equi_path, 'CONTCAR')):
             with self.assertRaises(RuntimeError):
                 self.elastic.make_confs(self.target_path, self.equi_path)
-        shutil.copy(os.path.join(self.source_path, 'CONTCAR'), os.path.join(self.equi_path, 'CONTCAR'))
+        shutil.copy(os.path.join(self.source_path, 'CONTCAR_Al_fcc'), os.path.join(self.equi_path, 'CONTCAR'))
         task_list = self.elastic.make_confs(self.target_path, self.equi_path)
         dfm_dirs = glob.glob(os.path.join(self.target_path, 'task.*'))
 
@@ -85,4 +86,3 @@ class TestElastic(unittest.TestCase):
             self.assertTrue(os.path.isfile(st_file))
             strain_json_file = os.path.join(ii, 'strain.json')
             self.assertTrue(os.path.isfile(strain_json_file))
-            strain_json = loadfn(strain_json_file)
