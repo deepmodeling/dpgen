@@ -40,11 +40,11 @@ class TestSurface(unittest.TestCase):
             ]
         }
 
-        self.equi_path = 'confs/mp-141/relaxation'
+        self.equi_path = 'confs/mp-141/relaxation/relax_task'
         self.source_path = 'equi/vasp'
         self.target_path = 'confs/mp-141/surface_00'
         if not os.path.exists(self.equi_path):
-            os.mkdir(self.equi_path)
+            os.makedirs(self.equi_path)
 
         self.confs = _jdata["structures"]
         self.inter_param = _jdata["interaction"]
@@ -53,14 +53,12 @@ class TestSurface(unittest.TestCase):
         self.surface = Surface(_jdata['properties'][0])
 
     def tearDown(self):
+        if os.path.exists(os.path.abspath(os.path.join(self.equi_path,'..'))):
+            shutil.rmtree(os.path.abspath(os.path.join(self.equi_path,'..')))
         if os.path.exists(self.equi_path):
             shutil.rmtree(self.equi_path)
         if os.path.exists(self.target_path):
             shutil.rmtree(self.target_path)
-        if os.path.exists('frozen_model.pb'):
-            os.remove('frozen_model.pb')
-        if os.path.exists('inter.json'):
-            os.remove('inter.json')
 
     def test_task_type(self):
         self.assertEqual('surface', self.surface.task_type())

@@ -19,7 +19,7 @@ class TestEOS(unittest.TestCase):
 
     def setUp(self):
         _jdata = {
-            "structures": ["confs/hp-*"],
+            "structures": ["confs/std-fcc"],
             "interaction": {
                 "type": "vasp",
                 "incar": "vasp_input/INCAR.rlx",
@@ -27,25 +27,31 @@ class TestEOS(unittest.TestCase):
                 "potcars": {"Li": "vasp_input/POTCAR"}
             },
             "properties": [
-                {
-                    "type": "eos",
-                    "vol_start": 10,
-                    "vol_end": 30,
-                    "vol_step": 3,
-                    "cal_type": "relaxation",
-                    "cal_setting": {"relax_pos": True,
-                                    "relax_shape": True,
-                                    "relax_vol": False,
-                                    "input_prop": ""}
-                }
+                 {
+                  "type":         "eos",
+                  "skip":  False,
+                  "vol_start":    0.8,
+                  "vol_end":      1.2,
+                  "vol_step":     0.01,
+                  "cal_setting": {
+                                  "relax_pos": True, 
+                                  "relax_shape": True, 
+                                  "relax_vol": False, 
+                                  "overwrite_interaction":{
+                                              "type":    "deepmd", 
+                                              "model":   "lammps_input/frozen_model.pb", 
+                                              "type_map":{"Al": 0}
+                                              }
+                                 }
+                 }
             ]
         }
 
-        self.equi_path = 'confs/hp-Li/relaxation'
+        self.equi_path = 'confs/std-fcc/relaxation/relax_task'
         self.source_path = 'equi/vasp'
-        self.target_path = 'confs/hp-Li/eos_00'
+        self.target_path = 'confs/std-fcc/eos_00'
         if not os.path.exists(self.equi_path):
-            os.mkdir(self.equi_path)
+            os.makedirs(self.equi_path)
 
         self.confs = _jdata["structures"]
         self.inter_param = _jdata["interaction"]
@@ -58,10 +64,6 @@ class TestEOS(unittest.TestCase):
             shutil.rmtree(self.equi_path)
         if os.path.exists(self.target_path):
             shutil.rmtree(self.target_path)
-        if os.path.exists('frozen_model.pb'):
-            os.remove('frozen_model.pb')
-        if os.path.exists('inter.json'):
-            os.remove('inter.json')
 
     def test_task_type(self):
         self.assertEqual('eos', self.eos.task_type())
@@ -70,6 +72,7 @@ class TestEOS(unittest.TestCase):
         self.assertEqual(self.prop_param[0], self.eos.task_param())
 
     def test_make_confs_0(self):
+
         if not os.path.exists(os.path.join(self.equi_path, 'CONTCAR')):
             with self.assertRaises(RuntimeError):
                 self.eos.make_confs(self.target_path, self.equi_path)
