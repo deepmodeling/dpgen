@@ -5,7 +5,7 @@ import numpy as np
 from monty.serialization import loadfn
 
 
-def make_repro(init_data_path, init_from_suffix, path_to_work, last_frame=True):
+def make_repro(init_data_path, init_from_suffix, path_to_work, reprod_last_frame=True):
     path_to_work = os.path.abspath(path_to_work)
     property_type = path_to_work.split('/')[-1].split('_')[0]
     init_data_path = os.path.join(init_data_path, '*', property_type + '_' + init_from_suffix)
@@ -34,7 +34,7 @@ def make_repro(init_data_path, init_from_suffix, path_to_work, last_frame=True):
     for ii in init_data_task_todo:
         # get frame number
         task_result = loadfn(os.path.join(ii, 'result_task.json'))
-        if last_frame:
+        if reprod_last_frame:
             nframe = 1
         else:
             nframe = len(task_result['energies'])
@@ -49,7 +49,7 @@ def make_repro(init_data_path, init_from_suffix, path_to_work, last_frame=True):
                 if os.path.exists(kk):
                     os.remove(kk)
             # make conf
-            if last_frame:
+            if reprod_last_frame:
                 task_result.to('vasp/poscar', 'POSCAR', frame_idx=-1)
             else:
                 task_result.to('vasp/poscar', 'POSCAR', frame_idx=jj)
@@ -58,7 +58,7 @@ def make_repro(init_data_path, init_from_suffix, path_to_work, last_frame=True):
     return task_list
 
 
-def post_repro(init_data_path, init_from_suffix, all_tasks, ptr_data, last_frame=True):
+def post_repro(init_data_path, init_from_suffix, all_tasks, ptr_data, reprod_last_frame=True):
     ptr_data += "Reproduce: Initial_path Init_E(eV/atom)  Reprod_E(eV/atom)  Difference(eV/atom)\n"
     struct_output_name = all_tasks[0].split('/')[-3]
     property_type = all_tasks[0].split('/')[-2].split('_')[0]
@@ -89,13 +89,13 @@ def post_repro(init_data_path, init_from_suffix, all_tasks, ptr_data, last_frame
 
     for ii in init_data_task_todo:
         init_task_result = loadfn(os.path.join(ii, 'result_task.json'))
-        if last_frame:
+        if reprod_last_frame:
             nframe = 1
         else:
             nframe = len(init_task_result['energies'])
         # idid += nframe
         natoms = init_task_result['atom_numbs'][0]
-        if last_frame:
+        if reprod_last_frame:
             init_ener = init_task_result['energies'][-1:]
         else:
             init_ener = init_task_result['energies']
@@ -113,7 +113,7 @@ def post_repro(init_data_path, init_from_suffix, all_tasks, ptr_data, last_frame
         output_ener = np.array(output_ener)
         output_ener = np.reshape(output_ener, [-1, 1])
         init_ener = np.reshape(init_ener, [-1, 1]) / natoms
-        if last_frame:
+        if reprod_last_frame:
             error_start = 0
         else:
             error_start = 1

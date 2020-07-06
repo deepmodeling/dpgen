@@ -95,7 +95,7 @@ class Surface(Property):
                 raise RuntimeError("please provide the initial data path to reproduce")
             init_data_path = os.path.abspath(self.parameter['init_data_path'])
             task_list = make_repro(init_data_path, self.init_from_suffix,
-                                   path_to_work, self.parameter.get('last_frame', True))
+                                   path_to_work, self.parameter.get('reprod_last_frame', True))
             os.chdir(cwd)
 
         else:
@@ -202,7 +202,7 @@ class Surface(Property):
                 raise RuntimeError("please provide the initial data path to reproduce")
             init_data_path = os.path.abspath(self.parameter['init_data_path'])
             res_data, ptr_data = post_repro(init_data_path, self.parameter['init_from_suffix'],
-                                            all_tasks, ptr_data, self.parameter.get('last_frame', True))
+                                            all_tasks, ptr_data, self.parameter.get('reprod_last_frame', True))
 
         with open(output_file, 'w') as fp:
             json.dump(res_data, fp, indent=4)
