@@ -72,7 +72,7 @@ class DispatcherList():
                     entity = self.dispatcher_list[ii]["entity"]
                     status_list = [item["dispatcher_status"] for item in self.dispatcher_list]
                     flag = "unallocated" in status_list
-                    if flag: self.delete(ii)
+                    if not flag: self.delete(ii)
                     else:
                         self.dispatcher_list[ii]["entity"] = None
                         self.server_pool.append(entity.instance_id)
@@ -155,8 +155,13 @@ class DispatcherList():
             if status == 0:
                 # param clean: delete remote work_dir or not.
                 clean = self.mdata_resources.get("clean", False)
-                if self.dispatcher_list[ii]["dispatcher"].all_finished(self.dispatcher_list[ii]["entity"].job_handler, allow_failue, clean):
-                    self.dispatcher_list[ii]["dispatcher_status"] = "finished"
+                try:
+                    # avoid raising ssh exception in download proceess
+                    finished = self.dispatcher_list[ii]["dispatcher"].all_finished(self.dispatcher_list[ii]["entity"].job_handler, allow_failue, clean)
+                    if finished:
+                        self.dispatcher_list[ii]["dispatcher_status"] = "finished"
+                except:
+                    pass                    
             elif status == 1:
                 # self.dispatcher_list[ii]["dispatcher_status"] = "terminated"
                 pass
