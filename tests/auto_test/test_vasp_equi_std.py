@@ -17,12 +17,12 @@ from dpgen.auto_test.calculator import make_calculator
 
 class TestEqui(unittest.TestCase):
     jdata = {
-        "structures": ["confs/hp-Li"],
+        "structures": ["confs/std-fcc"],
         "interaction": {
             "type": "vasp",
             "incar": "vasp_input/INCAR.rlx",
             "potcar_prefix": ".",
-            "potcars": {"Li": "vasp_input/POTCAR"}
+            "potcars": {"Al": "vasp_input/POT_Al"}
         },
         "relaxation": {
             "cal_type": "relaxation",
@@ -31,8 +31,10 @@ class TestEqui(unittest.TestCase):
     }
 
     def tearDown(self):
-        if os.path.exists('confs/hp-Li/relaxation'):
-            shutil.rmtree('confs/hp-Li/relaxation')
+        if os.path.isfile('confs/std-fcc/POSCAR'):
+           os.remove('confs/std-fcc/POSCAR')
+        if os.path.exists('confs/std-fcc/relaxation'):
+            shutil.rmtree('confs/std-fcc/relaxation')
 
     def test_make_equi(self):
         confs = self.jdata["structures"]
@@ -40,14 +42,16 @@ class TestEqui(unittest.TestCase):
         relax_param = self.jdata["relaxation"]
         make_equi(confs, inter_param, relax_param)
 
-        target_path = 'confs/hp-Li/relaxation/relax_task'
+        self.assertTrue(os.path.isfile("confs/std-fcc/POSCAR"))
+
+        target_path = 'confs/std-fcc/relaxation/relax_task'
         source_path = 'vasp_input'
 
         incar0 = Incar.from_file(os.path.join('vasp_input', 'INCAR'))
         incar1 = Incar.from_file(os.path.join(target_path, 'INCAR'))
         self.assertTrue(incar0 == incar1)
 
-        with open(os.path.join('vasp_input', 'POTCAR')) as fp:
+        with open(os.path.join('vasp_input', 'POT_Al')) as fp:
             pot0 = fp.read()
         with open(os.path.join(target_path, 'POTCAR')) as fp:
             pot1 = fp.read()
@@ -67,19 +71,3 @@ class TestEqui(unittest.TestCase):
 
         self.assertTrue(os.path.islink(os.path.join(target_path, 'POSCAR')))
 
-    def test_post_equi(self):
-        confs = self.jdata["structures"]
-        inter_param = self.jdata["interaction"]
-        relax_param = self.jdata["relaxation"]
-        target_path = 'confs/hp-Li/relaxation/relax_task'
-        source_path = 'equi/vasp'
-
-        poscar = os.path.join(source_path, 'POSCAR')
-        make_equi(confs, inter_param, relax_param)
-        shutil.copy(os.path.join(source_path, 'OUTCAR'), os.path.join(target_path, 'OUTCAR'))
-        shutil.copy(os.path.join(source_path, 'CONTCAR'), os.path.join(target_path, 'CONTCAR'))
-        post_equi(confs, inter_param)
-
-        result_json_file = os.path.join(target_path, 'result.json')
-        result_json = loadfn(result_json_file)
-        self.assertTrue(os.path.isfile(result_json_file))

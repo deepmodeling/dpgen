@@ -1,12 +1,11 @@
 import os
-import json
 from dpgen import dlog
 from dpgen.util import sepline
 import dpgen.auto_test.lib.vasp as vasp
 from dpgen.auto_test.Task import Task
 from dpgen.generator.lib.vasp import incar_upper
 from dpdata import LabeledSystem
-from monty.serialization import loadfn, dumpfn
+from monty.serialization import dumpfn
 from pymatgen.io.vasp import Incar, Kpoints
 from pymatgen.core.structure import Structure
 
@@ -24,6 +23,9 @@ class VASP(Task):
 
     def make_potential_files(self,
                              output_dir):
+        potcar_not_link_list = ['vacancy', 'interstitial']
+        task_type = output_dir.split('/')[-2].split('_')[0]
+
         ele_pot_list = [key for key in self.potcars.keys()]
         poscar = os.path.abspath(os.path.join(output_dir, 'POSCAR'))
         pos_str = Structure.from_file(poscar)
@@ -34,13 +36,32 @@ class VASP(Task):
             if not ele_pos_list_tmp[ii] == ele_pos_list_tmp[ii - 1]:
                 ele_pos_list.append(ele_pos_list_tmp[ii])
 
-        with open(os.path.join(output_dir, 'POTCAR'), 'w') as fp:
-            for ii in ele_pos_list:
-                for jj in ele_pot_list:
-                    if ii == jj:
-                        with open(os.path.join(self.potcar_prefix, self.potcars[jj]), 'r') as fin:
-                            for line in fin:
-                                print(line.strip('\n'), file=fp)
+        if task_type in potcar_not_link_list:
+            with open(os.path.join(output_dir, 'POTCAR'), 'w') as fp:
+                for ii in ele_pos_list:
+                    for jj in ele_pot_list:
+                        if ii == jj:
+                            with open(os.path.join(self.potcar_prefix, self.potcars[jj]), 'r') as fin:
+                                for line in fin:
+                                    print(line.strip('\n'), file=fp)
+
+        else:
+            if not os.path.isfile(os.path.join(output_dir, '../POTCAR')):
+                with open(os.path.join(output_dir, '../POTCAR'), 'w') as fp:
+                    for ii in ele_pos_list:
+                        for jj in ele_pot_list:
+                            if ii == jj:
+                                with open(os.path.join(self.potcar_prefix, self.potcars[jj]), 'r') as fin:
+                                    for line in fin:
+                                        print(line.strip('\n'), file=fp)
+            cwd = os.getcwd()
+            os.chdir(output_dir)
+            if not os.path.islink('POTCAR'):
+                os.symlink('../POTCAR', 'POTCAR')
+            elif not '../POTCAR' == os.readlink('POTCAR'):
+                os.remove('POTCAR')
+                os.symlink('../POTCAR', 'POTCAR')
+            os.chdir(cwd)
 
         dumpfn(self.inter, os.path.join(output_dir, 'inter.json'), indent=4)
 
@@ -106,6 +127,26 @@ class VASP(Task):
             else:
                 raise RuntimeError("not supported calculation type for VASP")
 
+            if 'ediff' in cal_setting:
+                dlog.info("%s setting EDIFF to %s" % (self.make_input_file.__name__, cal_setting['ediff']))
+                incar['EDIFF'] = cal_setting['ediff']
+
+            if 'ediffg' in cal_setting:
+                dlog.info("%s setting EDIFFG to %s" % (self.make_input_file.__name__, cal_setting['ediffg']))
+                incar['EDIFFG'] = cal_setting['ediffg']
+
+            if 'encut' in cal_setting:
+                dlog.info("%s setting ENCUT to %s" % (self.make_input_file.__name__, cal_setting['encut']))
+                incar['ENCUT'] = cal_setting['encut']
+
+            if 'kspacing' in cal_setting:
+                dlog.info("%s setting KSAPCING to %s" % (self.make_input_file.__name__, cal_setting['kspacing']))
+                incar['KSAPCING'] = cal_setting['kspacing']
+
+            if 'kgamma' in cal_setting:
+                dlog.info("%s setting KGAMMA to %s" % (self.make_input_file.__name__, cal_setting['kgamma']))
+                incar['KGAMMA'] = cal_setting['kgamma']
+
         try:
             kspacing = incar.get('KSPACING')
         except KeyError:
@@ -116,7 +157,15 @@ class VASP(Task):
         else:
             kgamma = False
 
-        incar.write_file(os.path.join(output_dir, 'INCAR'))
+        incar.write_file(os.path.join(output_dir, '../INCAR'))
+        cwd = os.getcwd()
+        os.chdir(output_dir)
+        if not os.path.islink('INCAR'):
+            os.symlink('../INCAR', 'INCAR')
+        elif not '../INCAR' == os.readlink('INCAR'):
+            os.remove('INCAR')
+            os.symlink('../INCAR', 'INCAR')
+        os.chdir(cwd)
         ret = vasp.make_kspacing_kpoints(self.path_to_poscar, kspacing, kgamma)
         kp = Kpoints.from_string(ret)
         kp.write_file(os.path.join(output_dir, "KPOINTS"))
@@ -150,11 +199,17 @@ class VASP(Task):
 
             return outcar_dict
 
-    def forward_files(self):
+    def forward_files(self, property_type='relaxation'):
         return ['INCAR', 'POSCAR', 'KPOINTS', 'POTCAR']
 
-    def forward_common_files(self):
-        return ['INCAR', 'POTCAR']
+    def forward_common_files(self, property_type='relaxation'):
+        potcar_not_link_list = ['vacancy', 'interstitial']
+        if property_type == 'elastic':
+            return ['INCAR', 'KPOINTS', 'POTCAR']
+        elif property_type in potcar_not_link_list:
+            return ['INCAR']
+        else:
+            return ['INCAR', 'POTCAR']
 
     def backward_files(self):
         return ['OUTCAR', 'outlog', 'CONTCAR', 'OSZICAR', 'XDATCAR']

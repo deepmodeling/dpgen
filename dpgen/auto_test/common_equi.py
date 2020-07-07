@@ -1,13 +1,15 @@
+import glob
 import os
+
+from monty.serialization import dumpfn
+
 import dpgen.auto_test.lib.crys as crys
-import glob, warnings, json
 import dpgen.auto_test.lib.util as util
 from dpgen import dlog
-from dpgen.dispatcher.Dispatcher import make_dispatcher
 from dpgen.auto_test.calculator import make_calculator
-from dpgen.remote.decide_machine import decide_fp_machine, decide_model_devi_machine
 from dpgen.auto_test.mpdb import get_structure
-from monty.serialization import loadfn, dumpfn
+from dpgen.dispatcher.Dispatcher import make_dispatcher
+from dpgen.remote.decide_machine import decide_fp_machine, decide_model_devi_machine
 
 lammps_task_type = ['deepmd', 'meam', 'eam_fs', 'eam_alloy']
 
@@ -29,7 +31,7 @@ def make_equi(confs,
         conf_dirs.extend(glob.glob(conf))
     conf_dirs.sort()
 
-    # generate a list of task names like mp-xxx/relaxation
+    # generate a list of task names like mp-xxx/relaxation/relax_task
     # ...
     cwd = os.getcwd()
     # generate poscar for single element crystal
@@ -60,7 +62,7 @@ def make_equi(confs,
 
             os.chdir(cwd)
     task_dirs = []
-    # make task directories like mp-xxx/relaxation
+    # make task directories like mp-xxx/relaxation/relax_task
     # if mp-xxx/exists then print a warning and exit.
     # ...
     for ii in conf_dirs:
@@ -73,14 +75,14 @@ def make_equi(confs,
         poscar = os.path.abspath(os.path.join(ii, 'POSCAR'))
         if not os.path.exists(poscar):
             raise FileNotFoundError('no configuration for autotest')
-        relax_dirs = os.path.abspath(os.path.join(ii, 'relaxation'))
+        relax_dirs = os.path.abspath(os.path.join(ii, 'relaxation', 'relax_task'))    # to be consistent with property in make dispatcher
         if os.path.exists(relax_dirs):
             dlog.warning('%s already exists' % relax_dirs)
         else:
             os.makedirs(relax_dirs)
         task_dirs.append(relax_dirs)
         os.chdir(relax_dirs)
-        # copy POSCARs to mp-xxx/relaxation
+        # copy POSCARs to mp-xxx/relaxation/relax_task
         # ...
         if os.path.isfile('POSCAR'):
             os.remove('POSCAR')
@@ -93,6 +95,13 @@ def make_equi(confs,
         relax_param['cal_setting'] = {"relax_pos": True,
                                       "relax_shape": True,
                                       "relax_vol": True}
+    elif "relax_pos" not in relax_param['cal_setting']:
+        relax_param['cal_setting']['relax_pos'] = True
+    elif "relax_shape" not in relax_param['cal_setting']:
+        relax_param['cal_setting']['relax_shape'] = True
+    elif "relax_vol" not in relax_param['cal_setting']:
+        relax_param['cal_setting']['relax_vol'] = True
+
     for ii in task_dirs:
         poscar = os.path.join(ii, 'POSCAR')
         dlog.debug('task_dir %s' % ii)
@@ -110,14 +119,14 @@ def run_equi(confs,
     for conf in confs:
         conf_dirs.extend(glob.glob(conf))
     conf_dirs.sort()
-    # generate a list of task names like mp-xxx/relaxation
+    # generate a list of task names like mp-xxx/relaxation/relax_task
     # ...
     work_path_list = []
     for ii in conf_dirs:
         work_path_list.append(os.path.abspath(os.path.join(ii, 'relaxation')))
     all_task = []
     for ii in work_path_list:
-        all_task.append(os.path.join(ii, '.'))
+        all_task.append(os.path.join(ii, 'relax_task'))
 
     inter_type = inter_param['type']
     # vasp
@@ -130,10 +139,10 @@ def run_equi(confs,
 
     # dispatch the tasks
     # POSCAR here is useless
-    virutual_calculator = make_calculator(inter_param, "POSCAR")
-    forward_files = virutual_calculator.forward_files()
-    forward_common_files = virutual_calculator.forward_common_files()
-    backward_files = virutual_calculator.backward_files()
+    virtual_calculator = make_calculator(inter_param, "POSCAR")
+    forward_files = virtual_calculator.forward_files()
+    forward_common_files = virtual_calculator.forward_common_files()
+    backward_files = virtual_calculator.backward_files()
     #    backward_files += logs
     # ...
     run_tasks = util.collect_task(all_task, inter_type)
@@ -142,9 +151,11 @@ def run_equi(confs,
     else:
         run_tasks = [os.path.basename(ii) for ii in all_task]
         machine, resources, command, group_size = util.get_machine_info(mdata, inter_type)
+        print('%d tasks will be submited '%len(run_tasks))
         for ii in range(len(work_path_list)):
             work_path = work_path_list[ii]
             disp = make_dispatcher(machine, resources, work_path, [run_tasks[ii]], group_size)
+            print("%s --> Runing... "%(work_path))
             disp.run_jobs(resources,
                           command,
                           work_path,
@@ -166,7 +177,7 @@ def post_equi(confs, inter_param):
     conf_dirs.sort()
     task_dirs = []
     for ii in conf_dirs:
-        task_dirs.append(os.path.abspath(os.path.join(ii, 'relaxation')))
+        task_dirs.append(os.path.abspath(os.path.join(ii, 'relaxation', 'relax_task')))
     task_dirs.sort()
 
     # generate a list of task names like mp-xxx/relaxation

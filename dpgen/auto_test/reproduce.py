@@ -1,18 +1,19 @@
-import os, glob, warnings
-import dpgen.auto_test.lib.vasp as vasp
-import dpgen.auto_test.lib.lammps as lammps
+import glob
+import os
+
 import numpy as np
-import dpdata
-from monty.serialization import loadfn, dumpfn
+from monty.serialization import loadfn
 
 
-def make_repro(vasp_lmp_path, path_to_work):
+def make_repro(init_data_path, init_from_suffix, path_to_work, reprod_last_frame=True):
     path_to_work = os.path.abspath(path_to_work)
-    vasp_lmp_path_list = glob.glob(vasp_lmp_path)
-    vasp_lmp_path_list.sort()
+    property_type = path_to_work.split('/')[-1].split('_')[0]
+    init_data_path = os.path.join(init_data_path, '*', property_type + '_' + init_from_suffix)
+    init_data_path_list = glob.glob(init_data_path)
+    init_data_path_list.sort()
     cwd = os.getcwd()
     struct_init_name_list = []
-    for ii in vasp_lmp_path_list:
+    for ii in init_data_path_list:
         struct_init_name_list.append(ii.split('/')[-2])
     struct_output_name = path_to_work.split('/')[-2]
 
@@ -22,21 +23,21 @@ def make_repro(vasp_lmp_path, path_to_work):
         if ii == struct_output_name:
             label = idx
 
-    vasp_lmp_path_todo = vasp_lmp_path_list[label]
+    init_data_path_todo = init_data_path_list[label]
 
-    if not os.path.exists(vasp_lmp_path_todo):
-        raise RuntimeError("please do VASP or LAMMPS calcualtions first")
-
-    vasp_lmp_task_todo = glob.glob(os.path.join(vasp_lmp_path_todo, 'task.[0-9]*[0-9]'))
-    assert len(vasp_lmp_task_todo) > 0, "Please do VASP or LAMMPS calculations first"
-    vasp_lmp_task_todo.sort()
+    init_data_task_todo = glob.glob(os.path.join(init_data_path_todo, 'task.[0-9]*[0-9]'))
+    assert len(init_data_task_todo) > 0, "There is no task in previous calculations path"
+    init_data_task_todo.sort()
 
     task_list = []
     task_num = 0
-    for ii in vasp_lmp_task_todo:
+    for ii in init_data_task_todo:
         # get frame number
         task_result = loadfn(os.path.join(ii, 'result_task.json'))
-        nframe = len(task_result['energies'])
+        if reprod_last_frame:
+            nframe = 1
+        else:
+            nframe = len(task_result['energies'])
         for jj in range(nframe):
             output_task = os.path.join(path_to_work, 'task.%06d' % task_num)
             task_num += 1
@@ -48,19 +49,25 @@ def make_repro(vasp_lmp_path, path_to_work):
                 if os.path.exists(kk):
                     os.remove(kk)
             # make conf
-            task_result.to('vasp/poscar', 'POSCAR', frame_idx=jj)
+            if reprod_last_frame:
+                task_result.to('vasp/poscar', 'POSCAR', frame_idx=-1)
+            else:
+                task_result.to('vasp/poscar', 'POSCAR', frame_idx=jj)
     os.chdir(cwd)
 
     return task_list
 
-def post_repro(vasp_lmp_path, all_tasks, ptr_data):
+
+def post_repro(init_data_path, init_from_suffix, all_tasks, ptr_data, reprod_last_frame=True):
     ptr_data += "Reproduce: Initial_path Init_E(eV/atom)  Reprod_E(eV/atom)  Difference(eV/atom)\n"
     struct_output_name = all_tasks[0].split('/')[-3]
-    vasp_lmp_path_list = glob.glob(vasp_lmp_path)
-    vasp_lmp_path_list.sort()
+    property_type = all_tasks[0].split('/')[-2].split('_')[0]
+    init_data_path = os.path.join(init_data_path, '*', property_type + '_' + init_from_suffix)
+    init_data_path_list = glob.glob(init_data_path)
+    init_data_path_list.sort()
     # cwd = os.getcwd()
     struct_init_name_list = []
-    for ii in vasp_lmp_path_list:
+    for ii in init_data_path_list:
         struct_init_name_list.append(ii.split('/')[-2])
 
     assert struct_output_name in struct_init_name_list
@@ -69,23 +76,29 @@ def post_repro(vasp_lmp_path, all_tasks, ptr_data):
         if ii == struct_output_name:
             label = idx
 
-    vasp_lmp_path_todo = vasp_lmp_path_list[label]
+    init_data_path_todo = init_data_path_list[label]
 
-    vasp_lmp_task_todo = glob.glob(os.path.join(vasp_lmp_path_todo, 'task.[0-9]*[0-9]'))
-    assert len(vasp_lmp_task_todo) > 0, "Please do VASP or LAMMPS calcualtions first"
-    vasp_lmp_task_todo.sort()
+    init_data_task_todo = glob.glob(os.path.join(init_data_path_todo, 'task.[0-9]*[0-9]'))
+    assert len(init_data_task_todo) > 0, "There is no task in previous calculations path"
+    init_data_task_todo.sort()
 
     idid = 0
     init_ener_tot = []
     output_ener_tot = []
     res_data = {}
 
-    for ii in vasp_lmp_task_todo:
+    for ii in init_data_task_todo:
         init_task_result = loadfn(os.path.join(ii, 'result_task.json'))
-        nframe = len(init_task_result['energies'])
+        if reprod_last_frame:
+            nframe = 1
+        else:
+            nframe = len(init_task_result['energies'])
         # idid += nframe
         natoms = init_task_result['atom_numbs'][0]
-        init_ener = init_task_result['energies']
+        if reprod_last_frame:
+            init_ener = init_task_result['energies'][-1:]
+        else:
+            init_ener = init_task_result['energies']
         init_ener_tot.extend(list(init_ener))
         output_ener = []
         for jj in range(idid, idid + nframe):
@@ -95,17 +108,19 @@ def post_repro(vasp_lmp_path, all_tasks, ptr_data):
             output_ener_tot.extend(output_task_result['energies'])
 
             init_epa = init_ener[jj - idid] / natoms
-            ptr_data += '%s %7.3f  %7.3f  %7.3f\n' % (ii, init_epa,
-                                                      output_epa, output_epa - init_epa)
+            ptr_data += '%s %7.3f  %7.3f  %7.3f\n' % (ii, init_epa, output_epa, output_epa - init_epa)
         idid += nframe
         output_ener = np.array(output_ener)
         output_ener = np.reshape(output_ener, [-1, 1])
         init_ener = np.reshape(init_ener, [-1, 1]) / natoms
-        error_start = 1
-        output_ener -= output_ener[-1] - init_ener[-1]
+        if reprod_last_frame:
+            error_start = 0
+        else:
+            error_start = 1
+            output_ener -= output_ener[-1] - init_ener[-1]
         diff = output_ener - init_ener
         diff = diff[error_start:]
-        error = np.linalg.norm(diff) / np.sqrt(np.size(output_ener)-1)
+        error = np.linalg.norm(diff) / np.sqrt(np.size(output_ener) - error_start)
         res_data[ii] = {'nframes': len(init_ener), 'error': error}
 
     if not len(init_ener_tot) == len(output_ener_tot):

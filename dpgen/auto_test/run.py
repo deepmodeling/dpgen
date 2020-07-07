@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
-import argparse
 import logging
+
+from monty.serialization import loadfn
+
 from dpgen import dlog
-from monty.serialization import loadfn,dumpfn
-from dpgen.auto_test.common_prop import make_property,run_property,post_property
-from dpgen.auto_test.common_equi import make_equi,run_equi,post_equi
+from dpgen.auto_test.common_equi import make_equi, run_equi, post_equi
+from dpgen.auto_test.common_prop import make_property, run_property, post_property
+
 
 #lammps_task_type = ['deepmd', 'meam', 'eam_fs', 'eam_alloy']
 
@@ -26,9 +28,15 @@ def run_task(step, param_file, machine_file=None):
         make_property(confs, inter_parameter, property_list)
 
     elif step == 'run' and 'relaxation' in jdata:
+        if machine_file is None:
+           print('Please supply the machine.json, exit now!')  
+           return
         run_equi(confs, inter_parameter, mdata)
 
     elif step == 'run' and 'properties' in jdata:
+        if machine_file is None:
+           print('Please supply the machine.json, exit now!')  
+           return
         property_list = jdata['properties']
         run_property(confs, inter_parameter, property_list, mdata)
 
@@ -48,4 +56,6 @@ def gen_test(args):
         dlog.setLevel(logging.DEBUG)
     run_task(args.TASK, args.PARAM, args.MACHINE)
     dlog.info("finished!")
+
+
 

@@ -3,6 +3,7 @@ import dpdata
 import numpy as np
 import unittest
 from monty.serialization import loadfn, dumpfn
+from pymatgen.io.vasp import Incar
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 __package__ = 'auto_test'
@@ -10,8 +11,8 @@ __package__ = 'auto_test'
 from .context import make_kspacing_kpoints
 from .context import setUpModule
 
-from pymatgen.io.vasp import Incar
 from dpgen.auto_test.common_prop import make_property
+from dpgen.auto_test.refine import make_refine
 
 
 class TestMakeProperty(unittest.TestCase):
@@ -48,15 +49,20 @@ class TestMakeProperty(unittest.TestCase):
     def tearDown(self):
         if os.path.exists('confs/std-fcc/eos_00'):
             shutil.rmtree('confs/std-fcc/eos_00')
+        if os.path.exists('confs/std-fcc/eos_02'):
+            shutil.rmtree('confs/std-fcc/eos_02')
         if os.path.exists('confs/std-fcc/relaxation'):
             shutil.rmtree('confs/std-fcc/relaxation')
 
     def test_make_eos(self):
+
+        pwd=os.getcwd()
         confs = self.jdata["structures"]
         inter_param = self.jdata["interaction"]
         property_list = self.jdata["properties"]
 
-        target_path = 'confs/std-fcc/eos_00'
+        target_path_0 = 'confs/std-fcc/eos_00'
+        target_path_2 = 'confs/std-fcc/eos_02'
         equi_path = 'confs/std-fcc/relaxation/relax_task'
         source_path = 'equi/vasp'
 
@@ -66,27 +72,29 @@ class TestMakeProperty(unittest.TestCase):
 
         make_property(confs, inter_param, property_list)
 
-        dfm_dirs = glob.glob(os.path.join(target_path, 'task.*'))
+        dfm_dirs_0 = glob.glob(os.path.join(target_path_0, 'task.*'))
 
-        incar0 = Incar.from_file(os.path.join('vasp_input', 'INCAR.rlx'))
-        incar0['ISIF'] = 4
-
-        with open(os.path.join('vasp_input', 'POT_Al')) as fp:
-            pot0 = fp.read()
-        for ii in dfm_dirs:
-            self.assertTrue(os.path.isfile(os.path.join(ii, 'KPOINTS')))
-            incar1 = Incar.from_file(os.path.join(ii, 'INCAR'))
-            self.assertTrue(incar0 == incar1)
-            self.assertTrue(os.path.isfile(os.path.join(ii, 'INCAR')))
+        for ii in dfm_dirs_0:
             self.assertTrue(os.path.isfile(os.path.join(ii, 'POSCAR')))
-            self.assertTrue(os.path.isfile(os.path.join(ii, 'POTCAR')))
-            self.assertTrue(os.path.isfile(os.path.join(ii, 'task.json')))
-            inter_json_file = os.path.join(ii, 'inter.json')
-            self.assertTrue(os.path.isfile(inter_json_file))
-            inter_json = loadfn(inter_json_file)
-            self.assertEqual(inter_json, inter_param)
-            self.assertEqual(os.path.realpath(os.path.join(ii, 'POSCAR.orig')),
-                             os.path.realpath(os.path.join(equi_path, 'CONTCAR')))
-            with open(os.path.join(ii, 'POTCAR')) as fp:
-                poti = fp.read()
-            self.assertEqual(pot0, poti)
+            shutil.copy(os.path.join(ii, 'POSCAR'),os.path.join(ii, 'CONTCAR'))
+
+        path_to_work = os.path.abspath(target_path_0)
+        new_prop_list=[
+        {
+         "type":         "eos",
+         "init_from_suffix": "00",
+         "output_suffix": "02",
+         "cal_setting": {
+                           "relax_pos": True,
+                            "relax_shape": True,
+                            "relax_vol": False,
+         "input_prop":  "lammps_input/lammps_high"}
+        }
+        ]
+        #ret=make_refine('00', '02', path_to_work)
+        #self.assertEqual(len(ret),len(dfm_dirs_0))
+        make_property(confs, inter_param, new_prop_list)
+        self.assertTrue(os.path.isdir(path_to_work.replace('00','02')))
+        os.chdir(pwd)
+        dfm_dirs_2 = glob.glob(os.path.join(target_path_2, 'task.*'))
+        self.assertEqual(len(dfm_dirs_2),len(dfm_dirs_0))
