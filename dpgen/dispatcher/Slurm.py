@@ -149,7 +149,7 @@ class Slurm(Batch) :
         else:
             return ""
 
-    def _check_status_inner(self, job_id, retry=0):
+    def _check_status_inner(self, job_id):
         ret, stdin, stdout, stderr\
             = self.context.block_call ('squeue -o "%.18i %.2t" -j ' + job_id)
         if (ret != 0) :
@@ -160,11 +160,6 @@ class Slurm(Batch) :
                 else :
                     return JobStatus.terminated
             else :
-                # retry 3 times
-                if retry < 3:
-                    # rest 60s
-                    time.sleep(60)
-                    return self._check_status_inner(job_id, retry=retry+1)
                 raise RuntimeError\
                     ("status command squeue fails to execute\nerror message:%s\nreturn code %d\n" % (err_str, ret))
         status_line = stdout.read().decode('utf-8').split ('\n')[-2]

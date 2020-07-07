@@ -6,7 +6,7 @@ from dpgen.auto_test.lib import vasp
 from dpgen.auto_test.lib import lammps
 from dpgen.auto_test.lib.utils import cmd_append_log
 
-lammps_task_type=['deepmd','meam','eam']
+lammps_task_type=['deepmd','meam','eam_fs','eam_alloy']   # 06/13 revised
 
 def voigt_to_stress(inpt) :
     ret = np.zeros((3,3))
@@ -81,7 +81,7 @@ def get_machine_info(mdata,task_type):
         group_size = mdata['model_devi_group_size']
         resources = mdata['model_devi_resources']
         machine=mdata['model_devi_machine']
-        command = lmp_exec + " -i lammps.in"
+        command = lmp_exec + " -i in.lammps"
         command = cmd_append_log(command, "model_devi.log")
     return machine, resources, command, group_size
 
