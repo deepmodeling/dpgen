@@ -28,6 +28,7 @@ import subprocess as sp
 import scipy.constants as pc
 from collections import Counter
 from distutils.version import LooseVersion
+from numpy.linalg  import norm
 from dpgen import dlog
 from dpgen import SHORT_CMD
 from dpgen.generator.lib.utils import make_iter_name
@@ -1025,6 +1026,27 @@ def _to_face_dist(box_):
         dists.append(vol / np.linalg.norm(vv))
     return np.array(dists)        
 
+def check_cluster(conf_name, 
+                  fp_cluster_vacuum, 
+                  fmt='lammps/dump'):
+    sys = dpdata.System(conf_name, fmt)
+    assert(sys.get_nframes() == 1)
+    cell=sys.data['cells'][0]
+    coord=sys.data['coords'][0]
+    xlim=max(coord[:,0])-min(coord[:,0])
+    ylim=max(coord[:,1])-min(coord[:,1])
+    zlim=max(coord[:,2])-min(coord[:,2])
+    a,b,c=map(norm,[cell[0,:],cell[1,:],cell[2,:]])
+    min_vac=min([a-xlim,b-ylim,c-zlim])
+    #print([a-xlim,b-ylim,c-zlim])
+    #_,r3d=miniball.get_bounding_ball(coord) 
+    
+    if min_vac < fp_cluster_vacuum:
+       is_bad = True
+    else:
+       is_bad = False
+    return is_bad
+
 def check_bad_box(conf_name, 
                    criteria, 
                    fmt = 'lammps/dump'):
@@ -1084,6 +1106,8 @@ def _make_fp_vasp_inner (modd_path,
     detailed_report_make_fp = jdata.get("detailed_report_make_fp", True)
     # skip bad box criteria
     skip_bad_box = jdata.get('fp_skip_bad_box')
+    # skip discrete structure in cluster 
+    fp_cluster_vacuum = jdata.get('fp_cluster_vacuum',None)
     for ss in system_index :
         fp_candidate = []
         if detailed_report_make_fp:
@@ -1169,6 +1193,7 @@ def _make_fp_vasp_inner (modd_path,
         dlog.info("system {0:s} accurate_ratio: {1:8.4f}    thresholds: {2:6.4f} and {3:6.4f}   eff. task min and max {4:4d} {5:4d}   number of fp tasks: {6:6d}".format(ss, accurate_ratio, fp_accurate_soft_threshold, fp_accurate_threshold, fp_task_min, this_fp_task_max, numb_task))
         # make fp tasks
         count_bad_box = 0
+        count_bad_cluster = 0
         for cc in range(numb_task) :
             tt = fp_candidate[cc][0]
             ii = fp_candidate[cc][1]
@@ -1182,6 +1207,13 @@ def _make_fp_vasp_inner (modd_path,
                     count_bad_box += 1
                     continue
 
+            if fp_cluster_vacuum is not None:
+               assert fp_cluster_vacuum >0
+               skip_cluster = check_cluster(conf_name, fp_cluster_vacuum)
+               if skip_cluster:
+                  count_bad_cluster +=1
+                  continue
+               
             # link job.json
             job_name = os.path.join(tt, "job.json")
             job_name = os.path.abspath(job_name)
@@ -1209,6 +1241,8 @@ def _make_fp_vasp_inner (modd_path,
             os.chdir(cwd)
         if count_bad_box > 0:
             dlog.info("system {0:s} skipped {1:6d} confs with bad box, {2:6d} remains".format(ss, count_bad_box, numb_task - count_bad_box))
+        if count_bad_cluster > 0:
+            dlog.info("system {0:s} skipped {1:6d} confs with bad cluster, {2:6d} remains".format(ss, count_bad_cluster, numb_task - count_bad_cluster))
     if cluster_cutoff is None:
         cwd = os.getcwd()
         for ii in fp_tasks:
