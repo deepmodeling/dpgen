@@ -539,8 +539,8 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | **model_devi_jobs["nsteps"]**     | Integer      | 3000                                                         | Running steps of MD.                                  |
 | **model_devi_jobs["ensembles"]** | String             | "nvt"                                    | Determining which ensemble used in MD, **options** include “npt” and “nvt”. |
 | model_devi_jobs["neidelay"] | Integer             | "10"                                    | delay building until this many steps since last build |
-| model_devi_jobs["taut"] | Float          | "0.1"                                    | Coupling time of thermostat (fs) |
-| model_devi_jobs["taup"] | Float             | "0.5"                                    | Coupling time of barostat (fs)
+| model_devi_jobs["taut"] | Float          | "0.1"                                    | Coupling time of thermostat (ps) |
+| model_devi_jobs["taup"] | Float             | "0.5"                                    | Coupling time of barostat (ps)
 | *#Labeling*
 | **fp_style** | string                | "vasp"                                                       | Software for First Principles. **Options** include “vasp”, “pwscf”, “siesta” and “gaussian” up to now. |
 | **fp_task_max** | Integer            | 20                                                           | Maximum of  structures to be calculated in `02.fp` of each iteration. |
