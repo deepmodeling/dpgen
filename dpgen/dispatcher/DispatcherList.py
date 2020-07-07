@@ -86,6 +86,7 @@ class DispatcherList():
                 elif dispatcher_status == "terminated":
                     pass
             self.update()
+            time.sleep(10)    
 
     # Derivate
     def create(self, ii):
