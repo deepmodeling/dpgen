@@ -856,6 +856,7 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
         model_devi_taup = jdata['model_devi_taup']
     mass_map = jdata['mass_map']
     nopbc = jdata.get('model_devi_nopbc', False)
+    lost_ignore = jdata.get('lost_ignore', False)
 
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
@@ -928,6 +929,7 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
                                                ele_temp_f = te_f,
                                                ele_temp_a = te_a,
                                                nopbc = nopbc,
+                                               lost_ignore = lost_ignore,
                                                deepmd_version = deepmd_version)
                     job = {}
                     job["ensemble"] = ensemble
