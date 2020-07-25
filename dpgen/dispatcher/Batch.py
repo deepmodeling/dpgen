@@ -155,7 +155,7 @@ class Batch(object) :
             else :
                 # do not support task-wise restart
                 tmp_cmd = ' %s 1>> %s 2>> %s ' % (self.sub_script_cmd(cmd, jj, res), outlog, errlog)
-                ret += 'CUDA_VISIBLE_DEVICES=%d; %s &\n\n' % ((self.cmd_cnt % self.manual_cuda_devices), tmp_cmd)
+                ret += 'export CUDA_VISIBLE_DEVICES=%d; %s &\n\n' % ((self.cmd_cnt % self.manual_cuda_devices), tmp_cmd)
                 self.cmd_cnt += 1
             ret += 'cd %s\n' % self.context.remote_root
             ret += 'test $? -ne 0 && exit 1\n'
