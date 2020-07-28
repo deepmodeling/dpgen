@@ -168,3 +168,11 @@ class LSF(Batch) :
             return False
         else:
             return True
+
+
+    def _make_squeue(self, mdata1, res):
+        ret = ''
+        ret += 'bjobs -u %s ' % mdata1['username']
+        ret += '-q %s ' % res['partition']
+        ret += '| grep PEND '
+        return ret
