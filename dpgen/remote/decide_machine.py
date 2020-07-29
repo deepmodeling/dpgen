@@ -165,12 +165,12 @@ def decide_model_devi_machine(mdata):
 	            temp_ssh_sess = SSHSession(temp_machine)
 	            cwd = os.getcwd()
 	            temp_context = SSHContext(cwd, temp_ssh_sess)
-		        if temp_machine['machine_type'] == 'lsf':
-		            temp_batch = LSF(temp_context)
-		        else:
-		            temp_batch = Slurm(temp_context)
-		        # For other type of machines, please add them using 'elif'.
-				# Here slurm is selected as the final choice in convinience.
+	            if temp_machine['machine_type'] == 'lsf':
+	                temp_batch = LSF(temp_context)
+	            else:
+	                temp_batch = Slurm(temp_context)
+	            # For other type of machines, please add them using 'elif'.
+	            # Here slurm is selected as the final choice in convinience.
 	            command = temp_batch._make_squeue(temp_machine, temp_resources)
 	            ret, stdin, stdout, stderr = temp_batch.context.block_call(command)
 	            pd_response = stdout.read().decode('utf-8').split("\n")
