@@ -211,5 +211,5 @@ class VASP(Task):
         else:
             return ['INCAR', 'POTCAR']
 
-    def backward_files(self):
+    def backward_files(self, property_type='relaxation'):
         return ['OUTCAR', 'outlog', 'CONTCAR', 'OSZICAR', 'XDATCAR']
