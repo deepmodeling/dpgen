@@ -583,7 +583,7 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 - repalce `section parameter` in cp2k as `value` with dict. keyword `"_"`
 - `repeat section` in cp2k just need to be written once with repeat parameter as list. 
 
-If you want to use your own paramter, just write a corresponding dictionary. The `COORD` section will be filled by dpgen automatically, therefore do not include this in dictionary. The `OT` or `Diagonization` section is require for semiconductor or metal system. For specific example, have a look on `example` directory.
+If you want to use your own paramter, just write a corresponding dictionary. The `COORD` section will be filled by dpgen automatically, therefore do not include this in dictionary. The `OT` or `Diagonalization` section is require for semiconductor or metal system. For specific example, have a look on `example` directory.
 
 Here are examples for setting:
  ```python
