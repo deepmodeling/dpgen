@@ -25,11 +25,7 @@ default_config={
       "SCF": {
         "SCF_GUESS": "ATOMIC",
         "EPS_SCF": "1.0E-6",
-        "MAX_SCF": 50,
-        "OT": {
-          "MINIMIZER": "DIIS",
-          "PRECONDITIONER": "FULL_SINGLE_INVERSE"
-        }
+        "MAX_SCF": 50
       },
       "XC": {
         "XC_FUNCTIONAL": {
@@ -157,7 +153,6 @@ def make_cp2k_input(sys_data, fp_params):
             }
         }
             }
-
     update_dict(default_config, user_config)
     update_dict(default_config, cell_config)
     #output list
