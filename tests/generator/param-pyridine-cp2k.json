@@ -102,6 +102,14 @@
     "fp_pp_files":	[],
     "user_fp_params":	{
         "FORCE_EVAL":{
+            "DFT":{
+                "SCF": {
+                    "OT": {
+                        "MINIMIZER": "DIIS",
+                        "PRECONDITIONER": "FULL_SINGLE_INVERSE"
+                    }
+                }
+            },
          "SUBSYS":{
              "KIND":{
                 "_": ["N","C","H"],
