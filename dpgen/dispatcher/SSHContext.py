@@ -13,18 +13,10 @@ class SSHSession (object) :
         self.remote_host = self.remote_profile['hostname']
         self.remote_uname = self.remote_profile['username']
         self.remote_port = self.remote_profile.get('port', 22)
-        self.remote_password = None
-        if 'password' in self.remote_profile :
-            self.remote_password = self.remote_profile['password']
-        self.local_key_filename = None
-        if 'key_filename' in self.remote_profile:
-            self.local_key_filename = self.remote_profile['key_filename']
-        self.remote_timeout = None
-        if 'timeout' in self.remote_profile:
-            self.remote_timeout = self.remote_profile['timeout']
-        self.local_key_passphrase = None
-        if 'passphrase' in self.remote_profile:
-            self.local_key_passphrase = self.remote_profile['passphrase']
+        self.remote_password = self.remote_profile.get('password', None)
+        self.local_key_filename = self.remote_profile.get('key_filename', None)
+        self.remote_timeout = self.remote_profile.get('timeout', None)
+        self.local_key_passphrase = self.remote_profile.get('passphrase', None)
         self.remote_workpath = self.remote_profile['work_path']
         self.ssh = None
         self._setup_ssh(hostname=self.remote_host,
