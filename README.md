@@ -582,6 +582,9 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 - replace `section name` in cp2k as `keyword` in dict. . The corresponding value is a `dict`.
 - repalce `section parameter` in cp2k as `value` with dict. keyword `"_"`
 - `repeat section` in cp2k just need to be written once with repeat parameter as list. 
+
+If you want to use your own paramter, just write a corresponding dictionary. The `COORD` section will be filled by dpgen automatically, therefore do not include this in dictionary. The `OT` or `Diagonalization` section is require for semiconductor or metal system. For specific example, have a look on `example` directory.
+
 Here are examples for setting:
  ```python
 
@@ -589,19 +592,22 @@ Here are examples for setting:
  #other we have set other parameters in code, if you want to
  #use your own paramter, just write a corresponding dictionary
  "user_fp_params":   {
- "FORCE_EVAL":{
- "DFT":{
- "BASIS_SET_FILE_NAME": "path",
- "POTENTIAL_FILE_NAME": "path"
- }
- "SUBSYS":{
- "KIND":{
- "_": ["N","C","H"],
- "POTENTIAL": ["GTH-PBE-q5","GTH-PBE-q4", "GTH-PBE-q1"],
- "BASIS_SET": ["DZVP-MOLOPT-GTH","DZVP-MOLOPT-GTH","DZVP-MOLOPT-GTH"]
- }
- }
- }
+     "FORCE_EVAL":{
+         "DFT":{
+             "BASIS_SET_FILE_NAME": "path",
+             "POTENTIAL_FILE_NAME": "path",
+             "SCF":{
+                 "OT":{ "keyword":"keyword parameter", "keyword2":"keyword parameter" }
+             }
+         }
+         "SUBSYS":{
+             "KIND":{
+                 "_": ["N","C","H"],
+                 "POTENTIAL": ["GTH-PBE-q5","GTH-PBE-q4", "GTH-PBE-q1"],
+                 "BASIS_SET": ["DZVP-MOLOPT-GTH","DZVP-MOLOPT-GTH","DZVP-MOLOPT-GTH"]
+             }
+         }
+     }
  }
 ```
 
