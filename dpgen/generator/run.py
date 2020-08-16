@@ -763,7 +763,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
         plm_templ = cur_job['template']['plm']
         plm_templ = os.path.abspath(plm_templ)    
         if use_plm_path:
-            plm_path_templ = cur_job['template']['plm_path']
+            plm_path_templ = cur_job['template']['plm']
             plm_path_templ = os.path.abspath(plm_path_templ) 
 
     iter_name = make_iter_name(iter_index)
