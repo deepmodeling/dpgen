@@ -115,6 +115,7 @@ class Dispatcher(object):
         task_chunks_str = ['+'.join(ii) for ii in task_chunks]
         task_hashes = [sha1(ii.encode('utf-8')).hexdigest() for ii in task_chunks_str]
         job_record = JobRecord(work_path, task_chunks, fname = self.jrname)
+        job_record.dump()
         nchunks = len(task_chunks)
         
         job_list = []
@@ -166,10 +167,10 @@ class Dispatcher(object):
                                                  job_uuid,
                                                  ip,
                                                  instance_id)
+                job_record.dump()
             else :
                 # finished job, append a None to list
                 job_list.append(None)
-        job_record.dump()
         assert(len(job_list) == nchunks)
         job_handler = {
             'task_chunks': task_chunks,
