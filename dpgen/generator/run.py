@@ -993,7 +993,7 @@ def run_model_devi (iter_index,
        # backward_files += ['output.plumed']
         backward_files += ['output.plumed','COLVAR','dump.0.xyz']
         if hills:
-            forward_files += ['HILLS']
+            backward_files += ['HILLS']
         if use_plm_path:
             forward_files += ['plmpath.pdb']
 
