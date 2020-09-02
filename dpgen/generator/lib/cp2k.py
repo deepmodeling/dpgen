@@ -50,7 +50,10 @@ default_config={
     "PRINT": {
       "FORCES": {
         "_": "ON"
-    }
+    },
+      "STRESS_TENSOR":{
+          "_": "ON"
+          }
   }
 }
 }
