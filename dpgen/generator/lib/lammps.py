@@ -89,8 +89,6 @@ def make_lammps_input(ensemble,
     ret+= "\n"
     ret+= "thermo_style    custom step temp pe ke etotal press vol lx ly lz xy xz yz\n"
     ret+= "thermo          ${THERMO_FREQ}\n"
-    if lost_ignore == True:
-        ret += "thermo_modify    lost ignore flush yes\n"
     ret+= "dump            1 all custom ${DUMP_FREQ} traj/*.lammpstrj id type x y z\n"
     ret+= "\n"
     if pka_e is None :
