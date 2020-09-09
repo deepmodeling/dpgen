@@ -121,7 +121,7 @@ class VASP(Task):
             elif cal_type == 'static':
                 nsw = 0
                 if not ('NSW' in incar and incar.get('NSW') == nsw):
-                    dlog.info("%s setting ISIF to %d" % (self.make_input_file.__name__, nsw))
+                    dlog.info("%s setting NSW to %d" % (self.make_input_file.__name__, nsw))
                     incar['NSW'] = nsw
 
             else:
@@ -211,5 +211,5 @@ class VASP(Task):
         else:
             return ['INCAR', 'POTCAR']
 
-    def backward_files(self):
+    def backward_files(self, property_type='relaxation'):
         return ['OUTCAR', 'outlog', 'CONTCAR', 'OSZICAR', 'XDATCAR']

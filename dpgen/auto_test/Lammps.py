@@ -118,7 +118,7 @@ class Lammps(Task):
                         task_param):
         lammps.cvt_lammps_conf(os.path.join(output_dir, 'POSCAR'), os.path.join(output_dir, 'conf.lmp'))
 
-        dumpfn(task_param, os.path.join(output_dir, 'task.json'), indent=4)
+        # dumpfn(task_param, os.path.join(output_dir, 'task.json'), indent=4)
 
         etol = 1e-12
         ftol = 1e-6
@@ -167,7 +167,7 @@ class Lammps(Task):
                 elif [relax_pos, relax_shape, relax_vol] == [True, True, True]:
                     fc = lammps.make_lammps_equi('conf.lmp', self.type_map, self.inter_func, self.model_param,
                                                  etol, ftol, maxiter, maxeval, True)
-                elif [relax_pos, relax_shape, relax_vol] == [True, True, False]:
+                elif [relax_pos, relax_shape, relax_vol] == [True, True, False] and not task_type == 'eos':
                     if 'scale2equi' in task_param:
                         scale2equi = task_param['scale2equi']
                         fc = lammps.make_lammps_press_relax('conf.lmp', self.type_map, scale2equi[int(output_dir[-6:])],
@@ -176,6 +176,10 @@ class Lammps(Task):
                     else:
                         fc = lammps.make_lammps_equi('conf.lmp', self.type_map, self.inter_func, self.model_param,
                                                      etol, ftol, maxiter, maxeval, True)
+                elif [relax_pos, relax_shape, relax_vol] == [True, True, False] and task_type == 'eos':
+                    task_param['cal_setting']['relax_shape'] = False
+                    fc = lammps.make_lammps_equi('conf.lmp', self.type_map, self.inter_func, self.model_param,
+                                                 etol, ftol, maxiter, maxeval, False)
                 elif [relax_pos, relax_shape, relax_vol] == [False, False, False]:
                     fc = lammps.make_lammps_eval('conf.lmp', self.type_map, self.inter_func, self.model_param)
 
@@ -187,6 +191,8 @@ class Lammps(Task):
 
             else:
                 raise RuntimeError("not supported calculation type for LAMMPS")
+
+        dumpfn(task_param, os.path.join(output_dir, 'task.json'), indent=4)
 
         in_lammps_not_link_list = ['eos']
         if task_type not in in_lammps_not_link_list:
@@ -305,10 +311,19 @@ class Lammps(Task):
             dlog.debug(_tmp)
             type_map_list = lammps.element_list(self.type_map)
 
+            type_list_set = set(type_list)
+            atom_numbs = []
+            for ii in type_list_set:
+                count = 0
+                for jj in type_list:
+                    if jj == ii:
+                        count += 1
+                atom_numbs.append(count)
+
             # d_dump = dpdata.System(dump_lammps, fmt='lammps/dump', type_map=type_map_list)
             # d_dump.to('vasp/poscar', contcar, frame_idx=-1)
 
-            result_dict = {"@module": "dpdata.system", "@class": "LabeledSystem", "data": {"atom_numbs": [natom],
+            result_dict = {"@module": "dpdata.system", "@class": "LabeledSystem", "data": {"atom_numbs": atom_numbs,
                                                                                            "atom_names": type_map_list,
                                                                                            "atom_types": {
                                                                                                "@module": "numpy",

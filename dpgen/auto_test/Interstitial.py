@@ -7,6 +7,7 @@ from monty.serialization import loadfn, dumpfn
 from pymatgen.analysis.defects.generators import InterstitialGenerator
 from pymatgen.core.structure import Structure
 
+import dpgen.auto_test.lib.lammps as lammps
 from dpgen.auto_test.Property import Property
 from dpgen.auto_test.refine import make_refine
 from dpgen.auto_test.reproduce import make_repro
@@ -148,7 +149,8 @@ class Interstitial(Property):
                                 print(ii, file=fout)
                 #            dss.append(jj.generate_defect_structure(self.supercell))
 
-                print('gen interstitial with supercell ' + str(self.supercell) + ' with element ' + str(self.insert_ele))
+                print(
+                    'gen interstitial with supercell ' + str(self.supercell) + ' with element ' + str(self.insert_ele))
                 os.chdir(path_to_work)
                 if os.path.isfile('POSCAR'):
                     os.remove('POSCAR')
@@ -173,7 +175,29 @@ class Interstitial(Property):
         return task_list
 
     def post_process(self, task_list):
-        pass
+        if True:
+            fin1 = open(os.path.join(task_list[0], '..', 'element.out'), 'r')
+            for ii in task_list:
+                conf = os.path.join(ii, 'conf.lmp')
+                inter = os.path.join(ii, 'inter.json')
+                insert_ele = fin1.readline().split()[0]
+                if os.path.isfile(conf):
+                    with open(conf, 'r') as fin2:
+                        conf_line = fin2.read().split('\n')
+                        insert_line = conf_line[-2]
+                    type_map = loadfn(inter)['type_map']
+                    type_map_list = lammps.element_list(type_map)
+                    if int(insert_line.split()[1]) > len(type_map_list):
+                        type_num = type_map[insert_ele] + 1
+                        conf_line[2] = str(len(type_map_list)) + ' atom types'
+                        conf_line[-2] = '%6.d' % int(insert_line.split()[0]) + '%7.d' % type_num + \
+                                        '%16.10f' % float(insert_line.split()[2]) + \
+                                        '%16.10f' % float(insert_line.split()[3]) + \
+                                        '%16.10f' % float(insert_line.split()[4])
+                        with open(conf, 'w+') as fout:
+                            for jj in conf_line:
+                                print(jj, file=fout)
+            fin1.close()
 
     def task_type(self):
         return self.parameter['type']
