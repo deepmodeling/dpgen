@@ -547,6 +547,7 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | **fp_task_min**     | Integer        | 5                                                            | Minimum of structures to calculate in `02.fp` of each iteration. |
 | fp_accurate_threshold      | Float | 0.9999  | If the accurate ratio is larger than this number, no fp calculation will be performed, i.e. fp_task_max = 0. |
 | fp_accurate_soft_threshold | Float | 0.9999  | If the accurate ratio is between this number and `fp_accurate_threshold`, the fp_task_max linearly decays to zero. |
+| fp_cluster_vacuum      | Float | None  | If the vacuum size is smaller than this value, this cluster will not be choosen for labeling |
 | *fp_style == VASP*
 | **fp_pp_path**   | String           | "/sharedext4/.../ch4/"                                       | Directory of psuedo-potential file to be used for 02.fp exists. |
 | **fp_pp_files**    | List of string         | ["POTCAR"]                                                   | Psuedo-potential file to be used for 02.fp. Note that the order of elements should correspond to the order in `type_map`. |
@@ -581,6 +582,9 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 - replace `section name` in cp2k as `keyword` in dict. . The corresponding value is a `dict`.
 - repalce `section parameter` in cp2k as `value` with dict. keyword `"_"`
 - `repeat section` in cp2k just need to be written once with repeat parameter as list. 
+
+If you want to use your own paramter, just write a corresponding dictionary. The `COORD` section will be filled by dpgen automatically, therefore do not include this in dictionary. The `OT` or `Diagonalization` section is require for semiconductor or metal system. For specific example, have a look on `example` directory.
+
 Here are examples for setting:
  ```python
 
@@ -588,19 +592,22 @@ Here are examples for setting:
  #other we have set other parameters in code, if you want to
  #use your own paramter, just write a corresponding dictionary
  "user_fp_params":   {
- "FORCE_EVAL":{
- "DFT":{
- "BASIS_SET_FILE_NAME": "path",
- "POTENTIAL_FILE_NAME": "path"
- }
- "SUBSYS":{
- "KIND":{
- "_": ["N","C","H"],
- "POTENTIAL": ["GTH-PBE-q5","GTH-PBE-q4", "GTH-PBE-q1"],
- "BASIS_SET": ["DZVP-MOLOPT-GTH","DZVP-MOLOPT-GTH","DZVP-MOLOPT-GTH"]
- }
- }
- }
+     "FORCE_EVAL":{
+         "DFT":{
+             "BASIS_SET_FILE_NAME": "path",
+             "POTENTIAL_FILE_NAME": "path",
+             "SCF":{
+                 "OT":{ "keyword":"keyword parameter", "keyword2":"keyword parameter" }
+             }
+         }
+         "SUBSYS":{
+             "KIND":{
+                 "_": ["N","C","H"],
+                 "POTENTIAL": ["GTH-PBE-q5","GTH-PBE-q4", "GTH-PBE-q1"],
+                 "BASIS_SET": ["DZVP-MOLOPT-GTH","DZVP-MOLOPT-GTH","DZVP-MOLOPT-GTH"]
+             }
+         }
+     }
  }
 ```
 

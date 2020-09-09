@@ -115,6 +115,7 @@ class Dispatcher(object):
         task_chunks_str = ['+'.join(ii) for ii in task_chunks]
         task_hashes = [sha1(ii.encode('utf-8')).hexdigest() for ii in task_chunks_str]
         job_record = JobRecord(work_path, task_chunks, fname = self.jrname)
+        job_record.dump()
         nchunks = len(task_chunks)
         
         job_list = []
@@ -157,7 +158,7 @@ class Dispatcher(object):
                 job_list.append(rjob)
                 ip = None
                 instance_id = None
-                if 'ali_auth' in self.remote_profile:
+                if 'cloud_resources' in self.remote_profile:
                     ip = self.remote_profile['hostname']
                     instance_id = self.remote_profile['instance_id']
                 job_record.record_remote_context(cur_hash,                                                 
@@ -166,10 +167,10 @@ class Dispatcher(object):
                                                  job_uuid,
                                                  ip,
                                                  instance_id)
+                job_record.dump()
             else :
                 # finished job, append a None to list
                 job_list.append(None)
-        job_record.dump()
         assert(len(job_list) == nchunks)
         job_handler = {
             'task_chunks': task_chunks,
@@ -253,11 +254,17 @@ class JobRecord(object):
                               ip=None,
                               instance_id=None):
         self.valid_hash(chunk_hash)
-        self.record[chunk_hash]['context'] = [local_root, remote_root, job_uuid, ip, instance_id]
+        # self.record[chunk_hash]['context'] = [local_root, remote_root, job_uuid, ip, instance_id]
+        self.record[chunk_hash]['context'] = {}
+        self.record[chunk_hash]['context']['local_root'] = local_root
+        self.record[chunk_hash]['context']['remote_root'] = remote_root
+        self.record[chunk_hash]['context']['job_uuid'] = job_uuid
+        self.record[chunk_hash]['context']['ip'] = ip
+        self.record[chunk_hash]['context']['instance_id'] = instance_id
 
     def get_uuid(self, chunk_hash):
         self.valid_hash(chunk_hash)
-        return self.record[chunk_hash]['context'][2]
+        return self.record[chunk_hash]['context']['job_uuid']
 
     def check_finished(self, chunk_hash):
         self.valid_hash(chunk_hash)
@@ -305,12 +312,14 @@ class JobRecord(object):
 
 
 def make_dispatcher(mdata, mdata_resource=None, work_path=None, run_tasks=None, group_size=None):
-    if 'ali_auth' in mdata:
-        from dpgen.dispatcher.ALI import ALI
-        nchunks = len(_split_tasks(run_tasks, group_size))
-        dispatcher = ALI(mdata['ali_auth'], mdata_resource, mdata, nchunks)
-        dispatcher.init(work_path, run_tasks, group_size)
-        return dispatcher
+    if 'cloud_resources' in mdata:
+        if mdata['cloud_resources']['cloud_platform'] == 'ali':
+            from dpgen.dispatcher.ALI import ALI
+            dispatcher = ALI(mdata, mdata_resource, work_path, run_tasks, group_size, mdata['cloud_resources'])
+            dispatcher.init()
+            return dispatcher
+        elif mdata['cloud_resources']['cloud_platform'] == 'ucloud':
+            pass
     else:    
         hostname = mdata.get('hostname', None)
         #use_uuid = mdata.get('use_uuid', False)
