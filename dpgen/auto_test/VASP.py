@@ -121,7 +121,7 @@ class VASP(Task):
             elif cal_type == 'static':
                 nsw = 0
                 if not ('NSW' in incar and incar.get('NSW') == nsw):
-                    dlog.info("%s setting ISIF to %d" % (self.make_input_file.__name__, nsw))
+                    dlog.info("%s setting NSW to %d" % (self.make_input_file.__name__, nsw))
                     incar['NSW'] = nsw
 
             else:

@@ -136,7 +136,7 @@ def inter_meam(param):
 def inter_eam_fs(param):  # 06/08 eam.fs interaction
     ret = ""
     line = "pair_style      eam/fs \n"
-    line += "pair_coeff      * * %s " % param['model_name']
+    line += "pair_coeff      * * %s " % param['model_name'][0]
     for ii in param['param_type']:
         line += ii + ' '
     line += '\n'

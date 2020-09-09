@@ -31,6 +31,13 @@ def make_repro(init_data_path, init_from_suffix, path_to_work, reprod_last_frame
 
     task_list = []
     task_num = 0
+
+    if property_type == 'interstitial':
+        if os.path.exists(os.path.join(path_to_work, 'element.out')):
+            os.remove(os.path.join(path_to_work, 'element.out'))
+        fout_element = open(os.path.join(path_to_work, 'element.out'), 'a+')
+        fin_element = open(os.path.join(init_data_path_todo, 'element.out'), 'r')
+
     for ii in init_data_task_todo:
         # get frame number
         task_result = loadfn(os.path.join(ii, 'result_task.json'))
@@ -38,7 +45,11 @@ def make_repro(init_data_path, init_from_suffix, path_to_work, reprod_last_frame
             nframe = 1
         else:
             nframe = len(task_result['energies'])
+        if property_type == 'interstitial':
+            insert_element = fin_element.readline().split()[0]
         for jj in range(nframe):
+            if property_type == 'interstitial':
+                print(insert_element, file=fout_element)
             output_task = os.path.join(path_to_work, 'task.%06d' % task_num)
             task_num += 1
             task_list.append(output_task)
@@ -54,6 +65,10 @@ def make_repro(init_data_path, init_from_suffix, path_to_work, reprod_last_frame
             else:
                 task_result.to('vasp/poscar', 'POSCAR', frame_idx=jj)
     os.chdir(cwd)
+
+    if property_type == 'interstitial':
+        fout_element.close()
+        fin_element.close()
 
     return task_list
 

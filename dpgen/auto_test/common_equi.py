@@ -43,7 +43,7 @@ def make_equi(confs,
             dlog.debug('pwd: %s' % os.getcwd())
             if crys_type == 'std-fcc':
                 if not os.path.exists('POSCAR'):
-                    crys.fcc(ele_list[0]).to('POSCAR', 'POSCAR')
+                    crys.fcc1(ele_list[0]).to('POSCAR', 'POSCAR')
             elif crys_type == 'std-hcp':
                 if not os.path.exists('POSCAR'):
                     crys.hcp(ele_list[0]).to('POSCAR', 'POSCAR')
