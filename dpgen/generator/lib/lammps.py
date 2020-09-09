@@ -32,7 +32,6 @@ def make_lammps_input(ensemble,
                       ele_temp_a = None,
                       max_seed = 1000000,
                       nopbc = False,
-                      lost_ignore = False,
                       deepmd_version = '0.1') :
     if (ele_temp_f is not None or ele_temp_a is not None) and LooseVersion(deepmd_version) < LooseVersion('1'):
         raise RuntimeError('the electron temperature is only supported by deepmd-kit >= 1.0.0, please upgrade your deepmd-kit')
