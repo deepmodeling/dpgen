@@ -38,3 +38,4 @@ dpgen.egg-info
 .coverage
 dbconfig.json
 .vscode/*
+.idea/*
