@@ -810,14 +810,18 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
         task_counter = 0
         for cc in ss :
             sys_rev = cur_job.get('sys_rev_mat', None)
+            total_rev_keys = rev_keys
+            total_rev_mat = rev_mat
             if sys_rev is not None:
-                sys_rev_keys, sys_rev_mat, sys_num_lmp = parse_cur_job_sys_revmat(cur_job, sys_idx=cc, use_plm=use_plm)
+                sys_rev_keys, sys_rev_mat, sys_num_lmp = parse_cur_job_sys_revmat(cur_job,
+                                                                                  sys_idx=sys_idx[sys_counter],
+                                                                                  use_plm=use_plm)
                 _lmp_keys = rev_keys[:num_lmp] + sys_rev_keys[:sys_num_lmp]
                 if use_plm:
                     _plm_keys = rev_keys[num_lmp:] + sys_rev_keys[sys_num_lmp:]
                     _lmp_keys += _plm_keys
-                rev_keys = _lmp_keys
-                total_rev_mat = []
+                total_rev_keys = _lmp_keys
+
                 for pub in rev_mat:
                     for pri in sys_rev_mat:
                         _lmp_mat = pub[:num_lmp] + pri[:sys_num_lmp]
@@ -825,9 +829,8 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                             _plm_mat = pub[num_lmp:] + pri[sys_num_lmp:]
                             _lmp_mat += _plm_mat
                         total_rev_mat.append(_lmp_mat)
-                rev_mat = total_rev_mat
-            for ii in range(len(rev_mat)):
-                rev_item = rev_mat[ii]
+            for ii in range(len(total_rev_mat)):
+                total_rev_item = total_rev_mat[ii]
                 task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
                 conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter) + '.lmp'
                 task_path = os.path.join(work_path, task_name)
@@ -847,14 +850,14 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                     lmp_lines = fp.readlines()
                 lmp_lines = revise_lmp_input_model(lmp_lines, task_model_list, trj_freq, deepmd_version = deepmd_version)
                 lmp_lines = revise_lmp_input_dump(lmp_lines, trj_freq)
-                lmp_lines = revise_by_keys(lmp_lines, rev_keys[:num_lmp], rev_item[:num_lmp])
+                lmp_lines = revise_by_keys(lmp_lines, total_rev_keys[:num_lmp], total_rev_item[:num_lmp])
                 # revise input of plumed
                 if use_plm:
                     lmp_lines = revise_lmp_input_plm(lmp_lines, 'input.plumed')
                     shutil.copyfile(plm_templ, 'input.plumed')
                     with open('input.plumed') as fp:
                         plm_lines = fp.readlines()
-                    plm_lines = revise_by_keys(plm_lines, rev_keys[num_lmp:], rev_item[num_lmp:])
+                    plm_lines = revise_by_keys(plm_lines, total_rev_keys[num_lmp:], total_rev_item[num_lmp:])
                     with open('input.plumed', 'w') as fp:
                         fp.write(''.join(plm_lines))
                     if use_plm_path:
@@ -864,7 +867,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                     fp.write(''.join(lmp_lines))
                 with open('job.json', 'w') as fp:
                     job = {}
-                    for ii,jj in zip(rev_keys, rev_item) : job[ii] = jj
+                    for ii,jj in zip(total_rev_keys, total_rev_item) : job[ii] = jj
                     json.dump(job, fp, indent = 4)
                 os.chdir(cwd_)
                 task_counter += 1
