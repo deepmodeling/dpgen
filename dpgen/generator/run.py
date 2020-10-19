@@ -613,8 +613,32 @@ def parse_cur_job_revmat(cur_job, use_plm = False):
             revise_keys.append(ii)
             revise_values.append(cur_job['rev_mat']['plm'][ii])
     revise_matrix = expand_matrix_values(revise_values)
-    return revise_keys, revise_matrix, n_lmp_keys            
+    return revise_keys, revise_matrix, n_lmp_keys
 
+
+def parse_cur_job_sys_revmat(cur_job, sys_idx, use_plm=False):
+    templates = [cur_job['template']['lmp']]
+    if use_plm:
+        templates.append(cur_job['template']['plm'])
+    sys_revise_keys = []
+    sys_revise_values = []
+    if 'sys_rev_mat' not in cur_job.keys():
+        cur_job['sys_rev_mat'] = {}
+    local_rev = cur_job['sys_rev_mat'].get(sys_idx, {})
+    if 'lmp' not in local_rev.keys():
+        local_rev['lmp'] = {}
+    for ii in local_rev['lmp'].keys():
+        sys_revise_keys.append(ii)
+        sys_revise_values.append(local_rev['lmp'][ii])
+    n_sys_lmp_keys = len(sys_revise_keys)
+    if use_plm:
+        if 'plm' not in local_rev.keys():
+            local_rev['plm'] = {}
+        for ii in local_rev['plm'].keys():
+            sys_revise_keys.append(ii)
+            sys_revise_values.append(local_rev['plm'][ii])
+    sys_revise_matrix = expand_matrix_values(sys_revise_values)
+    return sys_revise_keys, sys_revise_matrix, n_sys_lmp_keys
 
 def find_only_one_key(lmp_lines, key):
     found = []
@@ -785,6 +809,23 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
         conf_counter = 0
         task_counter = 0
         for cc in ss :
+            sys_rev = cur_job.get('sys_rev_mat', None)
+            if sys_rev is not None:
+                sys_rev_keys, sys_rev_mat, sys_num_lmp = parse_cur_job_sys_revmat(cur_job, sys_idx=cc, use_plm=use_plm)
+                _lmp_keys = rev_keys[:num_lmp] + sys_rev_keys[:sys_num_lmp]
+                if use_plm:
+                    _plm_keys = rev_keys[num_lmp:] + sys_rev_keys[sys_num_lmp:]
+                    _lmp_keys += _plm_keys
+                rev_keys = _lmp_keys
+                total_rev_mat = []
+                for pub in rev_mat:
+                    for pri in sys_rev_mat:
+                        _lmp_mat = pub[:num_lmp] + pri[:sys_num_lmp]
+                        if use_plm:
+                            _plm_mat = pub[num_lmp:] + pri[sys_num_lmp:]
+                            _lmp_mat += _plm_mat
+                        total_rev_mat.append(_lmp_mat)
+                rev_mat = total_rev_mat
             for ii in range(len(rev_mat)):
                 rev_item = rev_mat[ii]
                 task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
