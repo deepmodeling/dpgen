@@ -624,7 +624,7 @@ def parse_cur_job_sys_revmat(cur_job, sys_idx, use_plm=False):
     sys_revise_values = []
     if 'sys_rev_mat' not in cur_job.keys():
         cur_job['sys_rev_mat'] = {}
-    local_rev = cur_job['sys_rev_mat'].get(sys_idx, {})
+    local_rev = cur_job['sys_rev_mat'].get(str(sys_idx), {})
     if 'lmp' not in local_rev.keys():
         local_rev['lmp'] = {}
     for ii in local_rev['lmp'].keys():
@@ -813,6 +813,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
             total_rev_keys = rev_keys
             total_rev_mat = rev_mat
             if sys_rev is not None:
+                total_rev_mat = []
                 sys_rev_keys, sys_rev_mat, sys_num_lmp = parse_cur_job_sys_revmat(cur_job,
                                                                                   sys_idx=sys_idx[sys_counter],
                                                                                   use_plm=use_plm)
