@@ -861,8 +861,10 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                     shutil.copyfile(plm_templ, 'input.plumed')
                     with open('input.plumed') as fp:
                         plm_lines = fp.readlines()
+                    # allow using the same list as lmp
+                    # user should not use the same key name for plm
                     plm_lines = revise_by_keys(
-                        plm_lines, total_rev_keys[total_num_lmp:], total_rev_item[total_num_lmp:]
+                        plm_lines, total_rev_keys, total_rev_item
                     )
                     with open('input.plumed', 'w') as fp:
                         fp.write(''.join(plm_lines))
