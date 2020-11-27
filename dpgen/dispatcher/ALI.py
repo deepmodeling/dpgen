@@ -345,21 +345,31 @@ class ALI(DispatcherList):
         request = DescribeImagesRequest()
         request.set_accept_format('json')
         request.set_ImageOwnerAlias("self")
-        request.set_PageSize(100)
-        count = 0
-        flag = 0
-        while count < 10:
-            try:
-                response = self.client.do_action_with_exception(request)
-                response = json.loads(response)
-                for img in response["Images"]["Image"]:
-                    if img["ImageName"] == img_name:
-                        return img["ImageId"]
-                flag = 1
-                break
-            except:
-                count += 1
-                time.sleep(10)
+        request.set_PageSize(20)
+        response = self.client.do_action_with_exception(request)
+        response = json.loads(response)
+        totalcount = response["TotalCount"]
+
+        iteration = totalcount // 20
+        if iteration * 20 < totalcount:
+            iteration += 1
+
+        for ii in range(1, iteration+1):
+            count = 0
+            flag = 0
+            request.set_PageNumber(ii)
+            while count < 10:
+                try:
+                    response = self.client.do_action_with_exception(request)
+                    response = json.loads(response)
+                    for img in response["Images"]["Image"]:
+                        if img["ImageName"] == img_name:
+                            return img["ImageId"]
+                    flag = 1
+                    break
+                except:
+                    count += 1
+                    time.sleep(10)
         if not flag:
             dlog.info("get image failed, exit")
             sys.exit()
