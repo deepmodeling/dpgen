@@ -27,7 +27,7 @@
     "fp_command":	"/home/wanghan/local/bin/vasp_std",
     "fp_group_size":	2,
     "fp_machine":	{
-	"batch":	"local",
+	"batch":	"shell",
 	"work_path" :	"/home/wanghan/tmp/subs/",
 	"_comment" :	"that's all"
     },	
