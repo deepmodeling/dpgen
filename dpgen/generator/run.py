@@ -964,7 +964,7 @@ def run_model_devi (iter_index,
 
     all_task = glob.glob(os.path.join(work_path, "task.*"))
     all_task.sort()
-    command = lmp_exec + " -i input.lammps"
+    command = "{ if [ ! -f restart.dpgen.10000 ]; then %s -i input.lammps -v restart 0; else %s -i input.lammps -v restart 1; fi }" % (lmp_exec, lmp_exec)
     commands = [command]
 
     fp = open (os.path.join(work_path, 'cur_job.json'), 'r')

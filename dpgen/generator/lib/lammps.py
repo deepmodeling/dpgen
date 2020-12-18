@@ -61,7 +61,7 @@ def make_lammps_input(ensemble,
         ret+= "neigh_modify    delay %d\n" % neidelay
     ret+= "\n"
     ret+= "box          tilt large\n"
-    ret+= "read_data       %s\n" % conf_file
+    ret+= "if \"${restart} > 0\" then \"read_restart dpgen.restart.*\" else \"read_data %s\n" % conf_file
     ret+= "change_box   all triclinic\n"
     for jj in range(len(mass_map)) :
         ret+= "mass            %d %f\n" %(jj+1, mass_map[jj])
@@ -89,6 +89,7 @@ def make_lammps_input(ensemble,
     ret+= "thermo_style    custom step temp pe ke etotal press vol lx ly lz xy xz yz\n"
     ret+= "thermo          ${THERMO_FREQ}\n"
     ret+= "dump            1 all custom ${DUMP_FREQ} traj/*.lammpstrj id type x y z\n"
+    ret+= "restart         10000 dpgen.restart\n"
     ret+= "\n"
     if pka_e is None :
         ret+= "velocity        all create ${TEMP} %d" % (random.randrange(max_seed-1)+1)
@@ -127,7 +128,7 @@ def make_lammps_input(ensemble,
         ret+= "fix             fm all momentum 1 linear 1 1 1\n"
     ret+= "\n"
     ret+= "timestep        %f\n" % dt
-    ret+= "run             ${NSTEPS}\n"
+    ret+= "run             ${NSTEPS} upto\n"
     return ret
         
 # ret = make_lammps_input ("npt", "al.lmp", ['graph.000.pb', 'graph.001.pb'], 20000, 20, [27], 1000, pres = 1.0)
