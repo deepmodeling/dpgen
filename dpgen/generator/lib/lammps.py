@@ -92,7 +92,7 @@ def make_lammps_input(ensemble,
     ret+= "restart         10000 dpgen.restart\n"
     ret+= "\n"
     if pka_e is None :
-        ret+= "velocity        all create ${TEMP} %d" % (random.randrange(max_seed-1)+1)
+        ret+= "if \"${restart} == 0\" then \"velocity        all create ${TEMP} %d\"" % (random.randrange(max_seed-1)+1)
     else :
         sys = dpdata.System(conf_file, fmt = 'lammps/lmp')
         sys_data = sys.data
@@ -104,7 +104,7 @@ def make_lammps_input(ensemble,
         pka_vec = _sample_sphere()
         pka_vec *= pka_vn
         ret+= 'group           first id 1\n'
-        ret+= 'velocity        first set %f %f %f\n' % (pka_vec[0], pka_vec[1], pka_vec[2])
+        ret+= 'if \"${restart} == 0\" then \"velocity        first set %f %f %f\"\n' % (pka_vec[0], pka_vec[1], pka_vec[2])
         ret+= 'fix	       2 all momentum 1 linear 1 1 1\n'
     ret+= "\n"
     if ensemble.split('-')[0] == 'npt' :
