@@ -123,6 +123,13 @@ class LSF(Batch) :
         ret += '#BSUB -J %s\n' % (res['job_name'] if 'job_name' in res else 'dpgen')
         if len(res['partition']) > 0 :
             ret += '#BSUB -q %s\n' % res['partition']
+        if len(res['exclude_list']) > 0:
+            ret += '#BSUB -R select['
+            temp_exclude = []
+            for ii in res['exclude_list']:
+                temp_exclude.append('hname != %s' % ii)
+            ret += ' && '.join(temp_exclude)
+            ret += ']\n'
         ret += "\n"
         for ii in res['module_unload_list'] :
             ret += "module unload %s\n" % ii
