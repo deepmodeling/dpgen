@@ -8,7 +8,7 @@ from distutils.version import LooseVersion
 from dpdata.periodic_table import Element
 
 
-def cvt_lammps_conf(fin, fout, ofmt='lammps/data'):
+def cvt_lammps_conf(fin, fout, type_map, ofmt='lammps/data'):
     """
     Format convert from fin to fout, specify the output format by ofmt
     Imcomplete situation
@@ -26,10 +26,10 @@ def cvt_lammps_conf(fin, fout, ofmt='lammps/data'):
         raise RuntimeError("output format " + ofmt + " is not supported. use one of " + str(supp_ofmt))
 
     if 'lmp' in fout:
-        d_poscar = dpdata.System(fin, fmt='vasp/poscar')
+        d_poscar = dpdata.System(fin, fmt='vasp/poscar', type_map=type_map)
         d_poscar.to_lammps_lmp(fout, frame_idx=0)
     elif 'poscar' in fout or 'POSCAR' in fout:
-        d_dump = dpdata.System(fin, fmt='lammps/dump')
+        d_dump = dpdata.System(fin, fmt='lammps/dump', type_map=type_map)
         d_dump.to_vasp_poscar(fout, frame_idx=-1)
 
 
