@@ -61,7 +61,7 @@ def make_lammps_input(ensemble,
         ret+= "neigh_modify    delay %d\n" % neidelay
     ret+= "\n"
     ret+= "box          tilt large\n"
-    ret+= "if \"${restart} > 0\" then \"read_restart dpgen.restart.*\" else \"read_data %s\n" % conf_file
+    ret+= "if \"${restart} > 0\" then \"read_restart dpgen.restart.*\" else \"read_data %s\"\n" % conf_file
     ret+= "change_box   all triclinic\n"
     for jj in range(len(mass_map)) :
         ret+= "mass            %d %f\n" %(jj+1, mass_map[jj])
