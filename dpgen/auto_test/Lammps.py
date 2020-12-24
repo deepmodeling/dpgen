@@ -116,7 +116,7 @@ class Lammps(Task):
                         output_dir,
                         task_type,
                         task_param):
-        lammps.cvt_lammps_conf(os.path.join(output_dir, 'POSCAR'), os.path.join(output_dir, 'conf.lmp'))
+        lammps.cvt_lammps_conf(os.path.join(output_dir, 'POSCAR'), os.path.join(output_dir, 'conf.lmp'), lammps.element_list(self.type_map))
 
         # dumpfn(task_param, os.path.join(output_dir, 'task.json'), indent=4)
 
