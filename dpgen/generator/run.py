@@ -197,12 +197,20 @@ def make_train (iter_index,
     training_iter0_model = jdata.get('training_iter0_model_path', [])
     training_init_model = jdata.get('training_init_model', False)
     training_reuse_iter = jdata.get('training_reuse_iter')
-    training_reuse_old_ratio = jdata.get('training_reuse_old_ratio', 0.2)
+    training_reuse_old_ratio = jdata.get('training_reuse_old_ratio', None)
     training_reuse_stop_batch = jdata.get('training_reuse_stop_batch', 400000)
     training_reuse_start_lr = jdata.get('training_reuse_start_lr', 1e-4)
     training_reuse_start_pref_e = jdata.get('training_reuse_start_pref_e', 0.1)
     training_reuse_start_pref_f = jdata.get('training_reuse_start_pref_f', 100)
     model_devi_activation_func = jdata.get('model_devi_activation_func', None)
+
+    if training_reuse_iter is not None and training_reuse_old_ratio is None:
+        raise RuntimeError("training_reuse_old_ratio not found but is mandatory when using init-model (training_reuse_iter is detected in param).\n" \
+        "It defines the ratio of the old-data picking probability to the all-data(old-data plus new-data) picking probability in training after training_reuse_iter.\n" \
+        "Denoting the index of the current iter as N (N >= training_reuse_iter ), old-data refers to those existed before the N-1 iter, and new-data refers to that obtained by the N-1 iter.\n" \
+        "A recommended strategy is making the old-to-new ratio close to 10 times of the default value, to reasonably increase the sensitivity of the model to the new-data.\n" \
+        "By default, the picking probability of data from one system or one iter is proportional to the number of batches (the number of frames divided by batch_size) of that systems or iter.\n" \
+        "Detailed discussion about init-model (in Chinese) please see https://mp.weixin.qq.com/s/qsKMZ0j270YhQKvwXUiFvQ")
 
     if iter_index > 0 and _check_empty_iter(iter_index-1, fp_task_min) :
         log_task('prev data is empty, copy prev model')
@@ -218,7 +226,7 @@ def make_train (iter_index,
         copy_flag = os.path.join(work_path, 'copied')
         if os.path.isfile(copy_flag) :
             os.remove(copy_flag)
-
+                
     # establish work path
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, train_name)
