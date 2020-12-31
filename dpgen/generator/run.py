@@ -226,7 +226,7 @@ def make_train (iter_index,
         copy_flag = os.path.join(work_path, 'copied')
         if os.path.isfile(copy_flag) :
             os.remove(copy_flag)
-                
+
     # establish work path
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, train_name)
