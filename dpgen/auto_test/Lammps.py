@@ -311,9 +311,9 @@ class Lammps(Task):
             dlog.debug(_tmp)
             type_map_list = lammps.element_list(self.type_map)
 
-            type_list_set = set(type_list)
+            type_map_idx = list(range(len(type_map_list)))
             atom_numbs = []
-            for ii in type_list_set:
+            for ii in type_map_idx:
                 count = 0
                 for jj in type_list:
                     if jj == ii:
