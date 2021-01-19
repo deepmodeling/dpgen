@@ -16,7 +16,9 @@ from .context import param_pwscf_old_file
 from .context import param_siesta_file
 from .context import param_gaussian_file
 from .context import param_cp2k_file
-from .context import param_cp2k_file_v1
+from .context import param_cp2k_file_exinput
+from .context import ref_cp2k_file_input
+from .context import ref_cp2k_file_exinput
 from .context import machine_file
 from .context import param_diy_file
 from .context import make_kspacing_kpoints
@@ -129,67 +131,6 @@ gaussian_input_ref="""%nproc=14
 DPGEN
 """
 
-cp2k_input_ref="\
-&GLOBAL\n\
-PROJECT DPGEN\n\
-&END GLOBAL\n\
-&FORCE_EVAL\n\
-METHOD QS\n\
-STRESS_TENSOR ANALYTICAL\n\
-&DFT\n\
-BASIS_SET_FILE_NAME ./cp2k_basis_pp_file/BASIS_MOLOPT\n\
-POTENTIAL_FILE_NAME ./cp2k_basis_pp_file/GTH_POTENTIALS\n\
-CHARGE 0\n\
-UKS F\n\
-MULTIPLICITY 1\n\
-&MGRID\n\
-CUTOFF 400\n\
-REL_CUTOFF 50\n\
-NGRIDS 4\n\
-&END MGRID\n\
-&QS\n\
-EPS_DEFAULT 1.0E-12\n\
-&END QS\n\
-&SCF\n\
-SCF_GUESS ATOMIC\n\
-EPS_SCF 1.0E-6\n\
-MAX_SCF 50\n\
-&OT\n\
-MINIMIZER DIIS\n\
-PRECONDITIONER FULL_SINGLE_INVERSE\n\
-&END OT\n\
-&END SCF\n\
-&XC\n\
-&XC_FUNCTIONAL PBE\n\
-&END XC_FUNCTIONAL\n\
-&END XC\n\
-&END DFT\n\
-&SUBSYS\n\
-&CELL\n\
-&END CELL\n\
-&COORD\n\
-@include coord.xyz\n\
-&END COORD\n\
-&KIND H\n\
-BASIS_SET DZVP-MOLOPT-GTH\n\
-POTENTIAL GTH-PBE-q1\n\
-&END KIND\n\
-&KIND C\n\
-BASIS_SET DZVP-MOLOPT-GTH\n\
-POTENTIAL GTH-PBE-q4\n\
-&END KIND\n\
-&KIND N\n\
-BASIS_SET DZVP-MOLOPT-GTH\n\
-POTENTIAL GTH-PBE-q5\n\
-&END KIND\n\
-&END SUBSYS\n\
-&PRINT\n\
-&FORCES ON\n\
-&END FORCES\n\
-&STRESS_TENSOR ON\n\
-&END STRESS_TENSOR\n\
-&END PRINT\n\
-&END FORCE_EVAL\n";
 
 pwmat_input_ref = "4 1\n\
 in.atom=atom.config\n\
@@ -471,7 +412,7 @@ def _check_gaussian_input_head(testCase, idx) :
         testCase.assertEqual(('\n'.join(lines)).strip(), gaussian_input_ref.strip())
 
 
-def _check_cp2k_input_head(testCase, idx) :
+def _check_cp2k_input_head(testCase, idx, ref_out) :
     fp_path = os.path.join('iter.%06d' % idx, '02.fp')
     tasks = glob.glob(os.path.join(fp_path, 'task.*'))
     for ii in tasks :
@@ -485,7 +426,7 @@ def _check_cp2k_input_head(testCase, idx) :
             if '&END CELL' in jj :
                 cell_end_idx = idx
         lines_check = lines[:cell_start_idx+1] + lines[cell_end_idx:]
-        testCase.assertEqual(('\n'.join(lines_check)).strip(), cp2k_input_ref.strip())
+        testCase.assertEqual(('\n'.join(lines_check)).strip(), ref_out.strip())
 
 
 
@@ -814,9 +755,39 @@ class TestMakeFPCP2K(unittest.TestCase):
         make_fp(0, jdata, {})
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
-        _check_cp2k_input_head(self, 0)
+        with open(ref_cp2k_file_input, 'r') as f:
+            cp2k_input_ref = ''.join(f.readlines())
+        _check_cp2k_input_head(self, 0, cp2k_input_ref)
         _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
+    def test_make_fp_cp2k_exinput(self):
+        if os.path.isdir('iter.000000') :
+            shutil.rmtree('iter.000000')
+        with open (param_cp2k_file_exinput, 'r') as fp :
+            jdata = json.load (fp)
+        with open (machine_file, 'r') as fp:
+            mdata = json.load (fp)
+        md_descript = []
+        nsys = 2
+        nmd = 3
+        n_frame = 10
+        for ii in range(nsys) :
+            tmp = []
+            for jj in range(nmd) :
+                tmp.append(np.arange(0, 0.29, 0.29/10))
+            md_descript.append(tmp)
+        atom_types = [0, 1, 2, 2, 0, 1]
+        type_map = jdata['type_map']
+        _make_fake_md(0, md_descript, atom_types, type_map)
+        make_fp(0, jdata, {})
+        _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
+        _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
+        with open(ref_cp2k_file_exinput, 'r') as f:
+            cp2k_exinput_ref = ''.join(f.readlines())
+        _check_cp2k_input_head(self, 0, cp2k_exinput_ref)
+        _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
+        shutil.rmtree('iter.000000')
+
 
 
 class TestMakeFPPWmat(unittest.TestCase):
