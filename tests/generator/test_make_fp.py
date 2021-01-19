@@ -131,12 +131,6 @@ gaussian_input_ref="""%nproc=14
 DPGEN
 """
 
-print(os.getcwd())
-with open(ref_cp2k_file_exinput, 'r') as f:
-    cp2k_exinput_ref = ''.join(f.readlines())
-
-with open(ref_cp2k_file_input, 'r') as f:
-    cp2k_input_ref = ''.join(f.readlines())
 
 pwmat_input_ref = "4 1\n\
 in.atom=atom.config\n\
@@ -761,6 +755,8 @@ class TestMakeFPCP2K(unittest.TestCase):
         make_fp(0, jdata, {})
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
+        with open(ref_cp2k_file_input, 'r') as f:
+            cp2k_input_ref = ''.join(f.readlines())
         _check_cp2k_input_head(self, 0, cp2k_input_ref)
         _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
@@ -786,6 +782,8 @@ class TestMakeFPCP2K(unittest.TestCase):
         make_fp(0, jdata, {})
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
+        with open(ref_cp2k_file_exinput, 'r') as f:
+            cp2k_exinput_ref = ''.join(f.readlines())
         _check_cp2k_input_head(self, 0, cp2k_exinput_ref)
         _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
