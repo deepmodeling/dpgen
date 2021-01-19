@@ -131,6 +131,7 @@ gaussian_input_ref="""%nproc=14
 DPGEN
 """
 
+print(os.getcwd())
 with open(ref_cp2k_file_exinput, 'r') as f:
     cp2k_exinput_ref = ''.join(f.readlines())
 
