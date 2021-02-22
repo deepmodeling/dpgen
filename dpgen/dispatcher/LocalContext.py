@@ -196,7 +196,7 @@ class LocalContext(object) :
                 o, e = proc.communicate()
                 stdout = SPRetObj(o)
                 stderr = SPRetObj(e)
-            except:
+            except ValueError:
                 stdout = None
                 stderr = None
         return ret, stdout, stderr
