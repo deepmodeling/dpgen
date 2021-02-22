@@ -121,16 +121,13 @@ class LazyLocalContext(object) :
     def get_return(self, proc):
         ret = proc.poll()
         if ret is None:
-            print('---------------- proc is None ----------------')
             return None, None, None
         else :
             try:
                 o, e = proc.communicate()
-                print('---------------- communicate finishes ----------------')
                 stdout = SPRetObj(o)
                 stderr = SPRetObj(e)
             except ValueError:
-                print('---------------- communicate failed ----------------')
                 stdout = None
                 stderr = None
         return ret, stdout, stderr
