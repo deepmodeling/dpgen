@@ -157,7 +157,7 @@ class TestLazyLocalContext(unittest.TestCase):
 
     def test_call(self) :
         self.job = LazyLocalContext('loc', None)
-        proc = self.job.call('sleep 3')
+        proc = self.job.call('sleep 1.5')
         self.assertFalse(self.job.check_finish(proc))
         time.sleep(1)
         self.assertFalse(self.job.check_finish(proc))
