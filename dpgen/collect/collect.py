@@ -78,7 +78,9 @@ def collect_data(target_folder, param_file, output,
     # dump iter data
     for kk in coll_data.keys():
         out_dir = 'sys.%s' % kk
-        coll_data[kk].to('deepmd/npy', os.path.join(output, out_dir))
+        nframes = coll_data[kk].get_nframes()
+        coll_data[kk].to('deepmd/npy', os.path.join(output, out_dir), set_size = nframes)
+        # coll_data[kk].to('deepmd/npy', os.path.join(output, out_dir))
 
 def gen_collect(args):
     collect_data(args.JOB_DIR, args.parameter, args.OUTPUT, 
