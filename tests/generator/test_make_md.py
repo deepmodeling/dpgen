@@ -3,6 +3,8 @@ import dpdata
 import numpy as np
 import unittest
 
+from dpgen.generator.run import parse_cur_job_sys_revmat
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 __package__ = 'generator'
 from .context import make_model_devi
@@ -207,10 +209,19 @@ class TestMakeModelDeviRevMat(unittest.TestCase):
             "model_devi_e_trust_hi":	1e10,
             "model_devi_plumed":        True,
             "model_devi_jobs":	[
-                {"sys_idx": [0, 1], 'traj_freq': 10,  "template":{"lmp": "lmp/input.lammps", "plm": "lmp/input.plumed"},
-                 "rev_mat":{
-                     "lmp": {"V_NSTEPS": [1000], "V_TEMP": [50, 100], "V_PRES": [1, 10]}, "plm": {"V_DIST0":  [3,4], "V_DIST1": [5, 6]}
-                 }}
+                {"sys_idx": [0, 1], 'traj_freq': 10, "template": {"lmp": "lmp/input.lammps", "plm": "lmp/input.plumed"},
+                 "rev_mat": {
+                     "lmp": {"V_NSTEPS": [1000], "V_TEMP": [50, 100]}, "plm": {"V_DIST0": [3, 4]}
+                 },
+                 "sys_rev_mat": {
+                     "0": {
+                         "lmp": {"V_PRES": [1, 10]}, "plm": {"V_DIST1": [5, 6]}
+                     },
+                     "1": {
+                         "lmp": {"V_PRES": [1, 5, 10]}, "plm": {"V_DIST1": [5, 6, 7]}
+                     }
+                 }
+                 }
             ]
         }
         mdata = {'deepmd_version': '1'}
@@ -223,23 +234,44 @@ class TestMakeModelDeviRevMat(unittest.TestCase):
         md_dir = os.path.join('iter.%06d' % 0, '01.model_devi')
         tasks = glob.glob(os.path.join(md_dir, 'task.*'))
         tasks.sort()
-        # 4 accounts for 2 systems each with 2 frames
-        self.assertEqual(len(tasks), (len(jdata['model_devi_jobs'][0]['rev_mat']['lmp']['V_NSTEPS']) * 
-                                      len(jdata['model_devi_jobs'][0]['rev_mat']['lmp']['V_TEMP']) * 
-                                      len(jdata['model_devi_jobs'][0]['rev_mat']['lmp']['V_PRES']) * 
-                                      len(jdata['model_devi_jobs'][0]['rev_mat']['plm']['V_DIST0']) * 
-                                      len(jdata['model_devi_jobs'][0]['rev_mat']['plm']['V_DIST1']) * 
-                                      4))
+        # each system contains 2 frames
+        self.assertEqual(len(tasks), (len(jdata['model_devi_jobs'][0]['rev_mat']['lmp']['V_NSTEPS']) *
+                                      len(jdata['model_devi_jobs'][0]['rev_mat']['lmp']['V_TEMP']) *
+                                      len(jdata['model_devi_jobs'][0]['rev_mat']['plm']['V_DIST0']) *
+                                      (len(jdata['model_devi_jobs'][0]['sys_rev_mat']['0']['lmp']['V_PRES']) *
+                                       len(jdata['model_devi_jobs'][0]['sys_rev_mat']['0']['plm']['V_DIST1']) +
+                                       len(jdata['model_devi_jobs'][0]['sys_rev_mat']['1']['lmp']['V_PRES']) *
+                                       len(jdata['model_devi_jobs'][0]['sys_rev_mat']['1']['plm']['V_DIST1'])) *
+                                      2))
 
         cur_job = jdata['model_devi_jobs'][0]
         rev_keys = ['V_NSTEPS', 'V_TEMP', 'V_PRES', 'V_DIST0', 'V_DIST1']
         rev_matrix = []
+        # 2 systems with each 2 frames
         for i0 in cur_job['rev_mat']['lmp']['V_NSTEPS']:
             for i1 in cur_job['rev_mat']['lmp']['V_TEMP']:
-                for i2 in cur_job['rev_mat']['lmp']['V_PRES']:
-                    for i3 in cur_job['rev_mat']['plm']['V_DIST0']:
-                        for i4 in cur_job['rev_mat']['plm']['V_DIST1']:
-                            rev_matrix.append([i0, i1, i2, i3, i4])        
+                for i3 in cur_job['rev_mat']['plm']['V_DIST0']:
+                    for i2 in cur_job['sys_rev_mat']['0']['lmp']['V_PRES']:
+                        for i4 in cur_job['sys_rev_mat']['0']['plm']['V_DIST1']:
+                            rev_matrix.append([i0, i1, i2, i3, i4])
+        for i0 in cur_job['rev_mat']['lmp']['V_NSTEPS']:
+            for i1 in cur_job['rev_mat']['lmp']['V_TEMP']:
+                for i3 in cur_job['rev_mat']['plm']['V_DIST0']:
+                    for i2 in cur_job['sys_rev_mat']['0']['lmp']['V_PRES']:
+                        for i4 in cur_job['sys_rev_mat']['0']['plm']['V_DIST1']:
+                            rev_matrix.append([i0, i1, i2, i3, i4])
+        for i0 in cur_job['rev_mat']['lmp']['V_NSTEPS']:
+            for i1 in cur_job['rev_mat']['lmp']['V_TEMP']:
+                for i3 in cur_job['rev_mat']['plm']['V_DIST0']:
+                    for i2 in cur_job['sys_rev_mat']['1']['lmp']['V_PRES']:
+                        for i4 in cur_job['sys_rev_mat']['1']['plm']['V_DIST1']:
+                            rev_matrix.append([i0, i1, i2, i3, i4])
+        for i0 in cur_job['rev_mat']['lmp']['V_NSTEPS']:
+            for i1 in cur_job['rev_mat']['lmp']['V_TEMP']:
+                for i3 in cur_job['rev_mat']['plm']['V_DIST0']:
+                    for i2 in cur_job['sys_rev_mat']['1']['lmp']['V_PRES']:
+                        for i4 in cur_job['sys_rev_mat']['1']['plm']['V_DIST1']:
+                            rev_matrix.append([i0, i1, i2, i3, i4])
         numb_rev = len(rev_matrix)
         for ii in range(len(tasks)):
             with open(os.path.join(tasks[ii], 'job.json')) as fp:
@@ -247,7 +279,7 @@ class TestMakeModelDeviRevMat(unittest.TestCase):
                 job_recd = json.load(fp)
                 for kk in job_recd.keys():
                     kidx = rev_keys.index(kk)
-                self.assertEqual(rev_values[kidx], job_recd[kk])
+                    self.assertEqual(rev_values[kidx], job_recd[kk])
 
         cwd_ = os.getcwd()
         os.chdir(tasks[0])
@@ -359,6 +391,47 @@ class TestParseCurJobRevMat(unittest.TestCase):
         self.assertEqual(rk, self.ref_keys)
         self.assertEqual(nl, self.ref_nlmp)
         self.assertEqual(rm, self.ref_matrix)
+
+
+class TestParseCurJobSysRevMat(unittest.TestCase):
+    def setUp(self):
+        self.cur_job = {
+            "sys_idx": [0, 1],
+            "template":{"lmp": "lmp/input.lammps", "plm": "lmp/input.plumed"},
+            "rev_mat":{
+                "lmp": {"V_NSTEPS": [1000], "V_TEMP": [50, 100]}, "plm": {"V_DIST0":  [3, 4]}
+            },
+            "sys_rev_mat": {
+                "0": {
+                    "lmp": {"V_PRES": [1, 10]},
+                    "plm": {"V_DIST1": [5, 6]}
+                },
+                "1": {
+                    "lmp": {"V_PRES": [1, 10, 20]},
+                    "plm": {"V_DIST1": [5, 6, 7]}
+                }
+            }
+        }
+        self.sys_ref_matrix = [[], []]
+        for i0 in self.cur_job['sys_rev_mat']['0']['lmp']['V_PRES']:
+            for i1 in self.cur_job['sys_rev_mat']['0']['plm']['V_DIST1']:
+                self.sys_ref_matrix[0].append([i0, i1])
+        for i0 in self.cur_job['sys_rev_mat']['1']['lmp']['V_PRES']:
+            for i1 in self.cur_job['sys_rev_mat']['1']['plm']['V_DIST1']:
+                self.sys_ref_matrix[1].append([i0, i1])
+        self.sys_ref_keys = ['V_PRES', 'V_DIST1']
+        self.sys_ref_nlmp_0 = 1
+        self.sys_ref_nlmp_1 = 1
+
+    def test_parse_cur_job(self):
+        rk0, rm0, nl0 = parse_cur_job_sys_revmat(self.cur_job, 0, use_plm=True)
+        rk1, rm1, nl1 = parse_cur_job_sys_revmat(self.cur_job, 1, use_plm=True)
+        self.assertEqual(rk0, self.sys_ref_keys)
+        self.assertEqual(nl0, self.sys_ref_nlmp_0)
+        self.assertEqual(rm0, self.sys_ref_matrix[0])
+        self.assertEqual(rk1, self.sys_ref_keys)
+        self.assertEqual(nl1, self.sys_ref_nlmp_1)
+        self.assertEqual(rm1, self.sys_ref_matrix[1])
         
 
 class MakeModelDeviByReviseMatrix(unittest.TestCase):

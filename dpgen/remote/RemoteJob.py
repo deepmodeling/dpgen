@@ -108,18 +108,38 @@ class SSHSession (object) :
         self.remote_password = None
         if 'password' in self.remote_profile :
             self.remote_password = self.remote_profile['password']
+        self.local_key_filename = None
+        if 'key_filename' in self.remote_profile:
+            self.local_key_filename = self.remote_profile['key_filename']
+        self.remote_timeout = None
+        if 'timeout' in self.remote_profile:
+            self.remote_timeout = self.remote_profile['timeout']
+        self.local_key_passphrase = None
+        if 'passphrase' in self.remote_profile:
+            self.local_key_passphrase = self.remote_profile['passphrase']
         self.remote_workpath = self.remote_profile['work_path']
-        self.ssh = self._setup_ssh(self.remote_host, self.remote_port, username = self.remote_uname,password=self.remote_password)
+        self.ssh = self._setup_ssh(hostname=self.remote_host,
+                                   port=self.remote_port,
+                                   username=self.remote_uname,
+                                   password=self.remote_password,
+                                   key_filename=self.local_key_filename, 
+                                   timeout=self.remote_timeout,
+                                   passphrase=self.local_key_passphrase)
         
     def _setup_ssh(self,
                    hostname,
-                   port, 
-                   username = None,
-                   password = None):
-        ssh_client = paramiko.SSHClient()        
+                   port=22,
+                   username=None,
+                   password=None,
+                   key_filename=None,
+                   timeout=None,
+                   passphrase=None
+                   ):
+        ssh_client = paramiko.SSHClient()
         ssh_client.load_system_host_keys()
         ssh_client.set_missing_host_key_policy(paramiko.WarningPolicy)
-        ssh_client.connect(hostname, port=port, username=username, password=password)
+        ssh_client.connect(hostname, port, username, password,
+                           key_filename, timeout, passphrase)
         assert(ssh_client.get_transport().is_active())
         return ssh_client
 

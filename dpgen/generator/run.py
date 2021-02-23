@@ -50,7 +50,7 @@ from dpgen.generator.lib.pwmat import make_pwmat_input_user_dict
 from dpgen.generator.lib.pwmat import input_upper
 from dpgen.generator.lib.siesta import make_siesta_input
 from dpgen.generator.lib.gaussian import make_gaussian_input, take_cluster
-from dpgen.generator.lib.cp2k import make_cp2k_input, make_cp2k_xyz
+from dpgen.generator.lib.cp2k import make_cp2k_input, make_cp2k_input_from_external, make_cp2k_xyz
 from dpgen.generator.lib.ele_temp import NBandsEsti
 from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, LSFJob, CloudMachineJob, awsMachineJob
 from dpgen.remote.group_jobs import ucloud_submit_jobs, aws_submit_jobs
@@ -193,16 +193,24 @@ def make_train (iter_index,
     init_data_sys_ = jdata['init_data_sys']
     fp_task_min = jdata['fp_task_min']
     model_devi_jobs = jdata['model_devi_jobs']
-    use_ele_temp = jdata.get('use_ele_temp', 0)    
+    use_ele_temp = jdata.get('use_ele_temp', 0)
     training_iter0_model = jdata.get('training_iter0_model_path', [])
     training_init_model = jdata.get('training_init_model', False)
     training_reuse_iter = jdata.get('training_reuse_iter')
-    training_reuse_old_ratio = jdata.get('training_reuse_old_ratio', 0.2)
+    training_reuse_old_ratio = jdata.get('training_reuse_old_ratio', None)
     training_reuse_stop_batch = jdata.get('training_reuse_stop_batch', 400000)
     training_reuse_start_lr = jdata.get('training_reuse_start_lr', 1e-4)
     training_reuse_start_pref_e = jdata.get('training_reuse_start_pref_e', 0.1)
     training_reuse_start_pref_f = jdata.get('training_reuse_start_pref_f', 100)
     model_devi_activation_func = jdata.get('model_devi_activation_func', None)
+
+    if training_reuse_iter is not None and training_reuse_old_ratio is None:
+        raise RuntimeError("training_reuse_old_ratio not found but is mandatory when using init-model (training_reuse_iter is detected in param).\n" \
+        "It defines the ratio of the old-data picking probability to the all-data(old-data plus new-data) picking probability in training after training_reuse_iter.\n" \
+        "Denoting the index of the current iter as N (N >= training_reuse_iter ), old-data refers to those existed before the N-1 iter, and new-data refers to that obtained by the N-1 iter.\n" \
+        "A recommended strategy is making the new-to-old ratio close to 10 times of the default value, to reasonably increase the sensitivity of the model to the new-data.\n" \
+        "By default, the picking probability of data from one system or one iter is proportional to the number of batches (the number of frames divided by batch_size) of that systems or iter.\n" \
+        "Detailed discussion about init-model (in Chinese) please see https://mp.weixin.qq.com/s/qsKMZ0j270YhQKvwXUiFvQ")
 
     if iter_index > 0 and _check_empty_iter(iter_index-1, fp_task_min) :
         log_task('prev data is empty, copy prev model')
@@ -368,7 +376,7 @@ def make_train (iter_index,
         if type(training_iter0_model) == str:
             training_iter0_model = [training_iter0_model]
         iter0_models = []
-        for ii in training_iter0_model:            
+        for ii in training_iter0_model:
             model_is = glob.glob(ii)
             model_is.sort()
             iter0_models += [os.path.abspath(ii) for ii in model_is]
@@ -381,7 +389,7 @@ def make_train (iter_index,
 
 def _link_old_models(work_path, old_model_files, ii):
     """
-    link the `ii`th old model given by `old_model_files` to 
+    link the `ii`th old model given by `old_model_files` to
     the `ii`th training task in `work_path`
     """
     task_path = os.path.join(work_path, train_task_fmt % ii)
@@ -393,7 +401,7 @@ def _link_old_models(work_path, old_model_files, ii):
         basejj = os.path.basename(jj)
         os.chdir(task_old_path)
         os.symlink(os.path.relpath(absjj), basejj)
-        os.chdir(cwd)            
+        os.chdir(cwd)
 
 
 def detect_batch_size(batch_size, system=None):
@@ -448,8 +456,8 @@ def run_train (iter_index,
         command = os.path.join(deepmd_path, 'bin/dp_train %s' % train_input_file)
         commands.append(command)
         command = os.path.join(deepmd_path, 'bin/dp_frz')
-        commands.append(command)        
-    else: 
+        commands.append(command)
+    else:
         # 1.x
         ## Commands are like `dp train` and `dp freeze`
         ## train_command should not be None
@@ -476,7 +484,7 @@ def run_train (iter_index,
 
     forward_files = [train_input_file]
     if training_init_model:
-        forward_files += [os.path.join('old', 'model.ckpt.meta'), 
+        forward_files += [os.path.join('old', 'model.ckpt.meta'),
                           os.path.join('old', 'model.ckpt.index'),
                           os.path.join('old', 'model.ckpt.data-00000-of-00001')
         ]
@@ -613,8 +621,32 @@ def parse_cur_job_revmat(cur_job, use_plm = False):
             revise_keys.append(ii)
             revise_values.append(cur_job['rev_mat']['plm'][ii])
     revise_matrix = expand_matrix_values(revise_values)
-    return revise_keys, revise_matrix, n_lmp_keys            
+    return revise_keys, revise_matrix, n_lmp_keys
 
+
+def parse_cur_job_sys_revmat(cur_job, sys_idx, use_plm=False):
+    templates = [cur_job['template']['lmp']]
+    if use_plm:
+        templates.append(cur_job['template']['plm'])
+    sys_revise_keys = []
+    sys_revise_values = []
+    if 'sys_rev_mat' not in cur_job.keys():
+        cur_job['sys_rev_mat'] = {}
+    local_rev = cur_job['sys_rev_mat'].get(str(sys_idx), {})
+    if 'lmp' not in local_rev.keys():
+        local_rev['lmp'] = {}
+    for ii in local_rev['lmp'].keys():
+        sys_revise_keys.append(ii)
+        sys_revise_values.append(local_rev['lmp'][ii])
+    n_sys_lmp_keys = len(sys_revise_keys)
+    if use_plm:
+        if 'plm' not in local_rev.keys():
+            local_rev['plm'] = {}
+        for ii in local_rev['plm'].keys():
+            sys_revise_keys.append(ii)
+            sys_revise_values.append(local_rev['plm'][ii])
+    sys_revise_matrix = expand_matrix_values(sys_revise_values)
+    return sys_revise_keys, sys_revise_matrix, n_sys_lmp_keys
 
 def find_only_one_key(lmp_lines, key):
     found = []
@@ -633,7 +665,7 @@ def find_only_one_key(lmp_lines, key):
 def revise_lmp_input_model(lmp_lines, task_model_list, trj_freq, deepmd_version = '1'):
     idx = find_only_one_key(lmp_lines, ['pair_style', 'deepmd'])
     graph_list = ' '.join(task_model_list)
-    if LooseVersion(deepmd_version) < LooseVersion('1'):        
+    if LooseVersion(deepmd_version) < LooseVersion('1'):
         lmp_lines[idx] = "pair_style      deepmd %s %d model_devi.out\n" % (graph_list, trj_freq)
     else:
         lmp_lines[idx] = "pair_style      deepmd %s out_freq %d out_file model_devi.out\n" % (graph_list, trj_freq)
@@ -644,13 +676,13 @@ def revise_lmp_input_dump(lmp_lines, trj_freq):
     idx = find_only_one_key(lmp_lines, ['dump', 'dpgen_dump'])
     lmp_lines[idx] = "dump            dpgen_dump all custom %d traj/*.lammpstrj id type x y z\n" % trj_freq
     return lmp_lines
-    
+
 
 def revise_lmp_input_plm(lmp_lines, in_plm, out_plm = 'output.plumed'):
     idx = find_only_one_key(lmp_lines, ['fix', 'dpgen_plm'])
     lmp_lines[idx] = "fix            dpgen_plm all plumed plumedfile %s outfile %s\n" % (in_plm, out_plm)
     return lmp_lines
-    
+
 
 def revise_by_keys(lmp_lines, keys, values):
     for kk,vv in zip(keys, values):
@@ -747,7 +779,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
     model_devi_jobs = jdata['model_devi_jobs']
     if (iter_index >= len(model_devi_jobs)) :
         return False
-    cur_job = model_devi_jobs[iter_index]    
+    cur_job = model_devi_jobs[iter_index]
     sys_idx = expand_idx(cur_job['sys_idx'])
     if (len(sys_idx) != len(list(set(sys_idx)))) :
         raise RuntimeError("system index should be uniq")
@@ -761,10 +793,10 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
     lmp_templ = os.path.abspath(lmp_templ)
     if use_plm:
         plm_templ = cur_job['template']['plm']
-        plm_templ = os.path.abspath(plm_templ)    
+        plm_templ = os.path.abspath(plm_templ)
         if use_plm_path:
             plm_path_templ = cur_job['template']['plm_path']
-            plm_path_templ = os.path.abspath(plm_path_templ) 
+            plm_path_templ = os.path.abspath(plm_path_templ)
 
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
@@ -785,8 +817,30 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
         conf_counter = 0
         task_counter = 0
         for cc in ss :
-            for ii in range(len(rev_mat)):
-                rev_item = rev_mat[ii]
+            sys_rev = cur_job.get('sys_rev_mat', None)
+            total_rev_keys = rev_keys
+            total_rev_mat = rev_mat
+            total_num_lmp = num_lmp
+            if sys_rev is not None:
+                total_rev_mat = []
+                sys_rev_keys, sys_rev_mat, sys_num_lmp = parse_cur_job_sys_revmat(cur_job,
+                                                                                  sys_idx=sys_idx[sys_counter],
+                                                                                  use_plm=use_plm)
+                _lmp_keys = rev_keys[:num_lmp] + sys_rev_keys[:sys_num_lmp]
+                if use_plm:
+                    _plm_keys = rev_keys[num_lmp:] + sys_rev_keys[sys_num_lmp:]
+                    _lmp_keys += _plm_keys
+                total_rev_keys = _lmp_keys
+                total_num_lmp = num_lmp + sys_num_lmp
+                for pub in rev_mat:
+                    for pri in sys_rev_mat:
+                        _lmp_mat = pub[:num_lmp] + pri[:sys_num_lmp]
+                        if use_plm:
+                            _plm_mat = pub[num_lmp:] + pri[sys_num_lmp:]
+                            _lmp_mat += _plm_mat
+                        total_rev_mat.append(_lmp_mat)
+            for ii in range(len(total_rev_mat)):
+                total_rev_item = total_rev_mat[ii]
                 task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
                 conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter) + '.lmp'
                 task_path = os.path.join(work_path, task_name)
@@ -799,21 +853,27 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                            os.path.join(task_path, loc_conf_name) )
                 cwd_ = os.getcwd()
                 # chdir to task path
-                os.chdir(task_path)                
+                os.chdir(task_path)
                 shutil.copyfile(lmp_templ, 'input.lammps')
                 # revise input of lammps
                 with open('input.lammps') as fp:
                     lmp_lines = fp.readlines()
                 lmp_lines = revise_lmp_input_model(lmp_lines, task_model_list, trj_freq, deepmd_version = deepmd_version)
                 lmp_lines = revise_lmp_input_dump(lmp_lines, trj_freq)
-                lmp_lines = revise_by_keys(lmp_lines, rev_keys[:num_lmp], rev_item[:num_lmp])
+                lmp_lines = revise_by_keys(
+                    lmp_lines, total_rev_keys[:total_num_lmp], total_rev_item[:total_num_lmp]
+                )
                 # revise input of plumed
                 if use_plm:
                     lmp_lines = revise_lmp_input_plm(lmp_lines, 'input.plumed')
                     shutil.copyfile(plm_templ, 'input.plumed')
                     with open('input.plumed') as fp:
                         plm_lines = fp.readlines()
-                    plm_lines = revise_by_keys(plm_lines, rev_keys[num_lmp:], rev_item[num_lmp:])
+                    # allow using the same list as lmp
+                    # user should not use the same key name for plm
+                    plm_lines = revise_by_keys(
+                        plm_lines, total_rev_keys, total_rev_item
+                    )
                     with open('input.plumed', 'w') as fp:
                         fp.write(''.join(plm_lines))
                     if use_plm_path:
@@ -823,12 +883,12 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                     fp.write(''.join(lmp_lines))
                 with open('job.json', 'w') as fp:
                     job = {}
-                    for ii,jj in zip(rev_keys, rev_item) : job[ii] = jj
+                    for ii,jj in zip(total_rev_keys, total_rev_item) : job[ii] = jj
                     json.dump(job, fp, indent = 4)
                 os.chdir(cwd_)
                 task_counter += 1
             conf_counter += 1
-        sys_counter += 1                    
+        sys_counter += 1
 
 
 def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
@@ -838,7 +898,7 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
     cur_job = model_devi_jobs[iter_index]
     ensemble, nsteps, trj_freq, temps, press, pka_e, dt = parse_cur_job(cur_job)
     if dt is not None :
-        model_devi_dt = dt    
+        model_devi_dt = dt
     sys_idx = expand_idx(cur_job['sys_idx'])
     if (len(sys_idx) != len(list(set(sys_idx)))) :
         raise RuntimeError("system index should be uniq")
@@ -964,12 +1024,12 @@ def run_model_devi (iter_index,
 
     all_task = glob.glob(os.path.join(work_path, "task.*"))
     all_task.sort()
-    command = lmp_exec + " -i input.lammps"
+    command = "{ if [ ! -f dpgen.restart.10000 ]; then %s -i input.lammps -v restart 0; else %s -i input.lammps -v restart 1; fi }" % (lmp_exec, lmp_exec)
     commands = [command]
 
     fp = open (os.path.join(work_path, 'cur_job.json'), 'r')
     cur_job = json.load (fp)
-    
+
     run_tasks_ = all_task
     # for ii in all_task:
     #     fres = os.path.join(ii, 'model_devi.out')
@@ -1021,10 +1081,10 @@ def _to_face_dist(box_):
     for [ii,jj] in [[0, 1], [1, 2], [2, 0]]:
         vv = np.cross(box[ii], box[jj])
         dists.append(vol / np.linalg.norm(vv))
-    return np.array(dists)        
+    return np.array(dists)
 
-def check_cluster(conf_name, 
-                  fp_cluster_vacuum, 
+def check_cluster(conf_name,
+                  fp_cluster_vacuum,
                   fmt='lammps/dump'):
     sys = dpdata.System(conf_name, fmt)
     assert(sys.get_nframes() == 1)
@@ -1036,16 +1096,16 @@ def check_cluster(conf_name,
     a,b,c=map(norm,[cell[0,:],cell[1,:],cell[2,:]])
     min_vac=min([a-xlim,b-ylim,c-zlim])
     #print([a-xlim,b-ylim,c-zlim])
-    #_,r3d=miniball.get_bounding_ball(coord) 
-    
+    #_,r3d=miniball.get_bounding_ball(coord)
+
     if min_vac < fp_cluster_vacuum:
        is_bad = True
     else:
        is_bad = False
     return is_bad
 
-def check_bad_box(conf_name, 
-                   criteria, 
+def check_bad_box(conf_name,
+                   criteria,
                    fmt = 'lammps/dump'):
     all_c = criteria.split(';')
     sys = dpdata.System(conf_name, fmt)
@@ -1063,9 +1123,9 @@ def check_bad_box(conf_name,
             dists = _to_face_dist(sys['cells'][0])
             ratio = np.max(lengths) / np.min(dists)
             if ratio > float(value):
-                is_bad = True            
+                is_bad = True
         else:
-            raise RuntimeError('unknow key', key)        
+            raise RuntimeError('unknow key', key)
     return is_bad
 
 def _make_fp_vasp_inner (modd_path,
@@ -1103,7 +1163,7 @@ def _make_fp_vasp_inner (modd_path,
     detailed_report_make_fp = jdata.get("detailed_report_make_fp", True)
     # skip bad box criteria
     skip_bad_box = jdata.get('fp_skip_bad_box')
-    # skip discrete structure in cluster 
+    # skip discrete structure in cluster
     fp_cluster_vacuum = jdata.get('fp_cluster_vacuum',None)
     for ss in system_index :
         fp_candidate = []
@@ -1210,7 +1270,7 @@ def _make_fp_vasp_inner (modd_path,
                if skip_cluster:
                   count_bad_cluster +=1
                   continue
-               
+
             # link job.json
             job_name = os.path.join(tt, "job.json")
             job_name = os.path.abspath(job_name)
@@ -1247,7 +1307,7 @@ def _make_fp_vasp_inner (modd_path,
             dump_to_poscar('conf.dump', 'POSCAR', type_map)
             os.chdir(cwd)
     return fp_tasks
-    
+
 def make_vasp_incar(jdata, filename):
     if 'fp_incar' in jdata.keys() :
         fp_incar_path = jdata['fp_incar']
@@ -1262,7 +1322,7 @@ def make_vasp_incar(jdata, filename):
         incar = make_vasp_incar_user_dict(jdata['fp_params'])
     with open(filename, 'w') as fp:
         fp.write(incar)
-    return incar    
+    return incar
 
 def make_pwmat_input(jdata, filename):
     if 'fp_incar' in jdata.keys() :
@@ -1294,7 +1354,7 @@ def make_pwmat_input(jdata, filename):
         os.system('rm -rf tmp.config')
         input_dict = make_pwmat_input_dict(node1, node2, atom_config, ecut, e_error,
                                            rho_error, icmix = None, smearing = None,
-                                           sigma = None, kspacing = kspacing, 
+                                           sigma = None, kspacing = kspacing,
                                            flag_symm = flag_symm
         )
 
@@ -1315,7 +1375,7 @@ def make_pwmat_input(jdata, filename):
             fp.write(input)
             fp.write('job=scf\n')
             fp_pp_files = jdata['fp_pp_files']
-            for idx, ii in enumerate(fp_pp_files) : 
+            for idx, ii in enumerate(fp_pp_files) :
                 fp.write('IN.PSP%d = %s\n' %(idx+1, ii))
             if 'OUT.MLMD' in input or 'out.mlmd' in input:
                 return input
@@ -1354,7 +1414,7 @@ def make_fp_vasp_incar (iter_index,
             with open('job.json') as fp:
                 job_data = json.load(fp)
             if 'ele_temp' in job_data:
-                make_vasp_incar_ele_temp(jdata, 'INCAR', 
+                make_vasp_incar_ele_temp(jdata, 'INCAR',
                                          job_data['ele_temp'],
                                          nbands_esti = nbands_esti)
         os.chdir(cwd)
@@ -1487,7 +1547,7 @@ def sys_link_fp_vasp_pp (iter_index,
         sys = dpdata.System(sys_poscar, fmt = 'vasp/poscar')
         for ele_name in sys['atom_names']:
             ele_idx = jdata['type_map'].index(ele_name)
-            potcars.append(fp_pp_files[ele_idx])                
+            potcars.append(fp_pp_files[ele_idx])
         with open(os.path.join(work_path,'POTCAR.%s' % ii), 'w') as fp_pot:
             for jj in potcars:
                 with open(os.path.join(fp_pp_path, jj)) as fp:
@@ -1610,7 +1670,7 @@ def make_fp_siesta(iter_index,
         os.chdir(cwd)
     # link pp files
     _link_fp_vasp_pp(iter_index, jdata)
-        
+
 def make_fp_gaussian(iter_index,
                      jdata):
     # make config
@@ -1646,6 +1706,11 @@ def make_fp_cp2k (iter_index,
     work_path = os.path.join(iter_name, fp_name)
     if 'user_fp_params' in jdata.keys() :
         fp_params = jdata['user_fp_params']
+    # some users might use own inputs
+    # specify the input path string
+    elif 'external_input_path' in jdata.keys() :
+        fp_params = None
+        exinput_path = os.path.abspath(jdata['external_input_path'])
     else:
         fp_params = jdata['fp_params']
     cwd = os.getcwd()
@@ -1653,7 +1718,12 @@ def make_fp_cp2k (iter_index,
         os.chdir(ii)
         sys_data = dpdata.System('POSCAR').data
         # make input for every task
-        cp2k_input = make_cp2k_input(sys_data, fp_params)
+        # if fp_params exits, make keys
+        if fp_params:
+            cp2k_input = make_cp2k_input(sys_data, fp_params)
+        else:
+        # else read from user input
+            cp2k_input = make_cp2k_input_from_external(sys_data, exinput_path)
         with open('input.inp', 'w') as fp:
             fp.write(cp2k_input)
             fp.close()
@@ -1854,8 +1924,8 @@ def run_fp (iter_index,
         raise RuntimeError ("unsupported fp style")
 
 
-def post_fp_check_fail(iter_index, 
-                       jdata, 
+def post_fp_check_fail(iter_index,
+                       jdata,
                        rfailed = None) :
     ratio_failed =  rfailed if rfailed else jdata.get('ratio_failed',0.05)
     iter_name = make_iter_name(iter_index)
@@ -1868,14 +1938,14 @@ def post_fp_check_fail(iter_index,
     fp_failed_tags = glob.glob(os.path.join(work_path, 'task.*', 'tag_failure*'))
     fp_failed_tasks = [os.path.dirname(ii) for ii in fp_failed_tags]
     fp_failed_tasks = list(set(fp_failed_tasks))
-    
+
     ntask = len(fp_tasks)
     nfail = len(fp_failed_tasks)
     rfail = float(nfail) / float(ntask)
     dlog.info("failed tasks: %6d in %6d  %6.2f %% " % (nfail, ntask, rfail * 100.))
     if rfail > ratio_failed:
        raise RuntimeError("find too many unsuccessfully terminated jobs")
-    
+
 
 def post_fp_vasp (iter_index,
                   jdata,
@@ -2081,7 +2151,7 @@ def post_fp_gaussian (iter_index,
         sys_output = glob.glob(os.path.join(work_path, "task.%s.*/output"%ss))
         sys_output.sort()
         for idx,oo in enumerate(sys_output) :
-            sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log') 
+            sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log')
             if len(sys) > 0:
                 sys.check_type_map(type_map = jdata['type_map'])
             if jdata.get('use_atom_pref', False):
@@ -2242,7 +2312,7 @@ def set_version(mdata):
 
 
 
-    
+
 
 def run_iter (param_file, machine_file) :
     try:
@@ -2313,7 +2383,7 @@ def run_iter (param_file, machine_file) :
                 log_iter ("run_model_devi", ii, jj)
                 mdata = decide_model_devi_machine(mdata)
                 run_model_devi (ii, jdata, mdata)
-                
+
             elif jj == 5 :
                 log_iter ("post_model_devi", ii, jj)
                 post_model_devi (ii, jdata, mdata)

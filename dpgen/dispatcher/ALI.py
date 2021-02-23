@@ -127,10 +127,8 @@ class ALI(DispatcherList):
             sys.exit()
 
     def update(self):
-        if len(self.server_pool) == 0:
-            self.server_pool = self.get_server_pool()
-            self.ip_pool = self.get_ip(self.server_pool)
-        else: pass
+        self.server_pool = self.get_server_pool()
+        self.ip_pool = self.get_ip(self.server_pool)
 
     # Derivate
     def catch_dispatcher_exception(self, ii):
@@ -303,6 +301,9 @@ class ALI(DispatcherList):
         request.set_ImageId(image_id)
         request.set_ImageOwnerAlias("self")
         request.set_PasswordInherit(True)
+        if "address" in self.cloud_resources and self.cloud_resources['address'] == "public":
+            request.set_InternetMaxBandwidthIn(100)
+            request.set_InternetMaxBandwidthOut(100)
         request.set_InstanceType("ecs.c6.large")
         request.set_InstanceName(self.cloud_resources["instance_name"])
         request.set_SecurityGroupId(sg_id)
@@ -344,21 +345,31 @@ class ALI(DispatcherList):
         request = DescribeImagesRequest()
         request.set_accept_format('json')
         request.set_ImageOwnerAlias("self")
-        request.set_PageSize(100)
-        count = 0
-        flag = 0
-        while count < 10:
-            try:
-                response = self.client.do_action_with_exception(request)
-                response = json.loads(response)
-                for img in response["Images"]["Image"]:
-                    if img["ImageName"] == img_name:
-                        return img["ImageId"]
-                flag = 1
-                break
-            except:
-                count += 1
-                time.sleep(10)
+        request.set_PageSize(20)
+        response = self.client.do_action_with_exception(request)
+        response = json.loads(response)
+        totalcount = response["TotalCount"]
+
+        iteration = totalcount // 20
+        if iteration * 20 < totalcount:
+            iteration += 1
+
+        for ii in range(1, iteration+1):
+            count = 0
+            flag = 0
+            request.set_PageNumber(ii)
+            while count < 10:
+                try:
+                    response = self.client.do_action_with_exception(request)
+                    response = json.loads(response)
+                    for img in response["Images"]["Image"]:
+                        if img["ImageName"] == img_name:
+                            return img["ImageId"]
+                    flag = 1
+                    break
+                except:
+                    count += 1
+                    time.sleep(10)
         if not flag:
             dlog.info("get image failed, exit")
             sys.exit()
@@ -458,7 +469,10 @@ class ALI(DispatcherList):
                     request.set_InstanceIds([instance_list[i]])
                     response = self.client.do_action_with_exception(request)
                     response = json.loads(response)
-                    ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
+                    if "address" in self.cloud_resources and self.cloud_resources['address'] == "public":
+                        ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]["IpAddress"][0])
+                    else:
+                        ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
                     # ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]["IpAddress"][0])
             else:
                 iteration = len(instance_list) // 10
@@ -467,15 +481,19 @@ class ALI(DispatcherList):
                         request.set_InstanceIds([instance_list[i*10+j]])
                         response = self.client.do_action_with_exception(request)
                         response = json.loads(response)
-                        ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
-                        # ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]["IpAddress"][0])
+                        if "address" in self.cloud_resources and self.cloud_resources['address'] == "public":
+                            ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]["IpAddress"][0])
+                        else:
+                            ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
                 if len(instance_list) - iteration * 10 != 0:
                     for j in range(len(instance_list) - iteration * 10):
                         request.set_InstanceIds([instance_list[iteration*10+j]])
                         response = self.client.do_action_with_exception(request)
                         response = json.loads(response)
-                        ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
-                        # ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]["IpAddress"][0])
+                        if "address" in self.cloud_resources and self.cloud_resources['address'] == "public":
+                            ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]["IpAddress"][0])
+                        else:
+                            ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
             return ip_list
         except: return []
 

@@ -1,0 +1,25 @@
+name: Python package
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.7, 3.8]
+        PYMATGEN_VERSION: [2019.1.13, 2019.7.30]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: pip install coverage codecov pymatgen==${{ matrix.PYMATGEN_VERSION }} .
+    - name: Test
+      run: coverage run --source=./dpgen -m unittest -v && coverage report
+    - run: codecov

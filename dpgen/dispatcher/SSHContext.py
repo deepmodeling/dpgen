@@ -13,15 +13,19 @@ class SSHSession (object) :
         self.remote_host = self.remote_profile['hostname']
         self.remote_uname = self.remote_profile['username']
         self.remote_port = self.remote_profile.get('port', 22)
-        self.remote_password = None
-        if 'password' in self.remote_profile :
-            self.remote_password = self.remote_profile['password']
+        self.remote_password = self.remote_profile.get('password', None)
+        self.local_key_filename = self.remote_profile.get('key_filename', None)
+        self.remote_timeout = self.remote_profile.get('timeout', None)
+        self.local_key_passphrase = self.remote_profile.get('passphrase', None)
         self.remote_workpath = self.remote_profile['work_path']
         self.ssh = None
-        self._setup_ssh(self.remote_host,
-                        self.remote_port,
+        self._setup_ssh(hostname=self.remote_host,
+                        port=self.remote_port,
                         username=self.remote_uname,
-                        password=self.remote_password)
+                        password=self.remote_password,
+                        key_filename=self.local_key_filename,
+                        timeout=self.remote_timeout,
+                        passphrase=self.local_key_passphrase)
 
     def ensure_alive(self,
                      max_check = 10,
@@ -32,12 +36,15 @@ class SSHSession (object) :
                 raise RuntimeError('cannot connect ssh after %d failures at interval %d s' %
                                    (max_check, sleep_time))
             dlog.info('connection check failed, try to reconnect to ' + self.remote_host)
-            self._setup_ssh(self.remote_host,
-                            self.remote_port,
+            self._setup_ssh(hostname=self.remote_host,
+                            port=self.remote_port,
                             username=self.remote_uname,
-                            password=self.remote_password)
+                            password=self.remote_password,
+                            key_filename=self.local_key_filename,
+                            timeout=self.remote_timeout,
+                            passphrase=self.local_key_passphrase)
             count += 1
-            time.sleep(sleep)
+            time.sleep(sleep_time)
 
     def _check_alive(self):
         if self.ssh == None:
@@ -51,13 +58,18 @@ class SSHSession (object) :
 
     def _setup_ssh(self,
                    hostname,
-                   port, 
-                   username = None,
-                   password = None):
-        self.ssh = paramiko.SSHClient()        
-        # ssh_client.load_system_host_keys()        
+                   port=22,
+                   username=None,
+                   password=None,
+                   key_filename=None,
+                   timeout=None,
+                   passphrase=None):
+        self.ssh = paramiko.SSHClient()
+        # ssh_client.load_system_host_keys()
         self.ssh.set_missing_host_key_policy(paramiko.WarningPolicy)
-        self.ssh.connect(hostname, port=port, username=username, password=password)
+        self.ssh.connect(hostname=hostname, port=port,
+                         username=username, password=password,
+                         key_filename=key_filename, timeout=timeout, passphrase=passphrase)
         assert(self.ssh.get_transport().is_active())
         transport = self.ssh.get_transport()
         transport.set_keepalive(60)
@@ -148,19 +160,11 @@ class SSHContext (object):
         os.chdir(cwd)
         
     def block_checkcall(self, 
-                        cmd,
-                        retry=0) :
+                        cmd) :
         self.ssh_session.ensure_alive()
         stdin, stdout, stderr = self.ssh.exec_command(('cd %s ;' % self.remote_root) + cmd)
         exit_status = stdout.channel.recv_exit_status() 
         if exit_status != 0:
-            if retry<3:
-                # sleep 60 s
-                dlog.warning("Get error code %d in calling %s through ssh with job: %s . message: %s" %
-                        (exit_status, cmd, self.job_uuid, stderr.read().decode('utf-8')))
-                dlog.warning("Sleep 60 s and retry the command...")
-                time.sleep(60)
-                return self.block_checkcall(cmd, retry=retry+1)
             raise RuntimeError("Get error code %d in calling %s through ssh with job: %s . message: %s" %
                                (exit_status, cmd, self.job_uuid, stderr.read().decode('utf-8')))
         return stdin, stdout, stderr    
