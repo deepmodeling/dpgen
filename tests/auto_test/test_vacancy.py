@@ -4,7 +4,7 @@ import numpy as np
 import unittest
 import dpdata
 from monty.serialization import loadfn, dumpfn
-from pymatgen import Structure
+from pymatgen.core import Structure
 from pymatgen.io.vasp import Incar
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.analysis.defects.core import Vacancy as pmg_Vacancy

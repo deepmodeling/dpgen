@@ -1,6 +1,6 @@
 import os,sys,json,glob,shutil
 import unittest
-from pymatgen import Structure,Element
+from pymatgen.core import Structure, Element
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 __package__ = 'data'
