@@ -21,7 +21,7 @@ import dpgen.data.tools.bcc as bcc
 import dpgen.data.tools.diamond as diamond
 import dpgen.data.tools.sc as sc
 from dpgen.generator.lib.vasp import incar_upper
-from pymatgen import Structure
+from pymatgen.core import Structure
 from pymatgen.io.vasp import Incar
 from dpgen.remote.decide_machine import  decide_fp_machine
 from dpgen import ROOT_PATH

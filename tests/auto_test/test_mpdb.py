@@ -1,7 +1,7 @@
 import os
 import sys
 import unittest
-from pymatgen import Structure
+from pymatgen.core import Structure
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from monty.serialization import loadfn,dumpfn
 

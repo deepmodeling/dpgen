@@ -1,7 +1,7 @@
 import os
 from dpgen import dlog
-from pymatgen import MPRester,Structure
-from pymatgen.ext.matproj import MPRestError 
+from pymatgen.ext.matproj import MPRester, MPRestError
+from pymatgen.core import Structure
 
 web="materials.org"
 

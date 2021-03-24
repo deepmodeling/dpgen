@@ -4,7 +4,7 @@ import numpy as np
 import unittest
 import dpdata
 from monty.serialization import loadfn, dumpfn
-from pymatgen import Structure
+from pymatgen.core import Structure
 from pymatgen.io.vasp import Incar
 from pymatgen.core.surface import SlabGenerator
 

@@ -5,7 +5,7 @@ import unittest
 import dpdata
 from monty.serialization import loadfn, dumpfn
 from pymatgen.analysis.elasticity.strain import Strain, Deformation
-from pymatgen import Structure
+from pymatgen.core import Structure
 from pymatgen.io.vasp import Incar
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))

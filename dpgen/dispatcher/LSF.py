@@ -14,7 +14,7 @@ class LSF(Batch) :
         except:
             return JobStatus.terminated
         if job_id == "" :
-            raise RuntimeError("job %s is has not been submitted" % self.remote_root)
+            raise RuntimeError("job %s has not been submitted" % self.context.remote_root)
         ret, stdin, stdout, stderr\
             = self.context.block_call ("bjobs " + job_id)
         err_str = stderr.read().decode('utf-8')
