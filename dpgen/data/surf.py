@@ -15,7 +15,7 @@ from dpgen.remote.decide_machine import  decide_fp_machine
 from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher
 #-----PMG---------
 from pymatgen.io.vasp import Poscar
-from pymatgen import Structure,Element
+from pymatgen.core import Structure, Element
 from pymatgen.io.ase import AseAtomsAdaptor
 #-----ASE-------
 from ase.io import read
