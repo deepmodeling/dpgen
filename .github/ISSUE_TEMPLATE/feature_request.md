@@ -1,20 +1,21 @@
 ---
 name: Feature request
-about: Suggest an idea for this project
-title: ''
-labels: ''
+about: Suggest an idea for this project. If this doesn’t work right, [choose a different
+  type]( https://github.com/deepmodeling/dpgen/issues/new/choose).
+title: "[Feature Request] _Replace with Title_"
+labels: new feature
 assignees: ''
 
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+**Summary**
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+<!--Please provide a brief and concise description of the suggested feature or change-->
 
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
+**Detailed Description**
 
-**Additional context**
-Add any other context or screenshots about the feature request here.
+<!--Please explain how you would like to see DPGEN enhanced, what feature(s) you are looking for, what specific problems this will solve. If possible, provide references to relevant background information like publications or web pages, and whether you are planning to implement the enhancement yourself or would like to participate in the implementation. If applicable add a reference to an existing bug report or issue that this will address.-->
+
+**Further Information, Files, and Links**
+
+<!--Put any additional information here, attach relevant text or image files and URLs to external sites, e.g. relevant publications-->
