@@ -1,7 +1,7 @@
 ---
 name: Request for Help
-about: Don't post help requests here, go to discussions instead. If this doesn’t look
-  right, [choose a different type]( https://github.com/deepmodeling/dpgen/issues/new/choose).
+about: Don't post help requests here, go to [discussions](http://github.com/deepmodeling/dpgen/discussions)
+  instead. Or [choose a different type]( https://github.com/deepmodeling/dpgen/issues/new/choose).
 title: ''
 labels: ''
 assignees: ''
