@@ -103,6 +103,8 @@ class Slurm(Batch) :
                 temp_exclude += ","
             temp_exclude = temp_exclude[:-1]
             ret += '#SBATCH --exclude=%s \n' % temp_exclude
+        for flag in res.get('custom_flags', []):
+            ret += '#SBATCH %s \n' % flag
         ret += "\n"
         for ii in res['module_unload_list'] :
             ret += "module unload %s\n" % ii
