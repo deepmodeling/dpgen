@@ -180,13 +180,13 @@ class Surface(Property):
             ptr_data += "Miller_Indices: \tSurf_E(J/m^2) EpA(eV) equi_EpA(eV)\n"
             for ii in all_tasks:
                 task_result = loadfn(os.path.join(ii, 'result_task.json'))
-                natoms = task_result['atom_numbs'][0]
-                epa = task_result['energies'][-1] / task_result['atom_numbs'][0]
+                natoms = np.sum(task_result['atom_numbs'])
+                epa = task_result['energies'][-1] / natoms
                 AA = np.linalg.norm(np.cross(task_result['cells'][0][0], task_result['cells'][0][1]))
 
                 equi_path = os.path.abspath(os.path.join(os.path.dirname(output_file), '../relaxation/relax_task'))
                 equi_result = loadfn(os.path.join(equi_path, 'result.json'))
-                equi_epa = equi_result['energies'][-1] / equi_result['atom_numbs'][0]
+                equi_epa = equi_result['energies'][-1] / np.sum(equi_result['atom_numbs'])
                 structure_dir = os.path.basename(ii)
 
                 Cf = 1.60217657e-16 / (1e-20 * 2) * 0.001
