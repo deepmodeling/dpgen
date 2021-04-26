@@ -273,12 +273,28 @@ class SSHContext (object):
 
     def _get_files(self, 
                    files) :
-        of = self.job_uuid + '.tgz'
-        flist = ""
-        for ii in files :
-            flist += " " + ii
+        of = self.job_uuid + '.tar.gz'
         # remote tar
-        self.block_checkcall('tar czf %s %s' % (of, flist))
+        # If the number of files are large, we may get "Argument list too long" error.
+        # Thus, we may run tar commands for serveral times and tar only 100 files for
+        # each time.
+        per_nfile = 100
+        ntar = len(files) // per_nfile + 1
+        if ntar <= 1:
+            self.block_checkcall('tar czf %s %s' % (of, " ".join(files)))
+        else:
+            of_tar = self.job_uuid + '.tar'
+            for ii in range(ntar):
+                ff = files[per_nfile * ii : per_nfile * (ii+1)]
+                if ii == 0:
+                    # tar cf for the first time
+                    self.block_checkcall('tar cf %s %s' % (of_tar, " ".join(ff)))
+                else:
+                    # append using tar rf
+                    # -r, --append append files to the end of an archive
+                    self.block_checkcall('tar rf %s %s' % (of_tar, " ".join(ff)))
+            # compress the tar file using gzip, and will get a tar.gz file
+            self.block_checkcall('gzip %s' % of_tar)
         # trans
         from_f = os.path.join(self.remote_root, of)
         to_f = os.path.join(self.local_root, of)
