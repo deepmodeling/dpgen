@@ -143,20 +143,21 @@ class Batch(object) :
         for ii,jj in zip(job_dirs, args) :
             ret += 'cd %s\n' % ii
             ret += 'test $? -ne 0 && exit 1\n\n'
-            if self.manual_cuda_devices <= 0:
-                ret += 'if [ ! -f tag_%d_finished ] ;then\n' % idx
-                ret += '  %s 1>> %s 2>> %s \n' % (self.sub_script_cmd(cmd, jj, res), outlog, errlog)
-                if res['allow_failure'] is False:
-                    ret += '  if test $? -ne 0; then exit 1; else touch tag_%d_finished; fi \n' % idx
-                else :
-                    ret += '  if test $? -ne 0; then touch tag_failure_%d; fi \n' % idx
-                    ret += '  touch tag_%d_finished \n' % idx
-                ret += 'fi\n\n'
+            if self.manual_cuda_devices > 0:
+                # set CUDA_VISIBLE_DEVICES
+                ret += 'export CUDA_VISIBLE_DEVICES=%d\n' % (self.cmd_cnt % self.manual_cuda_devices)
+            ret += '{ if [ ! -f tag_%d_finished ] ;then\n' % idx
+            ret += '  %s 1>> %s 2>> %s \n' % (self.sub_script_cmd(cmd, jj, res), outlog, errlog)
+            if res['allow_failure'] is False:
+                ret += '  if test $? -ne 0; then exit 1; else touch tag_%d_finished; fi \n' % idx
             else :
-                # do not support task-wise restart
-                tmp_cmd = ' %s 1>> %s 2>> %s ' % (self.sub_script_cmd(cmd, jj, res), outlog, errlog)
-                ret += 'export CUDA_VISIBLE_DEVICES=%d; %s &\n\n' % ((self.cmd_cnt % self.manual_cuda_devices), tmp_cmd)
+                ret += '  if test $? -ne 0; then touch tag_failure_%d; fi \n' % idx
+                ret += '  touch tag_%d_finished \n' % idx
+            ret += 'fi }'
+            if self.manual_cuda_devices > 0:
+                ret += '&'
                 self.cmd_cnt += 1
+            ret += '\n\n'
             ret += 'cd %s\n' % self.context.remote_root
             ret += 'test $? -ne 0 && exit 1\n'
             if self.manual_cuda_devices > 0 and self.cmd_cnt % (self.manual_cuda_devices * self.manual_cuda_multiplicity) == 0:
