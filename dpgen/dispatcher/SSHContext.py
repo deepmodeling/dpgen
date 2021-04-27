@@ -83,6 +83,20 @@ class SSHSession (object) :
     def close(self) :
         self.ssh.close()
 
+    def exec_command(self, cmd, retry = 0):
+        """Calling self.ssh.exec_command but has an exception check."""
+        try:
+            return self.ssh.exec_command(cmd)
+        except paramiko.ssh_exception.SSHException:
+            # SSH session not active
+            # retry for up to 3 times
+            if retry < 3:
+                dlog.warning("SSH session not active in calling %s, retry the command..." % cmd)
+                # ensure alive
+                self.ensure_alive()
+                return self.exec_command(cmd, retry = retry+1)
+            raise RuntimeError("SSH session not active")
+
 
 class SSHContext (object):
     def __init__ (self,
@@ -162,7 +176,7 @@ class SSHContext (object):
     def block_checkcall(self, 
                         cmd) :
         self.ssh_session.ensure_alive()
-        stdin, stdout, stderr = self.ssh.exec_command(('cd %s ;' % self.remote_root) + cmd)
+        stdin, stdout, stderr = self.ssh_session.exec_command(('cd %s ;' % self.remote_root) + cmd)
         exit_status = stdout.channel.recv_exit_status() 
         if exit_status != 0:
             raise RuntimeError("Get error code %d in calling %s through ssh with job: %s . message: %s" %
@@ -172,7 +186,7 @@ class SSHContext (object):
     def block_call(self, 
                    cmd) :
         self.ssh_session.ensure_alive()
-        stdin, stdout, stderr = self.ssh.exec_command(('cd %s ;' % self.remote_root) + cmd)
+        stdin, stdout, stderr = self.ssh_session.exec_command(('cd %s ;' % self.remote_root) + cmd)
         exit_status = stdout.channel.recv_exit_status() 
         return exit_status, stdin, stdout, stderr
 
@@ -209,7 +223,7 @@ class SSHContext (object):
         return ret        
         
     def call(self, cmd):
-        stdin, stdout, stderr = self.ssh.exec_command(cmd)
+        stdin, stdout, stderr = self.ssh_session.exec_command(cmd)
         # stdin, stdout, stderr = self.ssh.exec_command('echo $$; exec ' + cmd)
         # pid = stdout.readline().strip()
         # print(pid)
