@@ -316,7 +316,9 @@ class SSHContext (object):
                     # -r, --append append files to the end of an archive
                     self.block_checkcall('tar rf %s %s' % (of_tar, " ".join(ff)))
             # compress the tar file using gzip, and will get a tar.gz file
-            self.block_checkcall('gzip %s' % of_tar)
+            # overwrite considering dpgen may stop and restart
+            # -f, --force force overwrite of output file and compress links
+            self.block_checkcall('gzip -f %s' % of_tar)
         # trans
         from_f = os.path.join(self.remote_root, of)
         to_f = os.path.join(self.local_root, of)
