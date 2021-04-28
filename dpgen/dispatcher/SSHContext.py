@@ -200,9 +200,7 @@ class SSHContext (object):
 
     def clean(self) :        
         self.ssh_session.ensure_alive()
-        sftp = self.ssh.open_sftp()        
-        self._rmtree(sftp, self.remote_root)
-        sftp.close()
+        self._rmtree(self.remote_root)
 
     def write_file(self, fname, write_str):
         self.ssh_session.ensure_alive()
@@ -253,17 +251,18 @@ class SSHContext (object):
         self.block_checkcall('kill -15 %s' % cmd_pipes['pid'])
 
 
-    def _rmtree(self, sftp, remotepath, level=0, verbose = False):
-        for f in sftp.listdir_attr(remotepath):
-            rpath = os.path.join(remotepath, f.filename)
-            if stat.S_ISDIR(f.st_mode):
-                self._rmtree(sftp, rpath, level=(level + 1))
-            else:
-                rpath = os.path.join(remotepath, f.filename)
-                if verbose: dlog.info('removing %s%s' % ('    ' * level, rpath))
-                sftp.remove(rpath)
-        if verbose: dlog.info('removing %s%s' % ('    ' * level, remotepath))
-        sftp.rmdir(remotepath)
+    def _rmtree(self, remotepath, verbose = False):
+        # The original implementation method removes files one by one.
+        # In some supercomputers, it's very slow to remove large numbers of files
+        # (e.g. directory containing trajectory) due to bad I/O performance.
+        # Also, if the server latency is high, it is very terrible 
+        # to execute thousands of commands synchronously.
+        # Here, we call `nohup rm -rf $directory >/dev/null &`
+        # to remove a directory asynchronously, which will save a lot 
+        # of time in some situations.
+        if verbose:
+            dlog.info('removing %s' % remotepath)
+        self.block_checkcall('nohup rm -rf %s >/dev/null &' % remotepath)
 
     def _put_files(self,
                    files,
