@@ -4,7 +4,7 @@
       "machine": {
         "batch": "shell",
         "hostname": "",
-        "password": "975481DING!",
+        "password": "PASSWORD",
         "port": 22,
         "username": "root",
         "work_path": "/root/dpgen_work",
@@ -42,7 +42,7 @@
       "machine": {
         "batch": "shell",
         "hostname": "",
-        "password": "975481DING!",
+        "password": "PASSWORD",
         "port": 22,
         "username": "root",
         "work_path": "/root/dpgen_work",
@@ -79,7 +79,7 @@
       "machine": {
         "batch": "shell",
         "hostname": "",
-        "password": "975481DING!",
+        "password": "PASSWORD",
         "port": 22,
         "username": "root",
         "work_path": "/root/dpgen_work",

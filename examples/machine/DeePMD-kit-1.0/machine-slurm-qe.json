@@ -1,0 +1,91 @@
+{
+    "_comment": "Last updated on 2021.4.30 for DP-GEN 0.9.2 by Yuzhi Zhang",
+    "train": [
+        {
+            "_comment": "Specify machine settings",
+            "command": "PATH_TO_DEEPMD/dp",
+            "machine": {
+                "_comment": "that's all",
+                "batch": "slurm",
+                "hostname": "localhost",
+                "port": 22,
+                "username": "USERNAME",
+                "work_path": "PATH_TO_WORK"
+            },
+            "resources": {
+                "_comment": "that's all",
+                "numb_node": 1,
+                "numb_gpu": 1,
+                "task_per_node": 4,
+                "partition": "all",
+                "mem_limit": 16,
+                "exclude_list": [
+                    "gpu06",
+                    "gpu07"
+                ],
+                "source_list": [
+                    "PATH/train_new.env"
+                ],
+                "module_list": [
+                    "intel"
+                ],
+                "time_limit": "23:0:0"
+            }
+        }
+    ],
+    "model_devi": [
+        {
+            "machine": {
+                "machine_type": "slurm",
+                "hostname": "localhost",
+                "port": 22,
+                "username": "USERNAME",
+                "work_path": "PATH_TO_WORK",
+                "_comment": "that's all"
+            },
+            "resources": {
+                "numb_node": 1,
+                "numb_gpu": 1,
+                "task_per_node": 4,
+                "partition": "all",
+                "mem_limit": 16,
+                "exclude_list": [],
+                "source_list": [
+                    "PATH/lmp_new.env"
+                ],
+                "module_list": [],
+                "time_limit": "23:0:0",
+                "_comment": "that's all"
+            },
+            "command": "lmp_serial",
+            "_comment": "DP-GEN will put 5 tasks together in one submitting script.",
+            "group_size": 5
+        }
+    ],
+    "fp": [
+        {
+            "machine": {
+                "machine_type": "slurm",
+                "hostname": "xxx.xxx.xxx.xxx",
+                "port": 22,
+                "username": "USERNAME",
+                "work_path": "PATH_TO_WORK"
+            },
+            "resources": {
+                "task_per_node": 8,
+                "numb_gpu": 0,
+                "exclude_list": [],
+                "_comment": "that's all",
+                "with_mpi": false,
+                "source_list": [],
+                "module_list": [
+                    "mpich/3.2.1-intel-2017.1"
+                ],
+                "time_limit": "120:0:0",
+                "partition": "C032M0128G"
+            },
+            "command": "mpirun -n 8 /gpfs/share/home/1600017784/yuzhi/soft/QE-mpi/PW/src/pw.x < input",
+            "group_size": 1
+        }
+    ]
+}
