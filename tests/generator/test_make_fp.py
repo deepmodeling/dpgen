@@ -821,7 +821,6 @@ class TestMakeFPPWmat(unittest.TestCase):
         atom_types = [0, 1, 2, 2, 0, 1]
         type_map = jdata['type_map']
         _make_fake_md(0, md_descript, atom_types, type_map)
-        print("Anguse : debug pwmat ", jdata)
         make_fp(0, jdata, {})
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
