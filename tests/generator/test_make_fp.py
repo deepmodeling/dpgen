@@ -444,6 +444,7 @@ def _check_pwmat_input(testCase, idx):
 
 class TestMakeFPPwscf(unittest.TestCase):
     def test_make_fp_pwscf(self):
+        setUpModule()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_pwscf_file, 'r') as fp :
@@ -470,6 +471,7 @@ class TestMakeFPPwscf(unittest.TestCase):
         shutil.rmtree('iter.000000')
 
     def test_make_fp_pwscf_old(self):
+        setUpModule()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_pwscf_old_file, 'r') as fp :
@@ -497,6 +499,7 @@ class TestMakeFPPwscf(unittest.TestCase):
 
 class TestMakeFPSIESTA(unittest.TestCase):
     def test_make_fp_siesta(self):
+        setUpModule()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_siesta_file, 'r') as fp :
@@ -524,6 +527,7 @@ class TestMakeFPSIESTA(unittest.TestCase):
 
 class TestMakeFPVasp(unittest.TestCase):
     def test_make_fp_vasp(self):
+        setUpModule()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_file, 'r') as fp :
@@ -554,6 +558,7 @@ class TestMakeFPVasp(unittest.TestCase):
         shutil.rmtree('iter.000000')
 
     def test_make_fp_vasp_old(self):
+        setUpModule()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_old_file, 'r') as fp :
@@ -616,6 +621,7 @@ class TestMakeFPVasp(unittest.TestCase):
 
     def test_make_fp_vasp_from_incar(self):
         ## Verify if user chooses to diy VASP INCAR totally.
+        setUpModule()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_diy_file, 'r') as fp :
@@ -649,6 +655,7 @@ class TestMakeFPVasp(unittest.TestCase):
 
     def test_make_fp_vasp_ele_temp(self):
         ## Verify if user chooses to diy VASP INCAR totally.
+        setUpModule()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_diy_file, 'r') as fp :
@@ -684,6 +691,7 @@ class TestMakeFPVasp(unittest.TestCase):
 
 class TestMakeFPGaussian(unittest.TestCase):
     def make_fp_gaussian(self, multiplicity="auto"):
+        setUpModule()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_gaussian_file, 'r') as fp :
@@ -734,6 +742,7 @@ class TestMakeFPGaussian(unittest.TestCase):
 
 class TestMakeFPCP2K(unittest.TestCase):
     def test_make_fp_cp2k(self):
+        setUpModule()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_cp2k_file, 'r') as fp :
@@ -761,6 +770,7 @@ class TestMakeFPCP2K(unittest.TestCase):
         _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
     def test_make_fp_cp2k_exinput(self):
+        setUpModule()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_cp2k_file_exinput, 'r') as fp :
@@ -792,6 +802,7 @@ class TestMakeFPCP2K(unittest.TestCase):
 
 class TestMakeFPPWmat(unittest.TestCase):
     def test_make_fp_pwmat(self):
+        setUpModule()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_pwmat_file, 'r') as fp :
@@ -810,6 +821,7 @@ class TestMakeFPPWmat(unittest.TestCase):
         atom_types = [0, 1, 2, 2, 0, 1]
         type_map = jdata['type_map']
         _make_fake_md(0, md_descript, atom_types, type_map)
+        print("Anguse : debug pwmat ", jdata)
         make_fp(0, jdata, {})
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
