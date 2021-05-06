@@ -83,23 +83,23 @@ and if everything works, it gives
 ```
 DeepModeling
 ------------
-Version: 0.5.1.dev53+gddbeee7.d20191020
-Date:    Oct-07-2019
-Path:    /home/me/miniconda3/envs/py363/lib/python3.6/site-packages/dpgen-0.5.1.dev53+gddbeee7.d20191020-py3.6.egg/dpgen
+Version: 0.9.2
+Date:    Mar-25-2021
+Path:    /root/yuzhi/dpgen-test/lib/python3.6/site-packages/dpgen
 
-Dependency
+Reference
 ------------
-     numpy     1.17.2   /home/me/miniconda3/envs/py363/lib/python3.6/site-packages/numpy
-    dpdata     0.1.10   /home/me/miniconda3/envs/py363/lib/python3.6/site-packages/dpdata-0.1.10-py3.6.egg/dpdata
-  pymatgen   2019.7.2   /home/me/miniconda3/envs/py363/lib/python3.6/site-packages/pymatgen
-     monty      2.0.4   /home/me/miniconda3/envs/py363/lib/python3.6/site-packages/monty
-       ase     3.17.0   /home/me/miniconda3/envs/py363/lib/python3.6/site-packages/ase-3.17.0-py3.6.egg/ase
-  paramiko      2.6.0   /home/me/miniconda3/envs/py363/lib/python3.6/site-packages/paramiko
- custodian  2019.2.10   /home/me/miniconda3/envs/py363/lib/python3.6/site-packages/custodian
+Please cite:
+Yuzhi Zhang, Haidi Wang, Weijie Chen, Jinzhe Zeng, Linfeng Zhang, Han Wang, and Weinan E,
+DP-GEN: A concurrent learning platform for the generation of reliable deep learning
+based potential energy models, Computer Physics Communications, 2020, 107206.
+------------
 
 Description
 ------------
-usage: dpgen [-h] {init_surf,init_bulk,run,run/report,test,db} ...
+usage: dpgen [-h]
+             {init_surf,init_bulk,auto_gen_param,init_reaction,run,run/report,collect,simplify,autotest,db}
+             ...
 
 dpgen is a convenient script that uses DeepGenerator to prepare initial data,
 drive DeepMDkit and analyze results. This script works based on several sub-
@@ -107,18 +107,21 @@ commands with their own options. To see the options for the sub-commands, type
 "dpgen sub-command -h".
 
 positional arguments:
-  {init_surf,init_bulk,run,run/report,test,db}
+  {init_surf,init_bulk,auto_gen_param,init_reaction,run,run/report,collect,simplify,autotest,db}
     init_surf           Generating initial data for surface systems.
     init_bulk           Generating initial data for bulk systems.
+    auto_gen_param      auto gen param.json
+    init_reaction       Generating initial data for reactive systems.
     run                 Main process of Deep Potential Generator.
     run/report          Report the systems and the thermodynamic conditions of
                         the labeled frames.
-    test                Auto-test for Deep Potential.
-    db                  Collecting data from Deep Generator.
+    collect             Collect data.
+    simplify            Simplify data.
+    autotest            Auto-test for Deep Potential.
+    db                  Collecting data from DP-GEN.
 
 optional arguments:
   -h, --help            show this help message and exit
-
 ```
 
 
@@ -1091,7 +1094,7 @@ An example for `MACHINE` is:
   "train": [
     {
       "machine": {
-        "machine_type": "slurm",
+        "batch": "slurm",
         "hostname": "localhost",
         "port": 22,
         "username": "Angus",
@@ -1110,13 +1113,13 @@ An example for `MACHINE` is:
         "time_limit": "23:0:0",
         "qos": "data"
       },
-      "deepmd_path": "....../tf1120-lowprec"
+      "command": "USERPATH/dp"
     }
   ],
   "model_devi": [
     {
       "machine": {
-        "machine_type": "slurm",
+        "batch": "slurm",
         "hostname": "localhost",
         "port": 22,
         "username": "Angus",
@@ -1142,7 +1145,7 @@ An example for `MACHINE` is:
   "fp": [
     {
       "machine": {
-        "machine_type": "slurm",
+        "batch": "slurm",
         "hostname": "localhost",
         "port": 22,
         "username": "Angus",
@@ -1175,17 +1178,14 @@ Following table illustrates which key is needed for three types of machine: `tra
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
 | machine | NEED  | NEED | NEED
 | resources | NEED | NEED | NEED
-| deepmd_path | NEED |
-| command |  |NEED |  NEED |
-| group_size | | NEED | NEED |
+| command | NEED  |NEED |  NEED  
+| group_size | NEED | NEED | NEED |
 
 The following table gives explicit descriptions on keys in param.json.
 
 
  Key   | Type       | Example                                                  | Discription                                                     |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
-|deepmd_path | String |"......tf1120-lowprec" | Installed directory of DeepMD-Kit 0.x, which should contain `bin lib include`.
-| python_path | String | "....../python3.6/bin/python" | Python path for DeePMD-kit 1.x installed. This option should not be used with `deepmd_path` together.
 | machine | Dict | | Settings of the machine for TASK.
 | resources | Dict | | Resources needed for calculation.
 | # Followings are keys in resources
