@@ -381,9 +381,7 @@ In `PARAM`, you can specialize the task as you expect.
   "init_data_sys": [
     "CH4.POSCAR.01x01x01/02.md/sys-0004-0001/deepmd"
   ],
-  "init_batch_size": [
-    8
-  ],
+
   "sys_configs_prefix": "....../init/",
   "sys_configs": [
     [
@@ -393,63 +391,73 @@ In `PARAM`, you can specialize the task as you expect.
       "CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale*/00001*/POSCAR"
     ]
   ],
-  "sys_batch_size": [
-    8,
-    8,
-    8,
-    8
-  ],
+ 
   "_comment": " that's all ",
   "numb_models": 4,
   "train_param": "input.json",
   "default_training_param": {
-    "_comment": "that's all",
-    "use_smooth": true,
-    "sel_a": [
-      16,
-      4
-    ],
-    "rcut_smth": 0.5,
-    "rcut": 5,
-    "filter_neuron": [
-      10,
-      20,
-      40
-    ],
-    "filter_resnet_dt": false,
-    "n_axis_neuron": 12,
-    "n_neuron": [
-      100,
-      100,
-      100
-    ],
-    "resnet_dt": true,
-    "coord_norm": true,
-    "type_fitting_net": false,
-    "systems": [],
-    "set_prefix": "set",
-    "stop_batch": 40000,
-    "batch_size": 1,
-    "start_lr": 0.001,
-    "decay_steps": 200,
-    "decay_rate": 0.95,
-    "seed": 0,
-    "start_pref_e": 0.02,
-    "limit_pref_e": 2,
-    "start_pref_f": 1000,
-    "limit_pref_f": 1,
-    "start_pref_v": 0.0,
-    "limit_pref_v": 0.0,
-    "disp_file": "lcurve.out",
-    "disp_freq": 1000,
-    "numb_test": 4,
-    "save_freq": 1000,
-    "save_ckpt": "model.ckpt",
-    "load_ckpt": "model.ckpt",
-    "disp_training": true,
-    "time_training": true,
-    "profiling": false,
-    "profiling_file": "timeline.json"
+     "model": {
+            "type_map": [
+                "H",
+                "C"
+            ],
+            "descriptor": {
+                "type": "se_a",
+                "sel": [
+                    16,
+                    4
+                ],
+                "rcut_smth": 0.5,
+                "rcut": 5,
+                "neuron": [
+                    120,
+                    120,
+                    120
+                ],
+                "resnet_dt": true,
+                "axis_neuron": 12,
+                "seed": 1
+            },
+            "fitting_net": {
+                "neuron": [
+                    25,
+                    50,
+                    100
+                ],
+                "resnet_dt": false,
+                "seed": 1
+            }
+        },
+        "learning_rate": {
+            "type": "exp",
+            "start_lr": 0.001,
+            "decay_steps": 100,
+            "decay_rate": 0.95
+        },
+        "loss": {
+            "start_pref_e": 0.02,
+            "limit_pref_e": 2,
+            "start_pref_f": 1000,
+            "limit_pref_f": 1,
+            "start_pref_v": 0.0,
+            "limit_pref_v": 0.0
+        },
+        "training": {
+            "set_prefix": "set",
+            "stop_batch": 2000,
+            "batch_size": 1,
+            "disp_file": "lcurve.out",
+            "disp_freq": 1000,
+            "numb_test": 4,
+            "save_freq": 1000,
+            "save_ckpt": "model.ckpt",
+            "load_ckpt": "model.ckpt",
+            "disp_training": true,
+            "time_training": true,
+            "profiling": false,
+            "profiling_file": "timeline.json",
+            "_comment": "that's all"
+        }
   },
   "model_devi_dt": 0.002,
   "model_devi_skip": 0,
@@ -515,15 +523,15 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
  | ***init_data_sys*** | List of string|["CH4.POSCAR.01x01x01/.../deepmd"] |Directories of initial data. You may use either absolute or relative path here.
  | ***sys_format*** | String | "vasp/poscar" | Format of initial data. It will be `vasp/poscar` if not set.
  | init_multi_systems | Boolean | false | If set to `true`, `init_data_sys` directories should contain sub-directories of various systems. DP-GEN will regard all of these sub-directories as inital data systems.
- | **init_batch_size**   | String of integer     | [8]                                                            | Each number is the batch_size of corresponding system  for training in `init_data_sys`. One recommended rule for setting the `sys_batch_size` and `init_batch_size` is that `batch_size` mutiply number of atoms ot the stucture should be larger than 32. If set to `auto`, batch size will be 32 divided by number of atoms. |
+ | init_batch_size   | String of integer     | [8]                                                            | Each number is the batch_size of corresponding system  for training in `init_data_sys`. One recommended rule for setting the `sys_batch_size` and `init_batch_size` is that `batch_size` mutiply number of atoms ot the stucture should be larger than 32. If set to `auto`, batch size will be 32 divided by number of atoms. |
   | sys_configs_prefix | String | "/sharedext4/.../data/" | Prefix of `sys_configs`
  | **sys_configs**   | List of list of string         | [<br />["/sharedext4/.../POSCAR"], <br />["....../POSCAR"]<br />] | Containing directories of structures to be explored in iterations.Wildcard characters are supported here. |
-| **sys_batch_size**      | List of integer   | [8, 8]                                                 | Each number  is the batch_size for training of corresponding system in `sys_configs`. If set to `auto`, batch size will be 32 divided by number of atoms. |
+| sys_batch_size      | List of integer   | [8, 8]                                                 | Each number  is the batch_size for training of corresponding system in `sys_configs`. If set to `auto`, batch size will be 32 divided by number of atoms. |
 | *#Training*
 | **numb_models**      | Integer      | 4 (recommend)                                                           | Number of models to be trained in `00.train`. |
 | training_iter0_model_path  | list of string  |  ["/path/to/model0_ckpt/", ...]  | The model used to init the first iter training. Number of element should be equal to `numb_models` |
 | training_init_model  | bool  |  False  | Iteration > 0, the model parameters will be initilized from the model trained at the previous iteration. Iteration == 0, the model parameters will be initialized from `training_iter0_model_path`.  |
-| **default_training_param** | Dict | {<br />... <br />"use_smooth": true, <br/>"sel_a": [16, 4], <br/>"rcut_smth": 0.5, <br/>"rcut": 5, <br/>"filter_neuron": [10, 20, 40], <br/>...<br />} | Training parameters for `deepmd-kit` in `00.train`. <br /> You can find instructions from here: (https://github.com/deepmodeling/deepmd-kit)..<br /> We commonly let `stop_batch` = 200 * `decay_steps`. |
+| **default_training_param** | Dict |  | Training parameters for `deepmd-kit` in `00.train`. <br /> You can find instructions from here: (https://github.com/deepmodeling/deepmd-kit)..<br /> |
 | *#Exploration*
 | **model_devi_dt** | Float | 0.002 (recommend) | Timestep for MD |
 | **model_devi_skip** | Integer | 0 | Number of structures skipped for fp in each MD
