@@ -9,11 +9,6 @@
     "al.hcp.02x02x02/02.md/sys-0016/deepmd",
     "al.bcc.02x02x02/02.md/sys-0016/deepmd"
 			],
-    "init_batch_size":	[
-    1,
-    2,
-    2
-    ],
     "sys_configs":	[
 
     ["/data1/yfb222333/2_dpgen_gpu_multi/init/al.fcc.02x02x02/01.scale_pert/sys-0032/scale-1.000/00000[0-4]/POSCAR"],

@@ -4,11 +4,9 @@
     "init_data_prefix":	"/home/jzzeng/0719dodecane/gen/",
     "init_data_sys":	["init_data"],
 	  "init_multi_systems": true,
-    "init_batch_size":	["auto"],
     "sys_configs":	[
 	    ["/home/jzzeng/0719dodecane/gen/data.dodecane.atomic"]
     ],
-    "sys_batch_size":	["auto"],
 	  "sys_format":"lammps/lmp",
     "numb_models":	4,
     "train_param":	"input.json",
