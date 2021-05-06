@@ -1,7 +1,7 @@
 {
     "_comment":		"training on localhost ",
     "_comment" : "This is for DeePMD-kit 1.*",
-    "python_path":	"/home/wanghan/local/deepmd/1.*/python",
+    "train_command" : "/home/wanghan/local/deepmd/1.*/dp",
     "train_machine":	{
 	"batch":	"shell",
 	"work_path" :	"/home/wanghan/tmp/subs/"
