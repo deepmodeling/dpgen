@@ -73,6 +73,8 @@ class SSHSession (object) :
         assert(self.ssh.get_transport().is_active())
         transport = self.ssh.get_transport()
         transport.set_keepalive(60)
+        # reset sftp
+        self._sftp = None
 
     def get_ssh_client(self) :
         return self.ssh
@@ -97,6 +99,14 @@ class SSHSession (object) :
                 return self.exec_command(cmd, retry = retry+1)
             raise RuntimeError("SSH session not active")
 
+    @property
+    def sftp(self):
+        """Returns sftp. Open a new one if not existing."""
+        if self._sftp is None:
+            self.ensure_alive()
+            self._sftp = self.ssh.open_sftp()
+        return self._sftp
+
 
 class SSHContext (object):
     def __init__ (self,
@@ -114,15 +124,17 @@ class SSHContext (object):
         self.ssh_session = ssh_session
         self.ssh_session.ensure_alive()
         try:
-           sftp = self.ssh_session.ssh.open_sftp() 
-           sftp.mkdir(self.remote_root)
-           sftp.close()
+           self.sftp.mkdir(self.remote_root)
         except: 
            pass
     
     @property
     def ssh(self):
         return self.ssh_session.get_ssh_client()  
+
+    @property
+    def sftp(self):
+        return self.ssh_session.sftp
 
     def close(self):
         self.ssh_session.close()
@@ -206,30 +218,24 @@ class SSHContext (object):
 
     def write_file(self, fname, write_str):
         self.ssh_session.ensure_alive()
-        sftp = self.ssh.open_sftp()
-        with sftp.open(os.path.join(self.remote_root, fname), 'w') as fp :
+        with self.sftp.open(os.path.join(self.remote_root, fname), 'w') as fp :
             fp.write(write_str)
-        sftp.close()
 
     def read_file(self, fname):
         self.ssh_session.ensure_alive()
-        sftp = self.ssh.open_sftp()
-        with sftp.open(os.path.join(self.remote_root, fname), 'r') as fp:
+        with self.sftp.open(os.path.join(self.remote_root, fname), 'r') as fp:
             ret = fp.read().decode('utf-8')
-        sftp.close()
         return ret
 
     def check_file_exists(self, fname):
         self.ssh_session.ensure_alive()
-        sftp = self.ssh.open_sftp()
         try:
-            sftp.stat(os.path.join(self.remote_root, fname)) 
+            self.sftp.stat(os.path.join(self.remote_root, fname)) 
             ret = True
         except IOError:
             ret = False
-        sftp.close()
         return ret        
-        
+
     def call(self, cmd):
         stdin, stdout, stderr = self.ssh_session.exec_command(cmd)
         # stdin, stdout, stderr = self.ssh.exec_command('echo $$; exec ' + cmd)
@@ -281,17 +287,15 @@ class SSHContext (object):
         # trans
         from_f = os.path.join(self.local_root, of)
         to_f = os.path.join(self.remote_root, of)
-        sftp = self.ssh.open_sftp()
         try:
-           sftp.put(from_f, to_f)
+           self.sftp.put(from_f, to_f)
         except FileNotFoundError:
            raise FileNotFoundError("from %s to %s Error!"%(from_f,to_f))
         # remote extract
         self.block_checkcall('tar xf %s' % of)
         # clean up
         os.remove(from_f)
-        sftp.remove(to_f)
-        sftp.close()
+        self.sftp.remove(to_f)
 
     def _get_files(self, 
                    files) :
@@ -324,8 +328,7 @@ class SSHContext (object):
         to_f = os.path.join(self.local_root, of)
         if os.path.isfile(to_f) :
             os.remove(to_f)
-        sftp = self.ssh.open_sftp()
-        sftp.get(from_f, to_f)
+        self.sftp.get(from_f, to_f)
         # extract
         cwd = os.getcwd()
         os.chdir(self.local_root)
@@ -334,5 +337,4 @@ class SSHContext (object):
         os.chdir(cwd)        
         # cleanup
         os.remove(to_f)
-        sftp.remove(from_f)
-        sftp.close()
+        self.sftp.remove(from_f)
