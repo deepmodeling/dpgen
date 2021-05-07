@@ -1,9 +1,9 @@
 {
     "_comment":		"training on localhost ",
-    "python_path":	"/gpfs/home/tzhu/anaconda3/envs/python3.6/bin/python",
+    "train_command":	"/gpfs/home/tzhu/anaconda3/envs/python3.6/bin/dp",
     "train_machine":	{
       "machine_type":	"lsf",
-      "hostname" :	"59.78.197.77",
+      "hostname" :	"xxx.xxx.xxx.xxx",
       "port" :	22,
       "username":	"tzhu",
       "work_path" :	"/gpfs/home/tzhu/jzzeng/dpgen_workdir",
@@ -31,7 +31,7 @@
     "model_devi_group_size": 1,
     "model_devi_machine":	{
       "machine_type":	"lsf",
-      "hostname" :	"59.78.197.77",
+      "hostname" :	"xxx.xxx.xxx.xxx",
       "port" :	22,
       "username":	"tzhu",
       "work_path" :	"/gpfs/home/tzhu/jzzeng/dpgen_workdir",
@@ -58,7 +58,7 @@
     "fp_group_size":	1,
     "fp_machine":	{
       "machine_type":	"pbs",
-      "hostname" :	"59.78.189.132",
+      "hostname" :	"xxx.xxx.xxx.xxx",
       "port" :	2323,
       "username":	"tzhu",
       "work_path" :	"/public/home/tzhu/jzzeng/dpgen_workdir",

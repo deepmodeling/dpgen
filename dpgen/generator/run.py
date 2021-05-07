@@ -301,13 +301,7 @@ def make_train (iter_index,
     except KeyError:
         mdata = set_version(mdata)
     # setup data systems
-    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
-        # 0.x
-        jinput['systems'] = init_data_sys
-        jinput['batch_size'] = init_batch_size
-        if use_ele_temp:
-            raise RuntimeError('the electron temperature is only supported by deepmd-kit >= 1.0.0, please upgrade your deepmd-kit')
-    else:
+    if LooseVersion(mdata["deepmd_version"]) >= LooseVersion('1') and LooseVersion(mdata["deepmd_version"]) < LooseVersion('2'):
         # 1.x
         jinput['training']['systems'] = init_data_sys
         jinput['training']['batch_size'] = init_batch_size
@@ -323,6 +317,8 @@ def make_train (iter_index,
             jinput['model']['fitting_net'].pop('numb_fparam', None)
         else:
             raise RuntimeError('invalid setting for use_ele_temp ' + str(use_ele_temp))
+    else:
+        raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x version!" )
     # set training reuse model
     if training_reuse_iter is not None and iter_index >= training_reuse_iter:
         jinput['training']['auto_prob_style'] \
@@ -344,14 +340,13 @@ def make_train (iter_index,
                 raise RuntimeError ("data sys %s does not exists, cwd is %s" % (jj, os.getcwd()))
         os.chdir(cwd)
         # set random seed for each model
-        if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
-            # 0.x
-            jinput['seed'] = random.randrange(sys.maxsize) % (2**32)
-        else:
+        if LooseVersion(mdata["deepmd_version"]) >= LooseVersion('1') and LooseVersion(mdata["deepmd_version"]) < LooseVersion('2'):
             # 1.x
             jinput['model']['descriptor']['seed'] = random.randrange(sys.maxsize) % (2**32)
             jinput['model']['fitting_net']['seed'] = random.randrange(sys.maxsize) % (2**32)
             jinput['training']['seed'] = random.randrange(sys.maxsize) % (2**32)
+        else:
+            raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x version!" )
         # set model activation function
         if model_devi_activation_func is not None:
             if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
@@ -429,12 +424,9 @@ def run_train (iter_index,
         mdata["deepmd_version"]
     except KeyError:
         mdata = set_version(mdata)
-    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
-        # 0.x
-        deepmd_path = mdata['deepmd_path']
-    else:
-        # 1.x
-        train_command = mdata.get('train_command', 'dp')
+
+    
+    train_command = mdata.get('train_command', 'dp')
     train_resources = mdata['train_resources']
 
     # paths
@@ -451,13 +443,8 @@ def run_train (iter_index,
         task_path = os.path.join(work_path, train_task_fmt % ii)
         all_task.append(task_path)
     commands = []
-    if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
-        # 0.x
-        command = os.path.join(deepmd_path, 'bin/dp_train %s' % train_input_file)
-        commands.append(command)
-        command = os.path.join(deepmd_path, 'bin/dp_frz')
-        commands.append(command)
-    else:
+    if LooseVersion(mdata["deepmd_version"]) >= LooseVersion('1') and LooseVersion(mdata["deepmd_version"]) < LooseVersion('2'):
+        
         # 1.x
         ## Commands are like `dp train` and `dp freeze`
         ## train_command should not be None
@@ -470,6 +457,8 @@ def run_train (iter_index,
         commands.append(command)
         command = '%s freeze' % train_command
         commands.append(command)
+    else:
+        raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x version!" )
 
     #_tasks = [os.path.basename(ii) for ii in all_task]
     # run_tasks = []
@@ -2289,24 +2278,8 @@ def post_fp (iter_index,
             shutil.rmtree(ii)
 
 def set_version(mdata):
-    if 'deepmd_path' in mdata:
-        deepmd_version = '0.1'
-    #elif 'python_path' in mdata:
-    #    deepmd_version = '1'
-    #elif 'train_command' in mdata:
-    #    deepmd_version = '1'
-    elif 'train' in mdata:
-        if 'deepmd_path' in mdata['train'][0]:
-            deepmd_version = '0.1'
-        else:
-            deepmd_version = '1'
-    #    elif 'python_path' in mdata['train'][0]:
-    #        deepmd_version = '1'
-    #    elif 'command' in mdata['train']:
-    #        deepmd_version = '1'
-    else:
-        deepmd_version = '1'
-    # set
+    
+    deepmd_version = '1'
     mdata['deepmd_version'] = deepmd_version
     return mdata
 
