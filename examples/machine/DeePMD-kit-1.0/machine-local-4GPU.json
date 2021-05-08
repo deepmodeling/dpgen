@@ -1,0 +1,68 @@
+{
+  "train": [
+    {
+      "machine": {
+        "batch":     "shell",
+    "work_path": "/home/user/Work/DeePMD/01-Test/dpgen_example/dpwork"
+      },
+      "resources":{
+        "numb_gpu":      0,
+        "numb_node":     1,
+        "task_per_node": 4,
+    "manual_cuda_devices": 4,
+    "cuda_multi_task": true,
+        "partition":     "gpu",
+        "exclude_list":  [],
+        "mem_limit":     64,
+        "source_list":   [],
+        "module_list":   [],
+        "time_limit":    "23:0:0"
+      },
+      "command":    "/home/user/anaconda3/bin/dp",
+      "group_size": 4
+    }
+  ],
+
+  "model_devi": [
+    {
+      "machine": {
+        "batch":     "shell",
+    "work_path": "/home/user/Work/DeePMD/01-Test/dpgen_example/dpwork"
+      },
+      "resources": {
+        "numb_gpu":      0,
+        "numb_node":     1,
+        "task_per_node": 4,
+        "manual_cuda_devices": 4,
+        "cuda_multi_task": true,
+        "partition":     "gpu",
+        "exclude_list":  [],
+        "mem_limit":     64,
+        "source_list":   [],
+        "module_list":   [],
+        "time_limit":    "23:0:0"
+      },
+      "command":    "/home/user/Soft/Deepmd/lammps-stable_29Oct2020/src/lmp_mpi",
+      "group_size": 240
+    }
+  ],
+
+  "fp": [
+    {
+      "machine": {
+        "batch":     "shell",
+    "work_path": "/home/user/Work/DeePMD/01-Test/dpgen_example/dpwork"
+      },
+      "resources": {
+        "allow_failure": true,
+        "ratio_failue":  0.05,
+        "task_per_node": 16,
+        "with_mpi":      true,
+        "source_list":   ["/opt/intel/parallel_studio_xe_2020/psxevars.sh"],
+        "envs":          {"PATH" : "/home/user/Soft/VASP/vasp.5.4.4-allbak/bin:$PATH"}
+      },
+      "command":    "vasp_std",
+      "group_size": 30
+    }
+  ]
+}
