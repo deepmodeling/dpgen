@@ -454,6 +454,7 @@ def run_train (iter_index,
             command = "{ if [ ! -f model.ckpt.index ]; then %s --init-model old/model.ckpt; else %s --restart model.ckpt; fi }" % (command, command)
         else:
             command = "{ if [ ! -f model.ckpt.index ]; then %s; else %s --restart model.ckpt; fi }" % (command, command)
+        command = "/bin/sh -c '%s'" % command
         commands.append(command)
         command = '%s freeze' % train_command
         commands.append(command)
@@ -1014,6 +1015,7 @@ def run_model_devi (iter_index,
     all_task = glob.glob(os.path.join(work_path, "task.*"))
     all_task.sort()
     command = "{ if [ ! -f dpgen.restart.10000 ]; then %s -i input.lammps -v restart 0; else %s -i input.lammps -v restart 1; fi }" % (lmp_exec, lmp_exec)
+    command = "/bin/sh -c '%s'" % command
     commands = [command]
 
     fp = open (os.path.join(work_path, 'cur_job.json'), 'r')
