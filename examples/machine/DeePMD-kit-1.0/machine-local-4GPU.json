@@ -16,8 +16,8 @@
       "resources":{
         "_comment" : "The number of nodes.",
         "numb_node":     1,
-        "_comment" : "The number of GPUs.",
-        "numb_gpu":      1,
+        "_comment" : "If you choose to run with multiple GPUs simultaneously, just ignore numb_gpu.",
+        "numb_gpu":      0,
         "_comment" : "The number of CPUs.",
         "task_per_node": 4,
         "_comment" : "The number of GPUs that can be used for each task.",
@@ -26,16 +26,9 @@
         "manual_cuda_multiplicity":1,
         "_comment" : "Allow the multi-GPU task running.",
         "cuda_multi_task": true,
-        "_comment" : "Partition.",
-        "partition":     "gpu",
-        "_comment" : "Memory limit.",
-        "mem_limit":     64,
-        "_comment" : "None for local device",
-        "exclude_list":  [],
         "module_list":   [],
-        "source_list":   ["/opt/intel/parallel_studio_xe_2020/psxevars.sh"],
-        "_comment" : "Time limit.",
-        "time_limit":    "23:0:0"
+        "_comment" : "Environment to be activated. This will generate source xxx/psxevars.sh in scripts. ",
+        "source_list":   ["/opt/intel/parallel_studio_xe_2020/psxevars.sh"]
       },
       "_comment" : "DP-GEN will put 4 tasks together in one submitting script.",
       "group_size": 4
@@ -50,17 +43,13 @@
       },
       "resources": {
         "numb_node":     1,
-        "numb_gpu":      4,
+        "numb_gpu":      0,
         "task_per_node": 4,
         "manual_cuda_devices": 4,
         "manual_cuda_multiplicity":1,
         "cuda_multi_task": true,
-        "partition":     "gpu",
-        "exclude_list":  [],
-        "mem_limit":     64,
         "source_list":   [],
-        "module_list":   [],
-        "time_limit":    "23:0:0"
+        "module_list":   []
       },
       "command":    "/home/user/Soft/Deepmd/lammps-stable_29Oct2020/src/lmp_mpi",
       "group_size": 4
@@ -80,7 +69,8 @@
         "with_mpi":      true,
         "_comment" : "Load the intel compiler.",
         "source_list":   ["/opt/intel/parallel_studio_xe_2020/psxevars.sh"],
-        "envs":          {"PATH" : "/home/user/Soft/VASP/vasp.5.4.4-allbak/bin:$PATH"}
+        "envs":          {"PATH" : "/home/user/Soft/VASP/vasp.5.4.4-allbak/bin:$PATH"},
+        "_comment" : "This will generate export PATH=/home/user/Soft/VASP/vasp.5.4.4-allbak/bin:$PATH in scripts;"
       },
       "command":    "vasp_std",
       "group_size": 1
