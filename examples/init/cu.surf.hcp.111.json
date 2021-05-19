@@ -1,7 +1,7 @@
 {
   "_comments": "This is an example to generate Cu-hcp surface configurations.",
   "_comments": "This example is used in Computer Physics Communications, 2020, 107206.",
-  "_coments" : "Last modified on 2019.8.27 by Yuzhi Zhang.",
+  "_comments" : "Last modified on 2019.8.27 by Yuzhi Zhang.",
   "stages": [
     1,
     2
