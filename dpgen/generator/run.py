@@ -1135,15 +1135,21 @@ def run_model_devi (iter_index,
         topol_filename = gromacs_settings.get("topol_filename", "processed.top")
         conf_filename = gromacs_settings.get("conf_filename", "conf.gro")
         index_filename = gromacs_settings.get("index_filename", "index.raw")
+        # Initial reference to process pbc condition.
+        # Default is em.tpr
+        ref_filename = gromacs_settings.get("ref_filename", "em.tpr")
         deffnm = gromacs_settings.get("deffnm", "deepmd")
         maxwarn = gromacs_settings.get("maxwarn", 1)
+        traj_filename = gromacs_settings.get("traj_filename", "deepmd_traj.gro")
         nsteps = cur_job["nsteps"]
         command = "%s grompp -f %s -p %s -c %s -o %s -maxwarn %d" % (lmp_exec, mdp_filename, topol_filename, conf_filename, deffnm, maxwarn)
         command += "&& %s mdrun -deffnm %s -nsteps %d" %(lmp_exec, deffnm, nsteps) 
+        command += "&& echo -e \"MOL\nMOL\n\" | %s trjconv -s %s -f %s.trr -o %s -pbc mol -ur compact -center" % (lmp_exec, ref_filename, deffnm, traj_filename)
+        command += "&& python model_devi.py %s" % traj_filename
         commands = [command]
 
-        forward_files = [mdp_filename, topol_filename, conf_filename, index_filename,  "input.json" ]
-        backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , 'model_devi.out', 'model_devi.log']
+        forward_files = [mdp_filename, topol_filename, conf_filename, index_filename,  ref_filename, "input.json", "model_devi.py" ]
+        backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , traj_filename, 'model_devi.out', 'model_devi.log' ]
 
 
     
