@@ -1057,9 +1057,8 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
                     os.symlink(os.path.join(cc,file), os.path.join(task_path, file))
                 else:
                     input_json = json.load(open(os.path.join(cc, "input.json")))
-                    print("input_json", input_json)
                     input_json["graph_file"] = models[0]
-                    with open(os.path.join(cc,'input.json'), 'w') as _outfile:
+                    with open(os.path.join(task_path,'input.json'), 'w') as _outfile:
                         json.dump(input_json, _outfile, indent = 4)
       
             cwd_ = os.getcwd()
