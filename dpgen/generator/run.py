@@ -1410,8 +1410,10 @@ def _make_fp_vasp_inner (modd_path,
             dlog.info("system {0:s} skipped {1:6d} confs with bad cluster, {2:6d} remains".format(ss, count_bad_cluster, numb_task - count_bad_cluster))
     if cluster_cutoff is None:
         cwd = os.getcwd()
+        print("Angus: fp_tasks is", fp_tasks)
         for ii in fp_tasks:
             os.chdir(ii)
+            print("Angus: cwd is", os.getcwd() )
             if model_devi_engine == "lammps":
                 dump_to_poscar('conf.dump', 'POSCAR', type_map, fmt = "lammps/dump")
             elif model_devi_engine == "gromacs":
