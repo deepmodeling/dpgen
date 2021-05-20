@@ -1047,31 +1047,28 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
         task_counter = 0
         for cc in ss :
             task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
-            conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter) + '.lmp'
+            #conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter) + '.lmp'
             task_path = os.path.join(work_path, task_name)
             # dlog.info(task_path)
             create_path(task_path)
-            create_path(os.path.join(task_path, 'traj'))
-            loc_conf_name = 'conf.lmp'
-            os.symlink(os.path.join(os.path.join('..','confs'), conf_name),
-                       os.path.join(task_path, loc_conf_name) )
+            #create_path(os.path.join(task_path, 'traj'))
+            #loc_conf_name = 'conf.lmp'
+            for file in os.listdir(cc):
+                if file != "input.json":
+                    os.symlink(file, os.path.join(task_path, file))
+
+      
             cwd_ = os.getcwd()
             os.chdir(task_path)
             
             job = {}
-            job["ensemble"] = ensemble
-            job["press"] = pp
-            job["temps"] = tt
-            if te_f is not None:
-                job["ele_temp"] = te_f
-            if te_a is not None:
-                job["ele_temp"] = te_a
+            
             job["model_devi_dt"] =  model_devi_dt
+            job["nsteps"] = nsteps
             with open('job.json', 'w') as _outfile:
                 json.dump(job, _outfile, indent = 4)
             os.chdir(cwd_)
-            with open(os.path.join(task_path, 'input.lammps'), 'w') as fp :
-                fp.write(file_c)
+            
             task_counter += 1
             conf_counter += 1
         sys_counter += 1
