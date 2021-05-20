@@ -684,6 +684,9 @@ def revise_by_keys(lmp_lines, keys, values):
 def make_model_devi (iter_index,
                      jdata,
                      mdata) :
+    # The MD engine to perform model deviation
+    # Default is lammps
+    model_devi_engine = jdata.get('model_devi_engine', "lammps")
     model_devi_jobs = jdata['model_devi_jobs']
     if (iter_index >= len(model_devi_jobs)) :
         return False
@@ -729,24 +732,27 @@ def make_model_devi (iter_index,
     for ss in conf_systems:
         conf_counter = 0
         for cc in ss :
-            conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter)
-            orig_poscar_name = conf_name + '.orig.poscar'
-            poscar_name = conf_name + '.poscar'
-            lmp_name = conf_name + '.lmp'
-            if shuffle_poscar :
-                os.symlink(cc, os.path.join(conf_path, orig_poscar_name))
-                poscar_shuffle(os.path.join(conf_path, orig_poscar_name),
-                               os.path.join(conf_path, poscar_name))
-            else :
-                os.symlink(cc, os.path.join(conf_path, poscar_name))
-            if 'sys_format' in jdata:
-                fmt = jdata['sys_format']
-            else:
-                fmt = 'vasp/poscar'
-            system = dpdata.System(os.path.join(conf_path, poscar_name), fmt = fmt, type_map = jdata['type_map'])
-            if jdata.get('model_devi_nopbc', False):
-                system.remove_pbc()
-            system.to_lammps_lmp(os.path.join(conf_path, lmp_name))
+            if model_devi_engine == "lammps":
+                conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter)
+                orig_poscar_name = conf_name + '.orig.poscar'
+                poscar_name = conf_name + '.poscar'
+                lmp_name = conf_name + '.lmp'
+                if shuffle_poscar :
+                    os.symlink(cc, os.path.join(conf_path, orig_poscar_name))
+                    poscar_shuffle(os.path.join(conf_path, orig_poscar_name),
+                                   os.path.join(conf_path, poscar_name))
+                else :
+                    os.symlink(cc, os.path.join(conf_path, poscar_name))
+                if 'sys_format' in jdata:
+                    fmt = jdata['sys_format']
+                else:
+                    fmt = 'vasp/poscar'
+                system = dpdata.System(os.path.join(conf_path, poscar_name), fmt = fmt, type_map = jdata['type_map'])
+                if jdata.get('model_devi_nopbc', False):
+                    system.remove_pbc()
+                system.to_lammps_lmp(os.path.join(conf_path, lmp_name))
+            elif model_devi_engine == "gromacs":
+                pass
             conf_counter += 1
         sys_counter += 1
 
@@ -756,7 +762,12 @@ def make_model_devi (iter_index,
     use_plm = jdata.get('model_devi_plumed', False)
     use_plm_path = jdata.get('model_devi_plumed_path', False)
     if input_mode == "native":
-        _make_model_devi_native(iter_index, jdata, mdata, conf_systems)
+        if model_devi_engine == "lammps":
+            _make_model_devi_native(iter_index, jdata, mdata, conf_systems)
+        elif model_devi_engine == "gromacs":
+            _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems)
+        else:
+            raise RuntimeError("unknown model_devi engine", model_devi_engine)
     elif input_mode == "revise_template":
         _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems)
     else:
