@@ -1,7 +1,7 @@
 {
   "_comments": "This is an example to generate Cu-hcp surface configurations.",
   "_comments": "This example is used in Computer Physics Communications, 2020, 107206.",
-  "_coments" : "Last modified on 2019.8.27 by Yuzhi Zhang.",
+  "_comments" : "Last modified on 2019.8.27 by Yuzhi Zhang.",
   "stages": [
     1,
     2
@@ -41,9 +41,9 @@
     "Cu"
   ],
   "potcars": [
-    "/gpfs/share/home/1600017784/start/data/POTCAR/Cu/POTCAR"
+    "PATH/POTCAR"
   ],
-  "relax_incar" : "/gpfs/share/home/1600017784/start/pku_input_set/INCAR_surf_rlx",
+  "relax_incar" : "PATH/INCAR_surf_rlx",
   "scale": [
    0.96,0.98, 1.0,1.02, 1.04, 1.06
   ],
@@ -51,6 +51,6 @@
   "pert_numb": 20,
   "pert_box": 0.03,
   "pert_atom": 0.01,
-  "lmp_cmd" : "/gpfs/share/home/1600017784/soft/dpgen_software/lammps-16Mar18/src/lmp_serial",
+  "lmp_cmd" : "PATH/lmp_serial",
   "_comment": "that's all"
 }
