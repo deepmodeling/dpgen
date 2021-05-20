@@ -752,6 +752,7 @@ def make_model_devi (iter_index,
                     system.remove_pbc()
                 system.to_lammps_lmp(os.path.join(conf_path, lmp_name))
             elif model_devi_engine == "gromacs":
+                print("conf_systems", conf_systems)
                 pass
             conf_counter += 1
         sys_counter += 1
@@ -1007,6 +1008,74 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
                     task_counter += 1
             conf_counter += 1
         sys_counter += 1
+def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
+    model_devi_jobs = jdata['model_devi_jobs']
+    if (iter_index >= len(model_devi_jobs)) :
+        return False
+    cur_job = model_devi_jobs[iter_index]
+    dt = cur_job.get("dt", None)
+    if dt is not None:
+        model_devi_dt = dt
+    else:
+        model_devi_dt = jdata['model_devi_dt']
+    nsteps = cur_job.get("nsteps", None)
+    if nsteps is None:
+        raise RuntimeError("nsteps is None, you should set nsteps in model_devi_jobs!")
+    # Currently Gromacs engine is not supported for different temperatures!
+    # If you want to change temperatures, you should change it in mdp files.
+
+  
+    sys_idx = expand_idx(cur_job['sys_idx'])
+    if (len(sys_idx) != len(list(set(sys_idx)))) :
+        raise RuntimeError("system index should be uniq")
+
+    mass_map = jdata['mass_map']
+   
+
+    iter_name = make_iter_name(iter_index)
+    train_path = os.path.join(iter_name, train_name)
+    train_path = os.path.abspath(train_path)
+    models = glob.glob(os.path.join(train_path, "graph*pb"))
+    task_model_list = []
+    for ii in models:
+        task_model_list.append(os.path.join('..', os.path.basename(ii)))
+    work_path = os.path.join(iter_name, model_devi_name)
+
+    sys_counter = 0
+    for ss in conf_systems:
+        conf_counter = 0
+        task_counter = 0
+        for cc in ss :
+            task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
+            conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter) + '.lmp'
+            task_path = os.path.join(work_path, task_name)
+            # dlog.info(task_path)
+            create_path(task_path)
+            create_path(os.path.join(task_path, 'traj'))
+            loc_conf_name = 'conf.lmp'
+            os.symlink(os.path.join(os.path.join('..','confs'), conf_name),
+                       os.path.join(task_path, loc_conf_name) )
+            cwd_ = os.getcwd()
+            os.chdir(task_path)
+            
+            job = {}
+            job["ensemble"] = ensemble
+            job["press"] = pp
+            job["temps"] = tt
+            if te_f is not None:
+                job["ele_temp"] = te_f
+            if te_a is not None:
+                job["ele_temp"] = te_a
+            job["model_devi_dt"] =  model_devi_dt
+            with open('job.json', 'w') as _outfile:
+                json.dump(job, _outfile, indent = 4)
+            os.chdir(cwd_)
+            with open(os.path.join(task_path, 'input.lammps'), 'w') as fp :
+                fp.write(file_c)
+            task_counter += 1
+            conf_counter += 1
+        sys_counter += 1
+
 
 
 def run_model_devi (iter_index,
