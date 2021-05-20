@@ -1147,7 +1147,7 @@ def run_model_devi (iter_index,
         command += "&& python model_devi.py %s" % traj_filename
         commands = [command]
 
-        forward_files = [mdp_filename, topol_filename, conf_filename, index_filename,  ref_filename, "input.json", "model_devi.py" ]
+        forward_files = [mdp_filename, topol_filename, conf_filename, index_filename,  ref_filename, "input.json", "model_devi.py", "job.json" ]
         backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , traj_filename, 'model_devi.out', 'model_devi.log', "traj" ]
 
 
