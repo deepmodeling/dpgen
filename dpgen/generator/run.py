@@ -1052,15 +1052,14 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
             create_path(task_path)
             #create_path(os.path.join(task_path, 'traj'))
             #loc_conf_name = 'conf.lmp'
-            for file in os.listdir(cc):
-                if file != "input.json":
+            gromacs_settings = jdata.get("gromacs_settings" , "")
+            for key,file in gromacs_settings.items():
+                if key != "traj_filename":
                     os.symlink(os.path.join(cc,file), os.path.join(task_path, file))
-                else:
-                    input_json = json.load(open(os.path.join(cc, "input.json")))
-                    input_json["graph_file"] = models[0]
-                    with open(os.path.join(task_path,'input.json'), 'w') as _outfile:
-                        json.dump(input_json, _outfile, indent = 4)
-      
+            input_json = json.load(open(os.path.join(cc, "input.json")))
+            input_json["graph_file"] = models[0]
+            with open(os.path.join(task_path,'input.json'), 'w') as _outfile:
+                json.dump(input_json, _outfile, indent = 4)    
             cwd_ = os.getcwd()
             os.chdir(task_path)
             job = {}
@@ -1363,6 +1362,7 @@ def _make_fp_vasp_inner (modd_path,
                 conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
             elif model_devi_engine == "gromacs":
                 conf_name = os.path.join(conf_name, str(ii) + '.gromacstrj')
+                print("gromacs traj conf_name is ", conf_name)
             else:
                 raise RuntimeError("unknown model_devi engine", model_devi_engine)
             conf_name = os.path.abspath(conf_name)
