@@ -752,7 +752,6 @@ def make_model_devi (iter_index,
                     system.remove_pbc()
                 system.to_lammps_lmp(os.path.join(conf_path, lmp_name))
             elif model_devi_engine == "gromacs":
-                print("conf_systems", conf_systems)
                 pass
             conf_counter += 1
         sys_counter += 1
@@ -1059,12 +1058,11 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
                 else:
                     input_json = json.load(open(os.path.join(cc, "input.json")))
                     input_json["graph_file"] = models[0]
-                    with open('input.json', 'w') as _outfile:
+                    with open(os.path.join(cc,'input.json'), 'w') as _outfile:
                         json.dump(input_json, _outfile, indent = 4)
       
             cwd_ = os.getcwd()
             os.chdir(task_path)
-            
             job = {}
             
             job["model_devi_dt"] =  model_devi_dt
@@ -1084,6 +1082,10 @@ def run_model_devi (iter_index,
                     mdata) :
     #rmdlog.info("This module has been run !")
     lmp_exec = mdata['lmp_command']
+    # Angus: lmp_exec name should be changed to model_devi_exec.
+    # We should also change make_dispatcher
+    # For now, I will use this name for gromacs command
+
     model_devi_group_size = mdata['model_devi_group_size']
     model_devi_resources = mdata['model_devi_resources']
     use_plm = jdata.get('model_devi_plumed', False)
@@ -1095,10 +1097,6 @@ def run_model_devi (iter_index,
 
     all_task = glob.glob(os.path.join(work_path, "task.*"))
     all_task.sort()
-    command = "{ if [ ! -f dpgen.restart.10000 ]; then %s -i input.lammps -v restart 0; else %s -i input.lammps -v restart 1; fi }" % (lmp_exec, lmp_exec)
-    command = "/bin/sh -c '%s'" % command
-    commands = [command]
-
     fp = open (os.path.join(work_path, 'cur_job.json'), 'r')
     cur_job = json.load (fp)
 
@@ -1117,14 +1115,40 @@ def run_model_devi (iter_index,
     #dlog.info("run_tasks in run_model_deviation",run_tasks_)
     all_models = glob.glob(os.path.join(work_path, 'graph*pb'))
     model_names = [os.path.basename(ii) for ii in all_models]
-    forward_files = ['conf.lmp', 'input.lammps', 'traj']
-    backward_files = ['model_devi.out', 'model_devi.log', 'traj']
-    if use_plm:
-        forward_files += ['input.plumed']
-       # backward_files += ['output.plumed']
-        backward_files += ['output.plumed','COLVAR','dump.0.xyz']
-        if use_plm_path:
-            forward_files += ['plmpath.pdb']
+
+    model_devi_engine = jdata.get("model_devi_engine", "lammps")
+    if model_devi_engine == "lammps":
+        command = "{ if [ ! -f dpgen.restart.10000 ]; then %s -i input.lammps -v restart 0; else %s -i input.lammps -v restart 1; fi }" % (lmp_exec, lmp_exec)
+        command = "/bin/sh -c '%s'" % command
+        commands = [command]
+        forward_files = ['conf.lmp', 'input.lammps', 'traj']
+        backward_files = ['model_devi.out', 'model_devi.log', 'traj']
+        if use_plm:
+            forward_files += ['input.plumed']
+           # backward_files += ['output.plumed']
+            backward_files += ['output.plumed','COLVAR','dump.0.xyz']
+            if use_plm_path:
+                forward_files += ['plmpath.pdb']
+    elif model_devi_engine == "gromacs":
+        gromacs_settings = jdata.get("gromacs_settings", {})
+        mdp_filename = gromacs_settings.get("mdp_filename", "md.mdp")
+        topol_filename = gromacs_settings.get("topol_filename", "processed.top")
+        conf_filename = gromacs_settings.get("conf_filename", "conf.gro")
+        index_filename = gromacs_settings.get("index_filename", "index.raw")
+        deffnm = gromacs_settings.get("deffnm", "deepmd")
+        maxwarn = gromacs_settings.get("maxwarn", 1)
+        nsteps = cur_job["nsteps"]
+        command = "%s grompp -f %s -p %s -c %s -o %s -maxwarn %d" % (lmp_exec, mdp_filename, topol_filename, conf_filename, deffnm, maxwarn)
+        command += "&& %s mdrun -deffnm %s -nsteps %d" %(lmp_exec, deffnm, nsteps) 
+        comamnds = [command]
+
+        forward_files = [mdp_filename, topol_filename, conf_filename, index_filename,  "input.json" ]
+        backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , 'model_devi.out', 'model_devi.log']
+        
+
+    
+    
+    
 
     cwd = os.getcwd()
     dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], work_path, run_tasks, model_devi_group_size)
