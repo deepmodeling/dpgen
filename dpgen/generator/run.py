@@ -1057,6 +1057,7 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
                     os.symlink(os.path.join(cc,file), os.path.join(task_path, file))
                 else:
                     input_json = json.load(open(os.path.join(cc, "input.json")))
+                    print("input_json", input_json)
                     input_json["graph_file"] = models[0]
                     with open(os.path.join(cc,'input.json'), 'w') as _outfile:
                         json.dump(input_json, _outfile, indent = 4)
@@ -1140,11 +1141,11 @@ def run_model_devi (iter_index,
         nsteps = cur_job["nsteps"]
         command = "%s grompp -f %s -p %s -c %s -o %s -maxwarn %d" % (lmp_exec, mdp_filename, topol_filename, conf_filename, deffnm, maxwarn)
         command += "&& %s mdrun -deffnm %s -nsteps %d" %(lmp_exec, deffnm, nsteps) 
-        comamnds = [command]
+        commands = [command]
 
         forward_files = [mdp_filename, topol_filename, conf_filename, index_filename,  "input.json" ]
         backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , 'model_devi.out', 'model_devi.log']
-        
+
 
     
     
