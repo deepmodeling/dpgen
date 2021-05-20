@@ -176,8 +176,8 @@ def poscar_to_conf(poscar, conf):
     sys.to_lammps_lmp(conf)
 
 
-def dump_to_poscar(dump, poscar, type_map) :
-    sys = dpdata.System(dump, fmt = 'lammps/dump', type_map = type_map)
+def dump_to_poscar(dump, poscar, type_map, fmt = "lammps/dump") :
+    sys = dpdata.System(dump, fmt = fmt, type_map = type_map)
     sys.to_vasp_poscar(poscar)
 
 
@@ -1064,7 +1064,7 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
             cwd_ = os.getcwd()
             os.chdir(task_path)
             job = {}
-            
+            job["trj_freq"] = cur_job["trj_freq"]
             job["model_devi_dt"] =  model_devi_dt
             job["nsteps"] = nsteps
             with open('job.json', 'w') as _outfile:
@@ -1149,7 +1149,7 @@ def run_model_devi (iter_index,
         commands = [command]
 
         forward_files = [mdp_filename, topol_filename, conf_filename, index_filename,  ref_filename, "input.json", "model_devi.py" ]
-        backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , traj_filename, 'model_devi.out', 'model_devi.log' ]
+        backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , traj_filename, 'model_devi.out', 'model_devi.log', "traj" ]
 
 
     
@@ -1168,7 +1168,7 @@ def run_model_devi (iter_index,
                         backward_files,
                         outlog = 'model_devi.log',
                         errlog = 'model_devi.log')
-
+    print("finihsed model_devi!")
 
 def post_model_devi (iter_index,
                      jdata,
@@ -1350,6 +1350,7 @@ def _make_fp_vasp_inner (modd_path,
         if (numb_task < fp_task_min):
             numb_task = 0
         dlog.info("system {0:s} accurate_ratio: {1:8.4f}    thresholds: {2:6.4f} and {3:6.4f}   eff. task min and max {4:4d} {5:4d}   number of fp tasks: {6:6d}".format(ss, accurate_ratio, fp_accurate_soft_threshold, fp_accurate_threshold, fp_task_min, this_fp_task_max, numb_task))
+        model_devi_engine = jdata.get("model_devi_engine", "lammps")
         # make fp tasks
         count_bad_box = 0
         count_bad_cluster = 0
@@ -1358,7 +1359,12 @@ def _make_fp_vasp_inner (modd_path,
             ii = fp_candidate[cc][1]
             ss = os.path.basename(tt).split('.')[1]
             conf_name = os.path.join(tt, "traj")
-            conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
+            if model_devi_engine == "lammps":
+                conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
+            elif model_devi_engine == "gromacs":
+                conf_name = os.path.join(conf_name, str(ii) + '.gromacstrj')
+            else:
+                raise RuntimeError("unknown model_devi engine", model_devi_engine)
             conf_name = os.path.abspath(conf_name)
             if skip_bad_box is not None:
                 skip = check_bad_box(conf_name, skip_bad_box)
@@ -1406,7 +1412,12 @@ def _make_fp_vasp_inner (modd_path,
         cwd = os.getcwd()
         for ii in fp_tasks:
             os.chdir(ii)
-            dump_to_poscar('conf.dump', 'POSCAR', type_map)
+            if model_devi_engine == "lammps":
+                dump_to_poscar('conf.dump', 'POSCAR', type_map, fmt = "lammps/dump")
+            elif model_devi_engine == "gromacs":
+                dump_to_poscar('conf.dump', 'POSCAR', type_map, fmt = "gromacs/gro")
+            else:
+                raise RuntimeError("unknown model_devi engine", model_devi_engine)
             os.chdir(cwd)
     return fp_tasks
 
