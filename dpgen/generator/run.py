@@ -1055,8 +1055,12 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
             #loc_conf_name = 'conf.lmp'
             for file in os.listdir(cc):
                 if file != "input.json":
-                    os.symlink(file, os.path.join(task_path, file))
-
+                    os.symlink(os.path.join(cc,file), os.path.join(task_path, file))
+                else:
+                    input_json = json.load(open(os.path.join(cc, "input.json")))
+                    input_json["graph_file"] = models[0]
+                    with open('input.json', 'w') as _outfile:
+                        json.dump(input_json, _outfile, indent = 4)
       
             cwd_ = os.getcwd()
             os.chdir(task_path)
