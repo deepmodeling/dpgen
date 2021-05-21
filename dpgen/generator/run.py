@@ -4,7 +4,7 @@
 init: data
 iter:
         00.train
-        01.mode_devi
+        01.model_devi
         02.vasp
         03.data
 """
@@ -179,6 +179,10 @@ def poscar_to_conf(poscar, conf):
 def dump_to_poscar(dump, poscar, type_map, fmt = "lammps/dump") :
     sys = dpdata.System(dump, fmt = fmt, type_map = type_map)
     sys.to_vasp_poscar(poscar)
+
+def dump_to_deepmd_raw(dump, deepmd_raw, type_map, fmt='gromacs/gro'):
+    system = dpdata.System(dump, fmt = fmt, type_map = type_map)
+    system.to_deepmd_raw(deepmd_raw)
 
 
 def make_train (iter_index,
@@ -1007,6 +1011,7 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
                     task_counter += 1
             conf_counter += 1
         sys_counter += 1
+
 def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
     model_devi_jobs = jdata['model_devi_jobs']
     if (iter_index >= len(model_devi_jobs)) :
@@ -1417,7 +1422,8 @@ def _make_fp_vasp_inner (modd_path,
             if model_devi_engine == "lammps":
                 dump_to_poscar('conf.dump', 'POSCAR', type_map, fmt = "lammps/dump")
             elif model_devi_engine == "gromacs":
-                dump_to_poscar('conf.dump', 'POSCAR', type_map, fmt = "gromacs/gro")
+                # dump_to_poscar('conf.dump', 'POSCAR', type_map, fmt = "gromacs/gro")
+                dump_to_deepmd_raw('conf.dump', 'deepmd.raw', type_map, fmt = 'gromacs/gro')
             else:
                 raise RuntimeError("unknown model_devi engine", model_devi_engine)
             os.chdir(cwd)
@@ -1800,9 +1806,14 @@ def make_fp_gaussian(iter_index,
     else:
         fp_params = jdata['fp_params']
     cwd = os.getcwd()
+
+    model_devi_engine = jdata.get('model_devi_engine', 'lammps')
     for ii in fp_tasks:
         os.chdir(ii)
-        sys_data = dpdata.System('POSCAR').data
+        if model_devi_engine == "lammps":
+            sys_data = dpdata.System('POSCAR').data
+        elif model_devi_engine == "gromacs":
+            sys_data = dpdata.System("deepmd.raw", fmt='deepmd/raw').data
         ret = make_gaussian_input(sys_data, fp_params)
         with open('input', 'w') as fp:
             fp.write(ret)
