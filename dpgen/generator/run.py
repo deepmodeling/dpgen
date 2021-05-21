@@ -319,6 +319,7 @@ def make_train (iter_index,
             raise RuntimeError('invalid setting for use_ele_temp ' + str(use_ele_temp))
     elif LooseVersion(mdata["deepmd_version"]) >= LooseVersion('2') and LooseVersion(mdata["deepmd_version"]) < LooseVersion('3'):
         # 2.x
+        jinput['training']['training_data'] = {}
         jinput['training']['training_data']['systems'] = init_data_sys
         jinput['training']['training_data']['batch_size'] = init_batch_size
         jinput['model']['type_map'] = jdata['type_map']
@@ -356,7 +357,7 @@ def make_train (iter_index,
                 raise RuntimeError ("data sys %s does not exists, cwd is %s" % (jj, os.getcwd()))
         os.chdir(cwd)
         # set random seed for each model
-        if LooseVersion(mdata["deepmd_version"]) >= LooseVersion('1') and LooseVersion(mdata["deepmd_version"]) < LooseVersion('2'):
+        if LooseVersion(mdata["deepmd_version"]) >= LooseVersion('1') and LooseVersion(mdata["deepmd_version"]) < LooseVersion('3'):
             # 1.x
             jinput['model']['descriptor']['seed'] = random.randrange(sys.maxsize) % (2**32)
             jinput['model']['fitting_net']['seed'] = random.randrange(sys.maxsize) % (2**32)
