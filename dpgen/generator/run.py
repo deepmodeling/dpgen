@@ -317,6 +317,22 @@ def make_train (iter_index,
             jinput['model']['fitting_net'].pop('numb_fparam', None)
         else:
             raise RuntimeError('invalid setting for use_ele_temp ' + str(use_ele_temp))
+    elif LooseVersion(mdata["deepmd_version"]) >= LooseVersion('2') and LooseVersion(mdata["deepmd_version"]) < LooseVersion('3'):
+        # 2.x
+        jinput['training']['training_data']['systems'] = init_data_sys
+        jinput['training']['training_data']['batch_size'] = init_batch_size
+        jinput['model']['type_map'] = jdata['type_map']
+        # electron temperature
+        if use_ele_temp == 0:
+            pass
+        elif use_ele_temp == 1:
+            jinput['model']['fitting_net']['numb_fparam'] = 1
+            jinput['model']['fitting_net'].pop('numb_aparam', None)
+        elif use_ele_temp == 2:
+            jinput['model']['fitting_net']['numb_aparam'] = 1
+            jinput['model']['fitting_net'].pop('numb_fparam', None)
+        else:
+            raise RuntimeError('invalid setting for use_ele_temp ' + str(use_ele_temp))
     else:
         raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x version!" )
     # set training reuse model
