@@ -338,9 +338,16 @@ def make_train (iter_index,
         raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x version!" )
     # set training reuse model
     if training_reuse_iter is not None and iter_index >= training_reuse_iter:
-        jinput['training']['auto_prob_style'] \
-            ="prob_sys_size; 0:%d:%f; %d:%d:%f" \
-            %(old_range, training_reuse_old_ratio, old_range, len(init_data_sys), 1.-training_reuse_old_ratio)
+        if LooseVersion('1') <= LooseVersion(mdata["deepmd_version"]) < LooseVersion('2'):
+            jinput['training']['auto_prob_style'] \
+                ="prob_sys_size; 0:%d:%f; %d:%d:%f" \
+                %(old_range, training_reuse_old_ratio, old_range, len(init_data_sys), 1.-training_reuse_old_ratio)
+        elif LooseVersion('2') <= LooseVersion(mdata["deepmd_version"]) < LooseVersion('3'):
+            jinput['training']['training_data']['auto_prob'] \
+                ="prob_sys_size; 0:%d:%f; %d:%d:%f" \
+                %(old_range, training_reuse_old_ratio, old_range, len(init_data_sys), 1.-training_reuse_old_ratio)
+        else:
+            raise RuntimeError("Unsupported DeePMD-kit version: %s" % mdata["deepmd_version"])
         if jinput['loss'].get('start_pref_e') is not None:
             jinput['loss']['start_pref_e'] = training_reuse_start_pref_e
         if jinput['loss'].get('start_pref_f') is not None:
