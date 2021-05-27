@@ -62,6 +62,7 @@ from dpgen.util import sepline
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar,Kpoints,Potcar
 from dpgen.auto_test.lib.vasp import make_kspacing_kpoints
+from gromacs.fileformats.mdp import MDP
 
 template_name = 'template'
 train_name = '00.train'
@@ -1059,12 +1060,25 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
             #loc_conf_name = 'conf.lmp'
             gromacs_settings = jdata.get("gromacs_settings" , "")
             for key,file in gromacs_settings.items():
-                if key != "traj_filename":
+                if key != "traj_filename" and key != "mdp_filename":
                     os.symlink(os.path.join(cc,file), os.path.join(task_path, file))
+            
+            # input.jsonf for DP-Gromacs
             input_json = json.load(open(os.path.join(cc, "input.json")))
             input_json["graph_file"] = models[0]
             with open(os.path.join(task_path,'input.json'), 'w') as _outfile:
-                json.dump(input_json, _outfile, indent = 4)    
+                json.dump(input_json, _outfile, indent = 4)
+
+            # trj_freq
+            trj_freq = cur_job.get("trj_freq", 10)
+            mdp = MDP()
+            mdp.read(os.path.join(cc, gromacs_settings['mdp_filename']))
+            mdp['nstcomm'] = trj_freq
+            mdp['nstxout'] = trj_freq
+            mdp['nstlog'] = trj_freq
+            mdp['nstenergy'] = trj_freq
+            mdp.write(os.path.join(task_path, gromacs_settings['mdp_filename']))
+
             cwd_ = os.getcwd()
             os.chdir(task_path)
             job = {}
@@ -1146,6 +1160,7 @@ def run_model_devi (iter_index,
         maxwarn = gromacs_settings.get("maxwarn", 1)
         traj_filename = gromacs_settings.get("traj_filename", "deepmd_traj.gro")
         nsteps = cur_job["nsteps"]
+
         command = "%s grompp -f %s -p %s -c %s -o %s -maxwarn %d" % (lmp_exec, mdp_filename, topol_filename, conf_filename, deffnm, maxwarn)
         command += "&& %s mdrun -deffnm %s -nsteps %d" %(lmp_exec, deffnm, nsteps) 
         command += "&& echo -e \"MOL\nMOL\n\" | %s trjconv -s %s -f %s.trr -o %s -pbc mol -ur compact -center" % (lmp_exec, ref_filename, deffnm, traj_filename)
@@ -1155,10 +1170,6 @@ def run_model_devi (iter_index,
         forward_files = [mdp_filename, topol_filename, conf_filename, index_filename,  ref_filename, "input.json", "model_devi.py", "job.json" ]
         backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , traj_filename, 'model_devi.out', 'model_devi.log', "traj" ]
 
-
-    
-    
-    
 
     cwd = os.getcwd()
     dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], work_path, run_tasks, model_devi_group_size)
