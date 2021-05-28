@@ -176,8 +176,8 @@ def poscar_to_conf(poscar, conf):
     sys.to_lammps_lmp(conf)
 
 
-def dump_to_poscar(dump, poscar, type_map, fmt = "lammps/dump") :
-    sys = dpdata.System(dump, fmt = fmt, type_map = type_map)
+def dump_to_poscar(dump, poscar, type_map) :
+    sys = dpdata.System(dump, fmt = 'lammps/dump', type_map = type_map)
     sys.to_vasp_poscar(poscar)
 
 
@@ -1052,18 +1052,19 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
             create_path(task_path)
             #create_path(os.path.join(task_path, 'traj'))
             #loc_conf_name = 'conf.lmp'
-            gromacs_settings = jdata.get("gromacs_settings" , "")
-            for key,file in gromacs_settings.items():
-                if key != "traj_filename":
+            for file in os.listdir(cc):
+                if file != "input.json":
                     os.symlink(os.path.join(cc,file), os.path.join(task_path, file))
-            input_json = json.load(open(os.path.join(cc, "input.json")))
-            input_json["graph_file"] = models[0]
-            with open(os.path.join(task_path,'input.json'), 'w') as _outfile:
-                json.dump(input_json, _outfile, indent = 4)    
+                else:
+                    input_json = json.load(open(os.path.join(cc, "input.json")))
+                    input_json["graph_file"] = models[0]
+                    with open(os.path.join(task_path,'input.json'), 'w') as _outfile:
+                        json.dump(input_json, _outfile, indent = 4)
+      
             cwd_ = os.getcwd()
             os.chdir(task_path)
             job = {}
-            job["trj_freq"] = cur_job["trj_freq"]
+            
             job["model_devi_dt"] =  model_devi_dt
             job["nsteps"] = nsteps
             with open('job.json', 'w') as _outfile:
@@ -1134,21 +1135,15 @@ def run_model_devi (iter_index,
         topol_filename = gromacs_settings.get("topol_filename", "processed.top")
         conf_filename = gromacs_settings.get("conf_filename", "conf.gro")
         index_filename = gromacs_settings.get("index_filename", "index.raw")
-        # Initial reference to process pbc condition.
-        # Default is em.tpr
-        ref_filename = gromacs_settings.get("ref_filename", "em.tpr")
         deffnm = gromacs_settings.get("deffnm", "deepmd")
         maxwarn = gromacs_settings.get("maxwarn", 1)
-        traj_filename = gromacs_settings.get("traj_filename", "deepmd_traj.gro")
         nsteps = cur_job["nsteps"]
         command = "%s grompp -f %s -p %s -c %s -o %s -maxwarn %d" % (lmp_exec, mdp_filename, topol_filename, conf_filename, deffnm, maxwarn)
         command += "&& %s mdrun -deffnm %s -nsteps %d" %(lmp_exec, deffnm, nsteps) 
-        command += "&& echo -e \"MOL\nMOL\n\" | %s trjconv -s %s -f %s.trr -o %s -pbc mol -ur compact -center" % (lmp_exec, ref_filename, deffnm, traj_filename)
-        command += "&& python model_devi.py %s" % traj_filename
         commands = [command]
-
-        forward_files = [mdp_filename, topol_filename, conf_filename, index_filename,  ref_filename, "input.json", "model_devi.py", "job.json" ]
-        backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , traj_filename, 'model_devi.out', 'model_devi.log', "traj" ]
+        print("commnads is", commands)
+        forward_files = [mdp_filename, topol_filename, conf_filename, index_filename,  "input.json" ]
+        backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , 'model_devi.out', 'model_devi.log']
 
 
     
@@ -1167,7 +1162,7 @@ def run_model_devi (iter_index,
                         backward_files,
                         outlog = 'model_devi.log',
                         errlog = 'model_devi.log')
-    print("finihsed model_devi!")
+
 
 def post_model_devi (iter_index,
                      jdata,
@@ -1349,7 +1344,6 @@ def _make_fp_vasp_inner (modd_path,
         if (numb_task < fp_task_min):
             numb_task = 0
         dlog.info("system {0:s} accurate_ratio: {1:8.4f}    thresholds: {2:6.4f} and {3:6.4f}   eff. task min and max {4:4d} {5:4d}   number of fp tasks: {6:6d}".format(ss, accurate_ratio, fp_accurate_soft_threshold, fp_accurate_threshold, fp_task_min, this_fp_task_max, numb_task))
-        model_devi_engine = jdata.get("model_devi_engine", "lammps")
         # make fp tasks
         count_bad_box = 0
         count_bad_cluster = 0
@@ -1358,13 +1352,7 @@ def _make_fp_vasp_inner (modd_path,
             ii = fp_candidate[cc][1]
             ss = os.path.basename(tt).split('.')[1]
             conf_name = os.path.join(tt, "traj")
-            if model_devi_engine == "lammps":
-                conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
-            elif model_devi_engine == "gromacs":
-                conf_name = os.path.join(conf_name, str(ii) + '.gromacstrj')
-                print("gromacs traj conf_name is ", conf_name)
-            else:
-                raise RuntimeError("unknown model_devi engine", model_devi_engine)
+            conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
             conf_name = os.path.abspath(conf_name)
             if skip_bad_box is not None:
                 skip = check_bad_box(conf_name, skip_bad_box)
@@ -1410,16 +1398,9 @@ def _make_fp_vasp_inner (modd_path,
             dlog.info("system {0:s} skipped {1:6d} confs with bad cluster, {2:6d} remains".format(ss, count_bad_cluster, numb_task - count_bad_cluster))
     if cluster_cutoff is None:
         cwd = os.getcwd()
-        print("Angus: fp_tasks is", fp_tasks)
         for ii in fp_tasks:
             os.chdir(ii)
-            print("Angus: cwd is", os.getcwd() )
-            if model_devi_engine == "lammps":
-                dump_to_poscar('conf.dump', 'POSCAR', type_map, fmt = "lammps/dump")
-            elif model_devi_engine == "gromacs":
-                dump_to_poscar('conf.dump', 'POSCAR', type_map, fmt = "gromacs/gro")
-            else:
-                raise RuntimeError("unknown model_devi engine", model_devi_engine)
+            dump_to_poscar('conf.dump', 'POSCAR', type_map)
             os.chdir(cwd)
     return fp_tasks
 
