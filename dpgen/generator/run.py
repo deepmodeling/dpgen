@@ -2432,10 +2432,6 @@ def set_version(mdata):
     mdata['deepmd_version'] = deepmd_version
     return mdata
 
-
-
-
-
 def run_iter (param_file, machine_file) :
     try:
        import ruamel
