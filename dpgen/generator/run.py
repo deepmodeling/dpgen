@@ -1876,10 +1876,10 @@ def run_fp (iter_index,
             mdata) :
     fp_style = jdata['fp_style']
     fp_pp_files = jdata['fp_pp_files']
-
+    backward_files  = ['fp.log']
     if fp_style == "vasp" :
         forward_files = ['POSCAR', 'INCAR', 'POTCAR','KPOINTS']
-        backward_files = ['OUTCAR','vasprun.xml']
+        backward_files += ['OUTCAR','vasprun.xml']
         # Move cvasp interface to jdata
         if ('cvasp' in jdata) and (jdata['cvasp'] == True):
             mdata['fp_resources']['cvasp'] = True
@@ -1893,23 +1893,23 @@ def run_fp (iter_index,
                      forward_common_files=forward_common_files)
     elif fp_style == "pwscf" :
         forward_files = ['input'] + fp_pp_files
-        backward_files = ['output']
+        backward_files += ['output']
         run_fp_inner(iter_index, jdata, mdata,  forward_files, backward_files, _qe_check_fin, log_file = 'output')
     elif fp_style == "siesta":
         forward_files = ['input'] + fp_pp_files
-        backward_files = ['output']
+        backward_files += ['output']
         run_fp_inner(iter_index, jdata, mdata,  forward_files, backward_files, _siesta_check_fin, log_file='output')
     elif fp_style == "gaussian":
         forward_files = ['input']
-        backward_files = ['output']
+        backward_files += ['output']
         run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, _gaussian_check_fin, log_file = 'output')
     elif fp_style == "cp2k":
         forward_files = ['input.inp', 'coord.xyz']
-        backward_files = ['output']
+        backward_files += ['output']
         run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, _cp2k_check_fin, log_file = 'output')
     elif fp_style == "pwmat" :
         forward_files = ['atom.config', 'etot.input'] + fp_pp_files
-        backward_files = ['REPORT', 'OUT.MLMD', 'output']
+        backward_files += ['REPORT', 'OUT.MLMD', 'output']
         run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, _pwmat_check_fin, log_file = 'output')
     else :
         raise RuntimeError ("unsupported fp style")
