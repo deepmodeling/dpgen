@@ -1028,14 +1028,12 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
         raise RuntimeError("nsteps is None, you should set nsteps in model_devi_jobs!")
     # Currently Gromacs engine is not supported for different temperatures!
     # If you want to change temperatures, you should change it in mdp files.
-
   
     sys_idx = expand_idx(cur_job['sys_idx'])
     if (len(sys_idx) != len(list(set(sys_idx)))) :
         raise RuntimeError("system index should be uniq")
 
     mass_map = jdata['mass_map']
-   
 
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
@@ -1063,8 +1061,9 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
                 if key != "traj_filename" and key != "mdp_filename":
                     os.symlink(os.path.join(cc,file), os.path.join(task_path, file))
             
-            # input.jsonf for DP-Gromacs
-            input_json = json.load(open(os.path.join(cc, "input.json")))
+            # input.json for DP-Gromacs
+            with open(os.path.join(cc, "input.json")) as f:
+                input_json = json.load(f)
             input_json["graph_file"] = models[0]
             with open(os.path.join(task_path,'input.json'), 'w') as _outfile:
                 json.dump(input_json, _outfile, indent = 4)
@@ -1077,6 +1076,8 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
             mdp['nstxout'] = trj_freq
             mdp['nstlog'] = trj_freq
             mdp['nstenergy'] = trj_freq
+            # dt
+            mdp['dt'] = dt
             mdp.write(os.path.join(task_path, gromacs_settings['mdp_filename']))
 
             cwd_ = os.getcwd()
