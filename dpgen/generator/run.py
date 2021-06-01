@@ -23,6 +23,7 @@ import shutil
 import time
 import copy
 import dpdata
+from dpdispatcher import submission
 import numpy as np
 import subprocess as sp
 import scipy.constants as pc
@@ -56,8 +57,12 @@ from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, LSFJ
 from dpgen.remote.group_jobs import ucloud_submit_jobs, aws_submit_jobs
 from dpgen.remote.group_jobs import group_slurm_jobs
 from dpgen.remote.group_jobs import group_local_jobs
-from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
-from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, make_dispatcher
+# from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
+# from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, make_dispatcher
+import dpdispatcher
+from dpdispatcher.submission import Submission, Task, Resources, Job
+from dpdispatcher.machine import Machine
+
 from dpgen.util import sepline
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar,Kpoints,Potcar
@@ -426,8 +431,8 @@ def run_train (iter_index,
         mdata = set_version(mdata)
 
     
-    train_command = mdata.get('train_command', 'dp')
-    train_resources = mdata['train_resources']
+    # train_command = mdata.get('train_command', 'dp')
+    # train_resources = mdata['train_resources']
 
     # paths
     iter_name = make_iter_name(iter_index)
@@ -443,23 +448,23 @@ def run_train (iter_index,
         task_path = os.path.join(work_path, train_task_fmt % ii)
         all_task.append(task_path)
     commands = []
-    if LooseVersion(mdata["deepmd_version"]) >= LooseVersion('1') and LooseVersion(mdata["deepmd_version"]) < LooseVersion('2'):
+    # if LooseVersion(mdata["deepmd_version"]) >= LooseVersion('1') and LooseVersion(mdata["deepmd_version"]) < LooseVersion('2'):
         
-        # 1.x
-        ## Commands are like `dp train` and `dp freeze`
-        ## train_command should not be None
-        assert(train_command)
-        command =  '%s train %s' % (train_command, train_input_file)
-        if training_init_model:
-            command = "{ if [ ! -f model.ckpt.index ]; then %s --init-model old/model.ckpt; else %s --restart model.ckpt; fi }" % (command, command)
-        else:
-            command = "{ if [ ! -f model.ckpt.index ]; then %s; else %s --restart model.ckpt; fi }" % (command, command)
-        command = "/bin/sh -c '%s'" % command
-        commands.append(command)
-        command = '%s freeze' % train_command
-        commands.append(command)
-    else:
-        raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x version!" )
+    #     # 1.x
+    #     ## Commands are like `dp train` and `dp freeze`
+    #     ## train_command should not be None
+    #     assert(train_command)
+    #     command =  '%s train %s' % (train_command, train_input_file)
+    #     if training_init_model:
+    #         command = "{ if [ ! -f model.ckpt.index ]; then %s --init-model old/model.ckpt; else %s --restart model.ckpt; fi }" % (command, command)
+    #     else:
+    #         command = "{ if [ ! -f model.ckpt.index ]; then %s; else %s --restart model.ckpt; fi }" % (command, command)
+    #     command = "/bin/sh -c '%s'" % command
+    #     commands.append(command)
+    #     command = '%s freeze' % train_command
+    #     commands.append(command)
+    # else:
+    #     raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x version!" )
 
     #_tasks = [os.path.basename(ii) for ii in all_task]
     # run_tasks = []
@@ -510,22 +515,56 @@ def run_train (iter_index,
             trans_comm_data += glob.glob(os.path.join(ii, 'nopbc'))
     os.chdir(cwd)
 
-    try:
-        train_group_size = mdata['train_group_size']
-    except:
-        train_group_size = 1
+    task_list = []
 
-    dispatcher = make_dispatcher(mdata['train_machine'], mdata['train_resources'], work_path, run_tasks, train_group_size)
-    dispatcher.run_jobs(mdata['train_resources'],
-                        commands,
-                        work_path,
-                        run_tasks,
-                        train_group_size,
-                        trans_comm_data,
-                        forward_files,
-                        backward_files,
-                        outlog = 'train.log',
-                        errlog = 'train.log')
+    train_command = mdata['train']['command']
+
+    backward_files = ['frozen_model.pb', 'lcurve.out', 'train.log',
+        'model.ckpt.meta', 'model.ckpt.index', 
+        'model.ckpt.data-00000-of-00001', 'checkpoint']
+
+    for ii in run_tasks:
+        task = Task(command=train_command, 
+            task_work_path=ii, 
+            forward_files=['input.json', ],
+            backward_files=backward_files,
+            outlog='train.log',
+            errlog='train.log')
+        task_list.append(task)
+
+    machine = Machine.load_from_dict(mdata['train']['machine'])
+    resources = Resources.load_from_dict(mdata['train']['resources'])
+
+    submission = Submission(
+        work_base=work_path,
+        machine=machine,
+        resources=resources,
+        forward_common_files=trans_comm_data,
+        backward_common_files=[],
+        task_list=task_list
+    )
+
+    print("debug691", submission.serialize())
+    submission.run_submission()
+
+    # try:
+    #     train_group_size = mdata['train_group_size']
+    # except:
+    #     train_group_size = 1
+
+    
+
+    # dispatcher = make_dispatcher(mdata['train_machine'], mdata['train_resources'], work_path, run_tasks, train_group_size)
+    # dispatcher.run_jobs(mdata['train_resources'],
+    #                     commands,
+    #                     work_path,
+    #                     run_tasks,
+    #                     train_group_size,
+    #                     trans_comm_data,
+    #                     forward_files,
+    #                     backward_files,
+    #                     outlog = 'train.log',
+    #                     errlog = 'train.log')
 
 def post_train (iter_index,
                 jdata,
@@ -1002,9 +1041,9 @@ def run_model_devi (iter_index,
                     jdata,
                     mdata) :
     #rmdlog.info("This module has been run !")
-    lmp_exec = mdata['lmp_command']
-    model_devi_group_size = mdata['model_devi_group_size']
-    model_devi_resources = mdata['model_devi_resources']
+    # lmp_exec = mdata['lmp_command']
+    # model_devi_group_size = mdata['model_devi_group_size']
+    # model_devi_resources = mdata['model_devi_resources']
     use_plm = jdata.get('model_devi_plumed', False)
     use_plm_path = jdata.get('model_devi_plumed_path', False)
 
@@ -1014,9 +1053,9 @@ def run_model_devi (iter_index,
 
     all_task = glob.glob(os.path.join(work_path, "task.*"))
     all_task.sort()
-    command = "{ if [ ! -f dpgen.restart.10000 ]; then %s -i input.lammps -v restart 0; else %s -i input.lammps -v restart 1; fi }" % (lmp_exec, lmp_exec)
-    command = "/bin/sh -c '%s'" % command
-    commands = [command]
+    # command = "{ if [ ! -f dpgen.restart.10000 ]; then %s -i input.lammps -v restart 0; else %s -i input.lammps -v restart 1; fi }" % (lmp_exec, lmp_exec)
+    # command = "/bin/sh -c '%s'" % command
+    # commands = [command]
 
     fp = open (os.path.join(work_path, 'cur_job.json'), 'r')
     cur_job = json.load (fp)
@@ -1046,17 +1085,45 @@ def run_model_devi (iter_index,
             forward_files += ['plmpath.pdb']
 
     cwd = os.getcwd()
-    dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], work_path, run_tasks, model_devi_group_size)
-    dispatcher.run_jobs(mdata['model_devi_resources'],
-                        commands,
-                        work_path,
-                        run_tasks,
-                        model_devi_group_size,
-                        model_names,
-                        forward_files,
-                        backward_files,
-                        outlog = 'model_devi.log',
-                        errlog = 'model_devi.log')
+    # dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], work_path, run_tasks, model_devi_group_size)
+    # dispatcher.run_jobs(mdata['model_devi_resources'],
+    #                     commands,
+    #                     work_path,
+    #                     run_tasks,
+    #                     model_devi_group_size,
+    #                     model_names,
+    #                     forward_files,
+    #                     backward_files,
+    #                     outlog = 'model_devi.log',
+    #                     errlog = 'model_devi.log')
+
+    model_devi_command = mdata['model_devi']['command']
+
+    task_list = []
+    for ii in run_tasks:
+        task = Task(command=model_devi_command, 
+            task_work_path=ii,
+            forward_files=forward_files,
+            backward_files=backward_files,
+            outlog='model_devi.log',
+            errlog='model_devi.log')
+        task_list.append(task)
+    
+    machine = Machine.load_from_dict(mdata['model_devi']['machine'])
+    resources = Resources.load_from_dict(mdata['model_devi']['resources'])
+
+    submission = Submission(
+        work_base=work_path,
+        machine=machine,
+        resources=resources,
+        forward_common_files=model_names,
+        backward_common_files=[],
+        task_list=task_list
+    )
+
+    print("debug691", submission.serialize())
+    submission.run_submission()
+    
 
 
 def post_model_devi (iter_index,
@@ -1838,10 +1905,10 @@ def run_fp_inner (iter_index,
                   check_fin,
                   log_file = "fp.log",
                   forward_common_files=[]) :
-    fp_command = mdata['fp_command']
-    fp_group_size = mdata['fp_group_size']
-    fp_resources = mdata['fp_resources']
-    mark_failure = fp_resources.get('mark_failure', False)
+    # fp_command = mdata['fp_command']
+    # fp_group_size = mdata['fp_group_size']
+    # fp_resources = mdata['fp_resources']
+    # mark_failure = fp_resources.get('mark_failure', False)
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -1856,20 +1923,43 @@ def run_fp_inner (iter_index,
     #     if not check_fin(ii) :
     #         fp_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
-    dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_path, run_tasks, fp_group_size)
-    dispatcher.run_jobs(mdata['fp_resources'],
-                        [fp_command],
-                        work_path,
-                        run_tasks,
-                        fp_group_size,
-                        forward_common_files,
-                        forward_files,
-                        backward_files,
-                        mark_failure = mark_failure,
-                        outlog = log_file,
-                        errlog = log_file)
+    # dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_path, run_tasks, fp_group_size)
+    # dispatcher.run_jobs(mdata['fp_resources'],
+    #                     [fp_command],
+    #                     work_path,
+    #                     run_tasks,
+    #                     fp_group_size,
+    #                     forward_common_files,
+    #                     forward_files,
+    #                     backward_files,
+    #                     mark_failure = mark_failure,
+    #                     outlog = log_file,
+    #                     errlog = log_file)
 
+    fp_command = mdata['fp']['command']
+    task_list = []
+    for ii in run_tasks:
+        task = Task(command=fp_command, 
+            task_work_path=ii,
+            forward_files=forward_files,
+            backward_files=backward_files,
+            outlog=log_file,
+            errlog=log_file)
+        task_list.append(task)
 
+    machine = Machine.load_from_dict(mdata['fp']['machine'])
+    resources = Resources.load_from_dict(mdata['fp']['resources'])
+
+    submission = Submission(
+        work_base=work_path,
+        machine=machine,
+        resources=resources,
+        forward_common_files=forward_common_files,
+        backward_common_files=[],
+        task_list=task_list
+    )
+    # print("debug691", submission.serialize())
+    submission.run_submission()
 
 def run_fp (iter_index,
             jdata,
@@ -1880,17 +1970,18 @@ def run_fp (iter_index,
     if fp_style == "vasp" :
         forward_files = ['POSCAR', 'INCAR', 'POTCAR','KPOINTS']
         backward_files = ['OUTCAR','vasprun.xml']
+        forward_common_files = []
         # Move cvasp interface to jdata
-        if ('cvasp' in jdata) and (jdata['cvasp'] == True):
-            mdata['fp_resources']['cvasp'] = True
-        if ('cvasp' in  mdata["fp_resources"] ) and (mdata["fp_resources"]["cvasp"]==True):
-            dlog.info("cvasp is on !")
-            forward_files.append('cvasp.py')
-            forward_common_files=[]
-        else:
-            forward_common_files=[]
+        # if ('cvasp' in jdata) and (jdata['cvasp'] == True):
+        #     mdata['fp_resources']['cvasp'] = True
+        # if ('cvasp' in  mdata["fp_resources"] ) and (mdata["fp_resources"]["cvasp"]==True):
+        #     dlog.info("cvasp is on !")
+        #     forward_files.append('cvasp.py')
+        #     forward_common_files=[]
+        # else:
+        #     forward_common_files=[]
         run_fp_inner(iter_index, jdata, mdata,  forward_files, backward_files, _vasp_check_fin,
-                     forward_common_files=forward_common_files)
+                    forward_common_files=forward_common_files)
     elif fp_style == "pwscf" :
         forward_files = ['input'] + fp_pp_files
         backward_files = ['output']
@@ -2344,7 +2435,7 @@ def run_iter (param_file, machine_file) :
                 make_train (ii, jdata, mdata)
             elif jj == 1 :
                 log_iter ("run_train", ii, jj)
-                mdata  = decide_train_machine(mdata)
+                # mdata  = decide_train_machine(mdata)
                 run_train  (ii, jdata, mdata)
             elif jj == 2 :
                 log_iter ("post_train", ii, jj)
@@ -2356,7 +2447,7 @@ def run_iter (param_file, machine_file) :
                     break
             elif jj == 4 :
                 log_iter ("run_model_devi", ii, jj)
-                mdata = decide_model_devi_machine(mdata)
+                # mdata = decide_model_devi_machine(mdata)
                 run_model_devi (ii, jdata, mdata)
 
             elif jj == 5 :
@@ -2367,7 +2458,7 @@ def run_iter (param_file, machine_file) :
                 make_fp (ii, jdata, mdata)
             elif jj == 7 :
                 log_iter ("run_fp", ii, jj)
-                mdata = decide_fp_machine(mdata)
+                # mdata = decide_fp_machine(mdata)
                 run_fp (ii, jdata, mdata)
             elif jj == 8 :
                 log_iter ("post_fp", ii, jj)

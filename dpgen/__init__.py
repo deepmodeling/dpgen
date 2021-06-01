@@ -38,7 +38,7 @@ def info():
     print('')
     print('Dependency')
     print('------------')
-    for modui in ['numpy', 'dpdata', 'pymatgen', 'monty', 'ase', 'paramiko', 'custodian' ]:
+    for modui in ['numpy', 'dpdata', 'monty', 'ase', 'paramiko', 'custodian' ]:
         try:
             mm = __import__(modui)
             print('%10s %10s   %s' % (modui, mm.__version__, mm.__path__[0]))

@@ -11,8 +11,8 @@ import dpgen.data.tools.sc as sc
 import dpgen.data.tools.bcc as bcc
 from dpgen import dlog
 from dpgen import ROOT_PATH
-from dpgen.remote.decide_machine import  decide_fp_machine
-from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher
+# from dpgen.remote.decide_machine import  decide_fp_machine
+# from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher
 #-----PMG---------
 from pymatgen.io.vasp import Poscar
 from pymatgen.core import Structure, Element
@@ -596,7 +596,8 @@ def gen_init_surf(args):
     
     if args.MACHINE is not None:
        # Decide a proper machine
-       mdata = decide_fp_machine(mdata)
+    #    mdata = decide_fp_machine(mdata)
+        pass
        # disp = make_dispatcher(mdata["fp_machine"])
 
     #stage = args.STAGE

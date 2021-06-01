@@ -23,9 +23,12 @@ import dpgen.data.tools.sc as sc
 from dpgen.generator.lib.vasp import incar_upper
 from pymatgen.core import Structure
 from pymatgen.io.vasp import Incar
-from dpgen.remote.decide_machine import  decide_fp_machine
+# from dpgen.remote.decide_machine import  decide_fp_machine
 from dpgen import ROOT_PATH
-from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher
+# from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher
+import dpdispatcher
+from dpdispatcher.submission import Submission, Resources, Task
+from dpdispatcher.machine import Machine
 
 
 
@@ -311,8 +314,8 @@ def make_vasp_relax (jdata, mdata) :
     shutil.copy2( jdata['relax_incar'], 
                  os.path.join(work_dir, 'INCAR'))
     is_cvasp = False
-    if 'cvasp' in mdata['fp_resources'].keys():
-        is_cvasp = mdata['fp_resources']['cvasp']
+    # if 'cvasp' in mdata['fp_resources'].keys():
+    #     is_cvasp = mdata['fp_resources']['cvasp']
     if is_cvasp:
         cvasp_file=os.path.join(ROOT_PATH,'generator/lib/cvasp.py')
         shutil.copyfile(cvasp_file, os.path.join(work_dir, 'cvasp.py'))
@@ -502,6 +505,7 @@ def coll_vasp_md(jdata) :
         for jj in scale :
             for kk in range(pert_numb) :
                 path_work = os.path.join("scale-%.3f" % jj, "%06d" % kk)
+                print('debug939:path_work', path_work)
                 outcar = os.path.join(path_work, 'OUTCAR')
                 #dlog.info("OUTCAR",outcar)
                 if os.path.isfile(outcar) :
@@ -557,18 +561,18 @@ def _vasp_check_fin (ii) :
     return True
 
 def run_vasp_relax(jdata, mdata):
-    fp_command = mdata['fp_command']
-    fp_group_size = mdata['fp_group_size']
-    fp_resources = mdata['fp_resources']
+    # fp_command = mdata['fp_command']
+    # fp_group_size = mdata['fp_group_size']
+    # fp_resources = mdata['fp_resources']
     #machine_type = mdata['fp_machine']['machine_type']
     work_dir = os.path.join(jdata['out_dir'], global_dirname_02)
     
     forward_files = ["POSCAR", "INCAR", "POTCAR"]
     backward_files = ["OUTCAR","CONTCAR"]
     forward_common_files = []
-    if 'cvasp' in mdata['fp_resources']:
-        if mdata['fp_resources']['cvasp']:
-            forward_common_files=['cvasp.py']
+    # if 'cvasp' in mdata['fp_resources']:
+    #     if mdata['fp_resources']['cvasp']:
+    #         forward_common_files=['cvasp.py']
     relax_tasks = glob.glob(os.path.join(work_dir, "sys-*"))
     relax_tasks.sort()
     #dlog.info("work_dir",work_dir)
@@ -581,21 +585,43 @@ def run_vasp_relax(jdata, mdata):
     #    if not _vasp_check_fin(ii):
     #        relax_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in relax_run_tasks]
-    dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_dir, run_tasks, fp_group_size)
-    #dlog.info(run_tasks)
-    dispatcher.run_jobs(fp_resources,
-                       [fp_command],
-                       work_dir,
-                       run_tasks,
-                       fp_group_size,
-                       forward_common_files,
-                       forward_files,
-                       backward_files)
+    # dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_dir, run_tasks, fp_group_size)
+    # dispatcher.run_jobs(fp_resources,
+    #                    [fp_command],
+    #                    work_dir,
+    #                    run_tasks,
+    #                    fp_group_size,
+    #                    forward_common_files,
+    #                    forward_files,
+    #                    backward_files)
+
+    fp_command = mdata['fp']['command']
+    task_list = []
+    for ii in run_tasks:
+        task = Task(command=fp_command,
+            task_work_path=ii,
+            forward_files=forward_files,
+            backward_files=backward_files,
+        )
+        task_list.append(task)
+
+    machine = Machine.load_from_dict(mdata['fp']['machine'])
+    resources = Resources.load_from_dict(mdata['fp']['resources'])
+
+    submission = Submission(
+        work_base=work_dir,
+        machine=machine,
+        resources=resources,
+        forward_common_files=forward_common_files,
+        backward_common_files=[],
+        task_list=task_list
+    )
+    submission.run_submission()
 
 def run_vasp_md(jdata, mdata):
-    fp_command = mdata['fp_command']
-    fp_group_size = mdata['fp_group_size']
-    fp_resources = mdata['fp_resources']
+    # fp_command = mdata['fp_command']
+    # fp_group_size = mdata['fp_group_size']
+    # fp_resources = mdata['fp_resources']
     #machine_type = mdata['fp_machine']['machine_type']
     work_dir = os.path.join(jdata['out_dir'], global_dirname_04)
     scale = jdata['scale']   
@@ -605,9 +631,9 @@ def run_vasp_md(jdata, mdata):
     forward_files = ["POSCAR", "INCAR", "POTCAR"]
     backward_files = ["OUTCAR"]
     forward_common_files = []
-    if 'cvasp' in mdata['fp_resources']:
-        if mdata['fp_resources']['cvasp']:
-            forward_common_files=['cvasp.py']
+    # if 'cvasp' in mdata['fp_resources']:
+    #     if mdata['fp_resources']['cvasp']:
+    #         forward_common_files=['cvasp.py']
 
     path_md = work_dir
     path_md = os.path.abspath(path_md)
@@ -627,15 +653,41 @@ def run_vasp_md(jdata, mdata):
     run_tasks = [ii.replace(work_dir+"/", "") for ii in md_run_tasks]
     #dlog.info("md_work_dir", work_dir)
     #dlog.info("run_tasks",run_tasks)
-    dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_dir, run_tasks, fp_group_size)
-    dispatcher.run_jobs(fp_resources,
-                       [fp_command],
-                       work_dir,
-                       run_tasks,
-                       fp_group_size,
-                       forward_common_files,
-                       forward_files,
-                       backward_files)
+    # dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_dir, run_tasks, fp_group_size)
+    # dispatcher.run_jobs(fp_resources,
+    #                    [fp_command],
+    #                    work_dir,
+    #                    run_tasks,
+    #                    fp_group_size,
+    #                    forward_common_files,
+    #                    forward_files,
+    #                    backward_files)
+
+    fp_command = mdata['fp']['command']
+    task_list = []
+
+    for ii in run_tasks:
+        task = Task(command=fp_command, 
+            task_work_path=ii, 
+            forward_files=forward_files, 
+            backward_files=backward_files,
+        )
+        task_list.append(task)
+
+    machine = Machine.load_from_dict(mdata['fp']['machine'])
+    resources = Resources.load_from_dict(mdata['fp']['resources'])
+
+    submission = Submission(
+        work_base=work_dir,
+        machine=machine,
+        resources=resources,
+        forward_common_files=forward_common_files,
+        backward_common_files=[],
+        task_list=task_list
+    )
+
+    submission.run_submission()
+
 
 def gen_init_bulk(args) :
     try:
@@ -653,9 +705,10 @@ def gen_init_bulk(args) :
               mdata = json.load(fp)
 
     if args.MACHINE is not None:
-       # Selecting a proper machine
-       mdata = decide_fp_machine(mdata)
-       #disp = make_dispatcher(mdata["fp_machine"])
+        pass
+        # Selecting a proper machine
+        # mdata = decide_fp_machine(mdata)
+        #disp = make_dispatcher(mdata["fp_machine"])
 
     # Decide work path
     out_dir = out_dir_name(jdata)
