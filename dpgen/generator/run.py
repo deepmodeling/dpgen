@@ -72,7 +72,7 @@ template_name = 'template'
 train_name = '00.train'
 train_task_fmt = '%03d'
 train_tmpl_path = os.path.join(template_name, train_name)
-default_train_input_file = 'input.json'
+# default_train_input_file = 'input.json'
 data_system_fmt = '%03d'
 model_devi_name = '01.model_devi'
 model_devi_task_fmt = data_system_fmt + '.%06d'
@@ -191,7 +191,7 @@ def make_train (iter_index,
                 mdata) :
     # load json param
     # train_param = jdata['train_param']
-    train_input_file = default_train_input_file
+    # train_input_file = default_train_input_file
     numb_models = jdata['numb_models']
     init_data_prefix = jdata['init_data_prefix']
     init_data_prefix = os.path.abspath(init_data_prefix)
@@ -360,7 +360,7 @@ def make_train (iter_index,
             jinput['model']['descriptor']['activation_function'] = model_devi_activation_func[ii]
             jinput['model']['fitting_net']['activation_function'] = model_devi_activation_func[ii]
         # dump the input.json
-        with open(os.path.join(task_path, train_input_file), 'w') as outfile:
+        with open(os.path.join(task_path, 'input.json'), 'w') as outfile:
             json.dump(jinput, outfile, indent = 4)
 
     # link old models
@@ -420,7 +420,7 @@ def run_train (iter_index,
     # load json param
     numb_models = jdata['numb_models']
     # train_param = jdata['train_param']
-    train_input_file = default_train_input_file
+    # train_input_file = default_train_input_file
     training_reuse_iter = jdata.get('training_reuse_iter')
     training_init_model = jdata.get('training_init_model', False)
     if training_reuse_iter is not None and iter_index >= training_reuse_iter:
@@ -430,8 +430,8 @@ def run_train (iter_index,
     except KeyError:
         mdata = set_version(mdata)
 
-    
-    # train_command = mdata.get('train_command', 'dp')
+    train_command = mdata['train'].get('train_command', 'dp train')
+    freeze_command = mdata['train'].get('freeze_command', 'dp freeze')
     # train_resources = mdata['train_resources']
 
     # paths
@@ -447,7 +447,7 @@ def run_train (iter_index,
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         all_task.append(task_path)
-    commands = []
+    # commands = []
     # if LooseVersion(mdata["deepmd_version"]) >= LooseVersion('1') and LooseVersion(mdata["deepmd_version"]) < LooseVersion('2'):
         
     #     # 1.x
@@ -455,14 +455,14 @@ def run_train (iter_index,
     #     ## train_command should not be None
     #     assert(train_command)
     #     command =  '%s train %s' % (train_command, train_input_file)
-    #     if training_init_model:
-    #         command = "{ if [ ! -f model.ckpt.index ]; then %s --init-model old/model.ckpt; else %s --restart model.ckpt; fi }" % (command, command)
-    #     else:
-    #         command = "{ if [ ! -f model.ckpt.index ]; then %s; else %s --restart model.ckpt; fi }" % (command, command)
+    if training_init_model:
+        command = "{ if [ ! -f model.ckpt.index ]; then %s input.json --init-model old/model.ckpt; else %s input.json --restart model.ckpt; fi } && %s" % (train_command, train_command, freeze_command)
+    else:
+        command = "{ if [ ! -f model.ckpt.index ]; then %s input.json; else %s input.json --restart model.ckpt; fi } && %s" % (train_command, train_command, freeze_command)
     #     command = "/bin/sh -c '%s'" % command
     #     commands.append(command)
     #     command = '%s freeze' % train_command
-    #     commands.append(command)
+        # command.append(command)
     # else:
     #     raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x version!" )
 
@@ -477,7 +477,7 @@ def run_train (iter_index,
     #         run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in all_task]
 
-    forward_files = [train_input_file]
+    forward_files = ['input.json']
     if training_init_model:
         forward_files += [os.path.join('old', 'model.ckpt.meta'),
                           os.path.join('old', 'model.ckpt.index'),
@@ -517,14 +517,14 @@ def run_train (iter_index,
 
     task_list = []
 
-    train_command = mdata['train']['command']
+    # train_command = mdata['train']['command']
 
     backward_files = ['frozen_model.pb', 'lcurve.out', 'train.log',
         'model.ckpt.meta', 'model.ckpt.index', 
         'model.ckpt.data-00000-of-00001', 'checkpoint']
 
     for ii in run_tasks:
-        task = Task(command=train_command, 
+        task = Task(command=command, 
             task_work_path=ii, 
             forward_files=['input.json', ],
             backward_files=backward_files,
@@ -1075,7 +1075,7 @@ def run_model_devi (iter_index,
     #dlog.info("run_tasks in run_model_deviation",run_tasks_)
     all_models = glob.glob(os.path.join(work_path, 'graph*pb'))
     model_names = [os.path.basename(ii) for ii in all_models]
-    forward_files = ['conf.lmp', 'input.lammps', 'traj']
+    forward_files = ['conf.lmp', 'input.lammps', 'traj/']
     backward_files = ['model_devi.out', 'model_devi.log', 'traj']
     if use_plm:
         forward_files += ['input.plumed']
