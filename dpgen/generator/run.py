@@ -4,7 +4,7 @@
 init: data
 iter:
         00.train
-        01.mode_devi
+        01.model_devi
         02.vasp
         03.data
 """
@@ -62,6 +62,7 @@ from dpgen.util import sepline
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar,Kpoints,Potcar
 from dpgen.auto_test.lib.vasp import make_kspacing_kpoints
+from gromacs.fileformats.mdp import MDP
 
 template_name = 'template'
 train_name = '00.train'
@@ -179,6 +180,10 @@ def poscar_to_conf(poscar, conf):
 def dump_to_poscar(dump, poscar, type_map) :
     sys = dpdata.System(dump, fmt = 'lammps/dump', type_map = type_map)
     sys.to_vasp_poscar(poscar)
+
+def dump_to_deepmd_raw(dump, deepmd_raw, type_map, fmt='gromacs/gro'):
+    system = dpdata.System(dump, fmt = fmt, type_map = type_map)
+    system.to_deepmd_raw(deepmd_raw)
 
 
 def make_train (iter_index,
@@ -1007,6 +1012,7 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
                     task_counter += 1
             conf_counter += 1
         sys_counter += 1
+
 def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
     model_devi_jobs = jdata['model_devi_jobs']
     if (iter_index >= len(model_devi_jobs)) :
@@ -1022,14 +1028,12 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
         raise RuntimeError("nsteps is None, you should set nsteps in model_devi_jobs!")
     # Currently Gromacs engine is not supported for different temperatures!
     # If you want to change temperatures, you should change it in mdp files.
-
   
     sys_idx = expand_idx(cur_job['sys_idx'])
     if (len(sys_idx) != len(list(set(sys_idx)))) :
         raise RuntimeError("system index should be uniq")
 
     mass_map = jdata['mass_map']
-   
 
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
@@ -1052,15 +1056,30 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
             create_path(task_path)
             #create_path(os.path.join(task_path, 'traj'))
             #loc_conf_name = 'conf.lmp'
-            for file in os.listdir(cc):
-                if file != "input.json":
+            gromacs_settings = jdata.get("gromacs_settings" , "")
+            for key,file in gromacs_settings.items():
+                if key != "traj_filename" and key != "mdp_filename":
                     os.symlink(os.path.join(cc,file), os.path.join(task_path, file))
-                else:
-                    input_json = json.load(open(os.path.join(cc, "input.json")))
-                    input_json["graph_file"] = models[0]
-                    with open(os.path.join(task_path,'input.json'), 'w') as _outfile:
-                        json.dump(input_json, _outfile, indent = 4)
-      
+            
+            # input.json for DP-Gromacs
+            with open(os.path.join(cc, "input.json")) as f:
+                input_json = json.load(f)
+            input_json["graph_file"] = models[0]
+            with open(os.path.join(task_path,'input.json'), 'w') as _outfile:
+                json.dump(input_json, _outfile, indent = 4)
+
+            # trj_freq
+            trj_freq = cur_job.get("trj_freq", 10)
+            mdp = MDP()
+            mdp.read(os.path.join(cc, gromacs_settings['mdp_filename']))
+            mdp['nstcomm'] = trj_freq
+            mdp['nstxout'] = trj_freq
+            mdp['nstlog'] = trj_freq
+            mdp['nstenergy'] = trj_freq
+            # dt
+            mdp['dt'] = dt
+            mdp.write(os.path.join(task_path, gromacs_settings['mdp_filename']))
+
             cwd_ = os.getcwd()
             os.chdir(task_path)
             job = {}
@@ -1138,17 +1157,14 @@ def run_model_devi (iter_index,
         deffnm = gromacs_settings.get("deffnm", "deepmd")
         maxwarn = gromacs_settings.get("maxwarn", 1)
         nsteps = cur_job["nsteps"]
+
         command = "%s grompp -f %s -p %s -c %s -o %s -maxwarn %d" % (lmp_exec, mdp_filename, topol_filename, conf_filename, deffnm, maxwarn)
         command += "&& %s mdrun -deffnm %s -nsteps %d" %(lmp_exec, deffnm, nsteps) 
         commands = [command]
-        print("commnads is", commands)
+        
         forward_files = [mdp_filename, topol_filename, conf_filename, index_filename,  "input.json" ]
         backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , 'model_devi.out', 'model_devi.log']
 
-
-    
-    
-    
 
     cwd = os.getcwd()
     dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], work_path, run_tasks, model_devi_group_size)
@@ -1400,7 +1416,13 @@ def _make_fp_vasp_inner (modd_path,
         cwd = os.getcwd()
         for ii in fp_tasks:
             os.chdir(ii)
-            dump_to_poscar('conf.dump', 'POSCAR', type_map)
+            if model_devi_engine == "lammps":
+                dump_to_poscar('conf.dump', 'POSCAR', type_map, fmt = "lammps/dump")
+            elif model_devi_engine == "gromacs":
+                # dump_to_poscar('conf.dump', 'POSCAR', type_map, fmt = "gromacs/gro")
+                dump_to_deepmd_raw('conf.dump', 'deepmd.raw', type_map, fmt = 'gromacs/gro')
+            else:
+                raise RuntimeError("unknown model_devi engine", model_devi_engine)
             os.chdir(cwd)
     return fp_tasks
 
@@ -1781,9 +1803,14 @@ def make_fp_gaussian(iter_index,
     else:
         fp_params = jdata['fp_params']
     cwd = os.getcwd()
+
+    model_devi_engine = jdata.get('model_devi_engine', 'lammps')
     for ii in fp_tasks:
         os.chdir(ii)
-        sys_data = dpdata.System('POSCAR').data
+        if model_devi_engine == "lammps":
+            sys_data = dpdata.System('POSCAR').data
+        elif model_devi_engine == "gromacs":
+            sys_data = dpdata.System("deepmd.raw", fmt='deepmd/raw').data
         ret = make_gaussian_input(sys_data, fp_params)
         with open('input', 'w') as fp:
             fp.write(ret)
@@ -2389,10 +2416,6 @@ def set_version(mdata):
     deepmd_version = '1'
     mdata['deepmd_version'] = deepmd_version
     return mdata
-
-
-
-
 
 def run_iter (param_file, machine_file) :
     try:
