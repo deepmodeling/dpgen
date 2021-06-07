@@ -1,7 +1,7 @@
 import os, sys, glob, shutil
 import unittest
 import json
-from context import make_model_devi, make_fp_gaussian
+from .context import make_model_devi, make_fp_gaussian
 import numpy as np
 
 
