@@ -177,8 +177,8 @@ def poscar_to_conf(poscar, conf):
     sys.to_lammps_lmp(conf)
 
 
-def dump_to_poscar(dump, poscar, type_map) :
-    sys = dpdata.System(dump, fmt = 'lammps/dump', type_map = type_map)
+def dump_to_poscar(dump, poscar, type_map, fmt = "lammps/dump") :
+    sys = dpdata.System(dump, fmt = fmt, type_map = type_map)
     sys.to_vasp_poscar(poscar)
 
 def dump_to_deepmd_raw(dump, deepmd_raw, type_map, fmt='gromacs/gro'):
@@ -1361,6 +1361,7 @@ def _make_fp_vasp_inner (modd_path,
             numb_task = 0
         dlog.info("system {0:s} accurate_ratio: {1:8.4f}    thresholds: {2:6.4f} and {3:6.4f}   eff. task min and max {4:4d} {5:4d}   number of fp tasks: {6:6d}".format(ss, accurate_ratio, fp_accurate_soft_threshold, fp_accurate_threshold, fp_task_min, this_fp_task_max, numb_task))
         # make fp tasks
+        model_devi_engine = jdata.get("model_devi_engine", "lammps")
         count_bad_box = 0
         count_bad_cluster = 0
         for cc in range(numb_task) :

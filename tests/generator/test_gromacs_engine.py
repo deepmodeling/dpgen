@@ -5,6 +5,8 @@ from context import make_model_devi, make_fp_gaussian
 import numpy as np
 
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+__package__ = 'generator'
 dirname = os.path.join(os.path.abspath(os.path.dirname(__file__)), "gromacs")
 
 def _make_fake_graphs(train_path):
@@ -101,3 +103,6 @@ class TestGromacsModelDeviEngine(unittest.TestCase):
     
     def tearDown(self):
         shutil.rmtree(self.iter_path)
+if __name__ == '__main__':
+    unittest.main()
+
