@@ -2,7 +2,7 @@ import os, sys, glob, shutil
 import unittest
 import json
 import numpy as np
-
+import importlib
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 __package__ = 'generator'
@@ -88,7 +88,7 @@ class TestGromacsModelDeviEngine(unittest.TestCase):
         shutil.copy(os.path.join(path_1, "model_devi.out"), os.path.join(path_2, "model_devi.out"))
         shutil.copytree(os.path.join(path_1, "traj"), os.path.join(path_2, "traj"))
 
-    def test_make_model_devi(self):
+    def test_make_model_devi_gromacs(self):
         flag = make_model_devi(iter_index=0,
                                jdata=self.jdata,
                                mdata={})
@@ -96,9 +96,12 @@ class TestGromacsModelDeviEngine(unittest.TestCase):
         self.assertTrue(os.path.exists(self.model_devi_path))
         self.assertTrue(os.path.exists(self.model_devi_task_path))
         self._check_dir(self.model_devi_task_path, post=False)
-    
+    def test_post_model_devi_gromacs(self):
         self._copy_outputs(os.path.join(self.dirname, "outputs"), self.model_devi_task_path)
         self._check_dir(self.model_devi_task_path, post=True)
+    
+    @unittest.skipIf(importlib.util.find_spec("openbabel") is None, "requires openbabel")
+    def test_make_fp_gaussian(self):
         make_fp_gaussian(iter_index=0, jdata=self.jdata)
         candi = np.loadtxt(os.path.join(self.fp_path, "candidate.shuffled.000.out"), dtype=np.str)
         candi_ref = np.loadtxt(os.path.join(self.dirname, "outputs", "candidate.shuffled.000.out"), dtype=np.str)
