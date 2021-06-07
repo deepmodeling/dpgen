@@ -1,13 +1,15 @@
 import os, sys, glob, shutil
 import unittest
 import json
-from .context import make_model_devi, make_fp_gaussian
 import numpy as np
 
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 __package__ = 'generator'
 dirname = os.path.join(os.path.abspath(os.path.dirname(__file__)), "gromacs")
+
+from .context import make_model_devi
+from .context import make_fp_gaussian
 
 def _make_fake_graphs(train_path):
     if not os.path.exists(train_path):
@@ -37,7 +39,7 @@ class TestGromacsModelDeviEngine(unittest.TestCase):
             },
             "model_devi_dt":         0.001,
             "model_devi_f_trust_lo": 0.05,
-            "model_devi_f_trust_hi": 0.20,
+            "model_devi_f_trust_hi": 0.10,
             "model_devi_e_trust_lo": 1e10,
             "model_devi_e_trust_hi": 1e10,
             "model_devi_clean_traj": False,
@@ -98,11 +100,14 @@ class TestGromacsModelDeviEngine(unittest.TestCase):
         self._copy_outputs(os.path.join(self.dirname, "outputs"), self.model_devi_task_path)
         self._check_dir(self.model_devi_task_path, post=True)
         make_fp_gaussian(iter_index=0, jdata=self.jdata)
-        num_candi = np.loadtxt(os.path.join(self.fp_path, "candidate.shuffled.000.out"), dtype=np.str).shape[0]
-        self.assertEqual(num_candi, 6)
-    
+        candi = np.loadtxt(os.path.join(self.fp_path, "candidate.shuffled.000.out"), dtype=np.str)
+        candi_ref = np.loadtxt(os.path.join(self.dirname, "outputs", "candidate.shuffled.000.out"), dtype=np.str)
+        self.assertEqual(sorted([int(i) for i in candi[:,1]]), [0,10,20,30,50])
+        
+     
     def tearDown(self):
-        shutil.rmtree(self.iter_path)
+        pass
+        #shutil.rmtree(self.iter_path)
 if __name__ == '__main__':
     unittest.main()
 

@@ -1373,7 +1373,12 @@ def _make_fp_vasp_inner (modd_path,
             ii = fp_candidate[cc][1]
             ss = os.path.basename(tt).split('.')[1]
             conf_name = os.path.join(tt, "traj")
-            conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
+            if model_devi_engine == "lammps":
+                conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
+            elif model_devi_engine == "gromacs":
+                conf_name = os.path.join(conf_name, str(ii) + '.gromacstrj')
+            else:
+                raise RuntimeError("unknown model_devi engine", model_devi_engine)
             conf_name = os.path.abspath(conf_name)
             if skip_bad_box is not None:
                 skip = check_bad_box(conf_name, skip_bad_box)
