@@ -62,7 +62,11 @@ from dpgen.util import sepline
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar,Kpoints,Potcar
 from dpgen.auto_test.lib.vasp import make_kspacing_kpoints
-from gromacs.fileformats.mdp import MDP
+try:
+    from gromacs.fileformats.mdp import MDP
+except ImportError:
+    dlog.info("GromacsWrapper>=0.8.0 is needed for DP-GEN + Gromacs.")
+    pass
 
 template_name = 'template'
 train_name = '00.train'
