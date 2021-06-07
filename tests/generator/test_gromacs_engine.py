@@ -109,8 +109,8 @@ class TestGromacsModelDeviEngine(unittest.TestCase):
         
      
     def tearDown(self):
-        pass
-        #shutil.rmtree(self.iter_path)
+        #pass
+        shutil.rmtree(self.iter_path)
 if __name__ == '__main__':
     unittest.main()
 
