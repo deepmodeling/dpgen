@@ -2030,7 +2030,7 @@ def post_fp_vasp (iter_index,
     dlog.info("failed frame: %6d in %6d  %6.2f %% " % (icount, tcount, rfail * 100.))
 
     if rfail>ratio_failed:
-       raise RuntimeError("find too many unsuccessfully terminated jobs")
+       raise RuntimeError("find too many unsuccessfully terminated jobs. Too many FP tasks are not converged. Please check your input parameters (e.g. INCAR) or configuration (e.g. POSCAR) in directories \'iter.*.*/02.fp/task.*.*/.\'")
 
 
 def post_fp_pwscf (iter_index,
