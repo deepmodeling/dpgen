@@ -96,7 +96,6 @@ class TestGromacsModelDeviEngine(unittest.TestCase):
         self.assertTrue(os.path.exists(self.model_devi_path))
         self.assertTrue(os.path.exists(self.model_devi_task_path))
         self._check_dir(self.model_devi_task_path, post=False)
-    def test_post_model_devi_gromacs(self):
         self._copy_outputs(os.path.join(self.dirname, "outputs"), self.model_devi_task_path)
         self._check_dir(self.model_devi_task_path, post=True)
     
