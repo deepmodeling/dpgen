@@ -12,6 +12,14 @@ DeePMD-kit's documentation
    toymodels/*
 
 
+.. _Contribution:
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Documentation Contribution Guide
+
+   README.md
+
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
