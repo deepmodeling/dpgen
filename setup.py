@@ -17,7 +17,7 @@ today = datetime.date.today().strftime("%b-%d-%Y")
 with open(path.join('dpgen', '_date.py'), 'w') as fp :
     fp.write('date = \'%s\'' % today)
 
-install_requires=['numpy>=1.14.3', 'dpdata>=0.1.14', 'pymatgen>=2019.1.13', 'ase', 'monty>2.0.0', 'paramiko', 'custodian']
+install_requires=['numpy>=1.14.3', 'dpdata>=0.1.14', 'pymatgen>=2019.1.13', 'ase', 'monty>2.0.0', 'paramiko', 'custodian','GromacsWrapper>=0.8.0']
 
 setuptools.setup(
     name=NAME,
