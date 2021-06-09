@@ -16,7 +16,7 @@ DeePMD-kit's documentation
 
 .. toctree::
    :maxdepth: 2
-   :caption: Documentation Contribution Guide
+   :caption: Contribution Guild
 
    README.md
 
