@@ -13,7 +13,7 @@ from .context import param_file
 from .context import param_old_file
 from .context import param_pwscf_file
 from .context import param_pwscf_old_file
-from .context import param_abacus_file
+from .context import param_abacus_post_file
 from .context import param_siesta_file
 from .context import param_gaussian_file
 from .context import param_cp2k_file
@@ -150,7 +150,7 @@ IN.PSP2 = H.SG15.PBE.UPF\n\
 IN.PSP3 = N.SG15.PBE.UPF\n";
 
 abacus_input_ref = "INPUT_PARAMETERS\n\
-ntype 3\n\
+ntype 2\n\
 pseudo_dir ./\n\
 ecutwfc 80.000000\n\
 mixing_type pulay\n\
@@ -541,7 +541,7 @@ class TestMakeFPABACUS(unittest.TestCase):
         setUpModule()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
-        with open (param_abacus_file, 'r') as fp :
+        with open (param_abacus_post_file, 'r') as fp :
             jdata = json.load (fp)
         with open (machine_file, 'r') as fp:
             mdata = json.load (fp)
@@ -554,7 +554,7 @@ class TestMakeFPABACUS(unittest.TestCase):
             for jj in range(nmd) :
                 tmp.append(np.arange(0, 0.29, 0.29/10))
             md_descript.append(tmp)
-        atom_types = [0, 1, 2, 2, 0, 1]
+        atom_types = [0, 0, 0, 0, 1]
         type_map = jdata['type_map']
         _make_fake_md(0, md_descript, atom_types, type_map)
         make_fp(0, jdata, {})

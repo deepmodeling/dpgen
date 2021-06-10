@@ -130,8 +130,8 @@
   "shuffle_poscar":       false,
   "fp_task_max":          30,
   "fp_task_min":          8,
-  "fp_pp_path":           "/home/mhchen_pkuhpc/mhchen_cls/lustre2/5_liurenxi/5_ABACUS_dpgen_interface/SG15_ONCV_v1.0_upf",
-  "fp_pp_files":          [ "H_ONCV_PBE-1.0.upf","C_ONCV_PBE-1.0.upf"],
+  "fp_pp_path":           ".",
+  "fp_pp_files":          [ "H_HSCV_PBE-1.0.UPF","C_HSCV_PBE-1.0.UPF"],
   "user_fp_params":{
     "ntype": 2,
     "ecutwfc": 80,

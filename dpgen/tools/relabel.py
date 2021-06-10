@@ -5,7 +5,6 @@ import numpy as np
 import subprocess as sp
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 from dpgen.generator.lib.pwscf import make_pwscf_input
-from dpgen.generator.lib.abacus_pw_scf import make_abacus_pw_scf_kpt, make_abacus_pw_scf_input, make_abacus_pw_scf_stru
 from dpgen.generator.lib.siesta import make_siesta_input
 from dpgen.generator.run import make_vasp_incar
 import dpdata
@@ -73,21 +72,6 @@ def make_pwscf(tdir, fp_params, mass_map, fp_pp_path, fp_pp_files, user_input) :
     open('input', 'w').write(ret)        
     os.chdir(cwd)
 
-def make_abacus_pw_scf(tdir, fp_params, mass_map, fp_pp_path, fp_pp_files):
-    cwd = os.getcwd()
-    os.chdir(tdir)
-    sys_data = dpdata.System('POSCAR').data
-    sys_data['atom_masses'] = mass_map
-    ret = make_abacus_pw_scf_input(fp_params) #INPUT
-    open('INPUT', 'w').write(ret)
-
-    ret = make_abacus_pw_scf_kpt(fp_params) #KPT
-    open('KPT', 'w').write(ret)
-
-    ret = make_abacus_pw_scf_stru(sys_data, fp_pp_files) #STRU
-    open('STRU', 'w').write(ret)
-    os.chdir(cwd)
-
 def make_siesta(tdir, fp_params, fp_pp_path, fp_pp_files) :
     cwd = os.getcwd()
     os.chdir(tdir)
@@ -147,10 +131,6 @@ def create_init_tasks(target_folder, param_file, output, fp_json, verbose = True
                     fp_params = fp_jdata['fp_params']
                     user_input = False
                 make_pwscf('.', fp_params, mass_map, fp_pp_files, fp_pp_files, user_input)
-            elif fp_style == "abacus/scf":
-                if "user_fp_params" not in fp_jdata:
-                    raise RuntimeError("'user_fp_params' key and its value are necessary for 'abacus/scf' fp_style.")
-                make_abacus_pw_scf(".", fp_params, mass_map, fp_pp_files, fp_pp_files)
             elif fp_style == 'siesta':
                 make_siesta('.', fp_params, fp_pp_files, fp_pp_files)
             os.chdir(cwd_)            
@@ -223,8 +203,6 @@ def create_tasks(target_folder, param_file, output, fp_json, verbose = True, num
         make_vasp_incar(fp_params, output)
     if fp_style == 'pwscf' :
         copy_pp_files(output, fp_pp_path, fp_pp_files)
-    if fp_style == 'abacus/scf' :
-        copy_pp_files(output, fp_pp_path, fp_pp_files)
     if fp_style == 'siesta' :
         copy_pp_files(output, fp_pp_path, fp_pp_files)
     for si in range(numb_sys) :
@@ -266,8 +244,6 @@ def create_tasks(target_folder, param_file, output, fp_json, verbose = True, num
                     fp_params = fp_jdata['fp_params']
                     user_input = False
                 make_pwscf('.', fp_params, mass_map, fp_pp_files, fp_pp_files, user_input)
-            elif fp_style == 'abacus/scf':
-                make_abacus_pw_scf('.', fp_params, mass_map, fp_pp_files, fp_pp_files)
             elif fp_style == 'siesta':
                 make_siesta('.', fp_params, mass_map, fp_pp_files, fp_pp_files)
             os.chdir(cwd_)
