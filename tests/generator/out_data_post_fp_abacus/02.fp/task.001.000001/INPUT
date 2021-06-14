@@ -1,0 +1,14 @@
+INPUT_PARAMETERS
+ntype 2
+pseudo_dir ./
+ecutwfc 80.000000
+mixing_type pulay
+mixing_beta 0.400000
+symmetry 1
+nbands 5.000000
+nspin 1
+ks_solver cg
+smearing fixed
+sigma 0.001000
+force 1
+stress 1

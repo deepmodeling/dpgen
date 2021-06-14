@@ -43,6 +43,7 @@ from dpgen.generator.lib.vasp import write_incar_dict
 from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
 from dpgen.generator.lib.vasp import incar_upper
 from dpgen.generator.lib.pwscf import make_pwscf_input
+from dpgen.generator.lib.abacus_pw_scf import make_abacus_pw_scf_stru, make_abacus_pw_scf_input, make_abacus_pw_scf_kpt
 #from dpgen.generator.lib.pwscf import cvt_1frame
 from dpgen.generator.lib.pwmat import make_pwmat_input_dict
 from dpgen.generator.lib.pwmat import write_input_dict
@@ -1795,6 +1796,41 @@ def make_fp_pwscf(iter_index,
     # link pp files
     _link_fp_vasp_pp(iter_index, jdata)
 
+def make_fp_abacus_pw_scf(iter_index,
+                  jdata) :
+    # make config
+    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
+    if len(fp_tasks) == 0 :
+        return
+    # make abacus/pw/scf input
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    fp_pp_files = jdata['fp_pp_files']
+    if 'user_fp_params' in jdata.keys() :
+        fp_params = jdata['user_fp_params']
+        #user_input = True
+    else:
+        raise RuntimeError("Key 'user_fp_params' and its value have to be specified in parameter json file.")
+    cwd = os.getcwd()
+    for ii in fp_tasks:
+        os.chdir(ii)
+        sys_data = dpdata.System('POSCAR').data
+        if 'mass_map' in jdata:
+            sys_data['atom_masses'] = jdata['mass_map']
+        ret_input = make_abacus_pw_scf_input(fp_params)
+        with open('INPUT', 'w') as fp:
+            fp.write(ret_input)
+        ret_kpt = make_abacus_pw_scf_kpt(fp_params)
+        with open("KPT", "w") as fp:
+            fp.write(ret_kpt)
+        ret_stru = make_abacus_pw_scf_stru(sys_data, fp_pp_files)
+        with open("STRU", "w") as fp:
+            fp.write(ret_stru)
+
+        os.chdir(cwd)
+    # link pp files
+    _link_fp_vasp_pp(iter_index, jdata)
+
 
 def make_fp_siesta(iter_index,
                   jdata) :
@@ -1918,6 +1954,8 @@ def make_fp (iter_index,
         make_fp_vasp(iter_index, jdata)
     elif fp_style == "pwscf" :
         make_fp_pwscf(iter_index, jdata)
+    elif fp_style == "abacus/scf" :
+        make_fp_abacus_pw_scf(iter_index, jdata)
     elif fp_style == "siesta" :
         make_fp_siesta(iter_index, jdata)
     elif fp_style == "gaussian" :
@@ -1951,6 +1989,16 @@ def _qe_check_fin(ii) :
         return False
     return True
 
+def _abacus_pw_scf_check_fin(ii) :
+    if os.path.isfile(os.path.join(ii, 'OUT.ABACUS/running_scf.log')) :
+        with open(os.path.join(ii, 'OUT.ABACUS/running_scf.log'), 'r') as fp :
+            content = fp.read()
+            count = content.count('!FINAL_ETOT_IS')
+            if count != 1 :
+                return False
+    else :
+        return False
+    return True
 
 def _siesta_check_fin(ii) :
     if os.path.isfile(os.path.join(ii, 'output')) :
@@ -2061,6 +2109,10 @@ def run_fp (iter_index,
         forward_files = ['input'] + fp_pp_files
         backward_files = ['output']
         run_fp_inner(iter_index, jdata, mdata,  forward_files, backward_files, _qe_check_fin, log_file = 'output')
+    elif fp_style == "abacus/scf":
+        forward_files = ["INPUT", "STRU", "KPT"] + fp_pp_files
+        backward_files = ["output", "OUT.ABACUS"]
+        run_fp_inner(iter_index, jdata, mdata,  forward_files, backward_files, _abacus_pw_scf_check_fin, log_file = 'output')
     elif fp_style == "siesta":
         forward_files = ['input'] + fp_pp_files
         backward_files = ['output']
@@ -2234,6 +2286,51 @@ def post_fp_pwscf (iter_index,
         sys_data_path = os.path.join(work_path, 'data.%s'%ss)
         all_sys.to_deepmd_raw(sys_data_path)
         all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
+
+def post_fp_abacus_pw_scf (iter_index,
+                        jdata):
+    model_devi_jobs = jdata['model_devi_jobs']
+    assert (iter_index < len(model_devi_jobs))
+
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
+    fp_tasks.sort()
+    if len(fp_tasks) == 0 :
+        return
+
+    system_index = []
+    for ii in fp_tasks :
+        system_index.append(os.path.basename(ii).split('.')[1])
+    system_index.sort()
+    set_tmp = set(system_index)
+    system_index = list(set_tmp)
+    system_index.sort()
+
+    cwd = os.getcwd()
+    for ss in system_index :
+        sys_output = glob.glob(os.path.join(work_path, "task.%s.*"%ss))
+        sys_input = glob.glob(os.path.join(work_path, "task.%s.*/INPUT"%ss))
+        sys_output.sort()
+        sys_input.sort()
+
+        flag=True
+        for ii,oo in zip(sys_input,sys_output) :
+            if flag:
+                _sys = dpdata.LabeledSystem(oo, fmt = 'abacus/scf', type_map = jdata['type_map'])
+                if len(_sys)>0:
+                   all_sys=_sys
+                   flag=False
+                else:
+                   pass
+            else:
+                _sys = dpdata.LabeledSystem(oo, fmt = 'abacus/scf', type_map = jdata['type_map'])
+                if len(_sys)>0:
+                   all_sys.append(_sys)
+
+        sys_data_path = os.path.join(work_path, 'data.%s'%ss)
+        all_sys.to_deepmd_raw(sys_data_path)
+        all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))           
 
 def post_fp_siesta (iter_index,
                    jdata):
@@ -2424,6 +2521,8 @@ def post_fp (iter_index,
         post_fp_vasp(iter_index, jdata)
     elif fp_style == "pwscf" :
         post_fp_pwscf(iter_index, jdata)
+    elif fp_style == "abacus/scf":
+        post_fp_abacus_pw_scf(iter_index, jdata)
     elif fp_style == "siesta":
         post_fp_siesta(iter_index, jdata)
     elif fp_style == 'gaussian' :
