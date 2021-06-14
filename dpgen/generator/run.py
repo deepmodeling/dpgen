@@ -326,13 +326,37 @@ def make_train (iter_index,
             jinput['model']['fitting_net'].pop('numb_fparam', None)
         else:
             raise RuntimeError('invalid setting for use_ele_temp ' + str(use_ele_temp))
+    elif LooseVersion(mdata["deepmd_version"]) >= LooseVersion('2') and LooseVersion(mdata["deepmd_version"]) < LooseVersion('3'):
+        # 2.x
+        jinput['training']['training_data'] = {}
+        jinput['training']['training_data']['systems'] = init_data_sys
+        jinput['training']['training_data']['batch_size'] = init_batch_size
+        jinput['model']['type_map'] = jdata['type_map']
+        # electron temperature
+        if use_ele_temp == 0:
+            pass
+        elif use_ele_temp == 1:
+            jinput['model']['fitting_net']['numb_fparam'] = 1
+            jinput['model']['fitting_net'].pop('numb_aparam', None)
+        elif use_ele_temp == 2:
+            jinput['model']['fitting_net']['numb_aparam'] = 1
+            jinput['model']['fitting_net'].pop('numb_fparam', None)
+        else:
+            raise RuntimeError('invalid setting for use_ele_temp ' + str(use_ele_temp))
     else:
         raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x version!" )
     # set training reuse model
     if training_reuse_iter is not None and iter_index >= training_reuse_iter:
-        jinput['training']['auto_prob_style'] \
-            ="prob_sys_size; 0:%d:%f; %d:%d:%f" \
-            %(old_range, training_reuse_old_ratio, old_range, len(init_data_sys), 1.-training_reuse_old_ratio)
+        if LooseVersion('1') <= LooseVersion(mdata["deepmd_version"]) < LooseVersion('2'):
+            jinput['training']['auto_prob_style'] \
+                ="prob_sys_size; 0:%d:%f; %d:%d:%f" \
+                %(old_range, training_reuse_old_ratio, old_range, len(init_data_sys), 1.-training_reuse_old_ratio)
+        elif LooseVersion('2') <= LooseVersion(mdata["deepmd_version"]) < LooseVersion('3'):
+            jinput['training']['training_data']['auto_prob'] \
+                ="prob_sys_size; 0:%d:%f; %d:%d:%f" \
+                %(old_range, training_reuse_old_ratio, old_range, len(init_data_sys), 1.-training_reuse_old_ratio)
+        else:
+            raise RuntimeError("Unsupported DeePMD-kit version: %s" % mdata["deepmd_version"])
         if jinput['loss'].get('start_pref_e') is not None:
             jinput['loss']['start_pref_e'] = training_reuse_start_pref_e
         if jinput['loss'].get('start_pref_f') is not None:
@@ -349,7 +373,7 @@ def make_train (iter_index,
                 raise RuntimeError ("data sys %s does not exists, cwd is %s" % (jj, os.getcwd()))
         os.chdir(cwd)
         # set random seed for each model
-        if LooseVersion(mdata["deepmd_version"]) >= LooseVersion('1') and LooseVersion(mdata["deepmd_version"]) < LooseVersion('2'):
+        if LooseVersion(mdata["deepmd_version"]) >= LooseVersion('1') and LooseVersion(mdata["deepmd_version"]) < LooseVersion('3'):
             # 1.x
             jinput['model']['descriptor']['seed'] = random.randrange(sys.maxsize) % (2**32)
             jinput['model']['fitting_net']['seed'] = random.randrange(sys.maxsize) % (2**32)
@@ -452,7 +476,7 @@ def run_train (iter_index,
         task_path = os.path.join(work_path, train_task_fmt % ii)
         all_task.append(task_path)
     commands = []
-    if LooseVersion(mdata["deepmd_version"]) >= LooseVersion('1') and LooseVersion(mdata["deepmd_version"]) < LooseVersion('2'):
+    if LooseVersion(mdata["deepmd_version"]) >= LooseVersion('1') and LooseVersion(mdata["deepmd_version"]) < LooseVersion('3'):
         
         # 1.x
         ## Commands are like `dp train` and `dp freeze`
