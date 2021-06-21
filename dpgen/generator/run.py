@@ -787,6 +787,12 @@ def make_model_devi (iter_index,
                 system.to_lammps_lmp(os.path.join(conf_path, lmp_name))
             elif model_devi_engine == "gromacs":
                 pass
+            elif model_devi_engine == "amber":
+                # Jinzhe's specific Amber version
+                conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter)
+                rst7_name = conf_name + '.rst7'
+                # link restart file
+                os.symlink(cc, os.path.join(conf_path, rst7_name))
             conf_counter += 1
         sys_counter += 1
 
@@ -800,6 +806,8 @@ def make_model_devi (iter_index,
             _make_model_devi_native(iter_index, jdata, mdata, conf_systems)
         elif model_devi_engine == "gromacs":
             _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems)
+        elif model_devi_engine == "amber":
+            _make_model_devi_amber(iter_index, jdata, mdata, conf_systems)
         else:
             raise RuntimeError("unknown model_devi engine", model_devi_engine)
     elif input_mode == "revise_template":
@@ -1123,7 +1131,80 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
             conf_counter += 1
         sys_counter += 1
 
+def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
+    """Make amber's MD inputs.
+    inputs: restart (coords), param, mdin, graph, disang (optional)
+    """
+    model_devi_jobs = jdata['model_devi_jobs']
+    if (iter_index >= len(model_devi_jobs)) :
+        return False
+    cur_job = model_devi_jobs[iter_index]   
+    sys_idx = expand_idx(cur_job['sys_idx'])
+    if (len(sys_idx) != len(list(set(sys_idx)))) :
+        raise RuntimeError("system index should be uniq")
 
+    graph_idxs = cur_job.get('graphs', [0])
+
+    iter_name = make_iter_name(iter_index)
+    train_path = os.path.join(iter_name, train_name)
+    train_path = os.path.abspath(train_path)
+    models = glob.glob(os.path.join(train_path, "graph*pb"))
+    task_model_list = []
+    for ii in models:
+        task_model_list.append(os.path.join('..', os.path.basename(ii)))
+    work_path = os.path.join(iter_name, model_devi_name)
+
+    sys_counter = 0
+    for ss in conf_systems:
+        conf_counter = 0
+        task_counter = 0
+        for cc in ss :
+            task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
+            conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter)
+            task_path = os.path.join(work_path, task_name)
+            # create task path
+            create_path(task_path)
+            # link restart file
+            loc_conf_name = 'init.rst7'
+            os.symlink(os.path.join(os.path.join('..','confs'), conf_name + ".rst7"),
+                    os.path.join(task_path, loc_conf_name) )
+            cwd_ = os.getcwd()
+            # chdir to task path
+            os.chdir(task_path)
+            # TODO: consider writing input in json instead of a given file
+            mdin = cur_job['mdin']
+            with open(mdin) as f, open('init.mdin', 'w') as fw:
+                mdin_str = f.read()
+                for ii, mm in enumerate(task_model_list):
+                    # replace graph
+                    mdin_str = mdin_str.replace("@GRAPH_FILE%d@" % ii, mm)
+                fw.write(mdin_str)
+            # link parm file
+            parm7 = cur_job['parm7']
+            os.symlink(parm7, 'qmmm.parm7')
+            
+            # reaction coordinates of umbrella sampling
+            # TODO: maybe consider a better name instead of `r`?
+            if 'r' in jdata:
+                r=jdata['r'][sys_idx[sys_counter]][conf_counter]
+                # r can either be a float or a list of float (for 2D coordinates)
+                if type(r) is not list:
+                    r = [r]
+                # disang file should include RVAL, RVAL2, ...
+                with open(cur_job['disang']) as f, open('TEMPLATE.disang', 'w') as fw:
+                    tl = f.read()
+                    for ii, rr in enumerate(r):
+                        tl = tl.replace("RVAL"+str(ii+1), rr)
+                    if len(r) == 1:
+                        tl = tl.replace("RVAL", r[0])
+                    fw.write(tl)
+
+            with open('job.json', 'w') as fp:
+                json.dump(cur_job, fp, indent = 4)
+            os.chdir(cwd_)
+            task_counter += 1
+            conf_counter += 1
+        sys_counter += 1            
 
 def run_model_devi (iter_index,
                     jdata,
@@ -1193,7 +1274,11 @@ def run_model_devi (iter_index,
         
         forward_files = [mdp_filename, topol_filename, conf_filename, index_filename,  "input.json" ]
         backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , 'model_devi.out', 'model_devi.log']
-
+    elif model_devi_engine == "amber":
+        # TODO: currently all options are written in lmp_exec, but we may move them here
+        command = [mdata['lmp_exec']]
+        forward_files = ['init.rst7', 'init.mdin', 'qmmm.parm7', 'TEMPLATE.disang']
+        backward_files = ['rc.mdout', 'rc.nc', 'rc.rst7', 'rc.mdinfo', 'TEMPLATE.dumpave']
 
     cwd = os.getcwd()
     dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], work_path, run_tasks, model_devi_group_size)
@@ -1299,6 +1384,7 @@ def _make_fp_vasp_inner (modd_path,
     system_index.sort()
 
     fp_tasks = []
+    model_devi_engine = jdata.get('model_devi_engine', 'lammps')
     cluster_cutoff = jdata['cluster_cutoff'] if jdata.get('use_clusters', False) else None
     # skip save *.out if detailed_report_make_fp is False, default is True
     detailed_report_make_fp = jdata.get("detailed_report_make_fp", True)
@@ -1322,41 +1408,63 @@ def _make_fp_vasp_inner (modd_path,
         for tt in modd_system_task :
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                all_conf = np.loadtxt(os.path.join(tt, 'model_devi.out'))
-                for ii in range(all_conf.shape[0]) :
-                    if all_conf[ii][0] < model_devi_skip :
-                        continue
-                    cc = int(all_conf[ii][0])
-                    if cluster_cutoff is None:
-                        if (all_conf[ii][1] < e_trust_hi and all_conf[ii][1] >= e_trust_lo) or \
-                           (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] >= f_trust_lo) :
-                            fp_candidate.append([tt, cc])
-                            counter['candidate'] += 1
-                        elif (all_conf[ii][1] >= e_trust_hi ) or (all_conf[ii][4] >= f_trust_hi ):
+                if model_devi_engine in ['lammps', 'gromacs']:
+                    all_conf = np.loadtxt(os.path.join(tt, 'model_devi.out'))
+                    for ii in range(all_conf.shape[0]) :
+                        if all_conf[ii][0] < model_devi_skip :
+                            continue
+                        cc = int(all_conf[ii][0])
+                        if cluster_cutoff is None:
+                            if (all_conf[ii][1] < e_trust_hi and all_conf[ii][1] >= e_trust_lo) or \
+                            (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] >= f_trust_lo) :
+                                fp_candidate.append([tt, cc])
+                                counter['candidate'] += 1
+                            elif (all_conf[ii][1] >= e_trust_hi ) or (all_conf[ii][4] >= f_trust_hi ):
+                                if detailed_report_make_fp:
+                                    fp_rest_failed.append([tt, cc])
+                                counter['failed'] += 1
+                            elif (all_conf[ii][1] < e_trust_lo and all_conf[ii][4] < f_trust_lo ):
+                                if detailed_report_make_fp:
+                                    fp_rest_accurate.append([tt, cc])
+                                counter['accurate'] += 1
+                            else :
+                                raise RuntimeError('md traj %s frame %d with f devi %f does not belong to either accurate, candidiate and failed, it should not happen' % (tt, ii, all_conf[ii][4]))
+                        else:
+                            idx_candidate = np.where(np.logical_and(all_conf[ii][7:] < f_trust_hi, all_conf[ii][7:] >= f_trust_lo))[0]
+                            for jj in idx_candidate:
+                                fp_candidate.append([tt, cc, jj])
+                            counter['candidate'] += len(idx_candidate)
+                            idx_rest_accurate = np.where(all_conf[ii][7:] < f_trust_lo)[0]
                             if detailed_report_make_fp:
-                                fp_rest_failed.append([tt, cc])
-                            counter['failed'] += 1
-                        elif (all_conf[ii][1] < e_trust_lo and all_conf[ii][4] < f_trust_lo ):
+                                for jj in idx_rest_accurate:
+                                    fp_rest_accurate.append([tt, cc, jj])
+                            counter['accurate'] += len(idx_rest_accurate)
+                            idx_rest_failed = np.where(all_conf[ii][7:] >= f_trust_hi)[0]
                             if detailed_report_make_fp:
-                                fp_rest_accurate.append([tt, cc])
-                            counter['accurate'] += 1
-                        else :
-                            raise RuntimeError('md traj %s frame %d with f devi %f does not belong to either accurate, candidiate and failed, it should not happen' % (tt, ii, all_conf[ii][4]))
-                    else:
-                        idx_candidate = np.where(np.logical_and(all_conf[ii][7:] < f_trust_hi, all_conf[ii][7:] >= f_trust_lo))[0]
-                        for jj in idx_candidate:
-                            fp_candidate.append([tt, cc, jj])
-                        counter['candidate'] += len(idx_candidate)
-                        idx_rest_accurate = np.where(all_conf[ii][7:] < f_trust_lo)[0]
-                        if detailed_report_make_fp:
-                            for jj in idx_rest_accurate:
-                                fp_rest_accurate.append([tt, cc, jj])
-                        counter['accurate'] += len(idx_rest_accurate)
-                        idx_rest_failed = np.where(all_conf[ii][7:] >= f_trust_hi)[0]
-                        if detailed_report_make_fp:
-                            for jj in idx_rest_failed:
-                                fp_rest_failed.append([tt, cc, jj])
-                        counter['failed'] += len(idx_rest_failed)
+                                for jj in idx_rest_failed:
+                                    fp_rest_failed.append([tt, cc, jj])
+                            counter['failed'] += len(idx_rest_failed)
+                elif model_devi_engine == "amber":
+                    with open(os.path.join(tt, "rc.mdout")) as f:
+                        cc = 0
+                        for line in f:
+                            if line.startswith("Active learning frame written with max. frc. std.:"):
+                                model_devi = float(line.split()[-2]) * 0.04336410390059322
+                                if model_devi < f_trust_lo:
+                                    # accurate
+                                    if detailed_report_make_fp:
+                                        fp_rest_accurate.append([tt, cc])
+                                    counter['accurate'] += 1
+                                elif model_devi > f_trust_hi:
+                                    # failed
+                                    if detailed_report_make_fp:
+                                        fp_rest_failed.append([tt, cc])
+                                    counter['failed'] += 1
+                                else:
+                                    # candidate
+                                    fp_candidate.append([tt, cc])
+                                    counter['candidate'] += 1
+                                cc += 1
         # print a report
         fp_sum = sum(counter.values())
         for cc_key, cc_value in counter.items():
@@ -1393,6 +1501,7 @@ def _make_fp_vasp_inner (modd_path,
         model_devi_engine = jdata.get("model_devi_engine", "lammps")
         count_bad_box = 0
         count_bad_cluster = 0
+        fp_candidate = sorted(fp_candidate[:numb_task])
         for cc in range(numb_task) :
             tt = fp_candidate[cc][0]
             ii = fp_candidate[cc][1]
@@ -1402,6 +1511,9 @@ def _make_fp_vasp_inner (modd_path,
                 conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
             elif model_devi_engine == "gromacs":
                 conf_name = os.path.join(conf_name, str(ii) + '.gromacstrj')
+            elif model_devi_engine == "amber":
+                conf_name = os.path.join(tt, "rc.nc")
+                rst_name = os.path.abspath(os.path.join(tt, "init.rst7"))
             else:
                 raise RuntimeError("unknown model_devi engine", model_devi_engine)
             conf_name = os.path.abspath(conf_name)
@@ -1435,7 +1547,26 @@ def _make_fp_vasp_inner (modd_path,
             cwd = os.getcwd()
             os.chdir(fp_task_path)
             if cluster_cutoff is None:
-                os.symlink(os.path.relpath(conf_name), 'conf.dump')
+                if model_devi_engine in ("lammps", "gromacs"):
+                    os.symlink(os.path.relpath(conf_name), 'conf.dump')
+                elif model_devi_engine == "amber":
+                    # read and write with ase
+                    from ase.io.netcdftrajectory import NetCDFTrajectory, write_netcdftrajectory
+                    if cc > 0 and tt == fp_candidate[cc-1][0]:
+                        # same MD task, use the same file
+                        pass
+                    else:
+                        # not the same file
+                        if cc > 0:
+                            # close the old file
+                            netcdftraj.close()
+                        netcdftraj = NetCDFTrajectory(conf_name)
+                    # write nc file
+                    write_netcdftrajectory('rc.nc', netcdftraj[ii])
+                    if cc >= numb_task - 1:
+                        netcdftraj.close()
+                    # link restart since it's necessary to start Amber
+                    os.symlink(os.path.relpath(rst_name), 'init.rst7')
                 os.symlink(os.path.relpath(job_name), 'job.json')
             else:
                 os.symlink(os.path.relpath(poscar_name), 'POSCAR')
@@ -1456,6 +1587,8 @@ def _make_fp_vasp_inner (modd_path,
             elif model_devi_engine == "gromacs":
                 # dump_to_poscar('conf.dump', 'POSCAR', type_map, fmt = "gromacs/gro")
                 dump_to_deepmd_raw('conf.dump', 'deepmd.raw', type_map, fmt = 'gromacs/gro')
+            elif model_devi_engine == "amber":
+                pass
             else:
                 raise RuntimeError("unknown model_devi engine", model_devi_engine)
             os.chdir(cwd)
@@ -1945,6 +2078,24 @@ def make_fp_pwmat (iter_index,
     # 2, create pwmat input
     _make_fp_pwmat_input(iter_index, jdata)
 
+def make_fp_amber_diff(iter_index, jdata):
+    """Run amber twice to calculate high-level and low-level potential,
+    and then generate difference between them."""
+    # make config
+    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
+    # make amber input
+    cwd = os.getcwd()
+    for ii in fp_tasks:
+        os.chdir(ii)
+
+        # link two mdin files and param7
+        os.symlink(jdata['fp_params']['low_level_mdin'] ,'low_level.mdin')
+        os.symlink(jdata['fp_params']['high_level_mdin'] ,'high_level.mdin')
+        os.symlink(jdata['fp_params']['parm7'] ,'qmmm.parm7')
+        create_path("dataset")
+
+        os.chdir(cwd)
+
 def make_fp (iter_index,
              jdata,
              mdata) :
@@ -1964,6 +2115,8 @@ def make_fp (iter_index,
         make_fp_cp2k(iter_index, jdata)
     elif fp_style == "pwmat" :
         make_fp_pwmat(iter_index, jdata)
+    elif fp_style == "amber/diff":
+        make_fp_amber_diff(iter_index, jdata)
     else :
         raise RuntimeError ("unsupported fp style")
 
@@ -2129,6 +2282,14 @@ def run_fp (iter_index,
         forward_files = ['atom.config', 'etot.input'] + fp_pp_files
         backward_files = ['REPORT', 'OUT.MLMD', 'output']
         run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, _pwmat_check_fin, log_file = 'output')
+    elif fp_style == 'amber/diff':
+        forward_files = ['low_level.mdin', 'high_level.mdin', 'qmmm.parm7', 'rc.nc', 'init.rst7', 'dataset']
+        backward_files = [
+            'low_level.mdfrc', 'low_level.mdout', 'low_level.mden', 'low_level.mdinfo',
+            'high_level.mdfrc', 'high_level.mdout', 'high_level.mden', 'high_level.mdinfo',
+            'output', 'dataset'
+        ]
+        run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, None, log_file = 'output')
     else :
         raise RuntimeError ("unsupported fp style")
 
@@ -2513,6 +2674,36 @@ def post_fp_pwmat (iter_index,
        raise RuntimeError("find too many unsuccessfully terminated jobs")
 
 
+def post_fp_amber_diff(iter_index, jdata):
+    model_devi_jobs = jdata['model_devi_jobs']
+    assert (iter_index < len(model_devi_jobs))
+
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
+    fp_tasks.sort()
+    if len(fp_tasks) == 0 :
+        return
+
+    system_index = []
+    for ii in fp_tasks :
+        system_index.append(os.path.basename(ii).split('.')[1])
+    system_index.sort()
+    set_tmp = set(system_index)
+    system_index = list(set_tmp)
+    system_index.sort()
+
+    for ss in system_index :
+        sys_output = glob.glob(os.path.join(work_path, "task.%s.*"%ss))
+        sys_output.sort()
+        all_sys=dpdata.MultiSystems()
+        for oo in sys_output :
+            sys=dpdata.MultiSystems().from_deepmd_npy(os.path.join(oo, 'dataset'))
+            all_sys.append(sys)
+        sys_data_path = os.path.join(work_path, 'data.%s'%ss)
+        all_sys.to_deepmd_raw(sys_data_path)
+        all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
+
 def post_fp (iter_index,
              jdata) :
     fp_style = jdata['fp_style']
@@ -2531,6 +2722,8 @@ def post_fp (iter_index,
         post_fp_cp2k(iter_index, jdata)
     elif fp_style == 'pwmat' :
         post_fp_pwmat(iter_index, jdata)
+    elif fp_style == 'amber/diff':
+        post_fp_amber_diff(iter_index, jdata)
     else :
         raise RuntimeError ("unsupported fp style")
     # clean traj
