@@ -1843,7 +1843,7 @@ def run_fp (iter_index,
         backward_files = ['output']
         run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, _gaussian_check_fin, log_file = 'output')
     elif fp_style == "cp2k":
-        forward_files = ['input.inp', 'coord.xyz'] 
+        forward_files = ['input.inp', 'coord.xyz']
         backward_files = ['output']
         run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, _cp2k_check_fin, log_file = 'output')
     elif fp_style == "pwmat" :
