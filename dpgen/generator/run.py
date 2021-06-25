@@ -957,7 +957,6 @@ def run_model_devi (iter_index,
     model_devi_resources = mdata['model_devi_resources']
     use_plm = jdata.get('model_devi_plumed', False)
     use_plm_path = jdata.get('model_devi_plumed_path', False)
-    hills = jdata.get('hills', False)
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, model_devi_name)
@@ -992,8 +991,6 @@ def run_model_devi (iter_index,
         forward_files += ['input.plumed']
        # backward_files += ['output.plumed']
         backward_files += ['output.plumed','COLVAR','dump.0.xyz']
-        if hills:
-            backward_files += ['HILLS']
         if use_plm_path:
             forward_files += ['plmpath.pdb']
 
@@ -1846,7 +1843,7 @@ def run_fp (iter_index,
         backward_files = ['output']
         run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, _gaussian_check_fin, log_file = 'output')
     elif fp_style == "cp2k":
-        forward_files = ['input.inp', 'coord.xyz'] + fp_pp_files
+        forward_files = ['input.inp', 'coord.xyz'] 
         backward_files = ['output']
         run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, _cp2k_check_fin, log_file = 'output')
     elif fp_style == "pwmat" :
