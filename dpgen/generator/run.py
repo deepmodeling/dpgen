@@ -551,8 +551,9 @@ def run_train (iter_index,
         train_group_size = 1
 
     api_version = mdata.get('api_version', '0.9')
+    print("debug:api_version", mdata)
 
-    if LooseVersion(api_version) <= '1.0':
+    if LooseVersion(api_version) < '1.0':
         dispatcher = make_dispatcher(mdata['train_machine'], mdata['train_resources'], work_path, run_tasks, train_group_size)
         dispatcher.run_jobs(mdata['train_resources'],
                         commands,
@@ -575,7 +576,9 @@ def run_train (iter_index,
             group_size=train_group_size,
             trans_comm_data=trans_comm_data,
             forward_files=forward_files,
-            backward_files=backward_files)
+            backward_files=backward_files,
+            outlog = 'train.log',
+            errlog = 'train.log')
         submission.run_submission()
 
 def post_train (iter_index,

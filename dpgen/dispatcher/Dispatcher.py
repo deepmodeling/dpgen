@@ -359,6 +359,7 @@ def make_submission(mdata, mdata_resources, commands, work_path, run_tasks, grou
             outlog=outlog,
             errlog=errlog
         )
+        task_list.append(task)
 
     submission = Submission(
         work_base=work_path,
