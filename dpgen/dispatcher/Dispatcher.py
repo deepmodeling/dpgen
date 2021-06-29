@@ -1,4 +1,6 @@
+from distutils.version import LooseVersion
 import os,sys,time,random,json,glob
+from dpdispatcher import Task, Submission, Resources, Machine
 from dpgen.dispatcher.LocalContext import LocalSession
 from dpgen.dispatcher.LocalContext import LocalContext
 from dpgen.dispatcher.LazyLocalContext import LazyLocalContext
@@ -12,6 +14,8 @@ from dpgen.dispatcher.AWS import AWS
 from dpgen.dispatcher.JobStatus import JobStatus
 from dpgen import dlog
 from hashlib import sha1
+# import dargs
+from dargs.dargs import Argument
 
 def _split_tasks(tasks,
                  group_size):
@@ -338,3 +342,95 @@ def make_dispatcher(mdata, mdata_resource=None, work_path=None, run_tasks=None, 
             context_type = 'lazy-local'
         disp = Dispatcher(mdata, context_type=context_type, batch_type=batch_type)
         return disp
+
+def make_submission(mdata, mdata_resources, commands, work_path, run_tasks, group_size,
+    trans_comm_data, forward_files, backward_files, api_version='0.9'):
+
+    if LooseVersion(api_version) <= LooseVersion('1.0'):
+        if hostname in mdata:
+            context_type = 'ssh'
+            remote_profile = {
+                'hostname': mdata['hostname'],
+                'username': mdata['username'],
+                'password': mdata.get('password', None),
+                'key_filename': mdata.get('key_filename', None),
+                'passphrase': mdata.get('passphrase', None),
+                'timeout': mdata.get('timeout', 10),
+                'port': mdata.get('port', 22),
+            }
+        else:
+            lazy_local =  (mdata.get('lazy-local', False)) or (mdata.get('lazy_local', False)) 
+            if lazy_local:
+                context_type = 'lazy_local'
+            else:
+                context_type = 'local'
+        try:
+            batch_type = mdata['batch']
+        except:
+            dlog.info('cannot find key "batch" in machine file, try to use deprecated key "machine_type"')
+            batch_type = mdata['machine_type']
+        
+        local_root = os.path.abspath(os.getcwd())
+        remote_root = mdata['work_path']
+
+        machine_dict = {
+            'batch_type': batch_type,
+            'context_type': context_type,
+            'local_root': local_root,
+            'remote_root': remote_root,
+            'remote_profile': remote_profile
+        }
+        resources_dict = map_old_resources_to_new_resources(mdata_resources)
+        task_list = []
+        for ii in run_tasks:
+            task = Task(
+                command=commands,
+                task_work_path=ii,
+                forward_files=forward_files,
+                backward_files=backward_files,
+                outlog='log',
+                errlog='err'
+            )
+            task_list.append(task)
+
+        machine = Machine.load_from_dict(machine_dict)
+        resources = Resources.load_from_dict(resources_dict)
+
+        submission = Submission(
+            work_base=work_path,
+            machine=machine,
+            resources=resources,
+            task_list=task_list,
+            forward_common_files=trans_comm_data,
+            backward_common_files=[]
+        )
+
+    elif LooseVersion(api_version) >= LooseVersion('1.0'):        
+        pass
+
+def map_old_resources_to_new_resources(mdata_resources):
+    strategy_args = [
+            Argument("if_cuda_multi_devices", bool, optional=True, default=True)
+        ]
+    strategy_format = Argument("strategy", dict, strategy_args, optional=True)
+
+    resources_args = [
+        Argument("number_node", int, optional=False, alias=['numb_node']),
+        Argument("cpu_per_node", int, optional=False, alias=['node_cpu', 'task_per_node']),
+        Argument("gpu_per_node", int, optional=False, alias=['numb_gpu']),
+        Argument("queue_name", str, optional=False, alias=['partition']),
+        Argument("group_size", int, optional=True, default=1),
+        strategy_format,
+        Argument("custom_flags", list, optional=True),
+        Argument("para_deg", int, optional=True),
+        Argument("source_list", list, optional=True),
+        Argument("module_unload_list", list, optional=True),
+        Argument("module_list", list, optional=True),
+        Argument("envs", dict, optional=True),
+        ]
+    resources_dict = resources_args.normalize_value(mdata_resources)
+    return resources_dict
+
+
+
+

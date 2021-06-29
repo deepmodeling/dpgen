@@ -58,7 +58,7 @@ from dpgen.remote.group_jobs import ucloud_submit_jobs, aws_submit_jobs
 from dpgen.remote.group_jobs import group_slurm_jobs
 from dpgen.remote.group_jobs import group_local_jobs
 from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
-from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, make_dispatcher
+from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, make_dispatcher, make_submission
 from dpgen.util import sepline
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar,Kpoints,Potcar
@@ -126,7 +126,7 @@ def copy_model(numb_model, prv_iter_index, cur_iter_index) :
     prv_train_path = os.path.abspath(prv_train_path)
     cur_train_path = os.path.abspath(cur_train_path)
     create_path(cur_train_path)
-    for ii in range(numb_model) :
+    for ii in range(numb_model):
         prv_train_task = os.path.join(prv_train_path, train_task_fmt%ii)
         os.chdir(cur_train_path)
         os.symlink(os.path.relpath(prv_train_task), train_task_fmt%ii)
@@ -446,6 +446,7 @@ def detect_batch_size(batch_size, system=None):
 def run_train (iter_index,
                jdata,
                mdata) :
+    # print("debug:run_train:mdata", mdata)
     # load json param
     numb_models = jdata['numb_models']
     # train_param = jdata['train_param']
@@ -549,17 +550,42 @@ def run_train (iter_index,
     except:
         train_group_size = 1
 
-    dispatcher = make_dispatcher(mdata['train_machine'], mdata['train_resources'], work_path, run_tasks, train_group_size)
-    dispatcher.run_jobs(mdata['train_resources'],
-                        commands,
-                        work_path,
-                        run_tasks,
-                        train_group_size,
-                        trans_comm_data,
-                        forward_files,
-                        backward_files,
-                        outlog = 'train.log',
-                        errlog = 'train.log')
+
+    print("debug:keys",
+        mdata['train_machine'],
+        mdata['train_resources'],
+        f"commands:{commands}"
+        f"work_path:{work_path}",
+        f"run_tasks:{run_tasks}",
+        f"train_group_size:{train_group_size}",
+        f"trans_comm_data:{trans_comm_data}",
+        f"forward_files:{forward_files}",
+        f"backward_files:{backward_files}")
+
+    submission = make_submission(
+        mdata['train_machine'],
+        mdata['train_resources'],
+        commands=commands,
+        work_path=work_path,
+        run_tasks=run_tasks,
+        group_size=train_group_size,
+        trans_comm_data=trans_comm_data,
+        forward_files=forward_files,
+        backward_files=backward_files)
+
+    submission.run_submission()
+
+    # dispatcher = make_dispatcher(mdata['train_machine'], mdata['train_resources'], work_path, run_tasks, train_group_size)
+    # dispatcher.run_jobs(mdata['train_resources'],
+    #                     commands,
+    #                     work_path,
+    #                     run_tasks,
+    #                     train_group_size,
+    #                     trans_comm_data,
+    #                     forward_files,
+    #                     backward_files,
+    #                     outlog = 'train.log',
+    #                     errlog = 'train.log')
 
 def post_train (iter_index,
                 jdata,
