@@ -349,10 +349,12 @@ def make_submission(mdata, mdata_resources, commands, work_path, run_tasks, grou
     machine = Machine.load_from_dict(mdata)
     resources = Resources.load_from_dict(mdata_resources)
 
+    command = commands.join("&&")
+
     task_list = []
     for ii in run_tasks:
         task = Task(
-            command=commands, 
+            command=command, 
             task_work_path=ii,
             forward_files=forward_files,
             backward_files=backward_files,
@@ -409,10 +411,11 @@ def make_submission_compatible(mdata, mdata_resources, commands, work_path, run_
         'remote_profile': remote_profile
     }
     resources_dict = map_old_resources_to_new_resources(mdata_resources)
+    command = commands.join("&&")
     task_list = []
     for ii in run_tasks:
         task = Task(
-            command=commands,
+            command=command,
             task_work_path=ii,
             forward_files=forward_files,
             backward_files=backward_files,
