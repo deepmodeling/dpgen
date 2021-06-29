@@ -344,69 +344,94 @@ def make_dispatcher(mdata, mdata_resource=None, work_path=None, run_tasks=None, 
         return disp
 
 def make_submission(mdata, mdata_resources, commands, work_path, run_tasks, group_size,
-    trans_comm_data, forward_files, backward_files, api_version='0.9'):
+    trans_comm_data, forward_files, backward_files, outlog, errlog):
 
-    if LooseVersion(api_version) <= LooseVersion('1.0'):
-        if hostname in mdata:
-            context_type = 'ssh'
-            remote_profile = {
-                'hostname': mdata['hostname'],
-                'username': mdata['username'],
-                'password': mdata.get('password', None),
-                'key_filename': mdata.get('key_filename', None),
-                'passphrase': mdata.get('passphrase', None),
-                'timeout': mdata.get('timeout', 10),
-                'port': mdata.get('port', 22),
-            }
+    machine = Machine.load_from_dict(mdata)
+    resources = Resources.load_from_dict(mdata_resources)
+
+    task_list = []
+    for ii in run_tasks:
+        task = Task(
+            command=commands, 
+            task_work_path=ii,
+            forward_files=forward_files,
+            backward_files=backward_files,
+            outlog=outlog,
+            errlog=errlog
+        )
+
+    submission = Submission(
+        work_base=work_path,
+        machine=machine,
+        resources=resources,
+        task_list=task_list,
+        forward_common_files=trans_comm_data,
+        backward_common_files=[]
+    )
+    return submission
+
+
+def make_submission_compatible(mdata, mdata_resources, commands, work_path, run_tasks, group_size,
+    trans_comm_data, forward_files, backward_files, outlog, errlog):
+    if "hostname" in mdata:
+        context_type = 'ssh'
+        remote_profile = {
+            'hostname': mdata['hostname'],
+            'username': mdata['username'],
+            'password': mdata.get('password', None),
+            'key_filename': mdata.get('key_filename', None),
+            'passphrase': mdata.get('passphrase', None),
+            'timeout': mdata.get('timeout', 10),
+            'port': mdata.get('port', 22),
+        }
+    else:
+        lazy_local =  (mdata.get('lazy-local', False)) or (mdata.get('lazy_local', False)) 
+        if lazy_local:
+            context_type = 'lazy_local'
         else:
-            lazy_local =  (mdata.get('lazy-local', False)) or (mdata.get('lazy_local', False)) 
-            if lazy_local:
-                context_type = 'lazy_local'
-            else:
-                context_type = 'local'
-        try:
-            batch_type = mdata['batch']
-        except:
-            dlog.info('cannot find key "batch" in machine file, try to use deprecated key "machine_type"')
-            batch_type = mdata['machine_type']
-        
+            context_type = 'local'
+
+    try:
+        batch_type = mdata['batch']
+    except:
+        dlog.info('cannot find key "batch" in machine file, try to use deprecated key "machine_type"')
+        batch_type = mdata['machine_type']
+
         local_root = os.path.abspath(os.getcwd())
         remote_root = mdata['work_path']
 
-        machine_dict = {
-            'batch_type': batch_type,
-            'context_type': context_type,
-            'local_root': local_root,
-            'remote_root': remote_root,
-            'remote_profile': remote_profile
-        }
-        resources_dict = map_old_resources_to_new_resources(mdata_resources)
-        task_list = []
-        for ii in run_tasks:
-            task = Task(
-                command=commands,
-                task_work_path=ii,
-                forward_files=forward_files,
-                backward_files=backward_files,
-                outlog='log',
-                errlog='err'
-            )
-            task_list.append(task)
-
-        machine = Machine.load_from_dict(machine_dict)
-        resources = Resources.load_from_dict(resources_dict)
-
-        submission = Submission(
-            work_base=work_path,
-            machine=machine,
-            resources=resources,
-            task_list=task_list,
-            forward_common_files=trans_comm_data,
-            backward_common_files=[]
+    machine_dict = {
+        'batch_type': batch_type,
+        'context_type': context_type,
+        'local_root': local_root,
+        'remote_root': remote_root,
+        'remote_profile': remote_profile
+    }
+    resources_dict = map_old_resources_to_new_resources(mdata_resources)
+    task_list = []
+    for ii in run_tasks:
+        task = Task(
+            command=commands,
+            task_work_path=ii,
+            forward_files=forward_files,
+            backward_files=backward_files,
+            outlog=outlog,
+            errlog=errlog
         )
+        task_list.append(task)
 
-    elif LooseVersion(api_version) >= LooseVersion('1.0'):        
-        pass
+    machine = Machine.load_from_dict(machine_dict)
+    resources = Resources.load_from_dict(resources_dict)
+
+    submission = Submission(
+        work_base=work_path,
+        machine=machine,
+        resources=resources,
+        task_list=task_list,
+        forward_common_files=trans_comm_data,
+        backward_common_files=[]
+    )
+    return submission
 
 def map_old_resources_to_new_resources(mdata_resources):
     strategy_args = [

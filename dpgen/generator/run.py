@@ -550,42 +550,33 @@ def run_train (iter_index,
     except:
         train_group_size = 1
 
+    api_version = mdata.get('api_version', '0.9')
 
-    print("debug:keys",
-        mdata['train_machine'],
-        mdata['train_resources'],
-        f"commands:{commands}"
-        f"work_path:{work_path}",
-        f"run_tasks:{run_tasks}",
-        f"train_group_size:{train_group_size}",
-        f"trans_comm_data:{trans_comm_data}",
-        f"forward_files:{forward_files}",
-        f"backward_files:{backward_files}")
+    if LooseVersion(api_version) <= '1.0':
+        dispatcher = make_dispatcher(mdata['train_machine'], mdata['train_resources'], work_path, run_tasks, train_group_size)
+        dispatcher.run_jobs(mdata['train_resources'],
+                        commands,
+                        work_path,
+                        run_tasks,
+                        train_group_size,
+                        trans_comm_data,
+                        forward_files,
+                        backward_files,
+                        outlog = 'train.log',
+                        errlog = 'train.log')
 
-    submission = make_submission(
-        mdata['train_machine'],
-        mdata['train_resources'],
-        commands=commands,
-        work_path=work_path,
-        run_tasks=run_tasks,
-        group_size=train_group_size,
-        trans_comm_data=trans_comm_data,
-        forward_files=forward_files,
-        backward_files=backward_files)
-
-    submission.run_submission()
-
-    # dispatcher = make_dispatcher(mdata['train_machine'], mdata['train_resources'], work_path, run_tasks, train_group_size)
-    # dispatcher.run_jobs(mdata['train_resources'],
-    #                     commands,
-    #                     work_path,
-    #                     run_tasks,
-    #                     train_group_size,
-    #                     trans_comm_data,
-    #                     forward_files,
-    #                     backward_files,
-    #                     outlog = 'train.log',
-    #                     errlog = 'train.log')
+    elif LooseVersion(api_version) >= '1.0':
+        submission = make_submission(
+            mdata['train_machine'],
+            mdata['train_resources'],
+            commands=commands,
+            work_path=work_path,
+            run_tasks=run_tasks,
+            group_size=train_group_size,
+            trans_comm_data=trans_comm_data,
+            forward_files=forward_files,
+            backward_files=backward_files)
+        submission.run_submission()
 
 def post_train (iter_index,
                 jdata,
