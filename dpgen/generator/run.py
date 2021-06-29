@@ -2136,7 +2136,6 @@ def run_fp_inner (iter_index,
             backward_files=backward_files,
             outlog = log_file,
             errlog = log_file)
-        print(f'debug:submission:{submission}')
         submission.run_submission()
 
 
