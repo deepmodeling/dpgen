@@ -58,7 +58,7 @@ from dpgen.remote.group_jobs import ucloud_submit_jobs, aws_submit_jobs
 from dpgen.remote.group_jobs import group_slurm_jobs
 from dpgen.remote.group_jobs import group_local_jobs
 from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
-from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, make_dispatcher
+from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, make_dispatcher, make_submission
 from dpgen.util import sepline
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar,Kpoints,Potcar
@@ -126,7 +126,7 @@ def copy_model(numb_model, prv_iter_index, cur_iter_index) :
     prv_train_path = os.path.abspath(prv_train_path)
     cur_train_path = os.path.abspath(cur_train_path)
     create_path(cur_train_path)
-    for ii in range(numb_model) :
+    for ii in range(numb_model):
         prv_train_task = os.path.join(prv_train_path, train_task_fmt%ii)
         os.chdir(cur_train_path)
         os.symlink(os.path.relpath(prv_train_task), train_task_fmt%ii)
@@ -446,6 +446,7 @@ def detect_batch_size(batch_size, system=None):
 def run_train (iter_index,
                jdata,
                mdata) :
+    # print("debug:run_train:mdata", mdata)
     # load json param
     numb_models = jdata['numb_models']
     # train_param = jdata['train_param']
@@ -549,8 +550,12 @@ def run_train (iter_index,
     except:
         train_group_size = 1
 
-    dispatcher = make_dispatcher(mdata['train_machine'], mdata['train_resources'], work_path, run_tasks, train_group_size)
-    dispatcher.run_jobs(mdata['train_resources'],
+    api_version = mdata.get('api_version', '0.9')
+    # print('debug:commands', commands)
+
+    if LooseVersion(api_version) < LooseVersion('1.0'):
+        dispatcher = make_dispatcher(mdata['train_machine'], mdata['train_resources'], work_path, run_tasks, train_group_size)
+        dispatcher.run_jobs(mdata['train_resources'],
                         commands,
                         work_path,
                         run_tasks,
@@ -560,6 +565,21 @@ def run_train (iter_index,
                         backward_files,
                         outlog = 'train.log',
                         errlog = 'train.log')
+
+    elif LooseVersion(api_version) >= LooseVersion('1.0'):
+        submission = make_submission(
+            mdata['train_machine'],
+            mdata['train_resources'],
+            commands=commands,
+            work_path=work_path,
+            run_tasks=run_tasks,
+            group_size=train_group_size,
+            trans_comm_data=trans_comm_data,
+            forward_files=forward_files,
+            backward_files=backward_files,
+            outlog = 'train.log',
+            errlog = 'train.log')
+        submission.run_submission()
 
 def post_train (iter_index,
                 jdata,
@@ -1281,8 +1301,11 @@ def run_model_devi (iter_index,
         backward_files = ['rc.mdout', 'rc.nc', 'rc.rst7', 'rc.mdinfo', 'TEMPLATE.dumpave']
 
     cwd = os.getcwd()
-    dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], work_path, run_tasks, model_devi_group_size)
-    dispatcher.run_jobs(mdata['model_devi_resources'],
+
+    api_version = mdata.get('api_version', '0.9')
+    if LooseVersion(api_version) < LooseVersion('1.0'):
+        dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], work_path, run_tasks, model_devi_group_size)
+        dispatcher.run_jobs(mdata['model_devi_resources'],
                         commands,
                         work_path,
                         run_tasks,
@@ -1293,6 +1316,20 @@ def run_model_devi (iter_index,
                         outlog = 'model_devi.log',
                         errlog = 'model_devi.log')
 
+    elif LooseVersion(api_version) >= LooseVersion('1.0'):
+        submission = make_submission(
+            mdata['model_devi_machine'],
+            mdata['model_devi_resources'],
+            commands=commands,
+            work_path=work_path,
+            run_tasks=run_tasks,
+            group_size=model_devi_group_size,
+            trans_comm_data=model_names,
+            forward_files=forward_files,
+            backward_files=backward_files,
+            outlog = 'model_devi.log',
+            errlog = 'model_devi.log')
+        submission.run_submission()
 
 def post_model_devi (iter_index,
                      jdata,
@@ -2223,8 +2260,11 @@ def run_fp_inner (iter_index,
     #     if not check_fin(ii) :
     #         fp_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
-    dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_path, run_tasks, fp_group_size)
-    dispatcher.run_jobs(mdata['fp_resources'],
+
+    api_version = mdata.get('api_version', '0.9')
+    if LooseVersion(api_version) < LooseVersion('1.0'):
+        dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_path, run_tasks, fp_group_size)
+        dispatcher.run_jobs(mdata['fp_resources'],
                         [fp_command],
                         work_path,
                         run_tasks,
@@ -2236,6 +2276,20 @@ def run_fp_inner (iter_index,
                         outlog = log_file,
                         errlog = log_file)
 
+    elif LooseVersion(api_version) >= LooseVersion('1.0'):
+        submission = make_submission(
+            mdata['fp_machine'],
+            mdata['fp_resources'],
+            commands=[fp_command],
+            work_path=work_path,
+            run_tasks=run_tasks,
+            group_size=fp_group_size,
+            trans_comm_data=forward_common_files,
+            forward_files=forward_files,
+            backward_files=backward_files,
+            outlog = log_file,
+            errlog = log_file)
+        submission.run_submission()
 
 
 def run_fp (iter_index,

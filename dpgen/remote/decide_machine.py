@@ -148,7 +148,7 @@ def decide_model_devi_machine(mdata):
 	    	mdata["model_devi_resources"] = mdata["model_devi"][0]["resources"]
 	    	mdata["lmp_command"] = mdata["model_devi"][0]["command"]
 	    	#if "group_size" in mdata["train"][0]:
-	    	mdata["model_devi_group_size"] = mdata["model_devi"][0]["group_size"]
+	    	mdata["model_devi_group_size"] = mdata["model_devi"][0].get("group_size", 1)
 	    	continue_flag = True
 
 	    pd_count_list =[]
@@ -183,7 +183,7 @@ def decide_model_devi_machine(mdata):
 	                mdata['model_devi_machine'] = temp_machine   
 	                mdata['model_devi_resources'] = temp_resources
 	                mdata['lmp_command'] = mdata['model_devi'][machine_idx]['command']
-	                mdata['model_devi_group_size'] =  mdata['model_devi'][machine_idx]['group_size']
+	                mdata['model_devi_group_size'] =  mdata['model_devi'][machine_idx].get('group_size', 1)
 	                pd_flag = True
 	                break
 	            else:
@@ -193,7 +193,7 @@ def decide_model_devi_machine(mdata):
 	            mdata['model_devi_machine'] = mdata['model_devi'][min_machine_idx]['machine']
 	            mdata['model_devi_resources'] = mdata['model_devi'][min_machine_idx]['resources']
 	            mdata['lmp_command'] = mdata['model_devi'][min_machine_idx]['command']
-	            mdata['model_devi_group_size'] =  mdata['model_devi'][min_machine_idx]['group_size']
+	            mdata['model_devi_group_size'] =  mdata['model_devi'][min_machine_idx].get('group_size', 1)
 	        with open("record.machine","w") as _outfile:
 	            profile = {}
 	            profile['purpose'] = 'model_devi'
@@ -230,7 +230,7 @@ def decide_fp_machine(mdata):
 	    	mdata["fp_resources"] = mdata["fp"][0]["resources"]
 	    	mdata["fp_command"] = mdata["fp"][0]["command"]
 	    	#if "group_size" in mdata["train"][0]:
-	    	mdata["fp_group_size"] = mdata["fp"][0]["group_size"]
+	    	mdata["fp_group_size"] = mdata["fp"][0].get("group_size", 1)
 	    	continue_flag = True
 
 	   
@@ -259,7 +259,7 @@ def decide_fp_machine(mdata):
 		            mdata['fp_machine'] = temp_machine   
 		            mdata['fp_resources'] = temp_resources
 		            mdata['fp_command'] = mdata['fp'][machine_idx]['command']
-		            mdata['fp_group_size'] =  mdata['fp'][machine_idx]['group_size']
+		            mdata['fp_group_size'] =  mdata['fp'][machine_idx].get('group_size', 1)
 		            pd_flag = True
 		            break
 		        else:
@@ -269,7 +269,7 @@ def decide_fp_machine(mdata):
 		        mdata['fp_machine'] = mdata['fp'][min_machine_idx]['machine']
 		        mdata['fp_resources'] = mdata['fp'][min_machine_idx]['resources']
 		        mdata['fp_command'] = mdata['fp'][min_machine_idx]['command']
-		        mdata['fp_group_size'] =  mdata['fp'][min_machine_idx]['group_size']
+		        mdata['fp_group_size'] =  mdata['fp'][min_machine_idx].get('group_size',1)
 
 		    with open("record.machine","w") as _outfile:
 		            profile = {}

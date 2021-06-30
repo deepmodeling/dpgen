@@ -20,12 +20,13 @@ import dpgen.data.tools.fcc as fcc
 import dpgen.data.tools.bcc as bcc
 import dpgen.data.tools.diamond as diamond
 import dpgen.data.tools.sc as sc
+from distutils.version import LooseVersion
 from dpgen.generator.lib.vasp import incar_upper
 from pymatgen.core import Structure
 from pymatgen.io.vasp import Incar
 from dpgen.remote.decide_machine import  decide_fp_machine
 from dpgen import ROOT_PATH
-from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher
+from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher, make_submission
 
 
 
@@ -581,9 +582,11 @@ def run_vasp_relax(jdata, mdata):
     #    if not _vasp_check_fin(ii):
     #        relax_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in relax_run_tasks]
-    dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_dir, run_tasks, fp_group_size)
-    #dlog.info(run_tasks)
-    dispatcher.run_jobs(fp_resources,
+
+    api_version = mdata.get('api_version', '0.9')
+    if LooseVersion(api_version) < LooseVersion('1.0'):
+        dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_dir, run_tasks, fp_group_size)
+        dispatcher.run_jobs(fp_resources,
                        [fp_command],
                        work_dir,
                        run_tasks,
@@ -591,6 +594,22 @@ def run_vasp_relax(jdata, mdata):
                        forward_common_files,
                        forward_files,
                        backward_files)
+
+    elif LooseVersion(api_version) >= LooseVersion('1.0'):
+        submission = make_submission(
+            mdata['fp_machine'],
+            mdata['fp_resources'],
+            commands=[fp_command],
+            work_path=work_dir,
+            run_tasks=run_tasks,
+            group_size=fp_group_size,
+            trans_comm_data=forward_common_files,
+            forward_files=forward_files,
+            backward_files=backward_files,
+            outlog = 'fp.log',
+            errlog = 'fp.log')
+        submission.run_submission()
+
 
 def run_vasp_md(jdata, mdata):
     fp_command = mdata['fp_command']
@@ -627,8 +646,10 @@ def run_vasp_md(jdata, mdata):
     run_tasks = [ii.replace(work_dir+"/", "") for ii in md_run_tasks]
     #dlog.info("md_work_dir", work_dir)
     #dlog.info("run_tasks",run_tasks)
-    dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_dir, run_tasks, fp_group_size)
-    dispatcher.run_jobs(fp_resources,
+    api_version = mdata.get('api_version', '0.9')
+    if LooseVersion(api_version) < LooseVersion('1.0'):
+        dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_dir, run_tasks, fp_group_size)
+        dispatcher.run_jobs(fp_resources,
                        [fp_command],
                        work_dir,
                        run_tasks,
@@ -636,6 +657,21 @@ def run_vasp_md(jdata, mdata):
                        forward_common_files,
                        forward_files,
                        backward_files)
+
+    elif LooseVersion(api_version) >= LooseVersion('1.0'):
+        submission = make_submission(
+            mdata['fp_machine'],
+            mdata['fp_resources'],
+            commands=[fp_command],
+            work_path=work_dir,
+            run_tasks=run_tasks,
+            group_size=fp_group_size,
+            trans_comm_data=forward_common_files,
+            forward_files=forward_files,
+            backward_files=backward_files,
+            outlog = 'fp.log',
+            errlog = 'fp.log')
+        submission.run_submission()
 
 def gen_init_bulk(args) :
     try:
