@@ -553,7 +553,7 @@ def run_train (iter_index,
     api_version = mdata.get('api_version', '0.9')
     # print('debug:commands', commands)
 
-    if LooseVersion(api_version) < '1.0':
+    if LooseVersion(api_version) < LooseVersion('1.0'):
         dispatcher = make_dispatcher(mdata['train_machine'], mdata['train_resources'], work_path, run_tasks, train_group_size)
         dispatcher.run_jobs(mdata['train_resources'],
                         commands,
@@ -566,7 +566,7 @@ def run_train (iter_index,
                         outlog = 'train.log',
                         errlog = 'train.log')
 
-    elif LooseVersion(api_version) >= '1.0':
+    elif LooseVersion(api_version) >= LooseVersion('1.0'):
         submission = make_submission(
             mdata['train_machine'],
             mdata['train_resources'],
@@ -1218,7 +1218,7 @@ def run_model_devi (iter_index,
     cwd = os.getcwd()
 
     api_version = mdata.get('api_version', '0.9')
-    if LooseVersion(api_version) < '1.0':
+    if LooseVersion(api_version) < LooseVersion('1.0'):
         dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], work_path, run_tasks, model_devi_group_size)
         dispatcher.run_jobs(mdata['model_devi_resources'],
                         commands,
@@ -1231,7 +1231,7 @@ def run_model_devi (iter_index,
                         outlog = 'model_devi.log',
                         errlog = 'model_devi.log')
 
-    elif LooseVersion(api_version) >= '1.0':
+    elif LooseVersion(api_version) >= LooseVersion('1.0'):
         submission = make_submission(
             mdata['model_devi_machine'],
             mdata['model_devi_resources'],
@@ -2109,7 +2109,7 @@ def run_fp_inner (iter_index,
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
 
     api_version = mdata.get('api_version', '0.9')
-    if LooseVersion(api_version) < '1.0':
+    if LooseVersion(api_version) < LooseVersion('1.0'):
         dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_path, run_tasks, fp_group_size)
         dispatcher.run_jobs(mdata['fp_resources'],
                         [fp_command],
@@ -2123,7 +2123,7 @@ def run_fp_inner (iter_index,
                         outlog = log_file,
                         errlog = log_file)
 
-    elif LooseVersion(api_version) >= '1.0':
+    elif LooseVersion(api_version) >= LooseVersion('1.0'):
         submission = make_submission(
             mdata['fp_machine'],
             mdata['fp_resources'],
