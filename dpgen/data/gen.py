@@ -647,7 +647,7 @@ def run_vasp_md(jdata, mdata):
     #dlog.info("md_work_dir", work_dir)
     #dlog.info("run_tasks",run_tasks)
     api_version = mdata.get('api_version', '0.9')
-    if LooseVersion(api_version) < '1.0':
+    if LooseVersion(api_version) < LooseVersion('1.0'):
         dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_dir, run_tasks, fp_group_size)
         dispatcher.run_jobs(fp_resources,
                        [fp_command],
