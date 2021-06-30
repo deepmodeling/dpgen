@@ -1,4 +1,5 @@
 {
+  "api_version": "1.0",
   "train": [
     {
       "command": "dp",
@@ -8,7 +9,7 @@
         "local_root": "./",
         "remote_root": "/home/fengbo/work_path_dpdispatcher_test",
         "remote_profile": {
-            "hostname": "39.106.84.25",
+            "hostname": "39.xxx.xx.xx",
             "username": "fengbo"
         }
       },
@@ -34,7 +35,7 @@
         "local_root": "./",
         "remote_root": "/home/fengbo/work_path_dpdispatcher_test",
         "remote_profile": {
-          "hostname": "39.106.84.25",
+          "hostname": "39.xxx.xx.xx",
           "username": "fengbo"
         }
       },
@@ -57,7 +58,7 @@
         "local_root": "./",
         "remote_root": "/home/fengbo/work_path_dpdispatcher_test",
         "remote_profile": {
-          "hostname": "39.106.84.25",
+          "hostname": "39.xxx.xx.xx",
           "username": "fengbo"
         }
       },
