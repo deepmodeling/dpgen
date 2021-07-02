@@ -344,7 +344,7 @@ def make_dispatcher(mdata, mdata_resource=None, work_path=None, run_tasks=None, 
         return disp
 
 def make_submission(mdata, mdata_resources, commands, work_path, run_tasks, group_size,
-    trans_comm_data, forward_files, backward_files, outlog, errlog):
+    forward_common_files, forward_files, backward_files, outlog, errlog):
 
     machine = Machine.load_from_dict(mdata)
     resources = Resources.load_from_dict(mdata_resources)
@@ -368,7 +368,7 @@ def make_submission(mdata, mdata_resources, commands, work_path, run_tasks, grou
         machine=machine,
         resources=resources,
         task_list=task_list,
-        forward_common_files=trans_comm_data,
+        forward_common_files=forward_common_files,
         backward_common_files=[]
     )
     return submission
