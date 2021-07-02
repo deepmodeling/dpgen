@@ -1276,7 +1276,7 @@ def run_model_devi (iter_index,
         backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , 'model_devi.out', 'model_devi.log']
     elif model_devi_engine == "amber":
         # TODO: currently all options are written in lmp_exec, but we may move them here
-        command = [mdata['lmp_exec']]
+        commands = [lmp_exec + " -O -p qmmm.parm7 -c init.rst7 -i init.mdin -o rc.mdout -r rc.rst7 -x rc.nc -inf rc.mdinfo"]
         forward_files = ['init.rst7', 'init.mdin', 'qmmm.parm7', 'TEMPLATE.disang']
         backward_files = ['rc.mdout', 'rc.nc', 'rc.rst7', 'rc.mdinfo', 'TEMPLATE.dumpave']
 
