@@ -133,7 +133,6 @@ def decide_train_machine(mdata):
 def decide_model_devi_machine(mdata):
 	if LooseVersion(mdata.get('api_version', '0.9')) >= LooseVersion('1.0'):
 		mdata['model_devi_group_size'] = mdata['model_devi'][0]['resources']['group_size']
-
 	if 'model_devi' in mdata:
 		continue_flag = False
 		if 'record.machine' in os.listdir():
