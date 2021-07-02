@@ -9,9 +9,11 @@ from dpgen import dlog
 import os
 import json
 import numpy as np
-
+from distutils.version import LooseVersion
 
 def decide_train_machine(mdata):
+    if LooseVersion(mdata.get('api_version')) >= LooseVersion('1.0'):
+        mdata['train_group_size'] = mdata['train'][0]['resources']['group_size']
 	if 'train' in mdata:
 	    continue_flag = False
 	    if 'record.machine' in os.listdir():
@@ -129,6 +131,9 @@ def decide_train_machine(mdata):
 	return mdata
 
 def decide_model_devi_machine(mdata):
+    if LooseVersion(mdata.get('api_version')) >= LooseVersion('1.0'):
+        mdata['model_devi_group_size'] = mdata['model_devi'][0]['resources']['group_size']
+
 	if 'model_devi' in mdata:
 	    continue_flag = False
 	    if 'record.machine' in os.listdir():
@@ -205,7 +210,8 @@ def decide_model_devi_machine(mdata):
 	            json.dump(profile, _outfile, indent = 4)
 	return mdata
 def decide_fp_machine(mdata):
-
+    if LooseVersion(mdata.get('api_version')) >= LooseVersion('1.0'):
+        mdata['fp_group_size'] = mdata['fp'][0]['resources']['group_size']
 	if 'fp' in mdata:
 	    #ssert isinstance(mdata['fp']['machine'], list)
 	    #assert isinstance(mdata['fp']['resources'], list)
