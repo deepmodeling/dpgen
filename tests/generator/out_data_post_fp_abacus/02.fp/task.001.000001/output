@@ -1,0 +1,81 @@
+ *********************************************************
+ *                                                       *
+ *                  WELCOME TO ABACUS                    *
+ *                                                       *
+ *            'Atomic-orbital Based Ab-initio            *
+ *                  Computation at UStc'                 *
+ *                                                       *
+ *          Website: http://abacus.ustc.edu.cn/          *
+ *                                                       *
+ *********************************************************
+ Tue Jun  1 15:08:11 2021
+ MAKE THE DIR         : OUT.ABACUS/
+ DONE(0.227909   SEC) : SETUP UNITCELL
+ DONE(0.279072   SEC) : SYMMETRY
+ DONE(0.280556   SEC) : INIT K-POINTS
+ ---------------------------------------------------------
+ This calculation is self-consistent
+ ---------------------------------------------------------
+ SPIN    KPOINTS         PROCESSORS  
+ 1       1               4           
+ ---------------------------------------------------------
+ Use plane wave basis
+ ---------------------------------------------------------
+ ELEMENT NATOM       XC          
+ H       4           PBE
+ C       1           PBE
+ ---------------------------------------------------------
+ Initial plane wave basis and FFT box
+ ---------------------------------------------------------
+ DONE(0.752093   SEC) : INIT PLANEWAVE
+ UNIFORM GRID DIM     : 120 * 108 * 108
+ UNIFORM GRID DIM(BIG): 120 * 108 * 108
+ MEMORY FOR PSI (MB)  : 1.53946
+ DONE(6.44984    SEC) : LOCAL POTENTIAL
+ DONE(6.45586    SEC) : NON-LOCAL POTENTIAL
+ START POTENTIAL      : atomic
+ DONE(7.58819    SEC) : INIT POTENTIAL
+ DONE(7.7217     SEC) : INIT BASIS
+ -------------------------------------------
+ SELF-CONSISTENT : 
+ -------------------------------------------
+ ITER   ETOT(eV)       EDIFF(eV)      DRHO2      CG_ITER    TIME(S)    
+ CG1    -2.187025e+02  0.000000e+00   7.298e-01  1.080e+01  1.730e+00  
+ CG2    -2.196514e+02  -9.488816e-01  5.470e-02  2.600e+00  9.200e-01  
+ CG3    -2.197226e+02  -7.120777e-02  1.663e-02  3.600e+00  1.060e+00  
+ CG4    -2.197322e+02  -9.626955e-03  1.204e-02  3.000e+00  9.600e-01  
+ CG5    -2.197629e+02  -3.073386e-02  3.887e-05  2.800e+00  9.400e-01  
+ CG6    -2.197641e+02  -1.190684e-03  6.534e-06  4.800e+00  1.180e+00  
+ CG7    -2.197641e+02  -5.146530e-06  6.104e-07  2.800e+00  9.500e-01  
+ CG8    -2.197641e+02  -4.310203e-07  1.719e-07  3.600e+00  1.040e+00  
+ CG9    -2.197641e+02  1.198682e-07   6.711e-08  3.200e+00  9.700e-01  
+ CG10   -2.197641e+02  1.184017e-07   2.332e-08  2.800e+00  9.600e-01  
+ CG11   -2.197641e+02  -2.947662e-08  1.012e-09  2.600e+00  9.300e-01  
+ CG12   -2.197641e+02  6.981625e-09   1.296e-10  3.200e+00  9.700e-01  
+
+  |CLASS_NAME---------|NAME---------------|TIME(Sec)-----|CALLS----|AVG------|PER%-------
+ A DC_Driv             reading             0.29           1         0.29      1.2       %
+ B Run_Frag            frag_init           0.21           1         0.21      0.85      %
+ A DC_Driv             divide_frag         0.46           1         0.46      1.9       %
+ B PW_Basis            gen_pw              0.46           1         0.46      1.9       %
+ A DC_Driv             solve_eachf         24             1         24        97        %
+ B Run_Frag            frag_pw_line        24             1         24        97        %
+ C ppcell_vl           init_vloc           5.7            1         5.7       23        %
+ X FFT                 FFT3D               8.2            837       0.0098    33        %
+ E potential           v_of_rho            3.1            13        0.24      13        %
+ C wavefunc            wfcinit             0.13           1         0.13      0.54      %
+ G Hamilt_PW           cinitcgg            1.5            13        0.11      6.1       %
+ H Hamilt_PW           h_psi               6.3            294       0.022     26        %
+ I Hamilt_PW           add_vuspsi          0.16           294       0.00056   0.67      %
+ C Ions                opt_ions_pw         17             1         17        69        %
+ D electrons           self_consistent     13             1         13        52        %
+ E electrons           c_bands             6.7            12        0.56      27        %
+ F Hamilt              diago               6.5            12        0.55      27        %
+ G Diago_CG            diag                5.2            12        0.43      21        %
+ E Charge              mix_rho             0.76           12        0.063     3.1       %
+ ----------------------------------------------------------------------------------------
+
+ START  Time  : Tue Jun  1 15:08:11 2021
+ FINISH Time  : Tue Jun  1 15:08:36 2021
+ TOTAL  Time  : 25
+ SEE INFORMATION IN : OUT.ABACUS/
