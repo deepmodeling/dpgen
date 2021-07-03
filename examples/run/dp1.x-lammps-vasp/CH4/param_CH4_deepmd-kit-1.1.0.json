@@ -131,8 +131,8 @@
     "fp_task_min": 5,
     "fp_pp_path": "/data1/yfb222333/2_dpgen_gpu_multi",
     "fp_pp_files": [
-        "H/POTCAR",
-        "C/POTCAR"
+        "POTCAR_H",
+        "POTCAR_C"
     ],
     "fp_incar": "/data1/yfb222333/2_dpgen_gpu_multi/INCAR_methane"
 }
