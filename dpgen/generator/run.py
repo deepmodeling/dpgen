@@ -554,6 +554,8 @@ def run_train (iter_index,
     # print('debug:commands', commands)
 
     if LooseVersion(api_version) < LooseVersion('1.0'):
+        warnings.warn(f"the dpdispatcher will be updated to new version."
+            f"And the interface may be changed. Please check the documents for more details")
         dispatcher = make_dispatcher(mdata['train_machine'], mdata['train_resources'], work_path, run_tasks, train_group_size)
         dispatcher.run_jobs(mdata['train_resources'],
                         commands,
@@ -1219,6 +1221,8 @@ def run_model_devi (iter_index,
 
     api_version = mdata.get('api_version', '0.9')
     if LooseVersion(api_version) < LooseVersion('1.0'):
+        warnings.warn(f"the dpdispatcher will be updated to new version."
+            f"And the interface may be changed. Please check the documents for more details")
         dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], work_path, run_tasks, model_devi_group_size)
         dispatcher.run_jobs(mdata['model_devi_resources'],
                         commands,
@@ -2110,6 +2114,8 @@ def run_fp_inner (iter_index,
 
     api_version = mdata.get('api_version', '0.9')
     if LooseVersion(api_version) < LooseVersion('1.0'):
+        warnings.warn(f"the dpdispatcher will be updated to new version."
+            f"And the interface may be changed. Please check the documents for more details")
         dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_path, run_tasks, fp_group_size)
         dispatcher.run_jobs(mdata['fp_resources'],
                         [fp_command],

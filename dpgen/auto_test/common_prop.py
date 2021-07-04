@@ -1,6 +1,7 @@
 from distutils.version import LooseVersion
 import glob
 import os
+import warnings
 from multiprocessing import Pool
 import dpgen.auto_test.lib.util as util
 from dpgen import dlog
@@ -200,6 +201,8 @@ def worker(work_path,
     disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
     api_version = mdata.get('api_version', '0.9')
     if LooseVersion(api_version) < LooseVersion('1.0'):
+        warnings.warn(f"the dpdispatcher will be updated to new version."
+            f"And the interface may be changed. Please check the documents for more details")
         disp.run_jobs(resources,
                   command,
                   work_path,

@@ -1,6 +1,6 @@
 import glob
 import os
-
+import warnings
 from monty.serialization import dumpfn
 
 import dpgen.auto_test.lib.crys as crys
@@ -162,7 +162,9 @@ def run_equi(confs,
 
         api_version = mdata.get('api_version', '0.9')
         if LooseVersion(api_version) < LooseVersion('1.0'):
-                disp.run_jobs(resources,
+            warnings.warn(f"the dpdispatcher will be updated to new version."
+                f"And the interface may be changed. Please check the documents for more details")
+            disp.run_jobs(resources,
                             command,
                             work_path,
                             [run_tasks[ii]],
