@@ -1094,15 +1094,17 @@ Here `pick_data` is the data to simplify and currently only supports `MultiSyste
 
 
 ## Set up machine
+### new dpdispatcher update note
 dpdispatcher Update Note: dpdispatcher is updated. the api of `machine.json` is changed.
 if the key `api_version` in `machine.json`'s value is `1.0`.
 
-dpgen will switch to new dpdispatcher. And it is maintained on a seperate repo https://github.com/deepmodeling/dpdispatcher
-the api of new dpdispatcher is close to old one except for a few changes.
-please check the documents for more information. https://deepmd.readthedocs.io/projects/dpdispatcher/en/latest/
+dpgen will switch to new dpdispatcher. And it is maintained on a seperate repo now. https://github.com/deepmodeling/dpdispatcher
+The api of new dpdispatcher is close to old one except for a few changes.
+Please check the documents for more information. https://deepmd.readthedocs.io/projects/dpdispatcher/en/latest/
 
 note1: the key "local_root" in dpgen's machine.json is always `./`
 
+### old dpdispatcher
 
 When switching into a new machine, you may modifying the `MACHINE`, according to the actual circumstance. Once you have finished, the `MACHINE` can be re-used for any DP-GEN tasks without any extra efforts.
 

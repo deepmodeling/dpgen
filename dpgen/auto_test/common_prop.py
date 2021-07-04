@@ -1,3 +1,4 @@
+from distutils.version import LooseVersion
 import glob
 import os
 from multiprocessing import Pool
@@ -12,6 +13,7 @@ from dpgen.auto_test.Vacancy import Vacancy
 from dpgen.auto_test.calculator import make_calculator
 from dpgen.dispatcher.Dispatcher import make_dispatcher
 from dpgen.remote.decide_machine import decide_fp_machine, decide_model_devi_machine
+from dpgen.dispatcher.Dispatcher import make_submission
 
 lammps_task_type = ['deepmd', 'meam', 'eam_fs', 'eam_alloy']
 
@@ -196,7 +198,9 @@ def worker(work_path,
     run_tasks = [os.path.basename(ii) for ii in all_task]
     machine, resources, command, group_size = util.get_machine_info(mdata, inter_type)
     disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
-    disp.run_jobs(resources,
+    api_version = mdata.get('api_version', '0.9')
+    if LooseVersion(api_version) < LooseVersion('1.0'):
+        disp.run_jobs(resources,
                   command,
                   work_path,
                   run_tasks,
@@ -206,7 +210,21 @@ def worker(work_path,
                   backward_files,
                   outlog='outlog',
                   errlog='errlog')
-
+    elif LooseVersion(api_version) > LooseVersion('1.0'):
+        submission = make_submission(
+                mdata_machine=machine,
+                mdata_resource=resources,
+                commands=[command],
+                work_path=work_path,
+                run_tasks=run_tasks,
+                group_size=group_size,
+                forward_common_files=forward_common_files,
+                forward_files=forward_files,
+                backward_files=backward_files,
+                outlog = 'outlog',
+                errlog = 'errlog'
+            )
+        submission.run_submission()
 
 def post_property(confs,
                   #                  inter_param,
