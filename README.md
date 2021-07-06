@@ -1107,44 +1107,91 @@ The repo link: https://github.com/deepmodeling/dpdispatcher
 
 The api of new dpdispatcher is close to old one except for a few changes. 
 
-Here provide a example `machine.json` for new dpdispatcher.
-
-Please check the [documents](https://deepmd.readthedocs.io/projects/dpdispatcher/en/latest/) for more information. 
-
-more `machine.json` examples can be seen [here](https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/getting-started.html)
+The new `machine.json` examples can be seen [here](https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/getting-started.html)
 
 And the explanation of the keys in [machine](https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/machine.html)
 [resources](https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/resources.html)
 
-an example of new machine.json
+
+Here is a example `machine.json` for dpgen's new dpdispatcher.
+Please check the [documents](https://deepmd.readthedocs.io/projects/dpdispatcher/en/latest/) for more information about new dpdispatcher. 
+
+an example of new dpgen's machine.json
 ```json
 {
-    "machine":{
-        "batch_type": "Slurm",
+  "api_version": "1.0",
+  "train": [
+    {
+      "command": "dp",
+      "machine": {
+        "batch_type": "PBS",
         "context_type": "SSHContext",
         "local_root": "./",
         "remote_root": "/home/user1234/work_path_dpdispatcher_test",
         "remote_profile": {
-            "hostname": "xxx.180.xxx.19",
+            "hostname": "39.xxx.xx.xx",
             "username": "user1234"
         }
-    },
-    "resources":{
+      },
+      "resources": {
         "number_node": 1,
         "cpu_per_node": 4,
-        "gpu_per_node": 2,
-        "queue_name": "GPU_2080Ti",
-        "group_size": 4,
-        "custom_flags": ["#SBATCH --nice=100", "#SBATCH --time=24:00:00"],
-        "strategy": {
-            "if_cuda_multi_devices": true
-        },
-        "para_deg": 2,
-        "module_unload_list": ["singularity"],
-        "module_list": ["singularity/3.0.0"],
-        "source_list": ["~/slurm_test.env"],
-        "envs": {"DP_DISPATCHER_EXPORT": "test_foo_bar_baz"}
+        "gpu_per_node": 1,
+        "queue_name": "T4_4_15",
+        "group_size": 1,
+        "custom_flags":["#SBATCH --mem=32G"],
+        "strategy": {"if_cuda_multi_devices": true},
+        "para_deg": 3,
+        "source_list": ["/home/user1234/deepmd.1.2.4.env"]
+      }
     }
+  ],
+  "model_devi":[
+    {
+      "command": "lmp",
+      "machine":{
+        "batch_type": "PBS",
+        "context_type": "SSHContext",
+        "local_root": "./",
+        "remote_root": "/home/user1234/work_path_dpdispatcher_test",
+        "remote_profile": {
+          "hostname": "39.xxx.xx.xx",
+          "username": "user1234"
+        }
+      },
+      "resources": {
+        "number_node": 1,
+        "cpu_per_node": 4,
+        "gpu_per_node": 1,
+        "queue_name": "T4_4_15",
+        "group_size": 5,
+        "source_list": ["/home/user1234/deepmd.1.2.4.env"]
+      }
+    }
+  ],
+  "fp":[
+    {
+      "command": "vasp_std",
+      "machine":{
+        "batch_type": "PBS",
+        "context_type": "SSHContext",
+        "local_root": "./",
+        "remote_root": "/home/user1234/work_path_dpdispatcher_test",
+        "remote_profile": {
+          "hostname": "39.xxx.xx.xx",
+          "username": "user1234"
+        }
+      },
+      "resources": {
+        "number_node": 1,
+        "cpu_per_node": 32,
+        "gpu_per_node": 0,
+        "queue_name": "G_32_128",
+        "group_size": 1,
+        "source_list": ["~/vasp.env"]
+      }
+    }
+  ]
 }
 ```
 note1: the key "local_root" in dpgen's machine.json is always `./`
