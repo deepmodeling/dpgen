@@ -1099,17 +1099,19 @@ dpdispatcher Update Note:
 dpdispatcher has updated and the api of `machine.json` is changed.
 dpgen will use new dpdispatcher if the key `api_version` in dpgen's `machine.json`'s value is equal or large than `1.0`.
 
-And dpgen will use old one if the key is not specified or the `api_version` is smaller than `1.0`.
-This gurantees that the old `machine.json`s still work and it will still use the old dpdispatcher.
+And dpgen will use old dpdispatcher if the key `api_version` is not specified in `machine.json` or the `api_version` is smaller than `1.0`.
+This gurantees that the old `machine.json`s still work.
 
-
-And for now dpdispatcher is maintained on a seperate repo now. 
+And for now dpdispatcher is maintained on a seperate repo. 
 The repo link: https://github.com/deepmodeling/dpdispatcher
 
-The api of new dpdispatcher is close to old one except for a few changes.
+The api of new dpdispatcher is close to old one except for a few changes. 
+
+Here provide a example `machine.json` for new dpdispatcher.
+
 Please check the [documents](https://deepmd.readthedocs.io/projects/dpdispatcher/en/latest/) for more information. 
 
-more machine.json example can be seen [here](https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/getting-started.html)
+more `machine.json` examples can be seen [here](https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/getting-started.html)
 
 And the explanation of the keys in [machine](https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/machine.html)
 [resources](https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/resources.html)
