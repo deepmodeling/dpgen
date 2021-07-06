@@ -1097,7 +1097,9 @@ Here `pick_data` is the data to simplify and currently only supports `MultiSyste
 ### new dpdispatcher update note
 dpdispatcher Update Note: 
 dpdispatcher has updated and the api of `machine.json` is changed.
- dpgen will use new dpdispatcher if the key `api_version` in dpgen's `machine.json`'s value is equal or large than `1.0`.
+dpgen will use new dpdispatcher if the key `api_version` in dpgen's `machine.json`'s value is equal or large than `1.0`.
+and dpgen will use old one if the key is not specified or the `api_version` is smaller than `1.0`.
+
 
 And for now dpdispatcher is maintained on a seperate repo now. 
 The repo link: https://github.com/deepmodeling/dpdispatcher
@@ -1107,7 +1109,7 @@ Please check the [documents](https://deepmd.readthedocs.io/projects/dpdispatcher
 
 more machine.json example can be seen [here](https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/getting-started.html)
 
-And the explanation of the keys [machine](https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/machine.html)
+And the explanation of the keys in [machine](https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/machine.html)
 [resources](https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/resources.html)
 
 an example of new machine.json
