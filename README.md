@@ -1098,7 +1098,9 @@ Here `pick_data` is the data to simplify and currently only supports `MultiSyste
 dpdispatcher Update Note: 
 dpdispatcher has updated and the api of `machine.json` is changed.
 dpgen will use new dpdispatcher if the key `api_version` in dpgen's `machine.json`'s value is equal or large than `1.0`.
-and dpgen will use old one if the key is not specified or the `api_version` is smaller than `1.0`.
+
+And dpgen will use old one if the key is not specified or the `api_version` is smaller than `1.0`.
+This gurantees that the old `machine.json`s still work and it will still use the old dpdispatcher.
 
 
 And for now dpdispatcher is maintained on a seperate repo now. 
