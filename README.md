@@ -1102,6 +1102,43 @@ dpgen will switch to new dpdispatcher. And it is maintained on a seperate repo n
 The api of new dpdispatcher is close to old one except for a few changes.
 Please check the documents for more information. https://deepmd.readthedocs.io/projects/dpdispatcher/en/latest/
 
+more machine.json example can be seen here https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/getting-started.html
+
+And the explenation of the fields in machine.json can be seen here.
+https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/machine.html
+https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/resources.html
+
+an example of new machine.json
+
+{
+    "machine":{
+        "batch_type": "Slurm",
+        "context_type": "SSHContext",
+        "local_root": "./",
+        "remote_root": "/home/user1234/work_path_dpdispatcher_test",
+        "remote_profile": {
+            "hostname": "xxx.180.xxx.19",
+            "username": "user1234"
+        }
+    },
+    "resources":{
+        "number_node": 1,
+        "cpu_per_node": 4,
+        "gpu_per_node": 2,
+        "queue_name": "GPU_2080Ti",
+        "group_size": 4,
+        "custom_flags": ["#SBATCH --nice=100", "#SBATCH --time=24:00:00"],
+        "strategy": {
+            "if_cuda_multi_devices": true
+        },
+        "para_deg": 2,
+        "module_unload_list": ["singularity"],
+        "module_list": ["singularity/3.0.0"],
+        "source_list": ["~/slurm_test.env"],
+        "envs": {"DP_DISPATCHER_EXPORT": "test_foo_bar_baz"}
+    }
+}
+
 note1: the key "local_root" in dpgen's machine.json is always `./`
 
 ### old dpdispatcher
