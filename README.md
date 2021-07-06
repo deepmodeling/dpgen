@@ -1094,6 +1094,110 @@ Here `pick_data` is the data to simplify and currently only supports `MultiSyste
 
 
 ## Set up machine
+### new dpdispatcher update note
+dpdispatcher Update Note: 
+dpdispatcher has updated and the api of `machine.json` is changed.
+dpgen will use new dpdispatcher if the key `api_version` in dpgen's `machine.json`'s value is equal or large than `1.0`.
+
+And dpgen will use old dpdispatcher if the key `api_version` is not specified in `machine.json` or the `api_version` is smaller than `1.0`.
+This gurantees that the old `machine.json`s still work.
+
+And for now dpdispatcher is maintained on a seperate repo. 
+The repo link: https://github.com/deepmodeling/dpdispatcher
+
+The api of new dpdispatcher is close to old one except for a few changes. 
+
+The new `machine.json` examples can be seen [here](https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/getting-started.html)
+
+And Here are the explanations of the keys in [machine](https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/machine.html)
+[resources](https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/resources.html).
+
+
+Here is a example `machine.json` for dpgen's new dpdispatcher.
+Please check the [documents](https://deepmd.readthedocs.io/projects/dpdispatcher/en/latest/) for more information about new dpdispatcher. 
+
+an example of new dpgen's machine.json
+```json
+{
+  "api_version": "1.0",
+  "train": [
+    {
+      "command": "dp",
+      "machine": {
+        "batch_type": "PBS",
+        "context_type": "SSHContext",
+        "local_root": "./",
+        "remote_root": "/home/user1234/work_path_dpdispatcher_test",
+        "remote_profile": {
+            "hostname": "39.xxx.xx.xx",
+            "username": "user1234"
+        }
+      },
+      "resources": {
+        "number_node": 1,
+        "cpu_per_node": 4,
+        "gpu_per_node": 1,
+        "queue_name": "T4_4_15",
+        "group_size": 1,
+        "custom_flags":["#SBATCH --mem=32G"],
+        "strategy": {"if_cuda_multi_devices": true},
+        "para_deg": 3,
+        "source_list": ["/home/user1234/deepmd.1.2.4.env"]
+      }
+    }
+  ],
+  "model_devi":[
+    {
+      "command": "lmp",
+      "machine":{
+        "batch_type": "PBS",
+        "context_type": "SSHContext",
+        "local_root": "./",
+        "remote_root": "/home/user1234/work_path_dpdispatcher_test",
+        "remote_profile": {
+          "hostname": "39.xxx.xx.xx",
+          "username": "user1234"
+        }
+      },
+      "resources": {
+        "number_node": 1,
+        "cpu_per_node": 4,
+        "gpu_per_node": 1,
+        "queue_name": "T4_4_15",
+        "group_size": 5,
+        "source_list": ["/home/user1234/deepmd.1.2.4.env"]
+      }
+    }
+  ],
+  "fp":[
+    {
+      "command": "vasp_std",
+      "machine":{
+        "batch_type": "PBS",
+        "context_type": "SSHContext",
+        "local_root": "./",
+        "remote_root": "/home/user1234/work_path_dpdispatcher_test",
+        "remote_profile": {
+          "hostname": "39.xxx.xx.xx",
+          "username": "user1234"
+        }
+      },
+      "resources": {
+        "number_node": 1,
+        "cpu_per_node": 32,
+        "gpu_per_node": 0,
+        "queue_name": "G_32_128",
+        "group_size": 1,
+        "source_list": ["~/vasp.env"]
+      }
+    }
+  ]
+}
+```
+note1: the key "local_root" in dpgen's machine.json is always `./`
+
+### old dpdispatcher
+
 When switching into a new machine, you may modifying the `MACHINE`, according to the actual circumstance. Once you have finished, the `MACHINE` can be re-used for any DP-GEN tasks without any extra efforts.
 
 An example for `MACHINE` is:
