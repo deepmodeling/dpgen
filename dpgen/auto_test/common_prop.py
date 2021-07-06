@@ -213,7 +213,7 @@ def worker(work_path,
                   backward_files,
                   outlog='outlog',
                   errlog='errlog')
-    elif LooseVersion(api_version) > LooseVersion('1.0'):
+    elif LooseVersion(api_version) >= LooseVersion('1.0'):
         submission = make_submission(
                 mdata_machine=machine,
                 mdata_resource=resources,
