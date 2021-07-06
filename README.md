@@ -1109,8 +1109,8 @@ The api of new dpdispatcher is close to old one except for a few changes.
 
 The new `machine.json` examples can be seen [here](https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/getting-started.html)
 
-And the explanation of the keys in [machine](https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/machine.html)
-[resources](https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/resources.html)
+And Here are the explanations of the keys in [machine](https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/machine.html)
+[resources](https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/resources.html).
 
 
 Here is a example `machine.json` for dpgen's new dpdispatcher.
