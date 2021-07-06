@@ -1109,12 +1109,12 @@ https://deepmd.readthedocs.io/projects/dpdispatcher/en/latest/
 more machine.json example can be seen here 
 https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/getting-started.html
 
-And the explanation of the fields in machine.json can be seen here.
+And the explanation of the keys in machine.json can be seen here.
 https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/machine.html
 https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/resources.html
 
 an example of new machine.json
-
+```json
 {
     "machine":{
         "batch_type": "Slurm",
@@ -1143,7 +1143,7 @@ an example of new machine.json
         "envs": {"DP_DISPATCHER_EXPORT": "test_foo_bar_baz"}
     }
 }
-
+```
 note1: the key "local_root" in dpgen's machine.json is always `./`
 
 ### old dpdispatcher
