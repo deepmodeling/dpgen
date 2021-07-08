@@ -1,5 +1,5 @@
 ==========================
-DeePMD-kit's documentation
+DPGEN's documentation
 ==========================
 
 .. _tutorial:
