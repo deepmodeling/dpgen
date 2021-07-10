@@ -390,8 +390,8 @@ def make_train (iter_index,
             if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
                 raise RuntimeError('model_devi_activation_func does not suppport deepmd version', mdata['deepmd_version'])
             assert(type(model_devi_activation_func) is list and len(model_devi_activation_func) == numb_models)
-            jinput['model']['descriptor']['activation_function'] = model_devi_activation_func[ii]
-            jinput['model']['fitting_net']['activation_function'] = model_devi_activation_func[ii]
+            jinput['model']['descriptor']['activation_function'] = model_devi_activation_func[ii][0]
+            jinput['model']['fitting_net']['activation_function'] = model_devi_activation_func[ii][1]
         # dump the input.json
         with open(os.path.join(task_path, train_input_file), 'w') as outfile:
             json.dump(jinput, outfile, indent = 4)
