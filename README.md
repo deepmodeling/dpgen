@@ -83,23 +83,23 @@ and if everything works, it gives
 ```
 DeepModeling
 ------------
-Version: 0.5.1.dev53+gddbeee7.d20191020
-Date:    Oct-07-2019
-Path:    /home/me/miniconda3/envs/py363/lib/python3.6/site-packages/dpgen-0.5.1.dev53+gddbeee7.d20191020-py3.6.egg/dpgen
+Version: 0.9.2
+Date:    Mar-25-2021
+Path:    /root/yuzhi/dpgen-test/lib/python3.6/site-packages/dpgen
 
-Dependency
+Reference
 ------------
-     numpy     1.17.2   /home/me/miniconda3/envs/py363/lib/python3.6/site-packages/numpy
-    dpdata     0.1.10   /home/me/miniconda3/envs/py363/lib/python3.6/site-packages/dpdata-0.1.10-py3.6.egg/dpdata
-  pymatgen   2019.7.2   /home/me/miniconda3/envs/py363/lib/python3.6/site-packages/pymatgen
-     monty      2.0.4   /home/me/miniconda3/envs/py363/lib/python3.6/site-packages/monty
-       ase     3.17.0   /home/me/miniconda3/envs/py363/lib/python3.6/site-packages/ase-3.17.0-py3.6.egg/ase
-  paramiko      2.6.0   /home/me/miniconda3/envs/py363/lib/python3.6/site-packages/paramiko
- custodian  2019.2.10   /home/me/miniconda3/envs/py363/lib/python3.6/site-packages/custodian
+Please cite:
+Yuzhi Zhang, Haidi Wang, Weijie Chen, Jinzhe Zeng, Linfeng Zhang, Han Wang, and Weinan E,
+DP-GEN: A concurrent learning platform for the generation of reliable deep learning
+based potential energy models, Computer Physics Communications, 2020, 107206.
+------------
 
 Description
 ------------
-usage: dpgen [-h] {init_surf,init_bulk,run,run/report,test,db} ...
+usage: dpgen [-h]
+             {init_surf,init_bulk,auto_gen_param,init_reaction,run,run/report,collect,simplify,autotest,db}
+             ...
 
 dpgen is a convenient script that uses DeepGenerator to prepare initial data,
 drive DeepMDkit and analyze results. This script works based on several sub-
@@ -107,18 +107,21 @@ commands with their own options. To see the options for the sub-commands, type
 "dpgen sub-command -h".
 
 positional arguments:
-  {init_surf,init_bulk,run,run/report,test,db}
+  {init_surf,init_bulk,auto_gen_param,init_reaction,run,run/report,collect,simplify,autotest,db}
     init_surf           Generating initial data for surface systems.
     init_bulk           Generating initial data for bulk systems.
+    auto_gen_param      auto gen param.json
+    init_reaction       Generating initial data for reactive systems.
     run                 Main process of Deep Potential Generator.
     run/report          Report the systems and the thermodynamic conditions of
                         the labeled frames.
-    test                Auto-test for Deep Potential.
-    db                  Collecting data from Deep Generator.
+    collect             Collect data.
+    simplify            Simplify data.
+    autotest            Auto-test for Deep Potential.
+    db                  Collecting data from DP-GEN.
 
 optional arguments:
   -h, --help            show this help message and exit
-
 ```
 
 
@@ -378,9 +381,7 @@ In `PARAM`, you can specialize the task as you expect.
   "init_data_sys": [
     "CH4.POSCAR.01x01x01/02.md/sys-0004-0001/deepmd"
   ],
-  "init_batch_size": [
-    8
-  ],
+
   "sys_configs_prefix": "....../init/",
   "sys_configs": [
     [
@@ -390,63 +391,73 @@ In `PARAM`, you can specialize the task as you expect.
       "CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale*/00001*/POSCAR"
     ]
   ],
-  "sys_batch_size": [
-    8,
-    8,
-    8,
-    8
-  ],
+ 
   "_comment": " that's all ",
   "numb_models": 4,
   "train_param": "input.json",
   "default_training_param": {
-    "_comment": "that's all",
-    "use_smooth": true,
-    "sel_a": [
-      16,
-      4
-    ],
-    "rcut_smth": 0.5,
-    "rcut": 5,
-    "filter_neuron": [
-      10,
-      20,
-      40
-    ],
-    "filter_resnet_dt": false,
-    "n_axis_neuron": 12,
-    "n_neuron": [
-      100,
-      100,
-      100
-    ],
-    "resnet_dt": true,
-    "coord_norm": true,
-    "type_fitting_net": false,
-    "systems": [],
-    "set_prefix": "set",
-    "stop_batch": 40000,
-    "batch_size": 1,
-    "start_lr": 0.001,
-    "decay_steps": 200,
-    "decay_rate": 0.95,
-    "seed": 0,
-    "start_pref_e": 0.02,
-    "limit_pref_e": 2,
-    "start_pref_f": 1000,
-    "limit_pref_f": 1,
-    "start_pref_v": 0.0,
-    "limit_pref_v": 0.0,
-    "disp_file": "lcurve.out",
-    "disp_freq": 1000,
-    "numb_test": 4,
-    "save_freq": 1000,
-    "save_ckpt": "model.ckpt",
-    "load_ckpt": "model.ckpt",
-    "disp_training": true,
-    "time_training": true,
-    "profiling": false,
-    "profiling_file": "timeline.json"
+     "model": {
+            "type_map": [
+                "H",
+                "C"
+            ],
+            "descriptor": {
+                "type": "se_a",
+                "sel": [
+                    16,
+                    4
+                ],
+                "rcut_smth": 0.5,
+                "rcut": 5,
+                "neuron": [
+                    120,
+                    120,
+                    120
+                ],
+                "resnet_dt": true,
+                "axis_neuron": 12,
+                "seed": 1
+            },
+            "fitting_net": {
+                "neuron": [
+                    25,
+                    50,
+                    100
+                ],
+                "resnet_dt": false,
+                "seed": 1
+            }
+        },
+        "learning_rate": {
+            "type": "exp",
+            "start_lr": 0.001,
+            "decay_steps": 100,
+            "decay_rate": 0.95
+        },
+        "loss": {
+            "start_pref_e": 0.02,
+            "limit_pref_e": 2,
+            "start_pref_f": 1000,
+            "limit_pref_f": 1,
+            "start_pref_v": 0.0,
+            "limit_pref_v": 0.0
+        },
+        "training": {
+            "set_prefix": "set",
+            "stop_batch": 2000,
+            "batch_size": 1,
+            "disp_file": "lcurve.out",
+            "disp_freq": 1000,
+            "numb_test": 4,
+            "save_freq": 1000,
+            "save_ckpt": "model.ckpt",
+            "load_ckpt": "model.ckpt",
+            "disp_training": true,
+            "time_training": true,
+            "profiling": false,
+            "profiling_file": "timeline.json",
+            "_comment": "that's all"
+        }
   },
   "model_devi_dt": 0.002,
   "model_devi_skip": 0,
@@ -512,15 +523,15 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
  | ***init_data_sys*** | List of string|["CH4.POSCAR.01x01x01/.../deepmd"] |Directories of initial data. You may use either absolute or relative path here.
  | ***sys_format*** | String | "vasp/poscar" | Format of initial data. It will be `vasp/poscar` if not set.
  | init_multi_systems | Boolean | false | If set to `true`, `init_data_sys` directories should contain sub-directories of various systems. DP-GEN will regard all of these sub-directories as inital data systems.
- | **init_batch_size**   | String of integer     | [8]                                                            | Each number is the batch_size of corresponding system  for training in `init_data_sys`. One recommended rule for setting the `sys_batch_size` and `init_batch_size` is that `batch_size` mutiply number of atoms ot the stucture should be larger than 32. If set to `auto`, batch size will be 32 divided by number of atoms. |
+ | init_batch_size   | String of integer     | [8]                                                            | Each number is the batch_size of corresponding system  for training in `init_data_sys`. One recommended rule for setting the `sys_batch_size` and `init_batch_size` is that `batch_size` mutiply number of atoms ot the stucture should be larger than 32. If set to `auto`, batch size will be 32 divided by number of atoms. |
   | sys_configs_prefix | String | "/sharedext4/.../data/" | Prefix of `sys_configs`
  | **sys_configs**   | List of list of string         | [<br />["/sharedext4/.../POSCAR"], <br />["....../POSCAR"]<br />] | Containing directories of structures to be explored in iterations.Wildcard characters are supported here. |
-| **sys_batch_size**      | List of integer   | [8, 8]                                                 | Each number  is the batch_size for training of corresponding system in `sys_configs`. If set to `auto`, batch size will be 32 divided by number of atoms. |
+| sys_batch_size      | List of integer   | [8, 8]                                                 | Each number  is the batch_size for training of corresponding system in `sys_configs`. If set to `auto`, batch size will be 32 divided by number of atoms. |
 | *#Training*
 | **numb_models**      | Integer      | 4 (recommend)                                                           | Number of models to be trained in `00.train`. |
 | training_iter0_model_path  | list of string  |  ["/path/to/model0_ckpt/", ...]  | The model used to init the first iter training. Number of element should be equal to `numb_models` |
 | training_init_model  | bool  |  False  | Iteration > 0, the model parameters will be initilized from the model trained at the previous iteration. Iteration == 0, the model parameters will be initialized from `training_iter0_model_path`.  |
-| **default_training_param** | Dict | {<br />... <br />"use_smooth": true, <br/>"sel_a": [16, 4], <br/>"rcut_smth": 0.5, <br/>"rcut": 5, <br/>"filter_neuron": [10, 20, 40], <br/>...<br />} | Training parameters for `deepmd-kit` in `00.train`. <br /> You can find instructions from here: (https://github.com/deepmodeling/deepmd-kit)..<br /> We commonly let `stop_batch` = 200 * `decay_steps`. |
+| **default_training_param** | Dict |  | Training parameters for `deepmd-kit` in `00.train`. <br /> You can find instructions from here: (https://github.com/deepmodeling/deepmd-kit)..<br /> |
 | *#Exploration*
 | **model_devi_dt** | Float | 0.002 (recommend) | Timestep for MD |
 | **model_devi_skip** | Integer | 0 | Number of structures skipped for fp in each MD
@@ -1083,6 +1094,110 @@ Here `pick_data` is the data to simplify and currently only supports `MultiSyste
 
 
 ## Set up machine
+### new dpdispatcher update note
+dpdispatcher Update Note: 
+dpdispatcher has updated and the api of `machine.json` is changed.
+dpgen will use new dpdispatcher if the key `api_version` in dpgen's `machine.json`'s value is equal or large than `1.0`.
+
+And dpgen will use old dpdispatcher if the key `api_version` is not specified in `machine.json` or the `api_version` is smaller than `1.0`.
+This gurantees that the old `machine.json`s still work.
+
+And for now dpdispatcher is maintained on a seperate repo. 
+The repo link: https://github.com/deepmodeling/dpdispatcher
+
+The api of new dpdispatcher is close to old one except for a few changes. 
+
+The new `machine.json` examples can be seen [here](https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/getting-started.html)
+
+And Here are the explanations of the keys in [machine](https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/machine.html)
+[resources](https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/resources.html).
+
+
+Here is a example `machine.json` for dpgen's new dpdispatcher.
+Please check the [documents](https://deepmd.readthedocs.io/projects/dpdispatcher/en/latest/) for more information about new dpdispatcher. 
+
+an example of new dpgen's machine.json
+```json
+{
+  "api_version": "1.0",
+  "train": [
+    {
+      "command": "dp",
+      "machine": {
+        "batch_type": "PBS",
+        "context_type": "SSHContext",
+        "local_root": "./",
+        "remote_root": "/home/user1234/work_path_dpdispatcher_test",
+        "remote_profile": {
+            "hostname": "39.xxx.xx.xx",
+            "username": "user1234"
+        }
+      },
+      "resources": {
+        "number_node": 1,
+        "cpu_per_node": 4,
+        "gpu_per_node": 1,
+        "queue_name": "T4_4_15",
+        "group_size": 1,
+        "custom_flags":["#SBATCH --mem=32G"],
+        "strategy": {"if_cuda_multi_devices": true},
+        "para_deg": 3,
+        "source_list": ["/home/user1234/deepmd.1.2.4.env"]
+      }
+    }
+  ],
+  "model_devi":[
+    {
+      "command": "lmp",
+      "machine":{
+        "batch_type": "PBS",
+        "context_type": "SSHContext",
+        "local_root": "./",
+        "remote_root": "/home/user1234/work_path_dpdispatcher_test",
+        "remote_profile": {
+          "hostname": "39.xxx.xx.xx",
+          "username": "user1234"
+        }
+      },
+      "resources": {
+        "number_node": 1,
+        "cpu_per_node": 4,
+        "gpu_per_node": 1,
+        "queue_name": "T4_4_15",
+        "group_size": 5,
+        "source_list": ["/home/user1234/deepmd.1.2.4.env"]
+      }
+    }
+  ],
+  "fp":[
+    {
+      "command": "vasp_std",
+      "machine":{
+        "batch_type": "PBS",
+        "context_type": "SSHContext",
+        "local_root": "./",
+        "remote_root": "/home/user1234/work_path_dpdispatcher_test",
+        "remote_profile": {
+          "hostname": "39.xxx.xx.xx",
+          "username": "user1234"
+        }
+      },
+      "resources": {
+        "number_node": 1,
+        "cpu_per_node": 32,
+        "gpu_per_node": 0,
+        "queue_name": "G_32_128",
+        "group_size": 1,
+        "source_list": ["~/vasp.env"]
+      }
+    }
+  ]
+}
+```
+note1: the key "local_root" in dpgen's machine.json is always `./`
+
+### old dpdispatcher
+
 When switching into a new machine, you may modifying the `MACHINE`, according to the actual circumstance. Once you have finished, the `MACHINE` can be re-used for any DP-GEN tasks without any extra efforts.
 
 An example for `MACHINE` is:
@@ -1091,7 +1206,7 @@ An example for `MACHINE` is:
   "train": [
     {
       "machine": {
-        "machine_type": "slurm",
+        "batch": "slurm",
         "hostname": "localhost",
         "port": 22,
         "username": "Angus",
@@ -1110,13 +1225,13 @@ An example for `MACHINE` is:
         "time_limit": "23:0:0",
         "qos": "data"
       },
-      "deepmd_path": "....../tf1120-lowprec"
+      "command": "USERPATH/dp"
     }
   ],
   "model_devi": [
     {
       "machine": {
-        "machine_type": "slurm",
+        "batch": "slurm",
         "hostname": "localhost",
         "port": 22,
         "username": "Angus",
@@ -1142,7 +1257,7 @@ An example for `MACHINE` is:
   "fp": [
     {
       "machine": {
-        "machine_type": "slurm",
+        "batch": "slurm",
         "hostname": "localhost",
         "port": 22,
         "username": "Angus",
@@ -1175,17 +1290,14 @@ Following table illustrates which key is needed for three types of machine: `tra
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
 | machine | NEED  | NEED | NEED
 | resources | NEED | NEED | NEED
-| deepmd_path | NEED |
-| command |  |NEED |  NEED |
-| group_size | | NEED | NEED |
+| command | NEED  |NEED |  NEED  
+| group_size | NEED | NEED | NEED |
 
 The following table gives explicit descriptions on keys in param.json.
 
 
  Key   | Type       | Example                                                  | Discription                                                     |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
-|deepmd_path | String |"......tf1120-lowprec" | Installed directory of DeepMD-Kit 0.x, which should contain `bin lib include`.
-| python_path | String | "....../python3.6/bin/python" | Python path for DeePMD-kit 1.x installed. This option should not be used with `deepmd_path` together.
 | machine | Dict | | Settings of the machine for TASK.
 | resources | Dict | | Resources needed for calculation.
 | # Followings are keys in resources

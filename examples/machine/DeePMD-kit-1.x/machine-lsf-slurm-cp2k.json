@@ -1,0 +1,91 @@
+{
+  "train": [
+    {
+      "machine": {
+        "machine_type": "slurm",
+        "hostname": "210.34.15.205",
+        "port": 22,
+        "username": "ybzhuang",
+        "work_path": "/home/ybzhuang/workdir"
+      },
+      "resources": {
+        "numb_gpu": 1,
+        "numb_node": 1,
+        "task_per_node": 1,
+        "partition": "gpu",
+        "job_name": "train",
+        "qos":"emergency",
+        "exclude_list": [],
+        "source_list": [
+        ],
+        "module_list": [
+            "deepmd/1.2"
+		],
+        "time_limit": "96:0:0",
+        "submit_wait_time": 60
+      },
+      "python_path": "/share/apps/deepmd/compress/bin/python3.8"
+    }
+  ],
+  "model_devi": [
+    {
+      "machine": {
+        "machine_type": "slurm",
+        "hostname": "210.34.15.205",
+        "port": 22,
+        "username": "ybzhuang",
+        "work_path": "/home/ybzhuang/workdir"
+      },
+      "resources": {
+	"numb_gpu": 1,
+        "numb_node": 1,
+        "task_per_node": 1,
+        "partition": "gpu",
+        "job_name": "md",
+        "qos":"emergency",
+        "exclude_list": [],
+        "source_list": [
+        ],
+        "module_list": [
+            "deepmd/1.2"
+		],
+        "time_limit": "96:0:0",
+        "submit_wait_time": 60
+      },
+      "command": "lmp_mpi",
+      "group_size": 5
+    }
+  ],
+  "fp": [
+    {
+      "machine": {
+        "machine_type": "lsf",
+        "hostname": "localhost",
+        "port": 6666,
+        "username": "ybzhuang",
+        "work_path": "/data/ybzhuang/methane-dpgen/dpgen-tutorial-2020-08-23/dpgen-tutorial-mathane/workpath"
+      },
+      "resources": {
+        "cvasp": false,
+        "task_per_node": 32,
+        "numb_node": 1,
+        "node_cpu": 32,
+        "exclude_list": [],
+        "with_mpi": true,
+        "source_list": [
+        ],
+        "module_list": [
+            "intel/17.5.239",
+            "mpi/intel/2017.5.239",
+            "gcc/5.5.0",
+            "cp2k/7.1"
+            ],
+        "time_limit": "12:00:00",
+        "partition": "53-medium",
+        "_comment": "that's Bel"
+      },
+      "command": "cp2k.popt -i input.inp",
+      "group_size": 50
+    }
+  ]
+}
