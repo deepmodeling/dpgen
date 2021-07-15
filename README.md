@@ -1308,7 +1308,7 @@ The following table gives explicit descriptions on keys in param.json.
 | manual_cuda_multiplicity |Interger | 5 | Used in 01.model_devi,used with key "manual_cuda_devices" specify the MD program number running on one GPU  at the same time,dpgen will  automatically allocate MD jobs on different GPU. This can improve GPU usage for GPU like V100.
 | node_cpu | Integer | 4 | Only for LSF. The number of CPU cores on each node that should be allocated to the job.
 | new_lsf_gpu | Boolean | false | **Only for LSF.** Control whether new syntax of GPU to be enabled. If enabled, DP-GEN will generate line like `#BSUB -gpu num=1:mode=shared:j_exclusive=yes` in job submission script. Only support LSF>=10.1.0.3, and `LSB_GPU_NEW_SYNTAX=Y` should be set. Default: `false`.
-| exclusive | Boolean | false | **Only for LSF.** Control whether enable `j_exclusive` during running. Default: `false`.
+| exclusive | Boolean | false | **Only for LSF, and only take effect when `new_lsf_gpu` enabled.** Control whether enable `j_exclusive` during running. Default: `false`.
 | source_list | List of string | "....../vasp.env" | Environment needed for certain job. For example, if "env" is in the list, 'source env' will be written in the script.
 | module_list | List of string | [ "Intel/2018", "Anaconda3"] | For example, If "Intel/2018" is in the list, "module load Intel/2018" will be written in the script.
 | partition | String  | "AdminGPU" | Partition / queue in which to run the job. |
