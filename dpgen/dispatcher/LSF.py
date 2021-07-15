@@ -108,7 +108,7 @@ class LSF(Batch) :
             if res['node_cpu']:
                 ret += '#BSUB -R span[ptile=%d]\n' % res['node_cpu']
             if res.get('new_lsf_gpu', False):
-                # supported in LSF >= 10.1.0 SP6
+                # supported in LSF >= 10.1.0.3
                 # ref: https://www.ibm.com/support/knowledgecenter/en/SSWRJV_10.1.0
                 # /lsf_resource_sharing/use_gpu_res_reqs.html
                 if res.get('exclusive', False):
