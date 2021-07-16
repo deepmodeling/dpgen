@@ -349,7 +349,7 @@ def make_submission(mdata_machine, mdata_resources, commands, work_path, run_tas
     machine = Machine.load_from_dict(mdata_machine)
     resources = Resources.load_from_dict(mdata_resources)
 
-    if resources['local_root'] != './':
+    if mdata_machine['local_root'] != './':
         raise RuntimeError(f"local_root must be './' in dpgen's machine.json.")
 
     command = "&&".join(commands)
