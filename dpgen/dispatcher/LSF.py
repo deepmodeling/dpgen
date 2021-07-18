@@ -108,13 +108,18 @@ class LSF(Batch) :
             if res['node_cpu']:
                 ret += '#BSUB -R span[ptile=%d]\n' % res['node_cpu']
             if res.get('new_lsf_gpu', False):
-                # supported in LSF >= 10.1.0 SP6
-                # ref: https://www.ibm.com/support/knowledgecenter/en/SSWRJV_10.1.0/lsf_resource_sharing/use_gpu_res_reqs.html
-                ret += '#BSUB -n %d\n#BSUB -gpu "num=%d:mode=shared:j_exclusive=yes"\n' % (
-                    res['numb_gpu'], res['task_per_node'])
+                # supported in LSF >= 10.1.0.3
+                # ref: https://www.ibm.com/support/knowledgecenter/en/SSWRJV_10.1.0
+                # /lsf_resource_sharing/use_gpu_res_reqs.html
+                if res.get('exclusive', False):
+                    j_exclusive = "no"
+                else:
+                    j_exclusive = "yes"
+                ret += '#BSUB -n %d\n#BSUB -gpu "num=%d:mode=shared:j_exclusive=%s"\n' % (
+                    res['task_per_node'], res['numb_gpu'], j_exclusive)
             else:
                 ret += '#BSUB -n %d\n#BSUB -R "select[ngpus >0] rusage[ngpus_excl_p=%d]"\n' % (
-                    res['numb_gpu'], res['task_per_node'])
+                    res['task_per_node'], res['numb_gpu'])
         if res['time_limit']:
             ret += '#BSUB -W %s\n' % (res['time_limit'].split(':')[
                 0] + ':' + res['time_limit'].split(':')[1])
