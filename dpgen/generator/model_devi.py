@@ -1,5 +1,7 @@
+from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import List, TYPE_CHECKING, Tuple
+from typing import Iterator, List, TYPE_CHECKING, Tuple, Iterator
+from dpgen.plugin import Plugin
 
 if TYPE_CHECKING:
     import numpy as np
@@ -7,26 +9,57 @@ if TYPE_CHECKING:
 
 class ModelDeviEngien(ABC):
     """This is the base class of the model deviation engien."""
+
+    __ModelDeviPlugin=Plugin()
+
+    @staticmethod
+    def register(key):
+        return ModelDeviEngien.__ModelDeviPlugin.register(key)
+
+    @staticmethod
+    def engiens():
+        return ModelDeviEngien.__ModelDeviPlugin.plugins
+    
+    @staticmethod
+    def get_engien(key):
+        try:
+            return ModelDeviEngien.engiens()[key]
+        except IndexError as e:
+            raise RuntimeError("Unsupported engien!") from e
+
     def __init__(self, jdata: dict, mdata: dict):
         self.jdata = jdata
         self.mdata = mdata
 
     @abstractmethod
-    def make_input(self, directory: str, system: dpdata.System, models: List[str]):
-        """Make a simulation input from a initial system.
+    def make_input(self, iter_idx:int, sys_idx: int, directory: Iterator[str], conf_name: str, models: List[str]):
+        """Make a simulation input from a directory.
+
+        The length of system should be only 1.
         
         Parameters
         ----------
-        system: dpdata.System
-            initial system to run simulations
+        iter_idx: int
+            index of iteration
+        sys_idx: int
+            index of system
+        directory: Iterator
+            generate the working directory to run simulations
+        conf_name: str
+            file name of initial system
         models: list[str]
             list of models
         """
         raise NotImplementedError("Not implemented")
 
     @abstractmethod
-    def get_running_parameters(self) -> Tuple[str, List[str]]:
+    def get_running_parameters(self, work_path: str) -> Tuple[str, List[str]]:
         """Get running parameters.
+
+        Parameters
+        ----------
+        work_path: str
+            the work path
 
         Returns
         -------

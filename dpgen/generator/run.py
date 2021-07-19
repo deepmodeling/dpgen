@@ -18,13 +18,11 @@ import random
 import logging
 import logging.handlers
 import queue
+from typing import Iterator
 import warnings
 import shutil
-import time
-import copy
 import dpdata
 import numpy as np
-import subprocess as sp
 import scipy.constants as pc
 from collections import Counter
 from distutils.version import LooseVersion
@@ -33,12 +31,10 @@ from dpgen import dlog
 from dpgen import SHORT_CMD
 from dpgen.generator.lib.utils import make_iter_name
 from dpgen.generator.lib.utils import create_path
-from dpgen.generator.lib.utils import copy_file_list
-from dpgen.generator.lib.utils import replace
+from dpgen.generator.lib.utils import _get_param_alias
 from dpgen.generator.lib.utils import log_iter
 from dpgen.generator.lib.utils import record_iter
 from dpgen.generator.lib.utils import log_task
-from dpgen.generator.lib.lammps import make_lammps_input
 from dpgen.generator.lib.vasp import write_incar_dict
 from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
 from dpgen.generator.lib.vasp import incar_upper
@@ -48,26 +44,19 @@ from dpgen.generator.lib.abacus_pw_scf import make_abacus_pw_scf_stru, make_abac
 from dpgen.generator.lib.pwmat import make_pwmat_input_dict
 from dpgen.generator.lib.pwmat import write_input_dict
 from dpgen.generator.lib.pwmat import make_pwmat_input_user_dict
-from dpgen.generator.lib.pwmat import input_upper
 from dpgen.generator.lib.siesta import make_siesta_input
 from dpgen.generator.lib.gaussian import make_gaussian_input, take_cluster
 from dpgen.generator.lib.cp2k import make_cp2k_input, make_cp2k_input_from_external, make_cp2k_xyz
 from dpgen.generator.lib.ele_temp import NBandsEsti
-from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, LSFJob, CloudMachineJob, awsMachineJob
-from dpgen.remote.group_jobs import ucloud_submit_jobs, aws_submit_jobs
-from dpgen.remote.group_jobs import group_slurm_jobs
-from dpgen.remote.group_jobs import group_local_jobs
+from dpgen.generator.model_devi import ModelDeviEngien
 from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
 from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, make_dispatcher, make_submission
 from dpgen.util import sepline
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar,Kpoints,Potcar
 from dpgen.auto_test.lib.vasp import make_kspacing_kpoints
-try:
-    from gromacs.fileformats.mdp import MDP
-except ImportError:
-    dlog.info("GromacsWrapper>=0.8.0 is needed for DP-GEN + Gromacs.")
-    pass
+import dpgen.generator.styles
+from dpgen.generator.styles.lammps import parse_cur_job, parse_cur_job_sys_revmat, parse_cur_job_revmat, find_only_one_key, revise_lmp_input_model, revise_lmp_input_dump, revise_lmp_input_plm, revise_by_keys
 
 template_name = 'template'
 train_name = '00.train'
@@ -604,145 +593,13 @@ def post_train (iter_index,
             os.remove(ofile)
         os.symlink(task_file, ofile)
 
-def _get_param_alias(jdata,
-                     names) :
-    for ii in names :
-        if ii in jdata :
-            return jdata[ii]
-    raise ValueError("one of the keys %s should be in jdata %s" % (str(names), (json.dumps(jdata, indent=4))))
-
-def parse_cur_job(cur_job) :
-    ensemble = _get_param_alias(cur_job, ['ens', 'ensemble'])
-    temps = [-1]
-    press = [-1]
-    if 'npt' in ensemble :
-        temps = _get_param_alias(cur_job, ['Ts','temps'])
-        press = _get_param_alias(cur_job, ['Ps','press'])
-    elif 'nvt' == ensemble or 'nve' == ensemble:
-        temps = _get_param_alias(cur_job, ['Ts','temps'])
-    nsteps = _get_param_alias(cur_job, ['nsteps'])
-    trj_freq = _get_param_alias(cur_job, ['t_freq', 'trj_freq','traj_freq'])
-    if 'pka_e' in cur_job :
-        pka_e = _get_param_alias(cur_job, ['pka_e'])
-    else :
-        pka_e = None
-    if 'dt' in cur_job :
-        dt = _get_param_alias(cur_job, ['dt'])
-    else :
-        dt = None
-    return ensemble, nsteps, trj_freq, temps, press, pka_e, dt
-
-def expand_matrix_values(target_list, cur_idx = 0):
-    nvar = len(target_list)
-    if cur_idx == nvar :
-        return [[]]
-    else :
-        res = []
-        prev = expand_matrix_values(target_list, cur_idx+1)
-        for ii in target_list[cur_idx]:
-            tmp = copy.deepcopy(prev)
-            for jj in tmp:
-               jj.insert(0, ii)
-               res.append(jj)
-        return res
-
-def parse_cur_job_revmat(cur_job, use_plm = False):
-    templates = [cur_job['template']['lmp']]
-    if use_plm :
-        templates.append(cur_job['template']['plm'])
-    revise_keys = []
-    revise_values = []
-    if 'rev_mat' not in cur_job.keys():
-        cur_job['rev_mat'] = {}
-    if 'lmp' not in cur_job['rev_mat'].keys():
-        cur_job['rev_mat']['lmp'] = {}
-    for ii in cur_job['rev_mat']['lmp'].keys():
-        revise_keys.append(ii)
-        revise_values.append(cur_job['rev_mat']['lmp'][ii])
-    n_lmp_keys = len(revise_keys)
-    if use_plm:
-        if 'plm' not in cur_job['rev_mat'].keys():
-            cur_job['rev_mat']['plm'] = {}
-        for ii in cur_job['rev_mat']['plm'].keys():
-            revise_keys.append(ii)
-            revise_values.append(cur_job['rev_mat']['plm'][ii])
-    revise_matrix = expand_matrix_values(revise_values)
-    return revise_keys, revise_matrix, n_lmp_keys
-
-
-def parse_cur_job_sys_revmat(cur_job, sys_idx, use_plm=False):
-    templates = [cur_job['template']['lmp']]
-    if use_plm:
-        templates.append(cur_job['template']['plm'])
-    sys_revise_keys = []
-    sys_revise_values = []
-    if 'sys_rev_mat' not in cur_job.keys():
-        cur_job['sys_rev_mat'] = {}
-    local_rev = cur_job['sys_rev_mat'].get(str(sys_idx), {})
-    if 'lmp' not in local_rev.keys():
-        local_rev['lmp'] = {}
-    for ii in local_rev['lmp'].keys():
-        sys_revise_keys.append(ii)
-        sys_revise_values.append(local_rev['lmp'][ii])
-    n_sys_lmp_keys = len(sys_revise_keys)
-    if use_plm:
-        if 'plm' not in local_rev.keys():
-            local_rev['plm'] = {}
-        for ii in local_rev['plm'].keys():
-            sys_revise_keys.append(ii)
-            sys_revise_values.append(local_rev['plm'][ii])
-    sys_revise_matrix = expand_matrix_values(sys_revise_values)
-    return sys_revise_keys, sys_revise_matrix, n_sys_lmp_keys
-
-def find_only_one_key(lmp_lines, key):
-    found = []
-    for idx in range(len(lmp_lines)):
-        words = lmp_lines[idx].split()
-        nkey = len(key)
-        if len(words) >= nkey and words[:nkey] == key :
-            found.append(idx)
-    if len(found) > 1:
-        raise RuntimeError('found %d keywords %s' % (len(found), key))
-    if len(found) == 0:
-        raise RuntimeError('failed to find keyword %s' % (key))
-    return found[0]
-
-
-def revise_lmp_input_model(lmp_lines, task_model_list, trj_freq, deepmd_version = '1'):
-    idx = find_only_one_key(lmp_lines, ['pair_style', 'deepmd'])
-    graph_list = ' '.join(task_model_list)
-    if LooseVersion(deepmd_version) < LooseVersion('1'):
-        lmp_lines[idx] = "pair_style      deepmd %s %d model_devi.out\n" % (graph_list, trj_freq)
-    else:
-        lmp_lines[idx] = "pair_style      deepmd %s out_freq %d out_file model_devi.out\n" % (graph_list, trj_freq)
-    return lmp_lines
-
-
-def revise_lmp_input_dump(lmp_lines, trj_freq):
-    idx = find_only_one_key(lmp_lines, ['dump', 'dpgen_dump'])
-    lmp_lines[idx] = "dump            dpgen_dump all custom %d traj/*.lammpstrj id type x y z\n" % trj_freq
-    return lmp_lines
-
-
-def revise_lmp_input_plm(lmp_lines, in_plm, out_plm = 'output.plumed'):
-    idx = find_only_one_key(lmp_lines, ['fix', 'dpgen_plm'])
-    lmp_lines[idx] = "fix            dpgen_plm all plumed plumedfile %s outfile %s\n" % (in_plm, out_plm)
-    return lmp_lines
-
-
-def revise_by_keys(lmp_lines, keys, values):
-    for kk,vv in zip(keys, values):
-        for ii in range(len(lmp_lines)):
-            lmp_lines[ii] = lmp_lines[ii].replace(kk, str(vv))
-    return lmp_lines
-
 
 def make_model_devi (iter_index,
                      jdata,
                      mdata) :
     # The MD engine to perform model deviation
     # Default is lammps
-    model_devi_engine = jdata.get('model_devi_engine', "lammps")
+    model_devi_engine = ModelDeviEngien.get_engien(jdata.get('model_devi_engine', "lammps"))(jdata, mdata)
     model_devi_jobs = jdata['model_devi_jobs']
     if (iter_index >= len(model_devi_jobs)) :
         return False
@@ -774,6 +631,7 @@ def make_model_devi (iter_index,
     train_path = os.path.join(iter_name, train_name)
     train_path = os.path.abspath(train_path)
     models = glob.glob(os.path.join(train_path, "graph*pb"))
+    task_model_list = [os.path.join('..', os.path.basename(ii)) for ii in models]
     work_path = os.path.join(iter_name, model_devi_name)
     create_path(work_path)
     for mm in models :
@@ -783,383 +641,43 @@ def make_model_devi (iter_index,
         json.dump(cur_job, outfile, indent = 4)
 
     conf_path = os.path.join(work_path, 'confs')
-    create_path(conf_path)
-    sys_counter = 0
-    for ss in conf_systems:
-        conf_counter = 0
-        for cc in ss :
-            if model_devi_engine == "lammps":
-                conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter)
-                orig_poscar_name = conf_name + '.orig.poscar'
-                poscar_name = conf_name + '.poscar'
-                lmp_name = conf_name + '.lmp'
-                if shuffle_poscar :
-                    os.symlink(cc, os.path.join(conf_path, orig_poscar_name))
-                    poscar_shuffle(os.path.join(conf_path, orig_poscar_name),
-                                   os.path.join(conf_path, poscar_name))
-                else :
-                    os.symlink(cc, os.path.join(conf_path, poscar_name))
-                if 'sys_format' in jdata:
-                    fmt = jdata['sys_format']
-                else:
-                    fmt = 'vasp/poscar'
-                system = dpdata.System(os.path.join(conf_path, poscar_name), fmt = fmt, type_map = jdata['type_map'])
-                if jdata.get('model_devi_nopbc', False):
-                    system.remove_pbc()
-                system.to_lammps_lmp(os.path.join(conf_path, lmp_name))
-            elif model_devi_engine == "gromacs":
-                pass
-            conf_counter += 1
-        sys_counter += 1
+    create_path(conf_path) 
+    def generate_task(sys_counter):
+        """generate a task, use next(generate_task())"""
+        task_counter = 0
+        while True:
+            task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
+            task_name = os.path.join(work_path, task_name)
+            yield task_name
+            task_counter += 1
+    for sys_counter, ss in enumerate(conf_systems):
+        task_generator = generate_task(sys_counter)
+        for conf_counter, cc in enumerate(ss) :
+            # cc is the path to an initial system with sys_format format
+            conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter)
+            orig_poscar_name = conf_name + '.orig.poscar'
+            # poscar_name is a symlink to cc
+            # the filename ends with .poscar, but it may be not a POSCAR but with sys_format format
+            poscar_name = conf_name + '.poscar'
+            
+            # JZ: I do not understand why we need to shuffle poscar
+            if shuffle_poscar :
+                os.symlink(cc, os.path.join(conf_path, orig_poscar_name))
+                poscar_shuffle(os.path.join(conf_path, orig_poscar_name),
+                                os.path.join(conf_path, poscar_name))
+            else :
+                os.symlink(cc, os.path.join(conf_path, poscar_name))
 
-    input_mode = "native"
-    if "template" in cur_job:
-        input_mode = "revise_template"
-    use_plm = jdata.get('model_devi_plumed', False)
-    use_plm_path = jdata.get('model_devi_plumed_path', False)
-    if input_mode == "native":
-        if model_devi_engine == "lammps":
-            _make_model_devi_native(iter_index, jdata, mdata, conf_systems)
-        elif model_devi_engine == "gromacs":
-            _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems)
-        else:
-            raise RuntimeError("unknown model_devi engine", model_devi_engine)
-    elif input_mode == "revise_template":
-        _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems)
-    else:
-        raise RuntimeError('unknown model_devi input mode', input_mode)
+            model_devi_engine.make_input(iter_index, conf_counter, task_generator, os.path.join(conf_path, poscar_name), task_model_list)
 
     return True
-
-
-def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
-    model_devi_jobs = jdata['model_devi_jobs']
-    if (iter_index >= len(model_devi_jobs)) :
-        return False
-    cur_job = model_devi_jobs[iter_index]
-    sys_idx = expand_idx(cur_job['sys_idx'])
-    if (len(sys_idx) != len(list(set(sys_idx)))) :
-        raise RuntimeError("system index should be uniq")
-    mass_map = jdata['mass_map']
-    use_plm = jdata.get('model_devi_plumed', False)
-    use_plm_path = jdata.get('model_devi_plumed_path', False)
-    trj_freq = _get_param_alias(cur_job, ['t_freq', 'trj_freq','traj_freq'])
-
-    rev_keys, rev_mat, num_lmp = parse_cur_job_revmat(cur_job, use_plm = use_plm)
-    lmp_templ = cur_job['template']['lmp']
-    lmp_templ = os.path.abspath(lmp_templ)
-    if use_plm:
-        plm_templ = cur_job['template']['plm']
-        plm_templ = os.path.abspath(plm_templ)
-        if use_plm_path:
-            plm_path_templ = cur_job['template']['plm_path']
-            plm_path_templ = os.path.abspath(plm_path_templ)
-
-    iter_name = make_iter_name(iter_index)
-    train_path = os.path.join(iter_name, train_name)
-    train_path = os.path.abspath(train_path)
-    models = glob.glob(os.path.join(train_path, "graph*pb"))
-    task_model_list = []
-    for ii in models:
-        task_model_list.append(os.path.join('..', os.path.basename(ii)))
-    work_path = os.path.join(iter_name, model_devi_name)
-    try:
-        mdata["deepmd_version"]
-    except KeyError:
-        mdata = set_version(mdata)
-    deepmd_version = mdata['deepmd_version']
-
-    sys_counter = 0
-    for ss in conf_systems:
-        conf_counter = 0
-        task_counter = 0
-        for cc in ss :
-            sys_rev = cur_job.get('sys_rev_mat', None)
-            total_rev_keys = rev_keys
-            total_rev_mat = rev_mat
-            total_num_lmp = num_lmp
-            if sys_rev is not None:
-                total_rev_mat = []
-                sys_rev_keys, sys_rev_mat, sys_num_lmp = parse_cur_job_sys_revmat(cur_job,
-                                                                                  sys_idx=sys_idx[sys_counter],
-                                                                                  use_plm=use_plm)
-                _lmp_keys = rev_keys[:num_lmp] + sys_rev_keys[:sys_num_lmp]
-                if use_plm:
-                    _plm_keys = rev_keys[num_lmp:] + sys_rev_keys[sys_num_lmp:]
-                    _lmp_keys += _plm_keys
-                total_rev_keys = _lmp_keys
-                total_num_lmp = num_lmp + sys_num_lmp
-                for pub in rev_mat:
-                    for pri in sys_rev_mat:
-                        _lmp_mat = pub[:num_lmp] + pri[:sys_num_lmp]
-                        if use_plm:
-                            _plm_mat = pub[num_lmp:] + pri[sys_num_lmp:]
-                            _lmp_mat += _plm_mat
-                        total_rev_mat.append(_lmp_mat)
-            for ii in range(len(total_rev_mat)):
-                total_rev_item = total_rev_mat[ii]
-                task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
-                conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter) + '.lmp'
-                task_path = os.path.join(work_path, task_name)
-                # create task path
-                create_path(task_path)
-                create_path(os.path.join(task_path, 'traj'))
-                # link conf
-                loc_conf_name = 'conf.lmp'
-                os.symlink(os.path.join(os.path.join('..','confs'), conf_name),
-                           os.path.join(task_path, loc_conf_name) )
-                cwd_ = os.getcwd()
-                # chdir to task path
-                os.chdir(task_path)
-                shutil.copyfile(lmp_templ, 'input.lammps')
-                # revise input of lammps
-                with open('input.lammps') as fp:
-                    lmp_lines = fp.readlines()
-                lmp_lines = revise_lmp_input_model(lmp_lines, task_model_list, trj_freq, deepmd_version = deepmd_version)
-                lmp_lines = revise_lmp_input_dump(lmp_lines, trj_freq)
-                lmp_lines = revise_by_keys(
-                    lmp_lines, total_rev_keys[:total_num_lmp], total_rev_item[:total_num_lmp]
-                )
-                # revise input of plumed
-                if use_plm:
-                    lmp_lines = revise_lmp_input_plm(lmp_lines, 'input.plumed')
-                    shutil.copyfile(plm_templ, 'input.plumed')
-                    with open('input.plumed') as fp:
-                        plm_lines = fp.readlines()
-                    # allow using the same list as lmp
-                    # user should not use the same key name for plm
-                    plm_lines = revise_by_keys(
-                        plm_lines, total_rev_keys, total_rev_item
-                    )
-                    with open('input.plumed', 'w') as fp:
-                        fp.write(''.join(plm_lines))
-                    if use_plm_path:
-                       shutil.copyfile(plm_path_templ, 'plmpath.pdb')
-                # dump input of lammps
-                with open('input.lammps', 'w') as fp:
-                    fp.write(''.join(lmp_lines))
-                with open('job.json', 'w') as fp:
-                    job = {}
-                    for ii,jj in zip(total_rev_keys, total_rev_item) : job[ii] = jj
-                    json.dump(job, fp, indent = 4)
-                os.chdir(cwd_)
-                task_counter += 1
-            conf_counter += 1
-        sys_counter += 1
-
-
-def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
-    model_devi_jobs = jdata['model_devi_jobs']
-    if (iter_index >= len(model_devi_jobs)) :
-        return False
-    cur_job = model_devi_jobs[iter_index]
-    ensemble, nsteps, trj_freq, temps, press, pka_e, dt = parse_cur_job(cur_job)
-    if dt is not None :
-        model_devi_dt = dt
-    sys_idx = expand_idx(cur_job['sys_idx'])
-    if (len(sys_idx) != len(list(set(sys_idx)))) :
-        raise RuntimeError("system index should be uniq")
-
-    use_ele_temp = jdata.get('use_ele_temp', 0)
-    model_devi_dt = jdata['model_devi_dt']
-    model_devi_neidelay = None
-    if 'model_devi_neidelay' in jdata :
-        model_devi_neidelay = jdata['model_devi_neidelay']
-    model_devi_taut = 0.1
-    if 'model_devi_taut' in jdata :
-        model_devi_taut = jdata['model_devi_taut']
-    model_devi_taup = 0.5
-    if 'model_devi_taup' in jdata :
-        model_devi_taup = jdata['model_devi_taup']
-    mass_map = jdata['mass_map']
-    nopbc = jdata.get('model_devi_nopbc', False)
-
-    iter_name = make_iter_name(iter_index)
-    train_path = os.path.join(iter_name, train_name)
-    train_path = os.path.abspath(train_path)
-    models = glob.glob(os.path.join(train_path, "graph*pb"))
-    task_model_list = []
-    for ii in models:
-        task_model_list.append(os.path.join('..', os.path.basename(ii)))
-    work_path = os.path.join(iter_name, model_devi_name)
-
-    sys_counter = 0
-    for ss in conf_systems:
-        conf_counter = 0
-        task_counter = 0
-        for cc in ss :
-            for tt_ in temps:
-                if use_ele_temp:
-                    if type(tt_) == list:
-                        tt = tt_[0]
-                        if use_ele_temp == 1:
-                            te_f = tt_[1]
-                            te_a = None
-                        else:
-                            te_f = None
-                            te_a = tt_[1]
-                    else:
-                        assert(type(tt_) == float or type(tt_) == int)
-                        tt = float(tt_)
-                        if use_ele_temp == 1:
-                            te_f = tt
-                            te_a = None
-                        else:
-                            te_f = None
-                            te_a = tt
-                else :
-                    tt = tt_
-                    te_f = None
-                    te_a = None
-                for pp in press:
-                    task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
-                    conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter) + '.lmp'
-                    task_path = os.path.join(work_path, task_name)
-                    # dlog.info(task_path)
-                    create_path(task_path)
-                    create_path(os.path.join(task_path, 'traj'))
-                    loc_conf_name = 'conf.lmp'
-                    os.symlink(os.path.join(os.path.join('..','confs'), conf_name),
-                               os.path.join(task_path, loc_conf_name) )
-                    cwd_ = os.getcwd()
-                    os.chdir(task_path)
-                    try:
-                        mdata["deepmd_version"]
-                    except KeyError:
-                        mdata = set_version(mdata)
-                    deepmd_version = mdata['deepmd_version']
-                    file_c = make_lammps_input(ensemble,
-                                               loc_conf_name,
-                                               task_model_list,
-                                               nsteps,
-                                               model_devi_dt,
-                                               model_devi_neidelay,
-                                               trj_freq,
-                                               mass_map,
-                                               tt,
-                                               jdata = jdata,
-                                               tau_t = model_devi_taut,
-                                               pres = pp,
-                                               tau_p = model_devi_taup,
-                                               pka_e = pka_e,
-                                               ele_temp_f = te_f,
-                                               ele_temp_a = te_a,
-                                               nopbc = nopbc,
-                                               deepmd_version = deepmd_version)
-                    job = {}
-                    job["ensemble"] = ensemble
-                    job["press"] = pp
-                    job["temps"] = tt
-                    if te_f is not None:
-                        job["ele_temp"] = te_f
-                    if te_a is not None:
-                        job["ele_temp"] = te_a
-                    job["model_devi_dt"] =  model_devi_dt
-                    with open('job.json', 'w') as _outfile:
-                        json.dump(job, _outfile, indent = 4)
-                    os.chdir(cwd_)
-                    with open(os.path.join(task_path, 'input.lammps'), 'w') as fp :
-                        fp.write(file_c)
-                    task_counter += 1
-            conf_counter += 1
-        sys_counter += 1
-
-def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
-    model_devi_jobs = jdata['model_devi_jobs']
-    if (iter_index >= len(model_devi_jobs)) :
-        return False
-    cur_job = model_devi_jobs[iter_index]
-    dt = cur_job.get("dt", None)
-    if dt is not None:
-        model_devi_dt = dt
-    else:
-        model_devi_dt = jdata['model_devi_dt']
-    nsteps = cur_job.get("nsteps", None)
-    if nsteps is None:
-        raise RuntimeError("nsteps is None, you should set nsteps in model_devi_jobs!")
-    # Currently Gromacs engine is not supported for different temperatures!
-    # If you want to change temperatures, you should change it in mdp files.
-  
-    sys_idx = expand_idx(cur_job['sys_idx'])
-    if (len(sys_idx) != len(list(set(sys_idx)))) :
-        raise RuntimeError("system index should be uniq")
-
-    mass_map = jdata['mass_map']
-
-    iter_name = make_iter_name(iter_index)
-    train_path = os.path.join(iter_name, train_name)
-    train_path = os.path.abspath(train_path)
-    models = glob.glob(os.path.join(train_path, "graph*pb"))
-    task_model_list = []
-    for ii in models:
-        task_model_list.append(os.path.join('..', os.path.basename(ii)))
-    work_path = os.path.join(iter_name, model_devi_name)
-
-    sys_counter = 0
-    for ss in conf_systems:
-        conf_counter = 0
-        task_counter = 0
-        for cc in ss :
-            task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
-            #conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter) + '.lmp'
-            task_path = os.path.join(work_path, task_name)
-            # dlog.info(task_path)
-            create_path(task_path)
-            #create_path(os.path.join(task_path, 'traj'))
-            #loc_conf_name = 'conf.lmp'
-            gromacs_settings = jdata.get("gromacs_settings" , "")
-            for key,file in gromacs_settings.items():
-                if key != "traj_filename" and key != "mdp_filename":
-                    os.symlink(os.path.join(cc,file), os.path.join(task_path, file))
-            
-            # input.json for DP-Gromacs
-            with open(os.path.join(cc, "input.json")) as f:
-                input_json = json.load(f)
-            input_json["graph_file"] = models[0]
-            with open(os.path.join(task_path,'input.json'), 'w') as _outfile:
-                json.dump(input_json, _outfile, indent = 4)
-
-            # trj_freq
-            trj_freq = cur_job.get("trj_freq", 10)
-            mdp = MDP()
-            mdp.read(os.path.join(cc, gromacs_settings['mdp_filename']))
-            mdp['nstcomm'] = trj_freq
-            mdp['nstxout'] = trj_freq
-            mdp['nstlog'] = trj_freq
-            mdp['nstenergy'] = trj_freq
-            # dt
-            mdp['dt'] = dt
-            mdp.write(os.path.join(task_path, gromacs_settings['mdp_filename']))
-
-            cwd_ = os.getcwd()
-            os.chdir(task_path)
-            job = {}
-            
-            job["model_devi_dt"] =  model_devi_dt
-            job["nsteps"] = nsteps
-            with open('job.json', 'w') as _outfile:
-                json.dump(job, _outfile, indent = 4)
-            os.chdir(cwd_)
-            
-            task_counter += 1
-            conf_counter += 1
-        sys_counter += 1
-
 
 
 def run_model_devi (iter_index,
                     jdata,
                     mdata) :
     #rmdlog.info("This module has been run !")
-    lmp_exec = mdata['lmp_command']
-    # Angus: lmp_exec name should be changed to model_devi_exec.
-    # We should also change make_dispatcher
-    # For now, I will use this name for gromacs command
-
     model_devi_group_size = mdata['model_devi_group_size']
-    model_devi_resources = mdata['model_devi_resources']
-    use_plm = jdata.get('model_devi_plumed', False)
-    use_plm_path = jdata.get('model_devi_plumed_path', False)
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, model_devi_name)
@@ -1167,8 +685,6 @@ def run_model_devi (iter_index,
 
     all_task = glob.glob(os.path.join(work_path, "task.*"))
     all_task.sort()
-    fp = open (os.path.join(work_path, 'cur_job.json'), 'r')
-    cur_job = json.load (fp)
 
     run_tasks_ = all_task
     # for ii in all_task:
@@ -1186,38 +702,10 @@ def run_model_devi (iter_index,
     all_models = glob.glob(os.path.join(work_path, 'graph*pb'))
     model_names = [os.path.basename(ii) for ii in all_models]
 
-    model_devi_engine = jdata.get("model_devi_engine", "lammps")
-    if model_devi_engine == "lammps":
-        command = "{ if [ ! -f dpgen.restart.10000 ]; then %s -i input.lammps -v restart 0; else %s -i input.lammps -v restart 1; fi }" % (lmp_exec, lmp_exec)
-        command = "/bin/sh -c '%s'" % command
-        commands = [command]
-        forward_files = ['conf.lmp', 'input.lammps', 'traj']
-        backward_files = ['model_devi.out', 'model_devi.log', 'traj']
-        if use_plm:
-            forward_files += ['input.plumed']
-           # backward_files += ['output.plumed']
-            backward_files += ['output.plumed','COLVAR','dump.0.xyz']
-            if use_plm_path:
-                forward_files += ['plmpath.pdb']
-    elif model_devi_engine == "gromacs":
-        gromacs_settings = jdata.get("gromacs_settings", {})
-        mdp_filename = gromacs_settings.get("mdp_filename", "md.mdp")
-        topol_filename = gromacs_settings.get("topol_filename", "processed.top")
-        conf_filename = gromacs_settings.get("conf_filename", "conf.gro")
-        index_filename = gromacs_settings.get("index_filename", "index.raw")
-        deffnm = gromacs_settings.get("deffnm", "deepmd")
-        maxwarn = gromacs_settings.get("maxwarn", 1)
-        nsteps = cur_job["nsteps"]
-
-        command = "%s grompp -f %s -p %s -c %s -o %s -maxwarn %d" % (lmp_exec, mdp_filename, topol_filename, conf_filename, deffnm, maxwarn)
-        command += "&& %s mdrun -deffnm %s -nsteps %d" %(lmp_exec, deffnm, nsteps) 
-        commands = [command]
-        
-        forward_files = [mdp_filename, topol_filename, conf_filename, index_filename,  "input.json" ]
-        backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , 'model_devi.out', 'model_devi.log']
-
-
-    cwd = os.getcwd()
+    model_devi_engine = ModelDeviEngien.get_engien(jdata.get('model_devi_engine', "lammps"))(jdata, mdata)
+    command, forward_files, backward_files, common_files = model_devi_engine.get_running_parameters()
+    commands = [command]
+    model_names.extend(common_files)
 
     api_version = mdata.get('api_version', '0.9')
     if LooseVersion(api_version) < LooseVersion('1.0'):

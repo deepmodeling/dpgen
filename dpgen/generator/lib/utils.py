@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os, re, shutil, logging
+import json
 
 iter_format = "%06d"
 task_format = "%02d"
@@ -61,3 +62,26 @@ def log_task (message) :
 def record_iter (record, ii, jj) :
     with open (record, "a") as frec :
         frec.write ("%d %d\n" % (ii, jj)) 
+
+def _get_param_alias(jdata,
+                     names) :
+    for ii in names :
+        if ii in jdata :
+            return jdata[ii]
+    raise ValueError("one of the keys %s should be in jdata %s" % (str(names), (json.dumps(jdata, indent=4))))
+
+def expand_idx (in_list) :
+    ret = []
+    for ii in in_list :
+        if type(ii) == int :
+            ret.append(ii)
+        elif type(ii) == str:
+            step_str = ii.split(':')
+            if len(step_str) > 1 :
+                step = int(step_str[1])
+            else :
+                step = 1
+            range_str = step_str[0].split('-')
+            assert(len(range_str)) == 2
+            ret += range(int(range_str[0]), int(range_str[1]), step)
+    return ret
