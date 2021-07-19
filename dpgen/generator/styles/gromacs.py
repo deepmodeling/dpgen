@@ -19,7 +19,6 @@ if TYPE_CHECKING:
 class LAMMPSEngien(ModelDeviEngien):
     def make_input(self, iter_index:int, sys_index:int, directory:Iterator[str], conf_name: str, models: List[str]):
         # JZ: doesn't support dpdata here??
-        conf_name = os.path.join("..", "confs", conf_name)
         _make_model_devi_native_gromacs(iter_index, directory, self.jdata, self.mdata, conf_name, models)
     
     def get_running_parameters(self, work_path: str) -> Tuple[str, List[str]]:
@@ -74,7 +73,8 @@ def _make_model_devi_native_gromacs(iter_index, task_paths, jdata, mdata, cc, mo
     gromacs_settings = jdata.get("gromacs_settings" , "")
     for key,file in gromacs_settings.items():
         if key != "traj_filename" and key != "mdp_filename":
-            os.symlink(os.path.join(cc,file), os.path.join(task_path, file))
+            # cc is abspath; use relpath instead
+            os.symlink(os.path.relpath(os.path.join(cc,file), task_path), os.path.join(task_path, file))
     
     # input.json for DP-Gromacs
     with open(os.path.join(cc, "input.json")) as f:

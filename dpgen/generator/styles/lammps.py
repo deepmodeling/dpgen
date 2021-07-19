@@ -26,7 +26,6 @@ class LAMMPSEngien(ModelDeviEngien):
             system.remove_pbc()
         new_conf_name = os.path.splitext(conf_name)[0] + ".lmp"
         system.to_lammps_lmp(new_conf_name)
-        new_conf_name = os.path.basename(new_conf_name)
         model_devi_jobs = self.jdata['model_devi_jobs']
         cur_job = model_devi_jobs[iter_index]
         input_mode = "native"
@@ -111,7 +110,8 @@ def _make_model_devi_native(iter_index, task_paths, jdata, mdata, conf_name, mod
             create_path(task_path)
             create_path(os.path.join(task_path, 'traj'))
             loc_conf_name = 'conf.lmp'
-            os.symlink(os.path.join("..", "confs", conf_name), os.path.join(task_path, loc_conf_name) )
+            # conf_name is absolute path; generate relative path to conf_name
+            os.symlink(os.path.relpath(conf_name, task_path), os.path.join(task_path, loc_conf_name) )
             cwd_ = os.getcwd()
             os.chdir(task_path)
             deepmd_version = mdata.get('deepmd_version', '1')
@@ -201,7 +201,7 @@ def _make_model_devi_revmat(iter_index, task_paths, jdata, mdata, conf_name, mod
         create_path(os.path.join(task_path, 'traj'))
         # link conf
         loc_conf_name = 'conf.lmp'
-        os.symlink(os.path.join("..", "confs", conf_name), os.path.join(task_path, loc_conf_name) )
+        os.symlink(os.path.relpath(conf_name, task_path), os.path.join(task_path, loc_conf_name) )
         cwd_ = os.getcwd()
         # chdir to task path
         os.chdir(task_path)
