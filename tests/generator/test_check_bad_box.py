@@ -12,11 +12,14 @@ class TestCheckBadBox(unittest.TestCase):
         dirname = os.path.dirname(__file__)
         conf_bad = os.path.join(dirname, 'check_bad_box', 'bad.length.lammpstrj')
         conf_good = os.path.join(dirname, 'check_bad_box', 'good.lammpstrj')
-        self.assertTrue(check_bad_box(conf_bad, 'length_ratio:5'))
-        self.assertFalse(check_bad_box(conf_good, 'length_ratio:5'))
+        sys_bad = dpdata.System(conf_bad, fmt = 'lammps/dump')
+        sys_good = dpdata.System(conf_good, fmt = 'lammps/dump')
+        self.assertTrue(check_bad_box(sys_bad, 'length_ratio:5'))
+        self.assertFalse(check_bad_box(sys_good, 'length_ratio:5'))
 
     def test_height_ratio(self):
         dirname = os.path.dirname(__file__)
         conf_bad = os.path.join(dirname, 'check_bad_box', 'bad.height.POSCAR')
-        self.assertTrue(check_bad_box(conf_bad, 'height_ratio:5', fmt = 'vasp/POSCAR'))
-        self.assertFalse(check_bad_box(conf_bad, 'length_ratio:5', fmt = 'vasp/POSCAR'))
+        sys_bad = dpdata.System(conf_bad, fmt = 'vasp/POSCAR')
+        self.assertTrue(check_bad_box(sys_bad, 'height_ratio:5'))
+        self.assertFalse(check_bad_box(sys_bad, 'length_ratio:5'))

@@ -184,10 +184,9 @@ def make_gaussian_input(sys_data, fp_params):
     buff.append('\n')
     return '\n'.join(buff)
 
-def take_cluster(old_conf_name, type_map, idx, jdata):
+def take_cluster(sys, idx, jdata):
     cutoff = jdata['cluster_cutoff']
     cutoff_hard = jdata.get('cluster_cutoff_hard', None)
-    sys = dpdata.System(old_conf_name, fmt = 'lammps/dump', type_map = type_map)
     atom_names = sys['atom_names']
     atom_types = sys['atom_types']
     cell = sys['cells'][0]

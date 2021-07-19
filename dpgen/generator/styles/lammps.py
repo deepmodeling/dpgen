@@ -8,13 +8,12 @@ from typing import List, TYPE_CHECKING, Tuple, Iterator
 from distutils.version import LooseVersion
 
 import dpdata
+import numpy as np
 from dpgen.generator.lib.utils import create_path, _get_param_alias, expand_idx
-from dpgen.generator.model_devi import ModelDeviEngien, Trajectory
+from dpgen.generator.model_devi import ModelDeviEngien, Trajectory, Frame
 from dpgen.generator.lib.lammps import make_lammps_input
+from dpgen.generator.lib.gaussian import take_cluster
 
-if TYPE_CHECKING:
-    import numpy as np
-    import dpdata
 
 @ModelDeviEngien.register("lammps")
 class LAMMPSEngien(ModelDeviEngien):
@@ -55,7 +54,42 @@ class LAMMPSEngien(ModelDeviEngien):
         return command, forward_files, backward_files, []
 
     def extract_trajectory(self, directory) -> 'Trajectory':
-        pass
+        return LAMMPSTrajectory(self, directory)
+
+class LAMMPSTrajectory(Trajectory):
+    def get_model_deviations(self) -> np.ndarray:
+        all_conf = np.loadtxt(os.path.join(self.directory, 'model_devi.out'))
+        # in current LAMMPS DeePMD plugin, it should has 7 colums for frame info
+        # the fifth column (index 4) is max f
+        # the atomic deviation starts from index 7
+        self.time = all_conf[:, 0]
+        if all_conf.shape[1] == 7:
+            # 1D
+            return all_conf[:, 4]
+        elif all_conf.shape[1] > 7:
+            # 2D
+            return all_conf[:, 7:]
+        else:
+            raise RuntimeError("The format of model_devi.out is not supported")
+    
+    def get_frame(self, idx: Tuple[int]) -> "Frame":
+        return LAMMPSFrame(self, idx)
+
+
+class LAMMPSFrame(Frame):
+    def read_frame(self) -> dpdata.System:
+        fidx = self.idx[0]
+        time = self.trajectory.time[fidx]
+        conf_name = os.path.join(self.trajectory.directory, 'traj', '%d.lammpstrj' % time)
+        type_map = self.trajectory.engien.jdata['type_map']
+        system = dpdata.System(conf_name, type_map=type_map, fmt='lammps/dump')
+        if len(self.idx) > 1:
+            # cluster
+            cidx = self.idx[1]
+            return take_cluster(conf_name, cidx, self.trajectory.engien.jdata)
+        # else: frame
+        return system
+
 
 def _make_model_devi_native(iter_index, task_paths, jdata, mdata, conf_name, models):
     model_devi_jobs = jdata['model_devi_jobs']

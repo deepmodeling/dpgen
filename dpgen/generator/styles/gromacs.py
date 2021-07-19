@@ -2,8 +2,10 @@ import os
 import json
 from typing import List, TYPE_CHECKING, Tuple, Iterator
 
+import dpdata
+import numpy as np
 from dpgen.generator.lib.utils import create_path, expand_idx
-from dpgen.generator.model_devi import ModelDeviEngien, Trajectory
+from dpgen.generator.model_devi import ModelDeviEngien, Trajectory, Frame
 try:
     from gromacs.fileformats.mdp import MDP
 except ImportError:
@@ -11,9 +13,6 @@ except ImportError:
     #dlog.info("GromacsWrapper>=0.8.0 is needed for DP-GEN + Gromacs.")
     pass
 
-if TYPE_CHECKING:
-    import numpy as np
-    import dpdata
 
 @ModelDeviEngien.register("gromacs")
 class LAMMPSEngien(ModelDeviEngien):
@@ -45,7 +44,26 @@ class LAMMPSEngien(ModelDeviEngien):
         return command, forward_files, backward_files, []
 
     def extract_trajectory(self, directory) -> 'Trajectory':
-        pass
+        return GromacsTrajectory(self, directory)
+
+class GromacsTrajectory(Trajectory):
+    def get_model_deviations(self) -> np.ndarray:
+        all_conf = np.loadtxt(os.path.join(self.directory, 'model_devi.out'))
+        self.time = all_conf[:, 0]
+        return all_conf[:, 4]
+
+    def get_frame(self, idx: Tuple[int]) -> "Frame":
+        return GromacsFrame(self, idx)
+
+
+class GromacsFrame(Frame):
+    def read_frame(self) -> dpdata.System:
+        fidx = self.idx[0]
+        time = self.trajectory.time[fidx]
+        conf_name = os.path.join(self.trajectory.directory, 'traj', '%d.gromacstrj' % time)
+        type_map = self.trajectory.engien.jdata['type_map']
+        system = dpdata.System(conf_name, type_map=type_map, fmt='gromacs/gro')
+        return system
 
 def _make_model_devi_native_gromacs(iter_index, task_paths, jdata, mdata, cc, models):
     model_devi_jobs = jdata['model_devi_jobs']

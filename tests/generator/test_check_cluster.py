@@ -14,11 +14,12 @@ class Test_check_cluster(unittest.TestCase):
     def test (self) :
         conf_name='POSCAR_Au_cluster'
         fmt='POSCAR'
-        ret = check_cluster(conf_name, fp_cluster_vacuum=15, fmt=fmt)
+        sys = dpdata.System(conf_name, fmt = fmt)
+        ret = check_cluster(sys, fp_cluster_vacuum=15)
         #bad cluster
         self.assertTrue(ret)
         #good cluster 
-        ret = check_cluster(conf_name, fp_cluster_vacuum=10, fmt=fmt)
+        ret = check_cluster(sys, fp_cluster_vacuum=10)
         self.assertFalse(ret)
 
 if __name__ == '__main__':

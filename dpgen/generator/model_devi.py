@@ -92,10 +92,13 @@ class Trajectory(ABC):
     
     Parameters
     ----------
+    engien: ModelDeviEngien
+        Engien
     directory: str
         The directory of a simulation
     """
-    def __init__(self, directory: str) -> None:
+    def __init__(self, engien: ModelDeviEngien, directory: str) -> None:
+        self.engien = engien
         self.directory = directory
         self.status = 0
     
@@ -118,20 +121,20 @@ class Trajectory(ABC):
         raise NotImplementedError("Not implemented")
     
     @abstractmethod
-    def get_frames(self, idx: List[Tuple[int]]) -> List["Frame"]:
-        """Get list of frames from idx.
+    def get_frame(self, idx: Tuple[int]) -> "Frame":
+        """Get a frame from idx.
 
         Parameters
         ----------
-        idx: list[tuple[int]]
-            List of indexes.
+        idx: tuple[int]
+            Index.
         
         Returns
         -------
-        frames: list[Frame]
-            List of frames.
+        frames: Frame
+            Frames.
         """
-        return [Frame(self, ii) for ii in idx]
+        return Frame(self, idx)
     
     def open_trajectory(self):
         """Open the trajectory.

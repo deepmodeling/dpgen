@@ -22,6 +22,7 @@ from typing import Iterator
 import warnings
 import shutil
 import dpdata
+from dpdata.system import MultiSystems
 import numpy as np
 import scipy.constants as pc
 from collections import Counter
@@ -744,7 +745,9 @@ def run_model_devi (iter_index,
 def post_model_devi (iter_index,
                      jdata,
                      mdata) :
-    pass
+    # select candidates via model deviation; move from make_fp
+    # TODO: change function name
+    _make_fp_vasp_configs(iter_index, jdata)
 
 
 def _to_face_dist(box_):
@@ -756,10 +759,9 @@ def _to_face_dist(box_):
         dists.append(vol / np.linalg.norm(vv))
     return np.array(dists)
 
-def check_cluster(conf_name,
+def check_cluster(sys,
                   fp_cluster_vacuum,
-                  fmt='lammps/dump'):
-    sys = dpdata.System(conf_name, fmt)
+                  ):
     assert(sys.get_nframes() == 1)
     cell=sys.data['cells'][0]
     coord=sys.data['coords'][0]
@@ -777,11 +779,10 @@ def check_cluster(conf_name,
        is_bad = False
     return is_bad
 
-def check_bad_box(conf_name,
+def check_bad_box(sys,
                    criteria,
-                   fmt = 'lammps/dump'):
+                   ):
     all_c = criteria.split(';')
-    sys = dpdata.System(conf_name, fmt)
     assert(sys.get_nframes() == 1)
     is_bad = False
     for ii in all_c:
@@ -820,7 +821,7 @@ def _make_fp_vasp_inner (modd_path,
     fp_link_files       [string]        linked files for fp, POTCAR for example
     fp_params           map             parameters for fp
     """
-
+    model_devi_engine = ModelDeviEngien.get_engien(jdata.get('model_devi_engine', "lammps"))(jdata, None)
     modd_task = glob.glob(os.path.join(modd_path, "task.*"))
     modd_task.sort()
     system_index = []
@@ -830,8 +831,6 @@ def _make_fp_vasp_inner (modd_path,
     system_index = list(set_tmp)
     system_index.sort()
 
-    fp_tasks = []
-    cluster_cutoff = jdata['cluster_cutoff'] if jdata.get('use_clusters', False) else None
     # skip save *.out if detailed_report_make_fp is False, default is True
     detailed_report_make_fp = jdata.get("detailed_report_make_fp", True)
     # skip bad box criteria
@@ -851,61 +850,51 @@ def _make_fp_vasp_inner (modd_path,
         counter['candidate'] = 0
         counter['failed'] = 0
         counter['accurate'] = 0
-        for tt in modd_system_task :
+        trajs = []
+        for tt_idx, tt in enumerate(modd_system_task) :
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                all_conf = np.loadtxt(os.path.join(tt, 'model_devi.out'))
-                for ii in range(all_conf.shape[0]) :
-                    if all_conf[ii][0] < model_devi_skip :
-                        continue
-                    cc = int(all_conf[ii][0])
-                    if cluster_cutoff is None:
-                        if (all_conf[ii][1] < e_trust_hi and all_conf[ii][1] >= e_trust_lo) or \
-                           (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] >= f_trust_lo) :
-                            fp_candidate.append([tt, cc])
-                            counter['candidate'] += 1
-                        elif (all_conf[ii][1] >= e_trust_hi ) or (all_conf[ii][4] >= f_trust_hi ):
-                            if detailed_report_make_fp:
-                                fp_rest_failed.append([tt, cc])
-                            counter['failed'] += 1
-                        elif (all_conf[ii][1] < e_trust_lo and all_conf[ii][4] < f_trust_lo ):
-                            if detailed_report_make_fp:
-                                fp_rest_accurate.append([tt, cc])
-                            counter['accurate'] += 1
-                        else :
-                            raise RuntimeError('md traj %s frame %d with f devi %f does not belong to either accurate, candidiate and failed, it should not happen' % (tt, ii, all_conf[ii][4]))
-                    else:
-                        idx_candidate = np.where(np.logical_and(all_conf[ii][7:] < f_trust_hi, all_conf[ii][7:] >= f_trust_lo))[0]
-                        for jj in idx_candidate:
-                            fp_candidate.append([tt, cc, jj])
-                        counter['candidate'] += len(idx_candidate)
-                        idx_rest_accurate = np.where(all_conf[ii][7:] < f_trust_lo)[0]
-                        if detailed_report_make_fp:
-                            for jj in idx_rest_accurate:
-                                fp_rest_accurate.append([tt, cc, jj])
-                        counter['accurate'] += len(idx_rest_accurate)
-                        idx_rest_failed = np.where(all_conf[ii][7:] >= f_trust_hi)[0]
-                        if detailed_report_make_fp:
-                            for jj in idx_rest_failed:
-                                fp_rest_failed.append([tt, cc, jj])
-                        counter['failed'] += len(idx_rest_failed)
+                traj = model_devi_engine.extract_trajectory(tt)
+                trajs.append(traj)
+                model_devis = traj.get_model_deviations()
+
+                skipped_array = np.ones(model_devis.shape ,dtype=bool)
+                skipped_array[:model_devi_skip] = False
+
+                # candidate
+                idx_candidate = np.transpose(np.where(np.logical_and(model_devis < f_trust_hi, model_devis >= f_trust_lo, skipped_array)))
+                counter['candidate'] += idx_candidate.shape[0]
+                idx_candidate_tt = np.concatenate((np.reshape(np.repeat(tt_idx, idx_candidate.shape[0]), (-1,1)), idx_candidate), axis=1)
+                fp_candidate.append(idx_candidate_tt)
+
+                # accurate
+                idx_rest_accurate = np.transpose(np.where(np.logical_and(model_devis < f_trust_lo, skipped_array)))
+                counter['accurate'] += idx_rest_accurate.shape[0]
+                if detailed_report_make_fp:
+                    idx_rest_accurate_tt = np.concatenate((np.reshape(np.repeat(tt_idx, idx_rest_accurate.shape[0]), (-1,1)), idx_rest_accurate), axis=1)
+                    fp_rest_accurate.append(idx_rest_accurate_tt)
+
+                # failed
+                idx_rest_failed = np.transpose(np.where(np.logical_and(model_devis >= f_trust_hi, skipped_array)))
+                counter['failed'] += idx_rest_failed.shape[0]
+                if detailed_report_make_fp:
+                    idx_rest_failed_tt = np.concatenate((np.reshape(np.repeat(tt_idx, idx_rest_failed.shape[0]), (-1,1)), idx_rest_failed), axis=1)
+                    fp_rest_failed.append(idx_rest_failed_tt)
+
         # print a report
         fp_sum = sum(counter.values())
         for cc_key, cc_value in counter.items():
             dlog.info("system {0:s} {1:9s} : {2:6d} in {3:6d} {4:6.2f} %".format(ss, cc_key, cc_value, fp_sum, cc_value/fp_sum*100))
-        random.shuffle(fp_candidate)
+        fp_candidate = np.concatenate(fp_candidate)
+        np.random.shuffle(fp_candidate)
         if detailed_report_make_fp:
-            random.shuffle(fp_rest_failed)
-            random.shuffle(fp_rest_accurate)
-            with open(os.path.join(work_path,'candidate.shuffled.%s.out'%ss), 'w') as fp:
-                for ii in fp_candidate:
-                    fp.write(" ".join([str(nn) for nn in ii]) + "\n")
-            with open(os.path.join(work_path,'rest_accurate.shuffled.%s.out'%ss), 'w') as fp:
-                for ii in fp_rest_accurate:
-                    fp.write(" ".join([str(nn) for nn in ii]) + "\n")
-            with open(os.path.join(work_path,'rest_failed.shuffled.%s.out'%ss), 'w') as fp:
-                for ii in fp_rest_failed:
-                    fp.write(" ".join([str(nn) for nn in ii]) + "\n")
+            fp_rest_failed = np.concatenate(fp_rest_failed)
+            fp_rest_accurate = np.concatenate(fp_rest_accurate)
+            np.random.shuffle(fp_rest_failed)
+            np.random.shuffle(fp_rest_accurate)
+            np.savetxt(os.path.join(modd_path,'candidate.shuffled.%s.out'%ss), fp_candidate, fmt="%d")
+            np.savetxt(os.path.join(modd_path,'rest_accurate.shuffled.%s.out'%ss), fp_rest_accurate, fmt="%d")
+            np.savetxt(os.path.join(modd_path,'rest_failed.shuffled.%s.out'%ss), fp_rest_failed, fmt="%d")
 
         # set number of tasks
         accurate_ratio = float(counter['accurate']) / float(fp_sum)
@@ -925,72 +914,68 @@ def _make_fp_vasp_inner (modd_path,
         model_devi_engine = jdata.get("model_devi_engine", "lammps")
         count_bad_box = 0
         count_bad_cluster = 0
-        for cc in range(numb_task) :
-            tt = fp_candidate[cc][0]
-            ii = fp_candidate[cc][1]
-            ss = os.path.basename(tt).split('.')[1]
-            conf_name = os.path.join(tt, "traj")
-            if model_devi_engine == "lammps":
-                conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
-            elif model_devi_engine == "gromacs":
-                conf_name = os.path.join(conf_name, str(ii) + '.gromacstrj')
-            else:
-                raise RuntimeError("unknown model_devi engine", model_devi_engine)
-            conf_name = os.path.abspath(conf_name)
+
+        # candidate has been shuffled
+        out_candidate = fp_candidate[:numb_task]
+        frames = sorted([trajs[cc[0]].get_frame(cc[1:]) for cc in out_candidate])
+        all_sys = dpdata.MultiSystems()
+        last_frame = None
+        for frame in frames :
+            # sys is dpdata.System
+            sys = frame.read_frame()
+            if last_frame is not None and last_frame.trajectory is not frame.trajectory:
+                last_frame.trajectory.close_trajectory()
             if skip_bad_box is not None:
-                skip = check_bad_box(conf_name, skip_bad_box)
+                skip = check_bad_box(sys, skip_bad_box)
                 if skip:
                     count_bad_box += 1
                     continue
 
             if fp_cluster_vacuum is not None:
                assert fp_cluster_vacuum >0
-               skip_cluster = check_cluster(conf_name, fp_cluster_vacuum)
+               skip_cluster = check_cluster(sys, fp_cluster_vacuum)
                if skip_cluster:
                   count_bad_cluster +=1
                   continue
 
-            # link job.json
-            job_name = os.path.join(tt, "job.json")
-            job_name = os.path.abspath(job_name)
-
-            if cluster_cutoff is not None:
-                # take clusters
-                jj = fp_candidate[cc][2]
-                poscar_name = '{}.cluster.{}.POSCAR'.format(conf_name, jj)
-                new_system = take_cluster(conf_name, type_map, jj, jdata)
-                new_system.to_vasp_poscar(poscar_name)
-            fp_task_name = make_fp_task_name(int(ss), cc)
-            fp_task_path = os.path.join(work_path, fp_task_name)
-            create_path(fp_task_path)
-            fp_tasks.append(fp_task_path)
-            cwd = os.getcwd()
-            os.chdir(fp_task_path)
-            if cluster_cutoff is None:
-                os.symlink(os.path.relpath(conf_name), 'conf.dump')
-                os.symlink(os.path.relpath(job_name), 'job.json')
-            else:
-                os.symlink(os.path.relpath(poscar_name), 'POSCAR')
-                np.save("atom_pref", new_system.data["atom_pref"])
-            for pair in fp_link_files :
-                os.symlink(pair[0], pair[1])
-            os.chdir(cwd)
+            all_sys.append(sys)
+            last_frame = frame
+        all_sys.to_deepmd_npy(os.path.join(modd_path, "data.%s"%ss))
         if count_bad_box > 0:
             dlog.info("system {0:s} skipped {1:6d} confs with bad box, {2:6d} remains".format(ss, count_bad_box, numb_task - count_bad_box))
         if count_bad_cluster > 0:
             dlog.info("system {0:s} skipped {1:6d} confs with bad cluster, {2:6d} remains".format(ss, count_bad_cluster, numb_task - count_bad_cluster))
-    if cluster_cutoff is None:
-        cwd = os.getcwd()
-        for ii in fp_tasks:
-            os.chdir(ii)
-            if model_devi_engine == "lammps":
-                dump_to_poscar('conf.dump', 'POSCAR', type_map, fmt = "lammps/dump")
-            elif model_devi_engine == "gromacs":
-                # dump_to_poscar('conf.dump', 'POSCAR', type_map, fmt = "gromacs/gro")
-                dump_to_deepmd_raw('conf.dump', 'deepmd.raw', type_map, fmt = 'gromacs/gro')
-            else:
-                raise RuntimeError("unknown model_devi engine", model_devi_engine)
-            os.chdir(cwd)
+
+
+def _make_fp_inner(iter_index, jdata):
+    """real make_fp_inner"""
+    iter_name = make_iter_name(iter_index)
+
+    modd_path = os.path.join(iter_name, model_devi_name)
+    work_path = os.path.join(iter_name, )
+
+    modd_data = glob.glob(os.path.join(modd_path, "data.*"))
+    modd_data.sort()
+    system_index = []
+    for ii in modd_data :
+        system_index.append(os.path.basename(ii).split('.')[1])
+    system_index = list(set(system_index))
+    system_index.sort()
+    fp_tasks = []
+
+    for ss in system_index :
+        cc = 0
+        multi_systems = MultiSystems().from_deepmd_npy(os.path.join(modd_path, "data.%s" % ss))
+        for system in multi_systems:
+            for sss in system:
+                fp_task_name = make_fp_task_name(int(ss), cc)
+                fp_task_path = os.path.join(work_path, fp_task_name)
+                fp_tasks.append(fp_task_path)
+                sss.to_deepmd_npy(os.path.join(fp_task_path), "conf")
+                cc += 1
+
+                for pair in jdata.get("fp_link_files") :
+                    os.symlink(pair[0], os.path.join(fp_task_path ,pair[1]))
     return fp_tasks
 
 def make_vasp_incar(jdata, filename):
@@ -1246,17 +1231,14 @@ def sys_link_fp_vasp_pp (iter_index,
 
 def _make_fp_vasp_configs(iter_index,
                           jdata):
+    # transfered to post_model_devi
     fp_task_max = jdata['fp_task_max']
     model_devi_skip = jdata['model_devi_skip']
     e_trust_lo = 1e+10
     e_trust_hi = 1e+10
     f_trust_lo = jdata['model_devi_f_trust_lo']
     f_trust_hi = jdata['model_devi_f_trust_hi']
-    type_map = jdata['type_map']
     iter_name = make_iter_name(iter_index)
-    work_path = os.path.join(iter_name, fp_name)
-    create_path(work_path)
-
 
     modd_path = os.path.join(iter_name, model_devi_name)
     task_min = -1
@@ -1265,22 +1247,28 @@ def _make_fp_vasp_configs(iter_index,
         if 'task_min' in cur_job :
             task_min = cur_job['task_min']
     # make configs
-    fp_tasks = _make_fp_vasp_inner(modd_path, work_path,
+    _make_fp_vasp_inner(modd_path, None,
                                    model_devi_skip,
                                    e_trust_lo, e_trust_hi,
                                    f_trust_lo, f_trust_hi,
                                    task_min, fp_task_max,
-                                   [],
-                                   type_map,
+                                   None,
+                                   None,
                                    jdata)
-    return fp_tasks
 
 def make_fp_vasp (iter_index,
                   jdata) :
     # make config
-    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
+    fp_tasks = _make_fp_inner(iter_index, jdata)
     if len(fp_tasks) == 0 :
         return
+    cwd = os.getcwd()
+    for ii in fp_tasks:
+        os.chdir(ii)
+        sys = dpdata.System("conf", fmt='deepmd/npy')
+        sys.to_poscar("POSCAR")
+        os.chdir(cwd)
+
     # abs path for fp_incar if it exists
     if 'fp_incar' in jdata:
         jdata['fp_incar'] = os.path.abspath(jdata['fp_incar'])
@@ -1303,7 +1291,7 @@ def make_fp_vasp (iter_index,
 def make_fp_pwscf(iter_index,
                   jdata) :
     # make config
-    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
+    fp_tasks = _make_fp_inner(iter_index, jdata)
     if len(fp_tasks) == 0 :
         return
     # make pwscf input
@@ -1319,7 +1307,7 @@ def make_fp_pwscf(iter_index,
     cwd = os.getcwd()
     for ii in fp_tasks:
         os.chdir(ii)
-        sys_data = dpdata.System('POSCAR').data
+        sys_data = dpdata.System("conf", fmt='deepmd/npy').data
         sys_data['atom_masses'] = jdata['mass_map']
         ret = make_pwscf_input(sys_data, fp_pp_files, fp_params, user_input = user_input)
         with open('input', 'w') as fp:
@@ -1331,7 +1319,7 @@ def make_fp_pwscf(iter_index,
 def make_fp_abacus_pw_scf(iter_index,
                   jdata) :
     # make config
-    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
+    fp_tasks = _make_fp_inner(iter_index, jdata)
     if len(fp_tasks) == 0 :
         return
     # make abacus/pw/scf input
@@ -1346,7 +1334,7 @@ def make_fp_abacus_pw_scf(iter_index,
     cwd = os.getcwd()
     for ii in fp_tasks:
         os.chdir(ii)
-        sys_data = dpdata.System('POSCAR').data
+        sys_data = dpdata.System("conf", fmt='deepmd/npy').data
         if 'mass_map' in jdata:
             sys_data['atom_masses'] = jdata['mass_map']
         ret_input = make_abacus_pw_scf_input(fp_params)
@@ -1367,7 +1355,7 @@ def make_fp_abacus_pw_scf(iter_index,
 def make_fp_siesta(iter_index,
                   jdata) :
     # make config
-    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
+    fp_tasks = _make_fp_inner(iter_index, jdata)
     if len(fp_tasks) == 0 :
         return
     # make siesta input
@@ -1383,7 +1371,7 @@ def make_fp_siesta(iter_index,
     cwd = os.getcwd()
     for ii in fp_tasks:
         os.chdir(ii)
-        sys_data = dpdata.System('POSCAR').data
+        sys_data = dpdata.System("conf", fmt='deepmd/npy').data
         ret = make_siesta_input(sys_data, fp_pp_files, fp_params)
         with open('input', 'w') as fp:
             fp.write(ret)
@@ -1394,7 +1382,7 @@ def make_fp_siesta(iter_index,
 def make_fp_gaussian(iter_index,
                      jdata):
     # make config
-    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
+    fp_tasks = _make_fp_inner(iter_index, jdata)
     if len(fp_tasks) == 0 :
         return
     # make gaussian gjf file
@@ -1409,10 +1397,7 @@ def make_fp_gaussian(iter_index,
     model_devi_engine = jdata.get('model_devi_engine', 'lammps')
     for ii in fp_tasks:
         os.chdir(ii)
-        if model_devi_engine == "lammps":
-            sys_data = dpdata.System('POSCAR').data
-        elif model_devi_engine == "gromacs":
-            sys_data = dpdata.System("deepmd.raw", fmt='deepmd/raw').data
+        sys_data = dpdata.System("conf", fmt='deepmd/npy').data
         ret = make_gaussian_input(sys_data, fp_params)
         with open('input', 'w') as fp:
             fp.write(ret)
@@ -1423,7 +1408,7 @@ def make_fp_gaussian(iter_index,
 def make_fp_cp2k (iter_index,
                   jdata):
     # make config
-    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
+    fp_tasks = _make_fp_inner(iter_index, jdata)
     if len(fp_tasks) == 0 :
         return
     # make cp2k input
@@ -1441,7 +1426,7 @@ def make_fp_cp2k (iter_index,
     cwd = os.getcwd()
     for ii in fp_tasks:
         os.chdir(ii)
-        sys_data = dpdata.System('POSCAR').data
+        sys_data = dpdata.System("conf", fmt='deepmd/npy').data
         # make input for every task
         # if fp_params exits, make keys
         if fp_params:
@@ -1465,7 +1450,7 @@ def make_fp_cp2k (iter_index,
 def make_fp_pwmat (iter_index,
                   jdata) :
     # make config
-    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
+    fp_tasks = _make_fp_inner(iter_index, jdata)
     if len(fp_tasks) == 0 :
         return
     # abs path for fp_incar if it exists
@@ -1480,6 +1465,11 @@ def make_fp_pwmat (iter_index,
 def make_fp (iter_index,
              jdata,
              mdata) :
+    # moved from _make_fp_vasp_configs
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    create_path(work_path)
+
     fp_style = jdata['fp_style']
 
     if fp_style == "vasp" :

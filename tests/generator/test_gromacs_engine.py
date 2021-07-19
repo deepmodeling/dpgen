@@ -9,7 +9,7 @@ __package__ = 'generator'
 dirname = os.path.join(os.path.abspath(os.path.dirname(__file__)), "gromacs")
 
 from .context import make_model_devi
-from .context import make_fp_gaussian
+from .context import post_model_devi
 
 def _make_fake_graphs(train_path):
     if not os.path.exists(train_path):
@@ -101,14 +101,17 @@ class TestGromacsModelDeviEngine(unittest.TestCase):
     
     @unittest.skipIf(importlib.util.find_spec("openbabel") is None, "requires openbabel")
     def test_make_fp_gaussian(self):
-        make_fp_gaussian(iter_index=0, jdata=self.jdata)
-        candi = np.loadtxt(os.path.join(self.fp_path, "candidate.shuffled.000.out"), dtype=np.str)
-        candi_ref = np.loadtxt(os.path.join(self.dirname, "outputs", "candidate.shuffled.000.out"), dtype=np.str)
+        flag = make_model_devi(iter_index=0,
+                        jdata=self.jdata,
+                        mdata={})
+        self._copy_outputs(os.path.join(self.dirname, "outputs"), self.model_devi_task_path)
+        post_model_devi(iter_index=0, jdata=self.jdata, mdata=None)
+        candi = np.loadtxt(os.path.join(self.model_devi_path, "candidate.shuffled.000.out"), dtype=np.str)
+        #candi_ref = np.loadtxt(os.path.join(self.dirname, "outputs", "candidate.shuffled.000.out"), dtype=np.str)
         self.assertEqual(sorted([int(i) for i in candi[:,1]]), [0,10,20,30,50])
         
      
     def tearDown(self):
-        #pass
         shutil.rmtree(self.iter_path)
 if __name__ == '__main__':
     unittest.main()
