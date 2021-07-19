@@ -668,7 +668,7 @@ def make_model_devi (iter_index,
             else :
                 os.symlink(cc, os.path.join(conf_path, poscar_name))
 
-            model_devi_engine.make_input(iter_index, conf_counter, task_generator, os.path.join(conf_path, poscar_name), task_model_list)
+            model_devi_engine.make_input(iter_index, sys_counter, task_generator, os.path.join(conf_path, poscar_name), task_model_list)
 
     return True
 
