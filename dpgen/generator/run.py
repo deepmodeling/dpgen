@@ -669,9 +669,9 @@ def make_model_devi (iter_index,
                 os.symlink(cc, os.path.join(conf_path, poscar_name))
 
             # generate the absolute path of confs
-            conf_path = os.path.abspath(os.path.join(conf_path, poscar_name))
+            poscar_path = os.path.abspath(os.path.join(conf_path, poscar_name))
 
-            model_devi_engine.make_input(iter_index, sys_counter, task_generator, conf_path, task_model_list)
+            model_devi_engine.make_input(iter_index, sys_counter, task_generator, poscar_path, task_model_list)
 
     return True
 
