@@ -707,9 +707,14 @@ def run_model_devi (iter_index,
     model_names = [os.path.basename(ii) for ii in all_models]
 
     model_devi_engine = ModelDeviEngien.get_engien(jdata.get('model_devi_engine', "lammps"))(jdata, mdata)
-    command, forward_files, backward_files, common_files = model_devi_engine.get_running_parameters()
+    running_parameters = model_devi_engine.get_running_parameters()
+    command = running_parameters['command']
+    forward_files = running_parameters['forward_files']
+    backward_files = running_parameters['backward_files']
+    common_files = running_parameters.get('common_files', None)
     commands = [command]
-    model_names.extend(common_files)
+    if common_files:
+        model_names.extend(common_files)
 
     api_version = mdata.get('api_version', '0.9')
     if LooseVersion(api_version) < LooseVersion('1.0'):

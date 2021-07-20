@@ -4,7 +4,7 @@ import os
 import json
 import shutil
 import copy
-from typing import List, TYPE_CHECKING, Tuple, Iterator
+from typing import List, TYPE_CHECKING, Tuple, Iterator, Dict
 from distutils.version import LooseVersion
 
 import dpdata
@@ -37,7 +37,7 @@ class LAMMPSEngien(ModelDeviEngien):
         else:
             raise RuntimeError('unknown model_devi input mode', input_mode)
 
-    def get_running_parameters(self, work_path: str) -> Tuple[str, List[str]]:
+    def get_running_parameters(self, work_path: str) -> Dict[str]:
         use_plm = self.jdata.get('model_devi_plumed', False)
         use_plm_path = self.jdata.get('model_devi_plumed_path', False)
         lmp_exec = self.mdata['lmp_command']
@@ -51,7 +51,12 @@ class LAMMPSEngien(ModelDeviEngien):
             backward_files += ['output.plumed','COLVAR','dump.0.xyz']
             if use_plm_path:
                 forward_files += ['plmpath.pdb']
-        return command, forward_files, backward_files, []
+        return {
+            "command": command,
+            "forward_files": forward_files,
+            "backward_files": backward_files,
+            "common_files": [],
+        }
 
     def extract_trajectory(self, directory) -> 'Trajectory':
         return LAMMPSTrajectory(self, directory)

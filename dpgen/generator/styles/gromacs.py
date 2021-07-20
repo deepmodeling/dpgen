@@ -1,6 +1,6 @@
 import os
 import json
-from typing import List, TYPE_CHECKING, Tuple, Iterator
+from typing import List, TYPE_CHECKING, Tuple, Iterator, Dict
 
 import dpdata
 import numpy as np
@@ -20,7 +20,7 @@ class GromacsEngien(ModelDeviEngien):
         # JZ: doesn't support dpdata here??
         _make_model_devi_native_gromacs(iter_index, directory, self.jdata, self.mdata, conf_name, models)
     
-    def get_running_parameters(self, work_path: str) -> Tuple[str, List[str]]:
+    def get_running_parameters(self, work_path: str) -> Dict[str]:
         with open (os.path.join(work_path, 'cur_job.json'), 'r') as fp:
             cur_job = json.load (fp)
         gromacs_settings = self.jdata.get("gromacs_settings", {})
@@ -41,7 +41,12 @@ class GromacsEngien(ModelDeviEngien):
         
         forward_files = [mdp_filename, topol_filename, conf_filename, index_filename,  "input.json" ]
         backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , 'model_devi.out', 'model_devi.log']
-        return command, forward_files, backward_files, []
+        return {
+            "command": command,
+            "forward_files": forward_files,
+            "backward_files": backward_files,
+            "common_files": [],
+        }
 
     def extract_trajectory(self, directory) -> 'Trajectory':
         return GromacsTrajectory(self, directory)
