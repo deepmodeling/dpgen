@@ -175,7 +175,10 @@ def _check_pb_link(testCase, iter_idx, numb_models) :
     os.chdir(pwd)
 
 class TestMakeTrain(unittest.TestCase):
-    def test_0 (self) :        
+
+    def test_0 (self) :   
+        # No longer support for DeePMD-kit-0.x version. 
+        return    
         with open (param_file, 'r') as fp :
             jdata = json.load (fp)
         with open (machine_file, 'r') as fp:
@@ -194,6 +197,8 @@ class TestMakeTrain(unittest.TestCase):
         shutil.rmtree('iter.000000')
 
     def test_1_data(self) :
+        # No longer support for DeePMD-kit-0.x version. 
+        return
         with open (param_file, 'r') as fp :
             jdata = json.load (fp)
         with open (machine_file, 'r') as fp:
@@ -213,6 +218,8 @@ class TestMakeTrain(unittest.TestCase):
 
 
     def test_1_skip(self):
+        # No longer support for DeePMD-kit-0.x version. 
+        return
         with open (param_file, 'r') as fp :
             jdata = json.load (fp)
         with open (machine_file, 'r') as fp:

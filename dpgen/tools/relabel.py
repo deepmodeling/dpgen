@@ -202,7 +202,7 @@ def create_tasks(target_folder, param_file, output, fp_json, verbose = True, num
         copy_pp_files(output, fp_pp_path, fp_pp_files)
         make_vasp_incar(fp_params, output)
     if fp_style == 'pwscf' :
-        copy_pp_files(output, fp_pp_path, fp_pp_files)        
+        copy_pp_files(output, fp_pp_path, fp_pp_files)
     if fp_style == 'siesta' :
         copy_pp_files(output, fp_pp_path, fp_pp_files)
     for si in range(numb_sys) :
