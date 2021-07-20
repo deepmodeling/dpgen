@@ -1,0 +1,79 @@
+{
+  "_comment" : "This is an example of DP-GEN on Local device running with 4 GPUs",
+  "_comment" : "Last updated on 2021.5.9 for DP-GEN 0.9.2 by Ke XU",
+  "train": [
+    {
+      "_comment" : "Specify the installed path of DeePMD-kit",
+      "_comment" : "The version of DeePMD-kit should be 1.*",
+      "command": "/home/user/anaconda3/bin/dp",
+      "_comment" : "Specify machine settings",
+      "machine": {
+        "_comment" : "Supported batches include slurm, pbs, shell, lsf.",
+        "batch": "shell",
+        "work_path": "/tmp/dpwork",
+        "_comment": "that's all"
+      },
+      "resources":{
+        "_comment" : "The number of nodes.",
+        "numb_node":     1,
+        "_comment" : "If you choose to run with multiple GPUs simultaneously, just ignore numb_gpu.",
+        "numb_gpu":      0,
+        "_comment" : "The number of CPUs.",
+        "task_per_node": 4,
+        "_comment" : "The number of GPUs that can be used for each task.",
+        "manual_cuda_devices": 4,
+        "_comment" : "The number of tasks that can be run in each GPU.",
+        "manual_cuda_multiplicity":1,
+        "_comment" : "Allow the multi-GPU task running.",
+        "cuda_multi_task": true,
+        "module_list":   [],
+        "_comment" : "Environment to be activated. This will generate source xxx/psxevars.sh in scripts. ",
+        "source_list":   ["/opt/intel/parallel_studio_xe_2020/psxevars.sh"]
+      },
+      "_comment" : "DP-GEN will put 4 tasks together in one submitting script.",
+      "group_size": 4
+    }
+  ],
+
+  "model_devi": [
+    {
+      "machine": {
+        "batch":     "shell",
+        "work_path": "/tmp/dpwork"
+      },
+      "resources": {
+        "numb_node":     1,
+        "numb_gpu":      0,
+        "task_per_node": 4,
+        "manual_cuda_devices": 4,
+        "manual_cuda_multiplicity":1,
+        "cuda_multi_task": true,
+        "source_list":   [],
+        "module_list":   []
+      },
+      "command":    "/home/user/Soft/Deepmd/lammps-stable_29Oct2020/src/lmp_mpi",
+      "group_size": 4
+    }
+  ],
+
+  "fp": [
+    {
+      "machine": {
+        "batch":     "shell",
+        "work_path": "/tmp/dpwork"
+      },
+      "resources": {
+        "allow_failure": true,
+        "ratio_failue":  0.05,
+        "task_per_node": 16,
+        "with_mpi":      true,
+        "_comment" : "Load the intel compiler.",
+        "source_list":   ["/opt/intel/parallel_studio_xe_2020/psxevars.sh"],
+        "envs":          {"PATH" : "/home/user/Soft/VASP/vasp.5.4.4-allbak/bin:$PATH"},
+        "_comment" : "This will generate export PATH=/home/user/Soft/VASP/vasp.5.4.4-allbak/bin:$PATH in scripts;"
+      },
+      "command":    "vasp_std",
+      "group_size": 1
+    }
+  ]
+}
