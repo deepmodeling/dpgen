@@ -32,8 +32,8 @@ class ModelDeviEngien(ABC):
         self.mdata = mdata
 
     @abstractmethod
-    def make_input(self, iter_idx:int, sys_idx: int, directory: Iterator[str], conf_name: str, models: List[str]):
-        """Make a simulation input from a directory.
+    def make_input(self, iter_idx:int, sys_idx: int, directories: Iterator[str], conf_name: str, models: List[str]):
+        """Make a simulation input from a working directory.
 
         The length of system should be only 1.
         
@@ -43,8 +43,8 @@ class ModelDeviEngien(ABC):
             index of iteration
         sys_idx: int
             index of system
-        directory: Iterator
-            generate the working directory to run simulations
+        directories: Iterator[str]
+            the iterator to generate the task directory to run simulations
         conf_name: str
             file name of initial system
         models: list[str]

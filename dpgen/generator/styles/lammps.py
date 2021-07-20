@@ -17,7 +17,7 @@ from dpgen.generator.lib.gaussian import take_cluster
 
 @ModelDeviEngien.register("lammps")
 class LAMMPSEngien(ModelDeviEngien):
-    def make_input(self, iter_index:int, sys_index:int, directory:Iterator[str], conf_name: str, models: List[str]):
+    def make_input(self, iter_index: int, sys_index: int, directories: Iterator[str], conf_name: str, models: List[str]):
         # the default system format is vasp/poscar
         fmt = self.jdata.get('sys_format', 'vasp/poscar')
         system = dpdata.System(conf_name, fmt = fmt, type_map = self.jdata['type_map'])
@@ -31,9 +31,9 @@ class LAMMPSEngien(ModelDeviEngien):
         if "template" in cur_job:
             input_mode = "revise_template"
         if input_mode == "native":
-            _make_model_devi_native(iter_index, directory, self.jdata, self.mdata, new_conf_name, models)
+            _make_model_devi_native(iter_index, directories, self.jdata, self.mdata, new_conf_name, models)
         elif input_mode == "revise_template":
-            _make_model_devi_revmat(iter_index, directory, self.jdata, self.mdata, new_conf_name, models, sys_index)
+            _make_model_devi_revmat(iter_index, directories, self.jdata, self.mdata, new_conf_name, models, sys_index)
         else:
             raise RuntimeError('unknown model_devi input mode', input_mode)
 

@@ -16,9 +16,9 @@ except ImportError:
 
 @ModelDeviEngien.register("gromacs")
 class GromacsEngien(ModelDeviEngien):
-    def make_input(self, iter_index:int, sys_index:int, directory:Iterator[str], conf_name: str, models: List[str]):
+    def make_input(self, iter_index: int, sys_index: int, directories: Iterator[str], conf_name: str, models: List[str]):
         # JZ: doesn't support dpdata here??
-        _make_model_devi_native_gromacs(iter_index, directory, self.jdata, self.mdata, conf_name, models)
+        _make_model_devi_native_gromacs(iter_index, directories, self.jdata, self.mdata, conf_name, models)
     
     def get_running_parameters(self, work_path: str) -> Dict[str]:
         with open (os.path.join(work_path, 'cur_job.json'), 'r') as fp:
