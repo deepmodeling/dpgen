@@ -7,6 +7,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 __package__ = 'generator'
 from .context import post_fp
 from .context import post_fp_pwscf
+from .context import post_fp_abacus_pw_scf
 from .context import post_fp_siesta
 from .context import post_fp_vasp
 from .context import post_fp_gaussian
@@ -15,6 +16,7 @@ from .context import param_file
 from .context import param_old_file
 from .context import param_pwscf_file
 from .context import param_pwscf_old_file
+from .context import param_abacus_post_file
 from .context import param_siesta_file
 from .context import param_gaussian_file
 from .context import param_cp2k_file
@@ -172,6 +174,22 @@ class TestPostFPPWSCF(unittest.TestCase, CompLabeledSys):
             shutil.rmtree('iter.000000')
         shutil.copytree('out_data_post_fp_pwscf', 'iter.000000')
         with open (param_pwscf_file, 'r') as fp :
+            jdata = json.load (fp)
+        post_fp(0, jdata)
+        self.system_1 = dpdata.LabeledSystem('iter.000000/orig', fmt = 'deepmd/raw')
+        self.system_2 = dpdata.LabeledSystem('iter.000000/02.fp/data.000', fmt = 'deepmd/raw')
+
+class TestPostFPABACUS(unittest.TestCase, CompLabeledSys):
+    def setUp(self):
+        self.places = 5
+        self.e_places = 5
+        self.f_places = 5
+        self.v_places = 2
+        assert os.path.isdir('out_data_post_fp_abacus'), 'out data for post fp pwscf should exist'
+        if os.path.isdir('iter.000000') :
+            shutil.rmtree('iter.000000')
+        shutil.copytree('out_data_post_fp_abacus', 'iter.000000')
+        with open (param_abacus_post_file, 'r') as fp :
             jdata = json.load (fp)
         post_fp(0, jdata)
         self.system_1 = dpdata.LabeledSystem('iter.000000/orig', fmt = 'deepmd/raw')

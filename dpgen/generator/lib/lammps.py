@@ -77,8 +77,9 @@ def make_lammps_input(ensemble,
         if jdata.get('use_clusters', False):
             keywords += "atomic "
         if jdata.get('use_relative', False):
-            eps = jdata.get('eps', 0.)
             keywords += "relative %s " % jdata['epsilon']
+        if jdata.get('use_relative_v', False):
+            keywords += "relative_v %s " % jdata['epsilon_v']
         if ele_temp_f is not None:
             keywords += "fparam ${ELE_TEMP}"
         if ele_temp_a is not None:

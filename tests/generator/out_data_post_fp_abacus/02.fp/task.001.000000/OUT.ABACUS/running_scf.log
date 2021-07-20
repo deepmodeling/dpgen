@@ -1,0 +1,601 @@
+                                                                                     
+                             WELCOME TO ABACUS                                       
+                                                                                     
+               'Atomic-orbital Based Ab-initio Computation at UStc'                  
+                                                                                     
+                     Website: http://abacus.ustc.edu.cn/                             
+                                                                                     
+    Version: Parallel, v2.1.0
+    Processor Number is 4
+    Start Time is Tue Jun  1 15:07:47 2021
+                                                                                     
+ ------------------------------------------------------------------------------------
+
+ READING GENERAL INFORMATION
+                           global_out_dir = OUT.ABACUS/
+                           global_in_card = INPUT
+                               pseudo_dir = ./
+                              pseudo_type = auto
+                                    DRANK = 1
+                                    DSIZE = 4
+                                   DCOLOR = 1
+                                    GRANK = 1
+                                    GSIZE = 1
+
+
+
+
+ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ |                                                                    |
+ | Reading atom information in unitcell:                              |
+ | From the input file and the structure file we know the number of   |
+ | different elments in this unitcell, then we list the detail        |
+ | information for each element, especially the zeta and polar atomic |
+ | orbital number for each element. The total atom number is counted. |
+ | We calculate the nearest atom distance for each atom and show the  |
+ | Cartesian and Direct coordinates for each atom. We list the file   |
+ | address for atomic orbitals. The volume and the lattice vectors    |
+ | in real and reciprocal space is also shown.                        |
+ |                                                                    |
+ <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+ READING UNITCELL INFORMATION
+                                    ntype = 2
+                 atom label for species 1 = H
+                 atom label for species 2 = C
+                  lattice constant (Bohr) = 1.88973
+              lattice constant (Angstrom) = 1
+
+ READING ATOM TYPE 1
+                               atom label = H
+                      start magnetization = FALSE
+                      L=0, number of zeta = 1
+                      L=1, number of zeta = 1
+                      L=2, number of zeta = 1
+             number of atom for this type = 4
+
+ READING ATOM TYPE 2
+                               atom label = C
+                      start magnetization = FALSE
+                      L=0, number of zeta = 1
+                      L=1, number of zeta = 1
+                      L=2, number of zeta = 1
+             number of atom for this type = 1
+
+                        TOTAL ATOM NUMBER = 5
+
+ CARTESIAN COORDINATES ( UNIT = 1.88973 Bohr ).
+         atom                   x                   y                   z                 mag
+      tauc_H1             5.34752       4.13299000001             3.42409                   0
+      tauc_H2       4.00995999999             5.01007             4.17371                   0
+      tauc_H3             5.58918       5.08242000001       4.86611999999                   0
+      tauc_H4             4.70525       3.51901000001             4.88607                   0
+      tauc_C1             4.92227       4.47265000001             4.37673                   0
+
+
+                          Volume (Bohr^3) = 6676.0271937
+                             Volume (A^3) = 989.283980644
+
+ Lattice vectors: (Cartesian coordinate: in unit of a_0)
+       +10.2565601854                  +0                  +0
+        -0.2453177497       +9.8128484191                  +0
+        -0.2571031519       -0.3012912337       +9.8293471194
+ Reciprocal vectors: (Cartesian coordinate: in unit of 2 pi/a_0)
+     +0.0974985747584   +0.00243742998334   +0.00262495228314
+                   -0     +0.101907209537   +0.00312368141153
+                   +0                  -0     +0.101736156822
+
+
+
+
+ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ |                                                                    |
+ | Reading pseudopotentials files:                                    |
+ | The pseudopotential file is in UPF format. The 'NC' indicates that |
+ | the type of pseudopotential is 'norm conserving'. Functional of    |
+ | exchange and correlation is decided by 4 given parameters in UPF   |
+ | file.  We also read in the 'core correction' if there exists.      |
+ | Also we can read the valence electrons number and the maximal      |
+ | angular momentum used in this pseudopotential. We also read in the |
+ | trail wave function, trail atomic density and local-pseudopotential|
+ | on logrithmic grid. The non-local pseudopotential projector is also|
+ | read in if there is any.                                           |
+ |                                                                    |
+ <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+                PAO radial cut off (Bohr) = 15
+
+ Read in pseudopotential file is H_ONCV_PBE-1.0.upf
+                     pseudopotential type = NC
+                            functional Ex = PBE
+                            functional Ec = 
+                          functional GCEx = 
+                          functional GCEc = 
+                 nonlocal core correction = 0
+                        valence electrons = 1
+                                     lmax = 0
+                           number of zeta = 0
+                     number of projectors = 2
+                           L of projector = 0
+                           L of projector = 0
+                PAO radial cut off (Bohr) = 15
+
+ Read in pseudopotential file is C_ONCV_PBE-1.0.upf
+                     pseudopotential type = NC
+                            functional Ex = PBE
+                            functional Ec = 
+                          functional GCEx = 
+                          functional GCEc = 
+                 nonlocal core correction = 0
+                        valence electrons = 4
+                                     lmax = 1
+                           number of zeta = 0
+                     number of projectors = 4
+                           L of projector = 0
+                           L of projector = 0
+                           L of projector = 1
+                           L of projector = 1
+     initial pseudo atomic orbital number = 0
+                                   NLOCAL = 45
+
+ SETUP THE ELECTRONS NUMBER
+             electron number of element H = 1
+       total electron number of element H = 4
+             electron number of element C = 4
+       total electron number of element C = 4
+                           occupied bands = 4
+                                   NBANDS = 5
+ DONE : SETUP UNITCELL Time : 0.248472929001 (SEC)
+
+
+
+
+
+ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ |                                                                    |
+ | Doing symmetry analysis:                                           |
+ | We calculate the norm of 3 vectors and the angles between them,    |
+ | the type of Bravais lattice is given. We can judge if the unticell |
+ | is a primitive cell. Finally we give the point group operation for |
+ | this unitcell. We we use the point group operations to do symmetry |
+ | analysis on given k-point mesh and the charge density.             |
+ |                                                                    |
+ <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+ LATTICE VECTORS: (CARTESIAN COORDINATE: IN UNIT OF A0)
+       +10.2565601854                  +0                  +0
+        -0.2453177497       +9.8128484191                  +0
+        -0.2571031519       -0.3012912337       +9.8293471194
+                       right hand lattice = 1
+                                   NORM_A = 10.2565601854
+                                   NORM_B = 9.81591436875
+                                   NORM_C = 9.83732398734
+                           ALPHA (DEGREE) = 91.4320759898
+                           BETA  (DEGREE) = 91.7171031174
+                           GAMMA (DEGREE) = 91.4976230389
+                             BRAVAIS TYPE = 14
+                     BRAVAIS LATTICE NAME = 14. Triclinic cell
+ STANDARD LATTICE VECTORS: (CARTESIAN COORDINATE: IN UNIT OF A0)
+       +10.2565601854                  +0                  +0
+        -0.2453177497       +9.8128484191                  +0
+        -0.2571031519       -0.3012912337       +9.8293471194
+                                    IBRAV = 14
+                                  BRAVAIS = TRICLINIC CELL
+                     LATTICE CONSTAddNT A = 24.3134388692
+                                B/A RATIO = 1.20720410464
+                                C/A RATIO = 1.18773716153
+                               COS(ALPHA) = 0.878270383691
+                                COS(BETA) = 0.653779913716
+                               COS(GAMMA) = 0.215574501928
+                                    ibrav = 14
+                        ROTATION MATRICES = 2
+              PURE POINT GROUP OPERATIONS = 1
+                   SPACE GROUP OPERATIONS = 1
+                              POINT GROUP = C_1
+ DONE : SYMMETRY Time : 0.302663087845 (SEC)
+
+
+
+
+
+ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ |                                                                    |
+ | Setup K-points                                                     |
+ | We setup the k-points according to input parameters.               |
+ | The reduced k-points are set according to symmetry operations.     |
+ | We treat the spin as another set of k-points.                      |
+ |                                                                    |
+ <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+
+ SETUP K-POINTS
+                                    nspin = 1
+                   Input type of k points = Monkhorst-Pack(Gamma)
+                                   nkstot = 1
+                               nkstot_ibz = 1
+      IBZ             DirectX             DirectY             DirectZ              Weight    ibz2bz
+        1                   0                   0                   0                   1         0
+                               nkstot now = 1
+
+  KPOINTS            DIRECT_X            DIRECT_Y            DIRECT_Z              WEIGHT
+        1                   0                   0                   0                   1
+
+           k-point number in this process = 1
+       minimum distributed K point number = 1
+
+  KPOINTS         CARTESIAN_X         CARTESIAN_Y         CARTESIAN_Z              WEIGHT
+        1                   0                   0                   0                   2
+
+  KPOINTS            DIRECT_X            DIRECT_Y            DIRECT_Z              WEIGHT
+        1                   0                   0                   0                   2
+ DONE : INIT K-POINTS Time : 0.304226875305 (SEC)
+
+
+
+
+
+ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ |                                                                    |
+ | Setup plane waves:                                                 |
+ | Use the energy cutoff and the lattice vectors to generate the      |
+ | dimensions of FFT grid. The number of FFT grid on each processor   |
+ | is 'nrxx'. The number of plane wave basis in reciprocal space is   |
+ | different for charege/potential and wave functions. We also set    |
+ | the 'sticks' for the parallel of FFT.                              |
+ |                                                                    |
+ <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+
+ SETUP THE PLANE WAVE BASIS
+     energy cutoff for wavefunc (unit:Ry) = 80
+            [fft grid for wave functions] = 120, 108, 108
+          [fft grid for charge/potential] = 120, 108, 108
+                      [fft grid division] = 1, 1, 1
+      [big fft grid for charge/potential] = 120, 108, 108
+                                     nbxx = 349920
+                                     nrxx = 349920
+
+ SETUP PLANE WAVES FOR CHARGE/POTENTIAL
+                    number of plane waves = 645411
+                         number of sticks = 9153
+
+ SETUP PLANE WAVES FOR WAVE FUNCTIONS
+                    number of plane waves = 80695
+                         number of sticks = 2293
+
+ PARALLEL PW FOR CHARGE/POTENTIAL
+     PROC   COLUMNS(POT)             PW
+        1           2289         161355
+        2           2288         161352
+        3           2288         161352
+        4           2288         161352
+ --------------- sum -------------------
+        4           9153         645411
+
+ PARALLEL PW FOR WAVE FUNCTIONS
+     PROC     COLUMNS(W)             PW
+        1            572          20178
+        2            574          20172
+        3            573          20172
+        4            574          20173
+ --------------- sum -------------------
+        4           2293          80695
+
+ SETUP COORDINATES OF PLANE WAVES
+              number of total plane waves = 645411
+
+ SETUP COORDINATES OF PLANE WAVES
+                            number of |g| = 152312
+                                  max |g| = 28.9459422956
+                                  min |g| = 0
+ DONE : INIT PLANEWAVE Time : 0.861092805862 (SEC)
+
+                                     npwx = 20178
+
+ SETUP NONLOCAL PSEUDOPOTENTIALS IN PLANE WAVE BASIS
+ H non-local projectors:
+ projector 1 L=0
+ projector 2 L=0
+ C non-local projectors:
+ projector 1 L=0
+ projector 2 L=0
+ projector 3 L=1
+ projector 4 L=1
+      TOTAL NUMBER OF NONLOCAL PROJECTORS = 16
+ DONE : LOCAL POTENTIAL Time : 6.48073101044 (SEC)
+
+
+ Init Non-Local PseudoPotential table : 
+ Init Non-Local-Pseudopotential done.
+ DONE : NON-LOCAL POTENTIAL Time : 6.48683285713 (SEC)
+
+                                start_pot = atomic
+ DONE : INIT POTENTIAL Time : 7.61773 (SEC)
+
+
+ Make real space PAO into reciprocal space.
+       max mesh points in Pseudopotential = 601
+     dq(describe PAO in reciprocal space) = 0.01
+                                    max q = 1078
+
+ number of pseudo atomic orbitals for H is 0
+
+ number of pseudo atomic orbitals for C is 0
+ DONE : INIT BASIS Time : 7.74402 (SEC)
+
+ -------------------------------------------
+ -------------------------------------------
+
+ PW ALGORITHM --------------- ION=   1  ELEC=   1--------------------------------
+  K-point    CG iter num      Time(Sec)
+        1      10.800000       1.100000
+
+ Density error is 0.716228562297
+                          Error Threshold = 0.010000000000
+
+       Energy                       Rydberg                            eV
+   E_KohnSham              -16.077989743340             -218.752272894988
+     E_Harris              -16.416413004613             -223.356757584032
+      E_Fermi               -1.047696916925              -14.254647847209
+
+ PW ALGORITHM --------------- ION=   1  ELEC=   2--------------------------------
+  K-point    CG iter num      Time(Sec)
+        1       2.600000       0.340000
+
+ Density error is 0.053485286288
+                          Error Threshold = 0.008952857029
+
+       Energy                       Rydberg                            eV
+   E_KohnSham              -16.147852555191             -219.702805214460
+     E_Harris              -16.170227865721             -220.007236932187
+      E_Fermi               -0.757274295387              -10.303245366204
+
+ PW ALGORITHM --------------- ION=   1  ELEC=   3--------------------------------
+  K-point    CG iter num      Time(Sec)
+        1       3.400000       0.420000
+
+ Density error is 0.014597674496
+                          Error Threshold = 0.000668566079
+
+       Energy                       Rydberg                            eV
+   E_KohnSham              -16.152630737187             -219.767815715679
+     E_Harris              -16.159901269386             -219.866736381080
+      E_Fermi               -0.678151111752               -9.226719224862
+
+ PW ALGORITHM --------------- ION=   1  ELEC=   4--------------------------------
+  K-point    CG iter num      Time(Sec)
+        1       2.600000       0.330000
+
+ Density error is 0.002894513932
+                          Error Threshold = 0.000182470931
+
+       Energy                       Rydberg                            eV
+   E_KohnSham              -16.153987551063             -219.786276115520
+     E_Harris              -16.155383261882             -219.805265735428
+      E_Fermi               -0.669796821983               -9.113053281256
+
+ PW ALGORITHM --------------- ION=   1  ELEC=   5--------------------------------
+  K-point    CG iter num      Time(Sec)
+        1       3.000000       0.370000
+
+ Density error is 0.000178084710
+                          Error Threshold = 0.000036181424
+
+       Energy                       Rydberg                            eV
+   E_KohnSham              -16.154367813314             -219.791449848876
+     E_Harris              -16.154442303768             -219.792463343494
+      E_Fermi               -0.654331591572               -8.902638026784
+
+ PW ALGORITHM --------------- ION=   1  ELEC=   6--------------------------------
+  K-point    CG iter num      Time(Sec)
+        1       3.200000       0.390000
+
+ Density error is 0.000016407178
+                          Error Threshold = 0.000002226059
+
+       Energy                       Rydberg                            eV
+   E_KohnSham              -16.154436359380             -219.792382465939
+     E_Harris              -16.154443715521             -219.792482551379
+      E_Fermi               -0.653660775768               -8.893511109543
+
+ PW ALGORITHM --------------- ION=   1  ELEC=   7--------------------------------
+  K-point    CG iter num      Time(Sec)
+        1       4.000000       0.470000
+
+ Density error is 0.000014008850
+                          Error Threshold = 0.000000205090
+
+       Energy                       Rydberg                            eV
+   E_KohnSham              -16.154437877417             -219.792403119902
+     E_Harris              -16.154445243508             -219.792503340712
+      E_Fermi               -0.654658037287               -8.907079548594
+
+ PW ALGORITHM --------------- ION=   1  ELEC=   8--------------------------------
+  K-point    CG iter num      Time(Sec)
+        1       2.800000       0.350000
+
+ Density error is 0.000000301230
+                          Error Threshold = 0.000000175111
+
+       Energy                       Rydberg                            eV
+   E_KohnSham              -16.154440948911             -219.792444909710
+     E_Harris              -16.154441074217             -219.792446614598
+      E_Fermi               -0.654018333952               -8.898375938218
+
+ PW ALGORITHM --------------- ION=   1  ELEC=   9--------------------------------
+  K-point    CG iter num      Time(Sec)
+        1       4.000000       0.480000
+
+ Density error is 0.000000018344
+                          Error Threshold = 0.000000003765
+
+       Energy                       Rydberg                            eV
+   E_KohnSham              -16.154441070784             -219.792446567885
+     E_Harris              -16.154441057559             -219.792446387946
+      E_Fermi               -0.654138260809               -8.900007626814
+
+ PW ALGORITHM --------------- ION=   1  ELEC=  10--------------------------------
+  K-point    CG iter num      Time(Sec)
+        1       3.400000       0.420000
+
+ Density error is 0.000000015755
+                          Error Threshold = 0.000000000229
+
+       Energy                       Rydberg                            eV
+   E_KohnSham              -16.154441067825             -219.792446527624
+     E_Harris              -16.154441072730             -219.792446594355
+      E_Fermi               -0.654121118038               -8.899774387444
+
+ PW ALGORITHM --------------- ION=   1  ELEC=  11--------------------------------
+  K-point    CG iter num      Time(Sec)
+        1       3.400000       0.430000
+
+ Density error is 0.000000001032
+                          Error Threshold = 0.000000000197
+
+       Energy                       Rydberg                            eV
+   E_KohnSham              -16.154441070882             -219.792446569210
+     E_Harris              -16.154441069860             -219.792446555307
+      E_Fermi               -0.654135023227               -8.899963577250
+
+ PW ALGORITHM --------------- ION=   1  ELEC=  12--------------------------------
+  K-point    CG iter num      Time(Sec)
+        1       4.000000       0.460000
+
+ Density error is 0.000000000233
+                          Error Threshold = 0.000000000013
+
+       Energy                       Rydberg                            eV
+   E_KohnSham              -16.154441071342             -219.792446575473
+     E_Harris              -16.154441071108             -219.792446572294
+       E_band               -6.620750901789              -90.079937302973
+   E_one_elec              -40.783150273403             -554.883226108534
+    E_Hartree              +21.222216891079             +288.743073910523
+         E_xc               -6.398952161196              -87.062210621679
+      E_Ewald               +9.805444472178             +133.409916244217
+      E_demet               +0.000000000000               +0.000000000000
+      E_descf               +0.000000000000               +0.000000000000
+     E_efield               +0.000000000000               +0.000000000000
+      E_Fermi               -0.654134329118               -8.899954133408
+ charge density convergence is achieved
+ final etot is -219.792446575473 eV
+
+ STATE ENERGY(eV) AND OCCUPATIONS. 1/1 kpoint (Cartesian) = 0.00000 0.00000 0.00000 (20178 pws)
+ [spin1_state]        1     -17.008572       2.000000
+ [spin1_state]        2      -9.762220       2.000000
+ [spin1_state]        3      -9.369222       2.000000
+ [spin1_state]        4      -8.899954       2.000000
+ [spin1_state]        5      -0.467626       0.000000
+
+
+
+ ><><><><><><><><><><><><><><><><><><><><><><
+
+    TOTAL-FORCE (Ry/Bohr)
+
+ ><><><><><><><><><><><><><><><><><><><><><><
+
+     atom              x              y              z
+       H1      +0.002959      +0.012968      -0.004708
+       H2      -0.019440      +0.007157      -0.002091
+       H3      +0.064612      +0.049770      +0.053569
+       H4      -0.000202      +0.018610      +0.013752
+       C1      -0.047929      -0.088505      -0.060522
+
+
+ ><><><><><><><><><><><><><><><><><><><><><><
+
+    TOTAL-FORCE (eV/Angstrom)
+
+ ><><><><><><><><><><><><><><><><><><><><><><
+
+     atom              x              y              z
+       H1      +0.076075      +0.333431      -0.121056
+       H2      -0.499814      +0.184016      -0.053760
+       H3      +1.661246      +1.279637      +1.377319
+       H4      -0.005203      +0.478484      +0.353569
+       C1      -1.232303      -2.275569      -1.556072
+
+
+ ><><><><><><><><><><><><><><><><><><><><><><
+
+ TOTAL-STRESS (KBAR)
+
+ ><><><><><><><><><><><><><><><><><><><><><><
+
+     +2.55460601    +1.16926976    +1.35703241
+     +1.16926976    +0.47006726    +0.83186454
+     +1.35703241    +0.83186454    +1.55891919
+
+
+ --------------------------------------------
+ !FINAL_ETOT_IS -219.7924465754728089 eV
+ --------------------------------------------
+
+
+
+
+
+
+  |CLASS_NAME---------|NAME---------------|TIME(Sec)-----|CALLS----|AVG------|PER%-------
+  A             DC_Driv             reading         +0.305         1     +0.31     +1.30%
+  B            Run_Frag           frag_init          +0.23         1     +0.23     +0.99%
+  A             DC_Driv         divide_frag          +0.56         1     +0.56     +2.38%
+  B            PW_Basis              gen_pw          +0.56         1     +0.56     +2.38%
+  A             DC_Driv         solve_eachf         +22.55         1    +22.55    +96.31%
+  B            Run_Frag        frag_pw_line         +22.55         1    +22.55    +96.31%
+  C           ppcell_vl           init_vloc          +5.59         1     +5.59    +23.90%
+  X                 FFT               FFT3D          +6.78       851     +0.01    +28.94%
+  E           potential            v_of_rho          +2.65        13     +0.20    +11.30%
+  C            wavefunc             wfcinit          +0.13         1     +0.13     +0.54%
+  G           Hamilt_PW            cinitcgg          +1.23        13     +0.09     +5.25%
+  H           Hamilt_PW               h_psi          +5.37       301     +0.02    +22.93%
+  I           Hamilt_PW          add_vuspsi          +0.14       301     +0.00     +0.61%
+  C                Ions         opt_ions_pw         +15.66         1    +15.66    +66.90%
+  D           electrons     self_consistent         +10.86         1    +10.86    +46.38%
+  E           electrons             c_bands          +5.69        12     +0.47    +24.30%
+  F              Hamilt               diago          +5.57        12     +0.46    +23.79%
+  G            Diago_CG                diag          +4.44        12     +0.37    +18.96%
+  E              Charge             mix_rho          +0.62        12     +0.05     +2.64%
+ ----------------------------------------------------------------------------------------
+
+ CLASS_NAME---------|NAME---------------|MEMORY(MB)--------
+                                         +98.5390
+         Charge_Pulay                Rrho       +21.3574
+         Charge_Pulay               dRrho       +18.6877
+         Charge_Pulay                drho       +18.6877
+              Use_FFT              porter        +5.3394
+             PW_Basis           struc_fac        +4.9242
+               Charge                 rho        +2.6697
+               Charge            rho_save        +2.6697
+               Charge            rho_core        +2.6697
+            potential               vltot        +2.6697
+            potential                  vr        +2.6697
+            potential                 vrs        +2.6697
+            potential                vrs1        +2.6697
+            potential                vnew        +2.6697
+         Charge_Pulay           rho_save2        +2.6697
+             wavefunc                 evc        +1.5395
+               Charge                rhog        +1.2310
+               Charge           rhog_save        +1.2310
+               Charge           rhog_core        +1.2310
+ ----------------------------------------------------------
+
+ Start  Time  : Tue Jun  1 15:07:47 2021
+ Finish Time  : Tue Jun  1 15:08:11 2021
+ Total  Time  : +0 h +0 mins +24 secs 
