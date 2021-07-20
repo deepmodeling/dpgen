@@ -57,7 +57,7 @@ class GromacsTrajectory(Trajectory):
         self.time = all_conf[:, 0]
         return all_conf[:, 4]
 
-    def get_frame(self, idx: Tuple[int]) -> "Frame":
+    def get_frame(self, idx: int) -> "GromacsFrame":
         return GromacsFrame(self, idx)
 
 

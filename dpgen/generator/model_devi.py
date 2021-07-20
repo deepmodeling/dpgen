@@ -128,18 +128,23 @@ class Trajectory(ABC):
         raise NotImplementedError("Not implemented")
     
     @abstractmethod
-    def get_frame(self, idx: Tuple[int]) -> "Frame":
+    def get_frame(self, idx: int) -> "Frame":
         """Get a frame from idx.
 
         Parameters
         ----------
-        idx: tuple[int]
+        idx: int
             Index.
         
         Returns
         -------
         frames: Frame
             Frames.
+        
+        Notes
+        -----
+        A new trajectory should implement thier own Frame, as the current
+        Frame do nothing in `read_frame` method.
         """
         return Frame(self, idx)
     

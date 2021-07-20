@@ -77,7 +77,7 @@ class LAMMPSTrajectory(Trajectory):
         else:
             raise RuntimeError("The format of model_devi.out is not supported")
     
-    def get_frame(self, idx: Tuple[int]) -> "Frame":
+    def get_frame(self, idx: int) -> "LAMMPSFrame":
         return LAMMPSFrame(self, idx)
 
 
