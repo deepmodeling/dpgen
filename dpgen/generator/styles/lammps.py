@@ -4,7 +4,7 @@ import os
 import json
 import shutil
 import copy
-from typing import List, TYPE_CHECKING, Tuple, Iterator, Dict
+from typing import List, TYPE_CHECKING, Tuple, Iterator, Dict, Union
 from distutils.version import LooseVersion
 
 import dpdata
@@ -37,7 +37,7 @@ class LAMMPSEngien(ModelDeviEngien):
         else:
             raise RuntimeError('unknown model_devi input mode', input_mode)
 
-    def get_running_parameters(self, work_path: str) -> Dict[str]:
+    def get_running_parameters(self, work_path: str) -> Dict[str, Union[str, List[str]]]:
         use_plm = self.jdata.get('model_devi_plumed', False)
         use_plm_path = self.jdata.get('model_devi_plumed_path', False)
         lmp_exec = self.mdata['lmp_command']

@@ -1,6 +1,6 @@
 import os
 import json
-from typing import List, TYPE_CHECKING, Tuple, Iterator, Dict
+from typing import List, TYPE_CHECKING, Tuple, Iterator, Dict, Union
 
 import dpdata
 import numpy as np
@@ -20,7 +20,7 @@ class GromacsEngien(ModelDeviEngien):
         # JZ: doesn't support dpdata here??
         _make_model_devi_native_gromacs(iter_index, directories, self.jdata, self.mdata, conf_name, models)
     
-    def get_running_parameters(self, work_path: str) -> Dict[str]:
+    def get_running_parameters(self, work_path: str) -> Dict[str, Union[str, List[str]]]:
         with open (os.path.join(work_path, 'cur_job.json'), 'r') as fp:
             cur_job = json.load (fp)
         gromacs_settings = self.jdata.get("gromacs_settings", {})

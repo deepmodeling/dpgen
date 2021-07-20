@@ -1,6 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import Iterator, List, TYPE_CHECKING, Tuple, Iterator, Dict
+from typing import Iterator, List, TYPE_CHECKING, Tuple, Iterator, Dict, Union
 from dpgen.plugin import Plugin
 
 if TYPE_CHECKING:
@@ -53,7 +53,7 @@ class ModelDeviEngien(ABC):
         raise NotImplementedError("Not implemented")
 
     @abstractmethod
-    def get_running_parameters(self, work_path: str) -> Dict[str]:
+    def get_running_parameters(self, work_path: str) -> Dict[str, Union[str, List[str]]]:
         """Get running parameters.
 
         Parameters
@@ -63,8 +63,8 @@ class ModelDeviEngien(ABC):
 
         Returns
         -------
-        parameters: dict[str]
-            a dict which should contain the following keys
+        parameters: dict[str, str]
+            a dict which should contain the following keys and values
                 command: str
                     the running command
                 forward_files: list of str
