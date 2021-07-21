@@ -15,6 +15,11 @@ jobs:
           ORGANIZATION: deepmodeling
           SSH_PRIVATE_KEY: ${{ secrets.SYNC_GITEE_PRIVATE_KEY }}
         with:
+<<<<<<< HEAD
           source-repo: "http://github.com/deepmodeling/dpgen.git"
           destination-repo: "git@gitee.com:deepmodeling/dpgen.git"
 
+=======
+          source-repo: "git@github.com:deepmodeling/dpgen.git"
+          destination-repo: "git@gitee.com:deepmodeling/dpgen.git"
+>>>>>>> 86afc5b845bd4e740ac36c69908040b56ff140c8

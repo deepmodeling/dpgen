@@ -21,7 +21,9 @@
 ## About DP-GEN
 
 [![GitHub release](https://img.shields.io/github/release/deepmodeling/dpgen.svg?maxAge=86400)](https://github.com/deepmodeling/dpgen/releases/)
-[![doi:10.1016/j.cpc.2020.107206](https://zenodo.org/badge/DOI/10.1016/j.cpc.2020.107206.svg)](https://doi.org/10.1016/j.cpc.2020.107206)
+[![doi:10.1016/j.cpc.2020.107206](https://img.shields.io/badge/DOI-10.1016%2Fj.cpc.2020.107206-blue)](https://doi.org/10.1016/j.cpc.2020.107206)
+[![conda install](https://img.shields.io/conda/dn/conda-forge/dpgen?label=conda%20install)](https://anaconda.org/conda-forge/dpgen)
+[![pip install](https://img.shields.io/pypi/dm/dpgen?label=pip%20install)](https://pypi.org/project/dpgen)
 
 DP-GEN (Deep Generator)  is a software written in Python, delicately designed to generate a deep learning based model of interatomic potential energy and force field. DP-GEN is depedent on DeepMD-kit (https://github.com/deepmodeling/deepmd-kit/blob/master/README.md). With highly scalable interface with common softwares for molecular simulation, DP-GEN is capable to  automatically prepare scripts and maintain job queues on HPC machines (High Performance Cluster) and analyze results.
 
@@ -541,7 +543,7 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | **model_devi_e_trust_hi**  | Float | 1e10                                                         | Upper bound of energies for the selection. |
 | **model_devi_clean_traj**  | Boolean | true                                                         | Deciding whether to clean traj folders in MD since they are too large. |
 | **model_devi_nopbc**  | Boolean | False                                                         | Assume open boundary condition in MD simulations. |
-| model_devi_activation_func | List of String | ["tanh", "tanh", "tanh", "tanh"]	| Set activation functions for models, length of the list should be the same as `numb_models` |
+| model_devi_activation_func | List of list of string | [["tanh","tanh"],["tanh","gelu"],["gelu","tanh"],["gelu","gelu"]]	| Set activation functions for models, length of the List should be the same as `numb_models`, and two elements in the list of string respectively assign activation functions to the embedding and fitting nets within each model. *Backward compatibility*: the orginal "List of String" format is still supported, where embedding and fitting nets of one model use the same activation function, and the length of the List should be the same as `numb_models`|
 | **model_devi_jobs**        | [<br/>{<br/>"sys_idx": [0], <br/>"temps": <br/>[100],<br/>"press":<br/>[1],<br/>"trj_freq":<br/>10,<br/>"nsteps":<br/> 1000,<br/> "ensembles": <br/> "nvt" <br />},<br />...<br />] | List of dict | Settings for exploration in `01.model_devi`. Each dict in the list corresponds to one iteration. The index of `model_devi_jobs` exactly accord with index of iterations |
 | **model_devi_jobs["sys_idx"]**    | List of integer           | [0]                                                          | Systems to be selected as the initial structure of MD and be explored. The index corresponds exactly to the `sys_configs`. |
 | **model_devi_jobs["temps"]**  | List of integer | [50, 300] | Temperature (**K**) in MD
@@ -1094,6 +1096,110 @@ Here `pick_data` is the data to simplify and currently only supports `MultiSyste
 
 
 ## Set up machine
+### new dpdispatcher update note
+dpdispatcher Update Note: 
+dpdispatcher has updated and the api of `machine.json` is changed.
+dpgen will use new dpdispatcher if the key `api_version` in dpgen's `machine.json`'s value is equal or large than `1.0`.
+
+And dpgen will use old dpdispatcher if the key `api_version` is not specified in `machine.json` or the `api_version` is smaller than `1.0`.
+This gurantees that the old `machine.json`s still work.
+
+And for now dpdispatcher is maintained on a seperate repo. 
+The repo link: https://github.com/deepmodeling/dpdispatcher
+
+The api of new dpdispatcher is close to old one except for a few changes. 
+
+The new `machine.json` examples can be seen [here](https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/getting-started.html)
+
+And Here are the explanations of the keys in [machine](https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/machine.html)
+[resources](https://docs.deepmodeling.org/projects/dpdispatcher/en/latest/resources.html).
+
+
+Here is a example `machine.json` for dpgen's new dpdispatcher.
+Please check the [documents](https://deepmd.readthedocs.io/projects/dpdispatcher/en/latest/) for more information about new dpdispatcher. 
+
+an example of new dpgen's machine.json
+```json
+{
+  "api_version": "1.0",
+  "train": [
+    {
+      "command": "dp",
+      "machine": {
+        "batch_type": "PBS",
+        "context_type": "SSHContext",
+        "local_root": "./",
+        "remote_root": "/home/user1234/work_path_dpdispatcher_test",
+        "remote_profile": {
+            "hostname": "39.xxx.xx.xx",
+            "username": "user1234"
+        }
+      },
+      "resources": {
+        "number_node": 1,
+        "cpu_per_node": 4,
+        "gpu_per_node": 1,
+        "queue_name": "T4_4_15",
+        "group_size": 1,
+        "custom_flags":["#SBATCH --mem=32G"],
+        "strategy": {"if_cuda_multi_devices": true},
+        "para_deg": 3,
+        "source_list": ["/home/user1234/deepmd.1.2.4.env"]
+      }
+    }
+  ],
+  "model_devi":[
+    {
+      "command": "lmp",
+      "machine":{
+        "batch_type": "PBS",
+        "context_type": "SSHContext",
+        "local_root": "./",
+        "remote_root": "/home/user1234/work_path_dpdispatcher_test",
+        "remote_profile": {
+          "hostname": "39.xxx.xx.xx",
+          "username": "user1234"
+        }
+      },
+      "resources": {
+        "number_node": 1,
+        "cpu_per_node": 4,
+        "gpu_per_node": 1,
+        "queue_name": "T4_4_15",
+        "group_size": 5,
+        "source_list": ["/home/user1234/deepmd.1.2.4.env"]
+      }
+    }
+  ],
+  "fp":[
+    {
+      "command": "vasp_std",
+      "machine":{
+        "batch_type": "PBS",
+        "context_type": "SSHContext",
+        "local_root": "./",
+        "remote_root": "/home/user1234/work_path_dpdispatcher_test",
+        "remote_profile": {
+          "hostname": "39.xxx.xx.xx",
+          "username": "user1234"
+        }
+      },
+      "resources": {
+        "number_node": 1,
+        "cpu_per_node": 32,
+        "gpu_per_node": 0,
+        "queue_name": "G_32_128",
+        "group_size": 1,
+        "source_list": ["~/vasp.env"]
+      }
+    }
+  ]
+}
+```
+note1: the key "local_root" in dpgen's machine.json is always `./`
+
+### old dpdispatcher
+
 When switching into a new machine, you may modifying the `MACHINE`, according to the actual circumstance. Once you have finished, the `MACHINE` can be re-used for any DP-GEN tasks without any extra efforts.
 
 An example for `MACHINE` is:
@@ -1203,6 +1309,8 @@ The following table gives explicit descriptions on keys in param.json.
 | manual_cuda_devices | Interger | 1 | Used with key "manual_cuda_multiplicity" specify the gpu number
 | manual_cuda_multiplicity |Interger | 5 | Used in 01.model_devi,used with key "manual_cuda_devices" specify the MD program number running on one GPU  at the same time,dpgen will  automatically allocate MD jobs on different GPU. This can improve GPU usage for GPU like V100.
 | node_cpu | Integer | 4 | Only for LSF. The number of CPU cores on each node that should be allocated to the job.
+| new_lsf_gpu | Boolean | false | **Only for LSF.** Control whether new syntax of GPU to be enabled. If enabled, DP-GEN will generate line like `#BSUB -gpu num=1:mode=shared:j_exclusive=yes` in job submission script. Only support LSF>=10.1.0.3, and `LSB_GPU_NEW_SYNTAX=Y` should be set. Default: `false`.
+| exclusive | Boolean | false | **Only for LSF, and only take effect when `new_lsf_gpu` enabled.** Control whether enable `j_exclusive` during running. Default: `false`.
 | source_list | List of string | "....../vasp.env" | Environment needed for certain job. For example, if "env" is in the list, 'source env' will be written in the script.
 | module_list | List of string | [ "Intel/2018", "Anaconda3"] | For example, If "Intel/2018" is in the list, "module load Intel/2018" will be written in the script.
 | partition | String  | "AdminGPU" | Partition / queue in which to run the job. |

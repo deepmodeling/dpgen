@@ -17,7 +17,7 @@ class Lammps(Task):
         self.inter_type = inter_parameter['type']
         self.type_map = inter_parameter['type_map']
         self.in_lammps = inter_parameter.get('in_lammps', 'auto')
-        if self.type_map == 'meam':
+        if self.inter_type == 'meam':
             self.model = list(map(os.path.abspath, inter_parameter['model']))
         else:
             self.model = os.path.abspath(inter_parameter['model'])

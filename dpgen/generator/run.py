@@ -58,7 +58,7 @@ from dpgen.remote.group_jobs import ucloud_submit_jobs, aws_submit_jobs
 from dpgen.remote.group_jobs import group_slurm_jobs
 from dpgen.remote.group_jobs import group_local_jobs
 from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
-from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, make_dispatcher
+from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, make_dispatcher, make_submission
 from dpgen.util import sepline
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar,Kpoints,Potcar
@@ -126,7 +126,7 @@ def copy_model(numb_model, prv_iter_index, cur_iter_index) :
     prv_train_path = os.path.abspath(prv_train_path)
     cur_train_path = os.path.abspath(cur_train_path)
     create_path(cur_train_path)
-    for ii in range(numb_model) :
+    for ii in range(numb_model):
         prv_train_task = os.path.join(prv_train_path, train_task_fmt%ii)
         os.chdir(cur_train_path)
         os.symlink(os.path.relpath(prv_train_task), train_task_fmt%ii)
@@ -376,7 +376,11 @@ def make_train (iter_index,
         # set random seed for each model
         if LooseVersion(mdata["deepmd_version"]) >= LooseVersion('1') and LooseVersion(mdata["deepmd_version"]) < LooseVersion('3'):
             # 1.x
-            jinput['model']['descriptor']['seed'] = random.randrange(sys.maxsize) % (2**32)
+            if jinput['model']['descriptor']['type'] == 'hybrid':
+                for desc in jinput['model']['descriptor']['list']:
+                    desc['seed'] = random.randrange(sys.maxsize) % (2**32)
+            else:
+                jinput['model']['descriptor']['seed'] = random.randrange(sys.maxsize) % (2**32)
             jinput['model']['fitting_net']['seed'] = random.randrange(sys.maxsize) % (2**32)
             jinput['training']['seed'] = random.randrange(sys.maxsize) % (2**32)
         else:
@@ -386,8 +390,12 @@ def make_train (iter_index,
             if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
                 raise RuntimeError('model_devi_activation_func does not suppport deepmd version', mdata['deepmd_version'])
             assert(type(model_devi_activation_func) is list and len(model_devi_activation_func) == numb_models)
-            jinput['model']['descriptor']['activation_function'] = model_devi_activation_func[ii]
-            jinput['model']['fitting_net']['activation_function'] = model_devi_activation_func[ii]
+            if len(np.array(model_devi_activation_func).shape) == 2 :                                    # 2-dim list for emd/fitting net-resolved assignment of actF
+                jinput['model']['descriptor']['activation_function'] = model_devi_activation_func[ii][0]
+                jinput['model']['fitting_net']['activation_function'] = model_devi_activation_func[ii][1]
+            if len(np.array(model_devi_activation_func).shape) == 1 :                                    # for backward compatibility, 1-dim list, not net-resolved
+                jinput['model']['descriptor']['activation_function'] = model_devi_activation_func[ii]
+                jinput['model']['descriptor']['activation_function'] = model_devi_activation_func[ii]
         # dump the input.json
         with open(os.path.join(task_path, train_input_file), 'w') as outfile:
             json.dump(jinput, outfile, indent = 4)
@@ -446,6 +454,7 @@ def detect_batch_size(batch_size, system=None):
 def run_train (iter_index,
                jdata,
                mdata) :
+    # print("debug:run_train:mdata", mdata)
     # load json param
     numb_models = jdata['numb_models']
     # train_param = jdata['train_param']
@@ -549,8 +558,14 @@ def run_train (iter_index,
     except:
         train_group_size = 1
 
-    dispatcher = make_dispatcher(mdata['train_machine'], mdata['train_resources'], work_path, run_tasks, train_group_size)
-    dispatcher.run_jobs(mdata['train_resources'],
+    api_version = mdata.get('api_version', '0.9')
+    # print('debug:commands', commands)
+
+    if LooseVersion(api_version) < LooseVersion('1.0'):
+        warnings.warn(f"the dpdispatcher will be updated to new version."
+            f"And the interface may be changed. Please check the documents for more details")
+        dispatcher = make_dispatcher(mdata['train_machine'], mdata['train_resources'], work_path, run_tasks, train_group_size)
+        dispatcher.run_jobs(mdata['train_resources'],
                         commands,
                         work_path,
                         run_tasks,
@@ -560,6 +575,21 @@ def run_train (iter_index,
                         backward_files,
                         outlog = 'train.log',
                         errlog = 'train.log')
+
+    elif LooseVersion(api_version) >= LooseVersion('1.0'):
+        submission = make_submission(
+            mdata['train_machine'],
+            mdata['train_resources'],
+            commands=commands,
+            work_path=work_path,
+            run_tasks=run_tasks,
+            group_size=train_group_size,
+            forward_common_files=trans_comm_data,
+            forward_files=forward_files,
+            backward_files=backward_files,
+            outlog = 'train.log',
+            errlog = 'train.log')
+        submission.run_submission()
 
 def post_train (iter_index,
                 jdata,
@@ -1196,8 +1226,13 @@ def run_model_devi (iter_index,
 
 
     cwd = os.getcwd()
-    dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], work_path, run_tasks, model_devi_group_size)
-    dispatcher.run_jobs(mdata['model_devi_resources'],
+
+    api_version = mdata.get('api_version', '0.9')
+    if LooseVersion(api_version) < LooseVersion('1.0'):
+        warnings.warn(f"the dpdispatcher will be updated to new version."
+            f"And the interface may be changed. Please check the documents for more details")
+        dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], work_path, run_tasks, model_devi_group_size)
+        dispatcher.run_jobs(mdata['model_devi_resources'],
                         commands,
                         work_path,
                         run_tasks,
@@ -1208,6 +1243,20 @@ def run_model_devi (iter_index,
                         outlog = 'model_devi.log',
                         errlog = 'model_devi.log')
 
+    elif LooseVersion(api_version) >= LooseVersion('1.0'):
+        submission = make_submission(
+            mdata['model_devi_machine'],
+            mdata['model_devi_resources'],
+            commands=commands,
+            work_path=work_path,
+            run_tasks=run_tasks,
+            group_size=model_devi_group_size,
+            forward_common_files=model_names,
+            forward_files=forward_files,
+            backward_files=backward_files,
+            outlog = 'model_devi.log',
+            errlog = 'model_devi.log')
+        submission.run_submission()
 
 def post_model_devi (iter_index,
                      jdata,
@@ -2070,8 +2119,13 @@ def run_fp_inner (iter_index,
     #     if not check_fin(ii) :
     #         fp_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
-    dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_path, run_tasks, fp_group_size)
-    dispatcher.run_jobs(mdata['fp_resources'],
+
+    api_version = mdata.get('api_version', '0.9')
+    if LooseVersion(api_version) < LooseVersion('1.0'):
+        warnings.warn(f"the dpdispatcher will be updated to new version."
+            f"And the interface may be changed. Please check the documents for more details")
+        dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_path, run_tasks, fp_group_size)
+        dispatcher.run_jobs(mdata['fp_resources'],
                         [fp_command],
                         work_path,
                         run_tasks,
@@ -2083,6 +2137,20 @@ def run_fp_inner (iter_index,
                         outlog = log_file,
                         errlog = log_file)
 
+    elif LooseVersion(api_version) >= LooseVersion('1.0'):
+        submission = make_submission(
+            mdata['fp_machine'],
+            mdata['fp_resources'],
+            commands=[fp_command],
+            work_path=work_path,
+            run_tasks=run_tasks,
+            group_size=fp_group_size,
+            forward_common_files=forward_common_files,
+            forward_files=forward_files,
+            backward_files=backward_files,
+            outlog = log_file,
+            errlog = log_file)
+        submission.run_submission()
 
 
 def run_fp (iter_index,
@@ -2239,7 +2307,7 @@ def post_fp_vasp (iter_index,
     dlog.info("failed frame: %6d in %6d  %6.2f %% " % (icount, tcount, rfail * 100.))
 
     if rfail>ratio_failed:
-       raise RuntimeError("find too many unsuccessfully terminated jobs")
+       raise RuntimeError("find too many unsuccessfully terminated jobs. Too many FP tasks are not converged. Please check your input parameters (e.g. INCAR) or configuration (e.g. POSCAR) in directories \'iter.*.*/02.fp/task.*.*/.\'")
 
 
 def post_fp_pwscf (iter_index,

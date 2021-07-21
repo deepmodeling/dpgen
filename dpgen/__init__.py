@@ -44,6 +44,8 @@ def info():
             print('%10s %10s   %s' % (modui, mm.__version__, mm.__path__[0]))
         except ImportError:
             print('%10s %10s Not Found' % (modui, ''))
+        except AttributeError:
+            print('%10s %10s unknown version or path' %(modui, ''))
     print()
 
     # reference
