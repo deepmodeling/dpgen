@@ -60,4 +60,32 @@ def log_task (message) :
 
 def record_iter (record, ii, jj) :
     with open (record, "a") as frec :
-        frec.write ("%d %d\n" % (ii, jj)) 
+        frec.write ("%d %d\n" % (ii, jj))
+
+def symlink_user_forward_common_files(mdata, task_type, work_path):
+    '''
+    Symlink user-defined forward_common_files
+    Current path should be work_path, such as 00.train
+    
+    Parameters
+    ---------
+    mdata : dict
+        machine parameters
+    task_type: str
+        task_type, such as "train"
+    work_path : str
+        work_path, such as "iter.000001/00.train"
+    Returns
+    -------
+    user_forward_common_files : list
+        The basename of forward_common_files
+    '''
+    user_forward_common_files = mdata.get(task_type + "_" + "user_forward_common_files", [])
+    user_forward_common_files_basename = []
+    for file in user_forward_common_files:
+        assert os.path.isfile(file)  ,\
+            "user_forward_common_file %s of %s stage doesn't exist. " % (file, task_type)
+        os.symlink(file, os.path.join(work_path, os.basename(file)))
+        user_forward_common_files_basename.append(os.basename(file))
+    return user_forward_common_files_basename
+    

@@ -9,10 +9,9 @@ from dpgen import dlog
 from dpgen.auto_test.calculator import make_calculator
 from dpgen.auto_test.mpdb import get_structure
 from dpgen.dispatcher.Dispatcher import make_dispatcher
-from dpgen.remote.decide_machine import decide_fp_machine, decide_model_devi_machine
 from distutils.version import LooseVersion
 from dpgen.dispatcher.Dispatcher import make_submission
-
+from dpgen.remote.decide_machine import convert_mdata
 lammps_task_type = ['deepmd', 'meam', 'eam_fs', 'eam_alloy']
 
 
@@ -133,9 +132,9 @@ def run_equi(confs,
     inter_type = inter_param['type']
     # vasp
     if inter_type == "vasp":
-        mdata = decide_fp_machine(mdata)
+        mdata = convert_mdata(mdata, ["fp"])
     elif inter_type in lammps_task_type:
-        mdata = decide_model_devi_machine(mdata)
+        mdata = convert_mdata(mdata, ["model_devi"])
     else:
         raise RuntimeError("unknown task %s, something wrong" % inter_type)
 

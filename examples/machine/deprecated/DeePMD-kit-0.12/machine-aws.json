@@ -96,7 +96,7 @@
         "with_mpi":true
     },
     "deepmd_path": "/deepmd_root/",
-    "lmp_command":"/usr/bin/lmp_mpi",
+    "model_devi_command":"/usr/bin/lmp_mpi",
     "fp_command":"/usr/bin/vasp_std",
     
     "train_resources": {},

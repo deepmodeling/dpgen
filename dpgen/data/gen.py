@@ -24,7 +24,7 @@ from distutils.version import LooseVersion
 from dpgen.generator.lib.vasp import incar_upper
 from pymatgen.core import Structure
 from pymatgen.io.vasp import Incar
-from dpgen.remote.decide_machine import  decide_fp_machine
+from dpgen.remote.decide_machine import  convert_mdata
 from dpgen import ROOT_PATH
 from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher, make_submission
 
@@ -694,7 +694,7 @@ def gen_init_bulk(args) :
 
     if args.MACHINE is not None:
        # Selecting a proper machine
-       mdata = decide_fp_machine(mdata)
+       mdata = convert_mdata(mdata, ["fp"])
        #disp = make_dispatcher(mdata["fp_machine"])
 
     # Decide work path

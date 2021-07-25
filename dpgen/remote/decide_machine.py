@@ -11,6 +11,40 @@ import json
 import numpy as np
 from distutils.version import LooseVersion
 
+
+def convert_mdata(mdata, task_types=["train", "model_devi", "fp"]):
+    '''
+    Convert mdata for DP-GEN main process.
+    New convension is like mdata["fp"]["machine"],
+    DP-GEN needs mdata["fp_machine"]
+
+    Notice that we deprecate the function which can automatically select one most avalaible machine,
+    since this function was only used by Angus, and only supports for Slurm.
+    In the future this can be implemented.
+
+    Parameters
+    ----------
+    mdata : dict
+        Machine parameters to be converted.
+    task_types : list of string
+        Type of tasks, default is ["train", "model_devi", "fp"]
+
+    Returns
+    -------
+    dict
+        mdata converted
+    '''
+    for task_type in task_types:
+        if task_type in mdata:
+            for key, item in mdata[task_type][0].items():
+                if "comments" not in key:
+                    mdata[task_type + "_" + key] = item
+            group_size = mdata[task_type][0]["resources"].get("group_size", 1)
+            mdata[task_type + "_" + "group_size"] = group_size
+    return mdata
+
+
+'''
 def decide_train_machine(mdata):
 	if LooseVersion(mdata.get('api_version', '0.9')) >= LooseVersion('1.0'):
 		mdata['train_group_size'] = mdata['train'][0]['resources']['group_size']
@@ -142,7 +176,7 @@ def decide_model_devi_machine(mdata):
 					if profile['purpose'] == 'model_devi':
 						mdata['model_devi_machine'] = profile['machine']
 						mdata['model_devi_resources'] = profile['resources']
-						mdata['lmp_command'] = profile['command']
+						mdata['model_devi_command'] = profile['command']
 						mdata['model_devi_group_size'] = profile['group_size']
 						continue_flag = True
 			except:
@@ -150,7 +184,7 @@ def decide_model_devi_machine(mdata):
 		if ("hostname" not in mdata["model_devi"][0]["machine"]) or (len(mdata["model_devi"]) == 1):
 			mdata["model_devi_machine"] = mdata["model_devi"][0]["machine"]
 			mdata["model_devi_resources"] = mdata["model_devi"][0]["resources"]
-			mdata["lmp_command"] = mdata["model_devi"][0]["command"]
+			mdata["model_devi_command"] = mdata["model_devi"][0]["command"]
 			#if "group_size" in mdata["train"][0]:
 			mdata["model_devi_group_size"] = mdata["model_devi"][0].get("group_size", 1)
 			continue_flag = True
@@ -186,7 +220,7 @@ def decide_model_devi_machine(mdata):
 				if pd_count ==0:
 					mdata['model_devi_machine'] = temp_machine   
 					mdata['model_devi_resources'] = temp_resources
-					mdata['lmp_command'] = mdata['model_devi'][machine_idx]['command']
+					mdata['model_devi_command'] = mdata['model_devi'][machine_idx]['command']
 					mdata['model_devi_group_size'] =  mdata['model_devi'][machine_idx].get('group_size', 1)
 					pd_flag = True
 					break
@@ -196,7 +230,7 @@ def decide_model_devi_machine(mdata):
 				min_machine_idx = np.argsort(pd_count_list)[0]
 				mdata['model_devi_machine'] = mdata['model_devi'][min_machine_idx]['machine']
 				mdata['model_devi_resources'] = mdata['model_devi'][min_machine_idx]['resources']
-				mdata['lmp_command'] = mdata['model_devi'][min_machine_idx]['command']
+				mdata['model_devi_command'] = mdata['model_devi'][min_machine_idx]['command']
 				mdata['model_devi_group_size'] =  mdata['model_devi'][min_machine_idx].get('group_size', 1)
 			with open("record.machine","w") as _outfile:
 				profile = {}
@@ -204,7 +238,7 @@ def decide_model_devi_machine(mdata):
 				profile['machine'] = mdata['model_devi_machine']
 				profile['resources'] = mdata['model_devi_resources']
 				profile['group_size'] = mdata['model_devi_group_size']
-				profile['command'] = mdata['lmp_command']
+				profile['command'] = mdata['model_devi_command']
 
 				json.dump(profile, _outfile, indent = 4)
 	return mdata
@@ -285,4 +319,4 @@ def decide_fp_machine(mdata):
 					profile['command'] = mdata['fp_command']
 					json.dump(profile, _outfile, indent = 4)
 	return mdata
-
+'''

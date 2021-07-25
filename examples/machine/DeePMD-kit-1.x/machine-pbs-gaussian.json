@@ -27,7 +27,7 @@
 
 
     "_comment":		"model_devi on localhost ",
-    "lmp_command":	"/gpfs/home/tzhu/lammps-stable_5Jun2019/src/lmp_intel_cpu_intelmpi -pk intel 0 omp 2",
+    "model_devi_command":	"/gpfs/home/tzhu/lammps-stable_5Jun2019/src/lmp_intel_cpu_intelmpi -pk intel 0 omp 2",
     "model_devi_group_size": 1,
     "model_devi_machine":	{
       "machine_type":	"lsf",

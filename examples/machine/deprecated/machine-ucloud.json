@@ -30,7 +30,7 @@
     },    
 
 
-    "lmp_command":		"/usr/bin/lmp_mpi",
+    "model_devi_command":		"/usr/bin/lmp_mpi",
     "model_devi_group_size":	20,
     "model_devi_machine":	{
 	"machine_type":		"ucloud",

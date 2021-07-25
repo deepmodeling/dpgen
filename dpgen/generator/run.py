@@ -38,6 +38,7 @@ from dpgen.generator.lib.utils import replace
 from dpgen.generator.lib.utils import log_iter
 from dpgen.generator.lib.utils import record_iter
 from dpgen.generator.lib.utils import log_task
+from dpgen.generator.lib.utils import symlink_user_forward_common_files
 from dpgen.generator.lib.lammps import make_lammps_input
 from dpgen.generator.lib.vasp import write_incar_dict
 from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
@@ -53,11 +54,7 @@ from dpgen.generator.lib.siesta import make_siesta_input
 from dpgen.generator.lib.gaussian import make_gaussian_input, take_cluster
 from dpgen.generator.lib.cp2k import make_cp2k_input, make_cp2k_input_from_external, make_cp2k_xyz
 from dpgen.generator.lib.ele_temp import NBandsEsti
-from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, LSFJob, CloudMachineJob, awsMachineJob
-from dpgen.remote.group_jobs import ucloud_submit_jobs, aws_submit_jobs
-from dpgen.remote.group_jobs import group_slurm_jobs
-from dpgen.remote.group_jobs import group_local_jobs
-from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
+from dpgen.remote.decide_machine import convert_mdata
 from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, make_dispatcher, make_submission
 from dpgen.util import sepline
 from dpgen import ROOT_PATH
@@ -345,7 +342,7 @@ def make_train (iter_index,
         else:
             raise RuntimeError('invalid setting for use_ele_temp ' + str(use_ele_temp))
     else:
-        raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x version!" )
+        raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x or 2.x version!" )
     # set training reuse model
     if training_reuse_iter is not None and iter_index >= training_reuse_iter:
         if LooseVersion('1') <= LooseVersion(mdata["deepmd_version"]) < LooseVersion('2'):
@@ -384,7 +381,7 @@ def make_train (iter_index,
             jinput['model']['fitting_net']['seed'] = random.randrange(sys.maxsize) % (2**32)
             jinput['training']['seed'] = random.randrange(sys.maxsize) % (2**32)
         else:
-            raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x version!" )
+            raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x or 2.x version!" )
         # set model activation function
         if model_devi_activation_func is not None:
             if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
@@ -502,7 +499,7 @@ def run_train (iter_index,
         command = '%s freeze' % train_command
         commands.append(command)
     else:
-        raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x version!" )
+        raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x or 2.x version!" )
 
     #_tasks = [os.path.basename(ii) for ii in all_task]
     # run_tasks = []
@@ -560,7 +557,9 @@ def run_train (iter_index,
 
     api_version = mdata.get('api_version', '0.9')
     # print('debug:commands', commands)
-
+    
+    trans_comm_data += symlink_user_forward_common_files(mdata = mdata, task_type = "train", work_path = work_path)
+    backward_files += mdata.get("train_" + "user_backward_files", [])
     if LooseVersion(api_version) < LooseVersion('1.0'):
         warnings.warn(f"the dpdispatcher will be updated to new version."
             f"And the interface may be changed. Please check the documents for more details")
@@ -1159,10 +1158,7 @@ def run_model_devi (iter_index,
                     jdata,
                     mdata) :
     #rmdlog.info("This module has been run !")
-    lmp_exec = mdata['lmp_command']
-    # Angus: lmp_exec name should be changed to model_devi_exec.
-    # We should also change make_dispatcher
-    # For now, I will use this name for gromacs command
+    model_devi_exec = mdata['model_devi_command']
 
     model_devi_group_size = mdata['model_devi_group_size']
     model_devi_resources = mdata['model_devi_resources']
@@ -1196,7 +1192,7 @@ def run_model_devi (iter_index,
 
     model_devi_engine = jdata.get("model_devi_engine", "lammps")
     if model_devi_engine == "lammps":
-        command = "{ if [ ! -f dpgen.restart.10000 ]; then %s -i input.lammps -v restart 0; else %s -i input.lammps -v restart 1; fi }" % (lmp_exec, lmp_exec)
+        command = "{ if [ ! -f dpgen.restart.10000 ]; then %s -i input.lammps -v restart 0; else %s -i input.lammps -v restart 1; fi }" % (model_devi_exec, model_devi_exec)
         command = "/bin/sh -c '%s'" % command
         commands = [command]
         forward_files = ['conf.lmp', 'input.lammps', 'traj']
@@ -1217,8 +1213,8 @@ def run_model_devi (iter_index,
         maxwarn = gromacs_settings.get("maxwarn", 1)
         nsteps = cur_job["nsteps"]
 
-        command = "%s grompp -f %s -p %s -c %s -o %s -maxwarn %d" % (lmp_exec, mdp_filename, topol_filename, conf_filename, deffnm, maxwarn)
-        command += "&& %s mdrun -deffnm %s -nsteps %d" %(lmp_exec, deffnm, nsteps) 
+        command = "%s grompp -f %s -p %s -c %s -o %s -maxwarn %d" % (model_devi_exec, mdp_filename, topol_filename, conf_filename, deffnm, maxwarn)
+        command += "&& %s mdrun -deffnm %s -nsteps %d" %(model_devi_exec, deffnm, nsteps)
         commands = [command]
         
         forward_files = [mdp_filename, topol_filename, conf_filename, index_filename,  "input.json" ]
@@ -1226,7 +1222,9 @@ def run_model_devi (iter_index,
 
 
     cwd = os.getcwd()
-
+    
+    model_names += symlink_user_forward_common_files(mdata = mdata, task_type = "model_devi", work_path = work_path)
+    backward_files += mdata.get("model_devi_" + "user_backward_files", [])
     api_version = mdata.get('api_version', '0.9')
     if LooseVersion(api_version) < LooseVersion('1.0'):
         warnings.warn(f"the dpdispatcher will be updated to new version."
@@ -2119,7 +2117,10 @@ def run_fp_inner (iter_index,
     #     if not check_fin(ii) :
     #         fp_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
-
+    
+    forward_files += symlink_user_forward_common_files(mdata = mdata, task_type = "fp", work_path = work_path)
+    backward_files += mdata.get("fp_" + "user_backward_files", [])
+    
     api_version = mdata.get('api_version', '0.9')
     if LooseVersion(api_version) < LooseVersion('1.0'):
         warnings.warn(f"the dpdispatcher will be updated to new version."
@@ -2646,7 +2647,8 @@ def run_iter (param_file, machine_file) :
             listener = logging.handlers.QueueListener(que, smtp_handler)
             dlog.addHandler(queue_handler)
             listener.start()
-
+    # Convert mdata
+    mdata = convert_mdata(mdata)
     max_tasks = 10000
     numb_task = 9
     record = "record.dpgen"
@@ -2673,7 +2675,6 @@ def run_iter (param_file, machine_file) :
                 make_train (ii, jdata, mdata)
             elif jj == 1 :
                 log_iter ("run_train", ii, jj)
-                mdata  = decide_train_machine(mdata)
                 run_train  (ii, jdata, mdata)
             elif jj == 2 :
                 log_iter ("post_train", ii, jj)
@@ -2685,7 +2686,6 @@ def run_iter (param_file, machine_file) :
                     break
             elif jj == 4 :
                 log_iter ("run_model_devi", ii, jj)
-                mdata = decide_model_devi_machine(mdata)
                 run_model_devi (ii, jdata, mdata)
 
             elif jj == 5 :
@@ -2696,7 +2696,6 @@ def run_iter (param_file, machine_file) :
                 make_fp (ii, jdata, mdata)
             elif jj == 7 :
                 log_iter ("run_fp", ii, jj)
-                mdata = decide_fp_machine(mdata)
                 run_fp (ii, jdata, mdata)
             elif jj == 8 :
                 log_iter ("post_fp", ii, jj)
