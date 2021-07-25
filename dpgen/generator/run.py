@@ -560,6 +560,9 @@ def run_train (iter_index,
     
     trans_comm_data += symlink_user_forward_common_files(mdata = mdata, task_type = "train", work_path = work_path)
     backward_files += mdata.get("train_" + "user_backward_files", [])
+    print("Angus trans_comm_data:", trans_comm_data )
+    print("Angus mdata:", mdata)
+    print("Angus train_user_forward_common_files", mdata["train_user_forward_common_files"])
     if LooseVersion(api_version) < LooseVersion('1.0'):
         warnings.warn(f"the dpdispatcher will be updated to new version."
             f"And the interface may be changed. Please check the documents for more details")
