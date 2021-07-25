@@ -85,7 +85,7 @@ def symlink_user_forward_common_files(mdata, task_type, work_path):
     for file in user_forward_common_files:
         assert os.path.isfile(file)  ,\
             "user_forward_common_file %s of %s stage doesn't exist. " % (file, task_type)
-        os.symlink(file, os.path.join(work_path, os.basename(file)))
-        user_forward_common_files_basename.append(os.basename(file))
+        os.symlink(file, os.path.join(work_path, os.path.basename(file)))
+        user_forward_common_files_basename.append(os.path.basename(file))
     return user_forward_common_files_basename
     
