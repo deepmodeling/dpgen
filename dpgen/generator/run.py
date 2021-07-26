@@ -419,6 +419,9 @@ def make_train (iter_index,
         for ii in range(len(iter0_models)):
             old_model_files = glob.glob(os.path.join(iter0_models[ii], 'model.ckpt*'))
             _link_old_models(work_path, old_model_files, ii)
+    # Copy user defined forward files
+    symlink_user_forward_files(mdata=mdata, task_type="train", work_path=work_path)
+    
 
 
 def _link_old_models(work_path, old_model_files, ii):
@@ -556,10 +559,10 @@ def run_train (iter_index,
         train_group_size = 1
 
     api_version = mdata.get('api_version', '0.9')
-    # print('debug:commands', commands)
-    print("Angus: cwd", os.getcwd())
-    forward_files += symlink_user_forward_files(mdata = mdata, task_type = "train", work_path = work_path)
-    backward_files += mdata.get("train_" + "user_backward_files", [])
+    
+    user_forward_files = mdata.get("train" + "_user_forward_files", [])
+    forward_files += [os.basename(file) for file in user_forward_files]
+    backward_files += mdata.get("train" + "_user_backward_files", [])
     if LooseVersion(api_version) < LooseVersion('1.0'):
         warnings.warn(f"the dpdispatcher will be updated to new version."
             f"And the interface may be changed. Please check the documents for more details")
@@ -835,7 +838,8 @@ def make_model_devi (iter_index,
         _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems)
     else:
         raise RuntimeError('unknown model_devi input mode', input_mode)
-
+    #Copy user defined forward_files
+    symlink_user_forward_files(mdata=mdata, task_type="model_devi", work_path=work_path)
     return True
 
 
@@ -1222,9 +1226,10 @@ def run_model_devi (iter_index,
 
 
     cwd = os.getcwd()
-    
-    forward_files += symlink_user_forward_files(mdata = mdata, task_type = "model_devi", work_path = work_path)
-    backward_files += mdata.get("model_devi_" + "user_backward_files", [])
+
+    user_forward_files = mdata.get("model_devi" + "_user_forward_files", [])
+    forward_files += [os.basename(file) for file in user_forward_files]
+    backward_files += mdata.get("model_devi" + "_user_backward_files", [])
     api_version = mdata.get('api_version', '0.9')
     if LooseVersion(api_version) < LooseVersion('1.0'):
         warnings.warn(f"the dpdispatcher will be updated to new version."
@@ -2013,6 +2018,10 @@ def make_fp (iter_index,
         make_fp_pwmat(iter_index, jdata)
     else :
         raise RuntimeError ("unsupported fp style")
+    # Copy user defined forward_files
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    symlink_user_forward_files(mdata=mdata, task_type="fp", work_path=work_path)
 
 def _vasp_check_fin (ii) :
     if os.path.isfile(os.path.join(ii, 'OUTCAR')) :
@@ -2117,9 +2126,10 @@ def run_fp_inner (iter_index,
     #     if not check_fin(ii) :
     #         fp_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
-    
-    forward_files += symlink_user_forward_files(mdata = mdata, task_type = "fp", work_path = work_path)
-    backward_files += mdata.get("fp_" + "user_backward_files", [])
+
+    user_forward_files = mdata.get("fp" + "_user_forward_files", [])
+    forward_files += [os.basename(file) for file in user_forward_files]
+    backward_files += mdata.get("fp" + "_user_backward_files", [])
     
     api_version = mdata.get('api_version', '0.9')
     if LooseVersion(api_version) < LooseVersion('1.0'):

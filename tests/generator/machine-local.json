@@ -49,6 +49,6 @@
 	"with_mpi":	true,
 	"_comment":	"that's all"
     },
-
+  "fp_user_forward_files" : ["vdw_kernel.bindat"],
     "_comment":		" that's all "
 }
