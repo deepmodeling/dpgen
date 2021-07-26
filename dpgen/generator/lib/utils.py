@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os, re, shutil, logging
+import glob
 
 iter_format = "%06d"
 task_format = "%02d"
@@ -62,7 +63,7 @@ def record_iter (record, ii, jj) :
     with open (record, "a") as frec :
         frec.write ("%d %d\n" % (ii, jj))
 
-def symlink_user_forward_common_files(mdata, task_type, work_path):
+def symlink_user_forward_files(mdata, task_type, work_path):
     '''
     Symlink user-defined forward_common_files
     Current path should be work_path, such as 00.train
@@ -77,15 +78,17 @@ def symlink_user_forward_common_files(mdata, task_type, work_path):
         work_path, such as "iter.000001/00.train"
     Returns
     -------
-    user_forward_common_files : list
+    user_forward_files : list
         The basename of forward_common_files
     '''
-    user_forward_common_files = mdata.get(task_type + "_" + "user_forward_common_files", [])
-    user_forward_common_files_basename = []
-    for file in user_forward_common_files:
+    user_forward_files = mdata.get(task_type + "_" + "user_forward_files", [])
+    user_forward_files_basename = []
+    for file in user_forward_files:
         assert os.path.isfile(file)  ,\
             "user_forward_common_file %s of %s stage doesn't exist. " % (file, task_type)
-        os.symlink(file, os.path.join(work_path, os.path.basename(file)))
-        user_forward_common_files_basename.append(os.path.basename(file))
-    return user_forward_common_files_basename
+        tasks = glob.glob(work_path, "task.*")
+        for task in tasks:
+            os.symlink(file, os.path.join(work_path, task, os.path.basename(file)))
+        user_forward_files_basename.append(os.path.basename(file))
+    return user_forward_files_basename
     

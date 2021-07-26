@@ -47,8 +47,8 @@
         "group_size": 5,
         "source_list": ["/home/fengbo/deepmd.1.2.4.env"]
       },
-      "_comments" : "In user_forward_common_files, define input files to be uploaded.",
-      "user_forward_common_files" : [],
+      "_comments" : "In user_forward_files, define input files to be uploaded.",
+      "user_forward_files" : [],
       "_comments" : "In user_backward_files, define output files to be collected.",
       "user_backward_files" : ["HILLS"]
     }
@@ -74,8 +74,8 @@
         "group_size": 1,
         "source_list": ["~/vasp.env"]
       },
-      "_comments" : "In user_forward_common_files, define input files to be uploaded.",
-      "user_forward_common_files" : ["vdw_kernel.bindat"],
+      "_comments" : "In user_forward_files, define input files to be uploaded.",
+      "user_forward_files" : ["vdw_kernel.bindat"],
       "_comments" : "In user_backward_files, define output files to be collected.",
       "user_backward_files" : []
     }

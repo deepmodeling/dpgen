@@ -38,7 +38,7 @@ from dpgen.generator.lib.utils import replace
 from dpgen.generator.lib.utils import log_iter
 from dpgen.generator.lib.utils import record_iter
 from dpgen.generator.lib.utils import log_task
-from dpgen.generator.lib.utils import symlink_user_forward_common_files
+from dpgen.generator.lib.utils import symlink_user_forward_files
 from dpgen.generator.lib.lammps import make_lammps_input
 from dpgen.generator.lib.vasp import write_incar_dict
 from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
@@ -558,11 +558,8 @@ def run_train (iter_index,
     api_version = mdata.get('api_version', '0.9')
     # print('debug:commands', commands)
     
-    trans_comm_data += symlink_user_forward_common_files(mdata = mdata, task_type = "train", work_path = work_path)
+    forward_files += symlink_user_forward_files(mdata = mdata, task_type = "train", work_path = work_path)
     backward_files += mdata.get("train_" + "user_backward_files", [])
-    print("Angus trans_comm_data:", trans_comm_data )
-    print("Angus mdata:", mdata)
-    print("Angus train_user_forward_common_files", mdata["train_user_forward_common_files"])
     if LooseVersion(api_version) < LooseVersion('1.0'):
         warnings.warn(f"the dpdispatcher will be updated to new version."
             f"And the interface may be changed. Please check the documents for more details")
@@ -1226,7 +1223,7 @@ def run_model_devi (iter_index,
 
     cwd = os.getcwd()
     
-    model_names += symlink_user_forward_common_files(mdata = mdata, task_type = "model_devi", work_path = work_path)
+    forward_files += symlink_user_forward_files(mdata = mdata, task_type = "model_devi", work_path = work_path)
     backward_files += mdata.get("model_devi_" + "user_backward_files", [])
     api_version = mdata.get('api_version', '0.9')
     if LooseVersion(api_version) < LooseVersion('1.0'):
@@ -2121,7 +2118,7 @@ def run_fp_inner (iter_index,
     #         fp_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
     
-    forward_files += symlink_user_forward_common_files(mdata = mdata, task_type = "fp", work_path = work_path)
+    forward_files += symlink_user_forward_files(mdata = mdata, task_type = "fp", work_path = work_path)
     backward_files += mdata.get("fp_" + "user_backward_files", [])
     
     api_version = mdata.get('api_version', '0.9')

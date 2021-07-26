@@ -13,4 +13,4 @@ class TestConvertMdata(unittest.TestCase):
         self.assertEqual(mdata["fp_command"], "vasp_std")
         self.assertEqual(mdata["fp_group_size"], 8)
         self.assertEqual(mdata["fp_machine"]["batch_type"], "PBS")
-        self.assertEqual(mdata["fp_user_forward_common_files"], ["vdw_kernel.bindat"])
+        self.assertEqual(mdata["fp_user_forward_files"], ["vdw_kernel.bindat"])

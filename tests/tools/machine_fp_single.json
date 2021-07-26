@@ -8,8 +8,8 @@
       "resources": {
         "group_size" : 8
       },
-      "_comments" : "In user_forward_common_files, define input files to be uploaded.",
-      "user_forward_common_files" : ["vdw_kernel.bindat"]
+      "_comments" : "In user_forward_files, define input files to be uploaded.",
+      "user_forward_files" : ["vdw_kernel.bindat"]
     }
     ]
 }
