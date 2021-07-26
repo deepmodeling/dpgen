@@ -557,7 +557,7 @@ def run_train (iter_index,
 
     api_version = mdata.get('api_version', '0.9')
     # print('debug:commands', commands)
-    
+    print("Angus: cwd", os.getcwd())
     forward_files += symlink_user_forward_files(mdata = mdata, task_type = "train", work_path = work_path)
     backward_files += mdata.get("train_" + "user_backward_files", [])
     if LooseVersion(api_version) < LooseVersion('1.0'):
