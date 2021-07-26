@@ -92,6 +92,8 @@ def symlink_user_forward_files(mdata, task_type, work_path):
         tasks = glob.glob(os.path.join(work_path, task_format[task_type]))
         for task in tasks:
             print("Angus: file path is ", os.path.join(task, os.path.basename(file)))
+            if os.path.isfile(os.path.join(task, os.path.basename(file))):
+                os.remove(os.path.join(task, os.path.basename(file)))
             os.symlink(file, os.path.join(task, os.path.basename(file)))
         user_forward_files_basename.append(os.path.basename(file))
     return user_forward_files_basename
