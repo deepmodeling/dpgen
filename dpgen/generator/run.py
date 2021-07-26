@@ -561,7 +561,7 @@ def run_train (iter_index,
     api_version = mdata.get('api_version', '0.9')
     
     user_forward_files = mdata.get("train" + "_user_forward_files", [])
-    forward_files += [os.basename(file) for file in user_forward_files]
+    forward_files += [os.path.basename(file) for file in user_forward_files]
     backward_files += mdata.get("train" + "_user_backward_files", [])
     if LooseVersion(api_version) < LooseVersion('1.0'):
         warnings.warn(f"the dpdispatcher will be updated to new version."
@@ -1228,7 +1228,7 @@ def run_model_devi (iter_index,
     cwd = os.getcwd()
 
     user_forward_files = mdata.get("model_devi" + "_user_forward_files", [])
-    forward_files += [os.basename(file) for file in user_forward_files]
+    forward_files += [os.path.basename(file) for file in user_forward_files]
     backward_files += mdata.get("model_devi" + "_user_backward_files", [])
     api_version = mdata.get('api_version', '0.9')
     if LooseVersion(api_version) < LooseVersion('1.0'):
@@ -2128,7 +2128,7 @@ def run_fp_inner (iter_index,
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
 
     user_forward_files = mdata.get("fp" + "_user_forward_files", [])
-    forward_files += [os.basename(file) for file in user_forward_files]
+    forward_files += [os.path.basename(file) for file in user_forward_files]
     backward_files += mdata.get("fp" + "_user_backward_files", [])
     
     api_version = mdata.get('api_version', '0.9')
