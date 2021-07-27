@@ -85,7 +85,7 @@ def symlink_user_forward_files(mdata, task_type, work_path):
     task_format = {"train" : "0*", "model_devi" : "task.*", "fp": "task.*"}
     for file in user_forward_files:
         assert os.path.isfile(file)  ,\
-            "user_forward_common_file %s of %s stage doesn't exist. " % (file, task_type)
+            "user_forward_file %s of %s stage doesn't exist. " % (file, task_type)
         tasks = glob.glob(os.path.join(work_path, task_format[task_type]))
         for task in tasks:
             if os.path.isfile(os.path.join(task, os.path.basename(file))):
