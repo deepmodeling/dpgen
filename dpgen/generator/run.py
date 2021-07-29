@@ -266,6 +266,7 @@ def make_train (iter_index,
     else:
         sys_batch_size = ["auto" for aa in range(len(jdata['sys_configs']))]
 
+    nums =[0 for ii in range(iter_index+1)]
     # make sure all init_data_sys has the batch size -- for the following `zip`
     assert (len(init_data_sys_) <= len(init_batch_size_))
     for ii, ss in zip(init_data_sys_, init_batch_size_) :
@@ -273,14 +274,15 @@ def make_train (iter_index,
             for single_sys in os.listdir(os.path.join(work_path, 'data.init', ii)):
                 init_data_sys.append(os.path.join('..', 'data.init', ii, single_sys))
                 init_batch_size.append(detect_batch_size(ss, os.path.join(work_path, 'data.init', ii, single_sys)))
+                nums[0] += get_nframe(os.path.join(work_path, 'data.init', ii, single_sys))
         else:
             init_data_sys.append(os.path.join('..', 'data.init', ii))
             init_batch_size.append(detect_batch_size(ss, os.path.join(work_path, 'data.init', ii)))
-    old_range = None
+            nums[0] += get_nframe(os.path.join(work_path, 'data.init', ii))
+    old_range = [0]
     if iter_index > 0 :
         for ii in range(iter_index) :
-            if ii == iter_index - 1:
-                old_range = len(init_data_sys)
+            old_range.append(len(init_data_sys))
             fp_path = os.path.join(make_iter_name(ii), fp_name)
             fp_data_sys = glob.glob(os.path.join(fp_path, "data.*"))
             for jj in fp_data_sys :
@@ -297,6 +299,7 @@ def make_train (iter_index,
                     for sys_single in os.listdir(jj):
                         init_data_sys.append(os.path.join('..', 'data.iters', jj, sys_single))
                         init_batch_size.append(detect_batch_size(sys_batch_size[sys_idx], os.path.join(jj, sys_single)))
+                        nums[ii+1] += get_nframe(os.path.join(jj, sys_single))
                 else:
                     nframes = dpdata.System(jj, 'deepmd/npy').get_nframes()
                     if nframes < fp_task_min :
@@ -304,6 +307,7 @@ def make_train (iter_index,
                         continue
                     init_data_sys.append(os.path.join('..', 'data.iters', jj))
                     init_batch_size.append(detect_batch_size(sys_batch_size[sys_idx], jj))
+                    nums[ii+1] += get_nframe(jj)
     # establish tasks
     jinput = jdata['default_training_param']
     try:
@@ -346,16 +350,27 @@ def make_train (iter_index,
             raise RuntimeError('invalid setting for use_ele_temp ' + str(use_ele_temp))
     else:
         raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x version!" )
+    
+    old_range.append(len(init_data_sys))
+    # Now nums has list of numbers of init, 0, 1, ..., N-1
+    # original prob
+    nums = np.array(nums, dtype=float)
+    x1 = np.ones(nums.size)
+    x1[0] = 0.
+    # 10. should be a parameter
+    # -> 1., 10., 10., ...
+    x1 = np.power(10., x1)
+    nums *= x1
+    ratios = nums/np.sum(nums, keepdims=True)
+    prob_str = "; ".join(["%d:%d:%f" % (old_range[ii], old_range[ii+1], ratios[ii]) for ii in range(iter_index + 1)])
     # set training reuse model
     if training_reuse_iter is not None and iter_index >= training_reuse_iter:
         if LooseVersion('1') <= LooseVersion(mdata["deepmd_version"]) < LooseVersion('2'):
             jinput['training']['auto_prob_style'] \
-                ="prob_sys_size; 0:%d:%f; %d:%d:%f" \
-                %(old_range, training_reuse_old_ratio, old_range, len(init_data_sys), 1.-training_reuse_old_ratio)
+                ="prob_sys_size; %s" % prob_str
         elif LooseVersion('2') <= LooseVersion(mdata["deepmd_version"]) < LooseVersion('3'):
             jinput['training']['training_data']['auto_prob'] \
-                ="prob_sys_size; 0:%d:%f; %d:%d:%f" \
-                %(old_range, training_reuse_old_ratio, old_range, len(init_data_sys), 1.-training_reuse_old_ratio)
+                ="prob_sys_size; %s" % prob_str
         else:
             raise RuntimeError("Unsupported DeePMD-kit version: %s" % mdata["deepmd_version"])
         if jinput['loss'].get('start_pref_e') is not None:
@@ -442,6 +457,9 @@ def detect_batch_size(batch_size, system=None):
         return int(min( np.ceil(32.0 / float(s["coords"].shape[1]) ), s["coords"].shape[0]))
     else:
         raise RuntimeError("Unsupported batch size")
+
+def get_nframe(system):
+    return len(dpdata.LabeledSystem(system, fmt='deepmd/npy'))
 
 def run_train (iter_index,
                jdata,
@@ -1296,7 +1314,7 @@ def run_model_devi (iter_index,
         backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , 'model_devi.out', 'model_devi.log']
     elif model_devi_engine == "amber":
         # TODO: currently all options are written in lmp_exec, but we may move them here
-        command = [mdata['lmp_exec']]
+        commands = [lmp_exec + " -O -p qmmm.parm7 -c init.rst7 -i init.mdin -o rc.mdout -r rc.rst7 -x rc.nc -inf rc.mdinfo"]
         forward_files = ['init.rst7', 'init.mdin', 'qmmm.parm7', 'TEMPLATE.disang']
         backward_files = ['rc.mdout', 'rc.nc', 'rc.rst7', 'rc.mdinfo', 'TEMPLATE.dumpave']
 
@@ -1422,7 +1440,7 @@ def _make_fp_vasp_inner (modd_path,
 
     fp_tasks = []
     model_devi_engine = jdata.get('model_devi_engine', 'lammps')
-    cluster_cutoff = jdata['cluster_cutoff'] if jdata.get('use_clusters', False) else None
+    cluster_cutoff = jdata.get('cluster_cutoff', None)
     # skip save *.out if detailed_report_make_fp is False, default is True
     detailed_report_make_fp = jdata.get("detailed_report_make_fp", True)
     # skip bad box criteria
@@ -2122,13 +2140,15 @@ def make_fp_amber_diff(iter_index, jdata):
     fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
     # make amber input
     cwd = os.getcwd()
+    # link two mdin files and param7
+    os.chdir(os.path.join(fp_tasks[0], ".."))
+    os.symlink(jdata['fp_params']['low_level_mdin'] ,'low_level.mdin')
+    os.symlink(jdata['fp_params']['high_level_mdin'] ,'high_level.mdin')
+    os.symlink(jdata['fp_params']['parm7'] ,'qmmm.parm7')
+    os.chdir(cwd)
     for ii in fp_tasks:
         os.chdir(ii)
 
-        # link two mdin files and param7
-        os.symlink(jdata['fp_params']['low_level_mdin'] ,'low_level.mdin')
-        os.symlink(jdata['fp_params']['high_level_mdin'] ,'high_level.mdin')
-        os.symlink(jdata['fp_params']['parm7'] ,'qmmm.parm7')
         create_path("dataset")
 
         os.chdir(cwd)
@@ -2296,7 +2316,7 @@ def run_fp (iter_index,
             jdata,
             mdata) :
     fp_style = jdata['fp_style']
-    fp_pp_files = jdata['fp_pp_files']
+    fp_pp_files = jdata.get('fp_pp_files', [])
 
     if fp_style == "vasp" :
         forward_files = ['POSCAR', 'INCAR', 'POTCAR','KPOINTS']
@@ -2337,13 +2357,15 @@ def run_fp (iter_index,
         backward_files = ['REPORT', 'OUT.MLMD', 'output']
         run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, _pwmat_check_fin, log_file = 'output')
     elif fp_style == 'amber/diff':
-        forward_files = ['low_level.mdin', 'high_level.mdin', 'qmmm.parm7', 'rc.nc', 'init.rst7', 'dataset']
+        forward_files = ['rc.nc', 'init.rst7', 'dataset']
         backward_files = [
             'low_level.mdfrc', 'low_level.mdout', 'low_level.mden', 'low_level.mdinfo',
             'high_level.mdfrc', 'high_level.mdout', 'high_level.mden', 'high_level.mdinfo',
             'output', 'dataset'
         ]
-        run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, None, log_file = 'output')
+        forward_common_files = ['low_level.mdin', 'high_level.mdin', 'qmmm.parm7']
+        run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, None, log_file = 'output',
+                     forward_common_files=forward_common_files)
     else :
         raise RuntimeError ("unsupported fp style")
 
