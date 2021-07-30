@@ -1073,6 +1073,9 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
         sys_counter += 1
 
 def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
+    # only support for deepmd v2.0
+    if LooseVersion(mdata['deepmd_version']) < LooseVersion('2.0'):
+        raise RuntimeError("Only support deepmd-kit 2.x for model_devi_engine='gromacs'")
     model_devi_jobs = jdata['model_devi_jobs']
     if (iter_index >= len(model_devi_jobs)) :
         return False
@@ -1172,7 +1175,7 @@ def run_model_devi (iter_index,
                     mdata) :
     #rmdlog.info("This module has been run !")
     lmp_exec = mdata['lmp_command']
-    # Angus: lmp_exec name should be changed to model_devi_exec.
+    # Anguse: lmp_exec name should be changed to model_devi_exec.
     # We should also change make_dispatcher
     # For now, I will use this name for gromacs command
 
@@ -1232,16 +1235,20 @@ def run_model_devi (iter_index,
         deffnm = gromacs_settings.get("deffnm", "deepmd")
         maxwarn = gromacs_settings.get("maxwarn", 1)
         traj_filename = gromacs_settings.get("traj_filename", "deepmd_traj.gro")
+        grp_name = gromacs_settings.get("group_name", "Other")
         nsteps = cur_job["nsteps"]
+        trj_freq = cur_job.get("trj_freq", 10)
 
         command = "%s grompp -f %s -p %s -c %s -o %s -maxwarn %d" % (lmp_exec, mdp_filename, topol_filename, conf_filename, deffnm, maxwarn)
         command += "&& %s mdrun -deffnm %s -nsteps %d" %(lmp_exec, deffnm, nsteps) 
-        command += "&& echo -e \"MOL\nMOL\n\" | %s trjconv -s %s -f %s.trr -o %s -pbc mol -ur compact -center" % (lmp_exec, ref_filename, deffnm, traj_filename)
-        command += "&& python model_devi.py %s" % traj_filename
+        command += "&& echo -e \"%s\n%s\n\" | %s trjconv -s %s -f %s.trr -o %s -pbc mol -ur compact -center" % (grp_name, grp_name, lmp_exec, ref_filename, deffnm, traj_filename)
+        command += "&& if [ ! -d traj ]; then \n mkdir traj; fi\n"
+        command += f"python -c \"import dpdata;system = dpdata.System('{traj_filename}', fmt='gromacs/gro'); [system.to_gromacs_gro('traj/%d.gromacstrj' % (i * {trj_freq}), frame_idx=i) for i in range(system.get_nframes())]; system.to_deepmd_npy('traj_deepmd')\""
+        command += "&& dp model-devi -m ../graph.000.pb ../graph.001.pb ../graph.002.pb ../graph.003.pb -s traj_deepmd -o model_devi.out"
         commands = [command]
 
-        forward_files = [mdp_filename, topol_filename, conf_filename, index_filename,  ref_filename, "input.json", "model_devi.py", "job.json" ]
-        backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , traj_filename, 'model_devi.out', 'model_devi.log', "traj" ]
+        forward_files = [mdp_filename, topol_filename, conf_filename, index_filename,  ref_filename, "input.json", "job.json" ]
+        backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , traj_filename, 'model_devi.out', "traj", "traj_deepmd" ]
 
 
     cwd = os.getcwd()
