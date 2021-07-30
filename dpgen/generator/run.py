@@ -1083,6 +1083,16 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
     else:
         model_devi_dt = jdata['model_devi_dt']
     nsteps = cur_job.get("nsteps", None)
+    lambdas = cur_job.get("lambdas", [])
+    temps = cur_job.get("temps", [])
+    if not lambdas:
+        lambdas = [1.0]
+    else:
+        for ll in lambdas:
+            if ll > 1:
+                raise RuntimeError("lambda is larger than 1.0")
+    if not temps:
+        temps = [298.0]
     if nsteps is None:
         raise RuntimeError("nsteps is None, you should set nsteps in model_devi_jobs!")
     # Currently Gromacs engine is not supported for different temperatures!
@@ -1108,48 +1118,50 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
         conf_counter = 0
         task_counter = 0
         for cc in ss :
-            task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
-            #conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter) + '.lmp'
-            task_path = os.path.join(work_path, task_name)
-            # dlog.info(task_path)
-            create_path(task_path)
-            #create_path(os.path.join(task_path, 'traj'))
-            #loc_conf_name = 'conf.lmp'
-            gromacs_settings = jdata.get("gromacs_settings" , "")
-            for key,file in gromacs_settings.items():
-                if key != "traj_filename" and key != "mdp_filename":
-                    os.symlink(os.path.join(cc,file), os.path.join(task_path, file))
-            
-            # input.json for DP-Gromacs
-            with open(os.path.join(cc, "input.json")) as f:
-                input_json = json.load(f)
-            input_json["graph_file"] = models[0]
-            with open(os.path.join(task_path,'input.json'), 'w') as _outfile:
-                json.dump(input_json, _outfile, indent = 4)
+            for ll in lambdas:
+                for tt in temps:
+                    task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
+                    task_path = os.path.join(work_path, task_name)
+                    create_path(task_path)
+                    gromacs_settings = jdata.get("gromacs_settings" , "")
+                    for key,file in gromacs_settings.items():
+                        if key != "traj_filename" and key != "mdp_filename":
+                            os.symlink(os.path.join(cc,file), os.path.join(task_path, file))
+                    # input.json for DP-Gromacs
+                    with open(os.path.join(cc, "input.json")) as f:
+                        input_json = json.load(f)
+                    input_json["graph_file"] = models[0]
+                    input_json["lambda"] = ll
+                    with open(os.path.join(task_path,'input.json'), 'w') as _outfile:
+                        json.dump(input_json, _outfile, indent = 4)
 
-            # trj_freq
-            trj_freq = cur_job.get("trj_freq", 10)
-            mdp = MDP()
-            mdp.read(os.path.join(cc, gromacs_settings['mdp_filename']))
-            mdp['nstcomm'] = trj_freq
-            mdp['nstxout'] = trj_freq
-            mdp['nstlog'] = trj_freq
-            mdp['nstenergy'] = trj_freq
-            # dt
-            mdp['dt'] = dt
-            mdp.write(os.path.join(task_path, gromacs_settings['mdp_filename']))
+                    # trj_freq
+                    trj_freq = cur_job.get("trj_freq", 10)
+                    mdp = MDP()
+                    mdp.read(os.path.join(cc, gromacs_settings['mdp_filename']))
+                    mdp['nstcomm'] = trj_freq
+                    mdp['nstxout'] = trj_freq
+                    mdp['nstlog'] = trj_freq
+                    mdp['nstenergy'] = trj_freq
+                    # dt
+                    mdp['dt'] = model_devi_dt
+                    # temps
+                    if "ref_t" in list(mdp.keys()):
+                        mdp["ref_t"] = tt
+                    else:
+                        mdp["ref-t"] = tt
+                    mdp.write(os.path.join(task_path, gromacs_settings['mdp_filename']))
 
-            cwd_ = os.getcwd()
-            os.chdir(task_path)
-            job = {}
-            
-            job["model_devi_dt"] =  model_devi_dt
-            job["nsteps"] = nsteps
-            with open('job.json', 'w') as _outfile:
-                json.dump(job, _outfile, indent = 4)
-            os.chdir(cwd_)
-            
-            task_counter += 1
+                    cwd_ = os.getcwd()
+                    os.chdir(task_path)
+                    job = {}
+                    job["trj_freq"] = cur_job["trj_freq"]
+                    job["model_devi_dt"] =  model_devi_dt
+                    job["nsteps"] = nsteps
+                    with open('job.json', 'w') as _outfile:
+                        json.dump(job, _outfile, indent = 4)
+                    os.chdir(cwd_) 
+                    task_counter += 1
             conf_counter += 1
         sys_counter += 1
 
@@ -1208,21 +1220,28 @@ def run_model_devi (iter_index,
             if use_plm_path:
                 forward_files += ['plmpath.pdb']
     elif model_devi_engine == "gromacs":
+        
         gromacs_settings = jdata.get("gromacs_settings", {})
         mdp_filename = gromacs_settings.get("mdp_filename", "md.mdp")
         topol_filename = gromacs_settings.get("topol_filename", "processed.top")
         conf_filename = gromacs_settings.get("conf_filename", "conf.gro")
         index_filename = gromacs_settings.get("index_filename", "index.raw")
+        # Initial reference to process pbc condition.
+        # Default is em.tpr
+        ref_filename = gromacs_settings.get("ref_filename", "em.tpr")
         deffnm = gromacs_settings.get("deffnm", "deepmd")
         maxwarn = gromacs_settings.get("maxwarn", 1)
+        traj_filename = gromacs_settings.get("traj_filename", "deepmd_traj.gro")
         nsteps = cur_job["nsteps"]
 
         command = "%s grompp -f %s -p %s -c %s -o %s -maxwarn %d" % (lmp_exec, mdp_filename, topol_filename, conf_filename, deffnm, maxwarn)
         command += "&& %s mdrun -deffnm %s -nsteps %d" %(lmp_exec, deffnm, nsteps) 
+        command += "&& echo -e \"MOL\nMOL\n\" | %s trjconv -s %s -f %s.trr -o %s -pbc mol -ur compact -center" % (lmp_exec, ref_filename, deffnm, traj_filename)
+        command += "&& python model_devi.py %s" % traj_filename
         commands = [command]
-        
-        forward_files = [mdp_filename, topol_filename, conf_filename, index_filename,  "input.json" ]
-        backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , 'model_devi.out', 'model_devi.log']
+
+        forward_files = [mdp_filename, topol_filename, conf_filename, index_filename,  ref_filename, "input.json", "model_devi.py", "job.json" ]
+        backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , traj_filename, 'model_devi.out', 'model_devi.log', "traj" ]
 
 
     cwd = os.getcwd()
