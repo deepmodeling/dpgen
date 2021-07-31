@@ -1546,6 +1546,8 @@ def _make_fp_vasp_inner (modd_path,
             os.chdir(task)
             if model_devi_engine == "lammps":
                 dump_to_poscar('conf.dump', 'POSCAR', type_map, fmt = "lammps/dump")
+                if charges_map:
+                    warnings.warn('"sys_charges" keyword only support for gromacs engine now.')
             elif model_devi_engine == "gromacs":
                 # dump_to_poscar('conf.dump', 'POSCAR', type_map, fmt = "gromacs/gro")
                 if charges_map:
