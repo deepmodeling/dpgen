@@ -395,7 +395,7 @@ def make_train (iter_index,
                 jinput['model']['fitting_net']['activation_function'] = model_devi_activation_func[ii][1]
             if len(np.array(model_devi_activation_func).shape) == 1 :                                    # for backward compatibility, 1-dim list, not net-resolved
                 jinput['model']['descriptor']['activation_function'] = model_devi_activation_func[ii]
-                jinput['model']['descriptor']['activation_function'] = model_devi_activation_func[ii]
+                jinput['model']['fitting_net']['activation_function'] = model_devi_activation_func[ii]
         # dump the input.json
         with open(os.path.join(task_path, train_input_file), 'w') as outfile:
             json.dump(jinput, outfile, indent = 4)
