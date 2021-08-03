@@ -460,7 +460,7 @@ def run_train (iter_index,
     except KeyError:
         mdata = set_version(mdata)
 
-    
+
     train_command = mdata.get('train_command', 'dp')
     train_resources = mdata['train_resources']
 
@@ -479,7 +479,7 @@ def run_train (iter_index,
         all_task.append(task_path)
     commands = []
     if LooseVersion(mdata["deepmd_version"]) >= LooseVersion('1') and LooseVersion(mdata["deepmd_version"]) < LooseVersion('3'):
-        
+
         # 1.x
         ## Commands are like `dp train` and `dp freeze`
         ## train_command should not be None
@@ -1079,7 +1079,7 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
         raise RuntimeError("nsteps is None, you should set nsteps in model_devi_jobs!")
     # Currently Gromacs engine is not supported for different temperatures!
     # If you want to change temperatures, you should change it in mdp files.
-  
+
     sys_idx = expand_idx(cur_job['sys_idx'])
     if (len(sys_idx) != len(list(set(sys_idx)))) :
         raise RuntimeError("system index should be uniq")
@@ -1111,7 +1111,7 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
             for key,file in gromacs_settings.items():
                 if key != "traj_filename" and key != "mdp_filename":
                     os.symlink(os.path.join(cc,file), os.path.join(task_path, file))
-            
+
             # input.json for DP-Gromacs
             with open(os.path.join(cc, "input.json")) as f:
                 input_json = json.load(f)
@@ -1134,13 +1134,13 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
             cwd_ = os.getcwd()
             os.chdir(task_path)
             job = {}
-            
+
             job["model_devi_dt"] =  model_devi_dt
             job["nsteps"] = nsteps
             with open('job.json', 'w') as _outfile:
                 json.dump(job, _outfile, indent = 4)
             os.chdir(cwd_)
-            
+
             task_counter += 1
             conf_counter += 1
         sys_counter += 1
@@ -1210,9 +1210,9 @@ def run_model_devi (iter_index,
         nsteps = cur_job["nsteps"]
 
         command = "%s grompp -f %s -p %s -c %s -o %s -maxwarn %d" % (lmp_exec, mdp_filename, topol_filename, conf_filename, deffnm, maxwarn)
-        command += "&& %s mdrun -deffnm %s -nsteps %d" %(lmp_exec, deffnm, nsteps) 
+        command += "&& %s mdrun -deffnm %s -nsteps %d" %(lmp_exec, deffnm, nsteps)
         commands = [command]
-        
+
         forward_files = [mdp_filename, topol_filename, conf_filename, index_filename,  "input.json" ]
         backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , 'model_devi.out', 'model_devi.log']
 
@@ -2390,7 +2390,7 @@ def post_fp_abacus_pw_scf (iter_index,
 
         sys_data_path = os.path.join(work_path, 'data.%s'%ss)
         all_sys.to_deepmd_raw(sys_data_path)
-        all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))           
+        all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
 
 def post_fp_siesta (iter_index,
                    jdata):
@@ -2503,20 +2503,29 @@ def post_fp_cp2k (iter_index,
     system_index.sort()
 
     cwd = os.getcwd()
+    tcount = 0
+    icount = 0
     for ss in system_index :
         sys_output = glob.glob(os.path.join(work_path, "task.%s.*/output"%ss))
         sys_output.sort()
-        for idx,oo in enumerate(sys_output) :
-            sys = dpdata.LabeledSystem(oo, fmt = 'cp2k/output')
-            if len(sys) > 0:
-                sys.check_type_map(type_map = jdata['type_map'])
-            if idx == 0:
-                all_sys = sys
+        tcount += len(sys_output)
+        all_sys = None
+        for oo in sys_output :
+            _sys = dpdata.LabeledSystem(oo, fmt = 'cp2k/output')
+            if len(_sys) == 1:
+                _sys.check_type_map(type_map = jdata['type_map'])
+                if all_sys is None:
+                    all_sys = _sys
+                else:
+                    all_sys.append(_sys)
             else:
-                all_sys.append(sys)
-        sys_data_path = os.path.join(work_path, 'data.%s'%ss)
-        all_sys.to_deepmd_raw(sys_data_path)
-        all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
+                icount += 1
+        if all_sys is not None:
+            sys_data_path = os.path.join(work_path, 'data.%s'%ss)
+            all_sys.to_deepmd_raw(sys_data_path)
+            all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
+    dlog.info("failed frame number: %s "%icount)
+    dlog.info("total frame number: %s "%tcount)
 
 
 def post_fp_pwmat (iter_index,
@@ -2605,7 +2614,7 @@ def post_fp (iter_index,
             shutil.rmtree(ii)
 
 def set_version(mdata):
-    
+
     deepmd_version = '1'
     mdata['deepmd_version'] = deepmd_version
     return mdata
