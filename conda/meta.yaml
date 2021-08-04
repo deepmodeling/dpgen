@@ -1,0 +1,50 @@
+{% set name = "dpgen" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ GIT_DESCRIBE_TAG }}
+
+source:
+  git_url: https://github.com/deepmodeling/dpgen
+  # git_rev: {{ version }}
+
+build:
+  number: 0
+  linux-64: python
+  script: python -m pip install --no-deps --ignore-installed .
+
+requirements:
+  build:
+    - git
+  host:
+    - git
+    - python >=3.6
+    - pip
+    - setuptools_scm
+    - dargs
+    - paramiko
+    - requests
+    - dpdispatcher
+
+  run:
+    - python >=3.6
+    - dargs
+    - paramiko
+    - requests
+    - dpdispatcher
+
+test:
+  imports:
+    - dpgen
+
+about:
+  home: https://github.com/deepmodeling/dpgen
+  license: LGPL-3.0
+  license_family: LGPL
+  license_file: LICENSE
+  doc_url: https://github.com/deepmodeling/dpgen
+  dev_url: https://github.com/deepmodeling/dpgen
+
+extra:
+  recipe-maintainers:
+    - felix5572
