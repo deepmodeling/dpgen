@@ -11,9 +11,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: publish-to-conda
-      uses: felix5572/conda-publish-action@v1.5
+      uses: felix5572/conda-publish-action@v1.7
       with:
         subdir: 'conda'
         anacondatoken: ${{ secrets.ANACONDA_TOKEN }}
         platforms: 'linux'
-        downloadchannels: ['deepmodeling', 'yfb222333']
