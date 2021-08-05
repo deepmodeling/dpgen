@@ -1,8 +1,9 @@
 {% set name = "dpgen" %}
+{% set version = environ.get('GIT_DESCRIBE_TAG').lstrip('v') %}
 
 package:
   name: {{ name|lower }}
-  version: {{ GIT_DESCRIBE_TAG }}
+  version: {{ version }}
 
 source:
   git_url: https://github.com/deepmodeling/dpgen
@@ -10,7 +11,7 @@ source:
 
 build:
   number: 0
-  linux-64: python
+  noarch: python
   script: python -m pip install --no-deps --ignore-installed .
 
 requirements:
@@ -24,6 +25,7 @@ requirements:
     - dargs
     - paramiko
     - requests
+    - dpdata
     - dpdispatcher
 
   run:
@@ -31,6 +33,7 @@ requirements:
     - dargs
     - paramiko
     - requests
+    - dpdata
     - dpdispatcher
 
 test:

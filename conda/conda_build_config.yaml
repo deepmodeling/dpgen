@@ -3,5 +3,3 @@ channel_sources:
   - conda-forge
 channel_targets: 
   - deepmodeling
-python:
-  - 3.6
