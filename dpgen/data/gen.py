@@ -342,8 +342,9 @@ def make_vasp_relax (jdata, mdata) :
            pass
         os.chdir(work_dir)
     os.chdir(cwd)
-    symlink_user_forward_files(mdata=mdata, task_type="init_relax",
-                               work_path=os.path.join(os.path.basename(out_dir),global_dirname_02))
+    symlink_user_forward_files(mdata=mdata, task_type="fp",
+                               work_path=os.path.join(os.path.basename(out_dir),global_dirname_02),
+                               task_format= {"fp" : "sys-*"})
 
 def make_scale(jdata):
     out_dir = jdata['out_dir']
@@ -494,7 +495,9 @@ def make_vasp_md(jdata, mdata) :
                 os.chdir(cwd)
                 
     symlink_user_forward_files(mdata=mdata, task_type="init_md",
-                               work_path=os.path.join(os.path.basename(out_dir),global_dirname_04))
+                               work_path=os.path.join(os.path.basename(out_dir),global_dirname_04),
+                               task_format= "sys-*/scale*/00*")
+                            
 
 def coll_vasp_md(jdata) :
     out_dir = jdata['out_dir']
