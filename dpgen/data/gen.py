@@ -429,7 +429,7 @@ def pert_scaled(jdata) :
                 shutil.copy2(pos_in, pos_out)
             os.chdir(cwd)
 
-def make_vasp_md(jdata) :
+def make_vasp_md(jdata, mdata) :
     out_dir = jdata['out_dir']
     potcars = jdata['potcars']
     scale = jdata['scale']   
@@ -775,9 +775,12 @@ def gen_init_bulk(args) :
             pert_scaled(jdata)
         elif stage == 3 :
             dlog.info("Current stage is 3, run a short md")
-            make_vasp_md(jdata)
             if args.MACHINE is not None:
+               make_vasp_md(jdata, mdata)
                run_vasp_md(jdata, mdata)
+            else:
+               make_vasp_md(jdata, {"fp_resources":{}})
+               
         elif stage == 4 :
             dlog.info("Current stage is 4, collect data")
             coll_vasp_md(jdata)
