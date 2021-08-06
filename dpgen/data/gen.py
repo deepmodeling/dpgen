@@ -313,12 +313,7 @@ def make_vasp_relax (jdata, mdata) :
         os.remove(os.path.join(work_dir, 'POTCAR'))
     shutil.copy2( jdata['relax_incar'], 
                  os.path.join(work_dir, 'INCAR'))
-    is_cvasp = False
-    if 'cvasp' in mdata['fp_resources'].keys():
-        is_cvasp = mdata['fp_resources']['cvasp']
-    if is_cvasp:
-        cvasp_file=os.path.join(ROOT_PATH,'generator/lib/cvasp.py')
-        shutil.copyfile(cvasp_file, os.path.join(work_dir, 'cvasp.py'))
+    
     out_potcar = os.path.join(work_dir, 'POTCAR')
     with open(out_potcar, 'w') as outfile:
         for fname in potcars:
@@ -340,6 +335,12 @@ def make_vasp_relax (jdata, mdata) :
            os.symlink(ln_src, 'POTCAR')
         except FileExistsError:
            pass
+        is_cvasp = False
+        if 'cvasp' in mdata['fp_resources'].keys():
+            is_cvasp = mdata['fp_resources']['cvasp']
+        if is_cvasp:
+            cvasp_file = os.path.join(ROOT_PATH, 'generator/lib/cvasp.py')
+            shutil.copyfile(cvasp_file, 'cvasp.py')
         os.chdir(work_dir)
     os.chdir(cwd)
     symlink_user_forward_files(mdata=mdata, task_type="fp",
@@ -459,12 +460,7 @@ def make_vasp_md(jdata, mdata) :
     os.chdir(path_md)
     os.chdir(cwd)
     
-    is_cvasp = False
-    if 'cvasp' in mdata['fp_resources'].keys():
-        is_cvasp = mdata['fp_resources']['cvasp']
-    if is_cvasp:
-        cvasp_file = os.path.join(ROOT_PATH, 'generator/lib/cvasp.py')
-        shutil.copyfile(cvasp_file, os.path.join(path_md, 'cvasp.py'))
+    
 
     for ii in sys_ps :
         for jj in scale :
@@ -491,6 +487,13 @@ def make_vasp_md(jdata, mdata) :
                     os.symlink(os.path.relpath(file_potcar), 'POTCAR')
                 except FileExistsError:
                     pass
+
+                is_cvasp = False
+                if 'cvasp' in mdata['fp_resources'].keys():
+                    is_cvasp = mdata['fp_resources']['cvasp']
+                if is_cvasp:
+                    cvasp_file = os.path.join(ROOT_PATH, 'generator/lib/cvasp.py')
+                    shutil.copyfile(cvasp_file,  'cvasp.py')
                  
                 os.chdir(cwd)
                 
@@ -590,7 +593,7 @@ def run_vasp_relax(jdata, mdata):
     forward_common_files = []
     if 'cvasp' in mdata['fp_resources']:
         if mdata['fp_resources']['cvasp']:
-            forward_common_files=['cvasp.py']
+            forward_files +=['cvasp.py']
     relax_tasks = glob.glob(os.path.join(work_dir, "sys-*"))
     relax_tasks.sort()
     #dlog.info("work_dir",work_dir)
@@ -652,7 +655,7 @@ def run_vasp_md(jdata, mdata):
     forward_common_files = []
     if 'cvasp' in mdata['fp_resources']:
         if mdata['fp_resources']['cvasp']:
-            forward_common_files=['cvasp.py']
+            forward_files +=['cvasp.py']
 
     path_md = work_dir
     path_md = os.path.abspath(path_md)
