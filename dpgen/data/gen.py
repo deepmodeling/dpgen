@@ -497,9 +497,9 @@ def make_vasp_md(jdata, mdata) :
                  
                 os.chdir(cwd)
                 
-    symlink_user_forward_files(mdata=mdata, task_type="init_md",
+    symlink_user_forward_files(mdata=mdata, task_type="fp",
                                work_path=os.path.join(os.path.basename(out_dir),global_dirname_04),
-                               task_format= "sys-*/scale*/00*")
+                               task_format= {"fp" :"sys-*/scale*/00*"})
                             
 
 def coll_vasp_md(jdata) :
