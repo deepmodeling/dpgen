@@ -1,5 +1,5 @@
 {% set name = "dpgen" %}
-{% set version = environ.get('GIT_DESCRIBE_TAG').lstrip('v') %}
+{% set version = os.popen('git describe --tags --abbrev=0').read().strip('\n').lstrip('v').replace('-', '_') %}
 
 package:
   name: {{ name|lower }}
