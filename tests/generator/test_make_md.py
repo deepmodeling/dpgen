@@ -13,7 +13,7 @@ from .context import parse_cur_job_revmat
 from .context import param_file
 from .context import machine_file
 from .context import my_file_cmp
-from .context import setUpModule
+from .context import switch_to_file_dir
 from .context import find_only_one_key
 from .context import revise_lmp_input_model
 from .context import revise_lmp_input_dump

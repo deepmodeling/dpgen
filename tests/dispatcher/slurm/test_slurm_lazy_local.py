@@ -6,7 +6,7 @@ __package__ = 'slurm'
 from .context import LazyLocalContext
 from .context import Slurm
 from .context import JobStatus
-from .context import setUpModule
+
 
 @unittest.skipIf(not shutil.which("sbatch"), "requires Slurm")
 class TestSlurm(unittest.TestCase) :

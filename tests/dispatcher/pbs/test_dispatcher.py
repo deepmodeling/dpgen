@@ -9,7 +9,7 @@ from .context import PBS
 from .context import JobStatus
 from .context import Dispatcher
 from .context import my_file_cmp
-from .context import setUpModule
+
 
 @unittest.skipIf(not shutil.which("qsub"), "requires PBS")
 class TestDispatcher(unittest.TestCase) :

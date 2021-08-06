@@ -7,7 +7,7 @@ from .context import LocalSession
 from .context import LocalContext
 from .context import PBS
 from .context import JobStatus
-from .context import setUpModule
+
 
 @unittest.skipIf(not shutil.which("qsub"), "requires PBS")
 class TestPBS(unittest.TestCase) :

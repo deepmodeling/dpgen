@@ -15,7 +15,7 @@ from dpdata import System,LabeledSystem
 from monty.shutil import remove 
 from monty.serialization import loadfn,dumpfn
 from pymatgen.io.vasp import Potcar,Poscar,Incar,Kpoints
-from .context import setUpModule
+from .context import switch_to_file_dir
 
 iter_pat="02.fp/task.007.00000*"
 init_pat="al.bcc.02x02x02/02.md/sys-0016/scale-1.000/00000*"

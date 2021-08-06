@@ -8,7 +8,7 @@ __package__ = 'generator'
 from .context import sys_link_fp_vasp_pp
 from .context import make_iter_name
 from .context import fp_name
-from .context import setUpModule
+from .context import switch_to_file_dir
 
 class TestConcatVASPPP(unittest.TestCase):
     def test(self):

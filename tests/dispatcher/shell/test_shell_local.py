@@ -8,7 +8,7 @@ from .context import LocalContext
 from .context import Shell
 from .context import JobStatus
 from .context import my_file_cmp
-from .context import setUpModule
+
 
 class TestShell(unittest.TestCase) :
     def setUp(self) :

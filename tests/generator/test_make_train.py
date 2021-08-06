@@ -12,7 +12,7 @@ from .context import param_file_v1
 from .context import param_file_v1_et
 from .context import machine_file
 from .context import machine_file_v1
-from .context import setUpModule
+from .context import switch_to_file_dir
 
 def _comp_sys_files (sys0, sys1) :
     pwd = os.getcwd()

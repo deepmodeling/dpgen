@@ -7,7 +7,7 @@ __package__ = 'generator'
 from .context import parse_cur_job
 from .context import param_file
 from .context import machine_file
-from .context import setUpModule
+from .context import switch_to_file_dir
 
 class TestParseCurJob(unittest.TestCase):
     def test_npt (self) :        

@@ -9,7 +9,7 @@ from .context import LSF
 from .context import JobStatus
 from .context import Dispatcher
 from .context import my_file_cmp
-from .context import setUpModule
+
 
 class TestDispatcher(unittest.TestCase) :
     def setUp(self) :

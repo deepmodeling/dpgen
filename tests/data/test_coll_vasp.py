@@ -8,7 +8,7 @@ __package__ = 'data'
 from .context import coll_vasp_md
 from .context import out_dir_name
 from .context import param_file
-from .context import setUpModule
+from .context import switch_to_file_dir
 
 class TestCollVasp(unittest.TestCase):
     def setUp(self):

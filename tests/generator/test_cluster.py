@@ -7,7 +7,7 @@ import importlib
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 __package__ = 'generator'
 from .context import take_cluster
-from .context import setUpModule
+from .context import switch_to_file_dir
 from .comp_sys import CompSys
 
 

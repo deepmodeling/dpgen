@@ -4,7 +4,7 @@ from pymatgen.core import Structure, Element
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 __package__ = 'data'
-from .context import setUpModule
+from .context import switch_to_file_dir
 from .context_surf_poscar import *
 
 class TestGenSurfPOSCAR(unittest.TestCase):

@@ -5,5 +5,5 @@ from dpgen.database.entry import Entry
 from dpgen.database.run import parsing_vasp
 from dpgen.database.vasp import VaspInput,DPPotcar
 
-def setUpModule():
+def switch_to_file_dir():
     os.chdir(os.path.abspath(os.path.dirname(__file__)))

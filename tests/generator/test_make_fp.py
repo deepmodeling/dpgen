@@ -24,7 +24,7 @@ from .context import machine_file
 from .context import param_diy_file
 from .context import make_kspacing_kpoints
 from .context import my_file_cmp
-from .context import setUpModule
+from .context import switch_to_file_dir
 from .comp_sys import test_atom_names
 from .comp_sys import test_atom_types
 from .comp_sys import test_coord
@@ -483,7 +483,7 @@ def _check_pwmat_input(testCase, idx):
 
 class TestMakeFPPwscf(unittest.TestCase):
     def test_make_fp_pwscf(self):
-        setUpModule()
+        switch_to_file_dir()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_pwscf_file, 'r') as fp :
@@ -510,7 +510,7 @@ class TestMakeFPPwscf(unittest.TestCase):
         shutil.rmtree('iter.000000')
 
     def test_make_fp_pwscf_old(self):
-        setUpModule()
+        switch_to_file_dir()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_pwscf_old_file, 'r') as fp :
@@ -538,7 +538,7 @@ class TestMakeFPPwscf(unittest.TestCase):
 
 class TestMakeFPABACUS(unittest.TestCase):
     def test_make_fp_abacus(self):
-        setUpModule()
+        switch_to_file_dir()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_abacus_post_file, 'r') as fp :
@@ -567,7 +567,7 @@ class TestMakeFPABACUS(unittest.TestCase):
 
 class TestMakeFPSIESTA(unittest.TestCase):
     def test_make_fp_siesta(self):
-        setUpModule()
+        switch_to_file_dir()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_siesta_file, 'r') as fp :
@@ -595,7 +595,7 @@ class TestMakeFPSIESTA(unittest.TestCase):
 
 class TestMakeFPVasp(unittest.TestCase):
     def test_make_fp_vasp(self):
-        setUpModule()
+        switch_to_file_dir()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_file, 'r') as fp :
@@ -626,7 +626,7 @@ class TestMakeFPVasp(unittest.TestCase):
         shutil.rmtree('iter.000000')
 
     def test_make_fp_vasp_old(self):
-        setUpModule()
+        switch_to_file_dir()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_old_file, 'r') as fp :
@@ -689,7 +689,7 @@ class TestMakeFPVasp(unittest.TestCase):
 
     def test_make_fp_vasp_from_incar(self):
         ## Verify if user chooses to diy VASP INCAR totally.
-        setUpModule()
+        switch_to_file_dir()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_diy_file, 'r') as fp :
@@ -723,7 +723,7 @@ class TestMakeFPVasp(unittest.TestCase):
 
     def test_make_fp_vasp_ele_temp(self):
         ## Verify if user chooses to diy VASP INCAR totally.
-        setUpModule()
+        switch_to_file_dir()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_diy_file, 'r') as fp :
@@ -759,7 +759,7 @@ class TestMakeFPVasp(unittest.TestCase):
 
 class TestMakeFPGaussian(unittest.TestCase):
     def make_fp_gaussian(self, multiplicity="auto"):
-        setUpModule()
+        switch_to_file_dir()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_gaussian_file, 'r') as fp :
@@ -810,7 +810,7 @@ class TestMakeFPGaussian(unittest.TestCase):
 
 class TestMakeFPCP2K(unittest.TestCase):
     def test_make_fp_cp2k(self):
-        setUpModule()
+        switch_to_file_dir()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_cp2k_file, 'r') as fp :
@@ -838,7 +838,7 @@ class TestMakeFPCP2K(unittest.TestCase):
         _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
     def test_make_fp_cp2k_exinput(self):
-        setUpModule()
+        switch_to_file_dir()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_cp2k_file_exinput, 'r') as fp :
@@ -870,7 +870,7 @@ class TestMakeFPCP2K(unittest.TestCase):
 
 class TestMakeFPPWmat(unittest.TestCase):
     def test_make_fp_pwmat(self):
-        setUpModule()
+        switch_to_file_dir()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_pwmat_file, 'r') as fp :

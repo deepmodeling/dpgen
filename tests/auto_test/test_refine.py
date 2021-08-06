@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 __package__ = 'auto_test'
 
 from .context import make_kspacing_kpoints
-from .context import setUpModule
+from .context import switch_to_file_dir
 
 from dpgen.auto_test.common_prop import make_property
 from dpgen.auto_test.refine import make_refine

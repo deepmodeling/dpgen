@@ -21,7 +21,7 @@ from .context import param_siesta_file
 from .context import param_gaussian_file
 from .context import param_cp2k_file
 from .context import machine_file
-from .context import setUpModule
+from .context import switch_to_file_dir
 from .comp_sys import test_atom_names
 from .comp_sys import test_atom_types
 from .comp_sys import test_coord
