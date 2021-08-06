@@ -22,11 +22,13 @@ import dpgen.data.tools.diamond as diamond
 import dpgen.data.tools.sc as sc
 from distutils.version import LooseVersion
 from dpgen.generator.lib.vasp import incar_upper
+from dpgen.generator.lib.utils import symlink_user_forward_files
 from pymatgen.core import Structure
 from pymatgen.io.vasp import Incar
 from dpgen.remote.decide_machine import  convert_mdata
 from dpgen import ROOT_PATH
 from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher, make_submission
+
 
 
 
@@ -340,6 +342,7 @@ def make_vasp_relax (jdata, mdata) :
            pass
         os.chdir(work_dir)
     os.chdir(cwd)
+    symlink_user_forward_files(mdata=mdata, task_type="init_relax", work_path=work_dir)
 
 def make_scale(jdata):
     out_dir = jdata['out_dir']
@@ -373,6 +376,7 @@ def make_scale(jdata):
             os.chdir(scale_path) 
             poscar_scale(pos_src, 'POSCAR', jj)
             os.chdir(cwd)
+    
 
 def pert_scaled(jdata) :
     out_dir = jdata['out_dir']
@@ -451,7 +455,14 @@ def make_vasp_md(jdata) :
             with open(fname) as infile:
                 outfile.write(infile.read())
     os.chdir(path_md)
-    os.chdir(cwd)    
+    os.chdir(cwd)
+    
+    is_cvasp = False
+    if 'cvasp' in mdata['fp_resources'].keys():
+        is_cvasp = mdata['fp_resources']['cvasp']
+    if is_cvasp:
+        cvasp_file = os.path.join(ROOT_PATH, 'generator/lib/cvasp.py')
+        shutil.copyfile(cvasp_file, os.path.join(path_md, 'cvasp.py'))
 
     for ii in sys_ps :
         for jj in scale :
@@ -479,7 +490,8 @@ def make_vasp_md(jdata) :
                 except FileExistsError:
                     pass
                  
-                os.chdir(cwd)                
+                os.chdir(cwd)
+    symlink_user_forward_files(mdata=mdata, task_type="init_md", work_path=path_md)
 
 def coll_vasp_md(jdata) :
     out_dir = jdata['out_dir']
@@ -565,7 +577,10 @@ def run_vasp_relax(jdata, mdata):
     work_dir = os.path.join(jdata['out_dir'], global_dirname_02)
     
     forward_files = ["POSCAR", "INCAR", "POTCAR"]
+    user_forward_files = mdata.get("fp" + "_user_forward_files", [])
+    forward_files += [os.path.basename(file) for file in user_forward_files]
     backward_files = ["OUTCAR","CONTCAR"]
+    backward_files += mdata.get("fp" + "_user_backward_files", [])
     forward_common_files = []
     if 'cvasp' in mdata['fp_resources']:
         if mdata['fp_resources']['cvasp']:
@@ -624,7 +639,10 @@ def run_vasp_md(jdata, mdata):
     md_nstep = jdata['md_nstep']
 
     forward_files = ["POSCAR", "INCAR", "POTCAR"]
+    user_forward_files = mdata.get("fp" + "_user_forward_files", [])
+    forward_files += [os.path.basename(file) for file in user_forward_files]
     backward_files = ["OUTCAR"]
+    backward_files += mdata.get("fp" + "_user_backward_files", [])
     forward_common_files = []
     if 'cvasp' in mdata['fp_resources']:
         if mdata['fp_resources']['cvasp']:
