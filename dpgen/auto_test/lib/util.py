@@ -77,11 +77,11 @@ def get_machine_info(mdata,task_type):
         command = vasp_exec
         command = cmd_append_log(command, "log")
     elif task_type in lammps_task_type:
-        lmp_exec = mdata['lmp_command']
+        model_devi_exec = mdata['model_devi_command']
         group_size = mdata['model_devi_group_size']
         resources = mdata['model_devi_resources']
         machine=mdata['model_devi_machine']
-        command = lmp_exec + " -i in.lammps"
+        command = model_devi_exec + " -i in.lammps"
         command = cmd_append_log(command, "model_devi.log")
     return machine, resources, command, group_size
 
