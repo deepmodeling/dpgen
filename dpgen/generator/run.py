@@ -468,7 +468,7 @@ def run_train (iter_index,
     except KeyError:
         mdata = set_version(mdata)
 
-
+    
     train_command = mdata.get('train_command', 'dp')
     train_resources = mdata['train_resources']
 
