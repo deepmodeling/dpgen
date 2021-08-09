@@ -6,8 +6,7 @@ package:
   version: {{ version }}
 
 source:
-  git_url: https://github.com/deepmodeling/dpgen
-  git_rev: v{{ version }}
+  path: ..
 
 build:
   number: 0
