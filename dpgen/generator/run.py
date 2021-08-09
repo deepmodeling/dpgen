@@ -487,7 +487,7 @@ def run_train (iter_index,
         all_task.append(task_path)
     commands = []
     if LooseVersion(mdata["deepmd_version"]) >= LooseVersion('1') and LooseVersion(mdata["deepmd_version"]) < LooseVersion('3'):
-
+        
         # 1.x
         ## Commands are like `dp train` and `dp freeze`
         ## train_command should not be None
@@ -1090,7 +1090,7 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
         raise RuntimeError("nsteps is None, you should set nsteps in model_devi_jobs!")
     # Currently Gromacs engine is not supported for different temperatures!
     # If you want to change temperatures, you should change it in mdp files.
-
+  
     sys_idx = expand_idx(cur_job['sys_idx'])
     if (len(sys_idx) != len(list(set(sys_idx)))) :
         raise RuntimeError("system index should be uniq")
@@ -1122,7 +1122,7 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
             for key,file in gromacs_settings.items():
                 if key != "traj_filename" and key != "mdp_filename":
                     os.symlink(os.path.join(cc,file), os.path.join(task_path, file))
-
+            
             # input.json for DP-Gromacs
             with open(os.path.join(cc, "input.json")) as f:
                 input_json = json.load(f)
@@ -1145,13 +1145,13 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
             cwd_ = os.getcwd()
             os.chdir(task_path)
             job = {}
-
+            
             job["model_devi_dt"] =  model_devi_dt
             job["nsteps"] = nsteps
             with open('job.json', 'w') as _outfile:
                 json.dump(job, _outfile, indent = 4)
             os.chdir(cwd_)
-
+            
             task_counter += 1
             conf_counter += 1
         sys_counter += 1
@@ -1220,7 +1220,7 @@ def run_model_devi (iter_index,
         command = "%s grompp -f %s -p %s -c %s -o %s -maxwarn %d" % (model_devi_exec, mdp_filename, topol_filename, conf_filename, deffnm, maxwarn)
         command += "&& %s mdrun -deffnm %s -nsteps %d" %(model_devi_exec, deffnm, nsteps)
         commands = [command]
-
+        
         forward_files = [mdp_filename, topol_filename, conf_filename, index_filename,  "input.json" ]
         backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , 'model_devi.out', 'model_devi.log']
 
@@ -2408,7 +2408,7 @@ def post_fp_abacus_pw_scf (iter_index,
 
         sys_data_path = os.path.join(work_path, 'data.%s'%ss)
         all_sys.to_deepmd_raw(sys_data_path)
-        all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
+        all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))           
 
 def post_fp_siesta (iter_index,
                    jdata):
@@ -2634,7 +2634,7 @@ def post_fp (iter_index,
             shutil.rmtree(ii)
 
 def set_version(mdata):
-
+    
     deepmd_version = '1'
     mdata['deepmd_version'] = deepmd_version
     return mdata
