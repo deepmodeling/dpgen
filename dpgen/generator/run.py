@@ -2511,7 +2511,9 @@ def post_fp_cp2k (iter_index,
     system_index.sort()
 
     cwd = os.getcwd()
+    # tcount: num of all fp tasks
     tcount = 0
+    # icount: num of converged fp tasks
     icount = 0
     for ss in system_index :
         sys_output = glob.glob(os.path.join(work_path, "task.%s.*/output"%ss))
@@ -2520,19 +2522,19 @@ def post_fp_cp2k (iter_index,
         all_sys = None
         for oo in sys_output :
             _sys = dpdata.LabeledSystem(oo, fmt = 'cp2k/output')
-            if len(_sys) == 1:
-                _sys.check_type_map(type_map = jdata['type_map'])
-                if all_sys is None:
-                    all_sys = _sys
-                else:
-                    all_sys.append(_sys)
+            _sys.check_type_map(type_map = jdata['type_map'])
+            if all_sys is None:
+                all_sys = _sys
             else:
-                icount += 1
+                all_sys.append(_sys)
+
+
+        icount += len(all_sys)
         if all_sys is not None:
             sys_data_path = os.path.join(work_path, 'data.%s'%ss)
             all_sys.to_deepmd_raw(sys_data_path)
             all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
-    dlog.info("failed frame number: %s "%icount)
+    dlog.info("failed frame number: %s "%(tcount-icount))
     dlog.info("total frame number: %s "%tcount)
 
 
