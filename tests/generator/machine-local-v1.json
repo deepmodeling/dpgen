@@ -28,7 +28,7 @@
 	"source_list": [],
 	"_comment": "that's All"
     },
-    "lmp_command": "/home/wanghan/local/bin/lmp_mpi_1_1_0",
+    "model_devi_command": "/home/wanghan/local/bin/lmp_mpi_1_1_0",
     "model_devi_group_size": 10,
 
     "fp_machine": {
