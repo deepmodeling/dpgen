@@ -187,7 +187,7 @@ def dump_to_deepmd_raw(dump, deepmd_raw, type_map, fmt='gromacs/gro', charge=Non
     system = dpdata.System(dump, fmt = fmt, type_map = type_map)
     system.to_deepmd_raw(deepmd_raw)
     if charge is not None:
-        with open(os.path.join(deepmd_raw, "charge"), 'w+') as f:
+        with open(os.path.join(deepmd_raw, "charge"), 'w') as f:
             f.write(str(charge))
 
 
@@ -1101,16 +1101,13 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
     else:
         model_devi_dt = jdata['model_devi_dt']
     nsteps = cur_job.get("nsteps", None)
-    lambdas = cur_job.get("lambdas", [])
-    temps = cur_job.get("temps", [])
-    if not lambdas:
-        lambdas = [1.0]
-    else:
-        for ll in lambdas:
-            if ll > 1:
-                raise RuntimeError("lambda is larger than 1.0")
-    if not temps:
-        temps = [298.0]
+    lambdas = cur_job.get("lambdas", [1.0])
+    temps = cur_job.get("temps", [298.0])
+
+    for ll in lambdas:
+        if ll > 1:
+            raise RuntimeError("lambda is larger than 1.0")
+
     if nsteps is None:
         raise RuntimeError("nsteps is None, you should set nsteps in model_devi_jobs!")
     # Currently Gromacs engine is not supported for different temperatures!
@@ -2534,22 +2531,19 @@ def post_fp_gaussian (iter_index,
         sys_output = glob.glob(os.path.join(work_path, "task.%s.*/output"%ss))
         sys_output.sort()
         for idx,oo in enumerate(sys_output) :
-            # TODO : UnboundLocalError sometimes occurs and I cannot figure it out.
-            try:
-                sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log')
-                if len(sys) > 0:
-                    sys.check_type_map(type_map = jdata['type_map'])
-                if jdata.get('use_atom_pref', False):
-                    sys.data['atom_pref'] = np.load(os.path.join(os.path.dirname(oo), "atom_pref.npy"))
-                if idx == 0:
-                    if jdata.get('use_clusters', False):
-                        all_sys = dpdata.MultiSystems(sys, type_map = jdata['type_map'])
-                    else:
-                        all_sys = sys
+            # TODO : UnboundLocalError sometimes occurs when parsing gaussian log
+            sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log')
+            if len(sys) > 0:
+                sys.check_type_map(type_map = jdata['type_map'])
+            if jdata.get('use_atom_pref', False):
+                sys.data['atom_pref'] = np.load(os.path.join(os.path.dirname(oo), "atom_pref.npy"))
+            if idx == 0:
+                if jdata.get('use_clusters', False):
+                    all_sys = dpdata.MultiSystems(sys, type_map = jdata['type_map'])
                 else:
-                    all_sys.append(sys)
-            except UnboundLocalError as e:
-                pass
+                    all_sys = sys
+            else:
+                all_sys.append(sys)
         sys_data_path = os.path.join(work_path, 'data.%s'%ss)
         all_sys.to_deepmd_raw(sys_data_path)
         all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
