@@ -12,8 +12,6 @@ specs:
   - python 3.8
   - pip
   - dpgen {{ version }} 
-  - dpdata
-  - pymatgen
 
 ignore_duplicate_files: True
 
