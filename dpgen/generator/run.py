@@ -407,7 +407,7 @@ def make_train (iter_index,
                 jinput['model']['fitting_net']['activation_function'] = model_devi_activation_func[ii][1]
             if len(np.array(model_devi_activation_func).shape) == 1 :                                    # for backward compatibility, 1-dim list, not net-resolved
                 jinput['model']['descriptor']['activation_function'] = model_devi_activation_func[ii]
-                jinput['model']['descriptor']['activation_function'] = model_devi_activation_func[ii]
+                jinput['model']['fitting_net']['activation_function'] = model_devi_activation_func[ii]
         # dump the input.json
         with open(os.path.join(task_path, train_input_file), 'w') as outfile:
             json.dump(jinput, outfile, indent = 4)
@@ -2524,18 +2524,22 @@ def post_fp_gaussian (iter_index,
         sys_output = glob.glob(os.path.join(work_path, "task.%s.*/output"%ss))
         sys_output.sort()
         for idx,oo in enumerate(sys_output) :
-            sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log')
-            if len(sys) > 0:
-                sys.check_type_map(type_map = jdata['type_map'])
-            if jdata.get('use_atom_pref', False):
-                sys.data['atom_pref'] = np.load(os.path.join(os.path.dirname(oo), "atom_pref.npy"))
-            if idx == 0:
-                if jdata.get('use_clusters', False):
-                    all_sys = dpdata.MultiSystems(sys, type_map = jdata['type_map'])
+            # TODO : UnboundLocalError sometimes occurs and I cannot figure it out.
+            try:
+                sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log')
+                if len(sys) > 0:
+                    sys.check_type_map(type_map = jdata['type_map'])
+                if jdata.get('use_atom_pref', False):
+                    sys.data['atom_pref'] = np.load(os.path.join(os.path.dirname(oo), "atom_pref.npy"))
+                if idx == 0:
+                    if jdata.get('use_clusters', False):
+                        all_sys = dpdata.MultiSystems(sys, type_map = jdata['type_map'])
+                    else:
+                        all_sys = sys
                 else:
-                    all_sys = sys
-            else:
-                all_sys.append(sys)
+                    all_sys.append(sys)
+            except UnboundLocalError as e:
+                pass
         sys_data_path = os.path.join(work_path, 'data.%s'%ss)
         all_sys.to_deepmd_raw(sys_data_path)
         all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
