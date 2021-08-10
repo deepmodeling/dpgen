@@ -549,11 +549,11 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | **model_devi_skip** | Integer | 0 | Number of structures skipped for fp in each MD
 | **model_devi_f_trust_lo** | Float | 0.05 | Lower bound of forces for the selection.
  | **model_devi_f_trust_hi** | Float | 0.15 | Upper bound of forces for the selection
-| **model_devi_v_trust_lo**  | Float | 1e10                                                         | Lower bound of virial for the selection. Recommend to set them a high number, since forces provide more precise information. Should be used with DeePMD-kit v2.x |
+| **model_devi_v_trust_lo**  | Float | 1e10                                                         | Lower bound of virial for the selection. Should be used with DeePMD-kit v2.x |
 | **model_devi_v_trust_hi**  | Float | 1e10                                                         | Upper bound of virial for the selection. Should be used with DeePMD-kit v2.x |
 | model_devi_adapt_trust_lo  | Boolean | False | Adaptively determines the lower trust levels of force and virial. This option should be used together with `model_devi_numb_candi_f` and `model_devi_numb_candi_v` |
 | model_devi_numb_candi_f  | Int | 10 | When `model_devi_adapt_trust_lo` is True, selected this number of frames with largest but lower than `model_devi_f_trust_hi` force model deviation as candidates  |
-| model_devi_numb_candi_v  | Int | 10 | When `model_devi_adapt_trust_lo` is True, selected this number of frames with largest but lower than `model_devi_v_trust_hi` force model deviation as candidates  |
+| model_devi_numb_candi_v  | Int | 0 | When `model_devi_adapt_trust_lo` is True, selected this number of frames with largest but lower than `model_devi_v_trust_hi` force model deviation as candidates  |
 | **model_devi_clean_traj**  | Boolean | true                                                         | Deciding whether to clean traj folders in MD since they are too large. |
 | **model_devi_nopbc**  | Boolean | False                                                         | Assume open boundary condition in MD simulations. |
 | model_devi_activation_func | List of list of string | [["tanh","tanh"],["tanh","gelu"],["gelu","tanh"],["gelu","gelu"]]	| Set activation functions for models, length of the List should be the same as `numb_models`, and two elements in the list of string respectively assign activation functions to the embedding and fitting nets within each model. *Backward compatibility*: the orginal "List of String" format is still supported, where embedding and fitting nets of one model use the same activation function, and the length of the List should be the same as `numb_models`|
