@@ -1389,16 +1389,20 @@ def _select_by_model_devi_adaptive_trust_low(
         modd_system_task: List[str],
         f_trust_hi : float,
         numb_candi_f : int,
+        perc_candi_f : float,
         v_trust_hi : float,
         numb_candi_v : int,
+        perc_candi_v : float,
         model_devi_skip : int = 0
 ):
     """
     modd_system_task    model deviation tasks belonging to one system
     f_trust_hi
     numb_candi_f        number of candidate due to the f model deviation
+    perc_candi_f        percentage of candidate due to the f model deviation
     v_trust_hi
     numb_candi_v        number of candidate due to the v model deviation
+    perc_candi_v        percentage of candidate due to the v model deviation
     model_devi_skip
     
     returns
@@ -1439,6 +1443,10 @@ def _select_by_model_devi_adaptive_trust_low(
     # sort
     coll_v.sort()
     coll_f.sort()
+    assert(len(coll_v) == len(coll_f))
+    # calcuate numbers
+    numb_candi_v = max(numb_candi_v, int(perc_candi_v * 0.01 * len(coll_v)))
+    numb_candi_f = max(numb_candi_f, int(perc_candi_f * 0.01 * len(coll_f)))
     # adjust number of candidate
     if len(coll_v) < numb_candi_v:
         numb_candi_v = len(coll_v)
@@ -1528,11 +1536,13 @@ def _make_fp_vasp_inner (modd_path,
         else:
             numb_candi_f = jdata.get('model_devi_numb_candi_f', 10)
             numb_candi_v = jdata.get('model_devi_numb_candi_v', 0)
+            perc_candi_f = jdata.get('model_devi_perc_candi_f', 0.)
+            perc_candi_v = jdata.get('model_devi_perc_candi_v', 0.)
             fp_rest_accurate, fp_candidate, fp_rest_failed, counter, f_trust_lo_ad, v_trust_lo_ad \
                 =  _select_by_model_devi_adaptive_trust_low(
                     modd_system_task,
-                    f_trust_hi, numb_candi_f,
-                    v_trust_hi, numb_candi_v,
+                    f_trust_hi, numb_candi_f, perc_candi_f,
+                    v_trust_hi, numb_candi_v, perc_candi_v,
                     model_devi_skip = model_devi_skip)
             dlog.info("system {0:s} {1:9s} : f_trust_lo {2:6.3f}   v_trust_lo {3:6.3f}".format(ss, 'adapted', f_trust_lo_ad, v_trust_lo_ad))
 
