@@ -40,7 +40,7 @@ from dpgen.generator.lib.utils import log_iter
 from dpgen.generator.lib.utils import record_iter
 from dpgen.generator.lib.utils import log_task
 from dpgen.generator.lib.utils import symlink_user_forward_files
-from dpgen.generator.lib.lammps import make_lammps_input
+from dpgen.generator.lib.lammps import make_lammps_input, get_dumped_forces
 from dpgen.generator.lib.vasp import write_incar_dict
 from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
 from dpgen.generator.lib.vasp import incar_upper
@@ -1323,6 +1323,24 @@ def check_bad_box(conf_name,
     return is_bad
 
 
+def _read_model_devi_file(
+        task_path : str,
+        model_devi_f_avg_relative : bool = False
+):
+    model_devi = np.loadtxt(os.path.join(task_path, 'model_devi.out'))
+    if model_devi_f_avg_relative :
+        trajs = glob.glob(os.path.join(task_path, 'traj', '*.lammpstrj'))
+        all_f = []
+        for ii in trajs:
+            all_f.append(get_dumped_forces(ii))
+        all_f = np.array(all_f)
+        all_f = all_f.reshape([-1,3])
+        avg_f = np.sqrt(np.average(np.sum(np.square(all_f), axis = 1)))
+        model_devi[:,4:7] = model_devi[:,4:7] / avg_f
+        np.savetxt(os.path.join(task_path, 'model_devi_avgf.out'), model_devi, fmt='%16.6e')
+    return model_devi
+
+
 def _select_by_model_devi_standard(
         modd_system_task: List[str],
         f_trust_lo : float,
@@ -1331,6 +1349,7 @@ def _select_by_model_devi_standard(
         v_trust_hi : float,
         cluster_cutoff : float, 
         model_devi_skip : int = 0,
+        model_devi_f_avg_relative : bool = False,
         detailed_report_make_fp : bool = True,
 ):
     fp_candidate = []
@@ -1345,7 +1364,7 @@ def _select_by_model_devi_standard(
     for tt in modd_system_task :
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            all_conf = np.loadtxt(os.path.join(tt, 'model_devi.out'))
+            all_conf = _read_model_devi_file(tt, model_devi_f_avg_relative)
             for ii in range(all_conf.shape[0]) :
                 if all_conf[ii][0] < model_devi_skip :
                     continue
@@ -1393,7 +1412,8 @@ def _select_by_model_devi_adaptive_trust_low(
         v_trust_hi : float,
         numb_candi_v : int,
         perc_candi_v : float,
-        model_devi_skip : int = 0
+        model_devi_skip : int = 0,
+        model_devi_f_avg_relative : bool = False,
 ):
     """
     modd_system_task    model deviation tasks belonging to one system
@@ -1424,6 +1444,7 @@ def _select_by_model_devi_adaptive_trust_low(
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             model_devi = np.loadtxt(os.path.join(tt, 'model_devi.out'))
+            model_devi = _read_model_devi_file(tt, model_devi_f_avg_relative)
             for ii in range(model_devi.shape[0]) :
                 if model_devi[ii][0] < model_devi_skip :
                     continue
@@ -1512,6 +1533,7 @@ def _make_fp_vasp_inner (modd_path,
     fp_tasks = []
     cluster_cutoff = jdata['cluster_cutoff'] if jdata.get('use_clusters', False) else None
     model_devi_adapt_trust_lo = jdata.get('model_devi_adapt_trust_lo', False)
+    model_devi_f_avg_relative = jdata.get('model_devi_f_avg_relative', False)
     # skip save *.out if detailed_report_make_fp is False, default is True
     detailed_report_make_fp = jdata.get("detailed_report_make_fp", True)
     # skip bad box criteria
@@ -1532,7 +1554,9 @@ def _make_fp_vasp_inner (modd_path,
                     v_trust_lo, v_trust_hi,
                     cluster_cutoff, 
                     model_devi_skip,
-                    detailed_report_make_fp = detailed_report_make_fp)
+                    model_devi_f_avg_relative = model_devi_f_avg_relative,
+                    detailed_report_make_fp = detailed_report_make_fp,
+                )
         else:
             numb_candi_f = jdata.get('model_devi_numb_candi_f', 10)
             numb_candi_v = jdata.get('model_devi_numb_candi_v', 0)
@@ -1543,7 +1567,9 @@ def _make_fp_vasp_inner (modd_path,
                     modd_system_task,
                     f_trust_hi, numb_candi_f, perc_candi_f,
                     v_trust_hi, numb_candi_v, perc_candi_v,
-                    model_devi_skip = model_devi_skip)
+                    model_devi_skip = model_devi_skip,
+                    model_devi_f_avg_relative = model_devi_f_avg_relative,
+                )
             dlog.info("system {0:s} {1:9s} : f_trust_lo {2:6.3f}   v_trust_lo {3:6.3f}".format(ss, 'adapted', f_trust_lo_ad, v_trust_lo_ad))
 
         # print a report
