@@ -1205,7 +1205,7 @@ def run_model_devi (iter_index,
         if use_plm:
             forward_files += ['input.plumed']
            # backward_files += ['output.plumed']
-            backward_files += ['output.plumed','COLVAR','dump.0.xyz']
+            backward_files += ['output.plumed','COLVAR']
             if use_plm_path:
                 forward_files += ['plmpath.pdb']
     elif model_devi_engine == "gromacs":
