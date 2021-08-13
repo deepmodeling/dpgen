@@ -214,7 +214,7 @@ def make_train (iter_index,
     elif 'training_reuse_numb_steps' in jdata.keys():
         training_reuse_stop_batch = jdata['training_reuse_numb_steps']
     else:
-        training_reuse_stop_batch = 40000
+        training_reuse_stop_batch = 400000
         
     training_reuse_start_lr = jdata.get('training_reuse_start_lr', 1e-4)
     training_reuse_start_pref_e = jdata.get('training_reuse_start_pref_e', 0.1)
@@ -1105,8 +1105,7 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
     temps = cur_job.get("temps", [298.0])
 
     for ll in lambdas:
-        if ll > 1:
-            raise RuntimeError("lambda is larger than 1.0")
+        assert (ll >= 0.0 and ll <= 1.0), "Lambda should be in [0,1]"
 
     if nsteps is None:
         raise RuntimeError("nsteps is None, you should set nsteps in model_devi_jobs!")
