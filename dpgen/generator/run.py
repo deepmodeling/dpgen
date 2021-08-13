@@ -1253,7 +1253,7 @@ def run_model_devi (iter_index,
         command += "&& echo -e \"%s\n%s\n\" | %s trjconv -s %s -f %s.trr -o %s -pbc mol -ur compact -center" % (grp_name, grp_name, model_devi_exec, ref_filename, deffnm, traj_filename)
         command += "&& if [ ! -d traj ]; then \n mkdir traj; fi\n"
         command += f"python -c \"import dpdata;system = dpdata.System('{traj_filename}', fmt='gromacs/gro'); [system.to_gromacs_gro('traj/%d.gromacstrj' % (i * {trj_freq}), frame_idx=i) for i in range(system.get_nframes())]; system.to_deepmd_npy('traj_deepmd')\""
-        command += "&& dp model-devi -m ../graph.000.pb ../graph.001.pb ../graph.002.pb ../graph.003.pb -s traj_deepmd -o model_devi.out"
+        command += f"&& dp model-devi -m ../graph.000.pb ../graph.001.pb ../graph.002.pb ../graph.003.pb -s traj_deepmd -o model_devi.out -f {trj_freq}"
         commands = [command]
 
         forward_files = [mdp_filename, topol_filename, conf_filename, index_filename,  ref_filename, "input.json", "job.json" ]
