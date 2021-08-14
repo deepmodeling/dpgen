@@ -91,7 +91,7 @@ class TestGromacsModelDeviEngine(unittest.TestCase):
     def test_make_model_devi_gromacs(self):
         flag = make_model_devi(iter_index=0,
                                jdata=self.jdata,
-                               mdata={})
+                               mdata={"deepmd_version": "2.0"})
         self.assertTrue(flag)
         self.assertTrue(os.path.exists(self.model_devi_path))
         self.assertTrue(os.path.exists(self.model_devi_task_path))
@@ -108,7 +108,7 @@ class TestGromacsModelDeviEngine(unittest.TestCase):
         
      
     def tearDown(self):
-        #pass
+        # pass
         shutil.rmtree(self.iter_path)
 if __name__ == '__main__':
     unittest.main()
