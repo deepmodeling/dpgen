@@ -1237,6 +1237,7 @@ def run_model_devi (iter_index,
         topol_filename = gromacs_settings.get("topol_filename", "processed.top")
         conf_filename = gromacs_settings.get("conf_filename", "conf.gro")
         index_filename = gromacs_settings.get("index_filename", "index.raw")
+        type_filename = gromacs_settings.get("type_filename", "type.raw")
         # Initial reference to process pbc condition.
         # Default is em.tpr
         ref_filename = gromacs_settings.get("ref_filename", "em.tpr")
@@ -1255,7 +1256,7 @@ def run_model_devi (iter_index,
         command += f"&& dp model-devi -m ../graph.000.pb ../graph.001.pb ../graph.002.pb ../graph.003.pb -s traj_deepmd -o model_devi.out -f {trj_freq}"
         commands = [command]
 
-        forward_files = [mdp_filename, topol_filename, conf_filename, index_filename,  ref_filename, "input.json", "job.json" ]
+        forward_files = [mdp_filename, topol_filename, conf_filename, index_filename,  ref_filename, type_filename, "input.json", "job.json" ]
         backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , traj_filename, 'model_devi.out', "traj", "traj_deepmd" ]
 
 
