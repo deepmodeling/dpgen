@@ -1,0 +1,25 @@
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Zhang"
+    given-names: "Yuzhi"
+  - family-names: "Wang"
+    given-names: "Haidi"
+  - family-names: "Chen"
+    given-names: "Weijie"
+  - family-names: "Zeng"
+    given-names: "Jinzhe"
+  - family-names: "Zhang"
+    given-names: "Linfeng"
+  - family-names: "Wang"
+    given-names: "Han"
+  - family-names: "E"
+    given-names: "Weinan"
+  doi: "10.1016/j.cpc.2020.107206"
+  journal: "Computer Physics Communications"
+  month: 8
+  start: 107206 # First page number
+  end: 107206 # Last page number
+  title: "DP-GEN: A concurrent learning platform for the generation of reliable deep learning based potential energy models"
+  volume: 253
+  year: 2020
