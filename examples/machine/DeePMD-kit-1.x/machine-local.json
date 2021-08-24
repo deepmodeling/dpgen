@@ -1,0 +1,42 @@
+{
+    "_comment":		"training on localhost ",
+    "_comment" : "This is for DeePMD-kit 1.*",
+    "train_command" : "/home/wanghan/local/deepmd/1.*/dp",
+    "train_machine":	{
+	"batch":	"shell",
+	"work_path" :	"/home/wanghan/tmp/subs/"
+    },	
+    "train_resources":	{
+	"envs":		{
+	}
+    },    
+
+
+    "_comment":		"model_devi on localhost ",
+    "model_devi_command":	"/home/wanghan/local/bin/lmp_mpi_010",
+    "model_devi_group_size": 5,
+    "model_devi_machine":	{
+	"batch":	"shell",
+	"_comment" : "If lazy_local is true, calculations are done directly in current folders.",
+	"lazy_local" : true
+    },	
+    "model_devi_resources":	{
+    },    
+
+    "_comment":		"fp on localhost ",
+    "fp_command":	"/home/wanghan/local/bin/vasp_std",
+    "fp_group_size":	2,
+    "fp_machine":	{
+	"batch":	"shell",
+	"work_path" :	"/home/wanghan/tmp/subs/",
+	"_comment" :	"that's all"
+    },	
+    "fp_resources":	{
+	"module_list":  ["mpi"],
+	"task_per_node":4,
+	"with_mpi":	true,
+	"_comment":	"that's all"
+    },
+
+    "_comment":		" that's all "
+}

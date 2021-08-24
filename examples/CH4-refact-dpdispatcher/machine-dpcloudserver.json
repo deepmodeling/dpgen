@@ -1,0 +1,126 @@
+{
+  "api_version": "1.0",
+  "train" :[
+    {
+      "command": "dp",
+      "machine": {
+        "batch_type": "DpCloudServer",
+        "context_type": "DpCloudServerContext",
+        "local_root" : "./",
+        "remote_profile":{
+            "username": "yfb222333",
+            "password": "",
+            "input_data":{
+                "job_type": "indicate",
+                "log_file": "dp_cloud_server.log",
+                "command": null,
+                "backward_files": [],
+                "job_name": "dpgen_20210630_job",
+                "machine": {
+                    "platform": "ali",
+                    "resources": {
+                        "gpu_type": "1 * NVIDIA P100",
+                        "cpu_num": 4,
+                        "mem_limit": 30,
+                        "disk_size": 100,
+                        "region": "cn-beijing",
+                        "time_limit": "2:00:00",
+                        "image_name": "yfb-deepmd-kit-1.2.4-cuda10"
+                        }
+                    },
+                "job_resources": null
+            }
+        }
+      },
+      "resources": {
+        "number_node": 1,
+        "cpu_per_node": 4,
+        "gpu_per_node": 1,
+        "queue_name": "GPU",
+        "group_size": 1
+      }
+    }],
+  "model_devi":
+    [{
+      "command": "lmp -i input.lammps -v restart 0",
+      "machine": {
+        "batch_type": "DpCloudServer",
+        "context_type": "DpCloudServerContext",
+        "local_root" : "./",
+        "remote_profile":{
+            "username": "yfb222333",
+            "password": "",
+            "input_data":{
+                "job_type": "indicate",
+                "log_file": "dp_cloud_server.log",
+                "command": null,
+                "backward_files": [],
+                "job_name": "dpgen_20210630_job",
+                "machine": {
+                    "platform": "ali",
+                    "resources": {
+                        "gpu_type": "1 * NVIDIA P100",
+                        "cpu_num": 4,
+                        "mem_limit": 30,
+                        "disk_size": 100,
+                        "region": "cn-beijing",
+                        "time_limit": "2:00:00",
+                        "image_name": "yfb-deepmd-kit-1.2.4-cuda10"
+                        }
+                    },
+                "job_resources": null
+            }
+        }
+      },
+      "resources": {
+        "number_node": 1,
+        "cpu_per_node": 4,
+        "gpu_per_node": 1,
+        "queue_name": "GPU",
+        "group_size": 5
+      }
+    }],
+  "fp":
+    [{
+      "command": "mpirun -n 16 vasp_std",
+      "machine": {
+        "batch_type": "DpCloudServer",
+        "context_type": "DpCloudServerContext",
+        "local_root" : "./",
+        "remote_profile":{
+            "username": "yfb222333",
+            "password": "",
+            "input_data":{
+                "job_type": "indicate",
+                "log_file": "dp_cloud_server.log",
+                "command": null,
+                "backward_files": [],
+                "job_name": "dpgen_20210630_job",
+                "machine": {
+                    "platform": "ali",
+                    "resources": {
+                        "cpu_num": 32,
+                        "mem_limit": 64,
+                        "disk_size": 200,
+                        "region": "cn-beijing",
+                        "time_limit": "2:00:00",
+                        "image_name": "deepmd-vasp-cloudserver-v8"
+                        }
+                    },
+                "job_resources": null
+            }
+        }
+      },
+      "resources": {
+        "number_node": 1,
+        "cpu_per_node": 32,
+        "gpu_per_node": 0,
+        "queue_name": "CPU",
+        "group_size": 5,
+	"source_list": [
+	    "/opt/intel/oneapi/setvars.sh"
+	]
+      }
+    }
+  ]
+}

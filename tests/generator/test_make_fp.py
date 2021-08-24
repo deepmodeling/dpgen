@@ -13,6 +13,7 @@ from .context import param_file
 from .context import param_old_file
 from .context import param_pwscf_file
 from .context import param_pwscf_old_file
+from .context import param_abacus_post_file
 from .context import param_siesta_file
 from .context import param_gaussian_file
 from .context import param_cp2k_file
@@ -148,7 +149,25 @@ IN.PSP1 = C.SG15.PBE.UPF\n\
 IN.PSP2 = H.SG15.PBE.UPF\n\
 IN.PSP3 = N.SG15.PBE.UPF\n";
 
+abacus_input_ref = "INPUT_PARAMETERS\n\
+ntype 2\n\
+pseudo_dir ./\n\
+ecutwfc 80.000000\n\
+mixing_type pulay\n\
+mixing_beta 0.400000\n\
+symmetry 1\n\
+nbands 5.000000\n\
+nspin 1\n\
+ks_solver cg\n\
+smearing fixed\n\
+sigma 0.001000\n\
+force 1\n\
+stress 1\n"
 
+abacus_kpt_ref = "K_POINTS\n\
+0\n\
+Gamma\n\
+1 1 1 0 0 0\n"
 
 
 def _box2lmpbox(orig, box) :
@@ -382,6 +401,26 @@ def _check_pwscf_input_head(testCase, idx) :
         lines = lines[:idx]
         testCase.assertEqual(('\n'.join(lines)).strip(), pwscf_input_ref.strip())
 
+def _check_abacus_input(testCase, idx) :
+    fp_path = os.path.join('iter.%06d' % idx, '02.fp')
+    tasks = glob.glob(os.path.join(fp_path, 'task.*'))
+    for ii in tasks :
+        ifile = os.path.join(ii, 'INPUT')
+        testCase.assertTrue(os.path.isfile(ifile))
+        with open(ifile) as fp:
+            lines = fp.read().split('\n')
+        testCase.assertEqual(('\n'.join(lines)).strip(), abacus_input_ref.strip())
+
+def _check_abacus_kpt(testCase, idx) :
+    fp_path = os.path.join('iter.%06d' % idx, '02.fp')
+    tasks = glob.glob(os.path.join(fp_path, 'task.*'))
+    for ii in tasks :
+        ifile = os.path.join(ii, 'KPT')
+        testCase.assertTrue(os.path.isfile(ifile))
+        with open(ifile) as fp:
+            lines = fp.read().split('\n')
+        testCase.assertEqual(('\n'.join(lines)).strip(), abacus_kpt_ref.strip())
+
 def _check_siesta_input_head(testCase, idx) :
     fp_path = os.path.join('iter.%06d' % idx, '02.fp')
     tasks = glob.glob(os.path.join(fp_path, 'task.*'))
@@ -442,8 +481,18 @@ def _check_pwmat_input(testCase, idx):
             testCase.assertEqual(lines.strip(), pwmat_input_ref.strip())
         os.chdir(cwd)
 
+def _check_symlink_user_forward_files(testCase, idx, file):
+    fp_path = os.path.join('iter.%06d' % idx, '02.fp')
+    tasks = glob.glob(os.path.join(fp_path, 'task.*'))
+    cwd = os.getcwd()
+    for ii in tasks:
+        os.chdir(ii)
+        testCase.assertEqual(os.path.isfile("vdw_kernel.bindat"), True)
+        os.chdir(cwd)
+
 class TestMakeFPPwscf(unittest.TestCase):
     def test_make_fp_pwscf(self):
+        setUpModule()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_pwscf_file, 'r') as fp :
@@ -470,6 +519,7 @@ class TestMakeFPPwscf(unittest.TestCase):
         shutil.rmtree('iter.000000')
 
     def test_make_fp_pwscf_old(self):
+        setUpModule()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_pwscf_old_file, 'r') as fp :
@@ -495,8 +545,38 @@ class TestMakeFPPwscf(unittest.TestCase):
         _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
 
+class TestMakeFPABACUS(unittest.TestCase):
+    def test_make_fp_abacus(self):
+        setUpModule()
+        if os.path.isdir('iter.000000') :
+            shutil.rmtree('iter.000000')
+        with open (param_abacus_post_file, 'r') as fp :
+            jdata = json.load (fp)
+        with open (machine_file, 'r') as fp:
+            mdata = json.load (fp)
+        md_descript = []
+        nsys = 2
+        nmd = 3
+        n_frame = 10
+        for ii in range(nsys) :
+            tmp = []
+            for jj in range(nmd) :
+                tmp.append(np.arange(0, 0.29, 0.29/10))
+            md_descript.append(tmp)
+        atom_types = [0, 0, 0, 0, 1]
+        type_map = jdata['type_map']
+        _make_fake_md(0, md_descript, atom_types, type_map)
+        make_fp(0, jdata, {})
+        _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
+        _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
+        _check_abacus_input(self, 0)
+        _check_abacus_kpt(self, 0)
+        _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
+        shutil.rmtree('iter.000000')
+
 class TestMakeFPSIESTA(unittest.TestCase):
     def test_make_fp_siesta(self):
+        setUpModule()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_siesta_file, 'r') as fp :
@@ -524,6 +604,7 @@ class TestMakeFPSIESTA(unittest.TestCase):
 
 class TestMakeFPVasp(unittest.TestCase):
     def test_make_fp_vasp(self):
+        setUpModule()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_file, 'r') as fp :
@@ -542,7 +623,7 @@ class TestMakeFPVasp(unittest.TestCase):
         atom_types = [0, 1, 0, 1]
         type_map = jdata['type_map']
         _make_fake_md(0, md_descript, atom_types, type_map)
-        make_fp(0, jdata, {})
+        make_fp(0, jdata, {"fp_user_forward_files" : ["vdw_kernel.bindat"] })
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
         # _check_incar_exists(self, 0)
@@ -554,6 +635,7 @@ class TestMakeFPVasp(unittest.TestCase):
         shutil.rmtree('iter.000000')
 
     def test_make_fp_vasp_old(self):
+        setUpModule()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_old_file, 'r') as fp :
@@ -616,6 +698,7 @@ class TestMakeFPVasp(unittest.TestCase):
 
     def test_make_fp_vasp_from_incar(self):
         ## Verify if user chooses to diy VASP INCAR totally.
+        setUpModule()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_diy_file, 'r') as fp :
@@ -649,6 +732,7 @@ class TestMakeFPVasp(unittest.TestCase):
 
     def test_make_fp_vasp_ele_temp(self):
         ## Verify if user chooses to diy VASP INCAR totally.
+        setUpModule()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_diy_file, 'r') as fp :
@@ -680,10 +764,11 @@ class TestMakeFPVasp(unittest.TestCase):
         # checked elsewhere
         # _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
-
+    
 
 class TestMakeFPGaussian(unittest.TestCase):
     def make_fp_gaussian(self, multiplicity="auto"):
+        setUpModule()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_gaussian_file, 'r') as fp :
@@ -734,6 +819,7 @@ class TestMakeFPGaussian(unittest.TestCase):
 
 class TestMakeFPCP2K(unittest.TestCase):
     def test_make_fp_cp2k(self):
+        setUpModule()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_cp2k_file, 'r') as fp :
@@ -761,6 +847,7 @@ class TestMakeFPCP2K(unittest.TestCase):
         _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
     def test_make_fp_cp2k_exinput(self):
+        setUpModule()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_cp2k_file_exinput, 'r') as fp :
@@ -792,6 +879,7 @@ class TestMakeFPCP2K(unittest.TestCase):
 
 class TestMakeFPPWmat(unittest.TestCase):
     def test_make_fp_pwmat(self):
+        setUpModule()
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_pwmat_file, 'r') as fp :

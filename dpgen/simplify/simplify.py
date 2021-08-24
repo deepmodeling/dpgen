@@ -22,12 +22,10 @@ import numpy as np
 from dpgen import dlog
 from dpgen import SHORT_CMD
 from dpgen.util import sepline
-from dpgen.remote.decide_machine import decide_train_machine
 from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher
 from dpgen.generator.run import make_train, run_train, post_train, run_fp, post_fp, fp_name, model_devi_name, train_name, train_task_fmt, sys_link_fp_vasp_pp, make_fp_vasp_incar, make_fp_vasp_kp, make_fp_vasp_cp_cvasp, data_system_fmt, model_devi_task_fmt, fp_task_fmt
 # TODO: maybe the following functions can be moved to dpgen.util
 from dpgen.generator.lib.utils import log_iter, make_iter_name, create_path, record_iter
-from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
 from dpgen.generator.lib.gaussian import make_gaussian_input
 
 
@@ -603,7 +601,8 @@ def run_iter(param_file, machine_file):
             listener = logging.handlers.QueueListener(que, smtp_handler)
             dlog.addHandler(queue_handler)
             listener.start()
-
+            
+    mdata = convert_mdata(mdata)
     max_tasks = 10000
     numb_task = 9
     record = "record.dpgen"
@@ -638,7 +637,6 @@ def run_iter(param_file, machine_file):
                 make_train(ii, jdata, mdata)
             elif jj == 1:
                 log_iter("run_train", ii, jj)
-                mdata = decide_train_machine(mdata)
                 #disp = make_dispatcher(mdata['train_machine'])
                 run_train(ii, jdata, mdata)
             elif jj == 2:
@@ -651,7 +649,6 @@ def run_iter(param_file, machine_file):
                     break
             elif jj == 4:
                 log_iter("run_model_devi", ii, jj)
-                mdata = decide_model_devi_machine(mdata)
                 #disp = make_dispatcher(mdata['model_devi_machine'])
                 run_model_devi(ii, jdata, mdata)
             elif jj == 5:
@@ -665,7 +662,6 @@ def run_iter(param_file, machine_file):
                 if jdata.get("labeled", False):
                     dlog.info("already have labeled data, skip run_fp")
                 else:
-                    mdata = decide_fp_machine(mdata)
                     #disp = make_dispatcher(mdata['fp_machine'])
                     run_fp(ii, jdata, mdata)
             elif jj == 8:

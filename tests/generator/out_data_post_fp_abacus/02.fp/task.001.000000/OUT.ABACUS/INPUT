@@ -1,0 +1,229 @@
+INPUT_PARAMETERS
+#Parameters (1.General)
+suffix              ABACUS #the name of main output directory
+latname             test #the name of lattice name
+atom_file           STRU #the filename of file containing atom positions
+kpoint_file         KPT #the name of file containing k points
+pseudo_dir          .// #the directory containing pseudo files
+pseudo_type         auto #the type pseudo files
+dft_functional      none #exchange correlation functional
+calculation         scf #test; scf; relax; nscf; ienvelope; istate;
+ntype               2 #atom species number
+nspin               1 #1: single spin; 2: up and down spin;
+nbands              5 #number of bands
+nbands_istate       5 #number of bands around Fermi level for istate calulation
+symmetry            1 #turn symmetry on or off
+nelec               0 #input number of electrons
+
+#Parameters (2.PW)
+ecutwfc             80 ##energy cutoff for wave functions
+diago_cg_maxiter    50 #max iteration number for cg
+diago_cg_prec       1 #diago_cg_prec
+ethr                0.01 #threshold for eigenvalues is cg electron iterations
+dr2                 1e-09 #charge density error
+start_wfc           atomic #start wave functions are from 'atomic' or 'file'
+start_charge        atomic #start charge is from 'atomic' or file
+charge_extrap       atomic #atomic; first-order; second-order; dm:coefficients of SIA
+out_charge          0 #>0 output charge density for selected electron steps
+out_potential       0 #output realspace potential
+out_wf              0 #output wave functions
+out_dos             0 #output energy and dos
+out_band            0 #output energy and band structure
+nx                  0 #number of points along x axis for FFT grid
+ny                  0 #number of points along y axis for FFT grid
+nz                  0 #number of points along z axis for FFT grid
+
+#Parameters (3.Relaxation)
+ks_solver           cg #cg; david; lapack; genelpa; hpseps;
+niter               40 ##number of electron iterations
+vna                 0 #use the vna or not
+grid_speed          1 #1:normal 2:fast
+force_set           0 #output the force_set or not
+nstep               1 #number of ion iteration steps
+out_stru            0 #output the structure files after each ion step
+force_thr           0.001 #force threshold, unit: Ry/Bohr
+force_thr_ev        0.0257112 #force threshold, unit: eV/Angstrom
+force_thr_ev2       0 #force invalid threshold, unit: eV/Angstrom
+stress_thr          0.01 #stress threshold
+press1              0 #target pressure, unit: KBar
+press2              0 #target pressure, unit: KBar
+press3              0 #target pressure, unit: KBar
+bfgs_w1             0.01 #wolfe condition 1 for bfgs
+bfgs_w2             0.5 #wolfe condition 2 for bfgs
+trust_radius_max    0.8 #maximal trust radius, unit: Bohr
+trust_radius_min    1e-05 #minimal trust radius, unit: Bohr
+trust_radius_ini    0.5 #initial trust radius, unit: Bohr
+stress              1 #calculate the stress or not
+fixed_axes          None #which axes are fixed
+move_method         cg #bfgs; sd; cg; cg_bfgs;
+out_level           ie #ie(for electrons); i(for ions);
+out_dm              0 #>0 output density matrix
+
+#Parameters (4.LCAO)
+basis_type          pw #PW; LCAO in pw; LCAO
+search_radius       -1 #input search radius (Bohr)
+search_pbc          1 #input periodic boundary condition
+lcao_ecut           0 #energy cutoff for LCAO
+lcao_dk             0.01 #delta k for 1D integration in LCAO
+lcao_dr             0.01 #delta r for 1D integration in LCAO
+lcao_rmax           30 #max R for 1D two-center integration table
+out_hs              0 #output H and S matrix
+out_lowf            0 #ouput LCAO wave functions
+bx                  1 #division of an element grid in FFT grid along x
+by                  1 #division of an element grid in FFT grid along y
+bz                  1 #division of an element grid in FFT grid along z
+
+#Parameters (5.Smearing)
+smearing            fixed #type of smearing: gauss; fd; fixed; mp; mp2
+sigma               0.001 #energy range for smearing
+
+#Parameters (6.Charge Mixing)
+mixing_type         pulay #plain; kerker; pulay; pulay-kerker
+mixing_beta         0.4 #mixing parameter: 0 means no new charge
+mixing_ndim         8 #mixing dimension in pulay
+mixing_gg0          0 #mixing parameter in kerker
+
+#Parameters (7.DOS)
+dos_emin_ev         -15 #minimal range for dos
+dos_emax_ev         15 #maximal range for dos
+dos_edelta_ev       0.01 #delta energy for dos
+dos_sigma           0.07 #gauss b coefficeinet(default=0.07)
+
+#Parameters (8.Technique)
+gamma_only          0 #gamma only
+diago_proc          4 #number of proc used to diago
+npool               1 #number of pools for k points, pw only
+sparse_matrix       0 #use sparse matrix, in DMM
+atom_distribution   0 #distribute atoms, in DMM
+mem_saver           0 #memory saver for many k points used
+printe              100 #print band energy for selectively ionic steps
+
+#Parameters (9.SIAO)
+selinv_npole        40 #number of selected poles
+selinv_temp         2000 #temperature for Fermi-Dirac distribution
+selinv_gap          0 #supposed gap in the calculation
+selinv_deltae       2 #expected energy range
+selinv_mu           -1 #chosen mu as Fermi energy
+selinv_threshold    0.001 #threshold for calculated electron number
+selinv_niter        50 #max number of steps to update mu
+
+#Parameters (10.Molecular dynamics)
+md_mdtype           1 #choose ensemble
+md_dt               -1 #time step
+md_nresn            3 #parameter during integrater
+md_nyosh            3 #parameter during integrater
+md_qmass            1 #mass of thermostat
+md_tfirst           -1 #temperature first
+md_tlast            -1 #temperature last
+md_dumpmdfred       1 #The period to dump MD information for monitoring and restarting MD
+md_mdoutpath        mdoutput #output path of md
+md_domsd            0 #whether compute <r(t)-r(0)>
+md_domsdatom        0 #whether compute msd for each atom
+md_rstmd            0 #whether restart
+md_fixtemperature   1 #period to change temperature
+md_ediff            0.0001 #parameter for constraining total energy change
+md_ediffg           0.001 #parameter for constraining max force change
+md_msdstarttime     1 #choose which step that msd be calculated
+
+#Parameters (11.Efield)
+efield              0 #add electric field
+edir                1 #add electric field
+emaxpos             0.5 #maximal position of efield [0,1)
+eopreg              0.1 #where sawlike potential decrease
+eamp                0.001 #amplitute of the efield, unit is a.u.
+eamp_v              0.05144 #amplitute of the efield, unit is V/A
+
+#Parameters (12.Bfield)
+bfield              0 #add magnetic field
+bfield_teslax       0 #magnetic field strength
+bfield_teslay       0 #magnetic field strength
+bfield_teslaz       0 #magnetic field strength
+bfield_gauge_x      0 #magnetic field gauge origin
+bfield_gauge_y      0 #magnetic field gauge origin
+bfield_gauge_z      0 #magnetic field gauge origin
+
+#Parameters (13.Test)
+out_alllog          0 #output information for each processor, when parallel
+nurse               0 #for coders
+colour              0 #for coders, make their live colourful
+t_in_h              1 #calculate the kinetic energy or not
+vl_in_h             1 #calculate the local potential or not
+vnl_in_h            1 #calculate the nonlocal potential or not
+zeeman_in_h         1 #calculate the zeeman term or not
+test_force          0 #test the force
+test_stress         0 #test the force
+
+#Parameters (14.Other Methods)
+mlwf_flag           0 #turn MLWF on or off
+opt_epsilon2        0 #calculate the dielectic function
+opt_nbands          0 #number of bands for optical calculation
+
+#Parameters (15.VdW Correction)
+vdw_method          none #the method of calculating vdw (none ; d2 ; d3_0 ; d3_bj
+vdw_s6              default #scale parameter of d2/d3_0/d3_bj
+vdw_s8              default #scale parameter of d3_0/d3_bj
+vdw_a1              default #damping parameter of d3_0/d3_bj
+vdw_a2              default #damping parameter of d3_bj
+vdw_d               20 #damping parameter of d2
+vdw_abc             0 #third-order term?
+vdw_C6_file         default #filename of C6
+vdw_C6_unit         Jnm6/mol #unit of C6, Jnm6/mol or eVA6
+vdw_R0_file         default #filename of R0
+vdw_R0_unit         A #unit of R0, A or Bohr
+vdw_model           radius #expression model of periodic structure, radius or period
+vdw_radius          default #radius cutoff for periodic structure
+vdw_radius_unit     Bohr #unit of radius cutoff for periodic structure
+vdw_cn_thr          40 #radius cutoff for cn
+vdw_cn_thr_unit     Bohr #unit of cn_thr, Bohr or Angstrom
+vdw_period          3 3 3 #periods of periodic structure
+
+#Parameters (16.spectrum)
+spectral_type       None #the type of the calculated spectrum
+spectral_method     0 #0: tddft(linear response)
+kernel_type         rpa #the kernel type: rpa, tdlda ...
+eels_method         0 #0: hilbert_transform method; 1: standard method
+absorption_method   0 #0: vasp's method  1: pwscf's method
+system              bulk #the calculate system
+eta                 0.05 #eta(Ry)
+domega              0.01 #domega(Ry)
+nomega              300 #nomega
+ecut_chi            1 #the dimension of chi matrix
+q_start             0.1   0.1   0.1  #the position of the first q point in direct coordinate
+q_direction         1   0   0  #the q direction
+nq                  1 #the total number of qpoints for calculation
+out_epsilon         1 #output epsilon or not
+out_chi             0 #output chi or not
+out_chi0            0 #output chi0 or not
+fermi_level         0 #the change of the fermi_level(Ry)
+coulomb_cutoff      0 # turn on the coulomb_cutoff or not
+kmesh_interpolation 0 #calculting <i,0|j,R>
+qcar                0   0   0  #(unit: 2PI/lat0)
+ocp                 0 #change occupation or not
+ocp_n               0 #number of occupation
+lcao_box            10   10   10  #the scale for searching the existence of the overlap <i,0|j,R>
+ mulliken           0 # mulliken  charge or not
+intrasmear          0 #Eta
+shift               0 #shift
+metalcalc           0 #metal or not
+eps_degauss         0.01 #degauss in calculating epsilon0
+noncolin            0 #using non-collinear-spin
+lspinorb            0 #consider the spin-orbit interaction
+starting_spin_angle 0 #starting_spin_angle
+
+#Parameters (17.tddft)
+tddft               0 #calculate tddft or not
+td_dr2              1e-09 #threshold for electronic iteration of tddft
+td_dt               0.02 #time of ion step
+td_force_dt         0.02 #time of force change
+val_elec_01         1 #val_elec_01
+val_elec_02         1 #val_elec_02
+val_elec_03         1 #val_elec_03
+vext                0 #add extern potential or not
+vext_dire           1 #extern potential direction
+
+#Parameters (18.berry_wannier)
+berry_phase         0 #calculate berry phase or not
+gdir                3 #calculate the polarization in the direction of the lattice vector
+towannier90         0 #use wannier90 code interface or not
+nnkpfile            seedname.nnkp #the wannier90 code nnkp file name
+wannier_spin        up #calculate spin in wannier90 code interface
