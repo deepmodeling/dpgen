@@ -21,7 +21,7 @@
 	"_comment":	"that's all"
     },
 
-    "lmp_command":	"/sharedext4/softwares/lammps/bin/lmp_serial",
+    "model_devi_command":	"/sharedext4/softwares/lammps/bin/lmp_serial",
     "model_devi_group_size":	1,
     "_comment":		"model_devi on localhost",
     "model_devi_machine":	{
