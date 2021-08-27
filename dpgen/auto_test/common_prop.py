@@ -13,9 +13,8 @@ from dpgen.auto_test.Surface import Surface
 from dpgen.auto_test.Vacancy import Vacancy
 from dpgen.auto_test.calculator import make_calculator
 from dpgen.dispatcher.Dispatcher import make_dispatcher
-from dpgen.remote.decide_machine import decide_fp_machine, decide_model_devi_machine
 from dpgen.dispatcher.Dispatcher import make_submission
-
+from dpgen.remote.decide_machine import convert_mdata
 lammps_task_type = ['deepmd', 'meam', 'eam_fs', 'eam_alloy']
 
 
@@ -150,9 +149,9 @@ def run_property(confs,
             inter_type = inter_param_prop['type']
             # vasp
             if inter_type == "vasp":
-                mdata = decide_fp_machine(mdata)
+                mdata = convert_mdata(mdata, ["fp"])
             elif inter_type in lammps_task_type:
-                mdata = decide_model_devi_machine(mdata)
+                mdata = convert_mdata(mdata, ["model_devi"])
             else:
                 raise RuntimeError("unknown task %s, something wrong" % inter_type)
 
