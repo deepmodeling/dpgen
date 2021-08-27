@@ -15,18 +15,23 @@ class PBS(Batch) :
         ret, stdin, stdout, stderr\
             = self.context.block_call ("qstat " + job_id)
         err_str = stderr.read().decode('utf-8')
+
         if (ret != 0) :
             if str("qstat: Unknown Job Id") in err_str or str("Job has finished") in err_str:
                 if self.check_finish_tag() :
                     return JobStatus.finished
                 else :
                     return JobStatus.terminated
+            elif ret == 35 :
+                if self.check_finish_tag() :
+                    return JobStatus.finished
+                else:
+                    return JobStatus.terminated
             else :
                 raise RuntimeError ("status command qstat fails to execute. erro info: %s return code %d"
                                     % (err_str, ret))
         status_line = stdout.read().decode('utf-8').split ('\n')[-2]
-        status_word = status_line.split ()[-2]        
-        # dlog.info (status_word)
+        status_word = status_line.split ()[-2]
         if      status_word in ["Q","H"] :
             return JobStatus.waiting
         elif    status_word in ["R"] :
@@ -38,11 +43,11 @@ class PBS(Batch) :
                 return JobStatus.terminated
         else :
             return JobStatus.unknown
-   
-    def do_submit(self, 
+
+    def do_submit(self,
                   job_dirs,
                   cmd,
-                  args = None, 
+                  args = None,
                   res = None,
                   outlog = 'log',
                   errlog = 'err'):
@@ -56,7 +61,7 @@ class PBS(Batch) :
         stdin, stdout, stderr = self.context.block_checkcall('cd %s && %s %s' % (self.context.remote_root, 'qsub', self.sub_script_name))
         subret = (stdout.readlines())
         job_id = subret[0].split()[0]
-        self.context.write_file(self.job_id_name, job_id)        
+        self.context.write_file(self.job_id_name, job_id)
 
     def default_resources(self, res_) :
         """
@@ -92,10 +97,9 @@ class PBS(Batch) :
         ret = ''
         ret += "#!/bin/bash -l\n"
         if res['numb_gpu'] == 0:
-            ret += '#PBS -l nodes=%d:ppn=%d\n' % (res['numb_node'], res['task_per_node'])
+            ret += '#PBS -l select=%d:ncpus=%d\n' % (res['numb_node'], res['task_per_node'])
         else :
-            ret += '#PBS -l nodes=%d:ppn=%d:gpus=%d\n' % (res['numb_node'], res['task_per_node'], res['numb_gpu'])
-        ret += '#PBS -l walltime=%s\n' % (res['time_limit'])
+            ret += '#PBS -l select=%d:ncpus=%d:ngpus=%d\n' % (res['numb_node'], res['task_per_node'], res['numb_gpu'])
         if res['mem_limit'] > 0 :
             ret += "#PBS -l mem=%dG \n" % res['mem_limit']
         ret += '#PBS -j oe\n'
@@ -127,7 +131,7 @@ class PBS(Batch) :
                     res['numb_node'] * res['task_per_node'], cmd, arg)
         else :
             ret = '%s %s' % (cmd, arg)
-        return ret        
+        return ret
 
     def _get_job_id(self) :
         if self.context.check_file_exists(self.job_id_name) :
