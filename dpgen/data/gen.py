@@ -534,6 +534,8 @@ def coll_vasp_md(jdata) :
                     #dlog.info("md_nstep", md_nstep)
                     if nforce == md_nstep :
                         valid_outcars.append(outcar)
+                    elif md_nstep == 0 and nforce == 1 :
+                        valid_outcars.append(outcar)
                     else:
                         dlog.info("WARNING : in directory %s nforce in OUTCAR is not equal to settings in INCAR"%(os.getcwd()))
         arg_cvt = " "
