@@ -28,6 +28,7 @@ import subprocess as sp
 import scipy.constants as pc
 from collections import Counter
 from distutils.version import LooseVersion
+from typing import List
 from numpy.linalg  import norm
 from dpgen import dlog
 from dpgen import SHORT_CMD
@@ -39,7 +40,7 @@ from dpgen.generator.lib.utils import log_iter
 from dpgen.generator.lib.utils import record_iter
 from dpgen.generator.lib.utils import log_task
 from dpgen.generator.lib.utils import symlink_user_forward_files
-from dpgen.generator.lib.lammps import make_lammps_input
+from dpgen.generator.lib.lammps import make_lammps_input, get_dumped_forces
 from dpgen.generator.lib.vasp import write_incar_dict
 from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
 from dpgen.generator.lib.vasp import incar_upper
@@ -1227,7 +1228,7 @@ def run_model_devi (iter_index,
         if use_plm:
             forward_files += ['input.plumed']
            # backward_files += ['output.plumed']
-            backward_files += ['output.plumed','COLVAR','dump.0.xyz']
+            backward_files += ['output.plumed','COLVAR']
             if use_plm_path:
                 forward_files += ['plmpath.pdb']
     elif model_devi_engine == "gromacs":
@@ -1356,11 +1357,190 @@ def check_bad_box(conf_name,
             raise RuntimeError('unknow key', key)
     return is_bad
 
+
+def _read_model_devi_file(
+        task_path : str,
+        model_devi_f_avg_relative : bool = False
+):
+    model_devi = np.loadtxt(os.path.join(task_path, 'model_devi.out'))
+    if model_devi_f_avg_relative :
+        trajs = glob.glob(os.path.join(task_path, 'traj', '*.lammpstrj'))
+        all_f = []
+        for ii in trajs:
+            all_f.append(get_dumped_forces(ii))
+        all_f = np.array(all_f)
+        all_f = all_f.reshape([-1,3])
+        avg_f = np.sqrt(np.average(np.sum(np.square(all_f), axis = 1)))
+        model_devi[:,4:7] = model_devi[:,4:7] / avg_f
+        np.savetxt(os.path.join(task_path, 'model_devi_avgf.out'), model_devi, fmt='%16.6e')
+    return model_devi
+
+
+def _select_by_model_devi_standard(
+        modd_system_task: List[str],
+        f_trust_lo : float,
+        f_trust_hi : float,
+        v_trust_lo : float,
+        v_trust_hi : float,
+        cluster_cutoff : float, 
+        model_devi_skip : int = 0,
+        model_devi_f_avg_relative : bool = False,
+        detailed_report_make_fp : bool = True,
+):
+    fp_candidate = []
+    if detailed_report_make_fp:
+        fp_rest_accurate = []
+        fp_rest_failed = []
+    cc = 0
+    counter = Counter()
+    counter['candidate'] = 0
+    counter['failed'] = 0
+    counter['accurate'] = 0
+    for tt in modd_system_task :
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            all_conf = _read_model_devi_file(tt, model_devi_f_avg_relative)
+            for ii in range(all_conf.shape[0]) :
+                if all_conf[ii][0] < model_devi_skip :
+                    continue
+                cc = int(all_conf[ii][0])
+                if cluster_cutoff is None:
+                    if (all_conf[ii][1] < v_trust_hi and all_conf[ii][1] >= v_trust_lo) or \
+                       (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] >= f_trust_lo) :
+                        fp_candidate.append([tt, cc])
+                        counter['candidate'] += 1
+                    elif (all_conf[ii][1] >= v_trust_hi ) or (all_conf[ii][4] >= f_trust_hi ):
+                        if detailed_report_make_fp:
+                            fp_rest_failed.append([tt, cc])
+                        counter['failed'] += 1
+                    elif (all_conf[ii][1] < v_trust_lo and all_conf[ii][4] < f_trust_lo ):
+                        if detailed_report_make_fp:
+                            fp_rest_accurate.append([tt, cc])
+                        counter['accurate'] += 1
+                    else :
+                        raise RuntimeError('md traj %s frame %d with f devi %f does not belong to either accurate, candidiate and failed, it should not happen' % (tt, ii, all_conf[ii][4]))
+                else:
+                    idx_candidate = np.where(np.logical_and(all_conf[ii][7:] < f_trust_hi, all_conf[ii][7:] >= f_trust_lo))[0]
+                    for jj in idx_candidate:
+                        fp_candidate.append([tt, cc, jj])
+                    counter['candidate'] += len(idx_candidate)
+                    idx_rest_accurate = np.where(all_conf[ii][7:] < f_trust_lo)[0]
+                    if detailed_report_make_fp:
+                        for jj in idx_rest_accurate:
+                            fp_rest_accurate.append([tt, cc, jj])
+                    counter['accurate'] += len(idx_rest_accurate)
+                    idx_rest_failed = np.where(all_conf[ii][7:] >= f_trust_hi)[0]
+                    if detailed_report_make_fp:
+                        for jj in idx_rest_failed:
+                            fp_rest_failed.append([tt, cc, jj])
+                    counter['failed'] += len(idx_rest_failed)
+    
+    return fp_rest_accurate, fp_candidate, fp_rest_failed, counter
+
+
+
+def _select_by_model_devi_adaptive_trust_low(
+        modd_system_task: List[str],
+        f_trust_hi : float,
+        numb_candi_f : int,
+        perc_candi_f : float,
+        v_trust_hi : float,
+        numb_candi_v : int,
+        perc_candi_v : float,
+        model_devi_skip : int = 0,
+        model_devi_f_avg_relative : bool = False,
+):
+    """
+    modd_system_task    model deviation tasks belonging to one system
+    f_trust_hi
+    numb_candi_f        number of candidate due to the f model deviation
+    perc_candi_f        percentage of candidate due to the f model deviation
+    v_trust_hi
+    numb_candi_v        number of candidate due to the v model deviation
+    perc_candi_v        percentage of candidate due to the v model deviation
+    model_devi_skip
+    
+    returns
+    accur               the accurate set
+    candi               the candidate set
+    failed              the failed set
+    counter             counters, number of elements in the sets
+    f_trust_lo          adapted trust level of f
+    v_trust_lo          adapted trust level of v
+    """
+    idx_v = 1
+    idx_f = 4
+    accur = set()
+    candi = set()
+    failed = []
+    coll_v = []
+    coll_f = []
+    for tt in modd_system_task:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            model_devi = np.loadtxt(os.path.join(tt, 'model_devi.out'))
+            model_devi = _read_model_devi_file(tt, model_devi_f_avg_relative)
+            for ii in range(model_devi.shape[0]) :
+                if model_devi[ii][0] < model_devi_skip :
+                    continue
+                cc = int(model_devi[ii][0])
+                # tt: name of task folder
+                # cc: time step of the frame
+                md_v = model_devi[ii][idx_v]
+                md_f = model_devi[ii][idx_f]
+                if md_f > f_trust_hi or md_v > v_trust_hi:
+                    failed.append([tt, cc])
+                else:
+                    coll_v.append([model_devi[ii][idx_v], tt, cc])
+                    coll_f.append([model_devi[ii][idx_f], tt, cc])
+                    # now accur takes all non-failed frames,
+                    # will be substracted by candidate lat er
+                    accur.add((tt, cc))
+    # sort
+    coll_v.sort()
+    coll_f.sort()
+    assert(len(coll_v) == len(coll_f))
+    # calcuate numbers
+    numb_candi_v = max(numb_candi_v, int(perc_candi_v * 0.01 * len(coll_v)))
+    numb_candi_f = max(numb_candi_f, int(perc_candi_f * 0.01 * len(coll_f)))
+    # adjust number of candidate
+    if len(coll_v) < numb_candi_v:
+        numb_candi_v = len(coll_v)
+    if len(coll_f) < numb_candi_f:
+        numb_candi_f = len(coll_f)
+    # compute trust lo
+    if numb_candi_v == 0:
+        v_trust_lo = v_trust_hi
+    else:
+        v_trust_lo = coll_v[-numb_candi_v][0]
+    if numb_candi_f == 0:
+        f_trust_lo = f_trust_hi
+    else:
+        f_trust_lo = coll_f[-numb_candi_f][0]        
+    # add to candidate set
+    for ii in range(len(coll_v) - numb_candi_v, len(coll_v)):
+        candi.add(tuple(coll_v[ii][1:]))
+    for ii in range(len(coll_f) - numb_candi_f, len(coll_f)):
+        candi.add(tuple(coll_f[ii][1:]))
+    # accurate set is substracted by the candidate set
+    accur = accur - candi
+    # convert to list
+    candi = [list(ii) for ii in candi]
+    accur = [list(ii) for ii in accur]
+    # counters
+    counter = Counter()
+    counter['candidate'] = len(candi)
+    counter['failed'] = len(failed)
+    counter['accurate'] = len(accur)
+
+    return accur, candi, failed, counter, f_trust_lo, v_trust_lo
+    
+
 def _make_fp_vasp_inner (modd_path,
                          work_path,
                          model_devi_skip,
-                         e_trust_lo,
-                         e_trust_hi,
+                         v_trust_lo,
+                         v_trust_hi,
                          f_trust_lo,
                          f_trust_hi,
                          fp_task_min,
@@ -1391,6 +1571,8 @@ def _make_fp_vasp_inner (modd_path,
     charges_map = jdata.get("sys_charges", [])
 
     cluster_cutoff = jdata['cluster_cutoff'] if jdata.get('use_clusters', False) else None
+    model_devi_adapt_trust_lo = jdata.get('model_devi_adapt_trust_lo', False)
+    model_devi_f_avg_relative = jdata.get('model_devi_f_avg_relative', False)
     # skip save *.out if detailed_report_make_fp is False, default is True
     detailed_report_make_fp = jdata.get("detailed_report_make_fp", True)
     # skip bad box criteria
@@ -1398,56 +1580,37 @@ def _make_fp_vasp_inner (modd_path,
     # skip discrete structure in cluster
     fp_cluster_vacuum = jdata.get('fp_cluster_vacuum',None)
     for ss in system_index :
-        fp_candidate = []
-        if detailed_report_make_fp:
-            fp_rest_accurate = []
-            fp_rest_failed = []
         modd_system_glob = os.path.join(modd_path, 'task.' + ss + '.*')
         modd_system_task = glob.glob(modd_system_glob)
         modd_system_task.sort()
-        cc = 0
-        counter = Counter()
-        counter['candidate'] = 0
-        counter['failed'] = 0
-        counter['accurate'] = 0
-        for tt in modd_system_task :
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                all_conf = np.loadtxt(os.path.join(tt, 'model_devi.out'))
-                for ii in range(all_conf.shape[0]) :
-                    if all_conf[ii][0] < model_devi_skip :
-                        continue
-                    cc = int(all_conf[ii][0])
-                    if cluster_cutoff is None:
-                        if (all_conf[ii][1] < e_trust_hi and all_conf[ii][1] >= e_trust_lo) or \
-                           (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] >= f_trust_lo) :
-                            fp_candidate.append([tt, cc])
-                            counter['candidate'] += 1
-                        elif (all_conf[ii][1] >= e_trust_hi ) or (all_conf[ii][4] >= f_trust_hi ):
-                            if detailed_report_make_fp:
-                                fp_rest_failed.append([tt, cc])
-                            counter['failed'] += 1
-                        elif (all_conf[ii][1] < e_trust_lo and all_conf[ii][4] < f_trust_lo ):
-                            if detailed_report_make_fp:
-                                fp_rest_accurate.append([tt, cc])
-                            counter['accurate'] += 1
-                        else :
-                            raise RuntimeError('md traj %s frame %d with f devi %f does not belong to either accurate, candidiate and failed, it should not happen' % (tt, ii, all_conf[ii][4]))
-                    else:
-                        idx_candidate = np.where(np.logical_and(all_conf[ii][7:] < f_trust_hi, all_conf[ii][7:] >= f_trust_lo))[0]
-                        for jj in idx_candidate:
-                            fp_candidate.append([tt, cc, jj])
-                        counter['candidate'] += len(idx_candidate)
-                        idx_rest_accurate = np.where(all_conf[ii][7:] < f_trust_lo)[0]
-                        if detailed_report_make_fp:
-                            for jj in idx_rest_accurate:
-                                fp_rest_accurate.append([tt, cc, jj])
-                        counter['accurate'] += len(idx_rest_accurate)
-                        idx_rest_failed = np.where(all_conf[ii][7:] >= f_trust_hi)[0]
-                        if detailed_report_make_fp:
-                            for jj in idx_rest_failed:
-                                fp_rest_failed.append([tt, cc, jj])
-                        counter['failed'] += len(idx_rest_failed)
+
+        # assumed e -> v
+        if not model_devi_adapt_trust_lo:
+            fp_rest_accurate, fp_candidate, fp_rest_failed, counter \
+                =  _select_by_model_devi_standard(
+                    modd_system_task,
+                    f_trust_lo, f_trust_hi,
+                    v_trust_lo, v_trust_hi,
+                    cluster_cutoff, 
+                    model_devi_skip,
+                    model_devi_f_avg_relative = model_devi_f_avg_relative,
+                    detailed_report_make_fp = detailed_report_make_fp,
+                )
+        else:
+            numb_candi_f = jdata.get('model_devi_numb_candi_f', 10)
+            numb_candi_v = jdata.get('model_devi_numb_candi_v', 0)
+            perc_candi_f = jdata.get('model_devi_perc_candi_f', 0.)
+            perc_candi_v = jdata.get('model_devi_perc_candi_v', 0.)
+            fp_rest_accurate, fp_candidate, fp_rest_failed, counter, f_trust_lo_ad, v_trust_lo_ad \
+                =  _select_by_model_devi_adaptive_trust_low(
+                    modd_system_task,
+                    f_trust_hi, numb_candi_f, perc_candi_f,
+                    v_trust_hi, numb_candi_v, perc_candi_v,
+                    model_devi_skip = model_devi_skip,
+                    model_devi_f_avg_relative = model_devi_f_avg_relative,
+                )
+            dlog.info("system {0:s} {1:9s} : f_trust_lo {2:6.3f}   v_trust_lo {3:6.3f}".format(ss, 'adapted', f_trust_lo_ad, v_trust_lo_ad))
+
         # print a report
         fp_sum = sum(counter.values())
         for cc_key, cc_value in counter.items():
@@ -1814,8 +1977,8 @@ def _make_fp_vasp_configs(iter_index,
                           jdata):
     fp_task_max = jdata['fp_task_max']
     model_devi_skip = jdata['model_devi_skip']
-    e_trust_lo = 1e+10
-    e_trust_hi = 1e+10
+    v_trust_lo = jdata.get('model_devi_v_trust_lo', 1e10)
+    v_trust_hi = jdata.get('model_devi_v_trust_hi', 1e10)
     f_trust_lo = jdata['model_devi_f_trust_lo']
     f_trust_hi = jdata['model_devi_f_trust_hi']
     type_map = jdata['type_map']
@@ -1833,7 +1996,7 @@ def _make_fp_vasp_configs(iter_index,
     # make configs
     fp_tasks = _make_fp_vasp_inner(modd_path, work_path,
                                    model_devi_skip,
-                                   e_trust_lo, e_trust_hi,
+                                   v_trust_lo, v_trust_hi,
                                    f_trust_lo, f_trust_hi,
                                    task_min, fp_task_max,
                                    [],
@@ -2570,20 +2733,31 @@ def post_fp_cp2k (iter_index,
     system_index.sort()
 
     cwd = os.getcwd()
+    # tcount: num of all fp tasks
+    tcount = 0
+    # icount: num of converged fp tasks
+    icount = 0
     for ss in system_index :
         sys_output = glob.glob(os.path.join(work_path, "task.%s.*/output"%ss))
         sys_output.sort()
-        for idx,oo in enumerate(sys_output) :
-            sys = dpdata.LabeledSystem(oo, fmt = 'cp2k/output')
-            if len(sys) > 0:
-                sys.check_type_map(type_map = jdata['type_map'])
-            if idx == 0:
-                all_sys = sys
+        tcount += len(sys_output)
+        all_sys = None
+        for oo in sys_output :
+            _sys = dpdata.LabeledSystem(oo, fmt = 'cp2k/output')
+            _sys.check_type_map(type_map = jdata['type_map'])
+            if all_sys is None:
+                all_sys = _sys
             else:
-                all_sys.append(sys)
-        sys_data_path = os.path.join(work_path, 'data.%s'%ss)
-        all_sys.to_deepmd_raw(sys_data_path)
-        all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
+                all_sys.append(_sys)
+
+
+        icount += len(all_sys)
+        if all_sys is not None:
+            sys_data_path = os.path.join(work_path, 'data.%s'%ss)
+            all_sys.to_deepmd_raw(sys_data_path)
+            all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
+    dlog.info("failed frame number: %s "%(tcount-icount))
+    dlog.info("total frame number: %s "%tcount)
 
 
 def post_fp_pwmat (iter_index,

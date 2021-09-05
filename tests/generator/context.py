@@ -4,6 +4,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..',
 from dpgen.generator.run import *
 from dpgen.generator.lib.gaussian import detect_multiplicity
 from dpgen.generator.lib.ele_temp import NBandsEsti
+from dpgen.generator.lib.lammps import get_dumped_forces
 
 param_file = 'param-mg-vasp.json'
 param_file_v1 = 'param-mg-vasp-v1.json'

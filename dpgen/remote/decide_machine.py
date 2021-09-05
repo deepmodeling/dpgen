@@ -40,6 +40,7 @@ def convert_mdata(mdata, task_types=["train", "model_devi", "fp"]):
                 if "comments" not in key:
                     mdata[task_type + "_" + key] = item
             group_size = mdata[task_type][0]["resources"].get("group_size", 1)
+            if group_size == 1: group_size = mdata[task_type][0].get("group_size", 1)
             mdata[task_type + "_" + "group_size"] = group_size
     return mdata
 
