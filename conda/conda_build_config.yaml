@@ -1,0 +1,5 @@
+channel_sources: 
+  - defaults
+  - conda-forge
+channel_targets: 
+  - deepmodeling

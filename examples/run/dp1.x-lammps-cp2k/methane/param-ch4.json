@@ -48,7 +48,7 @@
         "seed": 1
         },
         "fitting_net": {
-        "n_neuron": [
+        "neuron": [
             120, 
             120, 
             120

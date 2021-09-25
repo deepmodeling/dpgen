@@ -464,7 +464,7 @@ def make_vasp_md(jdata, mdata) :
 
     for ii in sys_ps :
         for jj in scale :
-            for kk in range(pert_numb) :
+            for kk in range(pert_numb+1) :
                 path_work = path_md
                 path_work = os.path.join(path_work, ii)
                 path_work = os.path.join(path_work, "scale-%.3f" % jj)
@@ -533,6 +533,8 @@ def coll_vasp_md(jdata) :
                     #dlog.info("nforce is", nforce)
                     #dlog.info("md_nstep", md_nstep)
                     if nforce == md_nstep :
+                        valid_outcars.append(outcar)
+                    elif md_nstep == 0 and nforce == 1 :
                         valid_outcars.append(outcar)
                     else:
                         dlog.info("WARNING : in directory %s nforce in OUTCAR is not equal to settings in INCAR"%(os.getcwd()))
