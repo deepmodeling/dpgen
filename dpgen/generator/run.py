@@ -2700,10 +2700,6 @@ def post_fp_gaussian (iter_index,
         sys_output = glob.glob(os.path.join(work_path, "task.%s.*/output"%ss))
         sys_output.sort()
         for idx,oo in enumerate(sys_output) :
-<<<<<<< HEAD
-            # TODO : UnboundLocalError sometimes occurs when parsing gaussian log
-=======
->>>>>>> d111f7ef5d99ad666d4db377e91f7bd647294208
             sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log')
             if len(sys) > 0:
                 sys.check_type_map(type_map = jdata['type_map'])
