@@ -1139,7 +1139,7 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
                     create_path(task_path)
                     gromacs_settings = jdata.get("gromacs_settings" , "")
                     for key,file in gromacs_settings.items():
-                        if key != "traj_filename" and key != "mdp_filename" and key != "group_name":
+                        if key != "traj_filename" and key != "mdp_filename" and key != "group_name" and key != "maxwarn":
                             os.symlink(os.path.join(cc,file), os.path.join(task_path, file))
                     # input.json for DP-Gromacs
                     with open(os.path.join(cc, "input.json")) as f:
@@ -1159,6 +1159,8 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
                     mdp['nstenergy'] = trj_freq
                     # dt
                     mdp['dt'] = model_devi_dt
+                    # nsteps
+                    mdp['nsteps'] = nsteps
                     # temps
                     if "ref_t" in list(mdp.keys()):
                         mdp["ref_t"] = tt
@@ -1237,6 +1239,8 @@ def run_model_devi (iter_index,
         topol_filename = gromacs_settings.get("topol_filename", "processed.top")
         conf_filename = gromacs_settings.get("conf_filename", "conf.gro")
         index_filename = gromacs_settings.get("index_filename", "index.raw")
+        type_filename = gromacs_settings.get("type_filename", "type.raw")
+        ndx_filename = gromacs_settings.get("ndx_filename", "")
         # Initial reference to process pbc condition.
         # Default is em.tpr
         ref_filename = gromacs_settings.get("ref_filename", "em.tpr")
@@ -1244,18 +1248,21 @@ def run_model_devi (iter_index,
         maxwarn = gromacs_settings.get("maxwarn", 1)
         traj_filename = gromacs_settings.get("traj_filename", "deepmd_traj.gro")
         grp_name = gromacs_settings.get("group_name", "Other")
-        nsteps = cur_job["nsteps"]
         trj_freq = cur_job.get("trj_freq", 10)
 
         command = "%s grompp -f %s -p %s -c %s -o %s -maxwarn %d" % (model_devi_exec, mdp_filename, topol_filename, conf_filename, deffnm, maxwarn)
-        command += "&& %s mdrun -deffnm %s -nsteps %d" %(model_devi_exec, deffnm, nsteps) 
-        command += "&& echo -e \"%s\n%s\n\" | %s trjconv -s %s -f %s.trr -o %s -pbc mol -ur compact -center" % (grp_name, grp_name, model_devi_exec, ref_filename, deffnm, traj_filename)
+        command += "&& %s mdrun -deffnm %s -cpi" %(model_devi_exec, deffnm)
+        if ndx_filename:
+            command += f"&& echo -e \"{grp_name}\\n{grp_name}\\n\" | {model_devi_exec} trjconv -s {ref_filename} -f {deffnm}.trr -n {ndx_filename} -o {traj_filename} -pbc mol -ur compact -center"
+        else:
+            command += "&& echo -e \"%s\\n%s\\n\" | %s trjconv -s %s -f %s.trr -o %s -pbc mol -ur compact -center" % (grp_name, grp_name, model_devi_exec, ref_filename, deffnm, traj_filename)
         command += "&& if [ ! -d traj ]; then \n mkdir traj; fi\n"
         command += f"python -c \"import dpdata;system = dpdata.System('{traj_filename}', fmt='gromacs/gro'); [system.to_gromacs_gro('traj/%d.gromacstrj' % (i * {trj_freq}), frame_idx=i) for i in range(system.get_nframes())]; system.to_deepmd_npy('traj_deepmd')\""
         command += f"&& dp model-devi -m ../graph.000.pb ../graph.001.pb ../graph.002.pb ../graph.003.pb -s traj_deepmd -o model_devi.out -f {trj_freq}"
         commands = [command]
 
-        forward_files = [mdp_filename, topol_filename, conf_filename, index_filename,  ref_filename, "input.json", "job.json" ]
+        forward_files = [mdp_filename, topol_filename, conf_filename, index_filename, ref_filename, type_filename, "input.json", "job.json" ]
+        if ndx_filename: forward_files.append(ndx_filename)
         backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , traj_filename, 'model_devi.out', "traj", "traj_deepmd" ]
 
 
@@ -2530,7 +2537,10 @@ def post_fp_gaussian (iter_index,
         sys_output = glob.glob(os.path.join(work_path, "task.%s.*/output"%ss))
         sys_output.sort()
         for idx,oo in enumerate(sys_output) :
+<<<<<<< HEAD
             # TODO : UnboundLocalError sometimes occurs when parsing gaussian log
+=======
+>>>>>>> d111f7ef5d99ad666d4db377e91f7bd647294208
             sys = dpdata.LabeledSystem(oo, fmt = 'gaussian/log')
             if len(sys) > 0:
                 sys.check_type_map(type_map = jdata['type_map'])
