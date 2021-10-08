@@ -45,7 +45,7 @@ from dpgen.generator.lib.vasp import write_incar_dict
 from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
 from dpgen.generator.lib.vasp import incar_upper
 from dpgen.generator.lib.pwscf import make_pwscf_input
-from dpgen.generator.lib.abacus_pw_scf import make_abacus_pw_scf_stru, make_abacus_pw_scf_input, make_abacus_pw_scf_kpt
+from dpgen.generator.lib.abacus_scf import make_abacus_scf_stru, make_abacus_scf_input, make_abacus_scf_kpt
 #from dpgen.generator.lib.pwscf import cvt_1frame
 from dpgen.generator.lib.pwmat import make_pwmat_input_dict
 from dpgen.generator.lib.pwmat import write_input_dict
@@ -2063,7 +2063,7 @@ def make_fp_pwscf(iter_index,
     # link pp files
     _link_fp_vasp_pp(iter_index, jdata)
 
-def make_fp_abacus_pw_scf(iter_index,
+def make_fp_abacus_scf(iter_index,
                   jdata) :
     # make config
     fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
@@ -2084,13 +2084,13 @@ def make_fp_abacus_pw_scf(iter_index,
         sys_data = dpdata.System('POSCAR').data
         if 'mass_map' in jdata:
             sys_data['atom_masses'] = jdata['mass_map']
-        ret_input = make_abacus_pw_scf_input(fp_params)
+        ret_input = make_abacus_scf_input(fp_params)
         with open('INPUT', 'w') as fp:
             fp.write(ret_input)
-        ret_kpt = make_abacus_pw_scf_kpt(fp_params)
+        ret_kpt = make_abacus_scf_kpt(fp_params)
         with open("KPT", "w") as fp:
             fp.write(ret_kpt)
-        ret_stru = make_abacus_pw_scf_stru(sys_data, fp_pp_files)
+        ret_stru = make_abacus_scf_stru(sys_data, fp_pp_files)
         with open("STRU", "w") as fp:
             fp.write(ret_stru)
 
@@ -2224,7 +2224,7 @@ def make_fp (iter_index,
     elif fp_style == "pwscf" :
         make_fp_pwscf(iter_index, jdata)
     elif fp_style == "abacus/scf" :
-        make_fp_abacus_pw_scf(iter_index, jdata)
+        make_fp_abacus_scf(iter_index, jdata)
     elif fp_style == "siesta" :
         make_fp_siesta(iter_index, jdata)
     elif fp_style == "gaussian" :
@@ -2262,7 +2262,7 @@ def _qe_check_fin(ii) :
         return False
     return True
 
-def _abacus_pw_scf_check_fin(ii) :
+def _abacus_scf_check_fin(ii) :
     if os.path.isfile(os.path.join(ii, 'OUT.ABACUS/running_scf.log')) :
         with open(os.path.join(ii, 'OUT.ABACUS/running_scf.log'), 'r') as fp :
             content = fp.read()
@@ -2407,7 +2407,7 @@ def run_fp (iter_index,
     elif fp_style == "abacus/scf":
         forward_files = ["INPUT", "STRU", "KPT"] + fp_pp_files
         backward_files = ["output", "OUT.ABACUS"]
-        run_fp_inner(iter_index, jdata, mdata,  forward_files, backward_files, _abacus_pw_scf_check_fin, log_file = 'output')
+        run_fp_inner(iter_index, jdata, mdata,  forward_files, backward_files, _abacus_scf_check_fin, log_file = 'output')
     elif fp_style == "siesta":
         forward_files = ['input'] + fp_pp_files
         backward_files = ['output']
@@ -2582,7 +2582,7 @@ def post_fp_pwscf (iter_index,
         all_sys.to_deepmd_raw(sys_data_path)
         all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
 
-def post_fp_abacus_pw_scf (iter_index,
+def post_fp_abacus_scf (iter_index,
                         jdata):
     model_devi_jobs = jdata['model_devi_jobs']
     assert (iter_index < len(model_devi_jobs))
@@ -2828,7 +2828,7 @@ def post_fp (iter_index,
     elif fp_style == "pwscf" :
         post_fp_pwscf(iter_index, jdata)
     elif fp_style == "abacus/scf":
-        post_fp_abacus_pw_scf(iter_index, jdata)
+        post_fp_abacus_scf(iter_index, jdata)
     elif fp_style == "siesta":
         post_fp_siesta(iter_index, jdata)
     elif fp_style == 'gaussian' :
