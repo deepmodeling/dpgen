@@ -20,12 +20,15 @@ import dpgen.data.tools.fcc as fcc
 import dpgen.data.tools.bcc as bcc
 import dpgen.data.tools.diamond as diamond
 import dpgen.data.tools.sc as sc
+from distutils.version import LooseVersion
 from dpgen.generator.lib.vasp import incar_upper
+from dpgen.generator.lib.utils import symlink_user_forward_files
 from pymatgen.core import Structure
 from pymatgen.io.vasp import Incar
-from dpgen.remote.decide_machine import  decide_fp_machine
+from dpgen.remote.decide_machine import  convert_mdata
 from dpgen import ROOT_PATH
-from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher
+from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher, make_submission
+
 
 
 
@@ -310,12 +313,7 @@ def make_vasp_relax (jdata, mdata) :
         os.remove(os.path.join(work_dir, 'POTCAR'))
     shutil.copy2( jdata['relax_incar'], 
                  os.path.join(work_dir, 'INCAR'))
-    is_cvasp = False
-    if 'cvasp' in mdata['fp_resources'].keys():
-        is_cvasp = mdata['fp_resources']['cvasp']
-    if is_cvasp:
-        cvasp_file=os.path.join(ROOT_PATH,'generator/lib/cvasp.py')
-        shutil.copyfile(cvasp_file, os.path.join(work_dir, 'cvasp.py'))
+    
     out_potcar = os.path.join(work_dir, 'POTCAR')
     with open(out_potcar, 'w') as outfile:
         for fname in potcars:
@@ -337,8 +335,17 @@ def make_vasp_relax (jdata, mdata) :
            os.symlink(ln_src, 'POTCAR')
         except FileExistsError:
            pass
+        is_cvasp = False
+        if 'cvasp' in mdata['fp_resources'].keys():
+            is_cvasp = mdata['fp_resources']['cvasp']
+        if is_cvasp:
+            cvasp_file = os.path.join(ROOT_PATH, 'generator/lib/cvasp.py')
+            shutil.copyfile(cvasp_file, 'cvasp.py')
         os.chdir(work_dir)
     os.chdir(cwd)
+    symlink_user_forward_files(mdata=mdata, task_type="fp",
+                               work_path=os.path.join(os.path.basename(out_dir),global_dirname_02),
+                               task_format= {"fp" : "sys-*"})
 
 def make_scale(jdata):
     out_dir = jdata['out_dir']
@@ -372,6 +379,7 @@ def make_scale(jdata):
             os.chdir(scale_path) 
             poscar_scale(pos_src, 'POSCAR', jj)
             os.chdir(cwd)
+    
 
 def pert_scaled(jdata) :
     out_dir = jdata['out_dir']
@@ -424,7 +432,7 @@ def pert_scaled(jdata) :
                 shutil.copy2(pos_in, pos_out)
             os.chdir(cwd)
 
-def make_vasp_md(jdata) :
+def make_vasp_md(jdata, mdata) :
     out_dir = jdata['out_dir']
     potcars = jdata['potcars']
     scale = jdata['scale']   
@@ -450,11 +458,13 @@ def make_vasp_md(jdata) :
             with open(fname) as infile:
                 outfile.write(infile.read())
     os.chdir(path_md)
-    os.chdir(cwd)    
+    os.chdir(cwd)
+    
+    
 
     for ii in sys_ps :
         for jj in scale :
-            for kk in range(pert_numb) :
+            for kk in range(pert_numb+1) :
                 path_work = path_md
                 path_work = os.path.join(path_work, ii)
                 path_work = os.path.join(path_work, "scale-%.3f" % jj)
@@ -477,8 +487,20 @@ def make_vasp_md(jdata) :
                     os.symlink(os.path.relpath(file_potcar), 'POTCAR')
                 except FileExistsError:
                     pass
+
+                is_cvasp = False
+                if 'cvasp' in mdata['fp_resources'].keys():
+                    is_cvasp = mdata['fp_resources']['cvasp']
+                if is_cvasp:
+                    cvasp_file = os.path.join(ROOT_PATH, 'generator/lib/cvasp.py')
+                    shutil.copyfile(cvasp_file,  'cvasp.py')
                  
-                os.chdir(cwd)                
+                os.chdir(cwd)
+                
+    symlink_user_forward_files(mdata=mdata, task_type="fp",
+                               work_path=os.path.join(os.path.basename(out_dir),global_dirname_04),
+                               task_format= {"fp" :"sys-*/scale*/00*"})
+                            
 
 def coll_vasp_md(jdata) :
     out_dir = jdata['out_dir']
@@ -511,6 +533,8 @@ def coll_vasp_md(jdata) :
                     #dlog.info("nforce is", nforce)
                     #dlog.info("md_nstep", md_nstep)
                     if nforce == md_nstep :
+                        valid_outcars.append(outcar)
+                    elif md_nstep == 0 and nforce == 1 :
                         valid_outcars.append(outcar)
                     else:
                         dlog.info("WARNING : in directory %s nforce in OUTCAR is not equal to settings in INCAR"%(os.getcwd()))
@@ -564,11 +588,14 @@ def run_vasp_relax(jdata, mdata):
     work_dir = os.path.join(jdata['out_dir'], global_dirname_02)
     
     forward_files = ["POSCAR", "INCAR", "POTCAR"]
+    user_forward_files = mdata.get("fp" + "_user_forward_files", [])
+    forward_files += [os.path.basename(file) for file in user_forward_files]
     backward_files = ["OUTCAR","CONTCAR"]
+    backward_files += mdata.get("fp" + "_user_backward_files", [])
     forward_common_files = []
     if 'cvasp' in mdata['fp_resources']:
         if mdata['fp_resources']['cvasp']:
-            forward_common_files=['cvasp.py']
+            forward_files +=['cvasp.py']
     relax_tasks = glob.glob(os.path.join(work_dir, "sys-*"))
     relax_tasks.sort()
     #dlog.info("work_dir",work_dir)
@@ -581,9 +608,13 @@ def run_vasp_relax(jdata, mdata):
     #    if not _vasp_check_fin(ii):
     #        relax_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in relax_run_tasks]
-    dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_dir, run_tasks, fp_group_size)
-    #dlog.info(run_tasks)
-    dispatcher.run_jobs(fp_resources,
+
+    api_version = mdata.get('api_version', '0.9')
+    if LooseVersion(api_version) < LooseVersion('1.0'):
+        warnings.warn(f"the dpdispatcher will be updated to new version."
+            f"And the interface may be changed. Please check the documents for more details")
+        dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_dir, run_tasks, fp_group_size)
+        dispatcher.run_jobs(fp_resources,
                        [fp_command],
                        work_dir,
                        run_tasks,
@@ -591,6 +622,22 @@ def run_vasp_relax(jdata, mdata):
                        forward_common_files,
                        forward_files,
                        backward_files)
+
+    elif LooseVersion(api_version) >= LooseVersion('1.0'):
+        submission = make_submission(
+            mdata['fp_machine'],
+            mdata['fp_resources'],
+            commands=[fp_command],
+            work_path=work_dir,
+            run_tasks=run_tasks,
+            group_size=fp_group_size,
+            forward_common_files=forward_common_files,
+            forward_files=forward_files,
+            backward_files=backward_files,
+            outlog = 'fp.log',
+            errlog = 'fp.log')
+        submission.run_submission()
+
 
 def run_vasp_md(jdata, mdata):
     fp_command = mdata['fp_command']
@@ -603,11 +650,14 @@ def run_vasp_md(jdata, mdata):
     md_nstep = jdata['md_nstep']
 
     forward_files = ["POSCAR", "INCAR", "POTCAR"]
+    user_forward_files = mdata.get("fp" + "_user_forward_files", [])
+    forward_files += [os.path.basename(file) for file in user_forward_files]
     backward_files = ["OUTCAR"]
+    backward_files += mdata.get("fp" + "_user_backward_files", [])
     forward_common_files = []
     if 'cvasp' in mdata['fp_resources']:
         if mdata['fp_resources']['cvasp']:
-            forward_common_files=['cvasp.py']
+            forward_files +=['cvasp.py']
 
     path_md = work_dir
     path_md = os.path.abspath(path_md)
@@ -627,8 +677,12 @@ def run_vasp_md(jdata, mdata):
     run_tasks = [ii.replace(work_dir+"/", "") for ii in md_run_tasks]
     #dlog.info("md_work_dir", work_dir)
     #dlog.info("run_tasks",run_tasks)
-    dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_dir, run_tasks, fp_group_size)
-    dispatcher.run_jobs(fp_resources,
+    api_version = mdata.get('api_version', '0.9')
+    if LooseVersion(api_version) < LooseVersion('1.0'):
+        warnings.warn(f"the dpdispatcher will be updated to new version."
+            f"And the interface may be changed. Please check the documents for more details")
+        dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_dir, run_tasks, fp_group_size)
+        dispatcher.run_jobs(fp_resources,
                        [fp_command],
                        work_dir,
                        run_tasks,
@@ -636,6 +690,21 @@ def run_vasp_md(jdata, mdata):
                        forward_common_files,
                        forward_files,
                        backward_files)
+
+    elif LooseVersion(api_version) >= LooseVersion('1.0'):
+        submission = make_submission(
+            mdata['fp_machine'],
+            mdata['fp_resources'],
+            commands=[fp_command],
+            work_path=work_dir,
+            run_tasks=run_tasks,
+            group_size=fp_group_size,
+            forward_common_files=forward_common_files,
+            forward_files=forward_files,
+            backward_files=backward_files,
+            outlog = 'fp.log',
+            errlog = 'fp.log')
+        submission.run_submission()
 
 def gen_init_bulk(args) :
     try:
@@ -654,7 +723,7 @@ def gen_init_bulk(args) :
 
     if args.MACHINE is not None:
        # Selecting a proper machine
-       mdata = decide_fp_machine(mdata)
+       mdata = convert_mdata(mdata, ["fp"])
        #disp = make_dispatcher(mdata["fp_machine"])
 
     # Decide work path
@@ -717,9 +786,12 @@ def gen_init_bulk(args) :
             pert_scaled(jdata)
         elif stage == 3 :
             dlog.info("Current stage is 3, run a short md")
-            make_vasp_md(jdata)
             if args.MACHINE is not None:
+               make_vasp_md(jdata, mdata)
                run_vasp_md(jdata, mdata)
+            else:
+               make_vasp_md(jdata, {"fp_resources":{}})
+               
         elif stage == 4 :
             dlog.info("Current stage is 4, collect data")
             coll_vasp_md(jdata)

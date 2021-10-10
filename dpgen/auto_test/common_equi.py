@@ -1,6 +1,6 @@
 import glob
 import os
-
+import warnings
 from monty.serialization import dumpfn
 
 import dpgen.auto_test.lib.crys as crys
@@ -9,8 +9,9 @@ from dpgen import dlog
 from dpgen.auto_test.calculator import make_calculator
 from dpgen.auto_test.mpdb import get_structure
 from dpgen.dispatcher.Dispatcher import make_dispatcher
-from dpgen.remote.decide_machine import decide_fp_machine, decide_model_devi_machine
-
+from distutils.version import LooseVersion
+from dpgen.dispatcher.Dispatcher import make_submission
+from dpgen.remote.decide_machine import convert_mdata
 lammps_task_type = ['deepmd', 'meam', 'eam_fs', 'eam_alloy']
 
 
@@ -131,9 +132,9 @@ def run_equi(confs,
     inter_type = inter_param['type']
     # vasp
     if inter_type == "vasp":
-        mdata = decide_fp_machine(mdata)
+        mdata = convert_mdata(mdata, ["fp"])
     elif inter_type in lammps_task_type:
-        mdata = decide_model_devi_machine(mdata)
+        mdata = convert_mdata(mdata, ["model_devi"])
     else:
         raise RuntimeError("unknown task %s, something wrong" % inter_type)
 
@@ -149,6 +150,7 @@ def run_equi(confs,
     if len(run_tasks) == 0:
         return
     else:
+        # if LooseVersion()
         run_tasks = [os.path.basename(ii) for ii in all_task]
         machine, resources, command, group_size = util.get_machine_info(mdata, inter_type)
         print('%d tasks will be submited '%len(run_tasks))
@@ -156,16 +158,36 @@ def run_equi(confs,
             work_path = work_path_list[ii]
             disp = make_dispatcher(machine, resources, work_path, [run_tasks[ii]], group_size)
             print("%s --> Runing... "%(work_path))
+
+        api_version = mdata.get('api_version', '0.9')
+        if LooseVersion(api_version) < LooseVersion('1.0'):
+            warnings.warn(f"the dpdispatcher will be updated to new version."
+                f"And the interface may be changed. Please check the documents for more details")
             disp.run_jobs(resources,
-                          command,
-                          work_path,
-                          [run_tasks[ii]],
-                          group_size,
-                          forward_common_files,
-                          forward_files,
-                          backward_files,
-                          outlog='outlog',
-                          errlog='errlog')
+                            command,
+                            work_path,
+                            [run_tasks[ii]],
+                            group_size,
+                            forward_common_files,
+                            forward_files,
+                            backward_files,
+                            outlog='outlog',
+                            errlog='errlog')
+        elif LooseVersion(api_version) >= LooseVersion('1.0'):
+            submission = make_submission(
+                mdata_machine=machine,
+                mdata_resource=resources,
+                commands=[command],
+                work_path=work_path,
+                run_tasks=run_tasks,
+                group_size=group_size,
+                forward_common_files=forward_common_files,
+                forward_files=forward_files,
+                backward_files=backward_files,
+                outlog = 'outlog',
+                errlog = 'errlog'
+            )
+            submission.run_submission()
 
 
 def post_equi(confs, inter_param):

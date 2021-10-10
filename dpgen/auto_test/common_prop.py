@@ -1,5 +1,7 @@
+from distutils.version import LooseVersion
 import glob
 import os
+import warnings
 from multiprocessing import Pool
 import dpgen.auto_test.lib.util as util
 from dpgen import dlog
@@ -11,8 +13,8 @@ from dpgen.auto_test.Surface import Surface
 from dpgen.auto_test.Vacancy import Vacancy
 from dpgen.auto_test.calculator import make_calculator
 from dpgen.dispatcher.Dispatcher import make_dispatcher
-from dpgen.remote.decide_machine import decide_fp_machine, decide_model_devi_machine
-
+from dpgen.dispatcher.Dispatcher import make_submission
+from dpgen.remote.decide_machine import convert_mdata
 lammps_task_type = ['deepmd', 'meam', 'eam_fs', 'eam_alloy']
 
 
@@ -147,9 +149,9 @@ def run_property(confs,
             inter_type = inter_param_prop['type']
             # vasp
             if inter_type == "vasp":
-                mdata = decide_fp_machine(mdata)
+                mdata = convert_mdata(mdata, ["fp"])
             elif inter_type in lammps_task_type:
-                mdata = decide_model_devi_machine(mdata)
+                mdata = convert_mdata(mdata, ["model_devi"])
             else:
                 raise RuntimeError("unknown task %s, something wrong" % inter_type)
 
@@ -196,7 +198,11 @@ def worker(work_path,
     run_tasks = [os.path.basename(ii) for ii in all_task]
     machine, resources, command, group_size = util.get_machine_info(mdata, inter_type)
     disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
-    disp.run_jobs(resources,
+    api_version = mdata.get('api_version', '0.9')
+    if LooseVersion(api_version) < LooseVersion('1.0'):
+        warnings.warn(f"the dpdispatcher will be updated to new version."
+            f"And the interface may be changed. Please check the documents for more details")
+        disp.run_jobs(resources,
                   command,
                   work_path,
                   run_tasks,
@@ -206,7 +212,21 @@ def worker(work_path,
                   backward_files,
                   outlog='outlog',
                   errlog='errlog')
-
+    elif LooseVersion(api_version) >= LooseVersion('1.0'):
+        submission = make_submission(
+                mdata_machine=machine,
+                mdata_resource=resources,
+                commands=[command],
+                work_path=work_path,
+                run_tasks=run_tasks,
+                group_size=group_size,
+                forward_common_files=forward_common_files,
+                forward_files=forward_files,
+                backward_files=backward_files,
+                outlog = 'outlog',
+                errlog = 'errlog'
+            )
+        submission.run_submission()
 
 def post_property(confs,
                   #                  inter_param,

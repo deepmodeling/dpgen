@@ -1,0 +1,18 @@
+{% set version = os.popen('git describe --tags --abbrev=0').read().strip('\n').lstrip('v').replace('-', '_') %}
+
+name: dpgen
+version: {{ version }}
+
+channels:
+  - defaults
+  - conda-forge
+  - deepmodeling
+
+specs:
+  - python 3.8
+  - pip
+  - dpgen {{ version }} 
+
+ignore_duplicate_files: True
+
+license_file: ../LICENSE

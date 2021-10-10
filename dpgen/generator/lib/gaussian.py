@@ -114,8 +114,13 @@ def make_gaussian_input(sys_data, fp_params):
         keywords = [keywords]
     else:
         keywords = keywords.copy()
+
     # assume default charge is zero and default spin multiplicity is 1
-    charge = fp_params.get('charge', 0)
+    if 'charge' in sys_data.keys():
+        charge = sys_data['charge']
+    else:
+        charge = fp_params.get('charge', 0)
+        
     use_fragment_guesses = False
     multiplicity = fp_params.get('multiplicity', 'auto')
     if type(multiplicity) == int:
