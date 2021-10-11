@@ -159,35 +159,35 @@ def run_equi(confs,
             disp = make_dispatcher(machine, resources, work_path, [run_tasks[ii]], group_size)
             print("%s --> Runing... "%(work_path))
 
-        api_version = mdata.get('api_version', '0.9')
-        if LooseVersion(api_version) < LooseVersion('1.0'):
-            warnings.warn(f"the dpdispatcher will be updated to new version."
-                f"And the interface may be changed. Please check the documents for more details")
-            disp.run_jobs(resources,
-                            command,
-                            work_path,
-                            [run_tasks[ii]],
-                            group_size,
-                            forward_common_files,
-                            forward_files,
-                            backward_files,
-                            outlog='outlog',
-                            errlog='errlog')
-        elif LooseVersion(api_version) >= LooseVersion('1.0'):
-            submission = make_submission(
-                mdata_machine=machine,
-                mdata_resource=resources,
-                commands=[command],
-                work_path=work_path,
-                run_tasks=run_tasks,
-                group_size=group_size,
-                forward_common_files=forward_common_files,
-                forward_files=forward_files,
-                backward_files=backward_files,
-                outlog = 'outlog',
-                errlog = 'errlog'
-            )
-            submission.run_submission()
+            api_version = mdata.get('api_version', '0.9')
+            if LooseVersion(api_version) < LooseVersion('1.0'):
+                warnings.warn(f"the dpdispatcher will be updated to new version."
+                    f"And the interface may be changed. Please check the documents for more details")
+                disp.run_jobs(resources,
+                                command,
+                                work_path,
+                                [run_tasks[ii]],
+                                group_size,
+                                forward_common_files,
+                                forward_files,
+                                backward_files,
+                                outlog='outlog',
+                                errlog='errlog')
+            elif LooseVersion(api_version) >= LooseVersion('1.0'):
+                submission = make_submission(
+                    mdata_machine=machine,
+                    mdata_resource=resources,
+                    commands=[command],
+                    work_path=work_path,
+                    run_tasks=run_tasks,
+                    group_size=group_size,
+                    forward_common_files=forward_common_files,
+                    forward_files=forward_files,
+                    backward_files=backward_files,
+                    outlog = 'outlog',
+                    errlog = 'errlog'
+                )
+                submission.run_submission()
 
 
 def post_equi(confs, inter_param):

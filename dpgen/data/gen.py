@@ -80,9 +80,9 @@ def out_dir_name(jdata) :
     from_poscar = False
     if 'from_poscar' in jdata :
         from_poscar = jdata['from_poscar']
-        from_poscar_path = jdata['from_poscar_path']
 
     if from_poscar:
+        from_poscar_path = jdata['from_poscar_path']
         poscar_name = os.path.basename(from_poscar_path)
         cell_str = "%02d" % (super_cell[0])
         for ii in range(1,len(super_cell)) :
