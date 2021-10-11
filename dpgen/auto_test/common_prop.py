@@ -112,6 +112,7 @@ def run_property(confs,
     conf_dirs.sort()
     task_list = []
     work_path_list = []
+    ret = None
     for ii in conf_dirs:
         sepline(ch=ii, screen=True)
         for jj in property_list:
@@ -184,7 +185,7 @@ def run_property(confs,
             #               errlog='errlog')
     pool.close()
     pool.join()
-    if ret.successful():
+    if ret and ret.successful():
         print('finished')
 
 
