@@ -40,7 +40,7 @@ from dpgen.generator.lib.utils import log_iter
 from dpgen.generator.lib.utils import record_iter
 from dpgen.generator.lib.utils import log_task
 from dpgen.generator.lib.utils import symlink_user_forward_files
-from dpgen.generator.lib.lammps import make_lammps_input
+from dpgen.generator.lib.lammps import make_lammps_input, get_dumped_forces
 from dpgen.generator.lib.vasp import write_incar_dict
 from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
 from dpgen.generator.lib.vasp import incar_upper
@@ -184,9 +184,12 @@ def dump_to_poscar(dump, poscar, type_map, fmt = "lammps/dump") :
     sys = dpdata.System(dump, fmt = fmt, type_map = type_map)
     sys.to_vasp_poscar(poscar)
 
-def dump_to_deepmd_raw(dump, deepmd_raw, type_map, fmt='gromacs/gro'):
+def dump_to_deepmd_raw(dump, deepmd_raw, type_map, fmt='gromacs/gro', charge=None):
     system = dpdata.System(dump, fmt = fmt, type_map = type_map)
     system.to_deepmd_raw(deepmd_raw)
+    if charge is not None:
+        with open(os.path.join(deepmd_raw, "charge"), 'w') as f:
+            f.write(str(charge))
 
 
 def make_train (iter_index,
@@ -206,7 +209,14 @@ def make_train (iter_index,
     training_init_model = jdata.get('training_init_model', False)
     training_reuse_iter = jdata.get('training_reuse_iter')
     training_reuse_old_ratio = jdata.get('training_reuse_old_ratio', None)
-    training_reuse_stop_batch = jdata.get('training_reuse_stop_batch', 400000)
+
+    if 'training_reuse_stop_batch' in jdata.keys():
+        training_reuse_stop_batch = jdata['training_reuse_stop_batch']
+    elif 'training_reuse_numb_steps' in jdata.keys():
+        training_reuse_stop_batch = jdata['training_reuse_numb_steps']
+    else:
+        training_reuse_stop_batch = 400000
+        
     training_reuse_start_lr = jdata.get('training_reuse_start_lr', 1e-4)
     training_reuse_start_pref_e = jdata.get('training_reuse_start_pref_e', 0.1)
     training_reuse_start_pref_f = jdata.get('training_reuse_start_pref_f', 100)
@@ -347,10 +357,12 @@ def make_train (iter_index,
     # set training reuse model
     if training_reuse_iter is not None and iter_index >= training_reuse_iter:
         if LooseVersion('1') <= LooseVersion(mdata["deepmd_version"]) < LooseVersion('2'):
+            jinput['training']['stop_batch'] = training_reuse_stop_batch
             jinput['training']['auto_prob_style'] \
                 ="prob_sys_size; 0:%d:%f; %d:%d:%f" \
                 %(old_range, training_reuse_old_ratio, old_range, len(init_data_sys), 1.-training_reuse_old_ratio)
         elif LooseVersion('2') <= LooseVersion(mdata["deepmd_version"]) < LooseVersion('3'):
+            jinput['training']['numb_steps'] = training_reuse_stop_batch
             jinput['training']['training_data']['auto_prob'] \
                 ="prob_sys_size; 0:%d:%f; %d:%d:%f" \
                 %(old_range, training_reuse_old_ratio, old_range, len(init_data_sys), 1.-training_reuse_old_ratio)
@@ -361,7 +373,7 @@ def make_train (iter_index,
         if jinput['loss'].get('start_pref_f') is not None:
             jinput['loss']['start_pref_f'] = training_reuse_start_pref_f
         jinput['learning_rate']['start_lr'] = training_reuse_start_lr
-        jinput['training']['stop_batch'] = training_reuse_stop_batch
+        
 
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
@@ -1077,6 +1089,9 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
         sys_counter += 1
 
 def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
+    # only support for deepmd v2.0
+    if LooseVersion(mdata['deepmd_version']) < LooseVersion('2.0'):
+        raise RuntimeError("Only support deepmd-kit 2.x for model_devi_engine='gromacs'")
     model_devi_jobs = jdata['model_devi_jobs']
     if (iter_index >= len(model_devi_jobs)) :
         return False
@@ -1087,6 +1102,12 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
     else:
         model_devi_dt = jdata['model_devi_dt']
     nsteps = cur_job.get("nsteps", None)
+    lambdas = cur_job.get("lambdas", [1.0])
+    temps = cur_job.get("temps", [298.0])
+
+    for ll in lambdas:
+        assert (ll >= 0.0 and ll <= 1.0), "Lambda should be in [0,1]"
+
     if nsteps is None:
         raise RuntimeError("nsteps is None, you should set nsteps in model_devi_jobs!")
     # Currently Gromacs engine is not supported for different temperatures!
@@ -1112,48 +1133,52 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
         conf_counter = 0
         task_counter = 0
         for cc in ss :
-            task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
-            #conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter) + '.lmp'
-            task_path = os.path.join(work_path, task_name)
-            # dlog.info(task_path)
-            create_path(task_path)
-            #create_path(os.path.join(task_path, 'traj'))
-            #loc_conf_name = 'conf.lmp'
-            gromacs_settings = jdata.get("gromacs_settings" , "")
-            for key,file in gromacs_settings.items():
-                if key != "traj_filename" and key != "mdp_filename":
-                    os.symlink(os.path.join(cc,file), os.path.join(task_path, file))
-            
-            # input.json for DP-Gromacs
-            with open(os.path.join(cc, "input.json")) as f:
-                input_json = json.load(f)
-            input_json["graph_file"] = models[0]
-            with open(os.path.join(task_path,'input.json'), 'w') as _outfile:
-                json.dump(input_json, _outfile, indent = 4)
+            for ll in lambdas:
+                for tt in temps:
+                    task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
+                    task_path = os.path.join(work_path, task_name)
+                    create_path(task_path)
+                    gromacs_settings = jdata.get("gromacs_settings" , "")
+                    for key,file in gromacs_settings.items():
+                        if key != "traj_filename" and key != "mdp_filename" and key != "group_name" and key != "maxwarn":
+                            os.symlink(os.path.join(cc,file), os.path.join(task_path, file))
+                    # input.json for DP-Gromacs
+                    with open(os.path.join(cc, "input.json")) as f:
+                        input_json = json.load(f)
+                    input_json["graph_file"] = models[0]
+                    input_json["lambda"] = ll
+                    with open(os.path.join(task_path,'input.json'), 'w') as _outfile:
+                        json.dump(input_json, _outfile, indent = 4)
 
-            # trj_freq
-            trj_freq = cur_job.get("trj_freq", 10)
-            mdp = MDP()
-            mdp.read(os.path.join(cc, gromacs_settings['mdp_filename']))
-            mdp['nstcomm'] = trj_freq
-            mdp['nstxout'] = trj_freq
-            mdp['nstlog'] = trj_freq
-            mdp['nstenergy'] = trj_freq
-            # dt
-            mdp['dt'] = dt
-            mdp.write(os.path.join(task_path, gromacs_settings['mdp_filename']))
+                    # trj_freq
+                    trj_freq = cur_job.get("trj_freq", 10)
+                    mdp = MDP()
+                    mdp.read(os.path.join(cc, gromacs_settings['mdp_filename']))
+                    mdp['nstcomm'] = trj_freq
+                    mdp['nstxout'] = trj_freq
+                    mdp['nstlog'] = trj_freq
+                    mdp['nstenergy'] = trj_freq
+                    # dt
+                    mdp['dt'] = model_devi_dt
+                    # nsteps
+                    mdp['nsteps'] = nsteps
+                    # temps
+                    if "ref_t" in list(mdp.keys()):
+                        mdp["ref_t"] = tt
+                    else:
+                        mdp["ref-t"] = tt
+                    mdp.write(os.path.join(task_path, gromacs_settings['mdp_filename']))
 
-            cwd_ = os.getcwd()
-            os.chdir(task_path)
-            job = {}
-            
-            job["model_devi_dt"] =  model_devi_dt
-            job["nsteps"] = nsteps
-            with open('job.json', 'w') as _outfile:
-                json.dump(job, _outfile, indent = 4)
-            os.chdir(cwd_)
-            
-            task_counter += 1
+                    cwd_ = os.getcwd()
+                    os.chdir(task_path)
+                    job = {}
+                    job["trj_freq"] = cur_job["trj_freq"]
+                    job["model_devi_dt"] =  model_devi_dt
+                    job["nsteps"] = nsteps
+                    with open('job.json', 'w') as _outfile:
+                        json.dump(job, _outfile, indent = 4)
+                    os.chdir(cwd_) 
+                    task_counter += 1
             conf_counter += 1
         sys_counter += 1
 
@@ -1205,25 +1230,41 @@ def run_model_devi (iter_index,
         if use_plm:
             forward_files += ['input.plumed']
            # backward_files += ['output.plumed']
-            backward_files += ['output.plumed','COLVAR','dump.0.xyz']
+            backward_files += ['output.plumed','COLVAR']
             if use_plm_path:
                 forward_files += ['plmpath.pdb']
     elif model_devi_engine == "gromacs":
+        
         gromacs_settings = jdata.get("gromacs_settings", {})
         mdp_filename = gromacs_settings.get("mdp_filename", "md.mdp")
         topol_filename = gromacs_settings.get("topol_filename", "processed.top")
         conf_filename = gromacs_settings.get("conf_filename", "conf.gro")
         index_filename = gromacs_settings.get("index_filename", "index.raw")
+        type_filename = gromacs_settings.get("type_filename", "type.raw")
+        ndx_filename = gromacs_settings.get("ndx_filename", "")
+        # Initial reference to process pbc condition.
+        # Default is em.tpr
+        ref_filename = gromacs_settings.get("ref_filename", "em.tpr")
         deffnm = gromacs_settings.get("deffnm", "deepmd")
         maxwarn = gromacs_settings.get("maxwarn", 1)
-        nsteps = cur_job["nsteps"]
+        traj_filename = gromacs_settings.get("traj_filename", "deepmd_traj.gro")
+        grp_name = gromacs_settings.get("group_name", "Other")
+        trj_freq = cur_job.get("trj_freq", 10)
 
         command = "%s grompp -f %s -p %s -c %s -o %s -maxwarn %d" % (model_devi_exec, mdp_filename, topol_filename, conf_filename, deffnm, maxwarn)
-        command += "&& %s mdrun -deffnm %s -nsteps %d" %(model_devi_exec, deffnm, nsteps)
+        command += "&& %s mdrun -deffnm %s -cpi" %(model_devi_exec, deffnm)
+        if ndx_filename:
+            command += f"&& echo -e \"{grp_name}\\n{grp_name}\\n\" | {model_devi_exec} trjconv -s {ref_filename} -f {deffnm}.trr -n {ndx_filename} -o {traj_filename} -pbc mol -ur compact -center"
+        else:
+            command += "&& echo -e \"%s\\n%s\\n\" | %s trjconv -s %s -f %s.trr -o %s -pbc mol -ur compact -center" % (grp_name, grp_name, model_devi_exec, ref_filename, deffnm, traj_filename)
+        command += "&& if [ ! -d traj ]; then \n mkdir traj; fi\n"
+        command += f"python -c \"import dpdata;system = dpdata.System('{traj_filename}', fmt='gromacs/gro'); [system.to_gromacs_gro('traj/%d.gromacstrj' % (i * {trj_freq}), frame_idx=i) for i in range(system.get_nframes())]; system.to_deepmd_npy('traj_deepmd')\""
+        command += f"&& dp model-devi -m ../graph.000.pb ../graph.001.pb ../graph.002.pb ../graph.003.pb -s traj_deepmd -o model_devi.out -f {trj_freq}"
         commands = [command]
-        
-        forward_files = [mdp_filename, topol_filename, conf_filename, index_filename,  "input.json" ]
-        backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , 'model_devi.out', 'model_devi.log']
+
+        forward_files = [mdp_filename, topol_filename, conf_filename, index_filename, ref_filename, type_filename, "input.json", "job.json" ]
+        if ndx_filename: forward_files.append(ndx_filename)
+        backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , traj_filename, 'model_devi.out', "traj", "traj_deepmd" ]
 
 
     cwd = os.getcwd()
@@ -1323,6 +1364,24 @@ def check_bad_box(conf_name,
     return is_bad
 
 
+def _read_model_devi_file(
+        task_path : str,
+        model_devi_f_avg_relative : bool = False
+):
+    model_devi = np.loadtxt(os.path.join(task_path, 'model_devi.out'))
+    if model_devi_f_avg_relative :
+        trajs = glob.glob(os.path.join(task_path, 'traj', '*.lammpstrj'))
+        all_f = []
+        for ii in trajs:
+            all_f.append(get_dumped_forces(ii))
+        all_f = np.array(all_f)
+        all_f = all_f.reshape([-1,3])
+        avg_f = np.sqrt(np.average(np.sum(np.square(all_f), axis = 1)))
+        model_devi[:,4:7] = model_devi[:,4:7] / avg_f
+        np.savetxt(os.path.join(task_path, 'model_devi_avgf.out'), model_devi, fmt='%16.6e')
+    return model_devi
+
+
 def _select_by_model_devi_standard(
         modd_system_task: List[str],
         f_trust_lo : float,
@@ -1331,6 +1390,7 @@ def _select_by_model_devi_standard(
         v_trust_hi : float,
         cluster_cutoff : float, 
         model_devi_skip : int = 0,
+        model_devi_f_avg_relative : bool = False,
         detailed_report_make_fp : bool = True,
 ):
     fp_candidate = []
@@ -1345,7 +1405,7 @@ def _select_by_model_devi_standard(
     for tt in modd_system_task :
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            all_conf = np.loadtxt(os.path.join(tt, 'model_devi.out'))
+            all_conf = _read_model_devi_file(tt, model_devi_f_avg_relative)
             for ii in range(all_conf.shape[0]) :
                 if all_conf[ii][0] < model_devi_skip :
                     continue
@@ -1393,7 +1453,8 @@ def _select_by_model_devi_adaptive_trust_low(
         v_trust_hi : float,
         numb_candi_v : int,
         perc_candi_v : float,
-        model_devi_skip : int = 0
+        model_devi_skip : int = 0,
+        model_devi_f_avg_relative : bool = False,
 ):
     """
     modd_system_task    model deviation tasks belonging to one system
@@ -1424,6 +1485,7 @@ def _select_by_model_devi_adaptive_trust_low(
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             model_devi = np.loadtxt(os.path.join(tt, 'model_devi.out'))
+            model_devi = _read_model_devi_file(tt, model_devi_f_avg_relative)
             for ii in range(model_devi.shape[0]) :
                 if model_devi[ii][0] < model_devi_skip :
                     continue
@@ -1510,8 +1572,13 @@ def _make_fp_vasp_inner (modd_path,
     system_index.sort()
 
     fp_tasks = []
+
+    charges_recorder = []  # record charges for each fp_task
+    charges_map = jdata.get("sys_charges", [])
+
     cluster_cutoff = jdata['cluster_cutoff'] if jdata.get('use_clusters', False) else None
     model_devi_adapt_trust_lo = jdata.get('model_devi_adapt_trust_lo', False)
+    model_devi_f_avg_relative = jdata.get('model_devi_f_avg_relative', False)
     # skip save *.out if detailed_report_make_fp is False, default is True
     detailed_report_make_fp = jdata.get("detailed_report_make_fp", True)
     # skip bad box criteria
@@ -1532,7 +1599,9 @@ def _make_fp_vasp_inner (modd_path,
                     v_trust_lo, v_trust_hi,
                     cluster_cutoff, 
                     model_devi_skip,
-                    detailed_report_make_fp = detailed_report_make_fp)
+                    model_devi_f_avg_relative = model_devi_f_avg_relative,
+                    detailed_report_make_fp = detailed_report_make_fp,
+                )
         else:
             numb_candi_f = jdata.get('model_devi_numb_candi_f', 10)
             numb_candi_v = jdata.get('model_devi_numb_candi_v', 0)
@@ -1543,7 +1612,9 @@ def _make_fp_vasp_inner (modd_path,
                     modd_system_task,
                     f_trust_hi, numb_candi_f, perc_candi_f,
                     v_trust_hi, numb_candi_v, perc_candi_v,
-                    model_devi_skip = model_devi_skip)
+                    model_devi_skip = model_devi_skip,
+                    model_devi_f_avg_relative = model_devi_f_avg_relative,
+                )
             dlog.info("system {0:s} {1:9s} : f_trust_lo {2:6.3f}   v_trust_lo {3:6.3f}".format(ss, 'adapted', f_trust_lo_ad, v_trust_lo_ad))
 
         # print a report
@@ -1601,11 +1672,11 @@ def _make_fp_vasp_inner (modd_path,
                     continue
 
             if fp_cluster_vacuum is not None:
-               assert fp_cluster_vacuum >0
-               skip_cluster = check_cluster(conf_name, fp_cluster_vacuum)
-               if skip_cluster:
-                  count_bad_cluster +=1
-                  continue
+                assert fp_cluster_vacuum >0
+                skip_cluster = check_cluster(conf_name, fp_cluster_vacuum)
+                if skip_cluster:
+                    count_bad_cluster +=1
+                    continue
 
             # link job.json
             job_name = os.path.join(tt, "job.json")
@@ -1621,6 +1692,8 @@ def _make_fp_vasp_inner (modd_path,
             fp_task_path = os.path.join(work_path, fp_task_name)
             create_path(fp_task_path)
             fp_tasks.append(fp_task_path)
+            if charges_map:
+                charges_recorder.append(charges_map[int(ss)])
             cwd = os.getcwd()
             os.chdir(fp_task_path)
             if cluster_cutoff is None:
@@ -1638,13 +1711,18 @@ def _make_fp_vasp_inner (modd_path,
             dlog.info("system {0:s} skipped {1:6d} confs with bad cluster, {2:6d} remains".format(ss, count_bad_cluster, numb_task - count_bad_cluster))
     if cluster_cutoff is None:
         cwd = os.getcwd()
-        for ii in fp_tasks:
-            os.chdir(ii)
+        for idx, task in enumerate(fp_tasks):
+            os.chdir(task)
             if model_devi_engine == "lammps":
                 dump_to_poscar('conf.dump', 'POSCAR', type_map, fmt = "lammps/dump")
+                if charges_map:
+                    warnings.warn('"sys_charges" keyword only support for gromacs engine now.')
             elif model_devi_engine == "gromacs":
                 # dump_to_poscar('conf.dump', 'POSCAR', type_map, fmt = "gromacs/gro")
-                dump_to_deepmd_raw('conf.dump', 'deepmd.raw', type_map, fmt = 'gromacs/gro')
+                if charges_map:
+                    dump_to_deepmd_raw('conf.dump', 'deepmd.raw', type_map, fmt='gromacs/gro', charge=charges_recorder[idx])
+                else:
+                    dump_to_deepmd_raw('conf.dump', 'deepmd.raw', type_map, fmt='gromacs/gro', charge=None)
             else:
                 raise RuntimeError("unknown model_devi engine", model_devi_engine)
             os.chdir(cwd)
@@ -2070,6 +2148,8 @@ def make_fp_gaussian(iter_index,
             sys_data = dpdata.System('POSCAR').data
         elif model_devi_engine == "gromacs":
             sys_data = dpdata.System("deepmd.raw", fmt='deepmd/raw').data
+            if os.path.isfile('deepmd.raw/charge'):
+                sys_data['charge'] = int(np.loadtxt('deepmd.raw/charge', dtype=int))
         ret = make_gaussian_input(sys_data, fp_params)
         with open('input', 'w') as fp:
             fp.write(ret)
