@@ -112,6 +112,7 @@ def run_property(confs,
     conf_dirs.sort()
     task_list = []
     work_path_list = []
+    multiple_ret = []
     for ii in conf_dirs:
         sepline(ch=ii, screen=True)
         for jj in property_list:
@@ -159,7 +160,7 @@ def run_property(confs,
             all_task = tmp_task_list
             run_tasks = util.collect_task(all_task, inter_type)
             if len(run_tasks) == 0:
-                return
+                continue
             else:
                 ret = pool.apply_async(worker, (work_path,
                                                 all_task,
@@ -169,23 +170,13 @@ def run_property(confs,
                                                 mdata,
                                                 inter_type,
                                                 ))
-            # run_tasks = [os.path.basename(ii) for ii in all_task]
-            # machine, resources, command, group_size = util.get_machine_info(mdata, inter_type)
-            # disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
-            # disp.run_jobs(resources,
-            #               command,
-            #               work_path,
-            #               run_tasks,
-            #               group_size,
-            #               forward_common_files,
-            #               forward_files,
-            #               backward_files,
-            #               outlog='outlog',
-            #               errlog='errlog')
+                multiple_ret.append(ret)
     pool.close()
     pool.join()
-    if ret.successful():
-        print('finished')
+    for ii in range(len(multiple_ret)):
+        if not multiple_ret[ii].successful():
+            raise RuntimeError("Job %d is not successful!" % ii)
+    print('%d jobs are finished' % len(multiple_ret))
 
 
 def worker(work_path,
