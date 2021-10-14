@@ -2090,7 +2090,7 @@ def make_fp_abacus_scf(iter_index,
         ret_kpt = make_abacus_scf_kpt(fp_params)
         with open("KPT", "w") as fp:
             fp.write(ret_kpt)
-        ret_stru = make_abacus_scf_stru(sys_data, fp_pp_files)
+        ret_stru = make_abacus_scf_stru(sys_data, fp_pp_files, fp_params)
         with open("STRU", "w") as fp:
             fp.write(ret_stru)
 

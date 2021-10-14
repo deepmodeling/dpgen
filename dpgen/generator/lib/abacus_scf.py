@@ -60,6 +60,12 @@ def make_abacus_scf_input(fp_params):
     if "sigma" in fp_params:
         assert(fp_params["sigma"] >= 0)
         ret += "sigma %f\n" % fp_params["sigma"]
+    if "force" in fp_params:
+        assert(fp_params["force"] == 0  or fp_params["force"] == 1)
+        ret += "force %d\n" % fp_params["force"]
+    if "stress" in fp_params:
+        assert(fp_params["stress"] == 0  or fp_params["stress"] == 1)
+        ret += "stress %d\n" % fp_params["stress"]    
     #paras for deepks
     if "out_descriptor" in fp_params:
         assert(fp_params["out_descriptor"] == 0 or fp_params["out_descriptor"] == 1)
@@ -72,13 +78,6 @@ def make_abacus_scf_input(fp_params):
         ret += "deepks_scf %d\n" % fp_params["deepks_scf"]
     if "model_file" in fp_params:
         ret += "model_file %s\n" % fp_params["model_file"]
-    #ret += "force 1\nstress 1\n"
-    if "force" in fp_params:
-        assert(fp_params["force"] == 0  or fp_params["force"] == 1)
-        ret += "force %d\n" % fp_params["force"]
-    if "stress" in fp_params:
-        assert(fp_params["stress"] == 0  or fp_params["stress"] == 1)
-        ret += "stress %d\n" % fp_params["stress"]    
     return ret
 
 def make_abacus_scf_stru(sys_data, fp_pp_files, fp_params):
@@ -90,7 +89,6 @@ def make_abacus_scf_stru(sys_data, fp_pp_files, fp_params):
     coord = sys_data['coords'][0]
     #volume = np.linalg.det(cell)
     #lattice_const = np.power(volume, 1/3)
-    #lattice_const = 1/bohr2ang # in Bohr, in this way coord and cell are in Angstrom 
 
     ret = "ATOMIC_SPECIES\n"
     for iatom in range(len(atom_names)):
@@ -99,7 +97,10 @@ def make_abacus_scf_stru(sys_data, fp_pp_files, fp_params):
 
     if "lattice_constant" in fp_params:
         ret += "\nLATTICE_CONSTANT\n"
-        ret += str(fp_params["lattice_constant"]) + "\n\n"
+        ret += str(fp_params["lattice_constant"]) + "\n\n" # in Bohr, in this way coord and cell are in Angstrom 
+    else:
+        ret += "\nLATTICE_CONSTANT\n"
+        ret += str(1/bohr2ang) + "\n\n"
 
     ret += "LATTICE_VECTORS\n"
     for ix in range(3):
