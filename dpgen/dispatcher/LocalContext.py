@@ -117,7 +117,13 @@ class LocalContext(object) :
                         pass
                     elif (os.path.exists(rfile)) and (not os.path.exists(lfile)) :
                         # trivial case, download happily
-                        shutil.move(rfile, lfile)
+                        # If the file to be downloaded is a softlink, `cp` should be performed instead of `mv`.
+                        # Otherwise, `lfile` is still a file linked to some original file,
+                        # and when this file's removed, `lfile` will be invalid.
+                        if os.path.islink(rfile):
+                            shutil.copyfile(rfile,lfile)
+                        else:
+                            shutil.move(rfile, lfile)
                     elif (os.path.exists(rfile)) and (os.path.exists(lfile)) :
                         # both exists, replace!
                         dlog.info('find existing %s, replacing by %s' % (lfile, rfile))
@@ -196,7 +202,7 @@ class LocalContext(object) :
                 o, e = proc.communicate()
                 stdout = SPRetObj(o)
                 stderr = SPRetObj(e)
-            except:
+            except ValueError:
                 stdout = None
                 stderr = None
         return ret, stdout, stderr

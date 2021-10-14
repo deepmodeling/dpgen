@@ -14,7 +14,7 @@ class LSF(Batch) :
         except:
             return JobStatus.terminated
         if job_id == "" :
-            raise RuntimeError("job %s is has not been submitted" % self.remote_root)
+            raise RuntimeError("job %s has not been submitted" % self.context.remote_root)
         ret, stdin, stdout, stderr\
             = self.context.block_call ("bjobs " + job_id)
         err_str = stderr.read().decode('utf-8')
@@ -108,13 +108,18 @@ class LSF(Batch) :
             if res['node_cpu']:
                 ret += '#BSUB -R span[ptile=%d]\n' % res['node_cpu']
             if res.get('new_lsf_gpu', False):
-                # supportted in LSF >= 10.1.0 SP6
-                # ref: https://www.ibm.com/support/knowledgecenter/en/SSWRJV_10.1.0/lsf_resource_sharing/use_gpu_res_reqs.html
-                ret += '#BSUB -n %d\n#BSUB -gpu "num=%d:mode=shared:j_exclusive=yes"\n' % (
-                    res['numb_gpu'], res['task_per_node'])
+                # supported in LSF >= 10.1.0.3
+                # ref: https://www.ibm.com/support/knowledgecenter/en/SSWRJV_10.1.0
+                # /lsf_resource_sharing/use_gpu_res_reqs.html
+                if res.get('exclusive', False):
+                    j_exclusive = "no"
+                else:
+                    j_exclusive = "yes"
+                ret += '#BSUB -n %d\n#BSUB -gpu "num=%d:mode=shared:j_exclusive=%s"\n' % (
+                    res['task_per_node'], res['numb_gpu'], j_exclusive)
             else:
                 ret += '#BSUB -n %d\n#BSUB -R "select[ngpus >0] rusage[ngpus_excl_p=%d]"\n' % (
-                    res['numb_gpu'], res['task_per_node'])
+                    res['task_per_node'], res['numb_gpu'])
         if res['time_limit']:
             ret += '#BSUB -W %s\n' % (res['time_limit'].split(':')[
                 0] + ':' + res['time_limit'].split(':')[1])
@@ -123,6 +128,13 @@ class LSF(Batch) :
         ret += '#BSUB -J %s\n' % (res['job_name'] if 'job_name' in res else 'dpgen')
         if len(res['partition']) > 0 :
             ret += '#BSUB -q %s\n' % res['partition']
+        if len(res['exclude_list']) > 0:
+            ret += '#BSUB -R "select['
+            temp_exclude = []
+            for ii in res['exclude_list']:
+                temp_exclude.append('hname != %s' % ii)
+            ret += ' && '.join(temp_exclude)
+            ret += ']"\n'
         ret += "\n"
         for ii in res['module_unload_list'] :
             ret += "module unload %s\n" % ii
@@ -168,3 +180,11 @@ class LSF(Batch) :
             return False
         else:
             return True
+
+
+    def _make_squeue(self, mdata1, res):
+        ret = ''
+        ret += 'bjobs -u %s ' % mdata1['username']
+        ret += '-q %s ' % res['partition']
+        ret += '| grep PEND '
+        return ret

@@ -8,7 +8,7 @@ NAME="dpgen"
 SHORT_CMD="dpgen"
 dlog = logging.getLogger(__name__)
 dlog.setLevel(logging.INFO)
-dlogf = logging.FileHandler(os.getcwd()+os.sep+SHORT_CMD+'.log')
+dlogf = logging.FileHandler(os.getcwd()+os.sep+SHORT_CMD+'.log', delay=True)
 dlogf_formatter=logging.Formatter('%(asctime)s - %(levelname)s : %(message)s')
 #dlogf_formatter=logging.Formatter('%(asctime)s - %(name)s - [%(filename)s:%(funcName)s - %(lineno)d ] - %(levelname)s \n %(message)s')
 dlogf.setFormatter(dlogf_formatter)
@@ -44,6 +44,8 @@ def info():
             print('%10s %10s   %s' % (modui, mm.__version__, mm.__path__[0]))
         except ImportError:
             print('%10s %10s Not Found' % (modui, ''))
+        except AttributeError:
+            print('%10s %10s unknown version or path' %(modui, ''))
     print()
 
     # reference

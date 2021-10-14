@@ -16,6 +16,7 @@ from aliyunsdkecs.request.v20140526.DescribeLaunchTemplatesRequest import Descri
 from aliyunsdkecs.request.v20140526.CreateLaunchTemplateRequest import CreateLaunchTemplateRequest
 from aliyunsdkecs.request.v20140526.DescribeImagesRequest import DescribeImagesRequest
 from aliyunsdkecs.request.v20140526.DescribeSecurityGroupsRequest import DescribeSecurityGroupsRequest
+from aliyunsdkvpc.request.v20160428.DescribeVSwitchesRequest import DescribeVSwitchesRequest
 import time, json, os, glob, string, random, sys
 from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, JobRecord
 from dpgen.dispatcher.SSHContext import SSHSession
@@ -83,6 +84,21 @@ def manual_delete(stage):
         os.remove("apg_id.json")
         print("delete successfully!")
 
+def delete_apg(stage):
+    fp = open("machine-ali.json")
+    data = json.load(fp)
+    mdata_machine = data[stage][0]["machine"]
+    mdata_resources = data[stage][0]["resources"]
+    cloud_resources = mdata_machine["cloud_resources"]
+    ali = ALI(mdata_machine, mdata_resources, "work_path", [1], 1, cloud_resources)
+    fp = open("apg_id.json")
+    data = json.load(fp)
+    ali.cloud_resources["apg_id"] = data["apg_id"]
+    ali.delete_apg()
+    os.remove("apg_id.json")
+    print("delete successfully!")
+    
+
 class ALI(DispatcherList):
     def __init__(self, mdata_machine, mdata_resources, work_path, run_tasks, group_size, cloud_resources=None):
         super().__init__(mdata_machine, mdata_resources, work_path, run_tasks, group_size, cloud_resources)
@@ -126,10 +142,8 @@ class ALI(DispatcherList):
             sys.exit()
 
     def update(self):
-        if len(self.server_pool) == 0:
-            self.server_pool = self.get_server_pool()
-            self.ip_pool = self.get_ip(self.server_pool)
-        else: pass
+        self.server_pool = self.get_server_pool()
+        self.ip_pool = self.get_ip(self.server_pool)
 
     # Derivate
     def catch_dispatcher_exception(self, ii):
@@ -302,6 +316,9 @@ class ALI(DispatcherList):
         request.set_ImageId(image_id)
         request.set_ImageOwnerAlias("self")
         request.set_PasswordInherit(True)
+        if "address" in self.cloud_resources and self.cloud_resources['address'] == "public":
+            request.set_InternetMaxBandwidthIn(100)
+            request.set_InternetMaxBandwidthOut(100)
         request.set_InstanceType("ecs.c6.large")
         request.set_InstanceName(self.cloud_resources["instance_name"])
         request.set_SecurityGroupId(sg_id)
@@ -343,21 +360,31 @@ class ALI(DispatcherList):
         request = DescribeImagesRequest()
         request.set_accept_format('json')
         request.set_ImageOwnerAlias("self")
-        request.set_PageSize(100)
-        count = 0
-        flag = 0
-        while count < 10:
-            try:
-                response = self.client.do_action_with_exception(request)
-                response = json.loads(response)
-                for img in response["Images"]["Image"]:
-                    if img["ImageName"] == img_name:
-                        return img["ImageId"]
-                flag = 1
-                break
-            except:
-                count += 1
-                time.sleep(10)
+        request.set_PageSize(20)
+        response = self.client.do_action_with_exception(request)
+        response = json.loads(response)
+        totalcount = response["TotalCount"]
+
+        iteration = totalcount // 20
+        if iteration * 20 < totalcount:
+            iteration += 1
+
+        for ii in range(1, iteration+1):
+            count = 0
+            flag = 0
+            request.set_PageNumber(ii)
+            while count < 10:
+                try:
+                    response = self.client.do_action_with_exception(request)
+                    response = json.loads(response)
+                    for img in response["Images"]["Image"]:
+                        if img["ImageName"] == img_name:
+                            return img["ImageId"]
+                    flag = 1
+                    break
+                except:
+                    count += 1
+                    time.sleep(10)
         if not flag:
             dlog.info("get image failed, exit")
             sys.exit()
@@ -379,7 +406,26 @@ class ALI(DispatcherList):
         response = json.loads(response)
         for vpc in response["Vpcs"]["Vpc"]:
             if vpc["VpcId"] == vpc_id:
-                return vpc["VSwitchIds"]["VSwitchId"]
+                vswitchids = vpc["VSwitchIds"]["VSwitchId"]
+                break
+        vswitchid_option = []
+        if "zone" in self.cloud_resources and self.cloud_resources['zone']:
+            for zone in self.cloud_resources['zone']:
+                for vswitchid in vswitchids:
+                    request = DescribeVSwitchesRequest()
+                    request.set_accept_format('json')
+                    request.set_VSwitchId(vswitchid)
+                    zoneid = self.cloud_resources['regionID']+"-"+zone
+                    request.set_ZoneId(zoneid)
+                    response = self.client.do_action_with_exception(request)
+                    response = json.loads(response)
+                    if(response["TotalCount"] == 1):
+                        vswitchid_option.append(vswitchid)
+                        continue
+        if(vswitchid_option):
+            return vswitchid_option
+        else:
+            return  vswitchids
 
     def change_apg_capasity(self, capasity):
         request = ModifyAutoProvisioningGroupRequest()
@@ -438,7 +484,10 @@ class ALI(DispatcherList):
                     request.set_InstanceIds([instance_list[i]])
                     response = self.client.do_action_with_exception(request)
                     response = json.loads(response)
-                    ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
+                    if "address" in self.cloud_resources and self.cloud_resources['address'] == "public":
+                        ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]["IpAddress"][0])
+                    else:
+                        ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
                     # ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]["IpAddress"][0])
             else:
                 iteration = len(instance_list) // 10
@@ -447,15 +496,19 @@ class ALI(DispatcherList):
                         request.set_InstanceIds([instance_list[i*10+j]])
                         response = self.client.do_action_with_exception(request)
                         response = json.loads(response)
-                        ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
-                        # ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]["IpAddress"][0])
+                        if "address" in self.cloud_resources and self.cloud_resources['address'] == "public":
+                            ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]["IpAddress"][0])
+                        else:
+                            ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
                 if len(instance_list) - iteration * 10 != 0:
                     for j in range(len(instance_list) - iteration * 10):
                         request.set_InstanceIds([instance_list[iteration*10+j]])
                         response = self.client.do_action_with_exception(request)
                         response = json.loads(response)
-                        ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
-                        # ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]["IpAddress"][0])
+                        if "address" in self.cloud_resources and self.cloud_resources['address'] == "public":
+                            ip_list.append(response["Instances"]["Instance"][0]["PublicIpAddress"]["IpAddress"][0])
+                        else:
+                            ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
             return ip_list
         except: return []
 

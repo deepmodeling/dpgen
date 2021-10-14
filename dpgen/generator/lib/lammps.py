@@ -61,7 +61,7 @@ def make_lammps_input(ensemble,
         ret+= "neigh_modify    delay %d\n" % neidelay
     ret+= "\n"
     ret+= "box          tilt large\n"
-    ret+= "read_data       %s\n" % conf_file
+    ret+= "if \"${restart} > 0\" then \"read_restart dpgen.restart.*\" else \"read_data %s\"\n" % conf_file
     ret+= "change_box   all triclinic\n"
     for jj in range(len(mass_map)) :
         ret+= "mass            %d %f\n" %(jj+1, mass_map[jj])
@@ -77,21 +77,23 @@ def make_lammps_input(ensemble,
         if jdata.get('use_clusters', False):
             keywords += "atomic "
         if jdata.get('use_relative', False):
-            eps = jdata.get('eps', 0.)
             keywords += "relative %s " % jdata['epsilon']
+        if jdata.get('use_relative_v', False):
+            keywords += "relative_v %s " % jdata['epsilon_v']
         if ele_temp_f is not None:
             keywords += "fparam ${ELE_TEMP}"
         if ele_temp_a is not None:
             keywords += "aparam ${ELE_TEMP}"
         ret+= "pair_style      deepmd %s out_freq ${THERMO_FREQ} out_file model_devi.out %s\n" % (graph_list, keywords)
-    ret+= "pair_coeff      \n"
+    ret+= "pair_coeff      * *\n"
     ret+= "\n"
     ret+= "thermo_style    custom step temp pe ke etotal press vol lx ly lz xy xz yz\n"
     ret+= "thermo          ${THERMO_FREQ}\n"
-    ret+= "dump            1 all custom ${DUMP_FREQ} traj/*.lammpstrj id type x y z\n"
+    ret+= "dump            1 all custom ${DUMP_FREQ} traj/*.lammpstrj id type x y z fx fy fz\n"
+    ret+= "restart         10000 dpgen.restart\n"
     ret+= "\n"
     if pka_e is None :
-        ret+= "velocity        all create ${TEMP} %d" % (random.randrange(max_seed-1)+1)
+        ret+= "if \"${restart} == 0\" then \"velocity        all create ${TEMP} %d\"" % (random.randrange(max_seed-1)+1)
     else :
         sys = dpdata.System(conf_file, fmt = 'lammps/lmp')
         sys_data = sys.data
@@ -103,7 +105,7 @@ def make_lammps_input(ensemble,
         pka_vec = _sample_sphere()
         pka_vec *= pka_vn
         ret+= 'group           first id 1\n'
-        ret+= 'velocity        first set %f %f %f\n' % (pka_vec[0], pka_vec[1], pka_vec[2])
+        ret+= 'if \"${restart} == 0\" then \"velocity        first set %f %f %f\"\n' % (pka_vec[0], pka_vec[1], pka_vec[2])
         ret+= 'fix	       2 all momentum 1 linear 1 1 1\n'
     ret+= "\n"
     if ensemble.split('-')[0] == 'npt' :
@@ -127,7 +129,7 @@ def make_lammps_input(ensemble,
         ret+= "fix             fm all momentum 1 linear 1 1 1\n"
     ret+= "\n"
     ret+= "timestep        %f\n" % dt
-    ret+= "run             ${NSTEPS}\n"
+    ret+= "run             ${NSTEPS} upto\n"
     return ret
         
 # ret = make_lammps_input ("npt", "al.lmp", ['graph.000.pb', 'graph.001.pb'], 20000, 20, [27], 1000, pres = 1.0)
@@ -135,5 +137,37 @@ def make_lammps_input(ensemble,
 # cvt_lammps_conf('POSCAR', 'tmp.lmp')
 
 
-    
- 
+def get_dumped_forces(
+        file_name):
+    with open(file_name) as fp:        
+        lines = fp.read().split('\n')
+    natoms = None
+    for idx,ii in enumerate(lines):
+        if 'ITEM: NUMBER OF ATOMS' in ii:
+            natoms = int(lines[idx+1])
+            break
+    if natoms is None:
+        raise RuntimeError('wrong dump file format, cannot find number of atoms', file_name)
+    idfx = None
+    for idx,ii in enumerate(lines):
+        if 'ITEM: ATOMS' in ii:
+            keys = ii
+            keys = keys.replace('ITEM: ATOMS', '')
+            keys = keys.split()
+            idfx = keys.index('fx')
+            idfy = keys.index('fy')
+            idfz = keys.index('fz')
+            break
+    if idfx is None:
+        raise RuntimeError('wrong dump file format, cannot find dump keys', file_name)
+    ret = []
+    for ii in range(idx+1, idx+natoms+1):
+        words = lines[ii].split()
+        ret.append([ float(words[ii]) for ii in [idfx, idfy, idfz] ])
+    ret = np.array(ret)
+    return ret
+
+
+if __name__ == '__main__':
+    ret = get_dumped_forces('40.lammpstrj')
+    print(ret)

@@ -81,6 +81,9 @@ class Slurm(Batch) :
         ret += "#SBATCH -t %s\n" % res['time_limit']
         if res['mem_limit'] > 0 :
             ret += "#SBATCH --mem=%dG \n" % res['mem_limit']
+        if 'job_name' in res:
+            if len(res['job_name']) > 0:
+                ret += '#SBATCH --job-name=%s\n' % res['job_name']
         if len(res['account']) > 0 :
             ret += "#SBATCH --account=%s \n" % res['account']
         if len(res['partition']) > 0 :
@@ -100,6 +103,8 @@ class Slurm(Batch) :
                 temp_exclude += ","
             temp_exclude = temp_exclude[:-1]
             ret += '#SBATCH --exclude=%s \n' % temp_exclude
+        for flag in res.get('custom_flags', []):
+            ret += '#SBATCH %s \n' % flag
         ret += "\n"
         for ii in res['module_unload_list'] :
             ret += "module unload %s\n" % ii

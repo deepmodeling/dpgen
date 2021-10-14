@@ -1,52 +1,88 @@
-import os,sys,json,glob,shutil
+import os, sys, json, glob, shutil
 import dpdata
 import numpy as np
 import unittest
+import dpdata
+from monty.serialization import loadfn, dumpfn
+from pymatgen.analysis.elasticity.strain import Strain, Deformation
+from pymatgen.core import Structure
+from pymatgen.io.vasp import Incar
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 __package__ = 'auto_test'
+
 from .context import make_kspacing_kpoints
 from .context import setUpModule
 
-from pymatgen.io.vasp import Incar
-from dpgen.auto_test.gen_02_elastic import make_vasp
+from dpgen.auto_test.Elastic import Elastic
 
-class Test02(unittest.TestCase):
-    def tearDown(self):
-        if os.path.exists('02.elastic'):
-            shutil.rmtree('02.elastic')
 
-    def test_make_vasp (self):
-        jdata = {
-            'relax_incar' : 'vasp_input/INCAR.rlx',
-            'potcar_map': {'Si': 'vasp_input/POTCAR' },
+class TestElastic(unittest.TestCase):
+
+    def setUp(self):
+        _jdata = {
+            "structures": ["confs/std-fcc"],
+            "interaction": {
+                "type": "vasp",
+                "incar": "vasp_input/INCAR.rlx",
+                "potcar_prefix": ".",
+                "potcars": {"Al": "vasp_input/POT_Al"}
+            },
+            "properties": [
+                {
+                    "skip":False,
+                    "type": "elastic",
+                    "norm_deform": 2e-2,
+                    "shear_deform": 5e-2
+                }
+            ]
         }
-        make_vasp(jdata, 'confs/si/mp-149')
-        
-        target_path = '02.elastic/si/mp-149/vasp-relax_incar'
-        equi_path = '00.equi/si/mp-149/vasp-relax_incar'
-        dfm_dirs = glob.glob(os.path.join(target_path, 'dfm*'))
-       
-        # check root INCAR
+
+        self.equi_path = 'confs/std-fcc/relaxation/task_relax'
+        self.source_path = 'equi/vasp'
+        self.target_path = 'confs/std-fcc/elastic_00'
+        if not os.path.exists(self.equi_path):
+            os.makedirs(self.equi_path)
+
+        self.confs = _jdata["structures"]
+        self.inter_param = _jdata["interaction"]
+        self.prop_param = _jdata['properties']
+
+        self.elastic = Elastic(_jdata['properties'][0])
+
+    def tearDown(self):
+        if os.path.exists(os.path.join(self.equi_path,'..')):
+            shutil.rmtree(self.equi_path)
+        if os.path.exists(self.equi_path):
+            shutil.rmtree(self.equi_path)
+        if os.path.exists(self.target_path):
+            shutil.rmtree(self.target_path)
+
+    def test_task_type(self):
+        self.assertEqual('elastic', self.elastic.task_type())
+
+    def test_task_param(self):
+        self.assertEqual(self.prop_param[0], self.elastic.task_param())
+
+    def test_make_confs(self):
+
+        shutil.copy(os.path.join(self.source_path, 'Al-fcc.json'), os.path.join(self.equi_path, 'result.json'))
+        if not os.path.exists(os.path.join(self.equi_path, 'CONTCAR')):
+            with self.assertRaises(RuntimeError):
+                self.elastic.make_confs(self.target_path, self.equi_path)
+        shutil.copy(os.path.join(self.source_path, 'CONTCAR_Al_fcc'), os.path.join(self.equi_path, 'CONTCAR'))
+        task_list = self.elastic.make_confs(self.target_path, self.equi_path)
+        dfm_dirs = glob.glob(os.path.join(self.target_path, 'task.*'))
+
         incar0 = Incar.from_file(os.path.join('vasp_input', 'INCAR.rlx'))
-        incar1 = Incar.from_file(os.path.join(target_path, 'INCAR'))
-        self.assertFalse(incar0 == incar1)
-        incar0['ISIF'] = 2
-        self.assertTrue(incar0 == incar1)
-        # check root POTCAR
-        with open(os.path.join('vasp_input', 'POTCAR')) as fp:
-            pot0 = fp.read()
-        with open(os.path.join(target_path, 'POTCAR')) as fp:
-            pot1 = fp.read()
-        self.assertEqual(pot0, pot1)
-        # check root POSCAR
-        self.assertEqual(os.path.realpath(os.path.join(target_path, 'POSCAR')), 
-                         os.path.realpath(os.path.join(equi_path, 'CONTCAR')))
-        # check subdir
+        incar0['ISIF'] = 4
+
+        self.assertEqual(os.path.realpath(os.path.join(self.equi_path, 'CONTCAR')),
+                         os.path.realpath(os.path.join(self.target_path, 'POSCAR')))
+        ref_st = Structure.from_file(os.path.join(self.target_path, 'POSCAR'))
+        dfm_dirs.sort()
         for ii in dfm_dirs:
-            self.assertEqual(os.path.realpath(os.path.join(ii, 'INCAR')),
-                             os.path.realpath(os.path.join(target_path, 'INCAR')))
-            self.assertEqual(os.path.realpath(os.path.join(ii, 'KPOINTS')),
-                             os.path.realpath(os.path.join(target_path, 'KPOINTS')))
-            self.assertEqual(os.path.realpath(os.path.join(ii, 'POTCAR')),
-                             os.path.realpath(os.path.join(target_path, 'POTCAR')))
+            st_file = os.path.join(ii, 'POSCAR')
+            self.assertTrue(os.path.isfile(st_file))
+            strain_json_file = os.path.join(ii, 'strain.json')
+            self.assertTrue(os.path.isfile(strain_json_file))

@@ -1,4 +1,6 @@
+from distutils.version import LooseVersion
 import os,sys,time,random,json,glob
+from dpdispatcher import Task, Submission, Resources, Machine
 from dpgen.dispatcher.LocalContext import LocalSession
 from dpgen.dispatcher.LocalContext import LocalContext
 from dpgen.dispatcher.LazyLocalContext import LazyLocalContext
@@ -12,6 +14,8 @@ from dpgen.dispatcher.AWS import AWS
 from dpgen.dispatcher.JobStatus import JobStatus
 from dpgen import dlog
 from hashlib import sha1
+# import dargs
+from dargs.dargs import Argument
 
 def _split_tasks(tasks,
                  group_size):
@@ -115,6 +119,7 @@ class Dispatcher(object):
         task_chunks_str = ['+'.join(ii) for ii in task_chunks]
         task_hashes = [sha1(ii.encode('utf-8')).hexdigest() for ii in task_chunks_str]
         job_record = JobRecord(work_path, task_chunks, fname = self.jrname)
+        job_record.dump()
         nchunks = len(task_chunks)
         
         job_list = []
@@ -166,10 +171,10 @@ class Dispatcher(object):
                                                  job_uuid,
                                                  ip,
                                                  instance_id)
+                job_record.dump()
             else :
                 # finished job, append a None to list
                 job_list.append(None)
-        job_record.dump()
         assert(len(job_list) == nchunks)
         job_handler = {
             'task_chunks': task_chunks,
@@ -337,3 +342,40 @@ def make_dispatcher(mdata, mdata_resource=None, work_path=None, run_tasks=None, 
             context_type = 'lazy-local'
         disp = Dispatcher(mdata, context_type=context_type, batch_type=batch_type)
         return disp
+
+def make_submission(mdata_machine, mdata_resources, commands, work_path, run_tasks, group_size,
+    forward_common_files, forward_files, backward_files, outlog, errlog):
+
+    machine = Machine.load_from_dict(mdata_machine)
+    resources = Resources.load_from_dict(mdata_resources)
+
+    if mdata_machine['local_root'] != './':
+        raise RuntimeError(f"local_root must be './' in dpgen's machine.json.")
+
+    command = "&&".join(commands)
+
+    task_list = []
+    for ii in run_tasks:
+        task = Task(
+            command=command, 
+            task_work_path=ii,
+            forward_files=forward_files,
+            backward_files=backward_files,
+            outlog=outlog,
+            errlog=errlog
+        )
+        task_list.append(task)
+
+    submission = Submission(
+        work_base=work_path,
+        machine=machine,
+        resources=resources,
+        task_list=task_list,
+        forward_common_files=forward_common_files,
+        backward_common_files=[]
+    )
+    return submission
+
+
+
+

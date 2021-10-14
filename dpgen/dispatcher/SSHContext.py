@@ -13,15 +13,19 @@ class SSHSession (object) :
         self.remote_host = self.remote_profile['hostname']
         self.remote_uname = self.remote_profile['username']
         self.remote_port = self.remote_profile.get('port', 22)
-        self.remote_password = None
-        if 'password' in self.remote_profile :
-            self.remote_password = self.remote_profile['password']
+        self.remote_password = self.remote_profile.get('password', None)
+        self.local_key_filename = self.remote_profile.get('key_filename', None)
+        self.remote_timeout = self.remote_profile.get('timeout', None)
+        self.local_key_passphrase = self.remote_profile.get('passphrase', None)
         self.remote_workpath = self.remote_profile['work_path']
         self.ssh = None
-        self._setup_ssh(self.remote_host,
-                        self.remote_port,
+        self._setup_ssh(hostname=self.remote_host,
+                        port=self.remote_port,
                         username=self.remote_uname,
-                        password=self.remote_password)
+                        password=self.remote_password,
+                        key_filename=self.local_key_filename,
+                        timeout=self.remote_timeout,
+                        passphrase=self.local_key_passphrase)
 
     def ensure_alive(self,
                      max_check = 10,
@@ -32,12 +36,15 @@ class SSHSession (object) :
                 raise RuntimeError('cannot connect ssh after %d failures at interval %d s' %
                                    (max_check, sleep_time))
             dlog.info('connection check failed, try to reconnect to ' + self.remote_host)
-            self._setup_ssh(self.remote_host,
-                            self.remote_port,
+            self._setup_ssh(hostname=self.remote_host,
+                            port=self.remote_port,
                             username=self.remote_uname,
-                            password=self.remote_password)
+                            password=self.remote_password,
+                            key_filename=self.local_key_filename,
+                            timeout=self.remote_timeout,
+                            passphrase=self.local_key_passphrase)
             count += 1
-            time.sleep(sleep)
+            time.sleep(sleep_time)
 
     def _check_alive(self):
         if self.ssh == None:
@@ -51,16 +58,23 @@ class SSHSession (object) :
 
     def _setup_ssh(self,
                    hostname,
-                   port, 
-                   username = None,
-                   password = None):
-        self.ssh = paramiko.SSHClient()        
-        # ssh_client.load_system_host_keys()        
+                   port=22,
+                   username=None,
+                   password=None,
+                   key_filename=None,
+                   timeout=None,
+                   passphrase=None):
+        self.ssh = paramiko.SSHClient()
+        # ssh_client.load_system_host_keys()
         self.ssh.set_missing_host_key_policy(paramiko.WarningPolicy)
-        self.ssh.connect(hostname, port=port, username=username, password=password)
+        self.ssh.connect(hostname=hostname, port=port,
+                         username=username, password=password,
+                         key_filename=key_filename, timeout=timeout, passphrase=passphrase)
         assert(self.ssh.get_transport().is_active())
         transport = self.ssh.get_transport()
         transport.set_keepalive(60)
+        # reset sftp
+        self._sftp = None
 
     def get_ssh_client(self) :
         return self.ssh
@@ -70,6 +84,28 @@ class SSHSession (object) :
 
     def close(self) :
         self.ssh.close()
+
+    def exec_command(self, cmd, retry = 0):
+        """Calling self.ssh.exec_command but has an exception check."""
+        try:
+            return self.ssh.exec_command(cmd)
+        except paramiko.ssh_exception.SSHException:
+            # SSH session not active
+            # retry for up to 3 times
+            if retry < 3:
+                dlog.warning("SSH session not active in calling %s, retry the command..." % cmd)
+                # ensure alive
+                self.ensure_alive()
+                return self.exec_command(cmd, retry = retry+1)
+            raise RuntimeError("SSH session not active")
+
+    @property
+    def sftp(self):
+        """Returns sftp. Open a new one if not existing."""
+        if self._sftp is None:
+            self.ensure_alive()
+            self._sftp = self.ssh.open_sftp()
+        return self._sftp
 
 
 class SSHContext (object):
@@ -88,15 +124,17 @@ class SSHContext (object):
         self.ssh_session = ssh_session
         self.ssh_session.ensure_alive()
         try:
-           sftp = self.ssh_session.ssh.open_sftp() 
-           sftp.mkdir(self.remote_root)
-           sftp.close()
+           self.sftp.mkdir(self.remote_root)
         except: 
            pass
     
     @property
     def ssh(self):
         return self.ssh_session.get_ssh_client()  
+
+    @property
+    def sftp(self):
+        return self.ssh_session.sftp
 
     def close(self):
         self.ssh_session.close()
@@ -151,7 +189,7 @@ class SSHContext (object):
                         cmd,
                         retry=0) :
         self.ssh_session.ensure_alive()
-        stdin, stdout, stderr = self.ssh.exec_command(('cd %s ;' % self.remote_root) + cmd)
+        stdin, stdout, stderr = self.ssh_session.exec_command(('cd %s ;' % self.remote_root) + cmd)
         exit_status = stdout.channel.recv_exit_status() 
         if exit_status != 0:
             if retry<3:
@@ -168,7 +206,7 @@ class SSHContext (object):
     def block_call(self, 
                    cmd) :
         self.ssh_session.ensure_alive()
-        stdin, stdout, stderr = self.ssh.exec_command(('cd %s ;' % self.remote_root) + cmd)
+        stdin, stdout, stderr = self.ssh_session.exec_command(('cd %s ;' % self.remote_root) + cmd)
         exit_status = stdout.channel.recv_exit_status() 
         return exit_status, stdin, stdout, stderr
 
@@ -180,32 +218,26 @@ class SSHContext (object):
 
     def write_file(self, fname, write_str):
         self.ssh_session.ensure_alive()
-        sftp = self.ssh.open_sftp()
-        with sftp.open(os.path.join(self.remote_root, fname), 'w') as fp :
+        with self.sftp.open(os.path.join(self.remote_root, fname), 'w') as fp :
             fp.write(write_str)
-        sftp.close()
 
     def read_file(self, fname):
         self.ssh_session.ensure_alive()
-        sftp = self.ssh.open_sftp()
-        with sftp.open(os.path.join(self.remote_root, fname), 'r') as fp:
+        with self.sftp.open(os.path.join(self.remote_root, fname), 'r') as fp:
             ret = fp.read().decode('utf-8')
-        sftp.close()
         return ret
 
     def check_file_exists(self, fname):
         self.ssh_session.ensure_alive()
-        sftp = self.ssh.open_sftp()
         try:
-            sftp.stat(os.path.join(self.remote_root, fname)) 
+            self.sftp.stat(os.path.join(self.remote_root, fname)) 
             ret = True
         except IOError:
             ret = False
-        sftp.close()
         return ret        
-        
+
     def call(self, cmd):
-        stdin, stdout, stderr = self.ssh.exec_command(cmd)
+        stdin, stdout, stderr = self.ssh_session.exec_command(cmd)
         # stdin, stdout, stderr = self.ssh.exec_command('echo $$; exec ' + cmd)
         # pid = stdout.readline().strip()
         # print(pid)
@@ -255,33 +287,48 @@ class SSHContext (object):
         # trans
         from_f = os.path.join(self.local_root, of)
         to_f = os.path.join(self.remote_root, of)
-        sftp = self.ssh.open_sftp()
         try:
-           sftp.put(from_f, to_f)
+           self.sftp.put(from_f, to_f)
         except FileNotFoundError:
            raise FileNotFoundError("from %s to %s Error!"%(from_f,to_f))
         # remote extract
         self.block_checkcall('tar xf %s' % of)
         # clean up
         os.remove(from_f)
-        sftp.remove(to_f)
-        sftp.close()
+        self.sftp.remove(to_f)
 
     def _get_files(self, 
                    files) :
-        of = self.job_uuid + '.tgz'
-        flist = ""
-        for ii in files :
-            flist += " " + ii
+        of = self.job_uuid + '.tar.gz'
         # remote tar
-        self.block_checkcall('tar czf %s %s' % (of, flist))
+        # If the number of files are large, we may get "Argument list too long" error.
+        # Thus, we may run tar commands for serveral times and tar only 100 files for
+        # each time.
+        per_nfile = 100
+        ntar = len(files) // per_nfile + 1
+        if ntar <= 1:
+            self.block_checkcall('tar czfh %s %s' % (of, " ".join(files)))
+        else:
+            of_tar = self.job_uuid + '.tar'
+            for ii in range(ntar):
+                ff = files[per_nfile * ii : per_nfile * (ii+1)]
+                if ii == 0:
+                    # tar cf for the first time
+                    self.block_checkcall('tar cfh %s %s' % (of_tar, " ".join(ff)))
+                else:
+                    # append using tar rf
+                    # -r, --append append files to the end of an archive
+                    self.block_checkcall('tar rfh %s %s' % (of_tar, " ".join(ff)))
+            # compress the tar file using gzip, and will get a tar.gz file
+            # overwrite considering dpgen may stop and restart
+            # -f, --force force overwrite of output file and compress links
+            self.block_checkcall('gzip -f %s' % of_tar)
         # trans
         from_f = os.path.join(self.remote_root, of)
         to_f = os.path.join(self.local_root, of)
         if os.path.isfile(to_f) :
             os.remove(to_f)
-        sftp = self.ssh.open_sftp()
-        sftp.get(from_f, to_f)
+        self.sftp.get(from_f, to_f)
         # extract
         cwd = os.getcwd()
         os.chdir(self.local_root)
@@ -290,5 +337,4 @@ class SSHContext (object):
         os.chdir(cwd)        
         # cleanup
         os.remove(to_f)
-        sftp.remove(from_f)
-        sftp.close()
+        self.sftp.remove(from_f)

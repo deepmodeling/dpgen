@@ -25,11 +25,7 @@ default_config={
       "SCF": {
         "SCF_GUESS": "ATOMIC",
         "EPS_SCF": "1.0E-6",
-        "MAX_SCF": 50,
-        "OT": {
-          "MINIMIZER": "DIIS",
-          "PRECONDITIONER": "FULL_SINGLE_INVERSE"
-        }
+        "MAX_SCF": 50
       },
       "XC": {
         "XC_FUNCTIONAL": {
@@ -54,7 +50,10 @@ default_config={
     "PRINT": {
       "FORCES": {
         "_": "ON"
-    }
+    },
+      "STRESS_TENSOR":{
+          "_": "ON"
+          }
   }
 }
 }
@@ -157,7 +156,6 @@ def make_cp2k_input(sys_data, fp_params):
             }
         }
             }
-
     update_dict(default_config, user_config)
     update_dict(default_config, cell_config)
     #output list
@@ -184,5 +182,36 @@ def make_cp2k_xyz(sys_data):
     return x
 
 
+
+def make_cp2k_input_from_external(sys_data, exinput_path):
+    # read the input content as string
+    with open(exinput_path, 'r') as f:
+        exinput = f.readlines()
+
+    # find the ABC cell string
+    for line_idx, line in enumerate(exinput):
+        if 'ABC' in line:
+            delete_cell_idx = line_idx
+            delete_cell_line = line
+
+    # remove the useless CELL line
+    exinput.remove(delete_cell_line)
+
+    # insert the cell information
+    # covert cell to cell string
+    cell = sys_data['cells'][0]
+    cell = np.reshape(cell, [3,3])
+    cell_a = np.array2string(cell[0,:])
+    cell_a = cell_a[1:-1]
+    cell_b = np.array2string(cell[1,:])
+    cell_b = cell_b[1:-1]
+    cell_c = np.array2string(cell[2,:])
+    cell_c = cell_c[1:-1]
+
+    exinput.insert(delete_cell_idx, 'A  ' + cell_a + '\n')
+    exinput.insert(delete_cell_idx+1, 'B  ' + cell_b + '\n')
+    exinput.insert(delete_cell_idx+2, 'C  ' + cell_c + '\n')
+
+    return ''.join(exinput)
 
 
