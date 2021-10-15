@@ -13,6 +13,8 @@ from dpgen.dispatcher.Dispatcher import make_dispatcher
 from distutils.version import LooseVersion
 from dpgen.dispatcher.Dispatcher import make_submission
 from dpgen.remote.decide_machine import convert_mdata
+from dpgen.auto_test.lib.utils import create_path
+
 lammps_task_type = ['deepmd', 'meam', 'eam_fs', 'eam_alloy']
 
 
@@ -78,10 +80,7 @@ def make_equi(confs,
         if not os.path.exists(poscar):
             raise FileNotFoundError('no configuration for autotest')
         relax_dirs = os.path.abspath(os.path.join(ii, 'relaxation', 'relax_task'))    # to be consistent with property in make dispatcher
-        if os.path.exists(relax_dirs):
-            dlog.warning('%s already exists' % relax_dirs)
-        else:
-            os.makedirs(relax_dirs)
+        create_path(relax_dirs)
         task_dirs.append(relax_dirs)
         os.chdir(relax_dirs)
         # copy POSCARs to mp-xxx/relaxation/relax_task

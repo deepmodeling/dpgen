@@ -15,6 +15,7 @@ from dpgen.auto_test.calculator import make_calculator
 from dpgen.dispatcher.Dispatcher import make_dispatcher
 from dpgen.dispatcher.Dispatcher import make_submission
 from dpgen.remote.decide_machine import convert_mdata
+from dpgen.auto_test.lib.utils import create_path
 lammps_task_type = ['deepmd', 'meam', 'eam_fs', 'eam_alloy']
 
 
@@ -73,10 +74,7 @@ def make_property(confs,
             path_to_equi = os.path.join(ii, 'relaxation', 'relax_task')
             path_to_work = os.path.join(ii, property_type + '_' + suffix)
 
-            if os.path.exists(path_to_work):
-                dlog.warning('%s already exists' % path_to_work)
-            else:
-                os.makedirs(path_to_work)
+            create_path(path_to_work)
 
             prop = make_property_instance(jj)
             task_list = prop.make_confs(path_to_work, path_to_equi, do_refine)
