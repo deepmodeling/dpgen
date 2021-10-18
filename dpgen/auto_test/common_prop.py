@@ -204,7 +204,7 @@ def worker(work_path,
     elif LooseVersion(api_version) >= LooseVersion('1.0'):
         submission = make_submission(
                 mdata_machine=machine,
-                mdata_resource=resources,
+                mdata_resources=resources,
                 commands=[command],
                 work_path=work_path,
                 run_tasks=run_tasks,
