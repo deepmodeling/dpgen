@@ -68,6 +68,16 @@ class Dispatcher(object):
             raise RuntimeError('unknown batch ' + batch_type)
         self.jrname = job_record
 
+    def do_async_check(self,
+                       job_handler,
+                       mark_failure):
+        finished_job, all_job = self.all_finished(job_handler, mark_failure)
+        dlog.debug("%d out of %d jobs will be checked in async mode" % (finished_job, all_job))
+        while finished_job != all_job:
+            time.sleep(60)
+            finished_job, all_job = self.all_finished(job_handler, mark_failure)
+        dlog.debug("all %d jobs have been checked finish in async mode" % finished_job)
+
     def run_jobs(self,
                  resources,
                  command,
@@ -80,7 +90,8 @@ class Dispatcher(object):
                  forward_task_deference = True,
                  mark_failure = False,
                  outlog = 'log',
-                 errlog = 'err') :
+                 errlog = 'err',
+                 async_check = 1) :
         job_handler = self.submit_jobs(resources,
                                        command,
                                        work_path,
@@ -92,11 +103,21 @@ class Dispatcher(object):
                                        forward_task_deference,
                                        outlog,
                                        errlog)
-        while not self.all_finished(job_handler, mark_failure) :
-            time.sleep(60)
-        # delete path map file when job finish
-        # _pmap.delete()
+        finished_job, all_job = self.all_finished(job_handler, mark_failure)
+        cnt = 0
+        while finished_job != all_job:
+            finished_ratio = float(finished_job) / float(all_job)
+            if finished_ratio >= async_check:
+                if cnt >= 10:
+                    import multiprocessing as mp
+                    check_mp = mp.Process(target=self.do_async_check, args=(job_handler, mark_failure))
+                    check_mp.start()
+                    return
+                else:
+                    cnt += 1
 
+            time.sleep(60)
+            finished_job, all_job = self.all_finished(job_handler, mark_failure)
 
     def submit_jobs(self,
                     resources,
@@ -233,7 +254,7 @@ class Dispatcher(object):
                     job_record.record_finish(cur_hash)
                     job_record.dump()
         job_record.dump()
-        return job_record.check_all_finished()
+        return job_record.check_all_finished(), len(job_record.record)
 
 
 class JobRecord(object):
@@ -275,8 +296,11 @@ class JobRecord(object):
         return self.record[chunk_hash]['finished']
 
     def check_all_finished(self):
-        flist = [self.record[ii]['finished'] for ii in self.record]
-        return all(flist)
+        flist = []
+        for ii in self.record:
+            if self.record[ii]['finished']:
+                flist.append(ii)
+        return len(flist)
 
     def record_finish(self, chunk_hash):
         self.valid_hash(chunk_hash)

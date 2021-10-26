@@ -2325,6 +2325,10 @@ def run_fp_inner (iter_index,
                   check_fin,
                   log_file = "fp.log",
                   forward_common_files=[]) :
+    fp_async_check_ratio = 1
+    if 'fp_async_check_ratio' in jdata and iter_index < len(jdata['model_devi_jobs'])-1:
+            fp_async_check_ratio = jdata['fp_async_check_ratio']
+
     fp_command = mdata['fp_command']
     fp_group_size = mdata['fp_group_size']
     fp_resources = mdata['fp_resources']
@@ -2363,7 +2367,8 @@ def run_fp_inner (iter_index,
                         backward_files,
                         mark_failure = mark_failure,
                         outlog = log_file,
-                        errlog = log_file)
+                        errlog = log_file,
+                        async_check = fp_async_check_ratio)
 
     elif LooseVersion(api_version) >= LooseVersion('1.0'):
         submission = make_submission(
@@ -2460,81 +2465,86 @@ def post_fp_vasp (iter_index,
     assert (iter_index < len(model_devi_jobs))
     use_ele_temp = jdata.get('use_ele_temp', 0)
 
-    iter_name = make_iter_name(iter_index)
-    work_path = os.path.join(iter_name, fp_name)
-    fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
-    fp_tasks.sort()
-    if len(fp_tasks) == 0 :
-        return
+    start_index = iter_index
+    if jdata.get('fp_async_check_ratio', 1.0) < 1.0 and iter_index > 0:
+        start_index = iter_index - 1
+    while start_index <= iter_index:
+        iter_name = make_iter_name(start_index)
+        start_index += 1
+        work_path = os.path.join(iter_name, fp_name)
+        fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
+        fp_tasks.sort()
+        if len(fp_tasks) == 0 :
+            continue
 
-    system_index = []
-    for ii in fp_tasks :
-        system_index.append(os.path.basename(ii).split('.')[1])
-    system_index.sort()
-    set_tmp = set(system_index)
-    system_index = list(set_tmp)
-    system_index.sort()
+        system_index = []
+        for ii in fp_tasks :
+            system_index.append(os.path.basename(ii).split('.')[1])
+        system_index.sort()
+        set_tmp = set(system_index)
+        system_index = list(set_tmp)
+        system_index.sort()
 
-    cwd = os.getcwd()
+        cwd = os.getcwd()
 
-    tcount=0
-    icount=0
-    for ss in system_index :
-        sys_outcars = glob.glob(os.path.join(work_path, "task.%s.*/OUTCAR"%ss))
-        sys_outcars.sort()
-        tcount += len(sys_outcars)
-        all_sys = None
-        all_te = []
-        for oo in sys_outcars :
-            try:
-                _sys = dpdata.LabeledSystem(oo, type_map = jdata['type_map'])
-            except:
-                dlog.info('Try to parse from vasprun.xml')
+        tcount=0
+        icount=0
+        for ss in system_index :
+            sys_outcars = glob.glob(os.path.join(work_path, "task.%s.*/OUTCAR"%ss))
+            sys_outcars.sort()
+            tcount += len(sys_outcars)
+            all_sys = None
+            all_te = []
+            for oo in sys_outcars :
                 try:
-                   _sys = dpdata.LabeledSystem(oo.replace('OUTCAR','vasprun.xml'), type_map = jdata['type_map'])
+                    _sys = dpdata.LabeledSystem(oo, type_map = jdata['type_map'])
                 except:
-                   _sys = dpdata.LabeledSystem()
-                   dlog.info('Failed fp path: %s'%oo.replace('OUTCAR',''))
-            if len(_sys) == 1:
-                if all_sys is None:
-                    all_sys = _sys
+                    dlog.info('Try to parse from vasprun.xml')
+                    try:
+                       _sys = dpdata.LabeledSystem(oo.replace('OUTCAR','vasprun.xml'), type_map = jdata['type_map'])
+                    except:
+                       _sys = dpdata.LabeledSystem()
+                       dlog.info('Failed fp path: %s'%oo.replace('OUTCAR',''))
+                if len(_sys) == 1:
+                    if all_sys is None:
+                        all_sys = _sys
+                    else:
+                        all_sys.append(_sys)
+                    # save ele_temp, if any
+                    with open(oo.replace('OUTCAR', 'job.json')) as fp:
+                        job_data = json.load(fp)
+                    if 'ele_temp' in job_data:
+                        assert(use_ele_temp)
+                        ele_temp = job_data['ele_temp']
+                        all_te.append(ele_temp)
                 else:
-                    all_sys.append(_sys)
-                # save ele_temp, if any
-                with open(oo.replace('OUTCAR', 'job.json')) as fp:
-                    job_data = json.load(fp)
-                if 'ele_temp' in job_data:
-                    assert(use_ele_temp)
-                    ele_temp = job_data['ele_temp']
-                    all_te.append(ele_temp)
-            else:
-                icount+=1
-        all_te = np.array(all_te)
-        if all_sys is not None:
-           sys_data_path = os.path.join(work_path, 'data.%s'%ss)
-           all_sys.to_deepmd_raw(sys_data_path)
-           all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_outcars))
-           if all_te.size > 0:
-               assert(len(all_sys) == all_sys.get_nframes())
-               assert(len(all_sys) == all_te.size)
-               all_te = np.reshape(all_te, [-1,1])
-               if use_ele_temp == 0:
-                   raise RuntimeError('should not get ele temp at setting: use_ele_temp == 0')
-               elif use_ele_temp == 1:
-                   np.savetxt(os.path.join(sys_data_path, 'fparam.raw'), all_te)
-                   np.save(os.path.join(sys_data_path, 'set.000', 'fparam.npy'), all_te)
-               elif use_ele_temp == 2:
-                   tile_te = np.tile(all_te, [1, all_sys.get_natoms()])
-                   np.savetxt(os.path.join(sys_data_path, 'aparam.raw'), tile_te)
-                   np.save(os.path.join(sys_data_path, 'set.000', 'aparam.npy'), tile_te)
-               else:
-                   raise RuntimeError('invalid setting of use_ele_temp ' + str(use_ele_temp))
+                    icount+=1
+            all_te = np.array(all_te)
+            if all_sys is not None:
+               sys_data_path = os.path.join(work_path, 'data.%s'%ss)
+               all_sys.to_deepmd_raw(sys_data_path)
+               all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_outcars))
+               if all_te.size > 0:
+                   assert(len(all_sys) == all_sys.get_nframes())
+                   assert(len(all_sys) == all_te.size)
+                   all_te = np.reshape(all_te, [-1,1])
+                   if use_ele_temp == 0:
+                       raise RuntimeError('should not get ele temp at setting: use_ele_temp == 0')
+                   elif use_ele_temp == 1:
+                       np.savetxt(os.path.join(sys_data_path, 'fparam.raw'), all_te)
+                       np.save(os.path.join(sys_data_path, 'set.000', 'fparam.npy'), all_te)
+                   elif use_ele_temp == 2:
+                       tile_te = np.tile(all_te, [1, all_sys.get_natoms()])
+                       np.savetxt(os.path.join(sys_data_path, 'aparam.raw'), tile_te)
+                       np.save(os.path.join(sys_data_path, 'set.000', 'aparam.npy'), tile_te)
+                   else:
+                       raise RuntimeError('invalid setting of use_ele_temp ' + str(use_ele_temp))
 
-    rfail=float(icount)/float(tcount)
-    dlog.info("failed frame: %6d in %6d  %6.2f %% " % (icount, tcount, rfail * 100.))
+        rfail=float(icount)/float(tcount)
+        dlog.info("%s failed frame: %6d in %6d  %6.2f %% " % (iter_name, icount, tcount, rfail * 100.))
 
-    if rfail>ratio_failed:
-       raise RuntimeError("find too many unsuccessfully terminated jobs. Too many FP tasks are not converged. Please check your input parameters (e.g. INCAR) or configuration (e.g. POSCAR) in directories \'iter.*.*/02.fp/task.*.*/.\'")
+        if rfail>ratio_failed:
+            raise RuntimeError("find too many unsuccessfully terminated jobs. Too many FP tasks are not converged. Please check your input parameters (e.g. INCAR) or configuration (e.g. POSCAR) in directories \'iter.*.*/02.fp/task.*.*/.\'")
 
 
 def post_fp_pwscf (iter_index,
