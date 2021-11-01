@@ -79,6 +79,9 @@ def make_equi(confs,
         poscar = os.path.abspath(os.path.join(ii, 'POSCAR'))
         if not os.path.exists(poscar):
             raise FileNotFoundError('no configuration for autotest')
+        if os.path.exists(os.path.join(ii, 'relaxation', 'jr.json')):
+            os.remove(os.path.join(ii, 'relaxation', 'jr.json'))
+
         relax_dirs = os.path.abspath(os.path.join(ii, 'relaxation', 'relax_task'))    # to be consistent with property in make dispatcher
         create_path(relax_dirs)
         task_dirs.append(relax_dirs)
