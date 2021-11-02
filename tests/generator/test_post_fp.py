@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 __package__ = 'generator'
 from .context import post_fp
 from .context import post_fp_pwscf
-from .context import post_fp_abacus_pw_scf
+from .context import post_fp_abacus_scf
 from .context import post_fp_siesta
 from .context import post_fp_vasp
 from .context import post_fp_gaussian

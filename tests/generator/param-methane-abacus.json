@@ -131,17 +131,29 @@
   "fp_task_max":          30,
   "fp_task_min":          8,
   "fp_pp_path":           ".",
-  "fp_pp_files":          [ "H_HSCV_PBE-1.0.UPF","C_HSCV_PBE-1.0.UPF"],
+  "fp_pp_files":          [ "./H_HSCV_PBE-1.0.UPF","./C_HSCV_PBE-1.0.UPF"],
   "user_fp_params":{
+    "lattice_constant":1, 
     "ntype": 2,
     "ecutwfc": 80,
-	"mixing_type": "pulay",
+    "dr2": 1e-7,
+    "niter": 50,
+    "basis_type": "pw",
+    "gamma_only": true,
+    "dft_functional": "pbe",
+	  "mixing_type": "pulay",
     "mixing_beta": 0.4,
     "symmetry": 1,
     "nbands": 5,
     "nspin": 1,
     "ks_solver": "cg",
     "smearing": "fixed",
-    "sigma": 0.001
+    "sigma": 0.001,
+    "force":1,
+    "stress":1,
+    "out_descriptor":0,
+    "lmax_descriptor":0, 
+    "deepks_scf":0, 
+    "model_file":"model.ptg"
 	}
 }
