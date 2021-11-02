@@ -2851,7 +2851,7 @@ def post_fp (iter_index,
     elif isinstance(clean_traj, int):
         clean_index = iter_index - clean_traj
         if clean_index >= 0:
-            modd_path = os.path.join(clean_index, model_devi_name)
+            modd_path = os.path.join(make_iter_name(clean_index), model_devi_name)
     if modd_path is not None:
         md_trajs = glob.glob(os.path.join(modd_path, 'task*/traj'))
         for ii in md_trajs:
