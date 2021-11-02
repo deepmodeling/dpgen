@@ -2840,15 +2840,24 @@ def post_fp (iter_index,
     else :
         raise RuntimeError ("unsupported fp style")
     # clean traj
-    iter_name = make_iter_name(iter_index)
     clean_traj = True
     if 'model_devi_clean_traj' in jdata :
         clean_traj = jdata['model_devi_clean_traj']
-    if clean_traj:
-        modd_path = os.path.join(iter_name, model_devi_name)
+    modd_path =  None
+    if isinstance(clean_traj, bool):
+        iter_name = make_iter_name(iter_index)
+        if clean_traj:
+            modd_path = os.path.join(iter_name, model_devi_name)
+    elif isinstance(clean_traj, int):
+        clean_index = iter_index - clean_traj
+        if clean_index >= 0:
+            modd_path = os.path.join(clean_index, model_devi_name)
+    if modd_path is not None:
         md_trajs = glob.glob(os.path.join(modd_path, 'task*/traj'))
-        for ii in md_trajs :
+        for ii in md_trajs:
             shutil.rmtree(ii)
+        
+
 
 def set_version(mdata):
     
