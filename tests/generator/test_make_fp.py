@@ -150,19 +150,28 @@ IN.PSP2 = H.SG15.PBE.UPF\n\
 IN.PSP3 = N.SG15.PBE.UPF\n";
 
 abacus_input_ref = "INPUT_PARAMETERS\n\
+calculation scf\n\
 ntype 2\n\
-pseudo_dir ./\n\
 ecutwfc 80.000000\n\
+dr2 1.000000e-07\n\
+niter 50\n\
+basis_type pw\n\
+dft_functional pbe\n\
+gamma_only 1\n\
 mixing_type pulay\n\
 mixing_beta 0.400000\n\
 symmetry 1\n\
-nbands 5.000000\n\
+nbands 5\n\
 nspin 1\n\
 ks_solver cg\n\
 smearing fixed\n\
 sigma 0.001000\n\
 force 1\n\
-stress 1\n"
+stress 1\n\
+out_descriptor 0\n\
+lmax_descriptor 0\n\
+deepks_scf 0\n\
+model_file model.ptg\n"
 
 abacus_kpt_ref = "K_POINTS\n\
 0\n\

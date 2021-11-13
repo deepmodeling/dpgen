@@ -23,7 +23,7 @@ import dpgen.data.tools.sc as sc
 from distutils.version import LooseVersion
 from dpgen.generator.lib.vasp import incar_upper
 from dpgen.generator.lib.utils import symlink_user_forward_files
-from dpgen.generator.lib.abacus_pw_scf import get_abacus_input_parameters, get_abacus_STRU, make_supercell_abacus, make_abacus_pw_scf_stru
+from dpgen.generator.lib.abacus_scf import get_abacus_input_parameters, get_abacus_STRU, make_supercell_abacus, make_abacus_pw_scf_stru
 from pymatgen.core import Structure
 from pymatgen.io.vasp import Incar
 from dpgen.remote.decide_machine import  convert_mdata
@@ -81,9 +81,9 @@ def out_dir_name(jdata) :
     from_poscar = False
     if 'from_poscar' in jdata :
         from_poscar = jdata['from_poscar']
-        from_poscar_path = jdata['from_poscar_path']
 
     if from_poscar:
+        from_poscar_path = jdata['from_poscar_path']
         poscar_name = os.path.basename(from_poscar_path)
         cell_str = "%02d" % (super_cell[0])
         for ii in range(1,len(super_cell)) :
