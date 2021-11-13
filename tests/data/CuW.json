@@ -1,0 +1,37 @@
+{
+    "init_fp_style":    "ABACUS",
+    "stages":    [1, 2, 3, 4],
+    "cell_type": "fcc",
+    "latt": 3.76,
+    "super_cell": [
+        1,
+        1,
+        1
+    ],
+    "elements": [
+        "Cu", "W"
+    ],
+    "atom_masses": [63.55, 183.8],
+    "potcars": [
+        "abacus.in/Cu_ONCV_PBE-1.0.upf",
+	    "abacus.in/W_ONCV_PBE-1.0.upf"
+    ],
+    "relax_incar": "abacus.in/INPUT",
+    "relax_kpt": "abacus.in/KPT",
+    "md_kpt": "abacus.in/KPT",
+    "md_incar": "abacus.in/INPUT.md",
+    "scale": [
+        0.99
+    ],
+    "skip_relax": true,
+    "pert_numb": 2,
+    "md_nstep": 2,
+    "pert_box": 0.01,
+    "pert_atom": 0.01,
+    "coll_ndata": 12,
+    "type_map": [
+        "Cu",
+        "W"
+    ],
+    "_comment": "that's all"
+}
