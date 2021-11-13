@@ -1,4 +1,6 @@
 import numpy as np
+from dpdata.abacus.scf import get_cell, get_coords
+import os
 bohr2ang = 0.52917721067
 def make_abacus_scf_kpt(fp_params):
     # Make KPT file for abacus pw scf calculation.
@@ -80,22 +82,24 @@ def make_abacus_scf_input(fp_params):
         ret += "model_file %s\n" % fp_params["model_file"]
     return ret
 
-def make_abacus_scf_stru(sys_data, fp_pp_files, fp_params):
+def make_abacus_scf_stru(sys_data, fp_pp_files, fp_params = None):
     atom_names = sys_data['atom_names']
     atom_numbs = sys_data['atom_numbs']
     assert(len(atom_names) == len(fp_pp_files)), "the number of pp_files must be equal to the number of atom types. "
     assert(len(atom_names) == len(atom_numbs)), "Please check the name of atoms. "
-    cell = sys_data["cells"][0].reshape([3, 3])
-    coord = sys_data['coords'][0]
+    cell = sys_data["cells"].reshape([3, 3])
+    coord = sys_data['coords'].reshape([sum(atom_numbs), 3])
     #volume = np.linalg.det(cell)
     #lattice_const = np.power(volume, 1/3)
 
     ret = "ATOMIC_SPECIES\n"
     for iatom in range(len(atom_names)):
-        ret += atom_names[iatom] + " 1.00 " + fp_pp_files[iatom] + "\n"
-    ret += "\n"
+        if 'atom_masses' not in sys_data:
+            ret += atom_names[iatom] + " 1.00 " + fp_pp_files[iatom] + "\n"
+        else:
+            ret += atom_names[iatom] + " %.3f "%sys_data['atom_masses'][iatom] + fp_pp_files[iatom] + "\n"
 
-    if "lattice_constant" in fp_params:
+    if fp_params is not None and "lattice_constant" in fp_params:
         ret += "\nLATTICE_CONSTANT\n"
         ret += str(fp_params["lattice_constant"]) + "\n\n" # in Bohr, in this way coord and cell are in Angstrom 
     else:
@@ -111,24 +115,24 @@ def make_abacus_scf_stru(sys_data, fp_pp_files, fp_params):
 
     ret += "ATOMIC_POSITIONS\n"
     ret += "Cartesian    # Cartesian(Unit is LATTICE_CONSTANT)\n"
-    ret += "\n"
+    #ret += "\n"
     natom_tot = 0
     for iele in range(len(atom_names)):
         ret += atom_names[iele] + "\n"
         ret += "0.0\n"
         ret += str(atom_numbs[iele]) + "\n"
         for iatom in range(atom_numbs[iele]):
-            ret += "%.12f %.12f %.12f %d %d %d\n" % (coord[natom_tot, 0], coord[natom_tot, 1], coord[natom_tot, 2], 0, 0, 0)
+            ret += "%.12f %.12f %.12f %d %d %d\n" % (coord[natom_tot, 0], coord[natom_tot, 1], coord[natom_tot, 2], 1, 1, 1)
             natom_tot += 1
     assert(natom_tot == sum(atom_numbs))
 
-    if "basis_type" in fp_params and fp_params["basis_type"]=="lcao":
+    if fp_params is not None and "basis_type" in fp_params and fp_params["basis_type"]=="lcao":
         ret +="\nNUMERICAL_ORBITAL\n"
         assert(len(fp_params["orb_files"])==len(atom_names))
         for iatom in range(len(atom_names)):
             ret += fp_params["orb_files"][iatom] +"\n"
 
-    if "deepks_scf" in fp_params and fp_params["out_descriptor"]==1:
+    if fp_params is not None and "deepks_scf" in fp_params and fp_params["out_descriptor"]==1:
         ret +="\nNUMERICAL_DESCRIPTOR\n"
         ret +=fp_params["proj_file"][0]+"\n"
 

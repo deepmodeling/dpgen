@@ -10,7 +10,7 @@ import numpy as np
 import ase.io
 import io_lammps
 
-from dpgen.generator.lib.abacus_pw_scf import get_abacus_STRU, make_abacus_pw_scf_stru
+from dpgen.generator.lib.abacus_scf import get_abacus_STRU, make_abacus_scf_stru
 
 def create_disturbs_atomsk(fin, nfile, dmax=1.0, ofmt="lmp"):
     # removing the exists files
@@ -220,7 +220,7 @@ def create_disturbs_abacus_dev(fin, nfile, dmax=1.0, etmax=0.1, ofmt="abacus", d
         # Writing it
         fout = fin + str(fid) + '.' + ofmt
         print("Creating %s ..." % fout)
-        ret = make_abacus_pw_scf_stru(stru_d, stru_d['pp_files'])
+        ret = make_abacus_scf_stru(stru_d, stru_d['pp_files'])
         with open(fout, "w") as fp:
             fp.write(ret)
         if write_d:

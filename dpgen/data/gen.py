@@ -23,7 +23,7 @@ import dpgen.data.tools.sc as sc
 from distutils.version import LooseVersion
 from dpgen.generator.lib.vasp import incar_upper
 from dpgen.generator.lib.utils import symlink_user_forward_files
-from dpgen.generator.lib.abacus_scf import get_abacus_input_parameters, get_abacus_STRU, make_supercell_abacus, make_abacus_pw_scf_stru
+from dpgen.generator.lib.abacus_scf import get_abacus_input_parameters, get_abacus_STRU, make_supercell_abacus, make_abacus_scf_stru
 from pymatgen.core import Structure
 from pymatgen.io.vasp import Incar
 from dpgen.remote.decide_machine import  convert_mdata
@@ -137,7 +137,7 @@ def stru_ele(supercell_stru, stru_out, eles, natoms, jdata, path_work):
     pp_file_names = [os.path.basename(a) for a in jdata['potcars']]
     supercell_stru["atom_masses"] = jdata["atom_masses"]
     supercell_stru["atom_names"] = eles
-    stru_text = make_abacus_pw_scf_stru(supercell_stru, pp_file_names)
+    stru_text = make_abacus_scf_stru(supercell_stru, pp_file_names)
     with open(stru_out, "w") as f:
         f.write(stru_text)
     absolute_pp_file_path = [os.path.abspath(a) for a in jdata["potcars"]]
@@ -216,7 +216,7 @@ def poscar_scale_abacus(poscar_in, poscar_out, scale, jdata):
     stru["cells"] *= scale
     stru["coords"] *= scale
     pp_files = [os.path.basename(a) for a in jdata['potcars']]
-    ret = make_abacus_pw_scf_stru(stru, pp_files)
+    ret = make_abacus_scf_stru(stru, pp_files)
     with open(poscar_out, "w") as fp:
         fp.write(ret)
     
@@ -345,7 +345,7 @@ def make_super_cell_STRU(jdata) :
     from_struct=get_abacus_STRU(from_file, n_ele=len(jdata["elements"]))
     from_struct = make_supercell_abacus(from_struct, super_cell)
     pp_file_names = [os.path.basename(a) for a in jdata['potcars']]
-    stru_text = make_abacus_pw_scf_stru(from_struct, pp_file_names)
+    stru_text = make_abacus_scf_stru(from_struct, pp_file_names)
     with open(to_file, "w") as fp:
         fp.write(stru_text)  
     # make system dir (copy)
@@ -653,7 +653,7 @@ def pert_scaled(jdata) :
                         stru_in = get_abacus_STRU(pos_in)
                         stru_out = shuffle_stru_data(stru_in)
                         with open(pos_out, "w") as fp:
-                            fp.write(make_abacus_pw_scf_stru(stru_out, pp_file))
+                            fp.write(make_abacus_scf_stru(stru_out, pp_file))
                 else :
                     shutil.copy2(pos_in, pos_out)
                 os.remove(pos_in)
@@ -675,7 +675,7 @@ def pert_scaled(jdata) :
                     stru_in = get_abacus_STRU(pos_in)
                     stru_out = shuffle_stru_data(stru_in)
                     with open(pos_out, "w") as fp:
-                        fp.write(make_abacus_pw_scf_stru(stru_out, pp_file))
+                        fp.write(make_abacus_scf_stru(stru_out, pp_file))
             else :
                 shutil.copy2(pos_in, pos_out)
             os.chdir(cwd)
