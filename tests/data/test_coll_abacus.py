@@ -55,7 +55,7 @@ class TestCollAbacus(unittest.TestCase):
                                            sys.data['virials'][ff][ii][jj], places = 5)
                     self.assertAlmostEqual(self.ref_cell[ff][ii][jj], 
                                            sys.data['cells'][ff][ii][jj])
-
+                    
 if __name__ == '__main__':
     unittest.main()
         
