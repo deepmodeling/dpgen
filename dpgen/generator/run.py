@@ -1195,6 +1195,9 @@ def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
     for ii in models:
         task_model_list.append(os.path.join('..', os.path.basename(ii)))
     work_path = os.path.join(iter_name, model_devi_name)
+    parm7 = cur_job['parm7']
+    if not isinstance(parm7, list):
+        parm7 = [parm7]
 
     sys_counter = 0
     for ss in conf_systems:
@@ -1222,8 +1225,7 @@ def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
                     mdin_str = mdin_str.replace("@GRAPH_FILE%d@" % ii, mm)
                 fw.write(mdin_str)
             # link parm file
-            parm7 = cur_job['parm7']
-            os.symlink(parm7, 'qmmm.parm7')
+            os.symlink(parm7[sys_counter], 'qmmm.parm7')
             
             # reaction coordinates of umbrella sampling
             # TODO: maybe consider a better name instead of `r`?
@@ -2148,10 +2150,18 @@ def make_fp_amber_diff(iter_index, jdata):
     os.chdir(os.path.join(fp_tasks[0], ".."))
     os.symlink(jdata['fp_params']['low_level_mdin'] ,'low_level.mdin')
     os.symlink(jdata['fp_params']['high_level_mdin'] ,'high_level.mdin')
-    os.symlink(jdata['fp_params']['parm7'] ,'qmmm.parm7')
+    parm7 = jdata['fp_params']['parm7']
+    if not isinstance(parm7, list):
+        parm7 = [parm7]
+    for ii, pp in enumerate(parm7):
+        os.symlink(pp, "qmmm%d.parm7"%ii)
+
     os.chdir(cwd)
     for ii in fp_tasks:
         os.chdir(ii)
+        sys_idx = int(ii.split(".")[3])
+        with open("sys_idx", 'w') as f:
+            f.write(str(sys_idx))
 
         create_path("dataset")
 
@@ -2278,6 +2288,20 @@ def run_fp_inner (iter_index,
     fp_tasks.sort()
     if len(fp_tasks) == 0 :
         return
+    
+    fp_style = jdata['fp_style']
+    if fp_style == 'amber/diff':
+        fp_command = ("%s -O -p ../qmmm`cat sys_idx`.parm7 -c init.rst7 -i ../low_level.mdin -o low_level.mdout -r low_level.rst7 "
+                      "-x low_level.nc -y rc.nc -inf rc.mdinfo -frc low_level.mdfrc -inf low_level.mdinfo "
+                      "-e low_level.mden && "
+                      "%s "
+                      "  -O -p ../qmmm`cat sys_idx`.parm7 -c init.rst7 -i ../high_level.mdin -o high_level.mdout -r high_level.rst7 "
+                      "  -x high_level.nc -y rc.nc -inf rc.mdinfo -frc high_level.mdfrc -inf high_level.mdinfo "
+                      "  -e high_level.mden && "
+                      "  dpamber corr --cutoff %f --parm7_file ../qmmm`cat sys_idx`.parm7 --nc rc.nc --hl high_level --ll low_level") % (
+                          fp_command, fp_command, jdata['fp_params']['cutoff'],
+                      )
+
 
     fp_run_tasks = fp_tasks
     # for ii in fp_tasks :
@@ -2361,13 +2385,23 @@ def run_fp (iter_index,
         backward_files = ['REPORT', 'OUT.MLMD', 'output']
         run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, _pwmat_check_fin, log_file = 'output')
     elif fp_style == 'amber/diff':
-        forward_files = ['rc.nc', 'init.rst7', 'dataset']
+        forward_files = ['rc.nc', 'init.rst7', 'dataset', 'sys_idx']
         backward_files = [
             'low_level.mdfrc', 'low_level.mdout', 'low_level.mden', 'low_level.mdinfo',
             'high_level.mdfrc', 'high_level.mdout', 'high_level.mden', 'high_level.mdinfo',
             'output', 'dataset'
         ]
-        forward_common_files = ['low_level.mdin', 'high_level.mdin', 'qmmm.parm7']
+        if jdata['fp_params'].get("qmwater", False):
+            backward_files = [
+                '*.mdfrc', '*.mdout', '*.mden', '*.mdinfo', 'output', 'dataset',
+            ]
+        elif jdata['fp_params'].get("pbe0", False):
+            backward_files = [
+                'low_level.mdfrc', 'low_level.mdout', 'low_level.mden', 'low_level.mdinfo',
+                'high_level.mdfrc', 'high_level.mdout', 'high_level.mdinfo',
+                'output', 'dataset'
+            ]
+        forward_common_files = ['low_level.mdin', 'high_level.mdin', 'qmmm*.parm7']
         run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, None, log_file = 'output',
                      forward_common_files=forward_common_files)
     else :
@@ -2830,7 +2864,7 @@ def run_iter (param_file, machine_file) :
        warnings.simplefilter('ignore', ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
        jdata=loadfn(param_file)
        mdata=loadfn(machine_file)
-    except:
+    except ImportError:
        with open (param_file, 'r') as fp :
            jdata = json.load (fp)
        with open (machine_file, 'r') as fp:
