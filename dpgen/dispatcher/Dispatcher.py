@@ -346,11 +346,17 @@ def make_dispatcher(mdata, mdata_resource=None, work_path=None, run_tasks=None, 
 def make_submission(mdata_machine, mdata_resources, commands, work_path, run_tasks, group_size,
     forward_common_files, forward_files, backward_files, outlog, errlog):
 
-    machine = Machine.load_from_dict(mdata_machine)
-    resources = Resources.load_from_dict(mdata_resources)
-
     if mdata_machine['local_root'] != './':
         raise RuntimeError(f"local_root must be './' in dpgen's machine.json.")
+    
+    abs_local_root = os.path.abspath('./')
+
+    abs_mdata_machine = mdata_machine.copy()
+    abs_mdata_machine['local_root'] = abs_local_root
+
+    machine = Machine.load_from_dict(abs_mdata_machine)
+    resources = Resources.load_from_dict(mdata_resources)
+
 
     command = "&&".join(commands)
 
