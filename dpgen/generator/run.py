@@ -1982,6 +1982,7 @@ def sys_link_fp_vasp_pp (iter_index,
 def _make_fp_vasp_configs(iter_index,
                           jdata):
     fp_task_max = jdata['fp_task_max']
+    fp_task_min = jdata['fp_task_min']
     model_devi_skip = jdata['model_devi_skip']
     v_trust_lo = jdata.get('model_devi_v_trust_lo', 1e10)
     v_trust_hi = jdata.get('model_devi_v_trust_hi', 1e10)
@@ -1994,17 +1995,13 @@ def _make_fp_vasp_configs(iter_index,
 
 
     modd_path = os.path.join(iter_name, model_devi_name)
-    task_min = -1
-    if os.path.isfile(os.path.join(modd_path, 'cur_job.json')) :
-        cur_job = json.load(open(os.path.join(modd_path, 'cur_job.json'), 'r'))
-        if 'task_min' in cur_job :
-            task_min = cur_job['task_min']
+    
     # make configs
     fp_tasks = _make_fp_vasp_inner(modd_path, work_path,
                                    model_devi_skip,
                                    v_trust_lo, v_trust_hi,
                                    f_trust_lo, f_trust_hi,
-                                   task_min, fp_task_max,
+                                   fp_task_min, fp_task_max,
                                    [],
                                    type_map,
                                    jdata)
