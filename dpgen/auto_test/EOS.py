@@ -170,7 +170,7 @@ class EOS(Property):
                 vol = loadfn(os.path.join(all_tasks[ii], 'eos.json'))['volume']
                 task_result = loadfn(all_res[ii])
                 res_data[vol] = task_result['energies'][-1] / task_result['atom_numbs'][0]
-                ptr_data += '%7.3f  %8.4f \n' % (vol, task_result['energies'][-1] / task_result['atom_numbs'][0])
+                ptr_data += '%7.3f  %8.4f \n' % (vol, task_result['energies'][-1] / task_result['atom_numbs'].sum())
                 # res_data[vol] = all_res[ii]['energy'] / len(all_res[ii]['force'])
                 # ptr_data += '%7.3f  %8.4f \n' % (vol, all_res[ii]['energy'] / len(all_res[ii]['force']))
 
