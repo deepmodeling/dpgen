@@ -545,6 +545,7 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | training_iter0_model_path  | list of string  |  ["/path/to/model0_ckpt/", ...]  | The model used to init the first iter training. Number of element should be equal to `numb_models` |
 | training_init_model  | bool  |  False  | Iteration > 0, the model parameters will be initilized from the model trained at the previous iteration. Iteration == 0, the model parameters will be initialized from `training_iter0_model_path`.  |
 | **default_training_param** | Dict |  | Training parameters for `deepmd-kit` in `00.train`. <br /> You can find instructions from here: (https://github.com/deepmodeling/deepmd-kit)..<br /> |
+| dp_compress | bool | false | Use `dp compress` to compress the model. Default is false. |
 | *#Exploration*
 | **model_devi_dt** | Float | 0.002 (recommend) | Timestep for MD |
 | **model_devi_skip** | Integer | 0 | Number of structures skipped for fp in each MD

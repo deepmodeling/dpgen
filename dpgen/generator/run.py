@@ -514,6 +514,8 @@ def run_train (iter_index,
         commands.append(command)
         command = '%s freeze' % train_command
         commands.append(command)
+        if jdata.get("dp_compress", False):
+            commands.append("%s compress" % train_command)
     else:
         raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x or 2.x version!" )
 
@@ -536,6 +538,8 @@ def run_train (iter_index,
         ]
     backward_files = ['frozen_model.pb', 'lcurve.out', 'train.log']
     backward_files+= ['model.ckpt.meta', 'model.ckpt.index', 'model.ckpt.data-00000-of-00001', 'checkpoint']
+    if jdata.get("dp_compress", False):
+        backward_files.append('frozen_model_compressed.pb')
     init_data_sys_ = jdata['init_data_sys']
     init_data_sys = []
     for ii in init_data_sys_ :
@@ -621,7 +625,11 @@ def post_train (iter_index,
         return
     # symlink models
     for ii in range(numb_models) :
-        task_file = os.path.join(train_task_fmt % ii, 'frozen_model.pb')
+        if not jdata.get("dp_compress", False):
+            model_name = 'frozen_model.pb'
+        else:
+            model_name = 'frozen_model_compressed.pb'
+        task_file = os.path.join(train_task_fmt % ii, model_name)
         ofile = os.path.join(work_path, 'graph.%03d.pb' % ii)
         if os.path.isfile(ofile) :
             os.remove(ofile)
