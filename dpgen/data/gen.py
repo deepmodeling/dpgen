@@ -1281,6 +1281,7 @@ def gen_init_bulk(args) :
             dlog.info("Current stage is 1, relax")
             create_path(out_dir)
             shutil.copy2(args.PARAM, os.path.join(out_dir, 'param.json'))
+            skip_relax = jdata['skip_relax']
             if from_poscar :
                 if jdata['init_fp_style'] == "VASP":
                     make_super_cell_poscar(jdata)
