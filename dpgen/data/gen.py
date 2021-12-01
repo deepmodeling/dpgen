@@ -240,12 +240,17 @@ def make_unit_cell_ABACUS (jdata) :
     latt = jdata['latt']
     out_dir = jdata['out_dir']
     path_uc = os.path.join(out_dir, global_dirname_02)
-    path_work = create_path(path_uc)
-    out_dir = jdata['out_dir']
-    path_uc = os.path.join(out_dir, global_dirname_02)
     cell_type = class_cell_type(jdata)
-
-    stru_data = cell_type.STRU_unit(latt)
+    cwd = os.getcwd()    
+    path_work = create_path(path_uc)
+    os.chdir(path_work)
+    with open('POSCAR.unit', 'w') as fp:
+        fp.write (cell_type.poscar_unit(latt))
+    stru_data = dpdata.System("POSCAR.unit", fmt = 'vasp/poscar').data
+    os.chdir(cwd) 
+    stru_data['coords'] = np.squeeze(stru_data['coords'])
+    stru_data['cells'] = np.squeeze(stru_data['cells'])
+    del stru_data["atom_names"]
     return stru_data
       
 

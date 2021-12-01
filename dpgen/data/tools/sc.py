@@ -19,13 +19,3 @@ def poscar_unit (latt) :
     ret += "Direct\n"
     ret += "%.16f %.16f %.16f\n" % (0.0, 0.0, 0.0)
     return ret
-
-def STRU_unit(latt):
-
-    box = gen_box() * latt
-    stru_data = {}
-    stru_data['cells'] = box
-    stru_data['atom_numbs'] = [1]
-    stru_data['coords'] = np.array([0.0, 0.0, 0.0])
-    stru_data['types'] = [0]
-    return stru_data
