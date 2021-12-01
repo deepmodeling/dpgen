@@ -85,7 +85,7 @@ def make_lammps_input(ensemble,
         if ele_temp_a is not None:
             keywords += "aparam ${ELE_TEMP}"
         ret+= "pair_style      deepmd %s out_freq ${THERMO_FREQ} out_file model_devi.out %s\n" % (graph_list, keywords)
-    ret+= "pair_coeff      \n"
+    ret+= "pair_coeff      * *\n"
     ret+= "\n"
     ret+= "thermo_style    custom step temp pe ke etotal press vol lx ly lz xy xz yz\n"
     ret+= "thermo          ${THERMO_FREQ}\n"

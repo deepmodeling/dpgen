@@ -25,6 +25,9 @@ requirements:
     - requests
     - dpdata
     - dpdispatcher
+    - ase
+    - GromacsWrapper
+    - custodian
 
   run:
     - python >=3.6
@@ -34,6 +37,9 @@ requirements:
     - dpdata
     - dpdispatcher
     - pymatgen
+    - ase
+    - GromacsWrapper
+    - custodian
 
 test:
   imports:
