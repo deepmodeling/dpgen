@@ -188,8 +188,7 @@ If you want to specify a structure as starting point for `init_bulk`, you may se
 ```json
 "from_poscar":	true,
 "from_poscar_path":	"....../C_mp-47_conventional.POSCAR",
-```　
-
+```
 `init_bulk` support both VASP and ABACUS for first-principle calculation. You can choose the software by specifying the key `init_fp_style`. If `init_fp_style` is not specified, the default software will be VASP. 
 
 When using ABACUS for `init_fp_style`, the keys of the paths of `INPUT` files for relaxation and MD simulations are the same as `INCAR` for VASP, which are `relax_incar` and `md_incar` respectively. You have to additionally specify `relax_kpt`, `md_kpt` for the relative path for `KPT` files of relaxation and MD simulations. If `from_poscar` is set to `false`, you have to specify `atom_masses` in the same order as `elements`.
