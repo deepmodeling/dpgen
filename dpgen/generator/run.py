@@ -1593,18 +1593,32 @@ def _make_fp_vasp_inner (modd_path,
     skip_bad_box = jdata.get('fp_skip_bad_box')
     # skip discrete structure in cluster
     fp_cluster_vacuum = jdata.get('fp_cluster_vacuum',None)
-    for ss in system_index :
+
+    def _trust_limitation_check(sys_idx, lim):
+        if isinstance(lim, list):
+            sys_lim = lim[sys_idx]
+        else:
+            sys_lim = lim
+        return sys_lim
+
+    for ss in system_index:
         modd_system_glob = os.path.join(modd_path, 'task.' + ss + '.*')
         modd_system_task = glob.glob(modd_system_glob)
         modd_system_task.sort()
+
+        # convert global trust limitations to local ones
+        f_trust_lo_sys = _trust_limitation_check(ss, f_trust_lo)
+        f_trust_hi_sys = _trust_limitation_check(ss, f_trust_hi)
+        v_trust_lo_sys = _trust_limitation_check(ss, v_trust_lo)
+        v_trust_hi_sys = _trust_limitation_check(ss, v_trust_hi)
 
         # assumed e -> v
         if not model_devi_adapt_trust_lo:
             fp_rest_accurate, fp_candidate, fp_rest_failed, counter \
                 =  _select_by_model_devi_standard(
                     modd_system_task,
-                    f_trust_lo, f_trust_hi,
-                    v_trust_lo, v_trust_hi,
+                    f_trust_lo_sys, f_trust_hi_sys,
+                    v_trust_lo_sys, v_trust_hi_sys,
                     cluster_cutoff, 
                     model_devi_skip,
                     model_devi_f_avg_relative = model_devi_f_avg_relative,
@@ -1618,8 +1632,8 @@ def _make_fp_vasp_inner (modd_path,
             fp_rest_accurate, fp_candidate, fp_rest_failed, counter, f_trust_lo_ad, v_trust_lo_ad \
                 =  _select_by_model_devi_adaptive_trust_low(
                     modd_system_task,
-                    f_trust_hi, numb_candi_f, perc_candi_f,
-                    v_trust_hi, numb_candi_v, perc_candi_v,
+                    f_trust_hi_sys, numb_candi_f, perc_candi_f,
+                    v_trust_hi_sys, numb_candi_v, perc_candi_v,
                     model_devi_skip = model_devi_skip,
                     model_devi_f_avg_relative = model_devi_f_avg_relative,
                 )
