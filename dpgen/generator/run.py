@@ -804,7 +804,7 @@ def make_model_devi (iter_index,
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
     train_path = os.path.abspath(train_path)
-    models = glob.glob(os.path.join(train_path, "graph*pb"))
+    models = sorted(glob.glob(os.path.join(train_path, "graph*pb")))
     work_path = os.path.join(iter_name, model_devi_name)
     create_path(work_path)
     for mm in models :
@@ -890,7 +890,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
     train_path = os.path.abspath(train_path)
-    models = glob.glob(os.path.join(train_path, "graph*pb"))
+    models = sorted(glob.glob(os.path.join(train_path, "graph*pb")))
     task_model_list = []
     for ii in models:
         task_model_list.append(os.path.join('..', os.path.basename(ii)))
@@ -947,12 +947,30 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                 # revise input of lammps
                 with open('input.lammps') as fp:
                     lmp_lines = fp.readlines()
-                lmp_lines = revise_lmp_input_model(lmp_lines, task_model_list, trj_freq, deepmd_version = deepmd_version)
-                lmp_lines = revise_lmp_input_dump(lmp_lines, trj_freq)
-                lmp_lines = revise_by_keys(
-                    lmp_lines, total_rev_keys[:total_num_lmp], total_rev_item[:total_num_lmp]
-                )
-                # revise input of plumed
+                
+				# only revise the line "pair deepmd" if the user has not written the full line (checked by then length of the line)
+				template_has_pair_deepmd=1
+				for line_idx,line_context in enumerate(lmp_lines):
+					if (line_context[0] != "#") and ("pair_style" in line_context) and ("deepmd" in line_context):
+						template_has_pair_deepmd=0
+						template_pair_deepmd_idx=line_idx
+				if template_has_pair_deepmd == 0:
+					if LooseVersion(deepmd_version) < LooseVersion('1'):
+						if len(lmp_lines[template_pair_deepmd_idx].split()) !=  (len(models) + len(["pair_style","deepmd","10", "model_devi.out"])):
+							lmp_lines = revise_lmp_input_model(lmp_lines, task_model_list, trj_freq, deepmd_version = deepmd_version)
+					else:
+						if len(lmp_lines[template_pair_deepmd_idx].split()) != (len(models) + len(["pair_style","deepmd","out_freq", "10", "out_file", "model_devi.out"])):
+							lmp_lines = revise_lmp_input_model(lmp_lines, task_model_list, trj_freq, deepmd_version = deepmd_version)
+				#use revise_lmp_input_model to raise error message "part_style" or "deepmd" not found
+				else:
+					lmp_lines = revise_lmp_input_model(lmp_lines, task_model_list, trj_freq, deepmd_version = deepmd_version)
+				
+				lmp_lines = revise_lmp_input_dump(lmp_lines, trj_freq)
+				lmp_lines = revise_by_keys(
+					lmp_lines, total_rev_keys[:total_num_lmp], total_rev_item[:total_num_lmp]
+				)                        
+                
+				# revise input of plumed
                 if use_plm:
                     lmp_lines = revise_lmp_input_plm(lmp_lines, 'input.plumed')
                     shutil.copyfile(plm_templ, 'input.plumed')
