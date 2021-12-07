@@ -947,7 +947,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                 # revise input of lammps
                 with open('input.lammps') as fp:
                     lmp_lines = fp.readlines()
-                # only revise the line "pair deepmd" if the user has not written the full line (checked by then length of the line)
+                # only revise the line "pair_style deepmd" if the user has not written the full line (checked by then length of the line)
                 template_has_pair_deepmd=1
                 for line_idx,line_context in enumerate(lmp_lines):
                     if (line_context[0] != "#") and ("pair_style" in line_context) and ("deepmd" in line_context):
@@ -960,7 +960,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                     else:
                         if len(lmp_lines[template_pair_deepmd_idx].split()) != (len(models) + len(["pair_style","deepmd","out_freq", "10", "out_file", "model_devi.out"])):
                             lmp_lines = revise_lmp_input_model(lmp_lines, task_model_list, trj_freq, deepmd_version = deepmd_version)
-                #use revise_lmp_input_model to raise error message "part_style" or "deepmd" not found
+                #use revise_lmp_input_model to raise error message if "part_style" or "deepmd" not found
                 else:
                     lmp_lines = revise_lmp_input_model(lmp_lines, task_model_list, trj_freq, deepmd_version = deepmd_version)
                 
