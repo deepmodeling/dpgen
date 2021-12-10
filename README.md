@@ -22,6 +22,7 @@
 
 [![GitHub release](https://img.shields.io/github/release/deepmodeling/dpgen.svg?maxAge=86400)](https://github.com/deepmodeling/dpgen/releases/)
 [![doi:10.1016/j.cpc.2020.107206](https://img.shields.io/badge/DOI-10.1016%2Fj.cpc.2020.107206-blue)](https://doi.org/10.1016/j.cpc.2020.107206)
+![Citations](https://citations.njzjz.win/10.1016/j.cpc.2020.107206)
 [![conda install](https://img.shields.io/conda/dn/conda-forge/dpgen?label=conda%20install)](https://anaconda.org/conda-forge/dpgen)
 [![pip install](https://img.shields.io/pypi/dm/dpgen?label=pip%20install)](https://pypi.org/project/dpgen)
 
@@ -544,20 +545,21 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | training_iter0_model_path  | list of string  |  ["/path/to/model0_ckpt/", ...]  | The model used to init the first iter training. Number of element should be equal to `numb_models` |
 | training_init_model  | bool  |  False  | Iteration > 0, the model parameters will be initilized from the model trained at the previous iteration. Iteration == 0, the model parameters will be initialized from `training_iter0_model_path`.  |
 | **default_training_param** | Dict |  | Training parameters for `deepmd-kit` in `00.train`. <br /> You can find instructions from here: (https://github.com/deepmodeling/deepmd-kit)..<br /> |
+| dp_compress | bool | false | Use `dp compress` to compress the model. Default is false. |
 | *#Exploration*
 | **model_devi_dt** | Float | 0.002 (recommend) | Timestep for MD |
 | **model_devi_skip** | Integer | 0 | Number of structures skipped for fp in each MD
-| **model_devi_f_trust_lo** | Float | 0.05 | Lower bound of forces for the selection.
- | **model_devi_f_trust_hi** | Float | 0.15 | Upper bound of forces for the selection
-| **model_devi_v_trust_lo**  | Float | 1e10                                                         | Lower bound of virial for the selection. Should be used with DeePMD-kit v2.x |
-| **model_devi_v_trust_hi**  | Float | 1e10                                                         | Upper bound of virial for the selection. Should be used with DeePMD-kit v2.x |
+| **model_devi_f_trust_lo** | Float or List of float | 0.05 | Lower bound of forces for the selection. If List, should be set for each index in `sys_configs`, respectively. |
+| **model_devi_f_trust_hi** | Float or List of float | 0.15 | Upper bound of forces for the selection. If List, should be set for each index in `sys_configs`, respectively. |
+| **model_devi_v_trust_lo**  | Float or List of float | 1e10 | Lower bound of virial for the selection. If List, should be set for each index in `sys_configs`, respectively. Should be used with DeePMD-kit v2.x. |
+| **model_devi_v_trust_hi**  | Float or List of float | 1e10 | Upper bound of virial for the selection. If List, should be set for each index in `sys_configs`, respectively. Should be used with DeePMD-kit v2.x. |
 | model_devi_adapt_trust_lo  | Boolean | False | Adaptively determines the lower trust levels of force and virial. This option should be used together with `model_devi_numb_candi_f`,  `model_devi_numb_candi_v` and optionally with `model_devi_perc_candi_f` and `model_devi_perc_candi_v`. `dpgen` will make two sets: 1. From the frames with force model deviation lower than `model_devi_f_trust_hi`, select `max(model_devi_numb_candi_f, model_devi_perc_candi_f*n_frames)` frames with largest force model deviation. 2. From the frames with virial model deviation lower than `model_devi_v_trust_hi`, select `max(model_devi_numb_candi_v, model_devi_perc_candi_v*n_frames)` frames with largest virial model deviation. The union of the two sets is made as candidate dataset|
 | model_devi_numb_candi_f  | Int | 10 | See `model_devi_adapt_trust_lo`.|
 | model_devi_numb_candi_v  | Int | 0  | See `model_devi_adapt_trust_lo`.|
 | model_devi_perc_candi_f  | Float | 0.0 | See `model_devi_adapt_trust_lo`.|
 | model_devi_perc_candi_v  | Float | 0.0 | See `model_devi_adapt_trust_lo`.|
 | model_devi_f_avg_relative | Boolean | False | Normalized the force model deviations by the RMS force magnitude along the trajectory. This key should not be used with `use_relative`. |
-| **model_devi_clean_traj**  | Boolean | true                                                         | Deciding whether to clean traj folders in MD since they are too large. |
+| **model_devi_clean_traj**  | Boolean or Int | true                                                         | If type of model_devi_clean_traj is boolean type then it denote whether to clean traj folders in MD since they are too large. If it is Int type, then the most recent n iterations of traj folders will be retained, others will be removed. |
 | **model_devi_nopbc**  | Boolean | False                                                         | Assume open boundary condition in MD simulations. |
 | model_devi_activation_func | List of list of string | [["tanh","tanh"],["tanh","gelu"],["gelu","tanh"],["gelu","gelu"]]	| Set activation functions for models, length of the List should be the same as `numb_models`, and two elements in the list of string respectively assign activation functions to the embedding and fitting nets within each model. *Backward compatibility*: the orginal "List of String" format is still supported, where embedding and fitting nets of one model use the same activation function, and the length of the List should be the same as `numb_models`|
 | **model_devi_jobs**        | [<br/>{<br/>"sys_idx": [0], <br/>"temps": <br/>[100],<br/>"press":<br/>[1],<br/>"trj_freq":<br/>10,<br/>"nsteps":<br/> 1000,<br/> "ensembles": <br/> "nvt" <br />},<br />...<br />] | List of dict | Settings for exploration in `01.model_devi`. Each dict in the list corresponds to one iteration. The index of `model_devi_jobs` exactly accord with index of iterations |

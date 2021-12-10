@@ -7,11 +7,11 @@
         1,
         12
     ],
-    "init_data_prefix": "/data1/yfb222333/2_dpgen_gpu_multi",
+    "init_data_prefix": "./",
     "init_data_sys": [
         "CH4.POSCAR.01x01x01/02.md/sys-0004-0001/deepmd"
     ],
-    "sys_configs_prefix": "/data1/yfb222333/2_dpgen_gpu_multi",
+    "sys_configs_prefix": "./",
     "sys_configs": [
         [
             "CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale*/00000*/POSCAR"
@@ -35,7 +35,7 @@
                     4
                 ],
                 "rcut_smth": 0.5,
-                "rcut": 5,
+                "rcut": 5.0,
                 "neuron": [
                     120,
                     120,
@@ -58,8 +58,7 @@
         "learning_rate": {
             "type": "exp",
             "start_lr": 0.001,
-            "decay_steps": 100,
-            "decay_rate": 0.95
+            "decay_steps": 100
         },
         "loss": {
             "start_pref_e": 0.02,
@@ -78,7 +77,6 @@
             "numb_test": 4,
             "save_freq": 1000,
             "save_ckpt": "model.ckpt",
-            "load_ckpt": "model.ckpt",
             "disp_training": true,
             "time_training": true,
             "profiling": false,
@@ -129,11 +127,10 @@
     "shuffle_poscar": false,
     "fp_task_max": 20,
     "fp_task_min": 5,
-    "fp_pp_path": "/data1/yfb222333/2_dpgen_gpu_multi",
+    "fp_pp_path": "./",
     "fp_pp_files": [
         "POTCAR_H",
         "POTCAR_C"
     ],
-    "_comments" : "We can only provide empty files in public, you should provide valid POTCARS yourself when running DP-GEN",
-    "fp_incar": "/data1/yfb222333/2_dpgen_gpu_multi/INCAR_methane"
+    "fp_incar": "./INCAR_methane"
 }
