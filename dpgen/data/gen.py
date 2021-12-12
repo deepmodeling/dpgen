@@ -769,13 +769,14 @@ def gen_init_bulk(args) :
             dlog.info("Current stage is 1, relax")
             create_path(out_dir)
             shutil.copy2(args.PARAM, os.path.join(out_dir, 'param.json'))
+            skip_relax = jdata['skip_relax']
             if from_poscar :
                 make_super_cell_poscar(jdata)
             else :
                 make_unit_cell(jdata)
                 make_super_cell(jdata)
                 place_element(jdata)
-            if args.MACHINE is not None:
+            if args.MACHINE is not None and not skip_relax:
                make_vasp_relax(jdata, mdata)
                run_vasp_relax(jdata, mdata)
             else:
