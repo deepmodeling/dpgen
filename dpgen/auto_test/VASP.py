@@ -140,8 +140,8 @@ class VASP(Task):
                 incar['ENCUT'] = cal_setting['encut']
 
             if 'kspacing' in cal_setting:
-                dlog.info("%s setting KSAPCING to %s" % (self.make_input_file.__name__, cal_setting['kspacing']))
-                incar['KSAPCING'] = cal_setting['kspacing']
+                dlog.info("%s setting KSPACING to %s" % (self.make_input_file.__name__, cal_setting['kspacing']))
+                incar['KSPACING'] = cal_setting['kspacing']
 
             if 'kgamma' in cal_setting:
                 dlog.info("%s setting KGAMMA to %s" % (self.make_input_file.__name__, cal_setting['kgamma']))
