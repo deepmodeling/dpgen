@@ -1,5 +1,6 @@
 import numpy as np
 from dpdata.abacus.scf import get_cell, get_coords
+from dpgen.auto_test.lib.vasp import reciprocal_box
 import os
 bohr2ang = 0.52917721067
 def make_abacus_scf_kpt(fp_params):
@@ -248,6 +249,16 @@ def make_supercell_abacus(from_struct, super_cell):
     from_struct['cells'][1] *= super_cell[1]
     from_struct['cells'][2] *= super_cell[2]
     return from_struct
+
+def make_kspacing_kpoints_stru(stru, kspacing) :
+    # adapted from dpgen.autotest.lib.vasp.make_kspacing_kpoints
+    if type(kspacing) is not list:
+        kspacing = [kspacing, kspacing, kspacing]
+    box = stru['cells']
+    rbox = reciprocal_box(box)
+    kpoints = [max(1,(np.ceil(2 * np.pi * np.linalg.norm(ii) / ks).astype(int))) for ii,ks in zip(rbox,kspacing)]
+    kpoints += [0, 0, 0]
+    return kpoints
 
 if __name__ == "__main__":
     fp_params = {"k_points": [1, 1, 1, 0, 0, 0]}

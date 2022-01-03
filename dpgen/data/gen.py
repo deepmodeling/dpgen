@@ -23,7 +23,8 @@ import dpgen.data.tools.sc as sc
 from distutils.version import LooseVersion
 from dpgen.generator.lib.vasp import incar_upper
 from dpgen.generator.lib.utils import symlink_user_forward_files
-from dpgen.generator.lib.abacus_scf import get_abacus_input_parameters, get_abacus_STRU, make_supercell_abacus, make_abacus_scf_stru
+from dpgen.generator.lib.abacus_scf import get_abacus_input_parameters, get_abacus_STRU, make_supercell_abacus, make_abacus_scf_stru\
+    , make_kspacing_kpoints_stru, make_abacus_scf_kpt
 from pymatgen.core import Structure
 from pymatgen.io.vasp import Incar
 from dpgen.remote.decide_machine import  convert_mdata
@@ -352,7 +353,13 @@ def make_super_cell_STRU(jdata) :
     pp_file_names = [os.path.basename(a) for a in jdata['potcars']]
     stru_text = make_abacus_scf_stru(from_struct, pp_file_names)
     with open(to_file, "w") as fp:
-        fp.write(stru_text)  
+        fp.write(stru_text) 
+    # if kspacing is specified in json file, use kspacing to generate KPT (rather than directly using specified KPT).
+    if 'relax_kspacing' in jdata:
+        kpoints = make_kspacing_kpoints_stru(from_struct, jdata['relax_kspacing'])
+        kpt_text = make_abacus_scf_kpt({"k_points": kpoints})
+        with open(os.path.join(to_path, 'KPT'), "w") as fp:
+            fp.write(kpt_text)
     # make system dir (copy)
     natoms_list = from_struct['atom_numbs']
     dlog.info(natoms_list)
@@ -428,7 +435,12 @@ def place_element_ABACUS(jdata, supercell_stru):
     #path_sc = os.path.join(out_dir, global_dirname_02)
     path_pe = os.path.join(out_dir, global_dirname_02)    
     combines = np.array(make_combines(len(elements), natoms), dtype = int)
-    
+    # if kspacing is specified in json file, use kspacing to generate KPT (rather than directly using specified KPT).
+    if 'relax_kspacing' in jdata:
+        kpoints = make_kspacing_kpoints_stru(supercell_stru)
+        kpt_text = make_abacus_scf_kpt({"k_points": kpoints})
+        with open(os.path.join(path_pe, 'KPT')) as fp:
+            fp.write(kpt_text)
     assert(os.path.isdir(path_pe))
     cwd = os.getcwd()
     for ii in combines :
@@ -508,13 +520,14 @@ def make_abacus_relax (jdata, mdata) :
     shutil.copy2( jdata['relax_incar'], 
                  os.path.join(work_dir, 'INPUT'))
     
-    if os.path.isfile(os.path.join(work_dir, 'KPT' )) :
-        os.remove(os.path.join(work_dir, 'KPT' ))
-    assert('relax_kpt' in jdata)
-    #print(jdata['relax_kpt'])
-    jdata['relax_kpt'] = os.path.relpath(jdata['relax_kpt'])
-    shutil.copy2( jdata['relax_kpt'], 
-                 os.path.join(work_dir, 'KPT'))
+    if 'relax_kspacing' not in jdata:
+        if os.path.isfile(os.path.join(work_dir, 'KPT' )) :
+            os.remove(os.path.join(work_dir, 'KPT' ))
+        assert('relax_kpt' in jdata)
+        #print(jdata['relax_kpt'])
+        jdata['relax_kpt'] = os.path.relpath(jdata['relax_kpt'])
+        shutil.copy2( jdata['relax_kpt'], 
+                    os.path.join(work_dir, 'KPT'))
 
     os.chdir(work_dir)
     
@@ -774,8 +787,9 @@ def make_abacus_md(jdata, mdata) :
     create_path(path_md)
     shutil.copy2(jdata['md_incar'], 
                  os.path.join(path_md, 'INPUT'))
-    shutil.copy2(jdata['md_kpt'], 
-                 os.path.join(path_md, 'KPT'))
+    if 'md_kpt' in jdata:
+        shutil.copy2(jdata['md_kpt'], 
+                     os.path.join(path_md, 'KPT'))
     for pp_file in jdata['potcars']:
         shutil.copy2(pp_file, 
                  os.path.join(path_md, os.path.basename(pp_file)))
@@ -798,6 +812,12 @@ def make_abacus_md(jdata, mdata) :
                 path_pos = os.path.join(path_pos, "scale-%.3f" % jj)
                 path_pos = os.path.join(path_pos, "%06d" % kk)
                 init_pos = os.path.join(path_pos, 'STRU')
+                if "md_kspacing" in jdata:
+                    init_stru = get_abacus_STRU(init_pos)
+                    kpoints = make_kspacing_kpoints_stru(init_stru, jdata['md_kspacing'])
+                    kpt_text = make_abacus_scf_kpt({"k_points": kpoints})
+                    with open(os.path.join(path_md, 'KPT'), "w") as fp:
+                        fp.write(kpt_text)
                 shutil.copy2 (init_pos, 'STRU')
                 file_incar = os.path.join(path_md, 'INPUT')
                 file_kpt = os.path.join(path_md, 'KPT')
@@ -1259,9 +1279,9 @@ def gen_init_bulk(args) :
                 if "nstep" in standard_incar:
                         nsw_flag = True
                         nsw_steps = int(standard_incar['nstep'])
-                assert("relax_kpt" in jdata)
+                assert("relax_kpt" in jdata or "relax_kspacing" in jdata)
                 if 3 in jdata["stages"]:
-                    assert("md_kpt" in jdata)
+                    assert("md_kpt" in jdata or "md_kspacing" in jdata)
                     assert("md_incar" in jdata)
             if nsw_flag:
                 if (nsw_steps != md_nstep_jdata):

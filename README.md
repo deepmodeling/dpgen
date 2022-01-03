@@ -191,7 +191,7 @@ If you want to specify a structure as starting point for `init_bulk`, you may se
 ```
 `init_bulk` support both VASP and ABACUS for first-principle calculation. You can choose the software by specifying the key `init_fp_style`. If `init_fp_style` is not specified, the default software will be VASP. 
 
-When using ABACUS for `init_fp_style`, the keys of the paths of `INPUT` files for relaxation and MD simulations are the same as `INCAR` for VASP, which are `relax_incar` and `md_incar` respectively. You have to additionally specify `relax_kpt`, `md_kpt` for the relative path for `KPT` files of relaxation and MD simulations. If `from_poscar` is set to `false`, you have to specify `atom_masses` in the same order as `elements`.
+When using ABACUS for `init_fp_style`, the keys of the paths of `INPUT` files for relaxation and MD simulations are the same as `INCAR` for VASP, which are `relax_incar` and `md_incar` respectively. You have to additionally specify `relax_kspacing` and `md_kspacing` for k points spacing, and dpgen will automatically generate `KPT` files according to them. You may also use `relax_kpt` and `md_kpt` instead of them for the relative path for `KPT` files of relaxation and MD simulations. However, either `relax_kspacing` and `md_kspacing`, or `relax_kpt` and `md_kpt` is needed. If `from_poscar` is set to `false`, you have to specify `atom_masses` in the same order as `elements`.
 
 The following table gives explicit descriptions on keys in `PARAM`.
 
@@ -217,7 +217,9 @@ The bold notation of key (such as **Elements**) means that it's a necessary key.
 | type_map | List | [ "Mg", "Al"] | The indices of elements in deepmd formats will be set in this order.
 | init_fp_style | String | "ABACUS" or "VASP" | First-principle software. If this key is abscent, the default value will be "VASP".
 | relax_kpt | String | "....../KPT" | Path of `KPT` file for relaxation in stage 1. Only useful if `init_fp_style` is "ABACUS".
+| relax_kspacing | Integer or List of 3 integers | 10 | kspacing parameter for relaxation in stage 1. Only useful if `init_fp_style` is "ABACUS".
 | md_kpt | String | "....../KPT" | Path of `KPT` file for MD simulations in stage 3. Only useful if `init_fp_style` is "ABACUS".
+| md_kspacing | Integer or List of 3 integers | 10 | kspacing parameter for MD simulations in stage 3. Only useful if `init_fp_style` is "ABACUS".
 | atom_masses | List of float | [24] | List of atomic masses of elements. The order should be the same as `Elements`. Only useful if `init_fp_style` is "ABACUS".
 
 ### Init_surf
