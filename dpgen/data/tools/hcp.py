@@ -23,4 +23,3 @@ def poscar_unit (latt) :
     ret += "%.16f %.16f %.16f\n" % (0, 0, 0)
     ret += "%.16f %.16f %.16f\n" % (1./3, 1./3, 1./2)
     return ret
-
