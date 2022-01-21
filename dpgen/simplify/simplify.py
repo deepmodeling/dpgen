@@ -27,6 +27,7 @@ from dpgen.generator.run import make_train, run_train, post_train, run_fp, post_
 # TODO: maybe the following functions can be moved to dpgen.util
 from dpgen.generator.lib.utils import log_iter, make_iter_name, create_path, record_iter
 from dpgen.generator.lib.gaussian import make_gaussian_input
+from dpgen.remote.decide_machine import  convert_mdata
 
 
 picked_data_name = "data.picked"
