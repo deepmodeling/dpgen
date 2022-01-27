@@ -190,6 +190,11 @@ def dump_to_deepmd_raw(dump, deepmd_raw, type_map, fmt='gromacs/gro'):
     system = dpdata.System(dump, fmt = fmt, type_map = type_map)
     system.to_deepmd_raw(deepmd_raw)
 
+def npy_to_hdf5(dump):
+    if not os.path.isfile(dump + ".hdf5"):
+        system = dpdata.MultiSystems().from_deepmd_npy(dump)
+        system.to_deepmd_hdf5(dump + ".hdf5")
+
 
 def make_train (iter_index,
                 jdata,
@@ -270,13 +275,14 @@ def make_train (iter_index,
     # make sure all init_data_sys has the batch size -- for the following `zip`
     assert (len(init_data_sys_) <= len(init_batch_size_))
     for ii, ss in zip(init_data_sys_, init_batch_size_) :
+        npy_to_hdf5(os.path.join(work_path, 'data.init', ii))
         if jdata.get('init_multi_systems', False):
             for single_sys in os.listdir(os.path.join(work_path, 'data.init', ii)):
-                init_data_sys.append(os.path.join('..', 'data.init', ii, single_sys))
+                init_data_sys.append(os.path.join('..', 'data.init', ii + ".hdf5#", single_sys))
                 init_batch_size.append(detect_batch_size(ss, os.path.join(work_path, 'data.init', ii, single_sys)))
                 nums[0] += get_nframe(os.path.join(work_path, 'data.init', ii, single_sys))
         else:
-            init_data_sys.append(os.path.join('..', 'data.init', ii))
+            init_data_sys.append(os.path.join('..', 'data.init.hdf5#', ii + ".hdf5#"))
             init_batch_size.append(detect_batch_size(ss, os.path.join(work_path, 'data.init', ii)))
             nums[0] += get_nframe(os.path.join(work_path, 'data.init', ii))
     old_range = [0]
@@ -284,8 +290,9 @@ def make_train (iter_index,
         for ii in range(iter_index) :
             old_range.append(len(init_data_sys))
             fp_path = os.path.join(make_iter_name(ii), fp_name)
-            fp_data_sys = glob.glob(os.path.join(fp_path, "data.*"))
+            fp_data_sys = set(glob.glob(os.path.join(fp_path, "data.*"))) - set(glob.glob(os.path.join(fp_path, "data.*.hdf5")))
             for jj in fp_data_sys :
+                npy_to_hdf5(jj)
                 sys_idx = int(jj.split('.')[-1])
                 if jdata.get('use_clusters', False):
                     nframes = 0
@@ -297,7 +304,7 @@ def make_train (iter_index,
                         log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
                         continue
                     for sys_single in os.listdir(jj):
-                        init_data_sys.append(os.path.join('..', 'data.iters', jj, sys_single))
+                        init_data_sys.append(os.path.join('..', 'data.iters', jj + ".hdf5#", sys_single))
                         init_batch_size.append(detect_batch_size(sys_batch_size[sys_idx], os.path.join(jj, sys_single)))
                         nums[ii+1] += get_nframe(os.path.join(jj, sys_single))
                 else:
@@ -305,7 +312,7 @@ def make_train (iter_index,
                     if nframes < fp_task_min :
                         log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
                         continue
-                    init_data_sys.append(os.path.join('..', 'data.iters', jj))
+                    init_data_sys.append(os.path.join('..', 'data.iters', jj + ".hdf5#"))
                     init_batch_size.append(detect_batch_size(sys_batch_size[sys_idx], jj))
                     nums[ii+1] += get_nframe(jj)
     # establish tasks
@@ -335,7 +342,7 @@ def make_train (iter_index,
         # 2.x
         jinput['training']['training_data'] = {}
         jinput['training']['training_data']['systems'] = init_data_sys
-        jinput['training']['training_data']['batch_size'] = init_batch_size
+        jinput['training']['training_data']['batch_size'] = "auto"
         jinput['model']['type_map'] = jdata['type_map']
         # electron temperature
         if use_ele_temp == 0:
@@ -356,7 +363,7 @@ def make_train (iter_index,
     # original prob
     nums = np.array(nums, dtype=float)
     x1 = np.ones(nums.size)
-    x1[0] = 0.
+    x1[:-1] = 0.
     # 10. should be a parameter
     # -> 1., 10., 10., ...
     x1 = np.power(10., x1)
@@ -378,15 +385,15 @@ def make_train (iter_index,
         if jinput['loss'].get('start_pref_f') is not None:
             jinput['loss']['start_pref_f'] = training_reuse_start_pref_f
         jinput['learning_rate']['start_lr'] = training_reuse_start_lr
-        jinput['training']['stop_batch'] = training_reuse_stop_batch
+        #jinput['training']['stop_batch'] = training_reuse_stop_batch
 
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         create_path(task_path)
         os.chdir(task_path)
-        for jj in init_data_sys :
-            if not os.path.isdir(jj) :
-                raise RuntimeError ("data sys %s does not exists, cwd is %s" % (jj, os.getcwd()))
+        # for jj in init_data_sys :
+        #     if not os.path.isdir(jj) :
+        #         raise RuntimeError ("data sys %s does not exists, cwd is %s" % (jj, os.getcwd()))
         os.chdir(cwd)
         # set random seed for each model
         if LooseVersion(mdata["deepmd_version"]) >= LooseVersion('1') and LooseVersion(mdata["deepmd_version"]) < LooseVersion('3'):
@@ -453,6 +460,8 @@ def _link_old_models(work_path, old_model_files, ii):
 
 
 def detect_batch_size(batch_size, system=None):
+    # auto
+    return batch_size
     if type(batch_size) == int:
         return batch_size
     elif batch_size == "auto":
@@ -515,6 +524,8 @@ def run_train (iter_index,
         commands.append(command)
         command = '%s freeze' % train_command
         commands.append(command)
+        if jdata.get("compress", False):
+            commands.append("%s compress -s %f" % (train_command, jdata.get("compress_step", 0.01)))
     else:
         raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x version!" )
 
@@ -536,35 +547,38 @@ def run_train (iter_index,
                           os.path.join('old', 'model.ckpt.data-00000-of-00001')
         ]
     backward_files = ['frozen_model.pb', 'lcurve.out', 'train.log']
+    if jdata.get("compress", False):
+        backward_files.append('frozen_model_compressed.pb')
     backward_files+= ['model.ckpt.meta', 'model.ckpt.index', 'model.ckpt.data-00000-of-00001', 'checkpoint']
     init_data_sys_ = jdata['init_data_sys']
     init_data_sys = []
     for ii in init_data_sys_ :
-        init_data_sys.append(os.path.join('data.init', ii))
-    trans_comm_data = []
+        init_data_sys.append(os.path.join('data.init', ii + ".hdf5"))
+    #trans_comm_data = []
     cwd = os.getcwd()
     os.chdir(work_path)
-    fp_data = glob.glob(os.path.join('data.iters', 'iter.*', '02.fp', 'data.*'))
-    for ii in init_data_sys :
-        if jdata.get('init_multi_systems', False):
-            for single_sys in os.listdir(os.path.join(ii)):
-                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'set.*'))
-                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type*.raw'))
-                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'nopbc'))
-        else:
-            trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
-            trans_comm_data += glob.glob(os.path.join(ii, 'type*.raw'))
-            trans_comm_data += glob.glob(os.path.join(ii, 'nopbc'))
-    for ii in fp_data :
-        if jdata.get('use_clusters', False):
-            for single_sys in os.listdir(os.path.join(ii)):
-                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'set.*'))
-                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type*.raw'))
-                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'nopbc'))
-        else:
-            trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
-            trans_comm_data += glob.glob(os.path.join(ii, 'type*.raw'))
-            trans_comm_data += glob.glob(os.path.join(ii, 'nopbc'))
+    fp_data = glob.glob(os.path.join('data.iters', 'iter.*', '02.fp', 'data.*.hdf5'))
+    trans_comm_data = init_data_sys + fp_data
+    # for ii in init_data_sys :
+    #     if jdata.get('init_multi_systems', False):
+    #         for single_sys in os.listdir(os.path.join(ii)):
+    #             trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'set.*'))
+    #             trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type*.raw'))
+    #             trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'nopbc'))
+    #     else:
+    #         trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
+    #         trans_comm_data += glob.glob(os.path.join(ii, 'type*.raw'))
+    #         trans_comm_data += glob.glob(os.path.join(ii, 'nopbc'))
+    # for ii in fp_data :
+    #     if jdata.get('use_clusters', False):
+    #         for single_sys in os.listdir(os.path.join(ii)):
+    #             trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'set.*'))
+    #             trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type*.raw'))
+    #             trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'nopbc'))
+    #     else:
+    #         trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
+    #         trans_comm_data += glob.glob(os.path.join(ii, 'type*.raw'))
+    #         trans_comm_data += glob.glob(os.path.join(ii, 'nopbc'))
     os.chdir(cwd)
 
     try:
@@ -618,7 +632,10 @@ def post_train (iter_index,
         return
     # symlink models
     for ii in range(numb_models) :
-        task_file = os.path.join(train_task_fmt % ii, 'frozen_model.pb')
+        if not jdata.get("compress", False):
+            task_file = os.path.join(train_task_fmt % ii, 'frozen_model.pb')
+        else:
+            task_file = os.path.join(train_task_fmt % ii, 'frozen_model_compressed.pb')
         ofile = os.path.join(work_path, 'graph.%03d.pb' % ii)
         if os.path.isfile(ofile) :
             os.remove(ofile)
@@ -1198,6 +1215,13 @@ def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
     parm7 = cur_job['parm7']
     if not isinstance(parm7, list):
         parm7 = [parm7]
+    # TODO: consider writing input in json instead of a given file
+    mdin = cur_job['mdin']
+    if not isinstance(mdin, list):
+        mdin = [mdin] * len(parm7)
+    disang = cur_job['disang']
+    if not isinstance(disang, list):
+        disang = [disang] * len(parm7)
 
     sys_counter = 0
     for ss in conf_systems:
@@ -1216,9 +1240,8 @@ def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
             cwd_ = os.getcwd()
             # chdir to task path
             os.chdir(task_path)
-            # TODO: consider writing input in json instead of a given file
-            mdin = cur_job['mdin']
-            with open(mdin) as f, open('init.mdin', 'w') as fw:
+            
+            with open(mdin[sys_counter]) as f, open('init.mdin', 'w') as fw:
                 mdin_str = f.read()
                 for ii, mm in enumerate(task_model_list):
                     # replace graph
@@ -1235,12 +1258,12 @@ def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
                 if type(r) is not list:
                     r = [r]
                 # disang file should include RVAL, RVAL2, ...
-                with open(cur_job['disang']) as f, open('TEMPLATE.disang', 'w') as fw:
+                with open(disang[sys_counter]) as f, open('TEMPLATE.disang', 'w') as fw:
                     tl = f.read()
                     for ii, rr in enumerate(r):
-                        tl = tl.replace("RVAL"+str(ii+1), rr)
+                        tl = tl.replace("RVAL"+str(ii+1), str(rr))
                     if len(r) == 1:
-                        tl = tl.replace("RVAL", r[0])
+                        tl = tl.replace("RVAL", str(r[0]))
                     fw.write(tl)
 
             with open('job.json', 'w') as fp:
@@ -2148,13 +2171,24 @@ def make_fp_amber_diff(iter_index, jdata):
     cwd = os.getcwd()
     # link two mdin files and param7
     os.chdir(os.path.join(fp_tasks[0], ".."))
-    os.symlink(jdata['fp_params']['low_level_mdin'] ,'low_level.mdin')
-    os.symlink(jdata['fp_params']['high_level_mdin'] ,'high_level.mdin')
+    llmdin = jdata['fp_params']['low_level_mdin']
+    hlmdin = jdata['fp_params']['high_level_mdin']
+    if not isinstance(llmdin, list):
+        llmdin = [llmdin]
+    if not isinstance(hlmdin, list):
+        hlmdin = [hlmdin]
+    for ii, pp in enumerate(llmdin):
+        os.symlink(pp, 'low_level%d.mdin'%ii)
+    for ii, pp in enumerate(hlmdin):
+        os.symlink(pp, 'high_level%d.mdin'%ii)
     parm7 = jdata['fp_params']['parm7']
     if not isinstance(parm7, list):
         parm7 = [parm7]
     for ii, pp in enumerate(parm7):
         os.symlink(pp, "qmmm%d.parm7"%ii)
+    qm_region = jdata['fp_params']['qm_region']
+    if not isinstance(parm7, list):
+        qm_region = [qm_region]
 
     os.chdir(cwd)
     for ii in fp_tasks:
@@ -2162,6 +2196,8 @@ def make_fp_amber_diff(iter_index, jdata):
         sys_idx = int(ii.split(".")[3])
         with open("sys_idx", 'w') as f:
             f.write(str(sys_idx))
+        with open("qm_region", 'w') as f:
+            f.write(qm_region[sys_idx])
 
         create_path("dataset")
 
@@ -2291,14 +2327,14 @@ def run_fp_inner (iter_index,
     
     fp_style = jdata['fp_style']
     if fp_style == 'amber/diff':
-        fp_command = ("%s -O -p ../qmmm`cat sys_idx`.parm7 -c init.rst7 -i ../low_level.mdin -o low_level.mdout -r low_level.rst7 "
+        fp_command = ("%s -O -p ../qmmm`cat sys_idx`.parm7 -c init.rst7 -i ../low_level`cat sys_idx`.mdin -o low_level.mdout -r low_level.rst7 "
                       "-x low_level.nc -y rc.nc -inf rc.mdinfo -frc low_level.mdfrc -inf low_level.mdinfo "
                       "-e low_level.mden && "
                       "%s "
-                      "  -O -p ../qmmm`cat sys_idx`.parm7 -c init.rst7 -i ../high_level.mdin -o high_level.mdout -r high_level.rst7 "
+                      "  -O -p ../qmmm`cat sys_idx`.parm7 -c init.rst7 -i ../high_level`cat sys_idx`.mdin -o high_level.mdout -r high_level.rst7 "
                       "  -x high_level.nc -y rc.nc -inf rc.mdinfo -frc high_level.mdfrc -inf high_level.mdinfo "
                       "  -e high_level.mden && "
-                      "  dpamber corr --cutoff %f --parm7_file ../qmmm`cat sys_idx`.parm7 --nc rc.nc --hl high_level --ll low_level") % (
+                      "  dpamber corr --cutoff %f --parm7_file ../qmmm`cat sys_idx`.parm7 --nc rc.nc --hl high_level --ll low_level --qm_region \"`cat qm_region`\"") % (
                           fp_command, fp_command, jdata['fp_params']['cutoff'],
                       )
 
@@ -2385,7 +2421,7 @@ def run_fp (iter_index,
         backward_files = ['REPORT', 'OUT.MLMD', 'output']
         run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, _pwmat_check_fin, log_file = 'output')
     elif fp_style == 'amber/diff':
-        forward_files = ['rc.nc', 'init.rst7', 'dataset', 'sys_idx']
+        forward_files = ['rc.nc', 'init.rst7', 'dataset', 'sys_idx', 'qm_region']
         backward_files = [
             'low_level.mdfrc', 'low_level.mdout', 'low_level.mden', 'low_level.mdinfo',
             'high_level.mdfrc', 'high_level.mdout', 'high_level.mden', 'high_level.mdinfo',
@@ -2401,7 +2437,7 @@ def run_fp (iter_index,
                 'high_level.mdfrc', 'high_level.mdout', 'high_level.mdinfo',
                 'output', 'dataset'
             ]
-        forward_common_files = ['low_level.mdin', 'high_level.mdin', 'qmmm*.parm7']
+        forward_common_files = ['low_level*.mdin', 'high_level*.mdin', 'qmmm*.parm7']
         run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, None, log_file = 'output',
                      forward_common_files=forward_common_files)
     else :
