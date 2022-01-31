@@ -803,7 +803,7 @@ def make_model_devi (iter_index,
         ss = sys_configs[idx]
         for ii in ss :
             cur_systems += glob.glob(ii)
-        cur_systems.sort()
+        #cur_systems.sort()
         cur_systems = [os.path.abspath(ii) for ii in cur_systems]
         conf_systems.append (cur_systems)
 
