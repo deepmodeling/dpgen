@@ -1207,7 +1207,7 @@ def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
     train_path = os.path.abspath(train_path)
-    models = glob.glob(os.path.join(train_path, "graph*pb"))
+    models = sorted(glob.glob(os.path.join(train_path, "graph*pb")))
     task_model_list = []
     for ii in models:
         task_model_list.append(os.path.join('..', os.path.basename(ii)))
@@ -1215,10 +1215,20 @@ def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
     parm7 = cur_job['parm7']
     if not isinstance(parm7, list):
         parm7 = [parm7]
+    # link parm file
+    for ii, pp in enumerate(parm7):
+        os.symlink(pp, os.path.join(work_path, 'qmmm%d.parm7'%ii))
     # TODO: consider writing input in json instead of a given file
     mdin = cur_job['mdin']
     if not isinstance(mdin, list):
         mdin = [mdin] * len(parm7)
+    for ii, pp in enumerate(mdin):
+        with open(pp) as f, open(os.path.join(work_path, 'init%d.mdin'%ii), 'w') as fw:
+            mdin_str = f.read()
+            for jj, mm in enumerate(task_model_list):
+                # replace graph
+                mdin_str = mdin_str.replace("@GRAPH_FILE%d@" % jj, mm)
+            fw.write(mdin_str)
     disang = cur_job['disang']
     if not isinstance(disang, list):
         disang = [disang] * len(parm7)
@@ -1240,15 +1250,6 @@ def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
             cwd_ = os.getcwd()
             # chdir to task path
             os.chdir(task_path)
-            
-            with open(mdin[sys_counter]) as f, open('init.mdin', 'w') as fw:
-                mdin_str = f.read()
-                for ii, mm in enumerate(task_model_list):
-                    # replace graph
-                    mdin_str = mdin_str.replace("@GRAPH_FILE%d@" % ii, mm)
-                fw.write(mdin_str)
-            # link parm file
-            os.symlink(parm7[sys_counter], 'qmmm.parm7')
             
             # reaction coordinates of umbrella sampling
             # TODO: maybe consider a better name instead of `r`?
@@ -1343,9 +1344,16 @@ def run_model_devi (iter_index,
         backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , 'model_devi.out', 'model_devi.log']
     elif model_devi_engine == "amber":
         # TODO: currently all options are written in lmp_exec, but we may move them here
-        commands = [lmp_exec + " -O -p qmmm.parm7 -c init.rst7 -i init.mdin -o rc.mdout -r rc.rst7 -x rc.nc -inf rc.mdinfo"]
-        forward_files = ['init.rst7', 'init.mdin', 'qmmm.parm7', 'TEMPLATE.disang']
+        commands = [(
+            "TASK=$(basename $(pwd)) && "
+            "SYS1=${TASK:5:3} && "
+            "SYS=$((10#$SYS1)) && "
+        )+ lmp_exec + (
+            " -O -p ../qmmm$SYS.parm7 -c init.rst7 -i ../init$SYS.mdin -o rc.mdout -r rc.rst7 -x rc.nc -inf rc.mdinfo"
+        )]
+        forward_files = ['init.rst7', 'TEMPLATE.disang']
         backward_files = ['rc.mdout', 'rc.nc', 'rc.rst7', 'rc.mdinfo', 'TEMPLATE.dumpave']
+        model_names.extend(["qmmm*.parm7", "init*.mdin"])
 
     cwd = os.getcwd()
 
@@ -2189,19 +2197,27 @@ def make_fp_amber_diff(iter_index, jdata):
     qm_region = jdata['fp_params']['qm_region']
     if not isinstance(parm7, list):
         qm_region = [qm_region]
+    
+    # 
+    for ii, ss in enumerate(jdata['sys_configs']):
+        os.symlink(ss[0], "init%d.rst7"%ii)
+
+    with open("qm_region", 'w') as f:
+        f.write("\n".join(qm_region))
+
 
     os.chdir(cwd)
-    for ii in fp_tasks:
-        os.chdir(ii)
-        sys_idx = int(ii.split(".")[3])
-        with open("sys_idx", 'w') as f:
-            f.write(str(sys_idx))
-        with open("qm_region", 'w') as f:
-            f.write(qm_region[sys_idx])
+    #for ii in fp_tasks:
+        #os.chdir(ii)
+        #sys_idx = int(ii.split(".")[3])
+        #with open("sys_idx", 'w') as f:
+        #    f.write(str(sys_idx))
+        #with open("qm_region", 'w') as f:
+        #    f.write(qm_region[sys_idx])
 
-        create_path("dataset")
+        #create_path("dataset")
 
-        os.chdir(cwd)
+        #os.chdir(cwd)
 
 def make_fp (iter_index,
              jdata,
@@ -2327,16 +2343,22 @@ def run_fp_inner (iter_index,
     
     fp_style = jdata['fp_style']
     if fp_style == 'amber/diff':
-        fp_command = ("%s -O -p ../qmmm`cat sys_idx`.parm7 -c init.rst7 -i ../low_level`cat sys_idx`.mdin -o low_level.mdout -r low_level.rst7 "
-                      "-x low_level.nc -y rc.nc -inf rc.mdinfo -frc low_level.mdfrc -inf low_level.mdinfo "
-                      "-e low_level.mden && "
-                      "%s "
-                      "  -O -p ../qmmm`cat sys_idx`.parm7 -c init.rst7 -i ../high_level`cat sys_idx`.mdin -o high_level.mdout -r high_level.rst7 "
-                      "  -x high_level.nc -y rc.nc -inf rc.mdinfo -frc high_level.mdfrc -inf high_level.mdinfo "
-                      "  -e high_level.mden && "
-                      "  dpamber corr --cutoff %f --parm7_file ../qmmm`cat sys_idx`.parm7 --nc rc.nc --hl high_level --ll low_level --qm_region \"`cat qm_region`\"") % (
-                          fp_command, fp_command, jdata['fp_params']['cutoff'],
-                      )
+        # firstly get sys_idx
+        fp_command = (
+            "TASK=$(basename $(pwd)) && "
+            "SYS1=${TASK:5:3} && "
+            "SYS=$((10#$SYS1)) && "
+            'QM_REGION=$(awk "NR==$SYS+1" ../qm_region) &&'
+        ) + fp_command + (
+            " -O -p ../qmmm$SYS.parm7 -c ../init$SYS.rst7 -i ../low_level$SYS.mdin -o low_level.mdout -r low_level.rst7 "
+            "-x low_level.nc -y rc.nc -inf rc.mdinfo -frc low_level.mdfrc -inf low_level.mdinfo && "
+        ) + fp_command + (
+            " -O -p ../qmmm$SYS.parm7 -c ../init$SYS.rst7 -i ../high_level$SYS.mdin -o high_level.mdout -r high_level.rst7 "
+            "-x high_level.nc -y rc.nc -inf rc.mdinfo -frc high_level.mdfrc -inf high_level.mdinfo && "
+        ) + (
+            "dpamber corr --cutoff %f --parm7_file ../qmmm$SYS.parm7 --nc rc.nc --hl high_level --ll low_level --qm_region $QM_REGION") % (
+               jdata['fp_params']['cutoff'],
+        )
 
 
     fp_run_tasks = fp_tasks
@@ -2421,23 +2443,13 @@ def run_fp (iter_index,
         backward_files = ['REPORT', 'OUT.MLMD', 'output']
         run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, _pwmat_check_fin, log_file = 'output')
     elif fp_style == 'amber/diff':
-        forward_files = ['rc.nc', 'init.rst7', 'dataset', 'sys_idx', 'qm_region']
+        forward_files = ['rc.nc']
         backward_files = [
-            'low_level.mdfrc', 'low_level.mdout', 'low_level.mden', 'low_level.mdinfo',
-            'high_level.mdfrc', 'high_level.mdout', 'high_level.mden', 'high_level.mdinfo',
+            'low_level.mdfrc', 'low_level.mdout', 'low_level.mdinfo',
+            'high_level.mdfrc', 'high_level.mdout', 'high_level.mdinfo',
             'output', 'dataset'
         ]
-        if jdata['fp_params'].get("qmwater", False):
-            backward_files = [
-                '*.mdfrc', '*.mdout', '*.mden', '*.mdinfo', 'output', 'dataset',
-            ]
-        elif jdata['fp_params'].get("pbe0", False):
-            backward_files = [
-                'low_level.mdfrc', 'low_level.mdout', 'low_level.mden', 'low_level.mdinfo',
-                'high_level.mdfrc', 'high_level.mdout', 'high_level.mdinfo',
-                'output', 'dataset'
-            ]
-        forward_common_files = ['low_level*.mdin', 'high_level*.mdin', 'qmmm*.parm7']
+        forward_common_files = ['low_level*.mdin', 'high_level*.mdin', 'qmmm*.parm7', 'qm_region', 'init*.rst7']
         run_fp_inner(iter_index, jdata, mdata, forward_files, backward_files, None, log_file = 'output',
                      forward_common_files=forward_common_files)
     else :
