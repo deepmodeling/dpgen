@@ -1212,26 +1212,42 @@ def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
     for ii in models:
         task_model_list.append(os.path.join('..', os.path.basename(ii)))
     work_path = os.path.join(iter_name, model_devi_name)
-    parm7 = cur_job['parm7']
-    if not isinstance(parm7, list):
-        parm7 = [parm7]
+    # parm7 - list
+    parm7 = jdata['parm7']
+    parm7_prefix = jdata.get("parm7_prefix", "")
+    parm7 = [os.path.join(parm7_prefix, pp) for pp in parm7]
+
     # link parm file
     for ii, pp in enumerate(parm7):
         os.symlink(pp, os.path.join(work_path, 'qmmm%d.parm7'%ii))
     # TODO: consider writing input in json instead of a given file
-    mdin = cur_job['mdin']
-    if not isinstance(mdin, list):
-        mdin = [mdin] * len(parm7)
+    # mdin 
+    mdin = jdata['mdin']
+    mdin_prefix = jdata.get("mdin_prefix", "")
+    mdin = [os.path.join(mdin_prefix, pp) for pp in mdin]
+
+    qm_region = jdata['qm_region']
+    qm_charge = jdata['qm_charge']
+
     for ii, pp in enumerate(mdin):
         with open(pp) as f, open(os.path.join(work_path, 'init%d.mdin'%ii), 'w') as fw:
             mdin_str = f.read()
+            # freq, nstlim, qm_region, qm_theory, qm_charge, rcut, graph
+            mdin_str = mdin_str.replace("@freq@", str(cur_job.get('trj_freq', 50))) \
+                               .replace("@nstlim@", str(cur_job['nsteps'][ii])) \
+                               .replace("@qm_region@", qm_region[ii]) \
+                               .replace("@qm_charge@", str(qm_charge[ii])) \
+                               .replace("@qm_theory@", jdata['low_level']) \
+                               .replace("@rcut@", str(jdata['cutoff']))
+            # graph
             for jj, mm in enumerate(task_model_list):
                 # replace graph
                 mdin_str = mdin_str.replace("@GRAPH_FILE%d@" % jj, mm)
             fw.write(mdin_str)
-    disang = cur_job['disang']
-    if not isinstance(disang, list):
-        disang = [disang] * len(parm7)
+    # disang - list
+    disang = jdata['disang']
+    disang_prefix = jdata.get("disang_prefix", "")
+    disang = [os.path.join(disang_prefix, pp) for pp in disang]
 
     sys_counter = 0
     for ss in conf_systems:
@@ -2179,24 +2195,33 @@ def make_fp_amber_diff(iter_index, jdata):
     cwd = os.getcwd()
     # link two mdin files and param7
     os.chdir(os.path.join(fp_tasks[0], ".."))
-    llmdin = jdata['fp_params']['low_level_mdin']
-    hlmdin = jdata['fp_params']['high_level_mdin']
-    if not isinstance(llmdin, list):
-        llmdin = [llmdin]
-    if not isinstance(hlmdin, list):
-        hlmdin = [hlmdin]
-    for ii, pp in enumerate(llmdin):
-        os.symlink(pp, 'low_level%d.mdin'%ii)
-    for ii, pp in enumerate(hlmdin):
-        os.symlink(pp, 'high_level%d.mdin'%ii)
-    parm7 = jdata['fp_params']['parm7']
-    if not isinstance(parm7, list):
-        parm7 = [parm7]
+    mdin = jdata['fp_params']['mdin']
+    mdin_prefix = jdata.get('mdin_prefix', '')
+    mdin = os.path.join(mdin_prefix, mdin)
+    with open(mdin) as f:
+        mdin_str = f.read()
+
+    qm_region = jdata['qm_region']
+    high_level = jdata['high_level']
+    low_level = jdata['low_level']
+    qm_charge = jdata['qm_charge']
+    # qm_theory qm_region qm_charge
+    for ii, _ in enumerate(qm_region):
+        mdin_new_str = mdin_str.replace("%qm_theory%", low_level) \
+                               .replace("%qm_region%", qm_region[ii]) \
+                               .replace("%qm_charge%", str(qm_charge[ii]))
+        with open('low_level%d.mdin'%ii, 'w') as f:
+            f.write(mdin_new_str)
+
+        mdin_new_str = mdin_str.replace("%qm_theory%", high_level) \
+                               .replace("%qm_region%", qm_region[ii]) \
+                               .replace("%qm_charge%", str(qm_charge[ii]))
+        with open('high_level%d.mdin'%ii, 'w') as f:
+            f.write(mdin_new_str)
+
+    parm7 = jdata['parm7']
     for ii, pp in enumerate(parm7):
         os.symlink(pp, "qmmm%d.parm7"%ii)
-    qm_region = jdata['fp_params']['qm_region']
-    if not isinstance(parm7, list):
-        qm_region = [qm_region]
     
     # 
     for ii, ss in enumerate(jdata['sys_configs']):
@@ -2357,7 +2382,7 @@ def run_fp_inner (iter_index,
             "-x high_level.nc -y rc.nc -inf rc.mdinfo -frc high_level.mdfrc -inf high_level.mdinfo && "
         ) + (
             "dpamber corr --cutoff %f --parm7_file ../qmmm$SYS.parm7 --nc rc.nc --hl high_level --ll low_level --qm_region $QM_REGION") % (
-               jdata['fp_params']['cutoff'],
+               jdata['cutoff'],
         )
 
 
