@@ -27,6 +27,7 @@ import numpy as np
 import subprocess as sp
 import scipy.constants as pc
 from collections import Counter
+from collections.abc import Iterable
 from distutils.version import LooseVersion
 from numpy.linalg  import norm
 from dpgen import dlog
@@ -1272,12 +1273,14 @@ def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
             if 'r' in jdata:
                 r=jdata['r'][sys_idx[sys_counter]][conf_counter]
                 # r can either be a float or a list of float (for 2D coordinates)
-                if type(r) is not list:
+                if not isinstance(r, Iterable) or isinstance(r, str):
                     r = [r]
                 # disang file should include RVAL, RVAL2, ...
                 with open(disang[sys_counter]) as f, open('TEMPLATE.disang', 'w') as fw:
                     tl = f.read()
                     for ii, rr in enumerate(r):
+                        if isinstance(rr, Iterable) and not isinstance(rr, str):
+                            raise RuntimeError("rr should not be iterable! sys: %d rr: %s r: %s" % (sys_idx[sys_counter], str(rr), str(r)))
                         tl = tl.replace("RVAL"+str(ii+1), str(rr))
                     if len(r) == 1:
                         tl = tl.replace("RVAL", str(r[0]))
