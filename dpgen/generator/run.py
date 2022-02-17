@@ -1368,7 +1368,7 @@ def run_model_devi (iter_index,
             "SYS1=${TASK:5:3} && "
             "SYS=$((10#$SYS1)) && "
         )+ lmp_exec + (
-            " -O -p ../qmmm$SYS.parm7 -c init.rst7 -i ../init$SYS.mdin -o rc.mdout -r rc.rst7 -x rc.nc -inf rc.mdinfo"
+            " -O -p ../qmmm$SYS.parm7 -c init.rst7 -i ../init$SYS.mdin -o rc.mdout -r rc.rst7 -x rc.nc -inf rc.mdinfo -ref init.rst7"
         )]
         forward_files = ['init.rst7', 'TEMPLATE.disang']
         backward_files = ['rc.mdout', 'rc.nc', 'rc.rst7', 'rc.mdinfo', 'TEMPLATE.dumpave']
