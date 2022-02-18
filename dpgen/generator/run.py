@@ -1559,8 +1559,12 @@ def _make_fp_vasp_inner (modd_path,
                 elif model_devi_engine == "amber":
                     with open(os.path.join(tt, "rc.mdout")) as f:
                         cc = 0
+                        first_active = True
                         for line in f:
                             if line.startswith("Active learning frame written with max. frc. std.:"):
+                                if first_active:
+                                    first_active = False
+                                    continue
                                 model_devi = float(line.split()[-2]) * 0.04336410390059322
                                 if model_devi < f_trust_lo:
                                     # accurate
