@@ -1229,13 +1229,14 @@ def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
 
     qm_region = jdata['qm_region']
     qm_charge = jdata['qm_charge']
+    nsteps = jdata['nsteps']
 
     for ii, pp in enumerate(mdin):
         with open(pp) as f, open(os.path.join(work_path, 'init%d.mdin'%ii), 'w') as fw:
             mdin_str = f.read()
             # freq, nstlim, qm_region, qm_theory, qm_charge, rcut, graph
             mdin_str = mdin_str.replace("@freq@", str(cur_job.get('trj_freq', 50))) \
-                               .replace("@nstlim@", str(cur_job['nsteps'][ii])) \
+                               .replace("@nstlim@", str(nsteps[ii])) \
                                .replace("@qm_region@", qm_region[ii]) \
                                .replace("@qm_charge@", str(qm_charge[ii])) \
                                .replace("@qm_theory@", jdata['low_level']) \
@@ -1276,7 +1277,7 @@ def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
                 if not isinstance(r, Iterable) or isinstance(r, str):
                     r = [r]
                 # disang file should include RVAL, RVAL2, ...
-                with open(disang[sys_counter]) as f, open('TEMPLATE.disang', 'w') as fw:
+                with open(disang[sys_idx[sys_counter]]) as f, open('TEMPLATE.disang', 'w') as fw:
                     tl = f.read()
                     for ii, rr in enumerate(r):
                         if isinstance(rr, Iterable) and not isinstance(rr, str):
