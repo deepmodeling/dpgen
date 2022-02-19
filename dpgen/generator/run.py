@@ -1372,7 +1372,7 @@ def run_model_devi (iter_index,
             " -O -p ../qmmm$SYS.parm7 -c init.rst7 -i ../init$SYS.mdin -o rc.mdout -r rc.rst7 -x rc.nc -inf rc.mdinfo -ref init.rst7"
         )]
         forward_files = ['init.rst7', 'TEMPLATE.disang']
-        backward_files = ['rc.mdout', 'rc.nc', 'rc.rst7', 'rc.mdinfo', 'TEMPLATE.dumpave']
+        backward_files = ['rc.mdout', 'rc.nc', 'rc.rst7', 'TEMPLATE.dumpave']
         model_names.extend(["qmmm*.parm7", "init*.mdin"])
 
     cwd = os.getcwd()
@@ -2228,12 +2228,15 @@ def make_fp_amber_diff(iter_index, jdata):
             f.write(mdin_new_str)
 
     parm7 = jdata['parm7']
+    parm7_prefix = jdata.get("parm7_prefix", "")
+    parm7 = [os.path.join(parm7_prefix, pp) for pp in parm7]
     for ii, pp in enumerate(parm7):
         os.symlink(pp, "qmmm%d.parm7"%ii)
     
     # 
+    rst7_prefix = jdata.get("sys_configs_prefix", "")
     for ii, ss in enumerate(jdata['sys_configs']):
-        os.symlink(ss[0], "init%d.rst7"%ii)
+        os.symlink(os.path.join(rst7_prefix, ss[0]), "init%d.rst7"%ii)
 
     with open("qm_region", 'w') as f:
         f.write("\n".join(qm_region))
@@ -2384,10 +2387,10 @@ def run_fp_inner (iter_index,
             'QM_REGION=$(awk "NR==$SYS+1" ../qm_region) &&'
         ) + fp_command + (
             " -O -p ../qmmm$SYS.parm7 -c ../init$SYS.rst7 -i ../low_level$SYS.mdin -o low_level.mdout -r low_level.rst7 "
-            "-x low_level.nc -y rc.nc -inf rc.mdinfo -frc low_level.mdfrc -inf low_level.mdinfo && "
+            "-x low_level.nc -y rc.nc -frc low_level.mdfrc -inf low_level.mdinfo && "
         ) + fp_command + (
             " -O -p ../qmmm$SYS.parm7 -c ../init$SYS.rst7 -i ../high_level$SYS.mdin -o high_level.mdout -r high_level.rst7 "
-            "-x high_level.nc -y rc.nc -inf rc.mdinfo -frc high_level.mdfrc -inf high_level.mdinfo && "
+            "-x high_level.nc -y rc.nc -frc high_level.mdfrc -inf high_level.mdinfo && "
         ) + (
             "dpamber corr --cutoff %f --parm7_file ../qmmm$SYS.parm7 --nc rc.nc --hl high_level --ll low_level --qm_region $QM_REGION") % (
                jdata['cutoff'],
@@ -2478,8 +2481,8 @@ def run_fp (iter_index,
     elif fp_style == 'amber/diff':
         forward_files = ['rc.nc']
         backward_files = [
-            'low_level.mdfrc', 'low_level.mdout', 'low_level.mdinfo',
-            'high_level.mdfrc', 'high_level.mdout', 'high_level.mdinfo',
+            'low_level.mdfrc', 'low_level.mdout',
+            'high_level.mdfrc', 'high_level.mdout',
             'output', 'dataset'
         ]
         forward_common_files = ['low_level*.mdin', 'high_level*.mdin', 'qmmm*.parm7', 'qm_region', 'init*.rst7']
