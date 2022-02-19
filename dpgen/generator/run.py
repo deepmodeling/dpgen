@@ -2203,11 +2203,15 @@ def make_fp_amber_diff(iter_index, jdata):
     cwd = os.getcwd()
     # link two mdin files and param7
     os.chdir(os.path.join(fp_tasks[0], ".."))
-    mdin = jdata['fp_params']['mdin']
     mdin_prefix = jdata.get('mdin_prefix', '')
-    mdin = os.path.join(mdin_prefix, mdin)
-    with open(mdin) as f:
-        mdin_str = f.read()
+    low_level_mdin = jdata['fp_params']['low_level_mdin']
+    low_level_mdin = os.path.join(mdin_prefix, low_level_mdin)
+    high_level_mdin = jdata['fp_params']['high_level_mdin']
+    high_level_mdin = os.path.join(mdin_prefix, high_level_mdin)
+    with open(low_level_mdin) as f:
+        low_level_mdin_str = f.read()
+    with open(high_level_mdin) as f:
+        high_level_mdin_str = f.read()
 
     qm_region = jdata['qm_region']
     high_level = jdata['high_level']
@@ -2215,13 +2219,13 @@ def make_fp_amber_diff(iter_index, jdata):
     qm_charge = jdata['qm_charge']
     # qm_theory qm_region qm_charge
     for ii, _ in enumerate(qm_region):
-        mdin_new_str = mdin_str.replace("%qm_theory%", low_level) \
+        mdin_new_str = low_level_mdin_str.replace("%qm_theory%", low_level) \
                                .replace("%qm_region%", qm_region[ii]) \
                                .replace("%qm_charge%", str(qm_charge[ii]))
         with open('low_level%d.mdin'%ii, 'w') as f:
             f.write(mdin_new_str)
 
-        mdin_new_str = mdin_str.replace("%qm_theory%", high_level) \
+        mdin_new_str = high_level_mdin_str.replace("%qm_theory%", high_level) \
                                .replace("%qm_region%", qm_region[ii]) \
                                .replace("%qm_charge%", str(qm_charge[ii]))
         with open('high_level%d.mdin'%ii, 'w') as f:
