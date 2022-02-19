@@ -2396,7 +2396,7 @@ def run_fp_inner (iter_index,
             " -O -p ../qmmm$SYS.parm7 -c ../init$SYS.rst7 -i ../high_level$SYS.mdin -o high_level.mdout -r high_level.rst7 "
             "-x high_level.nc -y rc.nc -frc high_level.mdfrc -inf high_level.mdinfo && "
         ) + (
-            "dpamber corr --cutoff %f --parm7_file ../qmmm$SYS.parm7 --nc rc.nc --hl high_level --ll low_level --qm_region $QM_REGION") % (
+            "dpamber corr --cutoff %f --parm7_file ../qmmm$SYS.parm7 --nc rc.nc --hl high_level --ll low_level --qm_region \"$QM_REGION\"") % (
                jdata['cutoff'],
         )
 
