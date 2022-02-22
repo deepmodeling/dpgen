@@ -1545,8 +1545,8 @@ def GenStructures(iter_index,jdata,mdata):
     forward_files = ['POSCAR', 'run_opt.py','check_outcar.py']
     backward_files = ['OUTCAR','CONTCAR','traj.traj','model_devi.log']
 
-    Lpickup = _parse_calypso_input('PickUp',calypso_run_opt_path)
-    PickUpStep =  _parse_calypso_input('PickStep',calypso_run_opt_path)
+    Lpickup = _parse_calypso_input('PickUp','.')
+    PickUpStep =  _parse_calypso_input('PickStep','.')
     if os.path.exists('tag_pickup_%s'%(str(PickUpStep))):
         dlog.info('caution! tag_pickup_%s exists!'%str(PickUpStep))
         Lpickup = 'F'
@@ -2364,7 +2364,7 @@ def _select_by_model_devi_standard(
                         else :
                             dlog.info('ase opt traj %s frame %d with f devi %f does not belong to either accurate, candidiate and failed ' \
                                          % (tt, ii, all_conf[ii][4]))
-                                pass
+                            pass
                 else:
                     idx_candidate = np.where(np.logical_and(all_conf[ii][7:] < f_trust_hi, all_conf[ii][7:] >= f_trust_lo))[0]
                     for jj in idx_candidate:
@@ -2642,7 +2642,7 @@ def _make_fp_vasp_inner (modd_path,
             numb_task = min(this_fp_task_max, len(fp_candidate))
             if (numb_task < fp_task_min):
                 numb_task = 0
-        elif model_devi_engine == 'calypso' and len(jdata.get('type_map')) > 1 and candi_num > calypso_total_fp_num):
+        elif (model_devi_engine == 'calypso' and len(jdata.get('type_map')) > 1 and candi_num > calypso_total_fp_num):
             numb_task = calypso_intend_fp_num
             if (len(fp_candidate) < numb_task):
                 numb_task = 0
