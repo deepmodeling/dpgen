@@ -2504,6 +2504,8 @@ def _make_fp_vasp_inner (modd_path,
 
     # --------------------------------------------------------------------------------------------------------------------------------------
     model_devi_engine = jdata.get('model_devi_engine', 'lammps')
+    numofspecies = _parse_calypso_input('NumberOfSpecies',calypso_run_opt_path)
+    min_dis = _parse_calypso_dis_mtx(numofspecies,calypso_run_opt_path)
     if model_devi_engine == 'calypso':
         calypso_total_fp_num = 300
         modd_path = os.path.join(modd_path,calypso_model_devi_name)
@@ -2511,17 +2513,18 @@ def _make_fp_vasp_inner (modd_path,
         with open(os.path.join(modd_path,'Model_Devi.out'),'r') as summfile:
             summary = np.loadtxt(summfile)
         summaryfmax = summary[:,-4]
-        sort_summary = np.sort(summaryfmax)
-        acc = np.where(sort_summary>f_trust_lo )
-        fail = np.where(sort_summary<f_trust_hi )
-        candi_num = fail[-1][-1]-acc[0][0]+1
-        acc_num = acc[0][0]
-        fail_num = acc[-1][-1] +1 -fail[-1][-1]
-        nan_num = len(np.where(np.isnan(sort_summary))[0])
-        fail_num = fail_num - nan_num
-        tot = summaryfmax.shape[0] - nan_num
+        dis  = summary[:,-1]
+        acc  = np.where((summaryfmax <= f_trust_lo) & (dis > min_dis))
+        fail = np.where((summaryfmax >  f_trust_hi) | (dis <= min_dis))
+        nnan = np.where(np.isnan(summaryfmax))
+
+        acc_num  = len(acc[0])
+        fail_num = len(fail[0])
+        nan_num  = len(nnan[0])
+        tot = len(summaryfmax) - nan_num
+        candi_num = tot - acc_num - fail_num
         dlog.info("summary  accurate_ratio: {0:8.4f}%  candidata_ratio: {1:8.4f}%  failed_ratio: {2:8.4f}%  in {3:d} structures".format(
-                                                                               acc_num*100/tot,candi_num*100/tot,fail_num*100/tot,tot ))
+                   acc_num*100/tot,candi_num*100/tot,fail_num*100/tot,tot ))
     # --------------------------------------------------------------------------------------------------------------------------------------
 
     modd_task = glob.glob(os.path.join(modd_path, "task.*"))
