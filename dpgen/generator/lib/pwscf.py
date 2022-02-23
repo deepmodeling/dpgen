@@ -130,11 +130,11 @@ def _make_pwscf_04_kpoints(sys_data, kspacing):
     if kpoints == [1,1,1]:
         ret += "K_POINTS gamma"
     else:
-    ret += "K_POINTS { automatic }\n"
-    for ii in range(3) :
-        ret += "%d " % kpoints[ii]
-    for ii in range(3) :
-        ret += "%d " % _kshift(kpoints[ii])
+        ret += "K_POINTS { automatic }\n"
+        for ii in range(3) :
+            ret += "%d " % kpoints[ii]
+        for ii in range(3) :
+            ret += "%d " % _kshift(kpoints[ii])
     ret += "\n"
     return ret
 
