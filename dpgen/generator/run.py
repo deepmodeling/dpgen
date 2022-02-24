@@ -2307,6 +2307,9 @@ def _select_by_model_devi_standard(
         model_devi_f_avg_relative : bool = False,
         detailed_report_make_fp : bool = True,
 ):
+    iter_name = modd_system_task[0].split('/')[0]
+    _work_path = os.path.join(iter_name, model_devi_name)
+    calypso_run_opt_path = os.path.join(_work_path,calypso_run_opt_name)
     numofspecies = _parse_calypso_input('NumberOfSpecies',calypso_run_opt_path)
     min_dis = _parse_calypso_dis_mtx(numofspecies,calypso_run_opt_path)
     fp_candidate = []
@@ -2504,6 +2507,9 @@ def _make_fp_vasp_inner (modd_path,
 
     # --------------------------------------------------------------------------------------------------------------------------------------
     model_devi_engine = jdata.get('model_devi_engine', 'lammps')
+    iter_name = work_path.split('/')[0]
+    _work_path = os.path.join(iter_name, model_devi_name)
+    calypso_run_opt_path = os.path.join(_work_path,calypso_run_opt_name)
     numofspecies = _parse_calypso_input('NumberOfSpecies',calypso_run_opt_path)
     min_dis = _parse_calypso_dis_mtx(numofspecies,calypso_run_opt_path)
     if model_devi_engine == 'calypso':
@@ -2514,8 +2520,8 @@ def _make_fp_vasp_inner (modd_path,
             summary = np.loadtxt(summfile)
         summaryfmax = summary[:,-4]
         dis  = summary[:,-1]
-        acc  = np.where((summaryfmax <= f_trust_lo) & (dis > min_dis))
-        fail = np.where((summaryfmax >  f_trust_hi) | (dis <= min_dis))
+        acc  = np.where((summaryfmax <= f_trust_lo) & (dis > float(min_dis)))
+        fail = np.where((summaryfmax >  f_trust_hi) | (dis <= float(min_dis)))
         nnan = np.where(np.isnan(summaryfmax))
 
         acc_num  = len(acc[0])
