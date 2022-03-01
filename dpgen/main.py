@@ -17,6 +17,7 @@ from dpgen.database.run import db_run
 from dpgen.tools.run_report import run_report
 from dpgen.tools.auto_gen_param import auto_gen_param
 from dpgen import info, __version__, __date__
+from dpgen.analysis.analysis import dpgen_analysis
 
 
 
@@ -154,8 +155,12 @@ def main():
 
     parser_db.add_argument('PARAM', type=str,
                         help="parameter file, json format")
-
     parser_db.set_defaults(func=db_run)
+
+    #analysis
+    parser_analysis = subparsers.add_parser("analysis", help="Analysis tools for dpgen")
+    parser_analysis.set_defaults(func=dpgen_analysis)
+
 
 
     try:
