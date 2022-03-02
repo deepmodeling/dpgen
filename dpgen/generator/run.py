@@ -389,6 +389,8 @@ def make_train (iter_index,
             if jinput['model']['descriptor']['type'] == 'hybrid':
                 for desc in jinput['model']['descriptor']['list']:
                     desc['seed'] = random.randrange(sys.maxsize) % (2**32)
+            elif jinput['model']['descriptor']['type'] == 'loc_frame':
+                pass
             else:
                 jinput['model']['descriptor']['seed'] = random.randrange(sys.maxsize) % (2**32)
             jinput['model']['fitting_net']['seed'] = random.randrange(sys.maxsize) % (2**32)

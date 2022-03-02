@@ -84,6 +84,8 @@ class TestCollVasp(unittest.TestCase):
                     self.assertAlmostEqual(ref_cell[ff][ii][jj], 
                                            sys.data['cells'][ff][ii][jj])
 
+if __name__ == '__main__':
+    unittest.main()
         
 
     
