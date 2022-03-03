@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import os
+import numpy as np
 
 def make_run_opt_script(fmax ) :
 
@@ -350,3 +352,56 @@ def make_calypso_input(nameofatoms,numberofatoms,
         ret+= "@end\n"
         ret+= "###################End Parameters for VSC ##########################\n"
     return ret
+
+
+def _make_model_devi_native_calypso(jdata, cur_job, calypso_run_opt_path):
+
+    # Crystal Parameters
+    nameofatoms = cur_job.get('NameOfAtoms')
+    numberofatoms = cur_job.get('NumberOfAtoms')
+    numberofformula = cur_job.get('NumberOfFormula',[1,1])
+    volume = cur_job.get('Volume')
+    distanceofion = cur_job.get('DistanceOfIon')
+    psoratio = cur_job.get('PsoRatio')
+    popsize = cur_job.get('PopSize')
+    maxstep = cur_job.get('MaxStep')
+    icode = cur_job.get('ICode',[1])
+    split = cur_job.get('Split','T')
+    # VSC Control
+    maxnumatom = None
+    ctrlrange = None
+    vsc = cur_job.get('VSC','F')
+    if vsc == 'T':
+        maxnumatom = cur_job.get('MaxNumAtom')
+        ctrlrange = cur_job.get('CtrlRange')
+
+    # Optimization
+    pstress = cur_job.get('PSTRESS',[0.001])
+    fmax = cur_job.get('fmax',[0.01])
+
+    # Cluster
+
+    # 2D
+
+    file_c = make_calypso_input(nameofatoms,numberofatoms,
+                               numberofformula,volume,
+                               distanceofion,psoratio,popsize,
+                               maxstep,icode,split,vsc,
+                               maxnumatom,ctrlrange,pstress,fmax)
+    with open(os.path.join(calypso_run_opt_path, 'input.dat'), 'w') as cin :
+        cin.write(file_c)
+
+def write_model_devi_out(devi, fname):
+    assert devi.shape[1] == 8
+    #assert devi.shape[1] == 7
+    header = "%5s" % "step"
+    for item in 'vf':
+        header += "%16s%16s%16s" % (f"max_devi_{item}", f"min_devi_{item}",f"avg_devi_{item}")
+    header += "%16s"%str('min_dis')
+    np.savetxt(fname,
+               devi,
+               fmt=['%5d'] + ['%17.6e' for _ in range(7)],
+               delimiter='',
+               header=header)
+    return devi
+
