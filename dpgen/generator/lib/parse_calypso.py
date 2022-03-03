@@ -7,6 +7,7 @@ def _parse_calypso_input(var,input_path):
         except:
             f = open(os.path.join(input_path,'input.dat'),'r')
         lines = f.readlines()
+        f.close()
 
         for line in lines:
             if var in line:
@@ -27,6 +28,7 @@ def _parse_calypso_dis_mtx(numberofspecies,input_path):
                 for i in range(int(numberofspecies)):
                     line = f.readline()
                     dis.append(line.split())
+                f.close()
                 break
         dis = np.array(dis)
         dis = dis.reshape((1,int(numberofspecies)**2))

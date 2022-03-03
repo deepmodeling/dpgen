@@ -820,7 +820,7 @@ def make_calypso_model_devi(iter_index,jdata,mdata):
             if iter_index in jobbs.get('times'):
                 cur_job = model_devi_jobs[iiidx]
 
-        _make_model_devi_native_calypso(jdata, cur_job, calypso_run_opt_path)
+        _make_model_devi_native_calypso(cur_job, calypso_run_opt_path)
 
         run_opt_script = os.path.join(calypso_run_opt_path,'run_opt.py')
         with open(run_opt_script,'w') as ffff:
