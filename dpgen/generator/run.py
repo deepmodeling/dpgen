@@ -778,83 +778,6 @@ def revise_by_keys(lmp_lines, keys, values):
             lmp_lines[ii] = lmp_lines[ii].replace(kk, str(vv))
     return lmp_lines
 
-
-def make_calypso_model_devi(iter_index,jdata,mdata):
-    ''' for calypso '''
-
-    model_devi_jobs = jdata['model_devi_jobs']
-    try:
-        maxiter = max(model_devi_jobs[-1].get('times'))
-    except Exception as e:
-        maxiter = jdata.get('model_devi_max_iter',0)
-        
-    if (iter_index > maxiter) :
-        return False
-
-    calypso_path = jdata.get('calypso_path')
-    iter_name = make_iter_name(iter_index)
-    train_path = os.path.join(iter_name, train_name)
-    train_path = os.path.abspath(train_path)
-    models = glob.glob(os.path.join(train_path, "graph*pb"))
-    work_path = os.path.join(iter_name, model_devi_name)
-    calypso_run_opt_path = os.path.join(work_path,calypso_run_opt_name)
-    calypso_model_devi_path = os.path.join(work_path,calypso_model_devi_name)
-
-    create_path(work_path)
-    create_path(calypso_run_opt_path)
-    create_path(calypso_model_devi_path)
-
-    # the model
-    for mm in models :
-        model_name = os.path.basename(mm)
-        os.symlink(mm, os.path.join(calypso_run_opt_path, model_name))
-
-
-    input_mode = "native"
-    if "calypso_input_path" in jdata:
-        input_mode = "buffet"
-
-    # generate input.dat automatic in each iter
-    if input_mode == "native":
-        for iiidx, jobbs in enumerate(model_devi_jobs):
-            if iter_index in jobbs.get('times'):
-                cur_job = model_devi_jobs[iiidx]
-
-        _make_model_devi_native_calypso(cur_job, calypso_run_opt_path)
-
-        run_opt_script = os.path.join(calypso_run_opt_path,'run_opt.py')
-        with open(run_opt_script,'w') as ffff:
-            ffff.write(make_run_opt_script(cur_job.get('fmax',0.01)))
-
-        # ----------for check the nan situation -------------
-        check_outcar_script = os.path.join(calypso_run_opt_path,'check_outcar.py')
-        with open(check_outcar_script,'w') as ffff:
-            ffff.write(make_check_outcar_script())
-        # ----------for check the nan situation -------------
-        return True
-
-    # generate confs according to the input.dat provided
-    elif input_mode == "buffet":
-        calypso_input_path = jdata.get('calypso_input_path')
-        shutil.copyfile(os.path.join(calypso_input_path,'input.dat'),os.path.join(calypso_run_opt_path, 'input.dat'))
-        popsize = _parse_calypso_input('PopSize',calypso_run_opt_path+'/input.dat')
-        run_opt_path = calypso_run_opt_path
-
-        run_opt_script = os.path.join(calypso_run_opt_path,'run_opt.py')
-        with open(run_opt_script,'w') as ffff:
-            ffff.write(make_run_opt_script(jdata.get('fmax',0.01)))
-
-        # ----------for check the nan situation -------------
-        check_outcar_script = os.path.join(calypso_run_opt_path,'check_outcar.py')
-        with open(check_outcar_script,'w') as ffff:
-            ffff.write(make_check_outcar_script())
-        # ----------for check the nan situation -------------
-        return True
-
-    else:
-        raise RuntimeError('do not found `calypso_input_path` or `model_devi_jobs`', input_mode)
-
-
 def make_model_devi (iter_index,
                      jdata,
                      mdata) :
@@ -958,6 +881,80 @@ def make_model_devi (iter_index,
         symlink_user_forward_files(mdata=mdata, task_type="model_devi", work_path=work_path)
         return True
 
+def make_calypso_model_devi(iter_index,jdata,mdata):
+    ''' for calypso '''
+
+    model_devi_jobs = jdata['model_devi_jobs']
+    try:
+        maxiter = max(model_devi_jobs[-1].get('times'))
+    except Exception as e:
+        maxiter = jdata.get('model_devi_max_iter',0)
+        
+    if (iter_index > maxiter) :
+        return False
+
+    calypso_path = jdata.get('calypso_path')
+    iter_name = make_iter_name(iter_index)
+    train_path = os.path.join(iter_name, train_name)
+    train_path = os.path.abspath(train_path)
+    models = glob.glob(os.path.join(train_path, "graph*pb"))
+    work_path = os.path.join(iter_name, model_devi_name)
+    calypso_run_opt_path = os.path.join(work_path,calypso_run_opt_name)
+    calypso_model_devi_path = os.path.join(work_path,calypso_model_devi_name)
+
+    create_path(work_path)
+    create_path(calypso_run_opt_path)
+    create_path(calypso_model_devi_path)
+
+    # the model
+    for mm in models :
+        model_name = os.path.basename(mm)
+        os.symlink(mm, os.path.join(calypso_run_opt_path, model_name))
+
+
+    input_mode = "native"
+    if "calypso_input_path" in jdata:
+        input_mode = "buffet"
+
+    # generate input.dat automatic in each iter
+    if input_mode == "native":
+        for iiidx, jobbs in enumerate(model_devi_jobs):
+            if iter_index in jobbs.get('times'):
+                cur_job = model_devi_jobs[iiidx]
+
+        _make_model_devi_native_calypso(cur_job, calypso_run_opt_path)
+
+        run_opt_script = os.path.join(calypso_run_opt_path,'run_opt.py')
+        with open(run_opt_script,'w') as ffff:
+            ffff.write(make_run_opt_script(cur_job.get('fmax',0.01)))
+
+        # ----------for check the nan situation -------------
+        check_outcar_script = os.path.join(calypso_run_opt_path,'check_outcar.py')
+        with open(check_outcar_script,'w') as ffff:
+            ffff.write(make_check_outcar_script())
+        # ----------for check the nan situation -------------
+        return True
+
+    # generate confs according to the input.dat provided
+    elif input_mode == "buffet":
+        calypso_input_path = jdata.get('calypso_input_path')
+        shutil.copyfile(os.path.join(calypso_input_path,'input.dat'),os.path.join(calypso_run_opt_path, 'input.dat'))
+        popsize = _parse_calypso_input('PopSize',calypso_run_opt_path+'/input.dat')
+        run_opt_path = calypso_run_opt_path
+
+        run_opt_script = os.path.join(calypso_run_opt_path,'run_opt.py')
+        with open(run_opt_script,'w') as ffff:
+            ffff.write(make_run_opt_script(jdata.get('fmax',0.01)))
+
+        # ----------for check the nan situation -------------
+        check_outcar_script = os.path.join(calypso_run_opt_path,'check_outcar.py')
+        with open(check_outcar_script,'w') as ffff:
+            ffff.write(make_check_outcar_script())
+        # ----------for check the nan situation -------------
+        return True
+
+    else:
+        raise RuntimeError('do not found `calypso_input_path` or `model_devi_jobs`', input_mode)
 
 def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
     model_devi_jobs = jdata['model_devi_jobs']
@@ -1302,85 +1299,6 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
         sys_counter += 1
 
 
-def run_model_devi_calypso (iter_index,
-                    jdata,
-                    mdata) :
-
-    print('############## run calypso model devi #######################')
-
-
-    iter_name = make_iter_name(iter_index)
-    work_path = os.path.join(iter_name, model_devi_name)
-    assert(os.path.isdir(work_path))
-
-    calypso_run_opt_path = os.path.join(work_path,calypso_run_opt_name)
-    calypso_model_devi_path = os.path.join(work_path,calypso_model_devi_name)
-
-    all_models = glob.glob(os.path.join(calypso_run_opt_path, 'graph*pb'))
-
-    cwd = os.getcwd()
-
-    api_version = mdata.get('api_version', '0.9')
-    if LooseVersion(api_version) < LooseVersion('1.0'):
-        warnings.warn(f"the dpdispatcher will be updated to new version."
-            f"And the interface may be changed. Please check the documents for more details")
-        record_calypso_path = os.path.join(work_path,'record.calypso')
-        while True:
-            if not os.path.exists(record_calypso_path):
-                f = open(record_calypso_path,'w')
-                f.write('1\n')
-                lines = '1'
-                f.close()
-            else:
-                f = open(record_calypso_path,'r')
-                lines = f.readlines()
-                f.close()
-
-            if lines[-1].strip().strip('\n') == '1':
-                # Gen Structures
-                GenStructures(iter_index,jdata,mdata)
-
-            elif lines[-1].strip().strip('\n') == '2':
-                # Analysis & to deepmd/raw
-                Analysis(iter_index,jdata,calypso_run_opt_path,calypso_model_devi_path)
-
-            elif lines[-1].strip().strip('\n') == '3':
-                # Model Devi
-                Modd(iter_index,calypso_model_devi_path,all_models,jdata)
-
-            elif lines[-1].strip().strip('\n') == '4':
-                print('Model Devi is done.')
-                break
-
-    elif LooseVersion(api_version) >= LooseVersion('1.0'):
-
-        record_calypso_path = os.path.join(work_path,'record.calypso')
-        while True:
-            if not os.path.exists(record_calypso_path):
-                f = open(record_calypso_path,'w')
-                f.write('1\n')
-                lines = '1'
-                f.close()
-            else:
-                f = open(record_calypso_path,'r')
-                lines = f.readlines()
-                f.close()
-
-            if lines[-1].strip().strip('\n') == '1':
-                # Gen Structures
-                GenStructures(iter_index,jdata,mdata)
-
-            elif lines[-1].strip().strip('\n') == '2':
-                # Analysis & to deepmd/raw
-                Analysis(iter_index,jdata,calypso_run_opt_path,calypso_model_devi_path)
-
-            elif lines[-1].strip().strip('\n') == '3':
-                # Model Devi
-                Modd(iter_index,calypso_model_devi_path,all_models,jdata)
-
-            elif lines[-1].strip().strip('\n') == '4':
-                print('Model Devi is done.')
-                break
 
 def run_model_devi (iter_index,
                     jdata,
@@ -1505,6 +1423,87 @@ def run_model_devi (iter_index,
                 outlog = 'model_devi.log',
                 errlog = 'model_devi.log')
             submission.run_submission()
+
+
+def run_model_devi_calypso (iter_index,
+                    jdata,
+                    mdata) :
+
+    print('############## run calypso model devi #######################')
+
+
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, model_devi_name)
+    assert(os.path.isdir(work_path))
+
+    calypso_run_opt_path = os.path.join(work_path,calypso_run_opt_name)
+    calypso_model_devi_path = os.path.join(work_path,calypso_model_devi_name)
+
+    all_models = glob.glob(os.path.join(calypso_run_opt_path, 'graph*pb'))
+
+    cwd = os.getcwd()
+
+    api_version = mdata.get('api_version', '0.9')
+    if LooseVersion(api_version) < LooseVersion('1.0'):
+        warnings.warn(f"the dpdispatcher will be updated to new version."
+            f"And the interface may be changed. Please check the documents for more details")
+        record_calypso_path = os.path.join(work_path,'record.calypso')
+        while True:
+            if not os.path.exists(record_calypso_path):
+                f = open(record_calypso_path,'w')
+                f.write('1\n')
+                lines = '1'
+                f.close()
+            else:
+                f = open(record_calypso_path,'r')
+                lines = f.readlines()
+                f.close()
+
+            if lines[-1].strip().strip('\n') == '1':
+                # Gen Structures
+                GenStructures(iter_index,jdata,mdata)
+
+            elif lines[-1].strip().strip('\n') == '2':
+                # Analysis & to deepmd/raw
+                Analysis(iter_index,jdata,calypso_run_opt_path,calypso_model_devi_path)
+
+            elif lines[-1].strip().strip('\n') == '3':
+                # Model Devi
+                Modd(iter_index,calypso_model_devi_path,all_models,jdata)
+
+            elif lines[-1].strip().strip('\n') == '4':
+                print('Model Devi is done.')
+                break
+
+    elif LooseVersion(api_version) >= LooseVersion('1.0'):
+
+        record_calypso_path = os.path.join(work_path,'record.calypso')
+        while True:
+            if not os.path.exists(record_calypso_path):
+                f = open(record_calypso_path,'w')
+                f.write('1\n')
+                lines = '1'
+                f.close()
+            else:
+                f = open(record_calypso_path,'r')
+                lines = f.readlines()
+                f.close()
+
+            if lines[-1].strip().strip('\n') == '1':
+                # Gen Structures
+                GenStructures(iter_index,jdata,mdata)
+
+            elif lines[-1].strip().strip('\n') == '2':
+                # Analysis & to deepmd/raw
+                Analysis(iter_index,jdata,calypso_run_opt_path,calypso_model_devi_path)
+
+            elif lines[-1].strip().strip('\n') == '3':
+                # Model Devi
+                Modd(iter_index,calypso_model_devi_path,all_models,jdata)
+
+            elif lines[-1].strip().strip('\n') == '4':
+                print('Model Devi is done.')
+                break
 
 def post_model_devi (iter_index,
                      jdata,
