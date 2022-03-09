@@ -93,18 +93,25 @@ class TestCALYPSOScript(unittest.TestCase):
                 break
 
     def test_parse_calypso_input(self):
-        formula = _parse_calypso_input('NumberOfFormula','parse_input.dat').split()
+        ret = make_calypso_input(["Mg","Al","Cu"],[1,1,1],[1,4],[30],[
+                              [1.48,1.44,1.59],[1.44,1.41,1.56],[1.59,1.56,1.70]
+                              ],[0.6],[5],[3],[13],"T","T",[31],[[1,10],[1,10],[1,10]],[0],[0.01])
+        #with open('calypso_test_path/input.dat','w') as fin:
+        with open('input.dat','w') as fin:
+            fin.write(ret)
+        formula = _parse_calypso_input('NumberOfFormula','input.dat').split()
         #formula = _parse_calypso_input('NumberOfFormula',calypso_data).split()
         formula = list(map(int,formula))
         self.assertEqual(formula,model_devi_jobs.get('model_devi_jobs').get('NumberOfFormula'))
 
-        nameofatoms = _parse_calypso_input('NameOfAtoms','parse_input.dat').split()
+        nameofatoms = _parse_calypso_input('NameOfAtoms','input.dat').split()
         #nameofatoms = _parse_calypso_input('NameOfAtoms',calypso_data).split()
         self.assertEqual(nameofatoms,model_devi_jobs.get('model_devi_jobs').get('NameOfAtoms'))
         
-        min_dis = _parse_calypso_dis_mtx(len(nameofatoms),'parse_input.dat')
+        min_dis = _parse_calypso_dis_mtx(len(nameofatoms),'input.dat')
         #min_dis = _parse_calypso_dis_mtx(len(nameofatoms),calypso_data)
         self.assertEqual(float(min_dis),np.nanmin(model_devi_jobs.get('model_devi_jobs').get('DistanceOfIon')))
+        os.remove('input.dat')
 
 
 if __name__ == '__main__':
