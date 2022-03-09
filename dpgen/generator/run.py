@@ -915,7 +915,7 @@ def make_calypso_model_devi(iter_index,jdata,mdata):
     # modd script
     modd_script = os.path.join(calypso_model_devi_path,'modd.py')
     with open(modd_script,'w') as fm:
-        fm.write(write_moddwrite_modd())
+        fm.write(write_modd())
 
     input_mode = "native"
     if "calypso_input_path" in jdata:
@@ -1444,7 +1444,6 @@ def run_model_devi_calypso (iter_index,
     calypso_run_opt_path = os.path.join(work_path,calypso_run_opt_name)
     calypso_model_devi_path = os.path.join(work_path,calypso_model_devi_name)
 
-    all_models = glob.glob(os.path.join(calypso_run_opt_path, 'graph*pb'))
 
     cwd = os.getcwd()
 
@@ -1474,6 +1473,8 @@ def run_model_devi_calypso (iter_index,
 
             elif lines[-1].strip().strip('\n') == '3':
                 # Model Devi
+                _calypso_run_opt_path = os.path.abspath(calypso_run_opt_path)
+                all_models = glob.glob(os.path.join(calypso_run_opt_path, 'graph*pb'))
                 cwd = os.getcwd()
                 os.chdir(calypso_model_devi_path)
                 args = ' '.join(['modd.py', '--all_models',' '.join(all_models),'--type_map',' '.join(jdata.get('type_map'))])

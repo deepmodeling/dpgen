@@ -108,14 +108,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='calc model-devi by `all_models` and `type_map`')
     parser.add_argument(
         "--all_models",
-        type=str,
         nargs='+',
         default=model_path,
         help="the path of models which will be used to do model-deviation",
     )
     parser.add_argument(
         "--type_map",
-        type=list,
+        nargs='+',
         help="the type map of models which will be used to do model-deviation",
     )
     args = parser.parse_args()
