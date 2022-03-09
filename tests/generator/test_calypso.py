@@ -14,7 +14,7 @@ from .context import write_model_devi_out
 from .context import _parse_calypso_input
 from .context import _parse_calypso_dis_mtx
 
-calypso_data = Path('.').joinpath('calypso_data')
+#calypso_data = Path('.').joinpath('calypso_data')
 
 #assert os.path.exists(calypso_data)
 #assert os.path.exists(calypso_path)
@@ -54,22 +54,30 @@ class TestCALYPSOScript(unittest.TestCase):
                 
     def test_write_check_outcar_script(self):
         ret = make_check_outcar_script()
-        with open('calypso_test_path/check_outcar.py','w') as fc:
+        #with open('calypso_test_path/check_outcar.py','w') as fc:
+        with open('check_outcar.py','w') as fc:
             fc.write(ret)
-        self.assertTrue(os.path.exists('calypso_test_path/check_outcar.py'))
+        #self.assertTrue(os.path.exists('calypso_test_path/check_outcar.py'))
+        self.assertTrue(os.path.exists('check_outcar.py'))
+        os.remove('check_outcar.py')
 
     def test_write_model_devi_out(self):
-        devi = write_model_devi_out(model_devi, 'calypso_test_path/model_devi.out')
-        ndevi = np.loadtxt('calypso_test_path/model_devi.out')
+        #devi = write_model_devi_out(model_devi, 'calypso_test_path/model_devi.out')
+        #ndevi = np.loadtxt('calypso_test_path/model_devi.out')
+        devi = write_model_devi_out(model_devi, 'model_devi.out')
+        ndevi = np.loadtxt('model_devi.out')
         self.assertEqual(ndevi[2,4],model_devi[2,4])
+        os.remove('model_devi.out')
 
     def test_make_calypso_input(self):
         ret = make_calypso_input(["Mg","Al","Cu"],[1,1,1],[1,4],[30],[
                               [1.48,1.44,1.59],[1.44,1.41,1.56],[1.59,1.56,1.70]
                               ],[0.6],[5],[3],[13],"T","T",[31],[[1,10],[1,10],[1,10]],[0],[0.01])
-        with open('calypso_test_path/input.dat','w') as fin:
+        #with open('calypso_test_path/input.dat','w') as fin:
+        with open('input.dat','w') as fin:
             fin.write(ret)
-        f = open('calypso_test_path/input.dat')
+        f = open('input.dat')
+        #f = open('calypso_test_path/input.dat')
         lines = f.readlines()
         f.close()
         for line in lines :
@@ -81,17 +89,21 @@ class TestCALYPSOScript(unittest.TestCase):
             if 'MaxStep' in line:
                 temp_2 = line.split('=')[1].strip()
                 self.assertEqual(int(temp_2),3)
+                os.remove('input.dat')
                 break
 
     def test_parse_calypso_input(self):
-        formula = _parse_calypso_input('NumberOfFormula',calypso_data).split()
+        formula = _parse_calypso_input('NumberOfFormula','parse_input.dat').split()
+        #formula = _parse_calypso_input('NumberOfFormula',calypso_data).split()
         formula = list(map(int,formula))
         self.assertEqual(formula,model_devi_jobs.get('model_devi_jobs').get('NumberOfFormula'))
 
-        nameofatoms = _parse_calypso_input('NameOfAtoms',calypso_data).split()
+        nameofatoms = _parse_calypso_input('NameOfAtoms','parse_input.dat').split()
+        #nameofatoms = _parse_calypso_input('NameOfAtoms',calypso_data).split()
         self.assertEqual(nameofatoms,model_devi_jobs.get('model_devi_jobs').get('NameOfAtoms'))
         
-        min_dis = _parse_calypso_dis_mtx(len(nameofatoms),calypso_data)
+        min_dis = _parse_calypso_dis_mtx(len(nameofatoms),'parse_input.dat')
+        #min_dis = _parse_calypso_dis_mtx(len(nameofatoms),calypso_data)
         self.assertEqual(float(min_dis),np.nanmin(model_devi_jobs.get('model_devi_jobs').get('DistanceOfIon')))
 
 
