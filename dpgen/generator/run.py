@@ -43,7 +43,8 @@ from dpgen.generator.lib.utils import symlink_user_forward_files
 from dpgen.generator.lib.lammps import make_lammps_input, get_dumped_forces
 from dpgen.generator.lib.calypso import make_run_opt_script,make_check_outcar_script
 from dpgen.generator.lib.calypso import _make_model_devi_native_calypso,write_model_devi_out
-from dpgen.generator.lib.modd_calypso import GenStructures,Analysis,Modd
+from dpgen.generator.lib.modd_calypso import GenStructures,Analysis
+from dpgen.generator.lib.write_modd import write_modd
 from dpgen.generator.lib.parse_calypso import _parse_calypso_input,_parse_calypso_dis_mtx
 from dpgen.generator.lib.vasp import write_incar_dict
 from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
@@ -911,6 +912,10 @@ def make_calypso_model_devi(iter_index,jdata,mdata):
         model_name = os.path.basename(mm)
         os.symlink(mm, os.path.join(calypso_run_opt_path, model_name))
 
+    # modd script
+    modd_script = os.path.join(calypso_model_devi_path,'modd.py')
+    with open(modd_script,'w') as fm:
+        fm.write(write_moddwrite_modd())
 
     input_mode = "native"
     if "calypso_input_path" in jdata:
@@ -1469,7 +1474,13 @@ def run_model_devi_calypso (iter_index,
 
             elif lines[-1].strip().strip('\n') == '3':
                 # Model Devi
-                Modd(iter_index,calypso_model_devi_path,all_models,jdata)
+                cwd = os.getcwd()
+                os.chdir(calypso_model_devi_path)
+                args = ' '.join(['modd.py', '--all_models',' '.join(all_models),'--type_map',' '.join(jdata.get('type_map'))])
+                deepmdkit_python = mdata.get('deepmdkit_python')
+                os.system(f'{deepmdkit_python} {args} ')
+                #Modd(iter_index,calypso_model_devi_path,all_models,jdata)
+                os.chdir(cwd)
 
             elif lines[-1].strip().strip('\n') == '4':
                 print('Model Devi is done.')
@@ -1499,7 +1510,13 @@ def run_model_devi_calypso (iter_index,
 
             elif lines[-1].strip().strip('\n') == '3':
                 # Model Devi
-                Modd(iter_index,calypso_model_devi_path,all_models,jdata)
+                cwd = os.getcwd()
+                os.chdir(calypso_model_devi_path)
+                args = ' '.join(['modd.py', '--all_models',' '.join(all_models),'--type_map',' '.join(jdata.get('type_map'))])
+                deepmdkit_python = mdata.get('deepmdkit_python')
+                os.system(f'{deepmdkit_python} {args} ')
+                #Modd(iter_index,calypso_model_devi_path,all_models,jdata)
+                os.chdir(cwd)
 
             elif lines[-1].strip().strip('\n') == '4':
                 print('Model Devi is done.')

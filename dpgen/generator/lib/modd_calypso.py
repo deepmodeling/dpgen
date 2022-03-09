@@ -16,8 +16,8 @@ import glob
 import shutil
 from ase.io.vasp import write_vasp
 from ase.io.trajectory import Trajectory
-from deepmd.infer import calc_model_devi
-from deepmd.infer import DeepPot as DP
+#from deepmd.infer import calc_model_devi
+#from deepmd.infer import DeepPot as DP
 from dpgen import dlog
 from dpgen.generator.lib.utils import make_iter_name
 from dpgen.generator.lib.calypso import write_model_devi_out
@@ -331,93 +331,93 @@ def Analysis(iter_index,jdata,calypso_run_opt_path,calypso_model_devi_path):
     os.chdir(cwd)
 
 
-def Modd(iter_index,calypso_model_devi_path,all_models,jdata):
-
-    # Model Devi 
-
-
-    dlog.info('$$$$$$$$$$$$$$$ Model Devi Start    $$$$$$$$$$$$$$$$$$')
-
-    iter_name = make_iter_name(iter_index)
-    work_path = os.path.join(iter_name, model_devi_name)
-
-    cwd = os.getcwd()
-    Devis = []
-    pcount = 0
-    strus_lists = glob.glob(os.path.join(calypso_model_devi_path,'*.structures'))
-    for num, strus_path in enumerate(strus_lists):
-        os.chdir(strus_path)
-        os.system('rename .vasp .poscar *')
-        os.chdir(cwd)
-
-        structure_list = glob.glob(os.path.join(strus_path,'*.poscar'))
-
-        # every 500 confs in one task dir
-        if len(structure_list) == 0:
-            continue
-        else:
-            num_per_task = math.ceil(len(structure_list)/500)
-        graphs = [DP(model) for model in all_models]
-        for temp in range(num_per_task):
-            task_name = os.path.join(calypso_model_devi_path,'task.%03d.%03d'%(num,temp)) 
-            put_poscar = os.path.join(task_name,'traj')
-            if not os.path.exists(task_name):
-                os.mkdir(task_name)
-                os.mkdir(put_poscar)
-            else:
-                shutil.rmtree(task_name)
-                os.mkdir(task_name)
-                os.mkdir(put_poscar)
-            devis = []
-            try:
-                temp_sl = structure_list[temp*500:(temp+1)*500]
-            except Exception as err:
-                dlog.info('err %s'%str(err))
-                temp_sl = structure_list[temp*500:]
-                
-            new_index = 0
-            for index,sname in enumerate(temp_sl):
-                shutil.copyfile(sname,os.path.join(put_poscar,'%s.poscar'%str(index)))
-                os.chdir(put_poscar)
-                pdata = dpdata.System('%s.poscar'%str(index),type_map = jdata['type_map'])
-                nopbc = pdata.nopbc
-                coord = pdata.data['coords']
-                cell  = pdata.data['cells']
-                atom_types = pdata.data['atom_types']
-                devi = calc_model_devi(coord,cell,atom_types,graphs,nopbc=nopbc)
-                # ------------------------------------------------------------------------------------
-                # append min-distance in devi list
-                dis_temp = dpdata.System('%s.poscar'%str(index))
-                dis = dis_temp.to_ase_structure()[0].get_all_distances(mic=True)
-                row,col = np.diag_indices_from(dis)
-                dis[row,col] = 10000
-                min_dis = np.nanmin(dis)
-                devi = np.append(devi[0],min_dis) 
-                t = [devi]
-                devi = np.array(t)
-                # ------------------------------------------------------------------------------------
-                temp_d = copy.deepcopy(devi)
-                temp_D = copy.deepcopy(devi)
-                devis.append(temp_d)
-                Devis.append(temp_D)
-                devis[index][0][0]  = np.array(index)
-                Devis[pcount][0][0] = np.array(pcount)
-                pcount += 1
-                new_index += 1
-                os.chdir(cwd)
-            os.chdir(task_name)
-            devis = np.vstack(devis)
-            write_model_devi_out(devis,'model_devi.out')
-            os.chdir(cwd)
-
-    os.chdir(calypso_model_devi_path)
-    Devis = np.vstack(Devis)
-    write_model_devi_out(Devis,'Model_Devi.out')
-    os.chdir(cwd)
-
-    os.chdir(work_path)
-    f = open('record.calypso','a+')
-    f.write('4\n')
-    f.close()
-    os.chdir(cwd)
+#def Modd(iter_index,calypso_model_devi_path,all_models,jdata):
+#
+#    # Model Devi 
+#
+#
+#    dlog.info('$$$$$$$$$$$$$$$ Model Devi Start    $$$$$$$$$$$$$$$$$$')
+#
+#    iter_name = make_iter_name(iter_index)
+#    work_path = os.path.join(iter_name, model_devi_name)
+#
+#    cwd = os.getcwd()
+#    Devis = []
+#    pcount = 0
+#    strus_lists = glob.glob(os.path.join(calypso_model_devi_path,'*.structures'))
+#    for num, strus_path in enumerate(strus_lists):
+#        os.chdir(strus_path)
+#        os.system('rename .vasp .poscar *')
+#        os.chdir(cwd)
+#
+#        structure_list = glob.glob(os.path.join(strus_path,'*.poscar'))
+#
+#        # every 500 confs in one task dir
+#        if len(structure_list) == 0:
+#            continue
+#        else:
+#            num_per_task = math.ceil(len(structure_list)/500)
+#        graphs = [DP(model) for model in all_models]
+#        for temp in range(num_per_task):
+#            task_name = os.path.join(calypso_model_devi_path,'task.%03d.%03d'%(num,temp)) 
+#            put_poscar = os.path.join(task_name,'traj')
+#            if not os.path.exists(task_name):
+#                os.mkdir(task_name)
+#                os.mkdir(put_poscar)
+#            else:
+#                shutil.rmtree(task_name)
+#                os.mkdir(task_name)
+#                os.mkdir(put_poscar)
+#            devis = []
+#            try:
+#                temp_sl = structure_list[temp*500:(temp+1)*500]
+#            except Exception as err:
+#                dlog.info('err %s'%str(err))
+#                temp_sl = structure_list[temp*500:]
+#                
+#            new_index = 0
+#            for index,sname in enumerate(temp_sl):
+#                shutil.copyfile(sname,os.path.join(put_poscar,'%s.poscar'%str(index)))
+#                os.chdir(put_poscar)
+#                pdata = dpdata.System('%s.poscar'%str(index),type_map = jdata['type_map'])
+#                nopbc = pdata.nopbc
+#                coord = pdata.data['coords']
+#                cell  = pdata.data['cells']
+#                atom_types = pdata.data['atom_types']
+#                devi = calc_model_devi(coord,cell,atom_types,graphs,nopbc=nopbc)
+#                # ------------------------------------------------------------------------------------
+#                # append min-distance in devi list
+#                dis_temp = dpdata.System('%s.poscar'%str(index))
+#                dis = dis_temp.to_ase_structure()[0].get_all_distances(mic=True)
+#                row,col = np.diag_indices_from(dis)
+#                dis[row,col] = 10000
+#                min_dis = np.nanmin(dis)
+#                devi = np.append(devi[0],min_dis) 
+#                t = [devi]
+#                devi = np.array(t)
+#                # ------------------------------------------------------------------------------------
+#                temp_d = copy.deepcopy(devi)
+#                temp_D = copy.deepcopy(devi)
+#                devis.append(temp_d)
+#                Devis.append(temp_D)
+#                devis[index][0][0]  = np.array(index)
+#                Devis[pcount][0][0] = np.array(pcount)
+#                pcount += 1
+#                new_index += 1
+#                os.chdir(cwd)
+#            os.chdir(task_name)
+#            devis = np.vstack(devis)
+#            write_model_devi_out(devis,'model_devi.out')
+#            os.chdir(cwd)
+#
+#    os.chdir(calypso_model_devi_path)
+#    Devis = np.vstack(Devis)
+#    write_model_devi_out(Devis,'Model_Devi.out')
+#    os.chdir(cwd)
+#
+#    os.chdir(work_path)
+#    f = open('record.calypso','a+')
+#    f.write('4\n')
+#    f.close()
+#    os.chdir(cwd)
 
