@@ -1823,12 +1823,13 @@ def _make_fp_vasp_inner (modd_path,
 
     # --------------------------------------------------------------------------------------------------------------------------------------
     model_devi_engine = jdata.get('model_devi_engine', 'lammps')
-    iter_name = work_path.split('/')[0]
-    _work_path = os.path.join(iter_name, model_devi_name)
-    calypso_run_opt_path = os.path.join(_work_path,calypso_run_opt_name)
-    numofspecies = _parse_calypso_input('NumberOfSpecies',calypso_run_opt_path)
-    min_dis = _parse_calypso_dis_mtx(numofspecies,calypso_run_opt_path)
     if model_devi_engine == 'calypso':
+        iter_name = work_path.split('/')[0]
+        _work_path = os.path.join(iter_name, model_devi_name)
+        calypso_run_opt_path = os.path.join(_work_path,calypso_run_opt_name)
+        numofspecies = _parse_calypso_input('NumberOfSpecies',calypso_run_opt_path)
+        min_dis = _parse_calypso_dis_mtx(numofspecies,calypso_run_opt_path)
+
         calypso_total_fp_num = 300
         modd_path = os.path.join(modd_path,calypso_model_devi_name)
         model_devi_skip = -1
@@ -1952,11 +1953,12 @@ def _make_fp_vasp_inner (modd_path,
         else:
             this_fp_task_max = 0
         # ----------------------------------------------------------------------------
-        calypso_intend_fp_num_temp = (len(fp_candidate)/candi_num)*calypso_total_fp_num
-        if calypso_intend_fp_num_temp < 1:
-            calypso_intend_fp_num = 1
-        else:
-            calypso_intend_fp_num = int(calypso_intend_fp_num_temp)
+        if model_devi_engine == 'calypso':
+            calypso_intend_fp_num_temp = (len(fp_candidate)/candi_num)*calypso_total_fp_num
+            if calypso_intend_fp_num_temp < 1:
+                calypso_intend_fp_num = 1
+            else:
+                calypso_intend_fp_num = int(calypso_intend_fp_num_temp)
         # ----------------------------------------------------------------------------
         numb_task = min(this_fp_task_max, len(fp_candidate))
         if (numb_task < fp_task_min):
@@ -2043,7 +2045,8 @@ def _make_fp_vasp_inner (modd_path,
             dlog.info("system {0:s} skipped {1:6d} confs with bad box, {2:6d} remains".format(ss, count_bad_box, numb_task - count_bad_box))
         if count_bad_cluster > 0:
             dlog.info("system {0:s} skipped {1:6d} confs with bad cluster, {2:6d} remains".format(ss, count_bad_cluster, numb_task - count_bad_cluster))
-    dlog.info("summary  accurate_ratio: {0:8.4f}%  candidata_ratio: {1:8.4f}%  failed_ratio: {2:8.4f}%  in {3:d} structures".format( acc_num*100/tot,candi_num*100/tot,fail_num*100/tot,tot ))
+    if model_devi_engine == 'calypso':
+        dlog.info("summary  accurate_ratio: {0:8.4f}%  candidata_ratio: {1:8.4f}%  failed_ratio: {2:8.4f}%  in {3:d} structures".format( acc_num*100/tot,candi_num*100/tot,fail_num*100/tot,tot ))
     if cluster_cutoff is None:
         cwd = os.getcwd()
         for idx, task in enumerate(fp_tasks):
