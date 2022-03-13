@@ -221,6 +221,7 @@ def run_equi(confs,
         pool.join()
         for ii in range(len(multiple_ret)):
             if not multiple_ret[ii].successful():
+                print(f"{multiple_ret[ii].get()}")
                 raise RuntimeError("Task %d is not successful! work_path: %s " % (ii, work_path_list[ii]))
         print('finished')
 
