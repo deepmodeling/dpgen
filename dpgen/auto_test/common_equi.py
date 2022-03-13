@@ -114,14 +114,6 @@ def make_equi(confs,
         inter.make_input_file(ii, 'relaxation', relax_param)
 
 
-def worker(work_path,
-           run_task,
-           forward_common_files,
-           forward_files,
-           backward_files,
-           mdata,
-           inter_type):
-    
 
 def run_equi(confs,
              inter_param,
