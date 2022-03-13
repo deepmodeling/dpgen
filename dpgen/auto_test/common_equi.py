@@ -153,6 +153,7 @@ def worker(work_path,
             outlog='outlog',
             errlog='errlog'
         )
+        print("Angus: use submission!")
         submission.run_submission()
 
 def run_equi(confs,
@@ -186,7 +187,8 @@ def run_equi(confs,
         mdata = convert_mdata(mdata, ["model_devi"])
     else:
         raise RuntimeError("unknown task %s, something wrong" % inter_type)
-
+    
+    print(f"Angus: mdata {mdata} ")
     # dispatch the tasks
     # POSCAR here is useless
     virtual_calculator = make_calculator(inter_param, "POSCAR")
