@@ -131,7 +131,7 @@ def run_equi(confs,
     # ...
     work_path_list = []
     for ii in conf_dirs:
-        work_path_list.append(os.path.abspath(os.path.join(ii, 'relaxation')))
+        work_path_list.append(os.path.join(ii, 'relaxation'))
     all_task = []
     for ii in work_path_list:
         all_task.append(os.path.join(ii, 'relax_task'))
