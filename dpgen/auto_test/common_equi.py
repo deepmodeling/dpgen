@@ -145,8 +145,6 @@ def run_equi(confs,
     else:
         raise RuntimeError("unknown task %s, something wrong" % inter_type)
     
-    print(f"Angus: mdata {mdata} ")
-    print(f"Angus: work_path_list {work_path_list}")
     # dispatch the tasks
     # POSCAR here is useless
     virtual_calculator = make_calculator(inter_param, "POSCAR")
@@ -188,7 +186,6 @@ def run_equi(confs,
             outlog='outlog',
             errlog='errlog'
         )
-        print("Angus: use submission!")
         submission.run_submission()
     
     
