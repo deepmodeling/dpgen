@@ -122,13 +122,13 @@ def worker(work_path,
            mdata,
            inter_type):
     machine, resources, command, group_size = util.get_machine_info(mdata, inter_type)
-    disp = make_dispatcher(machine, resources, work_path, [run_task], group_size)
     print("%s --> Runing... " % (work_path))
 
     api_version = mdata.get('api_version', '0.9')
     if LooseVersion(api_version) < LooseVersion('1.0'):
         warnings.warn(f"the dpdispatcher will be updated to new version."
                       f"And the interface may be changed. Please check the documents for more details")
+        disp = make_dispatcher(machine, resources, work_path, [run_task], group_size)
         disp.run_jobs(resources,
                       command,
                       work_path,
