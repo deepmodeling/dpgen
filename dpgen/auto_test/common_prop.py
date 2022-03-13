@@ -173,6 +173,7 @@ def run_property(confs,
     pool.join()
     for ii in range(len(multiple_ret)):
         if not multiple_ret[ii].successful():
+            print("ERROR:", multiple_ret[ii].get())
             raise RuntimeError("Job %d is not successful!" % ii)
     print('%d jobs are finished' % len(multiple_ret))
 
