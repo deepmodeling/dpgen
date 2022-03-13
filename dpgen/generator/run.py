@@ -1305,132 +1305,136 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
 
 
 
-def run_model_devi (iter_index,
+def run_single_model_devi (iter_index,
                     jdata,
                     mdata) :
 
+    #rmdlog.info("This module has been run !")
+    model_devi_exec = mdata['model_devi_command']
+
+    model_devi_group_size = mdata['model_devi_group_size']
+    model_devi_resources = mdata['model_devi_resources']
+    use_plm = jdata.get('model_devi_plumed', False)
+    use_plm_path = jdata.get('model_devi_plumed_path', False)
+
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, model_devi_name)
+    assert(os.path.isdir(work_path))
+
+    all_task = glob.glob(os.path.join(work_path, "task.*"))
+    all_task.sort()
+    fp = open (os.path.join(work_path, 'cur_job.json'), 'r')
+    cur_job = json.load (fp)
+
+    run_tasks_ = all_task
+    # for ii in all_task:
+    #     fres = os.path.join(ii, 'model_devi.out')
+    #     if os.path.isfile(fres) :
+    #         nlines = np.loadtxt(fres).shape[0]
+    #         if nframes != nlines :
+    #             run_tasks_.append(ii)
+    #     else :
+    #         run_tasks_.append(ii)
+
+    run_tasks = [os.path.basename(ii) for ii in run_tasks_]
+    #dlog.info("all_task is ", all_task)
+    #dlog.info("run_tasks in run_model_deviation",run_tasks_)
+    all_models = glob.glob(os.path.join(work_path, 'graph*pb'))
+    model_names = [os.path.basename(ii) for ii in all_models]
+
+    model_devi_engine = jdata.get("model_devi_engine", "lammps")
+    if model_devi_engine == "lammps":
+        command = "{ if [ ! -f dpgen.restart.10000 ]; then %s -i input.lammps -v restart 0; else %s -i input.lammps -v restart 1; fi }" % (model_devi_exec, model_devi_exec)
+        command = "/bin/sh -c '%s'" % command
+        commands = [command]
+        forward_files = ['conf.lmp', 'input.lammps', 'traj']
+        backward_files = ['model_devi.out', 'model_devi.log', 'traj']
+        if use_plm:
+            forward_files += ['input.plumed']
+           # backward_files += ['output.plumed']
+            backward_files += ['output.plumed','COLVAR']
+            if use_plm_path:
+                forward_files += ['plmpath.pdb']
+    elif model_devi_engine == "gromacs":
+        
+        gromacs_settings = jdata.get("gromacs_settings", {})
+        mdp_filename = gromacs_settings.get("mdp_filename", "md.mdp")
+        topol_filename = gromacs_settings.get("topol_filename", "processed.top")
+        conf_filename = gromacs_settings.get("conf_filename", "conf.gro")
+        index_filename = gromacs_settings.get("index_filename", "index.raw")
+        type_filename = gromacs_settings.get("type_filename", "type.raw")
+        ndx_filename = gromacs_settings.get("ndx_filename", "")
+        # Initial reference to process pbc condition.
+        # Default is em.tpr
+        ref_filename = gromacs_settings.get("ref_filename", "em.tpr")
+        deffnm = gromacs_settings.get("deffnm", "deepmd")
+        maxwarn = gromacs_settings.get("maxwarn", 1)
+        traj_filename = gromacs_settings.get("traj_filename", "deepmd_traj.gro")
+        grp_name = gromacs_settings.get("group_name", "Other")
+        trj_freq = cur_job.get("trj_freq", 10)
+
+        command = "%s grompp -f %s -p %s -c %s -o %s -maxwarn %d" % (model_devi_exec, mdp_filename, topol_filename, conf_filename, deffnm, maxwarn)
+        command += "&& %s mdrun -deffnm %s -cpi" %(model_devi_exec, deffnm)
+        if ndx_filename:
+            command += f"&& echo -e \"{grp_name}\\n{grp_name}\\n\" | {model_devi_exec} trjconv -s {ref_filename} -f {deffnm}.trr -n {ndx_filename} -o {traj_filename} -pbc mol -ur compact -center"
+        else:
+            command += "&& echo -e \"%s\\n%s\\n\" | %s trjconv -s %s -f %s.trr -o %s -pbc mol -ur compact -center" % (grp_name, grp_name, model_devi_exec, ref_filename, deffnm, traj_filename)
+        command += "&& if [ ! -d traj ]; then \n mkdir traj; fi\n"
+        command += f"python -c \"import dpdata;system = dpdata.System('{traj_filename}', fmt='gromacs/gro'); [system.to_gromacs_gro('traj/%d.gromacstrj' % (i * {trj_freq}), frame_idx=i) for i in range(system.get_nframes())]; system.to_deepmd_npy('traj_deepmd')\""
+        command += f"&& dp model-devi -m ../graph.000.pb ../graph.001.pb ../graph.002.pb ../graph.003.pb -s traj_deepmd -o model_devi.out -f {trj_freq}"
+        commands = [command]
+
+        forward_files = [mdp_filename, topol_filename, conf_filename, index_filename, ref_filename, type_filename, "input.json", "job.json" ]
+        if ndx_filename: forward_files.append(ndx_filename)
+        backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , traj_filename, 'model_devi.out', "traj", "traj_deepmd" ]
+
+
+    cwd = os.getcwd()
+
+    user_forward_files = mdata.get("model_devi" + "_user_forward_files", [])
+    forward_files += [os.path.basename(file) for file in user_forward_files]
+    backward_files += mdata.get("model_devi" + "_user_backward_files", [])
+    api_version = mdata.get('api_version', '0.9')
+    if LooseVersion(api_version) < LooseVersion('1.0'):
+        warnings.warn(f"the dpdispatcher will be updated to new version."
+            f"And the interface may be changed. Please check the documents for more details")
+        dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], work_path, run_tasks, model_devi_group_size)
+        dispatcher.run_jobs(mdata['model_devi_resources'],
+                        commands,
+                        work_path,
+                        run_tasks,
+                        model_devi_group_size,
+                        model_names,
+                        forward_files,
+                        backward_files,
+                        outlog = 'model_devi.log',
+                        errlog = 'model_devi.log')
+
+    elif LooseVersion(api_version) >= LooseVersion('1.0'):
+        submission = make_submission(
+            mdata['model_devi_machine'],
+            mdata['model_devi_resources'],
+            commands=commands,
+            work_path=work_path,
+            run_tasks=run_tasks,
+            group_size=model_devi_group_size,
+            forward_common_files=model_names,
+            forward_files=forward_files,
+            backward_files=backward_files,
+            outlog = 'model_devi.log',
+            errlog = 'model_devi.log')
+        submission.run_submission()
+
+def run_model_devi(iter_index,jdata,mdata):
+
     model_devi_engine = jdata.get("model_devi_engine", "lammps")
     if model_devi_engine == "calypso":
-        run_model_devi_calypso(iter_index,jdata,mdata)
+        run_multi_model_devi(iter_index,jdata,mdata)
     else:
-        #rmdlog.info("This module has been run !")
-        model_devi_exec = mdata['model_devi_command']
+        run_single_model_devi(iter_index,jdata,mdata)
+    
 
-        model_devi_group_size = mdata['model_devi_group_size']
-        model_devi_resources = mdata['model_devi_resources']
-        use_plm = jdata.get('model_devi_plumed', False)
-        use_plm_path = jdata.get('model_devi_plumed_path', False)
-
-        iter_name = make_iter_name(iter_index)
-        work_path = os.path.join(iter_name, model_devi_name)
-        assert(os.path.isdir(work_path))
-
-        all_task = glob.glob(os.path.join(work_path, "task.*"))
-        all_task.sort()
-        fp = open (os.path.join(work_path, 'cur_job.json'), 'r')
-        cur_job = json.load (fp)
-
-        run_tasks_ = all_task
-        # for ii in all_task:
-        #     fres = os.path.join(ii, 'model_devi.out')
-        #     if os.path.isfile(fres) :
-        #         nlines = np.loadtxt(fres).shape[0]
-        #         if nframes != nlines :
-        #             run_tasks_.append(ii)
-        #     else :
-        #         run_tasks_.append(ii)
-
-        run_tasks = [os.path.basename(ii) for ii in run_tasks_]
-        #dlog.info("all_task is ", all_task)
-        #dlog.info("run_tasks in run_model_deviation",run_tasks_)
-        all_models = glob.glob(os.path.join(work_path, 'graph*pb'))
-        model_names = [os.path.basename(ii) for ii in all_models]
-
-        model_devi_engine = jdata.get("model_devi_engine", "lammps")
-        if model_devi_engine == "lammps":
-            command = "{ if [ ! -f dpgen.restart.10000 ]; then %s -i input.lammps -v restart 0; else %s -i input.lammps -v restart 1; fi }" % (model_devi_exec, model_devi_exec)
-            command = "/bin/sh -c '%s'" % command
-            commands = [command]
-            forward_files = ['conf.lmp', 'input.lammps', 'traj']
-            backward_files = ['model_devi.out', 'model_devi.log', 'traj']
-            if use_plm:
-                forward_files += ['input.plumed']
-               # backward_files += ['output.plumed']
-                backward_files += ['output.plumed','COLVAR']
-                if use_plm_path:
-                    forward_files += ['plmpath.pdb']
-        elif model_devi_engine == "gromacs":
-            
-            gromacs_settings = jdata.get("gromacs_settings", {})
-            mdp_filename = gromacs_settings.get("mdp_filename", "md.mdp")
-            topol_filename = gromacs_settings.get("topol_filename", "processed.top")
-            conf_filename = gromacs_settings.get("conf_filename", "conf.gro")
-            index_filename = gromacs_settings.get("index_filename", "index.raw")
-            type_filename = gromacs_settings.get("type_filename", "type.raw")
-            ndx_filename = gromacs_settings.get("ndx_filename", "")
-            # Initial reference to process pbc condition.
-            # Default is em.tpr
-            ref_filename = gromacs_settings.get("ref_filename", "em.tpr")
-            deffnm = gromacs_settings.get("deffnm", "deepmd")
-            maxwarn = gromacs_settings.get("maxwarn", 1)
-            traj_filename = gromacs_settings.get("traj_filename", "deepmd_traj.gro")
-            grp_name = gromacs_settings.get("group_name", "Other")
-            trj_freq = cur_job.get("trj_freq", 10)
-
-            command = "%s grompp -f %s -p %s -c %s -o %s -maxwarn %d" % (model_devi_exec, mdp_filename, topol_filename, conf_filename, deffnm, maxwarn)
-            command += "&& %s mdrun -deffnm %s -cpi" %(model_devi_exec, deffnm)
-            if ndx_filename:
-                command += f"&& echo -e \"{grp_name}\\n{grp_name}\\n\" | {model_devi_exec} trjconv -s {ref_filename} -f {deffnm}.trr -n {ndx_filename} -o {traj_filename} -pbc mol -ur compact -center"
-            else:
-                command += "&& echo -e \"%s\\n%s\\n\" | %s trjconv -s %s -f %s.trr -o %s -pbc mol -ur compact -center" % (grp_name, grp_name, model_devi_exec, ref_filename, deffnm, traj_filename)
-            command += "&& if [ ! -d traj ]; then \n mkdir traj; fi\n"
-            command += f"python -c \"import dpdata;system = dpdata.System('{traj_filename}', fmt='gromacs/gro'); [system.to_gromacs_gro('traj/%d.gromacstrj' % (i * {trj_freq}), frame_idx=i) for i in range(system.get_nframes())]; system.to_deepmd_npy('traj_deepmd')\""
-            command += f"&& dp model-devi -m ../graph.000.pb ../graph.001.pb ../graph.002.pb ../graph.003.pb -s traj_deepmd -o model_devi.out -f {trj_freq}"
-            commands = [command]
-
-            forward_files = [mdp_filename, topol_filename, conf_filename, index_filename, ref_filename, type_filename, "input.json", "job.json" ]
-            if ndx_filename: forward_files.append(ndx_filename)
-            backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , traj_filename, 'model_devi.out', "traj", "traj_deepmd" ]
-
-
-        cwd = os.getcwd()
-
-        user_forward_files = mdata.get("model_devi" + "_user_forward_files", [])
-        forward_files += [os.path.basename(file) for file in user_forward_files]
-        backward_files += mdata.get("model_devi" + "_user_backward_files", [])
-        api_version = mdata.get('api_version', '0.9')
-        if LooseVersion(api_version) < LooseVersion('1.0'):
-            warnings.warn(f"the dpdispatcher will be updated to new version."
-                f"And the interface may be changed. Please check the documents for more details")
-            dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], work_path, run_tasks, model_devi_group_size)
-            dispatcher.run_jobs(mdata['model_devi_resources'],
-                            commands,
-                            work_path,
-                            run_tasks,
-                            model_devi_group_size,
-                            model_names,
-                            forward_files,
-                            backward_files,
-                            outlog = 'model_devi.log',
-                            errlog = 'model_devi.log')
-
-        elif LooseVersion(api_version) >= LooseVersion('1.0'):
-            submission = make_submission(
-                mdata['model_devi_machine'],
-                mdata['model_devi_resources'],
-                commands=commands,
-                work_path=work_path,
-                run_tasks=run_tasks,
-                group_size=model_devi_group_size,
-                forward_common_files=model_names,
-                forward_files=forward_files,
-                backward_files=backward_files,
-                outlog = 'model_devi.log',
-                errlog = 'model_devi.log')
-            submission.run_submission()
-
-
-def run_model_devi_calypso (iter_index,
+def run_multi_model_devi (iter_index,
                     jdata,
                     mdata) :
 
@@ -1652,38 +1656,29 @@ def _select_by_model_devi_standard(
                     continue
                 cc = int(all_conf[ii][0])
                 if cluster_cutoff is None:
-                    if model_devi_engine != 'calypso':
-                        if (all_conf[ii][1] < v_trust_hi and all_conf[ii][1] >= v_trust_lo) or \
-                           (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] >= f_trust_lo) :
-                            fp_candidate.append([tt, cc])
-                            counter['candidate'] += 1
-                        elif (all_conf[ii][1] >= v_trust_hi ) or (all_conf[ii][4] >= f_trust_hi ):
+                    if model_devi_engine == 'calypso':
+                        if float(all_conf[ii][-1]) <= float(min_dis):
                             if detailed_report_make_fp:
                                 fp_rest_failed.append([tt, cc])
                             counter['failed'] += 1
-                        elif (all_conf[ii][1] < v_trust_lo and all_conf[ii][4] < f_trust_lo ):
-                            if detailed_report_make_fp:
-                                fp_rest_accurate.append([tt, cc])
-                            counter['accurate'] += 1
-                        else :
+                            continue
+                    if (all_conf[ii][1] < v_trust_hi and all_conf[ii][1] >= v_trust_lo) or \
+                       (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] >= f_trust_lo) :
+                        fp_candidate.append([tt, cc])
+                        counter['candidate'] += 1
+                    elif (all_conf[ii][1] >= v_trust_hi ) or (all_conf[ii][4] >= f_trust_hi ):
+                        if detailed_report_make_fp:
+                            fp_rest_failed.append([tt, cc])
+                        counter['failed'] += 1
+                    elif (all_conf[ii][1] < v_trust_lo and all_conf[ii][4] < f_trust_lo ):
+                        if detailed_report_make_fp:
+                            fp_rest_accurate.append([tt, cc])
+                        counter['accurate'] += 1
+                    else :
+                        if model_devi_engine == 'calypso':
+                            dlog.info('ase opt traj %s frame %d with f devi %f does not belong to either accurate, candidiate and failed '% (tt, ii, all_conf[ii][4]))
+                        else:
                             raise RuntimeError('md traj %s frame %d with f devi %f does not belong to either accurate, candidiate and failed, it should not happen' % (tt, ii, all_conf[ii][4]))
-                    elif model_devi_engine == 'calypso':
-                        if (all_conf[ii][1] < v_trust_hi and all_conf[ii][1] >= v_trust_lo and float(all_conf[ii][-1]) > float(min_dis) or \
-                           (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] >= f_trust_lo) and float(all_conf[ii][-1]) > float(min_dis)):
-                            fp_candidate.append([tt, cc])
-                            counter['candidate'] += 1
-                        elif (all_conf[ii][1] >= v_trust_hi ) or (all_conf[ii][4] >= f_trust_hi ) or (float(all_conf[ii][-1]) <= float(min_dis)):
-                            if detailed_report_make_fp:
-                                fp_rest_failed.append([tt, cc])
-                            counter['failed'] += 1
-                        elif (all_conf[ii][1] < v_trust_lo and all_conf[ii][4] < f_trust_lo and float(all_conf[ii][-1]) > float(min_dis) ):
-                            if detailed_report_make_fp:
-                                fp_rest_accurate.append([tt, cc])
-                            counter['accurate'] += 1
-                        else :
-                            dlog.info('ase opt traj %s frame %d with f devi %f does not belong to either accurate, candidiate and failed ' \
-                                         % (tt, ii, all_conf[ii][4]))
-                            pass
                 else:
                     idx_candidate = np.where(np.logical_and(all_conf[ii][7:] < f_trust_hi, all_conf[ii][7:] >= f_trust_lo))[0]
                     for jj in idx_candidate:
