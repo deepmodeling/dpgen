@@ -363,8 +363,27 @@ def make_calypso_input(nameofatoms,numberofatoms,
         ret+= "###################End Parameters for VSC ##########################\n"
     return ret
 
+def _make_model_devi_buffet(jdata,calypso_run_opt_path):
+    calypso_input_path = jdata.get('calypso_input_path')
+    shutil.copyfile(os.path.join(calypso_input_path,'input.dat'),os.path.join(calypso_run_opt_path, 'input.dat'))
+    # run opt script
+    run_opt_script = os.path.join(calypso_run_opt_path,'run_opt.py')
+    with open(run_opt_script,'w') as ffff:
+        ffff.write(make_run_opt_script(jdata.get('fmax',0.01)))
 
-def _make_model_devi_native_calypso(cur_job, calypso_run_opt_path):
+def _make_model_devi_native_calypso(model_devi_jobs, calypso_run_opt_path):
+
+    for iiidx, jobbs in enumerate(model_devi_jobs):
+        if iter_index in jobbs.get('times'):
+            cur_job = model_devi_jobs[iiidx]
+
+    work_path = os.path.dirname(calypso_run_opt_path)
+    with open(os.path.join(work_path, 'cur_job.json'), 'w') as outfile:
+        json.dump(cur_job, outfile, indent = 4)
+
+    run_opt_script = os.path.join(calypso_run_opt_path,'run_opt.py')
+    with open(run_opt_script,'w') as ffff:
+        ffff.write(make_run_opt_script(cur_job.get('fmax',0.01)))
 
     # Crystal Parameters
     nameofatoms = cur_job.get('NameOfAtoms')
