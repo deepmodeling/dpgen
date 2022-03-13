@@ -140,6 +140,17 @@ def worker(work_path,
                       outlog='outlog',
                       errlog='errlog')
     elif LooseVersion(api_version) >= LooseVersion('1.0'):
+        print("machine", machine)
+        print("resources", resources)
+        print("command", [command])
+        print("work_path", work_path)
+        print("run_tasks", run_task)
+        print("group_size", group_size)
+        print("forward_common_files", forward_common_files)
+        print("backward_files", backward_files)
+        print("forward_files", forward_files)
+        print("outlog", outlog)
+        print("errlog", errlog)
         submission = make_submission(
             mdata_machine=machine,
             mdata_resources=resources,
