@@ -22,7 +22,7 @@ import numpy as np
 from dpgen import dlog
 from dpgen import SHORT_CMD
 from dpgen.util import sepline
-from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher
+from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, make_dispatcher, make_submission
 from dpgen.generator.run import make_train, run_train, post_train, run_fp, post_fp, fp_name, model_devi_name, train_name, train_task_fmt, sys_link_fp_vasp_pp, make_fp_vasp_incar, make_fp_vasp_kp, make_fp_vasp_cp_cvasp, data_system_fmt, model_devi_task_fmt, fp_task_fmt
 # TODO: maybe the following functions can be moved to dpgen.util
 from dpgen.generator.lib.utils import log_iter, make_iter_name, create_path, record_iter
@@ -268,8 +268,12 @@ def run_model_devi(iter_index, jdata, mdata):
     forward_files = [rest_data_name]
     backward_files = sum([[pf+".e.out", pf+".f.out", pf+".v.out"] for pf in detail_file_names], [])
 
-    dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], work_path, run_tasks, model_devi_group_size)
-    dispatcher.run_jobs(mdata['model_devi_resources'],
+    api_version = mdata.get('api_version', '0.9')
+    if LooseVersion(api_version) < LooseVersion('1.0'):
+        warnings.warn(f"the dpdispatcher will be updated to new version."
+            f"And the interface may be changed. Please check the documents for more details")
+        dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], work_path, run_tasks, model_devi_group_size)
+        dispatcher.run_jobs(mdata['model_devi_resources'],
                         commands,
                         work_path,
                         run_tasks,
@@ -277,8 +281,23 @@ def run_model_devi(iter_index, jdata, mdata):
                         model_names,
                         forward_files,
                         backward_files,
-                        outlog='model_devi.log',
-                        errlog='model_devi.log')
+                        outlog = 'model_devi.log',
+                        errlog = 'model_devi.log')
+
+    elif LooseVersion(api_version) >= LooseVersion('1.0'):
+        submission = make_submission(
+            mdata['model_devi_machine'],
+            mdata['model_devi_resources'],
+            commands=commands,
+            work_path=work_path,
+            run_tasks=run_tasks,
+            group_size=model_devi_group_size,
+            forward_common_files=model_names,
+            forward_files=forward_files,
+            backward_files=backward_files,
+            outlog = 'model_devi.log',
+            errlog = 'model_devi.log')
+        submission.run_submission()
 
 
 def post_model_devi(iter_index, jdata, mdata):
