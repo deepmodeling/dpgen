@@ -245,7 +245,7 @@ def run_model_devi(iter_index, jdata, mdata):
     commands = []
     detail_file_names = []
     for ii, mm in enumerate(task_model_list):
-        detail_file_name = "{prefix}.{ii}".format(
+        detail_file_name = "{prefix}-{ii}".format(
             prefix=detail_file_name_prefix,
             ii=ii,
         )
@@ -328,13 +328,13 @@ def post_model_devi(iter_index, jdata, mdata):
             sys_name = os.path.basename(task).split('.')[1]
             all_names.add(sys_name)
         # e.out
-        details_e = glob.glob(os.path.join(task, "{}.*.e.out".format(detail_file_name_prefix)))
+        details_e = glob.glob(os.path.join(task, "{}-*.e.out".format(detail_file_name_prefix)))
         e_all = np.array([np.loadtxt(detail_e, ndmin=2)[:, 1] for detail_e in details_e])
         e_std = np.std(e_all, axis=0)
         n_frame = e_std.size
         
         # f.out
-        details_f = glob.glob(os.path.join(task, "{}.*.f.out".format(detail_file_name_prefix)))
+        details_f = glob.glob(os.path.join(task, "{}-*.f.out".format(detail_file_name_prefix)))
         f_all = np.array([np.loadtxt(detail_f, ndmin=2)[:, 3:6].reshape((n_frame, -1, 3)) for detail_f in details_f])
         # (n_model, n_frame, n_atom, 3)
         f_std = np.std(f_all, axis=0)
