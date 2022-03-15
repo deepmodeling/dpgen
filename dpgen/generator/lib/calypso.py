@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import os
+import shutil
+import json
 import numpy as np
 
 def make_run_opt_script(fmax ) :
@@ -371,7 +373,7 @@ def _make_model_devi_buffet(jdata,calypso_run_opt_path):
     with open(run_opt_script,'w') as ffff:
         ffff.write(make_run_opt_script(jdata.get('fmax',0.01)))
 
-def _make_model_devi_native_calypso(model_devi_jobs, calypso_run_opt_path):
+def _make_model_devi_native_calypso(iter_index,model_devi_jobs, calypso_run_opt_path):
 
     for iiidx, jobbs in enumerate(model_devi_jobs):
         if iter_index in jobbs.get('times'):

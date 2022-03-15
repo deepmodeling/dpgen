@@ -42,7 +42,7 @@ from dpgen.generator.lib.utils import log_task
 from dpgen.generator.lib.utils import symlink_user_forward_files
 from dpgen.generator.lib.lammps import make_lammps_input, get_dumped_forces
 from dpgen.generator.lib.calypso import make_run_opt_script,make_check_outcar_script
-from dpgen.generator.lib.calypso import _make_model_devi_native_calypso,write_model_devi_out
+from dpgen.generator.lib.calypso import _make_model_devi_native_calypso,write_model_devi_out,_make_model_devi_buffet
 from dpgen.generator.lib.modd_calypso import GenStructures,Analysis
 from dpgen.generator.lib.write_modd import write_modd
 from dpgen.generator.lib.parse_calypso import _parse_calypso_input,_parse_calypso_dis_mtx
@@ -899,7 +899,7 @@ def make_model_devi (iter_index,
         elif model_devi_engine == "gromacs":
             _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems)
         elif model_devi_engine == "calypso":
-            _make_model_devi_native_calypso(model_devi_jobs, calypso_run_opt_path)  # generate input.dat automatic in each iter
+            _make_model_devi_native_calypso(iter_index,model_devi_jobs, calypso_run_opt_path)  # generate input.dat automatic in each iter
         else:
             raise RuntimeError("unknown model_devi engine", model_devi_engine)
     elif input_mode == "revise_template":
@@ -1429,7 +1429,7 @@ def run_multi_model_devi (iter_index,
             elif lines[-1].strip().strip('\n') == '3':
                 # Model Devi
                 _calypso_run_opt_path = os.path.abspath(calypso_run_opt_path)
-                all_models = glob.glob(os.path.join(calypso_run_opt_path, 'graph*pb'))
+                all_models = glob.glob(os.path.join(_calypso_run_opt_path, 'graph*pb'))
                 cwd = os.getcwd()
                 os.chdir(calypso_model_devi_path)
                 args = ' '.join(['modd.py', '--all_models',' '.join(all_models),'--type_map',' '.join(jdata.get('type_map'))])
@@ -1981,7 +1981,10 @@ def _make_fp_vasp_inner (modd_path,
                     os.symlink(os.path.relpath(job_name), 'job.json')
                 else:
                     os.symlink(os.path.relpath(conf_name), 'POSCAR')
-                    os.system('touch job.json')
+                    fjob = open('job.json','w+')
+                    fjob.write('{"model_devi_engine":"calypso"}')
+                    fjob.close()
+                    #os.system('touch job.json')
             else:
                 os.symlink(os.path.relpath(poscar_name), 'POSCAR')
                 np.save("atom_pref", new_system.data["atom_pref"])
