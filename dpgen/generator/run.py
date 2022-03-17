@@ -441,7 +441,19 @@ def make_train (iter_index,
         for ii in range(len(iter0_models)):
             old_model_files = glob.glob(os.path.join(iter0_models[ii], 'model.ckpt*'))
             _link_old_models(work_path, old_model_files, ii)
-
+    
+    if jdata.get("adjusted_sel", None) is not None:
+        jinput['training']['numb_steps'] = 0
+        jinput["training"]["save_ckpt"] = "adjust_sel/model.ckpt"
+        jinput["training"]["training_data"]["systems"] = jinput["training"]["training_data"]["systems"][:1]
+        for jj, _ in enumerate(jdata["sys_configs"]):
+            train_input_file_sel = "input_adjusted_sel_sys_%d.json" % jj
+            for kk in range(len(jinput["model"]["descriptor"]["list"])):
+                jinput["model"]["descriptor"]["list"][kk]["sel"] = jdata["adjusted_sel"][kk][jj]
+            for ii in range(numb_models) :
+                task_path = os.path.join(work_path, train_task_fmt % ii)
+                with open(os.path.join(task_path, train_input_file_sel), 'w') as outfile:
+                    json.dump(jinput, outfile, indent = 4)
 
 def _link_old_models(work_path, old_model_files, ii):
     """
@@ -527,6 +539,13 @@ def run_train (iter_index,
         commands.append(command)
         if jdata.get("compress", False):
             commands.append("%s compress -s %f" % (train_command, jdata.get("compress_step", 0.01)))
+
+        if jdata.get("adjusted_sel", None) is not None:
+            for jj, _ in enumerate(jdata["sys_configs"]):
+                train_input_file_sel = "input_adjusted_sel_sys_%d.json" % jj
+                command1 = "dp train input_adjusted_sel_sys_%d.json --init-frz-model frozen_model.pb --skip-neighbor-stat" % jj
+                command2 = "dp freeze -c adjust_sel/ -o frozen_model_adjusted_sel_sys_%d.pb" % jj
+                commands.extend((command1, command2))
     else:
         raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x version!" )
 
@@ -555,6 +574,11 @@ def run_train (iter_index,
     init_data_sys = []
     for ii in init_data_sys_ :
         init_data_sys.append(os.path.join('data.init', ii + ".hdf5"))
+    
+    if jdata.get("adjusted_sel", None) is not None:
+        for jj, _ in enumerate(jdata["sys_configs"]):
+            forward_files.append("input_adjusted_sel_sys_%d.json" % jj)
+            backward_files.append("frozen_model_adjusted_sel_sys_%d.pb" % jj)
     #trans_comm_data = []
     cwd = os.getcwd()
     os.chdir(work_path)
@@ -641,6 +665,13 @@ def post_train (iter_index,
         if os.path.isfile(ofile) :
             os.remove(ofile)
         os.symlink(task_file, ofile)
+        if jdata.get("adjusted_sel", None) is not None:
+            for jj, _ in enumerate(jdata["sys_configs"]):
+                task_file = os.path.join(train_task_fmt % ii, "frozen_model_adjusted_sel_sys_%d.pb" % jj)
+                ofile = os.path.join(work_path, 'graph.%03d.s%02d.pb' % (ii, jj))
+                if os.path.isfile(ofile) :
+                    os.remove(ofile)
+                os.symlink(task_file, ofile)
 
 def _get_param_alias(jdata,
                      names) :
@@ -1208,10 +1239,6 @@ def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
     train_path = os.path.abspath(train_path)
-    models = sorted(glob.glob(os.path.join(train_path, "graph*pb")))
-    task_model_list = []
-    for ii in models:
-        task_model_list.append(os.path.join('..', os.path.basename(ii)))
     work_path = os.path.join(iter_name, model_devi_name)
     # parm7 - list
     parm7 = jdata['parm7']
@@ -1241,6 +1268,13 @@ def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
                                .replace("@qm_charge@", str(qm_charge[ii])) \
                                .replace("@qm_theory@", jdata['low_level']) \
                                .replace("@rcut@", str(jdata['cutoff']))
+            if jdata.get("adjusted_sel", None) is None:
+                models = sorted(glob.glob(os.path.join(train_path, "graph.*.pb")))
+            else:
+                models = sorted(glob.glob(os.path.join(train_path, "graph.*.s%02d.pb" % ii)))
+            task_model_list = []
+            for ii in models:
+                task_model_list.append(os.path.join('..', os.path.basename(ii)))
             # graph
             for jj, mm in enumerate(task_model_list):
                 # replace graph
@@ -2907,7 +2941,7 @@ def post_fp_amber_diff(iter_index, jdata):
             all_sys.append(sys)
         sys_data_path = os.path.join(work_path, 'data.%s'%ss)
         all_sys.to_deepmd_raw(sys_data_path)
-        all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
+        all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output), prec=np.float64)
 
 def post_fp (iter_index,
              jdata) :
