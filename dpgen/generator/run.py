@@ -243,7 +243,7 @@ def make_train (iter_index,
         log_task('prev data is empty, copy prev model')
         copy_model(numb_models, iter_index-1, iter_index)
         return
-    elif iter_index > 0 and _check_skip_train(model_devi_jobs[iter_index-1]):
+    elif model_devi_engine != 'calypso' and iter_index > 0 and _check_skip_train(model_devi_jobs[iter_index-1]):
         log_task('skip training at step %d ' % (iter_index-1))
         copy_model(numb_models, iter_index-1, iter_index)
         return

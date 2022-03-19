@@ -18,6 +18,7 @@ from ase.io.vasp import write_vasp
 from ase.io.trajectory import Trajectory
 #from deepmd.infer import calc_model_devi
 #from deepmd.infer import DeepPot as DP
+from pathlib import Path
 from dpgen import dlog
 from dpgen.generator.lib.utils import make_iter_name
 from dpgen.generator.lib.calypso import write_model_devi_out
