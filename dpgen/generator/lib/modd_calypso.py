@@ -1,8 +1,8 @@
 """
 calypso model devi:
-       1. GenStructures
-       2. Analysis
-       3. Modd
+       1. gen_structures
+       2. analysis
+       3. model devi
 """
 
 import copy
@@ -19,6 +19,7 @@ from ase.io.trajectory import Trajectory
 #from deepmd.infer import calc_model_devi
 #from deepmd.infer import DeepPot as DP
 from pathlib import Path
+from distutils.version import LooseVersion
 from dpgen import dlog
 from dpgen.generator.lib.utils import make_iter_name
 from dpgen.generator.lib.calypso import write_model_devi_out
@@ -31,7 +32,7 @@ fp_name = '02.fp'
 calypso_run_opt_name = 'gen_stru_analy'
 calypso_model_devi_name = 'model_devi_results'
 
-def GenStructures(iter_index,jdata,mdata):
+def gen_structures(iter_index,jdata,mdata):
 
     # run calypso
     # vsc means generate elemental, binary and ternary at the same time
@@ -65,7 +66,7 @@ def GenStructures(iter_index,jdata,mdata):
     cwd = os.getcwd()
     os.chdir(calypso_run_opt_path)
 
-    forward_files = ['POSCAR', 'run_opt.py','check_outcar.py']
+    forward_files = ['POSCAR', 'run_opt.py','check_outcar.py','input.dat']
     backward_files = ['OUTCAR','CONTCAR','traj.traj','model_devi.log']
 
     run_calypso = calypso_path+'/calypso.x | tee log'
@@ -95,11 +96,9 @@ def GenStructures(iter_index,jdata,mdata):
         for ii in range(int(PickUpStep)-1,maxstep+1):
             dlog.info('$$$$$$$$$$$$$$$$$$$$ step %s $$$$$$$$$$$$$$$$$'%ii)
             if ii == maxstep :  
-                dlog.info('##################### counting OUTCAR #####################')
                 while True:
                     if len(glob.glob('OUTCAR_*')) == popsize:
                         break
-                dlog.info('##################### done counting OUTCAR #####################')
                 os.system('%s'%run_calypso)
                 break
             # run calypso
@@ -115,9 +114,9 @@ def GenStructures(iter_index,jdata,mdata):
                 shutil.copyfile('run_opt.py',os.path.join('task.%03d'%pop,'run_opt.py'))
                 shutil.copyfile('check_outcar.py',os.path.join('task.%03d'%pop,'check_outcar.py'))
                 shutil.copyfile('POSCAR_%s'%str(pop-ii*int(popsize)+1),os.path.join('task.%03d'%(pop),'POSCAR'))
+                shutil.copyfile('input.dat',os.path.join('task.%03d'%pop,'input.dat'))
             #for iii in range(1,popsize+1): 
             #    shutil.copyfile('POSCAR_%s'%str(iii),os.path.join('task.%03d'%(iii-1),'POSCAR'))
-            dlog.info('##################### copy file done #####################')
 
             all_task = glob.glob( "task.*")
             all_task.sort()
@@ -126,19 +125,37 @@ def GenStructures(iter_index,jdata,mdata):
 
             run_tasks = [os.path.basename(ii) for ii in run_tasks_]
 
-            dlog.info('$$$$$$$$$$$$$$$ dispatcher running $$$$$$$$$$$$$$$$$$')
-            dispatcher=make_dispatcher(mdata['model_devi_machine'],mdata['model_devi_resources'],'./', run_tasks, model_devi_group_size)
-            dispatcher.run_jobs(mdata['model_devi_resources'],
-                            commands,
-                            './',
-                            run_tasks,
-                            model_devi_group_size,
-                            model_names,
-                            forward_files,
-                            backward_files,
-                            outlog = 'model_devi.log',
-                            errlog = 'model_devi.log')
-            dlog.info('$$$$$$$$$$$$$$$ dispatcher $$$$$$$$$$$$$$$$$$')
+            api_version = mdata.get('api_version', '0.9')
+            if LooseVersion(api_version) < LooseVersion('1.0'):
+                warnings.warn(f"the dpdispatcher will be updated to new version."
+                    f"And the interface may be changed. Please check the documents for more details")
+                dispatcher=make_dispatcher(mdata['model_devi_machine'],mdata['model_devi_resources'],'./', run_tasks, model_devi_group_size)
+                dispatcher.run_jobs(mdata['model_devi_resources'],
+                                commands,
+                                './',
+                                run_tasks,
+                                model_devi_group_size,
+                                model_names,
+                                forward_files,
+                                backward_files,
+                                outlog = 'model_devi.log',
+                                errlog = 'model_devi.log')
+            elif LooseVersion(api_version) >= LooseVersion('1.0'):
+                os.chdir(cwd)
+                submission = make_submission(
+                    mdata['model_devi_machine'],
+                    mdata['model_devi_resources'],
+                    commands=commands,
+                    work_path=calypso_run_opt_path,
+                    run_tasks=run_tasks,
+                    group_size=model_devi_group_size,
+                    forward_common_files=model_names,
+                    forward_files=forward_files,
+                    backward_files=backward_files,
+                    outlog = 'model_devi.log',
+                    errlog = 'model_devi.log')
+                submission.run_submission()
+                os.chdir(calypso_run_opt_path)
            
             sstep = os.path.join('opt',str(ii))
             os.mkdir(sstep)
@@ -156,10 +173,8 @@ def GenStructures(iter_index,jdata,mdata):
                 # to traj
                 shutil.copyfile(os.path.join('task.%03d'%(jjj),'traj.traj'),os.path.join('traj','%s.traj'%str(jjj+1)),)
 
-
-            dlog.info('##################### copy file back done #####################')
-
-            os.rename('jr.json','jr_%s.json'%(str(ii)))
+            if LooseVersion(api_version) < LooseVersion('1.0'):
+                os.rename('jr.json','jr_%s.json'%(str(ii)))
 
             tlist = glob.glob('task.*')
             for t in tlist:
@@ -188,8 +203,7 @@ def GenStructures(iter_index,jdata,mdata):
             shutil.copyfile('run_opt.py',os.path.join('task.%04d'%(idx+1),'run_opt.py'))
             shutil.copyfile('check_outcar.py',os.path.join('task.%04d'%(idx+1),'check_outcar.py'))
             shutil.copyfile('POSCAR_%s'%str(idx+1),os.path.join('task.%04d'%(idx+1),'POSCAR'))
-
-        dlog.info('##################### copy file done #####################')
+            shutil.copyfile('input.dat',os.path.join('task.%04d'%(idx+1),'input.dat'))
 
         all_task = glob.glob( "task.*")
         all_task.sort()
@@ -198,20 +212,36 @@ def GenStructures(iter_index,jdata,mdata):
 
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
 
-        dlog.info('$$$$$$$$$$$$$$$ dispatcher running $$$$$$$$$$$$$$$$$$')
-        dispatcher=make_dispatcher(mdata['model_devi_machine'],mdata['model_devi_resources'],'./', run_tasks, model_devi_group_size)
-        #print(dispatcher)
-        dispatcher.run_jobs(mdata['model_devi_resources'],
-                        commands,
-                        './',
-                        run_tasks,
-                        model_devi_group_size,
-                        model_names,
-                        forward_files,
-                        backward_files,
-                        outlog = 'model_devi.log',
-                        errlog = 'model_devi.log')
-        dlog.info('$$$$$$$$$$$$$$$ dispatcher $$$$$$$$$$$$$$$$$$')
+        if LooseVersion(api_version) < LooseVersion('1.0'):
+            warnings.warn(f"the dpdispatcher will be updated to new version."
+                f"And the interface may be changed. Please check the documents for more details")
+            dispatcher=make_dispatcher(mdata['model_devi_machine'],mdata['model_devi_resources'],'./', run_tasks, model_devi_group_size)
+            dispatcher.run_jobs(mdata['model_devi_resources'],
+                            commands,
+                            './',
+                            run_tasks,
+                            model_devi_group_size,
+                            model_names,
+                            forward_files,
+                            backward_files,
+                            outlog = 'model_devi.log',
+                            errlog = 'model_devi.log')
+        elif LooseVersion(api_version) >= LooseVersion('1.0'):
+            os.chdir(cwd)
+            submission = make_submission(
+                mdata['model_devi_machine'],
+                mdata['model_devi_resources'],
+                commands=commands,
+                work_path=calypso_run_opt_path,
+                run_tasks=run_tasks,
+                group_size=model_devi_group_size,
+                forward_common_files=model_names,
+                forward_files=forward_files,
+                backward_files=backward_files,
+                outlog = 'model_devi.log',
+                errlog = 'model_devi.log')
+            submission.run_submission()
+            os.chdir(calypso_run_opt_path)
         
         os.mkdir('opt')
         if not os.path.exists('traj'):
@@ -227,8 +257,6 @@ def GenStructures(iter_index,jdata,mdata):
             # to traj
             shutil.copyfile(os.path.join('task.%04d'%(jjj+1),'traj.traj'),os.path.join('traj','%s.traj'%str(jjj+1)),)
 
-        dlog.info('##################### copy file back done #####################')
-
         tlist = glob.glob('task.*')
         for t in tlist:
             shutil.rmtree(t)
@@ -241,7 +269,7 @@ def GenStructures(iter_index,jdata,mdata):
     f.close()
     os.chdir(cwd)
 
-def Analysis(iter_index,jdata,calypso_run_opt_path,calypso_model_devi_path):
+def analysis(iter_index,jdata,calypso_run_opt_path,calypso_model_devi_path):
 
     # Analysis
 
@@ -293,8 +321,8 @@ def Analysis(iter_index,jdata,calypso_run_opt_path,calypso_model_devi_path):
            
     traj_pos_list = glob.glob(traj_path+'/*.poscar')
 
-    dlog.info('traj_num %s'%str(len(traj_pos_list)))
-    dlog.info('total_traj_num %s'%str(record_traj_num))
+    #dlog.info('traj_num %s'%str(len(traj_pos_list)))
+    #dlog.info('total_traj_num %s'%str(record_traj_num))
 
     for npos in traj_pos_list:
         try:
@@ -314,9 +342,9 @@ def Analysis(iter_index,jdata,calypso_run_opt_path,calypso_model_devi_path):
 
     split_lists = glob.glob(os.path.join(result_path,'deepmd','*'))
     for i,split_list in enumerate(split_lists):
-        ss = dpdata.System(split_list,fmt='deepmd')
-        for j in range(ss.get_nframes()):
-            ss.to('vasp/poscar',os.path.join(split_list,'%03d.%03d.poscar'%(i,j)),frame_idx=j)
+        #ss = dpdata.System(split_list,fmt='deepmd')
+        #for j in range(ss.get_nframes()):
+        #    ss.to('vasp/poscar',os.path.join(split_list,'%03d.%03d.poscar'%(i,j)),frame_idx=j)
         strus_path = os.path.join(calypso_model_devi_path,'%03d.structures'%i)
         if not os.path.exists(strus_path):
             shutil.copytree(split_list,strus_path)
@@ -332,7 +360,7 @@ def Analysis(iter_index,jdata,calypso_run_opt_path,calypso_model_devi_path):
     os.chdir(cwd)
 
 
-#def Modd(iter_index,calypso_model_devi_path,all_models,jdata):
+#def model_devi(iter_index,calypso_model_devi_path,all_models,jdata):
 #
 #    # Model Devi 
 #
