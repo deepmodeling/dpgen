@@ -43,7 +43,7 @@ from dpgen.generator.lib.utils import symlink_user_forward_files
 from dpgen.generator.lib.lammps import make_lammps_input, get_dumped_forces
 from dpgen.generator.lib.calypso import make_run_opt_script,make_check_outcar_script
 from dpgen.generator.lib.calypso import _make_model_devi_native_calypso,write_model_devi_out,_make_model_devi_buffet
-from dpgen.generator.lib.modd_calypso import GenStructures,Analysis
+from dpgen.generator.lib.model_devi_calypso import gen_structures,analysis
 from dpgen.generator.lib.write_modd import write_modd
 from dpgen.generator.lib.parse_calypso import _parse_calypso_input,_parse_calypso_dis_mtx
 from dpgen.generator.lib.vasp import write_incar_dict
@@ -281,10 +281,7 @@ def make_train (iter_index,
     if 'sys_batch_size' in jdata:
         sys_batch_size = jdata['sys_batch_size']
     else:
-        if model_devi_engine != 'calypso':
-            sys_batch_size = ["auto" for aa in range(len(jdata['sys_configs']))]
-        else: 
-            sys_batch_size = ["auto" for aa in range(3000)]
+        sys_batch_size = ["auto" for aa in range(len(jdata['sys_configs']))]
 
     # make sure all init_data_sys has the batch size -- for the following `zip`
     assert (len(init_data_sys_) <= len(init_batch_size_))
@@ -303,6 +300,10 @@ def make_train (iter_index,
                 old_range = len(init_data_sys)
             fp_path = os.path.join(make_iter_name(ii), fp_name)
             fp_data_sys = glob.glob(os.path.join(fp_path, "data.*"))
+            if model_devi_engine == 'calypso':
+                _modd_path = os.path.join(make_iter_name(ii), model_devi_name, calypso_model_devi_name)
+                sys_list = glob.glob(os.path.join(_modd_path, "*.structures"))
+                sys_batch_size = ["auto" for aa in range(len(sys_list))]
             for jj in fp_data_sys :
                 sys_idx = int(jj.split('.')[-1])
                 if jdata.get('use_clusters', False):
@@ -791,12 +792,20 @@ def make_model_devi (iter_index,
         if (iter_index >= len(model_devi_jobs)) :
             return False
     else:
-        try:
-            maxiter = max(model_devi_jobs[-1].get('times'))
-        except Exception as e:
-            maxiter = jdata.get('model_devi_max_iter',0)
+        # mode 1: generate structures according to the user-provided input.dat file, so calypso_input_path and model_devi_max_iter and fmax is needed
+        if "calypso_input_path" in jdata:
+            try:
+                maxiter = jdata.get('model_devi_max_iter')
+            except KeyError:
+                raise KeyError('calypso_input_path key exists so you should provide model_devi_max_iter key to control the max iter number')
+        # mode 2: control each iteration to generate structures in specific way by providing model_devi_jobs key
+        else:
+            try:
+                maxiter = max(model_devi_jobs[-1].get('times'))
+            except KeyError:
+                raise KeyError('did not find model_devi_jobs["times"] key')
         if (iter_index > maxiter) :
-            print('please check `times` in model_devi_jobs or `model_devi_max_iter` in input.json')
+            print(f'iter_index is {iter_index} and maxiter is {maxiter}')
             return False
 
     if "sys_configs_prefix" in jdata:
@@ -1389,7 +1398,7 @@ def run_multi_model_devi (iter_index,
                     jdata,
                     mdata) :
 
-    print('############## run calypso model devi #######################')
+    dlog.info('############## run calypso model devi #######################')
 
 
     iter_name = make_iter_name(iter_index)
@@ -1402,81 +1411,41 @@ def run_multi_model_devi (iter_index,
 
     cwd = os.getcwd()
 
-    api_version = mdata.get('api_version', '0.9')
-    if LooseVersion(api_version) < LooseVersion('1.0'):
-        warnings.warn(f"the dpdispatcher will be updated to new version."
-            f"And the interface may be changed. Please check the documents for more details")
-        record_calypso_path = os.path.join(work_path,'record.calypso')
-        while True:
-            if not os.path.exists(record_calypso_path):
-                f = open(record_calypso_path,'w')
-                f.write('1\n')
-                lines = '1'
-                f.close()
-            else:
-                f = open(record_calypso_path,'r')
-                lines = f.readlines()
-                f.close()
+    record_calypso_path = os.path.join(work_path,'record.calypso')
+    while True:
+        if not os.path.exists(record_calypso_path):
+            f = open(record_calypso_path,'w')
+            f.write('1\n')
+            lines = '1'
+            f.close()
+        else:
+            f = open(record_calypso_path,'r')
+            lines = f.readlines()
+            f.close()
 
-            if lines[-1].strip().strip('\n') == '1':
-                # Gen Structures
-                GenStructures(iter_index,jdata,mdata)
+        if lines[-1].strip().strip('\n') == '1':
+            # Gen Structures
+            gen_structures(iter_index,jdata,mdata)
 
-            elif lines[-1].strip().strip('\n') == '2':
-                # Analysis & to deepmd/raw
-                Analysis(iter_index,jdata,calypso_run_opt_path,calypso_model_devi_path)
+        elif lines[-1].strip().strip('\n') == '2':
+            # Analysis & to deepmd/raw
+            analysis(iter_index,jdata,calypso_run_opt_path,calypso_model_devi_path)
 
-            elif lines[-1].strip().strip('\n') == '3':
-                # Model Devi
-                _calypso_run_opt_path = os.path.abspath(calypso_run_opt_path)
-                all_models = glob.glob(os.path.join(_calypso_run_opt_path, 'graph*pb'))
-                cwd = os.getcwd()
-                os.chdir(calypso_model_devi_path)
-                args = ' '.join(['modd.py', '--all_models',' '.join(all_models),'--type_map',' '.join(jdata.get('type_map'))])
-                deepmdkit_python = mdata.get('deepmdkit_python')
-                os.system(f'{deepmdkit_python} {args} ')
-                #Modd(iter_index,calypso_model_devi_path,all_models,jdata)
-                os.chdir(cwd)
+        elif lines[-1].strip().strip('\n') == '3':
+            # Model Devi
+            _calypso_run_opt_path = os.path.abspath(calypso_run_opt_path)
+            all_models = glob.glob(os.path.join(_calypso_run_opt_path, 'graph*pb'))
+            cwd = os.getcwd()
+            os.chdir(calypso_model_devi_path)
+            args = ' '.join(['modd.py', '--all_models',' '.join(all_models),'--type_map',' '.join(jdata.get('type_map'))])
+            deepmdkit_python = mdata.get('deepmdkit_python')
+            os.system(f'{deepmdkit_python} {args} ')
+            #Modd(iter_index,calypso_model_devi_path,all_models,jdata)
+            os.chdir(cwd)
 
-            elif lines[-1].strip().strip('\n') == '4':
-                print('Model Devi is done.')
-                break
-
-    elif LooseVersion(api_version) >= LooseVersion('1.0'):
-
-        record_calypso_path = os.path.join(work_path,'record.calypso')
-        while True:
-            if not os.path.exists(record_calypso_path):
-                f = open(record_calypso_path,'w')
-                f.write('1\n')
-                lines = '1'
-                f.close()
-            else:
-                f = open(record_calypso_path,'r')
-                lines = f.readlines()
-                f.close()
-
-            if lines[-1].strip().strip('\n') == '1':
-                # Gen Structures
-                GenStructures(iter_index,jdata,mdata)
-
-            elif lines[-1].strip().strip('\n') == '2':
-                # Analysis & to deepmd/raw
-                Analysis(iter_index,jdata,calypso_run_opt_path,calypso_model_devi_path)
-
-            elif lines[-1].strip().strip('\n') == '3':
-                # Model Devi
-                cwd = os.getcwd()
-                os.chdir(calypso_model_devi_path)
-                args = ' '.join(['modd.py', '--all_models',' '.join(all_models),'--type_map',' '.join(jdata.get('type_map'))])
-                deepmdkit_python = mdata.get('deepmdkit_python')
-                os.system(f'{deepmdkit_python} {args} ')
-                #Modd(iter_index,calypso_model_devi_path,all_models,jdata)
-                os.chdir(cwd)
-
-            elif lines[-1].strip().strip('\n') == '4':
-                print('Model Devi is done.')
-                break
+        elif lines[-1].strip().strip('\n') == '4':
+            dlog.info('Model Devi is done.')
+            break
 
 def post_model_devi (iter_index,
                      jdata,
@@ -2791,11 +2760,11 @@ def post_fp_vasp (iter_index,
                 if all_sys is None:
                     all_sys = _sys
                 else:
-                    try:
-                        all_sys.append(_sys)
-                    except:
-                        dlog.info('%s has different formula, so pass in line 3518'%oo)
-                        pass
+                    #try:
+                    all_sys.append(_sys)
+                    #except RuntimeError:
+                    #    dlog.info('%s has different formula, so pass '%oo)
+                    #    pass
                 # save ele_temp, if any
                 # need to check 
                 with open(oo.replace('OUTCAR', 'job.json')) as fp:

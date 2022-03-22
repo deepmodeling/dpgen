@@ -121,7 +121,7 @@ def write_modd():
     ret+="        help='the type map of models which will be used to do model-deviation',\n"
     ret+="    )\n"
     ret+="    args = parser.parse_args()\n"
-    ret+="    print(vars(args))\n"
+    ret+="    #print(vars(args))\n"
     ret+="    Modd(args.all_models,args.type_map)\n"
     ret+="    #Modd(sys.argv[1],sys.argv[2])\n"
     return ret
