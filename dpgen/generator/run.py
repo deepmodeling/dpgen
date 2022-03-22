@@ -1398,7 +1398,7 @@ def run_multi_model_devi (iter_index,
                     jdata,
                     mdata) :
 
-    dlog.info('############## run calypso model devi #######################')
+    dlog.info('start running CALYPSO')
 
 
     iter_name = make_iter_name(iter_index)
@@ -1444,7 +1444,7 @@ def run_multi_model_devi (iter_index,
             os.chdir(cwd)
 
         elif lines[-1].strip().strip('\n') == '4':
-            dlog.info('Model Devi is done.')
+            #dlog.info('Model Devi is done.')
             break
 
 def post_model_devi (iter_index,

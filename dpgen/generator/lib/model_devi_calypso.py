@@ -94,7 +94,7 @@ def gen_structures(iter_index,jdata,mdata):
 
 
         for ii in range(int(PickUpStep)-1,maxstep+1):
-            dlog.info('$$$$$$$$$$$$$$$$$$$$ step %s $$$$$$$$$$$$$$$$$'%ii)
+            dlog.info('CALYPSO step %s'%ii)
             if ii == maxstep :  
                 while True:
                     if len(glob.glob('OUTCAR_*')) == popsize:
@@ -274,7 +274,7 @@ def analysis(iter_index,jdata,calypso_run_opt_path,calypso_model_devi_path):
     # Analysis
 
 
-    dlog.info('$$$$$$$$$$$$$$$ Analysis Started  $$$$$$$$$$$$$$$$$$')
+    #dlog.info('$$$$$$$$$$$$$$$ Analysis Started  $$$$$$$$$$$$$$$$$$')
 
     ms = dpdata.MultiSystems()
 
@@ -287,7 +287,7 @@ def analysis(iter_index,jdata,calypso_run_opt_path,calypso_model_devi_path):
     traj_path = os.path.join(calypso_run_opt_path,'traj')
     traj_list = glob.glob(traj_path+'/*.traj')
 
-    dlog.info('len(traj_list) %s'%str(len(traj_list)))
+    #dlog.info('len(traj_list) %s'%str(len(traj_list)))
 
     # read confs from traj
     record_traj_num = 0
