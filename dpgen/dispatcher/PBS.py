@@ -94,7 +94,7 @@ class PBS(Batch) :
         if res['numb_gpu'] == 0:
             ret += '#PBS -l nodes=%d:ppn=%d\n' % (res['numb_node'], res['task_per_node'])
         else :
-            ret += '#PBS -l select=%d:ncpus=%d:ngpus=%d\n' % (res['numb_node'], res['task_per_node'], res['numb_gpu'])
+            ret += '#PBS -l nodes=%d:ppn=%d:gpus=%d\n' % (res['numb_node'], res['task_per_node'], res['numb_gpu'])
         ret += '#PBS -l walltime=%s\n' % (res['time_limit'])
         if res['mem_limit'] > 0 :
             ret += "#PBS -l mem=%dG \n" % res['mem_limit']
