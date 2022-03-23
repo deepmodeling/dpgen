@@ -42,7 +42,7 @@ from dpgen.generator.lib.utils import log_task
 from dpgen.generator.lib.utils import symlink_user_forward_files
 from dpgen.generator.lib.lammps import make_lammps_input, get_dumped_forces
 from dpgen.generator.lib.make_calypso import _make_model_devi_native_calypso,_make_model_devi_buffet
-from dpgen.generator.lib.run_calypso import gen_structures,analysis
+from dpgen.generator.lib.run_calypso import gen_structures,analysis,run_calypso_model_devi
 from dpgen.generator.lib.parse_calypso import _parse_calypso_input,_parse_calypso_dis_mtx
 from dpgen.generator.lib.vasp import write_incar_dict
 from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
@@ -793,7 +793,7 @@ def make_model_devi (iter_index,
         if (iter_index >= len(model_devi_jobs)) :
             return False
     else:
-        # mode 1: generate structures according to the user-provided input.dat file, so calypso_input_path and model_devi_max_iter and fmax is needed
+        # mode 1: generate structures according to the user-provided input.dat file, so calypso_input_path and model_devi_max_iter are needed
         if "calypso_input_path" in jdata:
             try:
                 maxiter = jdata.get('model_devi_max_iter')
@@ -1267,9 +1267,9 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
 
 
 
-def run_single_model_devi (iter_index,
-                    jdata,
-                    mdata) :
+def run_md_model_devi (iter_index,
+                       jdata,
+                       mdata) :
 
     #rmdlog.info("This module has been run !")
     model_devi_exec = mdata['model_devi_command']
@@ -1391,64 +1391,10 @@ def run_model_devi(iter_index,jdata,mdata):
 
     model_devi_engine = jdata.get("model_devi_engine", "lammps")
     if model_devi_engine != "calypso":
-        run_single_model_devi(iter_index,jdata,mdata)
+        run_md_model_devi(iter_index,jdata,mdata)
     else:
-        run_multi_model_devi(iter_index,jdata,mdata)
+        run_calypso_model_devi(iter_index,jdata,mdata)
     
-
-def run_multi_model_devi (iter_index,
-                    jdata,
-                    mdata) :
-
-    dlog.info('start running CALYPSO')
-
-
-    iter_name = make_iter_name(iter_index)
-    work_path = os.path.join(iter_name, model_devi_name)
-    assert(os.path.isdir(work_path))
-
-    calypso_run_opt_path = os.path.join(work_path,calypso_run_opt_name)
-    calypso_model_devi_path = os.path.join(work_path,calypso_model_devi_name)
-
-
-    cwd = os.getcwd()
-
-    record_calypso_path = os.path.join(work_path,'record.calypso')
-    while True:
-        if not os.path.exists(record_calypso_path):
-            f = open(record_calypso_path,'w')
-            f.write('1\n')
-            lines = '1'
-            f.close()
-        else:
-            f = open(record_calypso_path,'r')
-            lines = f.readlines()
-            f.close()
-
-        if lines[-1].strip().strip('\n') == '1':
-            # Gen Structures
-            gen_structures(iter_index,jdata,mdata)
-
-        elif lines[-1].strip().strip('\n') == '2':
-            # Analysis & to deepmd/raw
-            analysis(iter_index,jdata,calypso_run_opt_path,calypso_model_devi_path)
-
-        elif lines[-1].strip().strip('\n') == '3':
-            # Model Devi
-            _calypso_run_opt_path = os.path.abspath(calypso_run_opt_path)
-            all_models = glob.glob(os.path.join(_calypso_run_opt_path, 'graph*pb'))
-            cwd = os.getcwd()
-            os.chdir(calypso_model_devi_path)
-            args = ' '.join(['calypso_run_model_devi.py', '--all_models',' '.join(all_models),'--type_map',' '.join(jdata.get('type_map'))])
-            deepmdkit_python = mdata.get('deepmdkit_python')
-            os.system(f'{deepmdkit_python} {args} ')
-            #Modd(iter_index,calypso_model_devi_path,all_models,jdata)
-            os.chdir(cwd)
-
-        elif lines[-1].strip().strip('\n') == '4':
-            #dlog.info('Model Devi is done.')
-            break
-
 def post_model_devi (iter_index,
                      jdata,
                      mdata) :

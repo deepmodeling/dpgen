@@ -16,15 +16,12 @@ import glob
 import shutil
 from ase.io.vasp import write_vasp
 from ase.io.trajectory import Trajectory
-#from deepmd.infer import calc_model_devi
-#from deepmd.infer import DeepPot as DP
 from pathlib import Path
 from distutils.version import LooseVersion
 from dpgen import dlog
 from dpgen.generator.lib.utils import make_iter_name
-from dpgen.generator.lib.calypso import write_model_devi_out
-from dpgen.generator.lib.parse_calypso import _parse_calypso_input,_parse_calypso_dis_mtx
-from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, make_dispatcher, make_submission
+from dpgen.generator.lib.parse_calypso import _parse_calypso_input
+from dpgen.dispatcher.Dispatcher import make_dispatcher, make_submission
 
 train_name = '00.train'
 model_devi_name = '01.model_devi'
@@ -51,7 +48,7 @@ def gen_structures(iter_index,jdata,mdata):
     calypso_model_devi_path = os.path.join(work_path,calypso_model_devi_name)
     #
 
-    calypso_path = jdata.get('calypso_path')
+    calypso_path = mdata.get('model_devi_calypso_path')
     #calypso_input_path = jdata.get('calypso_input_path')
     popsize = int(_parse_calypso_input('PopSize',calypso_run_opt_path))
     maxstep = int(_parse_calypso_input('MaxStep',calypso_run_opt_path))
@@ -59,7 +56,7 @@ def gen_structures(iter_index,jdata,mdata):
     all_models = glob.glob(os.path.join(calypso_run_opt_path, 'graph*pb'))
     model_names = [os.path.basename(ii) for ii in all_models]
 
-    deepmdkit_python = mdata.get('deepmdkit_python')
+    deepmdkit_python = mdata.get('model_devi_deepmdkit_python')
     command = "%s run_opt.py %s 1>> model_devi.log 2>> model_devi.log" % (deepmdkit_python,os.path.abspath(calypso_run_opt_path))
     command += "  ||  %s check_outcar.py %s " % (deepmdkit_python,os.path.abspath(calypso_run_opt_path))
     commands = [command]
@@ -360,3 +357,55 @@ def analysis(iter_index,jdata,calypso_run_opt_path,calypso_model_devi_path):
     f.close()
     os.chdir(cwd)
 
+
+def run_calypso_model_devi (iter_index,
+                    jdata,
+                    mdata) :
+
+    dlog.info('start running CALYPSO')
+
+
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, model_devi_name)
+    assert(os.path.isdir(work_path))
+
+    calypso_run_opt_path = os.path.join(work_path,calypso_run_opt_name)
+    calypso_model_devi_path = os.path.join(work_path,calypso_model_devi_name)
+
+    cwd = os.getcwd()
+
+    record_calypso_path = os.path.join(work_path,'record.calypso')
+    while True:
+        if not os.path.exists(record_calypso_path):
+            f = open(record_calypso_path,'w')
+            f.write('1\n')
+            lines = '1'
+            f.close()
+        else:
+            f = open(record_calypso_path,'r')
+            lines = f.readlines()
+            f.close()
+
+        if lines[-1].strip().strip('\n') == '1':
+            # Gen Structures
+            gen_structures(iter_index,jdata,mdata)
+
+        elif lines[-1].strip().strip('\n') == '2':
+            # Analysis & to deepmd/raw
+            analysis(iter_index,jdata,calypso_run_opt_path,calypso_model_devi_path)
+
+        elif lines[-1].strip().strip('\n') == '3':
+            # Model Devi
+            _calypso_run_opt_path = os.path.abspath(calypso_run_opt_path)
+            all_models = glob.glob(os.path.join(_calypso_run_opt_path, 'graph*pb'))
+            cwd = os.getcwd()
+            os.chdir(calypso_model_devi_path)
+            args = ' '.join(['calypso_run_model_devi.py', '--all_models',' '.join(all_models),'--type_map',' '.join(jdata.get('type_map'))])
+            deepmdkit_python = mdata.get('model_devi_deepmdkit_python')
+            os.system(f'{deepmdkit_python} {args} ')
+            #Modd(iter_index,calypso_model_devi_path,all_models,jdata)
+            os.chdir(cwd)
+
+        elif lines[-1].strip().strip('\n') == '4':
+            #dlog.info('Model Devi is done.')
+            break

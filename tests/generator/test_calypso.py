@@ -7,22 +7,13 @@ from pathlib import Path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 __package__ = 'generator'
 
-from .context import make_run_opt_script
-from .context import make_check_outcar_script
 from .context import make_calypso_input
 from .context import write_model_devi_out
 from .context import _parse_calypso_input
 from .context import _parse_calypso_dis_mtx
 
-#calypso_data = Path('.').joinpath('calypso_data')
-
-#assert os.path.exists(calypso_data)
-#assert os.path.exists(calypso_path)
-#assert os.path.exists(graph_path)
-
 # temp dir
 test_path = Path('.').joinpath('calypso_test_path')
-test_poscar_path = Path('.').joinpath('calypso_test_path','POSCAR')
 test_path.mkdir(parents=True,exist_ok=True)
 os.system('rm calypso_test_path/*')
 fmax = 0.01
@@ -45,21 +36,6 @@ class TestCALYPSOScript(unittest.TestCase):
 
     def tearDown(self):
         pass
-
-    def test_write_run_opt_script(self):
-        ret = make_run_opt_script(fmax)
-        for temp in ret.split('\n'):
-            if 'opt.run' in temp:
-                self.assertEqual(temp.strip(),'opt.run(fmax=0.01,steps=200)')
-                
-    def test_write_check_outcar_script(self):
-        ret = make_check_outcar_script()
-        #with open('calypso_test_path/check_outcar.py','w') as fc:
-        with open('check_outcar.py','w') as fc:
-            fc.write(ret)
-        #self.assertTrue(os.path.exists('calypso_test_path/check_outcar.py'))
-        self.assertTrue(os.path.exists('check_outcar.py'))
-        os.remove('check_outcar.py')
 
     def test_write_model_devi_out(self):
         #devi = write_model_devi_out(model_devi, 'calypso_test_path/model_devi.out')
