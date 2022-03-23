@@ -625,10 +625,8 @@ The bold notation of key (such as **calypso_path**) means that it's a necessary 
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
 | *in param file*
 | **model_devi_engine** | string | "calypso" | CALYPSO as model-deviation engine.|
-| **calypso_path** | string | "/home/zhenyu/workplace/debug" | The absolute path of calypso.x.|
-| **calypso_input_path** | string | "/home/zhenyu/workplace/debug" | The absolute path of CALYPSO input file named input.dat, when this keys exists, all the iters will use the same CALYPSO input file until reach the number of max iter specified by **model_devi_max_iter** and **model_devi_jobs** key will not work.|
+| **calypso_input_path** | string | "/home/zhenyu/workplace/debug" | The absolute path of CALYPSO input file named input.dat(PSTRESS and fmax should be included), when this keys exists, all the iters will use the same CALYPSO input file until reach the number of max iter specified by **model_devi_max_iter** and **model_devi_jobs** key will not work.|
 | **model_devi_max_iter** | int | 10 | The max iter number code can run, it works when **calypso_input_path** exists.|
-| **fmax** | float | 0.01 | The convergence criterion is that the force on all individual atoms should be less than *fmax*, it works when **calypso_input_path** exists.|
 | **model_devi_jobs** | List of Dict | [{ "times":[3],"NameOfAtoms":["Al","Cu"],"NumberOfAtoms":[1,10],"NumberOfFormula":[1,2],"Volume":[300],"DistanceOfIon":[[ 1.48,1.44],[ 1.44,1.41]],"PsoRatio":[0.6],"PopSize":[5],"MaxStep":[3],"ICode":[1],"Split":"T"},...] |  Settings for exploration in `01.model_devi`. Different number in `times` List means different iteration index and iterations mentioned in List wil use same CALYPSO parameters.|
 | **model_devi_jobs["times"]** | List of int | [0,1,2] | Different number in `times` List means different iteration index and iterations mentioned in List wil use same CALYPSO parameters.|
 | **model_devi_jobs["NameOfAtoms"]** | List of string |["Al","Cu"] | Parameter of CALYPSO input file, means the element species of structures to be generated. |
@@ -642,9 +640,10 @@ The bold notation of key (such as **calypso_path**) means that it's a necessary 
 | **model_devi_jobs["ICode"]** | List of int |[13] | Parameter of CALYPSO input file, means the chosen of local optimization, 1 is vasp and 13 is ASE with dp.  |
 | **model_devi_jobs["Split"]** | String |"T" | Parameter of CALYPSO input file, means that generating structures and optimizing structures are split into two parts, in dpgen workflow, Split must be T. |
 | **model_devi_jobs["PSTRESS"]** | List of float |[0.001] | Same as PSTRESS in INCAR. |
-| **model_devi_jobs["fmax"]** | List of float |[0.01] | The convergence criterion of local optimization. |
+| **model_devi_jobs["fmax"]** | List of float |[0.01] | The convergence criterion is that the force on all individual atoms should be less than *fmax*. |
 | *in machine file*
-| **deepmdkit_python** | String | "/home/zhenyu/soft/deepmd-kit/bin/python" | A python path with deepmd package. |
+| **model_devi["deepmdkit_python"]** | String | "/home/zhenyu/soft/deepmd-kit/bin/python" | A python path with deepmd package. |
+| **model_devi["calypso_path"]** | string | "/home/zhenyu/workplace/debug" | The absolute path of calypso.x.|
 
 #### Rules for cp2k input at dictionary form
    Converting cp2k input is very simple as dictionary used to dpgen input. You just need follow some simple rule:
