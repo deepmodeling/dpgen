@@ -378,7 +378,7 @@ In each iteration, there are three stages of work, namely, `00.train  01.model_d
 
 + 00.train: DP-GEN will train several (default 4) models based on initial and generated data. The only difference between these models is the random seed for neural network initialization.
 
-+ 01.model_devi : represent for model-deviation. Model-deviation engine in `01.model_devi` can be chosen between Molecular Dynamics(default LAMMPS) or Structures Prediction(CALYPSO). DP-GEN will use models obtained from 00.train to run Molecular Dynamics or to run structure optimization with ASE in CALYPSO. Larger deviation for structure properties (default is force of atoms) means less accuracy of the models. Using this criterion, a few fructures will be selected and put into next stage `02.fp` for more accurate calculation based on First Principles.
++ 01.model_devi : represent for model-deviation. Model-deviation engine in `01.model_devi` can be chosen between Molecular Dynamics(LAMMPS and GROMACS) or Structures Prediction(CALYPSO). DP-GEN will use models obtained from 00.train to run Molecular Dynamics or to run structure optimization with ASE in CALYPSO. Larger deviation for structure properties (default is force of atoms) means less accuracy of the models. Using this criterion, a few structures will be selected and put into next stage `02.fp` for more accurate calculation based on First Principles.
 
 + 02.fp : Selected structures will be calculated by first principles methods(default VASP). DP-GEN will obtain some new data and put them together with initial data and data generated in previous iterations. After that a new training will be set up and DP-GEN will enter next iteration!
 

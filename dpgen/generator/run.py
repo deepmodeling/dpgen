@@ -41,10 +41,8 @@ from dpgen.generator.lib.utils import record_iter
 from dpgen.generator.lib.utils import log_task
 from dpgen.generator.lib.utils import symlink_user_forward_files
 from dpgen.generator.lib.lammps import make_lammps_input, get_dumped_forces
-from dpgen.generator.lib.calypso import make_run_opt_script,make_check_outcar_script
-from dpgen.generator.lib.calypso import _make_model_devi_native_calypso,write_model_devi_out,_make_model_devi_buffet
-from dpgen.generator.lib.model_devi_calypso import gen_structures,analysis
-from dpgen.generator.lib.write_modd import write_modd
+from dpgen.generator.lib.make_calypso import _make_model_devi_native_calypso,_make_model_devi_buffet
+from dpgen.generator.lib.run_calypso import gen_structures,analysis
 from dpgen.generator.lib.parse_calypso import _parse_calypso_input,_parse_calypso_dis_mtx
 from dpgen.generator.lib.vasp import write_incar_dict
 from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
@@ -87,6 +85,9 @@ cvasp_file=os.path.join(ROOT_PATH,'generator/lib/cvasp.py')
 # for calypso 
 calypso_run_opt_name = 'gen_stru_analy'
 calypso_model_devi_name = 'model_devi_results'
+calypso_run_model_devi_file = os.path.join(ROOT_PATH,'generator/lib/calypso_run_model_devi.py')
+check_outcar_file = os.path.join(ROOT_PATH,'generator/lib/calypso_check_outcar.py')
+run_opt_file = os.path.join(ROOT_PATH,'generator/lib/calypso_run_opt.py')
 
 def get_job_names(jdata) :
     jobkeys = []
@@ -848,14 +849,15 @@ def make_model_devi (iter_index,
         calypso_model_devi_path = os.path.join(work_path,calypso_model_devi_name)
         create_path(calypso_run_opt_path)
         create_path(calypso_model_devi_path)
-        # modd script
-        modd_script = os.path.join(calypso_model_devi_path,'modd.py')
-        with open(modd_script,'w') as fm:
-            fm.write(write_modd())
+        # run model devi script
+        calypso_run_model_devi_script = os.path.join(calypso_model_devi_path,'calypso_run_model_devi.py')
+        shutil.copyfile(calypso_run_model_devi_file,calypso_run_model_devi_script)
+        # run confs opt script
+        run_opt_script = os.path.join(calypso_run_opt_path,'run_opt.py')
+        shutil.copyfile(run_opt_file,run_opt_script)
         # check outcar script
         check_outcar_script = os.path.join(calypso_run_opt_path,'check_outcar.py')
-        with open(check_outcar_script,'w') as ffff:
-            ffff.write(make_check_outcar_script())
+        shutil.copyfile(check_outcar_file,check_outcar_script)
     for mm in models :
         model_name = os.path.basename(mm)
         if model_devi_engine != 'calypso':
@@ -1437,7 +1439,7 @@ def run_multi_model_devi (iter_index,
             all_models = glob.glob(os.path.join(_calypso_run_opt_path, 'graph*pb'))
             cwd = os.getcwd()
             os.chdir(calypso_model_devi_path)
-            args = ' '.join(['modd.py', '--all_models',' '.join(all_models),'--type_map',' '.join(jdata.get('type_map'))])
+            args = ' '.join(['calypso_run_model_devi.py', '--all_models',' '.join(all_models),'--type_map',' '.join(jdata.get('type_map'))])
             deepmdkit_python = mdata.get('deepmdkit_python')
             os.system(f'{deepmdkit_python} {args} ')
             #Modd(iter_index,calypso_model_devi_path,all_models,jdata)
