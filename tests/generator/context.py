@@ -5,8 +5,7 @@ from dpgen.generator.run import *
 from dpgen.generator.lib.gaussian import detect_multiplicity
 from dpgen.generator.lib.ele_temp import NBandsEsti
 from dpgen.generator.lib.lammps import get_dumped_forces
-from dpgen.generator.lib.calypso_run_model_devi import write_model_devi_out
-from dpgen.generator.lib.make_calypso import make_calypso_input
+from dpgen.generator.lib.make_calypso import make_calypso_input,write_model_devi_out
 from dpgen.generator.lib.parse_calypso import _parse_calypso_input,_parse_calypso_dis_mtx
 
 param_file = 'param-mg-vasp.json'

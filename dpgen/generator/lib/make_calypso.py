@@ -145,3 +145,17 @@ def _make_model_devi_native_calypso(iter_index,model_devi_jobs, calypso_run_opt_
     with open(os.path.join(calypso_run_opt_path, 'input.dat'), 'w') as cin :
         cin.write(file_c)
 
+def write_model_devi_out(devi, fname):
+    assert devi.shape[1] == 8
+    #assert devi.shape[1] == 7
+    header = '%5s' % 'step'
+    for item in 'vf':
+        header += '%16s%16s%16s' % (f'max_devi_{item}', f'min_devi_{item}',f'avg_devi_{item}')
+    header += '%16s'%str('min_dis')
+    np.savetxt(fname,
+               devi,
+               fmt=['%5d'] + ['%17.6e' for _ in range(7)],
+               delimiter='',
+               header=header)
+    return devi
+
