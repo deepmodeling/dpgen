@@ -2708,13 +2708,8 @@ def post_fp_vasp (iter_index,
                 if all_sys is None:
                     all_sys = _sys
                 else:
-                    #try:
                     all_sys.append(_sys)
-                    #except RuntimeError:
-                    #    dlog.info('%s has different formula, so pass '%oo)
-                    #    pass
                 # save ele_temp, if any
-                # need to check 
                 with open(oo.replace('OUTCAR', 'job.json')) as fp:
                     job_data = json.load(fp)
                 if 'ele_temp' in job_data:
