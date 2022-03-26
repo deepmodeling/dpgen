@@ -99,7 +99,7 @@ def read_stress_fmax():
             continue
         if 'PSTRESS' in line or 'pstress' in line:
             pstress = float(line.split('=')[1])
-        elif 'fmax' in line:
+        if 'fmax' in line:
             fmax = float(line.split('=')[1])
     return fmax,pstress
                                                                                         
@@ -123,7 +123,7 @@ def run_opt(fmax,stress):
                                                                                         
     print('Start to Optimize Structures by DP----------')                               
                                                                                         
-    Opt_Step = 200                                                                      
+    Opt_Step = 600                                                                      
     start = time.time()                                                                 
     # pstress kbar
     pstress = stress
@@ -143,7 +143,7 @@ def run_opt(fmax,stress):
         #opt = QuasiNewton(to_be_opti)                                                  
         #opt = BFGS(to_be_opti)                                                         
         #opt = BFGS(to_be_opti,trajectory='traj.traj',logfile='opt.log')                
-        opt.run(fmax=fmax,steps=200)                       
+        opt.run(fmax=fmax,steps=Opt_Step)                       
                                                                                         
         atoms_lat = to_be_opti.cell                                                     
         atoms_pos = to_be_opti.positions                                                

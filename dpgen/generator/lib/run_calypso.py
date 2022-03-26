@@ -57,14 +57,14 @@ def gen_structures(iter_index,jdata,mdata):
     model_names = [os.path.basename(ii) for ii in all_models]
 
     deepmdkit_python = mdata.get('model_devi_deepmdkit_python')
-    command = "%s run_opt.py %s 1>> model_devi.log 2>> model_devi.log" % (deepmdkit_python,os.path.abspath(calypso_run_opt_path))
+    command = "%s calypso_run_opt.py %s 1>> model_devi.log 2>> model_devi.log" % (deepmdkit_python,os.path.abspath(calypso_run_opt_path))
     command += "  ||  %s check_outcar.py %s " % (deepmdkit_python,os.path.abspath(calypso_run_opt_path))
     commands = [command]
 
     cwd = os.getcwd()
     os.chdir(calypso_run_opt_path)
 
-    forward_files = ['POSCAR', 'run_opt.py','check_outcar.py','input.dat']
+    forward_files = ['POSCAR', 'calypso_run_opt.py','check_outcar.py','input.dat']
     backward_files = ['OUTCAR','CONTCAR','traj.traj','model_devi.log']
 
     run_calypso = calypso_path+'/calypso.x | tee log'
@@ -109,7 +109,7 @@ def gen_structures(iter_index,jdata,mdata):
                 except:
                     shutil.rmtree('task.%03d'%pop)
                     os.mkdir('task.%03d'%pop)
-                shutil.copyfile('run_opt.py',os.path.join('task.%03d'%pop,'run_opt.py'))
+                shutil.copyfile('calypso_run_opt.py',os.path.join('task.%03d'%pop,'calypso_run_opt.py'))
                 shutil.copyfile('check_outcar.py',os.path.join('task.%03d'%pop,'check_outcar.py'))
                 shutil.copyfile('POSCAR_%s'%str(pop-ii*int(popsize)+1),os.path.join('task.%03d'%(pop),'POSCAR'))
                 shutil.copyfile('input.dat',os.path.join('task.%03d'%pop,'input.dat'))
@@ -198,7 +198,7 @@ def gen_structures(iter_index,jdata,mdata):
             except:
                 shutil.rmtree('task.%04d'%(idx+1))
                 os.mkdir('task.%04d'%(idx+1))
-            shutil.copyfile('run_opt.py',os.path.join('task.%04d'%(idx+1),'run_opt.py'))
+            shutil.copyfile('calypso_run_opt.py',os.path.join('task.%04d'%(idx+1),'calypso_run_opt.py'))
             shutil.copyfile('check_outcar.py',os.path.join('task.%04d'%(idx+1),'check_outcar.py'))
             shutil.copyfile('POSCAR_%s'%str(idx+1),os.path.join('task.%04d'%(idx+1),'POSCAR'))
             shutil.copyfile('input.dat',os.path.join('task.%04d'%(idx+1),'input.dat'))

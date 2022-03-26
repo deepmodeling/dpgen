@@ -853,7 +853,7 @@ def make_model_devi (iter_index,
         calypso_run_model_devi_script = os.path.join(calypso_model_devi_path,'calypso_run_model_devi.py')
         shutil.copyfile(calypso_run_model_devi_file,calypso_run_model_devi_script)
         # run confs opt script
-        run_opt_script = os.path.join(calypso_run_opt_path,'run_opt.py')
+        run_opt_script = os.path.join(calypso_run_opt_path,'calypso_run_opt.py')
         shutil.copyfile(run_opt_file,run_opt_script)
         # check outcar script
         check_outcar_script = os.path.join(calypso_run_opt_path,'check_outcar.py')
