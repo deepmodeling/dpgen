@@ -170,7 +170,7 @@ def run_opt(fmax,stress):
 
 def run():
     fmax, stress = read_stress_fmax()
-    run_opt(famx, stress)                                                                               
+    run_opt(fmax, stress)                                                                               
 
 if __name__=='__main__':
    run()
