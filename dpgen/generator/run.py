@@ -2093,8 +2093,12 @@ def make_fp_pwscf(iter_index,
     for ii in fp_tasks:
         os.chdir(ii)
         sys_data = dpdata.System('POSCAR').data
-        sys_data['atom_masses'] = jdata['mass_map']
-        ret = make_pwscf_input(sys_data, fp_pp_files, fp_params, user_input = user_input)
+        sys_data['atom_masses'] = []
+        pps = []
+        for iii in sys_data['atom_names']:
+            sys_data['atom_masses'].append(jdata['mass_map'][jdata['type_map'].index(iii)])
+            pps.append(fp_pp_files[jdata['type_map'].index(iii)])
+        ret = make_pwscf_input(sys_data, pps, fp_params, user_input = user_input)
         with open('input', 'w') as fp:
             fp.write(ret)
         os.chdir(cwd)
