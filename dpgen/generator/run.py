@@ -1285,11 +1285,13 @@ def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
     disang_prefix = jdata.get("disang_prefix", "")
     disang = [os.path.join(disang_prefix, pp) for pp in disang]
 
-    sys_counter = 0
-    for ss in conf_systems:
-        conf_counter = 0
-        task_counter = 0
-        for cc in ss :
+    for sys_counter, ss in enumerate(conf_systems):
+        for idx_cc, cc in enumerate(ss) :
+            task_counter = idx_cc
+            conf_counter = idx_cc
+            if cur_job.get("only_run",None):
+                if (idx_cc % cur_job['only_run'][0]) not in cur_job['only_run'][1:]:
+                    continue
             task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
             conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter)
             task_path = os.path.join(work_path, task_name)
@@ -1324,9 +1326,6 @@ def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
             with open('job.json', 'w') as fp:
                 json.dump(cur_job, fp, indent = 4)
             os.chdir(cwd_)
-            task_counter += 1
-            conf_counter += 1
-        sys_counter += 1            
 
 def run_model_devi (iter_index,
                     jdata,
