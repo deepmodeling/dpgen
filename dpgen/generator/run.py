@@ -394,6 +394,8 @@ def make_train (iter_index,
             else:
                 jinput['model']['descriptor']['seed'] = random.randrange(sys.maxsize) % (2**32)
             jinput['model']['fitting_net']['seed'] = random.randrange(sys.maxsize) % (2**32)
+            if 'type_embedding' in jinput['model']:
+                jinput['model']['type_embedding']['seed'] = random.randrange(sys.maxsize) % (2**32)
             jinput['training']['seed'] = random.randrange(sys.maxsize) % (2**32)
         else:
             raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x or 2.x version!" )
