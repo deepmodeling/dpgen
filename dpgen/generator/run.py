@@ -589,8 +589,6 @@ def run_train (iter_index,
                           os.path.join('old', 'model.ckpt.data-00000-of-00001')
         ]
     backward_files = ['frozen_model.pb', 'lcurve.out', 'train.log']
-    if jdata.get("compress", False):
-        backward_files.append('frozen_model_compressed.pb')
     backward_files+= ['model.ckpt.meta', 'model.ckpt.index', 'model.ckpt.data-00000-of-00001', 'checkpoint']
     if jdata.get("dp_compress", False):
         backward_files.append('frozen_model_compressed.pb')
@@ -1850,32 +1848,33 @@ def _make_fp_vasp_inner (modd_path,
             counter['candidate'] = 0
             counter['failed'] = 0
             counter['accurate'] = 0
-            with open(os.path.join(tt, "rc.mdout")) as f:
-                skip_first = False
-                first_active = True
-                for line in f:
-                    if line.startswith("     ntx     =       1"):
-                        skip_first = True
-                    if line.startswith("Active learning frame written with max. frc. std.:"):
-                        if skip_first and first_active:
-                            first_active = False
-                            continue
-                        model_devi = float(line.split()[-2]) * 0.04336410390059322
-                        if model_devi < f_trust_lo:
-                            # accurate
-                            if detailed_report_make_fp:
-                                fp_rest_accurate.append([tt, cc])
-                            counter['accurate'] += 1
-                        elif model_devi > f_trust_hi:
-                            # failed
-                            if detailed_report_make_fp:
-                                fp_rest_failed.append([tt, cc])
-                            counter['failed'] += 1
-                        else:
-                            # candidate
-                            fp_candidate.append([tt, cc])
-                            counter['candidate'] += 1
-                        cc += 1
+            for tt in modd_system_task :
+                with open(os.path.join(tt, "rc.mdout")) as f:
+                    skip_first = False
+                    first_active = True
+                    for line in f:
+                        if line.startswith("     ntx     =       1"):
+                            skip_first = True
+                        if line.startswith("Active learning frame written with max. frc. std.:"):
+                            if skip_first and first_active:
+                                first_active = False
+                                continue
+                            model_devi = float(line.split()[-2]) * 0.04336410390059322
+                            if model_devi < f_trust_lo:
+                                # accurate
+                                if detailed_report_make_fp:
+                                    fp_rest_accurate.append([tt, cc])
+                                counter['accurate'] += 1
+                            elif model_devi > f_trust_hi:
+                                # failed
+                                if detailed_report_make_fp:
+                                    fp_rest_failed.append([tt, cc])
+                                counter['failed'] += 1
+                            else:
+                                # candidate
+                                fp_candidate.append([tt, cc])
+                                counter['candidate'] += 1
+                            cc += 1
 
         # print a report
         fp_sum = sum(counter.values())
