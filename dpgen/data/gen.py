@@ -32,7 +32,6 @@ from dpgen import ROOT_PATH
 from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher, make_submission
 
 
-
 def create_path (path,back=False) :
     if  path[-1] != "/":
         path += '/'
