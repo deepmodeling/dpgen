@@ -114,46 +114,6 @@ def make_equi(confs,
         inter.make_input_file(ii, 'relaxation', relax_param)
 
 
-def worker(work_path,
-           run_task,
-           forward_common_files,
-           forward_files,
-           backward_files,
-           mdata,
-           inter_type):
-    machine, resources, command, group_size = util.get_machine_info(mdata, inter_type)
-    disp = make_dispatcher(machine, resources, work_path, [run_task], group_size)
-    print("%s --> Runing... " % (work_path))
-
-    api_version = mdata.get('api_version', '0.9')
-    if LooseVersion(api_version) < LooseVersion('1.0'):
-        warnings.warn(f"the dpdispatcher will be updated to new version."
-                      f"And the interface may be changed. Please check the documents for more details")
-        disp.run_jobs(resources,
-                      command,
-                      work_path,
-                      [run_task],
-                      group_size,
-                      forward_common_files,
-                      forward_files,
-                      backward_files,
-                      outlog='outlog',
-                      errlog='errlog')
-    elif LooseVersion(api_version) >= LooseVersion('1.0'):
-        submission = make_submission(
-            mdata_machine=machine,
-            mdata_resources=resources,
-            commands=[command],
-            work_path=work_path,
-            run_tasks=run_task,
-            group_size=group_size,
-            forward_common_files=forward_common_files,
-            forward_files=forward_files,
-            backward_files=backward_files,
-            outlog='outlog',
-            errlog='errlog'
-        )
-        submission.run_submission()
 
 def run_equi(confs,
              inter_param,
@@ -166,18 +126,16 @@ def run_equi(confs,
     conf_dirs.sort()
 
     processes = len(conf_dirs)
-    pool = Pool(processes=processes)
-    print("Submit job via %d processes" % processes)
 
     # generate a list of task names like mp-xxx/relaxation/relax_task
     # ...
     work_path_list = []
     for ii in conf_dirs:
-        work_path_list.append(os.path.abspath(os.path.join(ii, 'relaxation')))
+        work_path_list.append(os.path.join(ii, 'relaxation'))
     all_task = []
     for ii in work_path_list:
         all_task.append(os.path.join(ii, 'relax_task'))
-
+    run_tasks = all_task
     inter_type = inter_param['type']
     # vasp
     if inter_type == "vasp":
@@ -186,7 +144,7 @@ def run_equi(confs,
         mdata = convert_mdata(mdata, ["model_devi"])
     else:
         raise RuntimeError("unknown task %s, something wrong" % inter_type)
-
+    
     # dispatch the tasks
     # POSCAR here is useless
     virtual_calculator = make_calculator(inter_param, "POSCAR")
@@ -194,33 +152,43 @@ def run_equi(confs,
     forward_common_files = virtual_calculator.forward_common_files()
     backward_files = virtual_calculator.backward_files()
     #    backward_files += logs
-    # ...
-    run_tasks = util.collect_task(all_task, inter_type)
-    if len(run_tasks) == 0:
-        return
-    else:
-        run_tasks = [os.path.basename(ii) for ii in all_task]
-        machine, resources, command, group_size = util.get_machine_info(mdata, inter_type)
-        print('%d tasks will be submited '%len(run_tasks))
-        multiple_ret = []
-        for ii in range(len(work_path_list)):
-            work_path = work_path_list[ii]
+    machine, resources, command, group_size = util.get_machine_info(mdata, inter_type)
+    work_path = os.getcwd()
+    print("%s --> Runing... " % (work_path))
 
-            ret = pool.apply_async(worker, (work_path,
-                                            run_tasks[ii],
-                                            forward_common_files,
-                                            forward_files,
-                                            backward_files,
-                                            mdata,
-                                            inter_type,
-                                            ))
-            multiple_ret.append(ret)
-        pool.close()
-        pool.join()
-        for ii in range(len(multiple_ret)):
-            if not multiple_ret[ii].successful():
-                raise RuntimeError("Task %d is not successful! work_path: %s " % (ii, work_path_list[ii]))
-        print('finished')
+    api_version = mdata.get('api_version', '0.9')
+    if LooseVersion(api_version) < LooseVersion('1.0'):
+        warnings.warn(f"the dpdispatcher will be updated to new version."
+                      f"And the interface may be changed. Please check the documents for more details")
+        disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
+        disp.run_jobs(resources,
+                      command,
+                      work_path,
+                      run_tasks,
+                      group_size,
+                      forward_common_files,
+                      forward_files,
+                      backward_files,
+                      outlog='outlog',
+                      errlog='errlog')
+    elif LooseVersion(api_version) >= LooseVersion('1.0'):
+    
+        submission = make_submission(
+            mdata_machine=machine,
+            mdata_resources=resources,
+            commands=[command],
+            work_path=work_path,
+            run_tasks=run_tasks,
+            group_size=group_size,
+            forward_common_files=forward_common_files,
+            forward_files=forward_files,
+            backward_files=backward_files,
+            outlog='outlog',
+            errlog='errlog'
+        )
+        submission.run_submission()
+    
+    
 
 def post_equi(confs, inter_param):
     # find all POSCARs and their name like mp-xxx
