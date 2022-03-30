@@ -84,6 +84,21 @@ def manual_delete(stage):
         os.remove("apg_id.json")
         print("delete successfully!")
 
+def delete_apg(stage):
+    fp = open("machine-ali.json")
+    data = json.load(fp)
+    mdata_machine = data[stage][0]["machine"]
+    mdata_resources = data[stage][0]["resources"]
+    cloud_resources = mdata_machine["cloud_resources"]
+    ali = ALI(mdata_machine, mdata_resources, "work_path", [1], 1, cloud_resources)
+    fp = open("apg_id.json")
+    data = json.load(fp)
+    ali.cloud_resources["apg_id"] = data["apg_id"]
+    ali.delete_apg()
+    os.remove("apg_id.json")
+    print("delete successfully!")
+    
+
 class ALI(DispatcherList):
     def __init__(self, mdata_machine, mdata_resources, work_path, run_tasks, group_size, cloud_resources=None):
         super().__init__(mdata_machine, mdata_resources, work_path, run_tasks, group_size, cloud_resources)

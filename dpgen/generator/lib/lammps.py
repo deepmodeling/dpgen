@@ -85,11 +85,11 @@ def make_lammps_input(ensemble,
         if ele_temp_a is not None:
             keywords += "aparam ${ELE_TEMP}"
         ret+= "pair_style      deepmd %s out_freq ${THERMO_FREQ} out_file model_devi.out %s\n" % (graph_list, keywords)
-    ret+= "pair_coeff      \n"
+    ret+= "pair_coeff      * *\n"
     ret+= "\n"
     ret+= "thermo_style    custom step temp pe ke etotal press vol lx ly lz xy xz yz\n"
     ret+= "thermo          ${THERMO_FREQ}\n"
-    ret+= "dump            1 all custom ${DUMP_FREQ} traj/*.lammpstrj id type x y z\n"
+    ret+= "dump            1 all custom ${DUMP_FREQ} traj/*.lammpstrj id type x y z fx fy fz\n"
     ret+= "restart         10000 dpgen.restart\n"
     ret+= "\n"
     if pka_e is None :
@@ -137,5 +137,37 @@ def make_lammps_input(ensemble,
 # cvt_lammps_conf('POSCAR', 'tmp.lmp')
 
 
-    
- 
+def get_dumped_forces(
+        file_name):
+    with open(file_name) as fp:        
+        lines = fp.read().split('\n')
+    natoms = None
+    for idx,ii in enumerate(lines):
+        if 'ITEM: NUMBER OF ATOMS' in ii:
+            natoms = int(lines[idx+1])
+            break
+    if natoms is None:
+        raise RuntimeError('wrong dump file format, cannot find number of atoms', file_name)
+    idfx = None
+    for idx,ii in enumerate(lines):
+        if 'ITEM: ATOMS' in ii:
+            keys = ii
+            keys = keys.replace('ITEM: ATOMS', '')
+            keys = keys.split()
+            idfx = keys.index('fx')
+            idfy = keys.index('fy')
+            idfz = keys.index('fz')
+            break
+    if idfx is None:
+        raise RuntimeError('wrong dump file format, cannot find dump keys', file_name)
+    ret = []
+    for ii in range(idx+1, idx+natoms+1):
+        words = lines[ii].split()
+        ret.append([ float(words[ii]) for ii in [idfx, idfy, idfz] ])
+    ret = np.array(ret)
+    return ret
+
+
+if __name__ == '__main__':
+    ret = get_dumped_forces('40.lammpstrj')
+    print(ret)

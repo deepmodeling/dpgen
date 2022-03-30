@@ -127,11 +127,14 @@ def _make_pwscf_04_kpoints(sys_data, kspacing):
     kpoints = [(np.ceil(2 * np.pi * np.linalg.norm(ii) / kspacing).astype(int))
                for ii in rcell]
     ret = ""
-    ret += "K_POINTS { automatic }\n"
-    for ii in range(3) :
-        ret += "%d " % kpoints[ii]
-    for ii in range(3) :
-        ret += "%d " % _kshift(kpoints[ii])
+    if kpoints == [1,1,1]:
+        ret += "K_POINTS gamma"
+    else:
+        ret += "K_POINTS { automatic }\n"
+        for ii in range(3) :
+            ret += "%d " % kpoints[ii]
+        for ii in range(3) :
+            ret += "%d " % _kshift(kpoints[ii])
     ret += "\n"
     return ret
 

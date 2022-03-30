@@ -150,19 +150,28 @@ IN.PSP2 = H.SG15.PBE.UPF\n\
 IN.PSP3 = N.SG15.PBE.UPF\n";
 
 abacus_input_ref = "INPUT_PARAMETERS\n\
+calculation scf\n\
 ntype 2\n\
-pseudo_dir ./\n\
 ecutwfc 80.000000\n\
+dr2 1.000000e-07\n\
+niter 50\n\
+basis_type pw\n\
+dft_functional pbe\n\
+gamma_only 1\n\
 mixing_type pulay\n\
 mixing_beta 0.400000\n\
 symmetry 1\n\
-nbands 5.000000\n\
+nbands 5\n\
 nspin 1\n\
 ks_solver cg\n\
 smearing fixed\n\
 sigma 0.001000\n\
 force 1\n\
-stress 1\n"
+stress 1\n\
+out_descriptor 0\n\
+lmax_descriptor 0\n\
+deepks_scf 0\n\
+model_file model.ptg\n"
 
 abacus_kpt_ref = "K_POINTS\n\
 0\n\
@@ -481,6 +490,15 @@ def _check_pwmat_input(testCase, idx):
             testCase.assertEqual(lines.strip(), pwmat_input_ref.strip())
         os.chdir(cwd)
 
+def _check_symlink_user_forward_files(testCase, idx, file):
+    fp_path = os.path.join('iter.%06d' % idx, '02.fp')
+    tasks = glob.glob(os.path.join(fp_path, 'task.*'))
+    cwd = os.getcwd()
+    for ii in tasks:
+        os.chdir(ii)
+        testCase.assertEqual(os.path.isfile("vdw_kernel.bindat"), True)
+        os.chdir(cwd)
+
 class TestMakeFPPwscf(unittest.TestCase):
     def test_make_fp_pwscf(self):
         setUpModule()
@@ -614,7 +632,7 @@ class TestMakeFPVasp(unittest.TestCase):
         atom_types = [0, 1, 0, 1]
         type_map = jdata['type_map']
         _make_fake_md(0, md_descript, atom_types, type_map)
-        make_fp(0, jdata, {})
+        make_fp(0, jdata, {"fp_user_forward_files" : ["vdw_kernel.bindat"] })
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
         # _check_incar_exists(self, 0)
@@ -755,7 +773,7 @@ class TestMakeFPVasp(unittest.TestCase):
         # checked elsewhere
         # _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
-
+    
 
 class TestMakeFPGaussian(unittest.TestCase):
     def make_fp_gaussian(self, multiplicity="auto"):

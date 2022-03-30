@@ -29,6 +29,7 @@ import scipy.constants as pc
 from collections import Counter
 from collections.abc import Iterable
 from distutils.version import LooseVersion
+from typing import List
 from numpy.linalg  import norm
 from dpgen import dlog
 from dpgen import SHORT_CMD
@@ -39,12 +40,13 @@ from dpgen.generator.lib.utils import replace
 from dpgen.generator.lib.utils import log_iter
 from dpgen.generator.lib.utils import record_iter
 from dpgen.generator.lib.utils import log_task
-from dpgen.generator.lib.lammps import make_lammps_input
+from dpgen.generator.lib.utils import symlink_user_forward_files
+from dpgen.generator.lib.lammps import make_lammps_input, get_dumped_forces
 from dpgen.generator.lib.vasp import write_incar_dict
 from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
 from dpgen.generator.lib.vasp import incar_upper
 from dpgen.generator.lib.pwscf import make_pwscf_input
-from dpgen.generator.lib.abacus_pw_scf import make_abacus_pw_scf_stru, make_abacus_pw_scf_input, make_abacus_pw_scf_kpt
+from dpgen.generator.lib.abacus_scf import make_abacus_scf_stru, make_abacus_scf_input, make_abacus_scf_kpt
 #from dpgen.generator.lib.pwscf import cvt_1frame
 from dpgen.generator.lib.pwmat import make_pwmat_input_dict
 from dpgen.generator.lib.pwmat import write_input_dict
@@ -54,11 +56,7 @@ from dpgen.generator.lib.siesta import make_siesta_input
 from dpgen.generator.lib.gaussian import make_gaussian_input, take_cluster
 from dpgen.generator.lib.cp2k import make_cp2k_input, make_cp2k_input_from_external, make_cp2k_xyz
 from dpgen.generator.lib.ele_temp import NBandsEsti
-from dpgen.remote.RemoteJob import SSHSession, JobStatus, SlurmJob, PBSJob, LSFJob, CloudMachineJob, awsMachineJob
-from dpgen.remote.group_jobs import ucloud_submit_jobs, aws_submit_jobs
-from dpgen.remote.group_jobs import group_slurm_jobs
-from dpgen.remote.group_jobs import group_local_jobs
-from dpgen.remote.decide_machine import decide_train_machine, decide_fp_machine, decide_model_devi_machine
+from dpgen.remote.decide_machine import convert_mdata
 from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, make_dispatcher, make_submission
 from dpgen.util import sepline
 from dpgen import ROOT_PATH
@@ -187,9 +185,12 @@ def dump_to_poscar(dump, poscar, type_map, fmt = "lammps/dump") :
     sys = dpdata.System(dump, fmt = fmt, type_map = type_map)
     sys.to_vasp_poscar(poscar)
 
-def dump_to_deepmd_raw(dump, deepmd_raw, type_map, fmt='gromacs/gro'):
+def dump_to_deepmd_raw(dump, deepmd_raw, type_map, fmt='gromacs/gro', charge=None):
     system = dpdata.System(dump, fmt = fmt, type_map = type_map)
     system.to_deepmd_raw(deepmd_raw)
+    if charge is not None:
+        with open(os.path.join(deepmd_raw, "charge"), 'w') as f:
+            f.write(str(charge))
 
 def npy_to_hdf5(dump):
     if not os.path.isfile(dump + ".hdf5"):
@@ -214,7 +215,14 @@ def make_train (iter_index,
     training_init_model = jdata.get('training_init_model', False)
     training_reuse_iter = jdata.get('training_reuse_iter')
     training_reuse_old_ratio = jdata.get('training_reuse_old_ratio', None)
-    training_reuse_stop_batch = jdata.get('training_reuse_stop_batch', 400000)
+
+    if 'training_reuse_stop_batch' in jdata.keys():
+        training_reuse_stop_batch = jdata['training_reuse_stop_batch']
+    elif 'training_reuse_numb_steps' in jdata.keys():
+        training_reuse_stop_batch = jdata['training_reuse_numb_steps']
+    else:
+        training_reuse_stop_batch = 400000
+        
     training_reuse_start_lr = jdata.get('training_reuse_start_lr', 1e-4)
     training_reuse_start_pref_e = jdata.get('training_reuse_start_pref_e', 0.1)
     training_reuse_start_pref_f = jdata.get('training_reuse_start_pref_f', 100)
@@ -357,7 +365,7 @@ def make_train (iter_index,
         else:
             raise RuntimeError('invalid setting for use_ele_temp ' + str(use_ele_temp))
     else:
-        raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x version!" )
+        raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x or 2.x version!" )
     
     old_range.append(len(init_data_sys))
     # Now nums has list of numbers of init, 0, 1, ..., N-1
@@ -374,9 +382,11 @@ def make_train (iter_index,
     # set training reuse model
     if training_reuse_iter is not None and iter_index >= training_reuse_iter:
         if LooseVersion('1') <= LooseVersion(mdata["deepmd_version"]) < LooseVersion('2'):
+            jinput['training']['stop_batch'] = training_reuse_stop_batch
             jinput['training']['auto_prob_style'] \
                 ="prob_sys_size; %s" % prob_str
         elif LooseVersion('2') <= LooseVersion(mdata["deepmd_version"]) < LooseVersion('3'):
+            jinput['training']['numb_steps'] = training_reuse_stop_batch
             jinput['training']['training_data']['auto_prob'] \
                 ="prob_sys_size; %s" % prob_str
         else:
@@ -386,7 +396,7 @@ def make_train (iter_index,
         if jinput['loss'].get('start_pref_f') is not None:
             jinput['loss']['start_pref_f'] = training_reuse_start_pref_f
         jinput['learning_rate']['start_lr'] = training_reuse_start_lr
-        #jinput['training']['stop_batch'] = training_reuse_stop_batch
+        
 
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
@@ -402,6 +412,8 @@ def make_train (iter_index,
             if jinput['model']['descriptor']['type'] == 'hybrid':
                 for desc in jinput['model']['descriptor']['list']:
                     desc['seed'] = random.randrange(sys.maxsize) % (2**32)
+            elif jinput['model']['descriptor']['type'] == 'loc_frame':
+                pass
             else:
                 jinput['model']['descriptor']['seed'] = random.randrange(sys.maxsize) % (2**32)
             jinput['model']['fitting_net']['seed'] = random.randrange(sys.maxsize) % (2**32)
@@ -409,14 +421,18 @@ def make_train (iter_index,
                 jinput['model']['type_embedding']['seed'] = random.randrange(sys.maxsize) % (2**32)
             jinput['training']['seed'] = random.randrange(sys.maxsize) % (2**32)
         else:
-            raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x version!" )
+            raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x or 2.x version!" )
         # set model activation function
         if model_devi_activation_func is not None:
             if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
                 raise RuntimeError('model_devi_activation_func does not suppport deepmd version', mdata['deepmd_version'])
             assert(type(model_devi_activation_func) is list and len(model_devi_activation_func) == numb_models)
-            jinput['model']['descriptor']['activation_function'] = model_devi_activation_func[ii]
-            jinput['model']['fitting_net']['activation_function'] = model_devi_activation_func[ii]
+            if len(np.array(model_devi_activation_func).shape) == 2 :                                    # 2-dim list for emd/fitting net-resolved assignment of actF
+                jinput['model']['descriptor']['activation_function'] = model_devi_activation_func[ii][0]
+                jinput['model']['fitting_net']['activation_function'] = model_devi_activation_func[ii][1]
+            if len(np.array(model_devi_activation_func).shape) == 1 :                                    # for backward compatibility, 1-dim list, not net-resolved
+                jinput['model']['descriptor']['activation_function'] = model_devi_activation_func[ii]
+                jinput['model']['fitting_net']['activation_function'] = model_devi_activation_func[ii]
         # dump the input.json
         with open(os.path.join(task_path, train_input_file), 'w') as outfile:
             json.dump(jinput, outfile, indent = 4)
@@ -456,6 +472,10 @@ def make_train (iter_index,
                 task_path = os.path.join(work_path, train_task_fmt % ii)
                 with open(os.path.join(task_path, train_input_file_sel), 'w') as outfile:
                     json.dump(jinput, outfile, indent = 4)
+    # Copy user defined forward files
+    symlink_user_forward_files(mdata=mdata, task_type="train", work_path=work_path)
+    
+
 
 def _link_old_models(work_path, old_model_files, ii):
     """
@@ -539,8 +559,6 @@ def run_train (iter_index,
         commands.append(command)
         command = '%s freeze' % train_command
         commands.append(command)
-        if jdata.get("compress", False):
-            commands.append("%s compress -s %f" % (train_command, jdata.get("compress_step", 0.01)))
 
         if jdata.get("adjusted_sel", None) is not None:
             for jj, _ in enumerate(jdata["sys_configs"]):
@@ -548,8 +566,10 @@ def run_train (iter_index,
                 command1 = "dp train input_adjusted_sel_sys_%d.json --init-frz-model frozen_model.pb --skip-neighbor-stat" % jj
                 command2 = "dp freeze -c adjust_sel/ -o frozen_model_adjusted_sel_sys_%d.pb" % jj
                 commands.extend((command1, command2))
+        if jdata.get("dp_compress", False):
+            commands.append("%s compress" % train_command)
     else:
-        raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x version!" )
+        raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x or 2.x version!" )
 
     #_tasks = [os.path.basename(ii) for ii in all_task]
     # run_tasks = []
@@ -572,6 +592,8 @@ def run_train (iter_index,
     if jdata.get("compress", False):
         backward_files.append('frozen_model_compressed.pb')
     backward_files+= ['model.ckpt.meta', 'model.ckpt.index', 'model.ckpt.data-00000-of-00001', 'checkpoint']
+    if jdata.get("dp_compress", False):
+        backward_files.append('frozen_model_compressed.pb')
     init_data_sys_ = jdata['init_data_sys']
     init_data_sys = []
     for ii in init_data_sys_ :
@@ -614,9 +636,13 @@ def run_train (iter_index,
         train_group_size = 1
 
     api_version = mdata.get('api_version', '0.9')
-    # print('debug:commands', commands)
-
+    
+    user_forward_files = mdata.get("train" + "_user_forward_files", [])
+    forward_files += [os.path.basename(file) for file in user_forward_files]
+    backward_files += mdata.get("train" + "_user_backward_files", [])
     if LooseVersion(api_version) < LooseVersion('1.0'):
+        warnings.warn(f"the dpdispatcher will be updated to new version."
+            f"And the interface may be changed. Please check the documents for more details")
         dispatcher = make_dispatcher(mdata['train_machine'], mdata['train_resources'], work_path, run_tasks, train_group_size)
         dispatcher.run_jobs(mdata['train_resources'],
                         commands,
@@ -637,7 +663,7 @@ def run_train (iter_index,
             work_path=work_path,
             run_tasks=run_tasks,
             group_size=train_group_size,
-            trans_comm_data=trans_comm_data,
+            forward_common_files=trans_comm_data,
             forward_files=forward_files,
             backward_files=backward_files,
             outlog = 'train.log',
@@ -659,10 +685,11 @@ def post_train (iter_index,
         return
     # symlink models
     for ii in range(numb_models) :
-        if not jdata.get("compress", False):
-            task_file = os.path.join(train_task_fmt % ii, 'frozen_model.pb')
+        if not jdata.get("dp_compress", False):
+            model_name = 'frozen_model.pb'
         else:
-            task_file = os.path.join(train_task_fmt % ii, 'frozen_model_compressed.pb')
+            model_name = 'frozen_model_compressed.pb'
+        task_file = os.path.join(train_task_fmt % ii, model_name)
         ofile = os.path.join(work_path, 'graph.%03d.pb' % ii)
         if os.path.isfile(ofile) :
             os.remove(ofile)
@@ -844,7 +871,7 @@ def make_model_devi (iter_index,
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
     train_path = os.path.abspath(train_path)
-    models = glob.glob(os.path.join(train_path, "graph*pb"))
+    models = sorted(glob.glob(os.path.join(train_path, "graph*pb")))
     work_path = os.path.join(iter_name, model_devi_name)
     create_path(work_path)
     for mm in models :
@@ -907,7 +934,8 @@ def make_model_devi (iter_index,
         _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems)
     else:
         raise RuntimeError('unknown model_devi input mode', input_mode)
-
+    #Copy user defined forward_files
+    symlink_user_forward_files(mdata=mdata, task_type="model_devi", work_path=work_path)
     return True
 
 
@@ -937,7 +965,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
     train_path = os.path.abspath(train_path)
-    models = glob.glob(os.path.join(train_path, "graph*pb"))
+    models = sorted(glob.glob(os.path.join(train_path, "graph*pb")))
     task_model_list = []
     for ii in models:
         task_model_list.append(os.path.join('..', os.path.basename(ii)))
@@ -994,7 +1022,23 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                 # revise input of lammps
                 with open('input.lammps') as fp:
                     lmp_lines = fp.readlines()
-                lmp_lines = revise_lmp_input_model(lmp_lines, task_model_list, trj_freq, deepmd_version = deepmd_version)
+                # only revise the line "pair_style deepmd" if the user has not written the full line (checked by then length of the line)
+                template_has_pair_deepmd=1
+                for line_idx,line_context in enumerate(lmp_lines):
+                    if (line_context[0] != "#") and ("pair_style" in line_context) and ("deepmd" in line_context):
+                        template_has_pair_deepmd=0
+                        template_pair_deepmd_idx=line_idx
+                if template_has_pair_deepmd == 0:
+                    if LooseVersion(deepmd_version) < LooseVersion('1'):
+                        if len(lmp_lines[template_pair_deepmd_idx].split()) !=  (len(models) + len(["pair_style","deepmd","10", "model_devi.out"])):
+                            lmp_lines = revise_lmp_input_model(lmp_lines, task_model_list, trj_freq, deepmd_version = deepmd_version)
+                    else:
+                        if len(lmp_lines[template_pair_deepmd_idx].split()) != (len(models) + len(["pair_style","deepmd","out_freq", "10", "out_file", "model_devi.out"])):
+                            lmp_lines = revise_lmp_input_model(lmp_lines, task_model_list, trj_freq, deepmd_version = deepmd_version)
+                #use revise_lmp_input_model to raise error message if "part_style" or "deepmd" not found
+                else:
+                    lmp_lines = revise_lmp_input_model(lmp_lines, task_model_list, trj_freq, deepmd_version = deepmd_version)
+                
                 lmp_lines = revise_lmp_input_dump(lmp_lines, trj_freq)
                 lmp_lines = revise_by_keys(
                     lmp_lines, total_rev_keys[:total_num_lmp], total_rev_item[:total_num_lmp]
@@ -1144,6 +1188,9 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
         sys_counter += 1
 
 def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
+    # only support for deepmd v2.0
+    if LooseVersion(mdata['deepmd_version']) < LooseVersion('2.0'):
+        raise RuntimeError("Only support deepmd-kit 2.x for model_devi_engine='gromacs'")
     model_devi_jobs = jdata['model_devi_jobs']
     if (iter_index >= len(model_devi_jobs)) :
         return False
@@ -1154,6 +1201,12 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
     else:
         model_devi_dt = jdata['model_devi_dt']
     nsteps = cur_job.get("nsteps", None)
+    lambdas = cur_job.get("lambdas", [1.0])
+    temps = cur_job.get("temps", [298.0])
+
+    for ll in lambdas:
+        assert (ll >= 0.0 and ll <= 1.0), "Lambda should be in [0,1]"
+
     if nsteps is None:
         raise RuntimeError("nsteps is None, you should set nsteps in model_devi_jobs!")
     # Currently Gromacs engine is not supported for different temperatures!
@@ -1179,48 +1232,52 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
         conf_counter = 0
         task_counter = 0
         for cc in ss :
-            task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
-            #conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter) + '.lmp'
-            task_path = os.path.join(work_path, task_name)
-            # dlog.info(task_path)
-            create_path(task_path)
-            #create_path(os.path.join(task_path, 'traj'))
-            #loc_conf_name = 'conf.lmp'
-            gromacs_settings = jdata.get("gromacs_settings" , "")
-            for key,file in gromacs_settings.items():
-                if key != "traj_filename" and key != "mdp_filename":
-                    os.symlink(os.path.join(cc,file), os.path.join(task_path, file))
-            
-            # input.json for DP-Gromacs
-            with open(os.path.join(cc, "input.json")) as f:
-                input_json = json.load(f)
-            input_json["graph_file"] = models[0]
-            with open(os.path.join(task_path,'input.json'), 'w') as _outfile:
-                json.dump(input_json, _outfile, indent = 4)
+            for ll in lambdas:
+                for tt in temps:
+                    task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
+                    task_path = os.path.join(work_path, task_name)
+                    create_path(task_path)
+                    gromacs_settings = jdata.get("gromacs_settings" , "")
+                    for key,file in gromacs_settings.items():
+                        if key != "traj_filename" and key != "mdp_filename" and key != "group_name" and key != "maxwarn":
+                            os.symlink(os.path.join(cc,file), os.path.join(task_path, file))
+                    # input.json for DP-Gromacs
+                    with open(os.path.join(cc, "input.json")) as f:
+                        input_json = json.load(f)
+                    input_json["graph_file"] = models[0]
+                    input_json["lambda"] = ll
+                    with open(os.path.join(task_path,'input.json'), 'w') as _outfile:
+                        json.dump(input_json, _outfile, indent = 4)
 
-            # trj_freq
-            trj_freq = cur_job.get("trj_freq", 10)
-            mdp = MDP()
-            mdp.read(os.path.join(cc, gromacs_settings['mdp_filename']))
-            mdp['nstcomm'] = trj_freq
-            mdp['nstxout'] = trj_freq
-            mdp['nstlog'] = trj_freq
-            mdp['nstenergy'] = trj_freq
-            # dt
-            mdp['dt'] = dt
-            mdp.write(os.path.join(task_path, gromacs_settings['mdp_filename']))
+                    # trj_freq
+                    trj_freq = cur_job.get("trj_freq", 10)
+                    mdp = MDP()
+                    mdp.read(os.path.join(cc, gromacs_settings['mdp_filename']))
+                    mdp['nstcomm'] = trj_freq
+                    mdp['nstxout'] = trj_freq
+                    mdp['nstlog'] = trj_freq
+                    mdp['nstenergy'] = trj_freq
+                    # dt
+                    mdp['dt'] = model_devi_dt
+                    # nsteps
+                    mdp['nsteps'] = nsteps
+                    # temps
+                    if "ref_t" in list(mdp.keys()):
+                        mdp["ref_t"] = tt
+                    else:
+                        mdp["ref-t"] = tt
+                    mdp.write(os.path.join(task_path, gromacs_settings['mdp_filename']))
 
-            cwd_ = os.getcwd()
-            os.chdir(task_path)
-            job = {}
-            
-            job["model_devi_dt"] =  model_devi_dt
-            job["nsteps"] = nsteps
-            with open('job.json', 'w') as _outfile:
-                json.dump(job, _outfile, indent = 4)
-            os.chdir(cwd_)
-            
-            task_counter += 1
+                    cwd_ = os.getcwd()
+                    os.chdir(task_path)
+                    job = {}
+                    job["trj_freq"] = cur_job["trj_freq"]
+                    job["model_devi_dt"] =  model_devi_dt
+                    job["nsteps"] = nsteps
+                    with open('job.json', 'w') as _outfile:
+                        json.dump(job, _outfile, indent = 4)
+                    os.chdir(cwd_) 
+                    task_counter += 1
             conf_counter += 1
         sys_counter += 1
 
@@ -1333,10 +1390,7 @@ def run_model_devi (iter_index,
                     jdata,
                     mdata) :
     #rmdlog.info("This module has been run !")
-    lmp_exec = mdata['lmp_command']
-    # Angus: lmp_exec name should be changed to model_devi_exec.
-    # We should also change make_dispatcher
-    # For now, I will use this name for gromacs command
+    model_devi_exec = mdata['model_devi_command']
 
     model_devi_group_size = mdata['model_devi_group_size']
     model_devi_resources = mdata['model_devi_resources']
@@ -1370,7 +1424,7 @@ def run_model_devi (iter_index,
 
     model_devi_engine = jdata.get("model_devi_engine", "lammps")
     if model_devi_engine == "lammps":
-        command = "{ if [ ! -f dpgen.restart.10000 ]; then %s -i input.lammps -v restart 0; else %s -i input.lammps -v restart 1; fi }" % (lmp_exec, lmp_exec)
+        command = "{ if [ ! -f dpgen.restart.10000 ]; then %s -i input.lammps -v restart 0; else %s -i input.lammps -v restart 1; fi }" % (model_devi_exec, model_devi_exec)
         command = "/bin/sh -c '%s'" % command
         commands = [command]
         forward_files = ['conf.lmp', 'input.lammps', 'traj']
@@ -1378,25 +1432,41 @@ def run_model_devi (iter_index,
         if use_plm:
             forward_files += ['input.plumed']
            # backward_files += ['output.plumed']
-            backward_files += ['output.plumed','COLVAR','dump.0.xyz']
+            backward_files += ['output.plumed','COLVAR']
             if use_plm_path:
                 forward_files += ['plmpath.pdb']
     elif model_devi_engine == "gromacs":
+        
         gromacs_settings = jdata.get("gromacs_settings", {})
         mdp_filename = gromacs_settings.get("mdp_filename", "md.mdp")
         topol_filename = gromacs_settings.get("topol_filename", "processed.top")
         conf_filename = gromacs_settings.get("conf_filename", "conf.gro")
         index_filename = gromacs_settings.get("index_filename", "index.raw")
+        type_filename = gromacs_settings.get("type_filename", "type.raw")
+        ndx_filename = gromacs_settings.get("ndx_filename", "")
+        # Initial reference to process pbc condition.
+        # Default is em.tpr
+        ref_filename = gromacs_settings.get("ref_filename", "em.tpr")
         deffnm = gromacs_settings.get("deffnm", "deepmd")
         maxwarn = gromacs_settings.get("maxwarn", 1)
-        nsteps = cur_job["nsteps"]
+        traj_filename = gromacs_settings.get("traj_filename", "deepmd_traj.gro")
+        grp_name = gromacs_settings.get("group_name", "Other")
+        trj_freq = cur_job.get("trj_freq", 10)
 
-        command = "%s grompp -f %s -p %s -c %s -o %s -maxwarn %d" % (lmp_exec, mdp_filename, topol_filename, conf_filename, deffnm, maxwarn)
-        command += "&& %s mdrun -deffnm %s -nsteps %d" %(lmp_exec, deffnm, nsteps) 
+        command = "%s grompp -f %s -p %s -c %s -o %s -maxwarn %d" % (model_devi_exec, mdp_filename, topol_filename, conf_filename, deffnm, maxwarn)
+        command += "&& %s mdrun -deffnm %s -cpi" %(model_devi_exec, deffnm)
+        if ndx_filename:
+            command += f"&& echo -e \"{grp_name}\\n{grp_name}\\n\" | {model_devi_exec} trjconv -s {ref_filename} -f {deffnm}.trr -n {ndx_filename} -o {traj_filename} -pbc mol -ur compact -center"
+        else:
+            command += "&& echo -e \"%s\\n%s\\n\" | %s trjconv -s %s -f %s.trr -o %s -pbc mol -ur compact -center" % (grp_name, grp_name, model_devi_exec, ref_filename, deffnm, traj_filename)
+        command += "&& if [ ! -d traj ]; then \n mkdir traj; fi\n"
+        command += f"python -c \"import dpdata;system = dpdata.System('{traj_filename}', fmt='gromacs/gro'); [system.to_gromacs_gro('traj/%d.gromacstrj' % (i * {trj_freq}), frame_idx=i) for i in range(system.get_nframes())]; system.to_deepmd_npy('traj_deepmd')\""
+        command += f"&& dp model-devi -m ../graph.000.pb ../graph.001.pb ../graph.002.pb ../graph.003.pb -s traj_deepmd -o model_devi.out -f {trj_freq}"
         commands = [command]
-        
-        forward_files = [mdp_filename, topol_filename, conf_filename, index_filename,  "input.json" ]
-        backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , 'model_devi.out', 'model_devi.log']
+
+        forward_files = [mdp_filename, topol_filename, conf_filename, index_filename, ref_filename, type_filename, "input.json", "job.json" ]
+        if ndx_filename: forward_files.append(ndx_filename)
+        backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , traj_filename, 'model_devi.out', "traj", "traj_deepmd" ]
     elif model_devi_engine == "amber":
         # TODO: currently all options are written in lmp_exec, but we may move them here
         commands = [(
@@ -1412,8 +1482,13 @@ def run_model_devi (iter_index,
 
     cwd = os.getcwd()
 
+    user_forward_files = mdata.get("model_devi" + "_user_forward_files", [])
+    forward_files += [os.path.basename(file) for file in user_forward_files]
+    backward_files += mdata.get("model_devi" + "_user_backward_files", [])
     api_version = mdata.get('api_version', '0.9')
     if LooseVersion(api_version) < LooseVersion('1.0'):
+        warnings.warn(f"the dpdispatcher will be updated to new version."
+            f"And the interface may be changed. Please check the documents for more details")
         dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], work_path, run_tasks, model_devi_group_size)
         dispatcher.run_jobs(mdata['model_devi_resources'],
                         commands,
@@ -1434,7 +1509,7 @@ def run_model_devi (iter_index,
             work_path=work_path,
             run_tasks=run_tasks,
             group_size=model_devi_group_size,
-            trans_comm_data=model_names,
+            forward_common_files=model_names,
             forward_files=forward_files,
             backward_files=backward_files,
             outlog = 'model_devi.log',
@@ -1501,11 +1576,190 @@ def check_bad_box(conf_name,
             raise RuntimeError('unknow key', key)
     return is_bad
 
+
+def _read_model_devi_file(
+        task_path : str,
+        model_devi_f_avg_relative : bool = False
+):
+    model_devi = np.loadtxt(os.path.join(task_path, 'model_devi.out'))
+    if model_devi_f_avg_relative :
+        trajs = glob.glob(os.path.join(task_path, 'traj', '*.lammpstrj'))
+        all_f = []
+        for ii in trajs:
+            all_f.append(get_dumped_forces(ii))
+        all_f = np.array(all_f)
+        all_f = all_f.reshape([-1,3])
+        avg_f = np.sqrt(np.average(np.sum(np.square(all_f), axis = 1)))
+        model_devi[:,4:7] = model_devi[:,4:7] / avg_f
+        np.savetxt(os.path.join(task_path, 'model_devi_avgf.out'), model_devi, fmt='%16.6e')
+    return model_devi
+
+
+def _select_by_model_devi_standard(
+        modd_system_task: List[str],
+        f_trust_lo : float,
+        f_trust_hi : float,
+        v_trust_lo : float,
+        v_trust_hi : float,
+        cluster_cutoff : float, 
+        model_devi_skip : int = 0,
+        model_devi_f_avg_relative : bool = False,
+        detailed_report_make_fp : bool = True,
+):
+    fp_candidate = []
+    if detailed_report_make_fp:
+        fp_rest_accurate = []
+        fp_rest_failed = []
+    cc = 0
+    counter = Counter()
+    counter['candidate'] = 0
+    counter['failed'] = 0
+    counter['accurate'] = 0
+    for tt in modd_system_task :
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            all_conf = _read_model_devi_file(tt, model_devi_f_avg_relative)
+            for ii in range(all_conf.shape[0]) :
+                if all_conf[ii][0] < model_devi_skip :
+                    continue
+                cc = int(all_conf[ii][0])
+                if cluster_cutoff is None:
+                    if (all_conf[ii][1] < v_trust_hi and all_conf[ii][1] >= v_trust_lo) or \
+                       (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] >= f_trust_lo) :
+                        fp_candidate.append([tt, cc])
+                        counter['candidate'] += 1
+                    elif (all_conf[ii][1] >= v_trust_hi ) or (all_conf[ii][4] >= f_trust_hi ):
+                        if detailed_report_make_fp:
+                            fp_rest_failed.append([tt, cc])
+                        counter['failed'] += 1
+                    elif (all_conf[ii][1] < v_trust_lo and all_conf[ii][4] < f_trust_lo ):
+                        if detailed_report_make_fp:
+                            fp_rest_accurate.append([tt, cc])
+                        counter['accurate'] += 1
+                    else :
+                        raise RuntimeError('md traj %s frame %d with f devi %f does not belong to either accurate, candidiate and failed, it should not happen' % (tt, ii, all_conf[ii][4]))
+                else:
+                    idx_candidate = np.where(np.logical_and(all_conf[ii][7:] < f_trust_hi, all_conf[ii][7:] >= f_trust_lo))[0]
+                    for jj in idx_candidate:
+                        fp_candidate.append([tt, cc, jj])
+                    counter['candidate'] += len(idx_candidate)
+                    idx_rest_accurate = np.where(all_conf[ii][7:] < f_trust_lo)[0]
+                    if detailed_report_make_fp:
+                        for jj in idx_rest_accurate:
+                            fp_rest_accurate.append([tt, cc, jj])
+                    counter['accurate'] += len(idx_rest_accurate)
+                    idx_rest_failed = np.where(all_conf[ii][7:] >= f_trust_hi)[0]
+                    if detailed_report_make_fp:
+                        for jj in idx_rest_failed:
+                            fp_rest_failed.append([tt, cc, jj])
+                    counter['failed'] += len(idx_rest_failed)
+    
+    return fp_rest_accurate, fp_candidate, fp_rest_failed, counter
+
+
+
+def _select_by_model_devi_adaptive_trust_low(
+        modd_system_task: List[str],
+        f_trust_hi : float,
+        numb_candi_f : int,
+        perc_candi_f : float,
+        v_trust_hi : float,
+        numb_candi_v : int,
+        perc_candi_v : float,
+        model_devi_skip : int = 0,
+        model_devi_f_avg_relative : bool = False,
+):
+    """
+    modd_system_task    model deviation tasks belonging to one system
+    f_trust_hi
+    numb_candi_f        number of candidate due to the f model deviation
+    perc_candi_f        percentage of candidate due to the f model deviation
+    v_trust_hi
+    numb_candi_v        number of candidate due to the v model deviation
+    perc_candi_v        percentage of candidate due to the v model deviation
+    model_devi_skip
+    
+    returns
+    accur               the accurate set
+    candi               the candidate set
+    failed              the failed set
+    counter             counters, number of elements in the sets
+    f_trust_lo          adapted trust level of f
+    v_trust_lo          adapted trust level of v
+    """
+    idx_v = 1
+    idx_f = 4
+    accur = set()
+    candi = set()
+    failed = []
+    coll_v = []
+    coll_f = []
+    for tt in modd_system_task:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            model_devi = np.loadtxt(os.path.join(tt, 'model_devi.out'))
+            model_devi = _read_model_devi_file(tt, model_devi_f_avg_relative)
+            for ii in range(model_devi.shape[0]) :
+                if model_devi[ii][0] < model_devi_skip :
+                    continue
+                cc = int(model_devi[ii][0])
+                # tt: name of task folder
+                # cc: time step of the frame
+                md_v = model_devi[ii][idx_v]
+                md_f = model_devi[ii][idx_f]
+                if md_f > f_trust_hi or md_v > v_trust_hi:
+                    failed.append([tt, cc])
+                else:
+                    coll_v.append([model_devi[ii][idx_v], tt, cc])
+                    coll_f.append([model_devi[ii][idx_f], tt, cc])
+                    # now accur takes all non-failed frames,
+                    # will be substracted by candidate lat er
+                    accur.add((tt, cc))
+    # sort
+    coll_v.sort()
+    coll_f.sort()
+    assert(len(coll_v) == len(coll_f))
+    # calcuate numbers
+    numb_candi_v = max(numb_candi_v, int(perc_candi_v * 0.01 * len(coll_v)))
+    numb_candi_f = max(numb_candi_f, int(perc_candi_f * 0.01 * len(coll_f)))
+    # adjust number of candidate
+    if len(coll_v) < numb_candi_v:
+        numb_candi_v = len(coll_v)
+    if len(coll_f) < numb_candi_f:
+        numb_candi_f = len(coll_f)
+    # compute trust lo
+    if numb_candi_v == 0:
+        v_trust_lo = v_trust_hi
+    else:
+        v_trust_lo = coll_v[-numb_candi_v][0]
+    if numb_candi_f == 0:
+        f_trust_lo = f_trust_hi
+    else:
+        f_trust_lo = coll_f[-numb_candi_f][0]        
+    # add to candidate set
+    for ii in range(len(coll_v) - numb_candi_v, len(coll_v)):
+        candi.add(tuple(coll_v[ii][1:]))
+    for ii in range(len(coll_f) - numb_candi_f, len(coll_f)):
+        candi.add(tuple(coll_f[ii][1:]))
+    # accurate set is substracted by the candidate set
+    accur = accur - candi
+    # convert to list
+    candi = [list(ii) for ii in candi]
+    accur = [list(ii) for ii in accur]
+    # counters
+    counter = Counter()
+    counter['candidate'] = len(candi)
+    counter['failed'] = len(failed)
+    counter['accurate'] = len(accur)
+
+    return accur, candi, failed, counter, f_trust_lo, v_trust_lo
+    
+
 def _make_fp_vasp_inner (modd_path,
                          work_path,
                          model_devi_skip,
-                         e_trust_lo,
-                         e_trust_hi,
+                         v_trust_lo,
+                         v_trust_hi,
                          f_trust_lo,
                          f_trust_hi,
                          fp_task_min,
@@ -1531,94 +1785,98 @@ def _make_fp_vasp_inner (modd_path,
     system_index.sort()
 
     fp_tasks = []
+
+    charges_recorder = []  # record charges for each fp_task
+    charges_map = jdata.get("sys_charges", [])
+
     model_devi_engine = jdata.get('model_devi_engine', 'lammps')
     cluster_cutoff = jdata.get('cluster_cutoff', None)
+    model_devi_adapt_trust_lo = jdata.get('model_devi_adapt_trust_lo', False)
+    model_devi_f_avg_relative = jdata.get('model_devi_f_avg_relative', False)
     # skip save *.out if detailed_report_make_fp is False, default is True
     detailed_report_make_fp = jdata.get("detailed_report_make_fp", True)
     # skip bad box criteria
     skip_bad_box = jdata.get('fp_skip_bad_box')
     # skip discrete structure in cluster
     fp_cluster_vacuum = jdata.get('fp_cluster_vacuum',None)
-    for ss in system_index :
-        fp_candidate = []
-        if detailed_report_make_fp:
-            fp_rest_accurate = []
-            fp_rest_failed = []
+
+    def _trust_limitation_check(sys_idx, lim):
+        if isinstance(lim, list):
+            sys_lim = lim[sys_idx]
+        else:
+            sys_lim = lim
+        return sys_lim
+
+    for ss in system_index:
         modd_system_glob = os.path.join(modd_path, 'task.' + ss + '.*')
         modd_system_task = glob.glob(modd_system_glob)
         modd_system_task.sort()
-        cc = 0
-        counter = Counter()
-        counter['candidate'] = 0
-        counter['failed'] = 0
-        counter['accurate'] = 0
-        for tt in modd_system_task :
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                if model_devi_engine in ['lammps', 'gromacs']:
-                    all_conf = np.loadtxt(os.path.join(tt, 'model_devi.out'))
-                    for ii in range(all_conf.shape[0]) :
-                        if all_conf[ii][0] < model_devi_skip :
+        if model_devi_engine in ['lammps', 'gromacs']:
+            # convert global trust limitations to local ones
+            f_trust_lo_sys = _trust_limitation_check(ss, f_trust_lo)
+            f_trust_hi_sys = _trust_limitation_check(ss, f_trust_hi)
+            v_trust_lo_sys = _trust_limitation_check(ss, v_trust_lo)
+            v_trust_hi_sys = _trust_limitation_check(ss, v_trust_hi)
+
+            # assumed e -> v
+            if not model_devi_adapt_trust_lo:
+                fp_rest_accurate, fp_candidate, fp_rest_failed, counter \
+                    =  _select_by_model_devi_standard(
+                        modd_system_task,
+                        f_trust_lo_sys, f_trust_hi_sys,
+                        v_trust_lo_sys, v_trust_hi_sys,
+                        cluster_cutoff, 
+                        model_devi_skip,
+                        model_devi_f_avg_relative = model_devi_f_avg_relative,
+                        detailed_report_make_fp = detailed_report_make_fp,
+                    )
+            else:
+                numb_candi_f = jdata.get('model_devi_numb_candi_f', 10)
+                numb_candi_v = jdata.get('model_devi_numb_candi_v', 0)
+                perc_candi_f = jdata.get('model_devi_perc_candi_f', 0.)
+                perc_candi_v = jdata.get('model_devi_perc_candi_v', 0.)
+                fp_rest_accurate, fp_candidate, fp_rest_failed, counter, f_trust_lo_ad, v_trust_lo_ad \
+                    =  _select_by_model_devi_adaptive_trust_low(
+                        modd_system_task,
+                        f_trust_hi_sys, numb_candi_f, perc_candi_f,
+                        v_trust_hi_sys, numb_candi_v, perc_candi_v,
+                        model_devi_skip = model_devi_skip,
+                        model_devi_f_avg_relative = model_devi_f_avg_relative,
+                    )
+                dlog.info("system {0:s} {1:9s} : f_trust_lo {2:6.3f}   v_trust_lo {3:6.3f}".format(ss, 'adapted', f_trust_lo_ad, v_trust_lo_ad))
+        elif model_devi_engine == "amber":
+            cc = 0
+            counter = Counter()
+            counter['candidate'] = 0
+            counter['failed'] = 0
+            counter['accurate'] = 0
+            with open(os.path.join(tt, "rc.mdout")) as f:
+                skip_first = False
+                first_active = True
+                for line in f:
+                    if line.startswith("     ntx     =       1"):
+                        skip_first = True
+                    if line.startswith("Active learning frame written with max. frc. std.:"):
+                        if skip_first and first_active:
+                            first_active = False
                             continue
-                        cc = int(all_conf[ii][0])
-                        if cluster_cutoff is None:
-                            if (all_conf[ii][1] < e_trust_hi and all_conf[ii][1] >= e_trust_lo) or \
-                            (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] >= f_trust_lo) :
-                                fp_candidate.append([tt, cc])
-                                counter['candidate'] += 1
-                            elif (all_conf[ii][1] >= e_trust_hi ) or (all_conf[ii][4] >= f_trust_hi ):
-                                if detailed_report_make_fp:
-                                    fp_rest_failed.append([tt, cc])
-                                counter['failed'] += 1
-                            elif (all_conf[ii][1] < e_trust_lo and all_conf[ii][4] < f_trust_lo ):
-                                if detailed_report_make_fp:
-                                    fp_rest_accurate.append([tt, cc])
-                                counter['accurate'] += 1
-                            else :
-                                raise RuntimeError('md traj %s frame %d with f devi %f does not belong to either accurate, candidiate and failed, it should not happen' % (tt, ii, all_conf[ii][4]))
+                        model_devi = float(line.split()[-2]) * 0.04336410390059322
+                        if model_devi < f_trust_lo:
+                            # accurate
+                            if detailed_report_make_fp:
+                                fp_rest_accurate.append([tt, cc])
+                            counter['accurate'] += 1
+                        elif model_devi > f_trust_hi:
+                            # failed
+                            if detailed_report_make_fp:
+                                fp_rest_failed.append([tt, cc])
+                            counter['failed'] += 1
                         else:
-                            idx_candidate = np.where(np.logical_and(all_conf[ii][7:] < f_trust_hi, all_conf[ii][7:] >= f_trust_lo))[0]
-                            for jj in idx_candidate:
-                                fp_candidate.append([tt, cc, jj])
-                            counter['candidate'] += len(idx_candidate)
-                            idx_rest_accurate = np.where(all_conf[ii][7:] < f_trust_lo)[0]
-                            if detailed_report_make_fp:
-                                for jj in idx_rest_accurate:
-                                    fp_rest_accurate.append([tt, cc, jj])
-                            counter['accurate'] += len(idx_rest_accurate)
-                            idx_rest_failed = np.where(all_conf[ii][7:] >= f_trust_hi)[0]
-                            if detailed_report_make_fp:
-                                for jj in idx_rest_failed:
-                                    fp_rest_failed.append([tt, cc, jj])
-                            counter['failed'] += len(idx_rest_failed)
-                elif model_devi_engine == "amber":
-                    with open(os.path.join(tt, "rc.mdout")) as f:
-                        cc = 0
-                        skip_first = False
-                        first_active = True
-                        for line in f:
-                            if line.startswith("     ntx     =       1"):
-                                skip_first = True
-                            if line.startswith("Active learning frame written with max. frc. std.:"):
-                                if skip_first and first_active:
-                                    first_active = False
-                                    continue
-                                model_devi = float(line.split()[-2]) * 0.04336410390059322
-                                if model_devi < f_trust_lo:
-                                    # accurate
-                                    if detailed_report_make_fp:
-                                        fp_rest_accurate.append([tt, cc])
-                                    counter['accurate'] += 1
-                                elif model_devi > f_trust_hi:
-                                    # failed
-                                    if detailed_report_make_fp:
-                                        fp_rest_failed.append([tt, cc])
-                                    counter['failed'] += 1
-                                else:
-                                    # candidate
-                                    fp_candidate.append([tt, cc])
-                                    counter['candidate'] += 1
-                                cc += 1
+                            # candidate
+                            fp_candidate.append([tt, cc])
+                            counter['candidate'] += 1
+                        cc += 1
+
         # print a report
         fp_sum = sum(counter.values())
         for cc_key, cc_value in counter.items():
@@ -1678,11 +1936,11 @@ def _make_fp_vasp_inner (modd_path,
                     continue
 
             if fp_cluster_vacuum is not None:
-               assert fp_cluster_vacuum >0
-               skip_cluster = check_cluster(conf_name, fp_cluster_vacuum)
-               if skip_cluster:
-                  count_bad_cluster +=1
-                  continue
+                assert fp_cluster_vacuum >0
+                skip_cluster = check_cluster(conf_name, fp_cluster_vacuum)
+                if skip_cluster:
+                    count_bad_cluster +=1
+                    continue
 
             # link job.json
             job_name = os.path.join(tt, "job.json")
@@ -1698,6 +1956,8 @@ def _make_fp_vasp_inner (modd_path,
             fp_task_path = os.path.join(work_path, fp_task_name)
             create_path(fp_task_path)
             fp_tasks.append(fp_task_path)
+            if charges_map:
+                charges_recorder.append(charges_map[int(ss)])
             cwd = os.getcwd()
             os.chdir(fp_task_path)
             if cluster_cutoff is None:
@@ -1734,13 +1994,18 @@ def _make_fp_vasp_inner (modd_path,
             dlog.info("system {0:s} skipped {1:6d} confs with bad cluster, {2:6d} remains".format(ss, count_bad_cluster, numb_task - count_bad_cluster))
     if cluster_cutoff is None:
         cwd = os.getcwd()
-        for ii in fp_tasks:
-            os.chdir(ii)
+        for idx, task in enumerate(fp_tasks):
+            os.chdir(task)
             if model_devi_engine == "lammps":
                 dump_to_poscar('conf.dump', 'POSCAR', type_map, fmt = "lammps/dump")
+                if charges_map:
+                    warnings.warn('"sys_charges" keyword only support for gromacs engine now.')
             elif model_devi_engine == "gromacs":
                 # dump_to_poscar('conf.dump', 'POSCAR', type_map, fmt = "gromacs/gro")
-                dump_to_deepmd_raw('conf.dump', 'deepmd.raw', type_map, fmt = 'gromacs/gro')
+                if charges_map:
+                    dump_to_deepmd_raw('conf.dump', 'deepmd.raw', type_map, fmt='gromacs/gro', charge=charges_recorder[idx])
+                else:
+                    dump_to_deepmd_raw('conf.dump', 'deepmd.raw', type_map, fmt='gromacs/gro', charge=None)
             elif model_devi_engine == "amber":
                 pass
             else:
@@ -2003,8 +2268,8 @@ def _make_fp_vasp_configs(iter_index,
                           jdata):
     fp_task_max = jdata['fp_task_max']
     model_devi_skip = jdata['model_devi_skip']
-    e_trust_lo = 1e+10
-    e_trust_hi = 1e+10
+    v_trust_lo = jdata.get('model_devi_v_trust_lo', 1e10)
+    v_trust_hi = jdata.get('model_devi_v_trust_hi', 1e10)
     f_trust_lo = jdata['model_devi_f_trust_lo']
     f_trust_hi = jdata['model_devi_f_trust_hi']
     type_map = jdata['type_map']
@@ -2022,7 +2287,7 @@ def _make_fp_vasp_configs(iter_index,
     # make configs
     fp_tasks = _make_fp_vasp_inner(modd_path, work_path,
                                    model_devi_skip,
-                                   e_trust_lo, e_trust_hi,
+                                   v_trust_lo, v_trust_hi,
                                    f_trust_lo, f_trust_hi,
                                    task_min, fp_task_max,
                                    [],
@@ -2083,7 +2348,7 @@ def make_fp_pwscf(iter_index,
     # link pp files
     _link_fp_vasp_pp(iter_index, jdata)
 
-def make_fp_abacus_pw_scf(iter_index,
+def make_fp_abacus_scf(iter_index,
                   jdata) :
     # make config
     fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
@@ -2104,13 +2369,13 @@ def make_fp_abacus_pw_scf(iter_index,
         sys_data = dpdata.System('POSCAR').data
         if 'mass_map' in jdata:
             sys_data['atom_masses'] = jdata['mass_map']
-        ret_input = make_abacus_pw_scf_input(fp_params)
+        ret_input = make_abacus_scf_input(fp_params)
         with open('INPUT', 'w') as fp:
             fp.write(ret_input)
-        ret_kpt = make_abacus_pw_scf_kpt(fp_params)
+        ret_kpt = make_abacus_scf_kpt(fp_params)
         with open("KPT", "w") as fp:
             fp.write(ret_kpt)
-        ret_stru = make_abacus_pw_scf_stru(sys_data, fp_pp_files)
+        ret_stru = make_abacus_scf_stru(sys_data, fp_pp_files, fp_params)
         with open("STRU", "w") as fp:
             fp.write(ret_stru)
 
@@ -2168,6 +2433,8 @@ def make_fp_gaussian(iter_index,
             sys_data = dpdata.System('POSCAR').data
         elif model_devi_engine == "gromacs":
             sys_data = dpdata.System("deepmd.raw", fmt='deepmd/raw').data
+            if os.path.isfile('deepmd.raw/charge'):
+                sys_data['charge'] = int(np.loadtxt('deepmd.raw/charge', dtype=int))
         ret = make_gaussian_input(sys_data, fp_params)
         with open('input', 'w') as fp:
             fp.write(ret)
@@ -2307,7 +2574,7 @@ def make_fp (iter_index,
     elif fp_style == "pwscf" :
         make_fp_pwscf(iter_index, jdata)
     elif fp_style == "abacus/scf" :
-        make_fp_abacus_pw_scf(iter_index, jdata)
+        make_fp_abacus_scf(iter_index, jdata)
     elif fp_style == "siesta" :
         make_fp_siesta(iter_index, jdata)
     elif fp_style == "gaussian" :
@@ -2320,6 +2587,10 @@ def make_fp (iter_index,
         make_fp_amber_diff(iter_index, jdata)
     else :
         raise RuntimeError ("unsupported fp style")
+    # Copy user defined forward_files
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    symlink_user_forward_files(mdata=mdata, task_type="fp", work_path=work_path)
 
 def _vasp_check_fin (ii) :
     if os.path.isfile(os.path.join(ii, 'OUTCAR')) :
@@ -2343,7 +2614,7 @@ def _qe_check_fin(ii) :
         return False
     return True
 
-def _abacus_pw_scf_check_fin(ii) :
+def _abacus_scf_check_fin(ii) :
     if os.path.isfile(os.path.join(ii, 'OUT.ABACUS/running_scf.log')) :
         with open(os.path.join(ii, 'OUT.ABACUS/running_scf.log'), 'r') as fp :
             content = fp.read()
@@ -2445,8 +2716,14 @@ def run_fp_inner (iter_index,
     #         fp_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
 
+    user_forward_files = mdata.get("fp" + "_user_forward_files", [])
+    forward_files += [os.path.basename(file) for file in user_forward_files]
+    backward_files += mdata.get("fp" + "_user_backward_files", [])
+    
     api_version = mdata.get('api_version', '0.9')
     if LooseVersion(api_version) < LooseVersion('1.0'):
+        warnings.warn(f"the dpdispatcher will be updated to new version."
+            f"And the interface may be changed. Please check the documents for more details")
         dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_path, run_tasks, fp_group_size)
         dispatcher.run_jobs(mdata['fp_resources'],
                         [fp_command],
@@ -2468,7 +2745,7 @@ def run_fp_inner (iter_index,
             work_path=work_path,
             run_tasks=run_tasks,
             group_size=fp_group_size,
-            trans_comm_data=forward_common_files,
+            forward_common_files=forward_common_files,
             forward_files=forward_files,
             backward_files=backward_files,
             outlog = log_file,
@@ -2484,7 +2761,7 @@ def run_fp (iter_index,
 
     if fp_style == "vasp" :
         forward_files = ['POSCAR', 'INCAR', 'POTCAR','KPOINTS']
-        backward_files = ['OUTCAR','vasprun.xml']
+        backward_files = ['fp.log','OUTCAR','vasprun.xml']
         # Move cvasp interface to jdata
         if ('cvasp' in jdata) and (jdata['cvasp'] == True):
             mdata['fp_resources']['cvasp'] = True
@@ -2503,7 +2780,7 @@ def run_fp (iter_index,
     elif fp_style == "abacus/scf":
         forward_files = ["INPUT", "STRU", "KPT"] + fp_pp_files
         backward_files = ["output", "OUT.ABACUS"]
-        run_fp_inner(iter_index, jdata, mdata,  forward_files, backward_files, _abacus_pw_scf_check_fin, log_file = 'output')
+        run_fp_inner(iter_index, jdata, mdata,  forward_files, backward_files, _abacus_scf_check_fin, log_file = 'output')
     elif fp_style == "siesta":
         forward_files = ['input'] + fp_pp_files
         backward_files = ['output']
@@ -2640,7 +2917,7 @@ def post_fp_vasp (iter_index,
     dlog.info("failed frame: %6d in %6d  %6.2f %% " % (icount, tcount, rfail * 100.))
 
     if rfail>ratio_failed:
-       raise RuntimeError("find too many unsuccessfully terminated jobs")
+       raise RuntimeError("find too many unsuccessfully terminated jobs. Too many FP tasks are not converged. Please check your input parameters (e.g. INCAR) or configuration (e.g. POSCAR) in directories \'iter.*.*/02.fp/task.*.*/.\'")
 
 
 def post_fp_pwscf (iter_index,
@@ -2688,7 +2965,7 @@ def post_fp_pwscf (iter_index,
         all_sys.to_deepmd_raw(sys_data_path)
         all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
 
-def post_fp_abacus_pw_scf (iter_index,
+def post_fp_abacus_scf (iter_index,
                         jdata):
     model_devi_jobs = jdata['model_devi_jobs']
     assert (iter_index < len(model_devi_jobs))
@@ -2844,20 +3121,31 @@ def post_fp_cp2k (iter_index,
     system_index.sort()
 
     cwd = os.getcwd()
+    # tcount: num of all fp tasks
+    tcount = 0
+    # icount: num of converged fp tasks
+    icount = 0
     for ss in system_index :
         sys_output = glob.glob(os.path.join(work_path, "task.%s.*/output"%ss))
         sys_output.sort()
-        for idx,oo in enumerate(sys_output) :
-            sys = dpdata.LabeledSystem(oo, fmt = 'cp2k/output')
-            if len(sys) > 0:
-                sys.check_type_map(type_map = jdata['type_map'])
-            if idx == 0:
-                all_sys = sys
+        tcount += len(sys_output)
+        all_sys = None
+        for oo in sys_output :
+            _sys = dpdata.LabeledSystem(oo, fmt = 'cp2k/output')
+            _sys.check_type_map(type_map = jdata['type_map'])
+            if all_sys is None:
+                all_sys = _sys
             else:
-                all_sys.append(sys)
-        sys_data_path = os.path.join(work_path, 'data.%s'%ss)
-        all_sys.to_deepmd_raw(sys_data_path)
-        all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
+                all_sys.append(_sys)
+
+
+        icount += len(all_sys)
+        if all_sys is not None:
+            sys_data_path = os.path.join(work_path, 'data.%s'%ss)
+            all_sys.to_deepmd_raw(sys_data_path)
+            all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
+    dlog.info("failed frame number: %s "%(tcount-icount))
+    dlog.info("total frame number: %s "%tcount)
 
 
 def post_fp_pwmat (iter_index,
@@ -2953,7 +3241,7 @@ def post_fp (iter_index,
     elif fp_style == "pwscf" :
         post_fp_pwscf(iter_index, jdata)
     elif fp_style == "abacus/scf":
-        post_fp_abacus_pw_scf(iter_index, jdata)
+        post_fp_abacus_scf(iter_index, jdata)
     elif fp_style == "siesta":
         post_fp_siesta(iter_index, jdata)
     elif fp_style == 'gaussian' :
@@ -2967,15 +3255,24 @@ def post_fp (iter_index,
     else :
         raise RuntimeError ("unsupported fp style")
     # clean traj
-    iter_name = make_iter_name(iter_index)
     clean_traj = True
     if 'model_devi_clean_traj' in jdata :
         clean_traj = jdata['model_devi_clean_traj']
-    if clean_traj:
-        modd_path = os.path.join(iter_name, model_devi_name)
+    modd_path =  None
+    if isinstance(clean_traj, bool):
+        iter_name = make_iter_name(iter_index)
+        if clean_traj:
+            modd_path = os.path.join(iter_name, model_devi_name)
+    elif isinstance(clean_traj, int):
+        clean_index = iter_index - clean_traj
+        if clean_index >= 0:
+            modd_path = os.path.join(make_iter_name(clean_index), model_devi_name)
+    if modd_path is not None:
         md_trajs = glob.glob(os.path.join(modd_path, 'task*/traj'))
-        for ii in md_trajs :
+        for ii in md_trajs:
             shutil.rmtree(ii)
+        
+
 
 def set_version(mdata):
     
@@ -3011,7 +3308,8 @@ def run_iter (param_file, machine_file) :
             listener = logging.handlers.QueueListener(que, smtp_handler)
             dlog.addHandler(queue_handler)
             listener.start()
-
+    # Convert mdata
+    mdata = convert_mdata(mdata)
     max_tasks = 10000
     numb_task = 9
     record = "record.dpgen"
@@ -3038,7 +3336,6 @@ def run_iter (param_file, machine_file) :
                 make_train (ii, jdata, mdata)
             elif jj == 1 :
                 log_iter ("run_train", ii, jj)
-                mdata  = decide_train_machine(mdata)
                 run_train  (ii, jdata, mdata)
             elif jj == 2 :
                 log_iter ("post_train", ii, jj)
@@ -3050,7 +3347,6 @@ def run_iter (param_file, machine_file) :
                     break
             elif jj == 4 :
                 log_iter ("run_model_devi", ii, jj)
-                mdata = decide_model_devi_machine(mdata)
                 run_model_devi (ii, jdata, mdata)
 
             elif jj == 5 :
@@ -3061,7 +3357,6 @@ def run_iter (param_file, machine_file) :
                 make_fp (ii, jdata, mdata)
             elif jj == 7 :
                 log_iter ("run_fp", ii, jj)
-                mdata = decide_fp_machine(mdata)
                 run_fp (ii, jdata, mdata)
             elif jj == 8 :
                 log_iter ("post_fp", ii, jj)

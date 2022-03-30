@@ -82,7 +82,7 @@
     }],
   "fp":
     [{
-      "command": "vasp_std",
+      "command": "mpirun -n 16 vasp_std",
       "machine": {
         "batch_type": "DpCloudServer",
         "context_type": "DpCloudServerContext",

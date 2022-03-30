@@ -19,7 +19,7 @@
 	"_comment":	"that's all"
     },
 
-    "lmp_command":	"/home/linfengz/SCR/wanghan/local/bin/lmp_serial_0110_gpu",
+    "model_devi_command":	"/home/linfengz/SCR/wanghan/local/bin/lmp_serial_0110_gpu",
     "model_devi_group_size":	20,
     "_comment":		"model_devi on localhost ",
     "model_devi_machine":	{
