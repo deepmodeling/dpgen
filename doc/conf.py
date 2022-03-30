@@ -38,6 +38,7 @@ author = 'Deep Potential'
 # ]
 
 extensions = [
+    'deepmodeling_sphinx',
     "sphinx_rtd_theme",
     'myst_parser',
     'sphinx.ext.autosummary',
