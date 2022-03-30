@@ -1,0 +1,712 @@
+                                                                                     
+                             WELCOME TO ABACUS                                       
+                                                                                     
+               'Atomic-orbital Based Ab-initio Computation at UStc'                  
+                                                                                     
+                     Website: http://abacus.ustc.edu.cn/                             
+                                                                                     
+    Version: Parallel, in development
+    Processor Number is 8
+    Start Time is Fri Nov 12 18:15:13 2021
+                                                                                     
+ ------------------------------------------------------------------------------------
+
+ READING GENERAL INFORMATION
+                           global_out_dir = OUT.ABACUS/
+                           global_in_card = INPUT
+                               pseudo_dir = 
+                              orbital_dir = 
+                              pseudo_type = auto
+                                    DRANK = 1
+                                    DSIZE = 8
+                                   DCOLOR = 1
+                                    GRANK = 1
+                                    GSIZE = 1
+
+
+
+
+ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ |                                                                    |
+ | Reading atom information in unitcell:                              |
+ | From the input file and the structure file we know the number of   |
+ | different elments in this unitcell, then we list the detail        |
+ | information for each element, especially the zeta and polar atomic |
+ | orbital number for each element. The total atom number is counted. |
+ | We calculate the nearest atom distance for each atom and show the  |
+ | Cartesian and Direct coordinates for each atom. We list the file   |
+ | address for atomic orbitals. The volume and the lattice vectors    |
+ | in real and reciprocal space is also shown.                        |
+ |                                                                    |
+ <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+ READING UNITCELL INFORMATION
+                                    ntype = 2
+                 atom label for species 1 = H
+                 atom label for species 2 = C
+                  lattice constant (Bohr) = 1.88973
+              lattice constant (Angstrom) = 1
+
+ READING ATOM TYPE 1
+                               atom label = H
+                      L=0, number of zeta = 1
+                      L=1, number of zeta = 1
+                      L=2, number of zeta = 1
+             number of atom for this type = 4
+                      start magnetization = FALSE
+                      start magnetization = FALSE
+                      start magnetization = FALSE
+                      start magnetization = FALSE
+
+ READING ATOM TYPE 2
+                               atom label = C
+                      L=0, number of zeta = 1
+                      L=1, number of zeta = 1
+                      L=2, number of zeta = 1
+             number of atom for this type = 1
+                      start magnetization = FALSE
+
+                        TOTAL ATOM NUMBER = 5
+
+ CARTESIAN COORDINATES ( UNIT = 1.88973 Bohr ).
+         atom                   x                   y                   z                 mag                  vx                  vy                  vz
+      tauc_H1       5.09744437597       3.89129339419        3.4622612337                   0                   0                   0                   0
+      tauc_H2       3.79629251291       4.55708480448       4.16835321433                   0                   0                   0                   0
+      tauc_H3        5.2235234109       5.32826990334       4.20676661344                   0                   0                   0                   0
+      tauc_H4       5.00707710352       3.97791420915       5.08117016892                   0                   0                   0                   0
+      tauc_C1       4.77978417423        4.4403114594       4.23003031273                   0                   0                   0                   0
+
+
+                          Volume (Bohr^3) = 5785.86022047
+                             Volume (A^3) = 857.37500227
+
+ Lattice vectors: (Cartesian coordinate: in unit of a_0)
+       +9.50000379042                  +0                  +0
+                   +0      +9.50000379042                  +0
+                   +0                  +0      +9.50000379042
+ Reciprocal vectors: (Cartesian coordinate: in unit of 2 pi/a_0)
+      +0.105263115896                  +0                  +0
+                   +0     +0.105263115896                  +0
+                   +0                  +0     +0.105263115896
+
+
+
+
+ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ |                                                                    |
+ | Reading pseudopotentials files:                                    |
+ | The pseudopotential file is in UPF format. The 'NC' indicates that |
+ | the type of pseudopotential is 'norm conserving'. Functional of    |
+ | exchange and correlation is decided by 4 given parameters in UPF   |
+ | file.  We also read in the 'core correction' if there exists.      |
+ | Also we can read the valence electrons number and the maximal      |
+ | angular momentum used in this pseudopotential. We also read in the |
+ | trail wave function, trail atomic density and local-pseudopotential|
+ | on logrithmic grid. The non-local pseudopotential projector is also|
+ | read in if there is any.                                           |
+ |                                                                    |
+ <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+                PAO radial cut off (Bohr) = 15
+
+ Read in pseudopotential file is H_ONCV_PBE-1.0.upf
+                     pseudopotential type = NC
+                            functional Ex = PBE
+                            functional Ec = 
+                          functional GCEx = 
+                          functional GCEc = 
+                 nonlocal core correction = 0
+                        valence electrons = 1
+                                     lmax = 0
+                           number of zeta = 0
+                     number of projectors = 2
+                           L of projector = 0
+                           L of projector = 0
+                PAO radial cut off (Bohr) = 15
+
+ Read in pseudopotential file is C_ONCV_PBE-1.0.upf
+                     pseudopotential type = NC
+                            functional Ex = PBE
+                            functional Ec = 
+                          functional GCEx = 
+                          functional GCEc = 
+                 nonlocal core correction = 0
+                        valence electrons = 4
+                                     lmax = 1
+                           number of zeta = 0
+                     number of projectors = 4
+                           L of projector = 0
+                           L of projector = 0
+                           L of projector = 1
+                           L of projector = 1
+     initial pseudo atomic orbital number = 0
+                                   NLOCAL = 45
+
+ SETUP THE ELECTRONS NUMBER
+             electron number of element H = 1
+       total electron number of element H = 4
+             electron number of element C = 4
+       total electron number of element C = 4
+                           occupied bands = 4
+                                   NBANDS = 14
+ DONE : SETUP UNITCELL Time : 0.086291129759 (SEC)
+
+
+
+
+
+ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ |                                                                    |
+ | Setup K-points                                                     |
+ | We setup the k-points according to input parameters.               |
+ | The reduced k-points are set according to symmetry operations.     |
+ | We treat the spin as another set of k-points.                      |
+ |                                                                    |
+ <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+
+ SETUP K-POINTS
+                                    nspin = 1
+                   Input type of k points = Monkhorst-Pack(Gamma)
+                                   nkstot = 1
+
+  KPOINTS            DIRECT_X            DIRECT_Y            DIRECT_Z              WEIGHT
+        1                   0                   0                   0                   1
+
+           k-point number in this process = 1
+       minimum distributed K point number = 1
+
+  KPOINTS         CARTESIAN_X         CARTESIAN_Y         CARTESIAN_Z              WEIGHT
+        1                   0                   0                   0                   2
+
+  KPOINTS            DIRECT_X            DIRECT_Y            DIRECT_Z              WEIGHT
+        1                   0                   0                   0                   2
+ DONE : INIT K-POINTS Time : 0.0878850566805 (SEC)
+
+
+
+
+
+ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ |                                                                    |
+ | Setup plane waves:                                                 |
+ | Use the energy cutoff and the lattice vectors to generate the      |
+ | dimensions of FFT grid. The number of FFT grid on each processor   |
+ | is 'nrxx'. The number of plane wave basis in reciprocal space is   |
+ | different for charege/potential and wave functions. We also set    |
+ | the 'sticks' for the parallel of FFT.                              |
+ |                                                                    |
+ <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+
+ SETUP THE PLANE WAVE BASIS
+     energy cutoff for wavefunc (unit:Ry) = 90
+            [fft grid for wave functions] = 120, 120, 120
+          [fft grid for charge/potential] = 120, 120, 120
+                      [fft grid division] = 1, 1, 1
+      [big fft grid for charge/potential] = 120, 120, 120
+                                     nbxx = 216000
+                                     nrxx = 216000
+
+ SETUP PLANE WAVES FOR CHARGE/POTENTIAL
+                    number of plane waves = 667317
+                         number of sticks = 9249
+
+ SETUP PLANE WAVES FOR WAVE FUNCTIONS
+                    number of plane waves = 83599
+                         number of sticks = 2313
+
+ PARALLEL PW FOR CHARGE/POTENTIAL
+     PROC   COLUMNS(POT)             PW
+        1           1155          83417
+        2           1157          83415
+        3           1157          83415
+        4           1156          83414
+        5           1156          83414
+        6           1156          83414
+        7           1156          83414
+        8           1156          83414
+ --------------- sum -------------------
+        8           9249         667317
+
+ PARALLEL PW FOR WAVE FUNCTIONS
+     PROC     COLUMNS(W)             PW
+        1            289          10449
+        2            289          10453
+        3            290          10452
+        4            287          10451
+        5            293          10449
+        6            290          10448
+        7            288          10448
+        8            287          10449
+ --------------- sum -------------------
+        8           2313          83599
+
+ SETUP COORDINATES OF PLANE WAVES
+              number of total plane waves = 667317
+
+ SETUP COORDINATES OF PLANE WAVES
+                            number of |g| = 2438
+                                  max |g| = 32.553990643
+                                  min |g| = 0
+ DONE : INIT PLANEWAVE Time : 0.350971238862 (SEC)
+
+                                     npwx = 10449
+
+ SETUP NONLOCAL PSEUDOPOTENTIALS IN PLANE WAVE BASIS
+ H non-local projectors:
+ projector 1 L=0
+ projector 2 L=0
+ C non-local projectors:
+ projector 1 L=0
+ projector 2 L=0
+ projector 3 L=1
+ projector 4 L=1
+      TOTAL NUMBER OF NONLOCAL PROJECTORS = 16
+ DONE : LOCAL POTENTIAL Time : 0.494807609997 (SEC)
+
+
+ Init Non-Local PseudoPotential table : 
+ Init Non-Local-Pseudopotential done.
+ DONE : NON-LOCAL POTENTIAL Time : 0.501984705625 (SEC)
+
+                                start_pot = atomic
+ DONE : INIT POTENTIAL Time : 0.639263 (SEC)
+
+
+ Make real space PAO into reciprocal space.
+       max mesh points in Pseudopotential = 601
+     dq(describe PAO in reciprocal space) = 0.01
+                                    max q = 1143
+
+ number of pseudo atomic orbitals for H is 0
+
+ number of pseudo atomic orbitals for C is 0
+ DONE : INIT BASIS Time : 0.917201 (SEC)
+
+ ...............Nose-Hoover Chain parameter initialization...............  
+ Temperature =    0
+ Temperature2 =    0
+ NHC frequency =    0.00120944
+ NHC chain =    4
+ Qmass  =    1822.89
+ ...............................................................  
+
+ PW ALGORITHM --------------- ION=   1  ELEC=   1--------------------------------
+  K-point    CG iter num      Time(Sec)
+        1       9.642857       1.320000
+
+ Density error is 0.925917380140
+
+ PW ALGORITHM --------------- ION=   1  ELEC=   2--------------------------------
+  K-point    CG iter num      Time(Sec)
+        1       2.357143       0.370000
+
+ Density error is 0.103089655783
+
+ PW ALGORITHM --------------- ION=   1  ELEC=   3--------------------------------
+  K-point    CG iter num      Time(Sec)
+        1       4.500000       0.620000
+
+ Density error is 0.029305943975
+
+ PW ALGORITHM --------------- ION=   1  ELEC=   4--------------------------------
+  K-point    CG iter num      Time(Sec)
+        1       3.928571       0.550000
+
+ Density error is 0.215036462399
+
+ PW ALGORITHM --------------- ION=   1  ELEC=   5--------------------------------
+  K-point    CG iter num      Time(Sec)
+        1       3.285714       0.480000
+
+ Density error is 0.000079236362
+
+ PW ALGORITHM --------------- ION=   1  ELEC=   6--------------------------------
+  K-point    CG iter num      Time(Sec)
+        1       6.857143       0.890000
+
+ Density error is 0.000065409462
+
+ PW ALGORITHM --------------- ION=   1  ELEC=   7--------------------------------
+  K-point    CG iter num      Time(Sec)
+        1       3.071429       0.440000
+
+ Density error is 0.000015159186
+
+ PW ALGORITHM --------------- ION=   1  ELEC=   8--------------------------------
+  K-point    CG iter num      Time(Sec)
+        1       5.214286       0.690000
+
+ Density error is 0.000000616832
+
+ PW ALGORITHM --------------- ION=   1  ELEC=   9--------------------------------
+  K-point    CG iter num      Time(Sec)
+        1       4.357143       0.590000
+
+ Density error is 0.000000158907
+
+ PW ALGORITHM --------------- ION=   1  ELEC=  10--------------------------------
+  K-point    CG iter num      Time(Sec)
+        1       5.857143       0.760000
+
+ Density error is 0.000000003032
+
+ PW ALGORITHM --------------- ION=   1  ELEC=  11--------------------------------
+  K-point    CG iter num      Time(Sec)
+        1       6.500000       0.840000
+
+ Density error is 0.000000000145
+
+ charge density convergence is achieved
+ final etot is -219.129937819178 eV
+
+
+
+ ><><><><><><><><><><><><><><><><><><><><><><
+
+    TOTAL-FORCE (eV/Angstrom)
+
+ ><><><><><><><><><><><><><><><><><><><><><><
+
+     atom              x              y              z
+       H1      +1.340517      -2.319940      -3.252982
+       H2      -4.366521      +0.525384      -0.271324
+       H3      +1.946277      +3.914840      -0.100276
+       H4      +0.968648      -1.975710      +3.652965
+       C1      +0.111080      -0.144573      -0.028383
+
+
+ ><><><><><><><><><><><><><><><><><><><><><><
+
+ TOTAL-STRESS (KBAR)
+
+ ><><><><><><><><><><><><><><><><><><><><><><
+
+      +10.830707      +0.064341      +0.036055
+       +0.064341     +10.682670      -0.044656
+       +0.036055      -0.044656     +10.497451
+
+output Pressure for check!
+Virtual Pressure is +21.340552 Kbar 
+Virial Term is +21.340552 Kbar 
+Kenetic Term is +0.000000 Kbar 
+
+ --------------------------------------------------
+ Molecular Dynamics (NVT) STEP 1
+ --------------------------------------------------
+--------------------------------------------------
+            SUMMARY OF NVT CALCULATION            
+ --------------------------------------------------
+ NVT Conservation     : -16.105748 (Rydberg)
+ NVT Temperature      :  +0.000000 (K)
+ NVT Kinetic energy   :  +0.000000 (Rydberg)
+ NVT Potential energy : -16.105748 (Rydberg)
+ maxForce             :  +0.007343
+ maxStep              :  +0.039821
+ MD_STEP             SystemE             Conserved           DeltaE              Temperature         
+ +1                  -8.052874           -8.052874           +0.000000           +172.203317         
+
+ PW ALGORITHM --------------- ION=+2    ELEC=+1  --------------------------------
+ K-point CG iter num    Time(Sec)      
+ +1      +53.714286     +6.150000      
+
+ Density error is +0.003432405487
+
+ PW ALGORITHM --------------- ION=+2    ELEC=+2  --------------------------------
+ K-point CG iter num    Time(Sec)      
+ +1      +2.214286      +0.340000      
+
+ Density error is +0.000062275134
+
+ PW ALGORITHM --------------- ION=+2    ELEC=+3  --------------------------------
+ K-point CG iter num    Time(Sec)      
+ +1      +4.000000      +0.530000      
+
+ Density error is +0.000015792053
+
+ PW ALGORITHM --------------- ION=+2    ELEC=+4  --------------------------------
+ K-point CG iter num    Time(Sec)      
+ +1      +3.142857      +0.450000      
+
+ Density error is +0.000001338459
+
+ PW ALGORITHM --------------- ION=+2    ELEC=+5  --------------------------------
+ K-point CG iter num    Time(Sec)      
+ +1      +4.642857      +0.610000      
+
+ Density error is +0.000000192378
+
+ PW ALGORITHM --------------- ION=+2    ELEC=+6  --------------------------------
+ K-point CG iter num    Time(Sec)      
+ +1      +3.142857      +0.460000      
+
+ Density error is +0.000000025550
+
+ PW ALGORITHM --------------- ION=+2    ELEC=+7  --------------------------------
+ K-point CG iter num    Time(Sec)      
+ +1      +4.714286      +0.640000      
+
+ Density error is +0.000000014039
+
+ PW ALGORITHM --------------- ION=+2    ELEC=+8  --------------------------------
+ K-point CG iter num    Time(Sec)      
+ +1      +2.142857      +0.330000      
+
+ Density error is +0.000000005006
+
+ PW ALGORITHM --------------- ION=+2    ELEC=+9  --------------------------------
+ K-point CG iter num    Time(Sec)      
+ +1      +2.428571      +0.370000      
+
+ Density error is +0.000000001075
+
+ PW ALGORITHM --------------- ION=+2    ELEC=+10 --------------------------------
+ K-point CG iter num    Time(Sec)      
+ +1      +4.571429      +0.630000      
+
+ Density error is +0.000000000036
+
+ charge density convergence is achieved
+ final etot is -219.440527700460 eV
+
+
+
+ ><><><><><><><><><><><><><><><><><><><><><><
+
+    TOTAL-FORCE (eV/Angstrom)
+
+ ><><><><><><><><><><><><><><><><><><><><><><
+
+ atom    x              y              z              
+ H1      +1.004871      -1.739881      -2.441947      
+ H2      -3.252618      +0.393216      -0.201464      
+ H3      +1.449497      +2.920979      -0.074231      
+ H4      +0.723985      -1.478039      +2.737075      
+ C1      +0.074265      -0.096275      -0.019433      
+
+
+ ><><><><><><><><><><><><><><><><><><><><><><
+
+ TOTAL-STRESS (KBAR)
+
+ ><><><><><><><><><><><><><><><><><><><><><><
+
+ +8.239066      +0.040673      +0.022701      
+ +0.040673      +8.146118      -0.028152      
+ +0.022701      -0.028152      +8.029180      
+
+output Pressure for check!
+Virtual Pressure is +16.387160 Kbar 
+Virial Term is +16.276243 Kbar 
+Kenetic Term is +0.110917 Kbar 
+
+ --------------------------------------------------
+ Molecular Dynamics (NVT) STEP 2
+ --------------------------------------------------
+--------------------------------------------------
+            SUMMARY OF NVT CALCULATION            
+ --------------------------------------------------
+ NVT Conservation     : -16.108578 (Rydberg)
+ NVT Temperature      : +526.047604 (K)
+ NVT Kinetic energy   : +0.019991  (Rydberg)
+ NVT Potential energy : -16.128576 (Rydberg)
+ maxForce             : +0.004075 
+ maxStep              : +0.098572 
+ MD_STEP             SystemE             Conserved           DeltaE              Temperature         
+ +2                  -8.064288           -8.054289           +0.000000           +1063.334415        
+
+ PW ALGORITHM --------------- ION=+3    ELEC=+1  --------------------------------
+ K-point CG iter num    Time(Sec)      
+ +1      +54.857143     +6.240000      
+
+ Density error is +0.019351753103
+
+ PW ALGORITHM --------------- ION=+3    ELEC=+2  --------------------------------
+ K-point CG iter num    Time(Sec)      
+ +1      +2.214286      +0.340000      
+
+ Density error is +0.000283196908
+
+ PW ALGORITHM --------------- ION=+3    ELEC=+3  --------------------------------
+ K-point CG iter num    Time(Sec)      
+ +1      +4.071429      +0.550000      
+
+ Density error is +0.000097414254
+
+ PW ALGORITHM --------------- ION=+3    ELEC=+4  --------------------------------
+ K-point CG iter num    Time(Sec)      
+ +1      +2.785714      +0.410000      
+
+ Density error is +0.000008367964
+
+ PW ALGORITHM --------------- ION=+3    ELEC=+5  --------------------------------
+ K-point CG iter num    Time(Sec)      
+ +1      +3.857143      +0.540000      
+
+ Density error is +0.000001252601
+
+ PW ALGORITHM --------------- ION=+3    ELEC=+6  --------------------------------
+ K-point CG iter num    Time(Sec)      
+ +1      +3.642857      +0.510000      
+
+ Density error is +0.000000066252
+
+ PW ALGORITHM --------------- ION=+3    ELEC=+7  --------------------------------
+ K-point CG iter num    Time(Sec)      
+ +1      +5.071429      +0.670000      
+
+ Density error is +0.000000013589
+
+ PW ALGORITHM --------------- ION=+3    ELEC=+8  --------------------------------
+ K-point CG iter num    Time(Sec)      
+ +1      +4.571429      +0.610000      
+
+ Density error is +0.000000024404
+
+ PW ALGORITHM --------------- ION=+3    ELEC=+9  --------------------------------
+ K-point CG iter num    Time(Sec)      
+ +1      +2.000000      +0.320000      
+
+ Density error is +0.000000010839
+
+ PW ALGORITHM --------------- ION=+3    ELEC=+10 --------------------------------
+ K-point CG iter num    Time(Sec)      
+ +1      +2.071429      +0.340000      
+
+ Density error is +0.000000002800
+
+ PW ALGORITHM --------------- ION=+3    ELEC=+11 --------------------------------
+ K-point CG iter num    Time(Sec)      
+ +1      +4.000000      +0.550000      
+
+ Density error is +0.000000000052
+
+ charge density convergence is achieved
+ final etot is -219.862433615028 eV
+
+
+
+ ><><><><><><><><><><><><><><><><><><><><><><
+
+    TOTAL-FORCE (eV/Angstrom)
+
+ ><><><><><><><><><><><><><><><><><><><><><><
+
+ atom    x              y              z              
+ H1      +0.308191      -0.535728      -0.757725      
+ H2      -0.975237      +0.122318      -0.058835      
+ H3      +0.431328      +0.882198      -0.020974      
+ H4      +0.218386      -0.449293      +0.842665      
+ C1      +0.017332      -0.019495      -0.005131      
+
+
+ ><><><><><><><><><><><><><><><><><><><><><><
+
+ TOTAL-STRESS (KBAR)
+
+ ><><><><><><><><><><><><><><><><><><><><><><
+
+ +2.590889      -0.001256      -0.000685      
+ -0.001256      +2.591786      +0.001012      
+ -0.000685      +0.001012      +2.595960      
+
+output Pressure for check!
+Virtual Pressure is +5.870656 Kbar 
+Virial Term is +5.185757 Kbar 
+Kenetic Term is +0.684900 Kbar 
+
+ --------------------------------------------------
+ Molecular Dynamics (NVT) STEP 3
+ --------------------------------------------------
+--------------------------------------------------
+            SUMMARY OF NVT CALCULATION            
+ --------------------------------------------------
+ NVT Conservation     : -16.111086 (Rydberg)
+ NVT Temperature      : +1266.849197 (K)
+ NVT Kinetic energy   : +0.048143  (Rydberg)
+ NVT Potential energy : -16.159585 (Rydberg)
+ maxForce             : +0.000367 
+ maxStep              : +0.114449 
+ MD_STEP             SystemE             Conserved           DeltaE              Temperature         
+ +3                  -8.079793           -8.055543           +0.000000           +1452.963348        
+
+
+ --------------------------------------------
+ !FINAL_ETOT_IS -219.8624336150282090 eV
+ --------------------------------------------
+
+
+
+
+
+
+  |CLASS_NAME---------|NAME---------------|TIME(Sec)-----|CALLS----|AVG------|PER%-------
+                       total               +67.074        15        +4.47     +100.00   %
+   Run_pw              plane_wave_line     +67.04         1         +67.04    +99.95    %
+   PW_Basis            gen_pw              +0.26          1         +0.26     +0.39     %
+   Run_MD_PW           md_cells_pw         +66.70         1         +66.70    +99.45    %
+   ppcell_vl           init_vloc           +0.12          1         +0.12     +0.18     %
+   Potential           init_pot            +0.46          4         +0.11     +0.68     %
+   FFT                 FFT3D               +26.79         8433      +0.00     +39.94    %
+   Charge              atomic_rho          +0.12          7         +0.02     +0.18     %
+   Potential           v_of_rho            +3.52          36        +0.10     +5.25     %
+   H_XC_pw             v_xc                +3.31          39        +0.08     +4.93     %
+   H_Hartree_pw        v_hartree           +0.42          36        +0.01     +0.63     %
+   wavefunc            wfcinit             +1.06          4         +0.26     +1.58     %
+   pp_cell_vnl         getvnl              +0.15          42        +0.00     +0.22     %
+   Hamilt_PW           diagH_subspace      +3.50          36        +0.10     +5.21     %
+   Hamilt_PW           h_psi               +27.80         3259      +0.01     +41.45    %
+   Hamilt_PW           vloc                +25.80         3259      +0.01     +38.46    %
+   Hamilt_PW           vnl                 +1.91          3259      +0.00     +2.85     %
+   Hamilt_PW           add_nonlocal_pp     +0.90          3259      +0.00     +1.35     %
+   Run_MD_PW           md_ions_pw          +66.15         1         +66.15    +98.63    %
+   Electrons           self_consistent     +62.27         3         +20.76    +92.84    %
+   Electrons           c_bands             +29.33         32        +0.92     +43.73    %
+   Hamilt              diagH_pw            +29.20         32        +0.91     +43.54    %
+   Diago_CG            diag                +26.09         34        +0.77     +38.90    %
+   Charge              sum_band            +2.94          32        +0.09     +4.38     %
+   Charge              rho_mpi             +1.08          32        +0.03     +1.61     %
+   Charge              mix_rho             +0.97          32        +0.03     +1.45     %
+   Forces              cal_force_nl        +0.24          3         +0.08     +0.36     %
+   Stress_PW           cal_stress          +1.94          3         +0.65     +2.89     %
+   Stress_Func         stress_ew           +22.20         2         +11.10    +33.10    %
+   Force_Func          stress_ew           +22.20         2         +11.10    +33.10    %
+   Stress_Func         stress_gga          +0.13          3         +0.04     +0.19     %
+   Stress_Func         stres_nl            +1.63          3         +0.54     +2.43     %
+ ----------------------------------------------------------------------------------------
+
+ CLASS_NAME---------|NAME---------------|MEMORY(MB)--------
+                                         +70.3196
+ Charge_Pulay        Rrho                +13.1836       
+ Charge_Pulay        dRrho               +11.5356       
+ Charge_Pulay        drho                +11.5356       
+ Use_FFT             porter              +3.2959        
+ PW_Basis            struc_fac           +2.5457        
+ wavefunc            evc                 +2.2321        
+ Charge              rho                 +1.6479        
+ Charge              rho_save            +1.6479        
+ Charge              rho_core            +1.6479        
+ Potential           vltot               +1.6479        
+ Potential           vr                  +1.6479        
+ Potential           vr_eff              +1.6479        
+ Potential           vr_eff1             +1.6479        
+ Potential           vnew                +1.6479        
+ Charge_Pulay        rho_save2           +1.6479        
+ ----------------------------------------------------------
+
+ Start  Time  : Fri Nov 12 18:15:13 2021
+ Finish Time  : Fri Nov 12 18:16:20 2021
+ Total  Time  : 0 h 1 mins 7 secs 
