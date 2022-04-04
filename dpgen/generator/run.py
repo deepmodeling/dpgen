@@ -193,6 +193,10 @@ def dump_to_deepmd_raw(dump, deepmd_raw, type_map, fmt='gromacs/gro', charge=Non
             f.write(str(charge))
 
 def npy_to_hdf5(dump):
+    if os.path.isfile(dump):
+        if not os.path.isfile(dump + ".hdf5"):
+            os.symlink(os.path.basename(dump), dump + ".hdf5")
+        return
     if not os.path.isfile(dump + ".hdf5"):
         system = dpdata.MultiSystems().from_deepmd_npy(dump)
         system.to_deepmd_hdf5(dump + ".hdf5")
@@ -286,10 +290,14 @@ def make_train (iter_index,
     for ii, ss in zip(init_data_sys_, init_batch_size_) :
         npy_to_hdf5(os.path.join(work_path, 'data.init', ii))
         if jdata.get('init_multi_systems', False):
-            for single_sys in os.listdir(os.path.join(work_path, 'data.init', ii)):
+            if os.path.isfile(os.path.join(work_path, 'data.init', ii)):
+                t=dpdata.MultiSystems().from_deepmd_hdf5(os.path.join(work_path, 'data.init', ii))
+            else:
+                t=dpdata.MultiSystems().from_deepmd_npy(os.path.join(work_path, 'data.init', ii))
+            for single_sys in t.systems:
                 init_data_sys.append(os.path.join('..', 'data.init', ii + ".hdf5#", single_sys))
-                init_batch_size.append(detect_batch_size(ss, os.path.join(work_path, 'data.init', ii, single_sys)))
-                nums[0] += get_nframe(os.path.join(work_path, 'data.init', ii, single_sys))
+                #init_batch_size.append(detect_batch_size(ss, os.path.join(work_path, 'data.init', ii, single_sys)))
+            nums[0] += t.get_nframes() #get_nframe(os.path.join(work_path, 'data.init', ii, single_sys))
         else:
             init_data_sys.append(os.path.join('..', 'data.init.hdf5#', ii + ".hdf5#"))
             init_batch_size.append(detect_batch_size(ss, os.path.join(work_path, 'data.init', ii)))
@@ -304,18 +312,18 @@ def make_train (iter_index,
                 npy_to_hdf5(jj)
                 sys_idx = int(jj.split('.')[-1])
                 if jdata.get('use_clusters', False):
-                    nframes = 0
-                    for sys_single in os.listdir(jj):
-                        tmp_box = np.loadtxt(os.path.join(jj, sys_single, 'box.raw'))
-                        tmp_box = np.reshape(tmp_box, [-1,9])
-                        nframes += tmp_box.shape[0]
+                    if os.path.isfile(jj):
+                        t=dpdata.MultiSystems().from_deepmd_hdf5(jj)
+                    else:
+                        t=dpdata.MultiSystems().from_deepmd_npy(jj)
+                    nframes = t.get_nframes()
                     if nframes < fp_task_min :
                         log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
                         continue
-                    for sys_single in os.listdir(jj):
+                    for sys_single in t.systems:
                         init_data_sys.append(os.path.join('..', 'data.iters', jj + ".hdf5#", sys_single))
-                        init_batch_size.append(detect_batch_size(sys_batch_size[sys_idx], os.path.join(jj, sys_single)))
-                        nums[ii+1] += get_nframe(os.path.join(jj, sys_single))
+                        #init_batch_size.append("auti")
+                    nums[ii+1] += nframes #get_nframe(os.path.join(jj, sys_single))
                 else:
                     nframes = dpdata.System(jj, 'deepmd/npy').get_nframes()
                     if nframes < fp_task_min :
@@ -507,6 +515,8 @@ def detect_batch_size(batch_size, system=None):
         raise RuntimeError("Unsupported batch size")
 
 def get_nframe(system):
+    if "#" in system:
+        return len(dpdata.LabeledSystem(system, fmt='deepmd/hdf5'))
     return len(dpdata.LabeledSystem(system, fmt='deepmd/npy'))
 
 def run_train (iter_index,
