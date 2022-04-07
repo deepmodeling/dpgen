@@ -173,6 +173,7 @@ def run_property(confs,
     pool.join()
     for ii in range(len(multiple_ret)):
         if not multiple_ret[ii].successful():
+            print("ERROR:", multiple_ret[ii].get())
             raise RuntimeError("Job %d is not successful!" % ii)
     print('%d jobs are finished' % len(multiple_ret))
 
@@ -186,11 +187,11 @@ def worker(work_path,
            inter_type):
     run_tasks = [os.path.basename(ii) for ii in all_task]
     machine, resources, command, group_size = util.get_machine_info(mdata, inter_type)
-    disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
     api_version = mdata.get('api_version', '0.9')
     if LooseVersion(api_version) < LooseVersion('1.0'):
         warnings.warn(f"the dpdispatcher will be updated to new version."
             f"And the interface may be changed. Please check the documents for more details")
+        disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
         disp.run_jobs(resources,
                   command,
                   work_path,
@@ -204,7 +205,7 @@ def worker(work_path,
     elif LooseVersion(api_version) >= LooseVersion('1.0'):
         submission = make_submission(
                 mdata_machine=machine,
-                mdata_resource=resources,
+                mdata_resources=resources,
                 commands=[command],
                 work_path=work_path,
                 run_tasks=run_tasks,

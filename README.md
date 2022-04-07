@@ -22,6 +22,7 @@
 
 [![GitHub release](https://img.shields.io/github/release/deepmodeling/dpgen.svg?maxAge=86400)](https://github.com/deepmodeling/dpgen/releases/)
 [![doi:10.1016/j.cpc.2020.107206](https://img.shields.io/badge/DOI-10.1016%2Fj.cpc.2020.107206-blue)](https://doi.org/10.1016/j.cpc.2020.107206)
+![Citations](https://citations.njzjz.win/10.1016/j.cpc.2020.107206)
 [![conda install](https://img.shields.io/conda/dn/conda-forge/dpgen?label=conda%20install)](https://anaconda.org/conda-forge/dpgen)
 [![pip install](https://img.shields.io/pypi/dm/dpgen?label=pip%20install)](https://pypi.org/project/dpgen)
 
@@ -188,6 +189,10 @@ If you want to specify a structure as starting point for `init_bulk`, you may se
 "from_poscar":	true,
 "from_poscar_path":	"....../C_mp-47_conventional.POSCAR",
 ```
+`init_bulk` support both VASP and ABACUS for first-principle calculation. You can choose the software by specifying the key `init_fp_style`. If `init_fp_style` is not specified, the default software will be VASP. 
+
+When using ABACUS for `init_fp_style`, the keys of the paths of `INPUT` files for relaxation and MD simulations are the same as `INCAR` for VASP, which are `relax_incar` and `md_incar` respectively. You have to additionally specify `relax_kspacing` and `md_kspacing` for k points spacing, and dpgen will automatically generate `KPT` files according to them. You may also use `relax_kpt` and `md_kpt` instead of them for the relative path for `KPT` files of relaxation and MD simulations. However, either `relax_kspacing` and `md_kspacing`, or `relax_kpt` and `md_kpt` is needed. If `from_poscar` is set to `false`, you have to specify `atom_masses` in the same order as `elements`.
+
 The following table gives explicit descriptions on keys in `PARAM`.
 
 The bold notation of key (such as **Elements**) means that it's a necessary key.
@@ -199,9 +204,9 @@ The bold notation of key (such as **Elements**) means that it's a necessary key.
 |  cell_type | String  | "hcp" | Specifying which typical structure to be generated. **Options** include fcc, hcp, bcc, sc, diamond.
 | latt | Float | 4.479 | Lattice constant for single cell.
 | from_poscar | Boolean | True | Deciding whether to use a given poscar as the beginning of relaxation. If it's true, keys (`cell_type`, `latt`) will be aborted. Otherwise, these two keys are **necessary**.
-| from_poscar_path | String | "....../C_mp-47_conventional.POSCAR" | Path of POSCAR. **Necessary** if `from_poscar` is true.
-| relax_incar | String | "....../INCAR" | Path of INCAR for relaxation in VASP. **Necessary** if `stages` include 1.
-| md_incar | String |  "....../INCAR" | Path of INCAR for MD in VASP. **Necessary** if `stages` include 3.|
+| from_poscar_path | String | "....../C_mp-47_conventional.POSCAR" | Path of POSCAR for VASP or STRU for ABACUS. **Necessary** if `from_poscar` is true.
+| relax_incar | String | "....../INCAR" | Path of INCAR for VASP or INPUT for ABACUS for relaxation in VASP. **Necessary** if `stages` include 1.
+| md_incar | String |  "....../INCAR" | Path of INCAR for VASP or INPUT for ABACUS for MD in VASP. **Necessary** if `stages` include 3.|
 | **scale** | List of float | [0.980, 1.000, 1.020] | Scales for transforming cells.
 | **skip_relax** | Boolean | False | If it's true, you may directly run stage 2 (pertub and scale) using an unrelaxed POSCAR.
 | **pert_numb** | Integer | 30 | Number of pertubations for each POSCAR.
@@ -210,6 +215,12 @@ The bold notation of key (such as **Elements**) means that it's a necessary key.
 | **md_nstep** | Integer | 10 | Steps of AIMD in stage 3. If it's not equal to settings via `NSW` in `md_incar`, DP-GEN will follow `NSW`.
 | **coll_ndata** | Integer | 5000 | Maximal number of collected data.
 | type_map | List | [ "Mg", "Al"] | The indices of elements in deepmd formats will be set in this order.
+| init_fp_style | String | "ABACUS" or "VASP" | First-principle software. If this key is abscent, the default value will be "VASP".
+| relax_kpt | String | "....../KPT" | Path of `KPT` file for relaxation in stage 1. Only useful if `init_fp_style` is "ABACUS".
+| relax_kspacing | Integer or List of 3 integers | 10 | kspacing parameter for relaxation in stage 1. Only useful if `init_fp_style` is "ABACUS".
+| md_kpt | String | "....../KPT" | Path of `KPT` file for MD simulations in stage 3. Only useful if `init_fp_style` is "ABACUS".
+| md_kspacing | Integer or List of 3 integers | 10 | kspacing parameter for MD simulations in stage 3. Only useful if `init_fp_style` is "ABACUS".
+| atom_masses | List of float | [24] | List of atomic masses of elements. The order should be the same as `Elements`. Only useful if `init_fp_style` is "ABACUS".
 
 ### Init_surf
 
@@ -544,20 +555,21 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | training_iter0_model_path  | list of string  |  ["/path/to/model0_ckpt/", ...]  | The model used to init the first iter training. Number of element should be equal to `numb_models` |
 | training_init_model  | bool  |  False  | Iteration > 0, the model parameters will be initilized from the model trained at the previous iteration. Iteration == 0, the model parameters will be initialized from `training_iter0_model_path`.  |
 | **default_training_param** | Dict |  | Training parameters for `deepmd-kit` in `00.train`. <br /> You can find instructions from here: (https://github.com/deepmodeling/deepmd-kit)..<br /> |
+| dp_compress | bool | false | Use `dp compress` to compress the model. Default is false. |
 | *#Exploration*
 | **model_devi_dt** | Float | 0.002 (recommend) | Timestep for MD |
 | **model_devi_skip** | Integer | 0 | Number of structures skipped for fp in each MD
-| **model_devi_f_trust_lo** | Float | 0.05 | Lower bound of forces for the selection.
- | **model_devi_f_trust_hi** | Float | 0.15 | Upper bound of forces for the selection
-| **model_devi_v_trust_lo**  | Float | 1e10                                                         | Lower bound of virial for the selection. Should be used with DeePMD-kit v2.x |
-| **model_devi_v_trust_hi**  | Float | 1e10                                                         | Upper bound of virial for the selection. Should be used with DeePMD-kit v2.x |
+| **model_devi_f_trust_lo** | Float or List of float | 0.05 | Lower bound of forces for the selection. If List, should be set for each index in `sys_configs`, respectively. |
+| **model_devi_f_trust_hi** | Float or List of float | 0.15 | Upper bound of forces for the selection. If List, should be set for each index in `sys_configs`, respectively. |
+| **model_devi_v_trust_lo**  | Float or List of float | 1e10 | Lower bound of virial for the selection. If List, should be set for each index in `sys_configs`, respectively. Should be used with DeePMD-kit v2.x. |
+| **model_devi_v_trust_hi**  | Float or List of float | 1e10 | Upper bound of virial for the selection. If List, should be set for each index in `sys_configs`, respectively. Should be used with DeePMD-kit v2.x. |
 | model_devi_adapt_trust_lo  | Boolean | False | Adaptively determines the lower trust levels of force and virial. This option should be used together with `model_devi_numb_candi_f`,  `model_devi_numb_candi_v` and optionally with `model_devi_perc_candi_f` and `model_devi_perc_candi_v`. `dpgen` will make two sets: 1. From the frames with force model deviation lower than `model_devi_f_trust_hi`, select `max(model_devi_numb_candi_f, model_devi_perc_candi_f*n_frames)` frames with largest force model deviation. 2. From the frames with virial model deviation lower than `model_devi_v_trust_hi`, select `max(model_devi_numb_candi_v, model_devi_perc_candi_v*n_frames)` frames with largest virial model deviation. The union of the two sets is made as candidate dataset|
 | model_devi_numb_candi_f  | Int | 10 | See `model_devi_adapt_trust_lo`.|
 | model_devi_numb_candi_v  | Int | 0  | See `model_devi_adapt_trust_lo`.|
 | model_devi_perc_candi_f  | Float | 0.0 | See `model_devi_adapt_trust_lo`.|
 | model_devi_perc_candi_v  | Float | 0.0 | See `model_devi_adapt_trust_lo`.|
 | model_devi_f_avg_relative | Boolean | False | Normalized the force model deviations by the RMS force magnitude along the trajectory. This key should not be used with `use_relative`. |
-| **model_devi_clean_traj**  | Boolean | true                                                         | Deciding whether to clean traj folders in MD since they are too large. |
+| **model_devi_clean_traj**  | Boolean or Int | true                                                         | If type of model_devi_clean_traj is boolean type then it denote whether to clean traj folders in MD since they are too large. If it is Int type, then the most recent n iterations of traj folders will be retained, others will be removed. |
 | **model_devi_nopbc**  | Boolean | False                                                         | Assume open boundary condition in MD simulations. |
 | model_devi_activation_func | List of list of string | [["tanh","tanh"],["tanh","gelu"],["gelu","tanh"],["gelu","gelu"]]	| Set activation functions for models, length of the List should be the same as `numb_models`, and two elements in the list of string respectively assign activation functions to the embedding and fitting nets within each model. *Backward compatibility*: the orginal "List of String" format is still supported, where embedding and fitting nets of one model use the same activation function, and the length of the List should be the same as `numb_models`|
 | **model_devi_jobs**        | [<br/>{<br/>"sys_idx": [0], <br/>"temps": <br/>[100],<br/>"press":<br/>[1],<br/>"trj_freq":<br/>10,<br/>"nsteps":<br/> 1000,<br/> "ensembles": <br/> "nvt" <br />},<br />...<br />] | List of dict | Settings for exploration in `01.model_devi`. Each dict in the list corresponds to one iteration. The index of `model_devi_jobs` exactly accord with index of iterations |

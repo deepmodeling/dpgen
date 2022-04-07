@@ -12,6 +12,8 @@ class TestGenBulk(unittest.TestCase):
         self.alloy=[] 
         with open (param_file, 'r') as fp :
             jdata = json.load (fp)
+        if "init_fp_style" not in jdata:
+            jdata["init_fp_style"] = "VASP"
         out_dir = out_dir_name(jdata)
         self.out_dir= out_dir
         jdata['out_dir'] = out_dir
@@ -52,3 +54,7 @@ class TestGenBulk(unittest.TestCase):
             for scale in scales:
                 perts=glob.glob(os.path.join(scale,"[0-9]*")) 
                 self.assertEqual(len(perts),self.pert_numb+1)
+
+
+if __name__ == '__main__':
+    unittest.main()

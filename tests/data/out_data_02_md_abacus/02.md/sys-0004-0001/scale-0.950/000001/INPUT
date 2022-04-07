@@ -1,0 +1,20 @@
+INPUT_PARAMETERS
+
+calculation md
+atom_file           STRU
+kpoint_file         KPT
+pseudo_dir ./
+ntype 2
+symmetry 1
+ecutwfc 90
+
+npool 1
+
+mixing_type pulay
+mixing_beta 0.4
+
+nstep 3
+force_thr_ev 0.02
+#move_method cg
+out_stru 0
+stress 1

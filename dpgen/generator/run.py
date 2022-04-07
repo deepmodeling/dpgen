@@ -45,7 +45,7 @@ from dpgen.generator.lib.vasp import write_incar_dict
 from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
 from dpgen.generator.lib.vasp import incar_upper
 from dpgen.generator.lib.pwscf import make_pwscf_input
-from dpgen.generator.lib.abacus_pw_scf import make_abacus_pw_scf_stru, make_abacus_pw_scf_input, make_abacus_pw_scf_kpt
+from dpgen.generator.lib.abacus_scf import make_abacus_scf_stru, make_abacus_scf_input, make_abacus_scf_kpt
 #from dpgen.generator.lib.pwscf import cvt_1frame
 from dpgen.generator.lib.pwmat import make_pwmat_input_dict
 from dpgen.generator.lib.pwmat import write_input_dict
@@ -389,9 +389,13 @@ def make_train (iter_index,
             if jinput['model']['descriptor']['type'] == 'hybrid':
                 for desc in jinput['model']['descriptor']['list']:
                     desc['seed'] = random.randrange(sys.maxsize) % (2**32)
+            elif jinput['model']['descriptor']['type'] == 'loc_frame':
+                pass
             else:
                 jinput['model']['descriptor']['seed'] = random.randrange(sys.maxsize) % (2**32)
             jinput['model']['fitting_net']['seed'] = random.randrange(sys.maxsize) % (2**32)
+            if 'type_embedding' in jinput['model']:
+                jinput['model']['type_embedding']['seed'] = random.randrange(sys.maxsize) % (2**32)
             jinput['training']['seed'] = random.randrange(sys.maxsize) % (2**32)
         else:
             raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x or 2.x version!" )
@@ -514,6 +518,8 @@ def run_train (iter_index,
         commands.append(command)
         command = '%s freeze' % train_command
         commands.append(command)
+        if jdata.get("dp_compress", False):
+            commands.append("%s compress" % train_command)
     else:
         raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x or 2.x version!" )
 
@@ -536,6 +542,8 @@ def run_train (iter_index,
         ]
     backward_files = ['frozen_model.pb', 'lcurve.out', 'train.log']
     backward_files+= ['model.ckpt.meta', 'model.ckpt.index', 'model.ckpt.data-00000-of-00001', 'checkpoint']
+    if jdata.get("dp_compress", False):
+        backward_files.append('frozen_model_compressed.pb')
     init_data_sys_ = jdata['init_data_sys']
     init_data_sys = []
     for ii in init_data_sys_ :
@@ -621,7 +629,11 @@ def post_train (iter_index,
         return
     # symlink models
     for ii in range(numb_models) :
-        task_file = os.path.join(train_task_fmt % ii, 'frozen_model.pb')
+        if not jdata.get("dp_compress", False):
+            model_name = 'frozen_model.pb'
+        else:
+            model_name = 'frozen_model_compressed.pb'
+        task_file = os.path.join(train_task_fmt % ii, model_name)
         ofile = os.path.join(work_path, 'graph.%03d.pb' % ii)
         if os.path.isfile(ofile) :
             os.remove(ofile)
@@ -796,7 +808,7 @@ def make_model_devi (iter_index,
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
     train_path = os.path.abspath(train_path)
-    models = glob.glob(os.path.join(train_path, "graph*pb"))
+    models = sorted(glob.glob(os.path.join(train_path, "graph*pb")))
     work_path = os.path.join(iter_name, model_devi_name)
     create_path(work_path)
     for mm in models :
@@ -882,7 +894,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
     train_path = os.path.abspath(train_path)
-    models = glob.glob(os.path.join(train_path, "graph*pb"))
+    models = sorted(glob.glob(os.path.join(train_path, "graph*pb")))
     task_model_list = []
     for ii in models:
         task_model_list.append(os.path.join('..', os.path.basename(ii)))
@@ -939,7 +951,23 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                 # revise input of lammps
                 with open('input.lammps') as fp:
                     lmp_lines = fp.readlines()
-                lmp_lines = revise_lmp_input_model(lmp_lines, task_model_list, trj_freq, deepmd_version = deepmd_version)
+                # only revise the line "pair_style deepmd" if the user has not written the full line (checked by then length of the line)
+                template_has_pair_deepmd=1
+                for line_idx,line_context in enumerate(lmp_lines):
+                    if (line_context[0] != "#") and ("pair_style" in line_context) and ("deepmd" in line_context):
+                        template_has_pair_deepmd=0
+                        template_pair_deepmd_idx=line_idx
+                if template_has_pair_deepmd == 0:
+                    if LooseVersion(deepmd_version) < LooseVersion('1'):
+                        if len(lmp_lines[template_pair_deepmd_idx].split()) !=  (len(models) + len(["pair_style","deepmd","10", "model_devi.out"])):
+                            lmp_lines = revise_lmp_input_model(lmp_lines, task_model_list, trj_freq, deepmd_version = deepmd_version)
+                    else:
+                        if len(lmp_lines[template_pair_deepmd_idx].split()) != (len(models) + len(["pair_style","deepmd","out_freq", "10", "out_file", "model_devi.out"])):
+                            lmp_lines = revise_lmp_input_model(lmp_lines, task_model_list, trj_freq, deepmd_version = deepmd_version)
+                #use revise_lmp_input_model to raise error message if "part_style" or "deepmd" not found
+                else:
+                    lmp_lines = revise_lmp_input_model(lmp_lines, task_model_list, trj_freq, deepmd_version = deepmd_version)
+                
                 lmp_lines = revise_lmp_input_dump(lmp_lines, trj_freq)
                 lmp_lines = revise_by_keys(
                     lmp_lines, total_rev_keys[:total_num_lmp], total_rev_item[:total_num_lmp]
@@ -1585,18 +1613,32 @@ def _make_fp_vasp_inner (modd_path,
     skip_bad_box = jdata.get('fp_skip_bad_box')
     # skip discrete structure in cluster
     fp_cluster_vacuum = jdata.get('fp_cluster_vacuum',None)
-    for ss in system_index :
+
+    def _trust_limitation_check(sys_idx, lim):
+        if isinstance(lim, list):
+            sys_lim = lim[sys_idx]
+        else:
+            sys_lim = lim
+        return sys_lim
+
+    for ss in system_index:
         modd_system_glob = os.path.join(modd_path, 'task.' + ss + '.*')
         modd_system_task = glob.glob(modd_system_glob)
         modd_system_task.sort()
+
+        # convert global trust limitations to local ones
+        f_trust_lo_sys = _trust_limitation_check(ss, f_trust_lo)
+        f_trust_hi_sys = _trust_limitation_check(ss, f_trust_hi)
+        v_trust_lo_sys = _trust_limitation_check(ss, v_trust_lo)
+        v_trust_hi_sys = _trust_limitation_check(ss, v_trust_hi)
 
         # assumed e -> v
         if not model_devi_adapt_trust_lo:
             fp_rest_accurate, fp_candidate, fp_rest_failed, counter \
                 =  _select_by_model_devi_standard(
                     modd_system_task,
-                    f_trust_lo, f_trust_hi,
-                    v_trust_lo, v_trust_hi,
+                    f_trust_lo_sys, f_trust_hi_sys,
+                    v_trust_lo_sys, v_trust_hi_sys,
                     cluster_cutoff, 
                     model_devi_skip,
                     model_devi_f_avg_relative = model_devi_f_avg_relative,
@@ -1610,8 +1652,8 @@ def _make_fp_vasp_inner (modd_path,
             fp_rest_accurate, fp_candidate, fp_rest_failed, counter, f_trust_lo_ad, v_trust_lo_ad \
                 =  _select_by_model_devi_adaptive_trust_low(
                     modd_system_task,
-                    f_trust_hi, numb_candi_f, perc_candi_f,
-                    v_trust_hi, numb_candi_v, perc_candi_v,
+                    f_trust_hi_sys, numb_candi_f, perc_candi_f,
+                    v_trust_hi_sys, numb_candi_v, perc_candi_v,
                     model_devi_skip = model_devi_skip,
                     model_devi_f_avg_relative = model_devi_f_avg_relative,
                 )
@@ -2063,7 +2105,7 @@ def make_fp_pwscf(iter_index,
     # link pp files
     _link_fp_vasp_pp(iter_index, jdata)
 
-def make_fp_abacus_pw_scf(iter_index,
+def make_fp_abacus_scf(iter_index,
                   jdata) :
     # make config
     fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
@@ -2084,13 +2126,13 @@ def make_fp_abacus_pw_scf(iter_index,
         sys_data = dpdata.System('POSCAR').data
         if 'mass_map' in jdata:
             sys_data['atom_masses'] = jdata['mass_map']
-        ret_input = make_abacus_pw_scf_input(fp_params)
+        ret_input = make_abacus_scf_input(fp_params)
         with open('INPUT', 'w') as fp:
             fp.write(ret_input)
-        ret_kpt = make_abacus_pw_scf_kpt(fp_params)
+        ret_kpt = make_abacus_scf_kpt(fp_params)
         with open("KPT", "w") as fp:
             fp.write(ret_kpt)
-        ret_stru = make_abacus_pw_scf_stru(sys_data, fp_pp_files)
+        ret_stru = make_abacus_scf_stru(sys_data, fp_pp_files, fp_params)
         with open("STRU", "w") as fp:
             fp.write(ret_stru)
 
@@ -2224,7 +2266,7 @@ def make_fp (iter_index,
     elif fp_style == "pwscf" :
         make_fp_pwscf(iter_index, jdata)
     elif fp_style == "abacus/scf" :
-        make_fp_abacus_pw_scf(iter_index, jdata)
+        make_fp_abacus_scf(iter_index, jdata)
     elif fp_style == "siesta" :
         make_fp_siesta(iter_index, jdata)
     elif fp_style == "gaussian" :
@@ -2262,7 +2304,7 @@ def _qe_check_fin(ii) :
         return False
     return True
 
-def _abacus_pw_scf_check_fin(ii) :
+def _abacus_scf_check_fin(ii) :
     if os.path.isfile(os.path.join(ii, 'OUT.ABACUS/running_scf.log')) :
         with open(os.path.join(ii, 'OUT.ABACUS/running_scf.log'), 'r') as fp :
             content = fp.read()
@@ -2407,7 +2449,7 @@ def run_fp (iter_index,
     elif fp_style == "abacus/scf":
         forward_files = ["INPUT", "STRU", "KPT"] + fp_pp_files
         backward_files = ["output", "OUT.ABACUS"]
-        run_fp_inner(iter_index, jdata, mdata,  forward_files, backward_files, _abacus_pw_scf_check_fin, log_file = 'output')
+        run_fp_inner(iter_index, jdata, mdata,  forward_files, backward_files, _abacus_scf_check_fin, log_file = 'output')
     elif fp_style == "siesta":
         forward_files = ['input'] + fp_pp_files
         backward_files = ['output']
@@ -2582,7 +2624,7 @@ def post_fp_pwscf (iter_index,
         all_sys.to_deepmd_raw(sys_data_path)
         all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
 
-def post_fp_abacus_pw_scf (iter_index,
+def post_fp_abacus_scf (iter_index,
                         jdata):
     model_devi_jobs = jdata['model_devi_jobs']
     assert (iter_index < len(model_devi_jobs))
@@ -2828,7 +2870,7 @@ def post_fp (iter_index,
     elif fp_style == "pwscf" :
         post_fp_pwscf(iter_index, jdata)
     elif fp_style == "abacus/scf":
-        post_fp_abacus_pw_scf(iter_index, jdata)
+        post_fp_abacus_scf(iter_index, jdata)
     elif fp_style == "siesta":
         post_fp_siesta(iter_index, jdata)
     elif fp_style == 'gaussian' :
@@ -2840,15 +2882,24 @@ def post_fp (iter_index,
     else :
         raise RuntimeError ("unsupported fp style")
     # clean traj
-    iter_name = make_iter_name(iter_index)
     clean_traj = True
     if 'model_devi_clean_traj' in jdata :
         clean_traj = jdata['model_devi_clean_traj']
-    if clean_traj:
-        modd_path = os.path.join(iter_name, model_devi_name)
+    modd_path =  None
+    if isinstance(clean_traj, bool):
+        iter_name = make_iter_name(iter_index)
+        if clean_traj:
+            modd_path = os.path.join(iter_name, model_devi_name)
+    elif isinstance(clean_traj, int):
+        clean_index = iter_index - clean_traj
+        if clean_index >= 0:
+            modd_path = os.path.join(make_iter_name(clean_index), model_devi_name)
+    if modd_path is not None:
         md_trajs = glob.glob(os.path.join(modd_path, 'task*/traj'))
-        for ii in md_trajs :
+        for ii in md_trajs:
             shutil.rmtree(ii)
+        
+
 
 def set_version(mdata):
     

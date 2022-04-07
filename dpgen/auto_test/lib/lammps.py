@@ -241,6 +241,8 @@ def make_lammps_equi(conf, type_map, interaction, param,
         ret += "fix             1 all box/relax iso 0.0 \n"
         ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)
         ret += "fix             1 all box/relax aniso 0.0 \n"
+        ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)
+        ret += "fix             1 all box/relax tri 0.0 \n"
     ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)
     ret += "variable        N equal count(all)\n"
     ret += "variable        V equal vol\n"

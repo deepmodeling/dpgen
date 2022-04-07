@@ -19,4 +19,3 @@ def poscar_unit (latt) :
     ret += "Direct\n"
     ret += "%.16f %.16f %.16f\n" % (0.0, 0.0, 0.0)
     return ret
-
