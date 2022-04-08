@@ -172,6 +172,117 @@ class Interstitial(Property):
                     dumpfn(self.supercell, 'supercell.json')
                 os.chdir(cwd)
 
+
+                os.chdir(path_to_work)
+                if 'bcc_self' in self.parameter and self.parameter['bcc_self']:
+                    with open('POSCAR', 'r') as fin:
+                        fin.readline()
+                        scale = float(fin.readline().split()[0])
+                        latt_param = float(fin.readline().split()[0])
+                        latt_param *= scale
+
+                    with open('task.000000/POSCAR', 'r') as fin:
+                        pos_line = fin.read().split('\n')
+
+                    super_latt_param = float(pos_line[2].split()[0])
+
+                    output_task1 = os.path.join(path_to_work, 'task.%06d' % (len(dss)))
+                    os.makedirs(output_task1, exist_ok=True)
+                    os.chdir(output_task1)
+                    task_list.append(output_task1)
+                    with open(insert_element_task, 'a+') as fout:
+                        print(self.insert_ele[0], file=fout)
+                    dumpfn(self.supercell, 'supercell.json')
+                    pos_line[-2] = '%.6f' % float(latt_param/4/super_latt_param) + ' ' + '%.6f' % float(latt_param/2/super_latt_param) + ' 0.000000 ' + self.insert_ele[0]
+                    with open('POSCAR', 'w+') as fout:
+                        for ii in pos_line:
+                                print(ii, file=fout)
+                    print('gen bcc tetrahedral')
+                    os.chdir(cwd)
+
+                    output_task2 = os.path.join(path_to_work, 'task.%06d' % (len(dss)+1))
+                    os.makedirs(output_task2, exist_ok=True)
+                    os.chdir(output_task2)
+                    task_list.append(output_task2)
+                    with open(insert_element_task, 'a+') as fout:
+                        print(self.insert_ele[0], file=fout)
+                    dumpfn(self.supercell, 'supercell.json')
+                    pos_line[-2] = '%.6f' % float(latt_param/2/super_latt_param) + ' ' + '%.6f' % float(latt_param/2/super_latt_param) + ' 0.000000 ' + self.insert_ele[0]
+                    with open('POSCAR', 'w+') as fout:
+                        for ii in pos_line:
+                                print(ii, file=fout)
+                    print('gen bcc octahedral')
+                    os.chdir(cwd)
+
+                    output_task3 = os.path.join(path_to_work, 'task.%06d' % (len(dss)+2))
+                    os.makedirs(output_task3, exist_ok=True)
+                    os.chdir(output_task3)
+                    task_list.append(output_task3)
+                    with open(insert_element_task, 'a+') as fout:
+                        print(self.insert_ele[0], file=fout)
+                    dumpfn(self.supercell, 'supercell.json')
+                    pos_line[-2] = '%.6f' % float(latt_param/4/super_latt_param) + ' ' + '%.6f' % float(latt_param/4/super_latt_param) + ' ' + '%.6f' % float(latt_param/4/super_latt_param) + ' ' + self.insert_ele[0]
+                    with open('POSCAR', 'w+') as fout:
+                        for ii in pos_line:
+                                print(ii, file=fout)
+                    print('gen bcc crowdion')
+                    os.chdir(cwd)
+
+                    for idx, ii in enumerate(pos_line):
+                        ss = ii.split()
+                        if len(ss) > 3:
+                            if abs(latt_param/2/super_latt_param - float(ss[0])) < 1e-5 and abs(latt_param/2/super_latt_param - float(ss[1])) < 1e-5 and abs(latt_param/2/super_latt_param - float(ss[2])) < 1e-5:
+                                replace_label = idx
+
+                    output_task4 = os.path.join(path_to_work, 'task.%06d' % (len(dss)+3))
+                    os.makedirs(output_task4, exist_ok=True)
+                    os.chdir(output_task4)
+                    task_list.append(output_task4)
+                    with open(insert_element_task, 'a+') as fout:
+                        print(self.insert_ele[0], file=fout)
+                    dumpfn(self.supercell, 'supercell.json')
+                    pos_line[-2] = '%.6f' % float(latt_param/3/super_latt_param) + ' ' + '%.6f' % float(latt_param/3/super_latt_param) + ' ' + '%.6f' % float(latt_param/3/super_latt_param) + ' ' + self.insert_ele[0]
+                    pos_line[replace_label] = '%.6f' % float(latt_param/3*2/super_latt_param) + ' ' + '%.6f' % float(latt_param/3*2/super_latt_param) + ' ' + '%.6f' % float(latt_param/3*2/super_latt_param) + ' ' + self.insert_ele[0]
+
+                    with open('POSCAR', 'w+') as fout:
+                        for ii in pos_line:
+                                print(ii, file=fout)
+                    print('gen bcc <111> dumbbell')
+                    os.chdir(cwd)
+
+                    output_task5 = os.path.join(path_to_work, 'task.%06d' % (len(dss)+4))
+                    os.makedirs(output_task5, exist_ok=True)
+                    os.chdir(output_task5)
+                    task_list.append(output_task5)
+                    with open(insert_element_task, 'a+') as fout:
+                        print(self.insert_ele[0], file=fout)
+                    dumpfn(self.supercell, 'supercell.json')
+                    pos_line[-2] = '%.6f' % float((latt_param+2.1/2**0.5)/2/super_latt_param) + ' ' + '%.6f' % float((latt_param-2.1/2**0.5)/2/super_latt_param) + ' ' + '%.6f' % float(latt_param/2/super_latt_param) + ' ' + self.insert_ele[0]
+                    pos_line[replace_label] = '%.6f' % float((latt_param-2.1/2**0.5)/2/super_latt_param) + ' ' + '%.6f' % float((latt_param+2.1/2**0.5)/2/super_latt_param) + ' ' + '%.6f' % float(latt_param/2/super_latt_param) + ' ' + self.insert_ele[0]
+
+                    with open('POSCAR', 'w+') as fout:
+                        for ii in pos_line:
+                                print(ii, file=fout)
+                    print('gen bcc <110> dumbbell')
+                    os.chdir(cwd)
+
+                    output_task6 = os.path.join(path_to_work, 'task.%06d' % (len(dss)+5))
+                    os.makedirs(output_task6, exist_ok=True)
+                    os.chdir(output_task6)
+                    task_list.append(output_task6)
+                    with open(insert_element_task, 'a+') as fout:
+                        print(self.insert_ele[0], file=fout)
+                    dumpfn(self.supercell, 'supercell.json')
+                    pos_line[-2] = '%.6f' % float(latt_param/2/super_latt_param) + ' ' + '%.6f' % float(latt_param/2/super_latt_param) + ' ' + '%.6f' % float((latt_param-2.1)/2/super_latt_param) + ' ' + self.insert_ele[0]
+                    pos_line[replace_label] = '%.6f' % float(latt_param/2/super_latt_param) + ' ' + '%.6f' % float(latt_param/2/super_latt_param) + ' ' + '%.6f' % float((latt_param+2.1)/2/super_latt_param) + ' ' + self.insert_ele[0]
+
+                    with open('POSCAR', 'w+') as fout:
+                        for ii in pos_line:
+                                print(ii, file=fout)
+                    print('gen bcc <100> dumbbell')
+                    os.chdir(cwd)
+
+
         return task_list
 
     def post_process(self, task_list):
