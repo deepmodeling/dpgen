@@ -180,6 +180,9 @@ class Interstitial(Property):
                         scale = float(fin.readline().split()[0])
                         latt_param = float(fin.readline().split()[0])
                         latt_param *= scale
+                    
+                    if not os.path.isfile('task.000000/POSCAR'):
+                        raise RuntimeError("need task.000000 structure as reference")
 
                     with open('task.000000/POSCAR', 'r') as fin:
                         pos_line = fin.read().split('\n')
