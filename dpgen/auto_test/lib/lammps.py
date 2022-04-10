@@ -115,7 +115,7 @@ def inter_deepmd(param):
             ret += "%s out_freq 10 out_file model_devi.out\n" % model_list
         else:
             ret += models[0] + '\n'
-    ret += "pair_coeff\n"
+    ret += "pair_coeff * *\n"
     return ret
 
 
