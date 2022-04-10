@@ -173,8 +173,8 @@ class Interstitial(Property):
                 os.chdir(cwd)
 
 
-                os.chdir(path_to_work)
                 if 'bcc_self' in self.parameter and self.parameter['bcc_self']:
+                    os.chdir(path_to_work)
                     with open('POSCAR', 'r') as fin:
                         fin.readline()
                         scale = float(fin.readline().split()[0])
