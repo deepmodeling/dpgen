@@ -1853,12 +1853,15 @@ def _make_fp_vasp_inner (modd_path,
                     )
                 dlog.info("system {0:s} {1:9s} : f_trust_lo {2:6.3f}   v_trust_lo {3:6.3f}".format(ss, 'adapted', f_trust_lo_ad, v_trust_lo_ad))
         elif model_devi_engine == "amber":
-            cc = 0
             counter = Counter()
             counter['candidate'] = 0
             counter['failed'] = 0
             counter['accurate'] = 0
+            fp_rest_accurate = []
+            fp_candidate = []
+            fp_rest_failed = []
             for tt in modd_system_task :
+                cc = 0
                 with open(os.path.join(tt, "rc.mdout")) as f:
                     skip_first = False
                     first_active = True
