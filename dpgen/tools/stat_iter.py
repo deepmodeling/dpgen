@@ -42,10 +42,10 @@ def stat_iter(target_folder,
             pk_id, task_dirname, OUTCAR_filename=path_doc.rsplit('/', 2) # pylint: disable=unused-variable
             try:
                 _sys = dpdata.LabeledSystem(path_doc, type_map = jdata['type_map'] )
-            except:
+            except Exception:
                 try:
                     _sys = dpdata.LabeledSystem(path_doc.replace('OUTCAR','vasprun.xml'), type_map = jdata['type_map'])
-                except:
+                except Exception:
                     _sys = dpdata.LabeledSystem()
             if len(_sys) == 1:
                 pass

@@ -178,7 +178,7 @@ class DispatcherList():
                 self.dispatcher_list[ii]["dispatcher_status"] = "unsubmitted"
                 flag = 1
                 break
-            except:
+            except Exception:
                 count += 1
                 time.sleep(60)
         if not flag:
@@ -201,7 +201,7 @@ class DispatcherList():
                     finished = self.dispatcher_list[ii]["dispatcher"].all_finished(self.dispatcher_list[ii]["entity"].job_handler, allow_failue, clean)
                     if finished:
                         self.dispatcher_list[ii]["dispatcher_status"] = "finished"
-                except:
+                except Exception:
                     pass                    
             elif status == 1:
                 # self.dispatcher_list[ii]["dispatcher_status"] = "terminated"

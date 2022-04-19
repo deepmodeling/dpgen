@@ -14,7 +14,7 @@ from dpgen.auto_test.mpdb import get_structure
 try:
    os.environ['MAPI_KEY']
    exist_key=True
-except:
+except Exception:
    exist_key=False
 
 
