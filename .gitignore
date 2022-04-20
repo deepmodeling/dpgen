@@ -40,3 +40,4 @@ dbconfig.json
 .vscode/*
 .idea/*
 _build
+tests/generator/calypso_test_path
