@@ -127,7 +127,7 @@ def create_init_tasks(target_folder, param_file, output, fp_json, verbose = True
                 try:                    
                     fp_params = fp_jdata['user_fp_params']
                     user_input = True
-                except:
+                except Exception:
                     fp_params = fp_jdata['fp_params']
                     user_input = False
                 make_pwscf('.', fp_params, mass_map, fp_pp_files, fp_pp_files, user_input)
@@ -240,7 +240,7 @@ def create_tasks(target_folder, param_file, output, fp_json, verbose = True, num
                 try:                    
                     fp_params = fp_jdata['user_fp_params']
                     user_input = True
-                except:
+                except Exception:
                     fp_params = fp_jdata['fp_params']
                     user_input = False
                 make_pwscf('.', fp_params, mass_map, fp_pp_files, fp_pp_files, user_input)

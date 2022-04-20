@@ -333,7 +333,7 @@ def make_dispatcher(mdata, mdata_resource=None, work_path=None, run_tasks=None, 
             context_type = 'local'
         try:
             batch_type = mdata['batch']
-        except:
+        except Exception:
             dlog.info('cannot find key "batch" in machine file, try to use deprecated key "machine_type"')
             batch_type = mdata['machine_type']
         lazy_local = (mdata.get('lazy-local', False)) or (mdata.get('lazy_local', False))

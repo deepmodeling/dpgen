@@ -130,9 +130,9 @@ class Slurm(Batch) :
             fp_max_errors = 3
             try:
                 fp_max_errors = res['fp_max_errors']
-            except:
+            except Exception:
                 pass
-        except:
+        except Exception:
             cvasp=False
 
         _cmd = cmd.split('1>')[0].strip()

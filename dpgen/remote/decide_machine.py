@@ -68,7 +68,7 @@ def convert_mdata(mdata, task_types=["train", "model_devi", "fp"]):
 # 						if 'command' in profile:
 # 							mdata['train_command'] = profile["command"]
 # 						continue_flag = True
-# 			except:
+# 			except Exception:
 # 				pass
 # 		if ("hostname" not in mdata["train"][0]["machine"]) or (len(mdata["train"]) == 1):
 # 			mdata["train_machine"] = mdata["train"][0]["machine"]
@@ -180,7 +180,7 @@ def convert_mdata(mdata, task_types=["train", "model_devi", "fp"]):
 # 						mdata['model_devi_command'] = profile['command']
 # 						mdata['model_devi_group_size'] = profile['group_size']
 # 						continue_flag = True
-# 			except:
+# 			except Exception:
 # 				pass
 # 		if ("hostname" not in mdata["model_devi"][0]["machine"]) or (len(mdata["model_devi"]) == 1):
 # 			mdata["model_devi_machine"] = mdata["model_devi"][0]["machine"]
@@ -263,7 +263,7 @@ def convert_mdata(mdata, task_types=["train", "model_devi", "fp"]):
 # 						mdata['fp_group_size'] = profile['group_size']
 #
 # 						continue_flag = True
-# 			except:
+# 			except Exception:
 # 				pass
 # 		if ("hostname" not in mdata["fp"][0]["machine"]) or (len(mdata["fp"]) == 1):
 # 			mdata["fp_machine"] = mdata["fp"][0]["machine"]

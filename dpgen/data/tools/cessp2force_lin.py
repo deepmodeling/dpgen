@@ -290,7 +290,7 @@ if __name__ == "__main__":
                 try:
                     name = str(item.split('=')[0])
                     number = int(item.split('=')[1])
-                except:
+                except Exception:
                     sys.stderr.write("\nERROR: Could not read the -c string\n")
                     sys.exit()
                 if number >= max_types:

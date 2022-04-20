@@ -39,7 +39,11 @@ def make_equi(confs,
     # ...
     cwd = os.getcwd()
     # generate poscar for single element crystal
-    if len(ele_list) == 1:
+    if len(ele_list) == 1 or 'single' in inter_param:
+        if 'single' in inter_param:
+            element_label = int(inter_param['single'])
+        else:
+            element_label = 0
         for ii in conf_dirs:
             os.chdir(ii)
             crys_type = ii.split('/')[-1]
@@ -47,22 +51,22 @@ def make_equi(confs,
             dlog.debug('pwd: %s' % os.getcwd())
             if crys_type == 'std-fcc':
                 if not os.path.exists('POSCAR'):
-                    crys.fcc1(ele_list[0]).to('POSCAR', 'POSCAR')
+                    crys.fcc1(ele_list[element_label]).to('POSCAR', 'POSCAR')
             elif crys_type == 'std-hcp':
                 if not os.path.exists('POSCAR'):
-                    crys.hcp(ele_list[0]).to('POSCAR', 'POSCAR')
+                    crys.hcp(ele_list[element_label]).to('POSCAR', 'POSCAR')
             elif crys_type == 'std-dhcp':
                 if not os.path.exists('POSCAR'):
-                    crys.dhcp(ele_list[0]).to('POSCAR', 'POSCAR')
+                    crys.dhcp(ele_list[element_label]).to('POSCAR', 'POSCAR')
             elif crys_type == 'std-bcc':
                 if not os.path.exists('POSCAR'):
-                    crys.bcc(ele_list[0]).to('POSCAR', 'POSCAR')
+                    crys.bcc(ele_list[element_label]).to('POSCAR', 'POSCAR')
             elif crys_type == 'std-diamond':
                 if not os.path.exists('POSCAR'):
-                    crys.diamond(ele_list[0]).to('POSCAR', 'POSCAR')
+                    crys.diamond(ele_list[element_label]).to('POSCAR', 'POSCAR')
             elif crys_type == 'std-sc':
                 if not os.path.exists('POSCAR'):
-                    crys.sc(ele_list[0]).to('POSCAR', 'POSCAR')
+                    crys.sc(ele_list[element_label]).to('POSCAR', 'POSCAR')
 
             os.chdir(cwd)
     task_dirs = []

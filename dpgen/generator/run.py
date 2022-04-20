@@ -576,7 +576,7 @@ def run_train (iter_index,
 
     try:
         train_group_size = mdata['train_group_size']
-    except:
+    except Exception:
         train_group_size = 1
 
     api_version = mdata.get('api_version', '0.9')
@@ -2590,11 +2590,11 @@ def post_fp_vasp (iter_index,
         for oo in sys_outcars :
             try:
                 _sys = dpdata.LabeledSystem(oo, type_map = jdata['type_map'])
-            except:
+            except Exception:
                 dlog.info('Try to parse from vasprun.xml')
                 try:
                    _sys = dpdata.LabeledSystem(oo.replace('OUTCAR','vasprun.xml'), type_map = jdata['type_map'])
-                except:
+                except Exception:
                    _sys = dpdata.LabeledSystem()
                    dlog.info('Failed fp path: %s'%oo.replace('OUTCAR',''))
             if len(_sys) == 1:
@@ -2974,7 +2974,7 @@ def run_iter (param_file, machine_file) :
        warnings.simplefilter('ignore', ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
        jdata=loadfn(param_file)
        mdata=loadfn(machine_file)
-    except:
+    except Exception:
        with open (param_file, 'r') as fp :
            jdata = json.load (fp)
        with open (machine_file, 'r') as fp:
