@@ -120,8 +120,8 @@ class Lammps(Task):
 
         # dumpfn(task_param, os.path.join(output_dir, 'task.json'), indent=4)
 
-        etol = 1e-12
-        ftol = 1e-6
+        etol = 0
+        ftol = 1e-10
         maxiter = 5000
         maxeval = 500000
         B0 = 70
