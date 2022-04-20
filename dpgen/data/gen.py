@@ -136,15 +136,28 @@ def stru_ele(supercell_stru, stru_out, eles, natoms, jdata, path_work):
         for iatom in range(natoms[iele]):
             supercell_stru["types"].append(iele)
     pp_file_names = [os.path.basename(a) for a in jdata['potcars']]
+    orb_file_names = None
+    dpks_descriptor_name = None
+    if 'orb_files' in jdata:
+        orb_file_names = [os.path.basename(a) for a in jdata['orb_files']]
+    if 'dpks_descriptor' in jdata:
+        dpks_descriptor_name = os.path.basename(jdata['dpks_descriptor'])
     supercell_stru["atom_masses"] = jdata["atom_masses"]
     supercell_stru["atom_names"] = eles
-    stru_text = make_abacus_scf_stru(supercell_stru, pp_file_names)
+    stru_text = make_abacus_scf_stru(supercell_stru, pp_file_names, orb_file_names, dpks_descriptor_name)
     with open(stru_out, "w") as f:
         f.write(stru_text)
     absolute_pp_file_path = [os.path.abspath(a) for a in jdata["potcars"]]
+    if 'orb_files' in jdata:
+        absolute_orb_file_path = [os.path.abspath(a) for a in jdata['orb_files']]
+    if 'dpks_descriptor' in jdata:
+        absolute_dpks_descriptor_path = os.path.abspath(jdata['dpks_descriptor'])
     for ipp, pp_file in enumerate(absolute_pp_file_path):
         os.symlink(pp_file, os.path.join(path_work, pp_file_names[ipp]))
-
+        if 'orb_files' in jdata:
+                os.symlink(absolute_orb_file_path[ipp], os.path.join(path_work, orb_file_names[ipp]))
+    if 'dpks_descriptor' in jdata:
+        os.symlink(absolute_dpks_descriptor_path, os.path.join(path_work, dpks_descriptor_name))
 
 def poscar_natoms(lines) :
     numb_atoms = 0
@@ -217,7 +230,14 @@ def poscar_scale_abacus(poscar_in, poscar_out, scale, jdata):
     stru["cells"] *= scale
     stru["coords"] *= scale
     pp_files = [os.path.basename(a) for a in jdata['potcars']]
-    ret = make_abacus_scf_stru(stru, pp_files)
+    orb_file_names = None
+    dpks_descriptor_name = None
+    if 'orb_files' in jdata:
+        orb_file_names = [os.path.basename(a) for a in jdata['orb_files']]
+    if 'dpks_descriptor' in jdata:
+        dpks_descriptor_name = os.path.basename(jdata['dpks_descriptor'])
+    ret = make_abacus_scf_stru(stru, pp_files, orb_file_names, dpks_descriptor_name)
+    #ret = make_abacus_scf_stru(stru, pp_files)
     with open(poscar_out, "w") as fp:
         fp.write(ret)
     
@@ -351,7 +371,13 @@ def make_super_cell_STRU(jdata) :
     from_struct=get_abacus_STRU(from_file, n_ele=len(jdata["elements"]))
     from_struct = make_supercell_abacus(from_struct, super_cell)
     pp_file_names = [os.path.basename(a) for a in jdata['potcars']]
-    stru_text = make_abacus_scf_stru(from_struct, pp_file_names)
+    orb_file_names = None
+    dpks_descriptor_name = None
+    if 'orb_files' in jdata:
+        orb_file_names = [os.path.basename(a) for a in jdata['orb_files']]
+    if 'dpks_descriptor' in jdata:
+        dpks_descriptor_name = os.path.basename(jdata['dpks_descriptor'])
+    stru_text = make_abacus_scf_stru(from_struct, pp_file_names, orb_file_names, dpks_descriptor_name)
     with open(to_file, "w") as fp:
         fp.write(stru_text) 
     # if kspacing is specified in json file, use kspacing to generate KPT (rather than directly using specified KPT).
@@ -372,12 +398,20 @@ def make_super_cell_STRU(jdata) :
     create_path(path_work)
     cwd = os.getcwd()
     absolute_pp_file_path = [os.path.abspath(a) for a in jdata['potcars']]
+    if 'orb_files' in jdata:
+        absolute_orb_file_path = [os.path.abspath(a) for a in jdata['orb_files']]
+    if 'dpks_descriptor' in jdata:
+        absolute_dpks_descriptor_path = os.path.abspath(jdata['dpks_descriptor'])
     to_file = os.path.abspath(to_file)
     os.chdir(path_work)
     try:
         os.symlink(os.path.relpath(to_file), 'STRU')
         for ipp, pp_file in enumerate(absolute_pp_file_path):
             os.symlink(pp_file, pp_file_names[ipp]) # create pseudo-potential files
+            if 'orb_files' in jdata:
+                os.symlink(absolute_orb_file_path[ipp], orb_file_names[ipp])
+        if 'dpks_descriptor' in jdata:
+            os.symlink(absolute_dpks_descriptor_path, dpks_descriptor_name)
     except FileExistsError:
         pass
     os.chdir(cwd)
@@ -528,6 +562,13 @@ def make_abacus_relax (jdata, mdata) :
         jdata['relax_kpt'] = os.path.relpath(jdata['relax_kpt'])
         shutil.copy2( jdata['relax_kpt'], 
                     os.path.join(work_dir, 'KPT'))
+    
+    if "dpks_model" in jdata:
+        dpks_model_absolute_path = os.path.abspath(jdata["dpks_model"])
+        assert(os.path.isfile(dpks_model_absolute_path))
+        dpks_model_name = os.path.basename(jdata["dpks_model"])
+        shutil.copy2( dpks_model_absolute_path, 
+                 os.path.join(work_dir, dpks_model_name))
 
     os.chdir(work_dir)
     
@@ -536,9 +577,13 @@ def make_abacus_relax (jdata, mdata) :
         os.chdir(ss)
         ln_src = os.path.relpath(os.path.join(work_dir,'INPUT'))
         kpt_src = os.path.relpath(os.path.join(work_dir,'KPT'))
+        if "dpks_model" in jdata:
+            ksmd_src = os.path.relpath(os.path.join(work_dir,dpks_model_name))
         try:
            os.symlink(ln_src, 'INPUT')
            os.symlink(kpt_src, 'KPT')
+           if "dpks_model" in jdata:
+               os.symlink(ksmd_src, dpks_model_name)
         except FileExistsError:
            pass
         os.chdir(work_dir)
@@ -624,6 +669,12 @@ def pert_scaled(jdata) :
     pert_atom = jdata['pert_atom']
     pert_numb = jdata['pert_numb']
     pp_file = [os.path.basename(a) for a in jdata['potcars']]
+    orb_file_names = None
+    dpks_descriptor_name = None
+    if 'orb_files' in jdata:
+        orb_file_names = [os.path.basename(a) for a in jdata['orb_files']]
+    if 'dpks_descriptor' in jdata:
+        dpks_descriptor_name = os.path.basename(jdata['dpks_descriptor'])
     from_poscar = False 
     if 'from_poscar' in jdata :
         from_poscar = jdata['from_poscar']
@@ -671,7 +722,7 @@ def pert_scaled(jdata) :
                         stru_in = get_abacus_STRU(pos_in)
                         stru_out = shuffle_stru_data(stru_in)
                         with open(pos_out, "w") as fp:
-                            fp.write(make_abacus_scf_stru(stru_out, pp_file))
+                            fp.write(make_abacus_scf_stru(stru_out, pp_file, orb_file_names, dpks_descriptor_name))
                 else :
                     shutil.copy2(pos_in, pos_out)
                 os.remove(pos_in)
@@ -693,7 +744,7 @@ def pert_scaled(jdata) :
                     stru_in = get_abacus_STRU(pos_in)
                     stru_out = shuffle_stru_data(stru_in)
                     with open(pos_out, "w") as fp:
-                        fp.write(make_abacus_scf_stru(stru_out, pp_file))
+                        fp.write(make_abacus_scf_stru(stru_out, pp_file, orb_file_names, dpks_descriptor_name))
             else :
                 shutil.copy2(pos_in, pos_out)
             os.chdir(cwd)
@@ -790,6 +841,28 @@ def make_abacus_md(jdata, mdata) :
     if 'md_kpt' in jdata:
         shutil.copy2(jdata['md_kpt'], 
                      os.path.join(path_md, 'KPT'))
+    orb_file_names = None
+    orb_file_abspath = None
+    dpks_descriptor_name = None
+    dpks_descriptor_abspath = None
+    dpks_model_name = None
+    dpks_model_abspath = None
+    if 'orb_files' in jdata:
+        orb_file_names = [os.path.basename(a) for a in jdata['orb_files']]
+        orb_file_abspath = [os.path.abspath(a) for a in jdata['orb_files']]
+        for iorb, orb_file in enumerate(orb_file_names):
+            shutil.copy2(orb_file_abspath[iorb], 
+                 os.path.join(path_md, orb_file))
+    if 'dpks_descriptor' in jdata:
+        dpks_descriptor_name = os.path.basename(jdata['dpks_descriptor'])
+        dpks_descriptor_abspath = os.path.abspath(jdata['dpks_descriptor'])
+        shutil.copy2(dpks_descriptor_abspath, 
+                 os.path.join(path_md, dpks_descriptor_name))
+    if 'dpks_model' in jdata:
+        dpks_model_name = os.path.basename(jdata['dpks_model'])
+        dpks_model_abspath = os.path.abspath(jdata['dpks_model'])
+        shutil.copy2(dpks_model_abspath, 
+                 os.path.join(path_md, dpks_model_name))
     for pp_file in jdata['potcars']:
         shutil.copy2(pp_file, 
                  os.path.join(path_md, os.path.basename(pp_file)))
@@ -829,6 +902,13 @@ def make_abacus_md(jdata, mdata) :
                 try:
                     for pp_file in [os.path.basename(a) for a in jdata['potcars']]:
                         os.symlink(os.path.relpath(os.path.join(path_md, pp_file)), pp_file)
+                    if 'orb_files' in jdata:
+                        for orb_file in orb_file_names:
+                            os.symlink(os.path.relpath(os.path.join(path_md, orb_file)), orb_file)   
+                    if 'dpks_model' in jdata:
+                        os.symlink(os.path.relpath(os.path.join(path_md, dpks_model_name)), dpks_model_name)
+                    if 'dpks_descriptor' in jdata:
+                        os.symlink(os.path.relpath(os.path.join(path_md, dpks_descriptor_name)), dpks_descriptor_name) 
                 except FileExistsError:
                     pass
                  
@@ -1049,7 +1129,16 @@ def run_abacus_relax(jdata, mdata):
     #machine_type = mdata['fp_machine']['machine_type']
     work_dir = os.path.join(jdata['out_dir'], global_dirname_02)
     pp_files = [os.path.basename(a) for a in jdata["potcars"]]
-    forward_files = ["STRU", "INPUT", "KPT"] + pp_files
+    orb_file_names = []
+    dpks_descriptor_name = []
+    dpks_model_name = []
+    if 'orb_files' in jdata:
+        orb_file_names = [os.path.basename(a) for a in jdata['orb_files']]
+    if 'dpks_descriptor' in jdata:
+        dpks_descriptor_name = [os.path.basename(jdata['dpks_descriptor'])]
+    if 'dpks_model' in jdata:
+        dpks_model_name = [os.path.basename(jdata['dpks_model'])]
+    forward_files = ["STRU", "INPUT", "KPT"] + pp_files + orb_file_names + dpks_descriptor_name + dpks_model_name
     user_forward_files = mdata.get("fp" + "_user_forward_files", [])
     forward_files += [os.path.basename(file) for file in user_forward_files]
     backward_files = ["OUT.ABACUS"]
@@ -1174,7 +1263,16 @@ def run_abacus_md(jdata, mdata):
     pert_numb = jdata['pert_numb'] 
     md_nstep = jdata['md_nstep']
 
-    forward_files = ["STRU", "INPUT", "KPT"]
+    orb_file_names = []
+    dpks_descriptor_name = []
+    dpks_model_name = []
+    if 'orb_files' in jdata:
+        orb_file_names = [os.path.basename(a) for a in jdata['orb_files']]
+    if 'dpks_descriptor' in jdata:
+        dpks_descriptor_name = [os.path.basename(jdata['dpks_descriptor'])]
+    if 'dpks_model' in jdata:
+        dpks_model_name = [os.path.basename(jdata['dpks_model'])]
+    forward_files = ["STRU", "INPUT", "KPT"] + orb_file_names + dpks_descriptor_name + dpks_model_name
     for pp_file in [os.path.basename(a) for a in jdata['potcars']]:
         forward_files.append(pp_file)
     user_forward_files = mdata.get("fp" + "_user_forward_files", [])

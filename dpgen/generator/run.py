@@ -2021,6 +2021,44 @@ def sys_link_fp_vasp_pp (iter_index,
             os.symlink(os.path.join('..', 'POTCAR.%s' % ii), 'POTCAR')
             os.chdir(cwd)
 
+def _link_fp_abacus_orb_descript (iter_index,
+                      jdata) :
+    # assume lcao orbital files, numerical descrptors and model for dpks are all in fp_pp_path.
+    fp_pp_path = jdata['fp_pp_path']
+
+    fp_orb_files = jdata['fp_orb_files']
+    assert(os.path.exists(fp_pp_path))
+    fp_dpks_descriptor = None
+    fp_dpks_model = None
+    if "fp_dpks_descriptor" in jdata:
+        fp_dpks_descriptor = jdata["fp_dpks_descriptor"]
+    if "user_fp_params" in jdata:
+        if "deepks_model" in jdata["user_fp_params"]:
+            fp_dpks_model = jdata["user_fp_params"]["deepks_model"]
+
+    fp_pp_path = os.path.abspath(fp_pp_path)
+
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+
+    fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
+    fp_tasks.sort()
+    if len(fp_tasks) == 0 :
+        return
+    cwd = os.getcwd()
+    for ii in fp_tasks:
+        os.chdir(ii)
+        for jj in fp_orb_files:
+            orb_file = os.path.join(fp_pp_path, jj)
+            os.symlink(orb_file, jj)
+        if fp_dpks_descriptor is not None:
+            descrptor = os.path.join(fp_pp_path, fp_dpks_descriptor)
+            os.symlink(descrptor, fp_dpks_descriptor)
+        if fp_dpks_model is not None:
+            dpks_model = os.path.join(fp_pp_path, fp_dpks_model)
+            os.symlink(dpks_model, fp_dpks_model)
+        os.chdir(cwd)
+
 def _make_fp_vasp_configs(iter_index,
                           jdata):
     fp_task_max = jdata['fp_task_max']
@@ -2115,8 +2153,20 @@ def make_fp_abacus_scf(iter_index,
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
     fp_pp_files = jdata['fp_pp_files']
+    fp_orb_files = None
+    fp_dpks_descriptor = None
+    assert('user_fp_params' in jdata.keys())
     if 'user_fp_params' in jdata.keys() :
         fp_params = jdata['user_fp_params']
+        # for lcao 
+        if 'basis_type' in fp_params:
+            if fp_params['basis_type'] == 'lcao':
+                assert('fp_orb_files' in jdata and type(jdata['fp_orb_files']) == list and len(jdata['fp_orb_files']) == len(fp_pp_files))
+                fp_orb_files = jdata['fp_orb_files']
+        if 'deepks_out_labels' in fp_params:
+            if fp_params['deepks_out_labels'] == 1:
+                assert('fp_dpks_descriptor' in jdata and type(jdata['fp_dpks_descriptor']) == str)
+                fp_dpks_descriptor = jdata['fp_dpks_descriptor']
         #user_input = True
     else:
         raise RuntimeError("Key 'user_fp_params' and its value have to be specified in parameter json file.")
@@ -2132,13 +2182,16 @@ def make_fp_abacus_scf(iter_index,
         ret_kpt = make_abacus_scf_kpt(fp_params)
         with open("KPT", "w") as fp:
             fp.write(ret_kpt)
-        ret_stru = make_abacus_scf_stru(sys_data, fp_pp_files, fp_params)
+        ret_stru = make_abacus_scf_stru(sys_data, fp_pp_files, fp_orb_files, fp_dpks_descriptor, fp_params)
         with open("STRU", "w") as fp:
             fp.write(ret_stru)
 
         os.chdir(cwd)
     # link pp files
     _link_fp_vasp_pp(iter_index, jdata)
+    if 'basis_type' in fp_params:
+            if fp_params['basis_type'] == 'lcao':
+                _link_fp_abacus_orb_descript(iter_index, jdata)
 
 
 def make_fp_siesta(iter_index,
@@ -2448,6 +2501,13 @@ def run_fp (iter_index,
         run_fp_inner(iter_index, jdata, mdata,  forward_files, backward_files, _qe_check_fin, log_file = 'output')
     elif fp_style == "abacus/scf":
         forward_files = ["INPUT", "STRU", "KPT"] + fp_pp_files
+        if "fp_orb_files" in jdata:
+            forward_files += jdata["fp_orb_files"]
+        if "fp_dpks_descriptor" in jdata:
+            forward_files.append(jdata["fp_dpks_descriptor"])
+        if "user_fp_params" in jdata:
+            if "deepks_model" in jdata["user_fp_params"]:
+                forward_files.append(jdata["user_fp_params"]["deepks_model"])
         backward_files = ["output", "OUT.ABACUS"]
         run_fp_inner(iter_index, jdata, mdata,  forward_files, backward_files, _abacus_scf_check_fin, log_file = 'output')
     elif fp_style == "siesta":

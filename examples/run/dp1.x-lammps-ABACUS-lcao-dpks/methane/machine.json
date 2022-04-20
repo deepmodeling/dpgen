@@ -1,0 +1,88 @@
+{
+	"train":[
+	{
+	"machine":{
+		"machine_type": "slurm",
+		"host_name": "localhost",
+		"port": 22,
+		"username": "mhchen_cls",
+		"work_path": "/home/mhchen_pkuhpc/mhchen_cls/lustre2/5_liurenxi/5_ABACUS_dpgen_interface/5_dpgen_examples/dpgen-example/run_abacus_fake_dpks"
+		},
+
+	"resources":{
+		"numb_node": 1,
+		"numb_gpu": 1,
+		"task_per_node": 1,
+		"partition": "gpu_4l",
+		"exclude_list": [],
+		"mem_limit": 0,
+		"source_list": ["/home/mhchen_pkuhpc/mhchen_cls/lustre2/5_liurenxi/5_ABACUS_dpgen_interface/env.sh"],
+		"module_list": [],
+		"time_limit": "23:0:0",
+		"account":"mhchen_g1",
+		"qos": "mhcheng4c"	
+	},
+	"python_path": "/home/mhchen_pkuhpc/mhchen_cls/lustre2/5_liurenxi/5_dpgen_interface/4_deepmd-kit/dpmd_install/bin/python"
+	}
+	],
+"model_devi": [
+	{
+		"machine": {	
+			"machine_type": "slurm",
+			"hostname": "localhost",
+			"port": 22,
+			"username": "mhchen_cls",
+			"work_path": "/home/mhchen_pkuhpc/mhchen_cls/lustre2/5_liurenxi/5_ABACUS_dpgen_interface/5_dpgen_examples/dpgen-example/run_abacus_fake_dpks"	
+		},
+		"resources": {	
+			"num_node": 1,
+			"num_gpu": 1,
+			"task_per_node": 1,
+			"partition": "gpu_4l",
+			"exclude_list": [],
+			"mem_limit": 0,
+			"source_list": ["/home/mhchen_pkuhpc/mhchen_cls/lustre2/5_liurenxi/5_ABACUS_dpgen_interface/env.sh"],
+			"module_list": [],
+			"time_limit": "14:00:00",
+			"account": "mhchen_g1",
+			"qos": "mhcheng4c",
+			"allow_failure":true
+		},
+		"command": "lmp",
+		"group_size": 6
+	}
+],
+"fp": [
+	{
+		"machine":{
+			"machine_type": "slurm",
+			"hostname": "localhost",
+			"port": 22,
+			"username": "mhchen_cls",
+			"work_path": "/home/mhchen_pkuhpc/mhchen_cls/lustre2/5_liurenxi/5_ABACUS_dpgen_interface/5_dpgen_examples/dpgen-example/run_abacus_fake_dpks"
+		},
+		"resources": {
+			"cvasp": false,
+			"numb_node": 1,
+			"partition": "cn-large",
+			"task_per_node": 4,
+
+			"numb_gpu": 0,
+			"exclude_list": [],
+			"with_mpi": false,
+			"mem_limit": 0,
+			"source_list":[
+				"/home/mhchen_pkuhpc/mhchen_cls/lustre2/5_liurenxi/ABACUS/source_intel.sh"
+			],
+			"module_list":[],
+			"time_limit": "48:0:0",
+			"account": "mhchen_cg2",
+			"qos": "mhchenq",
+			"_comment": "that's all"
+		},
+		"command": "mpirun -np 4 ABACUS.mpi",
+		"group_size": 150
+	}
+
+]
+}
