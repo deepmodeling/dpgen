@@ -156,8 +156,8 @@ ecutwfc 80.000000\n\
 dr2 1.000000e-07\n\
 niter 50\n\
 basis_type pw\n\
-dft_functional pbe\n\
 gamma_only 1\n\
+dft_functional pbe\n\
 mixing_type pulay\n\
 mixing_beta 0.400000\n\
 symmetry 1\n\

@@ -614,6 +614,10 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | *fp_style == cp2k*
 | **user_fp_params** | Dict |  |Parameters for cp2k calculation. find detail in manual.cp2k.org. only the kind section must be set before use.  we assume that you have basic knowledge for cp2k input.
 | **external_input_path** | String |  | Conflict with key:user_fp_params, use the template input provided by user, some rules should be followed, read the following text in detail.
+| *fp_style == ABACUS*
+| **user_fp_params** | Dict |  |Parameters for ABACUS INPUT. find detail [Here](https://github.com/deepmodeling/abacus-develop/blob/develop/docs/input-main.md#out-descriptor). If `deepks_model` is set, the model file should be in the pseudopotential directory. 
+| **fp_orb_files** | List |  |List of atomic orbital files. The files should be in pseudopotential directory. 
+| **fp_dpks_descriptor** | String |  |DeePKS descriptor file name. The file should be in pseudopotential directory. 
 
 One can choose the model-deviation engine by specifying the key `model_devi_engine`. If `model_devi_engine` is not specified, the default model-deviation engine will be LAMMPS.
 
