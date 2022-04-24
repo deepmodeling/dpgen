@@ -1,88 +1,75 @@
 {
-	"train":[
-	{
-	"machine":{
-		"machine_type": "slurm",
-		"host_name": "localhost",
-		"port": 22,
-		"username": "mhchen_cls",
-		"work_path": "/home/mhchen_pkuhpc/mhchen_cls/lustre2/5_liurenxi/5_ABACUS_dpgen_interface/5_dpgen_examples/dpgen-example/run_abacus_fake_dpks"
-		},
-
-	"resources":{
-		"numb_node": 1,
-		"numb_gpu": 1,
-		"task_per_node": 1,
-		"partition": "gpu_4l",
-		"exclude_list": [],
-		"mem_limit": 0,
-		"source_list": ["/home/mhchen_pkuhpc/mhchen_cls/lustre2/5_liurenxi/5_ABACUS_dpgen_interface/env.sh"],
-		"module_list": [],
-		"time_limit": "23:0:0",
-		"account":"mhchen_g1",
-		"qos": "mhcheng4c"	
-	},
-	"python_path": "/home/mhchen_pkuhpc/mhchen_cls/lustre2/5_liurenxi/5_dpgen_interface/4_deepmd-kit/dpmd_install/bin/python"
-	}
-	],
-"model_devi": [
-	{
-		"machine": {	
-			"machine_type": "slurm",
-			"hostname": "localhost",
-			"port": 22,
-			"username": "mhchen_cls",
-			"work_path": "/home/mhchen_pkuhpc/mhchen_cls/lustre2/5_liurenxi/5_ABACUS_dpgen_interface/5_dpgen_examples/dpgen-example/run_abacus_fake_dpks"	
-		},
-		"resources": {	
-			"num_node": 1,
-			"num_gpu": 1,
-			"task_per_node": 1,
-			"partition": "gpu_4l",
-			"exclude_list": [],
-			"mem_limit": 0,
-			"source_list": ["/home/mhchen_pkuhpc/mhchen_cls/lustre2/5_liurenxi/5_ABACUS_dpgen_interface/env.sh"],
-			"module_list": [],
-			"time_limit": "14:00:00",
-			"account": "mhchen_g1",
-			"qos": "mhcheng4c",
-			"allow_failure":true
-		},
-		"command": "lmp",
-		"group_size": 6
-	}
-],
-"fp": [
-	{
-		"machine":{
-			"machine_type": "slurm",
-			"hostname": "localhost",
-			"port": 22,
-			"username": "mhchen_cls",
-			"work_path": "/home/mhchen_pkuhpc/mhchen_cls/lustre2/5_liurenxi/5_ABACUS_dpgen_interface/5_dpgen_examples/dpgen-example/run_abacus_fake_dpks"
+	"api_version": "1.0",
+	"train": [
+	  {
+		"command": "dp",
+		"machine": {
+		  "batch_type": "PBS",
+		  "context_type": "SSHContext",
+		  "local_root": "./",
+		  "remote_root": "/home/user1234/work_path_dpdispatcher_test",
+		  "remote_profile": {
+			  "hostname": "39.xxx.xx.xx",
+			  "username": "user1234"
+		  }
 		},
 		"resources": {
-			"cvasp": false,
-			"numb_node": 1,
-			"partition": "cn-large",
-			"task_per_node": 4,
-
-			"numb_gpu": 0,
-			"exclude_list": [],
-			"with_mpi": false,
-			"mem_limit": 0,
-			"source_list":[
-				"/home/mhchen_pkuhpc/mhchen_cls/lustre2/5_liurenxi/ABACUS/source_intel.sh"
-			],
-			"module_list":[],
-			"time_limit": "48:0:0",
-			"account": "mhchen_cg2",
-			"qos": "mhchenq",
-			"_comment": "that's all"
+		  "number_node": 1,
+		  "cpu_per_node": 4,
+		  "gpu_per_node": 1,
+		  "queue_name": "T4_4_15",
+		  "group_size": 1,
+		  "custom_flags":["#SBATCH --mem=32G"],
+		  "strategy": {"if_cuda_multi_devices": true},
+		  "para_deg": 3,
+		  "source_list": ["/home/user1234/deepmd.1.2.4.env"]
+		}
+	  }
+	],
+	"model_devi":[
+	  {
+		"command": "lmp",
+		"machine":{
+		  "batch_type": "PBS",
+		  "context_type": "SSHContext",
+		  "local_root": "./",
+		  "remote_root": "/home/user1234/work_path_dpdispatcher_test",
+		  "remote_profile": {
+			"hostname": "39.xxx.xx.xx",
+			"username": "user1234"
+		  }
 		},
-		"command": "mpirun -np 4 ABACUS.mpi",
-		"group_size": 150
-	}
-
-]
-}
+		"resources": {
+		  "number_node": 1,
+		  "cpu_per_node": 4,
+		  "gpu_per_node": 1,
+		  "queue_name": "T4_4_15",
+		  "group_size": 5,
+		  "source_list": ["/home/user1234/deepmd.1.2.4.env"]
+		}
+	  }
+	],
+	"fp":[
+	  {
+		"command": "ABACUS.mpi",
+		"machine":{
+		  "batch_type": "PBS",
+		  "context_type": "SSHContext",
+		  "local_root": "./",
+		  "remote_root": "/home/user1234/work_path_dpdispatcher_test",
+		  "remote_profile": {
+			"hostname": "39.xxx.xx.xx",
+			"username": "user1234"
+		  }
+		},
+		"resources": {
+		  "number_node": 1,
+		  "cpu_per_node": 32,
+		  "gpu_per_node": 0,
+		  "queue_name": "G_32_128",
+		  "group_size": 1,
+		  "source_list": ["~/abacus.env"]
+		}
+	  }
+	]
+  }

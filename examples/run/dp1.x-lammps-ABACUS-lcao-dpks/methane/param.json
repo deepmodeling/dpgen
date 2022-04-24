@@ -67,22 +67,19 @@
         "decay_rate":        0.95
     },
       "training": {
-        "systems":           [],
-        "set_prefix":        "set",
-        "stop_batch":        3000,
-        "batch_size":        1,
-        "seed": 1,
-        "_comment":          "frequencies counted in batch",
-        "disp_file":         "lcurve.out",
-        "disp_freq":         500,
-        "numb_test":         4,
-        "save_freq":         1000,
-        "save_ckpt":         "model.ckpt",
-        "load_ckpt":         "model.ckpt",
-        "disp_training":     true,
-        "time_training":     true,
-        "profiling":         false,
-        "profiling_file":    "timeline.json"
+          "set_prefix": "set",
+          "numb_steps": 2000,
+          "batch_size": 1,
+          "disp_file": "lcurve.out",
+          "disp_freq": 1000,
+          "numb_test": 4,
+          "save_freq": 1000,
+          "save_ckpt": "model.ckpt",
+          "disp_training": true,
+          "time_training": true,
+          "profiling": false,
+          "profiling_file": "timeline.json",
+          "_comment": "that's all"
     }
   },
 
