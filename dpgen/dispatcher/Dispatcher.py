@@ -1,5 +1,6 @@
 from distutils.version import LooseVersion
 import os,sys,time,random,json,glob
+from typing import List
 from dpdispatcher import Task, Submission, Resources, Machine
 from dpgen.dispatcher.LocalContext import LocalSession
 from dpgen.dispatcher.LocalContext import LocalContext
@@ -383,5 +384,25 @@ def make_submission(mdata_machine, mdata_resources, commands, work_path, run_tas
     return submission
 
 
+def mdata_arginfo() -> List[Argument]:
+    """This method generates arginfo for a single mdata.
 
+    A submission requires the following keys: command, machine,
+    and resources.
+    
+    Returns
+    -------
+    list[Argument]
+        arginfo
+    """
+    doc_command = "Command of a program."
+    doc_mdata = "Machine and resources parameters"
+    command_arginfo = Argument("command", str, optional=False, doc=doc_command)
+    machine_arginfo = Machine.arginfo()
+    machine_arginfo.name = "machine"
+    resources_arginfo = Resources.arginfo()
+    resources_arginfo.name = "resources"
 
+    return [
+        command_arginfo, machine_arginfo, resources_arginfo,
+    ]
