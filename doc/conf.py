@@ -11,6 +11,7 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
+import sys
 import subprocess
 # import sys
 import recommonmark
@@ -79,3 +80,10 @@ html_theme = 'sphinx_rtd_theme'
 autodoc_default_flags = ['members']
 autosummary_generate = True
 master_doc = 'index'
+
+
+def generate_arginfo(app):
+    subprocess.check_output((sys.executable, "gen_arginfo.py"), universal_newlines=True)
+
+def setup(app):
+    app.connect('builder-inited', generate_arginfo)
