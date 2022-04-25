@@ -27,7 +27,7 @@ class DPPotcar(MSONable):
         else:
            try:
               self.potcars=Potcar(symbols=symbols, functional=functional)
-           except:
+           except Exception:
               warnings.warn ("""Inproperly configure of POTCAR !""")
               self.potcars=None
          
@@ -80,7 +80,7 @@ class DPPotcar(MSONable):
         try:
              potcars=Potcar.from_file(filename)
              return cls(pp_lists=potcars)
-        except:
+        except Exception:
              with open(filename,'r') as f:
                   content=f.readlines()
              functional=content[0].strip().split(':')[-1].strip()
@@ -179,7 +179,7 @@ class VaspInput(dict, MSONable):
                                  ("POSCAR", Poscar), ("POTCAR", DPPotcar)]:
                 fullzpath = zpath(os.path.join(input_dir, fname))
                 sub_d[fname.lower()] = ftype.from_file(fullzpath)
-        except:
+        except Exception:
             for fname, ftype in [("INCAR", Incar), 
                                  ("POSCAR", Poscar), ("POTCAR", DPPotcar)]:
                 fullzpath = zpath(os.path.join(input_dir, fname))
