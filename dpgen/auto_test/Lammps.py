@@ -289,7 +289,7 @@ class Lammps(Task):
                             if len(line) and str(ii) == line[0]:
                                 try:
                                     [float(kk) for kk in line]
-                                except:
+                                except Exception:
                                     continue
                                 stress.append([])
                                 virial.append([])

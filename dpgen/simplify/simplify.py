@@ -263,7 +263,7 @@ def run_model_devi(iter_index, jdata, mdata):
     # submit
     try:
         model_devi_group_size = mdata['model_devi_group_size']
-    except:
+    except Exception:
         model_devi_group_size = 1
 
     forward_files = [rest_data_name]
@@ -599,7 +599,7 @@ def run_iter(param_file, machine_file):
             'ignore', ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
         jdata = loadfn(param_file)
         mdata = loadfn(machine_file)
-    except:
+    except Exception:
         with open(param_file, 'r') as fp:
             jdata = json.load(fp)
         with open(machine_file, 'r') as fp:

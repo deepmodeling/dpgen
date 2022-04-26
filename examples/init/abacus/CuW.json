@@ -16,10 +16,16 @@
         "Cu_ONCV_PBE-1.0.upf",
 	    "W_ONCV_PBE-1.0.upf"
     ],
+    "orb_files":[
+        "Cu_gga_9au_60Ry_4s2p2d1f.orb",
+        "W_gga_10au_60Ry_4s2p2d2f.orb"
+    ],
     "relax_incar": "INPUT",
     "relax_kpt": "KPT",
     "md_kpt": "KPT",
     "md_incar": "INPUT.md",
+	"dpks_descriptor": "jle.orb",
+	"dpks_model": "model.ptg",
     "scale": [
         0.99
     ],

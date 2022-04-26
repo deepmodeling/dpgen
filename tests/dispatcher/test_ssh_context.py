@@ -26,14 +26,14 @@ class TestSSHContext(unittest.TestCase):
                                            'port': 22,
                                            'username' : getpass.getuser(),
                                            'work_path' : os.path.join(os.getcwd(), 'rmt')})
-        except:
+        except Exception:
             # for tianhe-2
             try:
                 self.ssh_session = SSHSession({'hostname' : 'localhost',
                                             'port': 5566,
                                             'username' : getpass.getuser(),
                                             'work_path' : os.path.join(os.getcwd(), 'rmt')})
-            except:
+            except Exception:
                 self.skipTest("Network error")
         self.job = SSHContext('loc', self.ssh_session)
         self.job1 = SSHContext('loc', self.ssh_session, job_uuid = self.job.job_uuid)
