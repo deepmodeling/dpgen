@@ -92,50 +92,6 @@ To test if the installation is successful, you may execute
 ```bash
 dpgen -h
 ```
-and if everything works, it gives
-```
-DeepModeling
-------------
-Version: 0.9.2
-Date:    Mar-25-2021
-Path:    /root/yuzhi/dpgen-test/lib/python3.6/site-packages/dpgen
-
-Reference
-------------
-Please cite:
-Yuzhi Zhang, Haidi Wang, Weijie Chen, Jinzhe Zeng, Linfeng Zhang, Han Wang, and Weinan E,
-DP-GEN: A concurrent learning platform for the generation of reliable deep learning
-based potential energy models, Computer Physics Communications, 2020, 107206.
-------------
-
-Description
-------------
-usage: dpgen [-h]
-             {init_surf,init_bulk,auto_gen_param,init_reaction,run,run/report,collect,simplify,autotest,db}
-             ...
-
-dpgen is a convenient script that uses DeepGenerator to prepare initial data,
-drive DeepMDkit and analyze results. This script works based on several sub-
-commands with their own options. To see the options for the sub-commands, type
-"dpgen sub-command -h".
-
-positional arguments:
-  {init_surf,init_bulk,auto_gen_param,init_reaction,run,run/report,collect,simplify,autotest,db}
-    init_surf           Generating initial data for surface systems.
-    init_bulk           Generating initial data for bulk systems.
-    auto_gen_param      auto gen param.json
-    init_reaction       Generating initial data for reactive systems.
-    run                 Main process of Deep Potential Generator.
-    run/report          Report the systems and the thermodynamic conditions of
-                        the labeled frames.
-    collect             Collect data.
-    simplify            Simplify data.
-    autotest            Auto-test for Deep Potential.
-    db                  Collecting data from DP-GEN.
-
-optional arguments:
-  -h, --help            show this help message and exit
-```
 
 
 ## Init: Preparing Initial Data
