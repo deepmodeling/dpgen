@@ -191,7 +191,7 @@ def gen_init_reaction(args):
         jdata = loadfn(args.PARAM)
         if args.MACHINE is not None:
             mdata = loadfn(args.MACHINE)
-    except:
+    except Exception:
         with open(args.PARAM, 'r') as fp:
             jdata = json.load(fp)
         if args.MACHINE is not None:

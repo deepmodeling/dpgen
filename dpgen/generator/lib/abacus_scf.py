@@ -20,70 +20,74 @@ def make_abacus_scf_input(fp_params):
     # Make INPUT file for abacus pw scf calculation.
     ret = "INPUT_PARAMETERS\n"
     ret += "calculation scf\n"
-    assert(fp_params['ntype'] >= 0 and type(fp_params["ntype"]) == int),  "'ntype' should be a positive integer."
-    ret += "ntype %d\n" % fp_params['ntype']
-    #ret += "pseudo_dir ./\n"
-    if "ecutwfc" in fp_params:
-        assert(fp_params["ecutwfc"] >= 0) ,  "'ntype' should be non-negative."
-        ret += "ecutwfc %f\n" % fp_params["ecutwfc"]
-    if "dr2" in fp_params:
-        ret += "dr2 %e\n" % fp_params["dr2"]
-    if "niter" in fp_params:
-        assert(fp_params['niter'] >= 0 and type(fp_params["niter"])== int), "'niter' should be a positive integer."
-        ret += "niter %d\n" % fp_params["niter"]    
-    if "basis_type" in fp_params:
-        assert(fp_params["basis_type"] in ["pw", "lcao", "lcao_in_pw"]) , "'basis_type' must in 'pw', 'lcao' or 'lcao_in_pw'."
-        ret+= "basis_type %s\n" % fp_params["basis_type"]
-    if "dft_functional" in fp_params:
-        ret += "dft_functional %s\n" % fp_params["dft_functional"]
-    if "gamma_only" in fp_params:
-        assert(fp_params["gamma_only"] ==1 ) , "'gamma_only' should be 1. Multi-k algorithm will be supported after the KPT generator is completed."
-        ret+= "gamma_only %d\n" % fp_params["gamma_only"]  
-    if "mixing_type" in fp_params:
-        assert(fp_params["mixing_type"] in ["plain", "kerker", "pulay", "pulay-kerker", "broyden"])
-        ret += "mixing_type %s\n" % fp_params["mixing_type"]
-    if "mixing_beta" in fp_params:
-        assert(fp_params["mixing_beta"] >= 0 and fp_params["mixing_beta"] < 1), "'mixing_beta' should between 0 and 1."
-        ret += "mixing_beta %f\n" % fp_params["mixing_beta"]
-    if "symmetry" in fp_params:
-        assert(fp_params["symmetry"] == 0 or fp_params["symmetry"] == 1), "'symmetry' should be either 0 or 1."
-        ret += "symmetry %d\n" % fp_params["symmetry"]
-    if "nbands" in fp_params:
-        assert(fp_params["nbands"] > 0 and type(fp_params["nbands"]) == int), "'nbands' should be a positive integer."
-        ret += "nbands %d\n" % fp_params["nbands"]
-    if "nspin" in fp_params:
-        assert(fp_params["nspin"] == 1 or fp_params["nspin"] == 2 or fp_params["nspin"] == 4), "'nspin' can anly take 1, 2 or 4"
-        ret += "nspin %d\n" % fp_params["nspin"]
-    if "ks_solver" in fp_params:
-        assert(fp_params["ks_solver"] in ["cg", "dav", "lapack", "genelpa", "hpseps", "scalapack_gvx"]), "'ks_sover' should in 'cgx', 'dav', 'lapack', 'genelpa', 'hpseps', 'scalapack_gvx'."
-        ret += "ks_solver %s\n" % fp_params["ks_solver"]
-    if "smearing" in fp_params:
-        assert(fp_params["smearing"] in ["gaussian", "fd", "fixed", "mp", "mp2", "mv"]), "'smearing' should in 'gaussian', 'fd', 'fixed', 'mp', 'mp2', 'mv'. "
-        ret += "smearing %s\n" % fp_params["smearing"]
-    if "sigma" in fp_params:
-        assert(fp_params["sigma"] >= 0), "'sigma' should be non-negative."
-        ret += "sigma %f\n" % fp_params["sigma"]
-    if "force" in fp_params:
-        assert(fp_params["force"] == 0  or fp_params["force"] == 1), "'force' should be either 0 or 1."
-        ret += "force %d\n" % fp_params["force"]
-    if "stress" in fp_params:
-        assert(fp_params["stress"] == 0  or fp_params["stress"] == 1), "'stress' should be either 0 or 1."
-        ret += "stress %d\n" % fp_params["stress"]    
-    #paras for deepks
-    if "out_descriptor" in fp_params:
-        assert(fp_params["out_descriptor"] == 0 or fp_params["out_descriptor"] == 1), "'out_descriptor' should be either 0 or 1."
-        ret += "out_descriptor %d\n" % fp_params["out_descriptor"]
-    if "lmax_descriptor" in fp_params:
-        assert(fp_params["lmax_descriptor"] >= 0),  "'lmax_descriptor' should be  a positive integer."
-        ret += "lmax_descriptor %d\n" % fp_params["lmax_descriptor"]
-    if "deepks_scf" in fp_params:
-        assert(fp_params["deepks_scf"] == 0  or fp_params["deepks_scf"] == 1), "'deepks_scf' should be either 0 or 1."
-        ret += "deepks_scf %d\n" % fp_params["deepks_scf"]
-    if "model_file" in fp_params:
-        ret += "model_file %s\n" % fp_params["model_file"]
+    for key in fp_params:
+        if key == 'ntype':
+            assert(fp_params['ntype'] >= 0 and type(fp_params["ntype"]) == int),  "'ntype' should be a positive integer."
+            ret += "ntype %d\n" % fp_params['ntype']
+        #ret += "pseudo_dir ./\n"
+        elif key == "ecutwfc":
+            assert(fp_params["ecutwfc"] >= 0) ,  "'ntype' should be non-negative."
+            ret += "ecutwfc %f\n" % fp_params["ecutwfc"]
+        elif key == "dr2":
+            ret += "dr2 %e\n" % fp_params["dr2"]
+        elif key == "niter":
+            assert(fp_params['niter'] >= 0 and type(fp_params["niter"])== int), "'niter' should be a positive integer."
+            ret += "niter %d\n" % fp_params["niter"]    
+        elif key == "basis_type":
+            assert(fp_params["basis_type"] in ["pw", "lcao", "lcao_in_pw"]) , "'basis_type' must in 'pw', 'lcao' or 'lcao_in_pw'."
+            ret+= "basis_type %s\n" % fp_params["basis_type"]
+        elif key == "dft_functional":
+            ret += "dft_functional %s\n" % fp_params["dft_functional"]
+        elif key == "gamma_only":
+            #assert(fp_params["gamma_only"] ==1 ) , "'gamma_only' should be 1. Multi-k algorithm will be supported after the KPT generator is completed."
+            ret+= "gamma_only %d\n" % fp_params["gamma_only"]  
+        elif key == "mixing_type":
+            assert(fp_params["mixing_type"] in ["plain", "kerker", "pulay", "pulay-kerker", "broyden"])
+            ret += "mixing_type %s\n" % fp_params["mixing_type"]
+        elif key == "mixing_beta":
+            assert(fp_params["mixing_beta"] >= 0 and fp_params["mixing_beta"] < 1), "'mixing_beta' should between 0 and 1."
+            ret += "mixing_beta %f\n" % fp_params["mixing_beta"]
+        elif key == "symmetry":
+            assert(fp_params["symmetry"] == 0 or fp_params["symmetry"] == 1), "'symmetry' should be either 0 or 1."
+            ret += "symmetry %d\n" % fp_params["symmetry"]
+        elif key == "nbands":
+            assert(fp_params["nbands"] > 0 and type(fp_params["nbands"]) == int), "'nbands' should be a positive integer."
+            ret += "nbands %d\n" % fp_params["nbands"]
+        elif key == "nspin":
+            assert(fp_params["nspin"] == 1 or fp_params["nspin"] == 2 or fp_params["nspin"] == 4), "'nspin' can anly take 1, 2 or 4"
+            ret += "nspin %d\n" % fp_params["nspin"]
+        elif key == "ks_solver":
+            assert(fp_params["ks_solver"] in ["cg", "dav", "lapack", "genelpa", "hpseps", "scalapack_gvx"]), "'ks_sover' should in 'cgx', 'dav', 'lapack', 'genelpa', 'hpseps', 'scalapack_gvx'."
+            ret += "ks_solver %s\n" % fp_params["ks_solver"]
+        elif key == "smearing":
+            assert(fp_params["smearing"] in ["gaussian", "fd", "fixed", "mp", "mp2", "mv"]), "'smearing' should in 'gaussian', 'fd', 'fixed', 'mp', 'mp2', 'mv'. "
+            ret += "smearing %s\n" % fp_params["smearing"]
+        elif key == "sigma":
+            assert(fp_params["sigma"] >= 0), "'sigma' should be non-negative."
+            ret += "sigma %f\n" % fp_params["sigma"]
+        elif key == "force":
+            assert(fp_params["force"] == 0  or fp_params["force"] == 1), "'force' should be either 0 or 1."
+            ret += "force %d\n" % fp_params["force"]
+        elif key == "stress":
+            assert(fp_params["stress"] == 0  or fp_params["stress"] == 1), "'stress' should be either 0 or 1."
+            ret += "stress %d\n" % fp_params["stress"]    
+        #paras for deepks
+        elif key == "deepks_out_labels":
+            assert(fp_params["deepks_out_labels"] == 0 or fp_params["deepks_out_labels"] == 1), "'deepks_out_labels' should be either 0 or 1."
+            ret += "deepks_out_labels %d\n" % fp_params["deepks_out_labels"]
+        elif key == "deepks_descriptor_lmax":
+            assert(fp_params["deepks_descriptor_lmax"] >= 0),  "'deepks_descriptor_lmax' should be  a positive integer."
+            ret += "deepks_descriptor_lmax %d\n" % fp_params["deepks_descriptor_lmax"]
+        elif key == "deepks_scf":
+            assert(fp_params["deepks_scf"] == 0  or fp_params["deepks_scf"] == 1), "'deepks_scf' should be either 0 or 1."
+            ret += "deepks_scf %d\n" % fp_params["deepks_scf"]
+        elif key == "deepks_model":
+            ret += "deepks_model %s\n" % fp_params["deepks_model"]
+        else:
+            ret += "%s %s\n" % (key, str(fp_params[key]))
     return ret
 
-def make_abacus_scf_stru(sys_data, fp_pp_files, fp_params = None):
+def make_abacus_scf_stru(sys_data, fp_pp_files, fp_orb_files = None, fp_dpks_descriptor = None, fp_params = None):
     atom_names = sys_data['atom_names']
     atom_numbs = sys_data['atom_numbs']
     assert(len(atom_names) == len(fp_pp_files)), "the number of pp_files must be equal to the number of atom types. "
@@ -127,15 +131,15 @@ def make_abacus_scf_stru(sys_data, fp_pp_files, fp_params = None):
             natom_tot += 1
     assert(natom_tot == sum(atom_numbs))
 
-    if fp_params is not None and "basis_type" in fp_params and fp_params["basis_type"]=="lcao":
+    if fp_orb_files is not None:
         ret +="\nNUMERICAL_ORBITAL\n"
-        assert(len(fp_params["orb_files"])==len(atom_names))
+        assert(len(fp_orb_files)==len(atom_names))
         for iatom in range(len(atom_names)):
-            ret += fp_params["orb_files"][iatom] +"\n"
+            ret += fp_orb_files[iatom] +"\n"
 
-    if fp_params is not None and "deepks_scf" in fp_params and fp_params["out_descriptor"]==1:
+    if fp_dpks_descriptor is not None:
         ret +="\nNUMERICAL_DESCRIPTOR\n"
-        ret +=fp_params["proj_file"][0]+"\n"
+        ret +="%s\n"%fp_dpks_descriptor
 
     return ret
 
@@ -199,13 +203,29 @@ def get_natoms_from_stru(geometry_inlines):
                 atom_numbs.append(int(geometry_inlines[iline+2].split()[0]))
                 iline += 3+atom_numbs[-1]
     return atom_names, atom_numbs
+
+def get_additional_from_STRU(geometry_inlines, nele):
+    dpks_descriptor_kw = "NUMERICAL_DESCRIPTOR"
+    orb_file_kw = "NUMERICAL_ORBITAL"
+    dpks_descriptor = None
+    orb_file = None
+    for iline in range(len(geometry_inlines)):
+        if len(geometry_inlines[iline]) > 0:
+            if orb_file_kw == geometry_inlines[iline].split()[0]:
+                orb_file = []
+                for iele in range(nele):
+                    orb_file.append(geometry_inlines[iline + iele + 1].rstrip())
+            if dpks_descriptor_kw == geometry_inlines[iline].split()[0]:
+                dpks_descriptor = geometry_inlines[iline + 1].rstrip()
+    return orb_file, dpks_descriptor
+
 def get_abacus_STRU(STRU, INPUT = None, n_ele = None):
     # read in geometry from STRU file. n_ele is the number of elements.
     # Either n_ele or INPUT should be provided.
     with open(STRU, 'r') as fp:
         geometry_inlines = fp.read().split('\n')
     for iline, line in enumerate(geometry_inlines):
-        if line.split() == []:
+        if line.split() == [] or len(line) == 0:
             del geometry_inlines[iline]
     geometry_inlines.append("")
     celldm, cell = get_cell(geometry_inlines) 
@@ -223,6 +243,7 @@ def get_abacus_STRU(STRU, INPUT = None, n_ele = None):
         inlines = ["ntype %d" %len(atom_numbs)]
         atom_names, natoms, types, coords = get_coords(celldm, cell, geometry_inlines, inlines)
     masses, pp_files = get_mass_from_STRU(geometry_inlines, inlines, atom_names)
+    orb_files, dpks_descriptor = get_additional_from_STRU(geometry_inlines, len(masses))
     data = {}
     data['atom_names'] = atom_names
     data['atom_numbs'] = natoms
@@ -231,6 +252,8 @@ def get_abacus_STRU(STRU, INPUT = None, n_ele = None):
     data['coords'] = coords
     data['atom_masses'] = masses # Notice that this key is not defined in dpdata system. 
     data['pp_files'] = pp_files
+    data['orb_files'] = orb_files
+    data['dpks_descriptor'] = dpks_descriptor
     return data
 
 def make_supercell_abacus(from_struct, super_cell):

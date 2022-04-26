@@ -11,7 +11,7 @@ class LSF(Batch) :
     def check_status(self):
         try:
             job_id = self._get_job_id()
-        except:
+        except Exception:
             return JobStatus.terminated
         if job_id == "" :
             raise RuntimeError("job %s has not been submitted" % self.context.remote_root)

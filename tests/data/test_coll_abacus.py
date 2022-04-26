@@ -19,11 +19,11 @@ class TestCollAbacus(unittest.TestCase):
         if os.path.isdir(self.odir) :
             shutil.rmtree(self.odir)
         shutil.copytree('out_data_02_md_abacus', self.odir)
-        self.ref_coord = np.reshape(np.genfromtxt("abacus.out/coord.raw"), [9, 5, 3])
-        self.ref_cell = np.reshape(np.genfromtxt("abacus.out/box.raw"), [9, 3, 3])
-        self.ref_e = np.reshape(np.genfromtxt("abacus.out/energy.raw"), [9, ])
-        self.ref_f = np.reshape(np.genfromtxt("abacus.out/force.raw"), [9, 5, 3])
-        self.ref_v = np.reshape(np.genfromtxt("abacus.out/virial.raw"), [9, 3, 3])
+        self.ref_coord = np.reshape(np.genfromtxt("abacus.out/coord.raw"), [8, 5, 3])
+        self.ref_cell = np.reshape(np.genfromtxt("abacus.out/box.raw"), [8, 3, 3])
+        self.ref_e = np.reshape(np.genfromtxt("abacus.out/energy.raw"), [8, ])
+        self.ref_f = np.reshape(np.genfromtxt("abacus.out/force.raw"), [8, 5, 3])
+        self.ref_v = np.reshape(np.genfromtxt("abacus.out/virial.raw"), [8, 3, 3])
     def tearDown(self):
         #print("escape.")
         shutil.rmtree(self.odir)
@@ -37,18 +37,18 @@ class TestCollAbacus(unittest.TestCase):
         coll_abacus_md(jdata)
         
         sys = dpdata.LabeledSystem(self.odir + '/02.md/sys-0004-0001/deepmd//', fmt = 'deepmd/raw')
-        self.assertEqual(sys.get_nframes(), 9)
+        self.assertEqual(sys.get_nframes(), 8)
             
-        for ff in range(9) :
+        for ff in range(8) :
             self.assertAlmostEqual(self.ref_e[ff], sys.data['energies'][ff])
-        for ff in range(9) :
+        for ff in range(8) :
             for ii in range(5) :
                 for dd in range(3) :
                     self.assertAlmostEqual(self.ref_coord[ff][ii][dd], 
                                            sys.data['coords'][ff][ii][dd])
                     self.assertAlmostEqual(self.ref_f[ff][ii][dd], 
                                            sys.data['forces'][ff][ii][dd])
-        for ff in range(9):
+        for ff in range(8):
             for ii in range(3) :
                 for jj in range(3) :
                     self.assertAlmostEqual(self.ref_v[ff][ii][jj], 

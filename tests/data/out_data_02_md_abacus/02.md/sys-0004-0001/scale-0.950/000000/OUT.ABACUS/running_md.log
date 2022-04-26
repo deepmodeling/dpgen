@@ -6,8 +6,8 @@
                      Website: http://abacus.ustc.edu.cn/                             
                                                                                      
     Version: Parallel, in development
-    Processor Number is 8
-    Start Time is Fri Nov 12 18:15:13 2021
+    Processor Number is 4
+    Start Time is Sun Apr 17 15:10:23 2022
                                                                                      
  ------------------------------------------------------------------------------------
 
@@ -18,7 +18,7 @@
                               orbital_dir = 
                               pseudo_type = auto
                                     DRANK = 1
-                                    DSIZE = 8
+                                    DSIZE = 4
                                    DCOLOR = 1
                                     GRANK = 1
                                     GSIZE = 1
@@ -52,9 +52,8 @@
 
  READING ATOM TYPE 1
                                atom label = H
-                      L=0, number of zeta = 1
+                      L=0, number of zeta = 2
                       L=1, number of zeta = 1
-                      L=2, number of zeta = 1
              number of atom for this type = 4
                       start magnetization = FALSE
                       start magnetization = FALSE
@@ -63,8 +62,8 @@
 
  READING ATOM TYPE 2
                                atom label = C
-                      L=0, number of zeta = 1
-                      L=1, number of zeta = 1
+                      L=0, number of zeta = 2
+                      L=1, number of zeta = 2
                       L=2, number of zeta = 1
              number of atom for this type = 1
                       start magnetization = FALSE
@@ -73,12 +72,16 @@
 
  CARTESIAN COORDINATES ( UNIT = 1.88973 Bohr ).
          atom                   x                   y                   z                 mag                  vx                  vy                  vz
-      tauc_H1       5.09744437597       3.89129339419        3.4622612337                   0                   0                   0                   0
-      tauc_H2       3.79629251291       4.55708480448       4.16835321433                   0                   0                   0                   0
-      tauc_H3        5.2235234109       5.32826990334       4.20676661344                   0                   0                   0                   0
-      tauc_H4       5.00707710352       3.97791420915       5.08117016892                   0                   0                   0                   0
-      tauc_C1       4.77978417423        4.4403114594       4.23003031273                   0                   0                   0                   0
+      tauc_H1       5.11354151141       3.86332162016       3.42284940424                   0                   0                   0                   0
+      tauc_H2       3.74479240205       4.56343706925       4.16524153913                   0                   0                   0                   0
+      tauc_H3       5.24638914723        5.3747890141       4.20565131535                   0                   0                   0                   0
+      tauc_H4       5.01853589977       3.95436780651       5.12512008234                   0                   0                   0                   0
+      tauc_C1        4.7808626171       4.43895826052       4.22971920202                   0                   0                   0                   0
 
+
+ READING ORBITAL FILE NAMES FOR LCAO
+ orbital file: H_gga_8au_60Ry_2s1p.orb
+ orbital file: C_gga_8au_60Ry_2s2p1d.orb
 
                           Volume (Bohr^3) = 5785.86022047
                              Volume (A^3) = 857.37500227
@@ -90,7 +93,7 @@
  Reciprocal vectors: (Cartesian coordinate: in unit of 2 pi/a_0)
       +0.105263115896                  +0                  +0
                    +0     +0.105263115896                  +0
-                   +0                  +0     +0.105263115896
+                   +0                  -0     +0.105263115896
 
 
 
@@ -117,10 +120,7 @@
 
  Read in pseudopotential file is H_ONCV_PBE-1.0.upf
                      pseudopotential type = NC
-                            functional Ex = PBE
-                            functional Ec = 
-                          functional GCEx = 
-                          functional GCEc = 
+          exchange-correlation functional = PBE
                  nonlocal core correction = 0
                         valence electrons = 1
                                      lmax = 0
@@ -132,10 +132,7 @@
 
  Read in pseudopotential file is C_ONCV_PBE-1.0.upf
                      pseudopotential type = NC
-                            functional Ex = PBE
-                            functional Ec = 
-                          functional GCEx = 
-                          functional GCEc = 
+          exchange-correlation functional = PBE
                  nonlocal core correction = 0
                         valence electrons = 4
                                      lmax = 1
@@ -146,7 +143,7 @@
                            L of projector = 1
                            L of projector = 1
      initial pseudo atomic orbital number = 0
-                                   NLOCAL = 45
+                                   NLOCAL = 33
 
  SETUP THE ELECTRONS NUMBER
              electron number of element H = 1
@@ -154,8 +151,10 @@
              electron number of element C = 4
        total electron number of element C = 4
                            occupied bands = 4
+                                   NLOCAL = 33
                                    NBANDS = 14
- DONE : SETUP UNITCELL Time : 0.086291129759 (SEC)
+                                   NBANDS = 14
+ DONE : SETUP UNITCELL Time : 0.044255124405 (SEC)
 
 
 
@@ -190,7 +189,7 @@
 
   KPOINTS            DIRECT_X            DIRECT_Y            DIRECT_Z              WEIGHT
         1                   0                   0                   0                   2
- DONE : INIT K-POINTS Time : 0.0878850566805 (SEC)
+ DONE : INIT K-POINTS Time : 0.0458821123466 (SEC)
 
 
 
@@ -215,10 +214,10 @@
      energy cutoff for wavefunc (unit:Ry) = 90
             [fft grid for wave functions] = 120, 120, 120
           [fft grid for charge/potential] = 120, 120, 120
-                      [fft grid division] = 1, 1, 1
-      [big fft grid for charge/potential] = 120, 120, 120
-                                     nbxx = 216000
-                                     nrxx = 216000
+                      [fft grid division] = 2, 2, 2
+      [big fft grid for charge/potential] = 60, 60, 60
+                                     nbxx = 54000
+                                     nrxx = 432000
 
  SETUP PLANE WAVES FOR CHARGE/POTENTIAL
                     number of plane waves = 667317
@@ -230,150 +229,138 @@
 
  PARALLEL PW FOR CHARGE/POTENTIAL
      PROC   COLUMNS(POT)             PW
-        1           1155          83417
-        2           1157          83415
-        3           1157          83415
-        4           1156          83414
-        5           1156          83414
-        6           1156          83414
-        7           1156          83414
-        8           1156          83414
+        1           2310         166830
+        2           2313         166829
+        3           2313         166829
+        4           2313         166829
  --------------- sum -------------------
-        8           9249         667317
+        4           9249         667317
 
  PARALLEL PW FOR WAVE FUNCTIONS
      PROC     COLUMNS(W)             PW
-        1            289          10449
-        2            289          10453
-        3            290          10452
-        4            287          10451
-        5            293          10449
-        6            290          10448
-        7            288          10448
-        8            287          10449
+        1            575          20899
+        2            580          20900
+        3            578          20898
+        4            580          20902
  --------------- sum -------------------
-        8           2313          83599
+        4           2313          83599
 
  SETUP COORDINATES OF PLANE WAVES
               number of total plane waves = 667317
 
  SETUP COORDINATES OF PLANE WAVES
-                            number of |g| = 2438
+                            number of |g| = 2450
                                   max |g| = 32.553990643
                                   min |g| = 0
- DONE : INIT PLANEWAVE Time : 0.350971238862 (SEC)
+ DONE : INIT PLANEWAVE Time : 0.377468010411 (SEC)
 
-                                     npwx = 10449
+ DONE : INIT CHARGE Time : 0.403857703321 (SEC)
 
- SETUP NONLOCAL PSEUDOPOTENTIALS IN PLANE WAVE BASIS
- H non-local projectors:
- projector 1 L=0
- projector 2 L=0
- C non-local projectors:
- projector 1 L=0
- projector 2 L=0
- projector 3 L=1
- projector 4 L=1
-      TOTAL NUMBER OF NONLOCAL PROJECTORS = 16
- DONE : LOCAL POTENTIAL Time : 0.494807609997 (SEC)
+ DONE : INIT POTENTIAL Time : 0.408238855191 (SEC)
 
 
- Init Non-Local PseudoPotential table : 
- Init Non-Local-Pseudopotential done.
- DONE : NON-LOCAL POTENTIAL Time : 0.501984705625 (SEC)
-
-                                start_pot = atomic
- DONE : INIT POTENTIAL Time : 0.639263 (SEC)
 
 
- Make real space PAO into reciprocal space.
-       max mesh points in Pseudopotential = 601
-     dq(describe PAO in reciprocal space) = 0.01
-                                    max q = 1143
 
- number of pseudo atomic orbitals for H is 0
+ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ |                                                                    |
+ | Setup numerical orbitals:                                          |
+ | This part setup: numerical atomic orbitals, non-local projectors   |
+ | and neutral potential (1D). The atomic orbitals information        |
+ | including the radius, angular momentum and zeta number.            |
+ | The neutral potential is the sum of local part of pseudopotential  |
+ | and potential given by atomic charge, they will cancel out beyond  |
+ | a certain radius cutoff, because the Z/r character.                |
+ |                                                                    |
+ <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
- number of pseudo atomic orbitals for C is 0
- DONE : INIT BASIS Time : 0.917201 (SEC)
 
- ...............Nose-Hoover Chain parameter initialization...............  
- Temperature =    0
- Temperature2 =    0
- NHC frequency =    0.00120944
- NHC chain =    4
- Qmass  =    1822.89
- ...............................................................  
 
- PW ALGORITHM --------------- ION=   1  ELEC=   1--------------------------------
-  K-point    CG iter num      Time(Sec)
-        1       9.642857       1.320000
 
- Density error is 0.925917380140
 
- PW ALGORITHM --------------- ION=   1  ELEC=   2--------------------------------
-  K-point    CG iter num      Time(Sec)
-        1       2.357143       0.370000
+ SETUP ONE DIMENSIONAL ORBITALS/POTENTIAL
+                        delta k  (1/Bohr) = 0.01
+                        delta r    (Bohr) = 0.01
+                        dr_uniform (Bohr) = 0.001
+                        rmax       (Bohr) = 30
+                                    kmesh = 953
+      ORBITAL  L  N      nr      dr    RCUT  CHECK_UNIT    NEW_UNIT
+            1  0  0     801    0.01       8           1           1
+            2  0  1     801    0.01       8           1           1
+            3  1  0     801    0.01       8           1           1
+      ORBITAL  L  N      nr      dr    RCUT  CHECK_UNIT    NEW_UNIT
+            1  0  0     801    0.01       8           1           1
+            2  0  1     801    0.01       8           1           1
+            3  1  0     801    0.01       8           1           1
+            4  1  1     801    0.01       8           1           1
+            5  2  0     801    0.01       8           1           1
+ SET NONLOCAL PSEUDOPOTENTIAL PROJECTORS
+ SET NONLOCAL PSEUDOPOTENTIAL PROJECTORS
+ max number of nonlocal projetors among all species is 4
 
- Density error is 0.103089655783
+ SETUP THE TWO-CENTER INTEGRATION TABLES
 
- PW ALGORITHM --------------- ION=   1  ELEC=   3--------------------------------
-  K-point    CG iter num      Time(Sec)
-        1       4.500000       0.620000
+ SETUP THE DIVISION OF H/S MATRIX
+ divide the H&S matrix using 2D block algorithms.
+                                     nb2d = 1
+                  trace_loc_row dimension = 33
+                  trace_loc_col dimension = 33
+                                     nloc = 289
+                                 init_chg = atomic
+                                     nloc = 289
+              searching radius is (Bohr)) = 18.89
+         searching radius unit is (Bohr)) = 1.88973
 
- Density error is 0.029305943975
+ LCAO ALGORITHM ------------- MD =    1  ELEC =    1 --------------------------------
 
- PW ALGORITHM --------------- ION=   1  ELEC=   4--------------------------------
-  K-point    CG iter num      Time(Sec)
-        1       3.928571       0.550000
+ Density error is 0.369103341079
 
- Density error is 0.215036462399
+ LCAO ALGORITHM ------------- MD =    1  ELEC =    2 --------------------------------
 
- PW ALGORITHM --------------- ION=   1  ELEC=   5--------------------------------
-  K-point    CG iter num      Time(Sec)
-        1       3.285714       0.480000
+ Density error is 0.143573672298
 
- Density error is 0.000079236362
+ LCAO ALGORITHM ------------- MD =    1  ELEC =    3 --------------------------------
 
- PW ALGORITHM --------------- ION=   1  ELEC=   6--------------------------------
-  K-point    CG iter num      Time(Sec)
-        1       6.857143       0.890000
+ Density error is 0.0734674541148
 
- Density error is 0.000065409462
+ LCAO ALGORITHM ------------- MD =    1  ELEC =    4 --------------------------------
 
- PW ALGORITHM --------------- ION=   1  ELEC=   7--------------------------------
-  K-point    CG iter num      Time(Sec)
-        1       3.071429       0.440000
+ Density error is 0.00483129776793
 
- Density error is 0.000015159186
+ LCAO ALGORITHM ------------- MD =    1  ELEC =    5 --------------------------------
 
- PW ALGORITHM --------------- ION=   1  ELEC=   8--------------------------------
-  K-point    CG iter num      Time(Sec)
-        1       5.214286       0.690000
+ Density error is 0.00175259574578
 
- Density error is 0.000000616832
+ LCAO ALGORITHM ------------- MD =    1  ELEC =    6 --------------------------------
 
- PW ALGORITHM --------------- ION=   1  ELEC=   9--------------------------------
-  K-point    CG iter num      Time(Sec)
-        1       4.357143       0.590000
+ Density error is 0.000110712686393
 
- Density error is 0.000000158907
+ LCAO ALGORITHM ------------- MD =    1  ELEC =    7 --------------------------------
 
- PW ALGORITHM --------------- ION=   1  ELEC=  10--------------------------------
-  K-point    CG iter num      Time(Sec)
-        1       5.857143       0.760000
+ Density error is 6.19582961728e-05
 
- Density error is 0.000000003032
+ LCAO ALGORITHM ------------- MD =    1  ELEC =    8 --------------------------------
 
- PW ALGORITHM --------------- ION=   1  ELEC=  11--------------------------------
-  K-point    CG iter num      Time(Sec)
-        1       6.500000       0.840000
+ Density error is 1.8043377224e-06
 
- Density error is 0.000000000145
+ LCAO ALGORITHM ------------- MD =    1  ELEC =    9 --------------------------------
+
+ Density error is 7.13331944904e-07
+
+ LCAO ALGORITHM ------------- MD =    1  ELEC =   10 --------------------------------
+
+ Density error is 2.6209014458e-08
+
+ LCAO ALGORITHM ------------- MD =    1  ELEC =   11 --------------------------------
+
+ Density error is 1.41723715595e-08
+
+ LCAO ALGORITHM ------------- MD =    1  ELEC =   12 --------------------------------
+
+ Density error is 3.11824834896e-10
 
  charge density convergence is achieved
- final etot is -219.129937819178 eV
-
-
+ final etot is -219.417612344 eV
 
  ><><><><><><><><><><><><><><><><><><><><><><
 
@@ -382,11 +369,11 @@
  ><><><><><><><><><><><><><><><><><><><><><><
 
      atom              x              y              z
-       H1      +1.340517      -2.319940      -3.252982
-       H2      -4.366521      +0.525384      -0.271324
-       H3      +1.946277      +3.914840      -0.100276
-       H4      +0.968648      -1.975710      +3.652965
-       C1      +0.111080      -0.144573      -0.028383
+       H1    +0.66817605     -1.1559675     -1.6201541
+       H2      -2.080502    +0.24971032    -0.12958234
+       H3    +0.93480114     +1.8790242   -0.048433506
+       H4    +0.47749957    -0.97335707     +1.7979153
+       C1 +2.5229946e-05 +0.00059002136 +0.00025459897
 
 
  ><><><><><><><><><><><><><><><><><><><><><><
@@ -395,94 +382,75 @@
 
  ><><><><><><><><><><><><><><><><><><><><><><
 
-      +10.830707      +0.064341      +0.036055
-       +0.064341     +10.682670      -0.044656
-       +0.036055      -0.044656     +10.497451
+       +5.466287      -0.000214      +0.000166
+       -0.000214      +5.469655      -0.000303
+       +0.000166      -0.000303      +5.469637
+
+ -------------------------------------------
+ STEP OF MOLECULAR DYNAMICS : 0
+ -------------------------------------------
 
 output Pressure for check!
-Virtual Pressure is +21.340552 Kbar 
-Virial Term is +21.340552 Kbar 
-Kenetic Term is +0.000000 Kbar 
+Virtual Pressure is +5.474968 Kbar 
+Virial Term is +5.468527 Kbar 
+Kenetic Term is +0.006441 Kbar 
 
- --------------------------------------------------
- Molecular Dynamics (NVT) STEP 1
- --------------------------------------------------
---------------------------------------------------
-            SUMMARY OF NVT CALCULATION            
- --------------------------------------------------
- NVT Conservation     : -16.105748 (Rydberg)
- NVT Temperature      :  +0.000000 (K)
- NVT Kinetic energy   :  +0.000000 (Rydberg)
- NVT Potential energy : -16.105748 (Rydberg)
- maxForce             :  +0.007343
- maxStep              :  +0.039821
- MD_STEP             SystemE             Conserved           DeltaE              Temperature         
- +1                  -8.052874           -8.052874           +0.000000           +172.203317         
 
- PW ALGORITHM --------------- ION=+2    ELEC=+1  --------------------------------
- K-point CG iter num    Time(Sec)      
- +1      +53.714286     +6.150000      
+ ><><><><><><><><><><><><><><><><><><><><><><
 
- Density error is +0.003432405487
+ MD STRESS (KBAR)
 
- PW ALGORITHM --------------- ION=+2    ELEC=+2  --------------------------------
- K-point CG iter num    Time(Sec)      
- +1      +2.214286      +0.340000      
+ ><><><><><><><><><><><><><><><><><><><><><><
 
- Density error is +0.000062275134
+       +5.471080      +0.000651      -0.003879
+       +0.000651      +5.472481      -0.005115
+       -0.003879      -0.005115      +5.481343
+                                     nloc = +289
+              searching radius is (Bohr)) = +18.890000
+         searching radius unit is (Bohr)) = +1.889726
 
- PW ALGORITHM --------------- ION=+2    ELEC=+3  --------------------------------
- K-point CG iter num    Time(Sec)      
- +1      +4.000000      +0.530000      
+ LCAO ALGORITHM ------------- MD =    2  ELEC =    1 --------------------------------
 
- Density error is +0.000015792053
+ Density error is +0.010266517531
 
- PW ALGORITHM --------------- ION=+2    ELEC=+4  --------------------------------
- K-point CG iter num    Time(Sec)      
- +1      +3.142857      +0.450000      
+ LCAO ALGORITHM ------------- MD =    2  ELEC =    2 --------------------------------
 
- Density error is +0.000001338459
+ Density error is +0.002497371603
 
- PW ALGORITHM --------------- ION=+2    ELEC=+5  --------------------------------
- K-point CG iter num    Time(Sec)      
- +1      +4.642857      +0.610000      
+ LCAO ALGORITHM ------------- MD =    2  ELEC =    3 --------------------------------
 
- Density error is +0.000000192378
+ Density error is +0.001347922782
 
- PW ALGORITHM --------------- ION=+2    ELEC=+6  --------------------------------
- K-point CG iter num    Time(Sec)      
- +1      +3.142857      +0.460000      
+ LCAO ALGORITHM ------------- MD =    2  ELEC =    4 --------------------------------
 
- Density error is +0.000000025550
+ Density error is +0.000084761244
 
- PW ALGORITHM --------------- ION=+2    ELEC=+7  --------------------------------
- K-point CG iter num    Time(Sec)      
- +1      +4.714286      +0.640000      
+ LCAO ALGORITHM ------------- MD =    2  ELEC =    5 --------------------------------
 
- Density error is +0.000000014039
+ Density error is +0.000012263011
 
- PW ALGORITHM --------------- ION=+2    ELEC=+8  --------------------------------
- K-point CG iter num    Time(Sec)      
- +1      +2.142857      +0.330000      
+ LCAO ALGORITHM ------------- MD =    2  ELEC =    6 --------------------------------
 
- Density error is +0.000000005006
+ Density error is +0.000001314208
 
- PW ALGORITHM --------------- ION=+2    ELEC=+9  --------------------------------
- K-point CG iter num    Time(Sec)      
- +1      +2.428571      +0.370000      
+ LCAO ALGORITHM ------------- MD =    2  ELEC =    7 --------------------------------
 
- Density error is +0.000000001075
+ Density error is +0.000000452317
 
- PW ALGORITHM --------------- ION=+2    ELEC=+10 --------------------------------
- K-point CG iter num    Time(Sec)      
- +1      +4.571429      +0.630000      
+ LCAO ALGORITHM ------------- MD =    2  ELEC =    8 --------------------------------
 
- Density error is +0.000000000036
+ Density error is +0.000000076730
+
+ LCAO ALGORITHM ------------- MD =    2  ELEC =    9 --------------------------------
+
+ Density error is +0.000000005728
+
+ LCAO ALGORITHM ------------- MD =    2  ELEC =   10 --------------------------------
+
+ Density error is +0.000000000431
 
  charge density convergence is achieved
- final etot is -219.440527700460 eV
-
-
+ final etot is -219.492968914185 eV
 
  ><><><><><><><><><><><><><><><><><><><><><><
 
@@ -490,12 +458,12 @@ Kenetic Term is +0.000000 Kbar
 
  ><><><><><><><><><><><><><><><><><><><><><><
 
- atom    x              y              z              
- H1      +1.004871      -1.739881      -2.441947      
- H2      -3.252618      +0.393216      -0.201464      
- H3      +1.449497      +2.920979      -0.074231      
- H4      +0.723985      -1.478039      +2.737075      
- C1      +0.074265      -0.096275      -0.019433      
+     atom              x              y              z
+       H1    +0.49025494    -0.86039958    -1.20570083
+       H2    -1.76382370    +0.18895466    -0.09843194
+       H3    +0.72520265    +1.42096166    -0.01878483
+       H4    +0.37884284    -0.78455333    +1.49561282
+       C1    +0.16952328    +0.03503658    -0.17269523
 
 
  ><><><><><><><><><><><><><><><><><><><><><><
@@ -504,100 +472,75 @@ Kenetic Term is +0.000000 Kbar
 
  ><><><><><><><><><><><><><><><><><><><><><><
 
- +8.239066      +0.040673      +0.022701      
- +0.040673      +8.146118      -0.028152      
- +0.022701      -0.028152      +8.029180      
+       +4.553376      -0.021360      +0.084915
+       -0.021360      +4.214380      -0.113669
+       +0.084915      -0.113669      +4.372736
+
+ -------------------------------------------
+ STEP OF MOLECULAR DYNAMICS : 1
+ -------------------------------------------
 
 output Pressure for check!
-Virtual Pressure is +16.387160 Kbar 
-Virial Term is +16.276243 Kbar 
-Kenetic Term is +0.110917 Kbar 
+Virtual Pressure is +4.468046 Kbar 
+Virial Term is +4.380164 Kbar 
+Kenetic Term is +0.087882 Kbar 
 
- --------------------------------------------------
- Molecular Dynamics (NVT) STEP 2
- --------------------------------------------------
---------------------------------------------------
-            SUMMARY OF NVT CALCULATION            
- --------------------------------------------------
- NVT Conservation     : -16.108578 (Rydberg)
- NVT Temperature      : +526.047604 (K)
- NVT Kinetic energy   : +0.019991  (Rydberg)
- NVT Potential energy : -16.128576 (Rydberg)
- maxForce             : +0.004075 
- maxStep              : +0.098572 
- MD_STEP             SystemE             Conserved           DeltaE              Temperature         
- +2                  -8.064288           -8.054289           +0.000000           +1063.334415        
 
- PW ALGORITHM --------------- ION=+3    ELEC=+1  --------------------------------
- K-point CG iter num    Time(Sec)      
- +1      +54.857143     +6.240000      
+ ><><><><><><><><><><><><><><><><><><><><><><
 
- Density error is +0.019351753103
+ MD STRESS (KBAR)
 
- PW ALGORITHM --------------- ION=+3    ELEC=+2  --------------------------------
- K-point CG iter num    Time(Sec)      
- +1      +2.214286      +0.340000      
+ ><><><><><><><><><><><><><><><><><><><><><><
 
- Density error is +0.000283196908
+       +4.628332      -0.038761      +0.085917
+       -0.038761      +4.315308      -0.131320
+       +0.085917      -0.131320      +4.460499
+                                     nloc = +289
+              searching radius is (Bohr)) = +18.890000
+         searching radius unit is (Bohr)) = +1.889726
 
- PW ALGORITHM --------------- ION=+3    ELEC=+3  --------------------------------
- K-point CG iter num    Time(Sec)      
- +1      +4.071429      +0.550000      
+ LCAO ALGORITHM ------------- MD =    3  ELEC =    1 --------------------------------
 
- Density error is +0.000097414254
+ Density error is +0.024594159592
 
- PW ALGORITHM --------------- ION=+3    ELEC=+4  --------------------------------
- K-point CG iter num    Time(Sec)      
- +1      +2.785714      +0.410000      
+ LCAO ALGORITHM ------------- MD =    3  ELEC =    2 --------------------------------
 
- Density error is +0.000008367964
+ Density error is +0.005534035993
 
- PW ALGORITHM --------------- ION=+3    ELEC=+5  --------------------------------
- K-point CG iter num    Time(Sec)      
- +1      +3.857143      +0.540000      
+ LCAO ALGORITHM ------------- MD =    3  ELEC =    3 --------------------------------
 
- Density error is +0.000001252601
+ Density error is +0.003088913442
 
- PW ALGORITHM --------------- ION=+3    ELEC=+6  --------------------------------
- K-point CG iter num    Time(Sec)      
- +1      +3.642857      +0.510000      
+ LCAO ALGORITHM ------------- MD =    3  ELEC =    4 --------------------------------
 
- Density error is +0.000000066252
+ Density error is +0.000157548989
 
- PW ALGORITHM --------------- ION=+3    ELEC=+7  --------------------------------
- K-point CG iter num    Time(Sec)      
- +1      +5.071429      +0.670000      
+ LCAO ALGORITHM ------------- MD =    3  ELEC =    5 --------------------------------
 
- Density error is +0.000000013589
+ Density error is +0.000009096313
 
- PW ALGORITHM --------------- ION=+3    ELEC=+8  --------------------------------
- K-point CG iter num    Time(Sec)      
- +1      +4.571429      +0.610000      
+ LCAO ALGORITHM ------------- MD =    3  ELEC =    6 --------------------------------
 
- Density error is +0.000000024404
+ Density error is +0.000002928976
 
- PW ALGORITHM --------------- ION=+3    ELEC=+9  --------------------------------
- K-point CG iter num    Time(Sec)      
- +1      +2.000000      +0.320000      
+ LCAO ALGORITHM ------------- MD =    3  ELEC =    7 --------------------------------
 
- Density error is +0.000000010839
+ Density error is +0.000001094513
 
- PW ALGORITHM --------------- ION=+3    ELEC=+10 --------------------------------
- K-point CG iter num    Time(Sec)      
- +1      +2.071429      +0.340000      
+ LCAO ALGORITHM ------------- MD =    3  ELEC =    8 --------------------------------
 
- Density error is +0.000000002800
+ Density error is +0.000000078221
 
- PW ALGORITHM --------------- ION=+3    ELEC=+11 --------------------------------
- K-point CG iter num    Time(Sec)      
- +1      +4.000000      +0.550000      
+ LCAO ALGORITHM ------------- MD =    3  ELEC =    9 --------------------------------
 
- Density error is +0.000000000052
+ Density error is +0.000000005822
+
+ LCAO ALGORITHM ------------- MD =    3  ELEC =   10 --------------------------------
+
+ Density error is +0.000000000775
 
  charge density convergence is achieved
- final etot is -219.862433615028 eV
-
-
+ final etot is -219.608412824317 eV
 
  ><><><><><><><><><><><><><><><><><><><><><><
 
@@ -605,12 +548,12 @@ Kenetic Term is +0.110917 Kbar
 
  ><><><><><><><><><><><><><><><><><><><><><><
 
- atom    x              y              z              
- H1      +0.308191      -0.535728      -0.757725      
- H2      -0.975237      +0.122318      -0.058835      
- H3      +0.431328      +0.882198      -0.020974      
- H4      +0.218386      -0.449293      +0.842665      
- C1      +0.017332      -0.019495      -0.005131      
+     atom              x              y              z
+       H1    +0.16002510    -0.30887491    -0.43098457
+       H2    -0.83438114    +0.05437479    -0.02141281
+       H3    +0.29374672    +0.52330577    +0.02732362
+       H4    +0.14605261    -0.32566633    +0.68804044
+       C1    +0.23455671    +0.05686068    -0.26296669
 
 
  ><><><><><><><><><><><><><><><><><><><><><><
@@ -619,33 +562,123 @@ Kenetic Term is +0.110917 Kbar
 
  ><><><><><><><><><><><><><><><><><><><><><><
 
- +2.590889      -0.001256      -0.000685      
- -0.001256      +2.591786      +0.001012      
- -0.000685      +0.001012      +2.595960      
+       +2.098185      +0.007527      +0.104271
+       +0.007527      +1.613231      -0.120516
+       +0.104271      -0.120516      +1.859916
+
+ -------------------------------------------
+ STEP OF MOLECULAR DYNAMICS : 2
+ -------------------------------------------
 
 output Pressure for check!
-Virtual Pressure is +5.870656 Kbar 
-Virial Term is +5.185757 Kbar 
-Kenetic Term is +0.684900 Kbar 
+Virtual Pressure is +2.031062 Kbar 
+Virial Term is +1.857111 Kbar 
+Kenetic Term is +0.173952 Kbar 
 
- --------------------------------------------------
- Molecular Dynamics (NVT) STEP 3
- --------------------------------------------------
---------------------------------------------------
-            SUMMARY OF NVT CALCULATION            
- --------------------------------------------------
- NVT Conservation     : -16.111086 (Rydberg)
- NVT Temperature      : +1266.849197 (K)
- NVT Kinetic energy   : +0.048143  (Rydberg)
- NVT Potential energy : -16.159585 (Rydberg)
- maxForce             : +0.000367 
- maxStep              : +0.114449 
- MD_STEP             SystemE             Conserved           DeltaE              Temperature         
- +3                  -8.079793           -8.055543           +0.000000           +1452.963348        
+
+ ><><><><><><><><><><><><><><><><><><><><><><
+
+ MD STRESS (KBAR)
+
+ ><><><><><><><><><><><><><><><><><><><><><><
+
+       +2.265906      -0.014782      +0.112736
+       -0.014782      +1.796291      -0.144526
+       +0.112736      -0.144526      +2.030990
+                                     nloc = +289
+              searching radius is (Bohr)) = +18.890000
+         searching radius unit is (Bohr)) = +1.889726
+
+ LCAO ALGORITHM ------------- MD =    4  ELEC =    1 --------------------------------
+
+ Density error is +0.022940518361
+
+ LCAO ALGORITHM ------------- MD =    4  ELEC =    2 --------------------------------
+
+ Density error is +0.005222919162
+
+ LCAO ALGORITHM ------------- MD =    4  ELEC =    3 --------------------------------
+
+ Density error is +0.002973846634
+
+ LCAO ALGORITHM ------------- MD =    4  ELEC =    4 --------------------------------
+
+ Density error is +0.000161676383
+
+ LCAO ALGORITHM ------------- MD =    4  ELEC =    5 --------------------------------
+
+ Density error is +0.000006384706
+
+ LCAO ALGORITHM ------------- MD =    4  ELEC =    6 --------------------------------
+
+ Density error is +0.000002108229
+
+ LCAO ALGORITHM ------------- MD =    4  ELEC =    7 --------------------------------
+
+ Density error is +0.000000600476
+
+ LCAO ALGORITHM ------------- MD =    4  ELEC =    8 --------------------------------
+
+ Density error is +0.000000092867
+
+ LCAO ALGORITHM ------------- MD =    4  ELEC =    9 --------------------------------
+
+ Density error is +0.000000005281
+
+ LCAO ALGORITHM ------------- MD =    4  ELEC =   10 --------------------------------
+
+ Density error is +0.000000000291
+
+ charge density convergence is achieved
+ final etot is -219.633913127181 eV
+
+ ><><><><><><><><><><><><><><><><><><><><><><
+
+    TOTAL-FORCE (eV/Angstrom)
+
+ ><><><><><><><><><><><><><><><><><><><><><><
+
+     atom              x              y              z
+       H1    -0.10149676    +0.12508314    +0.18002539
+       H2    +0.00865439    -0.06285089    +0.05043301
+       H3    -0.05771566    -0.19843987    +0.06496074
+       H4    -0.05642669    +0.07369607    -0.02676084
+       C1    +0.20698471    +0.06251155    -0.26865830
+
+
+ ><><><><><><><><><><><><><><><><><><><><><><
+
+ TOTAL-STRESS (KBAR)
+
+ ><><><><><><><><><><><><><><><><><><><><><><
+
+       -0.161231      +0.065000      +0.065454
+       +0.065000      -0.596004      -0.045760
+       +0.065454      -0.045760      -0.344891
+
+ -------------------------------------------
+ STEP OF MOLECULAR DYNAMICS : 3
+ -------------------------------------------
+
+output Pressure for check!
+Virtual Pressure is -0.281288 Kbar 
+Virial Term is -0.367375 Kbar 
+Kenetic Term is +0.086088 Kbar 
+
+
+ ><><><><><><><><><><><><><><><><><><><><><><
+
+ MD STRESS (KBAR)
+
+ ><><><><><><><><><><><><><><><><><><><><><><
+
+       -0.072045      +0.056002      +0.072032
+       +0.056002      -0.511726      -0.057839
+       +0.072032      -0.057839      -0.260091
 
 
  --------------------------------------------
- !FINAL_ETOT_IS -219.8624336150282090 eV
+ !FINAL_ETOT_IS -219.6339131271808753 eV
  --------------------------------------------
 
 
@@ -654,59 +687,84 @@ Kenetic Term is +0.684900 Kbar
 
 
   |CLASS_NAME---------|NAME---------------|TIME(Sec)-----|CALLS----|AVG------|PER%-------
-                       total               +67.074        15        +4.47     +100.00   %
-   Run_pw              plane_wave_line     +67.04         1         +67.04    +99.95    %
-   PW_Basis            gen_pw              +0.26          1         +0.26     +0.39     %
-   Run_MD_PW           md_cells_pw         +66.70         1         +66.70    +99.45    %
-   ppcell_vl           init_vloc           +0.12          1         +0.12     +0.18     %
-   Potential           init_pot            +0.46          4         +0.11     +0.68     %
-   FFT                 FFT3D               +26.79         8433      +0.00     +39.94    %
-   Charge              atomic_rho          +0.12          7         +0.02     +0.18     %
-   Potential           v_of_rho            +3.52          36        +0.10     +5.25     %
-   H_XC_pw             v_xc                +3.31          39        +0.08     +4.93     %
-   H_Hartree_pw        v_hartree           +0.42          36        +0.01     +0.63     %
-   wavefunc            wfcinit             +1.06          4         +0.26     +1.58     %
-   pp_cell_vnl         getvnl              +0.15          42        +0.00     +0.22     %
-   Hamilt_PW           diagH_subspace      +3.50          36        +0.10     +5.21     %
-   Hamilt_PW           h_psi               +27.80         3259      +0.01     +41.45    %
-   Hamilt_PW           vloc                +25.80         3259      +0.01     +38.46    %
-   Hamilt_PW           vnl                 +1.91          3259      +0.00     +2.85     %
-   Hamilt_PW           add_nonlocal_pp     +0.90          3259      +0.00     +1.35     %
-   Run_MD_PW           md_ions_pw          +66.15         1         +66.15    +98.63    %
-   Electrons           self_consistent     +62.27         3         +20.76    +92.84    %
-   Electrons           c_bands             +29.33         32        +0.92     +43.73    %
-   Hamilt              diagH_pw            +29.20         32        +0.91     +43.54    %
-   Diago_CG            diag                +26.09         34        +0.77     +38.90    %
-   Charge              sum_band            +2.94          32        +0.09     +4.38     %
-   Charge              rho_mpi             +1.08          32        +0.03     +1.61     %
-   Charge              mix_rho             +0.97          32        +0.03     +1.45     %
-   Forces              cal_force_nl        +0.24          3         +0.08     +0.36     %
-   Stress_PW           cal_stress          +1.94          3         +0.65     +2.89     %
-   Stress_Func         stress_ew           +22.20         2         +11.10    +33.10    %
-   Force_Func          stress_ew           +22.20         2         +11.10    +33.10    %
-   Stress_Func         stress_gga          +0.13          3         +0.04     +0.19     %
-   Stress_Func         stres_nl            +1.63          3         +0.54     +2.43     %
+                                      total      +50.10576        11     +4.56   +100.00%
+               Run_lcao           lcao_line      +50.07728         1    +50.08    +99.94%
+               PW_Basis              gen_pw       +0.32423         1     +0.32     +0.65%
+            ORB_control      set_orb_tables       +1.00186         1     +1.00     +2.00%
+         ORB_gen_tables          gen_tables       +1.00186         1     +1.00     +2.00%
+          ORB_table_phi          init_Table       +0.62925         1     +0.63     +1.26%
+          ORB_table_phi      cal_ST_Phi12_R       +0.62412       126     +0.00     +1.25%
+         ORB_table_beta     init_Table_Beta       +0.22784         1     +0.23     +0.45%
+         ORB_table_beta       VNL_PhiBeta_R       +0.22637        56     +0.00     +0.45%
+              Potential            init_pot       +1.98120         8     +0.25     +3.95%
+              Potential       set_local_pot       +0.12809         8     +0.02     +0.26%
+                    FFT               FFT3D       +8.39921       729     +0.01    +16.76%
+                 Charge          atomic_rho       +0.18136         7     +0.03     +0.36%
+              Potential            v_of_rho      +11.06614        50     +0.22    +22.09%
+          XC_Functional                v_xc      +10.17416        54     +0.19    +20.31%
+           H_Hartree_pw           v_hartree       +1.55105        50     +0.03     +3.10%
+            Run_MD_LCAO            opt_ions      +48.33155         1    +48.33    +96.46%
+                NVT_NHC               setup      +13.23980         1    +13.24    +26.42%
+                MD_func        force_stress      +25.25482         2    +12.63    +50.40%
+              LOOP_elec     solve_elec_stru      +36.73914         4     +9.18    +73.32%
+              LOOP_elec     set_matrix_grid       +0.27334         4     +0.07     +0.55%
+         Grid_Technique                init       +0.27228         4     +0.07     +0.54%
+           Grid_BigCellgrid_expansion_index       +0.17445         8     +0.02     +0.35%
+              LOOP_elec              solver      +36.46298         4     +9.12    +72.77%
+               ELEC_scf                 scf      +36.46297         4     +9.12    +72.77%
+          ELEC_cbands_k           cal_bands      +13.00063        42     +0.31    +25.95%
+                 Gint_k              vlocal       +5.98284        42     +0.14    +11.94%
+             Efficience              each_k       +6.96827        42     +0.17    +13.91%
+             Efficience                 H_k       +6.91588        42     +0.16    +13.80%
+            LCAO_Hamilt        calculate_Hk       +6.91580        42     +0.16    +13.80%
+                 Gint_k        folding_vl_k       +6.91479        42     +0.16    +13.80%
+                 Gint_k              Distri       +6.91407        42     +0.16    +13.80%
+      Local_Orbital_Cha           sum_bands      +11.29601        42     +0.27    +22.54%
+                 Gint_k           cal_rho_k       +5.36589        42     +0.13    +10.71%
+                 Charge             mix_rho       +2.55638        42     +0.06     +5.10%
+      Force_Stress_LCAO      getForceStress      +10.60361         4     +2.65    +21.16%
+                 Forces       cal_force_loc       +0.15708         4     +0.04     +0.31%
+            Stress_Func          stress_loc       +0.17575         4     +0.04     +0.35%
+            Stress_Func          stress_har       +0.14552         4     +0.04     +0.29%
+            Stress_Func          stress_gga       +0.41948         4     +0.10     +0.84%
+           Force_LCAO_k            ftable_k       +8.43132         4     +2.11    +16.83%
+           Force_LCAO_k      cal_fvl_dphi_k       +8.41336         4     +2.10    +16.79%
+                 Gint_k     svl_k_RealSpace       +7.44687         4     +1.86    +14.86%
+                 Gint_k   evaluate_vl_force       +0.94824    133427     +0.00     +1.89%
+                 Gint_k  evaluate_vl_stress       +1.74281    133427     +0.00     +3.48%
+                 Gint_k       folding_force       +4.25683         4     +1.06     +8.50%
+                MD_func     md_force_stress      +23.39869         2    +11.70    +46.70%
  ----------------------------------------------------------------------------------------
 
  CLASS_NAME---------|NAME---------------|MEMORY(MB)--------
-                                         +70.3196
- Charge_Pulay        Rrho                +13.1836       
- Charge_Pulay        dRrho               +11.5356       
- Charge_Pulay        drho                +11.5356       
- Use_FFT             porter              +3.2959        
- PW_Basis            struc_fac           +2.5457        
- wavefunc            evc                 +2.2321        
- Charge              rho                 +1.6479        
- Charge              rho_save            +1.6479        
- Charge              rho_core            +1.6479        
- Potential           vltot               +1.6479        
- Potential           vr                  +1.6479        
- Potential           vr_eff              +1.6479        
- Potential           vr_eff1             +1.6479        
- Potential           vnew                +1.6479        
- Charge_Pulay        rho_save2           +1.6479        
+                                         +1164.1075
+        ORB_table_phi               Jl(x)      +131.0928
+         Charge_Pulay                Rrho       +26.3672
+         Charge_Pulay               dRrho       +23.0713
+         Charge_Pulay                drho       +23.0713
+              Use_FFT              porter        +6.5918
+        Grid_Meshcell        index2normal        +5.8017
+        Grid_Meshcell         index2ucell        +5.8017
+             PW_Basis           struc_fac        +5.0912
+        ORB_table_phi         Table_SR&TR        +3.6736
+               Charge                 rho        +3.2959
+               Charge            rho_save        +3.2959
+               Charge            rho_core        +3.2959
+            Potential               vltot        +3.2959
+            Potential                  vr        +3.2959
+            Potential              vr_eff        +3.2959
+            Potential             vr_eff1        +3.2959
+            Potential                vnew        +3.2959
+         Charge_Pulay           rho_save2        +3.2959
+        init_meshball        meshball_pos        +2.1575
+               Charge                rhog        +1.2728
+               Charge           rhog_save        +1.2728
+               Charge               kin_r        +1.2728
+               Charge          kin_r_save        +1.2728
+               Charge           rhog_core        +1.2728
+       ORB_table_beta            Table_NR        +1.1560
  ----------------------------------------------------------
 
- Start  Time  : Fri Nov 12 18:15:13 2021
- Finish Time  : Fri Nov 12 18:16:20 2021
- Total  Time  : 0 h 1 mins 7 secs 
+ Start  Time  : Sun Apr 17 15:10:23 2022
+ Finish Time  : Sun Apr 17 15:11:13 2022
+ Total  Time  : 0 h 0 mins 50 secs 
