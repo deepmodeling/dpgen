@@ -1,4 +1,4 @@
-# Performing the Run process
+# Overview of the Run process
 
 The run process contains a series of successive iterations, succussively undertaken in order such as heating the system to certain temperature. Each iteration is composed of three steps: exploration, labeling, and training. Accordingly, there are three sub-folders: 00.train, 01.model_devi, and 02.fp in each iteration.
 
@@ -8,9 +8,9 @@ The run process contains a series of successive iterations, succussively underta
 
 02.fp : Selected structures will be calculated by first principles methods(default VASP). DP-GEN will obtain some new data and put them together with initial data and data generated in previous iterations. After that a new training will be set up and DP-GEN will enter next iteration!
 
-To execute the run process, param.json and machine.json are the two files required, which will be introduced in detail in the following sections. 
+In the run process of the DP-GEN, we need to specify the basic information about the system, the initial data, details of the training, exploration, and labeling tasks. In addition, we need to specify the software, machine environment, and computing resource and enable the process of job generation, submission, query, and collection automatically. We can perform the run process as we expect by specifying the keywords in param.json and machine.json, and they will be introduced in detail in the following sections. 
 
-Here, we give a description of the run process. We can execute the run process of DP-GEN easily by:
+Here, we give a general description of the run process. We can execute the run process of DP-GEN easily by:
 
 ```
 dpgen run param.json machine.json
