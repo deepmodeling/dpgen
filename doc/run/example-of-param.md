@@ -52,18 +52,6 @@ The training related keys in param.json is given as follows
   "numb_models": 4,
   "train_param": "input.json",
   "default_training_param": {
-     "model": {
-        ...
-     },
-     "learning_rate": {
-        ...
-        },
-     "loss": {
-        ...
-     },
-     "training": {
-     ...
-     }
   },
 ```
 The training related keys specify the detalis of training tasks. "numb_models" specifies the number of models to be trained. "default_training_param" specify the training parameters for `deepmd-kit`. 
