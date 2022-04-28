@@ -119,7 +119,6 @@ The labeling related keys in param.json is given as follows
     "POTCAR"
   ],
   "fp_incar": "....../INCAR_methane"
-}
 ```
 
 The labeling related keys specify the detalis of labeling tasks. "fp_style" specifies software for First Principles. "fp_task_max" and "fp_task_min" specify the minimum and maximum of structures to be calculated in `02.fp` of each iteration. "fp_pp_path" and "fp_pp_files" specify the location of psuedo-potential file to be used for 02.fp. "fp_incar" specifies input file for VASP. INCAR must specify KSPACING and KGAMMA.
