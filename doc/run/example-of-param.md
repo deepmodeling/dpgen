@@ -6,7 +6,7 @@ We have provided different examples of param.json in dpgen/examples/run/. In thi
 
 The basics related keys in param.json is given as follows
 
-```
+```json
   "type_map": [
     "H",
     "C"
@@ -23,7 +23,7 @@ The basics related keys specify the basics information about the system. "type_m
 
 The data related keys in param.json is given as follows
 
-```
+```json
   "init_data_prefix": "....../init/",
   "init_data_sys": [
     "CH4.POSCAR.01x01x01/02.md/sys-0004-0001/deepmd"
@@ -48,7 +48,7 @@ Here, the init data is provided at "...... /init/CH4.POSCAR.01x01x01/02.md/sys-0
 
 The training related keys in param.json is given as follows
 
-```
+```json
   "numb_models": 4,
   "train_param": "input.json",
   "default_training_param": {
@@ -74,7 +74,7 @@ Here, 4 DP models will be trained in `00.train`. Detailed explanation of trainin
 
 The exploration related keys in param.json is given as follows
 
-```
+```json
   "model_devi_dt": 0.002,
   "model_devi_skip": 0,
   "model_devi_f_trust_lo": 0.05,
@@ -121,7 +121,7 @@ Here, MD simulations are performed at the temperature of 100 K and the pressure 
 
 The labeling related keys in param.json is given as follows
 
-```
+```json
   "fp_style": "vasp",
   "shuffle_poscar": false,
   "fp_task_max": 20,
