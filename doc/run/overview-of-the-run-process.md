@@ -12,7 +12,7 @@ In the run process of the DP-GEN, we need to specify the basic information about
 
 Here, we give a general description of the run process. We can execute the run process of DP-GEN easily by:
 
-```
+```sh
 dpgen run param.json machine.json
 ```
 
@@ -24,7 +24,7 @@ The following files or folders will be created and upgraded by codes：
 
 When the first iteration is completed, the folder structure of iter.000000 is like this:
 
-```
+```sh
 $ ls iter.000000
 00.train 01.model_devi 02.fp
 ```
