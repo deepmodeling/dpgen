@@ -242,16 +242,16 @@ model_devi_jobs:
         | type: ``int``, optional
         | argument path: ``model_devi_jobs/neidelay``
 
-        delay building until this many steps since last build.
+        Delay building until this many steps since last build.
 
     taut: 
-        | type: ``float`` | ``str``, optional, default: ``log``
+        | type: ``float`` | ``str``, optional
         | argument path: ``model_devi_jobs/taut``
 
         Coupling time of thermostat (ps).
 
     taup: 
-        | type: ``float`` | ``str``, optional, default: ``log``
+        | type: ``float`` | ``str``, optional
         | argument path: ``model_devi_jobs/taup``
 
         Coupling time of barostat (ps).
