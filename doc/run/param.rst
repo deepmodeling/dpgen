@@ -172,12 +172,6 @@ model_devi_perc_candi_v:
 
     See model_devi_adapt_trust_lo.
 
-model_devi_perc_candi_v: 
-    | type: ``float``, optional
-    | argument path: ``model_devi_perc_candi_v``
-
-    See model_devi_adapt_trust_lo.
-
 model_devi_f_avg_relative: 
     | type: ``bool``, optional
     | argument path: ``model_devi_f_avg_relative``
