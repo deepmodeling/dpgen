@@ -260,7 +260,7 @@ fp_style:
     | type: ``dict``
     | argument path: ``fp_style``
 
-    Assume open boundary condition in MD simulations.
+    Software for First Principles. Options include “vasp”, “pwscf”, “siesta” and “gaussian” up to now.
 
 
     Depending on the value of *fp_style*, different sub args are accepted. 
