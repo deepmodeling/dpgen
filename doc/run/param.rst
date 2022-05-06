@@ -327,13 +327,13 @@ fp_style:
         Parameters for Gaussian calculation.
 
         doc_keywords: 
-            | type: ``str``
+            | type: ``str`` | ``list``
             | argument path: ``fp_style[gaussian]/fp_params/doc_keywords``
 
             Keywords for Gaussian input.
 
         multiplicity: 
-            | type: ``int``
+            | type: ``int`` | ``str``
             | argument path: ``fp_style[gaussian]/fp_params/multiplicity``
 
             Spin multiplicity for Gaussian input. If set to auto, the spin multiplicity will be detected automatically. If set to frag, the "fragment=N" method will be used.
