@@ -15,7 +15,7 @@ In this section, we will show you how to perform train task at a local workstati
 - Machine: specifies the machine environment (local workstation, local or remote cluster, or cloud server).
 - Resources: specify the number of groups, nodes, CPU, and GPU; enable the virtual environment.
 
-### Performing train tasks at a local workstation
+### Performing train task at a local workstation
 
 In this example, we perform the `train` task on a local workstation.
 
