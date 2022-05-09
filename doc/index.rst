@@ -2,6 +2,14 @@
 DPGEN's documentation
 ==========================
 
+.. _documents::
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Documents
+
+   run/run-process.rst
+
 .. _parameters::
 
 .. toctree::
@@ -9,7 +17,8 @@ DPGEN's documentation
    :caption: Parameters
 
    run-mdata.rst
-
+   run/param.rst
+   
 .. _tutorial:
 
 .. toctree::
