@@ -1,5 +1,5 @@
 =============================
-dpgen run machine parameters
+dpgen run param parameters
 =============================
 
 type_map: 
