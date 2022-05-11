@@ -2,23 +2,51 @@
 DPGEN's documentation
 ==========================
 
-.. _documents::
+.. _overview::
 
 .. toctree::
    :maxdepth: 2
-   :caption: Documents
-
-   run/run-process.rst
-
-.. _parameters::
+   :caption: Overview
+  
+  
+.. _installation::
 
 .. toctree::
    :maxdepth: 2
-   :caption: Parameters
+   :caption: Installation 
 
-   run-mdata.rst
-   run/param.rst
+
+.. _run::
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Run
    
+   run/run-process.rst
+   run/param.rst
+   run-mdata.rst
+   
+.. _init::
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Init   
+
+
+.. _autotest::
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Autotest   
+
+
+.. _simplify::
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Simplify  
+
+
 .. _tutorial:
 
 .. toctree::
