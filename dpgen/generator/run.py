@@ -839,6 +839,7 @@ def make_model_devi (iter_index,
         ss = sys_configs[idx]
         for ii in ss :
             cur_systems += glob.glob(ii)
+        # cur_systems should not be reverted, as we may add specific constrict to the similutions 
         #cur_systems.sort()
         cur_systems = [os.path.abspath(ii) for ii in cur_systems]
         conf_systems.append (cur_systems)
@@ -1278,9 +1279,67 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
             conf_counter += 1
         sys_counter += 1
 
-def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
+def _make_model_devi_amber(iter_index: int, jdata: dict, mdata: dict, conf_systems: list):
     """Make amber's MD inputs.
+
+    Parameters
+    ----------
+    iter_index : int
+        iter index
+    jdata : dict
+        run parameters. The following parameters will be used in this method:
+            model_devi_jobs : list[dict]
+                The list including the dict for information of each cycle:
+                    sys_idx : list[int]
+                        list of systems to run
+                    trj_freq : int
+                        freq to dump trajectory
+            parm7_prefix : str
+                The path prefix to AMBER PARM7 files
+            parm7 : list[str]
+                List of paths to AMBER PARM7 files. Each file maps to a system.
+            mdin_prefix : str 
+                The path prefix to AMBER mdin files
+            mdin : list[str]
+                List of paths to AMBER mdin files. Each files maps to a system.
+                The following keywords will be replaced by the actual value:
+                    @freq@ : freq to dump trajectory
+                    @nstlim@ : total time step to run
+                    @qm_region@ : AMBER mask of the QM region
+                    @qm_theory@ : The QM theory, such as DFTB2
+                    @qm_charge@ : The total charge of the QM theory, such as -2
+                    @rcut@ : cutoff radius of the DPRc model
+                    @GRAPH_FILE0@, @GRAPH_FILE1@, ... : graph files
+            qm_region : list[str]
+                AMBER mask of the QM region. Each mask maps to a system.
+            qm_charge : list[int]
+                Charge of the QM region. Each charge maps to a system.
+            nsteps : list[int]
+                The number of steps to run. Each number maps to a system.
+            r : list[list[float]] or list[list[list[float]]]
+                Constrict values for the enhanced sampling. The first dimension maps to systems.
+                The second dimension maps to confs in each system. The third dimension is the
+                constrict value. It can be a single float for 1D or list of floats for nD.
+            disang_prefix : str
+                The path prefix to disang prefix.
+            disang : list[str]
+                List of paths to AMBER disang files. Each file maps to a sytem.
+                The keyword RVAL will be replaced by the constrict values, or RVAL1, RVAL2, ...
+                for an nD system.
+    mdata : dict
+        machine parameters. Nothing will be used in this method.
+    conf_systems : list
+        conf systems
+
+    References
+    ----------
+    .. [1] Development of Range-Corrected Deep Learning Potentials for Fast, Accurate Quantum
+       Mechanical/Molecular Mechanical Simulations of Chemical Reactions in Solution, 
+       Jinzhe Zeng, Timothy J. Giese, Şölen Ekesan, and Darrin M. York, Journal of Chemical
+       Theory and Computation 2021 17 (11), 6993-7009 
+
     inputs: restart (coords), param, mdin, graph, disang (optional)
+
     """
     model_devi_jobs = jdata['model_devi_jobs']
     if (iter_index >= len(model_devi_jobs)) :
@@ -1289,8 +1348,6 @@ def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
     sys_idx = expand_idx(cur_job['sys_idx'])
     if (len(sys_idx) != len(list(set(sys_idx)))) :
         raise RuntimeError("system index should be uniq")
-
-    graph_idxs = cur_job.get('graphs', [0])
 
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
@@ -1324,10 +1381,7 @@ def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
                                .replace("@qm_charge@", str(qm_charge[ii])) \
                                .replace("@qm_theory@", jdata['low_level']) \
                                .replace("@rcut@", str(jdata['cutoff']))
-            if jdata.get("adjusted_sel", None) is None:
-                models = sorted(glob.glob(os.path.join(train_path, "graph.*.pb")))
-            else:
-                models = sorted(glob.glob(os.path.join(train_path, "graph.*.s%02d.pb" % ii)))
+            models = sorted(glob.glob(os.path.join(train_path, "graph.*.pb")))
             task_model_list = []
             for ii in models:
                 task_model_list.append(os.path.join('..', os.path.basename(ii)))
@@ -1345,9 +1399,7 @@ def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
         for idx_cc, cc in enumerate(ss) :
             task_counter = idx_cc
             conf_counter = idx_cc
-            if cur_job.get("only_run",None):
-                if (idx_cc % cur_job['only_run'][0]) not in cur_job['only_run'][1:]:
-                    continue
+
             task_name = make_model_devi_task_name(sys_idx[sys_counter], task_counter)
             conf_name = make_model_devi_conf_name(sys_idx[sys_counter], conf_counter)
             task_path = os.path.join(work_path, task_name)
@@ -1466,7 +1518,6 @@ def run_md_model_devi (iter_index,
         if ndx_filename: forward_files.append(ndx_filename)
         backward_files = ["%s.tpr" % deffnm, "%s.log" %deffnm , traj_filename, 'model_devi.out', "traj", "traj_deepmd" ]
     elif model_devi_engine == "amber":
-        # TODO: currently all options are written in lmp_exec, but we may move them here
         commands = [(
             "TASK=$(basename $(pwd)) && "
             "SYS1=${TASK:5:3} && "
@@ -1854,7 +1905,6 @@ def _make_fp_vasp_inner (modd_path,
     charges_recorder = []  # record charges for each fp_task
     charges_map = jdata.get("sys_charges", [])
 
-    model_devi_engine = jdata.get('model_devi_engine', 'lammps')
     cluster_cutoff = jdata.get('cluster_cutoff', None)
     model_devi_adapt_trust_lo = jdata.get('model_devi_adapt_trust_lo', False)
     model_devi_f_avg_relative = jdata.get('model_devi_f_avg_relative', False)
