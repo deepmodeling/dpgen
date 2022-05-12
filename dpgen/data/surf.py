@@ -447,7 +447,7 @@ def make_scale(jdata):
                 try:
                     pos_src = os.path.join(os.path.join(init_path, ii), 'CONTCAR')
                     assert(os.path.isfile(pos_src))
-                except:
+                except Exception:
                     raise RuntimeError("not file %s, vasp relaxation should be run before scale poscar")
             scale_path = os.path.join(work_path, ii)
             scale_path = os.path.join(scale_path, "scale-%.3f" % jj)
@@ -583,7 +583,7 @@ def gen_init_surf(args):
        jdata=loadfn(args.PARAM)
        if args.MACHINE is not None:
           mdata=loadfn(args.MACHINE)
-    except:
+    except Exception:
         with open (args.PARAM, 'r') as fp :
             jdata = json.load (fp)
         if args.MACHINE is not None:

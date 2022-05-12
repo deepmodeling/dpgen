@@ -88,6 +88,8 @@
   "model_devi_skip": 0,
   "model_devi_f_trust_lo":  0.05,
   "model_devi_f_trust_hi":  0.15,
+  "model_devi_e_trust_lo": 1e-3,
+  "model_devi_e_trust_hi": 1e-1,
   "model_devi_clean_traj":  false,
   "model_devi_jobs": [
     {
@@ -95,13 +97,13 @@
         0
       ],
       "temps": [
-        50
+        100
       ],
       "press": [
         1
       ],
       "trj_freq": 10,
-      "nsteps":   1000,
+      "nsteps":   3000,
       "ensemble": "nvt",
       "_idx":     "00"
     },
@@ -110,13 +112,13 @@
         1
       ],
       "temps": [
-        50
+        150
       ],
       "press": [
         1
       ],
       "trj_freq": 10,
-      "nsteps":   3000,
+      "nsteps":   9000,
       "ensemble": "nvt",
       "_idx":     "01"
     }
@@ -125,20 +127,26 @@
   "_comment": " 02.fp ",
   "fp_style":             "abacus/scf",
   "shuffle_poscar":       false,
-  "fp_task_max":          30,
+  "fp_task_max":          50,
   "fp_task_min":          8,
-  "fp_pp_path":           "/home/mhchen_pkuhpc/mhchen_cls/lustre2/5_liurenxi/5_ABACUS_dpgen_interface/SG15_ONCV_v1.0_upf",
+  "fp_pp_path":           "./",
   "fp_pp_files":          [ "H_ONCV_PBE-1.0.upf","C_ONCV_PBE-1.0.upf"],
+  "fp_orb_files": ["H_gga_8au_60Ry_2s1p.orb", "C_gga_8au_60Ry_2s2p1d.orb"],
+  "fp_dpks_descriptor": "jle.orb",
   "user_fp_params":{
     "ntype": 2,
+    "cal_force": 1,
+    "cal_stress": 1,
+    "deepks_model": "model.ptg",
+    "deepks_out_labels": 1,
+    "basis_type": "lcao",
+    "gamma_only": 1, 
     "ecutwfc": 80,
 	"mixing_type": "pulay",
     "mixing_beta": 0.4,
     "symmetry": 1,
     "nbands": 5,
     "nspin": 1,
-    "ks_solver": "cg",
-    "smearing": "fixed",
-    "sigma": 0.001
+    "smearing_method": "fixed"
 	}
 }

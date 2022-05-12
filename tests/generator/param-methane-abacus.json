@@ -133,7 +133,6 @@
   "fp_pp_path":           ".",
   "fp_pp_files":          [ "./H_HSCV_PBE-1.0.UPF","./C_HSCV_PBE-1.0.UPF"],
   "user_fp_params":{
-    "lattice_constant":1, 
     "ntype": 2,
     "ecutwfc": 80,
     "dr2": 1e-7,

@@ -220,7 +220,7 @@ def create_disturbs_abacus_dev(fin, nfile, dmax=1.0, etmax=0.1, ofmt="abacus", d
         # Writing it
         fout = fin + str(fid) + '.' + ofmt
         print("Creating %s ..." % fout)
-        ret = make_abacus_scf_stru(stru_d, stru_d['pp_files'])
+        ret = make_abacus_scf_stru(stru_d, stru_d['pp_files'], stru_d['orb_files'], stru_d['dpks_descriptor'])
         with open(fout, "w") as fp:
             fp.write(ret)
         if write_d:

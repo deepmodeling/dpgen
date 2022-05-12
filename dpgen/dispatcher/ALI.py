@@ -352,7 +352,7 @@ class ALI(DispatcherList):
                 response = self.client.do_action_with_exception(request)
                 flag = 1
                 break
-            except:
+            except Exception:
                 count += 1
         # count = 10 and still failed, continue
 
@@ -382,7 +382,7 @@ class ALI(DispatcherList):
                             return img["ImageId"]
                     flag = 1
                     break
-                except:
+                except Exception:
                     count += 1
                     time.sleep(10)
         if not flag:
@@ -441,7 +441,7 @@ class ALI(DispatcherList):
                 response = self.client.do_action_with_exception(request)
                 flag = 1
                 break
-            except:
+            except Exception:
                 count += 1
                 time.sleep(10)
         if not flag:
@@ -510,5 +510,5 @@ class ALI(DispatcherList):
                         else:
                             ip_list.append(response["Instances"]["Instance"][0]["VpcAttributes"]["PrivateIpAddress"]['IpAddress'][0])
             return ip_list
-        except: return []
+        except Exception: return []
 

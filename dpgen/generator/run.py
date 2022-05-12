@@ -42,6 +42,9 @@ from dpgen.generator.lib.utils import record_iter
 from dpgen.generator.lib.utils import log_task
 from dpgen.generator.lib.utils import symlink_user_forward_files
 from dpgen.generator.lib.lammps import make_lammps_input, get_dumped_forces
+from dpgen.generator.lib.make_calypso import _make_model_devi_native_calypso,_make_model_devi_buffet
+from dpgen.generator.lib.run_calypso import gen_structures,analysis,run_calypso_model_devi
+from dpgen.generator.lib.parse_calypso import _parse_calypso_input,_parse_calypso_dis_mtx
 from dpgen.generator.lib.vasp import write_incar_dict
 from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
 from dpgen.generator.lib.vasp import incar_upper
@@ -80,6 +83,12 @@ model_devi_conf_fmt = data_system_fmt + '.%04d'
 fp_name = '02.fp'
 fp_task_fmt = data_system_fmt + '.%06d'
 cvasp_file=os.path.join(ROOT_PATH,'generator/lib/cvasp.py')
+# for calypso 
+calypso_run_opt_name = 'gen_stru_analy'
+calypso_model_devi_name = 'model_devi_results'
+calypso_run_model_devi_file = os.path.join(ROOT_PATH,'generator/lib/calypso_run_model_devi.py')
+check_outcar_file = os.path.join(ROOT_PATH,'generator/lib/calypso_check_outcar.py')
+run_opt_file = os.path.join(ROOT_PATH,'generator/lib/calypso_run_opt.py')
 
 def get_job_names(jdata) :
     jobkeys = []
@@ -240,11 +249,12 @@ def make_train (iter_index,
         "By default, the picking probability of data from one system or one iter is proportional to the number of batches (the number of frames divided by batch_size) of that systems or iter.\n" \
         "Detailed discussion about init-model (in Chinese) please see https://mp.weixin.qq.com/s/qsKMZ0j270YhQKvwXUiFvQ")
 
+    model_devi_engine = jdata.get('model_devi_engine', "lammps")
     if iter_index > 0 and _check_empty_iter(iter_index-1, fp_task_min) :
         log_task('prev data is empty, copy prev model')
         copy_model(numb_models, iter_index-1, iter_index)
         return
-    elif iter_index > 0 and _check_skip_train(model_devi_jobs[iter_index-1]):
+    elif model_devi_engine != 'calypso' and iter_index > 0 and _check_skip_train(model_devi_jobs[iter_index-1]):
         log_task('skip training at step %d ' % (iter_index-1))
         copy_model(numb_models, iter_index-1, iter_index)
         return
@@ -308,6 +318,10 @@ def make_train (iter_index,
             old_range.append(len(init_data_sys))
             fp_path = os.path.join(make_iter_name(ii), fp_name)
             fp_data_sys = set(glob.glob(os.path.join(fp_path, "data.*"))) - set(glob.glob(os.path.join(fp_path, "data.*.hdf5")))
+            if model_devi_engine == 'calypso':
+                _modd_path = os.path.join(make_iter_name(ii), model_devi_name, calypso_model_devi_name)
+                sys_list = glob.glob(os.path.join(_modd_path, "*.structures"))
+                sys_batch_size = ["auto" for aa in range(len(sys_list))]
             for jj in fp_data_sys :
                 npy_to_hdf5(jj)
                 sys_idx = int(jj.split('.')[-1])
@@ -640,7 +654,7 @@ def run_train (iter_index,
 
     try:
         train_group_size = mdata['train_group_size']
-    except:
+    except Exception:
         train_group_size = 1
 
     api_version = mdata.get('api_version', '0.9')
@@ -842,17 +856,34 @@ def revise_by_keys(lmp_lines, keys, values):
             lmp_lines[ii] = lmp_lines[ii].replace(kk, str(vv))
     return lmp_lines
 
-
 def make_model_devi (iter_index,
                      jdata,
                      mdata) :
     # The MD engine to perform model deviation
     # Default is lammps
     model_devi_engine = jdata.get('model_devi_engine', "lammps")
+
     model_devi_jobs = jdata['model_devi_jobs']
-    if (iter_index >= len(model_devi_jobs)) :
-        return False
-    cur_job = model_devi_jobs[iter_index]
+    if model_devi_engine != 'calypso':
+        if (iter_index >= len(model_devi_jobs)) :
+            return False
+    else:
+        # mode 1: generate structures according to the user-provided input.dat file, so calypso_input_path and model_devi_max_iter are needed
+        if "calypso_input_path" in jdata:
+            try:
+                maxiter = jdata.get('model_devi_max_iter')
+            except KeyError:
+                raise KeyError('calypso_input_path key exists so you should provide model_devi_max_iter key to control the max iter number')
+        # mode 2: control each iteration to generate structures in specific way by providing model_devi_jobs key
+        else:
+            try:
+                maxiter = max(model_devi_jobs[-1].get('times'))
+            except KeyError:
+                raise KeyError('did not find model_devi_jobs["times"] key')
+        if (iter_index > maxiter) :
+            print(f'iter_index is {iter_index} and maxiter is {maxiter}')
+            return False
+
     if "sys_configs_prefix" in jdata:
         sys_configs = []
         for sys_list in jdata["sys_configs"]:
@@ -863,7 +894,13 @@ def make_model_devi (iter_index,
         sys_configs = jdata['sys_configs']
     shuffle_poscar = jdata['shuffle_poscar']
 
-    sys_idx = expand_idx(cur_job['sys_idx'])
+    if model_devi_engine != 'calypso':
+        cur_job = model_devi_jobs[iter_index]
+        sys_idx = expand_idx(cur_job['sys_idx'])
+    else:
+        cur_job = []
+        sys_idx = []
+
     if (len(sys_idx) != len(list(set(sys_idx)))) :
         raise RuntimeError("system index should be uniq")
     conf_systems = []
@@ -882,9 +919,26 @@ def make_model_devi (iter_index,
     models = sorted(glob.glob(os.path.join(train_path, "graph*pb")))
     work_path = os.path.join(iter_name, model_devi_name)
     create_path(work_path)
+    if model_devi_engine == 'calypso':
+        calypso_run_opt_path = os.path.join(work_path,calypso_run_opt_name)
+        calypso_model_devi_path = os.path.join(work_path,calypso_model_devi_name)
+        create_path(calypso_run_opt_path)
+        create_path(calypso_model_devi_path)
+        # run model devi script
+        calypso_run_model_devi_script = os.path.join(calypso_model_devi_path,'calypso_run_model_devi.py')
+        shutil.copyfile(calypso_run_model_devi_file,calypso_run_model_devi_script)
+        # run confs opt script
+        run_opt_script = os.path.join(calypso_run_opt_path,'calypso_run_opt.py')
+        shutil.copyfile(run_opt_file,run_opt_script)
+        # check outcar script
+        check_outcar_script = os.path.join(calypso_run_opt_path,'check_outcar.py')
+        shutil.copyfile(check_outcar_file,check_outcar_script)
     for mm in models :
         model_name = os.path.basename(mm)
-        os.symlink(mm, os.path.join(work_path, model_name))
+        if model_devi_engine != 'calypso':
+            os.symlink(mm, os.path.join(work_path, model_name))
+        else:
+            os.symlink(mm, os.path.join(calypso_run_opt_path, model_name))
     with open(os.path.join(work_path, 'cur_job.json'), 'w') as outfile:
         json.dump(cur_job, outfile, indent = 4)
 
@@ -925,6 +979,8 @@ def make_model_devi (iter_index,
         sys_counter += 1
 
     input_mode = "native"
+    if "calypso_input_path" in jdata:
+        input_mode = "buffet"
     if "template" in cur_job:
         input_mode = "revise_template"
     use_plm = jdata.get('model_devi_plumed', False)
@@ -936,16 +992,19 @@ def make_model_devi (iter_index,
             _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems)
         elif model_devi_engine == "amber":
             _make_model_devi_amber(iter_index, jdata, mdata, conf_systems)
+        elif model_devi_engine == "calypso":
+            _make_model_devi_native_calypso(iter_index,model_devi_jobs, calypso_run_opt_path)  # generate input.dat automatic in each iter
         else:
             raise RuntimeError("unknown model_devi engine", model_devi_engine)
     elif input_mode == "revise_template":
         _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems)
+    elif input_mode == "buffet":
+        _make_model_devi_buffet(jdata,calypso_run_opt_path)  # generate confs according to the input.dat provided
     else:
         raise RuntimeError('unknown model_devi input mode', input_mode)
     #Copy user defined forward_files
     symlink_user_forward_files(mdata=mdata, task_type="model_devi", work_path=work_path)
     return True
-
 
 def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
     model_devi_jobs = jdata['model_devi_jobs']
@@ -1394,9 +1453,10 @@ def _make_model_devi_amber(iter_index, jdata, mdata, conf_systems):
                 json.dump(cur_job, fp, indent = 4)
             os.chdir(cwd_)
 
-def run_model_devi (iter_index,
-                    jdata,
-                    mdata) :
+def run_md_model_devi (iter_index,
+                       jdata,
+                       mdata) :
+
     #rmdlog.info("This module has been run !")
     model_devi_exec = mdata['model_devi_command']
 
@@ -1524,6 +1584,14 @@ def run_model_devi (iter_index,
             errlog = 'model_devi.log')
         submission.run_submission()
 
+def run_model_devi(iter_index,jdata,mdata):
+
+    model_devi_engine = jdata.get("model_devi_engine", "lammps")
+    if model_devi_engine != "calypso":
+        run_md_model_devi(iter_index,jdata,mdata)
+    else:
+        run_calypso_model_devi(iter_index,jdata,mdata)
+    
 def post_model_devi (iter_index,
                      jdata,
                      mdata) :
@@ -1580,6 +1648,15 @@ def check_bad_box(conf_name,
             ratio = np.max(lengths) / np.min(dists)
             if ratio > float(value):
                 is_bad = True
+        #
+        elif key == 'wrap_ratio':
+            ratio=[sys['cells'][0][1][0]/sys['cells'][0][0][0],sys['cells'][0][2][1]/sys['cells'][0][1][1],sys['cells'][0][2][0]/sys['cells'][0][0][0]]
+            if np.max(np.abs(ratio)) > float(value):
+                is_bad = True
+        elif key == 'tilt_ratio':
+            ratio=[sys['cells'][0][1][0]/sys['cells'][0][1][1],sys['cells'][0][2][1]/sys['cells'][0][2][2],sys['cells'][0][2][0]/sys['cells'][0][2][2]]
+            if np.max(np.abs(ratio)) > float(value):
+                is_bad= True
         else:
             raise RuntimeError('unknow key', key)
     return is_bad
@@ -1610,10 +1687,17 @@ def _select_by_model_devi_standard(
         v_trust_lo : float,
         v_trust_hi : float,
         cluster_cutoff : float, 
+        model_devi_engine : str,
         model_devi_skip : int = 0,
         model_devi_f_avg_relative : bool = False,
         detailed_report_make_fp : bool = True,
 ):
+    if model_devi_engine == 'calypso':
+        iter_name = modd_system_task[0].split('/')[0]
+        _work_path = os.path.join(iter_name, model_devi_name)
+        calypso_run_opt_path = os.path.join(_work_path,calypso_run_opt_name)
+        numofspecies = _parse_calypso_input('NumberOfSpecies',calypso_run_opt_path)
+        min_dis = _parse_calypso_dis_mtx(numofspecies,calypso_run_opt_path)
     fp_candidate = []
     if detailed_report_make_fp:
         fp_rest_accurate = []
@@ -1627,11 +1711,22 @@ def _select_by_model_devi_standard(
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             all_conf = _read_model_devi_file(tt, model_devi_f_avg_relative)
+
+            if all_conf.shape == (7,):
+                all_conf = all_conf.reshape(1,all_conf.shape[0])
+            elif model_devi_engine == 'calypso' and all_conf.shape == (8,):
+                all_conf = all_conf.reshape(1,all_conf.shape[0])
             for ii in range(all_conf.shape[0]) :
                 if all_conf[ii][0] < model_devi_skip :
                     continue
                 cc = int(all_conf[ii][0])
                 if cluster_cutoff is None:
+                    if model_devi_engine == 'calypso':
+                        if float(all_conf[ii][-1]) <= float(min_dis):
+                            if detailed_report_make_fp:
+                                fp_rest_failed.append([tt, cc])
+                            counter['failed'] += 1
+                            continue
                     if (all_conf[ii][1] < v_trust_hi and all_conf[ii][1] >= v_trust_lo) or \
                        (all_conf[ii][4] < f_trust_hi and all_conf[ii][4] >= f_trust_lo) :
                         fp_candidate.append([tt, cc])
@@ -1645,7 +1740,10 @@ def _select_by_model_devi_standard(
                             fp_rest_accurate.append([tt, cc])
                         counter['accurate'] += 1
                     else :
-                        raise RuntimeError('md traj %s frame %d with f devi %f does not belong to either accurate, candidiate and failed, it should not happen' % (tt, ii, all_conf[ii][4]))
+                        if model_devi_engine == 'calypso':
+                            dlog.info('ase opt traj %s frame %d with f devi %f does not belong to either accurate, candidiate and failed '% (tt, ii, all_conf[ii][4]))
+                        else:
+                            raise RuntimeError('md traj %s frame %d with f devi %f does not belong to either accurate, candidiate and failed, it should not happen' % (tt, ii, all_conf[ii][4]))
                 else:
                     idx_candidate = np.where(np.logical_and(all_conf[ii][7:] < f_trust_hi, all_conf[ii][7:] >= f_trust_lo))[0]
                     for jj in idx_candidate:
@@ -1783,6 +1881,35 @@ def _make_fp_vasp_inner (modd_path,
     fp_params           map             parameters for fp
     """
 
+    # --------------------------------------------------------------------------------------------------------------------------------------
+    model_devi_engine = jdata.get('model_devi_engine', 'lammps')
+    if model_devi_engine == 'calypso':
+        iter_name = work_path.split('/')[0]
+        _work_path = os.path.join(iter_name, model_devi_name)
+        calypso_run_opt_path = os.path.join(_work_path,calypso_run_opt_name)
+        numofspecies = _parse_calypso_input('NumberOfSpecies',calypso_run_opt_path)
+        min_dis = _parse_calypso_dis_mtx(numofspecies,calypso_run_opt_path)
+
+        calypso_total_fp_num = 300
+        modd_path = os.path.join(modd_path,calypso_model_devi_name)
+        model_devi_skip = -1
+        with open(os.path.join(modd_path,'Model_Devi.out'),'r') as summfile:
+            summary = np.loadtxt(summfile)
+        summaryfmax = summary[:,-4]
+        dis  = summary[:,-1]
+        acc  = np.where((summaryfmax <= f_trust_lo) & (dis > float(min_dis)))
+        fail = np.where((summaryfmax >  f_trust_hi) | (dis <= float(min_dis)))
+        nnan = np.where(np.isnan(summaryfmax))
+
+        acc_num  = len(acc[0])
+        fail_num = len(fail[0])
+        nan_num  = len(nnan[0])
+        tot = len(summaryfmax) - nan_num
+        candi_num = tot - acc_num - fail_num
+        dlog.info("summary  accurate_ratio: {0:8.4f}%  candidata_ratio: {1:8.4f}%  failed_ratio: {2:8.4f}%  in {3:d} structures".format(
+                   acc_num*100/tot,candi_num*100/tot,fail_num*100/tot,tot ))
+    # --------------------------------------------------------------------------------------------------------------------------------------
+
     modd_task = glob.glob(os.path.join(modd_path, "task.*"))
     modd_task.sort()
     system_index = []
@@ -1834,6 +1961,7 @@ def _make_fp_vasp_inner (modd_path,
                         f_trust_lo_sys, f_trust_hi_sys,
                         v_trust_lo_sys, v_trust_hi_sys,
                         cluster_cutoff, 
+                        model_devi_engine,
                         model_devi_skip,
                         model_devi_f_avg_relative = model_devi_f_avg_relative,
                         detailed_report_make_fp = detailed_report_make_fp,
@@ -1891,6 +2019,10 @@ def _make_fp_vasp_inner (modd_path,
 
         # print a report
         fp_sum = sum(counter.values())
+
+        if fp_sum == 0:
+            dlog.info('system {0:s} has no fp task, maybe the model devi is nan %'.format(ss))
+            continue
         for cc_key, cc_value in counter.items():
             dlog.info("system {0:s} {1:9s} : {2:6d} in {3:6d} {4:6.2f} %".format(ss, cc_key, cc_value, fp_sum, cc_value/fp_sum*100))
         random.shuffle(fp_candidate)
@@ -1917,9 +2049,29 @@ def _make_fp_vasp_inner (modd_path,
             this_fp_task_max = int(fp_task_max * (accurate_ratio - fp_accurate_threshold) / (fp_accurate_soft_threshold - fp_accurate_threshold))
         else:
             this_fp_task_max = 0
+        # ----------------------------------------------------------------------------
+        if model_devi_engine == 'calypso':
+            calypso_intend_fp_num_temp = (len(fp_candidate)/candi_num)*calypso_total_fp_num
+            if calypso_intend_fp_num_temp < 1:
+                calypso_intend_fp_num = 1
+            else:
+                calypso_intend_fp_num = int(calypso_intend_fp_num_temp)
+        # ----------------------------------------------------------------------------
         numb_task = min(this_fp_task_max, len(fp_candidate))
         if (numb_task < fp_task_min):
             numb_task = 0
+
+        # ---------------------------------------------------------------------------- 
+        if (model_devi_engine == 'calypso' and len(jdata.get('type_map')) == 1) or \
+           (model_devi_engine == 'calypso' and len(jdata.get('type_map')) > 1 and candi_num <= calypso_total_fp_num):
+            numb_task = min(this_fp_task_max, len(fp_candidate))
+            if (numb_task < fp_task_min):
+                numb_task = 0
+        elif (model_devi_engine == 'calypso' and len(jdata.get('type_map')) > 1 and candi_num > calypso_total_fp_num):
+            numb_task = calypso_intend_fp_num
+            if (len(fp_candidate) < numb_task):
+                numb_task = 0
+        # ----------------------------------------------------------------------------
         dlog.info("system {0:s} accurate_ratio: {1:8.4f}    thresholds: {2:6.4f} and {3:6.4f}   eff. task min and max {4:4d} {5:4d}   number of fp tasks: {6:6d}".format(ss, accurate_ratio, fp_accurate_soft_threshold, fp_accurate_threshold, fp_task_min, this_fp_task_max, numb_task))
         # make fp tasks
         model_devi_engine = jdata.get("model_devi_engine", "lammps")
@@ -1933,16 +2085,21 @@ def _make_fp_vasp_inner (modd_path,
             conf_name = os.path.join(tt, "traj")
             if model_devi_engine == "lammps":
                 conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
+                ffmt = 'lammps/dump'
             elif model_devi_engine == "gromacs":
                 conf_name = os.path.join(conf_name, str(ii) + '.gromacstrj')
+                ffmt = 'lammps/dump'
             elif model_devi_engine == "amber":
                 conf_name = os.path.join(tt, "rc.nc")
                 rst_name = os.path.abspath(os.path.join(tt, "init.rst7"))
+            elif model_devi_engine == "calypso":
+                conf_name = os.path.join(conf_name, str(ii) + '.poscar')
+                ffmt = 'vasp/poscar'
             else:
                 raise RuntimeError("unknown model_devi engine", model_devi_engine)
             conf_name = os.path.abspath(conf_name)
             if skip_bad_box is not None:
-                skip = check_bad_box(conf_name, skip_bad_box)
+                skip = check_bad_box(conf_name, skip_bad_box, fmt=ffmt)
                 if skip:
                     count_bad_box += 1
                     continue
@@ -1954,9 +2111,10 @@ def _make_fp_vasp_inner (modd_path,
                     count_bad_cluster +=1
                     continue
 
-            # link job.json
-            job_name = os.path.join(tt, "job.json")
-            job_name = os.path.abspath(job_name)
+            if model_devi_engine != 'calypso':
+                # link job.json
+                job_name = os.path.join(tt, "job.json")
+                job_name = os.path.abspath(job_name)
 
             if cluster_cutoff is not None:
                 # take clusters
@@ -1975,6 +2133,7 @@ def _make_fp_vasp_inner (modd_path,
             if cluster_cutoff is None:
                 if model_devi_engine in ("lammps", "gromacs"):
                     os.symlink(os.path.relpath(conf_name), 'conf.dump')
+                    os.symlink(os.path.relpath(job_name), 'job.json')
                 elif model_devi_engine == "amber":
                     # read and write with ase
                     from ase.io.netcdftrajectory import NetCDFTrajectory, write_netcdftrajectory
@@ -1993,7 +2152,15 @@ def _make_fp_vasp_inner (modd_path,
                         netcdftraj.close()
                     # link restart since it's necessary to start Amber
                     os.symlink(os.path.relpath(rst_name), 'init.rst7')
-                os.symlink(os.path.relpath(job_name), 'job.json')
+                    os.symlink(os.path.relpath(job_name), 'job.json')
+                elif model_devi_engine == "calypso":
+                    os.symlink(os.path.relpath(conf_name), 'POSCAR')
+                    fjob = open('job.json','w+')
+                    fjob.write('{"model_devi_engine":"calypso"}')
+                    fjob.close()
+                    #os.system('touch job.json')
+                else:
+                    raise RuntimeError
             else:
                 os.symlink(os.path.relpath(poscar_name), 'POSCAR')
                 np.save("atom_pref", new_system.data["atom_pref"])
@@ -2004,6 +2171,8 @@ def _make_fp_vasp_inner (modd_path,
             dlog.info("system {0:s} skipped {1:6d} confs with bad box, {2:6d} remains".format(ss, count_bad_box, numb_task - count_bad_box))
         if count_bad_cluster > 0:
             dlog.info("system {0:s} skipped {1:6d} confs with bad cluster, {2:6d} remains".format(ss, count_bad_cluster, numb_task - count_bad_cluster))
+    if model_devi_engine == 'calypso':
+        dlog.info("summary  accurate_ratio: {0:8.4f}%  candidata_ratio: {1:8.4f}%  failed_ratio: {2:8.4f}%  in {3:d} structures".format( acc_num*100/tot,candi_num*100/tot,fail_num*100/tot,tot ))
     if cluster_cutoff is None:
         cwd = os.getcwd()
         for idx, task in enumerate(fp_tasks):
@@ -2018,7 +2187,7 @@ def _make_fp_vasp_inner (modd_path,
                     dump_to_deepmd_raw('conf.dump', 'deepmd.raw', type_map, fmt='gromacs/gro', charge=charges_recorder[idx])
                 else:
                     dump_to_deepmd_raw('conf.dump', 'deepmd.raw', type_map, fmt='gromacs/gro', charge=None)
-            elif model_devi_engine == "amber":
+            elif model_devi_engine in ("amber", 'calypso'):
                 pass
             else:
                 raise RuntimeError("unknown model_devi engine", model_devi_engine)
@@ -2276,6 +2445,44 @@ def sys_link_fp_vasp_pp (iter_index,
             os.symlink(os.path.join('..', 'POTCAR.%s' % ii), 'POTCAR')
             os.chdir(cwd)
 
+def _link_fp_abacus_orb_descript (iter_index,
+                      jdata) :
+    # assume lcao orbital files, numerical descrptors and model for dpks are all in fp_pp_path.
+    fp_pp_path = jdata['fp_pp_path']
+
+    fp_orb_files = jdata['fp_orb_files']
+    assert(os.path.exists(fp_pp_path))
+    fp_dpks_descriptor = None
+    fp_dpks_model = None
+    if "fp_dpks_descriptor" in jdata:
+        fp_dpks_descriptor = jdata["fp_dpks_descriptor"]
+    if "user_fp_params" in jdata:
+        if "deepks_model" in jdata["user_fp_params"]:
+            fp_dpks_model = jdata["user_fp_params"]["deepks_model"]
+
+    fp_pp_path = os.path.abspath(fp_pp_path)
+
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+
+    fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
+    fp_tasks.sort()
+    if len(fp_tasks) == 0 :
+        return
+    cwd = os.getcwd()
+    for ii in fp_tasks:
+        os.chdir(ii)
+        for jj in fp_orb_files:
+            orb_file = os.path.join(fp_pp_path, jj)
+            os.symlink(orb_file, jj)
+        if fp_dpks_descriptor is not None:
+            descrptor = os.path.join(fp_pp_path, fp_dpks_descriptor)
+            os.symlink(descrptor, fp_dpks_descriptor)
+        if fp_dpks_model is not None:
+            dpks_model = os.path.join(fp_pp_path, fp_dpks_model)
+            os.symlink(dpks_model, fp_dpks_model)
+        os.chdir(cwd)
+
 def _make_fp_vasp_configs(iter_index,
                           jdata):
     fp_task_max = jdata['fp_task_max']
@@ -2352,8 +2559,12 @@ def make_fp_pwscf(iter_index,
     for ii in fp_tasks:
         os.chdir(ii)
         sys_data = dpdata.System('POSCAR').data
-        sys_data['atom_masses'] = jdata['mass_map']
-        ret = make_pwscf_input(sys_data, fp_pp_files, fp_params, user_input = user_input)
+        sys_data['atom_masses'] = []
+        pps = []
+        for iii in sys_data['atom_names']:
+            sys_data['atom_masses'].append(jdata['mass_map'][jdata['type_map'].index(iii)])
+            pps.append(fp_pp_files[jdata['type_map'].index(iii)])
+        ret = make_pwscf_input(sys_data, pps, fp_params, user_input = user_input)
         with open('input', 'w') as fp:
             fp.write(ret)
         os.chdir(cwd)
@@ -2370,8 +2581,20 @@ def make_fp_abacus_scf(iter_index,
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
     fp_pp_files = jdata['fp_pp_files']
+    fp_orb_files = None
+    fp_dpks_descriptor = None
+    assert('user_fp_params' in jdata.keys())
     if 'user_fp_params' in jdata.keys() :
         fp_params = jdata['user_fp_params']
+        # for lcao 
+        if 'basis_type' in fp_params:
+            if fp_params['basis_type'] == 'lcao':
+                assert('fp_orb_files' in jdata and type(jdata['fp_orb_files']) == list and len(jdata['fp_orb_files']) == len(fp_pp_files))
+                fp_orb_files = jdata['fp_orb_files']
+        if 'deepks_out_labels' in fp_params:
+            if fp_params['deepks_out_labels'] == 1:
+                assert('fp_dpks_descriptor' in jdata and type(jdata['fp_dpks_descriptor']) == str)
+                fp_dpks_descriptor = jdata['fp_dpks_descriptor']
         #user_input = True
     else:
         raise RuntimeError("Key 'user_fp_params' and its value have to be specified in parameter json file.")
@@ -2387,13 +2610,16 @@ def make_fp_abacus_scf(iter_index,
         ret_kpt = make_abacus_scf_kpt(fp_params)
         with open("KPT", "w") as fp:
             fp.write(ret_kpt)
-        ret_stru = make_abacus_scf_stru(sys_data, fp_pp_files, fp_params)
+        ret_stru = make_abacus_scf_stru(sys_data, fp_pp_files, fp_orb_files, fp_dpks_descriptor, fp_params)
         with open("STRU", "w") as fp:
             fp.write(ret_stru)
 
         os.chdir(cwd)
     # link pp files
     _link_fp_vasp_pp(iter_index, jdata)
+    if 'basis_type' in fp_params:
+            if fp_params['basis_type'] == 'lcao':
+                _link_fp_abacus_orb_descript(iter_index, jdata)
 
 
 def make_fp_siesta(iter_index,
@@ -2791,6 +3017,13 @@ def run_fp (iter_index,
         run_fp_inner(iter_index, jdata, mdata,  forward_files, backward_files, _qe_check_fin, log_file = 'output')
     elif fp_style == "abacus/scf":
         forward_files = ["INPUT", "STRU", "KPT"] + fp_pp_files
+        if "fp_orb_files" in jdata:
+            forward_files += jdata["fp_orb_files"]
+        if "fp_dpks_descriptor" in jdata:
+            forward_files.append(jdata["fp_dpks_descriptor"])
+        if "user_fp_params" in jdata:
+            if "deepks_model" in jdata["user_fp_params"]:
+                forward_files.append(jdata["user_fp_params"]["deepks_model"])
         backward_files = ["output", "OUT.ABACUS"]
         run_fp_inner(iter_index, jdata, mdata,  forward_files, backward_files, _abacus_scf_check_fin, log_file = 'output')
     elif fp_style == "siesta":
@@ -2851,8 +3084,10 @@ def post_fp_vasp (iter_index,
                   rfailed=None):
 
     ratio_failed =  rfailed if rfailed else jdata.get('ratio_failed',0.05)
-    model_devi_jobs = jdata['model_devi_jobs']
-    assert (iter_index < len(model_devi_jobs))
+    model_devi_engine = jdata.get('model_devi_engine', "lammps")
+    if model_devi_engine != 'calypso':
+        model_devi_jobs = jdata['model_devi_jobs']
+        assert (iter_index < len(model_devi_jobs))
     use_ele_temp = jdata.get('use_ele_temp', 0)
 
     iter_name = make_iter_name(iter_index)
@@ -2883,11 +3118,11 @@ def post_fp_vasp (iter_index,
         for oo in sys_outcars :
             try:
                 _sys = dpdata.LabeledSystem(oo, type_map = jdata['type_map'])
-            except:
+            except Exception:
                 dlog.info('Try to parse from vasprun.xml')
                 try:
                    _sys = dpdata.LabeledSystem(oo.replace('OUTCAR','vasprun.xml'), type_map = jdata['type_map'])
-                except:
+                except Exception:
                    _sys = dpdata.LabeledSystem()
                    dlog.info('Failed fp path: %s'%oo.replace('OUTCAR',''))
             if len(_sys) == 1:
@@ -3299,7 +3534,7 @@ def run_iter (param_file, machine_file) :
        warnings.simplefilter('ignore', ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
        jdata=loadfn(param_file)
        mdata=loadfn(machine_file)
-    except ImportError:
+    except Exception:
        with open (param_file, 'r') as fp :
            jdata = json.load (fp)
        with open (machine_file, 'r') as fp:

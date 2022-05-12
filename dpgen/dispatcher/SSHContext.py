@@ -125,7 +125,7 @@ class SSHContext (object):
         self.ssh_session.ensure_alive()
         try:
            self.sftp.mkdir(self.remote_root)
-        except: 
+        except Exception: 
            pass
     
     @property
