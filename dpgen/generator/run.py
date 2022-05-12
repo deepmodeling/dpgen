@@ -1294,6 +1294,10 @@ def _make_model_devi_amber(iter_index: int, jdata: dict, mdata: dict, conf_syste
                         list of systems to run
                     trj_freq : int
                         freq to dump trajectory
+            low_level : str
+                low level method
+            cutoff : float
+                cutoff radius of the DPRc model
             parm7_prefix : str
                 The path prefix to AMBER PARM7 files
             parm7 : list[str]
@@ -1980,7 +1984,7 @@ def _make_fp_vasp_inner (modd_path,
                             if skip_first and first_active:
                                 first_active = False
                                 continue
-                            model_devi = float(line.split()[-2]) * 0.04336410390059322
+                            model_devi = float(line.split()[-2]) * dpdata.unit.EnergyConversion("kcal_mol", "eV").value()
                             if model_devi < f_trust_lo:
                                 # accurate
                                 if detailed_report_make_fp:
@@ -2723,6 +2727,8 @@ def make_fp_amber_diff(iter_index: int, jdata: dict):
 
     Besides AMBER, one needs to install `dpamber` package, which is avaiable at
     https://github.com/njzjz/dpamber
+
+    Currently, it should be used with the AMBER model_devi driver.
 
     Parameters
     ----------

@@ -18,6 +18,7 @@ from .context import param_siesta_file
 from .context import param_gaussian_file
 from .context import param_cp2k_file
 from .context import param_cp2k_file_exinput
+from .context import param_amber_file
 from .context import ref_cp2k_file_input
 from .context import ref_cp2k_file_exinput
 from .context import machine_file
@@ -583,6 +584,26 @@ class TestMakeFPABACUS(unittest.TestCase):
         _check_abacus_kpt(self, 0)
         _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
         shutil.rmtree('iter.000000')
+
+class TestMakeFPAMBERDiff(unittest.TestCase):
+    def test_make_fp_amber_diff(self):
+        setUpModule()
+        if os.path.isdir('iter.000000') :
+            shutil.rmtree('iter.000000')
+        with open(param_amber_file, 'r') as fp:
+            jdata = json.load(fp)
+        jdata['mdin_prefix'] = os.path.abspath(jdata['mdin_prefix'])
+        task_dir = os.path.join('iter.%06d' % 0,
+                        '01.model_devi',
+                        'task.%03d.%06d' % (0, 0))
+        os.makedirs(task_dir, exist_ok = True)
+        with open(os.path.join(task_dir, "rc.mdout"), 'w') as f:
+            f.write("Active learning frame written with max. frc. std.:     3.29037 kcal/mol/A")
+        import ase
+        from ase.io.netcdftrajectory import write_netcdftrajectory
+        write_netcdftrajectory(os.path.join(task_dir, 'rc.nc'), ase.Atoms("C", positions=np.zeros((1, 3))))
+        make_fp(0, jdata, {})
+
 
 class TestMakeFPSIESTA(unittest.TestCase):
     def test_make_fp_siesta(self):

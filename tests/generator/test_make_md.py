@@ -10,7 +10,7 @@ __package__ = 'generator'
 from .context import make_model_devi
 from .context import parse_cur_job
 from .context import parse_cur_job_revmat
-from .context import param_file
+from .context import param_file, param_amber_file
 from .context import machine_file
 from .context import my_file_cmp
 from .context import setUpModule
@@ -497,6 +497,25 @@ class MakeModelDeviByReviseMatrix(unittest.TestCase):
         tmp = " ".join(lines[3].split())
         self.assertEqual(tmp, "ddd")
         
+
+class TestMakeMDAMBER(unittest.TestCase):
+    def tearDown(self):
+        if os.path.isdir('iter.000000') :
+            shutil.rmtree('iter.000000')
+
+    def test_make_model_devi (self) :        
+        if os.path.isdir('iter.000000') :
+            shutil.rmtree('iter.000000')
+        with open (param_amber_file, 'r') as fp :
+            jdata = json.load (fp)
+        with open (machine_file, 'r') as fp:
+            mdata = json.load (fp)
+        _make_fake_models(0, jdata['numb_models'])
+        make_model_devi(0, jdata, mdata)
+        _check_pb(self, 0)
+        _check_confs(self, 0, jdata)
+        _check_traj_dir(self, 0)
+
 
 if __name__ == '__main__':
     unittest.main()
