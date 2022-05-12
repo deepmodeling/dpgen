@@ -1876,7 +1876,7 @@ def _make_fp_vasp_inner (modd_path,
         modd_system_glob = os.path.join(modd_path, 'task.' + ss + '.*')
         modd_system_task = glob.glob(modd_system_glob)
         modd_system_task.sort()
-        if model_devi_engine in ['lammps', 'gromacs']:
+        if model_devi_engine in ('lammps', 'gromacs', 'calypso'):
             # convert global trust limitations to local ones
             f_trust_lo_sys = _trust_limitation_check(ss, f_trust_lo)
             f_trust_hi_sys = _trust_limitation_check(ss, f_trust_hi)
