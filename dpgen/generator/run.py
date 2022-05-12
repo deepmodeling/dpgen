@@ -201,15 +201,6 @@ def dump_to_deepmd_raw(dump, deepmd_raw, type_map, fmt='gromacs/gro', charge=Non
         with open(os.path.join(deepmd_raw, "charge"), 'w') as f:
             f.write(str(charge))
 
-def npy_to_hdf5(dump):
-    if os.path.isfile(dump):
-        if not os.path.isfile(dump + ".hdf5"):
-            os.symlink(os.path.basename(dump), dump + ".hdf5")
-        return
-    if not os.path.isfile(dump + ".hdf5"):
-        system = dpdata.MultiSystems().from_deepmd_npy(dump)
-        system.to_deepmd_hdf5(dump + ".hdf5")
-
 
 def make_train (iter_index,
                 jdata,
@@ -294,58 +285,48 @@ def make_train (iter_index,
     else:
         sys_batch_size = ["auto" for aa in range(len(jdata['sys_configs']))]
 
-    nums =[0 for ii in range(iter_index+1)]
     # make sure all init_data_sys has the batch size -- for the following `zip`
     assert (len(init_data_sys_) <= len(init_batch_size_))
     for ii, ss in zip(init_data_sys_, init_batch_size_) :
-        npy_to_hdf5(os.path.join(work_path, 'data.init', ii))
         if jdata.get('init_multi_systems', False):
-            if os.path.isfile(os.path.join(work_path, 'data.init', ii)):
-                t=dpdata.MultiSystems().from_deepmd_hdf5(os.path.join(work_path, 'data.init', ii))
-            else:
-                t=dpdata.MultiSystems().from_deepmd_npy(os.path.join(work_path, 'data.init', ii))
-            for single_sys in t.systems:
-                init_data_sys.append(os.path.join('..', 'data.init', ii + ".hdf5#", single_sys))
-                #init_batch_size.append(detect_batch_size(ss, os.path.join(work_path, 'data.init', ii, single_sys)))
-            nums[0] += t.get_nframes() #get_nframe(os.path.join(work_path, 'data.init', ii, single_sys))
+            for single_sys in os.listdir(os.path.join(work_path, 'data.init', ii)):
+                init_data_sys.append(os.path.join('..', 'data.init', ii, single_sys))
+                init_batch_size.append(detect_batch_size(ss, os.path.join(work_path, 'data.init', ii, single_sys)))
         else:
-            init_data_sys.append(os.path.join('..', 'data.init.hdf5#', ii + ".hdf5#"))
+            init_data_sys.append(os.path.join('..', 'data.init', ii))
             init_batch_size.append(detect_batch_size(ss, os.path.join(work_path, 'data.init', ii)))
-            nums[0] += get_nframe(os.path.join(work_path, 'data.init', ii))
-    old_range = [0]
+    old_range = None
     if iter_index > 0 :
         for ii in range(iter_index) :
-            old_range.append(len(init_data_sys))
+            if ii == iter_index - 1:
+                old_range = len(init_data_sys)
             fp_path = os.path.join(make_iter_name(ii), fp_name)
-            fp_data_sys = set(glob.glob(os.path.join(fp_path, "data.*"))) - set(glob.glob(os.path.join(fp_path, "data.*.hdf5")))
+            fp_data_sys = glob.glob(os.path.join(fp_path, "data.*"))
             if model_devi_engine == 'calypso':
                 _modd_path = os.path.join(make_iter_name(ii), model_devi_name, calypso_model_devi_name)
                 sys_list = glob.glob(os.path.join(_modd_path, "*.structures"))
                 sys_batch_size = ["auto" for aa in range(len(sys_list))]
             for jj in fp_data_sys :
-                npy_to_hdf5(jj)
                 sys_idx = int(jj.split('.')[-1])
                 if jdata.get('use_clusters', False):
-                    if os.path.isfile(jj):
-                        t=dpdata.MultiSystems().from_deepmd_hdf5(jj)
-                    else:
-                        t=dpdata.MultiSystems().from_deepmd_npy(jj)
-                    nframes = t.get_nframes()
+                    nframes = 0
+                    for sys_single in os.listdir(jj):
+                        tmp_box = np.loadtxt(os.path.join(jj, sys_single, 'box.raw'))
+                        tmp_box = np.reshape(tmp_box, [-1,9])
+                        nframes += tmp_box.shape[0]
                     if nframes < fp_task_min :
                         log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
                         continue
-                    for sys_single in t.systems:
-                        init_data_sys.append(os.path.join('..', 'data.iters', jj + ".hdf5#", sys_single))
-                        #init_batch_size.append("auti")
-                    nums[ii+1] += nframes #get_nframe(os.path.join(jj, sys_single))
+                    for sys_single in os.listdir(jj):
+                        init_data_sys.append(os.path.join('..', 'data.iters', jj, sys_single))
+                        init_batch_size.append(detect_batch_size(sys_batch_size[sys_idx], os.path.join(jj, sys_single)))
                 else:
                     nframes = dpdata.System(jj, 'deepmd/npy').get_nframes()
                     if nframes < fp_task_min :
                         log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
                         continue
-                    init_data_sys.append(os.path.join('..', 'data.iters', jj + ".hdf5#"))
+                    init_data_sys.append(os.path.join('..', 'data.iters', jj))
                     init_batch_size.append(detect_batch_size(sys_batch_size[sys_idx], jj))
-                    nums[ii+1] += get_nframe(jj)
     # establish tasks
     jinput = jdata['default_training_param']
     try:
@@ -373,7 +354,7 @@ def make_train (iter_index,
         # 2.x
         jinput['training']['training_data'] = {}
         jinput['training']['training_data']['systems'] = init_data_sys
-        jinput['training']['training_data']['batch_size'] = "auto"
+        jinput['training']['training_data']['batch_size'] = init_batch_size
         jinput['model']['type_map'] = jdata['type_map']
         # electron temperature
         if use_ele_temp == 0:
@@ -388,29 +369,18 @@ def make_train (iter_index,
             raise RuntimeError('invalid setting for use_ele_temp ' + str(use_ele_temp))
     else:
         raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x or 2.x version!" )
-    
-    old_range.append(len(init_data_sys))
-    # Now nums has list of numbers of init, 0, 1, ..., N-1
-    # original prob
-    nums = np.array(nums, dtype=float)
-    x1 = np.ones(nums.size)
-    x1[:-1] = 0.
-    # 10. should be a parameter
-    # -> 1., 10., 10., ...
-    x1 = np.power(10., x1)
-    nums *= x1
-    ratios = nums/np.sum(nums, keepdims=True)
-    prob_str = "; ".join(["%d:%d:%f" % (old_range[ii], old_range[ii+1], ratios[ii]) for ii in range(iter_index + 1)])
     # set training reuse model
     if training_reuse_iter is not None and iter_index >= training_reuse_iter:
         if LooseVersion('1') <= LooseVersion(mdata["deepmd_version"]) < LooseVersion('2'):
             jinput['training']['stop_batch'] = training_reuse_stop_batch
             jinput['training']['auto_prob_style'] \
-                ="prob_sys_size; %s" % prob_str
+                ="prob_sys_size; 0:%d:%f; %d:%d:%f" \
+                %(old_range, training_reuse_old_ratio, old_range, len(init_data_sys), 1.-training_reuse_old_ratio)
         elif LooseVersion('2') <= LooseVersion(mdata["deepmd_version"]) < LooseVersion('3'):
             jinput['training']['numb_steps'] = training_reuse_stop_batch
             jinput['training']['training_data']['auto_prob'] \
-                ="prob_sys_size; %s" % prob_str
+                ="prob_sys_size; 0:%d:%f; %d:%d:%f" \
+                %(old_range, training_reuse_old_ratio, old_range, len(init_data_sys), 1.-training_reuse_old_ratio)
         else:
             raise RuntimeError("Unsupported DeePMD-kit version: %s" % mdata["deepmd_version"])
         if jinput['loss'].get('start_pref_e') is not None:
@@ -424,9 +394,9 @@ def make_train (iter_index,
         task_path = os.path.join(work_path, train_task_fmt % ii)
         create_path(task_path)
         os.chdir(task_path)
-        # for jj in init_data_sys :
-        #     if not os.path.isdir(jj) :
-        #         raise RuntimeError ("data sys %s does not exists, cwd is %s" % (jj, os.getcwd()))
+        for jj in init_data_sys :
+            if not os.path.isdir(jj) :
+                raise RuntimeError ("data sys %s does not exists, cwd is %s" % (jj, os.getcwd()))
         os.chdir(cwd)
         # set random seed for each model
         if LooseVersion(mdata["deepmd_version"]) >= LooseVersion('1') and LooseVersion(mdata["deepmd_version"]) < LooseVersion('3'):
@@ -481,19 +451,6 @@ def make_train (iter_index,
         for ii in range(len(iter0_models)):
             old_model_files = glob.glob(os.path.join(iter0_models[ii], 'model.ckpt*'))
             _link_old_models(work_path, old_model_files, ii)
-    
-    if jdata.get("adjusted_sel", None) is not None:
-        jinput['training']['numb_steps'] = 0
-        jinput["training"]["save_ckpt"] = "adjust_sel/model.ckpt"
-        jinput["training"]["training_data"]["systems"] = jinput["training"]["training_data"]["systems"][:1]
-        for jj, _ in enumerate(jdata["sys_configs"]):
-            train_input_file_sel = "input_adjusted_sel_sys_%d.json" % jj
-            for kk in range(len(jinput["model"]["descriptor"]["list"])):
-                jinput["model"]["descriptor"]["list"][kk]["sel"] = jdata["adjusted_sel"][kk][jj]
-            for ii in range(numb_models) :
-                task_path = os.path.join(work_path, train_task_fmt % ii)
-                with open(os.path.join(task_path, train_input_file_sel), 'w') as outfile:
-                    json.dump(jinput, outfile, indent = 4)
     # Copy user defined forward files
     symlink_user_forward_files(mdata=mdata, task_type="train", work_path=work_path)
     
@@ -517,8 +474,6 @@ def _link_old_models(work_path, old_model_files, ii):
 
 
 def detect_batch_size(batch_size, system=None):
-    # auto
-    return batch_size
     if type(batch_size) == int:
         return batch_size
     elif batch_size == "auto":
@@ -528,10 +483,6 @@ def detect_batch_size(batch_size, system=None):
     else:
         raise RuntimeError("Unsupported batch size")
 
-def get_nframe(system):
-    if "#" in system:
-        return len(dpdata.LabeledSystem(system, fmt='deepmd/hdf5'))
-    return len(dpdata.LabeledSystem(system, fmt='deepmd/npy'))
 
 def run_train (iter_index,
                jdata,
@@ -583,13 +534,6 @@ def run_train (iter_index,
         commands.append(command)
         command = '%s freeze' % train_command
         commands.append(command)
-
-        if jdata.get("adjusted_sel", None) is not None:
-            for jj, _ in enumerate(jdata["sys_configs"]):
-                train_input_file_sel = "input_adjusted_sel_sys_%d.json" % jj
-                command1 = "dp train input_adjusted_sel_sys_%d.json --init-frz-model frozen_model.pb --skip-neighbor-stat" % jj
-                command2 = "dp freeze -c adjust_sel/ -o frozen_model_adjusted_sel_sys_%d.pb" % jj
-                commands.extend((command1, command2))
         if jdata.get("dp_compress", False):
             commands.append("%s compress" % train_command)
     else:
@@ -619,37 +563,31 @@ def run_train (iter_index,
     init_data_sys_ = jdata['init_data_sys']
     init_data_sys = []
     for ii in init_data_sys_ :
-        init_data_sys.append(os.path.join('data.init', ii + ".hdf5"))
-    
-    if jdata.get("adjusted_sel", None) is not None:
-        for jj, _ in enumerate(jdata["sys_configs"]):
-            forward_files.append("input_adjusted_sel_sys_%d.json" % jj)
-            backward_files.append("frozen_model_adjusted_sel_sys_%d.pb" % jj)
-    #trans_comm_data = []
+        init_data_sys.append(os.path.join('data.init', ii))
+    trans_comm_data = []
     cwd = os.getcwd()
     os.chdir(work_path)
-    fp_data = glob.glob(os.path.join('data.iters', 'iter.*', '02.fp', 'data.*.hdf5'))
-    trans_comm_data = init_data_sys + fp_data
-    # for ii in init_data_sys :
-    #     if jdata.get('init_multi_systems', False):
-    #         for single_sys in os.listdir(os.path.join(ii)):
-    #             trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'set.*'))
-    #             trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type*.raw'))
-    #             trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'nopbc'))
-    #     else:
-    #         trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
-    #         trans_comm_data += glob.glob(os.path.join(ii, 'type*.raw'))
-    #         trans_comm_data += glob.glob(os.path.join(ii, 'nopbc'))
-    # for ii in fp_data :
-    #     if jdata.get('use_clusters', False):
-    #         for single_sys in os.listdir(os.path.join(ii)):
-    #             trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'set.*'))
-    #             trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type*.raw'))
-    #             trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'nopbc'))
-    #     else:
-    #         trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
-    #         trans_comm_data += glob.glob(os.path.join(ii, 'type*.raw'))
-    #         trans_comm_data += glob.glob(os.path.join(ii, 'nopbc'))
+    fp_data = glob.glob(os.path.join('data.iters', 'iter.*', '02.fp', 'data.*'))
+    for ii in init_data_sys :
+        if jdata.get('init_multi_systems', False):
+            for single_sys in os.listdir(os.path.join(ii)):
+                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'set.*'))
+                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type*.raw'))
+                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'nopbc'))
+        else:
+            trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
+            trans_comm_data += glob.glob(os.path.join(ii, 'type*.raw'))
+            trans_comm_data += glob.glob(os.path.join(ii, 'nopbc'))
+    for ii in fp_data :
+        if jdata.get('use_clusters', False):
+            for single_sys in os.listdir(os.path.join(ii)):
+                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'set.*'))
+                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type*.raw'))
+                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'nopbc'))
+        else:
+            trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
+            trans_comm_data += glob.glob(os.path.join(ii, 'type*.raw'))
+            trans_comm_data += glob.glob(os.path.join(ii, 'nopbc'))
     os.chdir(cwd)
 
     try:
