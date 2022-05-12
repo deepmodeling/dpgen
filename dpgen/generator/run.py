@@ -290,10 +290,10 @@ def make_train (iter_index,
         if jdata.get('init_multi_systems', False):
             for single_sys in os.listdir(os.path.join(work_path, 'data.init', ii)):
                 init_data_sys.append(os.path.join('..', 'data.init', ii, single_sys))
-                init_batch_size.append(detect_batch_size(ss, os.path.join(work_path, 'data.init', ii, single_sys)))
+                init_batch_size.append(ss)
         else:
             init_data_sys.append(os.path.join('..', 'data.init', ii))
-            init_batch_size.append(detect_batch_size(ss, os.path.join(work_path, 'data.init', ii)))
+            init_batch_size.append(ss)
     old_range = None
     if iter_index > 0 :
         for ii in range(iter_index) :
@@ -318,14 +318,14 @@ def make_train (iter_index,
                         continue
                     for sys_single in os.listdir(jj):
                         init_data_sys.append(os.path.join('..', 'data.iters', jj, sys_single))
-                        init_batch_size.append(detect_batch_size(sys_batch_size[sys_idx], os.path.join(jj, sys_single)))
+                        init_batch_size.append(sys_batch_size[sys_idx])
                 else:
                     nframes = dpdata.System(jj, 'deepmd/npy').get_nframes()
                     if nframes < fp_task_min :
                         log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
                         continue
                     init_data_sys.append(os.path.join('..', 'data.iters', jj))
-                    init_batch_size.append(detect_batch_size(sys_batch_size[sys_idx], jj))
+                    init_batch_size.append(sys_batch_size[sys_idx])
     # establish tasks
     jinput = jdata['default_training_param']
     try:
@@ -471,16 +471,6 @@ def _link_old_models(work_path, old_model_files, ii):
         os.symlink(os.path.relpath(absjj), basejj)
         os.chdir(cwd)
 
-
-def detect_batch_size(batch_size, system=None):
-    if type(batch_size) == int:
-        return batch_size
-    elif batch_size == "auto":
-        # automaticcaly set batch size, batch_size = 32 // atom_numb (>=1, <=fram_numb)
-        s = dpdata.LabeledSystem(system, fmt='deepmd/npy')
-        return int(min( np.ceil(32.0 / float(s["coords"].shape[1]) ), s["coords"].shape[0]))
-    else:
-        raise RuntimeError("Unsupported batch size")
 
 def run_train (iter_index,
                jdata,
