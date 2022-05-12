@@ -483,7 +483,6 @@ def detect_batch_size(batch_size, system=None):
     else:
         raise RuntimeError("Unsupported batch size")
 
-
 def run_train (iter_index,
                jdata,
                mdata) :
@@ -654,13 +653,6 @@ def post_train (iter_index,
         if os.path.isfile(ofile) :
             os.remove(ofile)
         os.symlink(task_file, ofile)
-        if jdata.get("adjusted_sel", None) is not None:
-            for jj, _ in enumerate(jdata["sys_configs"]):
-                task_file = os.path.join(train_task_fmt % ii, "frozen_model_adjusted_sel_sys_%d.pb" % jj)
-                ofile = os.path.join(work_path, 'graph.%03d.s%02d.pb' % (ii, jj))
-                if os.path.isfile(ofile) :
-                    os.remove(ofile)
-                os.symlink(task_file, ofile)
 
 def _get_param_alias(jdata,
                      names) :
