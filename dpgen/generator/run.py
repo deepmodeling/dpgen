@@ -2717,9 +2717,49 @@ def make_fp_pwmat (iter_index,
     # 2, create pwmat input
     _make_fp_pwmat_input(iter_index, jdata)
 
-def make_fp_amber_diff(iter_index, jdata):
+def make_fp_amber_diff(iter_index: int, jdata: dict):
     """Run amber twice to calculate high-level and low-level potential,
-    and then generate difference between them."""
+    and then generate difference between them.
+
+    Besides AMBER, one needs to install `dpamber` package, which is avaiable at
+    https://github.com/njzjz/dpamber
+
+    Parameters
+    ----------
+    iter_index : int
+        iter index
+    jdata : dict
+        Run parameters. The following parameters are used in this method:
+            mdin_prefix : str 
+                The path prefix to AMBER mdin files
+            qm_region : list[str]
+                AMBER mask of the QM region. Each mask maps to a system.
+            qm_charge : list[int]
+                Charge of the QM region. Each charge maps to a system.
+            high_level : str
+                high level method
+            low_level : str
+                low level method
+            fp_params : dict
+                This parameters includes:
+                    high_level_mdin : str
+                        High-level AMBER mdin file. %qm_theory%, %qm_region%,
+                        and %qm_charge% will be replace.
+                    low_level_mdin : str
+                        Low-level AMBER mdin file. %qm_theory%, %qm_region%,
+                        and %qm_charge% will be replace.
+            parm7_prefix : str
+                The path prefix to AMBER PARM7 files
+            parm7 : list[str]
+                List of paths to AMBER PARM7 files. Each file maps to a system.
+    
+    References
+    ----------
+    .. [1] Development of Range-Corrected Deep Learning Potentials for Fast, Accurate Quantum
+       Mechanical/Molecular Mechanical Simulations of Chemical Reactions in Solution, 
+       Jinzhe Zeng, Timothy J. Giese, Şölen Ekesan, and Darrin M. York, Journal of Chemical
+       Theory and Computation 2021 17 (11), 6993-7009 
+    """
     # make config
     fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
     # make amber input
@@ -2760,27 +2800,13 @@ def make_fp_amber_diff(iter_index, jdata):
     for ii, pp in enumerate(parm7):
         os.symlink(pp, "qmmm%d.parm7"%ii)
     
-    # 
     rst7_prefix = jdata.get("sys_configs_prefix", "")
     for ii, ss in enumerate(jdata['sys_configs']):
         os.symlink(os.path.join(rst7_prefix, ss[0]), "init%d.rst7"%ii)
 
     with open("qm_region", 'w') as f:
         f.write("\n".join(qm_region))
-
-
     os.chdir(cwd)
-    #for ii in fp_tasks:
-        #os.chdir(ii)
-        #sys_idx = int(ii.split(".")[3])
-        #with open("sys_idx", 'w') as f:
-        #    f.write(str(sys_idx))
-        #with open("qm_region", 'w') as f:
-        #    f.write(qm_region[sys_idx])
-
-        #create_path("dataset")
-
-        #os.chdir(cwd)
 
 def make_fp (iter_index,
              jdata,
