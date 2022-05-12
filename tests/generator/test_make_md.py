@@ -2,6 +2,7 @@ import os,sys,json,glob,shutil,copy
 import dpdata
 import numpy as np
 import unittest
+from pathlib import Path
 
 from dpgen.generator.run import parse_cur_job_sys_revmat
 
@@ -510,6 +511,7 @@ class TestMakeMDAMBER(unittest.TestCase):
             jdata = json.load (fp)
         with open (machine_file, 'r') as fp:
             mdata = json.load (fp)
+        jdata['sys_prefix'] = os.path.abspath(jdata['sys_prefix'])
         _make_fake_models(0, jdata['numb_models'])
         make_model_devi(0, jdata, mdata)
         _check_pb(self, 0)
