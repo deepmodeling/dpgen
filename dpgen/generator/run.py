@@ -287,9 +287,9 @@ def make_train (iter_index,
     # make sure all init_data_sys has the batch size -- for the following `zip`
     assert (len(init_data_sys_) <= len(init_batch_size_))
     for ii, ss in zip(init_data_sys_, init_batch_size_) :
-        sys_paths = expand_sys_str(ii)
+        sys_paths = expand_sys_str(os.path.join(init_data_prefix, ii))
         for single_sys in sys_paths:
-            init_data_sys.append(os.path.join('..', 'data.init', os.path.relpath(single_sys, ii)))
+            init_data_sys.append(os.path.normpath(os.path.join('..', 'data.init', ii, os.path.relpath(single_sys, os.path.join(init_data_prefix, ii)))))
             init_batch_size.append(detect_batch_size(ss, single_sys))
     old_range = None
     if iter_index > 0 :
@@ -312,7 +312,7 @@ def make_train (iter_index,
                     log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
                     continue
                 for sys_single in sys_paths:
-                    init_data_sys.append(os.path.join('..', 'data.iters', sys_single))
+                    init_data_sys.append(os.path.normpath(os.path.join('..', 'data.iters', sys_single)))
                     init_batch_size.append(detect_batch_size(sys_batch_size[sys_idx], sys_single))
     # establish tasks
     jinput = jdata['default_training_param']
