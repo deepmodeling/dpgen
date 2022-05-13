@@ -44,10 +44,6 @@ def expand_sys_str(root_dir):
     for root, dirnames, filenames in os.walk(root_dir, followlinks=True):
         for filename in fnmatch.filter(filenames, 'type.raw'):
             matches.append(root)
-    matches.sort()
-    dirnames = [os.path.basename(ii) for ii in matches]
-    if (len(list(set(dirnames))) != len(matches)) :
-        raise RuntimeError('duplicated system name: it is highly recommend to place all systems in the same level of directory and has different names')
     return matches
 
 
@@ -59,26 +55,10 @@ def get_system_cls(jdata):
 
 def get_multi_system(path, jdata):
     system = get_system_cls(jdata)
+    system_paths = expand_sys_str(path)
     systems = dpdata.MultiSystems(
-        *[system(os.path.join(path, s), fmt='deepmd/npy') for s in os.listdir(path)])
+        *[system(s, fmt='deepmd/npy') for s in system_paths])
     return systems
-
-
-def get_systems(path, jdata):
-    system_cls = get_system_cls(jdata)
-    system_paths = expand_sys_str(path)    
-    systems = {}
-    for ii in system_paths:
-        systems[os.path.basename(ii)] = system_cls(ii, fmt='deepmd/npy')
-    return systems
-
-
-def get_system_idx(path):
-    system_paths = expand_sys_str(path)    
-    sys_idx_map = {}
-    for idx,ii in enumerate(system_paths):
-        sys_idx_map[os.path.basename(ii)] = idx
-    return sys_idx_map
 
 
 def init_model(iter_index, jdata, mdata):
