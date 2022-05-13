@@ -22,7 +22,7 @@ import numpy as np
 
 from dpgen import dlog
 from dpgen import SHORT_CMD
-from dpgen.util import sepline
+from dpgen.util import sepline, expand_sys_str
 from distutils.version import LooseVersion
 from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, make_dispatcher, make_submission
 from dpgen.generator.run import make_train, run_train, post_train, run_fp, post_fp, fp_name, model_devi_name, train_name, train_task_fmt, sys_link_fp_vasp_pp, make_fp_vasp_incar, make_fp_vasp_kp, make_fp_vasp_cp_cvasp, data_system_fmt, model_devi_task_fmt, fp_task_fmt
@@ -38,13 +38,6 @@ accurate_data_name = "data.accurate"
 detail_file_name_prefix = "details"
 sys_name_fmt = 'sys.' + data_system_fmt
 sys_name_pattern = 'sys.[0-9]*[0-9]'
-
-def expand_sys_str(root_dir):
-    matches = []
-    for root, dirnames, filenames in os.walk(root_dir, followlinks=True):
-        for filename in fnmatch.filter(filenames, 'type.raw'):
-            matches.append(root)
-    return matches
 
 
 def get_system_cls(jdata):
