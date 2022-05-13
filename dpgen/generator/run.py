@@ -307,7 +307,7 @@ def make_train (iter_index,
                 sys_paths = expand_sys_str(jj)
                 nframes = 0
                 for sys_single in sys_paths:
-                    tmp_box = np.loadtxt(os.path.join(sys_single, 'box.raw'))
+                    tmp_box = np.load(os.path.join(sys_single, 'box.npy'))
                     tmp_box = np.reshape(tmp_box, [-1,9])
                     nframes += tmp_box.shape[0]
                 if nframes < fp_task_min :
