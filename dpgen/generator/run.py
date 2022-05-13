@@ -2000,6 +2000,8 @@ def _make_fp_vasp_inner (modd_path,
                                 fp_candidate.append([tt, cc])
                                 counter['candidate'] += 1
                             cc += 1
+        else:
+            raise RuntimeError('unknown model_devi_engine', model_devi_engine)
 
         # print a report
         fp_sum = sum(counter.values())
@@ -2144,7 +2146,7 @@ def _make_fp_vasp_inner (modd_path,
                     fjob.close()
                     #os.system('touch job.json')
                 else:
-                    raise RuntimeError
+                    raise RuntimeError('unknown model_devi_engine', model_devi_engine)
             else:
                 os.symlink(os.path.relpath(poscar_name), 'POSCAR')
                 np.save("atom_pref", new_system.data["atom_pref"])
