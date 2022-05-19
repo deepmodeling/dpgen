@@ -63,7 +63,7 @@ class awsMachineJob(object):
                 elif os.path.isdir(os.path.join(self.remote_root,job_dir,ii)):
                     try:
                         os.rmdir(os.path.join(self.local_root,job_dir,ii))
-                    except:
+                    except Exception:
                         print('dir is not empty   '+str(os.path.join(self.local_root,job_dir,ii)))
                     else:
                         shutil.copytree(os.path.join(self.remote_root,job_dir,ii),os.path.join(self.local_root,job_dir,ii))
@@ -176,7 +176,7 @@ class RemoteJob (object):
            sftp = self.ssh.open_sftp()        
            sftp.mkdir(self.remote_root)
            sftp.close()
-        except: 
+        except Exception: 
            pass
         # open('job_uuid', 'w').write(self.job_uuid)
 
@@ -410,7 +410,7 @@ class SlurmJob (RemoteJob) :
                else:
                   dlog.debug('task is finished')
                  
-           except:
+           except Exception:
                dlog.debug('no job_id file')
                dlog.debug('task restart point !!!')
                _submit()
@@ -529,9 +529,9 @@ class SlurmJob (RemoteJob) :
            cvasp=res['cvasp']
            try:
               fp_max_errors = res['fp_max_errors']
-           except:
+           except Exception:
               fp_max_errors = 3
-        except:
+        except Exception:
            cvasp=False
 
         for ii,jj in zip(job_dirs, args) :
@@ -765,7 +765,7 @@ class LSFJob (RemoteJob) :
                 dlog.debug('task is running')
             else:
                 dlog.debug('task is finished')
-            #except:
+            #except Exception:
                #dlog.debug('no job_id file')
                #dlog.debug('task restart point !!!')
                #self._submit(job_dirs, cmd, args, resources)
@@ -805,7 +805,7 @@ class LSFJob (RemoteJob) :
     def check_status(self) :
         try:
             job_id = self._get_job_id()
-        except:
+        except Exception:
             return JobStatus.terminated
         if job_id == "" :
             raise RuntimeError("job %s is has not been submitted" % self.remote_root)
