@@ -27,6 +27,7 @@ DPGEN's documentation
    :caption: Contribution Guild
 
    README.md
+   api/api
 
 * :ref:`genindex`
 * :ref:`modindex`
