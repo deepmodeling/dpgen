@@ -24,6 +24,8 @@ class EOS(Property):
                 self.vol_start = parameter['vol_start']
                 self.vol_end = parameter['vol_end']
                 self.vol_step = parameter['vol_step']
+                parameter['vol_abs'] = parameter.get('vol_abs', False)
+                self.vol_abs = parameter['vol_abs']
             parameter['cal_type'] = parameter.get('cal_type', 'relaxation')
             self.cal_type = parameter['cal_type']
             default_cal_setting = {"relax_pos": True,
@@ -117,6 +119,7 @@ class EOS(Property):
 
             else:
                 print('gen eos from ' + str(self.vol_start) + ' to ' + str(self.vol_end) + ' by every ' + str(self.vol_step))
+                if self.vol_abs : print('(absolute volume)')
                 equi_contcar = os.path.join(path_to_equi, 'CONTCAR')
                 if not os.path.exists(equi_contcar):
                     raise RuntimeError("please do relaxation first")
@@ -138,8 +141,13 @@ class EOS(Property):
                     task_list.append(output_task)
                     os.symlink(os.path.relpath(equi_contcar), 'POSCAR.orig')
                     # scale = (vol / vol_to_poscar) ** (1. / 3.)
-                    scale = vol ** (1. / 3.)
-                    eos_params = {'volume': vol * vol_to_poscar, 'scale': scale}
+
+                    if self.vol_abs :
+                        scale = (vol / vol_to_poscar) ** (1. / 3.)
+                        eos_params = {'volume': vol, 'scale': scale}
+                    else :
+                        scale = vol ** (1. / 3.)
+                        eos_params = {'volume': vol * vol_to_poscar, 'scale': scale}
                     dumpfn(eos_params, 'eos.json', indent=4)
                     self.parameter['scale2equi'].append(scale)  # 06/22
                     vasp.poscar_scale('POSCAR.orig', 'POSCAR', scale)
