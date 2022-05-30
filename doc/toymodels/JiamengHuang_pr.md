@@ -6,4 +6,4 @@ in the "eos" part of property.json
 if it's not mentioned, "False" is set defaultly
 when you are using absolute volume, there will be a notation in the last line of output during "make" process, which is like
 
-(absolute volume)
+treat vol_start and vol_end as absolute volume
