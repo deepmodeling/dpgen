@@ -19,7 +19,7 @@ from dpgen.auto_test.reproduce import post_repro
 
 class Gamma(Property):
     """
-    Calculation of gamma line for bcc and fcc
+    Calculation of gamma line for bcc and fcc (test version 1)
     """
 
     def __init__(self,
@@ -147,6 +147,7 @@ class Gamma(Property):
                                         center_slab=True, in_unit_planes=True,
                                         primitive=True)
                 slab = slabGen.get_slab()
+                print(slab)
                 all_slabs = self.__displace_slab(slab)
 
                 os.chdir(path_to_work)
