@@ -3,7 +3,7 @@ import glob
 import os
 import warnings
 from multiprocessing import Pool
-import dpgen.auto_test.lib.util as util
+import dpgen.auto_test.lib.util as utila
 from dpgen import dlog
 from dpgen.util import sepline
 from dpgen.auto_test.EOS import EOS
@@ -11,6 +11,7 @@ from dpgen.auto_test.Elastic import Elastic
 from dpgen.auto_test.Interstitial import Interstitial
 from dpgen.auto_test.Surface import Surface
 from dpgen.auto_test.Vacancy import Vacancy
+from dpgen.auto_test.Gamma import Gamma
 from dpgen.auto_test.calculator import make_calculator
 from dpgen.dispatcher.Dispatcher import make_dispatcher
 from dpgen.dispatcher.Dispatcher import make_submission
@@ -34,6 +35,8 @@ def make_property_instance(paramters):
         return Interstitial(paramters)
     elif prop_type == 'surface':
         return Surface(paramters)
+    elif prop_type == 'gamma':
+        return Gamma(paramters)
     else:
         raise RuntimeError(f'unknown property type {prop_type}')
 
