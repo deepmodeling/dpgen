@@ -19,7 +19,7 @@ from dpgen.auto_test.reproduce import post_repro
 
 class Gamma(Property):
     """
-    Calculation of gamma line for bcc and fcc (test version3)
+    Calculation of gamma line for bcc and fcc (test version4)
     """
 
     def __init__(self,
