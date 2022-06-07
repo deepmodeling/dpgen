@@ -2,7 +2,6 @@ import glob
 import json
 import os
 import re
-import copy
 
 import numpy as np
 from monty.serialization import loadfn, dumpfn
@@ -19,7 +18,7 @@ from dpgen.auto_test.reproduce import post_repro
 
 class Gamma(Property):
     """
-    Calculation of gamma line for bcc and fcc (v1.0)
+    Calculation of gamma line for bcc and fcc (v1.1 add half z judgement)
     """
 
     def __init__(self,
@@ -179,14 +178,16 @@ class Gamma(Property):
     def __displace_slab(self,
                         slab):
         # return a list of displaced slab objects
-        all_slabs = [copy.deepcopy(slab)]
+        all_slabs = [slab.copy()]
         for ii in list(range(self.n_steps)):
             frac_disp = 1 / self.n_steps
-            slab.translate_sites(indices=list(range(int(self.min_slab_size / 2))),
+            # return list of atoms number to be displaced which above 0.5 z
+            disp_atoms_list = np.where(slab.frac_coords[:,2]>0.5)[0]
+            slab.translate_sites(indices=disp_atoms_list,
                                  vector=(frac_disp, 0, 0),
                                  frac_coords=True,
                                  to_unit_cell=True)
-            all_slabs.append(copy.deepcopy(slab))
+            all_slabs.append(slab.copy())
         return all_slabs
 
     def post_process(self,
