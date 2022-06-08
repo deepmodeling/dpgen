@@ -122,7 +122,7 @@ def run_build_dataset(jdata, mdata, log_file="build_log"):
     run_tasks.sort()
     run_tasks = [os.path.basename(ii) for ii in run_tasks]
 
-    make_submission_compat(mdata['build_machine']
+    make_submission_compat(mdata['build_machine'],
                         mdata['build_resources'],
                         [build_command],
                         work_path,
