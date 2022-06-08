@@ -1,5 +1,6 @@
 from distutils.version import LooseVersion
 import os,sys,time,random,json,glob
+import warnings
 from typing import List
 from dpdispatcher import Task, Submission, Resources, Machine
 from dpgen.dispatcher.LocalContext import LocalSession
@@ -406,3 +407,81 @@ def mdata_arginfo() -> List[Argument]:
     return [
         command_arginfo, machine_arginfo, resources_arginfo,
     ]
+
+
+def make_submission_compat(
+        machine: dict,
+        resources: dict,
+        commands: List[str],
+        work_dir: str,
+        run_tasks: List[str],
+        group_size: int,
+        forward_common_files: List[str],
+        forward_files: List[str],
+        backward_files: List[str],
+        outlog: str="log",
+        errlog: str="err",
+        api_version: str="0.9",
+    ) -> None:
+    """Make submission with compatibility of both dispatcher API v0 and v1.
+
+    If `api_version` is less than 1.0, use `make_dispatcher`. If
+    `api_version` is large than 1.0, use `make_submission`.
+
+    Parameters
+    ----------
+    machine : dict
+        machine dict
+    resources : dict
+        resource dict
+    commands : list[str]
+        list of commands
+    work_dir : str
+        working directory
+    run_tasks : list[str]
+        list of paths to running tasks
+    group_size : int
+        group size
+    forward_common_files : list[str]
+        forwarded common files shared for all tasks
+    forward_files : list[str]
+        forwarded files for each task
+    backward_files : list[str]
+        backwarded files for each task
+    outlog : str, default=log
+        path to log from stdout
+    errlog : str, default=err
+        path to log from stderr
+    api_version : str, default=0.9
+        API version. 1.0 is recommended
+    """
+    if LooseVersion(api_version) < LooseVersion('1.0'):
+        warnings.warn(f"the dpdispatcher will be updated to new version."
+            f"And the interface may be changed. Please check the documents for more details")
+        dispatcher = make_dispatcher(machine, resources, work_dir, run_tasks, group_size)
+        dispatcher.run_jobs(resources,
+                       commands,
+                       work_dir,
+                       run_tasks,
+                       group_size,
+                       forward_common_files,
+                       forward_files,
+                       backward_files,
+                       outlog=outlog,
+                       errlog=errlog)
+
+    elif LooseVersion(api_version) >= LooseVersion('1.0'):
+        submission = make_submission(
+            machine,
+            resources,
+            commands=commands,
+            work_path=work_dir,
+            run_tasks=run_tasks,
+            group_size=group_size,
+            forward_common_files=forward_common_files,
+            forward_files=forward_files,
+            backward_files=backward_files,
+            outlog=outlog,
+            errlog=errlog)
+        submission.run_submission()
+
