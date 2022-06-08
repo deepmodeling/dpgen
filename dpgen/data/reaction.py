@@ -74,7 +74,7 @@ run	{nstep}
     return lmp_string
 
 
-def run_reaxff(jdata, mdata, dispatcher, log_file="reaxff_log"):
+def run_reaxff(jdata, mdata, log_file="reaxff_log"):
     work_path = reaxff_path
     reaxff_command = "{} -in {}".format(mdata["reaxff_command"], lmp_path)
     run_tasks = glob.glob(os.path.join(work_path, 'task.*'))
