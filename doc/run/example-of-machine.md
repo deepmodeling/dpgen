@@ -20,7 +20,7 @@ In this section, we will show you how to perform train task at a local workstati
 In this example, we perform the `train` task on a local workstation.
 
 ```json
-"train": [
+"train":
     {
       "command": "dp",
       "machine": {
@@ -36,8 +36,7 @@ In this example, we perform the `train` task on a local workstation.
         "group_size": 1,
         "source_list": ["/home/user1234/deepmd.env"]
       }
-    }
-  ],
+    },
 ```
 
 The "command" for the train task in the DeePMD-kit is "dp".
@@ -51,7 +50,7 @@ In the resources parameter, "number_node", "cpu_per_node", and "gpu_per_node" sp
 In this example, we perform the model_devi task at a local Slurm workstation.
 
 ```json
-"model_devi": [
+"model_devi":
     {
       "command": "lmp",
       "machine": {
@@ -70,7 +69,6 @@ In this example, we perform the model_devi task at a local Slurm workstation.
         "source_list": ["/home/user1234/lammps.env"]
       }
     }
-],
 ```
 
 The "command" for the model_devi task in the LAMMPS is "lmp".
@@ -84,7 +82,7 @@ In the resources parameter, we specify the name of the queue to which the task i
 In this example, we perform the fp task at a remote PBS cluster that can be accessed via SSH.
 
 ```json
-"fp": [
+"fp":
     {
       "command": "mpirun -n 32 vasp_std",
       "machine": {
@@ -106,7 +104,6 @@ In this example, we perform the fp task at a remote PBS cluster that can be acce
         "source_list": ["/home/user1234/vasp.env"]
       }
     }
-],
 ```
 
 VASP code is used for fp task and mpi is used for parallel computing, so "mpirun -n 32" is added to specify the number of parallel threads.

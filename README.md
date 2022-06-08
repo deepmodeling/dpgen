@@ -1139,7 +1139,7 @@ an example of new dpgen's machine.json
 ```json
 {
   "api_version": "1.0",
-  "train": [
+  "train":
     {
       "command": "dp",
       "machine": {
@@ -1163,9 +1163,8 @@ an example of new dpgen's machine.json
         "para_deg": 3,
         "source_list": ["/home/user1234/deepmd.1.2.4.env"]
       }
-    }
-  ],
-  "model_devi":[
+    },
+  "model_devi":
     {
       "command": "lmp",
       "machine":{
@@ -1186,9 +1185,8 @@ an example of new dpgen's machine.json
         "group_size": 5,
         "source_list": ["/home/user1234/deepmd.1.2.4.env"]
       }
-    }
-  ],
-  "fp":[
+    },
+  "fp":
     {
       "command": "vasp_std",
       "machine":{
@@ -1210,7 +1208,6 @@ an example of new dpgen's machine.json
         "source_list": ["~/vasp.env"]
       }
     }
-  ]
 }
 ```
 note1: the key "local_root" in dpgen's machine.json is always `./`
@@ -1222,7 +1219,7 @@ When switching into a new machine, you may modifying the `MACHINE`, according to
 An example for `MACHINE` is:
 ```json
 {
-  "train": [
+  "train":
     {
       "machine": {
         "batch": "slurm",
@@ -1245,9 +1242,8 @@ An example for `MACHINE` is:
         "qos": "data"
       },
       "command": "USERPATH/dp"
-    }
-  ],
-  "model_devi": [
+    },
+  "model_devi":
     {
       "machine": {
         "batch": "slurm",
@@ -1271,9 +1267,8 @@ An example for `MACHINE` is:
       },
       "command": "lmp_serial",
       "group_size": 1
-    }
-  ],
-  "fp": [
+    },
+  "fp":
     {
       "machine": {
         "batch": "slurm",
@@ -1300,7 +1295,6 @@ An example for `MACHINE` is:
       "command": "vasp_gpu",
       "group_size": 1
     }
-  ]
 }
 ```
 Following table illustrates which key is needed for three types of machine: `train`,`model_devi`  and `fp`. Each of them is a list of dicts. Each dict can be considered as an independent environmnet for calculation.

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+from lib2to3.pytree import type_repr
 from dpgen.dispatcher.SSHContext import SSHSession
 from dpgen.dispatcher.SSHContext import SSHContext
 from dpgen.dispatcher.Slurm import Slurm
@@ -36,11 +37,18 @@ def convert_mdata(mdata, task_types=["train", "model_devi", "fp"]):
     '''
     for task_type in task_types:
         if task_type in mdata:
-            for key, item in mdata[task_type][0].items():
+            if isinstance(mdata[task_type], dict):
+                task_data = mdata[task_type]
+            elif isinstance(mdata[task_type], (list, tuple)):
+                task_data = mdata[task_type][0]
+            else:
+                raise TypeError("mdata/%s should be dict or list!" % task_type)
+            for key, item in task_data.items():
                 if "comments" not in key:
                     mdata[task_type + "_" + key] = item
-            group_size = mdata[task_type][0]["resources"].get("group_size", 1)
-            if group_size == 1: group_size = mdata[task_type][0].get("group_size", 1)
+            group_size = task_data["resources"].get("group_size", 1)
+            if group_size == 1:
+                group_size = task_data.get("group_size", 1)
             mdata[task_type + "_" + "group_size"] = group_size
     return mdata
 
