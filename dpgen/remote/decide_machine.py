@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-from lib2to3.pytree import type_repr
 from dpgen.dispatcher.SSHContext import SSHSession
 from dpgen.dispatcher.SSHContext import SSHContext
 from dpgen.dispatcher.Slurm import Slurm
