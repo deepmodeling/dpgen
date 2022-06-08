@@ -413,7 +413,7 @@ def make_submission_compat(
         machine: dict,
         resources: dict,
         commands: List[str],
-        work_dir: str,
+        work_path: str,
         run_tasks: List[str],
         group_size: int,
         forward_common_files: List[str],
@@ -436,7 +436,7 @@ def make_submission_compat(
         resource dict
     commands : list[str]
         list of commands
-    work_dir : str
+    work_path : str
         working directory
     run_tasks : list[str]
         list of paths to running tasks
@@ -461,7 +461,7 @@ def make_submission_compat(
         dispatcher = make_dispatcher(machine, resources, work_dir, run_tasks, group_size)
         dispatcher.run_jobs(resources,
                        commands,
-                       work_dir,
+                       work_path,
                        run_tasks,
                        group_size,
                        forward_common_files,
@@ -475,7 +475,7 @@ def make_submission_compat(
             machine,
             resources,
             commands=commands,
-            work_path=work_dir,
+            work_path=work_path,
             run_tasks=run_tasks,
             group_size=group_size,
             forward_common_files=forward_common_files,
