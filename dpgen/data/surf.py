@@ -1,6 +1,6 @@
 #!/usr/bin/env python3 
 
-import time
+import warnings
 import os,json,shutil,re,glob,argparse
 import numpy as np
 import subprocess as sp
@@ -12,7 +12,7 @@ import dpgen.data.tools.bcc as bcc
 from dpgen import dlog
 from dpgen import ROOT_PATH
 from dpgen.remote.decide_machine import  convert_mdata
-from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher
+from dpgen.dispatcher.Dispatcher import make_submission_compat
 #-----PMG---------
 from pymatgen.io.vasp import Poscar
 from pymatgen.core import Structure, Element
@@ -565,15 +565,16 @@ def run_vasp_relax(jdata, mdata):
     run_tasks = [ii.replace(work_dir+"/", "") for ii in relax_run_tasks]
 
     #dlog.info(run_tasks)
-    dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_dir, run_tasks, fp_group_size)
-    dispatcher.run_jobs(fp_resources,
+    make_submission_compat(mdata['fp_machine'],
+                       fp_resources,
                        [fp_command],
                        work_dir,
                        run_tasks,
                        fp_group_size,
                        forward_common_files,
                        forward_files,
-                       backward_files)
+                       backward_files,
+                       api_version=mdata.get("api_version", "0.9"))
 
 def gen_init_surf(args):
     try:
