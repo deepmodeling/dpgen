@@ -117,7 +117,7 @@ def model_devi_jobs_args() -> List[Argument]:
     ]
 
     doc_model_devi_jobs = 'Settings for exploration in 01.model_devi. Each dict in the list corresponds to one iteration. The index of model_devi_jobs exactly accord with index of iterations'
-    return Argument("model_devi_jobs", list, args, [], doc=doc_model_devi_jobs)
+    return Argument("model_devi_jobs", list, args, [], repeat=True, doc=doc_model_devi_jobs)
 
 
 def model_devi_args() -> List[Argument]:
