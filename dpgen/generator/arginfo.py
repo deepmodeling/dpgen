@@ -46,9 +46,8 @@ def basic_args() -> List[Argument]:
 
 def data_args() -> List[Argument]:
     doc_init_data_prefix = 'Prefix of initial data directories.'
-    doc_init_data_sys = 'Directories of initial data. You may use either absolute or relative path here.'
+    doc_init_data_sys = 'Directories of initial data. You may use either absolute or relative path here. Systems will be detected recursively in the directories.'
     doc_sys_format = 'Format of initial data. It will be vasp/poscar if not set.'
-    doc_init_multi_systems = 'If set to true, init_data_sys directories should contain sub-directories of various systems. DP-GEN will regard all of these sub-directories as inital data systems.'
     doc_init_batch_size = 'Each number is the batch_size of corresponding system for training in init_data_sys. One recommended rule for setting the sys_batch_size and init_batch_size is that batch_size mutiply number of atoms ot the stucture should be larger than 32. If set to auto, batch size will be 32 divided by number of atoms.'
     doc_sys_configs_prefix = 'Prefix of sys_configs.'
     doc_sys_configs = 'Containing directories of structures to be explored in iterations.Wildcard characters are supported here.'
@@ -60,8 +59,6 @@ def data_args() -> List[Argument]:
         Argument("init_data_sys", list,
                  optional=False, doc=doc_init_data_sys),
         Argument("sys_format", str, optional=False, doc=doc_sys_format),
-        Argument("init_multi_systems", bool, optional=True,
-                 doc=doc_init_multi_systems),
         Argument("init_batch_size", str, optional=True,
                  doc=doc_init_batch_size),
         Argument("sys_configs_prefix", str, optional=True,
