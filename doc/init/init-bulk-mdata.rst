@@ -1,4 +1,6 @@
 dpgen init_bulk machine parameters
 ==================================
 
-.. include:: ../init_bulk-mdata-auto.rst
+.. dargs::
+   :module: dpgen.data.arginfo
+   :func: init_bulk_mdata_arginfo

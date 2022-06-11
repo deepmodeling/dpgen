@@ -1,4 +1,6 @@
 dpgen simplify machine parameters
 =================================
 
-.. include:: ../simplify-mdata-auto.rst
+.. dargs::
+   :module: dpgen.simplify.arginfo
+   :func: simplify_mdata_arginfo

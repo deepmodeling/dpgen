@@ -1,4 +1,6 @@
 dpgen init_surf machine parameters
 ==================================
 
-.. include:: ../init_surf-mdata-auto.rst
+.. dargs::
+   :module: dpgen.data.arginfo
+   :func: init_surf_mdata_arginfo
