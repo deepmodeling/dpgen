@@ -120,7 +120,7 @@ def model_devi_jobs_args() -> List[Argument]:
     return Argument("model_devi_jobs", list, args, [], repeat=True, doc=doc_model_devi_jobs)
 
 
-def model_devi_args() -> List[Argument]:
+def model_devi_lmp_args() -> List[Argument]:
     doc_model_devi_dt = 'Timestep for MD. 0.002 is recommend.'
     doc_model_devi_skip = 'Number of structures skipped for fp in each MD.'
     doc_model_devi_f_trust_lo = 'Lower bound of forces for the selection. If list, should be set for each index in sys_configs, respectively.'
@@ -173,6 +173,13 @@ The union of the two sets is made as candidate dataset.'
         Argument("model_devi_activation_func", list, optional=True,
                  doc=doc_model_devi_activation_func),
     ]
+
+
+def model_devi_args() -> Variant:
+    doc_model_devi_engine = "Engine for the model deviation task."
+    return Variant("model_devi_engine", [
+            Argument("lammps", dict, model_devi_lmp_args(), doc="LAMMPS"),
+        ], default="lammps", doc=doc_model_devi_engine)
 
 
 # Labeling
@@ -311,6 +318,7 @@ def run_jdata_arginfo() -> Argument:
     doc_run_jdata = "param.json file"
     return Argument("run_jdata",
                     dict,
-                    sub_fields=basic_args() + data_args() + training_args() + model_devi_args() + fp_args(),
+                    sub_fields=basic_args() + data_args() + training_args() + fp_args(),
+                    sub_variants=model_devi_args(),
                     doc=doc_run_jdata)
     
