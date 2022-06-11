@@ -120,9 +120,9 @@ class EOS(Property):
             else:
                 print('gen eos from ' + str(self.vol_start) + ' to ' + str(self.vol_end) + ' by every ' + str(self.vol_step))
                 if self.vol_abs : 
-                    print('treat vol_start and vol_end as absolute volume')
+                    dlog.info('treat vol_start and vol_end as absolute volume')
                 else : 
-                    print('treat vol_start and vol_end as relative volume')
+                    dlog.info('treat vol_start and vol_end as relative volume')
                 equi_contcar = os.path.join(path_to_equi, 'CONTCAR')
                 if not os.path.exists(equi_contcar):
                     raise RuntimeError("please do relaxation first")
