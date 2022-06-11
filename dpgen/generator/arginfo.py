@@ -179,7 +179,7 @@ def model_devi_args() -> Variant:
     doc_model_devi_engine = "Engine for the model deviation task."
     return Variant("model_devi_engine", [
             Argument("lammps", dict, model_devi_lmp_args(), doc="LAMMPS"),
-        ], default="lammps", doc=doc_model_devi_engine)
+        ], default_tag="lammps", optional=True, doc=doc_model_devi_engine)
 
 
 # Labeling
