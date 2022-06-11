@@ -32,6 +32,7 @@ class Gamma(Property):
                 self.min_vacuum_size = parameter['min_vacuum_size']
                 parameter['n_steps'] = parameter.get('n_steps', 10)
                 self.n_steps = parameter['n_steps']
+                self.atom_num = None
             #                parameter['pert_xz'] = parameter.get('pert_xz', 0.01)
             #                self.pert_xz = parameter['pert_xz']
             #                default_max_miller = 2
@@ -147,6 +148,7 @@ class Gamma(Property):
                                         primitive=True)
                 slab = slabGen.get_slab()
                 all_slabs = self.__displace_slab(slab)
+                self.atom_num = len(all_slabs[0].sites)
 
                 os.chdir(path_to_work)
                 if os.path.isfile('POSCAR'):
@@ -163,15 +165,11 @@ class Gamma(Property):
                         if os.path.exists(jj):
                             os.remove(jj)
                     task_list.append(output_task)
-                    atom_num = len(all_slabs[ii].sites)
-                    print("# %03d generate " % ii, output_task, " \t %d atoms" % atom_num)
+                    print("# %03d generate " % ii, output_task, " \t %d atoms" % self.atom_num)
                     # make confs
                     all_slabs[ii].to('POSCAR', 'POSCAR.tmp')
-                    # fix x y pos
-                    #self.fix_pos(atom_num)
                     vasp.regulate_poscar('POSCAR.tmp', 'POSCAR')
                     vasp.sort_poscar('POSCAR', 'POSCAR', ptypes)
-                    #self.fix_pos(atom_num)
                     # vasp.perturb_xz('POSCAR', 'POSCAR', self.pert_xz)
                     # record miller
                     dumpfn(all_slabs[ii].miller_index, 'miller.json')
@@ -196,25 +194,20 @@ class Gamma(Property):
             all_slabs.append(slab.copy())
         return all_slabs
 
-    @staticmethod
-    def fix_pos(atom_num):
-        """
-        add x y pos fix suffix to POSCAR
-        """
-        insert_pos = -atom_num
-        with open('POSCAR', 'r') as fin1:
-            contents = fin1.readlines()
-            contents.insert(insert_pos, 'Selective dynamics\n')
-            for ii in range(insert_pos, 0, 1):
-                contents[ii] = contents[ii].replace('\n', '')
-                contents[ii] += ' ' + 'F F T' + '\n'
-        with open('POSCAR', 'w') as fin2:
-            for ii in range(len(contents)):
-                fin2.write(contents[ii])
-
-    def post_process(self,
-                     task_list):
-        pass
+    def post_process(self, task_list):
+        if True:
+            insert_pos = -self.atom_num
+            for ii in task_list:
+                poscar = os.path.join(ii, 'POSCAR')
+                with open(poscar, 'r') as fin1:
+                    contents = fin1.readlines()
+                    contents.insert(insert_pos, 'Selective dynamics\n')
+                    for ii in range(insert_pos, 0, 1):
+                        contents[ii] = contents[ii].replace('\n', '')
+                        contents[ii] += ' ' + 'F F T' + '\n'
+                with open(poscar, 'w') as fin2:
+                    for ii in range(len(contents)):
+                        fin2.write(contents[ii])
 
     def task_type(self):
         return self.parameter['type']
