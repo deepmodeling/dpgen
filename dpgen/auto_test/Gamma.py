@@ -163,11 +163,15 @@ class Gamma(Property):
                         if os.path.exists(jj):
                             os.remove(jj)
                     task_list.append(output_task)
-                    print("# %03d generate " % ii, output_task, " \t %d atoms" % len(all_slabs[ii].sites))
+                    atom_num = len(all_slabs[ii].sites)
+                    print("# %03d generate " % ii, output_task, " \t %d atoms" % atom_num)
                     # make confs
                     all_slabs[ii].to('POSCAR', 'POSCAR.tmp')
+                    # fix x y pos
+                    #self.fix_pos(atom_num)
                     vasp.regulate_poscar('POSCAR.tmp', 'POSCAR')
                     vasp.sort_poscar('POSCAR', 'POSCAR', ptypes)
+                    #self.fix_pos(atom_num)
                     # vasp.perturb_xz('POSCAR', 'POSCAR', self.pert_xz)
                     # record miller
                     dumpfn(all_slabs[ii].miller_index, 'miller.json')
@@ -177,7 +181,9 @@ class Gamma(Property):
 
     def __displace_slab(self,
                         slab):
-        # return a list of displaced slab objects
+        """
+        return a list of displaced slab objects
+        """
         all_slabs = [slab.copy()]
         for ii in list(range(self.n_steps)):
             frac_disp = 1 / self.n_steps
@@ -189,6 +195,22 @@ class Gamma(Property):
                                  to_unit_cell=True)
             all_slabs.append(slab.copy())
         return all_slabs
+
+    @staticmethod
+    def fix_pos(atom_num):
+        """
+        add x y pos fix suffix to POSCAR
+        """
+        insert_pos = -atom_num
+        with open('POSCAR', 'r') as fin1:
+            contents = fin1.readlines()
+            contents.insert(insert_pos, 'Selective dynamics\n')
+            for ii in range(insert_pos, 0, 1):
+                contents[ii] = contents[ii].replace('\n', '')
+                contents[ii] += ' ' + 'F F T' + '\n'
+        with open('POSCAR', 'w') as fin2:
+            for ii in range(len(contents)):
+                fin2.write(contents[ii])
 
     def post_process(self,
                      task_list):
