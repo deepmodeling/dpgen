@@ -175,11 +175,11 @@ The union of the two sets is made as candidate dataset.'
     ]
 
 
-def model_devi_args() -> Variant:
+def model_devi_args() -> List[Variant]:
     doc_model_devi_engine = "Engine for the model deviation task."
-    return Variant("model_devi_engine", [
+    return [Variant("model_devi_engine", [
             Argument("lammps", dict, model_devi_lmp_args(), doc="LAMMPS"),
-        ], default_tag="lammps", optional=True, doc=doc_model_devi_engine)
+        ], default_tag="lammps", optional=True, doc=doc_model_devi_engine)]
 
 
 # Labeling
