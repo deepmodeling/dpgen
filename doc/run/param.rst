@@ -2,4 +2,6 @@
 dpgen run param parameters
 =============================
 
-.. include:: ../run-jdata-auto.rst
+.. dargs::
+   :module: dpgen.generator.arginfo
+   :func: run_jdata_arginfo

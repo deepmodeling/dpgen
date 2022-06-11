@@ -4,4 +4,5 @@ sphinx_rtd_theme
 sphinx_markdown_tables
 myst-parser
 deepmodeling_sphinx
+dargs>=0.3.1
 .
