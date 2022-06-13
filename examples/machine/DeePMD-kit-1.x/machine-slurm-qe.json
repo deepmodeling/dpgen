@@ -1,7 +1,7 @@
  {
   "_comment" : "This is an example of DP-GEN on Slurm",
   "_comment" : "Last updated on 2021.4.30 for DP-GEN 0.9.2 by Yuzhi Zhang", 
-  "train" :[
+  "train" :
     {
       "_comment" : "Specify the installed path of DeePMD-kit",
       "_comment" : "The version of DeePMD-kit should be 1.*", 
@@ -49,10 +49,9 @@
         "time_limit": "23:0:0",
         "_comment": "that's all"
       }
-    }
-  ],
+    },
 
-  "model_devi": [
+  "model_devi":
     {
       "machine": {
         "machine_type": "slurm",
@@ -81,10 +80,8 @@
       "command": "lmp_serial",
       "_comment" : "DP-GEN will put 5 tasks together in one submitting script.",  
       "group_size": 5
-    }
-  ], 
+    }, 
   "fp":
-  [
     {
       "machine": {
         "machine_type": "slurm",
@@ -113,5 +110,4 @@
       "command": "mpirun -n 8 /gpfs/share/home/1600017784/yuzhi/soft/QE-mpi/PW/src/pw.x < input",
       "group_size": 1
     }
-  ]
 }
