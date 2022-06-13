@@ -83,7 +83,7 @@ def make_abacus_scf_input(fp_params):
             ret += "deepks_scf %d\n" % fp_params["deepks_scf"]
         elif key == "deepks_model":
             ret += "deepks_model %s\n" % fp_params["deepks_model"]
-        else:
+        elif key != "k_points": # "k_points key is used to generate KPT file."
             ret += "%s %s\n" % (key, str(fp_params[key]))
     return ret
 
