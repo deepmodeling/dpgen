@@ -187,10 +187,8 @@ class Gamma(Property):
             frac_disp = 1 / self.n_steps
             # return list of atoms number to be displaced which above 0.5 z
             disp_atoms_list = np.where(slab.frac_coords[:,2]>0.5)[0]
-            slab.translate_sites(indices=disp_atoms_list,
-                                 vector=(frac_disp, 0, 0),
-                                 frac_coords=True,
-                                 to_unit_cell=True)
+            slab.translate_sites(indices=disp_atoms_list, vector=(frac_disp, 0, 0),
+                                 frac_coords=True, to_unit_cell=True)
             all_slabs.append(slab.copy())
         return all_slabs
 
