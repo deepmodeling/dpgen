@@ -28,7 +28,10 @@ class Gamma(Property):
         if not self.reprod:
             if not ('init_from_suffix' in parameter and 'output_suffix' in parameter):
                 self.miller_index = parameter['miller_index']
+                parameter['min_slab_size'] = parameter.get('min_slab_size', 10)
                 self.min_slab_size = parameter['min_slab_size']
+                parameter['min_supercell_size'] = parameter.get('min_supercell_size', (5,5,10))
+                self.min_supercell_size = parameter['min_supercell_size']
                 self.min_vacuum_size = parameter['min_vacuum_size']
                 parameter['n_steps'] = parameter.get('n_steps', 10)
                 self.n_steps = parameter['n_steps']
@@ -140,15 +143,28 @@ class Gamma(Property):
                 ss.to('POSCAR', 'CONTCAR.direct')
                 # re-read new CONTCAR
                 ss = Structure.from_file('CONTCAR.direct')
-                # gen initial slab
-                slabGen = SlabGenerator(ss, miller_index=self.miller_index,
-                                        min_slab_size=self.min_slab_size,
-                                        min_vacuum_size=self.min_vacuum_size,
-                                        center_slab=True, in_unit_planes=True,
-                                        primitive=True)
-                slab = slabGen.get_slab()
-                all_slabs = self.__displace_slab(slab)
-                self.atom_num = len(all_slabs[0].sites)
+                # gen initial slab for fp calculation
+                slabGen_fp = SlabGenerator(ss, miller_index=self.miller_index,
+                                           min_slab_size=self.min_slab_size,
+                                           min_vacuum_size=self.min_vacuum_size,
+                                           center_slab=True, in_unit_planes=True,
+                                           lll_reduce=False, primitive=True)
+                slab_fp = slabGen_fp.get_slab()
+                # gen initial slab for md calculation
+                slabGen_md = SlabGenerator(ss, miller_index=self.miller_index,
+                                           min_slab_size=self.min_supercell_size[2],
+                                           min_vacuum_size=0, center_slab=True,
+                                           in_unit_planes=True, lll_reduce=False,
+                                           primitive=False)
+                slab_md = slabGen_md.get_slab()
+                # make supercell for md calculation
+                slab_md.make_supercell(scaling_matrix=[self.min_supercell_size[0],
+                                                       self.min_supercell_size[1], 1])
+
+
+                all_slabs_fp = self.__displace_slab(slab_fp, disp_vector=(1,0,0))
+                all_slabs_md = self.__displace_slab(slab_md, disp_vector=(0.5,0.5,0))
+                self.atom_num = len(all_slabs_fp[0].sites)
 
                 os.chdir(path_to_work)
                 if os.path.isfile('POSCAR'):
@@ -157,7 +173,7 @@ class Gamma(Property):
                     os.remove('POSCAR')
                 os.symlink(os.path.relpath(equi_contcar), 'POSCAR')
                 #           task_poscar = os.path.join(output, 'POSCAR')
-                for ii in range(len(all_slabs)):
+                for ii in range(len(all_slabs_fp)):
                     output_task = os.path.join(path_to_work, 'task.%06d' % ii)
                     os.makedirs(output_task, exist_ok=True)
                     os.chdir(output_task)
@@ -165,47 +181,65 @@ class Gamma(Property):
                         if os.path.exists(jj):
                             os.remove(jj)
                     task_list.append(output_task)
-                    print("# %03d generate " % ii, output_task, " \t %d atoms" % self.atom_num)
+                    print("# %03d generate " % ii, output_task)
+                    # print("# %03d generate " % ii, output_task, " \t %d atoms" % self.atom_num)
                     # make confs
-                    all_slabs[ii].to('POSCAR', 'POSCAR.tmp')
+                    all_slabs_fp[ii].to('POSCAR', 'POSCAR.fp')
+                    all_slabs_md[ii].to('POSCAR', 'POSCAR.tmp')
                     vasp.regulate_poscar('POSCAR.tmp', 'POSCAR')
                     vasp.sort_poscar('POSCAR', 'POSCAR', ptypes)
                     # vasp.perturb_xz('POSCAR', 'POSCAR', self.pert_xz)
                     # record miller
-                    dumpfn(all_slabs[ii].miller_index, 'miller.json')
+                    dumpfn(all_slabs_fp[ii].miller_index, 'miller.json')
                 os.chdir(cwd)
 
         return task_list
 
     def __displace_slab(self,
-                        slab):
+                        slab, disp_vector):
         """
         return a list of displaced slab objects
         """
         all_slabs = [slab.copy()]
         for ii in list(range(self.n_steps)):
             frac_disp = 1 / self.n_steps
+            unit_vector = frac_disp * np.array(disp_vector)
             # return list of atoms number to be displaced which above 0.5 z
             disp_atoms_list = np.where(slab.frac_coords[:,2]>0.5)[0]
-            slab.translate_sites(indices=disp_atoms_list, vector=(frac_disp, 0, 0),
+            slab.translate_sites(indices=disp_atoms_list, vector=unit_vector,
                                  frac_coords=True, to_unit_cell=True)
             all_slabs.append(slab.copy())
         return all_slabs
 
-    def post_process(self, task_list):
+    def __pos_fix(self,
+                  poscar):
+        """
+        add position fix condition of x and y in POSCAR
+        """
+        insert_pos = -self.atom_num
+        with open(poscar, 'r') as fin1:
+            contents = fin1.readlines()
+            contents.insert(insert_pos - 1, 'Selective dynamics\n')
+            for ii in range(insert_pos, 0, 1):
+                contents[ii] = contents[ii].replace('\n', '')
+                contents[ii] += ' ' + 'F F T' + '\n'
+        with open(poscar, 'w') as fin2:
+            for ii in range(len(contents)):
+                fin2.write(contents[ii])
+
+    def post_process(self,
+                     task_list):
         if True:
-            insert_pos = -self.atom_num
             for ii in task_list:
+                inter = os.path.join(ii, 'inter.json')
+                poscar_fp = os.path.join(ii, 'POSCAR.fp')
                 poscar = os.path.join(ii, 'POSCAR')
-                with open(poscar, 'r') as fin1:
-                    contents = fin1.readlines()
-                    contents.insert(insert_pos, 'Selective dynamics\n')
-                    for ii in range(insert_pos, 0, 1):
-                        contents[ii] = contents[ii].replace('\n', '')
-                        contents[ii] += ' ' + 'F F T' + '\n'
-                with open(poscar, 'w') as fin2:
-                    for ii in range(len(contents)):
-                        fin2.write(contents[ii])
+                calc_type = loadfn(inter)['type']
+                if calc_type == 'vasp':
+                    self.__pos_fix(poscar_fp)
+                    os.renames(poscar_fp, poscar)
+                else:
+                    os.remove(poscar_fp)
 
     def task_type(self):
         return self.parameter['type']
