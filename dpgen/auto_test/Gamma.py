@@ -160,8 +160,6 @@ class Gamma(Property):
                 # make supercell for md calculation
                 slab_md.make_supercell(scaling_matrix=[self.min_supercell_size[0],
                                                        self.min_supercell_size[1], 1])
-
-
                 all_slabs_fp = self.__displace_slab(slab_fp, disp_vector=(1,0,0))
                 all_slabs_md = self.__displace_slab(slab_md, disp_vector=(0.5,0.5,0))
                 self.atom_num = len(all_slabs_fp[0].sites)
