@@ -32,6 +32,9 @@ DPGEN's documentation
    :maxdepth: 2
    :caption: Init   
 
+   init/init-bulk-mdata
+   init/init-surf-mdata
+   init/init-reaction-mdata
 
 .. _autotest::
 
@@ -45,6 +48,8 @@ DPGEN's documentation
 .. toctree::
    :maxdepth: 2
    :caption: Simplify  
+
+   simplify/simplify-mdata
 
 
 .. _tutorial:

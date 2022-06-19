@@ -61,7 +61,7 @@ from dpgen.generator.lib.cp2k import make_cp2k_input, make_cp2k_input_from_exter
 from dpgen.generator.lib.ele_temp import NBandsEsti
 from dpgen.remote.decide_machine import convert_mdata
 from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, make_dispatcher, make_submission
-from dpgen.util import sepline
+from dpgen.util import sepline, expand_sys_str
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar,Kpoints,Potcar
 from dpgen.auto_test.lib.vasp import make_kspacing_kpoints
@@ -288,13 +288,10 @@ def make_train (iter_index,
     # make sure all init_data_sys has the batch size -- for the following `zip`
     assert (len(init_data_sys_) <= len(init_batch_size_))
     for ii, ss in zip(init_data_sys_, init_batch_size_) :
-        if jdata.get('init_multi_systems', False):
-            for single_sys in os.listdir(os.path.join(work_path, 'data.init', ii)):
-                init_data_sys.append(os.path.join('..', 'data.init', ii, single_sys))
-                init_batch_size.append(detect_batch_size(ss, os.path.join(work_path, 'data.init', ii, single_sys)))
-        else:
-            init_data_sys.append(os.path.join('..', 'data.init', ii))
-            init_batch_size.append(detect_batch_size(ss, os.path.join(work_path, 'data.init', ii)))
+        sys_paths = expand_sys_str(os.path.join(init_data_prefix, ii))
+        for single_sys in sys_paths:
+            init_data_sys.append(os.path.normpath(os.path.join('..', 'data.init', ii, os.path.relpath(single_sys, os.path.join(init_data_prefix, ii)))))
+            init_batch_size.append(detect_batch_size(ss, single_sys))
     old_range = None
     if iter_index > 0 :
         for ii in range(iter_index) :
@@ -308,25 +305,16 @@ def make_train (iter_index,
                 sys_batch_size = ["auto" for aa in range(len(sys_list))]
             for jj in fp_data_sys :
                 sys_idx = int(jj.split('.')[-1])
-                if jdata.get('use_clusters', False):
-                    nframes = 0
-                    for sys_single in os.listdir(jj):
-                        tmp_box = np.loadtxt(os.path.join(jj, sys_single, 'box.raw'))
-                        tmp_box = np.reshape(tmp_box, [-1,9])
-                        nframes += tmp_box.shape[0]
-                    if nframes < fp_task_min :
-                        log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
-                        continue
-                    for sys_single in os.listdir(jj):
-                        init_data_sys.append(os.path.join('..', 'data.iters', jj, sys_single))
-                        init_batch_size.append(detect_batch_size(sys_batch_size[sys_idx], os.path.join(jj, sys_single)))
-                else:
-                    nframes = dpdata.System(jj, 'deepmd/npy').get_nframes()
-                    if nframes < fp_task_min :
-                        log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
-                        continue
-                    init_data_sys.append(os.path.join('..', 'data.iters', jj))
-                    init_batch_size.append(detect_batch_size(sys_batch_size[sys_idx], jj))
+                sys_paths = expand_sys_str(jj)
+                nframes = 0
+                for sys_single in sys_paths:
+                    nframes += dpdata.LabeledSystem(sys_single, fmt="deepmd/npy").get_nframes()
+                if nframes < fp_task_min :
+                    log_task('nframes (%d) in data sys %s is too small, skip' % (nframes, jj))
+                    continue
+                for sys_single in sys_paths:
+                    init_data_sys.append(os.path.normpath(os.path.join('..', 'data.iters', sys_single)))
+                    init_batch_size.append(detect_batch_size(sys_batch_size[sys_idx], sys_single))
     # establish tasks
     jinput = jdata['default_training_param']
     try:
@@ -568,25 +556,17 @@ def run_train (iter_index,
     os.chdir(work_path)
     fp_data = glob.glob(os.path.join('data.iters', 'iter.*', '02.fp', 'data.*'))
     for ii in init_data_sys :
-        if jdata.get('init_multi_systems', False):
-            for single_sys in os.listdir(os.path.join(ii)):
-                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'set.*'))
-                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type*.raw'))
-                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'nopbc'))
-        else:
-            trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
-            trans_comm_data += glob.glob(os.path.join(ii, 'type*.raw'))
-            trans_comm_data += glob.glob(os.path.join(ii, 'nopbc'))
+        sys_paths = expand_sys_str(ii)
+        for single_sys in sys_paths:
+            trans_comm_data += glob.glob(os.path.join(single_sys, 'set.*'))
+            trans_comm_data += glob.glob(os.path.join(single_sys, 'type*.raw'))
+            trans_comm_data += glob.glob(os.path.join(single_sys, 'nopbc'))
     for ii in fp_data :
-        if jdata.get('use_clusters', False):
-            for single_sys in os.listdir(os.path.join(ii)):
-                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'set.*'))
-                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'type*.raw'))
-                trans_comm_data += glob.glob(os.path.join(ii, single_sys, 'nopbc'))
-        else:
-            trans_comm_data += glob.glob(os.path.join(ii, 'set.*'))
-            trans_comm_data += glob.glob(os.path.join(ii, 'type*.raw'))
-            trans_comm_data += glob.glob(os.path.join(ii, 'nopbc'))
+        sys_paths = expand_sys_str(ii)
+        for single_sys in sys_paths:
+            trans_comm_data += glob.glob(os.path.join(single_sys, 'set.*'))
+            trans_comm_data += glob.glob(os.path.join(single_sys, 'type*.raw'))
+            trans_comm_data += glob.glob(os.path.join(single_sys, 'nopbc'))
     os.chdir(cwd)
 
     try:

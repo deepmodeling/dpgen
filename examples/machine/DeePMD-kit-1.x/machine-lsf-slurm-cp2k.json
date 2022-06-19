@@ -1,5 +1,5 @@
 {
-  "train": [
+  "train":
     {
       "machine": {
         "machine_type": "slurm",
@@ -25,9 +25,8 @@
         "submit_wait_time": 60
       },
       "python_path": "/share/apps/deepmd/compress/bin/python3.8"
-    }
-  ],
-  "model_devi": [
+    },
+  "model_devi":
     {
       "machine": {
         "machine_type": "slurm",
@@ -54,9 +53,8 @@
       },
       "command": "lmp_mpi",
       "group_size": 5
-    }
-  ],
-  "fp": [
+    },
+  "fp":
     {
       "machine": {
         "machine_type": "lsf",
@@ -87,5 +85,4 @@
       "command": "cp2k.popt -i input.inp",
       "group_size": 50
     }
-  ]
 }
