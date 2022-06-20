@@ -57,7 +57,7 @@ def init_reaction_jdata_arginfo() -> Argument:
     doc_nstep = "Total steps to run the ReaxFF MD simulation."
     doc_cutoff = "Cutoff radius to take clusters from the trajectory. Note that only a complete molecule or free radical will be taken."
     doc_dataset_size = "Collected dataset size for each bond type."
-    doc_qmkeywords = "Gaussian keywords for first-principle calculations. e.g. force mn15/6-31g**. Note that \"force\" job is necessary to collect data."
+    doc_qmkeywords = "Gaussian keywords for first-principle calculations. e.g. force mn15/6-31g** Geom=PrintInputOrient. Note that \"force\" job is necessary to collect data. Geom=PrintInputOrient should be used when there are more than 50 atoms in a cluster."
 
     return Argument("init_reaction_jdata", dict, [
         Argument("type_map", list, doc=doc_type_map),
