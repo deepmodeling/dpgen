@@ -161,6 +161,7 @@ def main_parser() -> argparse.ArgumentParser:
                         help="parameter file, json format")
 
     parser_db.set_defaults(func=db_run)
+    return parser
 
 
 def main():
