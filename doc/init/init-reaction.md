@@ -7,7 +7,7 @@ To start the workflow, one needs a box containing reactive systems. The followin
 - Sampling: [MDDatasetBuilder](https://github.com/tongzhugroup/mddatasetbuilder)
 - Labeling: [Gaussian](https://gaussian.com/)
 
-The Exploring step uses LAMMPS [pair_style reaxff](https://docs.lammps.org/latest/pair_reaxff.html) to run a short ReaxMD NVT MD simulation. In the Sampling step, molecular clusters are taken and k-means clustering algorithm is applied to remove the redundancy, which is described in [Nature Communications, 11, 5713 (2020)](10.1038/s41467-020-19497-z). The Labeling step calculates energies and forces using the Gaussian package.
+The Exploring step uses LAMMPS [pair_style reaxff](https://docs.lammps.org/latest/pair_reaxff.html) to run a short ReaxMD NVT MD simulation. In the Sampling step, molecular clusters are taken and k-means clustering algorithm is applied to remove the redundancy, which is described in [Nature Communications, 11, 5713 (2020)](https://doi.org/10.1038/s41467-020-19497-z). The Labeling step calculates energies and forces using the Gaussian package.
 
 For detailed parameters, see [parametes](init-reaction-jdata.rst) and [machine parameters](init-reaction-mdata.rst).
 
