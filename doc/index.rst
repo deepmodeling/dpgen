@@ -34,6 +34,8 @@ DPGEN's documentation
 
    init/init-bulk-mdata
    init/init-surf-mdata
+   init/init-reaction
+   init/init-reaction-jdata
    init/init-reaction-mdata
 
 .. _autotest::
