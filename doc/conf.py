@@ -45,6 +45,7 @@ extensions = [
     'myst_parser',
     'sphinx.ext.autosummary',
     'sphinx.ext.viewcode',
+    'sphinxarg.ext',
 ]
 
 
