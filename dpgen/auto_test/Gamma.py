@@ -148,20 +148,26 @@ class Gamma(Property):
                                            min_slab_size=self.min_slab_size,
                                            min_vacuum_size=self.min_vacuum_size,
                                            center_slab=True, in_unit_planes=True,
-                                           lll_reduce=False, primitive=True)
+                                           lll_reduce=False, primitive=True,
+                                           max_normal_search=5)
                 slab_fp = slabGen_fp.get_slab()
                 # gen initial slab for md calculation
                 slabGen_md = SlabGenerator(ss, miller_index=self.miller_index,
                                            min_slab_size=self.min_supercell_size[2],
                                            min_vacuum_size=0, center_slab=True,
-                                           in_unit_planes=True, lll_reduce=False,
-                                           primitive=False)
+                                           in_unit_planes=True, lll_reduce=True,
+                                           max_normal_search=5, primitive=False,
+                                           reorient_lattice=False)
                 slab_md = slabGen_md.get_slab()
                 # make supercell for md calculation
                 slab_md.make_supercell(scaling_matrix=[self.min_supercell_size[0],
                                                        self.min_supercell_size[1], 1])
-                all_slabs_fp = self.__displace_slab(slab_fp, disp_vector=(1,0,0))
-                all_slabs_md = self.__displace_slab(slab_md, disp_vector=(0.5,0.5,0))
+                # define displace vectors
+                disp_vector_fp = (1, 0, 0)
+                disp_vector_md = (0.5/self.min_supercell_size[0], 0.5/self.min_supercell_size[1], 0)
+                # displace structure
+                all_slabs_fp = self.__displace_slab(slab_fp, disp_vector=disp_vector_fp)
+                all_slabs_md = self.__displace_slab(slab_md, disp_vector=disp_vector_md)
                 self.atom_num = len(all_slabs_fp[0].sites)
 
                 os.chdir(path_to_work)
@@ -192,6 +198,9 @@ class Gamma(Property):
                 os.chdir(cwd)
 
         return task_list
+
+    def __direction_dict(self):
+        pass
 
     def __displace_slab(self,
                         slab, disp_vector):
@@ -249,4 +258,39 @@ class Gamma(Property):
                        output_file,
                        all_tasks,
                        all_res):
-        pass
+        output_file = os.path.abspath(output_file)
+        res_data = {}
+        ptr_data = os.path.dirname(output_file) + '\n'
+
+        if not self.reprod:
+            ptr_data += "No_steps: \tStacking_Fault_E(J/m^2) EpA(eV) equi_EpA(eV)\n"
+            for ii in all_tasks:
+                task_result = loadfn(os.path.join(ii, 'result_task.json'))
+                natoms = np.sum(task_result['atom_numbs'])
+                epa = task_result['energies'][-1] / natoms
+                AA = np.linalg.norm(np.cross(task_result['cells'][0][0], task_result['cells'][0][1]))
+
+                equi_path = os.path.abspath(os.path.join(os.path.dirname(output_file), '../relaxation/relax_task'))
+                equi_result = loadfn(os.path.join(equi_path, 'result.json'))
+                equi_epa = equi_result['energies'][-1] / np.sum(equi_result['atom_numbs'])
+                structure_dir = os.path.basename(ii)
+
+                Cf = 1.60217657e-16 / (1e-20 * 2) * 0.001
+                evac = (task_result['energies'][-1] - equi_epa * natoms) / AA * Cf
+
+                miller_index = loadfn(os.path.join(ii, 'miller.json'))
+                ptr_data += "%-25s     %7.3f    %8.3f %8.3f\n" % (
+                    str(miller_index) + '-' + structure_dir + ':', evac, epa, equi_epa)
+                res_data[str(miller_index) + '-' + structure_dir] = [evac, epa, equi_epa]
+
+        else:
+            if 'init_data_path' not in self.parameter:
+                raise RuntimeError("please provide the initial data path to reproduce")
+            init_data_path = os.path.abspath(self.parameter['init_data_path'])
+            res_data, ptr_data = post_repro(init_data_path, self.parameter['init_from_suffix'],
+                                            all_tasks, ptr_data, self.parameter.get('reprod_last_frame', True))
+
+        with open(output_file, 'w') as fp:
+            json.dump(res_data, fp, indent=4)
+
+        return res_data, ptr_data
