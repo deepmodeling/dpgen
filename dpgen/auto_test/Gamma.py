@@ -7,6 +7,8 @@ import numpy as np
 from monty.serialization import loadfn, dumpfn
 from pymatgen.core.structure import Structure
 from pymatgen.core.surface import SlabGenerator
+from pymatgen.io.ase import AseAtomsAdaptor
+from ase.lattice.cubic import BodyCenteredCubic as bcc
 
 import dpgen.auto_test.lib.vasp as vasp
 from dpgen import dlog
@@ -28,8 +30,8 @@ class Gamma(Property):
         if not self.reprod:
             if not ('init_from_suffix' in parameter and 'output_suffix' in parameter):
                 self.miller_index = parameter['miller_index']
-                parameter['min_slab_size'] = parameter.get('min_slab_size', 10)
-                self.min_slab_size = parameter['min_slab_size']
+                # parameter['min_slab_size'] = parameter.get('min_slab_size', 10)
+                # self.min_slab_size = parameter['min_slab_size']
                 parameter['min_supercell_size'] = parameter.get('min_supercell_size', (5,5,10))
                 self.min_supercell_size = parameter['min_supercell_size']
                 self.min_vacuum_size = parameter['min_vacuum_size']
@@ -143,32 +145,15 @@ class Gamma(Property):
                 ss.to('POSCAR', 'CONTCAR.direct')
                 # re-read new CONTCAR
                 ss = Structure.from_file('CONTCAR.direct')
-                # gen initial slab for fp calculation
-                slabGen_fp = SlabGenerator(ss, miller_index=self.miller_index,
-                                           min_slab_size=self.min_slab_size,
-                                           min_vacuum_size=self.min_vacuum_size,
-                                           center_slab=True, in_unit_planes=True,
-                                           lll_reduce=False, primitive=True,
-                                           max_normal_search=5)
-                slab_fp = slabGen_fp.get_slab()
-                # gen initial slab for md calculation
-                slabGen_md = SlabGenerator(ss, miller_index=self.miller_index,
-                                           min_slab_size=self.min_supercell_size[2],
-                                           min_vacuum_size=0, center_slab=True,
-                                           in_unit_planes=True, lll_reduce=True,
-                                           max_normal_search=5, primitive=False,
-                                           reorient_lattice=False)
-                slab_md = slabGen_md.get_slab()
-                # make supercell for md calculation
-                slab_md.make_supercell(scaling_matrix=[self.min_supercell_size[0],
-                                                       self.min_supercell_size[1], 1])
+                relax_a = ss.lattice.a
+                # gen initial slab
+                slab = self.__gen_slab_ase(symbol=ptypes[0],
+                                           lat_param=relax_a)
                 # define displace vectors
-                disp_vector_fp = (1, 0, 0)
-                disp_vector_md = (0.5/self.min_supercell_size[0], 0.5/self.min_supercell_size[1], 0)
+                disp_vector = (1/self.min_supercell_size[0], 0, 0)
                 # displace structure
-                all_slabs_fp = self.__displace_slab(slab_fp, disp_vector=disp_vector_fp)
-                all_slabs_md = self.__displace_slab(slab_md, disp_vector=disp_vector_md)
-                self.atom_num = len(all_slabs_fp[0].sites)
+                all_slabs = self.__displace_slab(slab, disp_vector=disp_vector)
+                self.atom_num = len(all_slabs[0].sites)
 
                 os.chdir(path_to_work)
                 if os.path.isfile('POSCAR'):
@@ -177,7 +162,7 @@ class Gamma(Property):
                     os.remove('POSCAR')
                 os.symlink(os.path.relpath(equi_contcar), 'POSCAR')
                 #           task_poscar = os.path.join(output, 'POSCAR')
-                for ii in range(len(all_slabs_fp)):
+                for ii in range(len(all_slabs)):
                     output_task = os.path.join(path_to_work, 'task.%06d' % ii)
                     os.makedirs(output_task, exist_ok=True)
                     os.chdir(output_task)
@@ -185,28 +170,58 @@ class Gamma(Property):
                         if os.path.exists(jj):
                             os.remove(jj)
                     task_list.append(output_task)
-                    print("# %03d generate " % ii, output_task)
-                    # print("# %03d generate " % ii, output_task, " \t %d atoms" % self.atom_num)
+                    #print("# %03d generate " % ii, output_task)
+                    print("# %03d generate " % ii, output_task, " \t %d atoms" % self.atom_num)
                     # make confs
-                    all_slabs_fp[ii].to('POSCAR', 'POSCAR.fp')
-                    all_slabs_md[ii].to('POSCAR', 'POSCAR.tmp')
+                    all_slabs[ii].to('POSCAR', 'POSCAR.tmp')
                     vasp.regulate_poscar('POSCAR.tmp', 'POSCAR')
                     vasp.sort_poscar('POSCAR', 'POSCAR', ptypes)
                     # vasp.perturb_xz('POSCAR', 'POSCAR', self.pert_xz)
                     # record miller
-                    dumpfn(all_slabs_fp[ii].miller_index, 'miller.json')
+                    dumpfn(self.miller_index, 'miller.json')
                 os.chdir(cwd)
 
         return task_list
 
-    def __direction_dict(self):
-        pass
+    @staticmethod
+    def return_direction(miller_tuple):
+        miller_str = ''
+        for ii in range(len(miller_tuple)):
+            miller_str += str(miller_tuple[ii])
+        # define specific cell vectors
+        dict_directions = {'100': [(0,1,0), (0,0,1), (1,0,0)],
+                           '110': [(-1,1,1), (1,-1,1), (1,1,0)],
+                           '111': [(-1,1,0), (-1,-1,2), (1,1,1)],
+                           #'112': [(-1,1,0), (-1,-1,1), (1,1,2)],
+                           '112': [(-1,-1,1), (-1,1,0), (1,1,2)],
+                           #'123': [(-2,1,0), (-1,-1,1), (1,2,3)],
+                           '123': [(-1,-1,1), (-2,1,0), (1,2,3)]}
+        return dict_directions[miller_str]
+
+    def __gen_slab_ase(self,
+                       symbol, lat_param):
+        lattice_type = 'bcc'
+        if lattice_type == 'bcc':
+            slab_ase = bcc(symbol=symbol, size=self.min_supercell_size, latticeconstant=lat_param,
+                           directions=self.return_direction(self.miller_index))
+        slab_ase.center(vacuum=self.min_vacuum_size/2, axis=2)
+        slab_pymatgen = AseAtomsAdaptor.get_structure(slab_ase)
+        return slab_pymatgen
+
+    def __gen_slab_pmg(self,
+                       pmg_struc):
+        slabGen = SlabGenerator(pmg_struc, miller_index=self.miller_index,
+                                min_slab_size=self.min_supercell_size[2],
+                                min_vacuum_size=self.min_vacuum_size,
+                                center_slab=True, in_unit_planes=True, lll_reduce=False,
+                                primitive=True, max_normal_search=5)
+        slab_pmg = slabGen.get_slab()
+        slab_pmg.make_supercell(scaling_matrix=[self.min_supercell_size[0],self.min_supercell_size[1],1])
+        return slab_pmg
 
     def __displace_slab(self,
                         slab, disp_vector):
-        """
-        return a list of displaced slab objects
-        """
+        # return a list of displaced slab objects
         all_slabs = [slab.copy()]
         for ii in list(range(self.n_steps)):
             frac_disp = 1 / self.n_steps
@@ -220,9 +235,7 @@ class Gamma(Property):
 
     def __pos_fix(self,
                   poscar):
-        """
-        add position fix condition of x and y in POSCAR
-        """
+        # add position fix condition of x and y in POSCAR
         insert_pos = -self.atom_num
         with open(poscar, 'r') as fin1:
             contents = fin1.readlines()
@@ -239,14 +252,12 @@ class Gamma(Property):
         if True:
             for ii in task_list:
                 inter = os.path.join(ii, 'inter.json')
-                poscar_fp = os.path.join(ii, 'POSCAR.fp')
                 poscar = os.path.join(ii, 'POSCAR')
                 calc_type = loadfn(inter)['type']
                 if calc_type == 'vasp':
-                    self.__pos_fix(poscar_fp)
-                    os.renames(poscar_fp, poscar)
+                    self.__pos_fix(poscar)
                 else:
-                    os.remove(poscar_fp)
+                    pass
 
     def task_type(self):
         return self.parameter['type']
