@@ -9,6 +9,8 @@ from pymatgen.core.structure import Structure
 from pymatgen.core.surface import SlabGenerator
 from pymatgen.io.ase import AseAtomsAdaptor
 from ase.lattice.cubic import BodyCenteredCubic as bcc
+from ase.lattice.cubic import FaceCenteredCubic as fcc
+from ase.lattice.hexagonal import HexagonalClosedPacked as hcp
 
 import dpgen.auto_test.lib.vasp as vasp
 from dpgen import dlog
@@ -199,6 +201,7 @@ class Gamma(Property):
         dict_directions = {'100:010': [(0,1,0), (0,0,1), (1,0,0)],
                            '110:111': [(-1,1,1), (1,-1,1), (1,1,0)],
                            '111:110': [(-1,1,0), (-1,-1,2), (1,1,1)],
+                           '111:112': [(-1,-1,2), (-1,1,0), (1,1,1)],
                            '112:111': [(-1,-1,1), (-1,1,0), (1,1,2)],
                            '123:111': [(-1,-1,1), (-2,1,0), (1,2,3)]}
         try:
@@ -229,7 +232,8 @@ class Gamma(Property):
             slab_ase = bcc(symbol=symbol, size=self.min_supercell_size, latticeconstant=lat_param,
                            directions=self.return_direction())
         elif self.lattice_type == 'fcc':
-            pass
+            slab_ase = fcc(symbol=symbol, size=self.min_supercell_size, latticeconstant=lat_param,
+                           directions=self.return_direction())
         elif self.lattice_type == 'hpc':
             pass
         else:
