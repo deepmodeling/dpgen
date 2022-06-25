@@ -32,9 +32,11 @@ class Gamma(Property):
                 self.miller_index = parameter['miller_index']
                 # parameter['min_slab_size'] = parameter.get('min_slab_size', 10)
                 # self.min_slab_size = parameter['min_slab_size']
-                parameter['min_supercell_size'] = parameter.get('min_supercell_size', (5,5,10))
+                # parameter['min_supercell_size'] = parameter.get('min_supercell_size', (5,5,10))
                 self.min_supercell_size = parameter['min_supercell_size']
                 self.min_vacuum_size = parameter['min_vacuum_size']
+                parameter['add_fix'] = parameter.get('add_fix', None)
+                self.add_fix = parameter['add_fix']
                 parameter['n_steps'] = parameter.get('n_steps', 10)
                 self.n_steps = parameter['n_steps']
                 self.atom_num = None
@@ -195,8 +197,22 @@ class Gamma(Property):
                            #'112': [(-1,1,0), (-1,-1,1), (1,1,2)],
                            '112': [(-1,-1,1), (-1,1,0), (1,1,2)],
                            #'123': [(-2,1,0), (-1,-1,1), (1,2,3)],
-                           '123': [(-1,-1,1), (-2,1,0), (1,2,3)]}
+                           '123': [(-1,-1,1), (-2,1,0), (1,2,3)]
+        }
         return dict_directions[miller_str]
+
+    @staticmethod
+    def centralize_slab(slab):
+        z_pos_list = list(set([site.position[2] for site in slab]))
+        z_pos_list.sort()
+        central_atoms = (z_pos_list[-1] - z_pos_list[0])/2
+        #print(f"central_atoms: {central_atoms}")
+        central_cell = slab.cell[2][2]/2
+        #print(f"central_cell: {central_cell}")
+        disp_length = central_cell - central_atoms
+        #print(f"disp_length: {disp_length}")
+        for site in slab:
+            site.position[2] += disp_length
 
     def __gen_slab_ase(self,
                        symbol, lat_param):
@@ -204,7 +220,9 @@ class Gamma(Property):
         if lattice_type == 'bcc':
             slab_ase = bcc(symbol=symbol, size=self.min_supercell_size, latticeconstant=lat_param,
                            directions=self.return_direction(self.miller_index))
-        slab_ase.center(vacuum=self.min_vacuum_size/2, axis=2)
+        self.centralize_slab(slab_ase)
+        if self.min_vacuum_size > 0:
+            slab_ase.center(vacuum=self.min_vacuum_size/2, axis=2)
         slab_pymatgen = AseAtomsAdaptor.get_structure(slab_ase)
         return slab_pymatgen
 
@@ -233,31 +251,68 @@ class Gamma(Property):
             all_slabs.append(slab.copy())
         return all_slabs
 
-    def __pos_fix(self,
+    def __poscar_fix(self,
                   poscar):
         # add position fix condition of x and y in POSCAR
         insert_pos = -self.atom_num
+        fix_dict = {
+            'fix_x': 'F T T',
+            'fix_y': 'T F T',
+            'fix_x_y': 'F F T',
+            'fix_x_y_z': 'F F F',
+        }
         with open(poscar, 'r') as fin1:
             contents = fin1.readlines()
-            contents.insert(insert_pos - 1, 'Selective dynamics\n')
+            contents.insert(insert_pos-1, 'Selective dynamics\n')
             for ii in range(insert_pos, 0, 1):
                 contents[ii] = contents[ii].replace('\n', '')
-                contents[ii] += ' ' + 'F F T' + '\n'
+                contents[ii] += ' ' + fix_dict[self.add_fix] + '\n'
         with open(poscar, 'w') as fin2:
+            for ii in range(len(contents)):
+                fin2.write(contents[ii])
+
+    def __inLammpes_fix(self,
+                        inLammps):
+        # add position fix condition of x and y of in.lammps
+        fix_dict = {
+            'fix_x': 'fix             1 all setforce 0 NULL NULL',
+            'fix_y': 'fix             1 all setforce NULL 0 NULL',
+            'fix_x_y': 'fix             1 all setforce 0 0 NULL',
+            'fix_x_y_z': 'fix             1 all setforce 0 0 0'
+        }
+        with open(inLammps, 'r') as fin1:
+            contents = fin1.readlines()
+            for ii in range(len(contents)):
+                lower = re.search("min_style       cg", contents[ii])
+                upper = re.search("variable        N equal count\(all\)", contents[ii])
+                if lower:
+                    lower_id = ii
+                    #print(lower_id)
+                elif upper:
+                    upper_id = ii
+                    #print(upper_id)
+            del contents[lower_id+1:upper_id-1]
+            contents.insert(lower_id+1, fix_dict[self.add_fix] + '\n')
+        with open(inLammps, 'w') as fin2:
             for ii in range(len(contents)):
                 fin2.write(contents[ii])
 
     def post_process(self,
                      task_list):
-        if True:
+        if self.add_fix:
+            count = 0
             for ii in task_list:
+                count += 1
                 inter = os.path.join(ii, 'inter.json')
                 poscar = os.path.join(ii, 'POSCAR')
                 calc_type = loadfn(inter)['type']
                 if calc_type == 'vasp':
-                    self.__pos_fix(poscar)
+                    self.__poscar_fix(poscar)
                 else:
-                    pass
+                    inLammps = os.path.join(ii, 'in.lammps')
+                    if count == 1:
+                        self.__inLammpes_fix(inLammps)
+
 
     def task_type(self):
         return self.parameter['type']
