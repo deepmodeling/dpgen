@@ -30,6 +30,8 @@ class Gamma(Property):
         if not self.reprod:
             if not ('init_from_suffix' in parameter and 'output_suffix' in parameter):
                 self.miller_index = parameter['miller_index']
+                self.displace_direction = parameter['displace_direction']
+                self.lattice_type = parameter['lattice_type']
                 # parameter['min_slab_size'] = parameter.get('min_slab_size', 10)
                 # self.min_slab_size = parameter['min_slab_size']
                 # parameter['min_supercell_size'] = parameter.get('min_supercell_size', (5,5,10))
@@ -37,7 +39,7 @@ class Gamma(Property):
                 self.min_vacuum_size = parameter['min_vacuum_size']
                 parameter['add_fix'] = parameter.get('add_fix', None)
                 self.add_fix = parameter['add_fix']
-                parameter['n_steps'] = parameter.get('n_steps', 10)
+                parameter['lattice_type'] = parameter.get('n_steps', 10)
                 self.n_steps = parameter['n_steps']
                 self.atom_num = None
             #                parameter['pert_xz'] = parameter.get('pert_xz', 0.01)
@@ -185,21 +187,26 @@ class Gamma(Property):
 
         return task_list
 
-    @staticmethod
-    def return_direction(miller_tuple):
+    def return_direction(self):
         miller_str = ''
-        for ii in range(len(miller_tuple)):
-            miller_str += str(miller_tuple[ii])
+        direct_str = ''
+        for ii in range(len(self.miller_index)):
+            miller_str += str(self.miller_index[ii])
+        for ii in range(len(self.displace_direction)):
+            direct_str += str(self.displace_direction[ii])
+        search_key = miller_str + ':' + direct_str
         # define specific cell vectors
-        dict_directions = {'100': [(0,1,0), (0,0,1), (1,0,0)],
-                           '110': [(-1,1,1), (1,-1,1), (1,1,0)],
-                           '111': [(-1,1,0), (-1,-1,2), (1,1,1)],
-                           #'112': [(-1,1,0), (-1,-1,1), (1,1,2)],
-                           '112': [(-1,-1,1), (-1,1,0), (1,1,2)],
-                           #'123': [(-2,1,0), (-1,-1,1), (1,2,3)],
-                           '123': [(-1,-1,1), (-2,1,0), (1,2,3)]
-        }
-        return dict_directions[miller_str]
+        dict_directions = {'100:010': [(0,1,0), (0,0,1), (1,0,0)],
+                           '110:111': [(-1,1,1), (1,-1,1), (1,1,0)],
+                           '111:110': [(-1,1,0), (-1,-1,2), (1,1,1)],
+                           '112:111': [(-1,-1,1), (-1,1,0), (1,1,2)],
+                           '123:111': [(-1,-1,1), (-2,1,0), (1,2,3)]}
+        try:
+            directions = dict_directions[search_key]
+        except KeyError:
+            raise RuntimeError(f'Unsupported input combination of miller index and displacement direction: '
+                               f'{miller_str}:{direct_str}')
+        return directions
 
     @staticmethod
     def centralize_slab(slab):
@@ -216,10 +223,17 @@ class Gamma(Property):
 
     def __gen_slab_ase(self,
                        symbol, lat_param):
-        lattice_type = 'bcc'
-        if lattice_type == 'bcc':
+        if not self.lattice_type:
+            raise RuntimeError('Error! Please provide the input lattice type!')
+        elif self.lattice_type == 'bcc':
             slab_ase = bcc(symbol=symbol, size=self.min_supercell_size, latticeconstant=lat_param,
-                           directions=self.return_direction(self.miller_index))
+                           directions=self.return_direction())
+        elif self.lattice_type == 'fcc':
+            pass
+        elif self.lattice_type == 'hpc':
+            pass
+        else:
+            raise RuntimeError(f'unsupported lattice type: {self.lattice_type}')
         self.centralize_slab(slab_ase)
         if self.min_vacuum_size > 0:
             slab_ase.center(vacuum=self.min_vacuum_size/2, axis=2)
