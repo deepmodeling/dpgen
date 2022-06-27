@@ -198,12 +198,14 @@ class Gamma(Property):
             direct_str += str(self.displace_direction[ii])
         search_key = miller_str + ':' + direct_str
         # define specific cell vectors
-        dict_directions = {'100:010': [(0,1,0), (0,0,1), (1,0,0)],
-                           '110:111': [(-1,1,1), (1,-1,1), (1,1,0)],
-                           '111:110': [(-1,1,0), (-1,-1,2), (1,1,1)],
-                           '111:112': [(-1,-1,2), (1,-1,0), (1,1,1)],
-                           '112:111': [(-1,-1,1), (-1,1,0), (1,1,2)],
-                           '123:111': [(-1,-1,1), (-2,1,0), (1,2,3)]}
+        dict_directions = {
+            '100:010': [(0,1,0), (0,0,1), (1,0,0)],
+            '110:111': [(-1,1,1), (1,-1,1), (1,1,0)],
+            '111:110': [(-1,1,0), (-1,-1,2), (1,1,1)],
+            '111:112': [(-1,-1,2), (1,-1,0), (1,1,1)],
+            '112:111': [(-1,-1,1), (-1,1,0), (1,1,2)],
+            '123:111': [(-1,-1,1), (-2,1,0), (1,2,3)]
+        }
         try:
             directions = dict_directions[search_key]
         except KeyError:
@@ -274,17 +276,18 @@ class Gamma(Property):
         # add position fix condition of x and y in POSCAR
         insert_pos = -self.atom_num
         fix_dict = {
-            'fix_x': 'F T T',
-            'fix_y': 'T F T',
-            'fix_x_y': 'F F T',
-            'fix_x_y_z': 'F F F',
+            True: 'F',
+            False: 'T'
         }
+        add_fix_str = ' ' + fix_dict[self.add_fix[0]] + \
+                      ' ' + fix_dict[self.add_fix[1]] + \
+                      ' ' + fix_dict[self.add_fix[2]] + '\n'
         with open(poscar, 'r') as fin1:
             contents = fin1.readlines()
             contents.insert(insert_pos-1, 'Selective dynamics\n')
             for ii in range(insert_pos, 0, 1):
                 contents[ii] = contents[ii].replace('\n', '')
-                contents[ii] += ' ' + fix_dict[self.add_fix] + '\n'
+                contents[ii] += add_fix_str
         with open(poscar, 'w') as fin2:
             for ii in range(len(contents)):
                 fin2.write(contents[ii])
@@ -293,11 +296,13 @@ class Gamma(Property):
                         inLammps):
         # add position fix condition of x and y of in.lammps
         fix_dict = {
-            'fix_x': 'fix             1 all setforce 0 NULL NULL',
-            'fix_y': 'fix             1 all setforce NULL 0 NULL',
-            'fix_x_y': 'fix             1 all setforce 0 0 NULL',
-            'fix_x_y_z': 'fix             1 all setforce 0 0 0'
+            True: '0',
+            False: 'NULL'
         }
+        add_fix_str = 'fix             1 all setforce' + \
+                      ' ' + fix_dict[self.add_fix[0]] + \
+                      ' ' + fix_dict[self.add_fix[1]] + \
+                      ' ' + fix_dict[self.add_fix[2]] + '\n'
         with open(inLammps, 'r') as fin1:
             contents = fin1.readlines()
             for ii in range(len(contents)):
@@ -310,7 +315,7 @@ class Gamma(Property):
                     upper_id = ii
                     #print(upper_id)
             del contents[lower_id+1:upper_id-1]
-            contents.insert(lower_id+1, fix_dict[self.add_fix] + '\n')
+            contents.insert(lower_id+1, add_fix_str)
         with open(inLammps, 'w') as fin2:
             for ii in range(len(contents)):
                 fin2.write(contents[ii])
