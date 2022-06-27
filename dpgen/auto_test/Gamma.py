@@ -189,6 +189,19 @@ class Gamma(Property):
 
         return task_list
 
+    @staticmethod
+    def centralize_slab(slab):
+        z_pos_list = list(set([site.position[2] for site in slab]))
+        z_pos_list.sort()
+        central_atoms = (z_pos_list[-1] - z_pos_list[0])/2
+        #print(f"central_atoms: {central_atoms}")
+        central_cell = slab.cell[2][2]/2
+        #print(f"central_cell: {central_cell}")
+        disp_length = central_cell - central_atoms
+        #print(f"disp_length: {disp_length}")
+        for site in slab:
+            site.position[2] += disp_length
+
     def return_direction(self):
         miller_str = ''
         direct_str = ''
@@ -212,19 +225,6 @@ class Gamma(Property):
             raise RuntimeError(f'Unsupported input combination of miller index and displacement direction: '
                                f'{miller_str}:{direct_str}')
         return directions
-
-    @staticmethod
-    def centralize_slab(slab):
-        z_pos_list = list(set([site.position[2] for site in slab]))
-        z_pos_list.sort()
-        central_atoms = (z_pos_list[-1] - z_pos_list[0])/2
-        #print(f"central_atoms: {central_atoms}")
-        central_cell = slab.cell[2][2]/2
-        #print(f"central_cell: {central_cell}")
-        disp_length = central_cell - central_atoms
-        #print(f"disp_length: {disp_length}")
-        for site in slab:
-            site.position[2] += disp_length
 
     def __gen_slab_ase(self,
                        symbol, lat_param):
