@@ -216,8 +216,8 @@ class Gamma(Property):
             '110:111': [(-1,1,1), (1,-1,1), (1,1,0)],
             '111:110': [(-1,1,0), (-1,-1,2), (1,1,1)],
             '111:112': [(-1,-1,2), (1,-1,0), (1,1,1)],
-            '112:111': [(-1,-1,1), (-1,1,0), (1,1,2)],
-            '123:111': [(-1,-1,1), (-2,1,0), (1,2,3)]
+            '112:111': [(-1,-1,1), (1,-1,0), (1,1,2)],
+            '123:111': [(-1,-1,1), (2,-1,0), (1,2,3)]
         }
         try:
             directions = dict_directions[search_key]
@@ -276,8 +276,8 @@ class Gamma(Property):
         # add position fix condition of x and y in POSCAR
         insert_pos = -self.atom_num
         fix_dict = {
-            True: 'F',
-            False: 'T'
+            'true': 'F',
+            'false': 'T'
         }
         add_fix_str = ' ' + fix_dict[self.add_fix[0]] + \
                       ' ' + fix_dict[self.add_fix[1]] + \
@@ -296,8 +296,8 @@ class Gamma(Property):
                         inLammps):
         # add position fix condition of x and y of in.lammps
         fix_dict = {
-            True: '0',
-            False: 'NULL'
+            'true': '0',
+            'false': 'NULL'
         }
         add_fix_str = 'fix             1 all setforce' + \
                       ' ' + fix_dict[self.add_fix[0]] + \
