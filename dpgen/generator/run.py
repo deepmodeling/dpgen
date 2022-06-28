@@ -2995,7 +2995,10 @@ def post_fp_gaussian (iter_index,
 
 
 def post_fp_cp2k (iter_index,
-                      jdata):
+                      jdata,
+                      rfailed=None):
+                      
+    ratio_failed =  rfailed if rfailed else jdata.get('ratio_failed',0.05)
     model_devi_jobs = jdata['model_devi_jobs']
     assert (iter_index < len(model_devi_jobs))
 
