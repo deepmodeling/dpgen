@@ -64,7 +64,7 @@
       },
       "resources": {
         "allow_failure": true,
-        "ratio_failue":  0.05,
+        "ratio_failure":  0.05,
         "task_per_node": 16,
         "with_mpi":      true,
         "_comment" : "Load the intel compiler.",
