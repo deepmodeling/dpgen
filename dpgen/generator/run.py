@@ -3342,7 +3342,10 @@ def post_fp_gaussian (iter_index,
 
 
 def post_fp_cp2k (iter_index,
-                      jdata):
+                      jdata,
+                      rfailed=None):
+                      
+    ratio_failed =  rfailed if rfailed else jdata.get('ratio_failed',0.10)
     model_devi_jobs = jdata['model_devi_jobs']
     assert (iter_index < len(model_devi_jobs))
 
@@ -3373,7 +3376,7 @@ def post_fp_cp2k (iter_index,
         all_sys = None
         for oo in sys_output :
             _sys = dpdata.LabeledSystem(oo, fmt = 'cp2k/output')
-            _sys.check_type_map(type_map = jdata['type_map'])
+            #_sys.check_type_map(type_map = jdata['type_map'])
             if all_sys is None:
                 all_sys = _sys
             else:
@@ -3385,8 +3388,12 @@ def post_fp_cp2k (iter_index,
             sys_data_path = os.path.join(work_path, 'data.%s'%ss)
             all_sys.to_deepmd_raw(sys_data_path)
             all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
-    dlog.info("failed frame number: %s "%(tcount-icount))
-    dlog.info("total frame number: %s "%tcount)
+
+    rfail=float(tcount - icount)/float(tcount)
+    dlog.info("failed frame: %6d in %6d  %6.2f %% " % (tcount - icount, tcount, rfail * 100.))
+
+    if rfail>ratio_failed:
+       raise RuntimeError("find too many unsuccessfully terminated jobs. Too many FP tasks are not converged. Please check your files in directories \'iter.*.*/02.fp/task.*.*/.\'")
 
 
 def post_fp_pwmat (iter_index,
