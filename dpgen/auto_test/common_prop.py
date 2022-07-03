@@ -3,7 +3,7 @@ import glob
 import os
 import warnings
 from multiprocessing import Pool
-import dpgen.auto_test.lib.util as utila
+import dpgen.auto_test.lib.util as util
 from dpgen import dlog
 from dpgen.util import sepline
 from dpgen.auto_test.EOS import EOS
