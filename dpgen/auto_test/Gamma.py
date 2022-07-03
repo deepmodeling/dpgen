@@ -22,9 +22,8 @@ from dpgen.auto_test.reproduce import post_repro
 
 class Gamma(Property):
     """
-    Calculation of gamma line for bcc and fcc (v1.1 add half z judgement)
+    Calculation of common gamma lines for bcc and fcc
     """
-
     def __init__(self,
                  parameter):
         parameter['reproduce'] = parameter.get('reproduce', False)
@@ -34,9 +33,6 @@ class Gamma(Property):
                 self.miller_index = parameter['miller_index']
                 self.displace_direction = parameter['displace_direction']
                 self.lattice_type = parameter['lattice_type']
-                # parameter['min_slab_size'] = parameter.get('min_slab_size', 10)
-                # self.min_slab_size = parameter['min_slab_size']
-                # parameter['min_supercell_size'] = parameter.get('min_supercell_size', (5,5,10))
                 self.min_supercell_size = parameter['min_supercell_size']
                 self.min_vacuum_size = parameter['min_vacuum_size']
                 parameter['add_fix'] = parameter.get('add_fix', None)
@@ -44,10 +40,6 @@ class Gamma(Property):
                 parameter['lattice_type'] = parameter.get('n_steps', 10)
                 self.n_steps = parameter['n_steps']
                 self.atom_num = None
-            #                parameter['pert_xz'] = parameter.get('pert_xz', 0.01)
-            #                self.pert_xz = parameter['pert_xz']
-            #                default_max_miller = 2
-            #                parameter['max_miller'] = parameter.get('max_miller', default_max_miller)
             parameter['cal_type'] = parameter.get('cal_type', 'relaxation')
             self.cal_type = parameter['cal_type']
             default_cal_setting = {"relax_pos": True,
@@ -271,8 +263,7 @@ class Gamma(Property):
             all_slabs.append(slab.copy())
         return all_slabs
 
-    def __poscar_fix(self,
-                  poscar):
+    def __poscar_fix(self, poscar) -> None:
         # add position fix condition of x and y in POSCAR
         insert_pos = -self.atom_num
         fix_dict = {
@@ -292,8 +283,7 @@ class Gamma(Property):
             for ii in range(len(contents)):
                 fin2.write(contents[ii])
 
-    def __inLammpes_fix(self,
-                        inLammps):
+    def __inLammpes_fix(self, inLammps) -> None:
         # add position fix condition of x and y of in.lammps
         fix_dict = {
             'true': '0',
@@ -353,6 +343,7 @@ class Gamma(Property):
 
         if not self.reprod:
             ptr_data += "No_steps: \tStacking_Fault_E(J/m^2) EpA(eV) equi_EpA(eV)\n"
+            count = 0
             for ii in all_tasks:
                 task_result = loadfn(os.path.join(ii, 'result_task.json'))
                 natoms = np.sum(task_result['atom_numbs'])
@@ -366,11 +357,17 @@ class Gamma(Property):
 
                 Cf = 1.60217657e-16 / (1e-20 * 2) * 0.001
                 evac = (task_result['energies'][-1] - equi_epa * natoms) / AA * Cf
+                if count == 0:
+                    fract_step = 0
+                else:
+                    fract_step = count/self.n_steps
 
                 miller_index = loadfn(os.path.join(ii, 'miller.json'))
                 ptr_data += "%-25s     %7.3f    %8.3f %8.3f\n" % (
-                    str(miller_index) + '-' + structure_dir + ':', evac, epa, equi_epa)
-                res_data[str(miller_index) + '-' + structure_dir] = [evac, epa, equi_epa]
+                    str(fract_step) + '-' + structure_dir + ':', evac, epa, equi_epa)
+                res_data[str(fract_step) + '-' + structure_dir] = [evac, epa, equi_epa]
+
+                count += 1
 
         else:
             if 'init_data_path' not in self.parameter:
