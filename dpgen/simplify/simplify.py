@@ -408,7 +408,10 @@ def post_model_devi(iter_index, jdata, mdata):
     np.random.shuffle(idx)
     pick_idx = idx[:iter_pick_number]
     rest_idx = idx[iter_pick_number:]
-    dlog.info("total candidate {0:6d}   picked {1:6d} ({2:6.2f} %) rest {3:6d} ({4:6.2f} % )".format\
+    if(counter['candidate'] == 0) : 
+      dlog.info("no candidate")
+    else :
+      dlog.info("total candidate {0:6d}   picked {1:6d} ({2:6.2f} %) rest {3:6d} ({4:6.2f} % )".format\
               (counter['candidate'], len(pick_idx), float(len(pick_idx))/counter['candidate']*100., len(rest_idx), float(len(rest_idx))/counter['candidate']*100.))
 
     # dump the picked candinate data
