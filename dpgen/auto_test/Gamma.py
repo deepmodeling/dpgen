@@ -33,17 +33,23 @@ class Gamma(Property):
                 self.miller_index = parameter['miller_index']
                 self.displace_direction = parameter['displace_direction']
                 self.lattice_type = parameter['lattice_type']
+
+                # parameter['min_slab_size'] = parameter.get('min_slab_size', 10)
+                # self.min_slab_size = parameter['min_slab_size']
+                parameter['min_supercell_size'] = parameter.get('min_supercell_size', (1,1,5))
+
                 self.min_supercell_size = parameter['min_supercell_size']
+                parameter['min_vacuum_size'] = parameter.get('min_vacuum_size', 20)
                 self.min_vacuum_size = parameter['min_vacuum_size']
-                parameter['add_fix'] = parameter.get('add_fix', None)
+                parameter['add_fix'] = parameter.get('add_fix', ['true','true','false']) # standard method
                 self.add_fix = parameter['add_fix']
-                parameter['lattice_type'] = parameter.get('n_steps', 10)
+                parameter['n_steps'] = parameter.get('n_steps', 10)
                 self.n_steps = parameter['n_steps']
                 self.atom_num = None
             parameter['cal_type'] = parameter.get('cal_type', 'relaxation')
             self.cal_type = parameter['cal_type']
             default_cal_setting = {"relax_pos": True,
-                                   "relax_shape": True,
+                                   "relax_shape": False,
                                    "relax_vol": False}
             if 'cal_setting' not in parameter:
                 parameter['cal_setting'] = default_cal_setting
@@ -99,7 +105,7 @@ class Gamma(Property):
         cwd = os.getcwd()
 
         if self.reprod:
-            print('surface reproduce starts')
+            print('gamma line reproduce starts')
             if 'init_data_path' not in self.parameter:
                 raise RuntimeError("please provide the initial data path to reproduce")
             init_data_path = os.path.abspath(self.parameter['init_data_path'])
@@ -109,7 +115,7 @@ class Gamma(Property):
 
         else:
             if refine:
-                print('surface refine starts')
+                print('gamma line refine starts')
                 task_list = make_refine(self.parameter['init_from_suffix'],
                                         self.parameter['output_suffix'],
                                         path_to_work)
@@ -135,6 +141,8 @@ class Gamma(Property):
                 equi_contcar = os.path.join(path_to_equi, 'CONTCAR')
                 if not os.path.exists(equi_contcar):
                     raise RuntimeError("please do relaxation first")
+                print('we now only support gamma line calculation for BCC and FCC metals')
+                print('supported slip systems are planes/direction: 100/010, 110/111, 111/110, 111/112, 112/111, and 123/111')
                 ptypes = vasp.get_poscar_types(equi_contcar)
                 # read structure from relaxed CONTCAR
                 ss = Structure.from_file(equi_contcar)
@@ -144,9 +152,11 @@ class Gamma(Property):
                 # re-read new CONTCAR
                 ss = Structure.from_file('CONTCAR.direct')
                 relax_a = ss.lattice.a
+                relax_b = ss.lattice.b
+                relax_c = ss.lattice.c
                 # gen initial slab
                 slab = self.__gen_slab_ase(symbol=ptypes[0],
-                                           lat_param=relax_a)
+                                           lat_param=[relax_a,relax_b,relax_c])
                 # define displace vectors
                 disp_vector = (1/self.min_supercell_size[0], 0, 0)
                 # displace structure
@@ -223,12 +233,12 @@ class Gamma(Property):
         if not self.lattice_type:
             raise RuntimeError('Error! Please provide the input lattice type!')
         elif self.lattice_type == 'bcc':
-            slab_ase = bcc(symbol=symbol, size=self.min_supercell_size, latticeconstant=lat_param,
+            slab_ase = bcc(symbol=symbol, size=self.min_supercell_size, latticeconstant=lat_param[0],
                            directions=self.return_direction())
         elif self.lattice_type == 'fcc':
-            slab_ase = fcc(symbol=symbol, size=self.min_supercell_size, latticeconstant=lat_param,
+            slab_ase = fcc(symbol=symbol, size=self.min_supercell_size, latticeconstant=lat_param[0],
                            directions=self.return_direction())
-        elif self.lattice_type == 'hpc':
+        elif self.lattice_type == 'hcp':
             pass
         else:
             raise RuntimeError(f'unsupported lattice type: {self.lattice_type}')
@@ -296,8 +306,8 @@ class Gamma(Property):
         with open(inLammps, 'r') as fin1:
             contents = fin1.readlines()
             for ii in range(len(contents)):
-                lower = re.search("min_style       cg", contents[ii])
                 upper = re.search("variable        N equal count\(all\)", contents[ii])
+                lower = re.search("min_style       cg", contents[ii])
                 if lower:
                     lower_id = ii
                     #print(lower_id)
@@ -342,8 +352,8 @@ class Gamma(Property):
         ptr_data = os.path.dirname(output_file) + '\n'
 
         if not self.reprod:
-            ptr_data += "No_steps: \tStacking_Fault_E(J/m^2) EpA(eV) equi_EpA(eV)\n"
-            count = 0
+            ptr_data += str(tuple(self.miller_index)) + ' plane along ' + str(self.displace_direction)
+            ptr_data += "No_task: \tDisplacement \tStacking_Fault_E(J/m^2) EpA(eV) equi_EpA(eV)\n"
             for ii in all_tasks:
                 task_result = loadfn(os.path.join(ii, 'result_task.json'))
                 natoms = np.sum(task_result['atom_numbs'])
@@ -356,18 +366,13 @@ class Gamma(Property):
                 structure_dir = os.path.basename(ii)
 
                 Cf = 1.60217657e-16 / (1e-20 * 2) * 0.001
-                evac = (task_result['energies'][-1] - equi_epa * natoms) / AA * Cf
-                if count == 0:
-                    fract_step = 0
-                else:
-                    fract_step = count/self.n_steps
+                sfe = (task_result['energies'][-1] - equi_epa * natoms) / AA * Cf
 
                 miller_index = loadfn(os.path.join(ii, 'miller.json'))
-                ptr_data += "%-25s     %7.3f    %8.3f %8.3f\n" % (
-                    str(fract_step) + '-' + structure_dir + ':', evac, epa, equi_epa)
-                res_data[str(fract_step) + '-' + structure_dir] = [evac, epa, equi_epa]
+                ptr_data += "%-25s     %7.2f   %7.3f    %8.3f %8.3f\n" % (
+                    str(miller_index) + '-' + structure_dir + ':', int(ii[-4:])/self.n_steps, sfe, epa, equi_epa)
+                res_data[int(ii[-4:])/self.n_steps] = [sfe, epa, equi_epa]
 
-                count += 1
 
         else:
             if 'init_data_path' not in self.parameter:
