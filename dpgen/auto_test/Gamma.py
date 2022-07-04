@@ -211,15 +211,15 @@ class Gamma(Property):
             miller_str += str(self.miller_index[ii])
         for ii in range(len(self.displace_direction)):
             direct_str += str(self.displace_direction[ii])
-        search_key = miller_str + ':' + direct_str
+        search_key = miller_str + '/' + direct_str
         # define specific cell vectors
         dict_directions = {
-            '100:010': [(0,1,0), (0,0,1), (1,0,0)],
-            '110:111': [(-1,1,1), (1,-1,1), (1,1,0)],
-            '111:110': [(-1,1,0), (-1,-1,2), (1,1,1)],
-            '111:112': [(-1,-1,2), (1,-1,0), (1,1,1)],
-            '112:111': [(-1,-1,1), (1,-1,0), (1,1,2)],
-            '123:111': [(-1,-1,1), (2,-1,0), (1,2,3)]
+            '100/010': [(0,1,0), (0,0,1), (1,0,0)],
+            '110/111': [(-1,1,1), (1,-1,1), (1,1,0)],
+            '111/110': [(-1,1,0), (-1,-1,2), (1,1,1)],
+            '111/112': [(-1,-1,2), (1,-1,0), (1,1,1)],
+            '112/111': [(-1,-1,1), (1,-1,0), (1,1,2)],
+            '123/111': [(-1,-1,1), (2,-1,0), (1,2,3)]
         }
         try:
             directions = dict_directions[search_key]
