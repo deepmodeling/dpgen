@@ -217,7 +217,7 @@ def post_model_devi(iter_index, jdata, mdata):
     sys_candinate = dpdata.MultiSystems()
     sys_failed = dpdata.MultiSystems()
 
-    sys_entire = dpdata.MultiSystems().from_deepmd_npy(os.path.join(work_path, rest_data_name + ".old"))
+    sys_entire = dpdata.MultiSystems().from_deepmd_npy(os.path.join(work_path, rest_data_name + ".old"), labeled=False)
 
     detail_file_name = detail_file_name_prefix
     with open(os.path.join(work_path, detail_file_name)) as f:
