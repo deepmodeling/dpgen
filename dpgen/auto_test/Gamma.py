@@ -33,11 +33,7 @@ class Gamma(Property):
                 self.miller_index = parameter['miller_index']
                 self.displace_direction = parameter['displace_direction']
                 self.lattice_type = parameter['lattice_type']
-
-                # parameter['min_slab_size'] = parameter.get('min_slab_size', 10)
-                # self.min_slab_size = parameter['min_slab_size']
                 parameter['min_supercell_size'] = parameter.get('min_supercell_size', (1,1,5))
-
                 self.min_supercell_size = parameter['min_supercell_size']
                 parameter['min_vacuum_size'] = parameter.get('min_vacuum_size', 20)
                 self.min_vacuum_size = parameter['min_vacuum_size']
@@ -192,15 +188,12 @@ class Gamma(Property):
         return task_list
 
     @staticmethod
-    def centralize_slab(slab):
+    def centralize_slab(slab) -> None:
         z_pos_list = list(set([site.position[2] for site in slab]))
         z_pos_list.sort()
         central_atoms = (z_pos_list[-1] - z_pos_list[0])/2
-        #print(f"central_atoms: {central_atoms}")
         central_cell = slab.cell[2][2]/2
-        #print(f"central_cell: {central_cell}")
         disp_length = central_cell - central_atoms
-        #print(f"disp_length: {disp_length}")
         for site in slab:
             site.position[2] += disp_length
 
