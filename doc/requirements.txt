@@ -5,4 +5,5 @@ sphinx_markdown_tables
 sphinx-argparse
 myst-parser
 deepmodeling_sphinx
+dargs>=0.3.1
 .

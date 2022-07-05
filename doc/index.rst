@@ -26,7 +26,7 @@ DPGEN's documentation
    
    run/run-process.rst
    run/param.rst
-   run-mdata.rst
+   run/mdata.rst
    
 .. _init::
 
@@ -63,14 +63,14 @@ DPGEN's documentation
    :caption: Tutorial
    :glob:  
 
-   toymodels/*
+   Tutorials <https://tutorials.deepmodeling.com/en/latest/Tutorials/DP-GEN/>
 
 
 .. _Contribution:
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contribution Guild
+   :caption: Contribution Guide
 
    README.md
    api/api

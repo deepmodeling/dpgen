@@ -107,9 +107,5 @@ def run_apidoc(_):
     main(['-M', '--tocfile', 'api', '-H', 'DP-GEN API', '-o', os.path.join(cur_dir, "api"), module, '--force'])
 
 
-def generate_arginfo(app):
-    subprocess.check_output((sys.executable, "gen_arginfo.py"), universal_newlines=True)
-
 def setup(app):
     app.connect('builder-inited', run_apidoc)
-    app.connect('builder-inited', generate_arginfo)
