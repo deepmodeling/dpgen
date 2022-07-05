@@ -18,7 +18,8 @@ from dpgen import dlog
 from dpgen.dispatcher.Dispatcher import make_submission_compat
 from dpgen.remote.decide_machine import convert_mdata
 from dpgen.generator.run import create_path, make_fp_task_name
-from dpgen.util import sepline
+from dpgen.util import sepline, normalize
+from .arginfo import init_reaction_jdata_arginfo
 
 reaxff_path = "00.reaxff"
 build_path = "01.build"
@@ -206,6 +207,9 @@ def gen_init_reaction(args):
         if args.MACHINE is not None:
             with open(args.MACHINE, "r") as fp:
                 mdata = json.load(fp)
+
+    jdata_arginfo = init_reaction_jdata_arginfo()
+    jdata = normalize(jdata_arginfo, jdata)
 
     mdata = convert_mdata(mdata, ["reaxff", "build", "fp"])
     record = "record.reaction"
