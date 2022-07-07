@@ -195,7 +195,7 @@ def fp_style_gaussian_args() -> List[Argument]:
     doc_nproc = 'The number of processors for Gaussian input.'
 
     args = [
-        Argument("doc_keywords", [str or list],
+        Argument("keywords", [str or list],
                  optional=False, doc=doc_keywords),
         Argument("multiplicity", [int or str],
                  optional=False, doc=doc_multiplicity),
