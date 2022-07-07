@@ -45,7 +45,7 @@ class DispatcherList():
                  mark_failure = False,
                  outlog = 'log',
                  errlog = 'err'):
-        ratio_failure = self.mdata_resources.get("ratio_failue", 0)
+        ratio_failure = self.mdata_resources.get("ratio_failure", 0)
         while True:
             if self.check_all_dispatchers_finished(ratio_failure):
                 self.clean()
@@ -178,7 +178,7 @@ class DispatcherList():
                 self.dispatcher_list[ii]["dispatcher_status"] = "unsubmitted"
                 flag = 1
                 break
-            except:
+            except Exception:
                 count += 1
                 time.sleep(60)
         if not flag:
@@ -188,7 +188,7 @@ class DispatcherList():
 
 
     # Base
-    def check_dispatcher_status(self, ii, allow_failue=False):
+    def check_dispatcher_status(self, ii, allow_failure=False):
         '''catch running dispatcher exception
            if no exception occured, check finished'''
         if self.dispatcher_list[ii]["dispatcher_status"] == "running":
@@ -198,10 +198,10 @@ class DispatcherList():
                 clean = self.mdata_resources.get("clean", False)
                 try:
                     # avoid raising ssh exception in download proceess
-                    finished = self.dispatcher_list[ii]["dispatcher"].all_finished(self.dispatcher_list[ii]["entity"].job_handler, allow_failue, clean)
+                    finished = self.dispatcher_list[ii]["dispatcher"].all_finished(self.dispatcher_list[ii]["entity"].job_handler, allow_failure, clean)
                     if finished:
                         self.dispatcher_list[ii]["dispatcher_status"] = "finished"
-                except:
+                except Exception:
                     pass                    
             elif status == 1:
                 # self.dispatcher_list[ii]["dispatcher_status"] = "terminated"

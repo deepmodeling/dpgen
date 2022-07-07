@@ -83,7 +83,7 @@ def _parsing_vasp(paths,config_info_dict, id_prefix,iters=True):
         iter_record.sort()
         dlog.info("iter_record")
         dlog.info(iter_record)
-      except:
+      except Exception:
         pass
     for path in paths:
       try:

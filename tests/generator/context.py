@@ -5,6 +5,8 @@ from dpgen.generator.run import *
 from dpgen.generator.lib.gaussian import detect_multiplicity
 from dpgen.generator.lib.ele_temp import NBandsEsti
 from dpgen.generator.lib.lammps import get_dumped_forces
+from dpgen.generator.lib.make_calypso import make_calypso_input,write_model_devi_out
+from dpgen.generator.lib.parse_calypso import _parse_calypso_input,_parse_calypso_dis_mtx
 
 param_file = 'param-mg-vasp.json'
 param_file_v1 = 'param-mg-vasp-v1.json'
@@ -24,6 +26,7 @@ param_diy_file = 'param-mg-vasp-diy.json'
 param_pwmat_file = 'param-pyridine-pwmat.json'
 param_abacus_file = 'param-pyridine-abacus.json'
 param_abacus_post_file = 'param-methane-abacus.json'
+param_amber_file = "param-amber.json"
 
 def my_file_cmp(test, f0, f1):
     with open(f0) as fp0 :
