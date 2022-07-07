@@ -53,6 +53,7 @@ DPGEN's documentation
    :maxdepth: 2
    :caption: Simplify  
 
+   simplify/simplify-jdata
    simplify/simplify-mdata
 
 
