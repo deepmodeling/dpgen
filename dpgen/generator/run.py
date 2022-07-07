@@ -3154,8 +3154,12 @@ def post_fp_vasp (iter_index,
                else:
                    raise RuntimeError('invalid setting of use_ele_temp ' + str(use_ele_temp))
 
-    rfail=float(icount)/float(tcount)
-    dlog.info("failed frame: %6d in %6d  %6.2f %% " % (icount, tcount, rfail * 100.))
+    if(tcount == 0) :
+        rfail = 0.0
+        dlog.info("failed frame: %6d in %6d " % (icount, tcount))
+    else :
+        rfail=float(icount)/float(tcount)
+        dlog.info("failed frame: %6d in %6d  %6.2f %% " % (icount, tcount, rfail * 100.))
 
     if rfail>ratio_failed:
        raise RuntimeError("find too many unsuccessfully terminated jobs. Too many FP tasks are not converged. Please check your input parameters (e.g. INCAR) or configuration (e.g. POSCAR) in directories \'iter.*.*/02.fp/task.*.*/.\'")
@@ -3389,8 +3393,12 @@ def post_fp_cp2k (iter_index,
             all_sys.to_deepmd_raw(sys_data_path)
             all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_output))
 
-    rfail=float(tcount - icount)/float(tcount)
-    dlog.info("failed frame: %6d in %6d  %6.2f %% " % (tcount - icount, tcount, rfail * 100.))
+    if(tcount == 0) :
+        rfail = 0.0
+        dlog.info("failed frame: %6d in %6d " % (tcount - icount, tcount))
+    else :
+        rfail=float(tcount - icount)/float(tcount)
+        dlog.info("failed frame: %6d in %6d  %6.2f %% " % (tcount - icount, tcount, rfail * 100.))
 
     if rfail>ratio_failed:
        raise RuntimeError("find too many unsuccessfully terminated jobs. Too many FP tasks are not converged. Please check your files in directories \'iter.*.*/02.fp/task.*.*/.\'")
