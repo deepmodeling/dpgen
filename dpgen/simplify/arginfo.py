@@ -27,7 +27,7 @@ def general_simplify_arginfo() -> Argument:
     doc_model_devi_f_trust_hi = "The higher bound of forces for the selection for the model deviation."
 
     return [
-        Argument("labeled", bool, optional=False, default=False, doc=doc_labeled),
+        Argument("labeled", bool, optional=True, default=False, doc=doc_labeled),
         Argument("pick_data", str, doc=doc_pick_data),
         Argument("init_pick_number", int, doc=doc_init_pick_number),
         Argument("iter_pick_number", int, doc=doc_iter_pick_number),
