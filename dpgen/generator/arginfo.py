@@ -258,7 +258,7 @@ def fp_style_cp2k_args() -> List[Argument]:
 
 
 def fp_style_variant_type_args() -> Variant:
-    doc_fp_style = 'The style of fp.'
+    doc_fp_style = 'Software for First Principles.'
 
     return Variant("fp_style", [Argument("vasp", dict, fp_style_vasp_args()),
                                 Argument("gaussian", dict,
@@ -271,7 +271,6 @@ def fp_style_variant_type_args() -> Variant:
 
 
 def fp_args() -> List[Argument]:
-    doc_fp_style = 'Software for First Principles. Options include “vasp”, “pwscf”, “siesta” and “gaussian” up to now.'
     doc_fp_task_max = 'Maximum of structures to be calculated in 02.fp of each iteration.'
     doc_fp_task_min = 'Minimum of structures to be calculated in 02.fp of each iteration.'
     doc_fp_accurate_threshold = 'If the accurate ratio is larger than this number, no fp calculation will be performed, i.e. fp_task_max = 0.'
@@ -279,10 +278,6 @@ def fp_args() -> List[Argument]:
     doc_fp_cluster_vacuum = 'If the vacuum size is smaller than this value, this cluster will not be choosen for labeling.'
 
     return [
-        Argument('fp_style', dict, [],
-                 [fp_style_variant_type_args()],
-                 optional=False,
-                 doc=doc_fp_style),
         Argument("fp_task_max", int, optional=False, doc=doc_fp_task_max),
         Argument("fp_task_min", int, optional=False, doc=doc_fp_task_min),
         Argument("fp_accurate_threshold", float,
@@ -306,5 +301,5 @@ def run_jdata_arginfo() -> Argument:
     return Argument("run_jdata",
                     dict,
                     sub_fields=basic_args() + data_args() + training_args() + fp_args(),
-                    sub_variants=model_devi_args(),
+                    sub_variants=model_devi_args() + [fp_style_variant_type_args()],
                     doc=doc_run_jdata)
