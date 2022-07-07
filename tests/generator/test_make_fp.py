@@ -23,6 +23,7 @@ from .context import ref_cp2k_file_input
 from .context import ref_cp2k_file_exinput
 from .context import machine_file
 from .context import param_diy_file
+from .context import param_multiple_trust_file
 from .context import make_kspacing_kpoints
 from .context import my_file_cmp
 from .context import setUpModule
@@ -345,6 +346,16 @@ def _check_potcar(testCase, idx, fp_pp_path, fp_pp_files) :
 
 
 def _check_sel(testCase, idx, fp_task_max, flo, fhi):
+    
+    def _trust_limitation_check(sys_idx, lim):
+        if isinstance(lim, list):
+            sys_lim = lim[sys_idx]
+        elif isinstance(lim, dict):
+            sys_lim = lim[str(sys_idx)]
+        else:
+            sys_lim = lim
+        return sys_lim
+    
     fp_path = os.path.join('iter.%06d' % idx, '02.fp')
     candi_files = glob.glob(os.path.join(fp_path, 'candidate.shuffled.*.out'))
     candi_files.sort()
@@ -358,6 +369,8 @@ def _check_sel(testCase, idx, fp_task_max, flo, fhi):
                 f_idx.append(ii.split()[1])
         md_task = md_task[:fp_task_max]
         f_idx = f_idx[:fp_task_max]
+        flo = _trust_limitation_check(int(sidx), flo)
+        fhi = _trust_limitation_check(int(sidx), fhi)
         for tt,ff in zip(md_task, f_idx):
             md_value = np.loadtxt(os.path.join(tt, 'model_devi.out'))
             fvalue = md_value[int(ff)][4]
@@ -767,6 +780,41 @@ class TestMakeFPVasp(unittest.TestCase):
         if os.path.isdir('iter.000000') :
             shutil.rmtree('iter.000000')
         with open (param_diy_file, 'r') as fp :
+            jdata = json.load (fp)
+        fp.close()
+        with open (machine_file, 'r') as fp:
+            mdata = json.load (fp)
+        fp.close()
+        md_descript = []
+        ele_temp = []
+        nsys = 2
+        nmd = 3
+        n_frame = 10
+        for ii in range(nsys) :
+            tmp = []
+            for jj in range(nmd) :
+                tmp.append(np.arange(0, 0.29, 0.29/10))
+            md_descript.append(tmp)
+            ele_temp.append([np.random.random() * 100000] * nmd)
+        atom_types = [0, 1, 0, 1]
+        type_map = jdata['type_map']
+        _make_fake_md(0, md_descript, atom_types, type_map, ele_temp = ele_temp)
+        make_fp(0, jdata, {})
+        _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
+        _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
+        _check_incar_ele_temp(self, 0, ele_temp)
+        _check_kpoints_exists(self, 0)
+        _check_kpoints(self,0)
+        # checked elsewhere
+        # _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
+        shutil.rmtree('iter.000000')
+
+    def test_make_fp_vasp_multiple_trust_level(self):
+        # Verify if sys_idx dependent trust level could be read.
+        setUpModule()
+        if os.path.isdir('iter.000000') :
+            shutil.rmtree('iter.000000')
+        with open (param_multiple_trust_file, 'r') as fp :
             jdata = json.load (fp)
         fp.close()
         with open (machine_file, 'r') as fp:
