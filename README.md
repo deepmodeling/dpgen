@@ -514,10 +514,10 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | *#Exploration*
 | **model_devi_dt** | Float | 0.002 (recommend) | Timestep for MD |
 | **model_devi_skip** | Integer | 0 | Number of structures skipped for fp in each MD
-| **model_devi_f_trust_lo** | Float or List of float | 0.05 | Lower bound of forces for the selection. If List, should be set for each index in `sys_configs`, respectively. |
-| **model_devi_f_trust_hi** | Float or List of float | 0.15 | Upper bound of forces for the selection. If List, should be set for each index in `sys_configs`, respectively. |
-| **model_devi_v_trust_lo**  | Float or List of float | 1e10 | Lower bound of virial for the selection. If List, should be set for each index in `sys_configs`, respectively. Should be used with DeePMD-kit v2.x. |
-| **model_devi_v_trust_hi**  | Float or List of float | 1e10 | Upper bound of virial for the selection. If List, should be set for each index in `sys_configs`, respectively. Should be used with DeePMD-kit v2.x. |
+| **model_devi_f_trust_lo** | Float or List of float or Dict[str, float] | 0.05 | Lower bound of forces for the selection. If List, should be set for each index in `sys_configs`, respectively. |
+| **model_devi_f_trust_hi** | Float or List of float or Dict[str, float] | 0.15 | Upper bound of forces for the selection. If List, should be set for each index in `sys_configs`, respectively. |
+| **model_devi_v_trust_lo**  | Float or List of float or Dict[str, float] | 1e10 | Lower bound of virial for the selection. If List, should be set for each index in `sys_configs`, respectively. Should be used with DeePMD-kit v2.x. |
+| **model_devi_v_trust_hi**  | Float or List of float or Dict[str, float] | 1e10 | Upper bound of virial for the selection. If List, should be set for each index in `sys_configs`, respectively. Should be used with DeePMD-kit v2.x. |
 | model_devi_adapt_trust_lo  | Boolean | False | Adaptively determines the lower trust levels of force and virial. This option should be used together with `model_devi_numb_candi_f`,  `model_devi_numb_candi_v` and optionally with `model_devi_perc_candi_f` and `model_devi_perc_candi_v`. `dpgen` will make two sets: 1. From the frames with force model deviation lower than `model_devi_f_trust_hi`, select `max(model_devi_numb_candi_f, model_devi_perc_candi_f*n_frames)` frames with largest force model deviation. 2. From the frames with virial model deviation lower than `model_devi_v_trust_hi`, select `max(model_devi_numb_candi_v, model_devi_perc_candi_v*n_frames)` frames with largest virial model deviation. The union of the two sets is made as candidate dataset|
 | model_devi_numb_candi_f  | Int | 10 | See `model_devi_adapt_trust_lo`.|
 | model_devi_numb_candi_v  | Int | 0  | See `model_devi_adapt_trust_lo`.|
@@ -536,7 +536,8 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | **model_devi_jobs["ensembles"]** | String             | "nvt"                                    | Determining which ensemble used in MD, **options** include “npt” and “nvt”. |
 | model_devi_jobs["neidelay"] | Integer             | "10"                                    | delay building until this many steps since last build |
 | model_devi_jobs["taut"] | Float          | "0.1"                                    | Coupling time of thermostat (ps) |
-| model_devi_jobs["taup"] | Float             | "0.5"                                    | Coupling time of barostat (ps)
+| model_devi_jobs["taup"] | Float             | "0.5"                                    | Coupling time of barostat (ps) |
+| model_devi_jobs["model_devi_f_trust_lo"] <br> model_devi_jobs["model_devi_f_trust_hi"] <br> model_devi_jobs["model_devi_v_trust_lo"] <br> model_devi_jobs["model_devi_v_trust_hi"] | Float or Dict[str, float] | See global model_devi config above like **model_devi_f_trust_lo**. For dict, should be set for each index in sys_idx, respectively. |
 | *#Labeling*
 | **fp_style** | string                | "vasp"                                                       | Software for First Principles. **Options** include “vasp”, “pwscf”, “siesta” and “gaussian” up to now. |
 | **fp_task_max** | Integer            | 20                                                           | Maximum of  structures to be calculated in `02.fp` of each iteration. |
