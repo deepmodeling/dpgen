@@ -50,7 +50,6 @@ The training related keys in param.json are given as follows
 
 ```json
   "numb_models": 4,
-  "train_param": "input.json",
   "default_training_param": {
   },
 ```

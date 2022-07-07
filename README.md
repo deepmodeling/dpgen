@@ -373,7 +373,6 @@ In `PARAM`, you can specialize the task as you expect.
  
   "_comment": " that's all ",
   "numb_models": 4,
-  "train_param": "input.json",
   "default_training_param": {
      "model": {
             "type_map": [
@@ -1015,7 +1014,6 @@ Here is an example of `param.json` for QM7 dataset:
         "auto"
     ],
     "numb_models": 4,
-    "train_param": "input.json",
     "default_training_param": {
         "model": {
             "type_map": [

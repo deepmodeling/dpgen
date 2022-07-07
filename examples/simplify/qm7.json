@@ -20,7 +20,6 @@
         "auto"
     ],
     "numb_models": 4,
-    "train_param": "input.json",
     "default_training_param": {
         "model": {
             "type_map": [
