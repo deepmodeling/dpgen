@@ -207,9 +207,9 @@ def fp_style_gaussian_args() -> List[Argument]:
     doc_fp_params_gaussian = 'Parameters for Gaussian calculation.'
 
     return [
-        Argument("use_clusters", bool, optional=False, doc=doc_use_clusters),
+        Argument("use_clusters", bool, optional=True, default=False, doc=doc_use_clusters),
         Argument("cluster_cutoff", float,
-                 optional=False, doc=doc_cluster_cutoff),
+                 optional=True, doc=doc_cluster_cutoff),
         Argument("fp_params", dict, args, [],
                  optional=False, doc=doc_fp_params_gaussian),
     ]
