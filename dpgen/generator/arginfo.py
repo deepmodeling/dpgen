@@ -50,7 +50,7 @@ def data_args() -> List[Argument]:
                  doc=doc_init_batch_size),
         Argument("sys_configs_prefix", str, optional=True,
                  doc=doc_sys_configs_prefix),
-        Argument("sys_configs", str, optional=False, doc=doc_sys_configs),
+        Argument("sys_configs", list, optional=False, doc=doc_sys_configs),
         Argument("sys_batch_size", list, optional=True,
                  doc=doc_sys_batch_size),
     ]
