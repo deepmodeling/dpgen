@@ -106,13 +106,13 @@ def model_devi_jobs_args() -> List[Argument]:
         Argument("taut", float, optional=True, doc=doc_taut),
         Argument("taup", float, optional=True, doc=doc_taup),
         Argument("model_devi_f_trust_lo", [
-                 float, Dict[str, float]], optional=False, doc=doc_model_devi_f_trust_lo),
+                 float, dict], optional=False, doc=doc_model_devi_f_trust_lo),
         Argument("model_devi_f_trust_hi", [
-                 float, Dict[str, float]], optional=False, doc=doc_model_devi_f_trust_hi),
+                 float, dict], optional=False, doc=doc_model_devi_f_trust_hi),
         Argument("model_devi_v_trust_lo", [
-                 float, Dict[str, float]], optional=False, doc=doc_model_devi_v_trust_lo),
+                 float, dict], optional=False, doc=doc_model_devi_v_trust_lo),
         Argument("model_devi_v_trust_hi", [
-                 float, Dict[str, float]], optional=False, doc=doc_model_devi_v_trust_hi),
+                 float, dict], optional=False, doc=doc_model_devi_v_trust_hi),
     ]
 
     doc_model_devi_jobs = 'Settings for exploration in 01.model_devi. Each dict in the list corresponds to one iteration. The index of model_devi_jobs exactly accord with index of iterations'
@@ -146,13 +146,13 @@ The union of the two sets is made as candidate dataset.'
         Argument("model_devi_skip", int, optional=False,
                  doc=doc_model_devi_skip),
         Argument("model_devi_f_trust_lo", [
-                 float, list, Dict[str, float]], optional=False, doc=doc_model_devi_f_trust_lo),
+                 float, list, dict], optional=False, doc=doc_model_devi_f_trust_lo),
         Argument("model_devi_f_trust_hi", [
-                 float, list, Dict[str, float]], optional=False, doc=doc_model_devi_f_trust_hi),
+                 float, list, dict], optional=False, doc=doc_model_devi_f_trust_hi),
         Argument("model_devi_v_trust_lo", [
-                 float, list, Dict[str, float]], optional=False, doc=doc_model_devi_v_trust_lo),
+                 float, list, dict], optional=False, doc=doc_model_devi_v_trust_lo),
         Argument("model_devi_v_trust_hi", [
-                 float, list, Dict[str, float]], optional=False, doc=doc_model_devi_v_trust_hi),
+                 float, list, dict], optional=False, doc=doc_model_devi_v_trust_hi),
         Argument("model_devi_adapt_trust_lo", bool, optional=True,
                  doc=doc_model_devi_adapt_trust_lo),
         Argument("model_devi_numb_candi_f", int, optional=True,

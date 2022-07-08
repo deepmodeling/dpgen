@@ -2472,11 +2472,11 @@ def _make_fp_vasp_configs(iter_index,
     # support iteration dependent trust levels
     v_trust_lo = cur_job.get('model_devi_v_trust_lo', jdata.get('model_devi_v_trust_lo', 1e10))
     v_trust_hi = cur_job.get('model_devi_v_trust_hi', jdata.get('model_devi_v_trust_hi', 1e10))
-    if cur_job.get('model_devi_f_trust_lo'):
+    if cur_job.get('model_devi_f_trust_lo') is not None:
         f_trust_lo = cur_job.get('model_devi_f_trust_lo')
     else:
         f_trust_lo = jdata['model_devi_f_trust_lo']
-    if cur_job.get('model_devi_f_trust_hi'):
+    if cur_job.get('model_devi_f_trust_hi') is not None:
         f_trust_hi = cur_job.get('model_devi_f_trust_hi')
     else:
         f_trust_hi = jdata['model_devi_f_trust_hi']
