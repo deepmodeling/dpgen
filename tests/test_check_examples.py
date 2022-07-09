@@ -9,8 +9,12 @@ from dpgen.util import normalize
 from dpgen.data.arginfo import (
     init_reaction_jdata_arginfo,
 )
+from dpgen.simplify.arginfo import (
+    simplify_jdata_arginfo,
+)
 
 init_reaction_jdata = init_reaction_jdata_arginfo()
+simplify_jdata = simplify_jdata_arginfo()
 
 # directory of examples
 p_examples = Path(__file__).parent.parent / "examples"
@@ -19,6 +23,7 @@ p_examples = Path(__file__).parent.parent / "examples"
 #   tuple of example list
 input_files = (
     (init_reaction_jdata, p_examples / "init" / "reaction.json"),
+    (simplify_jdata, p_examples / "simplify" / "qm7.json"),
 )
 
 

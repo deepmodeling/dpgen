@@ -26,7 +26,7 @@ def basic_args() -> List[Argument]:
     return [
         Argument("type_map", list, optional=False, doc=doc_type_map),
         Argument("mass_map", list, optional=False, doc=doc_mass_map),
-        Argument("use_ele_temp", int, optional=False,
+        Argument("use_ele_temp", int, optional=True,
                  default=0, doc=doc_use_ele_temp),
     ]
 
@@ -34,7 +34,7 @@ def basic_args() -> List[Argument]:
 def data_args() -> List[Argument]:
     doc_init_data_prefix = 'Prefix of initial data directories.'
     doc_init_data_sys = 'Directories of initial data. You may use either absolute or relative path here. Systems will be detected recursively in the directories.'
-    doc_sys_format = 'Format of initial data. It will be vasp/poscar if not set.'
+    doc_sys_format = 'Format of initial data.'
     doc_init_batch_size = 'Each number is the batch_size of corresponding system for training in init_data_sys. One recommended rule for setting the sys_batch_size and init_batch_size is that batch_size mutiply number of atoms ot the stucture should be larger than 32. If set to auto, batch size will be 32 divided by number of atoms.'
     doc_sys_configs_prefix = 'Prefix of sys_configs.'
     doc_sys_configs = 'Containing directories of structures to be explored in iterations.Wildcard characters are supported here.'
@@ -45,12 +45,12 @@ def data_args() -> List[Argument]:
                  doc=doc_init_data_prefix),
         Argument("init_data_sys", list,
                  optional=False, doc=doc_init_data_sys),
-        Argument("sys_format", str, optional=False, doc=doc_sys_format),
+        Argument("sys_format", str, optional=True, default='vasp/poscar', doc=doc_sys_format),
         Argument("init_batch_size", str, optional=True,
                  doc=doc_init_batch_size),
         Argument("sys_configs_prefix", str, optional=True,
                  doc=doc_sys_configs_prefix),
-        Argument("sys_configs", str, optional=False, doc=doc_sys_configs),
+        Argument("sys_configs", list, optional=False, doc=doc_sys_configs),
         Argument("sys_batch_size", list, optional=True,
                  doc=doc_sys_batch_size),
     ]
@@ -195,7 +195,7 @@ def fp_style_gaussian_args() -> List[Argument]:
     doc_nproc = 'The number of processors for Gaussian input.'
 
     args = [
-        Argument("doc_keywords", [str or list],
+        Argument("keywords", [str or list],
                  optional=False, doc=doc_keywords),
         Argument("multiplicity", [int or str],
                  optional=False, doc=doc_multiplicity),
@@ -207,9 +207,9 @@ def fp_style_gaussian_args() -> List[Argument]:
     doc_fp_params_gaussian = 'Parameters for Gaussian calculation.'
 
     return [
-        Argument("use_clusters", bool, optional=False, doc=doc_use_clusters),
+        Argument("use_clusters", bool, optional=True, default=False, doc=doc_use_clusters),
         Argument("cluster_cutoff", float,
-                 optional=False, doc=doc_cluster_cutoff),
+                 optional=True, doc=doc_cluster_cutoff),
         Argument("fp_params", dict, args, [],
                  optional=False, doc=doc_fp_params_gaussian),
     ]
