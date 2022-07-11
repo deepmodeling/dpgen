@@ -1,0 +1,77 @@
+title
+&cntrl
+! IO =======================================
+      irest = 1       ! 0 = start, 1 = restart
+        ntx = 5       ! 1 = start, 5 = restart
+       ntxo = 1       ! read/write rst as formatted file
+      iwrap = 1       ! wrap crds to unit cell
+     ioutfm = 1       ! write mdcrd as netcdf
+       imin = 0
+      ntmin = 1
+       ntpr = @freq@
+       ntwr = @freq@
+       ntwx = @freq@
+       ntwf = 0
+! DYNAMICS =================================
+     nstlim = @nstlim@   ! number of time steps
+         dt = 0.001   ! ps/step
+        ntb = 1       ! 1=NVT periodic, 2=NPT periodic, 0=no box
+! TEMPERATURE ==============================
+      temp0 = 298     ! target temp
+   gamma_ln = 5.0     ! Langevin collision freq
+        ntt = 3       ! thermostat (3=Langevin)
+! PRESSURE  ================================
+        ntp = 0       ! 0=no scaling, 1=isotropic, 2=anisotropic
+! SHAKE ====================================
+        ntc = 2       ! 1=no shake, 2=HX constrained, 3=all constrained
+noshakemask = "@qm_region@"    ! do not shake these
+        ntf = 1       ! 1=cpt all bond E, 2=ignore HX bond E, 3=ignore all bond E
+! MISC =====================================
+        cut = 9.0
+      ifqnt = 1
+         ig = -1
+     nmropt = 1
+/
+
+&wt
+type='DUMPFREQ', istep1=25
+&end
+&wt
+  type='END',
+&end
+DISANG=TEMPLATE.disang
+DUMPAVE=TEMPLATE.dumpave
+
+&ewald
+  dsum_tol = 1.e-6
+/
+
+&qmmm
+    qm_theory   = '@qm_theory@'
+        qmmask  = '@qm_region@'
+      qmcharge  = @qm_charge@
+          spin  = 1
+       qmshake  = 0
+      qm_ewald  = 1
+   qmmm_switch  = 1
+       scfconv  = 1.e-10
+     verbosity  = 0
+  tight_p_conv  = 1
+  diag_routine  = 0
+   pseudo_diag  = 1
+  dftb_maxiter  = 100
+/
+
+&ml
+  iml=1
+  mlmask="@qm_region@"
+  rcut = @rcut@
+  intrafile=""
+  alskip = @freq@
+  althresh = 1.e-6
+  interfile(1)="@GRAPH_FILE0@"
+  interfile(2)="@GRAPH_FILE1@"
+  interfile(3)="@GRAPH_FILE2@"
+  interfile(4)="@GRAPH_FILE3@"
+/
+

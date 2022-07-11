@@ -1,0 +1,48 @@
+{% set name = "numkit" %}
+{% set version = "1.1.2" %}
+
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/numkit-{{ version }}.tar.gz
+  sha256: cc7cabd8cd733d93f9b5d490d116ce22971a852f93894ed98db1a00311845fab
+
+build:
+  number: 0
+  noarch: python
+  script: {{ PYTHON }} -m pip install . -vv
+
+requirements:
+  host:
+    - pip
+    - python
+  run:
+    - numpy >=1.9
+    - matplotlib
+    - python
+    - scipy >=1.0
+    - six
+
+test:
+  imports:
+    - numkit
+    - numkit.tests
+  commands:
+    - pip check
+  requires:
+    - pip
+
+about:
+  home: https://github.com/Becksteinlab/numkit
+  summary: numerical first aid kit
+  doc_url: https://pythonhosted.org/numkit/
+  dev_url: https://github.com/Becksteinlab/numkit
+  license: BSD-3-Clause
+  license_file: LICENSE
+
+extra:
+  recipe-maintainers:
+    - felix5572
