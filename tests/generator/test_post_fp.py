@@ -20,6 +20,7 @@ from .context import param_abacus_post_file
 from .context import param_siesta_file
 from .context import param_gaussian_file
 from .context import param_cp2k_file
+from .context import param_amber_file
 from .context import machine_file
 from .context import setUpModule
 from .comp_sys import test_atom_names
@@ -259,6 +260,24 @@ class TestPostFPPWmat(unittest.TestCase, CompLabeledSys):
         post_fp(0, jdata)
         self.system_1 = dpdata.LabeledSystem('iter.000000/orig', fmt = 'deepmd/raw')
         self.system_2 = dpdata.LabeledSystem('iter.000000/02.fp/data.000', fmt = 'deepmd/raw')
+
+
+class TestPostAmberDiff(unittest.TestCase, CompLabeledSys):
+    def setUp(self):
+        self.places = 5
+        self.e_places = 5
+        self.f_places = 5
+        self.v_places = 5
+
+        if os.path.isdir('iter.000000') :
+            shutil.rmtree('iter.000000')
+        ms = dpdata.MultiSystems(dpdata.LabeledSystem(os.path.join('data', 'deepmd'), fmt="deepmd/raw"))
+        ms.to_deepmd_npy(os.path.join('iter.000000', '02.fp', 'task.000.000000', 'dataset'))
+        self.system_1 = list(ms.systems.values())[0]
+        with open (param_amber_file, 'r') as fp :
+            jdata = json.load (fp)
+        post_fp(0, jdata)
+        self.system_2 = list(dpdata.MultiSystems().from_deepmd_raw('iter.000000/02.fp/data.000').systems.values())[0]
 
 
 if __name__ == '__main__':
