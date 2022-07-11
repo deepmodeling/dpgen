@@ -216,8 +216,9 @@ def post_model_devi(iter_index, jdata, mdata):
     sys_accurate = dpdata.MultiSystems()
     sys_candinate = dpdata.MultiSystems()
     sys_failed = dpdata.MultiSystems()
-
-    sys_entire = dpdata.MultiSystems().from_deepmd_npy(os.path.join(work_path, rest_data_name + ".old"))
+    
+    labeled = jdata.get("labeled", False)
+    sys_entire = dpdata.MultiSystems().from_deepmd_npy(os.path.join(work_path, rest_data_name + ".old"), labeled=labeled)
 
     detail_file_name = detail_file_name_prefix
     with open(os.path.join(work_path, detail_file_name)) as f:
@@ -260,7 +261,10 @@ def post_model_devi(iter_index, jdata, mdata):
     np.random.shuffle(idx)
     pick_idx = idx[:iter_pick_number]
     rest_idx = idx[iter_pick_number:]
-    dlog.info("total candidate {0:6d}   picked {1:6d} ({2:6.2f} %) rest {3:6d} ({4:6.2f} % )".format\
+    if(counter['candidate'] == 0) : 
+        dlog.info("no candidate")
+    else :
+        dlog.info("total candidate {0:6d}   picked {1:6d} ({2:6.2f} %) rest {3:6d} ({4:6.2f} % )".format\
               (counter['candidate'], len(pick_idx), float(len(pick_idx))/counter['candidate']*100., len(rest_idx), float(len(rest_idx))/counter['candidate']*100.))
 
     # dump the picked candinate data

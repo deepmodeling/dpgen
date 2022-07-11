@@ -18,7 +18,8 @@ from dpgen import dlog
 from dpgen.dispatcher.Dispatcher import make_submission_compat
 from dpgen.remote.decide_machine import convert_mdata
 from dpgen.generator.run import create_path, make_fp_task_name
-from dpgen.util import sepline
+from dpgen.util import sepline, normalize
+from .arginfo import init_reaction_jdata_arginfo
 
 reaxff_path = "00.reaxff"
 build_path = "01.build"
@@ -107,6 +108,9 @@ def link_trj(jdata):
 
 def run_build_dataset(jdata, mdata, log_file="build_log"):
     work_path = build_path
+    # compatible with new dpdispatcher and old dpgen.dispatcher
+    build_ntasks = mdata["build_resources"].get("cpu_per_node", mdata["build_resources"]["task_per_node"])
+    fp_ntasks = mdata["fp_resources"].get("cpu_per_node", mdata["fp_resources"]["task_per_node"])
     build_command = "{cmd} -n {dataset_name} -a {type_map} -d {lammpstrj} -c {cutoff} -s {dataset_size} -k \"{qmkeywords}\" --nprocjob {nprocjob} --nproc {nproc}".format(
         cmd=mdata["build_command"],
         type_map=" ".join(jdata["type_map"]),
@@ -114,8 +118,8 @@ def run_build_dataset(jdata, mdata, log_file="build_log"):
         cutoff=jdata["cutoff"],
         dataset_size=jdata["dataset_size"],
         qmkeywords=jdata["qmkeywords"],
-        nprocjob=mdata["fp_resources"]["task_per_node"],
-        nproc=mdata["build_resources"]["task_per_node"],
+        nprocjob=fp_ntasks,
+        nproc=build_ntasks,
         dataset_name=dataset_name
     )
     run_tasks = glob.glob(os.path.join(work_path, 'task.*'))
@@ -203,6 +207,9 @@ def gen_init_reaction(args):
         if args.MACHINE is not None:
             with open(args.MACHINE, "r") as fp:
                 mdata = json.load(fp)
+
+    jdata_arginfo = init_reaction_jdata_arginfo()
+    jdata = normalize(jdata_arginfo, jdata)
 
     mdata = convert_mdata(mdata, ["reaxff", "build", "fp"])
     record = "record.reaction"
