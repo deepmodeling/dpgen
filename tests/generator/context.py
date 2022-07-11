@@ -26,6 +26,8 @@ param_diy_file = 'param-mg-vasp-diy.json'
 param_pwmat_file = 'param-pyridine-pwmat.json'
 param_abacus_file = 'param-pyridine-abacus.json'
 param_abacus_post_file = 'param-methane-abacus.json'
+param_amber_file = "param-amber.json"
+param_multiple_trust_file = 'param-mg-vasp-multi-trust.json'
 
 def my_file_cmp(test, f0, f1):
     with open(f0) as fp0 :

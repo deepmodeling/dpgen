@@ -1,5 +1,5 @@
 {
-  "train": [
+  "train":
     {
       "machine": {
         "batch": "shell",
@@ -34,10 +34,9 @@
       },
       "command": "/root/deepmd-kit/bin/dp",
       "group_size": 2
-    }
-  ],
+    },
 
-  "model_devi": [
+  "model_devi":
     {
       "machine": {
         "batch": "shell",
@@ -71,10 +70,9 @@
       },
       "command": "/root/deepmd-kit/bin/lmp",
       "group_size": 2
-    }
-  ],
+    },
 
-  "fp": [
+  "fp":
     {
       "machine": {
         "batch": "shell",
@@ -108,7 +106,6 @@
       "command": "mpirun -n 16 /root/deepmd-pkg/vasp.5.4.4/bin/vasp_std",
       "group_size": 1
     }
-  ]
 }
 
 

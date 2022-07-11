@@ -107,7 +107,6 @@
 
     "_comment":		" 00.train ",
     "numb_models":	4,
-    "train_param":	"input.json",
     "default_training_param" : {
 	"_comment": " model parameters",
 	"use_smooth":		true,
