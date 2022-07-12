@@ -210,7 +210,7 @@ def make_train (iter_index,
     train_input_file = default_train_input_file
     numb_models = jdata['numb_models']
     init_data_prefix = jdata['init_data_prefix']
-    init_data_prefix = os.path.abspath(init_data_prefix)
+    #init_data_prefix = os.path.abspath(init_data_prefix)
     init_data_sys_ = jdata['init_data_sys']
     fp_task_min = jdata['fp_task_min']
     model_devi_jobs = jdata['model_devi_jobs']
