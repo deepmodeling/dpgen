@@ -209,8 +209,8 @@ class Gamma(Property):
         dict_directions = {
             '100/010': [(0,1,0), (0,0,1), (1,0,0)],
             '110/111': [(-1,1,1), (1,-1,1), (1,1,0)],
-            '111/110': [(-1,1,0), (-1,-1,2), (1,1,1)],
-            '111/112': [(-1,-1,2), (1,-1,0), (1,1,1)],
+            '111/110': [(-1,1,0), (1,1,-2), (1,1,1)],
+            '111/112': [(1,1,-2), (-1,1,0), (1,1,1)],
             '112/111': [(-1,-1,1), (1,-1,0), (1,1,2)],
             '123/111': [(-1,-1,1), (2,-1,0), (1,2,3)]
         }
@@ -346,7 +346,8 @@ class Gamma(Property):
 
         if not self.reprod:
             ptr_data += str(tuple(self.miller_index)) + ' plane along ' + str(self.displace_direction)
-            ptr_data += "No_task: \tDisplacement \tStacking_Fault_E(J/m^2) EpA(eV) equi_EpA(eV)\n"
+            ptr_data += "No_task: \tDisplacement \tStacking_Fault_E(J/m^2) EpA(eV) slab_equi_EpA(eV)\n"
+            task_result_slab_equi = loadfn(os.path.join(all_tasks[0], 'result_task.json'))
             for ii in all_tasks:
                 task_result = loadfn(os.path.join(ii, 'result_task.json'))
                 natoms = np.sum(task_result['atom_numbs'])
@@ -356,14 +357,15 @@ class Gamma(Property):
                 equi_path = os.path.abspath(os.path.join(os.path.dirname(output_file), '../relaxation/relax_task'))
                 equi_result = loadfn(os.path.join(equi_path, 'result.json'))
                 equi_epa = equi_result['energies'][-1] / np.sum(equi_result['atom_numbs'])
+                equi_epa_slab = task_result_slab_equi['energies'][-1] / np.sum(equi_result['atom_numbs'])
                 structure_dir = os.path.basename(ii)
 
-                Cf = 1.60217657e-16 / (1e-20 * 2) * 0.001
-                sfe = (task_result['energies'][-1] - equi_epa * natoms) / AA * Cf
+                Cf = 1.60217657e-16 / 1e-20 * 0.001
+                sfe = (task_result['energies'][-1] - equi_epa_slab * natoms) / AA * Cf
 
                 miller_index = loadfn(os.path.join(ii, 'miller.json'))
                 ptr_data += "%-25s     %7.2f   %7.3f    %8.3f %8.3f\n" % (
-                    str(miller_index) + '-' + structure_dir + ':', int(ii[-4:])/self.n_steps, sfe, epa, equi_epa)
+                    str(miller_index) + '-' + structure_dir + ':', int(ii[-4:])/self.n_steps, sfe, epa, equi_epa_slab)
                 res_data[int(ii[-4:])/self.n_steps] = [sfe, epa, equi_epa]
 
 
