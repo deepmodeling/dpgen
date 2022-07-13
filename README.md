@@ -1064,9 +1064,7 @@ Here is an example of `param.json` for QM7 dataset:
             "start_pref_f": 1000,
             "limit_pref_f": 1,
             "start_pref_v": 0,
-            "limit_pref_v": 0,
-            "start_pref_pf": 0,
-            "limit_pref_pf": 0
+            "limit_pref_v": 0
         },
         "training": {
             "set_prefix": "set",
