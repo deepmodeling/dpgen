@@ -37,7 +37,7 @@ class TestGamma(unittest.TestCase):
                     "type": "gamma",
                     "lattice_type": "fcc",
                     "miller_index": [1, 1, 1],
-                    "displace_direction": [1, 1, 2],
+                    "displace_direction": [1, 1, 0],
                     "min_supercell_size": [1, 1, 10],
                     "min_vacuum_size": 10,
                     "add_fix": ["true", "true", "false"],
