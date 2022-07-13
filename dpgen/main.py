@@ -30,9 +30,14 @@ __maintainer__ = "Haidi Wang"
 __email__ = ""
 
 
-def main():
-    info()
-    print("Description\n------------")
+def main_parser() -> argparse.ArgumentParser:
+    """Returns parser for `dpgen` command.
+    
+    Returns
+    -------
+    argparse.ArgumentParser
+        parser for `dpgen` command
+    """
     parser = argparse.ArgumentParser(description="""
     dpgen is a convenient script that uses DeepGenerator to prepare initial
     data, drive DeepMDkit and analyze results. This script works based on
@@ -156,8 +161,13 @@ def main():
                         help="parameter file, json format")
 
     parser_db.set_defaults(func=db_run)
+    return parser
 
 
+def main():
+    info()
+    print("Description\n------------")
+    parser = main_parser()
     try:
         import argcomplete
         argcomplete.autocomplete(parser)

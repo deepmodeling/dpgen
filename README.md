@@ -499,9 +499,8 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | **use_ele_temp** | int | 0 | Currently only support fp_style vasp. 0(default): no electron temperature. 1: eletron temperature as frame parameter. 2: electron temperature as atom parameter.
 | *#Data*
  | init_data_prefix | String | "/sharedext4/.../data/" | Prefix of initial data directories
- | ***init_data_sys*** | List of string|["CH4.POSCAR.01x01x01/.../deepmd"] |Directories of initial data. You may use either absolute or relative path here.
+ | ***init_data_sys*** | List of string|["CH4.POSCAR.01x01x01/.../deepmd"] |Directories of initial data. You may use either absolute or relative path here. Systems will be detected recursively in the directories.
  | ***sys_format*** | String | "vasp/poscar" | Format of initial data. It will be `vasp/poscar` if not set.
- | init_multi_systems | Boolean | false | If set to `true`, `init_data_sys` directories should contain sub-directories of various systems. DP-GEN will regard all of these sub-directories as inital data systems.
  | init_batch_size   | String of integer     | [8]                                                            | Each number is the batch_size of corresponding system  for training in `init_data_sys`. One recommended rule for setting the `sys_batch_size` and `init_batch_size` is that `batch_size` mutiply number of atoms ot the stucture should be larger than 32. If set to `auto`, batch size will be 32 divided by number of atoms. |
   | sys_configs_prefix | String | "/sharedext4/.../data/" | Prefix of `sys_configs`
  | **sys_configs**   | List of list of string         | [<br />["/sharedext4/.../POSCAR"], <br />["....../POSCAR"]<br />] | Containing directories of structures to be explored in iterations.Wildcard characters are supported here. |
@@ -571,7 +570,7 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | **user_fp_params** | Dict |  |Parameters for cp2k calculation. find detail in manual.cp2k.org. only the kind section must be set before use.  we assume that you have basic knowledge for cp2k input.
 | **external_input_path** | String |  | Conflict with key:user_fp_params, use the template input provided by user, some rules should be followed, read the following text in detail.
 | *fp_style == ABACUS*
-| **user_fp_params** | Dict |  |Parameters for ABACUS INPUT. find detail [Here](https://github.com/deepmodeling/abacus-develop/blob/develop/docs/input-main.md#out-descriptor). If `deepks_model` is set, the model file should be in the pseudopotential directory. 
+| **user_fp_params** | Dict |  |Parameters for ABACUS INPUT. find detail [Here](https://github.com/deepmodeling/abacus-develop/blob/develop/docs/input-main.md#out-descriptor). If `deepks_model` is set, the model file should be in the pseudopotential directory. You can also set `KPT` file by adding `k_points` that corresponds to a list of six integers in this dictionary.
 | **fp_orb_files** | List |  |List of atomic orbital files. The files should be in pseudopotential directory. 
 | **fp_dpks_descriptor** | String |  |DeePKS descriptor file name. The file should be in pseudopotential directory. 
 
@@ -1086,7 +1085,6 @@ Here is an example of `param.json` for QM7 dataset:
         },
         "_comment": "that's all"
     },
-    "use_clusters": true,
     "fp_style": "gaussian",
     "shuffle_poscar": false,
     "fp_task_max": 1000,
@@ -1109,7 +1107,7 @@ Here is an example of `param.json` for QM7 dataset:
 }
 ```
 
-Here `pick_data` is the data to simplify and currently only supports `MultiSystems` containing `System` with `deepmd/npy` format, and `use_clusters` should always be `true`. `init_pick_number` and `iter_pick_number` are the numbers of picked frames. `e_trust_lo`, `e_trust_hi` mean the range of the deviation of the frame energy, and `f_trust_lo` and `f_trust_hi` mean the range of the max deviation of atomic forces in a frame. `fp_style` can only be `gaussian` currently. Other parameters are as the same as those of generator.
+Here `pick_data` is the directory to data to simplify where the program recursively detects systems `System` with `deepmd/npy` format. `init_pick_number` and `iter_pick_number` are the numbers of picked frames. `e_trust_lo`, `e_trust_hi` mean the range of the deviation of the frame energy, and `f_trust_lo` and `f_trust_hi` mean the range of the max deviation of atomic forces in a frame. `fp_style` can only be `gaussian` currently. Other parameters are as the same as those of generator.
 
 
 ## Set up machine
@@ -1139,7 +1137,7 @@ an example of new dpgen's machine.json
 ```json
 {
   "api_version": "1.0",
-  "train": [
+  "train":
     {
       "command": "dp",
       "machine": {
@@ -1163,9 +1161,8 @@ an example of new dpgen's machine.json
         "para_deg": 3,
         "source_list": ["/home/user1234/deepmd.1.2.4.env"]
       }
-    }
-  ],
-  "model_devi":[
+    },
+  "model_devi":
     {
       "command": "lmp",
       "machine":{
@@ -1186,9 +1183,8 @@ an example of new dpgen's machine.json
         "group_size": 5,
         "source_list": ["/home/user1234/deepmd.1.2.4.env"]
       }
-    }
-  ],
-  "fp":[
+    },
+  "fp":
     {
       "command": "vasp_std",
       "machine":{
@@ -1210,7 +1206,6 @@ an example of new dpgen's machine.json
         "source_list": ["~/vasp.env"]
       }
     }
-  ]
 }
 ```
 note1: the key "local_root" in dpgen's machine.json is always `./`
@@ -1222,7 +1217,7 @@ When switching into a new machine, you may modifying the `MACHINE`, according to
 An example for `MACHINE` is:
 ```json
 {
-  "train": [
+  "train":
     {
       "machine": {
         "batch": "slurm",
@@ -1245,9 +1240,8 @@ An example for `MACHINE` is:
         "qos": "data"
       },
       "command": "USERPATH/dp"
-    }
-  ],
-  "model_devi": [
+    },
+  "model_devi":
     {
       "machine": {
         "batch": "slurm",
@@ -1271,9 +1265,8 @@ An example for `MACHINE` is:
       },
       "command": "lmp_serial",
       "group_size": 1
-    }
-  ],
-  "fp": [
+    },
+  "fp":
     {
       "machine": {
         "batch": "slurm",
@@ -1300,7 +1293,6 @@ An example for `MACHINE` is:
       "command": "vasp_gpu",
       "group_size": 1
     }
-  ]
 }
 ```
 Following table illustrates which key is needed for three types of machine: `train`,`model_devi`  and `fp`. Each of them is a list of dicts. Each dict can be considered as an independent environmnet for calculation.

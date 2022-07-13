@@ -33,11 +33,7 @@ class Gamma(Property):
                 self.miller_index = parameter['miller_index']
                 self.displace_direction = parameter['displace_direction']
                 self.lattice_type = parameter['lattice_type']
-
-                # parameter['min_slab_size'] = parameter.get('min_slab_size', 10)
-                # self.min_slab_size = parameter['min_slab_size']
                 parameter['min_supercell_size'] = parameter.get('min_supercell_size', (1,1,5))
-
                 self.min_supercell_size = parameter['min_supercell_size']
                 parameter['min_vacuum_size'] = parameter.get('min_vacuum_size', 20)
                 self.min_vacuum_size = parameter['min_vacuum_size']
@@ -192,15 +188,12 @@ class Gamma(Property):
         return task_list
 
     @staticmethod
-    def centralize_slab(slab):
+    def centralize_slab(slab) -> None:
         z_pos_list = list(set([site.position[2] for site in slab]))
         z_pos_list.sort()
         central_atoms = (z_pos_list[-1] - z_pos_list[0])/2
-        #print(f"central_atoms: {central_atoms}")
         central_cell = slab.cell[2][2]/2
-        #print(f"central_cell: {central_cell}")
         disp_length = central_cell - central_atoms
-        #print(f"disp_length: {disp_length}")
         for site in slab:
             site.position[2] += disp_length
 
@@ -211,15 +204,15 @@ class Gamma(Property):
             miller_str += str(self.miller_index[ii])
         for ii in range(len(self.displace_direction)):
             direct_str += str(self.displace_direction[ii])
-        search_key = miller_str + ':' + direct_str
+        search_key = miller_str + '/' + direct_str
         # define specific cell vectors
         dict_directions = {
-            '100:010': [(0,1,0), (0,0,1), (1,0,0)],
-            '110:111': [(-1,1,1), (1,-1,1), (1,1,0)],
-            '111:110': [(-1,1,0), (-1,-1,2), (1,1,1)],
-            '111:112': [(-1,-1,2), (1,-1,0), (1,1,1)],
-            '112:111': [(-1,-1,1), (1,-1,0), (1,1,2)],
-            '123:111': [(-1,-1,1), (2,-1,0), (1,2,3)]
+            '100/010': [(0,1,0), (0,0,1), (1,0,0)],
+            '110/111': [(-1,1,1), (1,-1,1), (1,1,0)],
+            '111/110': [(-1,1,0), (1,1,-2), (1,1,1)],
+            '111/112': [(1,1,-2), (-1,1,0), (1,1,1)],
+            '112/111': [(-1,-1,1), (1,-1,0), (1,1,2)],
+            '123/111': [(-1,-1,1), (2,-1,0), (1,2,3)]
         }
         try:
             directions = dict_directions[search_key]
@@ -353,11 +346,14 @@ class Gamma(Property):
 
         if not self.reprod:
             ptr_data += str(tuple(self.miller_index)) + ' plane along ' + str(self.displace_direction)
-            ptr_data += "No_task: \tDisplacement \tStacking_Fault_E(J/m^2) EpA(eV) equi_EpA(eV)\n"
+            ptr_data += "No_task: \tDisplacement \tStacking_Fault_E(J/m^2) EpA(eV) slab_equi_EpA(eV)\n"
+            all_tasks.sort()
+            task_result_slab_equi = loadfn(os.path.join(all_tasks[0], 'result_task.json'))
             for ii in all_tasks:
                 task_result = loadfn(os.path.join(ii, 'result_task.json'))
                 natoms = np.sum(task_result['atom_numbs'])
                 epa = task_result['energies'][-1] / natoms
+                equi_epa_slab = task_result_slab_equi['energies'][-1] / natoms
                 AA = np.linalg.norm(np.cross(task_result['cells'][0][0], task_result['cells'][0][1]))
 
                 equi_path = os.path.abspath(os.path.join(os.path.dirname(output_file), '../relaxation/relax_task'))
@@ -365,12 +361,12 @@ class Gamma(Property):
                 equi_epa = equi_result['energies'][-1] / np.sum(equi_result['atom_numbs'])
                 structure_dir = os.path.basename(ii)
 
-                Cf = 1.60217657e-16 / (1e-20 * 2) * 0.001
-                sfe = (task_result['energies'][-1] - equi_epa * natoms) / AA * Cf
+                Cf = 1.60217657e-16 / 1e-20 * 0.001
+                sfe = (task_result['energies'][-1] - task_result_slab_equi['energies'][-1]) / AA * Cf
 
                 miller_index = loadfn(os.path.join(ii, 'miller.json'))
                 ptr_data += "%-25s     %7.2f   %7.3f    %8.3f %8.3f\n" % (
-                    str(miller_index) + '-' + structure_dir + ':', int(ii[-4:])/self.n_steps, sfe, epa, equi_epa)
+                    str(miller_index) + '-' + structure_dir + ':', int(ii[-4:])/self.n_steps, sfe, epa, equi_epa_slab)
                 res_data[int(ii[-4:])/self.n_steps] = [sfe, epa, equi_epa]
 
 

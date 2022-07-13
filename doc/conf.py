@@ -40,10 +40,12 @@ author = 'Deep Potential'
 
 extensions = [
     'deepmodeling_sphinx',
+    'dargs.sphinx',
     "sphinx_rtd_theme",
     'myst_parser',
     'sphinx.ext.autosummary',
     'sphinx.ext.viewcode',
+    'sphinxarg.ext',
 ]
 
 

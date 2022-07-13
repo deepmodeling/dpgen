@@ -25,7 +25,7 @@ class TestGamma(unittest.TestCase):
 
     def setUp(self):
         _jdata = {
-            "structures":    ["confs/hp-Mo"],
+            "structures":    ["confs/std-fcc"],
             "interaction": {
                 "type":          "vasp",
                 "incar":         "vasp_input/INCAR_Mo",
@@ -35,9 +35,9 @@ class TestGamma(unittest.TestCase):
             "properties": [
                 {
                     "type": "gamma",
-                    "lattice_type": "bcc",
-                    "miller_index": [1, 1, 0],
-                    "displace_direction": [1, 1, 1],
+                    "lattice_type": "fcc",
+                    "miller_index": [1, 1, 1],
+                    "displace_direction": [1, 1, 2],
                     "min_supercell_size": [1, 1, 10],
                     "min_vacuum_size": 10,
                     "add_fix": ["true", "true", "false"],
