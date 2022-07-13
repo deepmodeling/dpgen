@@ -20,23 +20,23 @@ from dpgen.auto_test.lib.utils import create_path
 lammps_task_type = ['deepmd', 'meam', 'eam_fs', 'eam_alloy']
 
 
-def make_property_instance(paramters):
+def make_property_instance(parameters):
     """
     Make an instance of Property
     """
-    prop_type = paramters['type']
+    prop_type = parameters['type']
     if prop_type == 'eos':
-        return EOS(paramters)
+        return EOS(parameters)
     elif prop_type == 'elastic':
-        return Elastic(paramters)
+        return Elastic(parameters)
     elif prop_type == 'vacancy':
-        return Vacancy(paramters)
+        return Vacancy(parameters)
     elif prop_type == 'interstitial':
-        return Interstitial(paramters)
+        return Interstitial(parameters)
     elif prop_type == 'surface':
-        return Surface(paramters)
+        return Surface(parameters)
     elif prop_type == 'gamma':
-        return Gamma(paramters)
+        return Gamma(parameters)
     else:
         raise RuntimeError(f'unknown property type {prop_type}')
 
