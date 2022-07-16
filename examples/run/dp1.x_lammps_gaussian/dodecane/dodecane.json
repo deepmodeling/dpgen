@@ -67,8 +67,6 @@
     "model_devi_skip":		100,
     "model_devi_f_trust_lo":	0.20,
     "model_devi_f_trust_hi":	0.45,
-    "model_devi_e_trust_lo":	1e10,
-    "model_devi_e_trust_hi":	1e10,
     "model_devi_clean_traj":	false,
     "model_devi_jobs":	[
       {"sys_idx": [0], "temps": [  3000], "trj_freq": 10, "nsteps": 2000, "ensemble": "nvt", "_idx": "00"},

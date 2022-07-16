@@ -163,8 +163,6 @@
     "model_devi_skip":		10,
     "model_devi_f_trust_lo":	0.150,
     "model_devi_f_trust_hi":	0.250,
-    "model_devi_e_trust_lo":	1e10,
-    "model_devi_e_trust_hi":	1e10,
     "model_devi_clean_traj":	true,
     "_comment":     "group 1: 0,1,11,lw; group 2: 2-6,9,12-15; group 3: 7,8,lw; group 4: 10.",
     "model_devi_jobs":	[

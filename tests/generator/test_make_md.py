@@ -206,8 +206,6 @@ class TestMakeModelDeviRevMat(unittest.TestCase):
             "shuffle_poscar":	False,
             "model_devi_f_trust_lo":	0.050,
             "model_devi_f_trust_hi":	0.150,
-            "model_devi_e_trust_lo":	1e10,
-            "model_devi_e_trust_hi":	1e10,
             "model_devi_plumed":        True,
             "model_devi_jobs":	[
                 {"sys_idx": [0, 1], 'traj_freq': 10, "template": {"lmp": "lmp/input.lammps", "plm": "lmp/input.plumed"},
@@ -323,8 +321,6 @@ class TestMakeModelDeviRevMat(unittest.TestCase):
             "shuffle_poscar":	False,
             "model_devi_f_trust_lo":	0.050,
             "model_devi_f_trust_hi":	0.150,
-            "model_devi_e_trust_lo":	1e10,
-            "model_devi_e_trust_hi":	1e10,
             "model_devi_plumed":        True,
             "model_devi_jobs":	[
                 {"sys_idx": [0, 1], 'traj_freq': 10,  "template":{"lmp": "lmp/input.lammps", "plm": "lmp/input.plumed"},
