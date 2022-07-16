@@ -7,8 +7,8 @@
 			],
     "init_batch_size":	[16],
     "sys_configs":	[
-	["data/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale*/000010/POSCAR"],
-	["data/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale*/00000[8-9]/POSCAR"]
+	["data/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale*/000000/POSCAR"],
+	["data/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale*/000001/POSCAR"]
     ],
     "_comment":		"0  1  2  3",
     "_comment":		"4  5  6  7",
@@ -17,6 +17,7 @@
 
     "_comment":		" 00.train ",
     "numb_models":	4,
+    "train_param":	"input.json",
     "default_training_param" : {
 	"_comment": " model parameters",
 	"use_smooth":		true,
@@ -68,13 +69,13 @@
     "_comment": "model_devi_skip: the first x of the recorded frames",
     "model_devi_dt":		0.002,
     "model_devi_skip":		0,
-    "model_devi_f_trust_lo":	0.050,
-    "model_devi_f_trust_hi":	0.150,
+    "model_devi_f_trust_lo":	[0.000, 0.050],
+    "model_devi_f_trust_hi":	{"1": 0.100, "0": 0.150},
     "model_devi_e_trust_lo":	1e10,
     "model_devi_e_trust_hi":	1e10,
     "model_devi_clean_traj":	false,
     "model_devi_jobs":	[
-	{"sys_idx": [0,1], "temps": [50,100], "press": [1.0,2.0], "trj_freq": 10, "nsteps": 1000, "ensemble": "npt", "_idx": "00"}
+	{"sys_idx": [0, 1], "temps": [50,100], "press": [1.0,2.0], "trj_freq": 10, "nsteps": 1000, "ensemble": "npt", "_idx": "00"}
     ],
 
     "_comment":		" 02.fp ",
@@ -84,22 +85,27 @@
     "fp_task_min":	10,
     "fp_pp_path":	".",
     "fp_pp_files":	["vasp/potcars/POTCAR.mg", "vasp/potcars/POTCAR.al"],
-    "fp_params":	{
-	"_comment": "given in unit depending on the fp method",
-	"ecut":		600,
-	"ediff":	1e-6,
-	"kspacing":	0.16,
-	"_comment": "gauss, mp:N(methfessel-paxton:order by default order=1), fd(Fermi-Dirac)",
-	"smearing":	"mp",
-	"sigma":	0.25,
-	"_comment": "only for vasp, can be NONE, SCAN, TPSS, RTPSS, M06L or MBJ",
-	"metagga":	"NONE",
-	"npar":		1,
-	"kpar":		1,
-	"user_vasp_params": {
-	    "EDIFF" :	1e-5
-	},
-	"_comment":	" that's all "
+    "_comment":		" user provided vasp script ",
+    "user_fp_params": {
+	"PREC":		"A",
+	"ENCUT":	600,
+	"ISYM":		0,
+	"ALGO":		"fast",
+	"EDIFF":	1e-05,
+	"LREAL":	"A",
+	"NPAR":		1,
+	"KPAR":		1,
+	"NELMIN":	4,
+	"ISIF":		2,
+	"ISMEAR":	1,
+	"SIGMA":	0.25,
+	"IBRION":	-1,
+	"NSW":		0,
+	"LWAVE":	false,
+	"LCHARG":	false,
+	"PSTRESS":	0,
+	"KSPACING":	0.16,
+	"KGAMMA":	false
     },
     "_comment":		" that's all "
 }

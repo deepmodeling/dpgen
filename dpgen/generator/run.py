@@ -1902,6 +1902,8 @@ def _make_fp_vasp_inner (modd_path,
     def _trust_limitation_check(sys_idx, lim):
         if isinstance(lim, list):
             sys_lim = lim[sys_idx]
+        elif isinstance(lim, dict):
+            sys_lim = lim[str(sys_idx)]
         else:
             sys_lim = lim
         return sys_lim
@@ -1912,10 +1914,10 @@ def _make_fp_vasp_inner (modd_path,
         modd_system_task.sort()
         if model_devi_engine in ('lammps', 'gromacs', 'calypso'):
             # convert global trust limitations to local ones
-            f_trust_lo_sys = _trust_limitation_check(ss, f_trust_lo)
-            f_trust_hi_sys = _trust_limitation_check(ss, f_trust_hi)
-            v_trust_lo_sys = _trust_limitation_check(ss, v_trust_lo)
-            v_trust_hi_sys = _trust_limitation_check(ss, v_trust_hi)
+            f_trust_lo_sys = _trust_limitation_check(int(ss), f_trust_lo)
+            f_trust_hi_sys = _trust_limitation_check(int(ss), f_trust_hi)
+            v_trust_lo_sys = _trust_limitation_check(int(ss), v_trust_lo)
+            v_trust_hi_sys = _trust_limitation_check(int(ss), v_trust_hi)
 
             # assumed e -> v
             if not model_devi_adapt_trust_lo:
@@ -2453,10 +2455,6 @@ def _make_fp_vasp_configs(iter_index,
                           jdata):
     fp_task_max = jdata['fp_task_max']
     model_devi_skip = jdata['model_devi_skip']
-    v_trust_lo = jdata.get('model_devi_v_trust_lo', 1e10)
-    v_trust_hi = jdata.get('model_devi_v_trust_hi', 1e10)
-    f_trust_lo = jdata['model_devi_f_trust_lo']
-    f_trust_hi = jdata['model_devi_f_trust_hi']
     type_map = jdata['type_map']
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -2469,6 +2467,20 @@ def _make_fp_vasp_configs(iter_index,
         cur_job = json.load(open(os.path.join(modd_path, 'cur_job.json'), 'r'))
         if 'task_min' in cur_job :
             task_min = cur_job['task_min']
+    else:
+        cur_job = {}
+    # support iteration dependent trust levels
+    v_trust_lo = cur_job.get('model_devi_v_trust_lo', jdata.get('model_devi_v_trust_lo', 1e10))
+    v_trust_hi = cur_job.get('model_devi_v_trust_hi', jdata.get('model_devi_v_trust_hi', 1e10))
+    if cur_job.get('model_devi_f_trust_lo') is not None:
+        f_trust_lo = cur_job.get('model_devi_f_trust_lo')
+    else:
+        f_trust_lo = jdata['model_devi_f_trust_lo']
+    if cur_job.get('model_devi_f_trust_hi') is not None:
+        f_trust_hi = cur_job.get('model_devi_f_trust_hi')
+    else:
+        f_trust_hi = jdata['model_devi_f_trust_hi']
+
     # make configs
     fp_tasks = _make_fp_vasp_inner(modd_path, work_path,
                                    model_devi_skip,

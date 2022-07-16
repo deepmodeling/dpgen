@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List
 from dargs import Argument, Variant
 
 from dpgen.arginfo import general_mdata_arginfo
@@ -90,6 +90,10 @@ def model_devi_jobs_args() -> List[Argument]:
     doc_neidelay = 'delay building until this many steps since last build.'
     doc_taut = 'Coupling time of thermostat (ps).'
     doc_taup = 'Coupling time of barostat (ps).'
+    doc_model_devi_f_trust_lo = 'Lower bound of forces for the selection. If dict, should be set for each index in sys_idx, respectively.'
+    doc_model_devi_f_trust_hi = 'Upper bound of forces for the selection. If dict, should be set for each index in sys_idx, respectively.'
+    doc_model_devi_v_trust_lo = 'Lower bound of virial for the selection. If dict, should be set for each index in sys_idx, respectively. Should be used with DeePMD-kit v2.x.'
+    doc_model_devi_v_trust_hi = 'Upper bound of virial for the selection. If dict, should be set for each index in sys_idx, respectively. Should be used with DeePMD-kit v2.x.'
 
     args = [
         Argument("sys_idx", list, optional=False, doc=doc_sys_idx),
@@ -101,6 +105,14 @@ def model_devi_jobs_args() -> List[Argument]:
         Argument("neidelay", int, optional=True, doc=doc_neidelay),
         Argument("taut", float, optional=True, doc=doc_taut),
         Argument("taup", float, optional=True, doc=doc_taup),
+        Argument("model_devi_f_trust_lo", [
+                 float, dict], optional=False, doc=doc_model_devi_f_trust_lo),
+        Argument("model_devi_f_trust_hi", [
+                 float, dict], optional=False, doc=doc_model_devi_f_trust_hi),
+        Argument("model_devi_v_trust_lo", [
+                 float, dict], optional=False, doc=doc_model_devi_v_trust_lo),
+        Argument("model_devi_v_trust_hi", [
+                 float, dict], optional=False, doc=doc_model_devi_v_trust_hi),
     ]
 
     doc_model_devi_jobs = 'Settings for exploration in 01.model_devi. Each dict in the list corresponds to one iteration. The index of model_devi_jobs exactly accord with index of iterations'
@@ -110,10 +122,10 @@ def model_devi_jobs_args() -> List[Argument]:
 def model_devi_lmp_args() -> List[Argument]:
     doc_model_devi_dt = 'Timestep for MD. 0.002 is recommend.'
     doc_model_devi_skip = 'Number of structures skipped for fp in each MD.'
-    doc_model_devi_f_trust_lo = 'Lower bound of forces for the selection. If list, should be set for each index in sys_configs, respectively.'
-    doc_model_devi_f_trust_hi = 'Upper bound of forces for the selection. If list, should be set for each index in sys_configs, respectively.'
-    doc_model_devi_v_trust_lo = 'Lower bound of virial for the selection. If list, should be set for each index in sys_configs, respectively. Should be used with DeePMD-kit v2.x.'
-    doc_model_devi_v_trust_hi = 'Upper bound of virial for the selection. If list, should be set for each index in sys_configs, respectively. Should be used with DeePMD-kit v2.x.'
+    doc_model_devi_f_trust_lo = 'Lower bound of forces for the selection. If list or dict, should be set for each index in sys_configs, respectively.'
+    doc_model_devi_f_trust_hi = 'Upper bound of forces for the selection. If list or dict, should be set for each index in sys_configs, respectively.'
+    doc_model_devi_v_trust_lo = 'Lower bound of virial for the selection. If list or dict, should be set for each index in sys_configs, respectively. Should be used with DeePMD-kit v2.x.'
+    doc_model_devi_v_trust_hi = 'Upper bound of virial for the selection. If list or dict, should be set for each index in sys_configs, respectively. Should be used with DeePMD-kit v2.x.'
     doc_model_devi_adapt_trust_lo = 'Adaptively determines the lower trust levels of force and virial. This option should be used together with model_devi_numb_candi_f, model_devi_numb_candi_v and optionally with model_devi_perc_candi_f and model_devi_perc_candi_v. dpgen will make two sets:\n\n\
 - 1. From the frames with force model deviation lower than model_devi_f_trust_hi, select max(model_devi_numb_candi_f, model_devi_perc_candi_f*n_frames) frames with largest force model deviation. \n\n\
 - 2. From the frames with virial model deviation lower than model_devi_v_trust_hi, select max(model_devi_numb_candi_v, model_devi_perc_candi_v*n_frames) frames with largest virial model deviation. \n\n\
@@ -134,13 +146,13 @@ The union of the two sets is made as candidate dataset.'
         Argument("model_devi_skip", int, optional=False,
                  doc=doc_model_devi_skip),
         Argument("model_devi_f_trust_lo", [
-                 float, list], optional=False, doc=doc_model_devi_f_trust_lo),
+                 float, list, dict], optional=False, doc=doc_model_devi_f_trust_lo),
         Argument("model_devi_f_trust_hi", [
-                 float, list], optional=False, doc=doc_model_devi_f_trust_hi),
+                 float, list, dict], optional=False, doc=doc_model_devi_f_trust_hi),
         Argument("model_devi_v_trust_lo", [
-                 float, list], optional=True, default=1e10, doc=doc_model_devi_v_trust_lo),
+                 float, list, dict], optional=True, default=1e10, doc=doc_model_devi_v_trust_lo),
         Argument("model_devi_v_trust_hi", [
-                 float, list], optional=True, default=1e10, doc=doc_model_devi_v_trust_hi),
+                 float, list, dict], optional=True, default=1e10, doc=doc_model_devi_v_trust_hi),
         Argument("model_devi_adapt_trust_lo", bool, optional=True,
                  doc=doc_model_devi_adapt_trust_lo),
         Argument("model_devi_numb_candi_f", int, optional=True,
