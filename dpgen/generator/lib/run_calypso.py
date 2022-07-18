@@ -14,9 +14,11 @@ import random
 import re
 import glob
 import shutil
+import sys
 from ase.io.vasp import write_vasp
 from ase.io.trajectory import Trajectory
 from pathlib import Path
+from itertools import combinations
 from distutils.version import LooseVersion
 from dpgen import dlog
 from dpgen.generator.lib.utils import make_iter_name
@@ -94,9 +96,9 @@ def gen_structures(iter_index,jdata,mdata):
         for ii in range(int(PickUpStep)-1,maxstep+1):
             dlog.info('CALYPSO step %s'%ii)
             if ii == maxstep :  
-                while True:
-                    if len(glob.glob('OUTCAR_*')) == popsize:
-                        break
+                #while True:
+                #    if len(glob.glob('OUTCAR_*')) == popsize:
+                #        break
                 os.system('%s'%run_calypso)
                 break
             # run calypso
@@ -180,12 +182,29 @@ def gen_structures(iter_index,jdata,mdata):
     else:
         # --------------------------------------------------------------
         # TODO(zhenyu) make this code work for other situation 
-        component = ['Mg','Al','Cu','MgAl','MgCu','AlCu','MgAlCu']
+        type_map = jdata['type_map']
+        how_many_spec = len(type_map)
+        if how_many_spec == 1:
+            dlog.info('vsc mode can not work in one-element situation' )
+            sys.exit()
+
+        comp_temp = list(map(list,list(combinations(type_map,1))))
+        for hms in range(2,how_many_spec+1):
+            comp_temp.extend(list(map(list,list(combinations(type_map,hms)))))  # comp_temp = [['Mg'],['Al'],['Cu'],['Mg','Al'],['Mg','Cu'],['Al','Cu'],['Mg','Al','Cu']]
+        
+        component = []
+        for comp_temp_ in comp_temp:
+            component.append(''.join(comp_temp_))     # component = ['Mg','Al','Cu','MgAl','MgCu','AlCu','MgAlCu']
+
+        print(component)
+        #sys.exit()
+        calypso_input_path = jdata.get('calypso_input_path')
         
         for idx,com in enumerate(component):
             pwd = os.getcwd()
             os.mkdir(str(idx))
-            shutil.copyfile(os.path.join(cwd,'calypso_input','input.dat.%s'%com),os.path.join(str(idx),'input.dat'))
+            #shutil.copyfile(os.path.join(cwd,'calypso_input','input.dat.%s'%com),os.path.join(str(idx),'input.dat'))
+            shutil.copyfile(os.path.join(calypso_input_path,'input.dat.%s'%com),os.path.join(str(idx),'input.dat'))
             os.chdir(str(idx))
             os.system(run_calypso)
             os.chdir(pwd)
@@ -330,7 +349,7 @@ def analysis(iter_index,jdata,calypso_run_opt_path,calypso_model_devi_path):
 
     if len(ms) == 0:
         print('too little confs, ')
-        return
+        sys.exit()
 
     if os.path.exists(os.path.join(result_path,'deepmd')):
         shutil.rmtree(os.path.join(result_path,'deepmd'))
@@ -407,5 +426,5 @@ def run_calypso_model_devi (iter_index,
             os.chdir(cwd)
 
         elif lines[-1].strip().strip('\n') == '4':
-            #dlog.info('Model Devi is done.')
-            break
+            dlog.info('Model Devi is done.')
+            return
