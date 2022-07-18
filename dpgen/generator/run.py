@@ -3119,7 +3119,7 @@ def post_fp_vasp (iter_index,
         sys_outcars = glob.glob(os.path.join(work_path, "task.%s.*/OUTCAR"%ss))
         sys_outcars.sort()
         tcount += len(sys_outcars)
-        all_sys = None
+        all_sys = dpdata.MultiSystems(type_map = jdata['type_map'])
         all_te = []
         for oo in sys_outcars :
             try:
