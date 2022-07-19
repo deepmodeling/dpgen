@@ -3119,8 +3119,7 @@ def post_fp_vasp (iter_index,
         sys_outcars = glob.glob(os.path.join(work_path, "task.%s.*/OUTCAR"%ss))
         sys_outcars.sort()
         tcount += len(sys_outcars)
-        type_map = jdata['type_map']
-        all_sys = dpdata.MultiSystems(type_map = type_map)
+        all_sys = None
         all_te = []
         for oo in sys_outcars :
             try:
@@ -3133,7 +3132,10 @@ def post_fp_vasp (iter_index,
                    _sys = dpdata.LabeledSystem()
                    dlog.info('Failed fp path: %s'%oo.replace('OUTCAR',''))
             if len(_sys) == 1:
-                all_sys.append(_sys)
+                if all_sys is None:
+                    all_sys = _sys
+                else:
+                    all_sys.append(_sys)
                 # save ele_temp, if any
                 if(os.path.exists(oo.replace('OUTCAR', 'job.json')) ): 
                     with open(oo.replace('OUTCAR', 'job.json')) as fp:
@@ -3150,8 +3152,8 @@ def post_fp_vasp (iter_index,
            all_sys.to_deepmd_raw(sys_data_path)
            all_sys.to_deepmd_npy(sys_data_path, set_size = len(sys_outcars))
            if all_te.size > 0:
-               # assert(len(all_sys) == all_sys.get_nframes())
-               # assert(len(all_sys) == all_te.size)
+               assert(len(all_sys) == all_sys.get_nframes())
+               assert(len(all_sys) == all_te.size)
                all_te = np.reshape(all_te, [-1,1])
                if use_ele_temp == 0:
                    raise RuntimeError('should not get ele temp at setting: use_ele_temp == 0')
