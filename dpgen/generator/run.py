@@ -3137,12 +3137,13 @@ def post_fp_vasp (iter_index,
                 else:
                     all_sys.append(_sys)
                 # save ele_temp, if any
-                with open(oo.replace('OUTCAR', 'job.json')) as fp:
-                    job_data = json.load(fp)
-                if 'ele_temp' in job_data:
-                    assert(use_ele_temp)
-                    ele_temp = job_data['ele_temp']
-                    all_te.append(ele_temp)
+                if(os.path.exists(oo.replace('OUTCAR', 'job.json')) ): 
+                    with open(oo.replace('OUTCAR', 'job.json')) as fp:
+                        job_data = json.load(fp)
+                    if 'ele_temp' in job_data:
+                        assert(use_ele_temp)
+                        ele_temp = job_data['ele_temp']
+                        all_te.append(ele_temp)
             else:
                 icount+=1
         all_te = np.array(all_te)
