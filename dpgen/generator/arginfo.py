@@ -126,7 +126,7 @@ The union of the two sets is made as candidate dataset.'
     doc_model_devi_clean_traj = 'If type of model_devi_clean_traj is bool type then it denote whether to clean traj folders in MD since they are too large. If it is Int type, then the most recent n iterations of traj folders will be retained, others will be removed.'
     doc_model_devi_nopbc = 'Assume open boundary condition in MD simulations.'
     doc_model_devi_activation_func = 'Set activation functions for models, length of the list should be the same as numb_models, and two elements in the list of string respectively assign activation functions to the embedding and fitting nets within each model. Backward compatibility: the orginal "list of String" format is still supported, where embedding and fitting nets of one model use the same activation function, and the length of the list should be the same as numb_models.'
-    doc_shuffle_poscar = 'Shuffle atoms of each frame before running simulations.' # TODO: explain the reason to do shuffle?
+    doc_shuffle_poscar = 'Shuffle atoms of each frame before running simulations. The purpose is to sample the element occupation of alloys.'
 
     return [
         model_devi_jobs_args(),
