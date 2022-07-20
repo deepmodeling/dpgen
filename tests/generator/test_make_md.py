@@ -53,9 +53,8 @@ def _check_confs(testCase, idx, jdata) :
     for ii in sys_idx :
         sys_poscars = []
         for ss in sys_configs[ii]:
-            tmp_poscars = glob.glob(ss)
+            tmp_poscars = sorted(glob.glob(ss))
             sys_poscars += tmp_poscars
-        sys_poscars.sort()
         poscars.append(sys_poscars)
     for ii in tasks :
         conf_file = os.path.join(ii, 'conf.lmp')
