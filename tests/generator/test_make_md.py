@@ -60,7 +60,6 @@ def _check_confs(testCase, idx, jdata) :
         conf_file = os.path.join(ii, 'conf.lmp')
         l_conf_file = os.path.basename(os.readlink(conf_file))
         poscar_file = poscars[int(l_conf_file.split('.')[0])][int(l_conf_file.split('.')[1])]
-        print(poscar_file, conf_file, poscars)
         sys_0 = dpdata.System(conf_file, type_map = jdata['type_map'])
         sys_1 = dpdata.System(poscar_file, type_map = jdata['type_map'])
         test_atom_names(testCase, sys_0, sys_1)
