@@ -802,7 +802,7 @@ def make_model_devi (iter_index,
             sys_configs.append(temp_sys_list)
     else:
         sys_configs = jdata['sys_configs']
-    shuffle_poscar = jdata['shuffle_poscar']
+    shuffle_poscar = jdata.get('shuffle_poscar', False)
 
     if model_devi_engine != 'calypso':
         cur_job = model_devi_jobs[iter_index]

@@ -160,7 +160,7 @@ The union of the two sets is made as candidate dataset.'
                  doc=doc_model_devi_nopbc),
         Argument("model_devi_activation_func", list, optional=True,
                  doc=doc_model_devi_activation_func),
-        Argument("shuffle_poscar", bool, optional=False, doc=doc_shuffle_poscar),
+        Argument("shuffle_poscar", bool, optional=True, default=False, doc=doc_shuffle_poscar),
     ]
 
 
