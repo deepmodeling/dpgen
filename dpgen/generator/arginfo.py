@@ -150,9 +150,9 @@ The union of the two sets is made as candidate dataset.'
         Argument("model_devi_f_trust_hi", [
                  float, list, dict], optional=False, doc=doc_model_devi_f_trust_hi),
         Argument("model_devi_v_trust_lo", [
-                 float, list, dict], optional=False, doc=doc_model_devi_v_trust_lo),
+                 float, list, dict], optional=True, default=1e10, doc=doc_model_devi_v_trust_lo),
         Argument("model_devi_v_trust_hi", [
-                 float, list, dict], optional=False, doc=doc_model_devi_v_trust_hi),
+                 float, list, dict], optional=True, default=1e10, doc=doc_model_devi_v_trust_hi),
         Argument("model_devi_adapt_trust_lo", bool, optional=True,
                  doc=doc_model_devi_adapt_trust_lo),
         Argument("model_devi_numb_candi_f", int, optional=True,
