@@ -818,7 +818,7 @@ def make_model_devi (iter_index,
         cur_systems = []
         ss = sys_configs[idx]
         for ii in ss :
-            cur_systems += glob.glob(ii)
+            cur_systems += sorted(glob.glob(ii))
         # cur_systems should not be sorted, as we may add specific constrict to the similutions 
         #cur_systems.sort()
         cur_systems = [os.path.abspath(ii) for ii in cur_systems]
