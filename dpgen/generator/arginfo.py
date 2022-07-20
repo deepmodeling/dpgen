@@ -86,7 +86,7 @@ def model_devi_jobs_args() -> List[Argument]:
     doc_press = 'Pressure (Bar) in MD.'
     doc_trj_freq = 'Frequecy of trajectory saved in MD.'
     doc_nsteps = 'Running steps of MD.'
-    doc_ensembles = 'Determining which ensemble used in MD, options include “npt” and “nvt”.'
+    doc_ensemble = 'Determining which ensemble used in MD, options include “npt” and “nvt”.'
     doc_neidelay = 'delay building until this many steps since last build.'
     doc_taut = 'Coupling time of thermostat (ps).'
     doc_taup = 'Coupling time of barostat (ps).'
@@ -101,7 +101,7 @@ def model_devi_jobs_args() -> List[Argument]:
         Argument("press", list, optional=False, doc=doc_press),
         Argument("trj_freq", int, optional=False, doc=doc_trj_freq),
         Argument("nsteps", int, optional=False, doc=doc_nsteps),
-        Argument("ensembles", str, optional=False, doc=doc_ensembles),
+        Argument("ensemble", str, optional=False, doc=doc_ensemble),
         Argument("neidelay", int, optional=True, doc=doc_neidelay),
         Argument("taut", float, optional=True, doc=doc_taut),
         Argument("taup", float, optional=True, doc=doc_taup),
