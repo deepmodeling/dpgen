@@ -40,8 +40,6 @@ class TestGromacsModelDeviEngine(unittest.TestCase):
             "model_devi_dt":         0.001,
             "model_devi_f_trust_lo": 0.05,
             "model_devi_f_trust_hi": 0.10,
-            "model_devi_e_trust_lo": 1e10,
-            "model_devi_e_trust_hi": 1e10,
             "model_devi_clean_traj": False,
             "model_devi_skip":       0,
             "model_devi_nopbc":      True,
