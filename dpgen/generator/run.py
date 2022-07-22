@@ -839,7 +839,7 @@ def make_model_devi (iter_index,
         # run model devi script
         calypso_run_model_devi_script = os.path.join(calypso_model_devi_path,'calypso_run_model_devi.py')
         shutil.copyfile(calypso_run_model_devi_file,calypso_run_model_devi_script)
-        # Create work path of calypso and dpdispatcher depending on the number of PRESSURE
+        # Create work path list
         caly_run_opt_path = []
         if run_mode == 1:
             caly_run_opt_path.append('%s.%03d'%(_calypso_run_opt_path, 0))

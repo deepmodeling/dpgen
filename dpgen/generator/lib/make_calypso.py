@@ -107,6 +107,11 @@ def _make_model_devi_native_calypso(iter_index,model_devi_jobs, caly_run_opt_pat
         if iter_index in jobbs.get('times'):
             cur_job = model_devi_jobs[iiidx]
 
+    work_path = os.path.dirname(caly_run_opt_path[0])
+    # cur_job.json
+    with open(os.path.join(work_path, 'cur_job.json'), 'w') as outfile:
+        json.dump(cur_job, outfile, indent = 4)
+
     # Crystal Parameters
     nameofatoms = cur_job.get('NameOfAtoms')
     numberofatoms = cur_job.get('NumberOfAtoms')
@@ -137,11 +142,6 @@ def _make_model_devi_native_calypso(iter_index,model_devi_jobs, caly_run_opt_pat
     for press_idx, temp_caly_run_opt_path in enumerate(caly_run_opt_path):
         # cur_press
         cur_press = pstress[press_idx]
-        # cur_dir
-        work_path = os.path.dirname(temp_caly_run_opt_path)
-        # cur_job.json
-        with open(os.path.join(work_path, 'cur_job.json'), 'w') as outfile:
-            json.dump(cur_job, outfile, indent = 4)
         file_c = make_calypso_input(nameofatoms,numberofatoms,
                                numberofformula,volume,
                                distanceofion,psoratio,popsize,
