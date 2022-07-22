@@ -76,7 +76,7 @@ def make_calypso_input(nameofatoms,numberofatoms,
     ret+= "NumberOfParallel = 4\n"
     assert split != None 
     ret+= "Split = %s\n"%(split)
-    assert pstress != None  or type(pstress) == type(200)
+    assert pstress != None  or type(pstress) == type(200) or type(pstress) == type(0.001)
     ret+= "PSTRESS = %f\n"%(pstress)
     assert fmax != None  or type(fmax) == type(0.01)
     ret+= "fmax = %f\n"%(fmax)
