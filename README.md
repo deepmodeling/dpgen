@@ -153,7 +153,7 @@ The following table gives explicit descriptions on keys in `PARAM`.
 
 The bold notation of key (such as **Elements**) means that it's a necessary key.
 
- Key  | Type          | Example                                                      | Discription                                                      |
+ Key  | Type          | Example                                                      | Description                                                      |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
 | **stages** | List of Integer | [1,2,3,4] | Stages for `init_bulk`
 | **Elements** | List of String | ["Mg"] | Atom types
@@ -166,7 +166,7 @@ The bold notation of key (such as **Elements**) means that it's a necessary key.
 | **scale** | List of float | [0.980, 1.000, 1.020] | Scales for transforming cells.
 | **skip_relax** | Boolean | False | If it's true, you may directly run stage 2 (pertub and scale) using an unrelaxed POSCAR.
 | **pert_numb** | Integer | 30 | Number of pertubations for each POSCAR.
-| **pert_box** | Float | 0.03 | Percentage of Perturbation for cells.
+| **pert_box** | Float | 0.03 | Pertubation of lattice vector component (Angstrom).
 | **pert_atom** | Float | 0.01 | Pertubation of each atoms (Angstrom).
 | **md_nstep** | Integer | 10 | Steps of AIMD in stage 3. If it's not equal to settings via `NSW` in `md_incar`, DP-GEN will follow `NSW`.
 | **coll_ndata** | Integer | 5000 | Maximal number of collected data.
@@ -300,7 +300,7 @@ The following table gives explicit descriptions on keys in `PARAM`.
 
 The bold notation of key (such as **Elements**) means that it's a necessary key.
 
- Key  | Type          | Example                                                      | Discription                                                      |
+ Key  | Type          | Example                                                      | Description                                                      |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
 | **stages** | List of Integer | [1,2,3,4] | Stages for `init_surf`
 | **Elements** | List of String | ["Mg"] | Atom types
@@ -316,7 +316,7 @@ The bold notation of key (such as **Elements**) means that it's a necessary key.
 | **scale** | List of float | [0.980, 1.000, 1.020] | Scales for transforming cells.
 | **skip_relax** | Boolean | False | If it's true, you may directly run stage 2 (pertub and scale) using an unrelaxed POSCAR.
 | **pert_numb** | Integer | 30 | Number of pertubations for each POSCAR.
-| **pert_box** | Float | 0.03 | Percentage of Perturbation for cells.
+| **pert_box** | Float | 0.03 | Pertubation of lattice vector component (Angstrom).
 | **pert_atom** | Float | 0.01 | Pertubation of each atoms (Angstrom).
 | **coll_ndata** | Integer | 5000 | Maximal number of collected data.
 
@@ -490,7 +490,7 @@ The following table gives explicit descriptions on keys in `PARAM`.
 
 The bold notation of key (such aas **type_map**) means that it's a necessary key.
 
- Key  | Type          | Example                                                      | Discription                                                      |
+ Key  | Type          | Example                                                      | Description                                                      |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
 | *#Basics*
 | **type_map** | List of string | ["H", "C"] | Atom types
@@ -580,7 +580,7 @@ There are some new keys needed to be added into `param` and `machine` if CALYPSO
 
 The bold notation of key (such as **calypso_path**) means that it's a necessary key.
 
- Key  | Type          | Example                                                      | Discription                                                      |
+ Key  | Type          | Example                                                      | Description                                                      |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
 | *in param file*
 | **model_devi_engine** | string | "calypso" | CALYPSO as model-deviation engine.|
@@ -767,7 +767,7 @@ The last part is the optional settings for various tasks mentioned above. You ca
 
 param.json in a dictionary.
 
-| Fields  | Type  | Example | Discription  |
+| Fields  | Type  | Example | Description  |
 | :---------------- | :--------------------- | :------------- | :----------------|
 | potcar_map | dict | {"Al": "example/POTCAR"} |a  dict like { "element" : "position of POTCAR"  } |
 | conf_dir | path like string | "confs/Al/std-fcc" | the dir which contains vasp's POSCAR  |
@@ -779,7 +779,7 @@ param.json in a dictionary.
 
 The keys in param["vasp_params"] is shown below.
 
-| Fields  | Type  | Example | Discription  |
+| Fields  | Type  | Example | Description  |
 | :---------------- | :--------------------- | :---------------- | :----------------|
 | ecut | real number | 650  | the plane wave cutoff for grid.  |
 | ediff | real number | 1e-6 |Tolerance of Density Matrix |
@@ -790,7 +790,7 @@ The keys in param["vasp_params"] is shown below.
 
 the keys in param["lammps_params"].
 
-| Key  | Type  | Example | Discription  |
+| Key  | Type  | Example | Description  |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
 | model_dir | path like string | "example/Al_model" | the model dir which contains .pb file  |
 | type_map | list of string | ["Al"] | a list contains the element, usually useful for multiple element situation |
@@ -807,7 +807,7 @@ the keys in param["lammps_params"].
 
 param.json.
 
-| Field  | Type | Example | Discription |
+| Field  | Type | Example | Description |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
 | EpA(eV) | real number | -3.7468 | the potential energy of a atom|
 | VpA(A^3)| real number | 16.511| theEquilibrium volume of a atom  |
@@ -818,7 +818,7 @@ conf_dir:        EpA(eV)  VpA(A^3)
 confs/Al/std-fcc  -3.7468   16.511
 ```
 
-| Field  | Type | Example | Discription |
+| Field  | Type | Example | Description |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
 | EpA(eV) | real number | -3.7468 | the potential energy of a atom|
 | VpA(A^3)| real number | 16.511| theEquilibrium volume of a atom  |
@@ -843,7 +843,7 @@ VpA(A^3)  EpA(eV)
 ```
 
 
-| Field  | Type| Example| Discription  |
+| Field  | Type| Example| Description  |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
 | EpA(eV) | list of real number | [15.5,16.0,16.5,17.0] | the potential energy of a atom in  quilibrium state|
 | VpA(A^3)| list of real number |[-3.7306, -3.7429, -3.746762, -3.7430] | the equilibrium volume of a atom  |
@@ -857,7 +857,7 @@ VpA(A^3)  EpA(eV)
 + `norm_deform` and `shear_deform` are the scales of material deformation.
 This task uses the stress-strain relationship to calculate the elastic constant.
 
-|Key  | Type  | Example | Discription  |
+|Key  | Type  | Example | Description  |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
 | norm_deform | real number | 0.02  | uniaxial deformation range  |
 | shear_deform | real number | 0.05| shear deformation range  |
@@ -877,7 +877,7 @@ conf_dir:confs/Al/std-fcc
 # Poission Ratio uV = 0.31
 ```
 
-| Field  | Type | Example | Discription |
+| Field  | Type | Example | Description |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
 | elastic module(GPa)| 6*6 matrix of real number| [[130.50   57.45   54.45    4.24    0.00    0.00] [57.61  130.31   54.45   -4.29   -0.00   -0.00]  [54.48   54.48  133.32   -0.00   -0.00   -0.00]   [4.49   -4.02   -0.89   33.78    0.00   -0.00]  [-0.00   -0.00   -0.00   -0.00   33.77    4.29] [0.00   -0.00   -0.00   -0.00    4.62   36.86]]| Voigt-notation elastic module;sequence of row and column is (xx, yy, zz, yz, zx, xy)|
 | bulk modulus(GPa) | real number | 80.78 | bulk modulus |
@@ -894,7 +894,7 @@ conf_dir:confs/Al/std-fcc
 ```
 + `supercell`:(list of integer) the supercell size used to generate vacancy defect and interstitial defect
 
-|Key  | Type  | Example | Discription  |
+|Key  | Type  | Example | Description  |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
 | supercell | list of integer | [3,3,3] | the supercell size used to generate vacancy defect and interstitial defect |
 
@@ -904,7 +904,7 @@ conf_dir:confs/Al/std-fcc
 Structure:      Vac_E(eV)  E(eV) equi_E(eV)
 struct-3x3x3-000:   0.859  -96.557 -97.416
 ```
-| Field  | Type | Example | Discription |
+| Field  | Type | Example | Description |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
 |Structure| list of string |['struct-3x3x3-000'] | structure name|
 | Vac_E(eV) | real number |0.723 | the vacancy formation energy |
@@ -920,7 +920,7 @@ struct-3x3x3-000:   0.859  -96.557 -97.416
 + `insert_ele`:(list of string) the elements used to generate point interstitial defect
 + `repord-opt`:(boolean) whether to reproduce trajectories of interstitial defect
 
-|Key  | Type  | Example | Discription  |
+|Key  | Type  | Example | Description  |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
 | insert_ele | list of string | ["Al"] | the elements used to generate point interstitial defect |
 | reprod-opt | boolean | false | whether to reproduce trajectories of interstitial defect|
@@ -932,7 +932,7 @@ Insert_ele-Struct: Inter_E(eV)  E(eV) equi_E(eV)
 struct-Al-3x3x3-000:   3.919  -100.991 -104.909
 struct-Al-3x3x3-001:   2.681  -102.229 -104.909
 ```
-| Field  | Type | Example | Discription |
+| Field  | Type | Example | Description |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
 |Structure| string |'struct-Al-3x3x3-000' | structure name|
 | Inter_E(eV) | real number |0.723 | the interstitial formation energy |
@@ -957,7 +957,7 @@ struct-Al-3x3x3-001:   2.681  -102.229 -104.909
 + `static-opt`:(boolean) whether to use atomic relaxation to compute surface energy. if false, the structure will be relaxed.
 + `relax_box`:(boolean) set true if the box is relaxed, otherwise only relax atom positions.
 
-|Key  | Type  | Example | Discription  |
+|Key  | Type  | Example | Description  |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
 | min_slab_size| real number| 10 |  the minimum size of slab thickness |
 |min_vacuum_size | real number| 11 |  the minimum size of  the vacuume width |
@@ -973,7 +973,7 @@ Miller_Indices:         Surf_E(J/m^2) EpA(eV) equi_EpA(eV)
 struct-000-m1.1.1m:        0.673     -3.628   -3.747
 struct-001-m2.2.1m:        0.917     -3.592   -3.747
 ```
-| Field  | Type | Example| Discription|
+| Field  | Type | Example| Description|
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
 |Miller_Indices| string | struct-000-m1.1.1m | Miller Indices|
 |Surf_E(J/m^2)| real number | 0.673 | the surface formation energy |
@@ -1306,7 +1306,7 @@ Following table illustrates which key is needed for three types of machine: `tra
 The following table gives explicit descriptions on keys in param.json.
 
 
- Key   | Type       | Example                                                  | Discription                                                     |
+ Key   | Type       | Example                                                  | Description                                                     |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
 | machine | Dict | | Settings of the machine for TASK.
 | resources | Dict | | Resources needed for calculation.
