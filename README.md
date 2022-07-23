@@ -108,7 +108,7 @@ tasks or MD tasks will be submitted automatically according to MACHINE.json.
 
 Basically `init_bulk` can be devided into four parts , denoted as `stages` in `PARAM`:
 1. Relax in folder `00.place_ele`
-2. Pertub and scale in folder `01.scale_pert`
+2. Perturb and scale in folder `01.scale_pert`
 3. Run a shor AIMD in folder `02.md`
 4. Collect data in folder `02.md`.
 
@@ -164,10 +164,10 @@ The bold notation of key (such as **Elements**) means that it's a necessary key.
 | relax_incar | String | "....../INCAR" | Path of INCAR for VASP or INPUT for ABACUS for relaxation in VASP. **Necessary** if `stages` include 1.
 | md_incar | String |  "....../INCAR" | Path of INCAR for VASP or INPUT for ABACUS for MD in VASP. **Necessary** if `stages` include 3.|
 | **scale** | List of float | [0.980, 1.000, 1.020] | Scales for transforming cells.
-| **skip_relax** | Boolean | False | If it's true, you may directly run stage 2 (pertub and scale) using an unrelaxed POSCAR.
-| **pert_numb** | Integer | 30 | Number of pertubations for each POSCAR.
+| **skip_relax** | Boolean | False | If it's true, you may directly run stage 2 (perturb and scale) using an unrelaxed POSCAR.
+| **pert_numb** | Integer | 30 | Number of perturbations for each POSCAR.
 | **pert_box** | Float | 0.03 | Percentage of Perturbation for cells.
-| **pert_atom** | Float | 0.01 | Pertubation of each atoms (Angstrom).
+| **pert_atom** | Float | 0.01 | Perturbation of each atoms (Angstrom).
 | **md_nstep** | Integer | 10 | Steps of AIMD in stage 3. If it's not equal to settings via `NSW` in `md_incar`, DP-GEN will follow `NSW`.
 | **coll_ndata** | Integer | 5000 | Maximal number of collected data.
 | type_map | List | [ "Mg", "Al"] | The indices of elements in deepmd formats will be set in this order.
@@ -190,7 +190,7 @@ tasks or MD tasks will be submitted automatically according to MACHINE.json.
 
 Basically `init_surf` can be devided into two parts , denoted as `stages` in `PARAM`:
 1. Build specific surface in folder `00.place_ele`
-2. Pertub and scale in folder `01.scale_pert`
+2. Perturb and scale in folder `01.scale_pert`
 
 All stages must be **in order**.
 
@@ -314,10 +314,10 @@ The bold notation of key (such as **Elements**) means that it's a necessary key.
 | **millers** | List of list of Integer | [[1,0,0]] | Miller indices.
 | relax_incar | String | "....../INCAR" | Path of INCAR for relaxation in VASP. **Necessary** if `stages` include 1.
 | **scale** | List of float | [0.980, 1.000, 1.020] | Scales for transforming cells.
-| **skip_relax** | Boolean | False | If it's true, you may directly run stage 2 (pertub and scale) using an unrelaxed POSCAR.
-| **pert_numb** | Integer | 30 | Number of pertubations for each POSCAR.
+| **skip_relax** | Boolean | False | If it's true, you may directly run stage 2 (perturb and scale) using an unrelaxed POSCAR.
+| **pert_numb** | Integer | 30 | Number of perturbations for each POSCAR.
 | **pert_box** | Float | 0.03 | Percentage of Perturbation for cells.
-| **pert_atom** | Float | 0.01 | Pertubation of each atoms (Angstrom).
+| **pert_atom** | Float | 0.01 | Perturbation of each atoms (Angstrom).
 | **coll_ndata** | Integer | 5000 | Maximal number of collected data.
 
 
@@ -429,7 +429,6 @@ In `PARAM`, you can specialize the task as you expect.
             "numb_test": 4,
             "save_freq": 1000,
             "save_ckpt": "model.ckpt",
-            "load_ckpt": "model.ckpt",
             "disp_training": true,
             "time_training": true,
             "profiling": false,
@@ -1076,7 +1075,6 @@ Here is an example of `param.json` for QM7 dataset:
             "numb_test": 1,
             "save_freq": 1000,
             "save_ckpt": "model.ckpt",
-            "load_ckpt": "model.ckpt",
             "disp_training": true,
             "time_training": true,
             "profiling": false,
