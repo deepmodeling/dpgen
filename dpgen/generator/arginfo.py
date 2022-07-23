@@ -196,9 +196,9 @@ def fp_style_vasp_args() -> List[Argument]:
         Argument("fp_pp_path", str, optional=False, doc=doc_fp_pp_path),
         Argument("fp_pp_files", list, optional=False, doc=doc_fp_pp_files),
         Argument("fp_incar", str, optional=False, doc=doc_fp_incar),
-        Argument("fp_aniso_kspacing", list, optional=False,
+        Argument("fp_aniso_kspacing", list, optional=True,
                  doc=doc_fp_aniso_kspacing),
-        Argument("cvasp", bool, optional=False, doc=doc_cvasp),
+        Argument("cvasp", bool, optional=True, doc=doc_cvasp),
     ]
 
 
