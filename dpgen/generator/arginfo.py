@@ -106,13 +106,13 @@ def model_devi_jobs_args() -> List[Argument]:
         Argument("taut", float, optional=True, doc=doc_taut),
         Argument("taup", float, optional=True, doc=doc_taup),
         Argument("model_devi_f_trust_lo", [
-                 float, dict], optional=False, doc=doc_model_devi_f_trust_lo),
+                 float, dict], optional=True, doc=doc_model_devi_f_trust_lo),
         Argument("model_devi_f_trust_hi", [
-                 float, dict], optional=False, doc=doc_model_devi_f_trust_hi),
+                 float, dict], optional=True, doc=doc_model_devi_f_trust_hi),
         Argument("model_devi_v_trust_lo", [
-                 float, dict], optional=False, doc=doc_model_devi_v_trust_lo),
+                 float, dict], optional=True, doc=doc_model_devi_v_trust_lo),
         Argument("model_devi_v_trust_hi", [
-                 float, dict], optional=False, doc=doc_model_devi_v_trust_hi),
+                 float, dict], optional=True, doc=doc_model_devi_v_trust_hi),
     ]
 
     doc_model_devi_jobs = 'Settings for exploration in 01.model_devi. Each dict in the list corresponds to one iteration. The index of model_devi_jobs exactly accord with index of iterations'
@@ -168,7 +168,7 @@ The union of the two sets is made as candidate dataset.'
                  doc=doc_model_devi_f_avg_relative),
         Argument("model_devi_clean_traj", [
                  bool, int], optional=False, doc=doc_model_devi_clean_traj),
-        Argument("model_devi_nopbc", bool, optional=False,
+        Argument("model_devi_nopbc", bool, optional=True, default=False,
                  doc=doc_model_devi_nopbc),
         Argument("model_devi_activation_func", list, optional=True,
                  doc=doc_model_devi_activation_func),
@@ -196,9 +196,9 @@ def fp_style_vasp_args() -> List[Argument]:
         Argument("fp_pp_path", str, optional=False, doc=doc_fp_pp_path),
         Argument("fp_pp_files", list, optional=False, doc=doc_fp_pp_files),
         Argument("fp_incar", str, optional=False, doc=doc_fp_incar),
-        Argument("fp_aniso_kspacing", list, optional=False,
+        Argument("fp_aniso_kspacing", list, optional=True,
                  doc=doc_fp_aniso_kspacing),
-        Argument("cvasp", bool, optional=False, doc=doc_cvasp),
+        Argument("cvasp", bool, optional=True, doc=doc_cvasp),
     ]
 
 
