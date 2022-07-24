@@ -168,7 +168,7 @@ The union of the two sets is made as candidate dataset.'
                  doc=doc_model_devi_f_avg_relative),
         Argument("model_devi_clean_traj", [
                  bool, int], optional=False, doc=doc_model_devi_clean_traj),
-        Argument("model_devi_nopbc", bool, optional=False,
+        Argument("model_devi_nopbc", bool, optional=True, default=False,
                  doc=doc_model_devi_nopbc),
         Argument("model_devi_activation_func", list, optional=True,
                  doc=doc_model_devi_activation_func),
