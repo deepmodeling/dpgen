@@ -106,13 +106,13 @@ def model_devi_jobs_args() -> List[Argument]:
         Argument("taut", float, optional=True, doc=doc_taut),
         Argument("taup", float, optional=True, doc=doc_taup),
         Argument("model_devi_f_trust_lo", [
-                 float, dict], optional=False, doc=doc_model_devi_f_trust_lo),
+                 float, dict], optional=True, doc=doc_model_devi_f_trust_lo),
         Argument("model_devi_f_trust_hi", [
-                 float, dict], optional=False, doc=doc_model_devi_f_trust_hi),
+                 float, dict], optional=True, doc=doc_model_devi_f_trust_hi),
         Argument("model_devi_v_trust_lo", [
-                 float, dict], optional=False, doc=doc_model_devi_v_trust_lo),
+                 float, dict], optional=True, doc=doc_model_devi_v_trust_lo),
         Argument("model_devi_v_trust_hi", [
-                 float, dict], optional=False, doc=doc_model_devi_v_trust_hi),
+                 float, dict], optional=True, doc=doc_model_devi_v_trust_hi),
     ]
 
     doc_model_devi_jobs = 'Settings for exploration in 01.model_devi. Each dict in the list corresponds to one iteration. The index of model_devi_jobs exactly accord with index of iterations'
