@@ -218,8 +218,9 @@ def post_model_devi(iter_index, jdata, mdata):
     sys_failed = dpdata.MultiSystems()
     
     labeled = jdata.get("labeled", False)
-    sys_entire = dpdata.MultiSystems().from_deepmd_npy(os.path.join(work_path, rest_data_name + ".old"), labeled=labeled)
-
+    type_map = jdata.get("type_map", [])
+    sys_entire = dpdata.MultiSystems(type_map = type_map).from_deepmd_npy(os.path.join(work_path, rest_data_name + ".old"), labeled=labeled)
+    
     detail_file_name = detail_file_name_prefix
     with open(os.path.join(work_path, detail_file_name)) as f:
         for line in f:
