@@ -33,8 +33,8 @@ class Gamma(Property):
                 self.miller_index = parameter['miller_index']
                 self.displace_direction = parameter['displace_direction']
                 self.lattice_type = parameter['lattice_type']
-                parameter['min_supercell_size'] = parameter.get('min_supercell_size', (1,1,5))
-                self.min_supercell_size = parameter['min_supercell_size']
+                parameter['supercell_size'] = parameter.get('supercell_size', (1,1,5))
+                self.supercell_size = parameter['supercell_size']
                 parameter['min_vacuum_size'] = parameter.get('min_vacuum_size', 20)
                 self.min_vacuum_size = parameter['min_vacuum_size']
                 parameter['add_fix'] = parameter.get('add_fix', ['true','true','false']) # standard method
@@ -154,7 +154,7 @@ class Gamma(Property):
                 slab = self.__gen_slab_ase(symbol=ptypes[0],
                                            lat_param=[relax_a,relax_b,relax_c])
                 # define displace vectors
-                disp_vector = (1/self.min_supercell_size[0], 0, 0)
+                disp_vector = (1/self.supercell_size[0], 0, 0)
                 # displace structure
                 all_slabs = self.__displace_slab(slab, disp_vector=disp_vector)
                 self.atom_num = len(all_slabs[0].sites)
@@ -226,10 +226,10 @@ class Gamma(Property):
         if not self.lattice_type:
             raise RuntimeError('Error! Please provide the input lattice type!')
         elif self.lattice_type == 'bcc':
-            slab_ase = bcc(symbol=symbol, size=self.min_supercell_size, latticeconstant=lat_param[0],
+            slab_ase = bcc(symbol=symbol, size=self.supercell_size, latticeconstant=lat_param[0],
                            directions=self.return_direction())
         elif self.lattice_type == 'fcc':
-            slab_ase = fcc(symbol=symbol, size=self.min_supercell_size, latticeconstant=lat_param[0],
+            slab_ase = fcc(symbol=symbol, size=self.supercell_size, latticeconstant=lat_param[0],
                            directions=self.return_direction())
         elif self.lattice_type == 'hcp':
             pass
@@ -241,16 +241,17 @@ class Gamma(Property):
         slab_pymatgen = AseAtomsAdaptor.get_structure(slab_ase)
         return slab_pymatgen
 
-    def __gen_slab_pmg(self,
-                       pmg_struc):
-        slabGen = SlabGenerator(pmg_struc, miller_index=self.miller_index,
-                                min_slab_size=self.min_supercell_size[2],
-                                min_vacuum_size=self.min_vacuum_size,
-                                center_slab=True, in_unit_planes=True, lll_reduce=False,
-                                primitive=True, max_normal_search=5)
-        slab_pmg = slabGen.get_slab()
-        slab_pmg.make_supercell(scaling_matrix=[self.min_supercell_size[0],self.min_supercell_size[1],1])
-        return slab_pmg
+    # leave this function to later use
+    #def __gen_slab_pmg(self,
+    #                   pmg_struc):
+    #    slabGen = SlabGenerator(pmg_struc, miller_index=self.miller_index,
+    #                            min_slab_size=self.supercell_size[2],
+    #                            min_vacuum_size=self.min_vacuum_size,
+    #                            center_slab=True, in_unit_planes=True, lll_reduce=False,
+    #                            primitive=True, max_normal_search=5)
+    #    slab_pmg = slabGen.get_slab()
+    #    slab_pmg.make_supercell(scaling_matrix=[self.supercell_size[0],self.supercell_size[1],1])
+    #    return slab_pmg
 
     def __displace_slab(self,
                         slab, disp_vector):
