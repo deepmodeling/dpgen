@@ -13,6 +13,13 @@ from ase.lattice.cubic import BodyCenteredCubic as bcc
 from ase.lattice.cubic import FaceCenteredCubic as fcc
 from ase.lattice.hexagonal import HexagonalClosedPacked as hcp
 
+import dpgen.auto_test.lib.vasp as vasp
+from dpgen import dlog
+from dpgen.auto_test.Property import Property
+from dpgen.auto_test.refine import make_refine
+from dpgen.auto_test.reproduce import make_repro
+from dpgen.auto_test.reproduce import post_repro
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 __package__ = 'auto_test'
 
@@ -38,7 +45,7 @@ class TestGamma(unittest.TestCase):
                     "lattice_type": "fcc",
                     "miller_index": [1, 1, 1],
                     "displace_direction": [1, 1, 0],
-                    "min_supercell_size": [1, 1, 10],
+                    "supercell_size": [1, 1, 10],
                     "min_vacuum_size": 10,
                     "add_fix": ["true", "true", "false"],
                     "n_steps": 20
@@ -49,6 +56,9 @@ class TestGamma(unittest.TestCase):
         self.equi_path = 'confs/hp-Mo/relaxation/relax_task'
         self.source_path = 'equi/vasp'
         self.target_path = 'confs/hp-Mo/gamma_00'
+        self.res_data = 'output/gamma_00/result.json'
+        self.ptr_data = 'output/gamma_00/result.out'
+
         if not os.path.exists(self.equi_path):
             os.makedirs(self.equi_path)
         if not os.path.exists(self.target_path):
@@ -65,6 +75,10 @@ class TestGamma(unittest.TestCase):
             shutil.rmtree(self.equi_path)
         if os.path.exists(self.target_path):
             shutil.rmtree(self.target_path)
+        if os.path.exists(self.res_data):
+            os.remove(self.res_data)
+        if os.path.exists(self.ptr_data):
+            os.remove(self.ptr_data)
 
     def test_task_type(self):
         self.assertEqual('gamma', self.gamma.task_type())
@@ -99,3 +113,17 @@ class TestGamma(unittest.TestCase):
                 z_coord_str = f.readlines()[-1].split()[-2]
                 z_coord = float(z_coord_str)
             self.assertTrue(z_coord <= 1)
+
+    def test_compute_lower(self):
+        cwd = os.getcwd()
+        output_file = os.path.join(cwd, 'output/gamma_00/result.json')
+        all_tasks = glob.glob('output/gamma_00/task.*')
+        all_tasks.sort()
+        all_res = [os.path.join(task, 'result_task.json') for task in all_tasks]
+
+        self.gamma._compute_lower(output_file,
+                                  all_tasks,
+                                  all_res)
+
+        self.assertTrue(os.path.isfile(self.res_data))
+
