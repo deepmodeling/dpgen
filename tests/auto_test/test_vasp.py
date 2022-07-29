@@ -70,7 +70,7 @@ class TestVASP(unittest.TestCase):
                          "relax_vol":False}
         self.VASP.make_input_file(self.equi_path,'relaxation',param)
         incar=incar_upper(Incar.from_file(os.path.join(self.equi_path, "INCAR")))
-        self.assertTrue(incar['ISIF'],4)
+        self.assertEqual(incar['ISIF'],4)
 
     def test_make_input_file_2(self):
         self.VASP.make_input_file(self.equi_path,'relaxation',self.task_param)
@@ -78,7 +78,7 @@ class TestVASP(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(self.equi_path, "KPOINTS")))   
         self.assertTrue(os.path.isfile(os.path.join(self.equi_path, "INCAR")))   
         incar=incar_upper(Incar.from_file(os.path.join(self.equi_path, "INCAR")))
-        self.assertTrue(incar['ISIF'],3)
+        self.assertEqual(incar['ISIF'],3)
 
     def test_make_input_file_3(self):
         param=self.task_param.copy()
@@ -87,7 +87,7 @@ class TestVASP(unittest.TestCase):
                          "relax_vol":False}
         self.VASP.make_input_file(self.equi_path,'relaxation',param)
         incar=incar_upper(Incar.from_file(os.path.join(self.equi_path, "INCAR")))
-        self.assertTrue(incar['ISIF'],2)
+        self.assertEqual(incar['ISIF'],2)
 
     def test_make_input_file_4(self):
         param=self.task_param.copy()
@@ -96,7 +96,7 @@ class TestVASP(unittest.TestCase):
                          "relax_vol":False}
         self.VASP.make_input_file(self.equi_path,'relaxation',param)
         incar=incar_upper(Incar.from_file(os.path.join(self.equi_path, "INCAR")))
-        self.assertTrue(incar['ISIF'],5)
+        self.assertEqual(incar['ISIF'],5)
 
     def test_make_input_file_5(self):
         param=self.task_param.copy()
@@ -105,7 +105,7 @@ class TestVASP(unittest.TestCase):
                          "relax_vol":True}
         self.VASP.make_input_file(self.equi_path,'relaxation',param)
         incar=incar_upper(Incar.from_file(os.path.join(self.equi_path, "INCAR")))
-        self.assertTrue(incar['ISIF'],6)
+        self.assertEqual(incar['ISIF'],6)
 
     def test_make_input_file_5(self):
         param=self.task_param.copy()
@@ -115,8 +115,8 @@ class TestVASP(unittest.TestCase):
                          "kspacing":0.01}
         self.VASP.make_input_file(self.equi_path,'relaxation',param)
         incar=incar_upper(Incar.from_file(os.path.join(self.equi_path, "INCAR")))
-        self.assertTrue(incar['ISIF'],6)
-        self.assertTrue(incar['KSPACING'],0.01)
+        self.assertEqual(incar['ISIF'],6)
+        self.assertEqual(incar['KSPACING'],0.01)
 
     def test_compuate(self):
         ret=self.VASP.compute(os.path.join(self.conf_path,'relaxation'))
@@ -124,7 +124,23 @@ class TestVASP(unittest.TestCase):
         shutil.copy(os.path.join(self.source_path, 'OUTCAR'), os.path.join(self.equi_path, 'OUTCAR'))
         ret=self.VASP.compute(self.equi_path)
         ret_ref=loadfn(os.path.join(self.source_path, 'outcar.json'))
-        self.assertTrue(ret,ret_ref.as_dict())
+        
+        def compare_dict(dict1,dict2):
+            self.assertEqual(dict1.keys(),dict2.keys())
+            for key in dict1:
+                print(key,type(dict1[key]),type(dict2[key]))
+                if key == 'stress':
+                    self.assertTrue((np.array(dict1[key]['data']) == dict2[key]).all())
+                elif type(dict1[key]) is dict:
+                    compare_dict(dict1[key],dict2[key])
+                else:
+                    if type(dict1[key]) is np.ndarray:
+                        self.assertTrue((dict1[key] == dict2[key]).all())
+                    else:
+                        self.assertTrue(dict1[key] == dict2[key])
+
+        compare_dict(ret,ret_ref.as_dict())
+        
         
     def test_backward_files(self):
         backward_files = ['OUTCAR', 'outlog', 'CONTCAR', 'OSZICAR', 'XDATCAR']
