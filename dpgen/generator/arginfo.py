@@ -204,29 +204,59 @@ def fp_style_vasp_args() -> List[Argument]:
 
 # gaussian
 def fp_style_gaussian_args() -> List[Argument]:
-    doc_keywords = 'Keywords for Gaussian input.'
-    doc_multiplicity = 'Spin multiplicity for Gaussian input. If set to auto, the spin multiplicity will be detected automatically. If set to frag, the "fragment=N" method will be used.'
+    """Gaussian fp style arguments.
+    
+    Returns
+    -------
+    list[dargs.Argument]
+        list of Gaussian fp style arguments
+    """
+    doc_keywords = 'Keywords for Gaussian input, e.g. force b3lyp/6-31g**. If a list, run multiple steps.'
+    doc_multiplicity = ('Spin multiplicity for Gaussian input. If `auto`, multiplicity will be detected automatically, '
+                        'with the following rules: when fragment_guesses=True, multiplicity will +1 for each radical, '
+                        'and +2 for each oxygen molecule; when fragment_guesses=False, multiplicity will be 1 or 2, '
+                        'but +2 for each oxygen molecule.')
     doc_nproc = 'The number of processors for Gaussian input.'
+    doc_charge = 'Molecule charge. Only used when charge is not provided by the system.'
+    doc_fragment_guesses = 'Initial guess generated from fragment guesses. If True, `multiplicity` should be `auto`.'
+    doc_basis_set = 'Custom basis set.'
+    doc_keywords_high_multiplicity = ('Keywords for points with multiple raicals. `multiplicity` should be `auto`. '
+                                      'If not set, fallback to normal keywords.')
 
     args = [
-        Argument("keywords", [str or list],
+        Argument("keywords", [str, list],
                  optional=False, doc=doc_keywords),
-        Argument("multiplicity", [int or str],
-                 optional=False, doc=doc_multiplicity),
+        Argument("multiplicity", [int, str],
+                 optional=True, default="auto", doc=doc_multiplicity),
         Argument("nproc", int, optional=False, doc=doc_nproc),
+        Argument("charge", int, optional=True, default=0, doc=doc_nproc),
+        Argument("fragment_guesses", bool, optional=True, default=False, doc=doc_fragment_guesses),
+        Argument("basis_set", str, optional=True, doc=doc_fragment_guesses),
+        Argument("keywords_high_multiplicity", str, optional=True, doc=doc_keywords_high_multiplicity),
     ]
 
-    doc_use_clusters = 'If set to true, clusters will be taken instead of the whole system. This option does not work with DeePMD-kit 0.x.'
-    doc_cluster_cutoff = 'The cutoff radius of clusters if use_clusters is set to true.'
+    doc_use_clusters = 'If set to true, clusters will be taken instead of the whole system.'
+    doc_cluster_cutoff = ('The soft cutoff radius of clusters if `use_clusters` is set to true. Molecules will be taken '
+                          'as whole even if part of atoms is out of the cluster. Use `cluster_cutoff_hard` to only '
+                          'take atoms within the hard cutoff radius.')
+    doc_cluster_cutoff_hard = ('The hard cutoff radius of clusters if `use_clusters` is set to true. Outside the hard cutoff radius, '
+                               'atoms will not be taken even if they are in a molecule where some atoms are within the cutoff radius.')
+    doc_cluster_minify = ('If enabled, when an atom within the soft cutoff radius connects a single bond with '
+                          'a non-hydrogen atom out of the soft cutoff radius, the outer atom will be replaced by a '
+                          'hydrogen atom. When the outer atom is a hydrogen atom, the outer atom will be '
+                          'kept. In this case, other atoms out of the soft cutoff radius will be removed.')
     doc_fp_params_gaussian = 'Parameters for Gaussian calculation.'
 
     return [
         Argument("use_clusters", bool, optional=True, default=False, doc=doc_use_clusters),
         Argument("cluster_cutoff", float,
                  optional=True, doc=doc_cluster_cutoff),
+        Argument("cluster_cutoff_hard", float, optional=True, doc=doc_cluster_cutoff_hard),
+        Argument("cluster_minify", bool, optional=True, default=False, doc=doc_cluster_minify),
         Argument("fp_params", dict, args, [],
                  optional=False, doc=doc_fp_params_gaussian),
     ]
+
 
 # siesta
 def fp_style_siesta_args() -> List[Argument]:
