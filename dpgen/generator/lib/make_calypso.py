@@ -2,6 +2,7 @@
 import os
 import shutil
 import json
+import glob
 import numpy as np
 from dpgen.generator.lib.utils import create_path
 
@@ -99,7 +100,29 @@ def make_calypso_input(nameofatoms,numberofatoms,
 def _make_model_devi_buffet(jdata,caly_run_opt_path):
 
     calypso_input_path = jdata.get('calypso_input_path')
-    shutil.copyfile(os.path.join(calypso_input_path,'input.dat'),os.path.join(caly_run_opt_path[0], 'input.dat'))
+    if jdata.get('vsc', False):
+        # [input.dat.Li.250, input.dat.Li.300]
+        one_ele_inputdat_list = list(
+                set(glob.glob(
+                    f"{jdata.get('calypso_input_path')}/input.dat.{jdata.get('type_map')[0]}.*"
+                    ))
+                )
+        # [input.dat.La, input.dat.H, input.dat.LaH,] only one pressure
+        if len(one_ele_inputdat_list) == 0:
+            os.system(f"cp {calypso_input_path}/input.dat.* {caly_run_opt_path[0]}")
+        # different pressure, 250GPa and 300GPa
+        # [input.dat.La.250, input.dat.H.250, input.dat.LaH.250, input.dat.La.300, input.dat.H.300, input.dat.LaH.300,]
+        else: 
+            pressures_list = [temp.split('.')[-1] for temp in one_ele_inputdat_list]
+            pressures_list = list(map(int, pressures_list))
+            # caly_run_opt_path = ['gen_struc_analy.000','gen_struc_analy.001']
+            for press_idx, temp_caly_run_opt_path in enumerate(caly_run_opt_path):
+                cur_press = pressures_list[press_idx]
+                os.system(f"cp {calypso_input_path}/input.dat.*.{cur_press} {temp_caly_run_opt_path}")
+    elif not jdata.get('vsc', False):
+        shutil.copyfile(os.path.join(calypso_input_path,'input.dat'),os.path.join(caly_run_opt_path[0], 'input.dat'))
+        if not os.path.exists(os.path.join(caly_run_opt_path[0], 'input.dat')):
+            raise FileNotFoundError('input.dat')
 
 def _make_model_devi_native_calypso(iter_index,model_devi_jobs, caly_run_opt_path):
 

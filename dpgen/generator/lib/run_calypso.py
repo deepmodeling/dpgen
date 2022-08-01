@@ -52,8 +52,6 @@ def gen_structures(iter_index, jdata, mdata, caly_run_path, current_idx, length_
 
     calypso_path = mdata.get('model_devi_calypso_path')
     #calypso_input_path = jdata.get('calypso_input_path')
-    popsize = int(_parse_calypso_input('PopSize',calypso_run_opt_path))
-    maxstep = int(_parse_calypso_input('MaxStep',calypso_run_opt_path))
     
     all_models = glob.glob(os.path.join(calypso_run_opt_path, 'graph*pb'))
     model_names = [os.path.basename(ii) for ii in all_models]
@@ -91,9 +89,9 @@ def gen_structures(iter_index, jdata, mdata, caly_run_path, current_idx, length_
                 os.mkdir('opt')
             except:
                 pass
-                #shutil.rmtree('opt')
-                #os.mkdir('opt')
 
+        popsize = int(_parse_calypso_input('PopSize', '.'))
+        maxstep = int(_parse_calypso_input('MaxStep', '.'))
 
         for ii in range(int(PickUpStep)-1,maxstep+1):
             dlog.info('CALYPSO step %s'%ii)
@@ -188,24 +186,30 @@ def gen_structures(iter_index, jdata, mdata, caly_run_path, current_idx, length_
 
         comp_temp = list(map(list,list(combinations(type_map,1))))
         for hms in range(2,how_many_spec+1):
-            comp_temp.extend(list(map(list,list(combinations(type_map,hms)))))  # comp_temp = [['Mg'],['Al'],['Cu'],['Mg','Al'],['Mg','Cu'],['Al','Cu'],['Mg','Al','Cu']]
+            # comp_temp = [['Mg'],['Al'],['Cu'],['Mg','Al'],['Mg','Cu'],['Al','Cu'],['Mg','Al','Cu']]
+            comp_temp.extend(list(map(list,list(combinations(type_map,hms)))))  
         
         component = []
         for comp_temp_ in comp_temp:
             component.append(''.join(comp_temp_))     # component = ['Mg','Al','Cu','MgAl','MgCu','AlCu','MgAlCu']
 
         dlog.info(component)
-        #sys.exit()
-        calypso_input_path = jdata.get('calypso_input_path')
+        # calypso_input_path = jdata.get('calypso_input_path')
         
-        for idx,com in enumerate(component):
-            pwd = os.getcwd()
-            os.mkdir(str(idx))
-            shutil.copyfile(os.path.join(calypso_input_path,'input.dat.%s'%com),os.path.join(str(idx),'input.dat'))
-            os.chdir(str(idx))
+        pwd = os.getcwd()
+        if len(glob.glob(f'input.dat.{component[0]}.*')) != 0:
+            os.system('for i in input.dat.*;do mv $i ${i%.*};done')
+        for idx, com in enumerate(component):
+            if not os.path.exists(com):
+                os.mkdir(com)
+            #shutil.copyfile(os.path.join(calypso_input_path,'input.dat.%s'%com),os.path.join(com,'input.dat'))
+            shutil.copyfile('input.dat.%s'%com ,os.path.join(com,'input.dat'))
+            os.chdir(com)
             os.system(run_calypso)
             os.chdir(pwd)
-        
+
+        shutil.copyfile('input.dat.%s'%component[-1], 'input.dat')
+
         name_list = Path('.').glob('*/POSCAR_*')
         for idx,name in enumerate(name_list):
             shutil.copyfile(name,'POSCAR_%s'%(idx+1))
@@ -219,7 +223,9 @@ def gen_structures(iter_index, jdata, mdata, caly_run_path, current_idx, length_
             shutil.copyfile('POSCAR_%s'%str(idx+1),os.path.join('task.%04d'%(idx+1),'POSCAR'))
             shutil.copyfile('input.dat',os.path.join('task.%04d'%(idx+1),'input.dat'))
 
-        all_task = glob.glob( "task.*")
+        # sys.exit()
+
+        all_task = glob.glob("task.*")
         all_task.sort()
 
         run_tasks_ = all_task
@@ -292,9 +298,6 @@ def gen_main(iter_index, jdata, mdata, caly_run_opt_list, gen_idx):
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, model_devi_name)
-
-    caly_run_opt_list = glob.glob(os.path.join(work_path,'%s.*'%((calypso_run_opt_name))))
-    caly_run_opt_list.sort()
 
     current_gen_path = os.path.join(work_path, '%s.%03d'%(calypso_run_opt_name, int(gen_idx)))
     if current_gen_path not in caly_run_opt_list:
@@ -403,7 +406,12 @@ def run_calypso_model_devi (iter_index,
 
     calypso_model_devi_path = os.path.join(work_path,calypso_model_devi_name)
 
-    caly_run_opt_list = glob.glob(os.path.join(work_path,'%s.*'%(str(calypso_run_opt_name))))
+    _caly_run_opt_list = glob.glob(os.path.join(work_path,'%s.*'%(str(calypso_run_opt_name))))
+    caly_run_opt_list = _caly_run_opt_list.copy()
+    # check if gen_struc_analy.000.bk000 in caly_run_opt_list
+    for temp_value in _caly_run_opt_list:
+        if 'bk' in temp_value:
+            caly_run_opt_list.remove(temp_value)
     caly_run_opt_list.sort()
 
     cwd = os.getcwd()
