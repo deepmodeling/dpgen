@@ -370,7 +370,7 @@ def analysis(iter_index, jdata, calypso_model_devi_path):
 
     if len(ms) == 0:
         dlog.info('too little confs, ')
-        sys.exit()
+        raise RuntimeError('no confs found in Analysis part and this should not happen!')
 
     if os.path.exists(deepmd_data_path):
         shutil.rmtree(deepmd_data_path)
