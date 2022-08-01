@@ -59,8 +59,10 @@ def gen_structures(iter_index, jdata, mdata, caly_run_path, current_idx, length_
     model_names = [os.path.basename(ii) for ii in all_models]
 
     deepmdkit_python = mdata.get('model_devi_deepmdkit_python')
-    command = "%s calypso_run_opt.py %s 1>> model_devi.log 2>> model_devi.log" % (deepmdkit_python,os.path.abspath(calypso_run_opt_path))
-    command += "  ||  %s check_outcar.py %s " % (deepmdkit_python,os.path.abspath(calypso_run_opt_path))
+    command = "%s calypso_run_opt.py  1>> model_devi.log 2>> model_devi.log" % (deepmdkit_python)
+    # command = "%s calypso_run_opt.py %s 1>> model_devi.log 2>> model_devi.log" % (deepmdkit_python,os.path.abspath(calypso_run_opt_path))
+    # command += "  ||  %s check_outcar.py %s " % (deepmdkit_python,os.path.abspath(calypso_run_opt_path))
+    command += "  ||  %s check_outcar.py  " % (deepmdkit_python)
     commands = [command]
 
     cwd = os.getcwd()

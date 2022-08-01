@@ -81,9 +81,10 @@ def check():
                                                                                                                                 
     from deepmd.calculator import DP                                                                                            
     from ase.io import read                                                                                                     
-    model_path = sys.argv[1]                                                                                                    
-    Model_List = glob.glob('%s/graph*pb'%model_path)                                                                            
-    calc = DP(model='%s'%(Model_List[0]))    # init the model before iteration                                                  
+    # model_path = sys.argv[1]                                                                                                    
+    # Model_List = glob.glob('%s/graph*pb'%model_path)                                                                            
+    # calc = DP(model='%s'%(Model_List[0]))    # init the model before iteration                                                  
+    calc = DP(model='../graph.000.pb')    # init the model before iteration                                                  
                                                                                                                                 
     to_be_opti = read('POSCAR')                                                                                                 
     to_be_opti.calc = calc                                                                                                      

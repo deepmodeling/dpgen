@@ -112,9 +112,10 @@ def run_opt(fmax,stress):
     is_dpgen = True
     nn = 1
     try:
-        model_path = sys.argv[1]                                                            
-        Model_List = glob.glob('%s/graph*pb'%model_path)                                    
-        calc = DP(model=Model_List[0])    # init the model before iteration          
+        # model_path = sys.argv[1]                                                            
+        # Model_List = glob.glob('%s/graph*pb'%model_path)                                    
+        # calc = DP(model=Model_List[0])    # init the model before iteration          
+        calc = DP(model='../graph.000.pb')    # init the model before iteration          
     except:
         assert os.path.exists('graph.pb'), 'did not found graph.pb in this directory %s, or did you forget to add args?'%(os.getcwd())
         calc = DP(model='graph.pb')    # init the model before iteration          
