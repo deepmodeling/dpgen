@@ -1,6 +1,6 @@
 import numpy as np
 from dpdata.abacus.scf import get_cell, get_coords
-from dpgen.auto_test.lib.vasp import reciprocal_box
+from dpgen.auto_test.lib import vasp
 import os
 bohr2ang = 0.52917721067
 def make_abacus_scf_kpt(fp_params):
@@ -148,7 +148,7 @@ def get_abacus_input_parameters(INPUT):
         inlines = fp.read().split("\n")
     input_parameters = {}
     for line in inlines:
-        if line.split() == [] or len(line.split()) < 2 :
+        if line.split() == [] or len(line.split()) < 2 or line[0] in ['#']:
             continue
         parameter_name = line.split()[0]
         parameter_value = line.split()[1]
@@ -179,12 +179,15 @@ def get_mass_from_STRU(geometry_inlines, inlines, atom_names):
     return mass_list, pp_file_list
 
 def get_natoms_from_stru(geometry_inlines):
-    key_words_list = ["ATOMIC_SPECIES", "NUMERICAL_ORBITAL", "LATTICE_CONSTANT", "LATTICE_VECTORS", "ATOMIC_POSITIONS"]
+    key_words_list = ["ATOMIC_SPECIES", "NUMERICAL_ORBITAL", "LATTICE_CONSTANT", "LATTICE_VECTORS", "ATOMIC_POSITIONS","NUMERICAL_DESCRIPTOR"]
     keyword_sequence = []
     keyword_line_index = []
     atom_names = []
     atom_numbs = []
-    for iline, line in enumerate(geometry_inlines):
+    tmp_line = []
+    for i in geometry_inlines:
+        if i.strip() != '': tmp_line.append(i)
+    for iline, line in enumerate(tmp_line):
         if line.split() == []:
             continue
         have_key_word = False
@@ -194,13 +197,13 @@ def get_natoms_from_stru(geometry_inlines):
                 keyword_line_index.append(iline)
     assert(len(keyword_line_index) == len(keyword_sequence))
     assert(len(keyword_sequence) > 0)
-    keyword_line_index.append(len(geometry_inlines))
+    keyword_line_index.append(len(tmp_line))
     for idx, keyword in enumerate(keyword_sequence):
         if keyword == "ATOMIC_POSITIONS":
             iline = keyword_line_index[idx]+2
             while iline < keyword_line_index[idx+1]-1:
-                atom_names.append(geometry_inlines[iline].split()[0])
-                atom_numbs.append(int(geometry_inlines[iline+2].split()[0]))
+                atom_names.append(tmp_line[iline].split()[0])
+                atom_numbs.append(int(tmp_line[iline+2].split()[0]))
                 iline += 3+atom_numbs[-1]
     return atom_names, atom_numbs
 
@@ -278,7 +281,7 @@ def make_kspacing_kpoints_stru(stru, kspacing) :
     if type(kspacing) is not list:
         kspacing = [kspacing, kspacing, kspacing]
     box = stru['cells']
-    rbox = reciprocal_box(box)
+    rbox = vasp.reciprocal_box(box)
     kpoints = [max(1,(np.ceil(2 * np.pi * np.linalg.norm(ii) / ks).astype(int))) for ii,ks in zip(rbox,kspacing)]
     kpoints += [0, 0, 0]
     return kpoints

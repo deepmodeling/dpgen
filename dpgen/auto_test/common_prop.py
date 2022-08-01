@@ -19,21 +19,21 @@ from dpgen.auto_test.lib.utils import create_path
 lammps_task_type = ['deepmd', 'meam', 'eam_fs', 'eam_alloy']
 
 
-def make_property_instance(paramters):
+def make_property_instance(paramters,inter_param):
     """
     Make an instance of Property
     """
     prop_type = paramters['type']
     if prop_type == 'eos':
-        return EOS(paramters)
+        return EOS(paramters,inter_param)
     elif prop_type == 'elastic':
-        return Elastic(paramters)
+        return Elastic(paramters,inter_param)
     elif prop_type == 'vacancy':
-        return Vacancy(paramters)
+        return Vacancy(paramters,inter_param)
     elif prop_type == 'interstitial':
-        return Interstitial(paramters)
+        return Interstitial(paramters,inter_param)
     elif prop_type == 'surface':
-        return Surface(paramters)
+        return Surface(paramters,inter_param)
     else:
         raise RuntimeError(f'unknown property type {prop_type}')
 
@@ -76,12 +76,12 @@ def make_property(confs,
 
             create_path(path_to_work)
 
-            prop = make_property_instance(jj)
-            task_list = prop.make_confs(path_to_work, path_to_equi, do_refine)
-
             inter_param_prop = inter_param
             if 'cal_setting' in jj and 'overwrite_interaction' in jj['cal_setting']:
                 inter_param_prop = jj['cal_setting']['overwrite_interaction']
+
+            prop = make_property_instance(jj,inter_param_prop)
+            task_list = prop.make_confs(path_to_work, path_to_equi, do_refine)    
 
             for kk in task_list:
                 poscar = os.path.join(kk, 'POSCAR')
@@ -147,7 +147,7 @@ def run_property(confs,
             # ...
             inter_type = inter_param_prop['type']
             # vasp
-            if inter_type == "vasp":
+            if inter_type in ["vasp","abacus"]:
                 mdata = convert_mdata(mdata, ["fp"])
             elif inter_type in lammps_task_type:
                 mdata = convert_mdata(mdata, ["model_devi"])
@@ -219,7 +219,7 @@ def worker(work_path,
         submission.run_submission()
 
 def post_property(confs,
-                  #                  inter_param,
+                  inter_param,
                   property_list):
     # find all POSCARs and their name like mp-xxx
     # ...
@@ -242,8 +242,13 @@ def post_property(confs,
                 suffix = 'reprod'
             else:
                 suffix = '00'
+
+            inter_param_prop = inter_param
+            if 'cal_setting' in jj and 'overwrite_interaction' in jj['cal_setting']:
+                inter_param_prop = jj['cal_setting']['overwrite_interaction']
+
             property_type = jj['type']
             path_to_work = os.path.join(ii, property_type + '_' + suffix)
-            prop = make_property_instance(jj)
+            prop = make_property_instance(jj,inter_param_prop)
             prop.compute(os.path.join(path_to_work, 'result.json'), os.path.join(path_to_work, 'result.out'),
                          path_to_work)

@@ -3,9 +3,9 @@ import os
 
 import numpy as np
 from monty.serialization import loadfn
+import dpgen.auto_test.lib.abacus as abacus
 
-
-def make_repro(init_data_path, init_from_suffix, path_to_work, reprod_last_frame=True):
+def make_repro(inter_param,init_data_path, init_from_suffix, path_to_work, reprod_last_frame=True):
     path_to_work = os.path.abspath(path_to_work)
     property_type = path_to_work.split('/')[-1].split('_')[0]
     init_data_path = os.path.join(init_data_path, '*', property_type + '_' + init_from_suffix)
@@ -56,7 +56,7 @@ def make_repro(init_data_path, init_from_suffix, path_to_work, reprod_last_frame
             os.makedirs(output_task, exist_ok=True)
             os.chdir(output_task)
             # clear dir
-            for kk in ['INCAR', 'POTCAR', 'POSCAR.orig', 'POSCAR', 'conf.lmp', 'in.lammps']:
+            for kk in ['INCAR', 'POTCAR', 'POSCAR.orig', 'POSCAR', 'conf.lmp', 'in.lammps','STRU']:
                 if os.path.exists(kk):
                     os.remove(kk)
             # make conf
@@ -64,6 +64,10 @@ def make_repro(init_data_path, init_from_suffix, path_to_work, reprod_last_frame
                 task_result.to('vasp/poscar', 'POSCAR', frame_idx=-1)
             else:
                 task_result.to('vasp/poscar', 'POSCAR', frame_idx=jj)
+            if inter_param['type'] == 'abacus':
+                abacus.poscar2stru("POSCAR",inter_param,"STRU")
+                os.remove('POSCAR')
+
     os.chdir(cwd)
 
     if property_type == 'interstitial':

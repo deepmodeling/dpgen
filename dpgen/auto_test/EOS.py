@@ -13,10 +13,12 @@ from dpgen.auto_test.refine import make_refine
 from dpgen.auto_test.reproduce import make_repro
 from dpgen.auto_test.reproduce import post_repro
 
+import dpgen.generator.lib.abacus_scf as abacus_scf
+import dpgen.auto_test.lib.abacus as abacus
 
 class EOS(Property):
     def __init__(self,
-                 parameter):
+                 parameter,inter_param=None):
         parameter['reproduce'] = parameter.get('reproduce', False)
         self.reprod = parameter['reproduce']
         if not self.reprod:
@@ -60,6 +62,7 @@ class EOS(Property):
             parameter['init_from_suffix'] = parameter.get('init_from_suffix', '00')
             self.init_from_suffix = parameter['init_from_suffix']
         self.parameter = parameter
+        self.inter_param = inter_param if inter_param != None else {'type': 'vasp'}
 
     def make_confs(self,
                    path_to_work,
@@ -89,7 +92,7 @@ class EOS(Property):
             if 'init_data_path' not in self.parameter:
                 raise RuntimeError("please provide the initial data path to reproduce")
             init_data_path = os.path.abspath(self.parameter['init_data_path'])
-            task_list = make_repro(init_data_path, self.init_from_suffix,
+            task_list = make_repro(self.inter_param,init_data_path, self.init_from_suffix,
                                    path_to_work, self.parameter.get('reprod_last_frame', True))
             os.chdir(cwd)
 
@@ -123,10 +126,18 @@ class EOS(Property):
                     dlog.info('treat vol_start and vol_end as absolute volume')
                 else : 
                     dlog.info('treat vol_start and vol_end as relative volume')
-                equi_contcar = os.path.join(path_to_equi, 'CONTCAR')
-                if not os.path.exists(equi_contcar):
-                    raise RuntimeError("please do relaxation first")
-                vol_to_poscar = vasp.poscar_vol(equi_contcar) / vasp.poscar_natoms(equi_contcar)
+
+                if self.inter_param['type'] == 'abacus':
+                    equi_contcar = os.path.join(path_to_equi,abacus.final_stru(path_to_equi))
+                    if not os.path.isfile(equi_contcar):
+                        raise RuntimeError("Can not find %s, please do relaxation first" % equi_contcar)
+                    stru_data = abacus_scf.get_abacus_STRU(equi_contcar)  
+                    vol_to_poscar = abs(np.linalg.det(stru_data['cells'])) / np.array(stru_data['atom_numbs']).sum()
+                else:
+                    equi_contcar = os.path.join(path_to_equi, 'CONTCAR')
+                    if not os.path.exists(equi_contcar):
+                        raise RuntimeError("please do relaxation first")
+                    vol_to_poscar = vasp.poscar_vol(equi_contcar) / vasp.poscar_natoms(equi_contcar)
                 self.parameter['scale2equi'] = []
 
                 task_num = 0
@@ -138,11 +149,14 @@ class EOS(Property):
                     output_task = os.path.join(path_to_work, 'task.%06d' % task_num)
                     os.makedirs(output_task, exist_ok=True)
                     os.chdir(output_task)
-                    for ii in ['INCAR', 'POTCAR', 'POSCAR.orig', 'POSCAR', 'conf.lmp', 'in.lammps']:
+                    for ii in ['INCAR', 'POTCAR', 'POSCAR.orig', 'POSCAR', 'conf.lmp', 'in.lammps','STRU','STRU.orig']:
                         if os.path.exists(ii):
                             os.remove(ii)
                     task_list.append(output_task)
-                    os.symlink(os.path.relpath(equi_contcar), 'POSCAR.orig')
+                    if self.inter_param['type'] == 'abacus':
+                        os.symlink(os.path.relpath(equi_contcar), 'STRU.orig')
+                    else:
+                        os.symlink(os.path.relpath(equi_contcar), 'POSCAR.orig')
                     # scale = (vol / vol_to_poscar) ** (1. / 3.)
 
                     if self.vol_abs :
@@ -153,7 +167,10 @@ class EOS(Property):
                         eos_params = {'volume': vol * vol_to_poscar, 'scale': scale}
                     dumpfn(eos_params, 'eos.json', indent=4)
                     self.parameter['scale2equi'].append(scale)  # 06/22
-                    vasp.poscar_scale('POSCAR.orig', 'POSCAR', scale)
+                    if self.inter_param['type'] == 'abacus':
+                        abacus.stru_scale('STRU.orig', 'STRU', scale)
+                    else:
+                        vasp.poscar_scale('POSCAR.orig', 'POSCAR', scale)
                     task_num += 1
                 os.chdir(cwd)
         return task_list

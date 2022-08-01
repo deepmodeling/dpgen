@@ -4,6 +4,7 @@ import os,re
 from dpgen import dlog
 from dpgen.auto_test.lib import vasp
 from dpgen.auto_test.lib import lammps
+from dpgen.auto_test.lib import abacus
 from dpgen.auto_test.lib.utils import cmd_append_log
 
 lammps_task_type=['deepmd','meam','eam_fs','eam_alloy']   # 06/13 revised
@@ -69,7 +70,7 @@ def make_work_path(jdata,task,reprod_opt,static,user):
 
 
 def get_machine_info(mdata,task_type):
-    if task_type=="vasp":
+    if task_type in ["vasp","abacus"]:
         vasp_exec=mdata['fp_command']
         group_size = mdata['fp_group_size']
         resources = mdata['fp_resources']
@@ -93,6 +94,9 @@ def collect_task(all_task,task_type):
     elif task_type in lammps_task_type:
         output_file = 'log.lammps'
         check_finished = lammps.check_finished
+    elif task_type == 'abacus':
+        output_file = 'OUT.ABACUS/running_relax.log'
+        check_finished = abacus.check_finished
 
     run_tasks_ = []
     for ii in all_task:
