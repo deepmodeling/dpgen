@@ -841,6 +841,9 @@ def make_model_devi (iter_index,
         shutil.copyfile(calypso_run_model_devi_file,calypso_run_model_devi_script)
         # Create work path list
         caly_run_opt_path = []
+
+        # mode 1: generate structures according to the user-provided input.dat file,
+        # so calypso_input_path and model_devi_max_iter are needed
         if run_mode == 1:
             if jdata.get('vsc', False) and len(jdata.get('type_map')) > 1:
                 # [input.dat.Li.250, input.dat.Li.300]
@@ -858,6 +861,8 @@ def make_model_devi (iter_index,
             elif not jdata.get('vsc', False):
                 caly_run_opt_path.append('%s.%03d'%(_calypso_run_opt_path, 0))
                         
+        # mode 2: control each iteration to generate structures in specific way 
+        # by providing model_devi_jobs key
         elif run_mode == 2:
             for iiidx, jobbs in enumerate(model_devi_jobs):
                 if iter_index in jobbs.get('times'):
