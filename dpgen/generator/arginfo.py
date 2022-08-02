@@ -59,11 +59,26 @@ def data_args() -> List[Argument]:
 
 
 def training_args() -> List[Argument]:
+    """Traning arguments.
+    
+    Returns
+    -------
+    list[dargs.Argument]
+        List of training arguments.
+    """
     doc_numb_models = 'Number of models to be trained in 00.train. 4 is recommend.'
     doc_training_iter0_model_path = 'The model used to init the first iter training. Number of element should be equal to numb_models.'
     doc_training_init_model = 'Iteration > 0, the model parameters will be initilized from the model trained at the previous iteration. Iteration == 0, the model parameters will be initialized from training_iter0_model_path.'
     doc_default_training_param = 'Training parameters for deepmd-kit in 00.train. You can find instructions from here: (https://github.com/deepmodeling/deepmd-kit).'
     doc_dp_compress = 'Use dp compress to compress the model.'
+    doc_training_reuse_iter = "The minimal index of iteration that continues training models from old models of last iteration."
+    doc_reusing = " This option is only adopted when continuing training models from old models. This option will override default parameters."
+    doc_training_reuse_old_ratio = "The probability proportion of old data during training." + doc_reusing
+    doc_training_reuse_numb_steps = "Number of training batch." + doc_reusing
+    doc_training_reuse_start_lr = "The learning rate the start of the training." + doc_reusing
+    doc_training_reuse_start_pref_e = "The prefactor of energy loss at the start of the training." + doc_reusing
+    doc_training_reuse_start_pref_f = "The prefactor of force loss at the start of the training." + doc_reusing
+    doc_model_devi_activation_func = "The activation function in the model. The shape of list should be (N_models, 2), where 2 represents the embedding and fitting network. This option will override default parameters."
 
     return [
         Argument("numb_models", int, optional=False, doc=doc_numb_models),
@@ -75,6 +90,13 @@ def training_args() -> List[Argument]:
                  doc=doc_default_training_param),
         Argument("dp_compress", bool, optional=True,
                  default=False, doc=doc_dp_compress),
+        Argument("training_reuse_iter", [None, int], optional=True, doc=doc_training_reuse_iter),
+        Argument("training_reuse_old_ratio", [None, float], optional=True, doc=doc_training_reuse_old_ratio),
+        Argument("training_reuse_numb_steps", [None, int], alias=["training_reuse_stop_batch"], optional=True, default=400000, doc=doc_training_reuse_numb_steps),
+        Argument("training_reuse_start_lr", [None, float], optional=True, default=1e-4, doc=doc_training_reuse_start_lr),
+        Argument("training_reuse_start_pref_e", [None, float, int], optional=True, default=0.1, doc=doc_training_reuse_start_pref_e),
+        Argument("training_reuse_start_pref_f", [None, float, int], optional=True, default=100, doc=doc_training_reuse_start_pref_f),
+        Argument("model_devi_activation_func", [None, list], optional=True, doc=doc_model_devi_activation_func),
     ]
 
 
@@ -139,6 +161,10 @@ The union of the two sets is made as candidate dataset.'
     doc_model_devi_nopbc = 'Assume open boundary condition in MD simulations.'
     doc_model_devi_activation_func = 'Set activation functions for models, length of the list should be the same as numb_models, and two elements in the list of string respectively assign activation functions to the embedding and fitting nets within each model. Backward compatibility: the orginal "list of String" format is still supported, where embedding and fitting nets of one model use the same activation function, and the length of the list should be the same as numb_models.'
     doc_shuffle_poscar = 'Shuffle atoms of each frame before running simulations. The purpose is to sample the element occupation of alloys.'
+    doc_use_relative = 'Calculate relative force model deviation.'
+    doc_epsilon = 'The level parameter for computing the relative force model deviation.'
+    doc_use_relative_v = 'Calculate relative virial model deviation.'
+    doc_epsilon_v = 'The level parameter for computing the relative virial model deviation.'
 
     return [
         model_devi_jobs_args(),
@@ -173,6 +199,10 @@ The union of the two sets is made as candidate dataset.'
         Argument("model_devi_activation_func", list, optional=True,
                  doc=doc_model_devi_activation_func),
         Argument("shuffle_poscar", bool, optional=True, default=False, doc=doc_shuffle_poscar),
+        Argument("use_relative", bool, optional=True, default=False, doc=doc_use_relative),
+        Argument("epsilon", float, optional=True, doc=doc_epsilon),
+        Argument("use_relative_v", bool, optional=True, default=False, doc=doc_use_relative_v),
+        Argument("epsilon_v", float, optional=True, doc=doc_epsilon_v),
     ]
 
 
@@ -204,29 +234,59 @@ def fp_style_vasp_args() -> List[Argument]:
 
 # gaussian
 def fp_style_gaussian_args() -> List[Argument]:
-    doc_keywords = 'Keywords for Gaussian input.'
-    doc_multiplicity = 'Spin multiplicity for Gaussian input. If set to auto, the spin multiplicity will be detected automatically. If set to frag, the "fragment=N" method will be used.'
+    """Gaussian fp style arguments.
+    
+    Returns
+    -------
+    list[dargs.Argument]
+        list of Gaussian fp style arguments
+    """
+    doc_keywords = 'Keywords for Gaussian input, e.g. force b3lyp/6-31g**. If a list, run multiple steps.'
+    doc_multiplicity = ('Spin multiplicity for Gaussian input. If `auto`, multiplicity will be detected automatically, '
+                        'with the following rules: when fragment_guesses=True, multiplicity will +1 for each radical, '
+                        'and +2 for each oxygen molecule; when fragment_guesses=False, multiplicity will be 1 or 2, '
+                        'but +2 for each oxygen molecule.')
     doc_nproc = 'The number of processors for Gaussian input.'
+    doc_charge = 'Molecule charge. Only used when charge is not provided by the system.'
+    doc_fragment_guesses = 'Initial guess generated from fragment guesses. If True, `multiplicity` should be `auto`.'
+    doc_basis_set = 'Custom basis set.'
+    doc_keywords_high_multiplicity = ('Keywords for points with multiple raicals. `multiplicity` should be `auto`. '
+                                      'If not set, fallback to normal keywords.')
 
     args = [
-        Argument("keywords", [str or list],
+        Argument("keywords", [str, list],
                  optional=False, doc=doc_keywords),
-        Argument("multiplicity", [int or str],
-                 optional=False, doc=doc_multiplicity),
+        Argument("multiplicity", [int, str],
+                 optional=True, default="auto", doc=doc_multiplicity),
         Argument("nproc", int, optional=False, doc=doc_nproc),
+        Argument("charge", int, optional=True, default=0, doc=doc_nproc),
+        Argument("fragment_guesses", bool, optional=True, default=False, doc=doc_fragment_guesses),
+        Argument("basis_set", str, optional=True, doc=doc_fragment_guesses),
+        Argument("keywords_high_multiplicity", str, optional=True, doc=doc_keywords_high_multiplicity),
     ]
 
-    doc_use_clusters = 'If set to true, clusters will be taken instead of the whole system. This option does not work with DeePMD-kit 0.x.'
-    doc_cluster_cutoff = 'The cutoff radius of clusters if use_clusters is set to true.'
+    doc_use_clusters = 'If set to true, clusters will be taken instead of the whole system.'
+    doc_cluster_cutoff = ('The soft cutoff radius of clusters if `use_clusters` is set to true. Molecules will be taken '
+                          'as whole even if part of atoms is out of the cluster. Use `cluster_cutoff_hard` to only '
+                          'take atoms within the hard cutoff radius.')
+    doc_cluster_cutoff_hard = ('The hard cutoff radius of clusters if `use_clusters` is set to true. Outside the hard cutoff radius, '
+                               'atoms will not be taken even if they are in a molecule where some atoms are within the cutoff radius.')
+    doc_cluster_minify = ('If enabled, when an atom within the soft cutoff radius connects a single bond with '
+                          'a non-hydrogen atom out of the soft cutoff radius, the outer atom will be replaced by a '
+                          'hydrogen atom. When the outer atom is a hydrogen atom, the outer atom will be '
+                          'kept. In this case, other atoms out of the soft cutoff radius will be removed.')
     doc_fp_params_gaussian = 'Parameters for Gaussian calculation.'
 
     return [
         Argument("use_clusters", bool, optional=True, default=False, doc=doc_use_clusters),
         Argument("cluster_cutoff", float,
                  optional=True, doc=doc_cluster_cutoff),
+        Argument("cluster_cutoff_hard", float, optional=True, doc=doc_cluster_cutoff_hard),
+        Argument("cluster_minify", bool, optional=True, default=False, doc=doc_cluster_minify),
         Argument("fp_params", dict, args, [],
                  optional=False, doc=doc_fp_params_gaussian),
     ]
+
 
 # siesta
 def fp_style_siesta_args() -> List[Argument]:
