@@ -28,11 +28,11 @@ def make_abacus_scf_input(fp_params):
         elif key == "ecutwfc":
             assert(fp_params["ecutwfc"] >= 0) ,  "'ntype' should be non-negative."
             ret += "ecutwfc %f\n" % fp_params["ecutwfc"]
-        elif key == "dr2":
-            ret += "dr2 %e\n" % fp_params["dr2"]
-        elif key == "niter":
-            assert(fp_params['niter'] >= 0 and type(fp_params["niter"])== int), "'niter' should be a positive integer."
-            ret += "niter %d\n" % fp_params["niter"]    
+        elif key == "scf_thr":
+            ret += "scf_thr %e\n" % fp_params["scf_thr"]
+        elif key == "scf_nmax":
+            assert(fp_params['scf_nmax'] >= 0 and type(fp_params["scf_nmax"])== int), "'scf_nmax' should be a positive integer."
+            ret += "scf_nmax %d\n" % fp_params["scf_nmax"]
         elif key == "basis_type":
             assert(fp_params["basis_type"] in ["pw", "lcao", "lcao_in_pw"]) , "'basis_type' must in 'pw', 'lcao' or 'lcao_in_pw'."
             ret+= "basis_type %s\n" % fp_params["basis_type"]
@@ -59,18 +59,18 @@ def make_abacus_scf_input(fp_params):
         elif key == "ks_solver":
             assert(fp_params["ks_solver"] in ["cg", "dav", "lapack", "genelpa", "hpseps", "scalapack_gvx"]), "'ks_sover' should in 'cgx', 'dav', 'lapack', 'genelpa', 'hpseps', 'scalapack_gvx'."
             ret += "ks_solver %s\n" % fp_params["ks_solver"]
-        elif key == "smearing":
-            assert(fp_params["smearing"] in ["gaussian", "fd", "fixed", "mp", "mp2", "mv"]), "'smearing' should in 'gaussian', 'fd', 'fixed', 'mp', 'mp2', 'mv'. "
-            ret += "smearing %s\n" % fp_params["smearing"]
-        elif key == "sigma":
-            assert(fp_params["sigma"] >= 0), "'sigma' should be non-negative."
-            ret += "sigma %f\n" % fp_params["sigma"]
+        elif key == "smearing_method":
+            assert(fp_params["smearing_method"] in ["gaussian", "fd", "fixed", "mp", "mp2", "mv"]), "'smearing_method' should in 'gaussian', 'fd', 'fixed', 'mp', 'mp2', 'mv'. "
+            ret += "smearing_method %s\n" % fp_params["smearing_method"]
+        elif key == "smearing_sigma":
+            assert(fp_params["smearing_sigma"] >= 0), "'smearing_sigma' should be non-negative."
+            ret += "smearing_sigma %f\n" % fp_params["smearing_sigma"]
         elif key == "force":
-            assert(fp_params["force"] == 0  or fp_params["force"] == 1), "'force' should be either 0 or 1."
-            ret += "force %d\n" % fp_params["force"]
-        elif key == "stress":
-            assert(fp_params["stress"] == 0  or fp_params["stress"] == 1), "'stress' should be either 0 or 1."
-            ret += "stress %d\n" % fp_params["stress"]    
+            assert(fp_params["cal_force"] == 0  or fp_params["cal_force"] == 1), "'cal_force' should be either 0 or 1."
+            ret += "cal_force %d\n" % fp_params["cal_force"]
+        elif key == "cal_stress":
+            assert(fp_params["cal_stress"] == 0  or fp_params["cal_stress"] == 1), "'cal_stress' should be either 0 or 1."
+            ret += "cal_stress %d\n" % fp_params["cal_stress"]
         #paras for deepks
         elif key == "deepks_out_labels":
             assert(fp_params["deepks_out_labels"] == 0 or fp_params["deepks_out_labels"] == 1), "'deepks_out_labels' should be either 0 or 1."

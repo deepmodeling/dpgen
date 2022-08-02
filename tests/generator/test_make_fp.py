@@ -155,8 +155,8 @@ abacus_input_ref = "INPUT_PARAMETERS\n\
 calculation scf\n\
 ntype 2\n\
 ecutwfc 80.000000\n\
-dr2 1.000000e-07\n\
-niter 50\n\
+scf_thr 1.000000e-07\n\
+scf_nmax 50\n\
 basis_type pw\n\
 gamma_only 1\n\
 dft_functional pbe\n\
@@ -166,14 +166,14 @@ symmetry 1\n\
 nbands 5\n\
 nspin 1\n\
 ks_solver cg\n\
-smearing fixed\n\
-sigma 0.001000\n\
-force 1\n\
-stress 1\n\
-out_descriptor 0\n\
-lmax_descriptor 0\n\
+smearing_method fixed\n\
+smearing_sigma 0.001000\n\
+cal_force 1\n\
+cal_stress 1\n\
+deepks_out_labels 0\n\
+deepks_descriptor_lmax 0\n\
 deepks_scf 0\n\
-model_file model.ptg\n"
+deepks_model model.ptg\n"
 
 abacus_kpt_ref = "K_POINTS\n\
 0\n\
