@@ -2,6 +2,7 @@
 import os
 import shutil
 import json
+import glob
 import numpy as np
 from dpgen.generator.lib.utils import create_path
 
@@ -12,17 +13,17 @@ def make_calypso_input(nameofatoms,numberofatoms,
                            maxnumatom,ctrlrange,pstress,fmax):
     ret = "################################ The Basic Parameters of CALYPSO ################################\n"
     ret+= "# A string of one or several words contain a descriptive name of the system (max. 40 characters).\n"
-    assert (nameofatoms != None )
+    assert nameofatoms is not None
     ret+= "SystemName = %s\n"%(''.join(nameofatoms))
     ret+= "# Number of different atomic species in the simulation.\n"
     ret+= "NumberOfSpecies = %d\n"%(len(nameofatoms))
     ret+= "# Element symbols of the different chemical species.\n"
     ret+= "NameOfAtoms = %s\n"%(' '.join(nameofatoms))
     ret+= "# Number of atoms for each chemical species in one formula unit. \n"
-    assert numberofatoms != None  or len(numberofatoms) == len(nameofatoms)
+    assert numberofatoms is not None and len(numberofatoms) == len(nameofatoms)
     ret+= "NumberOfAtoms = %s\n"%(' '.join(list(map(str,numberofatoms))))
     ret+= "# The range of formula unit per cell in your simulation. \n"
-    assert numberofformula != None  or len(numberofformula) == 2 or type(numberofformula) == type([1,2])
+    assert numberofformula is not None and len(numberofformula) == 2 and type(numberofformula) is list
     ret+= "NumberOfFormula = %s\n"%(' '.join(list(map(str,numberofformula))))
     ret+= "# The volume per formula unit. Unit is in angstrom^3.\n"
     ret+= "Volume = %s\n"%(volume)
@@ -41,9 +42,9 @@ def make_calypso_input(nameofatoms,numberofatoms,
     assert (0 <=  psoratio <= 1  )
     ret+= "PsoRatio = %s\n"%(psoratio)
     ret+= "# The population size. Normally, it has a larger number for larger systems.\n"
-    assert popsize != None or type(popsize) == type(0)
+    assert popsize is not None and type(popsize) is int
     ret+= "PopSize = %d\n"%(popsize)
-    assert maxstep != None or type(maxstep) == type(0)
+    assert maxstep is not None and type(maxstep) is int
     ret+= "# The Max step for iteration\n"
     ret+= "MaxStep = %d\n"%(maxstep)
     ret+= "#It determines which method should be adopted in generation the random structure. \n"                             
@@ -54,7 +55,7 @@ def make_calypso_input(nameofatoms,numberofatoms,
     ret+= "# 0 combination of all method\n"
     ret+= "# If GenType=3 or 4, it determined the small unit to grow the whole structure\n"
     ret+= "# It determines which local optimization method should be interfaced in the simulation.\n"
-    assert icode != None  or type(icode) == type(0)
+    assert icode is not None and type(icode) is int
     ret+= "ICode= %d\n"%(icode)
     ret+= "# ICode= 1 interfaced with VASP\n"
     ret+= "# ICode= 2 interfaced with SIESTA\n"
@@ -74,11 +75,11 @@ def make_calypso_input(nameofatoms,numberofatoms,
     ret+= "Parallel = F\n"
     ret+= "# The number node for parallel \n"
     ret+= "NumberOfParallel = 4\n"
-    assert split != None 
+    assert split is not None 
     ret+= "Split = %s\n"%(split)
-    assert pstress != None  or type(pstress) == type(200) or type(pstress) == type(0.001)
+    assert pstress is not None and (type(pstress) is int or type(pstress) is float)
     ret+= "PSTRESS = %f\n"%(pstress)
-    assert fmax != None  or type(fmax) == type(0.01)
+    assert fmax is not None or type(fmax) is float
     ret+= "fmax = %f\n"%(fmax)
     ret+= "################################ End of The Basic Parameters of CALYPSO #######################\n"
     if vsc == 'T':
@@ -96,18 +97,40 @@ def make_calypso_input(nameofatoms,numberofatoms,
         ret+= "###################End Parameters for VSC ##########################\n"
     return ret
 
-def _make_model_devi_buffet(jdata,caly_run_opt_path):
+def _make_model_devi_buffet(jdata,calypso_run_opt_path):
 
     calypso_input_path = jdata.get('calypso_input_path')
-    shutil.copyfile(os.path.join(calypso_input_path,'input.dat'),os.path.join(caly_run_opt_path[0], 'input.dat'))
+    if jdata.get('vsc', False):
+        # [input.dat.Li.250, input.dat.Li.300]
+        one_ele_inputdat_list = list(
+                set(glob.glob(
+                    f"{jdata.get('calypso_input_path')}/input.dat.{jdata.get('type_map')[0]}.*"
+                    ))
+                )
+        # [input.dat.La, input.dat.H, input.dat.LaH,] only one pressure
+        if len(one_ele_inputdat_list) == 0:
+            os.system(f"cp {calypso_input_path}/input.dat.* {calypso_run_opt_path[0]}")
+        # different pressure, 250GPa and 300GPa
+        # [input.dat.La.250, input.dat.H.250, input.dat.LaH.250, input.dat.La.300, input.dat.H.300, input.dat.LaH.300,]
+        else: 
+            pressures_list = [temp.split('.')[-1] for temp in one_ele_inputdat_list]
+            pressures_list = list(map(int, pressures_list))
+            # calypso_run_opt_path = ['gen_struc_analy.000','gen_struc_analy.001']
+            for press_idx, temp_calypso_run_opt_path in enumerate(calypso_run_opt_path):
+                cur_press = pressures_list[press_idx]
+                os.system(f"cp {calypso_input_path}/input.dat.*.{cur_press} {temp_calypso_run_opt_path}")
+    elif not jdata.get('vsc', False):
+        shutil.copyfile(os.path.join(calypso_input_path,'input.dat'),os.path.join(calypso_run_opt_path[0], 'input.dat'))
+        if not os.path.exists(os.path.join(calypso_run_opt_path[0], 'input.dat')):
+            raise FileNotFoundError('input.dat')
 
-def _make_model_devi_native_calypso(iter_index,model_devi_jobs, caly_run_opt_path):
+def _make_model_devi_native_calypso(iter_index,model_devi_jobs, calypso_run_opt_path):
 
     for iiidx, jobbs in enumerate(model_devi_jobs):
         if iter_index in jobbs.get('times'):
             cur_job = model_devi_jobs[iiidx]
 
-    work_path = os.path.dirname(caly_run_opt_path[0])
+    work_path = os.path.dirname(calypso_run_opt_path[0])
     # cur_job.json
     with open(os.path.join(work_path, 'cur_job.json'), 'w') as outfile:
         json.dump(cur_job, outfile, indent = 4)
@@ -139,7 +162,7 @@ def _make_model_devi_native_calypso(iter_index,model_devi_jobs, caly_run_opt_pat
     # pstress is a List which contains the target stress
     pstress = cur_job.get('PSTRESS',[0.001])
     # pressures
-    for press_idx, temp_caly_run_opt_path in enumerate(caly_run_opt_path):
+    for press_idx, temp_calypso_run_opt_path in enumerate(calypso_run_opt_path):
         # cur_press
         cur_press = pstress[press_idx]
         file_c = make_calypso_input(nameofatoms,numberofatoms,
@@ -147,7 +170,7 @@ def _make_model_devi_native_calypso(iter_index,model_devi_jobs, caly_run_opt_pat
                                distanceofion,psoratio,popsize,
                                maxstep,icode,split,vsc,
                                maxnumatom,ctrlrange,cur_press,fmax)
-        with open(os.path.join(temp_caly_run_opt_path, 'input.dat'), 'w') as cin :
+        with open(os.path.join(temp_calypso_run_opt_path, 'input.dat'), 'w') as cin :
             cin.write(file_c)
 
 def write_model_devi_out(devi, fname):

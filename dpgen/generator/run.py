@@ -842,7 +842,22 @@ def make_model_devi (iter_index,
         # Create work path list
         caly_run_opt_path = []
         if run_mode == 1:
-            caly_run_opt_path.append('%s.%03d'%(_calypso_run_opt_path, 0))
+            if jdata.get('vsc', False) and len(jdata.get('type_map')) > 1:
+                # [input.dat.Li.250, input.dat.Li.300]
+                one_ele_inputdat_list = glob.glob(
+                        f"{jdata.get('calypso_input_path')}/input.dat.{jdata.get('type_map')[0]}.*"
+                        )
+                if len(one_ele_inputdat_list) == 0:
+                    number_of_pressure = 1
+                else: 
+                    number_of_pressure = len(list(set(one_ele_inputdat_list)))
+
+                # caly_run_opt_path = ['gen_struc_analy.000','gen_struc_analy.001']
+                for temp_idx in range(number_of_pressure):
+                    caly_run_opt_path.append('%s.%03d'%(_calypso_run_opt_path, temp_idx))
+            elif not jdata.get('vsc', False):
+                caly_run_opt_path.append('%s.%03d'%(_calypso_run_opt_path, 0))
+                        
         elif run_mode == 2:
             for iiidx, jobbs in enumerate(model_devi_jobs):
                 if iter_index in jobbs.get('times'):
@@ -862,14 +877,16 @@ def make_model_devi (iter_index,
             check_outcar_script = os.path.join(temp_caly_run_opt_path,'check_outcar.py')
             shutil.copyfile(check_outcar_file,check_outcar_script)
 
-
     for mm in models :
         model_name = os.path.basename(mm)
         if model_devi_engine != 'calypso':
             os.symlink(mm, os.path.join(work_path, model_name))
         else:
             for temp_caly_run_opt_path in caly_run_opt_path:
-                os.symlink(mm, os.path.join(temp_caly_run_opt_path, model_name))
+                models_path = os.path.join(temp_caly_run_opt_path, model_name)
+                if not os.path.exists(models_path):
+                    os.symlink(mm, models_path)
+
     with open(os.path.join(work_path, 'cur_job.json'), 'w') as outfile:
         json.dump(cur_job, outfile, indent = 4)
 
