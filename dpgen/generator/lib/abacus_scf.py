@@ -21,7 +21,7 @@ def make_abacus_scf_input(fp_params):
     ret = "INPUT_PARAMETERS\n"
     ret += "calculation scf\n"
     for key in fp_params:
-        if key == 'ntype':
+        if key == "ntype":
             fp_params["ntype"] = int(fp_params["ntype"])
             assert(fp_params['ntype'] >= 0 and type(fp_params["ntype"]) == int),  "'ntype' should be a positive integer."
             ret += "ntype %d\n" % fp_params['ntype']
@@ -109,6 +109,8 @@ def make_abacus_scf_input(fp_params):
         elif key == "deepks_model":
             ret += "deepks_model %s\n" % fp_params["deepks_model"]
         elif key[0] == "_":
+            pass
+        elif key == "calculation":
             pass
         else:
             ret += "%s %s\n" % (key, str(fp_params[key]))
