@@ -11,6 +11,7 @@ from dpgen.auto_test.Elastic import Elastic
 from dpgen.auto_test.Interstitial import Interstitial
 from dpgen.auto_test.Surface import Surface
 from dpgen.auto_test.Vacancy import Vacancy
+from dpgen.auto_test.Gamma import Gamma
 from dpgen.auto_test.calculator import make_calculator
 from dpgen.dispatcher.Dispatcher import make_dispatcher
 from dpgen.dispatcher.Dispatcher import make_submission
@@ -19,21 +20,23 @@ from dpgen.auto_test.lib.utils import create_path
 lammps_task_type = ['deepmd', 'meam', 'eam_fs', 'eam_alloy']
 
 
-def make_property_instance(paramters,inter_param):
+def make_property_instance(parameters,inter_param):
     """
     Make an instance of Property
     """
-    prop_type = paramters['type']
+    prop_type = parameters['type']
     if prop_type == 'eos':
-        return EOS(paramters,inter_param)
+        return EOS(parameters,inter_param)
     elif prop_type == 'elastic':
-        return Elastic(paramters,inter_param)
+        return Elastic(parameters,inter_param)
     elif prop_type == 'vacancy':
-        return Vacancy(paramters,inter_param)
+        return Vacancy(parameters,inter_param)
     elif prop_type == 'interstitial':
-        return Interstitial(paramters,inter_param)
+        return Interstitial(parameters,inter_param)
     elif prop_type == 'surface':
-        return Surface(paramters,inter_param)
+        return Surface(parameters,inter_param)
+    elif prop_type == 'gamma':
+        return Gamma(parameters,inter_param)
     else:
         raise RuntimeError(f'unknown property type {prop_type}')
 
