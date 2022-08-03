@@ -1,0 +1,22 @@
+ntype		   	2
+ecutwfc   		80
+scf_thr   		1e-7
+scf_nmax   		50
+basis_type    		pw 
+gamma_only   		1
+dft_functional    	pbe 
+mixing_type  		pulay 
+mixing_beta   		0.4
+symmetry   		1
+nbands   		5
+nspin   		1
+ks_solver    		cg 
+smearing_method    	fixed 
+smearing_sigma   	0.001
+cal_force  		1
+cal_stress  		1
+deepks_out_labels  	0
+deepks_descriptor_lmax  0 
+deepks_scf  		0 
+deepks_model   		model.ptg 
+
