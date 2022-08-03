@@ -45,6 +45,7 @@ def make_abacus_scf_input(fp_params):
         elif key == "gamma_only":
             if(type(fp_params["gamma_only"])==str):
                 fp_params["gamma_only"] = int(eval(fp_params["gamma_only"]))
+            assert(fp_params["gamma_only"] == 0 or fp_params["gamma_only"] == 1), "'gamma_only' should be either 0 or 1."
             ret+= "gamma_only %d\n" % fp_params["gamma_only"]  
         elif key == "mixing_type":
             assert(fp_params["mixing_type"] in ["plain", "kerker", "pulay", "pulay-kerker", "broyden"])
