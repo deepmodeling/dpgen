@@ -89,7 +89,11 @@ def make_lammps_input(ensemble,
     ret+= "\n"
     ret+= "thermo_style    custom step temp pe ke etotal press vol lx ly lz xy xz yz\n"
     ret+= "thermo          ${THERMO_FREQ}\n"
-    ret+= "dump            1 all custom ${DUMP_FREQ} traj/*.lammpstrj id type x y z fx fy fz\n"
+    model_devi_merge_traj = jdata.get('model_devi_merge_traj', False)
+    if(model_devi_merge_traj is True):
+        ret+= "dump            1 all custom ${DUMP_FREQ} all.lammpstrj id type x y z fx fy fz\n"
+    else:
+        ret+= "dump            1 all custom ${DUMP_FREQ} traj/*.lammpstrj id type x y z fx fy fz\n"
     ret+= "restart         10000 dpgen.restart\n"
     ret+= "\n"
     if pka_e is None :
@@ -167,6 +171,61 @@ def get_dumped_forces(
     ret = np.array(ret)
     return ret
 
+def get_all_dumped_forces(
+        file_name):
+    with open(file_name) as fp:        
+        lines = fp.read().split('\n')
+
+    ret = []
+    exist_natoms = False
+    exist_atoms = False
+
+    for idx,ii in enumerate(lines):
+
+        if 'ITEM: NUMBER OF ATOMS' in ii:
+            natoms = int(lines[idx+1])
+            exist_natoms = True
+
+        if 'ITEM: ATOMS' in ii:
+            keys = ii
+            keys = keys.replace('ITEM: ATOMS', '')
+            keys = keys.split()
+            idfx = keys.index('fx')
+            idfy = keys.index('fy')
+            idfz = keys.index('fz')
+            exist_atoms = True
+        
+            single_traj = []
+            for jj in range(idx+1, idx+natoms+1):
+                words = lines[jj].split()
+                single_traj.append([ float(words[jj]) for jj in [idfx, idfy, idfz] ])
+            single_traj = np.array(single_traj)
+            ret.append(single_traj)
+    
+    if exist_natoms is False:
+        raise RuntimeError('wrong dump file format, cannot find number of atoms', file_name)
+    if exist_atoms is False:
+        raise RuntimeError('wrong dump file format, cannot find dump keys', file_name)
+    return ret
+
+def generate_single_traj(all_traj, traj_ind, single_traj):
+    with open(all_traj) as all_traj_fp:        
+        lines = all_traj_fp.read().split('\n')    
+    single_traj_fp = open(single_traj, "w")
+
+    time_step = None
+    get_traj = False
+    for idx,ii in enumerate(lines):
+        if 'ITEM: TIMESTEP' in ii:
+            if(get_traj is True):
+                break
+            time_step = int(lines[idx+1])
+            if(time_step == traj_ind):
+                single_traj_fp.write('ITEM: TIMESTEP\n')
+                single_traj_fp.write(str(time_step) + '\n')
+                get_traj = True
+        elif(get_traj is True):
+            single_traj_fp.write(ii + '\n')
 
 if __name__ == '__main__':
     ret = get_dumped_forces('40.lammpstrj')

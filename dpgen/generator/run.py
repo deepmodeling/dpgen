@@ -41,7 +41,7 @@ from dpgen.generator.lib.utils import log_iter
 from dpgen.generator.lib.utils import record_iter
 from dpgen.generator.lib.utils import log_task
 from dpgen.generator.lib.utils import symlink_user_forward_files
-from dpgen.generator.lib.lammps import make_lammps_input, get_dumped_forces
+from dpgen.generator.lib.lammps import make_lammps_input, get_dumped_forces, get_all_dumped_forces, generate_single_traj
 from dpgen.generator.lib.make_calypso import _make_model_devi_native_calypso,_make_model_devi_buffet
 from dpgen.generator.lib.run_calypso import gen_structures,analysis,run_calypso_model_devi
 from dpgen.generator.lib.parse_calypso import _parse_calypso_input,_parse_calypso_dis_mtx
@@ -1626,17 +1626,22 @@ def check_bad_box(conf_name,
             raise RuntimeError('unknow key', key)
     return is_bad
 
-
 def _read_model_devi_file(
         task_path : str,
-        model_devi_f_avg_relative : bool = False
+        model_devi_f_avg_relative : bool = False,
+        model_devi_merge_traj : bool = False
 ):
     model_devi = np.loadtxt(os.path.join(task_path, 'model_devi.out'))
     if model_devi_f_avg_relative :
-        trajs = glob.glob(os.path.join(task_path, 'traj', '*.lammpstrj'))
-        all_f = []
-        for ii in trajs:
-            all_f.append(get_dumped_forces(ii))
+        if(model_devi_merge_traj is True) : 
+            all_traj = glob.glob(os.path.join(task_path, 'all.lammpstrj'))
+            all_f = get_all_dumped_forces(all_traj)
+        else :
+            trajs = glob.glob(os.path.join(task_path, 'traj', '*.lammpstrj'))
+            all_f = []
+            for ii in trajs:
+                all_f.append(get_dumped_forces(ii))     
+
         all_f = np.array(all_f)
         all_f = all_f.reshape([-1,3])
         avg_f = np.sqrt(np.average(np.sum(np.square(all_f), axis = 1)))
@@ -1655,6 +1660,7 @@ def _select_by_model_devi_standard(
         model_devi_engine : str,
         model_devi_skip : int = 0,
         model_devi_f_avg_relative : bool = False,
+        model_devi_merge_traj : bool = False, 
         detailed_report_make_fp : bool = True,
 ):
     if model_devi_engine == 'calypso':
@@ -1675,7 +1681,7 @@ def _select_by_model_devi_standard(
     for tt in modd_system_task :
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            all_conf = _read_model_devi_file(tt, model_devi_f_avg_relative)
+            all_conf = _read_model_devi_file(tt, model_devi_f_avg_relative, model_devi_merge_traj)
 
             if all_conf.shape == (7,):
                 all_conf = all_conf.reshape(1,all_conf.shape[0])
@@ -1739,6 +1745,7 @@ def _select_by_model_devi_adaptive_trust_low(
         perc_candi_v : float,
         model_devi_skip : int = 0,
         model_devi_f_avg_relative : bool = False,
+        model_devi_merge_traj : bool = False, 
 ):
     """
     modd_system_task    model deviation tasks belonging to one system
@@ -1769,7 +1776,7 @@ def _select_by_model_devi_adaptive_trust_low(
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             model_devi = np.loadtxt(os.path.join(tt, 'model_devi.out'))
-            model_devi = _read_model_devi_file(tt, model_devi_f_avg_relative)
+            model_devi = _read_model_devi_file(tt, model_devi_f_avg_relative, model_devi_merge_traj)
             for ii in range(model_devi.shape[0]) :
                 if model_devi[ii][0] < model_devi_skip :
                     continue
@@ -1892,6 +1899,7 @@ def _make_fp_vasp_inner (modd_path,
     cluster_cutoff = jdata.get('cluster_cutoff', None)
     model_devi_adapt_trust_lo = jdata.get('model_devi_adapt_trust_lo', False)
     model_devi_f_avg_relative = jdata.get('model_devi_f_avg_relative', False)
+    model_devi_merge_traj = jdata.get('model_devi_merge_traj', False)
     # skip save *.out if detailed_report_make_fp is False, default is True
     detailed_report_make_fp = jdata.get("detailed_report_make_fp", True)
     # skip bad box criteria
@@ -1930,6 +1938,7 @@ def _make_fp_vasp_inner (modd_path,
                         model_devi_engine,
                         model_devi_skip,
                         model_devi_f_avg_relative = model_devi_f_avg_relative,
+                        model_devi_merge_traj = model_devi_merge_traj, 
                         detailed_report_make_fp = detailed_report_make_fp,
                     )
             else:
@@ -1944,6 +1953,7 @@ def _make_fp_vasp_inner (modd_path,
                         v_trust_hi_sys, numb_candi_v, perc_candi_v,
                         model_devi_skip = model_devi_skip,
                         model_devi_f_avg_relative = model_devi_f_avg_relative,
+                        model_devi_merge_traj = model_devi_merge_traj, 
                     )
                 dlog.info("system {0:s} {1:9s} : f_trust_lo {2:6.3f}   v_trust_lo {3:6.3f}".format(ss, 'adapted', f_trust_lo_ad, v_trust_lo_ad))
         elif model_devi_engine == "amber":
@@ -2052,6 +2062,10 @@ def _make_fp_vasp_inner (modd_path,
             ss = os.path.basename(tt).split('.')[1]
             conf_name = os.path.join(tt, "traj")
             if model_devi_engine == "lammps":
+                if(model_devi_merge_traj is True):
+                    all_traj = os.path.join(tt, 'all.lammpstrj')
+                    single_traj = os.path.join(conf_name, str(ii) + '.lammpstrj')
+                    generate_single_traj(all_traj, int(str(ii)), single_traj)
                 conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
                 ffmt = 'lammps/dump'
             elif model_devi_engine == "gromacs":
