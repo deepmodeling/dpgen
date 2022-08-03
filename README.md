@@ -572,7 +572,7 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | **user_fp_params** | Dict |  |Parameters for ABACUS INPUT. find detail [Here](https://github.com/deepmodeling/abacus-develop/blob/develop/docs/input-main.md#out-descriptor). If `deepks_model` is set, the model file should be in the pseudopotential directory. You can also set `KPT` file by adding `k_points` that corresponds to a list of six integers in this dictionary. Any key beginning with "_" will be ignored.
 | **fp_incar** | String | "./abacus/INPUT" | INPUT file for ABACUS. This is another way of providing input parameters. Users must choose one of these two ways. Any keyword beginning with "_" will be ignored
 | **k_points** | List of integers | [2,2,2,0,0,0] | Monkhorst-Pack k-grids setting for generating KPT file of ABACUS
-| **fp_kpt_file** | String | "./abacus/KPT" | KPT file for ABACUS. This is another way to provide KPT file for ABACUS and have lower priority than the above k_points key. They two have lower priority than kspacing and gamma_only in INPUT file of ABACUS.
+| **fp_kpt_file** | String | "./abacus/KPT" | KPT file for ABACUS. This is another way to provide KPT file for ABACUS and have lower priority than the above `k_points` key. They two have lower priority than kspacing and gamma_only in INPUT file of ABACUS.
 | **fp_orb_files** | List |  |List of atomic orbital files. The files should be in pseudopotential directory. 
 | **fp_dpks_descriptor** | String |  |DeePKS descriptor file name. The file should be in pseudopotential directory. 
 
