@@ -128,7 +128,6 @@ class TestVASP(unittest.TestCase):
         def compare_dict(dict1,dict2):
             self.assertEqual(dict1.keys(),dict2.keys())
             for key in dict1:
-                print(key,type(dict1[key]),type(dict2[key]))
                 if key == 'stress':
                     self.assertTrue((np.array(dict1[key]['data']) == dict2[key]).all())
                 elif type(dict1[key]) is dict:
