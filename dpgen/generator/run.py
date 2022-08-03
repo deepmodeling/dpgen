@@ -2586,15 +2586,37 @@ def make_fp_abacus_scf(iter_index,
     else:
         raise RuntimeError("Set 'user_fp_params' or 'fp_incar' in json file to make INPUT of ABACUS")
     # get paramters for writting KPT file
-    if 'k_points' in jdata.keys() :
-        ret_kpt = make_abacus_scf_kpt(jdata['k_points'])
-    elif 'fp_kpt_file' in jdata.keys():
-        fp_kpt_path = jdata['fp_kpt_file']
-        assert(os.path.exists(fp_kpt_path))
-        fp_kpt_path = os.path.abspath(fp_kpt_path)
-        fk = open(fp_kpt_path)
-        ret_kpt = fk.read()
-        fk.close()
+    if 'kspacing' not in fp_params.keys():
+        if 'gamma_only' in fp_params.keys():
+            if fp_params["gamma_only"]==1:
+                gamma_param = {"k_points":[1,1,1,0,0,0]}
+                ret_kpt = make_abacus_scf_kpt(gamma_param)
+            else:
+                if 'k_points' in jdata.keys() :
+                    ret_kpt = make_abacus_scf_kpt(jdata)
+                elif 'fp_kpt_file' in jdata.keys():
+                    fp_kpt_path = jdata['fp_kpt_file']
+                    assert(os.path.exists(fp_kpt_path))
+                    fp_kpt_path = os.path.abspath(fp_kpt_path)
+                    fk = open(fp_kpt_path)
+                    ret_kpt = fk.read()
+                    fk.close()
+                else:
+                    raise RuntimeError("Cannot find any k-points information")
+        else:
+            if 'k_points' in jdata.keys() :
+                ret_kpt = make_abacus_scf_kpt(jdata)
+            elif 'fp_kpt_file' in jdata.keys():
+                fp_kpt_path = jdata['fp_kpt_file']
+                assert(os.path.exists(fp_kpt_path))
+                fp_kpt_path = os.path.abspath(fp_kpt_path)
+                fk = open(fp_kpt_path)
+                ret_kpt = fk.read()
+                fk.close()
+            else:
+                gamma_param = {"k_points":[1,1,1,0,0,0]}
+                ret_kpt = make_abacus_scf_kpt(gamma_param)
+                warnings.warn("Cannot find k-points information, gamma_only will be generated.")
 
     cwd = os.getcwd()
     for ii in fp_tasks:
@@ -2604,8 +2626,9 @@ def make_fp_abacus_scf(iter_index,
             sys_data['atom_masses'] = jdata['mass_map']
         with open('INPUT', 'w') as fp:
             fp.write(ret_input)
-        with open("KPT", "w") as fp:
-            fp.write(ret_kpt)
+        if 'kspacing' not in fp_params.keys():
+            with open("KPT", "w") as fp:
+                fp.write(ret_kpt)
         ret_stru = make_abacus_scf_stru(sys_data, fp_pp_files, fp_orb_files, fp_dpks_descriptor, fp_params)
         with open("STRU", "w") as fp:
             fp.write(ret_stru)
@@ -3040,7 +3063,30 @@ def run_fp (iter_index,
         backward_files = ['output']
         run_fp_inner(iter_index, jdata, mdata,  forward_files, backward_files, _qe_check_fin, log_file = 'output')
     elif fp_style == "abacus/scf":
-        forward_files = ["INPUT", "STRU", "KPT"] + fp_pp_files
+        fp_params = {}
+        if 'user_fp_params' in jdata.keys() :
+            fp_params = jdata['user_fp_params']
+        elif 'fp_incar' in jdata.keys():
+            fp_input_path = jdata['fp_incar']
+            assert(os.path.exists(fp_input_path))
+            fp_input_path = os.path.abspath(fp_input_path)
+            fp_params = get_abacus_input_parameters(fp_input_path)
+
+        forward_files = ["INPUT", "STRU"]
+        if 'kspacing' not in fp_params.keys():
+            if 'gamma_only' in fp_params.keys():
+                if type(fp_params["gamma_only"])==str:
+                    fp_params["gamma_only"] = int(eval(fp_params["gamma_only"]))
+                assert(fp_params["gamma_only"] == 0 or fp_params["gamma_only"] == 1),\
+                        "'gamma_only' should be either 0 or 1."
+                if fp_params["gamma_only"]==0:
+                    raise RuntimeError("Cannot find any k-points information")
+                else:
+                    forward_files += ["KPT"]
+            else:
+                forward_files += ["KPT"]
+
+        forward_files += fp_pp_files
         if "fp_orb_files" in jdata:
             forward_files += jdata["fp_orb_files"]
         if "fp_dpks_descriptor" in jdata:

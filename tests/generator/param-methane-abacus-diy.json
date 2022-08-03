@@ -133,5 +133,6 @@
   "fp_pp_path":           ".",
   "fp_pp_files":          [ "./H_HSCV_PBE-1.0.UPF","./C_HSCV_PBE-1.0.UPF"],
   "fp_incar":		  "abacus/INPUT.diy",
-  "k_points":		   [1, 1, 1, 0, 0, 0]
+  "_k_points":		   [3, 3, 3, 0, 0, 0],
+  "_fp_kpt_file":	  "./abacus/KPT"
 }

@@ -19,4 +19,4 @@ deepks_out_labels  	0
 deepks_descriptor_lmax  0 
 deepks_scf  		0 
 deepks_model   		model.ptg 
-
+_kspacing		0.04

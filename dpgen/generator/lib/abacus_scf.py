@@ -30,6 +30,10 @@ def make_abacus_scf_input(fp_params):
             fp_params["ecutwfc"] = float(fp_params["ecutwfc"])
             assert(fp_params["ecutwfc"] >= 0) ,  "'ntype' should be non-negative."
             ret += "ecutwfc %f\n" % fp_params["ecutwfc"]
+        elif key == "kspacing":
+            fp_params["kspacing"] = float(fp_params["kspacing"])
+            assert(fp_params["kspacing"] >= 0) ,  "'ntype' should be non-negative."
+            ret += "kspacing %f\n" % fp_params["kspacing"]
         elif key == "scf_thr":
             fp_params["scf_thr"] = float(fp_params["scf_thr"])
             ret += "scf_thr %e\n" % fp_params["scf_thr"]
@@ -104,6 +108,8 @@ def make_abacus_scf_input(fp_params):
             ret += "deepks_scf %d\n" % fp_params["deepks_scf"]
         elif key == "deepks_model":
             ret += "deepks_model %s\n" % fp_params["deepks_model"]
+        elif key[0] == "_":
+            pass
         else:
             ret += "%s %s\n" % (key, str(fp_params[key]))
     return ret
