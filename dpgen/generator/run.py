@@ -840,7 +840,7 @@ def make_model_devi (iter_index,
         calypso_run_model_devi_script = os.path.join(calypso_model_devi_path,'calypso_run_model_devi.py')
         shutil.copyfile(calypso_run_model_devi_file,calypso_run_model_devi_script)
         # Create work path list
-        caly_run_opt_path = []
+        calypso_run_opt_path = []
 
         # mode 1: generate structures according to the user-provided input.dat file,
         # so calypso_input_path and model_devi_max_iter are needed
@@ -855,11 +855,11 @@ def make_model_devi (iter_index,
                 else: 
                     number_of_pressure = len(list(set(one_ele_inputdat_list)))
 
-                # caly_run_opt_path = ['gen_struc_analy.000','gen_struc_analy.001']
+                # calypso_run_opt_path = ['gen_struc_analy.000','gen_struc_analy.001']
                 for temp_idx in range(number_of_pressure):
-                    caly_run_opt_path.append('%s.%03d'%(_calypso_run_opt_path, temp_idx))
+                    calypso_run_opt_path.append('%s.%03d'%(_calypso_run_opt_path, temp_idx))
             elif not jdata.get('vsc', False):
-                caly_run_opt_path.append('%s.%03d'%(_calypso_run_opt_path, 0))
+                calypso_run_opt_path.append('%s.%03d'%(_calypso_run_opt_path, 0))
                         
         # mode 2: control each iteration to generate structures in specific way 
         # by providing model_devi_jobs key
@@ -870,16 +870,16 @@ def make_model_devi (iter_index,
                     
             pressures_list = cur_job.get('PSTRESS', [0.0001])
             for temp_idx in range(len(pressures_list)):
-                caly_run_opt_path.append('%s.%03d'%(_calypso_run_opt_path, temp_idx))
+                calypso_run_opt_path.append('%s.%03d'%(_calypso_run_opt_path, temp_idx))
         # to different directory
-        # caly_run_opt_path = ['gen_struc_analy.000','gen_struc_analy.001','gen_struc_analy.002',]
-        for temp_caly_run_opt_path in caly_run_opt_path:
-            create_path(temp_caly_run_opt_path)
+        # calypso_run_opt_path = ['gen_struc_analy.000','gen_struc_analy.001','gen_struc_analy.002',]
+        for temp_calypso_run_opt_path in calypso_run_opt_path:
+            create_path(temp_calypso_run_opt_path)
             # run confs opt script
-            run_opt_script = os.path.join(temp_caly_run_opt_path,'calypso_run_opt.py')
+            run_opt_script = os.path.join(temp_calypso_run_opt_path,'calypso_run_opt.py')
             shutil.copyfile(run_opt_file,run_opt_script)
             # check outcar script
-            check_outcar_script = os.path.join(temp_caly_run_opt_path,'check_outcar.py')
+            check_outcar_script = os.path.join(temp_calypso_run_opt_path,'check_outcar.py')
             shutil.copyfile(check_outcar_file,check_outcar_script)
 
     for mm in models :
@@ -887,8 +887,8 @@ def make_model_devi (iter_index,
         if model_devi_engine != 'calypso':
             os.symlink(mm, os.path.join(work_path, model_name))
         else:
-            for temp_caly_run_opt_path in caly_run_opt_path:
-                models_path = os.path.join(temp_caly_run_opt_path, model_name)
+            for temp_calypso_run_opt_path in calypso_run_opt_path:
+                models_path = os.path.join(temp_calypso_run_opt_path, model_name)
                 if not os.path.exists(models_path):
                     os.symlink(mm, models_path)
 
@@ -946,13 +946,13 @@ def make_model_devi (iter_index,
         elif model_devi_engine == "amber":
             _make_model_devi_amber(iter_index, jdata, mdata, conf_systems)
         elif model_devi_engine == "calypso":
-            _make_model_devi_native_calypso(iter_index,model_devi_jobs, caly_run_opt_path)  # generate input.dat automatic in each iter
+            _make_model_devi_native_calypso(iter_index,model_devi_jobs, calypso_run_opt_path)  # generate input.dat automatic in each iter
         else:
             raise RuntimeError("unknown model_devi engine", model_devi_engine)
     elif input_mode == "revise_template":
         _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems)
     elif input_mode == "buffet":
-        _make_model_devi_buffet(jdata,caly_run_opt_path)  # generate confs according to the input.dat provided
+        _make_model_devi_buffet(jdata,calypso_run_opt_path)  # generate confs according to the input.dat provided
     else:
         raise RuntimeError('unknown model_devi input mode', input_mode)
     #Copy user defined forward_files
