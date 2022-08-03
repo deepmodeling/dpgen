@@ -76,7 +76,7 @@ def poscar2stru(poscar,inter_param,stru):
     stru.to("stru", "STRU", mass = atom_mass, pp_file = pseudo, numerical_orbital = orb, numerical_descriptor = deepks_desc)
 
 
-def stru_fix_atom(struf,fix_atom = True):
+def stru_fix_atom(struf,fix_atom = [True,True,True]):
     '''
 ...
 ATOMIC_POSITIONS
@@ -87,6 +87,7 @@ Si                      #Name of element
 0.00 0.00 0.00 0 0 0    #x,y,z, move_x, move_y, move_z
 0.25 0.25 0.25 0 0 0
     '''
+    fix_xyz = ['0' if i else '1' for i in fix_atom ]
     if os.path.isfile(struf):
         with open(struf) as f1: lines = f1.readlines()
         for i in range(len(lines)):
@@ -103,10 +104,7 @@ Si                      #Name of element
             elif flag_atom_number:
                 flag_atom_number -= 1
                 x,y,z = lines[i].split()[:3]
-                if fix_atom:
-                    lines[i] = "%s %s %s 0 0 0\n" % (x,y,z)
-                else:
-                    lines[i] = "%s %s %s 1 1 1\n" % (x,y,z)
+                lines[i] = "%s %s %s %s %s %s\n" % tuple([x,y,z] + fix_xyz)
             elif flag_read_coord_type and flag_read_atom_number:
                 flag_read_atom_number -= 1
             elif not flag_read_atom_number:

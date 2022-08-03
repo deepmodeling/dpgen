@@ -3,6 +3,7 @@ import json
 import os
 import re
 
+import dpdata
 import numpy as np
 from monty.serialization import loadfn, dumpfn
 from pymatgen.core.structure import Structure
@@ -19,13 +20,15 @@ from dpgen.auto_test.refine import make_refine
 from dpgen.auto_test.reproduce import make_repro
 from dpgen.auto_test.reproduce import post_repro
 
+import dpgen.auto_test.lib.abacus as abacus
+
 
 class Gamma(Property):
     """
     Calculation of common gamma lines for bcc and fcc
     """
     def __init__(self,
-                 parameter):
+                 parameter,inter_param=None):
         parameter['reproduce'] = parameter.get('reproduce', False)
         self.reprod = parameter['reproduce']
         if not self.reprod:
@@ -76,6 +79,7 @@ class Gamma(Property):
             parameter['init_from_suffix'] = parameter.get('init_from_suffix', '00')
             self.init_from_suffix = parameter['init_from_suffix']
         self.parameter = parameter
+        self.inter_param = inter_param if inter_param != None else {'type': 'vasp'}
 
     def make_confs(self,
                    path_to_work,
@@ -134,14 +138,30 @@ class Gamma(Property):
                 os.chdir(cwd)
 
             else:
-                equi_contcar = os.path.join(path_to_equi, 'CONTCAR')
+                if self.inter_param['type'] == 'abacus':
+                    CONTCAR = abacus.final_stru(path_to_equi)
+                    POSCAR = 'STRU'
+                else:
+                    CONTCAR = 'CONTCAR'
+                    POSCAR = 'POSCAR'
+
+                equi_contcar = os.path.join(path_to_equi, CONTCAR)
                 if not os.path.exists(equi_contcar):
                     raise RuntimeError("please do relaxation first")
                 print('we now only support gamma line calculation for BCC and FCC metals')
                 print('supported slip systems are planes/direction: 100/010, 110/111, 111/110, 111/112, 112/111, and 123/111')
-                ptypes = vasp.get_poscar_types(equi_contcar)
-                # read structure from relaxed CONTCAR
-                ss = Structure.from_file(equi_contcar)
+
+                if self.inter_param['type'] == 'abacus':
+                    stru = dpdata.System(equi_contcar, fmt="stru")
+                    stru.to('contcar','CONTCAR.tmp')
+                    ptypes = vasp.get_poscar_types('CONTCAR.tmp')
+                    ss = Structure.from_file('CONTCAR.tmp')
+                    os.remove('CONTCAR.tmp')
+                else:
+                    ptypes = vasp.get_poscar_types(equi_contcar)
+                    # read structure from relaxed CONTCAR
+                    ss = Structure.from_file(equi_contcar)
+
                 # rewrite new CONTCAR with direct coords
                 os.chdir(path_to_equi)
                 ss.to('POSCAR', 'CONTCAR.direct')
@@ -160,17 +180,17 @@ class Gamma(Property):
                 self.atom_num = len(all_slabs[0].sites)
 
                 os.chdir(path_to_work)
-                if os.path.isfile('POSCAR'):
-                    os.remove('POSCAR')
-                if os.path.islink('POSCAR'):
-                    os.remove('POSCAR')
-                os.symlink(os.path.relpath(equi_contcar), 'POSCAR')
+                if os.path.isfile(POSCAR):
+                    os.remove(POSCAR)
+                if os.path.islink(POSCAR):
+                    os.remove(POSCAR)
+                os.symlink(os.path.relpath(equi_contcar), POSCAR)
                 #           task_poscar = os.path.join(output, 'POSCAR')
                 for ii in range(len(all_slabs)):
                     output_task = os.path.join(path_to_work, 'task.%06d' % ii)
                     os.makedirs(output_task, exist_ok=True)
                     os.chdir(output_task)
-                    for jj in ['INCAR', 'POTCAR', 'POSCAR', 'conf.lmp', 'in.lammps']:
+                    for jj in ['INCAR', 'POTCAR', POSCAR, 'conf.lmp', 'in.lammps']:
                         if os.path.exists(jj):
                             os.remove(jj)
                     task_list.append(output_task)
@@ -180,6 +200,9 @@ class Gamma(Property):
                     all_slabs[ii].to('POSCAR', 'POSCAR.tmp')
                     vasp.regulate_poscar('POSCAR.tmp', 'POSCAR')
                     vasp.sort_poscar('POSCAR', 'POSCAR', ptypes)
+                    if self.inter_param['type'] == 'abacus':
+                        abacus.poscar2stru("POSCAR",self.inter_param,"STRU")
+                        os.remove('POSCAR')
                     # vasp.perturb_xz('POSCAR', 'POSCAR', self.pert_xz)
                     # record miller
                     dumpfn(self.miller_index, 'miller.json')
@@ -287,6 +310,14 @@ class Gamma(Property):
             for ii in range(len(contents)):
                 fin2.write(contents[ii])
 
+    def __stru_fix(self,stru) -> None:
+        fix_dict = {
+            'true': True, 
+            'false': False
+        }
+        fix_xyz = [fix_dict[i] for i in self.addfix]
+        abacus.stru_fix_atom(stru,fix_atom=fix_xyz)
+
     def __inLammpes_fix(self, inLammps) -> None:
         # add position fix condition of x and y of in.lammps
         fix_dict = {
@@ -325,6 +356,8 @@ class Gamma(Property):
                 calc_type = loadfn(inter)['type']
                 if calc_type == 'vasp':
                     self.__poscar_fix(poscar)
+                elif calc_type == 'abacus':
+                    self.__stru_fix(os.path.join(ii, 'STRU'))
                 else:
                     inLammps = os.path.join(ii, 'in.lammps')
                     if count == 1:

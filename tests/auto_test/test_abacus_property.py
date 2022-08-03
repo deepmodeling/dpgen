@@ -14,6 +14,7 @@ from dpgen.auto_test.Elastic import Elastic
 from dpgen.auto_test.Vacancy import Vacancy
 from dpgen.auto_test.Interstitial import Interstitial
 from dpgen.auto_test.Surface import Surface
+from dpgen.auto_test.Gamma import Gamma
 from dpgen.auto_test.common_prop import make_property
 
 class TestABACUS(unittest.TestCase):
@@ -200,7 +201,30 @@ class TestABACUS(unittest.TestCase):
                          os.path.realpath(os.path.join(self.equi_path, 'OUT.ABACUS', 'STRU_ION_D')))
         for ii in glob.glob(os.path.join(work_path, 'task.*')):
             self.assertTrue(os.path.isfile(os.path.join(ii, 'STRU')))
-            self.assertTrue(os.path.isfile(os.path.join(ii, 'miller.json')))                 
+            self.assertTrue(os.path.isfile(os.path.join(ii, 'miller.json')))       
+
+    def test_make_property_gamma(self):
+        property = {"type": "gamma",
+                    "lattice_type": "fcc",
+                    "miller_index": [1, 1, 1],
+                    "displace_direction": [1, 1, 0],
+                    "supercell_size": [1, 1, 10],
+                    "min_vacuum_size": 10,
+                    "add_fix": ["true", "true", "false"],
+                    "n_steps": 20
+                    }
+        work_path = os.path.join(self.conf_path,"gamma_00")
+        gamma = Gamma(property,self.inter_param)
+        gamma.make_confs(work_path, self.equi_path, refine=False)
+
+        dfm_dirs = glob.glob(os.path.join(work_path, 'task.*'))
+        self.assertEqual(len(dfm_dirs), gamma.n_steps+1)
+
+        self.assertEqual(os.path.realpath(os.path.join(work_path, 'STRU')),
+                         os.path.realpath(os.path.join(self.equi_path, 'OUT.ABACUS', 'STRU_ION_D')))
+        for ii in glob.glob(os.path.join(work_path, 'task.*')):
+            self.assertTrue(os.path.isfile(os.path.join(ii, 'STRU')))
+            self.assertTrue(os.path.isfile(os.path.join(ii, 'miller.json')))          
 
     def test_make_property_refine(self):
         property = {"type":         "eos",

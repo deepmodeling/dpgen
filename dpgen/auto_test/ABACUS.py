@@ -113,7 +113,7 @@ class ABACUS(Task):
                 if 'interaction' in key.lower():continue
                 incar[key.lower()] = cal_setting[key]
 
-            fix_atom = False
+            fix_atom = [False,False,False]
             if cal_type == 'relaxation':
                 relax_pos = cal_setting['relax_pos']
                 relax_shape = cal_setting['relax_shape']
@@ -128,10 +128,10 @@ class ABACUS(Task):
                 elif [relax_pos, relax_shape, relax_vol] == [False, True, False]:
                     self.modify_input(incar,'calculation','cell-relax')
                     self.modify_input(incar,'fixed_axes','volume')
-                    fix_atom = True
+                    fix_atom = [True,True,True]
                 elif [relax_pos, relax_shape, relax_vol] == [False, True, True]:
                     self.modify_input(incar,'calculation','cell-relax')
-                    fix_atom = True
+                    fix_atom = [True,True,True]
                 elif [relax_pos, relax_shape, relax_vol] == [False, False, True]:
                     raise RuntimeError("relax volume but fix shape is not supported for ABACUS")
                 elif [relax_pos, relax_shape, relax_vol] == [False, False, False]:
