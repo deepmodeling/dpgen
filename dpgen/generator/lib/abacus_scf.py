@@ -43,7 +43,7 @@ def make_abacus_scf_input(fp_params):
         elif key == "dft_functional":
             ret += "dft_functional %s\n" % fp_params["dft_functional"]
         elif key == "gamma_only":
-            if(type(fp_params["gamma_only"])==str):
+            if type(fp_params["gamma_only"])==str:
                 fp_params["gamma_only"] = int(eval(fp_params["gamma_only"]))
             assert(fp_params["gamma_only"] == 0 or fp_params["gamma_only"] == 1), "'gamma_only' should be either 0 or 1."
             ret+= "gamma_only %d\n" % fp_params["gamma_only"]  
@@ -55,7 +55,7 @@ def make_abacus_scf_input(fp_params):
             assert(fp_params["mixing_beta"] >= 0 and fp_params["mixing_beta"] < 1), "'mixing_beta' should between 0 and 1."
             ret += "mixing_beta %f\n" % fp_params["mixing_beta"]
         elif key == "symmetry":
-            if(type(fp_params["symmetry"])==str):
+            if type(fp_params["symmetry"])==str:
                 fp_params["symmetry"] = int(eval(fp_params["symmetry"]))
             assert(fp_params["symmetry"] == 0 or fp_params["symmetry"] == 1), "'symmetry' should be either 0 or 1."
             ret += "symmetry %d\n" % fp_params["symmetry"]
@@ -78,18 +78,18 @@ def make_abacus_scf_input(fp_params):
             assert(fp_params["smearing_sigma"] >= 0), "'smearing_sigma' should be non-negative."
             ret += "smearing_sigma %f\n" % fp_params["smearing_sigma"]
         elif key == "cal_force":
-            if(type(fp_params["cal_force"])==str):
+            if type(fp_params["cal_force"])==str:
                 fp_params["cal_force"] = int(eval(fp_params["cal_force"]))
             assert(fp_params["cal_force"] == 0  or fp_params["cal_force"] == 1), "'cal_force' should be either 0 or 1."
             ret += "cal_force %d\n" % fp_params["cal_force"]
         elif key == "cal_stress":
-            if(type(fp_params["cal_stress"])==str):
+            if type(fp_params["cal_stress"])==str:
                 fp_params["cal_stress"] = int(eval(fp_params["cal_stress"]))
             assert(fp_params["cal_stress"] == 0  or fp_params["cal_stress"] == 1), "'cal_stress' should be either 0 or 1."
             ret += "cal_stress %d\n" % fp_params["cal_stress"]
         #paras for deepks
         elif key == "deepks_out_labels":
-            if(type(fp_params["deepks_out_labels"])==str):
+            if type(fp_params["deepks_out_labels"])==str:
                 fp_params["deepks_out_labels"] = int(eval(fp_params["deepks_out_labels"]))
             assert(fp_params["deepks_out_labels"] == 0 or fp_params["deepks_out_labels"] == 1), "'deepks_out_labels' should be either 0 or 1."
             ret += "deepks_out_labels %d\n" % fp_params["deepks_out_labels"]
@@ -98,7 +98,7 @@ def make_abacus_scf_input(fp_params):
             assert(fp_params["deepks_descriptor_lmax"] >= 0),  "'deepks_descriptor_lmax' should be  a positive integer."
             ret += "deepks_descriptor_lmax %d\n" % fp_params["deepks_descriptor_lmax"]
         elif key == "deepks_scf":
-            if(type(fp_params["deepks_scf"])==str):
+            if type(fp_params["deepks_scf"])==str:
                 fp_params["deepks_scf"] = int(eval(fp_params["deepks_scf"]))
             assert(fp_params["deepks_scf"] == 0  or fp_params["deepks_scf"] == 1), "'deepks_scf' should be either 0 or 1."
             ret += "deepks_scf %d\n" % fp_params["deepks_scf"]
