@@ -3,6 +3,7 @@ import json
 import os
 import re
 
+import dpdata
 import numpy as np
 from monty.serialization import loadfn, dumpfn
 from pymatgen.core.structure import Structure
@@ -138,12 +139,11 @@ class Surface(Property):
                     raise RuntimeError("please do relaxation first")
 
                 if self.inter_param['type'] == 'abacus':
-                    stru_data = abacus_scf.get_abacus_STRU(equi_contcar)
-                    species = []
-                    for i in range(len(stru_data['atom_numbs'])):
-                        for j in range(stru_data['atom_numbs'][i]): species.append(stru_data['atom_names'][i])
-                    ptypes = stru_data['atom_names']
-                    ss = Structure(stru_data['cells'],species,stru_data['coords'],coords_are_cartesian=True)
+                    stru = dpdata.System(equi_contcar, fmt="stru")
+                    stru.to('contcar','CONTCAR.tmp')
+                    ptypes = vasp.get_poscar_types('CONTCAR.tmp')
+                    ss = Structure.from_file('CONTCAR.tmp')
+                    os.remove('CONTCAR.tmp')
                 else:    
                     ptypes = vasp.get_poscar_types(equi_contcar)
                     # gen structure

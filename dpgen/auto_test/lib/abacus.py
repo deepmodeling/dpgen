@@ -43,50 +43,37 @@ def poscar2stru(poscar,inter_param,stru):
                                 - deepks_desc:  a string of deepks descriptor file
         - stru:            output filename, usally is 'STRU'
     '''
-    stru_data = dpdata.System(poscar, fmt = 'vasp/poscar').data
-    atom_name   = stru_data['atom_names']
-    assert('potcars' in inter_param), "please define the pseudopotential information in interaction:potcars"
-    pp_file     = inter_param['potcars']
-    assert(len(atom_name) == len(pp_file)), "the number of pseudopotential file must be equal to the number of atom types."
+    stru = dpdata.System(poscar, fmt = 'vasp/poscar')
+    stru_data = stru.data
+    atom_mass = []
+    pseudo = None
+    orb = None
+    deepks_desc = None 
 
-    atom_mass = None
     if 'atom_masses' not in inter_param:
-        atom_mass = {i:1.0 if i not in MASS_DICT else MASS_DICT[i] for i in atom_name}
+        atom_mass_dict = {i:1.0 if i not in MASS_DICT else MASS_DICT[i] for i in stru_data['atom_names']}
     else:
-        atom_mass = inter_param['atom_masses']
+        atom_mass_dict = inter_param['atom_masses']
+    for atom in stru_data['atom_names']:
+        assert(atom in atom_mass_dict), "the mass of %s is not defined in interaction:atom_masses" % atom
+        atom_mass.append(atom_mass_dict[atom]) 
 
-    context = 'ATOMIC_SPECIES\n'
-    for atom in atom_name:
-        assert(atom in atom_mass), "the mass of %s is not defined in interaction:atom_masses" % atom 
-        assert(atom in pp_file), "the pseudopotential of %s is not defined in interaction:potcars" % atom
-        context += atom + " " + str(atom_mass[atom]) + " " + "./pp_orb/" + pp_file[atom].split('/')[-1] + "\n"
+    if 'potcars' in inter_param:
+        pseudo = []
+        for atom in stru_data['atom_names']:
+            assert(atom in inter_param['potcars']), "the pseudopotential of %s is not defined in interaction:potcars" % atom
+            pseudo.append("./pp_orb/" + inter_param['potcars'][atom].split('/')[-1])
 
     if 'orb_files' in inter_param:
-        context += '\nNUMERICAL_ORBITAL\n'
-        for atom in atom_name:
+        orb = []
+        for atom in stru_data['atom_names']:
             assert(atom in inter_param['orb_files']), "orbital file of %s is not defined in interaction:orb_files" % atom
-            context += "./pp_orb/" + inter_param['orb_files'][atom].split('/')[-1] + '\n'
-    
-    context += '\nLATTICE_CONSTANT\n' + str(A2BOHR) + '\n'
-    context += '\nLATTICE_VECTORS\n'
-    for i in stru_data['cells'][0]:
-        for j in i: context += str(j) + " "
-        context += "\n"
+            orb.append("./pp_orb/" + inter_param['orb_files'][atom].split('/')[-1])
 
-    context += "\nATOMIC_POSITIONS\nCartesian    # Cartesian(Unit is LATTICE_CONSTANT)\n\n"
-    ii = 0
-    for i in range(len(atom_name)):
-        atom = atom_name[i]
-        context += atom + "\n0.0\n%d\n" % stru_data['atom_numbs'][i]
-        for j in range(stru_data['atom_numbs'][i]):
-            context += "%.12f %.12f %.12f 1 1 1\n" % tuple(stru_data['coords'][0][ii])
-            ii += 1
-        context += '\n'
-    context = context[:-1]
     if 'deepks_desc' in inter_param:
-        context +="\nNUMERICAL_DESCRIPTOR\n./pp_orb/%s\n" % inter_param['deepks_desc']
+        deepks_desc ="./pp_orb/%s\n" % inter_param['deepks_desc']
 
-    with open(stru,'w') as f1: f1.write(context)
+    stru.to("stru", "STRU", mass = atom_mass, pp_file = pseudo, numerical_orbital = orb, numerical_descriptor = deepks_desc)
 
 
 def stru_fix_atom(struf,fix_atom = True):
@@ -200,11 +187,11 @@ def final_stru(abacus_path):
         return 'STRU'
 
 def stru2Structure(struf):
-    stru_data = abacus_scf.get_abacus_STRU(struf)
-    species = []
-    for i in range(len(stru_data['atom_numbs'])):
-        for j in range(stru_data['atom_numbs'][i]): species.append(stru_data['atom_names'][i])
-    return Structure(stru_data['cells'],species,stru_data['coords'],coords_are_cartesian=True)  
+    stru = dpdata.System(struf, fmt="stru")
+    stru.to('poscar','POSCAR.tmp')
+    ss = Structure.from_file('POSCAR.tmp')
+    os.remove('POSCAR.tmp')
+    return ss
 
 def check_stru_fixed(struf,fixed):
     block = {}

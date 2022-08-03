@@ -165,16 +165,24 @@ class Elastic(Property):
         return task_list
 
     def post_process(self, task_list):
-        cwd = os.getcwd()
-        os.chdir(os.path.join(task_list[0], '..'))
-
         if self.inter_param['type'] == 'abacus':
-            stru_start = os.path.abspath('./STRU')           
-            if os.path.isfile('./INPUT'):
+            POSCAR = 'STRU'
+            INCAR = 'INPUT'
+            KPOINTS = 'KPT'
+        else:
+            POSCAR = 'POSCAR'
+            INCAR = 'INCAR'
+            KPOINTS = 'KPOINTS'
+
+        cwd = os.getcwd()
+        poscar_start = os.path.abspath(os.path.join(task_list[0], '..', POSCAR))
+        os.chdir(os.path.join(task_list[0], '..'))
+        if os.path.isfile(os.path.join(task_list[0], INCAR)):
+            if self.inter_param['type'] == 'abacus':
                 input_aba = abacus_scf.get_abacus_input_parameters('INPUT')
                 if 'kspacing' in input_aba:
                     kspacing = float(input_aba['kspacing'])
-                    kpt = abacus.make_kspacing_kpt(stru_start,kspacing)
+                    kpt = abacus.make_kspacing_kpt(poscar_start,kspacing)
                     kpt += [0,0,0]
                     abacus.write_kpt('KPT',kpt)
                     del input_aba['kspacing']
@@ -182,18 +190,7 @@ class Elastic(Property):
                     abacus.write_input('INPUT',input_aba)
                 else:
                     os.rename(os.path.join(task_list[0], 'KPT'),'./KPT')
-
-                kpoints_universal = os.path.abspath(os.path.join(task_list[0], '..', 'KPT'))
-                for ii in task_list:
-                    if os.path.isfile(os.path.join(ii, 'KPT')):
-                        os.remove(os.path.join(ii, 'KPT'))
-                    if os.path.islink(os.path.join(ii, 'KPT')):
-                        os.remove(os.path.join(ii, 'KPT'))
-                    os.chdir(ii)
-                    os.symlink(os.path.relpath(kpoints_universal), 'KPT')
-        else:    
-            poscar_start = os.path.abspath(os.path.join(task_list[0], '..', 'POSCAR'))
-            if os.path.isfile(os.path.join(task_list[0], 'INCAR')):
+            else:
                 incar = incar_upper(Incar.from_file(os.path.join(task_list[0], 'INCAR')))
                 kspacing = incar.get('KSPACING')
                 kgamma = incar.get('KGAMMA', False)
@@ -202,15 +199,16 @@ class Elastic(Property):
                 if os.path.isfile('KPOINTS'):
                     os.remove('KPOINTS')
                 kp.write_file("KPOINTS")
-                os.chdir(cwd)
-                kpoints_universal = os.path.abspath(os.path.join(task_list[0], '..', 'KPOINTS'))
-                for ii in task_list:
-                    if os.path.isfile(os.path.join(ii, 'KPOINTS')):
-                        os.remove(os.path.join(ii, 'KPOINTS'))
-                    if os.path.islink(os.path.join(ii, 'KPOINTS')):
-                        os.remove(os.path.join(ii, 'KPOINTS'))
-                    os.chdir(ii)
-                    os.symlink(os.path.relpath(kpoints_universal), 'KPOINTS')
+
+            os.chdir(cwd)
+            kpoints_universal = os.path.abspath(os.path.join(task_list[0], '..', KPOINTS))
+            for ii in task_list:
+                if os.path.isfile(os.path.join(ii, KPOINTS)):
+                    os.remove(os.path.join(ii, KPOINTS))
+                if os.path.islink(os.path.join(ii, KPOINTS)):
+                    os.remove(os.path.join(ii, KPOINTS))
+                os.chdir(ii)
+                os.symlink(os.path.relpath(kpoints_universal), KPOINTS)
 
         os.chdir(cwd)
 
