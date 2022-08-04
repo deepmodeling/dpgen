@@ -3063,14 +3063,6 @@ def run_fp (iter_index,
         backward_files = ['output']
         run_fp_inner(iter_index, jdata, mdata,  forward_files, backward_files, _qe_check_fin, log_file = 'output')
     elif fp_style == "abacus/scf":
-        fp_params = {}
-        if 'user_fp_params' in jdata.keys() :
-            fp_params = jdata['user_fp_params']
-        elif 'fp_incar' in jdata.keys():
-            fp_input_path = jdata['fp_incar']
-            assert(os.path.exists(fp_input_path))
-            fp_input_path = os.path.abspath(fp_input_path)
-            fp_params = get_abacus_input_parameters(fp_input_path)
         forward_files = ["INPUT", "STRU"]
         if 'kspacing' not in fp_params.keys():
             forward_files = ["INPUT","STRU","KPT"]
