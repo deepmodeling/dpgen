@@ -26,7 +26,10 @@ def make_calypso_input(nameofatoms,numberofatoms,
     assert numberofformula is not None and len(numberofformula) == 2 and type(numberofformula) is list
     ret+= "NumberOfFormula = %s\n"%(' '.join(list(map(str,numberofformula))))
     ret+= "# The volume per formula unit. Unit is in angstrom^3.\n"
-    ret+= "Volume = %s\n"%(volume)
+    if volume is None:
+        ret+= "# volume not found, CALYPSO will set one!\n"
+    else:
+        ret+= "Volume = %s\n"%(volume)
     ret+= "# Minimal distance between atoms of each chemical species. Unit is in angstrom.\n"
     assert len(distanceofion) == len(nameofatoms) #"check distance of ions and the number of atoms"
     assert len(distanceofion[0]) == len(nameofatoms)
