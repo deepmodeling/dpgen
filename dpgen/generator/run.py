@@ -3071,27 +3071,10 @@ def run_fp (iter_index,
             assert(os.path.exists(fp_input_path))
             fp_input_path = os.path.abspath(fp_input_path)
             fp_params = get_abacus_input_parameters(fp_input_path)
-
         forward_files = ["INPUT", "STRU"]
         if 'kspacing' not in fp_params.keys():
-            if 'gamma_only' in fp_params.keys():
-                if type(fp_params["gamma_only"])==str:
-                    fp_params["gamma_only"] = int(eval(fp_params["gamma_only"]))
-                assert(fp_params["gamma_only"] == 0 or fp_params["gamma_only"] == 1),\
-                        "'gamma_only' should be either 0 or 1."
-                if fp_params["gamma_only"]==1:
-                    forward_files += ["KPT"]
-                else:
-                    if 'k_points' in jdata.keys() :
-                        forward_files += ["KPT"]
-                    elif 'fp_kpt_file' in jdata.keys():
-                        forward_files += ["KPT"]
-                    else:
-                        raise RuntimeError("Cannot find any k-points information")
-            else:
-                forward_files += ["KPT"]
+            forward_files = ["INPUT","STRU","KPT"]
         forward_files += fp_pp_files
-
         if "fp_orb_files" in jdata:
             forward_files += jdata["fp_orb_files"]
         if "fp_dpks_descriptor" in jdata:
