@@ -115,12 +115,13 @@ def make_equi(confs,
         relax_param['cal_setting'] = {"relax_pos": True,
                                       "relax_shape": True,
                                       "relax_vol": True}
-    if "relax_pos" not in relax_param['cal_setting']:
-        relax_param['cal_setting']['relax_pos'] = True
-    if "relax_shape" not in relax_param['cal_setting']:
-        relax_param['cal_setting']['relax_shape'] = True
-    if "relax_vol" not in relax_param['cal_setting']:
-        relax_param['cal_setting']['relax_vol'] = True
+    else:
+        if "relax_pos" not in relax_param['cal_setting']:
+            relax_param['cal_setting']['relax_pos'] = True
+        if "relax_shape" not in relax_param['cal_setting']:
+            relax_param['cal_setting']['relax_shape'] = True
+        if "relax_vol" not in relax_param['cal_setting']:
+            relax_param['cal_setting']['relax_vol'] = True
 
     for ii in task_dirs:
         poscar = os.path.join(ii, 'POSCAR')
