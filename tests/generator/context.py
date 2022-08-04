@@ -26,6 +26,7 @@ param_diy_file = 'param-mg-vasp-diy.json'
 param_pwmat_file = 'param-pyridine-pwmat.json'
 param_abacus_file = 'param-pyridine-abacus.json'
 param_abacus_post_file = 'param-methane-abacus.json'
+param_diy_abacus_post_file = 'param-methane-abacus-diy.json'
 param_amber_file = "param-amber.json"
 param_multiple_trust_file = 'param-mg-vasp-multi-trust.json'
 
