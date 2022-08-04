@@ -334,6 +334,7 @@ def analysis(iter_index, jdata, calypso_model_devi_path):
     record_traj_num = 0
     for traj_name in traj_list:
         traj_num = os.path.basename(traj_name).split('.')[0]
+        press_num = traj_name.split('/')[-3].split('.')[-1]
         trajs_origin = Trajectory(traj_name)
 
         record_traj_num += len(trajs_origin)
@@ -354,8 +355,8 @@ def analysis(iter_index, jdata, calypso_model_devi_path):
            
         for idx, traj in enumerate(trajs):
             write_vasp(os.path.join(
-                traj_pos_path,'%03d.%03d.poscar' % (
-                    int(traj_num), int(idx)
+                traj_pos_path,'%d.%03d.%03d.poscar' % (
+                    int(press_num), int(traj_num), int(idx)
                     )
                 ),
                 traj)
