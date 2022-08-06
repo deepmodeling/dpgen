@@ -547,7 +547,7 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | **fp_pp_path**   | String           | "/sharedext4/.../ch4/"                                       | Directory of psuedo-potential file to be used for 02.fp exists. |
 | **fp_pp_files**    | List of string         | ["POTCAR"]                                                   | Psuedo-potential file to be used for 02.fp. Note that the order of elements should correspond to the order in `type_map`. |
 |**fp_incar** | String | "/sharedext4/../ch4/INCAR" | Input file for VASP. INCAR must specify KSPACING and KGAMMA.
-|**fp_aniso_kspacing** | List of integer | [1.0,1.0,1.0] | Set anisotropic kspacing. Usually useful for 1-D or 2-D materials. Only support VASP. If it is setting the KSPACING key in INCAR will be ignored.
+|**fp_aniso_kspacing** | List of float | [1.0,1.0,1.0] | Set anisotropic kspacing. Usually useful for 1-D or 2-D materials. Only support VASP. If it is setting the KSPACING key in INCAR will be ignored.
 |cvasp| Boolean | true | If `cvasp` is true, DP-GEN will use Custodian to help control VASP calculation.
 | *fp_style == Gaussian*
 | **use_clusters** | Boolean | false | If set to `true`, clusters will be taken instead of the whole system. This option does not work with DeePMD-kit 0.x.
