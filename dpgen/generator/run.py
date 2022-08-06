@@ -780,6 +780,7 @@ def make_model_devi (iter_index,
             return False
     else:
         # mode 1: generate structures according to the user-provided input.dat file, so calypso_input_path and model_devi_max_iter are needed
+        run_mode = 1
         if "calypso_input_path" in jdata:
             try:
                 maxiter = jdata.get('model_devi_max_iter')
@@ -789,10 +790,11 @@ def make_model_devi (iter_index,
         else:
             try:
                 maxiter = max(model_devi_jobs[-1].get('times'))
+                run_mode = 2
             except KeyError:
                 raise KeyError('did not find model_devi_jobs["times"] key')
         if (iter_index > maxiter) :
-            print(f'iter_index is {iter_index} and maxiter is {maxiter}')
+            dlog.info(f'iter_index is {iter_index} and maxiter is {maxiter}')
             return False
 
     if "sys_configs_prefix" in jdata:
@@ -809,7 +811,7 @@ def make_model_devi (iter_index,
         cur_job = model_devi_jobs[iter_index]
         sys_idx = expand_idx(cur_job['sys_idx'])
     else:
-        cur_job = []
+        cur_job = {'model_devi_engine':'calypso','input.dat':'user_provided'}
         sys_idx = []
 
     if (len(sys_idx) != len(list(set(sys_idx)))) :
@@ -832,25 +834,65 @@ def make_model_devi (iter_index,
     work_path = os.path.join(iter_name, model_devi_name)
     create_path(work_path)
     if model_devi_engine == 'calypso':
-        calypso_run_opt_path = os.path.join(work_path,calypso_run_opt_name)
+        _calypso_run_opt_path = os.path.join(work_path,calypso_run_opt_name)
         calypso_model_devi_path = os.path.join(work_path,calypso_model_devi_name)
-        create_path(calypso_run_opt_path)
         create_path(calypso_model_devi_path)
         # run model devi script
         calypso_run_model_devi_script = os.path.join(calypso_model_devi_path,'calypso_run_model_devi.py')
         shutil.copyfile(calypso_run_model_devi_file,calypso_run_model_devi_script)
-        # run confs opt script
-        run_opt_script = os.path.join(calypso_run_opt_path,'calypso_run_opt.py')
-        shutil.copyfile(run_opt_file,run_opt_script)
-        # check outcar script
-        check_outcar_script = os.path.join(calypso_run_opt_path,'check_outcar.py')
-        shutil.copyfile(check_outcar_file,check_outcar_script)
+        # Create work path list
+        calypso_run_opt_path = []
+
+        # mode 1: generate structures according to the user-provided input.dat file,
+        # so calypso_input_path and model_devi_max_iter are needed
+        if run_mode == 1:
+            if jdata.get('vsc', False) and len(jdata.get('type_map')) > 1:
+                # [input.dat.Li.250, input.dat.Li.300]
+                one_ele_inputdat_list = glob.glob(
+                        f"{jdata.get('calypso_input_path')}/input.dat.{jdata.get('type_map')[0]}.*"
+                        )
+                if len(one_ele_inputdat_list) == 0:
+                    number_of_pressure = 1
+                else: 
+                    number_of_pressure = len(list(set(one_ele_inputdat_list)))
+
+                # calypso_run_opt_path = ['gen_struc_analy.000','gen_struc_analy.001']
+                for temp_idx in range(number_of_pressure):
+                    calypso_run_opt_path.append('%s.%03d'%(_calypso_run_opt_path, temp_idx))
+            elif not jdata.get('vsc', False):
+                calypso_run_opt_path.append('%s.%03d'%(_calypso_run_opt_path, 0))
+                        
+        # mode 2: control each iteration to generate structures in specific way 
+        # by providing model_devi_jobs key
+        elif run_mode == 2:
+            for iiidx, jobbs in enumerate(model_devi_jobs):
+                if iter_index in jobbs.get('times'):
+                    cur_job = model_devi_jobs[iiidx]
+                    
+            pressures_list = cur_job.get('PSTRESS', [0.0001])
+            for temp_idx in range(len(pressures_list)):
+                calypso_run_opt_path.append('%s.%03d'%(_calypso_run_opt_path, temp_idx))
+        # to different directory
+        # calypso_run_opt_path = ['gen_struc_analy.000','gen_struc_analy.001','gen_struc_analy.002',]
+        for temp_calypso_run_opt_path in calypso_run_opt_path:
+            create_path(temp_calypso_run_opt_path)
+            # run confs opt script
+            run_opt_script = os.path.join(temp_calypso_run_opt_path,'calypso_run_opt.py')
+            shutil.copyfile(run_opt_file,run_opt_script)
+            # check outcar script
+            check_outcar_script = os.path.join(temp_calypso_run_opt_path,'check_outcar.py')
+            shutil.copyfile(check_outcar_file,check_outcar_script)
+
     for mm in models :
         model_name = os.path.basename(mm)
         if model_devi_engine != 'calypso':
             os.symlink(mm, os.path.join(work_path, model_name))
         else:
-            os.symlink(mm, os.path.join(calypso_run_opt_path, model_name))
+            for temp_calypso_run_opt_path in calypso_run_opt_path:
+                models_path = os.path.join(temp_calypso_run_opt_path, model_name)
+                if not os.path.exists(models_path):
+                    os.symlink(mm, models_path)
+
     with open(os.path.join(work_path, 'cur_job.json'), 'w') as outfile:
         json.dump(cur_job, outfile, indent = 4)
 
@@ -1661,7 +1703,8 @@ def _select_by_model_devi_standard(
     if model_devi_engine == 'calypso':
         iter_name = modd_system_task[0].split('/')[0]
         _work_path = os.path.join(iter_name, model_devi_name)
-        calypso_run_opt_path = os.path.join(_work_path,calypso_run_opt_name)
+        # calypso_run_opt_path = os.path.join(_work_path,calypso_run_opt_name)
+        calypso_run_opt_path = glob.glob('%s/%s.*'%(_work_path, calypso_run_opt_name))[0]
         numofspecies = _parse_calypso_input('NumberOfSpecies',calypso_run_opt_path)
         min_dis = _parse_calypso_dis_mtx(numofspecies,calypso_run_opt_path)
     fp_candidate = []
@@ -1852,7 +1895,8 @@ def _make_fp_vasp_inner (modd_path,
     if model_devi_engine == 'calypso':
         iter_name = work_path.split('/')[0]
         _work_path = os.path.join(iter_name, model_devi_name)
-        calypso_run_opt_path = os.path.join(_work_path,calypso_run_opt_name)
+        # calypso_run_opt_path = os.path.join(_work_path,calypso_run_opt_name)
+        calypso_run_opt_path = glob.glob('%s/%s.*'%(_work_path, calypso_run_opt_name))[0]
         numofspecies = _parse_calypso_input('NumberOfSpecies',calypso_run_opt_path)
         min_dis = _parse_calypso_dis_mtx(numofspecies,calypso_run_opt_path)
 
@@ -1983,6 +2027,7 @@ def _make_fp_vasp_inner (modd_path,
                                 fp_candidate.append([tt, cc])
                                 counter['candidate'] += 1
                             cc += 1
+
         else:
             raise RuntimeError('unknown model_devi_engine', model_devi_engine)
 
