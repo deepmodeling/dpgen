@@ -380,6 +380,12 @@ def make_super_cell_STRU(jdata) :
     stru_text = make_abacus_scf_stru(from_struct, pp_file_names, orb_file_names, dpks_descriptor_name)
     with open(to_file, "w") as fp:
         fp.write(stru_text) 
+    # if kspacing is specified in json file, use kspacing to generate KPT (rather than directly using specified KPT).
+    if 'relax_kspacing' in jdata:
+        kpoints = make_kspacing_kpoints_stru(from_struct, jdata['relax_kspacing'])
+        kpt_text = make_abacus_scf_kpt({"k_points": kpoints})
+        with open(os.path.join(to_path, 'KPT'), "w") as fp:
+            fp.write(kpt_text)
     # make system dir (copy)
     natoms_list = from_struct['atom_numbs']
     dlog.info(natoms_list)
@@ -463,6 +469,12 @@ def place_element_ABACUS(jdata, supercell_stru):
     #path_sc = os.path.join(out_dir, global_dirname_02)
     path_pe = os.path.join(out_dir, global_dirname_02)    
     combines = np.array(make_combines(len(elements), natoms), dtype = int)
+    # if kspacing is specified in json file, use kspacing to generate KPT (rather than directly using specified KPT).
+    if 'relax_kspacing' in jdata:
+        kpoints = make_kspacing_kpoints_stru(supercell_stru)
+        kpt_text = make_abacus_scf_kpt({"k_points": kpoints})
+        with open(os.path.join(path_pe, 'KPT')) as fp:
+            fp.write(kpt_text)
     assert(os.path.isdir(path_pe))
     cwd = os.getcwd()
     for ii in combines :
@@ -531,28 +543,6 @@ def make_vasp_relax (jdata, mdata) :
                                task_format= {"fp" : "sys-*"})
 
 def make_abacus_relax (jdata, mdata) :
-    relax_incar = jdata['relax_incar']
-    standard_incar = get_abacus_input_parameters(relax_incar) # a dictionary in which all of the values are strings
-    if "kspacing" not in standard_incar:
-        if "gamma_only" in standard_incar:
-            if type(standard_incar["gamma_only"])==str:
-                standard_incar["gamma_only"] = int(eval(standard_incar["gamma_only"]))
-            if standard_incar["gamma_only"] == 0:
-                if "relax_kpt" not in jdata:
-                    raise RuntimeError("Cannot find any k-points information.")
-                else:
-                    md_kpt_path = jdata['relax_kpt']
-                    assert(os.path.isfile(relax_kpt_path)), "file %s should exists" % relax_kpt_path
-            else:
-                gamma_param = {"k_points":[1,1,1,0,0,0]}
-                ret_kpt = make_abacus_scf_kpt(gamma_param)
-        else:
-            if "relax_kpt" not in jdata:
-                raise RuntimeError("Cannot find any k-points information.")
-            else:
-                relax_kpt_path = jdata['relax_kpt']
-                assert(os.path.isfile(relax_kpt_path)), "file %s should exists" % relax_kpt_path
-
     out_dir = jdata['out_dir']
     cwd = os.getcwd()
     work_dir = os.path.join(out_dir, global_dirname_02)
@@ -563,17 +553,15 @@ def make_abacus_relax (jdata, mdata) :
         os.remove(os.path.join(work_dir, 'INPUT' ))
     shutil.copy2( jdata['relax_incar'], 
                  os.path.join(work_dir, 'INPUT'))
-
     
-    if "kspacing" not in standard_incar:
+    if 'relax_kspacing' not in jdata:
         if os.path.isfile(os.path.join(work_dir, 'KPT' )) :
             os.remove(os.path.join(work_dir, 'KPT' ))
-        if "gamma_only" in standard_incar and standard_incar["gamma_only"]==1:
-            with open(os.path.join(work_dir,'KPT'),"w") as fp:
-                fp.write(ret_kpt)
-        else:
-            jdata['relax_kpt'] = os.path.relpath(jdata['relax_kpt'])
-            shutil.copy2(jdata['relax_kpt'],os.path.join(work_dir, 'KPT'))
+        assert('relax_kpt' in jdata)
+        #print(jdata['relax_kpt'])
+        jdata['relax_kpt'] = os.path.relpath(jdata['relax_kpt'])
+        shutil.copy2( jdata['relax_kpt'], 
+                    os.path.join(work_dir, 'KPT'))
     
     if "dpks_model" in jdata:
         dpks_model_absolute_path = os.path.abspath(jdata["dpks_model"])
@@ -588,18 +576,16 @@ def make_abacus_relax (jdata, mdata) :
     for ss in sys_list:
         os.chdir(ss)
         ln_src = os.path.relpath(os.path.join(work_dir,'INPUT'))
-        if "kspacing" not in standard_incar:
-            kpt_src = os.path.relpath(os.path.join(work_dir,'KPT'))
+        kpt_src = os.path.relpath(os.path.join(work_dir,'KPT'))
         if "dpks_model" in jdata:
             ksmd_src = os.path.relpath(os.path.join(work_dir,dpks_model_name))
         try:
-            os.symlink(ln_src, 'INPUT')
-            if "kspacing" not in standard_incar:
-                os.symlink(kpt_src, 'KPT')
-            if "dpks_model" in jdata:
-                os.symlink(ksmd_src, dpks_model_name)
+           os.symlink(ln_src, 'INPUT')
+           os.symlink(kpt_src, 'KPT')
+           if "dpks_model" in jdata:
+               os.symlink(ksmd_src, dpks_model_name)
         except FileExistsError:
-            pass
+           pass
         os.chdir(work_dir)
     os.chdir(cwd)
     symlink_user_forward_files(mdata=mdata, task_type="fp",
@@ -833,29 +819,6 @@ def make_vasp_md(jdata, mdata) :
                                task_format= {"fp" :"sys-*/scale*/00*"})
 
 def make_abacus_md(jdata, mdata) :
-    md_incar = jdata['md_incar']
-    standard_incar = get_abacus_input_parameters(md_incar) # a dictionary in which all of the values are strings
-    #assert("md_kpt" in jdata or "kspacing" in standard_incar or "gamma_only" in standard_incar) \
-    #        "Cannot find any k-points information."
-    if "kspacing" not in standard_incar:
-        if "gamma_only" in standard_incar:
-            if type(standard_incar["gamma_only"])==str:
-                standard_incar["gamma_only"] = int(eval(standard_incar["gamma_only"]))
-            if standard_incar["gamma_only"] == 0:
-                if "md_kpt" not in jdata:
-                    raise RuntimeError("Cannot find any k-points information.")
-                else:
-                    md_kpt_path = jdata['md_kpt']
-                    assert(os.path.isfile(md_kpt_path)), "file %s should exists" % md_kpt_path
-            else:
-                ret_kpt = make_abacus_scf_kpt({"k_points":[1,1,1,0,0,0]})
-        else:
-            if "md_kpt" not in jdata:
-                raise RuntimeError("Cannot find any k-points information.")
-            else:
-                md_kpt_path = jdata['md_kpt']
-                assert(os.path.isfile(md_kpt_path)), "file %s should exists" % md_kpt_path
-
     out_dir = jdata['out_dir']
     potcars = jdata['potcars']
     scale = jdata['scale']   
@@ -875,12 +838,9 @@ def make_abacus_md(jdata, mdata) :
     create_path(path_md)
     shutil.copy2(jdata['md_incar'], 
                  os.path.join(path_md, 'INPUT'))
-    if "kspacing" not in standard_incar:
-        if "gamma_only" in standard_incar and standard_incar["gamma_only"]==1:
-            with open(os.path.join(path_md,"KPT"),"w") as fp:
-                fp.write(ret_kpt)
-        else:
-            shutil.copy2(jdata['md_kpt'],os.path.join(path_md, 'KPT'))
+    if 'md_kpt' in jdata:
+        shutil.copy2(jdata['md_kpt'], 
+                     os.path.join(path_md, 'KPT'))
     orb_file_names = None
     orb_file_abspath = None
     dpks_descriptor_name = None
@@ -925,14 +885,18 @@ def make_abacus_md(jdata, mdata) :
                 path_pos = os.path.join(path_pos, "scale-%.3f" % jj)
                 path_pos = os.path.join(path_pos, "%06d" % kk)
                 init_pos = os.path.join(path_pos, 'STRU')
-                if "kspacing" not in standard_incar:
-                    file_kpt = os.path.join(path_md, 'KPT')
+                if "md_kspacing" in jdata:
+                    init_stru = get_abacus_STRU(init_pos)
+                    kpoints = make_kspacing_kpoints_stru(init_stru, jdata['md_kspacing'])
+                    kpt_text = make_abacus_scf_kpt({"k_points": kpoints})
+                    with open(os.path.join(path_md, 'KPT'), "w") as fp:
+                        fp.write(kpt_text)
                 shutil.copy2 (init_pos, 'STRU')
                 file_incar = os.path.join(path_md, 'INPUT')
+                file_kpt = os.path.join(path_md, 'KPT')
                 try:
                     os.symlink(os.path.relpath(file_incar), 'INPUT')
-                    if "kspacing" not in standard_incar:
-                        os.symlink(os.path.relpath(file_kpt), 'KPT')
+                    os.symlink(os.path.relpath(file_kpt), 'KPT')
                 except FileExistsError:
                     pass
                 try:
@@ -1159,11 +1123,6 @@ def coll_abacus_md(jdata) :
     os.chdir(cwd)
 
 def run_abacus_relax(jdata, mdata):
-    relax_incar = jdata['relax_incar']
-    standard_incar = get_abacus_input_parameters(relax_incar) # a dictionary in which all of the values are strings
-    if "gamma_only" in standard_incar:
-        if type(standard_incar["gamma_only"])==str:
-            standard_incar["gamma_only"] = int(eval(standard_incar["gamma_only"]))
     fp_command = mdata['fp_command']
     fp_group_size = mdata['fp_group_size']
     fp_resources = mdata['fp_resources']
@@ -1179,10 +1138,7 @@ def run_abacus_relax(jdata, mdata):
         dpks_descriptor_name = [os.path.basename(jdata['dpks_descriptor'])]
     if 'dpks_model' in jdata:
         dpks_model_name = [os.path.basename(jdata['dpks_model'])]
-    forward_files = ["STRU", "INPUT"]
-    if "kspacing" not in standard_incar:
-        forward_files = ["STRU", "INPUT", "KPT"]
-    forward_files += pp_files + orb_file_names + dpks_descriptor_name + dpks_model_name
+    forward_files = ["STRU", "INPUT", "KPT"] + pp_files + orb_file_names + dpks_descriptor_name + dpks_model_name
     user_forward_files = mdata.get("fp" + "_user_forward_files", [])
     forward_files += [os.path.basename(file) for file in user_forward_files]
     backward_files = ["OUT.ABACUS"]
@@ -1298,11 +1254,6 @@ def run_vasp_md(jdata, mdata):
         submission.run_submission()
 
 def run_abacus_md(jdata, mdata):
-    md_incar = jdata['md_incar']
-    standard_incar = get_abacus_input_parameters(md_incar) # a dictionary in which all of the values are strings
-    if "gamma_only" in standard_incar:
-        if type(standard_incar["gamma_only"])==str:
-            standard_incar["gamma_only"] = int(eval(standard_incar["gamma_only"]))
     fp_command = mdata['fp_command']
     fp_group_size = mdata['fp_group_size']
     fp_resources = mdata['fp_resources']
@@ -1321,11 +1272,7 @@ def run_abacus_md(jdata, mdata):
         dpks_descriptor_name = [os.path.basename(jdata['dpks_descriptor'])]
     if 'dpks_model' in jdata:
         dpks_model_name = [os.path.basename(jdata['dpks_model'])]
-    forward_files = ["STRU", "INPUT"]
-    if not (("kspacing" in standard_incar) or \
-            ("gamma_only" in standard_incar and standard_incar["gamma_only"]==1)):
-        forward_files = ["STRU", "INPUT", "KPT"]
-    forward_files += orb_file_names + dpks_descriptor_name + dpks_model_name
+    forward_files = ["STRU", "INPUT", "KPT"] + orb_file_names + dpks_descriptor_name + dpks_model_name
     for pp_file in [os.path.basename(a) for a in jdata['potcars']]:
         forward_files.append(pp_file)
     user_forward_files = mdata.get("fp" + "_user_forward_files", [])
@@ -1430,6 +1377,10 @@ def gen_init_bulk(args) :
                 if "nstep" in standard_incar:
                         nsw_flag = True
                         nsw_steps = int(standard_incar['nstep'])
+                assert("relax_kpt" in jdata or "relax_kspacing" in jdata)
+                if 3 in jdata["stages"]:
+                    assert("md_kpt" in jdata or "md_kspacing" in jdata)
+                    assert("md_incar" in jdata)
             if nsw_flag:
                 if (nsw_steps != md_nstep_jdata):
                     dlog.info("WARNING: your set-up for MD steps in PARAM and md_incar are not consistent!")
@@ -1453,6 +1404,7 @@ def gen_init_bulk(args) :
             dlog.info("Current stage is 1, relax")
             create_path(out_dir)
             shutil.copy2(args.PARAM, os.path.join(out_dir, 'param.json'))
+            skip_relax = jdata['skip_relax']
             if from_poscar :
                 if jdata['init_fp_style'] == "VASP":
                     make_super_cell_poscar(jdata)
