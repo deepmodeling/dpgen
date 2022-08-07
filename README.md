@@ -147,7 +147,7 @@ If you want to specify a structure as starting point for `init_bulk`, you may se
 ```
 `init_bulk` support both VASP and ABACUS for first-principle calculation. You can choose the software by specifying the key `init_fp_style`. If `init_fp_style` is not specified, the default software will be VASP. 
 
-When using ABACUS for `init_fp_style`, the keys of the paths of `INPUT` files for relaxation and MD simulations are the same as `INCAR` for VASP, which are `relax_incar` and `md_incar` respectively. You have to additionally specify `relax_kspacing` and `md_kspacing` for k points spacing, and dpgen will automatically generate `KPT` files according to them. You may also use `relax_kpt` and `md_kpt` instead of them for the relative path for `KPT` files of relaxation and MD simulations. However, either `relax_kspacing` and `md_kspacing`, or `relax_kpt` and `md_kpt` is needed. If `from_poscar` is set to `false`, you have to specify `atom_masses` in the same order as `elements`.
+When using ABACUS for `init_fp_style`, the keys of the paths of `INPUT` files for relaxation and MD simulations are the same as `INCAR` for VASP, which are `relax_incar` and `md_incar` respectively. Use `relax_kpt` and `md_kpt` for the relative path for `KPT` files of relaxation and MD simulations. They two can be ommited if `kspacing` or `gamma_only` has been set in corresponding INPUT files. If `from_poscar` is set to `false`, you have to specify `atom_masses` in the same order as `elements`.
 
 The following table gives explicit descriptions on keys in `PARAM`.
 
