@@ -1420,9 +1420,9 @@ def gen_init_bulk(args) :
             elif jdata['init_fp_style'] == "ABACUS":
                 standard_incar = get_abacus_input_parameters(md_incar) # a dictionary in which all of the values are strings
                 nsw_flag = False
-                if "nstep" in standard_incar:
+                if "md_nstep" in standard_incar:
                         nsw_flag = True
-                        nsw_steps = int(standard_incar['nstep'])
+                        nsw_steps = int(standard_incar['md_nstep'])
             if nsw_flag:
                 if (nsw_steps != md_nstep_jdata):
                     dlog.info("WARNING: your set-up for MD steps in PARAM and md_incar are not consistent!")
