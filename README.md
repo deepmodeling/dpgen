@@ -147,7 +147,7 @@ If you want to specify a structure as starting point for `init_bulk`, you may se
 ```
 `init_bulk` support both VASP and ABACUS for first-principle calculation. You can choose the software by specifying the key `init_fp_style`. If `init_fp_style` is not specified, the default software will be VASP. 
 
-When using ABACUS for `init_fp_style`, the keys of the paths of `INPUT` files for relaxation and MD simulations are the same as `INCAR` for VASP, which are `relax_incar` and `md_incar` respectively. Use `relax_kpt` and `md_kpt` for the relative path for `KPT` files of relaxation and MD simulations. They two can be ommited if `kspacing` or `gamma_only` has been set in corresponding INPUT files. If `from_poscar` is set to `false`, you have to specify `atom_masses` in the same order as `elements`.
+When using ABACUS for `init_fp_style`, the keys of the paths of `INPUT` files for relaxation and MD simulations are the same as `INCAR` for VASP, which are `relax_incar` and `md_incar` respectively. Use `relax_kpt` and `md_kpt` for the relative path for `KPT` files of relaxation and MD simulations. They two can be ommited if `kspacing` (in unit of 1/Bohr) or `gamma_only` has been set in corresponding INPUT files. If `from_poscar` is set to `false`, you have to specify `atom_masses` in the same order as `elements`.
 
 The following table gives explicit descriptions on keys in `PARAM`.
 
@@ -173,9 +173,7 @@ The bold notation of key (such as **Elements**) means that it's a necessary key.
 | type_map | List | [ "Mg", "Al"] | The indices of elements in deepmd formats will be set in this order.
 | init_fp_style | String | "ABACUS" or "VASP" | First-principle software. If this key is abscent, the default value will be "VASP".
 | relax_kpt | String | "....../KPT" | Path of `KPT` file for relaxation in stage 1. Only useful if `init_fp_style` is "ABACUS".
-| relax_kspacing | Integer or List of 3 integers | 10 | kspacing parameter for relaxation in stage 1. Only useful if `init_fp_style` is "ABACUS".
 | md_kpt | String | "....../KPT" | Path of `KPT` file for MD simulations in stage 3. Only useful if `init_fp_style` is "ABACUS".
-| md_kspacing | Integer or List of 3 integers | 10 | kspacing parameter for MD simulations in stage 3. Only useful if `init_fp_style` is "ABACUS".
 | atom_masses | List of float | [24] | List of atomic masses of elements. The order should be the same as `Elements`. Only useful if `init_fp_style` is "ABACUS".
 
 ### Init_surf
@@ -572,7 +570,7 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | **user_fp_params** | Dict |  |Parameters for ABACUS INPUT. find detail [Here](https://github.com/deepmodeling/abacus-develop/blob/develop/docs/input-main.md#out-descriptor). If `deepks_model` is set, the model file should be in the pseudopotential directory. You can also set `KPT` file by adding `k_points` that corresponds to a list of six integers in this dictionary. Any key beginning with "_" will be ignored.
 | **fp_incar** | String | "./abacus/INPUT" | INPUT file for ABACUS. This is another way of providing input parameters. Users must choose one of these two ways. Any keywords beginning with "_" will be ignored
 | **k_points** | List of integers | [2,2,2,0,0,0] | Monkhorst-Pack k-grids setting for generating KPT file of ABACUS
-| **fp_kpt_file** | String | "./abacus/KPT" | KPT file for ABACUS. This is another way to provide KPT file for ABACUS and has lower priority than the above `k_points` key. They two have lower priority than kspacing and gamma_only in INPUT file of ABACUS.
+| **fp_kpt_file** | String | "./abacus/KPT" | KPT file for ABACUS. This is another way to provide KPT file for ABACUS and has lower priority than the above `k_points` key. They two have lower priority than kspacing (in unit of 1/Bohr) and gamma_only in INPUT file of ABACUS.
 | **fp_orb_files** | List |  |List of atomic orbital files. The files should be in pseudopotential directory. 
 | **fp_dpks_descriptor** | String |  |DeePKS descriptor file name. The file should be in pseudopotential directory. 
 

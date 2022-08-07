@@ -75,7 +75,7 @@ def make_abacus_scf_input(fp_params):
             assert(fp_params["ks_solver"] in ["cg", "dav", "lapack", "genelpa", "hpseps", "scalapack_gvx"]), "'ks_sover' should in 'cgx', 'dav', 'lapack', 'genelpa', 'hpseps', 'scalapack_gvx'."
             ret += "ks_solver %s\n" % fp_params["ks_solver"]
         elif key == "smearing_method":
-            assert(fp_params["smearing_method"] in ["gaussian", "fd", "fixed", "mp", "mp2", "mv"]), "'smearing_method' should in 'gaussian', 'fd', 'fixed', 'mp', 'mp2', 'mv'. "
+            assert(fp_params["smearing_method"] in ["gauss","gaussian", "fd", "fixed", "mp", "mp2", "mv"]), "'smearing_method' should in 'gauss', 'gaussian', 'fd', 'fixed', 'mp', 'mp2', 'mv'. "
             ret += "smearing_method %s\n" % fp_params["smearing_method"]
         elif key == "smearing_sigma":
             fp_params["smearing_sigma"] = float(fp_params["smearing_sigma"])
