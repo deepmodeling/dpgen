@@ -1159,11 +1159,6 @@ def coll_abacus_md(jdata) :
     os.chdir(cwd)
 
 def run_abacus_relax(jdata, mdata):
-    relax_incar = jdata['relax_incar']
-    standard_incar = get_abacus_input_parameters(relax_incar) # a dictionary in which all of the values are strings
-    if "gamma_only" in standard_incar:
-        if type(standard_incar["gamma_only"])==str:
-            standard_incar["gamma_only"] = int(eval(standard_incar["gamma_only"]))
     fp_command = mdata['fp_command']
     fp_group_size = mdata['fp_group_size']
     fp_resources = mdata['fp_resources']
@@ -1179,6 +1174,8 @@ def run_abacus_relax(jdata, mdata):
         dpks_descriptor_name = [os.path.basename(jdata['dpks_descriptor'])]
     if 'dpks_model' in jdata:
         dpks_model_name = [os.path.basename(jdata['dpks_model'])]
+    relax_incar = jdata['relax_incar']
+    standard_incar = get_abacus_input_parameters(relax_incar) # a dictionary in which all of the values are strings
     forward_files = ["STRU", "INPUT"]
     if "kspacing" not in standard_incar:
         forward_files = ["STRU", "INPUT", "KPT"]
@@ -1298,11 +1295,6 @@ def run_vasp_md(jdata, mdata):
         submission.run_submission()
 
 def run_abacus_md(jdata, mdata):
-    md_incar = jdata['md_incar']
-    standard_incar = get_abacus_input_parameters(md_incar) # a dictionary in which all of the values are strings
-    if "gamma_only" in standard_incar:
-        if type(standard_incar["gamma_only"])==str:
-            standard_incar["gamma_only"] = int(eval(standard_incar["gamma_only"]))
     fp_command = mdata['fp_command']
     fp_group_size = mdata['fp_group_size']
     fp_resources = mdata['fp_resources']
@@ -1321,9 +1313,10 @@ def run_abacus_md(jdata, mdata):
         dpks_descriptor_name = [os.path.basename(jdata['dpks_descriptor'])]
     if 'dpks_model' in jdata:
         dpks_model_name = [os.path.basename(jdata['dpks_model'])]
+    md_incar = jdata['md_incar']
+    standard_incar = get_abacus_input_parameters(md_incar) # a dictionary in which all of the values are strings
     forward_files = ["STRU", "INPUT"]
-    if not (("kspacing" in standard_incar) or \
-            ("gamma_only" in standard_incar and standard_incar["gamma_only"]==1)):
+    if "kspacing" not in standard_incar:
         forward_files = ["STRU", "INPUT", "KPT"]
     forward_files += orb_file_names + dpks_descriptor_name + dpks_model_name
     for pp_file in [os.path.basename(a) for a in jdata['potcars']]:
