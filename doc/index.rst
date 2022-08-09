@@ -65,6 +65,7 @@ DPGEN's documentation
    :glob:  
 
    Tutorials <https://tutorials.deepmodeling.com/en/latest/Tutorials/DP-GEN/>
+   troubleshooting/index
 
 
 .. _Contribution:
