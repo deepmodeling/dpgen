@@ -52,11 +52,11 @@ A large part of `dispatcher` has been moved to `dpdispatcher`, see https://githu
 run.py is the core of DP-GEN, corresponding to `dpgen run`, we can find `make_train`, `run_train`, ... `post_fp`, and other steps related functions here.
 
 ## Find how a parameter is used in the code
-It is strongly recommended that you use the `find in files` function of Virtual Studio software, or similar functions of other software. Type in the name of the parameter you're looking for, and you'll see where it's read in, and the procedure used.
+It is strongly recommended that you use the `find in files` function of Visual Studio software, or similar functions of other software. Type in the name of the parameter you're looking for, and you'll see where it's read in, and the procedure used.
 Of course, you can also search for the relevant code according to the above guide.
 
 ## Want to modify a function?
-If you have special requirements, you can make personalized modifications in the code corresponding to the function. If you think your modification can benefit the public, and it does not conflict with the current DP-GEN function; or if you fix a bug, please make a pull requist to contribute the optimization to the DP-GEN repository.
+If you have special requirements, you can make personalized modifications in the code corresponding to the function. If you think your modification can benefit the public, and it does not conflict with the current DP-GEN function; or if you fix a bug, please make a pull request to contribute the optimization to the DP-GEN repository.
 
 ## DP-GEN dependencies
 dpdispatcher and dpdata are dependencies of DP-GEN. dpdispatcher is related to task submission, monitoring and recovery, and dpdata is related to data processing. If you encounter an error and want to find the reason, please judge whether the problem comes from DP-GEN, dpdispatcher or dpdata according to the last line of `Traceback`.
