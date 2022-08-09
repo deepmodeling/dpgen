@@ -5,8 +5,8 @@
     {
       "command": "dp",
       "machine": {
-        "batch_type": "",
-        "context_type": "",
+        "batch_type": "Lebesgue",
+        "context_type": "LebesgueContext",
         "local_root" : "./",
         "remote_profile":{
           "email": "",
@@ -39,8 +39,8 @@
     [{
       "command": "lmp -i input.lammps -v restart 0",
       "machine": {
-        "batch_type": "",
-        "context_type": "",
+        "batch_type": "Lebesgue",
+        "context_type": "LebesgueContext",
         "local_root" : "./",
         "remote_profile":{
           "email": "",
@@ -73,8 +73,8 @@
     [{
       "command": "OMP_NUM_THREADS=1 mpirun -n 8 abacus",
       "machine": {
-        "batch_type": "",
-        "context_type": "",
+        "batch_type": "Lebesgue",
+        "context_type": "LebesgueContext",
         "local_root" : "./",
         "remote_profile":{
           "email": "",
