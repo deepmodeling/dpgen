@@ -1562,6 +1562,8 @@ def run_md_model_devi (iter_index,
     forward_files += [os.path.basename(file) for file in user_forward_files]
     backward_files += mdata.get("model_devi" + "_user_backward_files", [])
     api_version = mdata.get('api_version', '0.9')
+    if(len(run_tasks) == 0): 
+        raise RuntimeError("run_tasks for model_devi should not be empty! Please check your files.") 
     if LooseVersion(api_version) < LooseVersion('1.0'):
         warnings.warn(f"the dpdispatcher will be updated to new version."
             f"And the interface may be changed. Please check the documents for more details")
