@@ -1578,6 +1578,8 @@ def run_md_model_devi (iter_index,
                         errlog = 'model_devi.log')
 
     elif LooseVersion(api_version) >= LooseVersion('1.0'):
+        if(len(run_tasks) == 0): 
+            warnings.warn("run_tasks for model_devi should not be empty! Please check your files.") 
         submission = make_submission(
             mdata['model_devi_machine'],
             mdata['model_devi_resources'],
