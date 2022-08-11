@@ -217,7 +217,7 @@ def generate_single_traj(all_traj, traj_ind, single_traj):
     get_traj = False
     for idx,ii in enumerate(lines):
         if 'ITEM: TIMESTEP' in ii:
-            if(get_traj is True):
+            if get_traj :
                 break
             time_step = int(lines[idx+1])
             if(time_step == traj_ind):
