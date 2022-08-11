@@ -1,5 +1,6 @@
 import glob
 import os
+import shutil
 import warnings
 from monty.serialization import dumpfn
 from multiprocessing import Pool
@@ -91,6 +92,8 @@ def make_equi(confs,
         poscar = os.path.abspath(os.path.join(ii, 'POSCAR'))
         POSCAR = 'POSCAR'
         if inter_param['type'] == "abacus":
+            shutil.copyfile(os.path.join(ii, 'STRU'),os.path.join(ii, 'STRU.bk'))
+            abacus.modify_stru_path(os.path.join(ii, 'STRU'),'pp_orb/')
             poscar = os.path.abspath(os.path.join(ii, 'STRU'))
             POSCAR = 'STRU'
         if not os.path.exists(poscar):

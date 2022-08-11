@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import os,sys
+from unicodedata import numeric
 import dpdata
 import dpgen.generator.lib.abacus_scf as abacus_scf
 import numpy as np
@@ -211,3 +212,25 @@ def check_stru_fixed(struf,fixed):
                 elif not fixed and not bool(int(k)): return False
         i += 1
     return True
+
+def modify_stru_path(strucf,tpath):
+    if tpath[-1] != '/':tpath += '/'
+    with open(strucf) as f1: lines = f1.readlines()
+    for i,line in enumerate(lines):
+        if "ATOMIC_SPECIES" in line and line.split()[0] == "ATOMIC_SPECIES":
+            file_numb = 2
+        elif ("NUMERICAL_ORBITAL" in line and line.split()[0] == "NUMERICAL_ORBITAL") or \
+             ("NUMERICAL_DESCRIPTOR" in line and line.split()[0] == "NUMERICAL_DESCRIPTOR"): 
+             file_numb = 0 
+        else:continue
+
+        for j in range(i+1,len(lines)):
+            if lines[j].strip() in key_words_list: break
+            elif lines[j].strip() == '':continue
+            ppfile = tpath + os.path.split(lines[j].split()[file_numb])[1]
+            tmp_line = ''
+            for k in range(file_numb): tmp_line += lines[j].split()[k] + ' '
+            lines[j] = tmp_line + ppfile + '\n'
+
+    with open(strucf,'w') as f1: f1.writelines(lines)
+
