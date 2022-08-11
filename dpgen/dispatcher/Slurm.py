@@ -106,6 +106,11 @@ class Slurm(Batch) :
         for flag in res.get('custom_flags', []):
             ret += '#SBATCH %s \n' % flag
         ret += "\n"
+        envs = res['envs']
+        if envs != None :
+            for key in envs.keys() :
+                ret += 'export %s=%s\n' % (key, envs[key])
+            ret += '\n' 
         for ii in res['module_unload_list'] :
             ret += "module unload %s\n" % ii
         for ii in res['module_list'] :
@@ -113,12 +118,7 @@ class Slurm(Batch) :
         ret += "\n"
         for ii in res['source_list'] :
             ret += "source %s\n" %ii
-        ret += "\n"
-        envs = res['envs']
-        if envs != None :
-            for key in envs.keys() :
-                ret += 'export %s=%s\n' % (key, envs[key])
-            ret += '\n'        
+        ret += "\n"       
         return ret
 
     def sub_script_cmd(self,
