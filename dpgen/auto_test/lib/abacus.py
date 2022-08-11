@@ -174,7 +174,7 @@ def final_stru(abacus_path):
             return 'OUT.%s/STRU_ION%d_D' % (suffix,max_step)
     elif calculation == 'md':
         with open(logf) as f1: lines = f1.readlines()
-        for i in range(1,range(len(lines))):
+        for i in range(1,len(lines)):
             if lines[-i][1:27] == 'STEP OF MOLECULAR DYNAMICS':
                 max_step = int(lines[-i].split()[-1])
                 break

@@ -178,7 +178,7 @@ class ABACUS(Task):
         else:
             mess  = "K point information is not defined\n"
             mess += "You can set key word 'kspacing' (unit in 1/bohr) as a float value in INPUT\n"
-            mess += "or set key word 'K_POINTS' as a list in 'relaxation':'cal_setting', e.g. [1,2,3,0,0,0]\n"
+            mess += "or set key word 'K_POINTS' as a list in 'cal_setting', e.g. [1,2,3,0,0,0]\n"
             raise RuntimeError(mess)
         abacus.write_kpt(os.path.join(output_dir, 'KPT'),kpt)
 
