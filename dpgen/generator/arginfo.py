@@ -228,7 +228,7 @@ def fp_style_vasp_args() -> List[Argument]:
         Argument("fp_aniso_kspacing", list, optional=True,
                  doc=doc_fp_aniso_kspacing),
         Argument("cvasp", bool, optional=True, doc=doc_cvasp),
-        Argument("ratio_failed", bool, optional=True,
+        Argument("ratio_failed", float, optional=True,
                  doc=doc_ratio_failed),
         Argument("fp_skip_bad_box", str, optional=True,
                  doc=doc_fp_skip_bad_box),
