@@ -117,7 +117,7 @@
             "_idx": "01"
         }
     ],
-    "fp_style": "abacus/scf",
+    "fp_style": "abacus",
     "shuffle_poscar": false,
     "fp_task_max": 20,
     "fp_task_min": 5,

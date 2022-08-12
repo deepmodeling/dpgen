@@ -2903,7 +2903,7 @@ def make_fp (iter_index,
         make_fp_vasp(iter_index, jdata)
     elif fp_style == "pwscf" :
         make_fp_pwscf(iter_index, jdata)
-    elif fp_style == "abacus/scf" :
+    elif fp_style == "abacus" :
         make_fp_abacus_scf(iter_index, jdata)
     elif fp_style == "siesta" :
         make_fp_siesta(iter_index, jdata)
@@ -3107,7 +3107,7 @@ def run_fp (iter_index,
         forward_files = ['input'] + fp_pp_files
         backward_files = ['output']
         run_fp_inner(iter_index, jdata, mdata,  forward_files, backward_files, _qe_check_fin, log_file = 'output')
-    elif fp_style == "abacus/scf":
+    elif fp_style == "abacus":
         fp_params = {}
         if 'user_fp_params' in jdata.keys() :
             fp_params = jdata['user_fp_params']
@@ -3606,7 +3606,7 @@ def post_fp (iter_index,
         post_fp_vasp(iter_index, jdata)
     elif fp_style == "pwscf" :
         post_fp_pwscf(iter_index, jdata)
-    elif fp_style == "abacus/scf":
+    elif fp_style == "abacus":
         post_fp_abacus_scf(iter_index, jdata)
     elif fp_style == "siesta":
         post_fp_siesta(iter_index, jdata)
