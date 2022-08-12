@@ -86,7 +86,6 @@
   "fp_pp_files": ["POTCAR_I","POTCAR_Pb_d","POTCAR_C","POTCAR_N","POTCAR_H"],
   "fp_incar": "INCAR",
 
-  "use_clusters": false,
   "labeled": false,
   "init_pick_number":5,
   "iter_pick_number":5,
