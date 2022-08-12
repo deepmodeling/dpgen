@@ -227,7 +227,7 @@ def fp_style_vasp_args() -> List[Argument]:
         Argument("fp_aniso_kspacing", list, optional=True,
                  doc=doc_fp_aniso_kspacing),
         Argument("cvasp", bool, optional=True, doc=doc_cvasp),
-        Argument("ratio_failed", bool, optional=True,
+        Argument("ratio_failed", float, optional=True,
                  doc=doc_ratio_failed),
     ]
 
@@ -352,7 +352,7 @@ def fp_style_cp2k_args() -> List[Argument]:
                  doc=doc_user_fp_params),
         Argument("external_input_path", str, optional=True,
                  doc=doc_external_input_path),
-        Argument("ratio_failed", bool, optional=True,
+        Argument("ratio_failed", float, optional=True,
                  doc=doc_ratio_failed),
     ]
 
