@@ -13,10 +13,12 @@ from dpgen.auto_test.refine import make_refine
 from dpgen.auto_test.reproduce import make_repro
 from dpgen.auto_test.reproduce import post_repro
 
+import dpgen.auto_test.lib.abacus as abacus
+import dpgen.generator.lib.abacus_scf as abacus_scf
 
 class Interstitial(Property):
     def __init__(self,
-                 parameter):
+                 parameter,inter_param=None):
         parameter['reproduce'] = parameter.get('reproduce', False)
         self.reprod = parameter['reproduce']
         if not self.reprod:
@@ -59,6 +61,7 @@ class Interstitial(Property):
             parameter['init_from_suffix'] = parameter.get('init_from_suffix', '00')
             self.init_from_suffix = parameter['init_from_suffix']
         self.parameter = parameter
+        self.inter_param = inter_param if inter_param != None else {'type': 'vasp'}
 
     def make_confs(self,
                    path_to_work,
@@ -85,7 +88,7 @@ class Interstitial(Property):
             if 'init_data_path' not in self.parameter:
                 raise RuntimeError("please provide the initial data path to reproduce")
             init_data_path = os.path.abspath(self.parameter['init_data_path'])
-            task_list = make_repro(init_data_path, self.init_from_suffix,
+            task_list = make_repro(self.inter_param,init_data_path, self.init_from_suffix,
                                    path_to_work, self.parameter.get('reprod_last_frame', False))
             os.chdir(cwd)
 
@@ -121,11 +124,22 @@ class Interstitial(Property):
                 os.chdir(cwd)
 
             else:
-                equi_contcar = os.path.join(path_to_equi, 'CONTCAR')
+                if self.inter_param['type'] == 'abacus':
+                    CONTCAR = abacus.final_stru(path_to_equi)
+                    POSCAR = 'STRU'
+                else:
+                    CONTCAR = 'CONTCAR'
+                    POSCAR = 'POSCAR'
+
+                equi_contcar = os.path.join(path_to_equi, CONTCAR)
                 if not os.path.exists(equi_contcar):
                     raise RuntimeError("please do relaxation first")
 
-                ss = Structure.from_file(equi_contcar)
+                if self.inter_param['type'] == 'abacus':
+                    ss = abacus.stru2Structure(equi_contcar)
+                else:
+                    ss = Structure.from_file(equi_contcar)
+
                 # gen defects
                 dss = []
                 insert_element_task = os.path.join(path_to_work, 'element.out')
@@ -152,18 +166,18 @@ class Interstitial(Property):
                 print(
                     'gen interstitial with supercell ' + str(self.supercell) + ' with element ' + str(self.insert_ele))
                 os.chdir(path_to_work)
-                if os.path.isfile('POSCAR'):
-                    os.remove('POSCAR')
-                if os.path.islink('POSCAR'):
-                    os.remove('POSCAR')
-                os.symlink(os.path.relpath(equi_contcar), 'POSCAR')
+                if os.path.isfile(POSCAR):
+                    os.remove(POSCAR)
+                if os.path.islink(POSCAR):
+                    os.remove(POSCAR)
+                os.symlink(os.path.relpath(equi_contcar), POSCAR)
                 #           task_poscar = os.path.join(output, 'POSCAR')
 
                 for ii in range(len(dss)):
                     output_task = os.path.join(path_to_work, 'task.%06d' % ii)
                     os.makedirs(output_task, exist_ok=True)
                     os.chdir(output_task)
-                    for jj in ['INCAR', 'POTCAR', 'POSCAR', 'conf.lmp', 'in.lammps']:
+                    for jj in ['INCAR', 'POTCAR', 'POSCAR', 'conf.lmp', 'in.lammps','STRU']:
                         if os.path.exists(jj):
                             os.remove(jj)
                     task_list.append(output_task)
@@ -285,6 +299,17 @@ class Interstitial(Property):
                     print('gen bcc <100> dumbbell')
                     os.chdir(cwd)
 
+                    total_task = len(dss)+6
+                else:
+                    total_task = len(dss)
+
+                if self.inter_param['type'] == 'abacus':
+                    for ii in range(total_task):
+                        output_task = os.path.join(path_to_work, 'task.%06d' % ii)
+                        os.chdir(output_task)
+                        abacus.poscar2stru("POSCAR",self.inter_param,"STRU")
+                        os.remove('POSCAR') 
+                    os.chdir(cwd)
 
         return task_list
 

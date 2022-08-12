@@ -1,11 +1,13 @@
 import glob
 import os
+import shutil
 import warnings
 from monty.serialization import dumpfn
 from multiprocessing import Pool
 
 import dpgen.auto_test.lib.crys as crys
 import dpgen.auto_test.lib.util as util
+import dpgen.auto_test.lib.abacus as abacus
 from dpgen import dlog
 from dpgen.auto_test.calculator import make_calculator
 from dpgen.auto_test.mpdb import get_structure
@@ -68,6 +70,10 @@ def make_equi(confs,
                 if not os.path.exists('POSCAR'):
                     crys.sc(ele_list[element_label]).to('POSCAR', 'POSCAR')
 
+            if inter_param['type'] == "abacus" and not os.path.exists('STRU'): 
+                abacus.poscar2stru("POSCAR",inter_param,"STRU")
+                os.remove('POSCAR')
+                
             os.chdir(cwd)
     task_dirs = []
     # make task directories like mp-xxx/relaxation/relax_task
@@ -79,8 +85,17 @@ def make_equi(confs,
 
         if 'mp-' in crys_type and not os.path.exists(os.path.join(ii, 'POSCAR')):
             get_structure(crys_type).to('POSCAR', os.path.join(ii, 'POSCAR'))
+            if inter_param['type'] == "abacus" and not os.path.exists('STRU'):
+                abacus.poscar2stru(os.path.join(ii, 'POSCAR'),inter_param,os.path.join(ii, 'STRU'))
+                os.remove(os.path.join(ii, 'POSCAR'))
 
         poscar = os.path.abspath(os.path.join(ii, 'POSCAR'))
+        POSCAR = 'POSCAR'
+        if inter_param['type'] == "abacus":
+            shutil.copyfile(os.path.join(ii, 'STRU'),os.path.join(ii, 'STRU.bk'))
+            abacus.modify_stru_path(os.path.join(ii, 'STRU'),'pp_orb/')
+            poscar = os.path.abspath(os.path.join(ii, 'STRU'))
+            POSCAR = 'STRU'
         if not os.path.exists(poscar):
             raise FileNotFoundError('no configuration for autotest')
         if os.path.exists(os.path.join(ii, 'relaxation', 'jr.json')):
@@ -92,9 +107,9 @@ def make_equi(confs,
         os.chdir(relax_dirs)
         # copy POSCARs to mp-xxx/relaxation/relax_task
         # ...
-        if os.path.isfile('POSCAR'):
-            os.remove('POSCAR')
-        os.symlink(os.path.relpath(poscar), 'POSCAR')
+        if os.path.isfile(POSCAR):
+            os.remove(POSCAR)
+        os.symlink(os.path.relpath(poscar), POSCAR)
         os.chdir(cwd)
     task_dirs.sort()
     # generate task files
@@ -103,12 +118,13 @@ def make_equi(confs,
         relax_param['cal_setting'] = {"relax_pos": True,
                                       "relax_shape": True,
                                       "relax_vol": True}
-    elif "relax_pos" not in relax_param['cal_setting']:
-        relax_param['cal_setting']['relax_pos'] = True
-    elif "relax_shape" not in relax_param['cal_setting']:
-        relax_param['cal_setting']['relax_shape'] = True
-    elif "relax_vol" not in relax_param['cal_setting']:
-        relax_param['cal_setting']['relax_vol'] = True
+    else:
+        if "relax_pos" not in relax_param['cal_setting']:
+            relax_param['cal_setting']['relax_pos'] = True
+        if "relax_shape" not in relax_param['cal_setting']:
+            relax_param['cal_setting']['relax_shape'] = True
+        if "relax_vol" not in relax_param['cal_setting']:
+            relax_param['cal_setting']['relax_vol'] = True
 
     for ii in task_dirs:
         poscar = os.path.join(ii, 'POSCAR')
@@ -142,7 +158,7 @@ def run_equi(confs,
     run_tasks = all_task
     inter_type = inter_param['type']
     # vasp
-    if inter_type == "vasp":
+    if inter_type in ["vasp","abacus"]:
         mdata = convert_mdata(mdata, ["fp"])
     elif inter_type in lammps_task_type:
         mdata = convert_mdata(mdata, ["model_devi"])
