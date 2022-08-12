@@ -9,6 +9,7 @@ DPGEN's documentation
    :caption: Overview
 
    overview/cli
+   overview/DP-GEN-structure
   
   
 .. _installation::
