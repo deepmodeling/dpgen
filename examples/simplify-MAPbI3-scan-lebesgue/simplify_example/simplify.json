@@ -78,7 +78,6 @@
   "fp_skip_bad_box":  "length_ratio:5;height_ratio:5",
   "fp_accurate_threshold":       0.95,
   "fp_accurate_soft_threshold":  0.90,
-  "shuffle_poscar":              false,
   "fp_task_max":                 20,
   "fp_task_min":                 5,
   "ratio_failed":                0.30,
