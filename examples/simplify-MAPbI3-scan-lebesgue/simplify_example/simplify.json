@@ -11,8 +11,6 @@
   "_comment": " 00.train ",
   "numb_models": 4,
   "model_devi_activation_func":[["tanh","tanh"],["tanh","gelu"],["gelu","gelu"],["gelu","tanh"]],
-
-  "train_param": "input.json",
  
   "default_training_param": {
     "model": {
