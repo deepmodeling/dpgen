@@ -7,6 +7,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), '..
 from dpgen.generator.lib.pwscf import make_pwscf_input
 from dpgen.generator.lib.siesta import make_siesta_input
 from dpgen.generator.run import make_vasp_incar
+from dpgen.generator.run import get_atomic_masses
 import dpdata
 
 def get_lmp_info(input_file) :
@@ -87,8 +88,8 @@ def create_init_tasks(target_folder, param_file, output, fp_json, verbose = True
     jdata = json.load(open(os.path.join(target_folder, param_file)))
     fp_jdata = json.load(open(fp_json))
     # fp settings
-    mass_map = jdata['mass_map']
     type_map = jdata['type_map']
+    mass_map = [ get_atomic_masses(i) for i in jdata['type_map'] ]
     fp_style = fp_jdata['fp_style']
     fp_pp_path = fp_jdata['fp_pp_path']
     fp_pp_files = fp_jdata['fp_pp_files']
@@ -147,7 +148,7 @@ def create_tasks(target_folder, param_file, output, fp_json, verbose = True, num
     os.chdir(target_folder)
     sys = jdata['sys_configs']    
     # fp settings
-    mass_map = jdata['mass_map']
+    mass_map = [ get_atomic_masses(i) for i in jdata['type_map'] ]
     fp_style = fp_jdata['fp_style']
     fp_pp_path = fp_jdata['fp_pp_path']
     fp_pp_files = fp_jdata['fp_pp_files']
