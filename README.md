@@ -147,7 +147,7 @@ If you want to specify a structure as starting point for `init_bulk`, you may se
 ```
 `init_bulk` support both VASP and ABACUS for first-principle calculation. You can choose the software by specifying the key `init_fp_style`. If `init_fp_style` is not specified, the default software will be VASP. 
 
-When using ABACUS for `init_fp_style`, the keys of the paths of `INPUT` files for relaxation and MD simulations are the same as `INCAR` for VASP, which are `relax_incar` and `md_incar` respectively. You have to additionally specify `relax_kspacing` and `md_kspacing` for k points spacing, and dpgen will automatically generate `KPT` files according to them. You may also use `relax_kpt` and `md_kpt` instead of them for the relative path for `KPT` files of relaxation and MD simulations. However, either `relax_kspacing` and `md_kspacing`, or `relax_kpt` and `md_kpt` is needed. If `from_poscar` is set to `false`, you have to specify `atom_masses` in the same order as `elements`.
+When using ABACUS for `init_fp_style`, the keys of the paths of `INPUT` files for relaxation and MD simulations are the same as `INCAR` for VASP, which are `relax_incar` and `md_incar` respectively. Use `relax_kpt` and `md_kpt` for the relative path for `KPT` files of relaxation and MD simulations. They two can be ommited if `kspacing` (in unit of 1/Bohr) or `gamma_only` has been set in corresponding INPUT files. If `from_poscar` is set to `false`, you have to specify `atom_masses` in the same order as `elements`.
 
 The following table gives explicit descriptions on keys in `PARAM`.
 
@@ -173,9 +173,7 @@ The bold notation of key (such as **Elements**) means that it's a necessary key.
 | type_map | List | [ "Mg", "Al"] | The indices of elements in deepmd formats will be set in this order.
 | init_fp_style | String | "ABACUS" or "VASP" | First-principle software. If this key is abscent, the default value will be "VASP".
 | relax_kpt | String | "....../KPT" | Path of `KPT` file for relaxation in stage 1. Only useful if `init_fp_style` is "ABACUS".
-| relax_kspacing | Integer or List of 3 integers | 10 | kspacing parameter for relaxation in stage 1. Only useful if `init_fp_style` is "ABACUS".
 | md_kpt | String | "....../KPT" | Path of `KPT` file for MD simulations in stage 3. Only useful if `init_fp_style` is "ABACUS".
-| md_kspacing | Integer or List of 3 integers | 10 | kspacing parameter for MD simulations in stage 3. Only useful if `init_fp_style` is "ABACUS".
 | atom_masses | List of float | [24] | List of atomic masses of elements. The order should be the same as `Elements`. Only useful if `init_fp_style` is "ABACUS".
 
 ### Init_surf
@@ -547,7 +545,7 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | **fp_pp_path**   | String           | "/sharedext4/.../ch4/"                                       | Directory of psuedo-potential file to be used for 02.fp exists. |
 | **fp_pp_files**    | List of string         | ["POTCAR"]                                                   | Psuedo-potential file to be used for 02.fp. Note that the order of elements should correspond to the order in `type_map`. |
 |**fp_incar** | String | "/sharedext4/../ch4/INCAR" | Input file for VASP. INCAR must specify KSPACING and KGAMMA.
-|**fp_aniso_kspacing** | List of integer | [1.0,1.0,1.0] | Set anisotropic kspacing. Usually useful for 1-D or 2-D materials. Only support VASP. If it is setting the KSPACING key in INCAR will be ignored.
+|**fp_aniso_kspacing** | List of float | [1.0,1.0,1.0] | Set anisotropic kspacing. Usually useful for 1-D or 2-D materials. Only support VASP. If it is setting the KSPACING key in INCAR will be ignored.
 |cvasp| Boolean | true | If `cvasp` is true, DP-GEN will use Custodian to help control VASP calculation.
 | *fp_style == Gaussian*
 | **use_clusters** | Boolean | false | If set to `true`, clusters will be taken instead of the whole system. This option does not work with DeePMD-kit 0.x.
@@ -569,7 +567,10 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | **user_fp_params** | Dict |  |Parameters for cp2k calculation. find detail in manual.cp2k.org. only the kind section must be set before use.  we assume that you have basic knowledge for cp2k input.
 | **external_input_path** | String |  | Conflict with key:user_fp_params, use the template input provided by user, some rules should be followed, read the following text in detail.
 | *fp_style == ABACUS*
-| **user_fp_params** | Dict |  |Parameters for ABACUS INPUT. find detail [Here](https://github.com/deepmodeling/abacus-develop/blob/develop/docs/input-main.md#out-descriptor). If `deepks_model` is set, the model file should be in the pseudopotential directory. You can also set `KPT` file by adding `k_points` that corresponds to a list of six integers in this dictionary.
+| **user_fp_params** | Dict |  |Parameters for ABACUS INPUT. find detail [Here](https://github.com/deepmodeling/abacus-develop/blob/develop/docs/input-main.md#out-descriptor). If `deepks_model` is set, the model file should be in the pseudopotential directory. You can also set `KPT` file by adding `k_points` that corresponds to a list of six integers in this dictionary. Any key beginning with "_" will be ignored.
+| **fp_incar** | String | "./abacus/INPUT" | INPUT file for ABACUS. This is another way of providing input parameters. Users must choose one of these two ways. Any keywords beginning with "_" will be ignored
+| **k_points** | List of integers | [2,2,2,0,0,0] | Monkhorst-Pack k-grids setting for generating KPT file of ABACUS
+| **fp_kpt_file** | String | "./abacus/KPT" | KPT file for ABACUS. This is another way to provide KPT file for ABACUS and has lower priority than the above `k_points` key. They two have lower priority than kspacing (in unit of 1/Bohr) and gamma_only in INPUT file of ABACUS.
 | **fp_orb_files** | List |  |List of atomic orbital files. The files should be in pseudopotential directory. 
 | **fp_dpks_descriptor** | String |  |DeePKS descriptor file name. The file should be in pseudopotential directory. 
 
@@ -590,15 +591,15 @@ The bold notation of key (such as **calypso_path**) means that it's a necessary 
 | **model_devi_jobs["NameOfAtoms"]** | List of string |["Al","Cu"] | Parameter of CALYPSO input file, means the element species of structures to be generated. |
 | **model_devi_jobs["NumberOfAtoms"]** | List of int |[1,10] | Parameter of CALYPSO input file, means the number of atoms for each chemical species in one formula unit. |
 | **model_devi_jobs["NumberOfFormula"]** | List of int |[1,2] | Parameter of CALYPSO input file, means the range of formula unit per cell. |
-| **model_devi_jobs["Volume"]** | List of int |[300] | Parameter of CALYPSO input file, means the colume per formula unit(angstrom^3). |
+| **model_devi_jobs["Volume"]** | int | 300 | Parameter of CALYPSO input file, means the colume per formula unit(angstrom^3). |
 | **model_devi_jobs["DistanceOfIon"]** | List of float |[[ 1.48,1.44],[ 1.44,1.41]] | Parameter of CALYPSO input file, means minimal distance between atoms of each chemical species. Unit is in angstrom. |
-| **model_devi_jobs["PsoRatio"]** | List of float |[0.6] | Parameter of CALYPSO input file, means the proportion of the structures generated by PSO. |
-| **model_devi_jobs["PopSize"]** | List of int |[5] | Parameter of CALYPSO input file, means the number of structures to be generated in one step in CALYPSO. |
-| **model_devi_jobs["MaxStep"]** | List of int |[3] | Parameter of CALYPSO input file, means the number of max step in CALYPSO.|
-| **model_devi_jobs["ICode"]** | List of int |[13] | Parameter of CALYPSO input file, means the chosen of local optimization, 1 is vasp and 13 is ASE with dp.  |
+| **model_devi_jobs["PsoRatio"]** | float or int | 0.6 | Parameter of CALYPSO input file, means the proportion of the structures generated by PSO. |
+| **model_devi_jobs["PopSize"]** | int | 5 | Parameter of CALYPSO input file, means the number of structures to be generated in one step in CALYPSO. |
+| **model_devi_jobs["MaxStep"]** | int | 3 | Parameter of CALYPSO input file, means the number of max step in CALYPSO.|
+| **model_devi_jobs["ICode"]** | int | 13 | Parameter of CALYPSO input file, means the chosen of local optimization, 1 is vasp and 13 is ASE with dp.  |
 | **model_devi_jobs["Split"]** | String |"T" | Parameter of CALYPSO input file, means that generating structures and optimizing structures are split into two parts, in dpgen workflow, Split must be T. |
-| **model_devi_jobs["PSTRESS"]** | List of float |[0.001] | Same as PSTRESS in INCAR. |
-| **model_devi_jobs["fmax"]** | List of float |[0.01] | The convergence criterion is that the force on all individual atoms should be less than *fmax*. |
+| **model_devi_jobs["PSTRESS"]** | List of float or int |[0.001] | Same as PSTRESS in INCAR. |
+| **model_devi_jobs["fmax"]** | float | 0.01 | The convergence criterion is that the force on all individual atoms should be less than *fmax*. |
 | *in machine file*
 | **model_devi["deepmdkit_python"]** | String | "/home/zhenyu/soft/deepmd-kit/bin/python" | A python path with deepmd package. |
 | **model_devi["calypso_path"]** | string | "/home/zhenyu/workplace/debug" | The absolute path of calypso.x.|
@@ -1206,130 +1207,6 @@ an example of new dpgen's machine.json
 }
 ```
 note1: the key "local_root" in dpgen's machine.json is always `./`
-
-### old dpdispatcher
-
-When switching into a new machine, you may modifying the `MACHINE`, according to the actual circumstance. Once you have finished, the `MACHINE` can be re-used for any DP-GEN tasks without any extra efforts.
-
-An example for `MACHINE` is:
-```json
-{
-  "train":
-    {
-      "machine": {
-        "batch": "slurm",
-        "hostname": "localhost",
-        "port": 22,
-        "username": "Angus",
-        "work_path": "....../work"
-      },
-      "resources": {
-        "numb_node": 1,
-        "numb_gpu": 1,
-        "task_per_node": 4,
-        "partition": "AdminGPU",
-        "exclude_list": [],
-        "source_list": [
-          "....../train_tf112_float.env"
-        ],
-        "module_list": [],
-        "time_limit": "23:0:0",
-        "qos": "data"
-      },
-      "command": "USERPATH/dp"
-    },
-  "model_devi":
-    {
-      "machine": {
-        "batch": "slurm",
-        "hostname": "localhost",
-        "port": 22,
-        "username": "Angus",
-        "work_path": "....../work"
-      },
-      "resources": {
-        "numb_node": 1,
-        "numb_gpu": 1,
-        "task_per_node": 2,
-        "partition": "AdminGPU",
-        "exclude_list": [],
-        "source_list": [
-          "......./lmp_tf112_float.env"
-        ],
-        "module_list": [],
-        "time_limit": "23:0:0",
-        "qos": "data"
-      },
-      "command": "lmp_serial",
-      "group_size": 1
-    },
-  "fp":
-    {
-      "machine": {
-        "batch": "slurm",
-        "hostname": "localhost",
-        "port": 22,
-        "username": "Angus",
-        "work_path": "....../work"
-      },
-      "resources": {
-        "task_per_node": 4,
-        "numb_gpu": 1,
-        "exclude_list": [],
-        "with_mpi": false,
-        "source_list": [],
-        "module_list": [
-          "mpich/3.2.1-intel-2017.1",
-          "vasp/5.4.4-intel-2017.1",
-          "cuda/10.1"
-        ],
-        "time_limit": "120:0:0",
-        "partition": "AdminGPU",
-        "_comment": "that's All"
-      },
-      "command": "vasp_gpu",
-      "group_size": 1
-    }
-}
-```
-Following table illustrates which key is needed for three types of machine: `train`,`model_devi`  and `fp`. Each of them is a list of dicts. Each dict can be considered as an independent environmnet for calculation.
-
- Key   | `train`          | `model_devi`                                                    | `fp`                                                     |
-| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
-| machine | NEED  | NEED | NEED
-| resources | NEED | NEED | NEED
-| command | NEED  |NEED |  NEED  
-| group_size | NEED | NEED | NEED |
-
-The following table gives explicit descriptions on keys in param.json.
-
-
- Key   | Type       | Example                                                  | Discription                                                     |
-| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
-| machine | Dict | | Settings of the machine for TASK.
-| resources | Dict | | Resources needed for calculation.
-| # Followings are keys in resources
-| numb_node | Integer | 1 | Node count required for the job
-| task_per_node | Integer | 4 | Number of CPU cores required
-| numb_gpu | Integer | Integer | 4 | Number of GPUs required
-| manual_cuda_devices | Interger | 1 | Used with key "manual_cuda_multiplicity" specify the gpu number
-| manual_cuda_multiplicity |Interger | 5 | Used in 01.model_devi,used with key "manual_cuda_devices" specify the MD program number running on one GPU  at the same time,dpgen will  automatically allocate MD jobs on different GPU. This can improve GPU usage for GPU like V100.
-| node_cpu | Integer | 4 | Only for LSF. The number of CPU cores on each node that should be allocated to the job.
-| new_lsf_gpu | Boolean | false | **Only for LSF.** Control whether new syntax of GPU to be enabled. If enabled, DP-GEN will generate line like `#BSUB -gpu num=1:mode=shared:j_exclusive=yes` in job submission script. Only support LSF>=10.1.0.3, and `LSB_GPU_NEW_SYNTAX=Y` should be set. Default: `false`.
-| exclusive | Boolean | false | **Only for LSF, and only take effect when `new_lsf_gpu` enabled.** Control whether enable `j_exclusive` during running. Default: `false`.
-| source_list | List of string | "....../vasp.env" | Environment needed for certain job. For example, if "env" is in the list, 'source env' will be written in the script.
-| module_list | List of string | [ "Intel/2018", "Anaconda3"] | For example, If "Intel/2018" is in the list, "module load Intel/2018" will be written in the script.
-| partition | String  | "AdminGPU" | Partition / queue in which to run the job. |
-| time_limit | String (time format) | 23:00:00 | Maximal time permitted for the job |
-mem_limit | Interger | 16 | Maximal memory permitted to apply for the job.
-| with_mpi | Boolean | true | Deciding whether to use mpi for calculation. If it's true and machine type is Slurm, "srun" will be prefixed to `command` in the script.
-| qos | "string"| "bigdata" | Deciding priority, dependent on particular settings of your HPC.
-| allow_failure | Boolean | false | Allow the command to return a non-zero exit code.
-| # End of resources
-| command | String | "lmp_serial" | Executable path of software, such as `lmp_serial`, `lmp_mpi` and `vasp_gpu`, `vasp_std`, etc.
-| group_size | Integer | 5 | DP-GEN will put these jobs together in one submitting script.
-| user_forward_files | List of str | ["/path_to/vdw_kernel.bindat"] | These files will be uploaded in each calculation task. You should make sure provide the path exists. 
-| user_backward_files | List of str | ["HILLS"] | Besides DP-GEN's normal output, these files will be downloaded after each calculation. You should make sure these files can be generated.
 
 ## Troubleshooting
 1. The most common problem is whether two settings correspond with each other, including:

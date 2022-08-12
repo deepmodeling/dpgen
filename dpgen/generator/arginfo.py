@@ -159,7 +159,6 @@ The union of the two sets is made as candidate dataset.'
     doc_model_devi_f_avg_relative = 'Normalized the force model deviations by the RMS force magnitude along the trajectory. This key should not be used with use_relative.'
     doc_model_devi_clean_traj = 'If type of model_devi_clean_traj is bool type then it denote whether to clean traj folders in MD since they are too large. If it is Int type, then the most recent n iterations of traj folders will be retained, others will be removed.'
     doc_model_devi_nopbc = 'Assume open boundary condition in MD simulations.'
-    doc_model_devi_activation_func = 'Set activation functions for models, length of the list should be the same as numb_models, and two elements in the list of string respectively assign activation functions to the embedding and fitting nets within each model. Backward compatibility: the orginal "list of String" format is still supported, where embedding and fitting nets of one model use the same activation function, and the length of the list should be the same as numb_models.'
     doc_shuffle_poscar = 'Shuffle atoms of each frame before running simulations. The purpose is to sample the element occupation of alloys.'
     doc_use_relative = 'Calculate relative force model deviation.'
     doc_epsilon = 'The level parameter for computing the relative force model deviation.'
@@ -196,8 +195,6 @@ The union of the two sets is made as candidate dataset.'
                  bool, int], optional=False, doc=doc_model_devi_clean_traj),
         Argument("model_devi_nopbc", bool, optional=True, default=False,
                  doc=doc_model_devi_nopbc),
-        Argument("model_devi_activation_func", list, optional=True,
-                 doc=doc_model_devi_activation_func),
         Argument("shuffle_poscar", bool, optional=True, default=False, doc=doc_shuffle_poscar),
         Argument("use_relative", bool, optional=True, default=False, doc=doc_use_relative),
         Argument("epsilon", float, optional=True, doc=doc_epsilon),
@@ -230,6 +227,29 @@ def fp_style_vasp_args() -> List[Argument]:
                  doc=doc_fp_aniso_kspacing),
         Argument("cvasp", bool, optional=True, doc=doc_cvasp),
     ]
+
+# abacus
+def fp_style_abacus_args() -> List[Argument]:
+    doc_fp_pp_path = 'Directory of psuedo-potential or numerical orbital files to be used for 02.fp exists.'
+    doc_fp_pp_files = 'Psuedo-potential file to be used for 02.fp. Note that the order of elements should correspond to the order in type_map.'
+    doc_fp_orb_files = 'numerical orbital file to be used for 02.fp when using LCAO basis. Note that the order of elements should correspond to the order in type_map.'
+    doc_fp_incar = 'Input file for ABACUS. This is optinal but priority over user_fp_params, one can also setting the key and value of INPUT in user_fp_params.'
+    doc_fp_kpt_file = 'KPT file for ABACUS.'
+    doc_fp_dpks_descriptor = 'DeePKS descriptor file name. The file should be in pseudopotential directory.'
+    doc_user_fp_params = 'Set the key and value of INPUT.'
+    doc_k_points = 'Monkhorst-Pack k-grids setting for generating KPT file of ABACUS'
+
+    return [
+        Argument("fp_pp_path", str, optional=False, doc=doc_fp_pp_path),
+        Argument("fp_pp_files", list, optional=False, doc=doc_fp_pp_files),
+        Argument("fp_orb_files", list, optional=True, doc=doc_fp_orb_files),
+        Argument("fp_incar", str, optional=True, doc=doc_fp_incar),
+        Argument("fp_kpt_file", str, optional=True, doc=doc_fp_kpt_file),
+        Argument("fp_dpks_descriptor", str, optional=True, doc=doc_fp_dpks_descriptor),
+        Argument("user_fp_params", dict, optional=True, doc=doc_user_fp_params),
+        Argument("k_points", list, optional=True, doc=doc_k_points),
+    ]
+
 
 
 # gaussian
@@ -339,7 +359,8 @@ def fp_style_variant_type_args() -> Variant:
                                          fp_style_gaussian_args()),
                                 Argument("siesta", dict,
                                          fp_style_siesta_args()),
-                                Argument("cp2k", dict, fp_style_cp2k_args())],
+                                Argument("cp2k", dict, fp_style_cp2k_args()),
+                                Argument("abacus", dict, fp_style_abacus_args())],
                    optional=False,
                    doc=doc_fp_style)
 

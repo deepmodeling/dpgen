@@ -50,6 +50,7 @@ from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
 from dpgen.generator.lib.vasp import incar_upper
 from dpgen.generator.lib.pwscf import make_pwscf_input
 from dpgen.generator.lib.abacus_scf import make_abacus_scf_stru, make_abacus_scf_input, make_abacus_scf_kpt
+from dpgen.generator.lib.abacus_scf import get_abacus_input_parameters
 #from dpgen.generator.lib.pwscf import cvt_1frame
 from dpgen.generator.lib.pwmat import make_pwmat_input_dict
 from dpgen.generator.lib.pwmat import write_input_dict
@@ -779,6 +780,7 @@ def make_model_devi (iter_index,
             return False
     else:
         # mode 1: generate structures according to the user-provided input.dat file, so calypso_input_path and model_devi_max_iter are needed
+        run_mode = 1
         if "calypso_input_path" in jdata:
             try:
                 maxiter = jdata.get('model_devi_max_iter')
@@ -788,10 +790,11 @@ def make_model_devi (iter_index,
         else:
             try:
                 maxiter = max(model_devi_jobs[-1].get('times'))
+                run_mode = 2
             except KeyError:
                 raise KeyError('did not find model_devi_jobs["times"] key')
         if (iter_index > maxiter) :
-            print(f'iter_index is {iter_index} and maxiter is {maxiter}')
+            dlog.info(f'iter_index is {iter_index} and maxiter is {maxiter}')
             return False
 
     if "sys_configs_prefix" in jdata:
@@ -808,7 +811,7 @@ def make_model_devi (iter_index,
         cur_job = model_devi_jobs[iter_index]
         sys_idx = expand_idx(cur_job['sys_idx'])
     else:
-        cur_job = []
+        cur_job = {'model_devi_engine':'calypso','input.dat':'user_provided'}
         sys_idx = []
 
     if (len(sys_idx) != len(list(set(sys_idx)))) :
@@ -831,25 +834,65 @@ def make_model_devi (iter_index,
     work_path = os.path.join(iter_name, model_devi_name)
     create_path(work_path)
     if model_devi_engine == 'calypso':
-        calypso_run_opt_path = os.path.join(work_path,calypso_run_opt_name)
+        _calypso_run_opt_path = os.path.join(work_path,calypso_run_opt_name)
         calypso_model_devi_path = os.path.join(work_path,calypso_model_devi_name)
-        create_path(calypso_run_opt_path)
         create_path(calypso_model_devi_path)
         # run model devi script
         calypso_run_model_devi_script = os.path.join(calypso_model_devi_path,'calypso_run_model_devi.py')
         shutil.copyfile(calypso_run_model_devi_file,calypso_run_model_devi_script)
-        # run confs opt script
-        run_opt_script = os.path.join(calypso_run_opt_path,'calypso_run_opt.py')
-        shutil.copyfile(run_opt_file,run_opt_script)
-        # check outcar script
-        check_outcar_script = os.path.join(calypso_run_opt_path,'check_outcar.py')
-        shutil.copyfile(check_outcar_file,check_outcar_script)
+        # Create work path list
+        calypso_run_opt_path = []
+
+        # mode 1: generate structures according to the user-provided input.dat file,
+        # so calypso_input_path and model_devi_max_iter are needed
+        if run_mode == 1:
+            if jdata.get('vsc', False) and len(jdata.get('type_map')) > 1:
+                # [input.dat.Li.250, input.dat.Li.300]
+                one_ele_inputdat_list = glob.glob(
+                        f"{jdata.get('calypso_input_path')}/input.dat.{jdata.get('type_map')[0]}.*"
+                        )
+                if len(one_ele_inputdat_list) == 0:
+                    number_of_pressure = 1
+                else: 
+                    number_of_pressure = len(list(set(one_ele_inputdat_list)))
+
+                # calypso_run_opt_path = ['gen_struc_analy.000','gen_struc_analy.001']
+                for temp_idx in range(number_of_pressure):
+                    calypso_run_opt_path.append('%s.%03d'%(_calypso_run_opt_path, temp_idx))
+            elif not jdata.get('vsc', False):
+                calypso_run_opt_path.append('%s.%03d'%(_calypso_run_opt_path, 0))
+                        
+        # mode 2: control each iteration to generate structures in specific way 
+        # by providing model_devi_jobs key
+        elif run_mode == 2:
+            for iiidx, jobbs in enumerate(model_devi_jobs):
+                if iter_index in jobbs.get('times'):
+                    cur_job = model_devi_jobs[iiidx]
+                    
+            pressures_list = cur_job.get('PSTRESS', [0.0001])
+            for temp_idx in range(len(pressures_list)):
+                calypso_run_opt_path.append('%s.%03d'%(_calypso_run_opt_path, temp_idx))
+        # to different directory
+        # calypso_run_opt_path = ['gen_struc_analy.000','gen_struc_analy.001','gen_struc_analy.002',]
+        for temp_calypso_run_opt_path in calypso_run_opt_path:
+            create_path(temp_calypso_run_opt_path)
+            # run confs opt script
+            run_opt_script = os.path.join(temp_calypso_run_opt_path,'calypso_run_opt.py')
+            shutil.copyfile(run_opt_file,run_opt_script)
+            # check outcar script
+            check_outcar_script = os.path.join(temp_calypso_run_opt_path,'check_outcar.py')
+            shutil.copyfile(check_outcar_file,check_outcar_script)
+
     for mm in models :
         model_name = os.path.basename(mm)
         if model_devi_engine != 'calypso':
             os.symlink(mm, os.path.join(work_path, model_name))
         else:
-            os.symlink(mm, os.path.join(calypso_run_opt_path, model_name))
+            for temp_calypso_run_opt_path in calypso_run_opt_path:
+                models_path = os.path.join(temp_calypso_run_opt_path, model_name)
+                if not os.path.exists(models_path):
+                    os.symlink(mm, models_path)
+
     with open(os.path.join(work_path, 'cur_job.json'), 'w') as outfile:
         json.dump(cur_job, outfile, indent = 4)
 
@@ -1519,6 +1562,8 @@ def run_md_model_devi (iter_index,
     forward_files += [os.path.basename(file) for file in user_forward_files]
     backward_files += mdata.get("model_devi" + "_user_backward_files", [])
     api_version = mdata.get('api_version', '0.9')
+    if(len(run_tasks) == 0): 
+        raise RuntimeError("run_tasks for model_devi should not be empty! Please check your files.") 
     if LooseVersion(api_version) < LooseVersion('1.0'):
         warnings.warn(f"the dpdispatcher will be updated to new version."
             f"And the interface may be changed. Please check the documents for more details")
@@ -1660,7 +1705,8 @@ def _select_by_model_devi_standard(
     if model_devi_engine == 'calypso':
         iter_name = modd_system_task[0].split('/')[0]
         _work_path = os.path.join(iter_name, model_devi_name)
-        calypso_run_opt_path = os.path.join(_work_path,calypso_run_opt_name)
+        # calypso_run_opt_path = os.path.join(_work_path,calypso_run_opt_name)
+        calypso_run_opt_path = glob.glob('%s/%s.*'%(_work_path, calypso_run_opt_name))[0]
         numofspecies = _parse_calypso_input('NumberOfSpecies',calypso_run_opt_path)
         min_dis = _parse_calypso_dis_mtx(numofspecies,calypso_run_opt_path)
     fp_candidate = []
@@ -1851,7 +1897,8 @@ def _make_fp_vasp_inner (modd_path,
     if model_devi_engine == 'calypso':
         iter_name = work_path.split('/')[0]
         _work_path = os.path.join(iter_name, model_devi_name)
-        calypso_run_opt_path = os.path.join(_work_path,calypso_run_opt_name)
+        # calypso_run_opt_path = os.path.join(_work_path,calypso_run_opt_name)
+        calypso_run_opt_path = glob.glob('%s/%s.*'%(_work_path, calypso_run_opt_name))[0]
         numofspecies = _parse_calypso_input('NumberOfSpecies',calypso_run_opt_path)
         min_dis = _parse_calypso_dis_mtx(numofspecies,calypso_run_opt_path)
 
@@ -1982,6 +2029,7 @@ def _make_fp_vasp_inner (modd_path,
                                 fp_candidate.append([tt, cc])
                                 counter['candidate'] += 1
                             cc += 1
+
         else:
             raise RuntimeError('unknown model_devi_engine', model_devi_engine)
 
@@ -2561,7 +2609,8 @@ def make_fp_abacus_scf(iter_index,
     fp_pp_files = jdata['fp_pp_files']
     fp_orb_files = None
     fp_dpks_descriptor = None
-    assert('user_fp_params' in jdata.keys())
+    # get paramters for writting INPUT file
+    fp_params = {}
     if 'user_fp_params' in jdata.keys() :
         fp_params = jdata['user_fp_params']
         # for lcao 
@@ -2574,20 +2623,59 @@ def make_fp_abacus_scf(iter_index,
                 assert('fp_dpks_descriptor' in jdata and type(jdata['fp_dpks_descriptor']) == str)
                 fp_dpks_descriptor = jdata['fp_dpks_descriptor']
         #user_input = True
+        ret_input = make_abacus_scf_input(fp_params)
+    elif 'fp_incar' in jdata.keys():
+        fp_input_path = jdata['fp_incar']
+        assert(os.path.exists(fp_input_path))
+        fp_input_path = os.path.abspath(fp_input_path)
+        fp_params = get_abacus_input_parameters(fp_input_path)
+        ret_input = make_abacus_scf_input(fp_params)
     else:
-        raise RuntimeError("Key 'user_fp_params' and its value have to be specified in parameter json file.")
+        raise RuntimeError("Set 'user_fp_params' or 'fp_incar' in json file to make INPUT of ABACUS")
+    # get paramters for writting KPT file
+    if 'kspacing' not in fp_params.keys():
+        if 'gamma_only' in fp_params.keys():
+            if fp_params["gamma_only"]==1:
+                gamma_param = {"k_points":[1,1,1,0,0,0]}
+                ret_kpt = make_abacus_scf_kpt(gamma_param)
+            else:
+                if 'k_points' in jdata.keys() :
+                    ret_kpt = make_abacus_scf_kpt(jdata)
+                elif 'fp_kpt_file' in jdata.keys():
+                    fp_kpt_path = jdata['fp_kpt_file']
+                    assert(os.path.exists(fp_kpt_path))
+                    fp_kpt_path = os.path.abspath(fp_kpt_path)
+                    fk = open(fp_kpt_path)
+                    ret_kpt = fk.read()
+                    fk.close()
+                else:
+                    raise RuntimeError("Cannot find any k-points information")
+        else:
+            if 'k_points' in jdata.keys() :
+                ret_kpt = make_abacus_scf_kpt(jdata)
+            elif 'fp_kpt_file' in jdata.keys():
+                fp_kpt_path = jdata['fp_kpt_file']
+                assert(os.path.exists(fp_kpt_path))
+                fp_kpt_path = os.path.abspath(fp_kpt_path)
+                fk = open(fp_kpt_path)
+                ret_kpt = fk.read()
+                fk.close()
+            else:
+                gamma_param = {"k_points":[1,1,1,0,0,0]}
+                ret_kpt = make_abacus_scf_kpt(gamma_param)
+                warnings.warn("Cannot find k-points information, gamma_only will be generated.")
+
     cwd = os.getcwd()
     for ii in fp_tasks:
         os.chdir(ii)
         sys_data = dpdata.System('POSCAR').data
         if 'mass_map' in jdata:
             sys_data['atom_masses'] = jdata['mass_map']
-        ret_input = make_abacus_scf_input(fp_params)
         with open('INPUT', 'w') as fp:
             fp.write(ret_input)
-        ret_kpt = make_abacus_scf_kpt(fp_params)
-        with open("KPT", "w") as fp:
-            fp.write(ret_kpt)
+        if 'kspacing' not in fp_params.keys():
+            with open("KPT", "w") as fp:
+                fp.write(ret_kpt)
         ret_stru = make_abacus_scf_stru(sys_data, fp_pp_files, fp_orb_files, fp_dpks_descriptor, fp_params)
         with open("STRU", "w") as fp:
             fp.write(ret_stru)
@@ -3022,7 +3110,18 @@ def run_fp (iter_index,
         backward_files = ['output']
         run_fp_inner(iter_index, jdata, mdata,  forward_files, backward_files, _qe_check_fin, log_file = 'output')
     elif fp_style == "abacus/scf":
-        forward_files = ["INPUT", "STRU", "KPT"] + fp_pp_files
+        fp_params = {}
+        if 'user_fp_params' in jdata.keys() :
+            fp_params = jdata['user_fp_params']
+        elif 'fp_incar' in jdata.keys():
+            fp_input_path = jdata['fp_incar']
+            assert(os.path.exists(fp_input_path))
+            fp_input_path = os.path.abspath(fp_input_path)
+            fp_params = get_abacus_input_parameters(fp_input_path)
+        forward_files = ["INPUT", "STRU"]
+        if 'kspacing' not in fp_params.keys():
+            forward_files = ["INPUT","STRU","KPT"]
+        forward_files += fp_pp_files
         if "fp_orb_files" in jdata:
             forward_files += jdata["fp_orb_files"]
         if "fp_dpks_descriptor" in jdata:
