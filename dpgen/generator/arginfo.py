@@ -348,9 +348,9 @@ def fp_style_cp2k_args() -> List[Argument]:
     doc_ratio_failed = 'Check the ratio of unsuccessfully terminated jobs. If too many FP tasks are not converged, RuntimeError will be raised.'
 
     return [
-        Argument("user_fp_params", dict, optional=False,
+        Argument("user_fp_params", dict, optional=True,
                  doc=doc_user_fp_params),
-        Argument("external_input_path", str, optional=False,
+        Argument("external_input_path", str, optional=True,
                  doc=doc_external_input_path),
         Argument("ratio_failed", bool, optional=True,
                  doc=doc_ratio_failed),
