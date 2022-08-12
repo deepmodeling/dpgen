@@ -6,7 +6,7 @@
   "init_data_prefix": "",
   "init_data_sys":   [],
   "sys_configs": [null],
-  "sys_batch_size":  [1,1,1], 
+  "sys_batch_size":  [1], 
 
   "_comment": " 00.train ",
   "numb_models": 4,
@@ -54,19 +54,19 @@
       "learning_rate": {
         "type":              "exp",
         "start_lr":          0.001,
-        "decay_steps":       100000,
+        "decay_steps":       25,
         "decay_rate":        0.95
     },
       "training": {
         "set_prefix":        "set",
-        "stop_batch":        100000,
+        "stop_batch":        5000,
         "batch_size":        "auto",
         "seed": 1,
         "_comment":          "frequencies counted in batch",
         "disp_file":         "lcurve.out",
-        "disp_freq":         100000,
+        "disp_freq":         1000,
         "numb_test":         4,
-        "save_freq":         100000,
+        "save_freq":         10000,
         "save_ckpt":         "model.ckpt", 
         "disp_training":     true,
         "time_training":     true,
@@ -90,8 +90,8 @@
 
   "use_clusters": false,
   "labeled": false,
-  "init_pick_number":20,
-  "iter_pick_number":20,
+  "init_pick_number":5,
+  "iter_pick_number":5,
   "model_devi_f_trust_lo":0.30,
   "model_devi_f_trust_hi":100.00, 
   "cvasp": false

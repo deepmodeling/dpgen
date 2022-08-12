@@ -1,5 +1,6 @@
 {
     "api_version": "1.0",
+    "_comment": "dependent on dpdispatcher 0.4.15",
     "train" :[
       {
         "command": "dp",
@@ -67,7 +68,7 @@
           "cpu_per_node": 4,
           "gpu_per_node": 1,
           "queue_name": "V100_8_32",
-          "group_size": 1
+          "group_size": 10
         }
       }],
     "fp":
@@ -88,7 +89,7 @@
                 "grouped": true,
                 "job_name": "simplify_MAPbI3-scan_fp_job",
                 "disk_size": 100,
-                "scass_type":"c32_m256_cpu",
+                "scass_type":"c32_m64_cpu",
                 "platform": "ali",
                 "checkpoint_files": "sync_files",
                 "checkpoint_time": 15,
@@ -102,7 +103,7 @@
           "cpu_per_node": 32,
           "gpu_per_node": 0,
           "queue_name": "CPU",
-          "group_size": 1,
+          "group_size": 10,
       "source_list": ["/opt/intel/oneapi/setvars.sh"]
         }
       }

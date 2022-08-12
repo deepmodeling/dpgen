@@ -24,6 +24,7 @@ p_examples = Path(__file__).parent.parent / "examples"
 input_files = (
     (init_reaction_jdata, p_examples / "init" / "reaction.json"),
     (simplify_jdata, p_examples / "simplify" / "qm7.json"),
+    (simplify_jdata, p_examples / "simplify-MAPbI3-scan-lebesgue" / "simplify_example" / "simplify.json"),
 )
 
 
