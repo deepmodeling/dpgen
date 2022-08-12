@@ -29,6 +29,7 @@ input_files = (
     (init_reaction_jdata, p_examples / "init" / "reaction.json"),
     (simplify_jdata, p_examples / "simplify" / "qm7.json"),
     (run_jdata, p_examples / "run" / "dp2.x-lammps-vasp" / "param_CH4_deepmd-kit-2.0.1.json"),
+    (run_jdata, p_examples / "run" / "dp2.x-lammps-cp2k" / "param_CH4_deepmd-kit-2.0.1.json"),
     #(run_jdata, p_examples / "run" / "dp2.x-gromacs-gaussian" / "param.json"),
     (run_jdata, p_examples / "run" / "dp1.x-lammps-vasp" / "CH4" / "param_CH4_deepmd-kit-1.1.0.json"),
     (run_jdata, p_examples / "run" / "dp1.x-lammps-vasp" / "Al" / "param_al_all_gpu-deepmd-kit-1.1.0.json"),
