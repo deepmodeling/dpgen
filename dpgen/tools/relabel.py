@@ -6,7 +6,7 @@ import subprocess as sp
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 from dpgen.generator.lib.pwscf import make_pwscf_input
 from dpgen.generator.lib.siesta import make_siesta_input
-from dpgen.generator.run import make_vasp_incar
+from dpgen.generator.run import make_vasp_incar, get_atomic_masses
 import dpdata
 
 def get_lmp_info(input_file) :
