@@ -25,6 +25,7 @@ def general_simplify_arginfo() -> Argument:
     doc_iter_pick_number = "The number of pick data in each iteration."
     doc_model_devi_f_trust_lo = "The lower bound of forces for the selection for the model deviation."
     doc_model_devi_f_trust_hi = "The higher bound of forces for the selection for the model deviation."
+    doc_shuffle_poscar = 'Shuffle atoms of each frame before running simulations. The purpose is to sample the element occupation of alloys.'
 
     return [
         Argument("labeled", bool, optional=True, default=False, doc=doc_labeled),
@@ -33,6 +34,7 @@ def general_simplify_arginfo() -> Argument:
         Argument("iter_pick_number", int, doc=doc_iter_pick_number),
         Argument("model_devi_f_trust_lo", float, optional=False, doc=doc_model_devi_f_trust_lo),
         Argument("model_devi_f_trust_hi", float, optional=False, doc=doc_model_devi_f_trust_hi),
+        Argument("shuffle_poscar", bool, optional=True, default=False, doc=doc_shuffle_poscar),
     ]
 
 
