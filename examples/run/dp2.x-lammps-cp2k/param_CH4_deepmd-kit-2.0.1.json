@@ -126,8 +126,6 @@
     "shuffle_poscar": false, 
     "fp_task_max": 30, 
     "fp_task_min": 1, 
-    "fp_pp_path": ".", 
-    "fp_pp_files": [], 
     "user_fp_params":   {
         "FORCE_EVAL":{
             "DFT":{
