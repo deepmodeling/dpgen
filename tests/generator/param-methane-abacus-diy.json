@@ -126,7 +126,7 @@
   ],
 
   "_comment": " 02.fp ",
-  "fp_style":             "abacus/scf",
+  "fp_style":             "abacus",
   "shuffle_poscar":       false,
   "fp_task_max":          30,
   "fp_task_min":          8,

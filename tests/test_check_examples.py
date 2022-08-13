@@ -33,6 +33,8 @@ input_files = (
     (run_jdata, p_examples / "run" / "dp1.x-lammps-vasp" / "CH4" / "param_CH4_deepmd-kit-1.1.0.json"),
     (run_jdata, p_examples / "run" / "dp1.x-lammps-vasp" / "Al" / "param_al_all_gpu-deepmd-kit-1.1.0.json"),
     (run_jdata, p_examples / "run" / "dp1.x-lammps-vasp-et" / "param_elet.json"),
+    (run_jdata, p_examples / "run" / "dp2.x-lammps-ABACUS-lcao" / "fcc-al" / "run_param.json"),
+    (run_jdata, p_examples / "run" / "dp2.x-lammps-ABACUS-pw" / "fcc-al" / "run_param.json"),
     #(run_jdata, p_examples / "run" / "dp1.x-lammps-cp2k" / "methane" / "param-ch4.json"),
     #(run_jdata, p_examples / "run" / "dp1.x-lammps-ABACUS-pw" / "methane" / "param.json"),
     #(run_jdata, p_examples / "run" / "dp1.x-lammps-ABACUS-lcao-dpks" / "methane" / "param.json"),
