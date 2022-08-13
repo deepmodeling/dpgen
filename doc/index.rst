@@ -77,6 +77,7 @@ DPGEN's documentation
 
    README.md
    api/api
+   credits.rst
 
 * :ref:`genindex`
 * :ref:`modindex`
