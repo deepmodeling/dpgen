@@ -348,12 +348,15 @@ def fp_style_siesta_args() -> List[Argument]:
 def fp_style_cp2k_args() -> List[Argument]:
     doc_user_fp_params = 'Parameters for cp2k calculation. find detail in manual.cp2k.org. only the kind section must be set before use. we assume that you have basic knowledge for cp2k input.'
     doc_external_input_path = 'Conflict with key:user_fp_params, use the template input provided by user, some rules should be followed, read the following text in detail.'
+    doc_ratio_failed = 'Check the ratio of unsuccessfully terminated jobs. If too many FP tasks are not converged, RuntimeError will be raised.'
 
     return [
-        Argument("user_fp_params", dict, optional=False,
+        Argument("user_fp_params", dict, optional=True,
                  doc=doc_user_fp_params),
-        Argument("external_input_path", str, optional=False,
+        Argument("external_input_path", str, optional=True,
                  doc=doc_external_input_path),
+        Argument("ratio_failed", float, optional=True,
+                 doc=doc_ratio_failed),
     ]
 
 
