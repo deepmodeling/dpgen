@@ -30,7 +30,6 @@
     ], 
     "_comment": " that's all ", 
     "numb_models": 4, 
-    "train_param": "input.json", 
     "default_training_param": {
         "_comment": "that's all", 
         "use_smooth": true, 

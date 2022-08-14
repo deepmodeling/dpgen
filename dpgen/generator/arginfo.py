@@ -46,7 +46,7 @@ def data_args() -> List[Argument]:
         Argument("init_data_sys", list,
                  optional=False, doc=doc_init_data_sys),
         Argument("sys_format", str, optional=True, default='vasp/poscar', doc=doc_sys_format),
-        Argument("init_batch_size", str, optional=True,
+        Argument("init_batch_size", [list, str], optional=True,
                  doc=doc_init_batch_size),
         Argument("sys_configs_prefix", str, optional=True,
                  doc=doc_sys_configs_prefix),
@@ -105,7 +105,7 @@ def model_devi_jobs_args() -> List[Argument]:
     # this may be not correct
     doc_sys_idx = 'Systems to be selected as the initial structure of MD and be explored. The index corresponds exactly to the sys_configs.'
     doc_temps = 'Temperature (K) in MD.'
-    doc_press = 'Pressure (Bar) in MD.'
+    doc_press = 'Pressure (Bar) in MD. Required when ensemble is npt.'
     doc_trj_freq = 'Frequecy of trajectory saved in MD.'
     doc_nsteps = 'Running steps of MD.'
     doc_ensemble = 'Determining which ensemble used in MD, options include “npt” and “nvt”.'
@@ -120,7 +120,7 @@ def model_devi_jobs_args() -> List[Argument]:
     args = [
         Argument("sys_idx", list, optional=False, doc=doc_sys_idx),
         Argument("temps", list, optional=False, doc=doc_temps),
-        Argument("press", list, optional=False, doc=doc_press),
+        Argument("press", list, optional=True, doc=doc_press),
         Argument("trj_freq", int, optional=False, doc=doc_trj_freq),
         Argument("nsteps", int, optional=False, doc=doc_nsteps),
         Argument("ensemble", str, optional=False, doc=doc_ensemble),
@@ -285,9 +285,9 @@ def fp_style_gaussian_args() -> List[Argument]:
         Argument("multiplicity", [int, str],
                  optional=True, default="auto", doc=doc_multiplicity),
         Argument("nproc", int, optional=False, doc=doc_nproc),
-        Argument("charge", int, optional=True, default=0, doc=doc_nproc),
+        Argument("charge", int, optional=True, default=0, doc=doc_charge),
         Argument("fragment_guesses", bool, optional=True, default=False, doc=doc_fragment_guesses),
-        Argument("basis_set", str, optional=True, doc=doc_fragment_guesses),
+        Argument("basis_set", str, optional=True, doc=doc_basis_set),
         Argument("keywords_high_multiplicity", str, optional=True, doc=doc_keywords_high_multiplicity),
     ]
 
@@ -321,12 +321,14 @@ def fp_style_siesta_args() -> List[Argument]:
     doc_kspacing = 'Sample factor in Brillouin zones.'
     doc_mixingweight = 'Proportion a of output Density Matrix to be used for the input Density Matrix of next SCF cycle (linear mixing).'
     doc_NumberPulay = 'Controls the Pulay convergence accelerator.'
+    doc_fp_pp_path = 'Directory of psuedo-potential or numerical orbital files to be used for 02.fp exists.'
+    doc_fp_pp_files = 'Psuedo-potential file to be used for 02.fp. Note that the order of elements should correspond to the order in type_map.'
 
     args = [
         Argument("ecut", int, optional=False, doc=doc_ecut),
         Argument("ediff", float, optional=False, doc=doc_ediff),
-        Argument("kspacing", float, optional=False, doc=doc_kspacing),
-        Argument("mixingweight", float, optional=False, doc=doc_mixingweight),
+        Argument("kspacing", [float, int], optional=False, doc=doc_kspacing),
+        Argument("mixingWeight", float, optional=False, doc=doc_mixingweight),
         Argument("NumberPulay", int, optional=False, doc=doc_NumberPulay),
     ]
 
@@ -335,11 +337,13 @@ def fp_style_siesta_args() -> List[Argument]:
     doc_fp_params_siesta = 'Parameters for siesta calculation.'
 
     return [
-        Argument("use_clusters", bool, optional=False, doc=doc_use_clusters),
+        Argument("use_clusters", bool, optional=True, doc=doc_use_clusters),
         Argument("cluster_cutoff", float,
-                 optional=False, doc=doc_cluster_cutoff),
+                 optional=True, doc=doc_cluster_cutoff),
         Argument("fp_params", dict, args, [],
                  optional=False, doc=doc_fp_params_siesta),
+        Argument("fp_pp_path", str, optional=False, doc=doc_fp_pp_path),
+        Argument("fp_pp_files", list, optional=False, doc=doc_fp_pp_files),
     ]
 
 # cp2k
@@ -352,7 +356,7 @@ def fp_style_cp2k_args() -> List[Argument]:
 
     return [
         Argument("user_fp_params", dict, optional=True,
-                 doc=doc_user_fp_params),
+                 doc=doc_user_fp_params, alias=["fp_params"]),
         Argument("external_input_path", str, optional=True,
                  doc=doc_external_input_path),
         Argument("ratio_failed", float, optional=True,
