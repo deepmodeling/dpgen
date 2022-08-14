@@ -219,6 +219,7 @@ def fp_style_vasp_args() -> List[Argument]:
     doc_fp_aniso_kspacing = 'Set anisotropic kspacing. Usually useful for 1-D or 2-D materials. Only support VASP. If it is setting the KSPACING key in INCAR will be ignored.'
     doc_cvasp = 'If cvasp is true, DP-GEN will use Custodian to help control VASP calculation.'
     doc_ratio_failed = 'Check the ratio of unsuccessfully terminated jobs. If too many FP tasks are not converged, RuntimeError will be raised.'
+    doc_fp_skip_bad_box = 'Skip the configurations that are obviously unreasonable before 02.fp'
 
     return [
         Argument("fp_pp_path", str, optional=False, doc=doc_fp_pp_path),
@@ -229,6 +230,8 @@ def fp_style_vasp_args() -> List[Argument]:
         Argument("cvasp", bool, optional=True, doc=doc_cvasp),
         Argument("ratio_failed", float, optional=True,
                  doc=doc_ratio_failed),
+        Argument("fp_skip_bad_box", str, optional=True,
+                 doc=doc_fp_skip_bad_box),
     ]
 
 # abacus

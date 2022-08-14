@@ -28,6 +28,7 @@ p_examples = Path(__file__).parent.parent / "examples"
 input_files = (
     (init_reaction_jdata, p_examples / "init" / "reaction.json"),
     (simplify_jdata, p_examples / "simplify" / "qm7.json"),
+    (simplify_jdata, p_examples / "simplify-MAPbI3-scan-lebesgue" / "simplify_example" / "simplify.json"),
     (run_jdata, p_examples / "run" / "dp2.x-lammps-vasp" / "param_CH4_deepmd-kit-2.0.1.json"),
     (run_jdata, p_examples / "run" / "dp2.x-lammps-cp2k" / "param_CH4_deepmd-kit-2.0.1.json"),
     #(run_jdata, p_examples / "run" / "dp2.x-gromacs-gaussian" / "param.json"),
