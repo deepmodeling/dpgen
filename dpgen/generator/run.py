@@ -968,7 +968,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
     sys_idx = expand_idx(cur_job['sys_idx'])
     if (len(sys_idx) != len(list(set(sys_idx)))) :
         raise RuntimeError("system index should be uniq")
-    mass_map = [get_atomic_masses(i) for i in jdata['type_map']] if jdata['mass_map'] is None else jdata['mass_map']
+    mass_map = [get_atomic_masses(i) for i in jdata['type_map']] if jdata['mass_map'] == "auto" else jdata['mass_map']
     use_plm = jdata.get('model_devi_plumed', False)
     use_plm_path = jdata.get('model_devi_plumed_path', False)
     trj_freq = _get_param_alias(cur_job, ['t_freq', 'trj_freq','traj_freq'])
@@ -1115,7 +1115,7 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
     model_devi_taup = 0.5
     if 'model_devi_taup' in jdata :
         model_devi_taup = jdata['model_devi_taup']
-    mass_map = [get_atomic_masses(i) for i in jdata['type_map']] if jdata['mass_map'] is None else jdata['mass_map']
+    mass_map = [get_atomic_masses(i) for i in jdata['type_map']] if jdata['mass_map'] == "auto" else jdata['mass_map']
     nopbc = jdata.get('model_devi_nopbc', False)
 
     iter_name = make_iter_name(iter_index)
@@ -1237,7 +1237,7 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
     if (len(sys_idx) != len(list(set(sys_idx)))) :
         raise RuntimeError("system index should be uniq")
 
-    mass_map = [get_atomic_masses(i) for i in jdata['type_map']] if jdata['mass_map'] is None else jdata['mass_map']
+    mass_map = [get_atomic_masses(i) for i in jdata['type_map']] if jdata['mass_map'] == "auto" else jdata['mass_map']
 
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
@@ -2588,7 +2588,7 @@ def make_fp_pwscf(iter_index,
         sys_data['atom_masses'] = []
         pps = []
         for iii in sys_data['atom_names']:
-            mass_map = [get_atomic_masses(i) for i in jdata['type_map']] if jdata['mass_map'] is None else jdata['mass_map']
+            mass_map = [get_atomic_masses(i) for i in jdata['type_map']] if jdata['mass_map'] == "auto" else jdata['mass_map']
             sys_data['atom_masses'].append(mass_map[jdata['type_map'].index(iii)])
             pps.append(fp_pp_files[jdata['type_map'].index(iii)])
         ret = make_pwscf_input(sys_data, pps, fp_params, user_input = user_input)
@@ -2671,7 +2671,7 @@ def make_fp_abacus_scf(iter_index,
         os.chdir(ii)
         sys_data = dpdata.System('POSCAR').data
         if 'mass_map' in jdata:
-            sys_data['atom_masses'] = [get_atomic_masses(i) for i in jdata['type_map']] if jdata['mass_map'] is None else jdata['mass_map']
+            sys_data['atom_masses'] = [get_atomic_masses(i) for i in jdata['type_map']] if jdata['mass_map'] == "auto" else jdata['mass_map']
         with open('INPUT', 'w') as fp:
             fp.write(ret_input)
         if 'kspacing' not in fp_params.keys():
