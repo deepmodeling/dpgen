@@ -208,25 +208,6 @@ def get_all_dumped_forces(
         raise RuntimeError('wrong dump file format, cannot find dump keys', file_name)
     return ret
 
-def generate_single_traj(all_traj, traj_ind, single_traj):
-    with open(all_traj) as all_traj_fp:        
-        lines = all_traj_fp.read().split('\n')    
-    single_traj_fp = open(single_traj, "w")
-
-    time_step = None
-    get_traj = False
-    for idx,ii in enumerate(lines):
-        if 'ITEM: TIMESTEP' in ii:
-            if get_traj :
-                break
-            time_step = int(lines[idx+1])
-            if(time_step == traj_ind):
-                single_traj_fp.write('ITEM: TIMESTEP\n')
-                single_traj_fp.write(str(time_step) + '\n')
-                get_traj = True
-        elif(get_traj is True):
-            single_traj_fp.write(ii + '\n')
-
 if __name__ == '__main__':
     ret = get_dumped_forces('40.lammpstrj')
     print(ret)
