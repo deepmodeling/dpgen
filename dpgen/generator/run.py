@@ -190,9 +190,9 @@ def poscar_to_conf(poscar, conf):
     sys.to_lammps_lmp(conf)
 
 
-def dump_to_poscar(dump, poscar, type_map, fmt = "lammps/dump") :
-    sys = dpdata.System(dump, fmt = fmt, type_map = type_map)
-    sys.to_vasp_poscar(poscar)
+# def dump_to_poscar(dump, poscar, type_map, fmt = "lammps/dump") :
+#    sys = dpdata.System(dump, fmt = fmt, type_map = type_map)
+#    sys.to_vasp_poscar(poscar)
 
 def dump_to_deepmd_raw(dump, deepmd_raw, type_map, fmt='gromacs/gro', charge=None):
     system = dpdata.System(dump, fmt = fmt, type_map = type_map)
@@ -1833,7 +1833,8 @@ def _select_by_model_devi_adaptive_trust_low(
     return accur, candi, failed, counter, f_trust_lo, v_trust_lo
     
 
-def _make_fp_vasp_inner (modd_path,
+def _make_fp_vasp_inner (iter_index, 
+                         modd_path,
                          work_path,
                          model_devi_skip,
                          v_trust_lo,
@@ -1846,6 +1847,7 @@ def _make_fp_vasp_inner (modd_path,
                          type_map,
                          jdata):
     """
+    iter_index          int             iter index
     modd_path           string          path of model devi
     work_path           string          path of fp
     fp_task_max         int             max number of tasks
@@ -1887,6 +1889,7 @@ def _make_fp_vasp_inner (modd_path,
     system_index = []
     for ii in modd_task :
         system_index.append(os.path.basename(ii).split('.')[1])
+
     set_tmp = set(system_index)
     system_index = list(set_tmp)
     system_index.sort()
@@ -2052,21 +2055,34 @@ def _make_fp_vasp_inner (modd_path,
         # ----------------------------------------------------------------------------
         dlog.info("system {0:s} accurate_ratio: {1:8.4f}    thresholds: {2:6.4f} and {3:6.4f}   eff. task min and max {4:4d} {5:4d}   number of fp tasks: {6:6d}".format(ss, accurate_ratio, fp_accurate_soft_threshold, fp_accurate_threshold, fp_task_min, this_fp_task_max, numb_task))
         # make fp tasks
-        model_devi_engine = jdata.get("model_devi_engine", "lammps")
+        
+        # read all.lammpstrj, save in all_sys for each system_index
+        all_sys = []
+        trj_freq = None
+        if model_devi_merge_traj :
+            for ii in modd_system_task :
+                all_traj = os.path.join(ii, 'all.lammpstrj')
+                all_sys_per_task = dpdata.System(all_traj, fmt = 'lammps/dump', type_map = type_map)
+                all_sys.append(all_sys_per_task)
+            model_devi_jobs = jdata['model_devi_jobs']
+            cur_job = model_devi_jobs[iter_index]
+            trj_freq = int(_get_param_alias(cur_job, ['t_freq', 'trj_freq', 'traj_freq']))
+        
         count_bad_box = 0
         count_bad_cluster = 0
         fp_candidate = sorted(fp_candidate[:numb_task])
+
         for cc in range(numb_task) :
             tt = fp_candidate[cc][0]
             ii = fp_candidate[cc][1]
             ss = os.path.basename(tt).split('.')[1]
             conf_name = os.path.join(tt, "traj")
+            conf_sys = None
             if model_devi_engine == "lammps":
-                if(model_devi_merge_traj is True):
-                    all_traj = os.path.join(tt, 'all.lammpstrj')
-                    single_traj = os.path.join(conf_name, str(ii) + '.lammpstrj')
-                    generate_single_traj(all_traj, int(str(ii)), single_traj)
-                conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
+                if model_devi_merge_traj :
+                    conf_sys = all_sys[int(os.path.basename(tt).split('.')[-1])][int(int(ii) / trj_freq)]
+                else :
+                    conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
                 ffmt = 'lammps/dump'
             elif model_devi_engine == "gromacs":
                 conf_name = os.path.join(conf_name, str(ii) + '.gromacstrj')
@@ -2160,7 +2176,14 @@ def _make_fp_vasp_inner (modd_path,
         for idx, task in enumerate(fp_tasks):
             os.chdir(task)
             if model_devi_engine == "lammps":
-                dump_to_poscar('conf.dump', 'POSCAR', type_map, fmt = "lammps/dump")
+                sys = None
+                if model_devi_merge_traj:
+                    sys = conf_sys
+                else :
+                    sys = dpdata.System('conf.dump', fmt = "lammps/dump", type_map = type_map)
+                sys.to_vasp_poscar('POSCAR')
+                # dump to sposcar 
+
                 if charges_map:
                     warnings.warn('"sys_charges" keyword only support for gromacs engine now.')
             elif model_devi_engine == "gromacs":
@@ -2496,7 +2519,8 @@ def _make_fp_vasp_configs(iter_index,
         f_trust_hi = jdata['model_devi_f_trust_hi']
 
     # make configs
-    fp_tasks = _make_fp_vasp_inner(modd_path, work_path,
+    fp_tasks = _make_fp_vasp_inner(iter_index, 
+                                   modd_path, work_path,
                                    model_devi_skip,
                                    v_trust_lo, v_trust_hi,
                                    f_trust_lo, f_trust_hi,
