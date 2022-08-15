@@ -1,7 +1,7 @@
 {
   "api_version": "1.0",
   "deepmd_version": "2.0.1",
-  "train" :[
+  "train" :
     {
       "command": "dp",
       "machine": {
@@ -11,7 +11,7 @@
         "remote_profile":{
           "email": "",
           "password": "",
-          "program_id": ,
+          "program_id": 0,
             "keep_backup":true,
             "input_data":{
                 "job_type": "indicate",
@@ -25,18 +25,17 @@
                 "platform": "",
 		"region":"",
                 "image_name":"",
-                "on_demand":0,
-                "job_type":""
+                "on_demand":0
             }
         }
       },
       "resources": {
-        "local_root":"./",
+        "batch_type": "Lebesgue",
         "group_size": 1
       }
-    }],
+    },
   "model_devi":
-    [{
+    {
       "command": "lmp -i input.lammps -v restart 0",
       "machine": {
         "batch_type": "Lebesgue",
@@ -45,7 +44,7 @@
         "remote_profile":{
           "email": "",
           "password": "",
-          "program_id": ,
+          "program_id": 0,
             "keep_backup":true,
             "input_data":{
               "job_type": "indicate",
@@ -59,18 +58,17 @@
               "image_name":"",
               "checkpoint_files": "sync_files",
               "checkpoint_time":30,
-              "on_demand":0,
-	      "job_type":""
+              "on_demand":0
             }
         }
       },
       "resources": {
-        "local_root":"./",
+        "batch_type": "Lebesgue",
         "group_size": 50
       }
-    }],
+    },
   "fp":
-    [{
+    {
       "command": "OMP_NUM_THREADS=1 mpirun -n 8 abacus",
       "machine": {
         "batch_type": "Lebesgue",
@@ -79,7 +77,7 @@
         "remote_profile":{
           "email": "",
           "password": "",
-          "program_id": ,
+          "program_id": 0,
             "keep_backup":true,
             "input_data":{
               "job_type": "indicate",
@@ -97,10 +95,9 @@
         }
       },
       "resources": {
+        "batch_type": "Lebesgue",
         "group_size": 50,
-        "local_root":"./",
         "source_list": [""]
       }
     }
-  ]
 }
