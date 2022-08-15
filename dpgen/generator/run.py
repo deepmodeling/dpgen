@@ -41,7 +41,7 @@ from dpgen.generator.lib.utils import log_iter
 from dpgen.generator.lib.utils import record_iter
 from dpgen.generator.lib.utils import log_task
 from dpgen.generator.lib.utils import symlink_user_forward_files
-from dpgen.generator.lib.lammps import make_lammps_input, get_dumped_forces, get_all_dumped_forces, generate_single_traj
+from dpgen.generator.lib.lammps import make_lammps_input, get_dumped_forces, get_all_dumped_forces
 from dpgen.generator.lib.make_calypso import _make_model_devi_native_calypso,_make_model_devi_buffet
 from dpgen.generator.lib.run_calypso import gen_structures,analysis,run_calypso_model_devi
 from dpgen.generator.lib.parse_calypso import _parse_calypso_input,_parse_calypso_dis_mtx
