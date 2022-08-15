@@ -694,7 +694,7 @@ At this step, we assume that you have prepared some graph files like `graph.*.pb
 
 The main code of this step is
 ```
-dpgen test PARAM MACHINE
+dpgen autotest PARAM MACHINE
 ```
 where `PARAM` and `MACHINE` are both json files. `MACHINE` is the same as above.
 
@@ -735,14 +735,14 @@ std-*: standard structures, * can be fcc, bcc, hcp and so on.
 mp-**: ** means Material id from Material Project.
 ```
 Usually, if you add the relative path of POSCAR as the above format,
-`dpgen test` will check the existence of such file and automatically downloads the standard and existed configurations of the given element or alloy from Materials Project and stores them in **confs** folder, which needs the API key of Materials project.
+`dpgen autotest` will check the existence of such file and automatically downloads the standard and existed configurations of the given element or alloy from Materials Project and stores them in **confs** folder, which needs the API key of Materials project.
 
 + `task_type` contains 3 optional types for testing, i.e. **vasp**, **deepmd** and **meam**.
 + `task` contains 7 options, **equi**, **eos**, **elastic**, **vacancy**, **interstitial**, **surf** and **all**. The option **all** can do all the tasks.
 
 It is worth noting that the subsequent tasks need to rely on the calculation results of the equilibrium state, so it is necessary to give priority to the calculation of the equilibrium state while testing. And due to the stable consideration, we recommand you to test the equilibrium state of **vasp** before other tests.
 
-The second part is the computational settings for vasp and lammps. According to your actual needs， you can choose to add the paths of specific INCAR or use the simplified INCAR by setting `vasp_params`. The priority of specified INCAR is higher than using `vasp_params`. The most important setting is to add the folder path `model_dir` of **deepmd** model and supply the corresponding element type map. Besides, `dpgen test` also is able to call common lammps packages, such as **meam**.
+The second part is the computational settings for vasp and lammps. According to your actual needs， you can choose to add the paths of specific INCAR or use the simplified INCAR by setting `vasp_params`. The priority of specified INCAR is higher than using `vasp_params`. The most important setting is to add the folder path `model_dir` of **deepmd** model and supply the corresponding element type map. Besides, `dpgen autotest` also is able to call common lammps packages, such as **meam**.
 ```json
 "relax_incar":"somewhere/relax_incar",
 "scf_incar":"somewhere/scf_incar",
