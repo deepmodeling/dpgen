@@ -76,7 +76,7 @@ DPGEN's documentation
    :maxdepth: 2
    :caption: Contribution Guide
 
-   README.md
+   how-to-contribute
    api/api
    credits.rst
 
