@@ -9,9 +9,9 @@
         "context_type": "LebesgueContext",
         "local_root" : "./",
         "remote_profile":{
-          "email": "huyongxin1015@163.com",
-          "password": "0415fnmsM.",
-          "program_id": 10330,
+          "email": "",
+          "password": "",
+          "program_id": ,
             "keep_backup":true,
             "input_data":{
                 "job_type": "indicate",
@@ -45,9 +45,9 @@
         "context_type": "LebesgueContext",
         "local_root" : "./",
         "remote_profile":{
-          "email": "huyongxin1015@163.com",
-          "password": "0415fnmsM.",
-          "program_id": 10330,
+          "email": "",
+          "password": "",
+          "program_id": ,
             "keep_backup":true,
             "input_data":{
               "job_type": "indicate",
@@ -79,9 +79,9 @@
         "context_type": "LebesgueContext",
         "local_root" : "./",
         "remote_profile":{
-          "email": "huyongxin1015@163.com",
-          "password": "0415fnmsM.",
-          "program_id": 10330,
+          "email": "",
+          "password": "",
+          "program_id": ,
             "input_data":{
               "api_version":2,
               "job_type": "indicate",

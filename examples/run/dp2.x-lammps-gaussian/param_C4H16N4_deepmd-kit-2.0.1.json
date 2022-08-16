@@ -9,10 +9,12 @@
         12,
         14
     ], 
-    "init_data_prefix": "./data/deepmd", 
+    "init_data_prefix": "./data/deepmd/", 
     "init_data_sys": [
-        "data.000","data.001","data.002","data.003","data.004","data.005"
-    ], 
+        "data"
+    ],
+   "init_multi_systems": true,
+    "init_batch_size":  ["auto"],
     "sys_configs": [
         [
             "./data/md_sys/data.ch4n2"
@@ -122,6 +124,11 @@
         }
 
     ], 
+    "use_clusters": true,
+    "cluster_cutoff": 5.0,
+    "cluster_minify": true,
+    "use_relative": true,
+    "epsilon": 1.0,
     "ratio_failed": 0.20, 
     "fp_style": "gaussian",
     "shuffle_poscar": false,
