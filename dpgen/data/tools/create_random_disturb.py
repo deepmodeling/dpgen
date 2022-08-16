@@ -10,6 +10,7 @@ import numpy as np
 import ase.io
 import io_lammps
 
+from dpgen.generator.lib.abacus_scf import get_abacus_STRU, make_abacus_scf_stru
 
 def create_disturbs_atomsk(fin, nfile, dmax=1.0, ofmt="lmp"):
     # removing the exists files
@@ -143,7 +144,14 @@ def create_disturbs_ase_dev(fin, nfile, dmax=1.0, etmax=0.1, ofmt="lmp", dstyle=
             np.savetxt(fout_c, cell, '%f')
 
         # determine new cell & atomic positions randomiziations
-        pos = atoms_d.get_positions() + dpos
+        fixed = atoms_d._get_constraints()
+        fixed_idx = fixed[0].todict()["kwargs"]["indices"]
+
+        pos = atoms_d.get_positions()
+        for idx, coord in enumerate(pos):
+            if idx in fixed_idx:
+                continue
+            pos[idx] = coord + dpos[idx]
         atoms_d.set_positions(pos)
 
         # pre-converting the Atoms to be in low tri-angular cell matrix
@@ -160,6 +168,68 @@ def create_disturbs_ase_dev(fin, nfile, dmax=1.0, etmax=0.1, ofmt="lmp", dstyle=
             io_lammps.ase2lammpsdata(atoms_d, fout=fout)
         else:
             ase.io.write(fout, atoms_d, ofmt, vasp5 = True)
+        if write_d:
+            fw.close()
+    return
+
+def create_disturbs_abacus_dev(fin, nfile, dmax=1.0, etmax=0.1, ofmt="abacus", dstyle='uniform', write_d=False, diag=0):
+    # removing the exists files
+    flist = glob.glob('*.' + ofmt)
+    for f in flist:
+        os.remove(f)
+
+    # read-in by ase
+    #atoms = ase.io.read(fin)
+    #natoms = atoms.get_number_of_atoms()
+    #cell0 = atoms.get_cell()
+    
+    stru = get_abacus_STRU(fin)
+    natoms = sum(stru["atom_numbs"])
+    cell0 = stru['cells']
+
+    # creat nfile ofmt files.
+    for fid in range(1, nfile + 1):
+        # Use copy(), otherwise it will modify the input atoms every time.
+        stru_d = stru.copy()
+
+        # random flux for atomic positions
+        if write_d:
+            fw = open('disp-' + str(fid) + '.dat', 'w')
+        dpos = np.zeros((natoms, 3))
+        for i in range(natoms):
+            dr = gen_random_disturb(dmax, -0.5, 0.5, dstyle)
+            dpos[i, :] = dr
+            if write_d:
+                dnorm = np.linalg.norm(dr)
+                fw.write('%d\t%f\t%f\t%f\t%f\n' %
+                         (i + 1, dr[0], dr[1], dr[2], dnorm))
+                fw.flush()
+
+        # random flux for volumes
+        cell = np.dot(cell0, gen_random_emat(etmax, diag))
+        stru_d['cells'] = cell
+        if write_d:
+            fout_c = 'cell-' + str(fid) + '.dat'
+            np.savetxt(fout_c, cell, '%f')
+
+        # determine new cell & atomic positions randomiziations
+        stru_d['coords'] += dpos
+
+        # pre-converting the Atoms to be in low tri-angular cell matrix
+        cell_new = io_lammps.convert_cell(cell)
+        #pos_new = io_lammps.convert_positions(pos, cell, cell_new)
+        stru_d['cells'] = cell_new
+
+        convert_mat = np.linalg.inv(cell).dot(cell_new)
+        stru_d['coords'] = np.matmul(stru_d['coords'], convert_mat)
+
+
+        # Writing it
+        fout = fin + str(fid) + '.' + ofmt
+        print("Creating %s ..." % fout)
+        ret = make_abacus_scf_stru(stru_d, stru_d['pp_files'], stru_d['orb_files'], stru_d['dpks_descriptor'])
+        with open(fout, "w") as fp:
+            fp.write(ret)
         if write_d:
             fw.close()
     return
@@ -252,5 +322,9 @@ if __name__ == "__main__":
     # main program
     #create_disturbs_atomsk(fin, nfile, dmax, ofmt)
     #create_disturbs_ase(fin, nfile, dmax, ofmt, dstyle, write_d)
-    create_disturbs_ase_dev(fin, nfile, dmax, etmax,
+    if ofmt == "vasp":
+        create_disturbs_ase_dev(fin, nfile, dmax, etmax,
+                            ofmt, dstyle, write_d, diag)
+    elif ofmt == "abacus":
+        create_disturbs_abacus_dev(fin, nfile, dmax, etmax,
                             ofmt, dstyle, write_d, diag)
