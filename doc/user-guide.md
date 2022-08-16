@@ -18,4 +18,14 @@ Here are the types you can choose. A proper type can help developer figure out w
 
 Note: before you raise a question, please check TUTORIAL/FAQs and search history issues to find solutions. 
       
+## Tutorials 
+
+Tutorials can be found here. [https://tutorials.deepmodeling.com/en/latest/](https://tutorials.deepmodeling.com/en/latest/Tutorials/DP-GEN/index.html)
+
+## Example
+      
+If you have no idea how to prepare a PARAM for your task, you can find examples of PARAM for different tasks in https://github.com/deepmodeling/dpgen/tree/master/examples. 
+      
+For example, if you want to set specific template for LAMPPS, you can find an example [here](https://github.com/deepmodeling/dpgen/blob/master/examples/run/dp-lammps-enhance_sampling/param.json)
+      
 ## [Pull requests - How to contribute](https://docs.deepmodeling.com/projects/dpgen/en/latest/README.html)
