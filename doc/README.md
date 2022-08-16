@@ -2,7 +2,7 @@
 
 The way to make contributions is through making pull requests(PR for short). After your PR is merged, the changes you make can be applied by other users.
 
-![3.png](https://s2.loli.net/2022/08/16/qt1MWOfYbQzKGJC.png)
+<div align=center><href="https://sm.ms/image/qt1MWOfYbQzKGJC" target="_blank"><img src="https://s2.loli.net/2022/08/16/qt1MWOfYbQzKGJC.png" width="60%"></div>
 
 Firstly, fork in DP-GEN repository. Then you can clone the repository, build a new branch, make changes and then make a pull request.
 
@@ -22,15 +22,16 @@ Chinese tutorial see https://blog.csdn.net/Saintmm/article/details/119835900
 Also, you can use Github Desktop to make PR.
 The following shows the steps to clone the repository and add your doc to tutorials. If it is your first time using Github, Open with Github Desktop is recommended. Github Desktop is a software, which can make your operations on branches visually.
 
-![4.PNG](https://s2.loli.net/2022/08/16/ShdQXosaRM51Jqv.png)
+<div align=center><href="https://sm.ms/image/ShdQXosaRM51Jqv" target="_blank"><img src="https://s2.loli.net/2022/08/16/ShdQXosaRM51Jqv.png" width="40%"></div>
+
 
 After you clone it to your PC, you can open it with Github Desktop.
 
-![5.PNG](https://s2.loli.net/2022/08/16/NMApYxjaqS4DGEz.png)
+<div align=center><href="https://sm.ms/image/NMApYxjaqS4DGEz" target="_blank"><img src="https://s2.loli.net/2022/08/16/NMApYxjaqS4DGEz.png" width="40%"></div>
 
 Firstly, create your new branch based on devel branch.
 
-![6.PNG](https://s2.loli.net/2022/08/16/3Eqm162oQ8Lcg9P.png)
+<div align=center><href="https://sm.ms/image/3Eqm162oQ8Lcg9P" target="_blank"><img src="https://s2.loli.net/2022/08/16/3Eqm162oQ8Lcg9P.png" width="40%"></div>
 
 Secondly, add your doc to the certain directory in your local repository, and add its name into index. 
 
@@ -44,13 +45,13 @@ Without being listed in index, the document will not be shown on the website.
 
 Thirdly, select the changes that you what to push, and commit to it. Press "Publish branch" to push your origin repository to the remote branch.
 
-![7.PNG](https://s2.loli.net/2022/08/16/3dyQAKplTnR2tX6.png)
+<div align=center><href="https://sm.ms/image/3dyQAKplTnR2tX6" target="_blank"><img src="https://s2.loli.net/2022/08/16/3dyQAKplTnR2tX6.png" width="40%"></div>
 
 Finally, you can check it on github and make a pull request. Press "Compare & pull request" to make a PR.
 
 (Note: please commit pr to the devel branch)    
 
-![8.PNG](https://s2.loli.net/2022/08/16/Uj9m6zGtXRh1L3a.png)
+<div align=center><href="https://sm.ms/image/Uj9m6zGtXRh1L3a" target="_blank"><img src="https://s2.loli.net/2022/08/16/Uj9m6zGtXRh1L3a.png" width="80%"></div>
 
 ### How to contribute to DP-GEN tutorials and documents
 The documents of DP-GEN https://github.com/deepmodeling/dpgen/tree/master/doc
@@ -62,18 +63,18 @@ The structure of tutorials and the preparation before writing a document see htt
 
 The latest page of DP-GEN Docs
 
-![9.PNG](https://s2.loli.net/2022/08/16/zEPKuj3TdaHI57b.png)
+<div align=center><href="https://sm.ms/image/zEPKuj3TdaHI57b" target="_blank"><img src="https://s2.loli.net/2022/08/16/zEPKuj3TdaHI57b.png" width="60%"></div>
 
 #### Examples of contributions
 Example 1(a merged one): https://github.com/deepmodeling/dpgen/pull/758
 Example 2(a simple one for beginner): https://github.com/deepmodeling/dpgen/pull/844
 #### 1. Push your doc
 
-![10.PNG](https://s2.loli.net/2022/08/16/T4Zb8uiDXGeyYvc.png)
+<div align=center><href="https://sm.ms/image/T4Zb8uiDXGeyYvc" target="_blank"><img src="https://s2.loli.net/2022/08/16/T4Zb8uiDXGeyYvc.png" width="60%"></div>
 
 #### 2. Add the directory in index.rst
 
-![11.PNG](https://s2.loli.net/2022/08/16/q3iKvzQ8oRmfVLt.png)
+<div align=center><href="https://sm.ms/image/q3iKvzQ8oRmfVLt" target="_blank"><img src="https://s2.loli.net/2022/08/16/q3iKvzQ8oRmfVLt.png" width="60%"></div>
 
 #### 3. Build and check it
 
@@ -92,13 +93,13 @@ https://readthedocs.org/
 3. Import https://github.com/<your-github-username>/dpgen.git 
 Remember to set Project homepage as https://github.com/<your-github-username>/dpgen , and set the Default branch as the one you do modification in Advanced Settings.
 
-![12.PNG](https://s2.loli.net/2022/08/16/4cVRb7ytT1h5l9n.png)
+<div align=center><href="https://sm.ms/image/4cVRb7ytT1h5l9n" target="_blank"><img src="https://s2.loli.net/2022/08/16/4cVRb7ytT1h5l9n.png" width="60%"></div>
 
 (“doc_overview” is just an example, please change it into your branch's name.)
 
 4. Build Version 
 
-![13.PNG](https://s2.loli.net/2022/08/16/CsJ7S5xeTYh9EWp.png)
+<div align=center><href="https://sm.ms/image/CsJ7S5xeTYh9EWp" target="_blank"><img src="https://s2.loli.net/2022/08/16/CsJ7S5xeTYh9EWp.png" width="60%"></div>
 
 ---
 After successfully making a PR, developers will check it and give comments. It will be merged after everything done. Then CONGRATULATIONS! You become a first-time contributor to DP-GEN!  
