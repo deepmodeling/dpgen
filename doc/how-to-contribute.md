@@ -9,8 +9,13 @@ Firstly, fork in DP-GEN repository. Then you can clone the repository, build a n
 ---
 
 ## How to contribute to DP-GEN
-The repository of DP-GEN https://github.com/deepmodeling/dpgen
+DP-GEN adopts the same convention as other softwares in DeepModeling Community. 
+You can first refer to DeePMD-kit's
+[Contributing guide](https://github.com/deepmodeling/deepmd-kit/edit/devel/CONTRIBUTING.md)
+and [Developer guide](https://github.com/deepmodeling/deepmd-kit/edit/devel/doc/development/index.md).
+Welcome to the repository of DP-GEN https://github.com/deepmodeling/dpgen
 If you have no idea how to fix your problem or where to find the relative code, see OVERVIEW/Overview of the structure of the DP-GEN repository on this website.
+  
 ### Use command line
 You can use git with the command line, or open the repository on Github Desktop. Here is a video as a demo of making changes to DP-GEN and publishing it with command line.
 
