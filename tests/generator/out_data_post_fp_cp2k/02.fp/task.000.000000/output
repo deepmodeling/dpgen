@@ -877,7 +877,7 @@
 
   Total energy:                                               -31.04389446913810
 
- *** WARNING in qs_scf.F:542 :: SCF run NOT converged ***
+  *** SCF run converged in    29 steps ***
 
 
  !-----------------------------------------------------------------------------!

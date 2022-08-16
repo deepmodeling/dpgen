@@ -7,7 +7,7 @@ input: trajectory
 output: data
 """
 
-import argparse
+import warnings
 import glob
 import json
 import os
@@ -15,9 +15,11 @@ import random
 
 import dpdata
 from dpgen import dlog
-from dpgen.dispatcher.Dispatcher import make_dispatcher
+from dpgen.dispatcher.Dispatcher import make_submission_compat
+from dpgen.remote.decide_machine import convert_mdata
 from dpgen.generator.run import create_path, make_fp_task_name
-from dpgen.util import sepline
+from dpgen.util import sepline, normalize
+from .arginfo import init_reaction_jdata_arginfo
 
 reaxff_path = "00.reaxff"
 build_path = "01.build"
@@ -73,14 +75,15 @@ run	{nstep}
     return lmp_string
 
 
-def run_reaxff(jdata, mdata, dispatcher, log_file="reaxff_log"):
+def run_reaxff(jdata, mdata, log_file="reaxff_log"):
     work_path = reaxff_path
     reaxff_command = "{} -in {}".format(mdata["reaxff_command"], lmp_path)
     run_tasks = glob.glob(os.path.join(work_path, 'task.*'))
     run_tasks.sort()
     run_tasks = [os.path.basename(ii) for ii in run_tasks]
 
-    dispatcher.run_jobs(mdata['reaxff_resources'],
+    make_submission_compat(mdata['reaxff_machine'],
+                        mdata['reaxff_resources'],
                         [reaxff_command],
                         work_path,
                         run_tasks,
@@ -89,7 +92,8 @@ def run_reaxff(jdata, mdata, dispatcher, log_file="reaxff_log"):
                         [ff_path, data_init_path, control_path, lmp_path],
                         [trj_path],
                         outlog=log_file,
-                        errlog=log_file)
+                        errlog=log_file,
+                        api_version=mdata.get("api_version", "0.9"))
 
 
 def link_trj(jdata):
@@ -102,8 +106,11 @@ def link_trj(jdata):
         os.path.join(task_path, trj_path)))
 
 
-def run_build_dataset(jdata, mdata, dispatcher, log_file="build_log"):
+def run_build_dataset(jdata, mdata, log_file="build_log"):
     work_path = build_path
+    # compatible with new dpdispatcher and old dpgen.dispatcher
+    build_ntasks = mdata["build_resources"].get("cpu_per_node", mdata["build_resources"]["task_per_node"])
+    fp_ntasks = mdata["fp_resources"].get("cpu_per_node", mdata["fp_resources"]["task_per_node"])
     build_command = "{cmd} -n {dataset_name} -a {type_map} -d {lammpstrj} -c {cutoff} -s {dataset_size} -k \"{qmkeywords}\" --nprocjob {nprocjob} --nproc {nproc}".format(
         cmd=mdata["build_command"],
         type_map=" ".join(jdata["type_map"]),
@@ -111,15 +118,16 @@ def run_build_dataset(jdata, mdata, dispatcher, log_file="build_log"):
         cutoff=jdata["cutoff"],
         dataset_size=jdata["dataset_size"],
         qmkeywords=jdata["qmkeywords"],
-        nprocjob=mdata["fp_resources"]["task_per_node"],
-        nproc=mdata["build_resources"]["task_per_node"],
+        nprocjob=fp_ntasks,
+        nproc=build_ntasks,
         dataset_name=dataset_name
     )
     run_tasks = glob.glob(os.path.join(work_path, 'task.*'))
     run_tasks.sort()
     run_tasks = [os.path.basename(ii) for ii in run_tasks]
 
-    dispatcher.run_jobs(mdata['build_resources'],
+    make_submission_compat(mdata['build_machine'],
+                        mdata['build_resources'],
                         [build_command],
                         work_path,
                         run_tasks,
@@ -128,7 +136,8 @@ def run_build_dataset(jdata, mdata, dispatcher, log_file="build_log"):
                         [trj_path],
                         [f"dataset_{dataset_name}_gjf"],
                         outlog=log_file,
-                        errlog=log_file)
+                        errlog=log_file,
+                        api_version=mdata.get("api_version", "0.9"))
 
 
 def link_fp_input():
@@ -146,7 +155,6 @@ def link_fp_input():
 
 def run_fp(jdata,
            mdata,
-           dispatcher,
            log_file="output",
            forward_common_files=[]):
     fp_command = mdata['fp_command']
@@ -162,7 +170,8 @@ def run_fp(jdata,
 
     run_tasks = [os.path.basename(ii) for ii in fp_run_tasks]
 
-    dispatcher.run_jobs(mdata['fp_resources'],
+    make_submission_compat(mdata['fp_machine'],
+                        mdata['fp_resources'],
                         [fp_command],
                         work_path,
                         run_tasks,
@@ -171,7 +180,8 @@ def run_fp(jdata,
                         ["input"],
                         [log_file],
                         outlog=log_file,
-                        errlog=log_file)
+                        errlog=log_file,
+                        api_version=mdata.get("api_version", "0.9"))
 
 
 def convert_data(jdata):
@@ -191,13 +201,17 @@ def gen_init_reaction(args):
         jdata = loadfn(args.PARAM)
         if args.MACHINE is not None:
             mdata = loadfn(args.MACHINE)
-    except:
+    except Exception:
         with open(args.PARAM, 'r') as fp:
             jdata = json.load(fp)
         if args.MACHINE is not None:
             with open(args.MACHINE, "r") as fp:
                 mdata = json.load(fp)
 
+    jdata_arginfo = init_reaction_jdata_arginfo()
+    jdata = normalize(jdata_arginfo, jdata)
+
+    mdata = convert_mdata(mdata, ["reaxff", "build", "fp"])
     record = "record.reaction"
     iter_rec = -1
     numb_task = 7
@@ -213,18 +227,15 @@ def gen_init_reaction(args):
         elif ii == 0:
             link_reaxff(jdata)
         elif ii == 1:
-            dispatcher = make_dispatcher(mdata["reaxff_machine"])
-            run_reaxff(jdata, mdata, dispatcher)
+            run_reaxff(jdata, mdata)
         elif ii == 2:
             link_trj(jdata)
         elif ii == 3:
-            dispatcher = make_dispatcher(mdata["build_machine"])
-            run_build_dataset(jdata, mdata, dispatcher)
+            run_build_dataset(jdata, mdata)
         elif ii == 4:
             link_fp_input()
         elif ii == 5:
-            dispatcher = make_dispatcher(mdata["fp_machine"])
-            run_fp(jdata, mdata, dispatcher)
+            run_fp(jdata, mdata)
         elif ii == 6:
             convert_data(jdata)
         with open(record, "a") as frec:

@@ -341,7 +341,7 @@ def group_slurm_jobs(ssh_sess,
             if not job_fin[idx] :
                 try:
                   status = rjob.check_status()
-                except:
+                except Exception:
                   ssh_sess = SSHSession(ssh_sess.remote_profile)
                   for _idx,_rjob in enumerate(job_list):
                     job_list[_idx] = SlurmJob(ssh_sess, work_path, _rjob.job_uuid)
@@ -426,5 +426,5 @@ class PMap(object):
       f_path_map=self.f_path_map
       try:
          os.remove(f_path_map)
-      except:
+      except Exception:
          pass

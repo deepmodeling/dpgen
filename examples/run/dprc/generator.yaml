@@ -1,0 +1,215 @@
+type_map:
+  - C
+  - H
+  - O
+  - "N"
+  - P
+  - HW
+  - OW
+init_data_sys:
+  - /path/to/initial_data
+# qm_region: the Amber mask of the QM region in the parm file
+qm_region:
+  - ":1"
+# qm_charge: the charge of the QM region
+qm_charge:
+  - 0
+# parm7: absolute path to parm7 file
+parm7:
+  - /path/to/MON.parm7
+# mdin: absolute path to mdin file
+mdin:
+  - /path/to/ml.mdin
+# disang: absolute path to disang template file
+disang:
+  - /path/to/mon.disang
+# sys_configs: abosulute path to initial configurations
+sys_configs:
+  - - /path/to/init_-1.20.rst7
+    - /path/to/init_-0.80.rst7
+    - /path/to/init_-0.40.rst7
+    - /path/to/init_0.00.rst7
+# r: reaction coordinates to replace RVAL in the template; can be a list for 2D
+r:
+  - - -1.20
+    - -0.80
+    - -0.40
+    - 0.00
+numb_models: 4
+# same as the simplify
+default_training_param:
+  model:
+    # type_map: same as above
+    type_map:
+      - C
+      - H
+      - O
+      - "N"
+      - P
+      - HW
+      - OW
+    descriptor:
+      type: hybrid
+      list:
+        # QM-QM descriptor
+        - type: se_a
+          # sel: refer https://docs.deepmodeling.org/projects/deepmd/en/latest/model/sel.html to obatin the proper sel
+          # In a DPRc model, sel of MM atoms for the QM-QM descriptor should be set to zero.
+          sel:
+            - 6
+            - 7
+            - 6
+            - 1
+            - 1
+            - 0
+            - 0
+          rcut_smth: 1.0
+          rcut: 9.0
+          neuron:
+            - 25
+            - 50
+            - 100
+          resnet_dt: false
+          axis_neuron: 12
+          # exclude_types: In the QM-QM descriptor, MM-MM and QM-MM descriptor should be disabled.
+          # >>> from itertools import combinations_with_replacement, product
+          # >>> qm = range(5)
+          # >>> mm = range(5,7)
+          # >>> list(map(list,list(combinations_with_replacement(mm,2))+list(product(qm,mm))))
+          exclude_types: [[5, 5], [5, 6], [6, 6], [0, 5], [0, 6], [1, 5], [1, 6], [2, 5], [2, 6], [3, 5], [3, 6], [4, 5], [4, 6]]
+          # set_davg_zero: In a DPRc model, it must be set to true.
+          set_davg_zero: true
+          type_one_side: true
+          precision: "float32"
+        # QM-MM descriptor
+        - type: se_a
+          # *1.2 for MM atoms
+          sel:
+            - 6
+            - 7
+            - 6
+            - 1
+            - 1
+            - 88
+            - 44
+          rcut_smth: 1.0
+          rcut: 6.0
+          neuron:
+            - 25
+            - 50
+            - 100
+          resnet_dt: false
+          axis_neuron: 12
+          # exclude_types: In the QM-MM descriptor, QM-QM and MM-MM descriptor should be disabled.
+          # >>> from itertools import combinations_with_replacement, product
+          # >>> qm = range(5)
+          # >>> mm = range(5,7)
+          # >>> list(map(list,list(combinations_with_replacement(qm,2))+list(combinations_with_replacement(mm,2))))
+          exclude_types: [[0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [1, 1], [1, 2], [1, 3], [1, 4], [2, 2], [2, 3], [2, 4], [3, 3], [3, 4], [4, 4], [5, 5], [5, 6], [6, 6]]
+          set_davg_zero: true
+          type_one_side: true
+          precision: "float32"
+    fitting_net:
+      neuron:
+        - 240
+        - 240
+        - 240
+      resnet_dt: true
+      # atom_ener: In a DPRc model, the atom_ener of MM atoms should be set to 0
+      atom_ener:
+        - null
+        - null
+        - null
+        - null
+        - null
+        - 0.0
+        - 0.0
+      precision: "float32"
+  # learning_rate: from 1.e-3 to 5.e-8
+  learning_rate:
+    type: exp
+    start_lr: 1.e-3
+    decay_steps: 400
+    stop_lr: 5.e-8
+  loss:
+    start_pref_e: 0.02
+    limit_pref_e: 1
+    start_pref_f: 1000
+    limit_pref_f: 1
+    start_pref_v: 0
+    limit_pref_v: 0
+  training:
+    numb_steps: 400000
+    disp_file: lcurve.out
+    disp_freq: 100
+    save_freq: 1000
+    disp_training: true
+    time_training: true
+    profiling: false
+    profiling_file: timeline.json
+dp_compress: true
+
+model_devi_f_trust_lo: 0.08
+model_devi_f_trust_hi: 0.25
+training_reuse_iter: 2
+
+
+# nsteps: the number of steps to run
+nsteps:
+- 10000
+model_devi_jobs:
+  - sys_idx: [0] 
+    trj_freq: 40
+  #1 
+  - sys_idx: [0] 
+    trj_freq: 40
+  #2 
+  - sys_idx: [0] 
+    trj_freq: 40
+  #3
+  - sys_idx: [0] 
+    trj_freq: 40
+  #4 
+  - sys_idx: [0] 
+    trj_freq: 40
+  #5 
+  - sys_idx: [0] 
+    trj_freq: 40
+  #6 
+  - sys_idx: [0] 
+    trj_freq: 40
+  #7 
+  - sys_idx: [0] 
+    trj_freq: 40
+  #8 
+  - sys_idx: [0] 
+    trj_freq: 40
+  #9
+  - sys_idx: [0] 
+    trj_freq: 40
+  #10
+  - sys_idx: [0] 
+    trj_freq: 40
+
+# fp_task_max: the maximum fp tasks to calculate
+fp_task_max: 1000
+fp_task_min: 10
+fp_params:
+  low_level_mdin: /path/to/low_level.mdin
+  high_level_mdin: /path/to/high_level.mdin
+
+low_level: MNDOD
+high_level: PBE0
+# cutoff: QM-MM cutoff radius
+cutoff: 6.
+
+# do not change the value below
+sys_format: amber/rst7
+init_multi_systems: true
+model_devi_clean_traj: false
+model_devi_engine: amber
+model_devi_skip: 0
+shuffle_poscar: false
+fp_style: amber/diff
+detailed_report_make_fp: true
+use_clusters: true

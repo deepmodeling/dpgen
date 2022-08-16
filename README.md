@@ -22,6 +22,7 @@
 
 [![GitHub release](https://img.shields.io/github/release/deepmodeling/dpgen.svg?maxAge=86400)](https://github.com/deepmodeling/dpgen/releases/)
 [![doi:10.1016/j.cpc.2020.107206](https://img.shields.io/badge/DOI-10.1016%2Fj.cpc.2020.107206-blue)](https://doi.org/10.1016/j.cpc.2020.107206)
+![Citations](https://citations.njzjz.win/10.1016/j.cpc.2020.107206)
 [![conda install](https://img.shields.io/conda/dn/conda-forge/dpgen?label=conda%20install)](https://anaconda.org/conda-forge/dpgen)
 [![pip install](https://img.shields.io/pypi/dm/dpgen?label=pip%20install)](https://pypi.org/project/dpgen)
 
@@ -91,50 +92,6 @@ To test if the installation is successful, you may execute
 ```bash
 dpgen -h
 ```
-and if everything works, it gives
-```
-DeepModeling
-------------
-Version: 0.9.2
-Date:    Mar-25-2021
-Path:    /root/yuzhi/dpgen-test/lib/python3.6/site-packages/dpgen
-
-Reference
-------------
-Please cite:
-Yuzhi Zhang, Haidi Wang, Weijie Chen, Jinzhe Zeng, Linfeng Zhang, Han Wang, and Weinan E,
-DP-GEN: A concurrent learning platform for the generation of reliable deep learning
-based potential energy models, Computer Physics Communications, 2020, 107206.
-------------
-
-Description
-------------
-usage: dpgen [-h]
-             {init_surf,init_bulk,auto_gen_param,init_reaction,run,run/report,collect,simplify,autotest,db}
-             ...
-
-dpgen is a convenient script that uses DeepGenerator to prepare initial data,
-drive DeepMDkit and analyze results. This script works based on several sub-
-commands with their own options. To see the options for the sub-commands, type
-"dpgen sub-command -h".
-
-positional arguments:
-  {init_surf,init_bulk,auto_gen_param,init_reaction,run,run/report,collect,simplify,autotest,db}
-    init_surf           Generating initial data for surface systems.
-    init_bulk           Generating initial data for bulk systems.
-    auto_gen_param      auto gen param.json
-    init_reaction       Generating initial data for reactive systems.
-    run                 Main process of Deep Potential Generator.
-    run/report          Report the systems and the thermodynamic conditions of
-                        the labeled frames.
-    collect             Collect data.
-    simplify            Simplify data.
-    autotest            Auto-test for Deep Potential.
-    db                  Collecting data from DP-GEN.
-
-optional arguments:
-  -h, --help            show this help message and exit
-```
 
 
 ## Init: Preparing Initial Data
@@ -188,6 +145,10 @@ If you want to specify a structure as starting point for `init_bulk`, you may se
 "from_poscar":	true,
 "from_poscar_path":	"....../C_mp-47_conventional.POSCAR",
 ```
+`init_bulk` support both VASP and ABACUS for first-principle calculation. You can choose the software by specifying the key `init_fp_style`. If `init_fp_style` is not specified, the default software will be VASP. 
+
+When using ABACUS for `init_fp_style`, the keys of the paths of `INPUT` files for relaxation and MD simulations are the same as `INCAR` for VASP, which are `relax_incar` and `md_incar` respectively. You have to additionally specify `relax_kspacing` and `md_kspacing` for k points spacing, and dpgen will automatically generate `KPT` files according to them. You may also use `relax_kpt` and `md_kpt` instead of them for the relative path for `KPT` files of relaxation and MD simulations. However, either `relax_kspacing` and `md_kspacing`, or `relax_kpt` and `md_kpt` is needed. If `from_poscar` is set to `false`, you have to specify `atom_masses` in the same order as `elements`.
+
 The following table gives explicit descriptions on keys in `PARAM`.
 
 The bold notation of key (such as **Elements**) means that it's a necessary key.
@@ -199,9 +160,9 @@ The bold notation of key (such as **Elements**) means that it's a necessary key.
 |  cell_type | String  | "hcp" | Specifying which typical structure to be generated. **Options** include fcc, hcp, bcc, sc, diamond.
 | latt | Float | 4.479 | Lattice constant for single cell.
 | from_poscar | Boolean | True | Deciding whether to use a given poscar as the beginning of relaxation. If it's true, keys (`cell_type`, `latt`) will be aborted. Otherwise, these two keys are **necessary**.
-| from_poscar_path | String | "....../C_mp-47_conventional.POSCAR" | Path of POSCAR. **Necessary** if `from_poscar` is true.
-| relax_incar | String | "....../INCAR" | Path of INCAR for relaxation in VASP. **Necessary** if `stages` include 1.
-| md_incar | String |  "....../INCAR" | Path of INCAR for MD in VASP. **Necessary** if `stages` include 3.|
+| from_poscar_path | String | "....../C_mp-47_conventional.POSCAR" | Path of POSCAR for VASP or STRU for ABACUS. **Necessary** if `from_poscar` is true.
+| relax_incar | String | "....../INCAR" | Path of INCAR for VASP or INPUT for ABACUS for relaxation in VASP. **Necessary** if `stages` include 1.
+| md_incar | String |  "....../INCAR" | Path of INCAR for VASP or INPUT for ABACUS for MD in VASP. **Necessary** if `stages` include 3.|
 | **scale** | List of float | [0.980, 1.000, 1.020] | Scales for transforming cells.
 | **skip_relax** | Boolean | False | If it's true, you may directly run stage 2 (pertub and scale) using an unrelaxed POSCAR.
 | **pert_numb** | Integer | 30 | Number of pertubations for each POSCAR.
@@ -210,6 +171,12 @@ The bold notation of key (such as **Elements**) means that it's a necessary key.
 | **md_nstep** | Integer | 10 | Steps of AIMD in stage 3. If it's not equal to settings via `NSW` in `md_incar`, DP-GEN will follow `NSW`.
 | **coll_ndata** | Integer | 5000 | Maximal number of collected data.
 | type_map | List | [ "Mg", "Al"] | The indices of elements in deepmd formats will be set in this order.
+| init_fp_style | String | "ABACUS" or "VASP" | First-principle software. If this key is abscent, the default value will be "VASP".
+| relax_kpt | String | "....../KPT" | Path of `KPT` file for relaxation in stage 1. Only useful if `init_fp_style` is "ABACUS".
+| relax_kspacing | Integer or List of 3 integers | 10 | kspacing parameter for relaxation in stage 1. Only useful if `init_fp_style` is "ABACUS".
+| md_kpt | String | "....../KPT" | Path of `KPT` file for MD simulations in stage 3. Only useful if `init_fp_style` is "ABACUS".
+| md_kspacing | Integer or List of 3 integers | 10 | kspacing parameter for MD simulations in stage 3. Only useful if `init_fp_style` is "ABACUS".
+| atom_masses | List of float | [24] | List of atomic masses of elements. The order should be the same as `Elements`. Only useful if `init_fp_style` is "ABACUS".
 
 ### Init_surf
 
@@ -367,7 +334,7 @@ In each iteration, there are three stages of work, namely, `00.train  01.model_d
 
 + 00.train: DP-GEN will train several (default 4) models based on initial and generated data. The only difference between these models is the random seed for neural network initialization.
 
-+ 01.model_devi : represent for model-deviation. DP-GEN will use models obtained from 00.train to run Molecular Dynamics(default LAMMPS). Larger deviation for structure properties (default is force of atoms) means less accuracy of the models. Using this criterion, a few fructures will be selected and put into next stage `02.fp` for more accurate calculation based on First Principles.
++ 01.model_devi : represent for model-deviation. Model-deviation engine in `01.model_devi` can be chosen between Molecular Dynamics(LAMMPS and GROMACS) or Structures Prediction(CALYPSO). DP-GEN will use models obtained from 00.train to run Molecular Dynamics or to run structure optimization with ASE in CALYPSO. Larger deviation for structure properties (default is force of atoms) means less accuracy of the models. Using this criterion, a few structures will be selected and put into next stage `02.fp` for more accurate calculation based on First Principles.
 
 + 02.fp : Selected structures will be calculated by first principles methods(default VASP). DP-GEN will obtain some new data and put them together with initial data and data generated in previous iterations. After that a new training will be set up and DP-GEN will enter next iteration!
 
@@ -406,7 +373,6 @@ In `PARAM`, you can specialize the task as you expect.
  
   "_comment": " that's all ",
   "numb_models": 4,
-  "train_param": "input.json",
   "default_training_param": {
      "model": {
             "type_map": [
@@ -532,9 +498,8 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | **use_ele_temp** | int | 0 | Currently only support fp_style vasp. 0(default): no electron temperature. 1: eletron temperature as frame parameter. 2: electron temperature as atom parameter.
 | *#Data*
  | init_data_prefix | String | "/sharedext4/.../data/" | Prefix of initial data directories
- | ***init_data_sys*** | List of string|["CH4.POSCAR.01x01x01/.../deepmd"] |Directories of initial data. You may use either absolute or relative path here.
+ | ***init_data_sys*** | List of string|["CH4.POSCAR.01x01x01/.../deepmd"] |Directories of initial data. You may use either absolute or relative path here. Systems will be detected recursively in the directories.
  | ***sys_format*** | String | "vasp/poscar" | Format of initial data. It will be `vasp/poscar` if not set.
- | init_multi_systems | Boolean | false | If set to `true`, `init_data_sys` directories should contain sub-directories of various systems. DP-GEN will regard all of these sub-directories as inital data systems.
  | init_batch_size   | String of integer     | [8]                                                            | Each number is the batch_size of corresponding system  for training in `init_data_sys`. One recommended rule for setting the `sys_batch_size` and `init_batch_size` is that `batch_size` mutiply number of atoms ot the stucture should be larger than 32. If set to `auto`, batch size will be 32 divided by number of atoms. |
   | sys_configs_prefix | String | "/sharedext4/.../data/" | Prefix of `sys_configs`
  | **sys_configs**   | List of list of string         | [<br />["/sharedext4/.../POSCAR"], <br />["....../POSCAR"]<br />] | Containing directories of structures to be explored in iterations.Wildcard characters are supported here. |
@@ -544,20 +509,21 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | training_iter0_model_path  | list of string  |  ["/path/to/model0_ckpt/", ...]  | The model used to init the first iter training. Number of element should be equal to `numb_models` |
 | training_init_model  | bool  |  False  | Iteration > 0, the model parameters will be initilized from the model trained at the previous iteration. Iteration == 0, the model parameters will be initialized from `training_iter0_model_path`.  |
 | **default_training_param** | Dict |  | Training parameters for `deepmd-kit` in `00.train`. <br /> You can find instructions from here: (https://github.com/deepmodeling/deepmd-kit)..<br /> |
+| dp_compress | bool | false | Use `dp compress` to compress the model. Default is false. |
 | *#Exploration*
 | **model_devi_dt** | Float | 0.002 (recommend) | Timestep for MD |
 | **model_devi_skip** | Integer | 0 | Number of structures skipped for fp in each MD
-| **model_devi_f_trust_lo** | Float | 0.05 | Lower bound of forces for the selection.
- | **model_devi_f_trust_hi** | Float | 0.15 | Upper bound of forces for the selection
-| **model_devi_v_trust_lo**  | Float | 1e10                                                         | Lower bound of virial for the selection. Should be used with DeePMD-kit v2.x |
-| **model_devi_v_trust_hi**  | Float | 1e10                                                         | Upper bound of virial for the selection. Should be used with DeePMD-kit v2.x |
+| **model_devi_f_trust_lo** | Float or List of float or Dict[str, float] | 0.05 | Lower bound of forces for the selection. If List, should be set for each index in `sys_configs`, respectively. |
+| **model_devi_f_trust_hi** | Float or List of float or Dict[str, float] | 0.15 | Upper bound of forces for the selection. If List, should be set for each index in `sys_configs`, respectively. |
+| **model_devi_v_trust_lo**  | Float or List of float or Dict[str, float] | 1e10 | Lower bound of virial for the selection. If List, should be set for each index in `sys_configs`, respectively. Should be used with DeePMD-kit v2.x. |
+| **model_devi_v_trust_hi**  | Float or List of float or Dict[str, float] | 1e10 | Upper bound of virial for the selection. If List, should be set for each index in `sys_configs`, respectively. Should be used with DeePMD-kit v2.x. |
 | model_devi_adapt_trust_lo  | Boolean | False | Adaptively determines the lower trust levels of force and virial. This option should be used together with `model_devi_numb_candi_f`,  `model_devi_numb_candi_v` and optionally with `model_devi_perc_candi_f` and `model_devi_perc_candi_v`. `dpgen` will make two sets: 1. From the frames with force model deviation lower than `model_devi_f_trust_hi`, select `max(model_devi_numb_candi_f, model_devi_perc_candi_f*n_frames)` frames with largest force model deviation. 2. From the frames with virial model deviation lower than `model_devi_v_trust_hi`, select `max(model_devi_numb_candi_v, model_devi_perc_candi_v*n_frames)` frames with largest virial model deviation. The union of the two sets is made as candidate dataset|
 | model_devi_numb_candi_f  | Int | 10 | See `model_devi_adapt_trust_lo`.|
 | model_devi_numb_candi_v  | Int | 0  | See `model_devi_adapt_trust_lo`.|
 | model_devi_perc_candi_f  | Float | 0.0 | See `model_devi_adapt_trust_lo`.|
 | model_devi_perc_candi_v  | Float | 0.0 | See `model_devi_adapt_trust_lo`.|
 | model_devi_f_avg_relative | Boolean | False | Normalized the force model deviations by the RMS force magnitude along the trajectory. This key should not be used with `use_relative`. |
-| **model_devi_clean_traj**  | Boolean | true                                                         | Deciding whether to clean traj folders in MD since they are too large. |
+| **model_devi_clean_traj**  | Boolean or Int | true                                                         | If type of model_devi_clean_traj is boolean type then it denote whether to clean traj folders in MD since they are too large. If it is Int type, then the most recent n iterations of traj folders will be retained, others will be removed. |
 | **model_devi_nopbc**  | Boolean | False                                                         | Assume open boundary condition in MD simulations. |
 | model_devi_activation_func | List of list of string | [["tanh","tanh"],["tanh","gelu"],["gelu","tanh"],["gelu","gelu"]]	| Set activation functions for models, length of the List should be the same as `numb_models`, and two elements in the list of string respectively assign activation functions to the embedding and fitting nets within each model. *Backward compatibility*: the orginal "List of String" format is still supported, where embedding and fitting nets of one model use the same activation function, and the length of the List should be the same as `numb_models`|
 | **model_devi_jobs**        | [<br/>{<br/>"sys_idx": [0], <br/>"temps": <br/>[100],<br/>"press":<br/>[1],<br/>"trj_freq":<br/>10,<br/>"nsteps":<br/> 1000,<br/> "ensembles": <br/> "nvt" <br />},<br />...<br />] | List of dict | Settings for exploration in `01.model_devi`. Each dict in the list corresponds to one iteration. The index of `model_devi_jobs` exactly accord with index of iterations |
@@ -569,7 +535,8 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | **model_devi_jobs["ensembles"]** | String             | "nvt"                                    | Determining which ensemble used in MD, **options** include “npt” and “nvt”. |
 | model_devi_jobs["neidelay"] | Integer             | "10"                                    | delay building until this many steps since last build |
 | model_devi_jobs["taut"] | Float          | "0.1"                                    | Coupling time of thermostat (ps) |
-| model_devi_jobs["taup"] | Float             | "0.5"                                    | Coupling time of barostat (ps)
+| model_devi_jobs["taup"] | Float             | "0.5"                                    | Coupling time of barostat (ps) |
+| model_devi_jobs["model_devi_f_trust_lo"] <br> model_devi_jobs["model_devi_f_trust_hi"] <br> model_devi_jobs["model_devi_v_trust_lo"] <br> model_devi_jobs["model_devi_v_trust_hi"] | Float or Dict[str, float] | See global model_devi config above like **model_devi_f_trust_lo**. For dict, should be set for each index in sys_idx, respectively. |
 | *#Labeling*
 | **fp_style** | string                | "vasp"                                                       | Software for First Principles. **Options** include “vasp”, “pwscf”, “siesta” and “gaussian” up to now. |
 | **fp_task_max** | Integer            | 20                                                           | Maximum of  structures to be calculated in `02.fp` of each iteration. |
@@ -602,7 +569,40 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | *fp_style == cp2k*
 | **user_fp_params** | Dict |  |Parameters for cp2k calculation. find detail in manual.cp2k.org. only the kind section must be set before use.  we assume that you have basic knowledge for cp2k input.
 | **external_input_path** | String |  | Conflict with key:user_fp_params, use the template input provided by user, some rules should be followed, read the following text in detail.
+| *fp_style == ABACUS*
+| **user_fp_params** | Dict |  |Parameters for ABACUS INPUT. find detail [Here](https://github.com/deepmodeling/abacus-develop/blob/develop/docs/input-main.md#out-descriptor). If `deepks_model` is set, the model file should be in the pseudopotential directory. You can also set `KPT` file by adding `k_points` that corresponds to a list of six integers in this dictionary.
+| **fp_orb_files** | List |  |List of atomic orbital files. The files should be in pseudopotential directory. 
+| **fp_dpks_descriptor** | String |  |DeePKS descriptor file name. The file should be in pseudopotential directory. 
 
+One can choose the model-deviation engine by specifying the key `model_devi_engine`. If `model_devi_engine` is not specified, the default model-deviation engine will be LAMMPS.
+
+There are some new keys needed to be added into `param` and `machine` if CALYPSO as model-deviation engine.
+
+The bold notation of key (such as **calypso_path**) means that it's a necessary key.
+
+ Key  | Type          | Example                                                      | Discription                                                      |
+| :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
+| *in param file*
+| **model_devi_engine** | string | "calypso" | CALYPSO as model-deviation engine.|
+| **calypso_input_path** | string | "/home/zhenyu/workplace/debug" | The absolute path of CALYPSO input file named input.dat(PSTRESS and fmax should be included), when this keys exists, all the iters will use the same CALYPSO input file until reach the number of max iter specified by **model_devi_max_iter** and **model_devi_jobs** key will not work.|
+| **model_devi_max_iter** | int | 10 | The max iter number code can run, it works when **calypso_input_path** exists.|
+| **model_devi_jobs** | List of Dict | [{ "times":[3],"NameOfAtoms":["Al","Cu"],"NumberOfAtoms":[1,10],"NumberOfFormula":[1,2],"Volume":[300],"DistanceOfIon":[[ 1.48,1.44],[ 1.44,1.41]],"PsoRatio":[0.6],"PopSize":[5],"MaxStep":[3],"ICode":[1],"Split":"T"},...] |  Settings for exploration in `01.model_devi`. Different number in `times` List means different iteration index and iterations mentioned in List wil use same CALYPSO parameters.|
+| **model_devi_jobs["times"]** | List of int | [0,1,2] | Different number in `times` List means different iteration index and iterations mentioned in List wil use same CALYPSO parameters.|
+| **model_devi_jobs["NameOfAtoms"]** | List of string |["Al","Cu"] | Parameter of CALYPSO input file, means the element species of structures to be generated. |
+| **model_devi_jobs["NumberOfAtoms"]** | List of int |[1,10] | Parameter of CALYPSO input file, means the number of atoms for each chemical species in one formula unit. |
+| **model_devi_jobs["NumberOfFormula"]** | List of int |[1,2] | Parameter of CALYPSO input file, means the range of formula unit per cell. |
+| **model_devi_jobs["Volume"]** | List of int |[300] | Parameter of CALYPSO input file, means the colume per formula unit(angstrom^3). |
+| **model_devi_jobs["DistanceOfIon"]** | List of float |[[ 1.48,1.44],[ 1.44,1.41]] | Parameter of CALYPSO input file, means minimal distance between atoms of each chemical species. Unit is in angstrom. |
+| **model_devi_jobs["PsoRatio"]** | List of float |[0.6] | Parameter of CALYPSO input file, means the proportion of the structures generated by PSO. |
+| **model_devi_jobs["PopSize"]** | List of int |[5] | Parameter of CALYPSO input file, means the number of structures to be generated in one step in CALYPSO. |
+| **model_devi_jobs["MaxStep"]** | List of int |[3] | Parameter of CALYPSO input file, means the number of max step in CALYPSO.|
+| **model_devi_jobs["ICode"]** | List of int |[13] | Parameter of CALYPSO input file, means the chosen of local optimization, 1 is vasp and 13 is ASE with dp.  |
+| **model_devi_jobs["Split"]** | String |"T" | Parameter of CALYPSO input file, means that generating structures and optimizing structures are split into two parts, in dpgen workflow, Split must be T. |
+| **model_devi_jobs["PSTRESS"]** | List of float |[0.001] | Same as PSTRESS in INCAR. |
+| **model_devi_jobs["fmax"]** | List of float |[0.01] | The convergence criterion is that the force on all individual atoms should be less than *fmax*. |
+| *in machine file*
+| **model_devi["deepmdkit_python"]** | String | "/home/zhenyu/soft/deepmd-kit/bin/python" | A python path with deepmd package. |
+| **model_devi["calypso_path"]** | string | "/home/zhenyu/workplace/debug" | The absolute path of calypso.x.|
 
 #### Rules for cp2k input at dictionary form
    Converting cp2k input is very simple as dictionary used to dpgen input. You just need follow some simple rule:
@@ -1015,7 +1015,6 @@ Here is an example of `param.json` for QM7 dataset:
         "auto"
     ],
     "numb_models": 4,
-    "train_param": "input.json",
     "default_training_param": {
         "model": {
             "type_map": [
@@ -1085,7 +1084,6 @@ Here is an example of `param.json` for QM7 dataset:
         },
         "_comment": "that's all"
     },
-    "use_clusters": true,
     "fp_style": "gaussian",
     "shuffle_poscar": false,
     "fp_task_max": 1000,
@@ -1108,7 +1106,7 @@ Here is an example of `param.json` for QM7 dataset:
 }
 ```
 
-Here `pick_data` is the data to simplify and currently only supports `MultiSystems` containing `System` with `deepmd/npy` format, and `use_clusters` should always be `true`. `init_pick_number` and `iter_pick_number` are the numbers of picked frames. `e_trust_lo`, `e_trust_hi` mean the range of the deviation of the frame energy, and `f_trust_lo` and `f_trust_hi` mean the range of the max deviation of atomic forces in a frame. `fp_style` can only be `gaussian` currently. Other parameters are as the same as those of generator.
+Here `pick_data` is the directory to data to simplify where the program recursively detects systems `System` with `deepmd/npy` format. `init_pick_number` and `iter_pick_number` are the numbers of picked frames. `e_trust_lo`, `e_trust_hi` mean the range of the deviation of the frame energy, and `f_trust_lo` and `f_trust_hi` mean the range of the max deviation of atomic forces in a frame. `fp_style` can only be `gaussian` currently. Other parameters are as the same as those of generator.
 
 
 ## Set up machine
@@ -1138,7 +1136,7 @@ an example of new dpgen's machine.json
 ```json
 {
   "api_version": "1.0",
-  "train": [
+  "train":
     {
       "command": "dp",
       "machine": {
@@ -1162,9 +1160,8 @@ an example of new dpgen's machine.json
         "para_deg": 3,
         "source_list": ["/home/user1234/deepmd.1.2.4.env"]
       }
-    }
-  ],
-  "model_devi":[
+    },
+  "model_devi":
     {
       "command": "lmp",
       "machine":{
@@ -1185,9 +1182,8 @@ an example of new dpgen's machine.json
         "group_size": 5,
         "source_list": ["/home/user1234/deepmd.1.2.4.env"]
       }
-    }
-  ],
-  "fp":[
+    },
+  "fp":
     {
       "command": "vasp_std",
       "machine":{
@@ -1209,7 +1205,6 @@ an example of new dpgen's machine.json
         "source_list": ["~/vasp.env"]
       }
     }
-  ]
 }
 ```
 note1: the key "local_root" in dpgen's machine.json is always `./`
@@ -1221,7 +1216,7 @@ When switching into a new machine, you may modifying the `MACHINE`, according to
 An example for `MACHINE` is:
 ```json
 {
-  "train": [
+  "train":
     {
       "machine": {
         "batch": "slurm",
@@ -1244,9 +1239,8 @@ An example for `MACHINE` is:
         "qos": "data"
       },
       "command": "USERPATH/dp"
-    }
-  ],
-  "model_devi": [
+    },
+  "model_devi":
     {
       "machine": {
         "batch": "slurm",
@@ -1270,9 +1264,8 @@ An example for `MACHINE` is:
       },
       "command": "lmp_serial",
       "group_size": 1
-    }
-  ],
-  "fp": [
+    },
+  "fp":
     {
       "machine": {
         "batch": "slurm",
@@ -1299,7 +1292,6 @@ An example for `MACHINE` is:
       "command": "vasp_gpu",
       "group_size": 1
     }
-  ]
 }
 ```
 Following table illustrates which key is needed for three types of machine: `train`,`model_devi`  and `fp`. Each of them is a list of dicts. Each dict can be considered as an independent environmnet for calculation.
@@ -1340,7 +1332,7 @@ mem_limit | Interger | 16 | Maximal memory permitted to apply for the job.
 | group_size | Integer | 5 | DP-GEN will put these jobs together in one submitting script.
 | user_forward_files | List of str | ["/path_to/vdw_kernel.bindat"] | These files will be uploaded in each calculation task. You should make sure provide the path exists. 
 | user_backward_files | List of str | ["HILLS"] | Besides DP-GEN's normal output, these files will be downloaded after each calculation. You should make sure these files can be generated.
-  
+
 ## Troubleshooting
 1. The most common problem is whether two settings correspond with each other, including:
     - The order of elements in `type_map` and `mass_map` and **`fp_pp_files`**.

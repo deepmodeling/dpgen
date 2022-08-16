@@ -221,6 +221,7 @@ def create_disturbs_abacus_dev(fin, nfile, dmax=1.0, etmax=0.1, ofmt="abacus", d
         stru_d['cells'] = cell_new
 
         convert_mat = np.linalg.inv(cell).dot(cell_new)
+        convert_mat = np.linalg.inv(cell)*cell_new
         stru_d['coords'] = np.matmul(stru_d['coords'], convert_mat)
 
 

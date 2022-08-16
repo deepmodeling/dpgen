@@ -25,6 +25,10 @@ requirements:
     - requests
     - dpdata
     - dpdispatcher
+    - ase
+    - GromacsWrapper
+    - custodian
+    - netCDF4
 
   run:
     - python >=3.6
@@ -34,6 +38,10 @@ requirements:
     - dpdata
     - dpdispatcher
     - pymatgen
+    - ase
+    - GromacsWrapper
+    - custodian
+    - netCDF4
 
 test:
   imports:

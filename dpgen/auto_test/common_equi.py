@@ -2,6 +2,7 @@ import glob
 import os
 import warnings
 from monty.serialization import dumpfn
+from multiprocessing import Pool
 
 import dpgen.auto_test.lib.crys as crys
 import dpgen.auto_test.lib.util as util
@@ -12,6 +13,8 @@ from dpgen.dispatcher.Dispatcher import make_dispatcher
 from distutils.version import LooseVersion
 from dpgen.dispatcher.Dispatcher import make_submission
 from dpgen.remote.decide_machine import convert_mdata
+from dpgen.auto_test.lib.utils import create_path
+
 lammps_task_type = ['deepmd', 'meam', 'eam_fs', 'eam_alloy']
 
 
@@ -36,7 +39,11 @@ def make_equi(confs,
     # ...
     cwd = os.getcwd()
     # generate poscar for single element crystal
-    if len(ele_list) == 1:
+    if len(ele_list) == 1 or 'single' in inter_param:
+        if 'single' in inter_param:
+            element_label = int(inter_param['single'])
+        else:
+            element_label = 0
         for ii in conf_dirs:
             os.chdir(ii)
             crys_type = ii.split('/')[-1]
@@ -44,22 +51,22 @@ def make_equi(confs,
             dlog.debug('pwd: %s' % os.getcwd())
             if crys_type == 'std-fcc':
                 if not os.path.exists('POSCAR'):
-                    crys.fcc1(ele_list[0]).to('POSCAR', 'POSCAR')
+                    crys.fcc1(ele_list[element_label]).to('POSCAR', 'POSCAR')
             elif crys_type == 'std-hcp':
                 if not os.path.exists('POSCAR'):
-                    crys.hcp(ele_list[0]).to('POSCAR', 'POSCAR')
+                    crys.hcp(ele_list[element_label]).to('POSCAR', 'POSCAR')
             elif crys_type == 'std-dhcp':
                 if not os.path.exists('POSCAR'):
-                    crys.dhcp(ele_list[0]).to('POSCAR', 'POSCAR')
+                    crys.dhcp(ele_list[element_label]).to('POSCAR', 'POSCAR')
             elif crys_type == 'std-bcc':
                 if not os.path.exists('POSCAR'):
-                    crys.bcc(ele_list[0]).to('POSCAR', 'POSCAR')
+                    crys.bcc(ele_list[element_label]).to('POSCAR', 'POSCAR')
             elif crys_type == 'std-diamond':
                 if not os.path.exists('POSCAR'):
-                    crys.diamond(ele_list[0]).to('POSCAR', 'POSCAR')
+                    crys.diamond(ele_list[element_label]).to('POSCAR', 'POSCAR')
             elif crys_type == 'std-sc':
                 if not os.path.exists('POSCAR'):
-                    crys.sc(ele_list[0]).to('POSCAR', 'POSCAR')
+                    crys.sc(ele_list[element_label]).to('POSCAR', 'POSCAR')
 
             os.chdir(cwd)
     task_dirs = []
@@ -76,11 +83,11 @@ def make_equi(confs,
         poscar = os.path.abspath(os.path.join(ii, 'POSCAR'))
         if not os.path.exists(poscar):
             raise FileNotFoundError('no configuration for autotest')
+        if os.path.exists(os.path.join(ii, 'relaxation', 'jr.json')):
+            os.remove(os.path.join(ii, 'relaxation', 'jr.json'))
+
         relax_dirs = os.path.abspath(os.path.join(ii, 'relaxation', 'relax_task'))    # to be consistent with property in make dispatcher
-        if os.path.exists(relax_dirs):
-            dlog.warning('%s already exists' % relax_dirs)
-        else:
-            os.makedirs(relax_dirs)
+        create_path(relax_dirs)
         task_dirs.append(relax_dirs)
         os.chdir(relax_dirs)
         # copy POSCARs to mp-xxx/relaxation/relax_task
@@ -111,6 +118,7 @@ def make_equi(confs,
         inter.make_input_file(ii, 'relaxation', relax_param)
 
 
+
 def run_equi(confs,
              inter_param,
              mdata):
@@ -120,15 +128,18 @@ def run_equi(confs,
     for conf in confs:
         conf_dirs.extend(glob.glob(conf))
     conf_dirs.sort()
+
+    processes = len(conf_dirs)
+
     # generate a list of task names like mp-xxx/relaxation/relax_task
     # ...
     work_path_list = []
     for ii in conf_dirs:
-        work_path_list.append(os.path.abspath(os.path.join(ii, 'relaxation')))
+        work_path_list.append(os.path.join(ii, 'relaxation'))
     all_task = []
     for ii in work_path_list:
         all_task.append(os.path.join(ii, 'relax_task'))
-
+    run_tasks = all_task
     inter_type = inter_param['type']
     # vasp
     if inter_type == "vasp":
@@ -137,7 +148,7 @@ def run_equi(confs,
         mdata = convert_mdata(mdata, ["model_devi"])
     else:
         raise RuntimeError("unknown task %s, something wrong" % inter_type)
-
+    
     # dispatch the tasks
     # POSCAR here is useless
     virtual_calculator = make_calculator(inter_param, "POSCAR")
@@ -145,50 +156,43 @@ def run_equi(confs,
     forward_common_files = virtual_calculator.forward_common_files()
     backward_files = virtual_calculator.backward_files()
     #    backward_files += logs
-    # ...
-    run_tasks = util.collect_task(all_task, inter_type)
-    if len(run_tasks) == 0:
-        return
-    else:
-        # if LooseVersion()
-        run_tasks = [os.path.basename(ii) for ii in all_task]
-        machine, resources, command, group_size = util.get_machine_info(mdata, inter_type)
-        print('%d tasks will be submited '%len(run_tasks))
-        for ii in range(len(work_path_list)):
-            work_path = work_path_list[ii]
-            disp = make_dispatcher(machine, resources, work_path, [run_tasks[ii]], group_size)
-            print("%s --> Runing... "%(work_path))
+    machine, resources, command, group_size = util.get_machine_info(mdata, inter_type)
+    work_path = os.getcwd()
+    print("%s --> Runing... " % (work_path))
 
-        api_version = mdata.get('api_version', '0.9')
-        if LooseVersion(api_version) < LooseVersion('1.0'):
-            warnings.warn(f"the dpdispatcher will be updated to new version."
-                f"And the interface may be changed. Please check the documents for more details")
-            disp.run_jobs(resources,
-                            command,
-                            work_path,
-                            [run_tasks[ii]],
-                            group_size,
-                            forward_common_files,
-                            forward_files,
-                            backward_files,
-                            outlog='outlog',
-                            errlog='errlog')
-        elif LooseVersion(api_version) >= LooseVersion('1.0'):
-            submission = make_submission(
-                mdata_machine=machine,
-                mdata_resource=resources,
-                commands=[command],
-                work_path=work_path,
-                run_tasks=run_tasks,
-                group_size=group_size,
-                forward_common_files=forward_common_files,
-                forward_files=forward_files,
-                backward_files=backward_files,
-                outlog = 'outlog',
-                errlog = 'errlog'
-            )
-            submission.run_submission()
-
+    api_version = mdata.get('api_version', '0.9')
+    if LooseVersion(api_version) < LooseVersion('1.0'):
+        warnings.warn(f"the dpdispatcher will be updated to new version."
+                      f"And the interface may be changed. Please check the documents for more details")
+        disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
+        disp.run_jobs(resources,
+                      command,
+                      work_path,
+                      run_tasks,
+                      group_size,
+                      forward_common_files,
+                      forward_files,
+                      backward_files,
+                      outlog='outlog',
+                      errlog='errlog')
+    elif LooseVersion(api_version) >= LooseVersion('1.0'):
+    
+        submission = make_submission(
+            mdata_machine=machine,
+            mdata_resources=resources,
+            commands=[command],
+            work_path=work_path,
+            run_tasks=run_tasks,
+            group_size=group_size,
+            forward_common_files=forward_common_files,
+            forward_files=forward_files,
+            backward_files=backward_files,
+            outlog='outlog',
+            errlog='errlog'
+        )
+        submission.run_submission()
+    
+    
 
 def post_equi(confs, inter_param):
     # find all POSCARs and their name like mp-xxx

@@ -24,7 +24,7 @@ class TestShell(unittest.TestCase) :
                                       'port': port,
                                       'username' : getpass.getuser(),
                                       'work_path' : os.path.join(os.getcwd(), 'rmt')})
-        except:
+        except Exception:
             ssh_session = SSHSession({'hostname' : 'localhost',
                                       'port': 5566,
                                       'username' : getpass.getuser(),

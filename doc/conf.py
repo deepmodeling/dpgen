@@ -11,6 +11,7 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
+import sys
 import subprocess
 # import sys
 import recommonmark
@@ -38,17 +39,21 @@ author = 'Deep Potential'
 # ]
 
 extensions = [
+    'deepmodeling_sphinx',
+    'dargs.sphinx',
     "sphinx_rtd_theme",
     'myst_parser',
     'sphinx.ext.autosummary',
+    'sphinx.ext.viewcode',
+    'sphinxarg.ext',
 ]
 
 
 # Tell sphinx what the primary language being documented is.
-primary_domain = 'cpp'
+primary_domain = 'py'
 
 # Tell sphinx what the pygments highlight language should be.
-highlight_language = 'cpp'
+highlight_language = 'py'
 
 # 
 myst_heading_anchors = 4
@@ -78,3 +83,29 @@ html_theme = 'sphinx_rtd_theme'
 autodoc_default_flags = ['members']
 autosummary_generate = True
 master_doc = 'index'
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/", None),
+    "dargs": ("https://docs.deepmodeling.com/projects/dargs/en/latest/", None),
+    "dpdata": ("https://docs.deepmodeling.com/projects/dpdata/en/latest/", None),
+    "dpdispatcher": ("https://docs.deepmodeling.com/projects/dpdispatcher/en/latest/", None),
+    "ase": ("https://wiki.fysik.dtu.dk/ase/", None),
+    "numpy": ("https://docs.scipy.org/doc/numpy/", None),
+    "pamatgen": ("https://pymatgen.org/", None),
+    "monty": ("https://guide.materialsvirtuallab.org/monty/", None),
+    "paramiko": ("https://docs.paramiko.org/en/stable/", None),
+    "custodian": ("https://cloudcustodian.io/docs/", None),
+    "GromacsWrapper": ("https://gromacswrapper.readthedocs.io/en/latest/", None),
+}
+
+
+def run_apidoc(_):
+    from sphinx.ext.apidoc import main
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+    cur_dir = os.path.abspath(os.path.dirname(__file__))
+    module = os.path.join(cur_dir, "..", "dpgen")
+    main(['-M', '--tocfile', 'api', '-H', 'DP-GEN API', '-o', os.path.join(cur_dir, "api"), module, '--force'])
+
+
+def setup(app):
+    app.connect('builder-inited', run_apidoc)

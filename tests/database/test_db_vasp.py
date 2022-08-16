@@ -61,7 +61,7 @@ class Test(unittest.TestCase):
            Potcar(['Al'])
            #ps  TITEL  = PAW_PBE Al 04Jan2001
            refd.update({'hashs':['9aafba2c552fad8414179cae2e888e67']})
-        except:
+        except Exception:
            pass
 
         for f in self.init_path+self.iter_path:
@@ -121,7 +121,7 @@ class Test(unittest.TestCase):
         #try:
         #   Potcar(['Al'])
         #   ref=os.path.join(self.cwd,'data/all_data_pp.json')
-        #except:
+        #except Exception:
         #   ref=os.path.join(self.cwd,'data/all_data.json')
         #Potcar(['Al'])
         ref=os.path.join(self.cwd,'data/all_data_pp.json')

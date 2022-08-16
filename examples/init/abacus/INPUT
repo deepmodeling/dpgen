@@ -1,0 +1,16 @@
+INPUT_PARAMETERS
+
+calculation relax
+pseudo_dir ./
+ntype 2
+symmetry 1
+ecutwfc 90
+
+mixing_type pulay
+mixing_beta 0.4
+
+force_thr_ev 0.02
+relax_method cg
+
+basis_type lcao
+deepks_model model.ptg
