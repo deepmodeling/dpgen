@@ -14,6 +14,8 @@ If you have no idea how to fix your problem or where to find the relative code, 
 #### Use command line
 You can use git with the command line, or open the repository on Github Desktop. Here is a video as a demo of making changes to DP-GEN and publishing it with command line.
 
+https://www.youtube.com/watch?v=DPApc1_eNS8
+  
 If you have never used Github before, remember to generate your ssh key and configure the public key in Github Settings.
 If you can't configure your username and password, please use token. 
 The explanation from Github see https://github.blog/2020-12-15-token-authentication-requirements-for-git-operations/
