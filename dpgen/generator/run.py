@@ -3829,7 +3829,7 @@ def get_atomic_masses(atom):
     elif atom in atomic_number:
         return atomic_masses[atomic_number.index(atom)]
     else:
-        raise RuntimeError('unknown atomic identifier', atom, '.Please pass in element names, chemical symbols, or atomic number.')
+        raise RuntimeError('unknown atomic identifier', atom, 'if one want to use isotopes, or non-standard element names, chemical symbols, or atomic number in the type_map list, please customize the mass_map list instead of using "auto".')
 
 
 def gen_run(args) :
