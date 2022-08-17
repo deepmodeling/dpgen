@@ -96,22 +96,5 @@ As mentioned in "How to build the website to check if the modification works".
 
 https://github.com/deepmodeling/dpgen/pulls
 
-### How to build the website to check if it works
-
-1. Fork https://github.com/deepmodeling/dpgen
-2. Create account on readthedocs
-readthedocs.org
-https://readthedocs.org/
-3. Import https://github.com/<your-github-username>/dpgen.git 
-Remember to set Project homepage as https://github.com/<your-github-username>/dpgen , and set the Default branch as the one you do modification in Advanced Settings.
-
-<div align=center><href="https://sm.ms/image/4cVRb7ytT1h5l9n" target="_blank"><img src="https://s2.loli.net/2022/08/16/4cVRb7ytT1h5l9n.png" width="60%"></div>
-
-(“doc_overview” is just an example, please change it into your branch's name.)
-
-4. Build Version 
-
-<div align=center><href="https://sm.ms/image/CsJ7S5xeTYh9EWp" target="_blank"><img src="https://s2.loli.net/2022/08/16/CsJ7S5xeTYh9EWp.png" width="60%"></div>
-
 ---
 After successfully making a PR, developers will check it and give comments. It will be merged after everything done. Then CONGRATULATIONS! You become a first-time contributor to DP-GEN!  
