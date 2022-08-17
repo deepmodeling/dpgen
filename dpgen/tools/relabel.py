@@ -88,7 +88,7 @@ def create_init_tasks(target_folder, param_file, output, fp_json, verbose = True
     fp_jdata = json.load(open(fp_json))
     # fp settings
     type_map = jdata['type_map']
-    mass_map = [get_atomic_masses(i) for i in jdata['type_map']] if jdata['mass_map'] is None else jdata['mass_map']
+    mass_map = [get_atomic_masses(i) for i in jdata['type_map']]
     fp_style = fp_jdata['fp_style']
     fp_pp_path = fp_jdata['fp_pp_path']
     fp_pp_files = fp_jdata['fp_pp_files']
@@ -147,7 +147,7 @@ def create_tasks(target_folder, param_file, output, fp_json, verbose = True, num
     os.chdir(target_folder)
     sys = jdata['sys_configs']    
     # fp settings
-    mass_map = [get_atomic_masses(i) for i in jdata['type_map']] if jdata['mass_map'] is None else jdata['mass_map']
+    mass_map = [get_atomic_masses(i) for i in jdata['type_map']]
     fp_style = fp_jdata['fp_style']
     fp_pp_path = fp_jdata['fp_pp_path']
     fp_pp_files = fp_jdata['fp_pp_files']
