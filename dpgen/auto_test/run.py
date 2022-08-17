@@ -45,7 +45,7 @@ def run_task(step, param_file, machine_file=None):
 
     elif step == 'post' and 'properties' in jdata:
         property_list = jdata['properties']
-        post_property(confs, property_list)
+        post_property(confs,inter_parameter, property_list)
 
     else:
         raise RuntimeError('unknown tasks')

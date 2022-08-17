@@ -8,7 +8,7 @@ import argparse
 
 import numpy as np
 import ase.io
-import io_lammps
+import dpgen.data.tools.io_lammps as io_lammps
 
 from dpgen.generator.lib.abacus_scf import get_abacus_STRU, make_abacus_scf_stru
 

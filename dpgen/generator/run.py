@@ -50,6 +50,7 @@ from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
 from dpgen.generator.lib.vasp import incar_upper
 from dpgen.generator.lib.pwscf import make_pwscf_input
 from dpgen.generator.lib.abacus_scf import make_abacus_scf_stru, make_abacus_scf_input, make_abacus_scf_kpt
+from dpgen.generator.lib.abacus_scf import get_abacus_input_parameters
 #from dpgen.generator.lib.pwscf import cvt_1frame
 from dpgen.generator.lib.pwmat import make_pwmat_input_dict
 from dpgen.generator.lib.pwmat import write_input_dict
@@ -779,6 +780,7 @@ def make_model_devi (iter_index,
             return False
     else:
         # mode 1: generate structures according to the user-provided input.dat file, so calypso_input_path and model_devi_max_iter are needed
+        run_mode = 1
         if "calypso_input_path" in jdata:
             try:
                 maxiter = jdata.get('model_devi_max_iter')
@@ -788,10 +790,11 @@ def make_model_devi (iter_index,
         else:
             try:
                 maxiter = max(model_devi_jobs[-1].get('times'))
+                run_mode = 2
             except KeyError:
                 raise KeyError('did not find model_devi_jobs["times"] key')
         if (iter_index > maxiter) :
-            print(f'iter_index is {iter_index} and maxiter is {maxiter}')
+            dlog.info(f'iter_index is {iter_index} and maxiter is {maxiter}')
             return False
 
     if "sys_configs_prefix" in jdata:
@@ -802,13 +805,13 @@ def make_model_devi (iter_index,
             sys_configs.append(temp_sys_list)
     else:
         sys_configs = jdata['sys_configs']
-    shuffle_poscar = jdata['shuffle_poscar']
+    shuffle_poscar = jdata.get('shuffle_poscar', False)
 
     if model_devi_engine != 'calypso':
         cur_job = model_devi_jobs[iter_index]
         sys_idx = expand_idx(cur_job['sys_idx'])
     else:
-        cur_job = []
+        cur_job = {'model_devi_engine':'calypso','input.dat':'user_provided'}
         sys_idx = []
 
     if (len(sys_idx) != len(list(set(sys_idx)))) :
@@ -818,7 +821,7 @@ def make_model_devi (iter_index,
         cur_systems = []
         ss = sys_configs[idx]
         for ii in ss :
-            cur_systems += glob.glob(ii)
+            cur_systems += sorted(glob.glob(ii))
         # cur_systems should not be sorted, as we may add specific constrict to the similutions 
         #cur_systems.sort()
         cur_systems = [os.path.abspath(ii) for ii in cur_systems]
@@ -831,25 +834,65 @@ def make_model_devi (iter_index,
     work_path = os.path.join(iter_name, model_devi_name)
     create_path(work_path)
     if model_devi_engine == 'calypso':
-        calypso_run_opt_path = os.path.join(work_path,calypso_run_opt_name)
+        _calypso_run_opt_path = os.path.join(work_path,calypso_run_opt_name)
         calypso_model_devi_path = os.path.join(work_path,calypso_model_devi_name)
-        create_path(calypso_run_opt_path)
         create_path(calypso_model_devi_path)
         # run model devi script
         calypso_run_model_devi_script = os.path.join(calypso_model_devi_path,'calypso_run_model_devi.py')
         shutil.copyfile(calypso_run_model_devi_file,calypso_run_model_devi_script)
-        # run confs opt script
-        run_opt_script = os.path.join(calypso_run_opt_path,'calypso_run_opt.py')
-        shutil.copyfile(run_opt_file,run_opt_script)
-        # check outcar script
-        check_outcar_script = os.path.join(calypso_run_opt_path,'check_outcar.py')
-        shutil.copyfile(check_outcar_file,check_outcar_script)
+        # Create work path list
+        calypso_run_opt_path = []
+
+        # mode 1: generate structures according to the user-provided input.dat file,
+        # so calypso_input_path and model_devi_max_iter are needed
+        if run_mode == 1:
+            if jdata.get('vsc', False) and len(jdata.get('type_map')) > 1:
+                # [input.dat.Li.250, input.dat.Li.300]
+                one_ele_inputdat_list = glob.glob(
+                        f"{jdata.get('calypso_input_path')}/input.dat.{jdata.get('type_map')[0]}.*"
+                        )
+                if len(one_ele_inputdat_list) == 0:
+                    number_of_pressure = 1
+                else: 
+                    number_of_pressure = len(list(set(one_ele_inputdat_list)))
+
+                # calypso_run_opt_path = ['gen_struc_analy.000','gen_struc_analy.001']
+                for temp_idx in range(number_of_pressure):
+                    calypso_run_opt_path.append('%s.%03d'%(_calypso_run_opt_path, temp_idx))
+            elif not jdata.get('vsc', False):
+                calypso_run_opt_path.append('%s.%03d'%(_calypso_run_opt_path, 0))
+                        
+        # mode 2: control each iteration to generate structures in specific way 
+        # by providing model_devi_jobs key
+        elif run_mode == 2:
+            for iiidx, jobbs in enumerate(model_devi_jobs):
+                if iter_index in jobbs.get('times'):
+                    cur_job = model_devi_jobs[iiidx]
+                    
+            pressures_list = cur_job.get('PSTRESS', [0.0001])
+            for temp_idx in range(len(pressures_list)):
+                calypso_run_opt_path.append('%s.%03d'%(_calypso_run_opt_path, temp_idx))
+        # to different directory
+        # calypso_run_opt_path = ['gen_struc_analy.000','gen_struc_analy.001','gen_struc_analy.002',]
+        for temp_calypso_run_opt_path in calypso_run_opt_path:
+            create_path(temp_calypso_run_opt_path)
+            # run confs opt script
+            run_opt_script = os.path.join(temp_calypso_run_opt_path,'calypso_run_opt.py')
+            shutil.copyfile(run_opt_file,run_opt_script)
+            # check outcar script
+            check_outcar_script = os.path.join(temp_calypso_run_opt_path,'check_outcar.py')
+            shutil.copyfile(check_outcar_file,check_outcar_script)
+
     for mm in models :
         model_name = os.path.basename(mm)
         if model_devi_engine != 'calypso':
             os.symlink(mm, os.path.join(work_path, model_name))
         else:
-            os.symlink(mm, os.path.join(calypso_run_opt_path, model_name))
+            for temp_calypso_run_opt_path in calypso_run_opt_path:
+                models_path = os.path.join(temp_calypso_run_opt_path, model_name)
+                if not os.path.exists(models_path):
+                    os.symlink(mm, models_path)
+
     with open(os.path.join(work_path, 'cur_job.json'), 'w') as outfile:
         json.dump(cur_job, outfile, indent = 4)
 
@@ -925,7 +968,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
     sys_idx = expand_idx(cur_job['sys_idx'])
     if (len(sys_idx) != len(list(set(sys_idx)))) :
         raise RuntimeError("system index should be uniq")
-    mass_map = jdata['mass_map']
+    mass_map = [get_atomic_masses(i) for i in jdata['type_map']] if jdata['mass_map'] == "auto" else jdata['mass_map']
     use_plm = jdata.get('model_devi_plumed', False)
     use_plm_path = jdata.get('model_devi_plumed_path', False)
     trj_freq = _get_param_alias(cur_job, ['t_freq', 'trj_freq','traj_freq'])
@@ -1072,7 +1115,7 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
     model_devi_taup = 0.5
     if 'model_devi_taup' in jdata :
         model_devi_taup = jdata['model_devi_taup']
-    mass_map = jdata['mass_map']
+    mass_map = [get_atomic_masses(i) for i in jdata['type_map']] if jdata['mass_map'] == "auto" else jdata['mass_map']
     nopbc = jdata.get('model_devi_nopbc', False)
 
     iter_name = make_iter_name(iter_index)
@@ -1194,7 +1237,7 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
     if (len(sys_idx) != len(list(set(sys_idx)))) :
         raise RuntimeError("system index should be uniq")
 
-    mass_map = jdata['mass_map']
+    mass_map = [get_atomic_masses(i) for i in jdata['type_map']] if jdata['mass_map'] == "auto" else jdata['mass_map']
 
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
@@ -1519,6 +1562,8 @@ def run_md_model_devi (iter_index,
     forward_files += [os.path.basename(file) for file in user_forward_files]
     backward_files += mdata.get("model_devi" + "_user_backward_files", [])
     api_version = mdata.get('api_version', '0.9')
+    if(len(run_tasks) == 0): 
+        raise RuntimeError("run_tasks for model_devi should not be empty! Please check your files.") 
     if LooseVersion(api_version) < LooseVersion('1.0'):
         warnings.warn(f"the dpdispatcher will be updated to new version."
             f"And the interface may be changed. Please check the documents for more details")
@@ -1660,7 +1705,8 @@ def _select_by_model_devi_standard(
     if model_devi_engine == 'calypso':
         iter_name = modd_system_task[0].split('/')[0]
         _work_path = os.path.join(iter_name, model_devi_name)
-        calypso_run_opt_path = os.path.join(_work_path,calypso_run_opt_name)
+        # calypso_run_opt_path = os.path.join(_work_path,calypso_run_opt_name)
+        calypso_run_opt_path = glob.glob('%s/%s.*'%(_work_path, calypso_run_opt_name))[0]
         numofspecies = _parse_calypso_input('NumberOfSpecies',calypso_run_opt_path)
         min_dis = _parse_calypso_dis_mtx(numofspecies,calypso_run_opt_path)
     fp_candidate = []
@@ -1851,7 +1897,8 @@ def _make_fp_vasp_inner (modd_path,
     if model_devi_engine == 'calypso':
         iter_name = work_path.split('/')[0]
         _work_path = os.path.join(iter_name, model_devi_name)
-        calypso_run_opt_path = os.path.join(_work_path,calypso_run_opt_name)
+        # calypso_run_opt_path = os.path.join(_work_path,calypso_run_opt_name)
+        calypso_run_opt_path = glob.glob('%s/%s.*'%(_work_path, calypso_run_opt_name))[0]
         numofspecies = _parse_calypso_input('NumberOfSpecies',calypso_run_opt_path)
         min_dis = _parse_calypso_dis_mtx(numofspecies,calypso_run_opt_path)
 
@@ -1982,6 +2029,7 @@ def _make_fp_vasp_inner (modd_path,
                                 fp_candidate.append([tt, cc])
                                 counter['candidate'] += 1
                             cc += 1
+
         else:
             raise RuntimeError('unknown model_devi_engine', model_devi_engine)
 
@@ -2540,7 +2588,8 @@ def make_fp_pwscf(iter_index,
         sys_data['atom_masses'] = []
         pps = []
         for iii in sys_data['atom_names']:
-            sys_data['atom_masses'].append(jdata['mass_map'][jdata['type_map'].index(iii)])
+            mass_map = [get_atomic_masses(i) for i in jdata['type_map']] if jdata['mass_map'] == "auto" else jdata['mass_map']
+            sys_data['atom_masses'].append(mass_map[jdata['type_map'].index(iii)])
             pps.append(fp_pp_files[jdata['type_map'].index(iii)])
         ret = make_pwscf_input(sys_data, pps, fp_params, user_input = user_input)
         with open('input', 'w') as fp:
@@ -2561,7 +2610,8 @@ def make_fp_abacus_scf(iter_index,
     fp_pp_files = jdata['fp_pp_files']
     fp_orb_files = None
     fp_dpks_descriptor = None
-    assert('user_fp_params' in jdata.keys())
+    # get paramters for writting INPUT file
+    fp_params = {}
     if 'user_fp_params' in jdata.keys() :
         fp_params = jdata['user_fp_params']
         # for lcao 
@@ -2574,20 +2624,59 @@ def make_fp_abacus_scf(iter_index,
                 assert('fp_dpks_descriptor' in jdata and type(jdata['fp_dpks_descriptor']) == str)
                 fp_dpks_descriptor = jdata['fp_dpks_descriptor']
         #user_input = True
+        ret_input = make_abacus_scf_input(fp_params)
+    elif 'fp_incar' in jdata.keys():
+        fp_input_path = jdata['fp_incar']
+        assert(os.path.exists(fp_input_path))
+        fp_input_path = os.path.abspath(fp_input_path)
+        fp_params = get_abacus_input_parameters(fp_input_path)
+        ret_input = make_abacus_scf_input(fp_params)
     else:
-        raise RuntimeError("Key 'user_fp_params' and its value have to be specified in parameter json file.")
+        raise RuntimeError("Set 'user_fp_params' or 'fp_incar' in json file to make INPUT of ABACUS")
+    # get paramters for writting KPT file
+    if 'kspacing' not in fp_params.keys():
+        if 'gamma_only' in fp_params.keys():
+            if fp_params["gamma_only"]==1:
+                gamma_param = {"k_points":[1,1,1,0,0,0]}
+                ret_kpt = make_abacus_scf_kpt(gamma_param)
+            else:
+                if 'k_points' in jdata.keys() :
+                    ret_kpt = make_abacus_scf_kpt(jdata)
+                elif 'fp_kpt_file' in jdata.keys():
+                    fp_kpt_path = jdata['fp_kpt_file']
+                    assert(os.path.exists(fp_kpt_path))
+                    fp_kpt_path = os.path.abspath(fp_kpt_path)
+                    fk = open(fp_kpt_path)
+                    ret_kpt = fk.read()
+                    fk.close()
+                else:
+                    raise RuntimeError("Cannot find any k-points information")
+        else:
+            if 'k_points' in jdata.keys() :
+                ret_kpt = make_abacus_scf_kpt(jdata)
+            elif 'fp_kpt_file' in jdata.keys():
+                fp_kpt_path = jdata['fp_kpt_file']
+                assert(os.path.exists(fp_kpt_path))
+                fp_kpt_path = os.path.abspath(fp_kpt_path)
+                fk = open(fp_kpt_path)
+                ret_kpt = fk.read()
+                fk.close()
+            else:
+                gamma_param = {"k_points":[1,1,1,0,0,0]}
+                ret_kpt = make_abacus_scf_kpt(gamma_param)
+                warnings.warn("Cannot find k-points information, gamma_only will be generated.")
+
     cwd = os.getcwd()
     for ii in fp_tasks:
         os.chdir(ii)
         sys_data = dpdata.System('POSCAR').data
         if 'mass_map' in jdata:
-            sys_data['atom_masses'] = jdata['mass_map']
-        ret_input = make_abacus_scf_input(fp_params)
+            sys_data['atom_masses'] = [get_atomic_masses(i) for i in jdata['type_map']] if jdata['mass_map'] == "auto" else jdata['mass_map']
         with open('INPUT', 'w') as fp:
             fp.write(ret_input)
-        ret_kpt = make_abacus_scf_kpt(fp_params)
-        with open("KPT", "w") as fp:
-            fp.write(ret_kpt)
+        if 'kspacing' not in fp_params.keys():
+            with open("KPT", "w") as fp:
+                fp.write(ret_kpt)
         ret_stru = make_abacus_scf_stru(sys_data, fp_pp_files, fp_orb_files, fp_dpks_descriptor, fp_params)
         with open("STRU", "w") as fp:
             fp.write(ret_stru)
@@ -2817,7 +2906,7 @@ def make_fp (iter_index,
         make_fp_vasp(iter_index, jdata)
     elif fp_style == "pwscf" :
         make_fp_pwscf(iter_index, jdata)
-    elif fp_style == "abacus/scf" :
+    elif fp_style == "abacus" :
         make_fp_abacus_scf(iter_index, jdata)
     elif fp_style == "siesta" :
         make_fp_siesta(iter_index, jdata)
@@ -3021,8 +3110,19 @@ def run_fp (iter_index,
         forward_files = ['input'] + fp_pp_files
         backward_files = ['output']
         run_fp_inner(iter_index, jdata, mdata,  forward_files, backward_files, _qe_check_fin, log_file = 'output')
-    elif fp_style == "abacus/scf":
-        forward_files = ["INPUT", "STRU", "KPT"] + fp_pp_files
+    elif fp_style == "abacus":
+        fp_params = {}
+        if 'user_fp_params' in jdata.keys() :
+            fp_params = jdata['user_fp_params']
+        elif 'fp_incar' in jdata.keys():
+            fp_input_path = jdata['fp_incar']
+            assert(os.path.exists(fp_input_path))
+            fp_input_path = os.path.abspath(fp_input_path)
+            fp_params = get_abacus_input_parameters(fp_input_path)
+        forward_files = ["INPUT", "STRU"]
+        if 'kspacing' not in fp_params.keys():
+            forward_files = ["INPUT","STRU","KPT"]
+        forward_files += fp_pp_files
         if "fp_orb_files" in jdata:
             forward_files += jdata["fp_orb_files"]
         if "fp_dpks_descriptor" in jdata:
@@ -3137,12 +3237,13 @@ def post_fp_vasp (iter_index,
                 else:
                     all_sys.append(_sys)
                 # save ele_temp, if any
-                with open(oo.replace('OUTCAR', 'job.json')) as fp:
-                    job_data = json.load(fp)
-                if 'ele_temp' in job_data:
-                    assert(use_ele_temp)
-                    ele_temp = job_data['ele_temp']
-                    all_te.append(ele_temp)
+                if(os.path.exists(oo.replace('OUTCAR', 'job.json')) ): 
+                    with open(oo.replace('OUTCAR', 'job.json')) as fp:
+                        job_data = json.load(fp)
+                    if 'ele_temp' in job_data:
+                        assert(use_ele_temp)
+                        ele_temp = job_data['ele_temp']
+                        all_te.append(ele_temp)
             else:
                 icount+=1
         all_te = np.array(all_te)
@@ -3508,7 +3609,7 @@ def post_fp (iter_index,
         post_fp_vasp(iter_index, jdata)
     elif fp_style == "pwscf" :
         post_fp_pwscf(iter_index, jdata)
-    elif fp_style == "abacus/scf":
+    elif fp_style == "abacus":
         post_fp_abacus_scf(iter_index, jdata)
     elif fp_style == "siesta":
         post_fp_siesta(iter_index, jdata)
@@ -3632,6 +3733,103 @@ def run_iter (param_file, machine_file) :
             else :
                 raise RuntimeError ("unknown task %d, something wrong" % jj)
             record_iter (record, ii, jj)
+
+def get_atomic_masses(atom):
+    element_names = ['Hydrogen', 'Helium', 'Lithium', 'Beryllium', 'Boron', 'Carbon', 'Nitrogen',
+                     'Oxygen', 'Fluorine', 'Neon', 'Sodium', 'Magnesium', 'Aluminium', 'Silicon',
+                     'Phosphorus', 'Sulfur', 'Chlorine', 'Argon', 'Potassium', 'Calcium', 'Scandium',
+                     'Titanium', 'Vanadium', 'Chromium', 'Manganese', 'Iron', 'Cobalt', 'Nickel',
+                     'Copper', 'Zinc', 'Gallium', 'Germanium', 'Arsenic', 'Selenium', 'Bromine',
+                     'Krypton', 'Rubidium', 'Strontium', 'Yttrium', 'Zirconium', 'Niobium',
+                     'Molybdenum', 'Technetium', 'Ruthenium', 'Rhodium', 'Palladium', 'Silver',
+                     'Cadmium', 'Indium', 'Tin', 'Antimony', 'Tellurium', 'Iodine', 'Xenon',
+                     'Caesium', 'Barium', 'Lanthanum', 'Cerium', 'Praseodymium', 'Neodymium',
+                     'Promethium', 'Samarium', 'Europium', 'Gadolinium', 'Terbium', 'Dysprosium',
+                     'Holmium', 'Erbium', 'Thulium', 'Ytterbium', 'Lutetium', 'Hafnium', 'Tantalum',
+                     'Tungsten', 'Rhenium', 'Osmium', 'Iridium', 'Platinum', 'Gold', 'Mercury',
+                     'Thallium', 'Lead', 'Bismuth', 'Polonium', 'Astatine', 'Radon', 'Francium',
+                     'Radium', 'Actinium', 'Thorium', 'Protactinium', 'Uranium', 'Neptunium',
+                     'Plutonium', 'Americium', 'Curium', 'Berkelium', 'Californium', 'Einsteinium',
+                     'Fermium', 'Mendelevium', 'Nobelium', 'Lawrencium', 'Rutherfordium', 'Dubnium',
+                     'Seaborgium', 'Bohrium', 'Hassium', 'Meitnerium', 'Darmastadtium', 'Roentgenium',
+                     'Copernicium', 'Nihonium', 'Flerovium', 'Moscovium', 'Livermorium', 'Tennessine',
+                     'Oganesson']
+    chemical_symbols  = ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al',
+                         'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe',
+                         'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr',
+                         'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn',
+                         'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm',
+                         'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Hf', 'Ta', 'W',
+                         'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn',
+                         'Fr', 'Ra', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf',
+                         'Es', 'Fm', 'Md', 'No', 'Lr', 'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds',
+                         'Rg', 'Cn', 'Nh', 'Fl', 'Mc', 'Lv', 'Ts', 'Og']
+    atomic_number  = [ i+1 for i in range(len(chemical_symbols)) ]
+
+    # NIST Standard Reference Database 144
+    # URL: https://physics.nist.gov/cgi-bin/Compositions/stand_alone.pl?ele=&ascii=ascii&isotype=all
+    atomic_masses_common = [1.00782503223, 4.00260325413, 7.0160034366, 9.012183065, 11.00930536,
+                            12.0, 14.00307400443, 15.99491461957, 18.99840316273, 19.9924401762,
+                            22.989769282, 23.985041697, 26.98153853, 27.97692653465, 30.97376199842,
+                            31.9720711744, 34.968852682, 39.9623831237, 38.9637064864, 39.962590863,
+                            44.95590828, 47.94794198, 50.94395704, 51.94050623, 54.93804391,
+                            55.93493633, 58.93319429, 57.93534241, 62.92959772, 63.92914201,
+                            68.9255735, 73.921177761, 74.92159457, 79.9165218, 78.9183376, 83.9114977282,
+                            84.9117897379, 87.9056125, 88.9058403, 89.9046977, 92.906373, 97.90540482,
+                            96.9063667, 101.9043441, 102.905498, 105.9034804, 106.9050916, 113.90336509,
+                            114.903878776, 119.90220163, 120.903812, 129.906222748, 126.9044719,
+                            131.9041550856, 132.905451961, 137.905247, 138.9063563, 139.9054431,
+                            140.9076576, 141.907729, 144.9127559, 151.9197397, 152.921238, 157.9241123,
+                            158.9253547, 163.9291819, 164.9303288, 165.9302995, 168.9342179, 173.9388664,
+                            174.9407752, 179.946557, 180.9479958, 183.95093092, 186.9557501, 191.961477,
+                            192.9629216, 194.9647917, 196.96656879, 201.9706434, 204.9744278, 207.9766525,
+                            208.9803991, 208.9824308, 209.9871479, 222.0175782, 223.019736, 226.0254103,
+                            227.0277523, 232.0380558, 231.0358842, 238.0507884, 237.0481736, 244.0642053,
+                            243.0613813, 247.0703541, 247.0703073, 251.0795886, 252.08298, 257.0951061,
+                            258.0984315, 259.10103, 262.10961, 267.12179, 268.12567, 271.13393, 272.13826,
+                            270.13429, 276.15159, 281.16451, 280.16514, 285.17712, 284.17873, 289.19042, 
+                            288.19274, 293.20449, 292.20746, 294.21392]
+    # IUPAC Technical Report
+    # doi:10.1515/pac-2015-0305
+    atomic_masses_2013 = [1.00784, 4.002602, 6.938, 9.0121831, 10.806, 12.0096, 14.00643, 15.99903,
+                          18.99840316, 20.1797, 22.98976928, 24.304, 26.9815385, 28.084, 30.973762,
+                          32.059, 35.446, 39.948, 39.0983, 40.078, 44.955908, 47.867, 50.9415, 51.9961,
+                          54.938044, 55.845, 58.933194, 58.6934, 63.546, 65.38, 69.723, 72.63, 74.921595,
+                          78.971, 79.901, 83.798, 85.4678, 87.62, 88.90584, 91.224, 92.90637, 95.95, None,
+                          101.07, 102.9055, 106.42, 107.8682, 112.414, 114.818, 118.71, 121.76, 127.6,
+                          126.90447, 131.293, 132.905452, 137.327, 138.90547, 140.116, 140.90766, 144.242,
+                          None, 150.36, 151.964, 157.25, 158.92535, 162.5, 164.93033, 167.259, 168.93422,
+                          173.054, 174.9668, 178.49, 180.94788, 183.84, 186.207, 190.23, 192.217, 195.084,
+                          196.966569, 200.592, 204.382, 207.2, 208.9804, None, None, None, None, None, None,
+                          232.0377, 231.03588, 238.02891, None, None, None, None, None, None, None, None,
+                          None, None, None, None, None, None, None, None, None, None, None, None, None,
+                          None, None, None, None, None]
+    # IUPAC Technical Report
+    # doi:10.1515/pac-2019-0603
+    atomic_masses_2021 = [1.00784, 4.002602, 6.938, 9.0121831, 10.806, 12.0096, 14.00643, 15.99903,
+                          18.99840316, 20.1797, 22.98976928, 24.304, 26.9815384, 28.084, 30.973762,
+                          32.059, 35.446, 39.792, 39.0983, 40.078, 44.955907, 47.867, 50.9415, 51.9961,
+                          54.938043, 55.845, 58.933194, 58.6934, 63.546, 65.38, 69.723, 72.63, 74.921595,
+                          78.971, 79.901, 83.798, 85.4678, 87.62, 88.905838, 91.224, 92.90637, 95.95,
+                          None, 101.07, 102.90549, 106.42, 107.8682, 112.414, 114.818, 118.71, 121.76,
+                          127.6, 126.90447, 131.293, 132.905452, 137.327, 138.90547, 140.116, 140.90766,
+                          144.242, None, 150.36, 151.964, 157.25, 158.925354, 162.5, 164.930329, 167.259,
+                          168.934219, 173.045, 174.9668, 178.486, 180.94788, 183.84, 186.207, 190.23,
+                          192.217, 195.084, 196.96657, 200.592, 204.382, 206.14, 208.9804, None, None,
+                          None, None, None, None, 232.0377, 231.03588, 238.02891, None, None, None,
+                          None, None, None, None, None, None, None, None, None, None, None, None, None,
+                          None, None, None, None, None, None, None, None, None, None]
+
+    atomic_masses = [atomic_masses_common[n] if i is None else i for n,i in enumerate(atomic_masses_2021)]
+
+    if atom in element_names:
+        return atomic_masses[element_names.index(atom)]
+    elif atom in chemical_symbols:
+        return atomic_masses[chemical_symbols.index(atom)]
+    elif atom in atomic_number:
+        return atomic_masses[atomic_number.index(atom)]
+    else:
+        raise RuntimeError('unknown atomic identifier', atom, 'if one want to use isotopes, or non-standard element names, chemical symbols, or atomic number in the type_map list, please customize the mass_map list instead of using "auto".')
 
 
 def gen_run(args) :

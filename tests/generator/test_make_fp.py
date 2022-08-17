@@ -14,6 +14,7 @@ from .context import param_old_file
 from .context import param_pwscf_file
 from .context import param_pwscf_old_file
 from .context import param_abacus_post_file
+from .context import param_diy_abacus_post_file
 from .context import param_siesta_file
 from .context import param_gaussian_file
 from .context import param_cp2k_file
@@ -155,8 +156,8 @@ abacus_input_ref = "INPUT_PARAMETERS\n\
 calculation scf\n\
 ntype 2\n\
 ecutwfc 80.000000\n\
-dr2 1.000000e-07\n\
-niter 50\n\
+scf_thr 1.000000e-07\n\
+scf_nmax 50\n\
 basis_type pw\n\
 gamma_only 1\n\
 dft_functional pbe\n\
@@ -166,14 +167,14 @@ symmetry 1\n\
 nbands 5\n\
 nspin 1\n\
 ks_solver cg\n\
-smearing fixed\n\
-sigma 0.001000\n\
-force 1\n\
-stress 1\n\
-out_descriptor 0\n\
-lmax_descriptor 0\n\
+smearing_method fixed\n\
+smearing_sigma 0.001000\n\
+cal_force 1\n\
+cal_stress 1\n\
+deepks_out_labels 0\n\
+deepks_descriptor_lmax 0\n\
 deepks_scf 0\n\
-model_file model.ptg\n"
+deepks_model model.ptg\n"
 
 abacus_kpt_ref = "K_POINTS\n\
 0\n\
@@ -575,8 +576,10 @@ class TestMakeFPABACUS(unittest.TestCase):
             shutil.rmtree('iter.000000')
         with open (param_abacus_post_file, 'r') as fp :
             jdata = json.load (fp)
+        fp.close()
         with open (machine_file, 'r') as fp:
             mdata = json.load (fp)
+        fp.close()
         md_descript = []
         nsys = 2
         nmd = 3
@@ -592,6 +595,36 @@ class TestMakeFPABACUS(unittest.TestCase):
         make_fp(0, jdata, {})
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
+        _check_abacus_input(self, 0)
+        _check_abacus_kpt(self, 0)
+        _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
+        shutil.rmtree('iter.000000')
+
+    def test_make_fp_abacus_from_input(self):
+        ## Verify if user chooses to diy ABACUS INPUT totally.
+        setUpModule()
+        if os.path.isdir('iter.000000') :
+            shutil.rmtree('iter.000000')
+        with open (param_diy_abacus_post_file, 'r') as fp :
+            jdata = json.load (fp)
+        fp.close()
+        with open (machine_file, 'r') as fp:
+            mdata = json.load (fp)
+        fp.close()
+        md_descript = []
+        nsys = 2
+        nmd = 3
+        n_frame = 10
+        for ii in range(nsys) :
+            tmp = []
+            for jj in range(nmd) :
+                tmp.append(np.arange(0, 0.29, 0.29/10))
+            md_descript.append(tmp)
+        atom_types = [0, 1, 0, 1]
+        type_map = jdata['type_map']
+        _make_fake_md(0, md_descript, atom_types, type_map)
+        make_fp(0, jdata, {})
+        _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
         _check_abacus_input(self, 0)
         _check_abacus_kpt(self, 0)

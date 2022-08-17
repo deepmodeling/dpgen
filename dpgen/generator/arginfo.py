@@ -17,7 +17,7 @@ def run_mdata_arginfo() -> Argument:
 # basics
 def basic_args() -> List[Argument]:
     doc_type_map = 'Atom types.'
-    doc_mass_map = 'Standard atom weights.'
+    doc_mass_map = 'Standard atomic weights (default: "auto"). if one want to use isotopes, or non-standard element names, chemical symbols, or atomic number in the type_map list, please customize the mass_map list instead of using "auto". Tips: at present the default value will not be applied automatically, so you need to set "mass_map" to "auto" manually in param.json.'
     doc_use_ele_temp = 'Currently only support fp_style vasp. \n\n\
 - 0: no electron temperature. \n\n\
 - 1: eletron temperature as frame parameter. \n\n\
@@ -25,7 +25,7 @@ def basic_args() -> List[Argument]:
 
     return [
         Argument("type_map", list, optional=False, doc=doc_type_map),
-        Argument("mass_map", list, optional=False, doc=doc_mass_map),
+        Argument("mass_map", [str, list], optional=True, default="auto", doc=doc_mass_map),
         Argument("use_ele_temp", int, optional=True,
                  default=0, doc=doc_use_ele_temp),
     ]
@@ -59,11 +59,26 @@ def data_args() -> List[Argument]:
 
 
 def training_args() -> List[Argument]:
+    """Traning arguments.
+    
+    Returns
+    -------
+    list[dargs.Argument]
+        List of training arguments.
+    """
     doc_numb_models = 'Number of models to be trained in 00.train. 4 is recommend.'
     doc_training_iter0_model_path = 'The model used to init the first iter training. Number of element should be equal to numb_models.'
     doc_training_init_model = 'Iteration > 0, the model parameters will be initilized from the model trained at the previous iteration. Iteration == 0, the model parameters will be initialized from training_iter0_model_path.'
     doc_default_training_param = 'Training parameters for deepmd-kit in 00.train. You can find instructions from here: (https://github.com/deepmodeling/deepmd-kit).'
     doc_dp_compress = 'Use dp compress to compress the model.'
+    doc_training_reuse_iter = "The minimal index of iteration that continues training models from old models of last iteration."
+    doc_reusing = " This option is only adopted when continuing training models from old models. This option will override default parameters."
+    doc_training_reuse_old_ratio = "The probability proportion of old data during training." + doc_reusing
+    doc_training_reuse_numb_steps = "Number of training batch." + doc_reusing
+    doc_training_reuse_start_lr = "The learning rate the start of the training." + doc_reusing
+    doc_training_reuse_start_pref_e = "The prefactor of energy loss at the start of the training." + doc_reusing
+    doc_training_reuse_start_pref_f = "The prefactor of force loss at the start of the training." + doc_reusing
+    doc_model_devi_activation_func = "The activation function in the model. The shape of list should be (N_models, 2), where 2 represents the embedding and fitting network. This option will override default parameters."
 
     return [
         Argument("numb_models", int, optional=False, doc=doc_numb_models),
@@ -75,6 +90,13 @@ def training_args() -> List[Argument]:
                  doc=doc_default_training_param),
         Argument("dp_compress", bool, optional=True,
                  default=False, doc=doc_dp_compress),
+        Argument("training_reuse_iter", [None, int], optional=True, doc=doc_training_reuse_iter),
+        Argument("training_reuse_old_ratio", [None, float], optional=True, doc=doc_training_reuse_old_ratio),
+        Argument("training_reuse_numb_steps", [None, int], alias=["training_reuse_stop_batch"], optional=True, default=400000, doc=doc_training_reuse_numb_steps),
+        Argument("training_reuse_start_lr", [None, float], optional=True, default=1e-4, doc=doc_training_reuse_start_lr),
+        Argument("training_reuse_start_pref_e", [None, float, int], optional=True, default=0.1, doc=doc_training_reuse_start_pref_e),
+        Argument("training_reuse_start_pref_f", [None, float, int], optional=True, default=100, doc=doc_training_reuse_start_pref_f),
+        Argument("model_devi_activation_func", [None, list], optional=True, doc=doc_model_devi_activation_func),
     ]
 
 
@@ -86,7 +108,7 @@ def model_devi_jobs_args() -> List[Argument]:
     doc_press = 'Pressure (Bar) in MD.'
     doc_trj_freq = 'Frequecy of trajectory saved in MD.'
     doc_nsteps = 'Running steps of MD.'
-    doc_ensembles = 'Determining which ensemble used in MD, options include “npt” and “nvt”.'
+    doc_ensemble = 'Determining which ensemble used in MD, options include “npt” and “nvt”.'
     doc_neidelay = 'delay building until this many steps since last build.'
     doc_taut = 'Coupling time of thermostat (ps).'
     doc_taup = 'Coupling time of barostat (ps).'
@@ -101,18 +123,18 @@ def model_devi_jobs_args() -> List[Argument]:
         Argument("press", list, optional=False, doc=doc_press),
         Argument("trj_freq", int, optional=False, doc=doc_trj_freq),
         Argument("nsteps", int, optional=False, doc=doc_nsteps),
-        Argument("ensembles", str, optional=False, doc=doc_ensembles),
+        Argument("ensemble", str, optional=False, doc=doc_ensemble),
         Argument("neidelay", int, optional=True, doc=doc_neidelay),
         Argument("taut", float, optional=True, doc=doc_taut),
         Argument("taup", float, optional=True, doc=doc_taup),
         Argument("model_devi_f_trust_lo", [
-                 float, dict], optional=False, doc=doc_model_devi_f_trust_lo),
+                 float, dict], optional=True, doc=doc_model_devi_f_trust_lo),
         Argument("model_devi_f_trust_hi", [
-                 float, dict], optional=False, doc=doc_model_devi_f_trust_hi),
+                 float, dict], optional=True, doc=doc_model_devi_f_trust_hi),
         Argument("model_devi_v_trust_lo", [
-                 float, dict], optional=False, doc=doc_model_devi_v_trust_lo),
+                 float, dict], optional=True, doc=doc_model_devi_v_trust_lo),
         Argument("model_devi_v_trust_hi", [
-                 float, dict], optional=False, doc=doc_model_devi_v_trust_hi),
+                 float, dict], optional=True, doc=doc_model_devi_v_trust_hi),
     ]
 
     doc_model_devi_jobs = 'Settings for exploration in 01.model_devi. Each dict in the list corresponds to one iteration. The index of model_devi_jobs exactly accord with index of iterations'
@@ -137,7 +159,11 @@ The union of the two sets is made as candidate dataset.'
     doc_model_devi_f_avg_relative = 'Normalized the force model deviations by the RMS force magnitude along the trajectory. This key should not be used with use_relative.'
     doc_model_devi_clean_traj = 'If type of model_devi_clean_traj is bool type then it denote whether to clean traj folders in MD since they are too large. If it is Int type, then the most recent n iterations of traj folders will be retained, others will be removed.'
     doc_model_devi_nopbc = 'Assume open boundary condition in MD simulations.'
-    doc_model_devi_activation_func = 'Set activation functions for models, length of the list should be the same as numb_models, and two elements in the list of string respectively assign activation functions to the embedding and fitting nets within each model. Backward compatibility: the orginal "list of String" format is still supported, where embedding and fitting nets of one model use the same activation function, and the length of the list should be the same as numb_models.'
+    doc_shuffle_poscar = 'Shuffle atoms of each frame before running simulations. The purpose is to sample the element occupation of alloys.'
+    doc_use_relative = 'Calculate relative force model deviation.'
+    doc_epsilon = 'The level parameter for computing the relative force model deviation.'
+    doc_use_relative_v = 'Calculate relative virial model deviation.'
+    doc_epsilon_v = 'The level parameter for computing the relative virial model deviation.'
 
     return [
         model_devi_jobs_args(),
@@ -150,9 +176,9 @@ The union of the two sets is made as candidate dataset.'
         Argument("model_devi_f_trust_hi", [
                  float, list, dict], optional=False, doc=doc_model_devi_f_trust_hi),
         Argument("model_devi_v_trust_lo", [
-                 float, list, dict], optional=False, doc=doc_model_devi_v_trust_lo),
+                 float, list, dict], optional=True, default=1e10, doc=doc_model_devi_v_trust_lo),
         Argument("model_devi_v_trust_hi", [
-                 float, list, dict], optional=False, doc=doc_model_devi_v_trust_hi),
+                 float, list, dict], optional=True, default=1e10, doc=doc_model_devi_v_trust_hi),
         Argument("model_devi_adapt_trust_lo", bool, optional=True,
                  doc=doc_model_devi_adapt_trust_lo),
         Argument("model_devi_numb_candi_f", int, optional=True,
@@ -167,10 +193,13 @@ The union of the two sets is made as candidate dataset.'
                  doc=doc_model_devi_f_avg_relative),
         Argument("model_devi_clean_traj", [
                  bool, int], optional=False, doc=doc_model_devi_clean_traj),
-        Argument("model_devi_nopbc", bool, optional=False,
+        Argument("model_devi_nopbc", bool, optional=True, default=False,
                  doc=doc_model_devi_nopbc),
-        Argument("model_devi_activation_func", list, optional=True,
-                 doc=doc_model_devi_activation_func),
+        Argument("shuffle_poscar", bool, optional=True, default=False, doc=doc_shuffle_poscar),
+        Argument("use_relative", bool, optional=True, default=False, doc=doc_use_relative),
+        Argument("epsilon", float, optional=True, doc=doc_epsilon),
+        Argument("use_relative_v", bool, optional=True, default=False, doc=doc_use_relative_v),
+        Argument("epsilon_v", float, optional=True, doc=doc_epsilon_v),
     ]
 
 
@@ -189,42 +218,101 @@ def fp_style_vasp_args() -> List[Argument]:
     doc_fp_incar = 'Input file for VASP. INCAR must specify KSPACING and KGAMMA.'
     doc_fp_aniso_kspacing = 'Set anisotropic kspacing. Usually useful for 1-D or 2-D materials. Only support VASP. If it is setting the KSPACING key in INCAR will be ignored.'
     doc_cvasp = 'If cvasp is true, DP-GEN will use Custodian to help control VASP calculation.'
+    doc_ratio_failed = 'Check the ratio of unsuccessfully terminated jobs. If too many FP tasks are not converged, RuntimeError will be raised.'
+    doc_fp_skip_bad_box = 'Skip the configurations that are obviously unreasonable before 02.fp'
 
     return [
         Argument("fp_pp_path", str, optional=False, doc=doc_fp_pp_path),
         Argument("fp_pp_files", list, optional=False, doc=doc_fp_pp_files),
         Argument("fp_incar", str, optional=False, doc=doc_fp_incar),
-        Argument("fp_aniso_kspacing", list, optional=False,
+        Argument("fp_aniso_kspacing", list, optional=True,
                  doc=doc_fp_aniso_kspacing),
-        Argument("cvasp", bool, optional=False, doc=doc_cvasp),
+        Argument("cvasp", bool, optional=True, doc=doc_cvasp),
+        Argument("ratio_failed", float, optional=True,
+                 doc=doc_ratio_failed),
+        Argument("fp_skip_bad_box", str, optional=True,
+                 doc=doc_fp_skip_bad_box),
     ]
+
+# abacus
+def fp_style_abacus_args() -> List[Argument]:
+    doc_fp_pp_path = 'Directory of psuedo-potential or numerical orbital files to be used for 02.fp exists.'
+    doc_fp_pp_files = 'Psuedo-potential file to be used for 02.fp. Note that the order of elements should correspond to the order in type_map.'
+    doc_fp_orb_files = 'numerical orbital file to be used for 02.fp when using LCAO basis. Note that the order of elements should correspond to the order in type_map.'
+    doc_fp_incar = 'Input file for ABACUS. This is optinal but priority over user_fp_params, one can also setting the key and value of INPUT in user_fp_params.'
+    doc_fp_kpt_file = 'KPT file for ABACUS.'
+    doc_fp_dpks_descriptor = 'DeePKS descriptor file name. The file should be in pseudopotential directory.'
+    doc_user_fp_params = 'Set the key and value of INPUT.'
+    doc_k_points = 'Monkhorst-Pack k-grids setting for generating KPT file of ABACUS'
+
+    return [
+        Argument("fp_pp_path", str, optional=False, doc=doc_fp_pp_path),
+        Argument("fp_pp_files", list, optional=False, doc=doc_fp_pp_files),
+        Argument("fp_orb_files", list, optional=True, doc=doc_fp_orb_files),
+        Argument("fp_incar", str, optional=True, doc=doc_fp_incar),
+        Argument("fp_kpt_file", str, optional=True, doc=doc_fp_kpt_file),
+        Argument("fp_dpks_descriptor", str, optional=True, doc=doc_fp_dpks_descriptor),
+        Argument("user_fp_params", dict, optional=True, doc=doc_user_fp_params),
+        Argument("k_points", list, optional=True, doc=doc_k_points),
+    ]
+
 
 
 # gaussian
 def fp_style_gaussian_args() -> List[Argument]:
-    doc_keywords = 'Keywords for Gaussian input.'
-    doc_multiplicity = 'Spin multiplicity for Gaussian input. If set to auto, the spin multiplicity will be detected automatically. If set to frag, the "fragment=N" method will be used.'
+    """Gaussian fp style arguments.
+    
+    Returns
+    -------
+    list[dargs.Argument]
+        list of Gaussian fp style arguments
+    """
+    doc_keywords = 'Keywords for Gaussian input, e.g. force b3lyp/6-31g**. If a list, run multiple steps.'
+    doc_multiplicity = ('Spin multiplicity for Gaussian input. If `auto`, multiplicity will be detected automatically, '
+                        'with the following rules: when fragment_guesses=True, multiplicity will +1 for each radical, '
+                        'and +2 for each oxygen molecule; when fragment_guesses=False, multiplicity will be 1 or 2, '
+                        'but +2 for each oxygen molecule.')
     doc_nproc = 'The number of processors for Gaussian input.'
+    doc_charge = 'Molecule charge. Only used when charge is not provided by the system.'
+    doc_fragment_guesses = 'Initial guess generated from fragment guesses. If True, `multiplicity` should be `auto`.'
+    doc_basis_set = 'Custom basis set.'
+    doc_keywords_high_multiplicity = ('Keywords for points with multiple raicals. `multiplicity` should be `auto`. '
+                                      'If not set, fallback to normal keywords.')
 
     args = [
-        Argument("keywords", [str or list],
+        Argument("keywords", [str, list],
                  optional=False, doc=doc_keywords),
-        Argument("multiplicity", [int or str],
-                 optional=False, doc=doc_multiplicity),
+        Argument("multiplicity", [int, str],
+                 optional=True, default="auto", doc=doc_multiplicity),
         Argument("nproc", int, optional=False, doc=doc_nproc),
+        Argument("charge", int, optional=True, default=0, doc=doc_nproc),
+        Argument("fragment_guesses", bool, optional=True, default=False, doc=doc_fragment_guesses),
+        Argument("basis_set", str, optional=True, doc=doc_fragment_guesses),
+        Argument("keywords_high_multiplicity", str, optional=True, doc=doc_keywords_high_multiplicity),
     ]
 
-    doc_use_clusters = 'If set to true, clusters will be taken instead of the whole system. This option does not work with DeePMD-kit 0.x.'
-    doc_cluster_cutoff = 'The cutoff radius of clusters if use_clusters is set to true.'
+    doc_use_clusters = 'If set to true, clusters will be taken instead of the whole system.'
+    doc_cluster_cutoff = ('The soft cutoff radius of clusters if `use_clusters` is set to true. Molecules will be taken '
+                          'as whole even if part of atoms is out of the cluster. Use `cluster_cutoff_hard` to only '
+                          'take atoms within the hard cutoff radius.')
+    doc_cluster_cutoff_hard = ('The hard cutoff radius of clusters if `use_clusters` is set to true. Outside the hard cutoff radius, '
+                               'atoms will not be taken even if they are in a molecule where some atoms are within the cutoff radius.')
+    doc_cluster_minify = ('If enabled, when an atom within the soft cutoff radius connects a single bond with '
+                          'a non-hydrogen atom out of the soft cutoff radius, the outer atom will be replaced by a '
+                          'hydrogen atom. When the outer atom is a hydrogen atom, the outer atom will be '
+                          'kept. In this case, other atoms out of the soft cutoff radius will be removed.')
     doc_fp_params_gaussian = 'Parameters for Gaussian calculation.'
 
     return [
         Argument("use_clusters", bool, optional=True, default=False, doc=doc_use_clusters),
         Argument("cluster_cutoff", float,
                  optional=True, doc=doc_cluster_cutoff),
+        Argument("cluster_cutoff_hard", float, optional=True, doc=doc_cluster_cutoff_hard),
+        Argument("cluster_minify", bool, optional=True, default=False, doc=doc_cluster_minify),
         Argument("fp_params", dict, args, [],
                  optional=False, doc=doc_fp_params_gaussian),
     ]
+
 
 # siesta
 def fp_style_siesta_args() -> List[Argument]:
@@ -260,12 +348,15 @@ def fp_style_siesta_args() -> List[Argument]:
 def fp_style_cp2k_args() -> List[Argument]:
     doc_user_fp_params = 'Parameters for cp2k calculation. find detail in manual.cp2k.org. only the kind section must be set before use. we assume that you have basic knowledge for cp2k input.'
     doc_external_input_path = 'Conflict with key:user_fp_params, use the template input provided by user, some rules should be followed, read the following text in detail.'
+    doc_ratio_failed = 'Check the ratio of unsuccessfully terminated jobs. If too many FP tasks are not converged, RuntimeError will be raised.'
 
     return [
-        Argument("user_fp_params", dict, optional=False,
+        Argument("user_fp_params", dict, optional=True,
                  doc=doc_user_fp_params),
-        Argument("external_input_path", str, optional=False,
+        Argument("external_input_path", str, optional=True,
                  doc=doc_external_input_path),
+        Argument("ratio_failed", float, optional=True,
+                 doc=doc_ratio_failed),
     ]
 
 
@@ -277,7 +368,8 @@ def fp_style_variant_type_args() -> Variant:
                                          fp_style_gaussian_args()),
                                 Argument("siesta", dict,
                                          fp_style_siesta_args()),
-                                Argument("cp2k", dict, fp_style_cp2k_args())],
+                                Argument("cp2k", dict, fp_style_cp2k_args()),
+                                Argument("abacus", dict, fp_style_abacus_args())],
                    optional=False,
                    doc=doc_fp_style)
 
