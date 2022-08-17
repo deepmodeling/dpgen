@@ -107,7 +107,7 @@ def gen_random_emat(etmax, diag=0):
     return emat
 
 
-def create_disturbs_ase_dev(fin, nfile, dmax=1.0, etmax=0.1, ofmt="lmp", dstyle='uniform', write_d=False, diag=0):
+def create_disturbs_ase_dev(jdata, fin, nfile, dmax=1.0, etmax=0.1, ofmt="lmp", dstyle='uniform', write_d=False, diag=0):
     # removing the exists files
     flist = glob.glob('*.' + ofmt)
     for f in flist:
@@ -326,7 +326,7 @@ if __name__ == "__main__":
     #create_disturbs_atomsk(fin, nfile, dmax, ofmt)
     #create_disturbs_ase(fin, nfile, dmax, ofmt, dstyle, write_d)
     if ofmt == "vasp":
-        create_disturbs_ase_dev(fin, nfile, dmax, etmax,
+        create_disturbs_ase_dev(jdata, fin, nfile, dmax, etmax,
                             ofmt, dstyle, write_d, diag)
     elif ofmt == "abacus":
         create_disturbs_abacus_dev(fin, nfile, dmax, etmax,
