@@ -144,9 +144,11 @@ def create_disturbs_ase_dev(fin, nfile, dmax=1.0, etmax=0.1, ofmt="lmp", dstyle=
             np.savetxt(fout_c, cell, '%f')
 
         # determine new cell & atomic positions randomiziations
-        fixed = atoms_d._get_constraints()
-        fixed_idx = fixed[0].todict()["kwargs"]["indices"]
-
+        if "fix_layers" in jdata:
+            fixed = atoms_d._get_constraints()
+            fixed_idx = fixed[0].todict()["kwargs"]["indices"]
+        else:
+            fixed_idx = []
         pos = atoms_d.get_positions()
         for idx, coord in enumerate(pos):
             if idx in fixed_idx:
