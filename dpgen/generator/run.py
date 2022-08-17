@@ -2588,8 +2588,7 @@ def make_fp_pwscf(iter_index,
         sys_data['atom_masses'] = []
         pps = []
         for iii in sys_data['atom_names']:
-            mass_map = jdata['mass_map']
-            sys_data['atom_masses'].append(mass_map[jdata['type_map'].index(iii)])
+            sys_data['atom_masses'].append(jdata['mass_map'][jdata['type_map'].index(iii)])
             pps.append(fp_pp_files[jdata['type_map'].index(iii)])
         ret = make_pwscf_input(sys_data, pps, fp_params, user_input = user_input)
         with open('input', 'w') as fp:
