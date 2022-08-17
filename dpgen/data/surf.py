@@ -435,14 +435,17 @@ def poscar_scale_cartesian (jdata, str_in, scale) :
         lines[ii] = "%.16e %.16e %.16e\n" % (boxv[0], boxv[1], boxv[2])
     # scale coord
     if "fix_layers" in jdata:
-        start = 9
+        for ii in range(9, 9+numb_atoms) :
+            cl = lines[ii].split()
+            cv = [float(ii) for ii in cl[0: 3]]
+            cv = np.array(cv) * scale
+            lines[ii] = "%.16e %.16e %.16e    %s    %s    %s\n" % (cv[0], cv[1], cv[2], cl[3], cl[4], cl[5])
     else:
-        start = 8
-    for ii in range(start, start+numb_atoms) :
-        cl = lines[ii].split()
-        cv = [float(ii) for ii in cl[0: 3]]
-        cv = np.array(cv) * scale
-        lines[ii] = "%.16e %.16e %.16e    %s    %s    %s\n" % (cv[0], cv[1], cv[2], cl[3], cl[4], cl[5])
+        for ii in range(8, 8+numb_atoms) :
+            cl = lines[ii].split()
+            cv = [float(ii) for ii in cl]
+            cv = np.array(cv) * scale
+            lines[ii] = "%.16e %.16e %.16e\n" % (cv[0], cv[1], cv[2])
     return lines
 
 def poscar_scale (jdata, poscar_in, poscar_out, scale) :
