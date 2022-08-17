@@ -327,7 +327,7 @@ def fp_style_siesta_args() -> List[Argument]:
     args = [
         Argument("ecut", int, optional=False, doc=doc_ecut),
         Argument("ediff", float, optional=False, doc=doc_ediff),
-        Argument("kspacing", [float, int], optional=False, doc=doc_kspacing),
+        Argument("kspacing", float, optional=False, doc=doc_kspacing),
         Argument("mixingWeight", float, optional=False, doc=doc_mixingweight),
         Argument("NumberPulay", int, optional=False, doc=doc_NumberPulay),
     ]

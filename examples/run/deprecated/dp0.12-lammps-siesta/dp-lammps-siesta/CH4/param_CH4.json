@@ -125,7 +125,7 @@
 	"fp_params":	{
 	"ecut":		300,
 	"ediff":	1e-4,
-	"kspacing":	1,
+	"kspacing":	1.0,
 	"mixingWeight": 0.05, 
 	"NumberPulay": 5, 
 	"_comment":	" that's all "
