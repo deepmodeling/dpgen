@@ -3168,19 +3168,20 @@ def post_fp_check_fail(iter_index,
     ratio_failed =  rfailed if rfailed else jdata.get('ratio_failed',0.05)
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
-    fp_tasks = glob.glob(os.path.join(work_path, 'task.*'))
-    fp_tasks.sort()
-    if len(fp_tasks) == 0 :
-        return
-    # check fail according to tag_failure
-    fp_failed_tags = glob.glob(os.path.join(work_path, 'task.*', 'tag_failure*'))
-    fp_failed_tasks = [os.path.dirname(ii) for ii in fp_failed_tags]
-    fp_failed_tasks = list(set(fp_failed_tasks))
 
-    ntask = len(fp_tasks)
-    nfail = len(fp_failed_tasks)
-    rfail = float(nfail) / float(ntask)
-    dlog.info("failed tasks: %6d in %6d  %6.2f %% " % (nfail, ntask, rfail * 100.))
+    # check fail according to _flag_if_job_task_fail, which will be 1 if any task in the group fails.
+    fp_flags = glob.glob(os.path.join(work_path, '*_flag_if_job_task_fail'))
+    if(len(fp_flags) == 0) :
+        return
+    njob = len(fp_flags)
+    nfail = 0
+    for ii in fp_flags:
+        with open(ii) as fp:
+            fail_flag = fp.read()
+            if fail_flag :
+                nfail += 1
+    rfail = float(nfail) / float(njob)
+    dlog.info("failed tasks: %6d in %6d  %6.2f %% " % (nfail, njob, rfail * 100.))
     if rfail > ratio_failed:
        raise RuntimeError("find too many unsuccessfully terminated jobs")
 
