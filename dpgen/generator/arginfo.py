@@ -17,7 +17,7 @@ def run_mdata_arginfo() -> Argument:
 # basics
 def basic_args() -> List[Argument]:
     doc_type_map = 'Atom types.'
-    doc_mass_map = 'Standard atomic weights. You can set a list of atomic masses corresponding to type_map, or just set "auto"'
+    doc_mass_map = 'Standard atom weights.'
     doc_use_ele_temp = 'Currently only support fp_style vasp. \n\n\
 - 0: no electron temperature. \n\n\
 - 1: eletron temperature as frame parameter. \n\n\
@@ -25,7 +25,7 @@ def basic_args() -> List[Argument]:
 
     return [
         Argument("type_map", list, optional=False, doc=doc_type_map),
-        Argument("mass_map", [str, list], optional=True, default="auto", doc=doc_mass_map),
+        Argument("mass_map", list, optional=False, doc=doc_mass_map),
         Argument("use_ele_temp", int, optional=True,
                  default=0, doc=doc_use_ele_temp),
     ]
