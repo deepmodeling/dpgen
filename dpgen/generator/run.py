@@ -968,7 +968,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
     sys_idx = expand_idx(cur_job['sys_idx'])
     if (len(sys_idx) != len(list(set(sys_idx)))) :
         raise RuntimeError("system index should be uniq")
-    mass_map = [get_atomic_masses(i) for i in jdata['type_map']]
+    mass_map = jdata['mass_map']
     use_plm = jdata.get('model_devi_plumed', False)
     use_plm_path = jdata.get('model_devi_plumed_path', False)
     trj_freq = _get_param_alias(cur_job, ['t_freq', 'trj_freq','traj_freq'])
@@ -1115,7 +1115,7 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
     model_devi_taup = 0.5
     if 'model_devi_taup' in jdata :
         model_devi_taup = jdata['model_devi_taup']
-    mass_map = [get_atomic_masses(i) for i in jdata['type_map']]
+    mass_map = jdata['mass_map']
     nopbc = jdata.get('model_devi_nopbc', False)
 
     iter_name = make_iter_name(iter_index)
@@ -1237,7 +1237,7 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
     if (len(sys_idx) != len(list(set(sys_idx)))) :
         raise RuntimeError("system index should be uniq")
 
-    mass_map = [get_atomic_masses(i) for i in jdata['type_map']]
+    mass_map = jdata['mass_map']
 
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
@@ -2588,7 +2588,7 @@ def make_fp_pwscf(iter_index,
         sys_data['atom_masses'] = []
         pps = []
         for iii in sys_data['atom_names']:
-            sys_data['atom_masses'].append([get_atomic_masses(i) for i in jdata['type_map']][jdata['type_map'].index(iii)])
+            sys_data['atom_masses'].append(jdata['mass_map'][jdata['type_map'].index(iii)])
             pps.append(fp_pp_files[jdata['type_map'].index(iii)])
         ret = make_pwscf_input(sys_data, pps, fp_params, user_input = user_input)
         with open('input', 'w') as fp:
@@ -2670,7 +2670,7 @@ def make_fp_abacus_scf(iter_index,
         os.chdir(ii)
         sys_data = dpdata.System('POSCAR').data
         if 'mass_map' in jdata:
-            sys_data['atom_masses'] = [get_atomic_masses(i) for i in jdata['type_map']]
+            sys_data['atom_masses'] = jdata['mass_map']
         with open('INPUT', 'w') as fp:
             fp.write(ret_input)
         if 'kspacing' not in fp_params.keys():
@@ -3732,20 +3732,6 @@ def run_iter (param_file, machine_file) :
             else :
                 raise RuntimeError ("unknown task %d, something wrong" % jj)
             record_iter (record, ii, jj)
-
-        
-def get_atomic_masses(chemical_symbol):
-  chemical_symbols = ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn', 'Fr', 'Ra', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr', 'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds', 'Rg', 'Cn', 'Nh', 'Fl', 'Mc', 'Lv', 'Ts', 'Og']
-
-  # doi:10.1515/pac-2015-0305
-  atomic_masses = [1.008, 4.002602, 6.94, 9.0121831, 10.81, 12.011, 14.007, 15.999, 18.998403163, 20.1797, 22.98976928, 24.305, 26.9815385, 28.085, 30.973761998, 32.06, 35.45, 39.948, 39.0983, 40.078, 44.955908, 47.867, 50.9415, 51.9961, 54.938044, 55.845, 58.933194, 58.6934, 63.546, 65.38, 69.723, 72.63, 74.921595, 78.971, 79.904, 83.798, 85.4678, 87.62, 88.90584, 91.224, 92.90637, 95.95, 97.90721, 101.07, 102.9055, 106.42, 107.8682, 112.414, 114.818, 118.71, 121.76, 127.6, 126.90447, 131.293, 132.90545196, 137.327, 138.90547, 140.116, 140.90766, 144.242, 144.91276, 150.36, 151.964, 157.25, 158.92535, 162.5, 164.93033, 167.259, 168.93422, 173.054, 174.9668, 178.49, 180.94788, 183.84, 186.207, 190.23, 192.217, 195.084, 196.966569, 200.592, 204.38, 207.2, 208.9804, 208.98243, 209.98715, 222.01758, 223.01974, 226.02541, 227.02775, 232.0377, 231.03588, 238.02891, 237.04817, 244.06421, 243.06138, 247.07035, 247.07031, 251.07959, 252.083, 257.09511, 258.09843, 259.101, 262.11, 267.122, 268.126, 271.134, 270.133, 269.1338, 278.156, 281.165, 281.166, 285.177, 286.182, 289.19, 289.194, 293.204, 293.208, 294.214]
-
-  atomic_symbols_masses  = dict(zip(chemical_symbols, atomic_masses))
-
-  if chemical_symbol not in atomic_symbols_masses.keys():
-    raise RuntimeError('unknown element', chemical_symbol)
-  else:
-    return atomic_symbols_masses[chemical_symbol]
 
 
 def gen_run(args) :
