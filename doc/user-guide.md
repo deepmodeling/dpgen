@@ -3,7 +3,7 @@
 
 <div align=center><href="https://sm.ms/image/DVrYCuwFlM4Pqni" target="_blank"><img src="https://s2.loli.net/2022/08/16/DVrYCuwFlM4Pqni.png" width="60%"></div>
 
-Welcome everyone to participate in the discussion about DP-GEN in the discussion module. You can ask for help, share an idea or anything to discuss here. The website is https://github.com/deepmodeling/dpgen/discussions
+Welcome everyone to participate in the discussion about DP-GEN in the [discussion](https://github.com/deepmodeling/dpgen/discussions) module. You can ask for help, share an idea or anything to discuss here.
 Note: before you raise a question, please check TUTORIAL/FAQs and search history discussions to find solutions. 
 
 ## Issue：
@@ -20,14 +20,14 @@ Note: before you raise a question, please check TUTORIAL/FAQs and search history
       
 ## Tutorials 
 
-Tutorials can be found here. [https://tutorials.deepmodeling.com/en/latest/](https://tutorials.deepmodeling.com/en/latest/Tutorials/DP-GEN/index.html)
+Tutorials can be found [here](https://tutorials.deepmodeling.com/en/latest/Tutorials/DP-GEN/index.html).
 
 ## Example for parameters
       
-If you have no idea how to prepare a `PARAM` for your task, you can find examples of PARAM for different tasks in https://github.com/deepmodeling/dpgen/tree/master/examples. 
+If you have no idea how to prepare a `PARAM` for your task, you can find examples of PARAM for different tasks in [examples](https://github.com/deepmodeling/dpgen/tree/master/examples).
       
 For example, if you want to set specific template for LAMPPS, you can find an example [here](https://github.com/deepmodeling/dpgen/blob/master/examples/run/dp-lammps-enhance_sampling/param.json)
       
-If you want to learn more about Machine parameters, please check https://docs.deepmodeling.com/projects/dpdispatcher/en/latest/
+If you want to learn more about Machine parameters, please check [docs for dpdispatcher](https://docs.deepmodeling.com/projects/dpdispatcher/en/latest/)
       
-## [Pull requests - How to contribute](https://docs.deepmodeling.com/projects/dpgen/en/latest/README.html)
+## [Pull requests - How to contribute](https://docs.deepmodeling.com/projects/dpgen/en/latest/how-to-contribute.html)
