@@ -1,7 +1,7 @@
 {
     "api_version": "1.0",
     "_comment": "dependent on dpdispatcher 0.4.15",
-    "train" :[
+    "train" :
       {
         "command": "dp",
         "machine": {
@@ -11,7 +11,7 @@
           "remote_profile":{
           "email": "",
           "password": "",
-          "program_id": ,
+          "program_id": 0,
               "input_data":{
                   "api_version":2,
                   "job_type": "indicate",
@@ -29,15 +29,16 @@
           }
         },
         "resources": {
+          "batch_type": "Lebesgue",
           "number_node": 15,
           "cpu_per_node": 4,
           "gpu_per_node": 1,
           "queue_name": "V100_8_32",
           "group_size": 1
         }
-      }],
+      },
     "model_devi":
-      [{
+      {
         "command": "dp",
         "machine": {
         "batch_type": "Lebesgue",
@@ -46,7 +47,7 @@
           "remote_profile":{
           "email": "",
           "password": "",
-          "program_id": ,
+          "program_id": 0,
               "input_data":{
                 "api_version":2,
                 "job_type": "indicate",
@@ -64,15 +65,16 @@
           }
         },
         "resources": {
+          "batch_type": "Lebesgue",
           "number_node": 15,
           "cpu_per_node": 4,
           "gpu_per_node": 1,
           "queue_name": "V100_8_32",
           "group_size": 10
         }
-      }],
+      },
     "fp":
-      [{
+      {
         "command": "ulimit -m unlimited; ulimit -s unlimited; mpirun -n 32 vasp_std",
         "machine": {
         "batch_type": "Lebesgue",
@@ -81,7 +83,7 @@
           "remote_profile":{
           "email": "",
           "password": "",
-          "program_id": ,
+          "program_id": 0,
               "input_data":{
                 "api_version":2,
                 "job_type": "indicate",
@@ -99,6 +101,7 @@
           }
         },
         "resources": {
+          "batch_type": "Lebesgue",
           "number_node": 15,
           "cpu_per_node": 32,
           "gpu_per_node": 0,
@@ -107,6 +110,5 @@
       "source_list": ["/opt/intel/oneapi/setvars.sh"]
         }
       }
-    ]
   }
   
