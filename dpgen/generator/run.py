@@ -968,7 +968,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
     sys_idx = expand_idx(cur_job['sys_idx'])
     if (len(sys_idx) != len(list(set(sys_idx)))) :
         raise RuntimeError("system index should be uniq")
-    mass_map = [get_atomic_masses(i) for i in jdata['type_map']] if jdata['mass_map'] is None else jdata['mass_map']
+    mass_map = [get_atomic_masses(i) for i in jdata['type_map']]
     use_plm = jdata.get('model_devi_plumed', False)
     use_plm_path = jdata.get('model_devi_plumed_path', False)
     trj_freq = _get_param_alias(cur_job, ['t_freq', 'trj_freq','traj_freq'])
@@ -1115,7 +1115,7 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
     model_devi_taup = 0.5
     if 'model_devi_taup' in jdata :
         model_devi_taup = jdata['model_devi_taup']
-    mass_map = [get_atomic_masses(i) for i in jdata['type_map']] if jdata['mass_map'] is None else jdata['mass_map']
+    mass_map = [get_atomic_masses(i) for i in jdata['type_map']]
     nopbc = jdata.get('model_devi_nopbc', False)
 
     iter_name = make_iter_name(iter_index)
@@ -1237,7 +1237,7 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
     if (len(sys_idx) != len(list(set(sys_idx)))) :
         raise RuntimeError("system index should be uniq")
 
-    mass_map = [get_atomic_masses(i) for i in jdata['type_map']] if jdata['mass_map'] is None else jdata['mass_map']
+    mass_map = [get_atomic_masses(i) for i in jdata['type_map']]
 
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
@@ -2588,8 +2588,7 @@ def make_fp_pwscf(iter_index,
         sys_data['atom_masses'] = []
         pps = []
         for iii in sys_data['atom_names']:
-            mass_map = [get_atomic_masses(i) for i in jdata['type_map']] if jdata['mass_map'] is None else jdata['mass_map']
-            sys_data['atom_masses'].append(mass_map[jdata['type_map'].index(iii)])
+            sys_data['atom_masses'].append([get_atomic_masses(i) for i in jdata['type_map']][jdata['type_map'].index(iii)])
             pps.append(fp_pp_files[jdata['type_map'].index(iii)])
         ret = make_pwscf_input(sys_data, pps, fp_params, user_input = user_input)
         with open('input', 'w') as fp:
@@ -2671,7 +2670,7 @@ def make_fp_abacus_scf(iter_index,
         os.chdir(ii)
         sys_data = dpdata.System('POSCAR').data
         if 'mass_map' in jdata:
-            sys_data['atom_masses'] = [get_atomic_masses(i) for i in jdata['type_map']] if jdata['mass_map'] is None else jdata['mass_map']
+            sys_data['atom_masses'] = [get_atomic_masses(i) for i in jdata['type_map']]
         with open('INPUT', 'w') as fp:
             fp.write(ret_input)
         if 'kspacing' not in fp_params.keys():
@@ -3734,33 +3733,24 @@ def run_iter (param_file, machine_file) :
                 raise RuntimeError ("unknown task %d, something wrong" % jj)
             record_iter (record, ii, jj)
 
-def get_atomic_masses(atom):
-
+        
+def get_atomic_masses(chemical_symbol):
   element_names = ['Hydrogen', 'Helium', 'Lithium', 'Beryllium', 'Boron', 'Carbon', 'Nitrogen', 'Oxygen', 'Fluorine', 'Neon', 'Sodium', 'Magnesium', 'Aluminium', 'Silicon', 'Phosphorus', 'Sulfur', 'Chlorine', 'Argon', 'Potassium', 'Calcium', 'Scandium', 'Titanium', 'Vanadium', 'Chromium', 'Manganese', 'Iron', 'Cobalt', 'Nickel', 'Copper', 'Zinc', 'Gallium', 'Germanium', 'Arsenic', 'Selenium', 'Bromine', 'Krypton', 'Rubidium', 'Strontium', 'Yttrium', 'Zirconium', 'Niobium', 'Molybdenum', 'Technetium', 'Ruthenium', 'Rhodium', 'Palladium', 'Silver', 'Cadmium', 'Indium', 'Tin', 'Antimony', 'Tellurium', 'Iodine', 'Xenon', 'Caesium', 'Barium', 'Lanthanum', 'Cerium', 'Praseodymium', 'Neodymium', 'Promethium', 'Samarium', 'Europium', 'Gadolinium', 'Terbium', 'Dysprosium', 'Holmium', 'Erbium', 'Thulium', 'Ytterbium', 'Lutetium', 'Hafnium', 'Tantalum', 'Tungsten', 'Rhenium', 'Osmium', 'Iridium', 'Platinum', 'Gold', 'Mercury', 'Thallium', 'Lead', 'Bismuth', 'Polonium', 'Astatine', 'Radon', 'Francium', 'Radium', 'Actinium', 'Thorium', 'Protactinium', 'Uranium', 'Neptunium', 'Plutonium', 'Americium', 'Curium', 'Berkelium', 'Californium', 'Einsteinium', 'Fermium', 'Mendelevium', 'Nobelium', 'Lawrencium', 'Rutherfordium', 'Dubnium', 'Seaborgium', 'Bohrium', 'Hassium', 'Meitnerium', 'Darmastadtium', 'Roentgenium', 'Copernicium', 'Nihonium', 'Flerovium', 'Moscovium', 'Livermorium', 'Tennessine', 'Oganesson']
   chemical_symbols  = ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn', 'Fr', 'Ra', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr', 'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds', 'Rg', 'Cn', 'Nh', 'Fl', 'Mc', 'Lv', 'Ts', 'Og']
   atomic_number  = [ i+1 for i in range(len(chemical_symbols)) ]
-
-
-  # NIST Standard Reference Database 144
-  # URL: https://physics.nist.gov/cgi-bin/Compositions/stand_alone.pl?ele=&ascii=ascii&isotype=all
-  atomic_masses_common = [1.00782503223, 4.00260325413, 7.0160034366, 9.012183065, 11.00930536, 12.0, 14.00307400443, 15.99491461957, 18.99840316273, 19.9924401762, 22.989769282, 23.985041697, 26.98153853, 27.97692653465, 30.97376199842, 31.9720711744, 34.968852682, 39.9623831237, 38.9637064864, 39.962590863, 44.95590828, 47.94794198, 50.94395704, 51.94050623, 54.93804391, 55.93493633, 58.93319429, 57.93534241, 62.92959772, 63.92914201, 68.9255735, 73.921177761, 74.92159457, 79.9165218, 78.9183376, 83.9114977282, 84.9117897379, 87.9056125, 88.9058403, 89.9046977, 92.906373, 97.90540482, 96.9063667, 101.9043441, 102.905498, 105.9034804, 106.9050916, 113.90336509, 114.903878776, 119.90220163, 120.903812, 129.906222748, 126.9044719, 131.9041550856, 132.905451961, 137.905247, 138.9063563, 139.9054431, 140.9076576, 141.907729, 144.9127559, 151.9197397, 152.921238, 157.9241123, 158.9253547, 163.9291819, 164.9303288, 165.9302995, 168.9342179, 173.9388664, 174.9407752, 179.946557, 180.9479958, 183.95093092, 186.9557501, 191.961477, 192.9629216, 194.9647917, 196.96656879, 201.9706434, 204.9744278, 207.9766525, 208.9803991, 208.9824308, 209.9871479, 222.0175782, 223.019736, 226.0254103, 227.0277523, 232.0380558, 231.0358842, 238.0507884, 237.0481736, 244.0642053, 243.0613813, 247.0703541, 247.0703073, 251.0795886, 252.08298, 257.0951061, 258.0984315, 259.10103, 262.10961, 267.12179, 268.12567, 271.13393, 272.13826, 270.13429, 276.15159, 281.16451, 280.16514, 285.17712, 284.17873, 289.19042, 288.19274, 293.20449, 292.20746, 294.21392]
-  # IUPAC Technical Report
+  
   # doi:10.1515/pac-2015-0305
-  atomic_masses_2013 = [1.00784, 4.002602, 6.938, 9.0121831, 10.806, 12.0096, 14.00643, 15.99903, 18.99840316, 20.1797, 22.98976928, 24.304, 26.9815385, 28.084, 30.973762, 32.059, 35.446, 39.948, 39.0983, 40.078, 44.955908, 47.867, 50.9415, 51.9961, 54.938044, 55.845, 58.933194, 58.6934, 63.546, 65.38, 69.723, 72.63, 74.921595, 78.971, 79.901, 83.798, 85.4678, 87.62, 88.90584, 91.224, 92.90637, 95.95, None, 101.07, 102.9055, 106.42, 107.8682, 112.414, 114.818, 118.71, 121.76, 127.6, 126.90447, 131.293, 132.905452, 137.327, 138.90547, 140.116, 140.90766, 144.242, None, 150.36, 151.964, 157.25, 158.92535, 162.5, 164.93033, 167.259, 168.93422, 173.054, 174.9668, 178.49, 180.94788, 183.84, 186.207, 190.23, 192.217, 195.084, 196.966569, 200.592, 204.382, 207.2, 208.9804, None, None, None, None, None, None, 232.0377, 231.03588, 238.02891, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
-  # IUPAC Technical Report
-  # doi:10.1515/pac-2019-0603
-  atomic_masses_2021 = [1.00784, 4.002602, 6.938, 9.0121831, 10.806, 12.0096, 14.00643, 15.99903, 18.99840316, 20.1797, 22.98976928, 24.304, 26.9815384, 28.084, 30.973762, 32.059, 35.446, 39.792, 39.0983, 40.078, 44.955907, 47.867, 50.9415, 51.9961, 54.938043, 55.845, 58.933194, 58.6934, 63.546, 65.38, 69.723, 72.63, 74.921595, 78.971, 79.901, 83.798, 85.4678, 87.62, 88.905838, 91.224, 92.90637, 95.95, None, 101.07, 102.90549, 106.42, 107.8682, 112.414, 114.818, 118.71, 121.76, 127.6, 126.90447, 131.293, 132.905452, 137.327, 138.90547, 140.116, 140.90766, 144.242, None, 150.36, 151.964, 157.25, 158.925354, 162.5, 164.930329, 167.259, 168.934219, 173.045, 174.9668, 178.486, 180.94788, 183.84, 186.207, 190.23, 192.217, 195.084, 196.96657, 200.592, 204.382, 206.14, 208.9804, None, None, None, None, None, None, 232.0377, 231.03588, 238.02891, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+  atomic_masses_2013 = [1.008, 4.002602, 6.94, 9.0121831, 10.81, 12.011, 14.007, 15.999, 18.998403163, 20.1797, 22.98976928, 24.305, 26.9815385, 28.085, 30.973761998, 32.06, 35.45, 39.948, 39.0983, 40.078, 44.955908, 47.867, 50.9415, 51.9961, 54.938044, 55.845, 58.933194, 58.6934, 63.546, 65.38, 69.723, 72.63, 74.921595, 78.971, 79.904, 83.798, 85.4678, 87.62, 88.90584, 91.224, 92.90637, 95.95, 97.90721, 101.07, 102.9055, 106.42, 107.8682, 112.414, 114.818, 118.71, 121.76, 127.6, 126.90447, 131.293, 132.90545196, 137.327, 138.90547, 140.116, 140.90766, 144.242, 144.91276, 150.36, 151.964, 157.25, 158.92535, 162.5, 164.93033, 167.259, 168.93422, 173.054, 174.9668, 178.49, 180.94788, 183.84, 186.207, 190.23, 192.217, 195.084, 196.966569, 200.592, 204.38, 207.2, 208.9804, 208.98243, 209.98715, 222.01758, 223.01974, 226.02541, 227.02775, 232.0377, 231.03588, 238.02891, 237.04817, 244.06421, 243.06138, 247.07035, 247.07031, 251.07959, 252.083, 257.09511, 258.09843, 259.101, 262.11, 267.122, 268.126, 271.134, 270.133, 269.1338, 278.156, 281.165, 281.166, 285.177, 286.182, 289.19, 289.194, 293.204, 293.208, 294.214]
+  # doi:10.1515/pac-2015-0305
+  atomic_masses_2021 = []
+  
+  atomic_masses = atomic_masses_2013
+  atomic_symbols_masses  = dict(zip(chemical_symbols, atomic_masses))
 
-  atomic_masses = [atomic_masses_common[n] if i is None else i for n,i in enumerate(atomic_masses_2021)]
-
-  if atom in element_names:
-    return atomic_masses[element_names.index(atom)]
-  elif atom in chemical_symbols:
-    return atomic_masses[chemical_symbols.index(atom)]
-  elif atom in atomic_number:
-    return atomic_masses[atomic_number.index(atom)]
+  if chemical_symbol not in atomic_symbols_masses.keys():
+    raise RuntimeError('unknown element', chemical_symbol)
   else:
-    raise RuntimeError('unknown atomic identifier', atom, '.Please pass in element names, chemical symbols, or atomic number.')
+    return atomic_symbols_masses[chemical_symbol]
 
 
 def gen_run(args) :
