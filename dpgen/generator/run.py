@@ -3181,7 +3181,7 @@ def post_fp_check_fail(iter_index,
             if fail_flag :
                 nfail += 1
     rfail = float(nfail) / float(njob)
-    dlog.info("failed tasks: %6d in %6d  %6.2f %% " % (nfail, njob, rfail * 100.))
+    dlog.info("failed jobs: %6d in %6d  %6.2f %% " % (nfail, njob, rfail * 100.))
     if rfail > ratio_failed:
        raise RuntimeError("find too many unsuccessfully terminated jobs")
 
