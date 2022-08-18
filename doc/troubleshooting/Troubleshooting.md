@@ -4,7 +4,7 @@
     - Size of `init_data_sys` and `init_batch_size`.
     - Size of `sys_configs` and `sys_batch_size`.
     - Size of `sel_a` and actual types of atoms in your system.
-    - Index of `sys_configs` and `sys_idx`
+    - Index of `sys_configs` and `sys_idx`.
 
 2. Please verify the directories of `sys_configs`. If there isnt's any POSCAR for `01.model_devi` in one iteration, it may happen that you write the false path of `sys_configs`.
 3. Correct format of JSON file.
