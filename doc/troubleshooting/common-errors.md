@@ -29,3 +29,6 @@ Some common reasons are as follows:
 
 ## RuntimeError: find too many unsuccessfully terminated jobs.
 The ratio of failed jobs is larger than ratio_failure. You can set a high value for ratio_failure or check if there is something wrong with your input files. 
+
+## Dargs: xxx is not allowed in strict mode.
+Strict format check has been applied since version 0.10.6.  To avoid misleading users, some older-version keys that are already ignored or absorbed into default settings are not allowed to be present. And the expected structure of the dictionary in the param.json also differs from those before versions 0.10.6. This error will occur when format check finds older-fashion keys in the json file.  Please try deleting or annotating these keys, or correspondingly modulate the json file. Example files in the newest format could be found in [examples](https://github.com/deepmodeling/dpgen/tree/master/examples).
