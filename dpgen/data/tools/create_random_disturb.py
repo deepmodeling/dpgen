@@ -144,7 +144,16 @@ def create_disturbs_ase_dev(fin, nfile, dmax=1.0, etmax=0.1, ofmt="lmp", dstyle=
             np.savetxt(fout_c, cell, '%f')
 
         # determine new cell & atomic positions randomiziations
-        pos = atoms_d.get_positions() + dpos
+        fixed = atoms_d._get_constraints()
+        if fixed:
+            fixed_idx = fixed[0].todict()["kwargs"]["indices"]
+        else:
+            fixed_idx = []
+        pos = atoms_d.get_positions()
+        for idx, coord in enumerate(pos):
+            if idx in fixed_idx:
+                continue
+            pos[idx] = coord + dpos[idx]
         atoms_d.set_positions(pos)
 
         # pre-converting the Atoms to be in low tri-angular cell matrix
@@ -214,6 +223,7 @@ def create_disturbs_abacus_dev(fin, nfile, dmax=1.0, etmax=0.1, ofmt="abacus", d
         stru_d['cells'] = cell_new
 
         convert_mat = np.linalg.inv(cell).dot(cell_new)
+        convert_mat = np.linalg.inv(cell)*cell_new
         stru_d['coords'] = np.matmul(stru_d['coords'], convert_mat)
 
 
