@@ -1634,7 +1634,7 @@ def _read_model_devi_file(
     model_devi = np.loadtxt(os.path.join(task_path, 'model_devi.out'))
     if model_devi_f_avg_relative :
         if(model_devi_merge_traj is True) : 
-            all_traj = glob.glob(os.path.join(task_path, 'all.lammpstrj'))
+            all_traj = os.path.join(task_path, 'all.lammpstrj')
             all_f = get_all_dumped_forces(all_traj)
         else :
             trajs = glob.glob(os.path.join(task_path, 'traj', '*.lammpstrj'))
