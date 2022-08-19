@@ -20,7 +20,7 @@ You can also read relative chapters on [Github Docs](https://docs.github.com/en/
 
 Welcome to the repository of [DP-GEN](https://github.com/deepmodeling/dpgen) 
 
-If you have no idea how to fix your problem or where to find the relative code, see [OVERVIEW/Overview](./overview/DP-GEN-structure.html) of the structure of the DP-GEN repository on this website.
+If you have no idea how to fix your problem or where to find the relative code, see [OVERVIEW/Overview](overview/DP-GEN-structure.html) of the structure of the DP-GEN repository on this website.
   
 ### Use command line
 You can use git with the command line, or open the repository on Github Desktop. Here is a video as a demo of making changes to DP-GEN and publishing it with command line.
