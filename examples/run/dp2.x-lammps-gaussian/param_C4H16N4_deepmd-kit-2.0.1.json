@@ -13,7 +13,6 @@
     "init_data_sys": [
         "data.000","data.001","data.002","data.003","data.004","data.005"
     ],
-   "init_multi_systems": true,
     "init_batch_size":  ["auto","auto","auto","auto","auto","auto"],
     "sys_configs": [
         [
