@@ -167,7 +167,7 @@ def final_stru(abacus_path):
             return 'OUT.%s/STRU_ION_D' % suffix
         else:
             with open(logf) as f1: lines = f1.readlines()
-            for i in range(1,range(len(lines))):
+            for i in range(1,len(lines)):
                 if lines[-i][36:41] == 'istep':
                     max_step = int(lines[-i].split()[-1])
                     break

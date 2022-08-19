@@ -1,6 +1,6 @@
 {
   "api_version": "1.0",
-  "train": [
+  "train":
     {
       "command": "dp",
       "machine": {
@@ -14,6 +14,7 @@
         }
       },
       "resources": {
+        "batch_type": "PBS",
         "number_node": 1,
         "cpu_per_node": 4,
         "gpu_per_node": 1,
@@ -24,9 +25,8 @@
         "para_deg": 3,
         "source_list": ["/home/fengbo/deepmd.1.2.4.env"]
       }
-    }
-  ],
-  "model_devi":[
+    },
+  "model_devi":
     {
       "command": "lmp",
       "machine":{
@@ -40,6 +40,7 @@
         }
       },
       "resources": {
+        "batch_type": "PBS",
         "number_node": 1,
         "cpu_per_node": 4,
         "gpu_per_node": 1,
@@ -51,9 +52,8 @@
       "user_forward_files" : [],
       "_comments" : "In user_backward_files, define output files to be collected.",
       "user_backward_files" : ["HILLS"]
-    }
-  ],
-  "fp":[
+    },
+  "fp":
     {
       "command": "vasp_std",
       "machine":{
@@ -67,6 +67,7 @@
         }
       },
       "resources": {
+        "batch_type": "PBS",
         "number_node": 1,
         "cpu_per_node": 32,
         "gpu_per_node": 0,
@@ -79,5 +80,4 @@
       "_comments" : "In user_backward_files, define output files to be collected.",
       "user_backward_files" : []
     }
-  ]
 }
