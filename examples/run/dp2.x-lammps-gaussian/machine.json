@@ -1,8 +1,8 @@
 {
   "api_version": "1.0",
   "deepmd_version": "2.1.0",
-  "train" :[
-    {
+  "train" :
+  {
       "command": "dp",
       "machine": {
         "batch_type": "Lebesgue",
@@ -29,16 +29,16 @@
         }
       },
       "resources": {
+	"batch_type": "Lebesgue",
         "number_node": 1,
         "cpu_per_node": 4,
         "gpu_per_node": 1,
         "queue_name": "T4_4_15",
         "group_size": 1
       }
-    }
-  ],
+    },
   "model_devi":
-    [{
+    {
       "command": "lmp",
       "machine": {
         "batch_type": "Lebesgue",
@@ -63,16 +63,16 @@
         }
       },
       "resources": {
+	"batch_type": "Lebesgue",
         "number_node": 1,
         "cpu_per_node": 4,
         "gpu_per_node": 1,
         "queue_name": "T4_4_15",
         "group_size": 50
       }
-    }
-  ],
+    },
   "fp":
-    [{
+    {
       "command": "g09 < input > output ||:",
       "machine": {
         "batch_type": "Lebesgue",
@@ -97,6 +97,7 @@
         }
       },
       "resources": {
+	"batch_type": "Lebesgue",
         "source_list": ["/root/g09.sh"],
         "number_node": 1,
         "cpu_per_node": 16,
@@ -105,6 +106,5 @@
         "group_size": 10
       }
     }
-  ]
 }
 

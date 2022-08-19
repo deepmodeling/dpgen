@@ -32,6 +32,7 @@ def basic_args() -> List[Argument]:
 
 
 def data_args() -> List[Argument]:
+    doc_init_multi_systems = 'Read init_data_sys as MultiSystems.'
     doc_init_data_prefix = 'Prefix of initial data directories.'
     doc_init_data_sys = 'Directories of initial data. You may use either absolute or relative path here. Systems will be detected recursively in the directories.'
     doc_sys_format = 'Format of initial data.'
@@ -41,6 +42,8 @@ def data_args() -> List[Argument]:
     doc_sys_batch_size = 'Each number is the batch_size for training of corresponding system in sys_configs. If set to auto, batch size will be 32 divided by number of atoms.'
 
     return [
+        Argument('init_multi_systems', bool, optional=True,
+                 doc = doc_init_multi_systems),
         Argument("init_data_prefix", str, optional=True,
                  doc=doc_init_data_prefix),
         Argument("init_data_sys", list,

@@ -22,8 +22,7 @@
     ], 
     "_comment": " that's all ", 
     "numb_models": 4,
-    "sys_format":"lammps/lmp", 
-    "train_param": "input.json", 
+    "sys_format":"lammps/lmp",  
     "default_training_param": {
         "model": {
             "type_map": [
