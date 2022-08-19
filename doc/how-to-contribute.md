@@ -16,19 +16,22 @@ You can first refer to DeePMD-kit's
 [Contributing guide](https://github.com/deepmodeling/deepmd-kit/edit/devel/CONTRIBUTING.md)
 and [Developer guide](https://github.com/deepmodeling/deepmd-kit/edit/devel/doc/development/index.md).
 
-Welcome to the repository of DP-GEN https://github.com/deepmodeling/dpgen
+You can also read relative chapters on [Github Docs](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request).
 
-  If you have no idea how to fix your problem or where to find the relative code, see OVERVIEW/Overview of the structure of the DP-GEN repository on this website.
+Welcome to the repository of [DP-GEN](https://github.com/deepmodeling/dpgen) 
+
+If you have no idea how to fix your problem or where to find the relative code, see OVERVIEW/Overview of the structure of the DP-GEN repository on this website.
   
 ### Use command line
 You can use git with the command line, or open the repository on Github Desktop. Here is a video as a demo of making changes to DP-GEN and publishing it with command line.
 
-https://www.youtube.com/watch?v=DPApc1_eNS8
-  
+<div class="bilitube" data-youtube="DPApc1_eNS8" data-bvid="BV1ZT411c7wp">Loading...</div>
+<script src="https://unpkg.com/bilitube@0/dist/bilitube.min.js" defer></script>
+
+
 > If you have never used Github before, remember to generate your ssh key and configure the public key in Github Settings.
 > If you can't configure your username and password, please use token. 
-> The explanation from Github see https://github.blog/2020-12-15-token-authentication-requirements-for-git-operations/
-Chinese tutorial see https://blog.csdn.net/Saintmm/article/details/119835900
+> The explanation from Github see [Github Blog: token authentication requirements for git operations](https://github.blog/2020-12-15-token-authentication-requirements-for-git-operations/). [A discussion on StaskOverflow](https://stackoverflow.com/questions/68775869/message-support-for-password-authentication-was-removed-please-use-a-personal) can solve this problem.  
 
 ### Use Github Desktop
 Also, you can use Github Desktop to make PR.
@@ -47,13 +50,8 @@ Firstly, create your new branch based on devel branch.
 
 Secondly, add your doc to the certain directory in your local repository, and add its name into index. 
 
-For example, see https://github.com/deepmodeling/tutorials/pull/43. 
+Here is an [example](https://github.com/deepmodeling/tutorials/pull/43). 
 Remember to add the filename of your doc into index! 
-
-This is a case of failed contribution https://github.com/deepmodeling/tutorials/pull/49. 
-Without being listed in index, the document will not be shown on the website.
-
-(And here is how it has been fixed https://github.com/deepmodeling/tutorials/pull/50. ) 
 
 Thirdly, select the changes that you what to push, and commit to it. Press "Publish branch" to push your origin repository to the remote branch.
 
@@ -66,20 +64,21 @@ Finally, you can check it on github and make a pull request. Press "Compare & pu
 <div align=center><href="https://sm.ms/image/Uj9m6zGtXRh1L3a" target="_blank"><img src="https://s2.loli.net/2022/08/16/Uj9m6zGtXRh1L3a.png" width="80%"></div>
 
 ## How to contribute to DP-GEN tutorials and documents
-The documents of DP-GEN https://github.com/deepmodeling/dpgen/tree/master/doc
+Welcome to [the documents of DP-GEN](https://github.com/deepmodeling/dpgen/tree/master/doc)
 - If you want to add the documentation of a toy model, simply put your file in the directory doc/toymodels/ and push;
 - If you want to add a new directory for a new category of instructions, make a new directory and add it in doc/index.rst.
 
-Tutorials repository: https://github.com/deepmodeling/tutorials
-The structure of tutorials and the preparation before writing a document see https://tutorials.deepmodeling.com/en/devel/Resources/writingTips.html#
+Also welcome to [Tutorials repository](https://github.com/deepmodeling/tutorials)
+You can find the structure of tutorials and preparations before writing a document in [Writing Tips](https://tutorials.deepmodeling.com/en/devel/Resources/writingTips.html#). 
 
 The latest page of DP-GEN Docs
 
 <div align=center><href="https://sm.ms/image/zEPKuj3TdaHI57b" target="_blank"><img src="https://s2.loli.net/2022/08/16/zEPKuj3TdaHI57b.png" width="60%"></div>
 
 ### Examples of contributions
-Example 1(a merged one): https://github.com/deepmodeling/dpgen/pull/758
-Example 2(a simple one for beginner): https://github.com/deepmodeling/dpgen/pull/844
+- [Example 1](https://github.com/deepmodeling/dpgen/pull/758) 
+- [Example 2](https://github.com/deepmodeling/dpgen/pull/844) (a simple one for beginner)
+
 ### 1. Push your doc
 
 <div align=center><href="https://sm.ms/image/T4Zb8uiDXGeyYvc" target="_blank"><img src="https://s2.loli.net/2022/08/16/T4Zb8uiDXGeyYvc.png" width="60%"></div>
@@ -92,9 +91,7 @@ Example 2(a simple one for beginner): https://github.com/deepmodeling/dpgen/pull
 
 As mentioned in "How to build the website to check if the modification works".
 
-### 4. Make pull request to dpgen
-
-https://github.com/deepmodeling/dpgen/pulls
+### 4. Make [pull request](https://github.com/deepmodeling/dpgen/pulls) to dpgen
 
 ---
 After successfully making a PR, developers will check it and give comments. It will be merged after everything done. Then CONGRATULATIONS! You become a first-time contributor to DP-GEN!  
