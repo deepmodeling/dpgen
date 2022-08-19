@@ -20,7 +20,7 @@ from pymatgen.io.ase import AseAtomsAdaptor
 #-----ASE-------
 from ase.io import read
 from ase.build import general_surface
-
+from dpgen.data.fix_layer import layer
 
 def create_path (path) :
     path += '/'
@@ -129,13 +129,17 @@ def poscar_natoms(poscar_in) :
         lines = list(fin)
         return _poscar_natoms(lines)
 
-def poscar_shuffle(poscar_in, poscar_out) :
+def poscar_shuffle(jdata, poscar_in, poscar_out) :
     with open(poscar_in, 'r') as fin :
         lines = list(fin)
     numb_atoms = _poscar_natoms(lines)
-    idx = np.arange(8, 8+numb_atoms)
+    if "fix_layers" in jdata:
+        idx = np.arange(9, 9+numb_atoms)
+        out_lines = lines[0:9]
+    else:
+        idx = np.arange(8, 8+numb_atoms)
+        out_lines = lines[0:8]
     np.random.shuffle(idx)
-    out_lines = lines[0:8]
     for ii in range(numb_atoms) :
         out_lines.append(lines[idx[ii]])
     with open(poscar_out, 'w') as fout:
@@ -178,10 +182,14 @@ def poscar_scale (poscar_in, poscar_out, scale) :
     with open(poscar_out, 'w') as fout:
         fout.write("".join(lines))
 
-def poscar_elong (poscar_in, poscar_out, elong, shift_center=True) :
+def poscar_elong (jdata, poscar_in, poscar_out, elong, shift_center=True) :
     with open(poscar_in, 'r') as fin :
         lines = list(fin)
-    if lines[7][0].upper() != 'C' :
+    if "fix_layers" in jdata:
+        judge = 8
+    else:
+        judge = 7
+    if lines[judge][0].upper() != 'C' :
         raise RuntimeError("only works for Cartesian POSCAR")
     sboxz = lines[4].split()
     boxz = np.array([float(sboxz[0]), float(sboxz[1]), float(sboxz[2])])
@@ -201,7 +209,20 @@ def poscar_elong (poscar_in, poscar_out, elong, shift_center=True) :
     else:
        with open(poscar_out, 'w') as fout:
             fout.write("".join(lines))
+    if "fix_layers" in jdata:
+        total = sum(list(map(int, lines[6].strip().split())))
+        coord_in = lines[9: 9+total]
 
+        with open(poscar_out, 'r') as out:
+            new_pos = list(out)
+            new_pos.insert(7, 'Selective dynamics\n')
+            for idx, cord in enumerate(coord_in):
+                cord_list = cord.split()
+                cord_out = new_pos[9+idx].split()
+                new_pos[9+idx] = f"{cord_out[0]} {cord_out[1]} {cord_out[2]} {cord_list[3]} {cord_list[4]} {cord_list[5]}\n"
+        
+        with open(poscar_out, 'w') as out2:
+            out2.writelines(new_pos)
 def make_unit_cell (jdata) :
 
     from_poscar= jdata.get('from_poscar',False)
@@ -347,10 +368,14 @@ def place_element (jdata) :
             create_path(path_work)
             pos_out = os.path.join(path_work, 'POSCAR')
             if from_poscar:
-               shutil.copy2( pos_in, pos_out) 
+                shutil.copy2( pos_in, pos_out)
+                if "fix_layers" and "total_layers" in jdata:
+                    layer(jdata, pos_in, pos_out)
+                else:
+                    shutil.copy2(pos_in, pos_out) 
             else:
                poscar_ele(pos_in, pos_out, elements, ii)
-            poscar_shuffle(pos_out, pos_out)
+            poscar_shuffle(jdata, pos_out, pos_out)
 
 def make_vasp_relax (jdata) :
     out_dir = jdata['out_dir']
@@ -392,7 +417,7 @@ def poscar_scale_direct (str_in, scale) :
     lines[1] = str(pscale) + "\n"
     return lines
 
-def poscar_scale_cartesian (str_in, scale) :
+def poscar_scale_cartesian (jdata, str_in, scale) :
     lines = str_in.copy()
     numb_atoms = _poscar_natoms(lines)
     # scale box
@@ -402,20 +427,31 @@ def poscar_scale_cartesian (str_in, scale) :
         boxv = np.array(boxv) * scale
         lines[ii] = "%.16e %.16e %.16e\n" % (boxv[0], boxv[1], boxv[2])
     # scale coord
-    for ii in range(8, 8+numb_atoms) :
-        cl = lines[ii].split()
-        cv = [float(ii) for ii in cl]
-        cv = np.array(cv) * scale
-        lines[ii] = "%.16e %.16e %.16e\n" % (cv[0], cv[1], cv[2])
+    if "fix_layers" in jdata:
+        for ii in range(9, 9+numb_atoms) :
+            cl = lines[ii].split()
+            cv = [float(ii) for ii in cl[0: 3]]
+            cv = np.array(cv) * scale
+            lines[ii] = "%.16e %.16e %.16e    %s    %s    %s\n" % (cv[0], cv[1], cv[2], cl[3], cl[4], cl[5])
+    else:
+        for ii in range(8, 8+numb_atoms) :
+            cl = lines[ii].split()
+            cv = [float(ii) for ii in cl]
+            cv = np.array(cv) * scale
+            lines[ii] = "%.16e %.16e %.16e\n" % (cv[0], cv[1], cv[2])
     return lines
 
-def poscar_scale (poscar_in, poscar_out, scale) :
+def poscar_scale (jdata, poscar_in, poscar_out, scale) :
+    if "fix_layers" in jdata:
+        idx = 8
+    else:
+        idx = 7
     with open(poscar_in, 'r') as fin :
         lines = list(fin)
-    if 'D' == lines[7][0] or 'd' == lines[7][0]:
+    if 'D' == lines[idx][0] or 'd' == lines[idx][0]:
         lines = poscar_scale_direct(lines, scale)
-    elif 'C' == lines[7][0] or 'c' == lines[7][0] :
-        lines = poscar_scale_cartesian(lines, scale)
+    elif 'C' == lines[idx][0] or 'c' == lines[idx][0] :
+        lines = poscar_scale_cartesian(jdata, lines, scale)
     else :
         raise RuntimeError("Unknow poscar style at line 7: %s" % lines[7])
 
@@ -453,7 +489,7 @@ def make_scale(jdata):
             scale_path = os.path.join(scale_path, "scale-%.3f" % jj)
             create_path(scale_path)
             os.chdir(scale_path)
-            poscar_scale(pos_src, 'POSCAR', jj)
+            poscar_scale(jdata, pos_src, 'POSCAR', jj)
             os.chdir(cwd)
 
 def pert_scaled(jdata) :
@@ -511,21 +547,21 @@ def pert_scaled(jdata) :
                 path_elong = os.path.join(path_elong, 'elong-%3.3f' % ll) 
                 create_path(path_elong)
                 os.chdir(path_elong)
-                poscar_elong(poscar_in, 'POSCAR', ll)                
+                poscar_elong(jdata, poscar_in, 'POSCAR', ll)                
                 sp.check_call(pert_cmd, shell = True)
                 for kk in range(pert_numb) :
                     pos_in = 'POSCAR%d.vasp' % (kk+1)
                     dir_out = '%06d' % (kk+1)
                     create_path(dir_out)
                     pos_out = os.path.join(dir_out, 'POSCAR')
-                    poscar_shuffle(pos_in, pos_out)
+                    poscar_shuffle(jdata, pos_in, pos_out)
                     os.remove(pos_in)
                 kk = -1
                 pos_in = 'POSCAR'
                 dir_out = '%06d' % (kk+1)
                 create_path(dir_out)
                 pos_out = os.path.join(dir_out, 'POSCAR')
-                poscar_shuffle(pos_in, pos_out)
+                poscar_shuffle(jdata, pos_in, pos_out)
                 os.chdir(cwd)
 def _vasp_check_fin (ii) :
     if os.path.isfile(os.path.join(ii, 'OUTCAR')) :
