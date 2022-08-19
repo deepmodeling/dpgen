@@ -46,7 +46,7 @@ DPGEN's documentation
    :maxdepth: 2
    :caption: Autotest   
 
-   Autotest/autotest.mdata
+   Autotest/autotest
 
 .. _simplify::
 
