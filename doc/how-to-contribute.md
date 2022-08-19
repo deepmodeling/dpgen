@@ -13,8 +13,8 @@ Firstly, fork in DP-GEN repository. Then you can clone the repository, build a n
 DP-GEN adopts the same convention as other softwares in DeepModeling Community. 
 
 You can first refer to DeePMD-kit's
-[Contributing guide](https://github.com/deepmodeling/deepmd-kit/edit/devel/CONTRIBUTING.md)
-and [Developer guide](https://github.com/deepmodeling/deepmd-kit/edit/devel/doc/development/index.md).
+[Contributing guide](https://github.com/deepmodeling/deepmd-kit/blob/master/CONTRIBUTING.md)
+and [Developer guide](https://docs.deepmodeling.com/projects/deepmd/en/master/development/coding-conventions.html).
 
 You can also read relative chapters on [Github Docs](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request).
 
@@ -93,5 +93,19 @@ As mentioned in "How to build the website to check if the modification works".
 
 ### 4. Make [pull request](https://github.com/deepmodeling/dpgen/pulls) to dpgen
 
+----
+  
+## Tips
+  
+1. Please try to submit a PR after finishing all the changes
+  
+2. Please briefly describe what you do with `git commit -m "what you do"`! "No description provided." will make the maintainer feel confused.
+
+3. It is not recommended to make changes directly in the `devel` branch. It is recommended to pull a branch from devel: `git is git checkout -b <new-branch-name>`
+  
+4. When switching branches, remember to check if you want to bring the changes to the next branch!
+
+5. Please fix the errors reported by the unit test. You can firstly test on your local machine before pushing commits. Hint: The way to test the code is to go from the main directory to the tests directory, and use the command `python3 -m unittest`. You can watch the demo video for review. Sometimes you may fail unit tests due to your local circumstance. You can check whether the error reported is related to the part you modified to eliminate this problem. After submitting, as long as there is a green check mark after the PR title on the webpage, it means that the test has been passed.
+6. Pay attention to whether there are comments under your PR. If there is a change request, you need to check and modify the code. If there are conflicts, you need to solve them manually.  
 ---
 After successfully making a PR, developers will check it and give comments. It will be merged after everything done. Then CONGRATULATIONS! You become a first-time contributor to DP-GEN!  
