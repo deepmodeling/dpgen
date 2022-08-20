@@ -3661,7 +3661,7 @@ def run_iter (param_file, machine_file) :
        with open (machine_file, 'r') as fp:
            mdata = json.load (fp)
 
-    if jdata['mass_map'] == 'auto': jdata['mass_map'] = [get_atomic_masses(i) for i in jdata['type_map']]
+    update_mass_map(jdata)
         
     if jdata.get('pretty_print',False):
        #assert(jdata["pretty_format"] in ['json','yaml'])
@@ -3832,6 +3832,11 @@ def get_atomic_masses(atom):
         return atomic_masses[atomic_number.index(atom)]
     else:
         raise RuntimeError('unknown atomic identifier', atom, 'if one want to use isotopes, or non-standard element names, chemical symbols, or atomic number in the type_map list, please customize the mass_map list instead of using "auto".')
+
+
+def update_mass_map(jdata):
+    if jdata['mass_map'] == 'auto':
+        jdata['mass_map'] = [get_atomic_masses(i) for i in jdata['type_map']]
         
         
 def gen_run(args) :
