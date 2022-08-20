@@ -30,4 +30,4 @@ For example, if you want to set specific template for LAMMPS, you can find an ex
       
 If you want to learn more about Machine parameters, please check [docs for dpdispatcher](https://docs.deepmodeling.com/projects/dpdispatcher/en/latest/)
       
-## [Pull requests - How to contribute](how-to-contribute.html)
+## [Pull requests - How to contribute](how-to-contribute)
