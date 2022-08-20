@@ -278,7 +278,7 @@ def fp_style_gaussian_args() -> List[Argument]:
     doc_basis_set = 'Custom basis set.'
     doc_keywords_high_multiplicity = ('Keywords for points with multiple raicals. `multiplicity` should be `auto`. '
                                       'If not set, fallback to normal keywords.')
-    doc_ratio_failed = 'Check the ratio of unsuccessfully terminated jobs. If too many FP tasks are not converged, RuntimeError will be raised.'
+    
 
     args = [
         Argument("keywords", [str, list],
@@ -290,8 +290,6 @@ def fp_style_gaussian_args() -> List[Argument]:
         Argument("fragment_guesses", bool, optional=True, default=False, doc=doc_fragment_guesses),
         Argument("basis_set", str, optional=True, doc=doc_basis_set),
         Argument("keywords_high_multiplicity", str, optional=True, doc=doc_keywords_high_multiplicity),
-        Argument("ratio_failed", float, optional=True,
-                 doc=doc_ratio_failed),
     ]
 
     doc_use_clusters = 'If set to true, clusters will be taken instead of the whole system.'
@@ -305,6 +303,7 @@ def fp_style_gaussian_args() -> List[Argument]:
                           'hydrogen atom. When the outer atom is a hydrogen atom, the outer atom will be '
                           'kept. In this case, other atoms out of the soft cutoff radius will be removed.')
     doc_fp_params_gaussian = 'Parameters for Gaussian calculation.'
+    doc_ratio_failed = 'Check the ratio of unsuccessfully terminated jobs. If too many FP tasks are not converged, RuntimeError will be raised.'
 
     return [
         Argument("use_clusters", bool, optional=True, default=False, doc=doc_use_clusters),
@@ -314,6 +313,8 @@ def fp_style_gaussian_args() -> List[Argument]:
         Argument("cluster_minify", bool, optional=True, default=False, doc=doc_cluster_minify),
         Argument("fp_params", dict, args, [],
                  optional=False, doc=doc_fp_params_gaussian),
+        Argument("ratio_failed", float, optional=True,
+                 doc=doc_ratio_failed),
     ]
 
 
