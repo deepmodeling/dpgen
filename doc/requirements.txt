@@ -6,4 +6,5 @@ sphinx-argparse
 myst-parser
 deepmodeling_sphinx
 dargs>=0.3.1
+numpydoc
 .
