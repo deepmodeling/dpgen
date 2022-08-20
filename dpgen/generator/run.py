@@ -66,11 +66,7 @@ from dpgen.util import sepline, expand_sys_str
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar,Kpoints,Potcar
 from dpgen.auto_test.lib.vasp import make_kspacing_kpoints
-try:
-    from gromacs.fileformats.mdp import MDP
-except ImportError:
-    dlog.info("GromacsWrapper>=0.8.0 is needed for DP-GEN + Gromacs.")
-    pass
+
 
 template_name = 'template'
 train_name = '00.train'
@@ -1209,6 +1205,10 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
         sys_counter += 1
 
 def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
+    try:
+        from gromacs.fileformats.mdp import MDP
+    except ImportError as e:
+        raise RuntimeError("GromacsWrapper>=0.8.0 is needed for DP-GEN + Gromacs.") from e
     # only support for deepmd v2.0
     if LooseVersion(mdata['deepmd_version']) < LooseVersion('2.0'):
         raise RuntimeError("Only support deepmd-kit 2.x for model_devi_engine='gromacs'")
