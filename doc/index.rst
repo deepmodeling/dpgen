@@ -36,6 +36,7 @@ DPGEN's documentation
    :caption: Init   
 
    init/init-bulk-mdata
+   init/init_surf.md
    init/init-surf-mdata
    init/init-reaction
    init/init-reaction-jdata
