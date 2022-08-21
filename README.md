@@ -112,15 +112,15 @@ dpgen init_bulk PARAM [MACHINE]
 The MACHINE configure file is optional. If this parameter exists, then the optimization
 tasks or MD tasks will be submitted automatically according to MACHINE.json.
 
-Basically `init_bulk` can be devided into four parts , denoted as `stages` in `PARAM`:
+Basically `init_bulk` can be divided into four parts , denoted as `stages` in `PARAM`:
 1. Relax in folder `00.place_ele`
 2. Perturb and scale in folder `01.scale_pert`
-3. Run a shor AIMD in folder `02.md`
+3. Run a short AIMD in folder `02.md`
 4. Collect data in folder `02.md`.
 
 All stages must be **in order**. One doesn't need to run all stages. For example, you may run stage 1 and 2, generating supercells as starting point of exploration in `dpgen run`.
 
-If MACHINE is None, there should be only one stage in stages. Corresponding tasks will be generated, but user's intervention should be involved in, to manunally run the scripts.
+If MACHINE is None, there should be only one stage in stages. Corresponding tasks will be generated, but user's intervention should be involved in, to manually run the scripts.
 
 Following is an example for `PARAM`, which generates data from a typical structure hcp.
 ```json
@@ -153,13 +153,13 @@ If you want to specify a structure as starting point for `init_bulk`, you may se
 ```
 `init_bulk` support both VASP and ABACUS for first-principle calculation. You can choose the software by specifying the key `init_fp_style`. If `init_fp_style` is not specified, the default software will be VASP. 
 
-When using ABACUS for `init_fp_style`, the keys of the paths of `INPUT` files for relaxation and MD simulations are the same as `INCAR` for VASP, which are `relax_incar` and `md_incar` respectively. Use `relax_kpt` and `md_kpt` for the relative path for `KPT` files of relaxation and MD simulations. They two can be ommited if `kspacing` (in unit of 1/Bohr) or `gamma_only` has been set in corresponding INPUT files. If `from_poscar` is set to `false`, you have to specify `atom_masses` in the same order as `elements`.
+When using ABACUS for `init_fp_style`, the keys of the paths of `INPUT` files for relaxation and MD simulations are the same as `INCAR` for VASP, which are `relax_incar` and `md_incar` respectively. Use `relax_kpt` and `md_kpt` for the relative path for `KPT` files of relaxation and MD simulations. They two can be omitted if `kspacing` (in unit of 1/Bohr) or `gamma_only` has been set in corresponding INPUT files. If `from_poscar` is set to `false`, you have to specify `atom_masses` in the same order as `elements`.
 
 The following table gives explicit descriptions on keys in `PARAM`.
 
 The bold notation of key (such as **Elements**) means that it's a necessary key.
 
- Key  | Type          | Example                                                      | Discription                                                      |
+ Key  | Type          | Example                                                      | Description                                                      |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
 | **stages** | List of Integer | [1,2,3,4] | Stages for `init_bulk`
 | **Elements** | List of String | ["Mg"] | Atom types
@@ -177,7 +177,7 @@ The bold notation of key (such as **Elements**) means that it's a necessary key.
 | **md_nstep** | Integer | 10 | Steps of AIMD in stage 3. If it's not equal to settings via `NSW` in `md_incar`, DP-GEN will follow `NSW`.
 | **coll_ndata** | Integer | 5000 | Maximal number of collected data.
 | type_map | List | [ "Mg", "Al"] | The indices of elements in deepmd formats will be set in this order.
-| init_fp_style | String | "ABACUS" or "VASP" | First-principle software. If this key is abscent, the default value will be "VASP".
+| init_fp_style | String | "ABACUS" or "VASP" | First-principle software. If this key is absent, the default value will be "VASP".
 | relax_kpt | String | "....../KPT" | Path of `KPT` file for relaxation in stage 1. Only useful if `init_fp_style` is "ABACUS".
 | md_kpt | String | "....../KPT" | Path of `KPT` file for MD simulations in stage 3. Only useful if `init_fp_style` is "ABACUS".
 | atom_masses | List of float | [24] | List of atomic masses of elements. The order should be the same as `Elements`. Only useful if `init_fp_style` is "ABACUS".
@@ -192,7 +192,7 @@ dpgen init_surf PARAM [MACHINE]
 The MACHINE configure file is optional. If this parameter exists, then the optimization
 tasks or MD tasks will be submitted automatically according to MACHINE.json.
 
-Basically `init_surf` can be devided into two parts , denoted as `stages` in `PARAM`:
+Basically `init_surf` can be divided into two parts , denoted as `stages` in `PARAM`:
 1. Build specific surface in folder `00.place_ele`
 2. Perturb and scale in folder `01.scale_pert`
 
@@ -304,17 +304,17 @@ The following table gives explicit descriptions on keys in `PARAM`.
 
 The bold notation of key (such as **Elements**) means that it's a necessary key.
 
- Key  | Type          | Example                                                      | Discription                                                      |
+ Key  | Type          | Example                                                      | Description                                                      |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
 | **stages** | List of Integer | [1,2,3,4] | Stages for `init_surf`
 | **Elements** | List of String | ["Mg"] | Atom types
 |  **cell_type** | String  | "hcp" | Specifying which typical structure to be generated. **Options** include fcc, hcp, bcc, sc, diamond.
 | **latt** | Float | 4.479 | Lattice constant for single cell.
-| **layer_numb** | Integer | 3 | Number of equavilent layers of slab.
-| **z__min** | Float | 9.0 | Thickness of slab without vacuum (Angstrom). If the `layer_numb` and `z_min` are all setted, the `z_min` value will be ignored.
+| **layer_numb** | Integer | 3 | Number of equivalent layers of slab.
+| **z__min** | Float | 9.0 | Thickness of slab without vacuum (Angstrom). If the `layer_numb` and `z_min` are all set, the `z_min` value will be ignored.
 | **vacuum_max** | Float | 9 | Maximal thickness of vacuum (Angstrom).
 | vacuum_min | Float | 3.0 | Minimal thickness of vacuum (Angstrom). Default value is 2 times atomic radius.
-| **vacuum_resol** | List of float | [0.5, 1 ] | Interval of thichness of vacuum. If size of `vacuum_resol` is 1, the interval is fixed to its value. If size of `vacuum_resol` is 2, the interval is `vacuum_resol[0]` before `mid_point`, otherwise `vacuum_resol[1]` after `mid_point`.
+| **vacuum_resol** | List of float | [0.5, 1 ] | Interval of thickness of vacuum. If size of `vacuum_resol` is 1, the interval is fixed to its value. If size of `vacuum_resol` is 2, the interval is `vacuum_resol[0]` before `mid_point`, otherwise `vacuum_resol[1]` after `mid_point`.
 | **millers** | List of list of Integer | [[1,0,0]] | Miller indices.
 | relax_incar | String | "....../INCAR" | Path of INCAR for relaxation in VASP. **Necessary** if `stages` include 1.
 | **scale** | List of float | [0.980, 1.000, 1.020] | Scales for transforming cells.
@@ -332,7 +332,7 @@ You may call the main process by:
 `dpgen run PARAM MACHINE`.
 
 
-The whole process of generator will contain a series of iterations, succussively undertaken in order such as heating the system to certain temperature.
+The whole process of generator will contain a series of iterations, successively undertaken in order such as heating the system to certain temperature.
 
 In each iteration, there are three stages of work, namely, `00.train  01.model_devi  02.fp`.
 
@@ -491,26 +491,26 @@ In `PARAM`, you can specialize the task as you expect.
 
 The following table gives explicit descriptions on keys in `PARAM`.
 
-The bold notation of key (such aas **type_map**) means that it's a necessary key.
+The bold notation of key (such as **type_map**) means that it's a necessary key.
 
- Key  | Type          | Example                                                      | Discription                                                      |
+ Key  | Type          | Example                                                      | Description                                                      |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
 | *#Basics*
 | **type_map** | List of string | ["H", "C"] | Atom types
 | **mass_map** | List of float |  [1, 12] | Standard atom weights.
-| **use_ele_temp** | int | 0 | Currently only support fp_style vasp. 0(default): no electron temperature. 1: eletron temperature as frame parameter. 2: electron temperature as atom parameter.
+| **use_ele_temp** | int | 0 | Currently only support fp_style vasp. 0(default): no electron temperature. 1: electron temperature as frame parameter. 2: electron temperature as atom parameter.
 | *#Data*
  | init_data_prefix | String | "/sharedext4/.../data/" | Prefix of initial data directories
  | ***init_data_sys*** | List of string|["CH4.POSCAR.01x01x01/.../deepmd"] |Directories of initial data. You may use either absolute or relative path here. Systems will be detected recursively in the directories.
  | ***sys_format*** | String | "vasp/poscar" | Format of initial data. It will be `vasp/poscar` if not set.
- | init_batch_size   | String of integer     | [8]                                                            | Each number is the batch_size of corresponding system  for training in `init_data_sys`. One recommended rule for setting the `sys_batch_size` and `init_batch_size` is that `batch_size` mutiply number of atoms ot the stucture should be larger than 32. If set to `auto`, batch size will be 32 divided by number of atoms. |
+ | init_batch_size   | String of integer     | [8]                                                            | Each number is the batch_size of corresponding system  for training in `init_data_sys`. One recommended rule for setting the `sys_batch_size` and `init_batch_size` is that `batch_size` multiply number of atoms in the structure should be larger than 32. If set to `auto`, batch size will be 32 divided by number of atoms. |
   | sys_configs_prefix | String | "/sharedext4/.../data/" | Prefix of `sys_configs`
- | **sys_configs**   | List of list of string         | [<br />["/sharedext4/.../POSCAR"], <br />["....../POSCAR"]<br />] | Containing directories of structures to be explored in iterations.Wildcard characters are supported here. |
+ | **sys_configs**   | List of list of string         | [<br />["/sharedext4/.../POSCAR"], <br />["....../POSCAR"]<br />] | Containing directories of structures to be explored in iterations. Wildcard characters are supported here. |
 | sys_batch_size      | List of integer   | [8, 8]                                                 | Each number  is the batch_size for training of corresponding system in `sys_configs`. If set to `auto`, batch size will be 32 divided by number of atoms. |
 | *#Training*
 | **numb_models**      | Integer      | 4 (recommend)                                                           | Number of models to be trained in `00.train`. |
 | training_iter0_model_path  | list of string  |  ["/path/to/model0_ckpt/", ...]  | The model used to init the first iter training. Number of element should be equal to `numb_models` |
-| training_init_model  | bool  |  False  | Iteration > 0, the model parameters will be initilized from the model trained at the previous iteration. Iteration == 0, the model parameters will be initialized from `training_iter0_model_path`.  |
+| training_init_model  | bool  |  False  | Iteration > 0, the model parameters will be initialized from the model trained at the previous iteration. Iteration == 0, the model parameters will be initialized from `training_iter0_model_path`.  |
 | **default_training_param** | Dict |  | Training parameters for `deepmd-kit` in `00.train`. <br /> You can find instructions from here: (https://github.com/deepmodeling/deepmd-kit)..<br /> |
 | dp_compress | bool | false | Use `dp compress` to compress the model. Default is false. |
 | *#Exploration*
@@ -528,12 +528,12 @@ The bold notation of key (such aas **type_map**) means that it's a necessary key
 | model_devi_f_avg_relative | Boolean | False | Normalized the force model deviations by the RMS force magnitude along the trajectory. This key should not be used with `use_relative`. |
 | **model_devi_clean_traj**  | Boolean or Int | true                                                         | If type of model_devi_clean_traj is boolean type then it denote whether to clean traj folders in MD since they are too large. If it is Int type, then the most recent n iterations of traj folders will be retained, others will be removed. |
 | **model_devi_nopbc**  | Boolean | False                                                         | Assume open boundary condition in MD simulations. |
-| model_devi_activation_func | List of list of string | [["tanh","tanh"],["tanh","gelu"],["gelu","tanh"],["gelu","gelu"]]	| Set activation functions for models, length of the List should be the same as `numb_models`, and two elements in the list of string respectively assign activation functions to the embedding and fitting nets within each model. *Backward compatibility*: the orginal "List of String" format is still supported, where embedding and fitting nets of one model use the same activation function, and the length of the List should be the same as `numb_models`|
+| model_devi_activation_func | List of list of string | [["tanh","tanh"],["tanh","gelu"],["gelu","tanh"],["gelu","gelu"]]	| Set activation functions for models, length of the List should be the same as `numb_models`, and two elements in the list of string respectively assign activation functions to the embedding and fitting nets within each model. *Backward compatibility*: the original "List of String" format is still supported, where embedding and fitting nets of one model use the same activation function, and the length of the List should be the same as `numb_models`|
 | **model_devi_jobs**        | [<br/>{<br/>"sys_idx": [0], <br/>"temps": <br/>[100],<br/>"press":<br/>[1],<br/>"trj_freq":<br/>10,<br/>"nsteps":<br/> 1000,<br/> "ensemble": <br/> "nvt" <br />},<br />...<br />] | List of dict | Settings for exploration in `01.model_devi`. Each dict in the list corresponds to one iteration. The index of `model_devi_jobs` exactly accord with index of iterations |
 | **model_devi_jobs["sys_idx"]**    | List of integer           | [0]                                                          | Systems to be selected as the initial structure of MD and be explored. The index corresponds exactly to the `sys_configs`. |
 | **model_devi_jobs["temps"]**  | List of integer | [50, 300] | Temperature (**K**) in MD
 | **model_devi_jobs["press"]**  | List of integer | [1,10] | Pressure (**Bar**) in MD
-| **model_devi_jobs["trj_freq"]**   | Integer  | 10                                                            | Frequecy of trajectory saved in MD.                   |
+| **model_devi_jobs["trj_freq"]**   | Integer  | 10                                                            | Frequency of trajectory saved in MD.                   |
 | **model_devi_jobs["nsteps"]**     | Integer      | 3000                                                         | Running steps of MD.                                  |
 | **model_devi_jobs["ensemble"]** | String             | "nvt"                                    | Determining which ensemble used in MD, **options** include “npt” and “nvt”. |
 | model_devi_jobs["neidelay"] | Integer             | "10"                                    | delay building until this many steps since last build |
@@ -586,7 +586,7 @@ There are some new keys needed to be added into `param` and `machine` if CALYPSO
 
 The bold notation of key (such as **calypso_path**) means that it's a necessary key.
 
- Key  | Type          | Example                                                      | Discription                                                      |
+ Key  | Type          | Example                                                      | Description                                                      |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
 | *in param file*
 | **model_devi_engine** | string | "calypso" | CALYPSO as model-deviation engine.|
@@ -616,7 +616,7 @@ The bold notation of key (such as **calypso_path**) means that it's a necessary 
 - replace `keyword` in cp2k as `keyword` in dict.
 - replace `keyword parameter` in cp2k as `value` in dict.
 - replace `section name` in cp2k as `keyword` in dict. . The corresponding value is a `dict`.
-- repalce `section parameter` in cp2k as `value` with dict. keyword `"_"`
+- replace `section parameter` in cp2k as `value` with dict. keyword `"_"`
 - `repeat section` in cp2k just need to be written once with repeat parameter as list. 
 
 If you want to use your own paramter, just write a corresponding dictionary. The `COORD` section will be filled by dpgen automatically, therefore do not include this in dictionary. The `OT` or `Diagonalization` section is require for semiconductor or metal system. For specific example, have a look on `example` directory.
@@ -882,7 +882,6 @@ Here we take deepmd for example and the input file for other task types is simil
     "interaction": {
         "type":          "deepmd",
         "model":         "frozen_model.pb",
-        "deepmd_version":"1.2.0",
         "type_map":     {"Al": 0}
     },
     "properties": [
@@ -948,7 +947,7 @@ Key words | data structure | example | description
 **vol_start** | Float | 0.9 | the starting volume related to the equilibrium structure
 **vol_end** | Float | 1.1 | the biggest volume related to the equilibrium structure
 **vol_step** | Float | 0.01 | the volume increment related to the equilibrium structure
-**vol_abs** | Boolean | false | whether to treat vol_start, vol_end and vol_step as absolute volume or not (as relative volume), default = false
+vol_abs | Boolean | false | whether to treat vol_start, vol_end and vol_step as absolute volume or not (as relative volume), default = false
 
 Key words for **Elastic**
 
@@ -970,7 +969,7 @@ Key words | data structure | example | description
 **insert_ele** | List of String | ["Al"] | the element to be inserted
 supercell | List of Int | [3,3,3] | the supercell to be constructed, default = [1,1,1]
 conf_filters | Dict | "min_dist": 1.5 | filter out the undesirable configuration
-"bcc_self" | Boolean | false | whether to do the self-interstitial calculations for bcc structures, default = false
+bcc_self | Boolean | false | whether to do the self-interstitial calculations for bcc structures, default = false
 
 Key words for **Surface**
 
@@ -979,7 +978,7 @@ Key words | data structure | example | description
 **min_slab_size** | Int | 10 | minimum size of slab thickness
 **min_vacuum_size** | Int | 11 | minimum size of vacuum width
 pert_xz | Float | 0.01 | perturbation through xz direction used to compute surface energy, default = 0.01
-max_miller | Int | 2 | the maximum miller index
+max_miller | Int | 2 | the maximum miller index, default = 2
 
 Key words for **Gamma**
 
@@ -988,10 +987,10 @@ Key words | data structure | example | description
 **lattice_type** | String | "fcc" | "bcc" or "fcc" at this stage
 **miller_index** | List of Int | [1,1,1] | slip plane for gamma-line calculation
 **displace_direction** | List of Int | [1,1,0] | slip direction for gamma-line calculation
-**supercell_size** | List of Int | [1,1,10] | the supercell to be constructed, default = [1,1,5]
-**min_vacuum_size** | Int or Float | 10 | minimum size of vacuum width, default = 20
-**add_fix** | List of String | ['true','true','false'] | whether to do relaxation in the direction, default = ['true','true','false'] (standard method)
-**n_steps** | Int | 20 | Number of points for gamma-line calculation, default = 10
+supercell_size | List of Int | [1,1,10] | the supercell to be constructed, default = [1,1,5]
+min_vacuum_size | Int or Float | 10 | minimum size of vacuum width, default = 20
+add_fix | List of String | ['true','true','false'] | whether to do relaxation in the direction, default = ['true','true','false'] (standard method)
+n_steps | Int | 20 | Number of points for gamma-line calculation, default = 10
 
 Three steps for property calculations are also `make`, `run`, and `post`.
 
@@ -1008,7 +1007,6 @@ An example of the input file `refine.json` is given below:
     "interaction": {
         "type":          "deepmd",
         "model":         "frozen_model.pb",
-        "deepmd_version":"1.2.0",
         "type_map":     {"Al": 0}
     },
     "properties": [
@@ -1058,7 +1056,7 @@ Sometimes we want to reproduce the initial results with the same configurations 
 Three steps for reproduce calculations are also `make`, `run`, and `post`.
 
 ### More Information of Autotest
-For more information of atutotest, please refer to [dpgen wiki](https://github.com/deepmodeling/dpgen/wiki).
+For more information of autotest, please refer to [dpgen wiki](https://github.com/deepmodeling/dpgen/wiki).
 
 ## Simplify
 When you have a dataset containing lots of repeated data, this step will help you simplify your dataset. The workflow contains three stages: train, model_devi, and fp. The train stage and the fp stage are as the same as the run step, and the model_devi stage will calculate model deviations of the rest data that has not been confirmed accurate. Data with small model deviations will be confirmed accurate, while the program will pick data from those with large model deviations to the new dataset.
@@ -1192,9 +1190,9 @@ dpdispatcher has updated and the api of `machine.json` is changed.
 dpgen will use new dpdispatcher if the key `api_version` in dpgen's `machine.json`'s value is equal or large than `1.0`.
 
 And dpgen will use old dpdispatcher if the key `api_version` is not specified in `machine.json` or the `api_version` is smaller than `1.0`.
-This gurantees that the old `machine.json`s still work.
+This guarantees that the old `machine.json`s still work.
 
-And for now dpdispatcher is maintained on a seperate repo. 
+And for now dpdispatcher is maintained on a separate repo. 
 The repo link: https://github.com/deepmodeling/dpdispatcher
 
 The api of new dpdispatcher is close to old one except for a few changes. 
@@ -1293,9 +1291,9 @@ note1: the key "local_root" in dpgen's machine.json is always `./`
     - Size of `sel_a` and actual types of atoms in your system.
     - Index of `sys_configs` and `sys_idx`
 
-2. Please verify the directories of `sys_configs`. If there isnt's any POSCAR for `01.model_devi` in one iteration, it may happen that you write the false path of `sys_configs`.
+2. Please verify the directories of `sys_configs`. If there isn't any POSCAR for `01.model_devi` in one iteration, it may happen that you write the false path of `sys_configs`.
 3. Correct format of JSON file.
-4. In `02.fp`, total cores you require through `task_per_node` should be devided by `npar` times `kpar`.
+4. In `02.fp`, total cores you require through `task_per_node` should be divided by `npar` times `kpar`.
 5. The frames of one system should be larger than `batch_size` and `numb_test` in `default_training_param`. It happens that one iteration adds only a few structures and causes error in next iteration's training. In this condition, you may let `fp_task_min` be larger than `numb_test`.
 ## License
 The project dpgen is licensed under [GNU LGPLv3.0](./LICENSE).
