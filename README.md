@@ -853,8 +853,8 @@ An example of the input file for relaxation by LAMMPS:
             "type_map":   {"Al": 0}
 	},
     "relaxation": {
-            "cal_setting":{"etol": 1e-12,
-                           "ftol": 1e-6,
+            "cal_setting":{"etol": 0,
+                           "ftol": 1e-10,
                            "maxiter": 5000,
                            "maximal": 500000}
 	}
@@ -867,8 +867,8 @@ Key words | data structure | example | description
 **model** | String or List of String | "frozen_model.pb" | model file for atomic interaction
 in_lammps | String | "lammps_input/in.lammps" | input file for lammps commands
 **type_map** | Dict | {"Al": 0} | key is element type and value is type number. DP starts from 0, others starts from 1
-etol | Float | 1e-12 | stopping tolerance for energy
-ftol | Float | 1e-6 | stopping tolerance for force
+etol | Float | 0 | stopping tolerance for energy
+ftol | Float | 1e-10 | stopping tolerance for force
 maxiter | Int | 5000 | max iterations of minimizer
 maxeval | Int | 500000 | max number of force/energy evaluations
 
@@ -989,7 +989,7 @@ Key words | data structure | example | description
 **displace_direction** | List of Int | [1,1,0] | slip direction for gamma-line calculation
 supercell_size | List of Int | [1,1,10] | the supercell to be constructed, default = [1,1,5]
 min_vacuum_size | Int or Float | 10 | minimum size of vacuum width, default = 20
-add_fix | List of String | ['true','true','false'] | whether to do relaxation in the direction, default = ['true','true','false'] (standard method)
+add_fix | List of String | ['true','true','false'] | whether to fix atoms in the direction, default = ['true','true','false'] (standard method)
 n_steps | Int | 20 | Number of points for gamma-line calculation, default = 10
 
 Three steps for property calculations are also `make`, `run`, and `post`.
