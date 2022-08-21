@@ -198,7 +198,7 @@ Basically `init_surf` can be divided into two parts , denoted as `stages` in `PA
 
 All stages must be **in order**.
 
-Following is an example for `PARAM`, which generates data from a typical structure hcp.
+Following is an example for `PARAM`, which generates data from a typical structure fcc.
 ```json
 {
   "stages": [
@@ -546,7 +546,7 @@ The bold notation of key (such as **type_map**) means that it's a necessary key.
 | **fp_task_min**     | Integer        | 5                                                            | Minimum of structures to calculate in `02.fp` of each iteration. |
 | fp_accurate_threshold      | Float | 0.9999  | If the accurate ratio is larger than this number, no fp calculation will be performed, i.e. fp_task_max = 0. |
 | fp_accurate_soft_threshold | Float | 0.9999  | If the accurate ratio is between this number and `fp_accurate_threshold`, the fp_task_max linearly decays to zero. |
-| fp_cluster_vacuum      | Float | None  | If the vacuum size is smaller than this value, this cluster will not be choosen for labeling |
+| fp_cluster_vacuum      | Float | None  | If the vacuum size is smaller than this value, this cluster will not be chosen for labeling |
 | *fp_style == VASP*
 | **fp_pp_path**   | String           | "/sharedext4/.../ch4/"                                       | Directory of psuedo-potential file to be used for 02.fp exists. |
 | **fp_pp_files**    | List of string         | ["POTCAR"]                                                   | Psuedo-potential file to be used for 02.fp. Note that the order of elements should correspond to the order in `type_map`. |
@@ -619,7 +619,7 @@ The bold notation of key (such as **calypso_path**) means that it's a necessary 
 - replace `section parameter` in cp2k as `value` with dict. keyword `"_"`
 - `repeat section` in cp2k just need to be written once with repeat parameter as list. 
 
-If you want to use your own paramter, just write a corresponding dictionary. The `COORD` section will be filled by dpgen automatically, therefore do not include this in dictionary. The `OT` or `Diagonalization` section is require for semiconductor or metal system. For specific example, have a look on `example` directory.
+If you want to use your own parameter, just write a corresponding dictionary. The `COORD` section will be filled by dpgen automatically, therefore do not include this in dictionary. The `OT` or `Diagonalization` section is require for semiconductor or metal system. For specific example, have a look on `example` directory.
 
 Here are examples for setting:
  ```python
@@ -697,15 +697,15 @@ the following essential section should be provided in user template
 ## Autotest: Autotest for Deep Generator
 Suppose that we have a potential (can be DFT, DP, MEAM ...), `autotest` helps us automatically calculate M properties on N configurations. The folder where the `autotest` runs is called the working directory of `autotest`. Different potentials should be tested in different working directories.
 
-A property is tested in three steps: `make`, `run` and `post`. `make` prepares all computational tasks that are needed to calculate the property. For example to calculate EOS, `make` prepares a series of tasks, each of which has a scaled configuration with certain volume, and all necessary input files necessary for starting a VASP, ABACUS, or LAMMPS calculations. `run` sends all the computational tasks to remote computational resources defined in a machine configuration file like `machine.json`, and automatically collect the results when remote calculations finish. `post` calculates the desired property from the collected results.
+A property is tested in three steps: `make`, `run` and `post`. `make` prepares all computational tasks that are needed to calculate the property. For example to calculate EOS, `make` prepares a series of tasks, each of which has a scaled configuration with certain volume, and all necessary input files necessary for starting a VASP, ABACUS, or LAMMPS calculations. `run` sends all the computational tasks to remote computational resources defined in a machine configuration file like `machine.json`, and automatically collects the results when remote calculations finish. `post` calculates the desired property from the collected results.
 
 ### Relaxation
 
 The relaxation of a structure should be carried out before calculating all other properties:
 ```bash
-dpgen autotest make equi.json
+dpgen autotest make relax.json
 dpgen autotest run relax.json machine.json
-dpgen autotest post equi.json
+dpgen autotest post relax.json
 ```
 If, for some reasons, the main program terminated at stage `run`, one can easily restart with the same command.
 `relax.json` is the parameter file. An example for `deepmd` relaxation is given as:
@@ -725,7 +725,7 @@ where the key `structures` provides the structures to relax. `interaction` is pr
 
 ### Task type
 
-There are now six task types implemented in the package: `vasp`, `abacus`, `deepmd`, `meam`, `eam_fs`, and `eam_alloy`. An `inter.json` file in json format containing the interaction parameters will be written in the directory of each task after `make`. The input examples of the `interaction` part of each type can be found below:
+There are now six task types implemented in the package: `vasp`, `abacus`, `deepmd`, `meam`, `eam_fs`, and `eam_alloy`. An `inter.json` file in json format containing the interaction parameters will be written in the directory of each task after `make`. We give input examples of the `interaction` part for each type below:
 
 **VASP**: 
     
@@ -788,13 +788,13 @@ Please make sure the [MANYBODY package](https://lammps.sandia.gov/doc/Packages_d
 
 Now the supported property types are `eos`, `elastic`, `vacancy`, `interstitial`, `surface`, and `gamma`. Before property tests, `relaxation` should be done first or the relaxation results should be present in the corresponding directory `confs/mp-*/relaxation/relax_task`. A file named `task.json` in json format containing the property parameter will be written in the directory of each task after `make` step. Multiple property tests can be performed simultaneously.
 
-### Here we start to introduce the relaxation, property, refine, and reproduce calculations in `autotest` in details.
+### Below we start to introduce the relaxation, property, refine, and reproduce calculations in `autotest` in details.
 
 ### Relaxation calculations
 
 The relaxation of a structure should be carried out before calculating all other properties. 
 
-First, we need input parameter file and we name it `relaxation.json` here. All the relaxation calculations should be taken either by `VASP`, `ABACUS`, or `LAMMPS`. Here are two input examples for `VASP` and `LAMMPS` respectively. 
+First, we need input parameter file and we name it `relax.json` here. All the relaxation calculations should be taken either by `VASP`, `ABACUS`, or `LAMMPS`. Here are two input examples for `VASP` and `LAMMPS` respectively. 
 
 An example of the input file for relaxation by VASP:
 
@@ -826,8 +826,8 @@ Key words | data structure | example | description
 **structures** | List of String | ["confs/std-*"] | path of different structures
 **interaction** | Dict | See above | description of the task type and atomic interaction
 **type** | String | "vasp" | task type
-**incar** | String | "vasp_input/INCAR" | the path for INCAR file in vasp
-potcar_prefix | String | "vasp_input" | the prefix of path for POTCAR file in vasp, default = ""
+**incar** | String | "vasp_input/INCAR" | path for INCAR file in vasp
+potcar_prefix | String | "vasp_input" | prefix of path for POTCAR file in vasp, default = ""
 **potcars** | Dict | {"Al": "POTCAR.al"} | key is element type and value is potcar name
 **relaxation** | Dict | See above | the calculation type and setting for relaxation
 cal_type  | String | "relaxation" or "static" | calculation type
@@ -932,10 +932,10 @@ Universal key words for properties
 
 Key words | data structure | example | description
 ---|---|---|---
-**type** | String | "eos" | specifying the property type
+**type** | String | "eos" | specifying property type
 skip | Boolean | true | whether to skip current property or not
 start_confs_path | String | "../vasp/confs" | starting from the equilibrium configuration in other path only for the current property type
-cal_setting["input_prop"] | String | "lammps_input/lammps_high" |input commands file for lammps
+cal_setting["input_prop"] | String | "lammps_input/lammps_high" |input commands file 
 cal_setting["overwrite_interaction"] | Dict | | overwrite the interaction in the `interaction` part only for the current property type
 
 other parameters in `cal_setting` and `cal_type` in `relaxation` also apply in `property`.
