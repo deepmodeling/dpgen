@@ -132,8 +132,6 @@
     "shuffle_poscar": false,
     "fp_task_max": 20,
     "fp_task_min": 5,
-    "fp_pp_path": "./",
-    "fp_pp_files": [],
     "fp_params":{
             "keywords": "force B3LYP 6-31g(d,p) nosymm",
             "nproc":2 ,
