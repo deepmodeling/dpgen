@@ -1,6 +1,12 @@
 # Common Errors
 (Errors are sorted alphabetically)
 
+## dargs.dargs.ArgumentTypeError: [at root location] key `xxx` gets wrong value type, requires <xxx> but gets <xx>
+Please check your parameters with [DPGEN's Document](https://docs.deepmodeling.com/projects/dpgen/en/latest/). Maybe youhave superfluous parentheses in your parameter file.
+  
+## Dargs: xxx is not allowed in strict mode.
+Strict format check has been applied since version 0.10.7.  To avoid misleading users, some older-version keys that are already ignored or absorbed into default settings are not allowed to be present. And the expected structure of the dictionary in the param.json also differs from those before version 0.10.7. This error will occur when format check finds older-fashion keys in the json file.  Please try deleting or annotating these keys, or correspondingly modulate the json file. Example files in the newest format could be found in [examples](https://github.com/deepmodeling/dpgen/tree/master/examples).
+
 ## FileNotFoundError: [Errno 2] No such file or directory: '.../01.model_devi/graph.xxx.pb'
 If you find this error occurs, please check your initial data. Your model will not be generated if the initial data is incorrect.
 
@@ -29,3 +35,6 @@ Some common reasons are as follows:
 
 ## RuntimeError: find too many unsuccessfully terminated jobs.
 The ratio of failed jobs is larger than ratio_failure. You can set a high value for ratio_failure or check if there is something wrong with your input files. 
+
+## ValueError: Cannot load file containing picked data when allow_picked=False
+Please make sure that there is no excess file where you run DP-GEN. 
