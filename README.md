@@ -829,7 +829,7 @@ Key words | data structure | example | description
 **incar** | String | "vasp_input/INCAR" | path for INCAR file in vasp
 potcar_prefix | String | "vasp_input" | prefix of path for POTCAR file in vasp, default = ""
 **potcars** | Dict | {"Al": "POTCAR.al"} | key is element type and value is potcar name
-**relaxation** | Dict | See above | the calculation type and setting for relaxation
+**relaxation** | Dict | See above | calculation type and setting for relaxation
 cal_type  | String | "relaxation" or "static" | calculation type
 cal_setting | Dict | See above | calculation setting
 relax_pos | Boolean | true | relax atomic position or not, default = true for relaxation
@@ -932,9 +932,9 @@ Universal key words for properties
 
 Key words | data structure | example | description
 ---|---|---|---
-**type** | String | "eos" | specifying property type
+**type** | String | "eos" | property type
 skip | Boolean | true | whether to skip current property or not
-start_confs_path | String | "../vasp/confs" | starting from the equilibrium configuration in other path only for the current property type
+start_confs_path | String | "../vasp/confs" | start from the equilibrium configuration in other path only for the current property type
 cal_setting["input_prop"] | String | "lammps_input/lammps_high" |input commands file 
 cal_setting["overwrite_interaction"] | Dict | | overwrite the interaction in the `interaction` part only for the current property type
 
@@ -953,8 +953,8 @@ Key words for **Elastic**
 
 Key words | data structure | example | description
 ---|---|---|---
-norm_deform | Float | 1e-2 | specifying the deformation in xx, yy, zz, default = 1e-2
-shear_deform | Float | 1e-2 | specifying the deformation in other directions, default = 1e-2
+norm_deform | Float | 1e-2 | deformation in xx, yy, zz, default = 1e-2
+shear_deform | Float | 1e-2 | deformation in other directions, default = 1e-2
 
 Key words for **Vacancy**
 
@@ -1025,7 +1025,7 @@ Three steps for refine calculations are also `make`, `run`, and `post`.
 
 ### Reproduce the calculation of a property
 
-Sometimes we want to reproduce the initial results with the same configurations for cross validation. This version of autotest package can accomplish this successfully in all property types except for `Elastic`. An input example for using `deepmd` to reproduce the `VASP` Interstitial results is given as below:
+Sometimes we want to reproduce the initial results with the same configurations for cross validation. This version of autotest package can accomplish this successfully in all property types except for `Elastic`. An input example for using `deepmd` to reproduce the `VASP` Interstitial results is given below:
 
 ```json
 {
