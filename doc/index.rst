@@ -46,7 +46,7 @@ DPGEN's documentation
    :maxdepth: 2
    :caption: Autotest   
 
-   Autotest/autotest
+   Autotest/index.rst
 
 .. _simplify::
 
