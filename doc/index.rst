@@ -35,7 +35,7 @@ DPGEN's documentation
    :maxdepth: 2
    :caption: Init 
    
-   init/init_bulk.md
+   init/init-bulk.md
    init/init-bulk-mdata
    init/init_surf.md
    init/init-surf-mdata
