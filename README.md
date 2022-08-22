@@ -162,7 +162,7 @@ The bold notation of key (such as **Elements**) means that it's a necessary key.
 | from_poscar | Boolean | True | Deciding whether to use a given poscar as the beginning of relaxation. If it's true, keys (`cell_type`, `latt`) will be aborted. Otherwise, these two keys are **necessary**.
 | from_poscar_path | String | "....../C_mp-47_conventional.POSCAR" | Path of POSCAR for VASP or STRU for ABACUS. **Necessary** if `from_poscar` is true.
 | relax_incar | String | "....../INCAR" | Path of INCAR for VASP or INPUT for ABACUS for relaxation in VASP. **Necessary** if `stages` include 1.
-| md_incar | String |  "....../INCAR" | Path of INCAR for VASP or INPUT for ABACUS for MD in VASP. **Necessary** if `stages` include 3.|
+| md_incar | String |  "....../INCAR_md" | Path of INCAR for VASP or INPUT for ABACUS for MD in VASP. **Necessary** if `stages` include 3.|
 | **scale** | List of float | [0.980, 1.000, 1.020] | Scales for transforming cells.
 | **skip_relax** | Boolean | False | If it's true, you may directly run stage 2 (pertub and scale) using an unrelaxed POSCAR.
 | **pert_numb** | Integer | 30 | Number of pertubations for each POSCAR.
