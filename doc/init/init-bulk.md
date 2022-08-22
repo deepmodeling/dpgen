@@ -16,7 +16,7 @@ Basically `init_bulk` can be devided into four parts , denoted as `stages` in `P
 
 All stages must be **in order**. One doesn't need to run all stages. For example, you may run stage 1 and 2, generating supercells as starting point of exploration in `dpgen run`.
 
-If MACHINE is None, there should be only one stage in stages. Corresponding tasks will be generated, but user's intervention should be involved in, to manunally run the scripts.
+If MACHINE is None, there should be only one stage in stages. Corresponding tasks will be generated, but user's intervention should be involved in, to manually run the scripts.
 
 Following is an example for `PARAM`, which generates data from a typical structure hcp.
 ```json
@@ -55,7 +55,7 @@ The following table gives explicit descriptions on keys in `PARAM`.
 
 The bold notation of key (such as **Elements**) means that it's a necessary key.
 
- Key  | Type          | Example                                                      | Discription                                                      |
+ Key  | Type          | Example                                                      | Description                                                      |
 | :---------------- | :--------------------- | :-------------------------------------- | :-------------------------------------------------------------|
 | **stages** | List of Integer | [1,2,3,4] | Stages for `init_bulk`
 | **Elements** | List of String | ["Mg"] | Atom types
@@ -73,7 +73,7 @@ The bold notation of key (such as **Elements**) means that it's a necessary key.
 | **md_nstep** | Integer | 10 | Steps of AIMD in stage 3. If it's not equal to settings via `NSW` in `md_incar`, DP-GEN will follow `NSW`.
 | **coll_ndata** | Integer | 5000 | Maximal number of collected data.
 | type_map | List | [ "Mg", "Al"] | The indices of elements in deepmd formats will be set in this order.
-| init_fp_style | String | "ABACUS" or "VASP" | First-principle software. If this key is abscent, the default value will be "VASP".
+| init_fp_style | String | "ABACUS" or "VASP" | First-principle software. If this key is absent, the default value will be "VASP".
 | relax_kpt | String | "....../KPT" | Path of `KPT` file for relaxation in stage 1. Only useful if `init_fp_style` is "ABACUS".
 | relax_kspacing | Integer or List of 3 integers | 10 | kspacing parameter for relaxation in stage 1. Only useful if `init_fp_style` is "ABACUS".
 | md_kpt | String | "....../KPT" | Path of `KPT` file for MD simulations in stage 3. Only useful if `init_fp_style` is "ABACUS".
