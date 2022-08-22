@@ -71,10 +71,16 @@ def fp_args() -> List[Argument]:
     """
     doc_fp_task_max = 'Maximum of structures to be calculated in 02.fp of each iteration.'
     doc_fp_task_min = 'Minimum of structures to be calculated in 02.fp of each iteration.'
+    doc_fp_accurate_threshold = 'If the accurate ratio is larger than this number, no fp calculation will be performed, i.e. fp_task_max = 0.'
+    doc_fp_accurate_soft_threshold = 'If the accurate ratio is between this number and fp_accurate_threshold, the fp_task_max linearly decays to zero.'
 
     return [
         Argument("fp_task_max", int, optional=True, doc=doc_fp_task_max),
         Argument("fp_task_min", int, optional=True, doc=doc_fp_task_min),
+        Argument("fp_accurate_threshold", float,
+                 optional=True, doc=doc_fp_accurate_threshold),
+        Argument("fp_accurate_soft_threshold", float,
+                 optional=True, doc=doc_fp_accurate_soft_threshold),
     ]
 
 

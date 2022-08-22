@@ -9,6 +9,7 @@ DPGEN's documentation
    :caption: Overview
 
    overview/cli
+   overview/DP-GEN-structure
   
   
 .. _installation::
@@ -66,6 +67,8 @@ DPGEN's documentation
    :glob:  
 
    Tutorials <https://tutorials.deepmodeling.com/en/latest/Tutorials/DP-GEN/>
+   troubleshooting/index
+   user-guide
 
 
 .. _Contribution:
@@ -74,8 +77,9 @@ DPGEN's documentation
    :maxdepth: 2
    :caption: Contribution Guide
 
-   README.md
+   how-to-contribute
    api/api
+   credits.rst
 
 * :ref:`genindex`
 * :ref:`modindex`

@@ -218,8 +218,9 @@ def post_model_devi(iter_index, jdata, mdata):
     sys_failed = dpdata.MultiSystems()
     
     labeled = jdata.get("labeled", False)
-    sys_entire = dpdata.MultiSystems().from_deepmd_npy(os.path.join(work_path, rest_data_name + ".old"), labeled=labeled)
-
+    type_map = jdata.get("type_map", [])
+    sys_entire = dpdata.MultiSystems(type_map = type_map).from_deepmd_npy(os.path.join(work_path, rest_data_name + ".old"), labeled=labeled)
+    
     detail_file_name = detail_file_name_prefix
     with open(os.path.join(work_path, detail_file_name)) as f:
         for line in f:
@@ -315,14 +316,16 @@ def make_fp_configs(iter_index, jdata):
     create_path(work_path)
     picked_data_path = os.path.join(iter_name, model_devi_name, picked_data_name)
     systems = get_multi_system(picked_data_path, jdata)
+    ii = 0
     jj = 0
     for system in systems:
         for subsys in system:
-            task_name = "task." + fp_task_fmt % (0, jj)
+            task_name = "task." + fp_task_fmt % (ii, jj)
             task_path = os.path.join(work_path, task_name)
             create_path(task_path)
             subsys.to('vasp/poscar', os.path.join(task_path, 'POSCAR'))
             jj += 1
+        ii += 1
 
 
 def make_fp_gaussian(iter_index, jdata):

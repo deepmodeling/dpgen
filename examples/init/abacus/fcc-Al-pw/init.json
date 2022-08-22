@@ -1,0 +1,23 @@
+{
+    "init_fp_style": "ABACUS",
+    "stages":           [1,2,3,4],
+    "cell_type":	"fcc",
+    "super_cell":	[2, 1, 1],
+    "elements":		["Al"],
+    "from_poscar":	true,
+    "from_poscar_path":	"./Al.STRU",
+    "potcars":		["Al_ONCV_PBE-1.0.upf"],
+    "relax_incar": 	"INPUT.rlx",
+    "relax_kpt": 	"KPT",
+    "md_incar" : 	"INPUT.md",
+    "md_kpt" :	 	"KPT",
+    "skip_relax":	false,
+    "scale":		[1.00],
+    "pert_numb":	10,
+    "md_nstep" : 	10,
+    "pert_box":		0.01,
+    "pert_atom":	0.01,
+    "deepgen_templ":	"../generator/template/",
+    "coll_ndata":	10,
+    "_comment":		"that's all"
+}

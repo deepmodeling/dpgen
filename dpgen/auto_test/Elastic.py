@@ -16,10 +16,12 @@ from dpgen.auto_test.Property import Property
 from dpgen.auto_test.refine import make_refine
 from dpgen.generator.lib.vasp import incar_upper
 
+import dpgen.auto_test.lib.abacus as abacus
+import dpgen.generator.lib.abacus_scf as abacus_scf
 
 class Elastic(Property):
     def __init__(self,
-                 parameter):
+                 parameter,inter_param=None):
         if not ('init_from_suffix' in parameter and 'output_suffix' in parameter):
             default_norm_def = 2e-3
             default_shear_def = 5e-3
@@ -45,6 +47,7 @@ class Elastic(Property):
         # parameter['reproduce'] = False
         # self.reprod = parameter['reproduce']
         self.parameter = parameter
+        self.inter_param = inter_param if inter_param != None else {'type': 'vasp'}
 
     def make_confs(self,
                    path_to_work,
@@ -69,14 +72,22 @@ class Elastic(Property):
 
         task_list = []
         cwd = os.getcwd()
-        equi_contcar = os.path.join(path_to_equi, 'CONTCAR')
+
+        if self.inter_param['type'] == 'abacus':
+            CONTCAR = abacus.final_stru(path_to_equi)
+            POSCAR = 'STRU'
+        else:
+            CONTCAR = 'CONTCAR'
+            POSCAR = 'POSCAR'
+
+        equi_contcar = os.path.join(path_to_equi, CONTCAR)
 
         os.chdir(path_to_work)
-        if os.path.isfile('POSCAR'):
-            os.remove('POSCAR')
-        if os.path.islink('POSCAR'):
-            os.remove('POSCAR')
-        os.symlink(os.path.relpath(equi_contcar), 'POSCAR')
+        if os.path.isfile(POSCAR):
+            os.remove(POSCAR)
+        if os.path.islink(POSCAR):
+            os.remove(POSCAR)
+        os.symlink(os.path.relpath(equi_contcar), POSCAR)
         #           task_poscar = os.path.join(output, 'POSCAR')
 
         # stress, deal with unsupported stress in dpdata
@@ -123,7 +134,10 @@ class Elastic(Property):
             if not os.path.exists(equi_contcar):
                 raise RuntimeError("please do relaxation first")
 
-            ss = Structure.from_file(equi_contcar)
+            if self.inter_param['type'] == 'abacus':
+                ss = abacus.stru2Structure(equi_contcar)
+            else:
+                ss = Structure.from_file(equi_contcar)
             dfm_ss = DeformedStructureSet(ss,
                                           symmetry=False,
                                           norm_strains=norm_strains,
@@ -136,11 +150,14 @@ class Elastic(Property):
                 output_task = os.path.join(path_to_work, 'task.%06d' % ii)
                 os.makedirs(output_task, exist_ok=True)
                 os.chdir(output_task)
-                for jj in ['INCAR', 'POTCAR', 'POSCAR', 'conf.lmp', 'in.lammps']:
+                for jj in ['INCAR', 'POTCAR', 'POSCAR', 'conf.lmp', 'in.lammps','STRU']:
                     if os.path.exists(jj):
                         os.remove(jj)
                 task_list.append(output_task)
                 dfm_ss.deformed_structures[ii].to('POSCAR', 'POSCAR')
+                if self.inter_param['type'] == 'abacus':
+                    abacus.poscar2stru("POSCAR",self.inter_param,"STRU")
+                    os.remove('POSCAR')
                 # record strain
                 df = Strain.from_deformation(dfm_ss.deformations[ii])
                 dumpfn(df.as_dict(), 'strain.json', indent=4)
@@ -148,27 +165,51 @@ class Elastic(Property):
         return task_list
 
     def post_process(self, task_list):
+        if self.inter_param['type'] == 'abacus':
+            POSCAR = 'STRU'
+            INCAR = 'INPUT'
+            KPOINTS = 'KPT'
+        else:
+            POSCAR = 'POSCAR'
+            INCAR = 'INCAR'
+            KPOINTS = 'KPOINTS'
+
         cwd = os.getcwd()
-        poscar_start = os.path.abspath(os.path.join(task_list[0], '..', 'POSCAR'))
+        poscar_start = os.path.abspath(os.path.join(task_list[0], '..', POSCAR))
         os.chdir(os.path.join(task_list[0], '..'))
-        if os.path.isfile(os.path.join(task_list[0], 'INCAR')):
-            incar = incar_upper(Incar.from_file(os.path.join(task_list[0], 'INCAR')))
-            kspacing = incar.get('KSPACING')
-            kgamma = incar.get('KGAMMA', False)
-            ret = vasp.make_kspacing_kpoints(poscar_start, kspacing, kgamma)
-            kp = Kpoints.from_string(ret)
-            if os.path.isfile('KPOINTS'):
-                os.remove('KPOINTS')
-            kp.write_file("KPOINTS")
+        if os.path.isfile(os.path.join(task_list[0], INCAR)):
+            if self.inter_param['type'] == 'abacus':
+                input_aba = abacus_scf.get_abacus_input_parameters('INPUT')
+                if 'kspacing' in input_aba:
+                    kspacing = float(input_aba['kspacing'])
+                    kpt = abacus.make_kspacing_kpt(poscar_start,kspacing)
+                    kpt += [0,0,0]
+                    abacus.write_kpt('KPT',kpt)
+                    del input_aba['kspacing']
+                    os.remove('INPUT')
+                    abacus.write_input('INPUT',input_aba)
+                else:
+                    os.rename(os.path.join(task_list[0], 'KPT'),'./KPT')
+            else:
+                incar = incar_upper(Incar.from_file(os.path.join(task_list[0], 'INCAR')))
+                kspacing = incar.get('KSPACING')
+                kgamma = incar.get('KGAMMA', False)
+                ret = vasp.make_kspacing_kpoints(poscar_start, kspacing, kgamma)
+                kp = Kpoints.from_string(ret)
+                if os.path.isfile('KPOINTS'):
+                    os.remove('KPOINTS')
+                kp.write_file("KPOINTS")
+
             os.chdir(cwd)
-            kpoints_universal = os.path.abspath(os.path.join(task_list[0], '..', 'KPOINTS'))
+            kpoints_universal = os.path.abspath(os.path.join(task_list[0], '..', KPOINTS))
             for ii in task_list:
-                if os.path.isfile(os.path.join(ii, 'KPOINTS')):
-                    os.remove(os.path.join(ii, 'KPOINTS'))
-                if os.path.islink(os.path.join(ii, 'KPOINTS')):
-                    os.remove(os.path.join(ii, 'KPOINTS'))
+                if os.path.isfile(os.path.join(ii, KPOINTS)):
+                    os.remove(os.path.join(ii, KPOINTS))
+                if os.path.islink(os.path.join(ii, KPOINTS)):
+                    os.remove(os.path.join(ii, KPOINTS))
                 os.chdir(ii)
-                os.symlink(os.path.relpath(kpoints_universal), 'KPOINTS')
+                os.symlink(os.path.relpath(kpoints_universal), KPOINTS)
+
         os.chdir(cwd)
 
     def task_type(self):

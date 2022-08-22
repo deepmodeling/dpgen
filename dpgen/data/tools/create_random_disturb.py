@@ -8,7 +8,7 @@ import argparse
 
 import numpy as np
 import ase.io
-import io_lammps
+import dpgen.data.tools.io_lammps as io_lammps
 
 from dpgen.generator.lib.abacus_scf import get_abacus_STRU, make_abacus_scf_stru
 
@@ -213,7 +213,7 @@ def create_disturbs_abacus_dev(fin, nfile, dmax=1.0, etmax=0.1, ofmt="abacus", d
         #pos_new = io_lammps.convert_positions(pos, cell, cell_new)
         stru_d['cells'] = cell_new
 
-        convert_mat = np.linalg.inv(cell)*cell_new
+        convert_mat = np.linalg.inv(cell).dot(cell_new)
         stru_d['coords'] = np.matmul(stru_d['coords'], convert_mat)
 
 
