@@ -1055,9 +1055,6 @@ Sometimes we want to reproduce the initial results with the same configurations 
 
 Three steps for reproduce calculations are also `make`, `run`, and `post`.
 
-### More Information of Autotest
-For more information of autotest, please refer to [dpgen wiki](https://github.com/deepmodeling/dpgen/wiki).
-
 ## Simplify
 When you have a dataset containing lots of repeated data, this step will help you simplify your dataset. The workflow contains three stages: train, model_devi, and fp. The train stage and the fp stage are as the same as the run step, and the model_devi stage will calculate model deviations of the rest data that has not been confirmed accurate. Data with small model deviations will be confirmed accurate, while the program will pick data from those with large model deviations to the new dataset.
 
