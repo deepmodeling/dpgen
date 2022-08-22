@@ -33,8 +33,9 @@ DPGEN's documentation
 
 .. toctree::
    :maxdepth: 2
-   :caption: Init   
-
+   :caption: Init
+   
+   init/init-bulk.md
    init/init-bulk-mdata
    init/init_surf.md
    init/init-surf-mdata
