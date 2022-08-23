@@ -547,7 +547,10 @@ def run_vasp_relax(jdata, mdata):
     
     forward_files = ["POSCAR", "INCAR", "POTCAR"]
     backward_files = ["OUTCAR","CONTCAR"]
-    forward_common_files = mdata['fp'].get('forward_files', []) 
+    forward_common_files = []
+    user_forward_files = mdata['fp'].get('forward_files', []) 
+    for ii in user_forward_files :
+        forward_files.append(os.path.basename(ii))
     #if 'cvasp' in mdata['fp_resources']:
     #    if mdata['fp_resources']['cvasp']:
     #        forward_common_files=['cvasp.py']
@@ -562,9 +565,7 @@ def run_vasp_relax(jdata, mdata):
     for ii in relax_tasks : 
         if not _vasp_check_fin(ii):
             relax_run_tasks.append(ii)
-            for jj in forward_common_files: 
-                #os.symlink(os.path.relpath(os.path.join(work_dir, os.path.basename(os_path_jj)), os.path.join(ii)), 
-                #    os.path.join(ii, os.path.basename(os_path_jj)) )
+            for jj in user_forward_files: 
                 os.symlink(os.path.abspath(jj), os.path.abspath(
                     os.path.join(ii, os.path.basename(jj))))
     run_tasks = [ii.replace(work_dir+"/", "") for ii in relax_run_tasks]
