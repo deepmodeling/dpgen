@@ -226,6 +226,7 @@ class Elastic(Property):
         res_data = {}
         ptr_data = os.path.dirname(output_file) + '\n'
         equi_stress = Stress(loadfn(os.path.join(os.path.dirname(output_file), 'equi.stress.json')))
+        equi_stress *= -1000
         lst_strain = []
         lst_stress = []
         for ii in all_tasks:
