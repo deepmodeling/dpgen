@@ -550,6 +550,8 @@ def run_vasp_relax(jdata, mdata):
     forward_common_files = []
     user_forward_files = mdata['fp'].get('forward_files', []) 
     for ii in user_forward_files :
+        if not os.path.exists(ii) :
+            raise FileNotFoundError('Forward files not found. Please check the path set in "forward_files". ')
         forward_files.append(os.path.basename(ii))
     #if 'cvasp' in mdata['fp_resources']:
     #    if mdata['fp_resources']['cvasp']:
