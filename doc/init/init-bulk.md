@@ -1,5 +1,3 @@
-## Init: Preparing Initial Data
-
 ## Init_bulk
 
 You may prepare initial data for bulk systems with VASP by:
