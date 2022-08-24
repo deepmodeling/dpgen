@@ -56,6 +56,7 @@ input_files = (
     (run_jdata, p_examples / "run" / "deprecated" / "dp0.12-lammps-vasp" / "Al" / "param_al_all_gpu.json"),
     (run_jdata, p_examples / "run" / "deprecated" / "dp0.12-lammps-vasp" / "CH4" / "param_CH4.json"),
     (run_jdata, p_examples / "run" / "dp2.x-lammps-gaussian" / "param_C4H16N4_deepmd-kit-2.0.1.json"),
+    (run_jdata, p_examples / "run" / "dprc" / "generator.json"),
     # machines
     #(run_mdata, p_examples / "machine" / "DeePMD-kit-2.x" / "lebesgue_v2_machine.json"),
     #(run_mdata, p_examples / "machine" / "DeePMD-kit-1.x" / "machine-ali.json"),

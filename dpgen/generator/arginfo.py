@@ -25,7 +25,7 @@ def basic_args() -> List[Argument]:
 
     return [
         Argument("type_map", list, optional=False, doc=doc_type_map),
-        Argument("mass_map", list, optional=False, doc=doc_mass_map),
+        Argument("mass_map", list, optional=True, doc=doc_mass_map),
         Argument("use_ele_temp", int, optional=True,
                  default=0, doc=doc_use_ele_temp),
     ]
@@ -203,10 +203,73 @@ The union of the two sets is made as candidate dataset.'
     ]
 
 
+def model_devi_amber_args() -> List[Argument]:
+    """Amber engine arguments."""
+    doc_model_devi_jobs = "List of dicts. The list including the dict for information of each cycle."
+    doc_sys_idx = "List of ints. List of systems to run."
+    doc_trj_freq = "Frequency to dump trajectory."
+    doc_low_level = "Low level method. The value will be filled into mdin file as @qm_theory@."
+    doc_cutoff = "Cutoff radius for the DPRc model."
+    doc_parm7_prefix = "The path prefix to AMBER PARM7 files."
+    doc_parm7 = "List of paths to AMBER PARM7 files. Each file maps to a system."
+    doc_mdin_prefix = "The path prefix to AMBER mdin template files."
+    doc_mdin = ("List of paths to AMBER mdin template files. Each files maps to a system. "
+                "In the template, the following keywords will be replaced by the actual value: "
+                "`@freq@`: freq to dump trajectory; "
+                "`@nstlim@`: total time step to run; "
+                "`@qm_region@`: AMBER mask of the QM region; "
+                "`@qm_theory@`: The low level QM theory, such as DFTB2; "
+                "`@qm_charge@`: The total charge of the QM theory, such as -2; "
+                "`@rcut@`: cutoff radius of the DPRc model; "
+                "`@GRAPH_FILE0@`, `@GRAPH_FILE1@`, ... : graph files."
+                )
+    doc_qm_region = "List of strings. AMBER mask of the QM region. Each mask maps to a system."
+    doc_qm_charge = "List of ints. Charge of the QM region. Each charge maps to a system."
+    doc_nsteps = "List of ints. The number of steps to run. Each number maps to a system."
+    doc_r = ("3D or 4D list of floats. Constrict values for the enhanced sampling. "
+             "The first dimension maps to systems. "
+             "The second dimension maps to confs in each system. The third dimension is the "
+             "constrict value. It can be a single float for 1D or list of floats for nD.")
+    doc_disang_prefix = "The path prefix to disang prefix."
+    doc_disang = ("List of paths to AMBER disang files. Each file maps to a sytem. "
+                "The keyword RVAL will be replaced by the constrict values, or RVAL1, RVAL2, ... "
+                "for an nD system.")
+    doc_model_devi_f_trust_lo = 'Lower bound of forces for the selection. If dict, should be set for each index in sys_idx, respectively.'
+    doc_model_devi_f_trust_hi = 'Upper bound of forces for the selection. If dict, should be set for each index in sys_idx, respectively.'
+
+    
+    return [
+        # make model devi args
+        Argument("model_devi_jobs", list, optional=False, repeat=True, doc=doc_model_devi_jobs, sub_fields=[
+           Argument("sys_idx", list, optional=False, doc=doc_sys_idx),
+           Argument("trj_freq", int, optional=False, doc=doc_trj_freq),
+        ]),
+        Argument("low_level", str, optional=False, doc=doc_low_level),
+        Argument("cutoff", float, optional=False, doc=doc_cutoff),
+        Argument("parm7_prefix", str, optional=True, doc=doc_parm7_prefix),
+        Argument("parm7", list, optional=False, doc=doc_parm7),
+        Argument("mdin_prefix", str, optional=True, doc=doc_mdin_prefix),
+        Argument("mdin", list, optional=False, doc=doc_mdin),
+        Argument("qm_region", list, optional=False, doc=doc_qm_region),
+        Argument("qm_charge", list, optional=False, doc=doc_qm_charge),
+        Argument("nsteps", list, optional=False, doc=doc_nsteps),
+        Argument("r", list, optional=False, doc=doc_r),
+        Argument("disang_prefix", str, optional=True, doc=doc_disang_prefix),
+        Argument("disang", list, optional=False, doc=doc_disang),
+        # post model devi args
+        Argument("model_devi_f_trust_lo", [
+                 float, list, dict], optional=False, doc=doc_model_devi_f_trust_lo),
+        Argument("model_devi_f_trust_hi", [
+                 float, list, dict], optional=False, doc=doc_model_devi_f_trust_hi),
+    ]
+
+
 def model_devi_args() -> List[Variant]:
     doc_model_devi_engine = "Engine for the model deviation task."
+    doc_amber = "Amber DPRc engine. The command argument in the machine file should be path to sander."
     return [Variant("model_devi_engine", [
             Argument("lammps", dict, model_devi_lmp_args(), doc="LAMMPS"),
+            Argument("amber", dict, model_devi_amber_args(), doc=doc_amber),
         ], default_tag="lammps", optional=True, doc=doc_model_devi_engine)]
 
 
@@ -368,8 +431,38 @@ def fp_style_cp2k_args() -> List[Argument]:
     ]
 
 
+def fp_style_amber_diff_args() -> List[Argument]:
+    """Arguments for FP style amber/diff.
+
+    Returns
+    -------
+    list[dargs.Argument]
+        list of Gaussian fp style arguments
+    """
+    doc_fp_params_gaussian = 'Parameters for FP calculation.'
+    doc_high_level = "High level method. The value will be filled into mdin template as @qm_theory@."
+    doc_high_level_mdin = ("Path to high-level AMBER mdin template file. %qm_theory%, %qm_region%, "
+                           "and %qm_charge% will be replaced.")
+    doc_low_level_mdin = ("Path to low-level AMBER mdin template file. %qm_theory%, %qm_region%, "
+                           "and %qm_charge% will be replaced.")
+    return [
+        Argument("high_level", str, optional=False, doc=doc_high_level),
+        Argument("fp_params", dict, 
+                 optional=False, doc=doc_fp_params_gaussian,
+                 sub_fields=[
+                    Argument("high_level_mdin", str, optional=False, doc=doc_high_level_mdin),
+                    Argument("low_level_mdin", str, optional=False, doc=doc_low_level_mdin),
+                 ]),
+    ]
+
+
 def fp_style_variant_type_args() -> Variant:
     doc_fp_style = 'Software for First Principles.'
+    doc_amber_diff = ('Amber/diff style for DPRc models. Note: this fp style '
+                      'only supports to be used with model_devi_engine `amber`, '
+                      'where some arguments are reused. '
+                      'The command argument in the machine file should be path to sander. '
+                      'One should also install dpamber and make it visible in the PATH.')
 
     return Variant("fp_style", [Argument("vasp", dict, fp_style_vasp_args()),
                                 Argument("gaussian", dict,
@@ -377,7 +470,9 @@ def fp_style_variant_type_args() -> Variant:
                                 Argument("siesta", dict,
                                          fp_style_siesta_args()),
                                 Argument("cp2k", dict, fp_style_cp2k_args()),
-                                Argument("abacus", dict, fp_style_abacus_args())],
+                                Argument("abacus", dict, fp_style_abacus_args()),
+                                Argument("amber/diff", dict, fp_style_amber_diff_args(), doc=doc_amber_diff),
+                                ],
                    optional=False,
                    doc=doc_fp_style)
 
@@ -388,6 +483,7 @@ def fp_args() -> List[Argument]:
     doc_fp_accurate_threshold = 'If the accurate ratio is larger than this number, no fp calculation will be performed, i.e. fp_task_max = 0.'
     doc_fp_accurate_soft_threshold = 'If the accurate ratio is between this number and fp_accurate_threshold, the fp_task_max linearly decays to zero.'
     doc_fp_cluster_vacuum = 'If the vacuum size is smaller than this value, this cluster will not be choosen for labeling.'
+    doc_detailed_report_make_fp = 'If set to true, detailed report will be generated for each iteration.'
 
     return [
         Argument("fp_task_max", int, optional=False, doc=doc_fp_task_max),
@@ -398,6 +494,7 @@ def fp_args() -> List[Argument]:
                  optional=True, doc=doc_fp_accurate_soft_threshold),
         Argument("fp_cluster_vacuum", float,
                  optional=True, doc=doc_fp_cluster_vacuum),
+        Argument("detailed_report_make_fp", bool, optional=True, default=True, doc=doc_detailed_report_make_fp),
     ]
 
 

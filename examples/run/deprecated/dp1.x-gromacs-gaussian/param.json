@@ -15,7 +15,6 @@
   ],
   "init_data_prefix": "somplace/tyk2-dpgen",
   "init_data_sys": ["init_data", "mdtraj_data"],
-  "init_multi_systems": true,
   "sys_configs_prefix": "somplace/tyk2-dpgen",
   "sys_configs": [
     ["model_devi/lig_ejm_31"],
