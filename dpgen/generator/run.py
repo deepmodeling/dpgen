@@ -3176,22 +3176,14 @@ def post_fp_check_fail(iter_index,
     ntask = len(fp_tasks)
     nfail = 0
 
-    api_version = mdata.get('api_version', '0.9')
-    if LooseVersion(api_version) < LooseVersion('1.0') :
-        # check fail according to tag_failure
-        fp_failed_tags = glob.glob(os.path.join(work_path, 'task.*', out_file))
-        fp_failed_tasks = [os.path.dirname(ii) for ii in fp_failed_tags]
-        fp_failed_tasks = list(set(fp_failed_tasks))
-        nfail = len(fp_failed_tasks)
-    elif LooseVersion(api_version) >= LooseVersion('1.0'):
-        # check fail according to the number of collected data
-        sys_data = glob.glob(os.path.join(work_path, "data.*"))
-        sys_data.sort()
-        nframe = 0
-        for ii in sys_data :
-            sys = dpdata.LabeledSystem().from_deepmd_raw(ii, type_map = jdata['type_map'])
-            nframe += len(sys)
-        nfail = ntask - nframe
+    # check fail according to the number of collected data
+    sys_data = glob.glob(os.path.join(work_path, "data.*"))
+    sys_data.sort()
+    nframe = 0
+    for ii in sys_data :
+        sys = dpdata.LabeledSystem().from_deepmd_raw(ii, type_map = jdata['type_map'])
+        nframe += len(sys)
+    nfail = ntask - nframe
 
     rfail = float(nfail) / float(ntask)
     dlog.info("failed tasks: %6d in %6d  %6.2f %% " % (nfail, ntask, rfail * 100.))
