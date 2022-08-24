@@ -8,13 +8,15 @@ dpgen init_surf PARAM [MACHINE]
 The MACHINE configure file is optional. If this parameter exists, then the optimization
 tasks or MD tasks will be submitted automatically according to MACHINE.json.
 
-Basically `init_surf` can be devided into two parts , denoted as `stages` in `PARAM`:
+
+Basically `init_surf` can be divided into two parts , denoted as `stages` in `PARAM`:
 1. Build specific surface in folder `00.place_ele`
 2. Pertub and scale in folder `01.scale_pert`
 
 All stages must be **in order**.
 
-Following is an example for `PARAM`, which generates data from a typical structure hcp.
+
+Following is an example for `PARAM`, which generates data from a typical structure fcc.
 ```json
 {
   "stages": [
@@ -72,7 +74,7 @@ Following is an example for `PARAM`, which generates data from a typical structu
 
 Another example is `from_poscar` method. Here you need to specify the POSCAR file. 
 
-```
+```json
 {
   "stages": [
     1,
