@@ -3181,7 +3181,7 @@ def post_fp_check_fail(iter_index,
     sys_data.sort()
     nframe = 0
     for ii in sys_data :
-        sys = dpdata.LabeledSystem().from_deepmd_raw(ii, type_map = jdata['type_map'])
+        sys = dpdata.LabeledSystem(ii, fmt = 'deepmd/raw')
         nframe += len(sys)
     nfail = ntask - nframe
 
