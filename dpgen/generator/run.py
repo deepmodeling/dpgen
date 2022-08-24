@@ -3245,7 +3245,6 @@ def post_fp_vasp (iter_index,
                         all_te.append(ele_temp)
             elif len(_sys) >= 2:
                 raise RuntimeError("The vasp parameter NSW should be set as 1") 
-                icount+=1
             else:
                 icount+=1
         all_te = np.array(all_te)
