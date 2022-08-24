@@ -23,8 +23,8 @@ class Elastic(Property):
     def __init__(self,
                  parameter,inter_param=None):
         if not ('init_from_suffix' in parameter and 'output_suffix' in parameter):
-            default_norm_def = 2e-3
-            default_shear_def = 5e-3
+            default_norm_def = 1e-2
+            default_shear_def = 1e-2
             parameter['norm_deform'] = parameter.get('norm_deform', default_norm_def)
             self.norm_deform = parameter['norm_deform']
             parameter['shear_deform'] = parameter.get('shear_deform', default_shear_def)
