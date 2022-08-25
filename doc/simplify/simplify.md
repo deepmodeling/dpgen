@@ -112,8 +112,6 @@ Here is an example of `param.json` for QM7 dataset:
     },
     "init_pick_number":100,
     "iter_pick_number":100,
-    "e_trust_lo":1e10,
-    "e_trust_hi":1e10,
     "f_trust_lo":0.25,
     "f_trust_hi":0.45,
     "_comment": " that's all "
