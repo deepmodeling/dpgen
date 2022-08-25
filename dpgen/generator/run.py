@@ -988,7 +988,9 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                 task_path = os.path.join(work_path, task_name)
                 # create task path
                 create_path(task_path)
-                create_path(os.path.join(task_path, 'traj'))
+                model_devi_merge_traj = jdata.get('model_devi_merge_traj', False)
+                if not model_devi_merge_traj :
+                    create_path(os.path.join(task_path, 'traj'))
                 # link conf
                 loc_conf_name = 'conf.lmp'
                 os.symlink(os.path.join(os.path.join('..','confs'), conf_name),
@@ -1118,7 +1120,9 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
                     task_path = os.path.join(work_path, task_name)
                     # dlog.info(task_path)
                     create_path(task_path)
-                    create_path(os.path.join(task_path, 'traj'))
+                    model_devi_merge_traj = jdata.get('model_devi_merge_traj', False)
+                    if not model_devi_merge_traj :
+                        create_path(os.path.join(task_path, 'traj'))
                     loc_conf_name = 'conf.lmp'
                     os.symlink(os.path.join(os.path.join('..','confs'), conf_name),
                                os.path.join(task_path, loc_conf_name) )
@@ -1430,6 +1434,7 @@ def run_md_model_devi (iter_index,
     model_devi_resources = mdata['model_devi_resources']
     use_plm = jdata.get('model_devi_plumed', False)
     use_plm_path = jdata.get('model_devi_plumed_path', False)
+    model_devi_merge_traj = jdata.get('model_devi_merge_traj', False)
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, model_devi_name)
@@ -1461,8 +1466,12 @@ def run_md_model_devi (iter_index,
         command = "{ if [ ! -f dpgen.restart.10000 ]; then %s -i input.lammps -v restart 0; else %s -i input.lammps -v restart 1; fi }" % (model_devi_exec, model_devi_exec)
         command = "/bin/sh -c '%s'" % command
         commands = [command]
-        forward_files = ['conf.lmp', 'input.lammps', 'traj']
-        backward_files = ['model_devi.out', 'model_devi.log', 'traj']
+        
+        lmp_traj_name = 'traj'
+        if model_devi_merge_traj :
+            lmp_traj_name = 'all.lammpstrj'
+        forward_files = ['conf.lmp', 'input.lammps', lmp_traj_name]
+        backward_files = ['model_devi.out', 'model_devi.log', lmp_traj_name]
         if use_plm:
             forward_files += ['input.plumed']
            # backward_files += ['output.plumed']
