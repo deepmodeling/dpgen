@@ -76,7 +76,7 @@ def training_args() -> List[Argument]:
                  doc=doc_default_training_param),
         Argument("dp_compress", bool, optional=True,
                  default=False, doc=doc_dp_compress),
-         Argument("srtab_file_path",str,optional=True,
+        Argument("srtab_file_path",str,optional=True,
                  doc=doc_srtab_file_path)
     ]
 
