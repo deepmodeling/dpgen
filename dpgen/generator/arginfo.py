@@ -25,7 +25,7 @@ def basic_args() -> List[Argument]:
 
     return [
         Argument("type_map", list, optional=False, doc=doc_type_map),
-        Argument("mass_map", [str, list], optional=True, default="auto", doc=doc_mass_map),
+        Argument("mass_map", [list, str], optional=True, default="auto", doc=doc_mass_map),
         Argument("use_ele_temp", int, optional=True,
                  default=0, doc=doc_use_ele_temp),
     ]
