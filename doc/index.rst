@@ -54,7 +54,8 @@ DPGEN's documentation
 .. toctree::
    :maxdepth: 2
    :caption: Simplify  
-
+   
+   simplify/simplify
    simplify/simplify-jdata
    simplify/simplify-mdata
 
