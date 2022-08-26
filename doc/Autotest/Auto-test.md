@@ -1,3 +1,5 @@
+## Auto-test Overview
+
 Suppose that we have a potential (can be DFT, DP, MEAM ...), `autotest` helps us automatically calculate M porperties on N configurations. The folder where the `autotest` runs is called the `autotest`'s working directory. Different potentials should be tested in different working directories.
 
 A property is tested in three stages: `make`, `run` and `post`. `make` prepare all computational tasks that are needed to calculate the property. For example to calculate EOS, `autotest` prepare a series of tasks, each of which has a scaled configuration with certain volume, and all necessary input files necessary for starting a VAPS or LAMMPS relaxation. `run` sends all the computational tasks to remote computational resources defined in a machine configuration file like `machine.json`, and automatically collect the results when remote calculations finish. `post` calculates the desired property from the collected results.
