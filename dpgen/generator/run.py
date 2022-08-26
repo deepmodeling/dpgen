@@ -3218,7 +3218,7 @@ def post_fp_vasp (iter_index,
         sys_outcars = glob.glob(os.path.join(work_path, "task.%s.*/OUTCAR"%ss))
         sys_outcars.sort()
         if len(sys_outcars) == 0:
-                raise RuntimeError("OUTCAR does not exist! please check fp_tasks.")
+            raise RuntimeError("OUTCAR does not exist! please check fp_tasks.")
         tcount += len(sys_outcars)
         all_sys = None
         all_te = []
