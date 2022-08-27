@@ -1,4 +1,4 @@
-## Surface-post
+## Surface post
 
 For `Surface`, we need to calculate the energy difference between a crystal structure with and without a surface with a certain miller index divided by the surface area.
 

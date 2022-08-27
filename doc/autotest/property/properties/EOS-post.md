@@ -1,4 +1,4 @@
-## EOS-post
+## EOS post
 
 The post processing of EOS would go to every directory in `confs/mp-*/eos_00` and do the post processing. Let's suppose we are now in `confs/mp-100/eos_00` and there are `task.000000, task.000001,..., task.000039` in this directory. By reading `inter.json` file in every task directory, the task type can be determined and the energy and force information of every task can further be obtained. By appending the `dict` of energy and force into a list, an example of the list with 1 atom is given as:
 ```txt

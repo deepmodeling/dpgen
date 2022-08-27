@@ -1,4 +1,4 @@
-## Interstitial-make
+## Interstitial make
 
 **Step 1.** For each element in `insert_ele` list, `InterstitialGenerator` module in [pymatgen.analysis.defects.generators](https://pymatgen.org/pymatgen.analysis.defects.generators.html) would help to generate interstitial structure. The structure would be appended into a list if it can meet the requirements in `conf_filters`.
 

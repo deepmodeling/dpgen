@@ -1,4 +1,4 @@
-## EOS-get-started-and-input-examples
+## EOS get started and input examples
 
 Equation of State (EOS) here calculates the energies of the most stable structures as a function of volume. Users can refer to Figure 4 of the [dpgen JCPC paper](https://www.sciencedirect.com/science/article/pii/S001046552030045X?via%3Dihub) for more information of EOS.
 

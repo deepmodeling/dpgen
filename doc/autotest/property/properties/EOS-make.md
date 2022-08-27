@@ -1,4 +1,4 @@
-## EOS-make
+## EOS make
 
 **Step 1.** Before `make` in EOS, the equilibrium configuration `CONTCAR` must be present in `confs/mp-*/relaxation`. 
 

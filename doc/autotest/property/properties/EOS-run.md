@@ -1,4 +1,4 @@
-## EOS-run
+## EOS run
 
 The work path of each task should be in the form like `confs/mp-*/eos_00` and all task is in the form like `confs/mp-*/eos_00/task.[0-9]*[0-9]`.
 

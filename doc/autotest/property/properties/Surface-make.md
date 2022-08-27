@@ -1,4 +1,4 @@
-## Surface-make
+## Surface make
 
 **Step 1.** Based on the equilibrium configuration, `generate_all_slabs` module in [pymatgen.core.surface](https://pymatgen.org/pymatgen.core.surface.html) would help to generate surface structure list with using `max_miller`, `min_slab_size`, and `min_vacuum_size` parameters. 
 

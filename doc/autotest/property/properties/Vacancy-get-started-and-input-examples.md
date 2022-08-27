@@ -1,4 +1,4 @@
-## Vacancy-get-started-and-input-examples
+## Vacancy get started and input examples
 
 `Vacancy` calculates the energy difference when removing an atom from the crystal structure. We only need to give the information of `supercell` to help calculate the vacancy energy and the default value of `supercell` is [1, 1, 1].
 

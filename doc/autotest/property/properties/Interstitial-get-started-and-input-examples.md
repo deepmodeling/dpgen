@@ -1,4 +1,4 @@
-## Interstitial-get-started-and-input-examples
+## Interstitial get started and input examples
 
 `Interstitial` calculates the energy difference when adding an atom into the crystal structure. We need to give the information of `supercell` (default value is [1, 1, 1]) and `insert_ele` list for the element types of the atoms added in.
 

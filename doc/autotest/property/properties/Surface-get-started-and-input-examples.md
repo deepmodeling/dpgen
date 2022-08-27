@@ -1,4 +1,4 @@
-## Surface-get-started-and-input-examples
+## Surface get started and input examples
 
 `Surface` calculates the surface energy. We need to give the information of `min_slab_size`, `min_vacuum_size`, `max_miller` (default value is 2), and `pert_xz` which means perturbations in xz and will help work around vasp bug. If `static-opt` parameter is given and is `True`, the static calculations of surface energies would be performed.
 

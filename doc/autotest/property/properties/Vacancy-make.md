@@ -1,4 +1,4 @@
-## Vacancy-make
+## Vacancy make
 
 **Step 1.** The `VacancyGenerator` module in [pymatgen.analysis.defects.generators](https://pymatgen.org/pymatgen.analysis.defects.generators.html) is used to generate a set of structures with vacancy. 
 

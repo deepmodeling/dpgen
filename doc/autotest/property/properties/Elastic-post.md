@@ -1,4 +1,4 @@
-## Elastic-post
+## Elastic post
 
 The `ElasticTensor` module in [pymatgen.analysis.elasticity.elastic](https://pymatgen.org/pymatgen.analysis.elasticity.elastic.html) is used to get the elastic tensor, Bv, and Gv. The mechanical properties of a crystal structure would be written in `result.json` in json format and `result.out` in txt format. The example of the output file is give below.
 
