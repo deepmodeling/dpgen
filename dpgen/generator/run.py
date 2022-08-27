@@ -2191,7 +2191,7 @@ def _make_fp_vasp_inner (iter_index,
                 else :
                     sys = dpdata.System('conf.dump', fmt = "lammps/dump", type_map = type_map)
                 sys.to_vasp_poscar('POSCAR')
-                # dump to sposcar 
+                # dump to poscar 
 
                 if charges_map:
                     warnings.warn('"sys_charges" keyword only support for gromacs engine now.')
