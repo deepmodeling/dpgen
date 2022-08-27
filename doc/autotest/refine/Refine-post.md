@@ -1,4 +1,4 @@
-## Refine-post
+## Refine post
 
 ```bash
 dpgen autotest post refine.json

@@ -9,8 +9,6 @@ Auto test
    :caption: Guidelines
 
    Auto-test
-   Auto-test-to-do-list
-  
   
 .. _Main-components::
 
@@ -28,21 +26,15 @@ Auto test
    :maxdepth: 2
    :caption: Structure relaxation
    
-   Relaxation-get-started-and-input-examples
-   Relaxation-make
-   Relaxation-run
-   Relaxation-post
+   relaxation/index.rst
 
 .. _Property::
 
 .. toctree::
    :maxdepth: 2
    :caption: Property
-   
-   Property-get-started-and-input-examples
-   Property-make
-   Property-run
-   Property-post
+
+   property/index.rst
 
 .. _Refine::
 
@@ -50,10 +42,7 @@ Auto test
    :maxdepth: 2
    :caption: Refine
    
-   Refine-get-started-and-input-examples
-   Refine-make
-   Refine-run
-   Refine-post
+   refine/index.rst
 
 .. _Reproduce::
 
@@ -61,7 +50,4 @@ Auto test
    :maxdepth: 2
    :caption: Reproduce
    
-   Reproduce-get-started-and-input-examples
-   Reproduce-make
-   Reproduce-run
-   Reproduce-post
+   reproduce/index.rst

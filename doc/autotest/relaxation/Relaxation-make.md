@@ -1,4 +1,4 @@
-## Relaxation-make
+## Relaxation make
 
 The list of the directories storing structures are `["confs/std-*"]` in the previous example. For single element system, if `POSCAR` doesn't exist in the directories: `std-fcc`, `std-hcp`, `std-dhcp`, `std-bcc`, `std-diamond`, and `std-sc`, the package will automatically generate the standard crystal structures **`fcc`**, **`hcp`**, **`dhcp`**, **`bcc`**, **`diamond`**, and **`sc`** in the corresponding directories, respectively. In other conditions and for multi-component system (more than 1), if `POSCAR` doesn't exist, the package will terminate and print the error **"no configuration for autotest"**.
 

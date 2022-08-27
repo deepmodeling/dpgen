@@ -1,4 +1,4 @@
-## Reproduce-post
+## Reproduce post
 
 ```bash
 dpgen autotest post reproduce.json

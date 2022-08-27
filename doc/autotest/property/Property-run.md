@@ -1,4 +1,4 @@
-## Property-run
+## Property run
 
 ```bash
 nohup dpgen autotest run property.json machine-ali.json > run.result 2>&1 &

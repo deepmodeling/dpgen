@@ -1,4 +1,4 @@
-## Relaxation-run
+## Relaxation run
 
 The work path of each task should be in the form like `confs/mp-*/relaxation` and all task is in the form like `confs/mp-*/relaxation/relax_task`. 
 

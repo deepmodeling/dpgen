@@ -1,13 +1,13 @@
-## Reproduce-get-started-and-input-examples
+## Reproduce get started and input examples
 
-Some times we want to reproduce the initial results with the same configurations for cross validation. This version of auto-test package can accomplish this successfully in all property types except for `Elastic`. An input example for using `deepmd` to reproduce the `VASP` Interstitial results is given as below:
+Sometimes we want to reproduce the initial results with the same configurations for cross validation. This version of autotest package can accomplish this successfully in all property types except for `Elastic`. An input example for using `deepmd` to reproduce the `VASP` Interstitial results is given below:
+
 ```json
 {
     "structures":       ["confs/std-*"],
     "interaction": {
         "type":          "deepmd",
         "model":         "frozen_model.pb",
-        "deepmd_version":"1.2.0",
         "type_map":     {"Al": 0}
     },
     "properties": [

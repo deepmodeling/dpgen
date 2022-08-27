@@ -1,4 +1,4 @@
-## Elastic-make
+## Elastic make
 
 **Step 1.** The `DeformedStructureSet` module in [pymatgen.analysis.elasticity.strain](https://pymatgen.org/pymatgen.analysis.elasticity.strain.html) is used to generate a set of independently deformed structures. `equi.stress.out` file is written to record the equilibrium stress in the Elastic directory. For the example in the previous section, `equi.stress.out` should be in `confs/mp-*/elastic_00`.
 

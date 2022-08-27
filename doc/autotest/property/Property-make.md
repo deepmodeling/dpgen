@@ -1,4 +1,4 @@
-## Property-make
+## Property make
 
 ```bash
 dpgen autotest make property.json

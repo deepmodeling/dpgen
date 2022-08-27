@@ -1,4 +1,4 @@
-## Refine-make
+## Refine make
 
 ```bash
 dpgen autotest make refine.json

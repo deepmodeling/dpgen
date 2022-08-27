@@ -1,4 +1,4 @@
-## Reproduce-make
+## Reproduce make
 
 ```bash
 dpgen autotest make reproduce.json

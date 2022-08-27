@@ -1,4 +1,4 @@
-## Elastic-get-started-and-input-examples
+## Elastic get started and input examples
 
 Here we calculate the mechanical properties which include elastic constants (C11 to C66), bulk modulus Bv, shear modulus Gv, Youngs modulus Ev, and Poission ratio Uv of a certain crystal structure.
 

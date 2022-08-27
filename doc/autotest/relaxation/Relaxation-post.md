@@ -1,4 +1,4 @@
-## Relaxation-post
+## Relaxation post
 
 Take `deepmd` post for example:
 ```bash

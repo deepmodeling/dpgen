@@ -1,9 +1,10 @@
-## Relaxation-get-started-and-input-examples
+## Relaxation get started and input examples
 
-All the property tests should be based on the equilibrium state calculated either by `VASP` or `LAMMPS`. The structure after relaxation is supposed to exist as the file like `confs/mp-*/relaxation/relax_task/CONTCAR` and the further property tests would normally start from this configuration.
+The relaxation of a structure should be carried out before calculating all other properties. 
 
-### Input example
-#### An example of the input file for relaxation by VASP:
+First, we need input parameter file and we name it `relax.json` here. All the relaxation calculations should be taken either by `VASP`, `ABACUS`, or `LAMMPS`. Here are two input examples for `VASP` and `LAMMPS` respectively. 
+
+An example of the input file for relaxation by VASP:
 
 ```json
 {
@@ -27,17 +28,16 @@ All the property tests should be based on the equilibrium state calculated eithe
 	}
 }
 ```
-For VASP relaxation and all the property calculations, **the initial INCAR file must be given by user** and the package would change the `ISIF` and `NSW` parameter according to the property type. Besides, users can also set the `cal_setting` dictionary in the `relaxation` part to make the final changes on INCAR.
 
 Key words | data structure | example | description
 ---|---|---|---
 **structures** | List of String | ["confs/std-*"] | path of different structures
 **interaction** | Dict | See above | description of the task type and atomic interaction
 **type** | String | "vasp" | task type
-**incar** | String | "vasp_input/INCAR" | the path for INCAR file in vasp
-potcar_prefix | String | "vasp_input" | the prefix of path for POTCAR file in vasp, default = ""
+**incar** | String | "vasp_input/INCAR" | path for INCAR file in vasp
+potcar_prefix | String | "vasp_input" | prefix of path for POTCAR file in vasp, default = ""
 **potcars** | Dict | {"Al": "POTCAR.al"} | key is element type and value is potcar name
-**relaxation** | Dict | See above | the calculation type and setting for relaxation
+**relaxation** | Dict | See above | calculation type and setting for relaxation
 cal_type  | String | "relaxation" or "static" | calculation type
 cal_setting | Dict | See above | calculation setting
 relax_pos | Boolean | true | relax atomic position or not, default = true for relaxation
@@ -49,7 +49,7 @@ encut | Int | 650 | set `encut` parameter in INCAR files
 kspacing | Float | 0.1 | set `KSPACING` parameter in INCAR files
 kgamma | Boolean | false | set `KGAMMA` parameter in INCAR files
 
-#### An example of the input file for relaxation by LAMMPS:
+An example of the input file for relaxation by LAMMPS:
 
 ```json
 {
@@ -61,8 +61,8 @@ kgamma | Boolean | false | set `KGAMMA` parameter in INCAR files
             "type_map":   {"Al": 0}
 	},
     "relaxation": {
-            "cal_setting":{"etol": 1e-12,
-                           "ftol": 1e-6,
+            "cal_setting":{"etol": 0,
+                           "ftol": 1e-10,
                            "maxiter": 5000,
                            "maximal": 500000}
 	}
@@ -75,8 +75,8 @@ Key words | data structure | example | description
 **model** | String or List of String | "frozen_model.pb" | model file for atomic interaction
 in_lammps | String | "lammps_input/in.lammps" | input file for lammps commands
 **type_map** | Dict | {"Al": 0} | key is element type and value is type number. DP starts from 0, others starts from 1
-etol | Float | 1e-12 | stopping tolerance for energy
-ftol | Float | 1e-6 | stopping tolerance for force
+etol | Float | 0 | stopping tolerance for energy
+ftol | Float | 1e-10 | stopping tolerance for force
 maxiter | Int | 5000 | max iterations of minimizer
 maxeval | Int | 500000 | max number of force/energy evaluations
 
