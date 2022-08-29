@@ -2,7 +2,7 @@
 
 **Step 1.** The `DeformedStructureSet` module in [pymatgen.analysis.elasticity.strain](https://pymatgen.org/pymatgen.analysis.elasticity.strain.html) is used to generate a set of independently deformed structures. `equi.stress.out` file is written to record the equilibrium stress in the Elastic directory. For the example in the previous section, `equi.stress.out` should be in `confs/mp-*/elastic_00`.
 
-**Step 2.** If there are `init_from_suffix` and `output_suffix` parameter in the `properties` part, the [refine process](../../refine/Refine-get-started-and-input-examples.html) follows. Else, the deformed structure (`POSCAR`) and strain information (`strain.out`) are written in the task directory, for example, in `confs/mp-*/elastic_00/task.000000`.
+**Step 2.** If there are `init_from_suffix` and `output_suffix` parameter in the `properties` part, the [refine process](../../refine/Refine-get-started-and-input-examples) follows. Else, the deformed structure (`POSCAR`) and strain information (`strain.out`) are written in the task directory, for example, in `confs/mp-*/elastic_00/task.000000`.
 
 **Step 3.** When doing `elastic` by VASP, `ISIF=2`. When doing by LAMMPS, the following `in.lammps` would be written.
 
