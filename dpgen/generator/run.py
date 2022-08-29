@@ -3175,15 +3175,14 @@ def post_fp_check_fail(iter_index,
         return
     ntask = len(fp_tasks)
     nfail = 0
+    nsys = 0
 
     # check fail according to the number of collected data
     sys_data = glob.glob(os.path.join(work_path, "data.*"))
-    sys_data.sort()
-    nframe = 0
     for ii in sys_data :
-        sys = dpdata.LabeledSystem(ii, fmt = 'deepmd/npy')
-        nframe += len(sys)
-    nfail = ntask - nframe
+        sys_paths = expand_sys_str(ii)
+        nsys += len(sys_paths)
+    nfail = ntask - nsys
 
     rfail = float(nfail) / float(ntask)
     dlog.info("failed tasks: %6d in %6d  %6.2f %% " % (nfail, ntask, rfail * 100.))
