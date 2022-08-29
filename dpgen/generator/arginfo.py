@@ -71,7 +71,6 @@ def training_args() -> List[Argument]:
     doc_training_init_model = 'Iteration > 0, the model parameters will be initilized from the model trained at the previous iteration. Iteration == 0, the model parameters will be initialized from training_iter0_model_path.'
     doc_default_training_param = 'Training parameters for deepmd-kit in 00.train. You can find instructions from here: (https://github.com/deepmodeling/deepmd-kit).'
     doc_dp_compress = 'Use dp compress to compress the model.'
-    doc_srtab_file_path = 'The path of the table for the short-range pairwise interaction which is needed when using DP-ZBL potential'
     
     doc_training_reuse_iter = "The minimal index of iteration that continues training models from old models of last iteration."
     doc_reusing = " This option is only adopted when continuing training models from old models. This option will override default parameters."
@@ -92,8 +91,6 @@ def training_args() -> List[Argument]:
                  doc=doc_default_training_param),
         Argument("dp_compress", bool, optional=True,
                  default=False, doc=doc_dp_compress),
-        Argument("srtab_file_path",str,optional=True,
-                 doc=doc_srtab_file_path)
         Argument("training_reuse_iter", [None, int], optional=True, doc=doc_training_reuse_iter),
         Argument("training_reuse_old_ratio", [None, float], optional=True, doc=doc_training_reuse_old_ratio),
         Argument("training_reuse_numb_steps", [None, int], alias=["training_reuse_stop_batch"], optional=True, default=400000, doc=doc_training_reuse_numb_steps),
