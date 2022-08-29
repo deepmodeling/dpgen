@@ -3184,7 +3184,7 @@ def post_fp_check_fail(iter_index,
         sys_paths = expand_sys_str(ii)
         for single_sys in sys_paths:
             sys = dpdata.LabeledSystem(os.path.join(single_sys), fmt = 'deepmd/npy')
-        nframe += len(sys)
+            nframe += len(sys)
     nfail = ntask - nframe
 
     rfail = float(nfail) / float(ntask)
