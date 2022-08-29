@@ -70,9 +70,12 @@ def Modd(all_models,type_map):
                 pdata.to_vasp_poscar(os.path.join(put_poscar,'%s.poscar'%str(index)))
                 nopbc = pdata.nopbc
                 coord = pdata.data['coords']
-                cell  = pdata.data['cells']
+                cell  = pdata.data['cells'] if not nopbc else None
                 atom_types = pdata.data['atom_types']
-                devi = calc_model_devi(coord,cell,atom_types,graphs,nopbc=nopbc)
+                try:
+                    devi = calc_model_devi(coord,cell,atom_types,graphs,nopbc=nopbc)
+                except TypeError:
+                    devi = calc_model_devi(coord,cell,atom_types,graphs)
                 # ------------------------------------------------------------------------------------
                 # append min-distance in devi list
                 dis = pdata.to_ase_structure()[0].get_all_distances(mic=True)

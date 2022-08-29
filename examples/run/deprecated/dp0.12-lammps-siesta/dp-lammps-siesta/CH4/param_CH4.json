@@ -30,7 +30,6 @@
     ], 
     "_comment": " that's all ", 
     "numb_models": 4, 
-    "train_param": "input.json", 
     "default_training_param": {
         "_comment": "that's all", 
         "use_smooth": true, 
@@ -126,7 +125,7 @@
 	"fp_params":	{
 	"ecut":		300,
 	"ediff":	1e-4,
-	"kspacing":	1,
+	"kspacing":	1.0,
 	"mixingWeight": 0.05, 
 	"NumberPulay": 5, 
 	"_comment":	" that's all "

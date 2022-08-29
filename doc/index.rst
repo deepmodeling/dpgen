@@ -9,6 +9,7 @@ DPGEN's documentation
    :caption: Overview
 
    overview/cli
+   overview/DP-GEN-structure
   
   
 .. _installation::
@@ -35,6 +36,7 @@ DPGEN's documentation
    :caption: Init   
 
    init/init-bulk-mdata
+   init/init_surf.md
    init/init-surf-mdata
    init/init-reaction
    init/init-reaction-jdata
@@ -52,7 +54,8 @@ DPGEN's documentation
 .. toctree::
    :maxdepth: 2
    :caption: Simplify  
-
+   
+   simplify/simplify
    simplify/simplify-jdata
    simplify/simplify-mdata
 
@@ -65,6 +68,8 @@ DPGEN's documentation
    :glob:  
 
    Tutorials <https://tutorials.deepmodeling.com/en/latest/Tutorials/DP-GEN/>
+   troubleshooting/index
+   user-guide
 
 
 .. _Contribution:
@@ -73,8 +78,9 @@ DPGEN's documentation
    :maxdepth: 2
    :caption: Contribution Guide
 
-   README.md
+   how-to-contribute
    api/api
+   credits.rst
 
 * :ref:`genindex`
 * :ref:`modindex`

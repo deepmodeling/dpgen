@@ -1,6 +1,6 @@
 import numpy as np
 from dpdata.abacus.scf import get_cell, get_coords
-from dpgen.auto_test.lib.vasp import reciprocal_box
+from dpgen.auto_test.lib import vasp
 import os
 bohr2ang = 0.52917721067
 def make_abacus_scf_kpt(fp_params):
@@ -21,69 +21,98 @@ def make_abacus_scf_input(fp_params):
     ret = "INPUT_PARAMETERS\n"
     ret += "calculation scf\n"
     for key in fp_params:
-        if key == 'ntype':
+        if key == "ntype":
+            fp_params["ntype"] = int(fp_params["ntype"])
             assert(fp_params['ntype'] >= 0 and type(fp_params["ntype"]) == int),  "'ntype' should be a positive integer."
             ret += "ntype %d\n" % fp_params['ntype']
         #ret += "pseudo_dir ./\n"
         elif key == "ecutwfc":
+            fp_params["ecutwfc"] = float(fp_params["ecutwfc"])
             assert(fp_params["ecutwfc"] >= 0) ,  "'ntype' should be non-negative."
             ret += "ecutwfc %f\n" % fp_params["ecutwfc"]
-        elif key == "dr2":
-            ret += "dr2 %e\n" % fp_params["dr2"]
-        elif key == "niter":
-            assert(fp_params['niter'] >= 0 and type(fp_params["niter"])== int), "'niter' should be a positive integer."
-            ret += "niter %d\n" % fp_params["niter"]    
+        elif key == "kspacing":
+            fp_params["kspacing"] = float(fp_params["kspacing"])
+            assert(fp_params["kspacing"] >= 0) ,  "'ntype' should be non-negative."
+            ret += "kspacing %f\n" % fp_params["kspacing"]
+        elif key == "scf_thr":
+            fp_params["scf_thr"] = float(fp_params["scf_thr"])
+            ret += "scf_thr %e\n" % fp_params["scf_thr"]
+        elif key == "scf_nmax":
+            fp_params["scf_nmax"] = int(fp_params["scf_nmax"])
+            assert(fp_params['scf_nmax'] >= 0 and type(fp_params["scf_nmax"])== int), "'scf_nmax' should be a positive integer."
+            ret += "scf_nmax %d\n" % fp_params["scf_nmax"]
         elif key == "basis_type":
             assert(fp_params["basis_type"] in ["pw", "lcao", "lcao_in_pw"]) , "'basis_type' must in 'pw', 'lcao' or 'lcao_in_pw'."
             ret+= "basis_type %s\n" % fp_params["basis_type"]
         elif key == "dft_functional":
             ret += "dft_functional %s\n" % fp_params["dft_functional"]
         elif key == "gamma_only":
-            #assert(fp_params["gamma_only"] ==1 ) , "'gamma_only' should be 1. Multi-k algorithm will be supported after the KPT generator is completed."
+            if type(fp_params["gamma_only"])==str:
+                fp_params["gamma_only"] = int(eval(fp_params["gamma_only"]))
+            assert(fp_params["gamma_only"] == 0 or fp_params["gamma_only"] == 1), "'gamma_only' should be either 0 or 1."
             ret+= "gamma_only %d\n" % fp_params["gamma_only"]  
         elif key == "mixing_type":
             assert(fp_params["mixing_type"] in ["plain", "kerker", "pulay", "pulay-kerker", "broyden"])
             ret += "mixing_type %s\n" % fp_params["mixing_type"]
         elif key == "mixing_beta":
+            fp_params["mixing_beta"] = float(fp_params["mixing_beta"])
             assert(fp_params["mixing_beta"] >= 0 and fp_params["mixing_beta"] < 1), "'mixing_beta' should between 0 and 1."
             ret += "mixing_beta %f\n" % fp_params["mixing_beta"]
         elif key == "symmetry":
+            if type(fp_params["symmetry"])==str:
+                fp_params["symmetry"] = int(eval(fp_params["symmetry"]))
             assert(fp_params["symmetry"] == 0 or fp_params["symmetry"] == 1), "'symmetry' should be either 0 or 1."
             ret += "symmetry %d\n" % fp_params["symmetry"]
         elif key == "nbands":
+            fp_params["nbands"] = int(fp_params["nbands"])
             assert(fp_params["nbands"] > 0 and type(fp_params["nbands"]) == int), "'nbands' should be a positive integer."
             ret += "nbands %d\n" % fp_params["nbands"]
         elif key == "nspin":
+            fp_params["nspin"] = int(fp_params["nspin"])
             assert(fp_params["nspin"] == 1 or fp_params["nspin"] == 2 or fp_params["nspin"] == 4), "'nspin' can anly take 1, 2 or 4"
             ret += "nspin %d\n" % fp_params["nspin"]
         elif key == "ks_solver":
             assert(fp_params["ks_solver"] in ["cg", "dav", "lapack", "genelpa", "hpseps", "scalapack_gvx"]), "'ks_sover' should in 'cgx', 'dav', 'lapack', 'genelpa', 'hpseps', 'scalapack_gvx'."
             ret += "ks_solver %s\n" % fp_params["ks_solver"]
-        elif key == "smearing":
-            assert(fp_params["smearing"] in ["gaussian", "fd", "fixed", "mp", "mp2", "mv"]), "'smearing' should in 'gaussian', 'fd', 'fixed', 'mp', 'mp2', 'mv'. "
-            ret += "smearing %s\n" % fp_params["smearing"]
-        elif key == "sigma":
-            assert(fp_params["sigma"] >= 0), "'sigma' should be non-negative."
-            ret += "sigma %f\n" % fp_params["sigma"]
-        elif key == "force":
-            assert(fp_params["force"] == 0  or fp_params["force"] == 1), "'force' should be either 0 or 1."
-            ret += "force %d\n" % fp_params["force"]
-        elif key == "stress":
-            assert(fp_params["stress"] == 0  or fp_params["stress"] == 1), "'stress' should be either 0 or 1."
-            ret += "stress %d\n" % fp_params["stress"]    
+        elif key == "smearing_method":
+            assert(fp_params["smearing_method"] in ["gauss","gaussian", "fd", "fixed", "mp", "mp2", "mv"]), "'smearing_method' should in 'gauss', 'gaussian', 'fd', 'fixed', 'mp', 'mp2', 'mv'. "
+            ret += "smearing_method %s\n" % fp_params["smearing_method"]
+        elif key == "smearing_sigma":
+            fp_params["smearing_sigma"] = float(fp_params["smearing_sigma"])
+            assert(fp_params["smearing_sigma"] >= 0), "'smearing_sigma' should be non-negative."
+            ret += "smearing_sigma %f\n" % fp_params["smearing_sigma"]
+        elif key == "cal_force":
+            if type(fp_params["cal_force"])==str:
+                fp_params["cal_force"] = int(eval(fp_params["cal_force"]))
+            assert(fp_params["cal_force"] == 0  or fp_params["cal_force"] == 1), "'cal_force' should be either 0 or 1."
+            ret += "cal_force %d\n" % fp_params["cal_force"]
+        elif key == "cal_stress":
+            if type(fp_params["cal_stress"])==str:
+                fp_params["cal_stress"] = int(eval(fp_params["cal_stress"]))
+            assert(fp_params["cal_stress"] == 0  or fp_params["cal_stress"] == 1), "'cal_stress' should be either 0 or 1."
+            ret += "cal_stress %d\n" % fp_params["cal_stress"]
         #paras for deepks
         elif key == "deepks_out_labels":
+            if type(fp_params["deepks_out_labels"])==str:
+                fp_params["deepks_out_labels"] = int(eval(fp_params["deepks_out_labels"]))
             assert(fp_params["deepks_out_labels"] == 0 or fp_params["deepks_out_labels"] == 1), "'deepks_out_labels' should be either 0 or 1."
             ret += "deepks_out_labels %d\n" % fp_params["deepks_out_labels"]
         elif key == "deepks_descriptor_lmax":
+            fp_params["deepks_descriptor_lmax"] = int(fp_params["deepks_descriptor_lmax"])
             assert(fp_params["deepks_descriptor_lmax"] >= 0),  "'deepks_descriptor_lmax' should be  a positive integer."
             ret += "deepks_descriptor_lmax %d\n" % fp_params["deepks_descriptor_lmax"]
         elif key == "deepks_scf":
+            if type(fp_params["deepks_scf"])==str:
+                fp_params["deepks_scf"] = int(eval(fp_params["deepks_scf"]))
             assert(fp_params["deepks_scf"] == 0  or fp_params["deepks_scf"] == 1), "'deepks_scf' should be either 0 or 1."
             ret += "deepks_scf %d\n" % fp_params["deepks_scf"]
         elif key == "deepks_model":
             ret += "deepks_model %s\n" % fp_params["deepks_model"]
-        elif key != "k_points": # "k_points key is used to generate KPT file."
+        elif key[0] == "_":
+            pass
+        elif key == "calculation":
+            pass
+        else:
             ret += "%s %s\n" % (key, str(fp_params[key]))
     return ret
 
@@ -148,11 +177,12 @@ def get_abacus_input_parameters(INPUT):
         inlines = fp.read().split("\n")
     input_parameters = {}
     for line in inlines:
-        if line.split() == [] or len(line.split()) < 2 :
+        if line.split() == [] or len(line.split()) < 2 or line[0] in ['#']:
             continue
         parameter_name = line.split()[0]
         parameter_value = line.split()[1]
         input_parameters[parameter_name] = parameter_value
+    fp.close()
     return input_parameters
 
 def get_mass_from_STRU(geometry_inlines, inlines, atom_names):
@@ -179,12 +209,15 @@ def get_mass_from_STRU(geometry_inlines, inlines, atom_names):
     return mass_list, pp_file_list
 
 def get_natoms_from_stru(geometry_inlines):
-    key_words_list = ["ATOMIC_SPECIES", "NUMERICAL_ORBITAL", "LATTICE_CONSTANT", "LATTICE_VECTORS", "ATOMIC_POSITIONS"]
+    key_words_list = ["ATOMIC_SPECIES", "NUMERICAL_ORBITAL", "LATTICE_CONSTANT", "LATTICE_VECTORS", "ATOMIC_POSITIONS","NUMERICAL_DESCRIPTOR"]
     keyword_sequence = []
     keyword_line_index = []
     atom_names = []
     atom_numbs = []
-    for iline, line in enumerate(geometry_inlines):
+    tmp_line = []
+    for i in geometry_inlines:
+        if i.strip() != '': tmp_line.append(i)
+    for iline, line in enumerate(tmp_line):
         if line.split() == []:
             continue
         have_key_word = False
@@ -194,13 +227,13 @@ def get_natoms_from_stru(geometry_inlines):
                 keyword_line_index.append(iline)
     assert(len(keyword_line_index) == len(keyword_sequence))
     assert(len(keyword_sequence) > 0)
-    keyword_line_index.append(len(geometry_inlines))
+    keyword_line_index.append(len(tmp_line))
     for idx, keyword in enumerate(keyword_sequence):
         if keyword == "ATOMIC_POSITIONS":
             iline = keyword_line_index[idx]+2
             while iline < keyword_line_index[idx+1]-1:
-                atom_names.append(geometry_inlines[iline].split()[0])
-                atom_numbs.append(int(geometry_inlines[iline+2].split()[0]))
+                atom_names.append(tmp_line[iline].split()[0])
+                atom_numbs.append(int(tmp_line[iline+2].split()[0]))
                 iline += 3+atom_numbs[-1]
     return atom_names, atom_numbs
 
@@ -278,7 +311,7 @@ def make_kspacing_kpoints_stru(stru, kspacing) :
     if type(kspacing) is not list:
         kspacing = [kspacing, kspacing, kspacing]
     box = stru['cells']
-    rbox = reciprocal_box(box)
+    rbox = vasp.reciprocal_box(box)
     kpoints = [max(1,(np.ceil(2 * np.pi * np.linalg.norm(ii) / ks).astype(int))) for ii,ks in zip(rbox,kspacing)]
     kpoints += [0, 0, 0]
     return kpoints

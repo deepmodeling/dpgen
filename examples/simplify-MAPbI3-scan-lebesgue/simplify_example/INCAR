@@ -1,0 +1,38 @@
+#Parameters
+SYSTEM  =  dpgen_rlx
+PREC    = A
+ISTART  = 0
+ICHARG  = 2
+IWAVPR  =  11
+#Electronic Relaxation
+ENCUT  = 500
+NELM   = 100
+NELMIN = 6
+NELMDL = -5
+EDIFF  = 1e-06
+LREAL  = .False.
+ALGO   = Normal
+# GGA = PE
+METAGGA = SCAN
+#Ionic Relaxation
+IBRION = 2
+POTIM  = 0.2
+ISIF   = 3
+EDIFFG = -0.005
+ISYM   = 0
+NSW    = 0
+ISMEAR = 0
+SIGMA  = 0.1
+#vdW correction
+# IVDW = 12  #D3-BJ
+# Write flags
+LWAVE   = .False.
+LCHARG  = .False.
+
+KSPACING = 0.16
+KGAMMA   = .TRUE.
+#KPAR    = 1
+NPAR    = 2
+
+PSTRESS  = 0.0
+# NCORE    = 4

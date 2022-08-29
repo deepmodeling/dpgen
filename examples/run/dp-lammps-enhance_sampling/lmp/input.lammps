@@ -20,7 +20,7 @@ mass           2  1.008
 
 #Interatomic potentials - DeepMD
 pair_style     deepmd 
-pair_coeff
+pair_coeff     * *
 
 
 #MD parameters
