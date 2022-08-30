@@ -158,6 +158,7 @@ The union of the two sets is made as candidate dataset.'
     doc_model_devi_perc_candi_v = 'See model_devi_adapt_trust_lo.'
     doc_model_devi_f_avg_relative = 'Normalized the force model deviations by the RMS force magnitude along the trajectory. This key should not be used with use_relative.'
     doc_model_devi_clean_traj = 'If type of model_devi_clean_traj is bool type then it denote whether to clean traj folders in MD since they are too large. If it is Int type, then the most recent n iterations of traj folders will be retained, others will be removed.'
+    doc_model_devi_merge_traj = 'If model_devi_merge_traj is set as True, only all.lammpstrj will be generated, instead of lots of small traj files.'
     doc_model_devi_nopbc = 'Assume open boundary condition in MD simulations.'
     doc_shuffle_poscar = 'Shuffle atoms of each frame before running simulations. The purpose is to sample the element occupation of alloys.'
     doc_use_relative = 'Calculate relative force model deviation.'
@@ -192,7 +193,9 @@ The union of the two sets is made as candidate dataset.'
         Argument("model_devi_f_avg_relative", bool, optional=True,
                  doc=doc_model_devi_f_avg_relative),
         Argument("model_devi_clean_traj", [
-                 bool, int], optional=False, doc=doc_model_devi_clean_traj),
+                 bool, int], optional=True, default=True , doc=doc_model_devi_clean_traj),
+        Argument("model_devi_merge_traj", [
+                 bool], optional=True, default=False , doc=doc_model_devi_merge_traj),
         Argument("model_devi_nopbc", bool, optional=True, default=False,
                  doc=doc_model_devi_nopbc),
         Argument("shuffle_poscar", bool, optional=True, default=False, doc=doc_shuffle_poscar),
