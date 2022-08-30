@@ -13,6 +13,7 @@ from dpgen import dlog
 from dpgen import ROOT_PATH
 from dpgen.remote.decide_machine import  convert_mdata
 from dpgen.dispatcher.Dispatcher import make_submission_compat
+from dpgen.generator.lib.utils import symlink_user_forward_files
 #-----PMG---------
 from pymatgen.io.vasp import Poscar
 from pymatgen.core import Structure, Element
@@ -548,6 +549,13 @@ def run_vasp_relax(jdata, mdata):
     forward_files = ["POSCAR", "INCAR", "POTCAR"]
     backward_files = ["OUTCAR","CONTCAR"]
     forward_common_files = []
+    work_path_list = glob.glob(os.path.join(work_dir, "surf-*"))
+    task_format = {"fp" : "sys-*"}
+    for work_path in work_path_list :
+        symlink_user_forward_files(mdata=mdata, task_type="fp", work_path=work_path, task_format=task_format)
+    user_forward_files = mdata.get("fp" + "_user_forward_files", [])
+    forward_files += [os.path.basename(file) for file in user_forward_files]
+    backward_files += mdata.get("fp" + "_user_backward_files", [])
     #if 'cvasp' in mdata['fp_resources']:
     #    if mdata['fp_resources']['cvasp']:
     #        forward_common_files=['cvasp.py']
