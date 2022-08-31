@@ -41,7 +41,7 @@ from dpgen.generator.lib.utils import log_iter
 from dpgen.generator.lib.utils import record_iter
 from dpgen.generator.lib.utils import log_task
 from dpgen.generator.lib.utils import symlink_user_forward_files
-from dpgen.generator.lib.lammps import make_lammps_input, get_dumped_forces
+from dpgen.generator.lib.lammps import make_lammps_input, get_dumped_forces, get_all_dumped_forces
 from dpgen.generator.lib.make_calypso import _make_model_devi_native_calypso,_make_model_devi_buffet
 from dpgen.generator.lib.run_calypso import gen_structures,analysis,run_calypso_model_devi
 from dpgen.generator.lib.parse_calypso import _parse_calypso_input,_parse_calypso_dis_mtx
@@ -187,9 +187,9 @@ def poscar_to_conf(poscar, conf):
     sys.to_lammps_lmp(conf)
 
 
-def dump_to_poscar(dump, poscar, type_map, fmt = "lammps/dump") :
-    sys = dpdata.System(dump, fmt = fmt, type_map = type_map)
-    sys.to_vasp_poscar(poscar)
+# def dump_to_poscar(dump, poscar, type_map, fmt = "lammps/dump") :
+#    sys = dpdata.System(dump, fmt = fmt, type_map = type_map)
+#    sys.to_vasp_poscar(poscar)
 
 def dump_to_deepmd_raw(dump, deepmd_raw, type_map, fmt='gromacs/gro', charge=None):
     system = dpdata.System(dump, fmt = fmt, type_map = type_map)
@@ -1028,7 +1028,9 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                 task_path = os.path.join(work_path, task_name)
                 # create task path
                 create_path(task_path)
-                create_path(os.path.join(task_path, 'traj'))
+                model_devi_merge_traj = jdata.get('model_devi_merge_traj', False)
+                if not model_devi_merge_traj :
+                    create_path(os.path.join(task_path, 'traj'))
                 # link conf
                 loc_conf_name = 'conf.lmp'
                 os.symlink(os.path.join(os.path.join('..','confs'), conf_name),
@@ -1158,7 +1160,9 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
                     task_path = os.path.join(work_path, task_name)
                     # dlog.info(task_path)
                     create_path(task_path)
-                    create_path(os.path.join(task_path, 'traj'))
+                    model_devi_merge_traj = jdata.get('model_devi_merge_traj', False)
+                    if not model_devi_merge_traj :
+                        create_path(os.path.join(task_path, 'traj'))
                     loc_conf_name = 'conf.lmp'
                     os.symlink(os.path.join(os.path.join('..','confs'), conf_name),
                                os.path.join(task_path, loc_conf_name) )
@@ -1474,6 +1478,7 @@ def run_md_model_devi (iter_index,
     model_devi_resources = mdata['model_devi_resources']
     use_plm = jdata.get('model_devi_plumed', False)
     use_plm_path = jdata.get('model_devi_plumed_path', False)
+    model_devi_merge_traj = jdata.get('model_devi_merge_traj', False)
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, model_devi_name)
@@ -1505,8 +1510,12 @@ def run_md_model_devi (iter_index,
         command = "{ if [ ! -f dpgen.restart.10000 ]; then %s -i input.lammps -v restart 0; else %s -i input.lammps -v restart 1; fi }" % (model_devi_exec, model_devi_exec)
         command = "/bin/sh -c '%s'" % command
         commands = [command]
-        forward_files = ['conf.lmp', 'input.lammps', 'traj']
-        backward_files = ['model_devi.out', 'model_devi.log', 'traj']
+        
+        lmp_traj_name = 'traj'
+        if model_devi_merge_traj :
+            lmp_traj_name = 'all.lammpstrj'
+        forward_files = ['conf.lmp', 'input.lammps', lmp_traj_name]
+        backward_files = ['model_devi.out', 'model_devi.log', lmp_traj_name]
         if use_plm:
             forward_files += ['input.plumed']
            # backward_files += ['output.plumed']
@@ -1672,17 +1681,22 @@ def check_bad_box(conf_name,
             raise RuntimeError('unknow key', key)
     return is_bad
 
-
 def _read_model_devi_file(
         task_path : str,
-        model_devi_f_avg_relative : bool = False
+        model_devi_f_avg_relative : bool = False,
+        model_devi_merge_traj : bool = False
 ):
     model_devi = np.loadtxt(os.path.join(task_path, 'model_devi.out'))
     if model_devi_f_avg_relative :
-        trajs = glob.glob(os.path.join(task_path, 'traj', '*.lammpstrj'))
-        all_f = []
-        for ii in trajs:
-            all_f.append(get_dumped_forces(ii))
+        if(model_devi_merge_traj is True) : 
+            all_traj = os.path.join(task_path, 'all.lammpstrj')
+            all_f = get_all_dumped_forces(all_traj)
+        else :
+            trajs = glob.glob(os.path.join(task_path, 'traj', '*.lammpstrj'))
+            all_f = []
+            for ii in trajs:
+                all_f.append(get_dumped_forces(ii))     
+
         all_f = np.array(all_f)
         all_f = all_f.reshape([-1,3])
         avg_f = np.sqrt(np.average(np.sum(np.square(all_f), axis = 1)))
@@ -1701,6 +1715,7 @@ def _select_by_model_devi_standard(
         model_devi_engine : str,
         model_devi_skip : int = 0,
         model_devi_f_avg_relative : bool = False,
+        model_devi_merge_traj : bool = False, 
         detailed_report_make_fp : bool = True,
 ):
     if model_devi_engine == 'calypso':
@@ -1722,7 +1737,7 @@ def _select_by_model_devi_standard(
     for tt in modd_system_task :
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            all_conf = _read_model_devi_file(tt, model_devi_f_avg_relative)
+            all_conf = _read_model_devi_file(tt, model_devi_f_avg_relative, model_devi_merge_traj)
 
             if all_conf.shape == (7,):
                 all_conf = all_conf.reshape(1,all_conf.shape[0])
@@ -1786,6 +1801,7 @@ def _select_by_model_devi_adaptive_trust_low(
         perc_candi_v : float,
         model_devi_skip : int = 0,
         model_devi_f_avg_relative : bool = False,
+        model_devi_merge_traj : bool = False, 
 ):
     """
     modd_system_task    model deviation tasks belonging to one system
@@ -1816,7 +1832,7 @@ def _select_by_model_devi_adaptive_trust_low(
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             model_devi = np.loadtxt(os.path.join(tt, 'model_devi.out'))
-            model_devi = _read_model_devi_file(tt, model_devi_f_avg_relative)
+            model_devi = _read_model_devi_file(tt, model_devi_f_avg_relative, model_devi_merge_traj)
             for ii in range(model_devi.shape[0]) :
                 if model_devi[ii][0] < model_devi_skip :
                     continue
@@ -1873,7 +1889,8 @@ def _select_by_model_devi_adaptive_trust_low(
     return accur, candi, failed, counter, f_trust_lo, v_trust_lo
     
 
-def _make_fp_vasp_inner (modd_path,
+def _make_fp_vasp_inner (iter_index, 
+                         modd_path,
                          work_path,
                          model_devi_skip,
                          v_trust_lo,
@@ -1886,6 +1903,7 @@ def _make_fp_vasp_inner (modd_path,
                          type_map,
                          jdata):
     """
+    iter_index          int             iter index
     modd_path           string          path of model devi
     work_path           string          path of fp
     fp_task_max         int             max number of tasks
@@ -1928,6 +1946,7 @@ def _make_fp_vasp_inner (modd_path,
     system_index = []
     for ii in modd_task :
         system_index.append(os.path.basename(ii).split('.')[1])
+
     set_tmp = set(system_index)
     system_index = list(set_tmp)
     system_index.sort()
@@ -1940,6 +1959,7 @@ def _make_fp_vasp_inner (modd_path,
     cluster_cutoff = jdata.get('cluster_cutoff', None)
     model_devi_adapt_trust_lo = jdata.get('model_devi_adapt_trust_lo', False)
     model_devi_f_avg_relative = jdata.get('model_devi_f_avg_relative', False)
+    model_devi_merge_traj = jdata.get('model_devi_merge_traj', False)
     # skip save *.out if detailed_report_make_fp is False, default is True
     detailed_report_make_fp = jdata.get("detailed_report_make_fp", True)
     # skip bad box criteria
@@ -1978,6 +1998,7 @@ def _make_fp_vasp_inner (modd_path,
                         model_devi_engine,
                         model_devi_skip,
                         model_devi_f_avg_relative = model_devi_f_avg_relative,
+                        model_devi_merge_traj = model_devi_merge_traj, 
                         detailed_report_make_fp = detailed_report_make_fp,
                     )
             else:
@@ -1992,6 +2013,7 @@ def _make_fp_vasp_inner (modd_path,
                         v_trust_hi_sys, numb_candi_v, perc_candi_v,
                         model_devi_skip = model_devi_skip,
                         model_devi_f_avg_relative = model_devi_f_avg_relative,
+                        model_devi_merge_traj = model_devi_merge_traj, 
                     )
                 dlog.info("system {0:s} {1:9s} : f_trust_lo {2:6.3f}   v_trust_lo {3:6.3f}".format(ss, 'adapted', f_trust_lo_ad, v_trust_lo_ad))
         elif model_devi_engine == "amber":
@@ -2091,17 +2113,34 @@ def _make_fp_vasp_inner (modd_path,
         # ----------------------------------------------------------------------------
         dlog.info("system {0:s} accurate_ratio: {1:8.4f}    thresholds: {2:6.4f} and {3:6.4f}   eff. task min and max {4:4d} {5:4d}   number of fp tasks: {6:6d}".format(ss, accurate_ratio, fp_accurate_soft_threshold, fp_accurate_threshold, fp_task_min, this_fp_task_max, numb_task))
         # make fp tasks
-        model_devi_engine = jdata.get("model_devi_engine", "lammps")
+        
+        # read all.lammpstrj, save in all_sys for each system_index
+        all_sys = []
+        trj_freq = None
+        if model_devi_merge_traj :
+            for ii in modd_system_task :
+                all_traj = os.path.join(ii, 'all.lammpstrj')
+                all_sys_per_task = dpdata.System(all_traj, fmt = 'lammps/dump', type_map = type_map)
+                all_sys.append(all_sys_per_task)
+            model_devi_jobs = jdata['model_devi_jobs']
+            cur_job = model_devi_jobs[iter_index]
+            trj_freq = int(_get_param_alias(cur_job, ['t_freq', 'trj_freq', 'traj_freq']))
+        
         count_bad_box = 0
         count_bad_cluster = 0
         fp_candidate = sorted(fp_candidate[:numb_task])
+
         for cc in range(numb_task) :
             tt = fp_candidate[cc][0]
             ii = fp_candidate[cc][1]
             ss = os.path.basename(tt).split('.')[1]
             conf_name = os.path.join(tt, "traj")
+            conf_sys = None
             if model_devi_engine == "lammps":
-                conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
+                if model_devi_merge_traj :
+                    conf_sys = all_sys[int(os.path.basename(tt).split('.')[-1])][int(int(ii) / trj_freq)]
+                else :
+                    conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
                 ffmt = 'lammps/dump'
             elif model_devi_engine == "gromacs":
                 conf_name = os.path.join(conf_name, str(ii) + '.gromacstrj')
@@ -2195,7 +2234,14 @@ def _make_fp_vasp_inner (modd_path,
         for idx, task in enumerate(fp_tasks):
             os.chdir(task)
             if model_devi_engine == "lammps":
-                dump_to_poscar('conf.dump', 'POSCAR', type_map, fmt = "lammps/dump")
+                sys = None
+                if model_devi_merge_traj:
+                    sys = conf_sys
+                else :
+                    sys = dpdata.System('conf.dump', fmt = "lammps/dump", type_map = type_map)
+                sys.to_vasp_poscar('POSCAR')
+                # dump to poscar 
+
                 if charges_map:
                     warnings.warn('"sys_charges" keyword only support for gromacs engine now.')
             elif model_devi_engine == "gromacs":
@@ -2531,7 +2577,8 @@ def _make_fp_vasp_configs(iter_index,
         f_trust_hi = jdata['model_devi_f_trust_hi']
 
     # make configs
-    fp_tasks = _make_fp_vasp_inner(modd_path, work_path,
+    fp_tasks = _make_fp_vasp_inner(iter_index, 
+                                   modd_path, work_path,
                                    model_devi_skip,
                                    v_trust_lo, v_trust_hi,
                                    f_trust_lo, f_trust_hi,
