@@ -216,6 +216,10 @@ def make_train (iter_index,
     training_init_model = jdata.get('training_init_model', False)
     training_reuse_iter = jdata.get('training_reuse_iter')
     training_reuse_old_ratio = jdata.get('training_reuse_old_ratio', None)
+    
+    #if you want to us DP-ZBL potential , you have to give the path of your energy potential file
+    if 'srtab_file_path' in jdata.keys():
+        srtab_file_path = jdata.get("srtab_file_path", None) 
        
     if 'training_reuse_stop_batch' in jdata.keys():
         training_reuse_stop_batch = jdata['training_reuse_stop_batch']
@@ -379,7 +383,10 @@ def make_train (iter_index,
         task_path = os.path.join(work_path, train_task_fmt % ii)
         create_path(task_path)
         os.chdir(task_path)
-          
+        
+        if srtab_file_path:
+            os.system('cp %s ./'%srtab_file_path)
+
         for jj in init_data_sys :
             if not os.path.isdir(jj) :
                 raise RuntimeError ("data sys %s does not exists, cwd is %s" % (jj, os.getcwd()))
