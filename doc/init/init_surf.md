@@ -6,8 +6,12 @@ You may prepare initial data for surface systems with VASP by:
 dpgen init_surf PARAM [MACHINE]
 ```
 The MACHINE configure file is optional. If this parameter exists, then the optimization
-tasks or MD tasks will be submitted automatically according to MACHINE.json.
-
+tasks or MD tasks will be submitted automatically according to MACHINE.json. That is to say, if one only wants to prepare `surf-xxx/sys-xxx` folders for the second stage but wants to skip relaxation, `dpgen init_surf PARAM` should be used (without `MACHINE`).
+"stages" and "skip_relax" in `PARAM` should be set as: 
+```json
+  "stages": [1,2],
+  "skip_relax": true,
+```
 
 Basically `init_surf` can be divided into two parts , denoted as `stages` in `PARAM`:
 1. Build specific surface in folder `00.place_ele`
