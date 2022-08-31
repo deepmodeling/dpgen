@@ -14,11 +14,12 @@
 	},
 	"properties": [
             {
-                "type":         "interstitial",
-                "supercell":	[1, 1, 1],
-                "insert_ele":   ["Al","Mg"],
-                "conf_filters": {"min_dist": 1.5} 
-	    }
+                "type":        "interstitial",
+                "supercell":   [3, 3, 3],
+                "insert_ele":  ["Al"],
+                "conf_filters":{"min_dist": 1.5},
+                "cal_setting": {"input_prop": "lammps_input/lammps_high"}
+            }
         ]
 }
 ```

@@ -14,15 +14,14 @@ Equation of State (EOS) here calculates the energies of the most stable structur
 		"potcars":	{"Al": "POTCAR.al", "Mg": "POTCAR.mg"}
 	},
 	"properties": [
-		{
-                        "type":         "eos",
-			"vol_start":	10,
-			"vol_end":	30,
-			"vol_step":	0.5,
-                        "change_box":   true
-		}
+        {
+         "type":         "eos",
+         "vol_start":    0.9,
+         "vol_end":      1.1,
+         "vol_step":     0.01
+        }
         ]
 }
 ```
 
-`vol_start` is the starting volume per atom in Å^3/atom, `vol_step` is the increasing step of volume and the biggest volume is smaller than `vol_end`. In the above example, 40 tasks would be generated as `task.000000` to `task.000039` with the volume `10.00, 10.50, 11.00, ..., 29.50` Å^3/atom, respectively.
+`vol_start` is the starting volume per atom in Å^3/atom, `vol_step` is the increasing step of volume, and the biggest volume is smaller than `vol_end`. In the above example, 40 tasks would be generated as `task.000000` to `task.000020` with from 0.9 to 1.1 times the volume of equilibrium structure (Å^3/atom as the unit), respectively.

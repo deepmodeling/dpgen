@@ -23,7 +23,7 @@ thermo          100
 thermo_style    custom step pe pxx pyy pzz pxy pxz pyz lx ly lz vol c_mype
 dump            1 all custom 100 dump.relax id type xs ys zs fx fy fz
 min_style       cg
-minimize        1.000000e-12 1.000000e-06 5000 500000
+minimize        0 1.000000e-10 5000 500000
 variable        N equal count(all)
 variable        V equal vol
 variable        E equal "c_mype"

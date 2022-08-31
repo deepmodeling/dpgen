@@ -14,22 +14,22 @@ Then the volume can be calculated from the task id and the corresponding energy 
 An example of `result.json` is give as:
 ```txt
 {
-    10.00: -3.0245,
-    10.50: -3.0216,
-         ...
-    29.50: -7.9740
+    "14.808453313267595": -3.7194474,
+    "14.972991683415014": -3.7242038,
+        ...
+    "17.934682346068534": -3.7087655
 }
 ```
 
 An example of `result.out` is given below:
 
 ```txt
-conf_dir: confs/mp-100/eos_00
+onf_dir: /root/auto_test_example/deepmd/confs/std-fcc/eos_00
  VpA(A^3)  EpA(eV)
- 10.000   -3.0245
- 10.500   -3.0216
-  ...        ...
- 29.500   -7.9740
+ 14.808   -3.7194
+ 14.973   -3.7242
+   ...      ...
+ 17.935   -3.7088
 ```
 
  
