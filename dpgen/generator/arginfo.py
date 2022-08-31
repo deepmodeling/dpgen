@@ -79,6 +79,7 @@ def training_args() -> List[Argument]:
     doc_training_reuse_start_pref_e = "The prefactor of energy loss at the start of the training." + doc_reusing
     doc_training_reuse_start_pref_f = "The prefactor of force loss at the start of the training." + doc_reusing
     doc_model_devi_activation_func = "The activation function in the model. The shape of list should be (N_models, 2), where 2 represents the embedding and fitting network. This option will override default parameters."
+    doc_srtab_file_path = 'The path of the table for the short-range pairwise interaction which is needed when using DP-ZBL potential'
 
     return [
         Argument("numb_models", int, optional=False, doc=doc_numb_models),
@@ -97,6 +98,8 @@ def training_args() -> List[Argument]:
         Argument("training_reuse_start_pref_e", [None, float, int], optional=True, default=0.1, doc=doc_training_reuse_start_pref_e),
         Argument("training_reuse_start_pref_f", [None, float, int], optional=True, default=100, doc=doc_training_reuse_start_pref_f),
         Argument("model_devi_activation_func", [None, list], optional=True, doc=doc_model_devi_activation_func),
+        Argument("srtab_file_path",str,optional=True,
+                 doc=doc_srtab_file_path),
     ]
 
 
