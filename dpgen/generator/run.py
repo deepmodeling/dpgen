@@ -384,7 +384,7 @@ def make_train (iter_index,
         create_path(task_path)
         os.chdir(task_path)
         
-        if srtab_file_path:
+        if 'srtab_file_path' in jdata.keys():
             os.system('cp %s ./'%srtab_file_path)
 
         for jj in init_data_sys :
