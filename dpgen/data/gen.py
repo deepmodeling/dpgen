@@ -76,6 +76,8 @@ global_dirname_03 = '01.scale_pert'
 global_dirname_04 = '02.md'
 
 def out_dir_name(jdata) :
+    elements = jdata['elements']
+    super_cell = jdata['super_cell']    
     from_poscar = jdata.get('from_poscar', False)
 
     if from_poscar:
@@ -87,8 +89,6 @@ def out_dir_name(jdata) :
         return poscar_name + '.' + cell_str
     else :
         cell_type = jdata['cell_type']
-        elements = jdata['elements']
-        super_cell = jdata['super_cell']    
         ele_str = ""
         for ii in elements:
             ele_str = ele_str + ii.lower()
