@@ -76,12 +76,7 @@ global_dirname_03 = '01.scale_pert'
 global_dirname_04 = '02.md'
 
 def out_dir_name(jdata) :
-    cell_type = jdata['cell_type']
-    elements = jdata['elements']
-    super_cell = jdata['super_cell']    
-    from_poscar = False
-    if 'from_poscar' in jdata :
-        from_poscar = jdata['from_poscar']
+    from_poscar = jdata.get('from_poscar', False)
 
     if from_poscar:
         from_poscar_path = jdata['from_poscar_path']
@@ -91,6 +86,9 @@ def out_dir_name(jdata) :
             cell_str = cell_str + ("x%02d" % super_cell[ii])
         return poscar_name + '.' + cell_str
     else :
+        cell_type = jdata['cell_type']
+        elements = jdata['elements']
+        super_cell = jdata['super_cell']    
         ele_str = ""
         for ii in elements:
             ele_str = ele_str + ii.lower()
@@ -1399,9 +1397,7 @@ def gen_init_bulk(args) :
     jdata['out_dir'] = out_dir
     dlog.info ("# working dir %s" % out_dir)
     # Decide whether to use a given poscar
-    from_poscar = False 
-    if 'from_poscar' in jdata :
-        from_poscar = jdata['from_poscar']
+    from_poscar = jdata.get('from_poscar', False)
     # Verify md_nstep
     md_nstep_jdata = jdata["md_nstep"]
     if 'init_fp_style' not in jdata:
