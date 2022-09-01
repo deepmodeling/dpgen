@@ -486,6 +486,10 @@ def run_train (iter_index,
     train_input_file = default_train_input_file
     training_reuse_iter = jdata.get('training_reuse_iter')
     training_init_model = jdata.get('training_init_model', False)
+
+    if 'srtab_file_path' in jdata.keys():
+        zbl_file=os.path.basename(jdata.get("srtab_file_path", None))
+
     if training_reuse_iter is not None and iter_index >= training_reuse_iter:
         training_init_model = True
     try:
@@ -541,8 +545,10 @@ def run_train (iter_index,
     #     else:
     #         run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in all_task]
-
-    forward_files = [train_input_file]
+    if 'srtab_file_path' in jdata.keys():
+        forward_files = [train_input_file,zbl_file]
+    else:
+        forward_files = [train_input_file]
     if training_init_model:
         forward_files += [os.path.join('old', 'model.ckpt.meta'),
                           os.path.join('old', 'model.ckpt.index'),
