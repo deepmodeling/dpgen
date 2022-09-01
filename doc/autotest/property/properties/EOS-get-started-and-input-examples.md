@@ -24,4 +24,4 @@ Equation of State (EOS) here calculates the energies of the most stable structur
 }
 ```
 
-`vol_start` is the starting volume per atom in Å^3/atom, `vol_step` is the increasing step of volume, and the biggest volume is smaller than `vol_end`. In the above example, 40 tasks would be generated as `task.000000` to `task.000020` with from 0.9 to 1.1 times the volume of equilibrium structure (Å^3/atom as the unit), respectively.
+`vol_start` is the starting relative volume per atom in Å^3/atom, `vol_step` is the increasing step of the ratio of relative volume, and the biggest volume is smaller than `vol_end` times the volume of equilibrium structure.
