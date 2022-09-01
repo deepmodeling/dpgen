@@ -24,4 +24,4 @@ Equation of State (EOS) here calculates the energies of the most stable structur
 }
 ```
 
-`vol_start` is the starting relative volume per atom in Å^3/atom, `vol_step` is the increasing step of the ratio of relative volume, and the biggest volume is smaller than `vol_end` times the volume of equilibrium structure.
+`vol_start` is the starting volume relative to the equilibrium structure, `vol_step` is the volume increment step relative to the equilibrium structure, and the biggest relative volume is smaller than `vol_end`.
