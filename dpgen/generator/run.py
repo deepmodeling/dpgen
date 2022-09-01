@@ -3211,6 +3211,7 @@ def run_fp (iter_index,
 def post_fp_check_fail(iter_index,
                        jdata,
                        rfailed = None) :
+
     ratio_failed =  rfailed if rfailed else jdata.get('ratio_failed',0.05)
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -3218,13 +3219,20 @@ def post_fp_check_fail(iter_index,
     fp_tasks.sort()
     if len(fp_tasks) == 0 :
         return
-    # check fail according to tag_failure
-    fp_failed_tags = glob.glob(os.path.join(work_path, 'task.*', 'tag_failure*'))
-    fp_failed_tasks = [os.path.dirname(ii) for ii in fp_failed_tags]
-    fp_failed_tasks = list(set(fp_failed_tasks))
-
     ntask = len(fp_tasks)
-    nfail = len(fp_failed_tasks)
+    nfail = 0
+
+    # check fail according to the number of collected data
+    sys_data = glob.glob(os.path.join(work_path, "data.*"))
+    sys_data.sort()
+    nframe = 0
+    for ii in sys_data :
+        sys_paths = expand_sys_str(ii)
+        for single_sys in sys_paths:
+            sys = dpdata.LabeledSystem(os.path.join(single_sys), fmt = 'deepmd/npy')
+            nframe += len(sys)
+    nfail = ntask - nframe
+
     rfail = float(nfail) / float(ntask)
     dlog.info("failed tasks: %6d in %6d  %6.2f %% " % (nfail, ntask, rfail * 100.))
     if rfail > ratio_failed:
@@ -3652,7 +3660,6 @@ def post_fp_amber_diff(iter_index, jdata):
 def post_fp (iter_index,
              jdata) :
     fp_style = jdata['fp_style']
-    post_fp_check_fail(iter_index, jdata)
     if fp_style == "vasp" :
         post_fp_vasp(iter_index, jdata)
     elif fp_style == "pwscf" :
@@ -3671,6 +3678,7 @@ def post_fp (iter_index,
         post_fp_amber_diff(iter_index, jdata)
     else :
         raise RuntimeError ("unsupported fp style")
+    post_fp_check_fail(iter_index, jdata)
     # clean traj
     clean_traj = True
     if 'model_devi_clean_traj' in jdata :
