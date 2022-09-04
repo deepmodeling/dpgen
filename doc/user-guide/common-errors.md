@@ -37,4 +37,4 @@ Some common reasons are as follows:
 The ratio of failed jobs is larger than ratio_failure. You can set a high value for ratio_failure or check if there is something wrong with your input files. 
 
 ## ValueError: Cannot load file containing picked data when allow_picked=False
-Please make sure that there is no excess file where you run DP-GEN. 
+Please ensure that you write the correct path of the dataset with no excess files. 
