@@ -36,7 +36,7 @@ DPGEN's documentation
 
 .. toctree::
    :maxdepth: 2
-   :caption: How to get help from the community
+   :caption: User Guide
 
    user-guide/index.rst
 
