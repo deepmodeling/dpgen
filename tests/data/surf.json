@@ -11,7 +11,7 @@
     1
   ],
   "layer_numb": 3,
-  "vacuum_max": 9,
+  "vacuum_max": 9.0,
   "vacuum_resol": [
     0.5,
     1

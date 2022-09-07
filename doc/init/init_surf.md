@@ -35,7 +35,7 @@ Following is an example for `PARAM`, which generates data from a typical structu
     2
   ],
   "layer_numb": 3,
-  "vacuum_max": 9,
+  "vacuum_max": 9.0,
   "vacuum_resol": [
     0.5,
     1
@@ -93,7 +93,7 @@ Another example is `from_poscar` method. Here you need to specify the POSCAR fil
     1
   ],
   "layer_numb": 3,
-  "vacuum_max": 5,
+  "vacuum_max": 5.0,
   "vacuum_resol": [0.5,2],
   "mid_point": 2.0,
   "millers": [
