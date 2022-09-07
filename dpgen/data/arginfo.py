@@ -47,6 +47,7 @@ def init_bulk_jdata_arginfo() -> Argument:
     doc_stages = "Stages for `init_bulk`."
     doc_elements = "Atom types."
     doc_cell_type = "Specifying which typical structure to be generated. **Options** include fcc, hcp, bcc, sc, diamond."
+    doc_super_cell = "Size of supercell."
     doc_from_poscar = "Deciding whether to use a given poscar as the beginning of relaxation. If it's true, keys (`cell_type`, `latt`) will be aborted. Otherwise, these two keys are **necessary**."
     doc_from_poscar_path = "Path of POSCAR for VASP or STRU for ABACUS. **Necessary** if `from_poscar` is true."
     doc_relax_incar = "Path of INCAR for VASP or INPUT for ABACUS for relaxation in VASP. **Necessary** if `stages` include 1."
@@ -67,6 +68,7 @@ def init_bulk_jdata_arginfo() -> Argument:
         Argument("stages", list, optional=False, doc=doc_stages),
         Argument("elements", list, optional=False, doc=doc_elements),
         Argument("cell_type", str, optional=True, doc=doc_cell_type),
+        Argument("super_cell", list, optional=False, doc=doc_super_cell),
         Argument("from_poscar", bool, optional=True, default=False, doc=doc_from_poscar),
         Argument("from_poscar_path", str, optional=True, doc=doc_from_poscar_path),
         Argument("relax_incar", str, optional=True, doc=doc_relax_incar),
@@ -97,6 +99,7 @@ def init_surf_jdata_arginfo() -> Argument:
     doc_stages = "Stages for `init_surf`."
     doc_elements = "Atom types."
     doc_cell_type = "Specifying which typical structure to be generated. **Options** include fcc, hcp, bcc, sc, diamond."
+    doc_super_cell = "Size of supercell."
     doc_from_poscar = "Deciding whether to use a given poscar as the beginning of relaxation. If it's true, keys (`cell_type`, `latt`) will be aborted. Otherwise, these two keys are **necessary**."
     doc_from_poscar_path = "Path of POSCAR for VASP or STRU for ABACUS. **Necessary** if `from_poscar` is true."
     doc_latt = "Lattice constant for single cell."
@@ -117,6 +120,7 @@ def init_surf_jdata_arginfo() -> Argument:
         Argument("stages", list, optional=False, doc=doc_stages),
         Argument("elements", list, optional=False, doc=doc_elements),
         Argument("cell_type", str, optional=True, doc=doc_cell_type),
+        Argument("super_cell", list, optional=False, doc=doc_super_cell),
         Argument("from_poscar", bool, optional=True, default=False, doc=doc_from_poscar),
         Argument("from_poscar_path", str, optional=True, doc=doc_from_poscar_path),
         Argument("latt", float, optional=False, doc=doc_latt),
