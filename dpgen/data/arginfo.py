@@ -76,7 +76,7 @@ def init_bulk_jdata_arginfo() -> Argument:
         Argument("pert_numb", int, optional=False, doc=doc_pert_numb),
         Argument("pert_box", float, optional=False, doc=doc_pert_box),
         Argument("pert_atom", float, optional=False, doc=doc_pert_atom),
-        Argument("md_step", int, optional=False, doc=doc_md_step),
+        Argument("md_nstep", int, optional=False, doc=doc_md_nstep),
         Argument("coll_ndata", int, optional=False, doc=doc_coll_ndata),
         Argument("type_map", list, optional=True, doc=doc_type_map),
         Argument("init_fp_style", str, optional=True, deault="VASP", doc=doc_init_fp_style),
