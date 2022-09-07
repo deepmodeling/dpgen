@@ -36,14 +36,14 @@ def init_reaction_mdata_arginfo() -> Argument:
     return general_mdata_arginfo("init_reaction_mdata", ("reaxff", "build", "fp"))
 
 def init_bulk_jdata_arginfo() -> Argument:
-    """Generate arginfo for dpgen init_surf jdata.
+    """Generate arginfo for dpgen init_bulk jdata.
     
     Returns
     -------
     Argument
-        dpgen init_surf jdata arginfo
+        dpgen init_bulk jdata arginfo
     """
-    doc_init_surf = "Generate initial data for bulk systems."
+    doc_init_bulk = "Generate initial data for bulk systems."
     doc_stages = "Stages for `init_bulk`."
     doc_elements = "Atom types."
     doc_cell_type = "Specifying which typical structure to be generated. **Options** include fcc, hcp, bcc, sc, diamond."
@@ -63,7 +63,7 @@ def init_bulk_jdata_arginfo() -> Argument:
     doc_relax_kpt = 'Path of `KPT` file for relaxation in stage 1. Only useful if `init_fp_style` is "ABACUS".'
     doc_md_kpt = 'Path of `KPT` file for MD simulations in stage 3. Only useful if `init_fp_style` is "ABACUS".'
     doc_atom_masses = 'List of atomic masses of elements. The order should be the same as `Elements`. Only useful if `init_fp_style` is "ABACUS".'
-    return Argument("init_surf_jdata", dict, [
+    return Argument("init_bulk_jdata", dict, [
         Argument("stages", list, optional=False, doc=doc_stages),
         Argument("elements", list, optional=False, doc=doc_elements),
         Argument("cell_type", str, optional=True, doc=doc_cell_type),
