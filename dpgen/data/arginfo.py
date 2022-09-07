@@ -59,7 +59,7 @@ def init_bulk_jdata_arginfo() -> Argument:
     doc_md_nstep = "Steps of AIMD in stage 3. If it's not equal to settings via `NSW` in `md_incar`, DP-GEN will follow `NSW`."
     doc_coll_ndata = "Maximal number of collected data."
     doc_type_map = "The indices of elements in deepmd formats will be set in this order."
-    doc_init_fp_style(default=VASP) = "First-principle software. If this key is absent."
+    doc_init_fp_style = "First-principle software. If this key is absent."
     doc_relax_kpt = 'Path of `KPT` file for relaxation in stage 1. Only useful if `init_fp_style` is "ABACUS".'
     doc_md_kpt = 'Path of `KPT` file for MD simulations in stage 3. Only useful if `init_fp_style` is "ABACUS".'
     doc_atom_masses = 'List of atomic masses of elements. The order should be the same as `Elements`. Only useful if `init_fp_style` is "ABACUS".'
