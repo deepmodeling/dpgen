@@ -79,7 +79,7 @@ def init_bulk_jdata_arginfo() -> Argument:
         Argument("md_nstep", int, optional=False, doc=doc_md_nstep),
         Argument("coll_ndata", int, optional=False, doc=doc_coll_ndata),
         Argument("type_map", list, optional=True, doc=doc_type_map),
-        Argument("init_fp_style", str, optional=True, deault="VASP", doc=doc_init_fp_style),
+        Argument("init_fp_style", str, optional=True, default="VASP", doc=doc_init_fp_style),
         Argument("relax_kpt", str, optional=True, doc=doc_relax_kpt),
         Argument("md_kpt", str, optional=True, doc=doc_md_kpt),
         Argument("atom_masses", list, optional=True, doc=doc_atom_masses),
