@@ -46,6 +46,7 @@ def init_bulk_jdata_arginfo() -> Argument:
     doc_init_bulk = "Generate initial data for bulk systems."
     doc_stages = "Stages for `init_bulk`."
     doc_elements = "Atom types."
+    doc_potcars = "Path of POTCAR."
     doc_cell_type = "Specifying which typical structure to be generated. **Options** include fcc, hcp, bcc, sc, diamond."
     doc_super_cell = "Size of supercell."
     doc_from_poscar = "Deciding whether to use a given poscar as the beginning of relaxation. If it's true, keys (`cell_type`, `latt`) will be aborted. Otherwise, these two keys are **necessary**."
@@ -67,6 +68,7 @@ def init_bulk_jdata_arginfo() -> Argument:
     return Argument("init_bulk_jdata", dict, [
         Argument("stages", list, optional=False, doc=doc_stages),
         Argument("elements", list, optional=False, doc=doc_elements),
+        Argument("potcars", list, optional=True, doc=doc_potcars),
         Argument("cell_type", str, optional=True, doc=doc_cell_type),
         Argument("super_cell", list, optional=False, doc=doc_super_cell),
         Argument("from_poscar", bool, optional=True, default=False, doc=doc_from_poscar),
@@ -98,6 +100,7 @@ def init_surf_jdata_arginfo() -> Argument:
     doc_init_surf = "Generate initial data for surface systems."
     doc_stages = "Stages for `init_surf`."
     doc_elements = "Atom types."
+    doc_potcars = "Path of POTCAR."
     doc_cell_type = "Specifying which typical structure to be generated. **Options** include fcc, hcp, bcc, sc, diamond."
     doc_super_cell = "Size of supercell."
     doc_from_poscar = "Deciding whether to use a given poscar as the beginning of relaxation. If it's true, keys (`cell_type`, `latt`) will be aborted. Otherwise, these two keys are **necessary**."
@@ -122,6 +125,7 @@ def init_surf_jdata_arginfo() -> Argument:
     return Argument("init_surf_jdata", dict, [
         Argument("stages", list, optional=False, doc=doc_stages),
         Argument("elements", list, optional=False, doc=doc_elements),
+        Argument("potcars", list, optional=True, doc=doc_potcars),
         Argument("cell_type", str, optional=True, doc=doc_cell_type),
         Argument("super_cell", list, optional=False, doc=doc_super_cell),
         Argument("from_poscar", bool, optional=True, default=False, doc=doc_from_poscar),
