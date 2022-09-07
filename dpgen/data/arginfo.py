@@ -132,7 +132,7 @@ def init_surf_jdata_arginfo() -> Argument:
         Argument("from_poscar_path", str, optional=True, doc=doc_from_poscar_path),
         Argument("latt", float, optional=False, doc=doc_latt),
         Argument("layer_numb", int, optional=True, doc=doc_layer_numb),
-        Argument("z_min", float, optional=True, doc=doc_z_min),
+        Argument("z_min", int, optional=True, doc=doc_z_min),
         Argument("vacuum_max", float, optional=False, doc=doc_vacuum_max),
         Argument("vacuum_min", float, optional=True, doc=doc_vacuum_min),
         Argument("vacuum_resol", list, optional=False, doc=doc_vacuum_resol),
