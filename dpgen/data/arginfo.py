@@ -133,7 +133,6 @@ def init_surf_jdata_arginfo() -> Argument:
         Argument("pert_box", float, optional=False, doc=doc_pert_box),
         Argument("pert_atom", float, optional=False, doc=doc_pert_atom),
         Argument("coll_ndata", int, optional=False, doc=doc_coll_ndata),
-        Argument("latt", float, optional=False, doc=doc_latt),
     ], doc=doc_init_surf)
 
 def init_reaction_jdata_arginfo() -> Argument:
