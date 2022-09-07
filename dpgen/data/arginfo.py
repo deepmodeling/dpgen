@@ -136,7 +136,7 @@ def init_surf_jdata_arginfo() -> Argument:
         Argument("vacuum_max", float, optional=False, doc=doc_vacuum_max),
         Argument("vacuum_min", float, optional=True, doc=doc_vacuum_min),
         Argument("vacuum_resol", list, optional=False, doc=doc_vacuum_resol),
-        Argument("vacuum_numb", float, optional=True, doc=doc_vacuum_numb),
+        Argument("vacuum_numb", int, optional=True, doc=doc_vacuum_numb),
         Argument("mid_point", float, optional=True, doc=doc_mid_point),
         Argument("head_ratio", float, optional=True, doc=doc_head_ratio),
         Argument("millers", list, optional=False, doc=doc_millers),
