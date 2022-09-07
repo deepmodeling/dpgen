@@ -109,6 +109,7 @@ def init_surf_jdata_arginfo() -> Argument:
     doc_vacuum_min = "Minimal thickness of vacuum (Angstrom). Default value is 2 times atomic radius."
     doc_vacuum_resol = "Interval of thickness of vacuum. If size of `vacuum_resol` is 1, the interval is fixed to its value. If size of `vacuum_resol` is 2, the interval is `vacuum_resol[0]` before `mid_point`, otherwise `vacuum_resol[1]` after `mid_point`."
     doc_mid_point = "Value of mid-point. **Necessary** if the size of vacuum_resol is 2 or 0."
+    doc_head_ratio  = "Head number is `vacuum_num` times `head_ratio`. **Necessary** if vacuum_resol is empty."
     doc_millers = "Miller indices."
     doc_relax_incar = "Path of INCAR for relaxation in VASP. **Necessary** if `stages` include 1."
     doc_scale = "Scales for transforming cells."
@@ -130,7 +131,8 @@ def init_surf_jdata_arginfo() -> Argument:
         Argument("vacuum_max", float, optional=False, doc=doc_vacuum_max),
         Argument("vacuum_min", float, optional=True, doc=doc_vacuum_min),
         Argument("vacuum_resol", list, optional=False, doc=doc_vacuum_resol),
-        Argument("mid_point", list, optional=True, doc=doc_mid_point),
+        Argument("mid_point", float, optional=True, doc=doc_mid_point),
+        Argument("head_ratio", float, optional=True, doc=doc_head_ratio),
         Argument("millers", list, optional=False, doc=doc_millers),
         Argument("relax_incar", str, optional=True, doc=doc_relax_incar),
         Argument("scale", list, optional=False, doc=doc_scale),
