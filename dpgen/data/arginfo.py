@@ -35,6 +35,28 @@ def init_reaction_mdata_arginfo() -> Argument:
     """
     return general_mdata_arginfo("init_reaction_mdata", ("reaxff", "build", "fp"))
 
+def init_bulk_vasp_arg() -> List[Argument]:
+    return []
+
+def init_bulk_abacus_arg() -> List[Argument]:
+    doc_relax_kpt = 'Path of `KPT` file for relaxation in stage 1. Only useful if `init_fp_style` is "ABACUS".'
+    doc_md_kpt = 'Path of `KPT` file for MD simulations in stage 3. Only useful if `init_fp_style` is "ABACUS".'
+    doc_atom_masses = 'List of atomic masses of elements. The order should be the same as `Elements`. Only useful if `init_fp_style` is "ABACUS".'
+    return [
+        Argument("relax_kpt", str, optional=True, doc=doc_relax_kpt),
+        Argument("md_kpt", str, optional=True, doc=doc_md_kpt),
+        Argument("atom_masses", list, optional=True, doc=doc_atom_masses),
+    ]
+    
+
+def init_bulk_variant_type_args() -> List[Variant]:
+    doc_init_fp_style = "First-principle software. If this key is absent."
+    return [Variant("init_fp_style", [
+            Argument("VASP", dict, init_bulk_vasp_arg(), doc="VASP"),
+            Argument("ABACUS", dict, init_bulk_abacus_args(), doc="ABACUS"),
+        ], default_tag="VASP", optional=True, doc=doc_init_fp_style)]
+
+
 def init_bulk_jdata_arginfo() -> Argument:
     """Generate arginfo for dpgen init_bulk jdata.
     
@@ -61,10 +83,7 @@ def init_bulk_jdata_arginfo() -> Argument:
     doc_md_nstep = "Steps of AIMD in stage 3. If it's not equal to settings via `NSW` in `md_incar`, DP-GEN will follow `NSW`."
     doc_coll_ndata = "Maximal number of collected data."
     doc_type_map = "The indices of elements in deepmd formats will be set in this order."
-    doc_init_fp_style = "First-principle software. If this key is absent."
-    doc_relax_kpt = 'Path of `KPT` file for relaxation in stage 1. Only useful if `init_fp_style` is "ABACUS".'
-    doc_md_kpt = 'Path of `KPT` file for MD simulations in stage 3. Only useful if `init_fp_style` is "ABACUS".'
-    doc_atom_masses = 'List of atomic masses of elements. The order should be the same as `Elements`. Only useful if `init_fp_style` is "ABACUS".'
+
     return Argument("init_bulk_jdata", dict, [
         Argument("stages", list, optional=False, doc=doc_stages),
         Argument("elements", list, optional=False, doc=doc_elements),
@@ -83,11 +102,8 @@ def init_bulk_jdata_arginfo() -> Argument:
         Argument("md_nstep", int, optional=False, doc=doc_md_nstep),
         Argument("coll_ndata", int, optional=False, doc=doc_coll_ndata),
         Argument("type_map", list, optional=True, doc=doc_type_map),
-        Argument("init_fp_style", str, optional=True, default="VASP", doc=doc_init_fp_style),
-        Argument("relax_kpt", str, optional=True, doc=doc_relax_kpt),
-        Argument("md_kpt", str, optional=True, doc=doc_md_kpt),
-        Argument("atom_masses", list, optional=True, doc=doc_atom_masses),
-    ], doc=doc_init_bulk) # out_dir, type_map
+    ], sub_variants=init_bulk_variant_type_args(),
+    doc=doc_init_bulk) 
 
 def init_surf_jdata_arginfo() -> Argument:
     """Generate arginfo for dpgen init_surf jdata.
