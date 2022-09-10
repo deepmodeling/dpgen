@@ -31,6 +31,7 @@ DPGEN's documentation
    :glob:  
 
    Tutorials <https://tutorials.deepmodeling.com/en/latest/Tutorials/DP-GEN/>
+   Publications <https://deepmodeling.com/blog/papers/dpgen/>
 
 .. _user-guide:
 
