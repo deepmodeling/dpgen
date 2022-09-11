@@ -20,7 +20,7 @@ with open(path.join('dpgen', '_date.py'), 'w') as fp :
 install_requires=[
     'numpy>=1.14.3',
     'dpdata>=0.2.6',
-    'pymatgen>=2019.1.13',
+    'pymatgen>=2022.7.19',
     'ase',
     'monty>2.0.0',
     'paramiko',
