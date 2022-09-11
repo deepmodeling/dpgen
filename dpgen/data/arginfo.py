@@ -1,4 +1,5 @@
-from dargs import Argument, ArgumentEncoder
+from dargs import Argument, ArgumentEncoder, Variant
+from typing import Dict, List
 
 from dpgen.arginfo import general_mdata_arginfo
 
@@ -123,7 +124,7 @@ def init_surf_jdata_arginfo() -> Argument:
     doc_from_poscar_path = "Path of POSCAR for VASP or STRU for ABACUS. **Necessary** if `from_poscar` is true."
     doc_latt = "Lattice constant for single cell."
     doc_layer_numb = "Number of equivalent layers of slab."
-    doc_z_min = "Thickness of slab without vacuum (Angstrom). If the layer_numb and z_min are all set, the z_min value will be ignored."
+    doc_z_min = "Thickness of slab without vacuum (Angstrom). If `layer_numb` is set, `z_min` will be ignored."
     doc_vacuum_max = "Maximal thickness of vacuum (Angstrom)."
     doc_vacuum_min = "Minimal thickness of vacuum (Angstrom). Default value is 2 times atomic radius."
     doc_vacuum_resol = "Interval of thickness of vacuum. If size of `vacuum_resol` is 1, the interval is fixed to its value. If size of `vacuum_resol` is 2, the interval is `vacuum_resol[0]` before `mid_point`, otherwise `vacuum_resol[1]` after `mid_point`."
