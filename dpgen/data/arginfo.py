@@ -36,10 +36,10 @@ def init_reaction_mdata_arginfo() -> Argument:
     """
     return general_mdata_arginfo("init_reaction_mdata", ("reaxff", "build", "fp"))
 
-def init_bulk_vasp_arg() -> List[Argument]:
+def init_bulk_vasp_args() -> List[Argument]:
     return []
 
-def init_bulk_abacus_arg() -> List[Argument]:
+def init_bulk_abacus_args() -> List[Argument]:
     doc_relax_kpt = 'Path of `KPT` file for relaxation in stage 1. Only useful if `init_fp_style` is "ABACUS".'
     doc_md_kpt = 'Path of `KPT` file for MD simulations in stage 3. Only useful if `init_fp_style` is "ABACUS".'
     doc_atom_masses = 'List of atomic masses of elements. The order should be the same as `Elements`. Only useful if `init_fp_style` is "ABACUS".'
@@ -53,7 +53,7 @@ def init_bulk_abacus_arg() -> List[Argument]:
 def init_bulk_variant_type_args() -> List[Variant]:
     doc_init_fp_style = "First-principle software. If this key is absent."
     return [Variant("init_fp_style", [
-            Argument("VASP", dict, init_bulk_vasp_arg(), doc="VASP"),
+            Argument("VASP", dict, init_bulk_vasp_args(), doc="VASP"),
             Argument("ABACUS", dict, init_bulk_abacus_args(), doc="ABACUS"),
         ], default_tag="VASP", optional=True, doc=doc_init_fp_style)]
 
