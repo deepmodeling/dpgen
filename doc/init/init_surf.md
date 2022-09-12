@@ -19,6 +19,19 @@ Basically `init_surf` can be divided into two parts , denoted as `stages` in `PA
 
 All stages must be **in order**.
 
+Generally, `init_surf` does not run AIMD but only generates a lot of configurations. Compared with `init_bulk`, which runs DFT calculations twice, init_surf does once. Usually, we do `init_bulk`, run many rounds of DP-GEN iterations, collect enough data for the bulk system, and do `init_surf` after that. At this point, the lattice constant has been determined, and the lattice constant required for the initial configuration of `init_surf` can be used directly. These configurations made by `init_surf` are prepared for `01.model_devi`. Candidates will do DFT calculation in `02.fp`. 
+
+- Generate vacuum layers
+
+According to [the source code of pert_scaled](https://github.com/deepmodeling/dpgen/blob/8dea29ef125f66be9641afe5ac4970433a9c9ce1/dpgen/data/surf.py#L484), init_surf will generate a series of surface structures with specified separations between the sample layer and its periodic image. There are two ways to specify the interval in generating the vacuum layers: 1) to set the interval value and 2) to set the number of intervals.
+
+You can use `layer_numb` (the number of layers of the slab) or `z_min` (the total thickness) to specify the thickness of the atoms below. Then `vacuum_*` parameters specify the vacuum layers above. `dpgen init_surf` will make a series of structures with the thickness of vacuum layers from `vacuum_min` to `vacuum_max`. The number of vacuum layers is controlled by the parameter `vacuum_resol`. 
+
+The layers will be generated even when the size of `vacuum_resol` is 1. When the size of `vacuum_resol` is 2 or it is empty, the whole interval range is divided into the nearby region with denser intervals (head region) and the far-away region with sparser intervals (tail region), which are divided by mid_point. 
+
+When the size of `vacuum_resol` is 2, each of its elements decides the number of layers in the interval.
+
+When `vacuum_resol` is empty, the number of intervals in the head region = vacuum_num * head_ratio. `vacuum_num` and `head_ratio` are both keys in `param.json`.
 
 Following is an example for `PARAM`, which generates data from a typical structure fcc.
 ```json
