@@ -7,10 +7,9 @@ from monty.serialization import loadfn, dumpfn
 try: 
     from pymatgen.analysis.defects.generators import InterstitialGenerator
 except ModuleNotFoundError:
-    print("pymatgen==2022.7.19 is the final release with `pymatgen.analysis.defects` module. Please check the version of pymatgen.")
-    print("Please install `pymatgen-analysis-defects`.")
-    print("Kindly reminder: `pybind11>=2.4` need to be installed previously.")
-    os._exit(0)
+    raise ModuleNotFoundError("pymatgen==2022.7.19 is the final release with `pymatgen.analysis.defects` module. Please check the version of pymatgen.\n" \
+                              "Please install `pymatgen-analysis-defects`.\n" \
+                              "Kindly reminder: `pybind11>=2.4` need to be installed previously.")
 
 
 from pymatgen.core.structure import Structure
