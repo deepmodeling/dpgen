@@ -1510,11 +1510,14 @@ def run_md_model_devi (iter_index,
         command = "/bin/sh -c '%s'" % command
         commands = [command]
         
-        lmp_traj_name = 'traj'
+        forward_files = ['conf.lmp', 'input.lammps']
+        backward_files = ['model_devi.out', 'model_devi.log']
         if model_devi_merge_traj :
-            lmp_traj_name = 'all.lammpstrj'
-        forward_files = ['conf.lmp', 'input.lammps', lmp_traj_name]
-        backward_files = ['model_devi.out', 'model_devi.log', lmp_traj_name]
+            backward_files += ['all.lammpstrj']
+        else :
+            forward_files += ['traj']     
+            backward_files += ['traj']          
+
         if use_plm:
             forward_files += ['input.plumed']
            # backward_files += ['output.plumed']
