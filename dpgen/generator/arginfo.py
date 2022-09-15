@@ -481,8 +481,8 @@ def fp_style_variant_type_args() -> Variant:
 
 
 def fp_args() -> List[Argument]:
-    doc_fp_task_max = 'Maximum of structures to be calculated in 02.fp of each iteration.'
-    doc_fp_task_min = 'Minimum of structures to be calculated in 02.fp of each iteration.'
+    doc_fp_task_max = 'Maximum number of structures to be calculated in each system in 02.fp of each iteration.'
+    doc_fp_task_min = 'Minimum number of structures to be calculated in each system in 02.fp of each iteration.'
     doc_fp_accurate_threshold = 'If the accurate ratio is larger than this number, no fp calculation will be performed, i.e. fp_task_max = 0.'
     doc_fp_accurate_soft_threshold = 'If the accurate ratio is between this number and fp_accurate_threshold, the fp_task_max linearly decays to zero.'
     doc_fp_cluster_vacuum = 'If the vacuum size is smaller than this value, this cluster will not be choosen for labeling.'
