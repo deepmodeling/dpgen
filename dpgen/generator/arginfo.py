@@ -17,7 +17,7 @@ def run_mdata_arginfo() -> Argument:
 # basics
 def basic_args() -> List[Argument]:
     doc_type_map = 'Atom types.'
-    doc_mass_map = 'Standard atomic weights (default: "auto"). if one want to use isotopes, or non-standard element names, chemical symbols, or atomic number in the type_map list, please customize the mass_map list instead of using "auto". Tips: at present the default value will not be applied automatically, so you need to set "mass_map" manually in param.json.'
+    doc_mass_map = 'Standard atomic weights (default: "auto"). if one want to use isotopes, or non-standard element names, chemical symbols, or atomic number in the type_map list, please customize the mass_map list instead of using "auto".'
     doc_use_ele_temp = 'Currently only support fp_style vasp. \n\n\
 - 0: no electron temperature. \n\n\
 - 1: eletron temperature as frame parameter. \n\n\
