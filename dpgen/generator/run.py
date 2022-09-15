@@ -62,10 +62,11 @@ from dpgen.generator.lib.cp2k import make_cp2k_input, make_cp2k_input_from_exter
 from dpgen.generator.lib.ele_temp import NBandsEsti
 from dpgen.remote.decide_machine import convert_mdata
 from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, make_dispatcher, make_submission
-from dpgen.util import sepline, expand_sys_str
+from dpgen.util import sepline, expand_sys_str, normalize
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar,Kpoints,Potcar
 from dpgen.auto_test.lib.vasp import make_kspacing_kpoints
+from .arginfo import run_jdata_arginfo
 
 
 template_name = 'template'
@@ -3717,6 +3718,9 @@ def run_iter (param_file, machine_file) :
            jdata = json.load (fp)
        with open (machine_file, 'r') as fp:
            mdata = json.load (fp)
+
+    jdata_arginfo = run_jdata_arginfo()
+    jdata = normalize(jdata_arginfo, jdata, strict_check=False)
 
     update_mass_map(jdata)
         
