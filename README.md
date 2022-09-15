@@ -15,7 +15,7 @@ Yuzhi Zhang, Haidi Wang, Weijie Chen, Jinzhe Zeng, Linfeng Zhang, Han Wang, and 
 ## Highlighted features
 + **Accurate and efficient**: DP-GEN is capable to sample more than tens of million structures and select only a few for first principles calculation. DP-GEN will finally obtain a uniformly accurate model.
 + **User-friendly and automatic**: Users may install and run DP-GEN easily. Once successfully running, DP-GEN can dispatch and handle all jobs on HPCs, and thus there's no need for any personal effort.
-+ **Highly scalable**: With modularized code structures, users and developers can easily extend DP-GEN for their most relevant needs. DP-GEN currently supports for HPC systems (Slurm, PBS, LSF and cloud machines ), Deep Potential interface with DeePMD-kit, MD interface with [LAMMPS](https://www.lammps.org/), [Gromacs](http://www.gromacs.org/)   and *ab-initio* calculation interface with VASP, PWSCF, CP2K, SIESTA, Gaussian, Abacus, PWMAT, etc. We're sincerely welcome and embraced to users' contributions, with more possibilities and cases to use DP-GEN.
++ **Highly scalable**: With modularized code structures, users and developers can easily extend DP-GEN for their most relevant needs. DP-GEN currently supports for HPC systems (Slurm, PBS, LSF and cloud machines), Deep Potential interface with DeePMD-kit, MD interface with [LAMMPS](https://www.lammps.org/), [Gromacs](http://www.gromacs.org/)，[AMBER](https://ambermd.org/), Calypso and *ab-initio* calculation interface with VASP, PWSCF, CP2K, SIESTA, Gaussian, Abacus, PWMAT, etc. We're sincerely welcome and embraced to users' contributions, with more possibilities and cases to use DP-GEN.
 
 ## Download and Install
 One can download the source code of dpgen by
