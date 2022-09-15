@@ -22,7 +22,7 @@ import numpy as np
 
 from dpgen import dlog
 from dpgen import SHORT_CMD
-from dpgen.util import sepline, expand_sys_str
+from dpgen.util import sepline, expand_sys_str, normalize
 from distutils.version import LooseVersion
 from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, make_dispatcher, make_submission
 from dpgen.generator.run import make_train, run_train, post_train, run_fp, post_fp, fp_name, model_devi_name, train_name, train_task_fmt, sys_link_fp_vasp_pp, make_fp_vasp_incar, make_fp_vasp_kp, make_fp_vasp_cp_cvasp, data_system_fmt, model_devi_task_fmt, fp_task_fmt
@@ -30,6 +30,7 @@ from dpgen.generator.run import make_train, run_train, post_train, run_fp, post_
 from dpgen.generator.lib.utils import log_iter, make_iter_name, create_path, record_iter
 from dpgen.generator.lib.gaussian import make_gaussian_input
 from dpgen.remote.decide_machine import  convert_mdata
+from .arginfo import simplify_jdata_arginfo
 
 
 picked_data_name = "data.picked"
@@ -412,6 +413,9 @@ def run_iter(param_file, machine_file):
             jdata = json.load(fp)
         with open(machine_file, 'r') as fp:
             mdata = json.load(fp)
+
+    jdata_arginfo = simplify_jdata_arginfo()
+    jdata = normalize(jdata_arginfo, jdata)
 
     if jdata.get('pretty_print', False):
         fparam = SHORT_CMD+'_' + \
