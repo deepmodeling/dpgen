@@ -152,7 +152,7 @@ class Phonon(Property):
             for ii in range(len(all_tasks)):
                 os.chdir(all_tasks[ii])
             
-            if (self.parameter['type'] == 'vasp'):
+            if (self.inter_param['type'] == 'vasp'):
                 if os.path.isfile('vasprun.xml'):
                     os.system('phonopy --fc vasprun.xml')
                     if os.path.isfile('FORCE_CONSTANTS'):
