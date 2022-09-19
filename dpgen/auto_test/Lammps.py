@@ -390,4 +390,7 @@ class Lammps(Task):
                 return [os.path.basename(self.model)]
 
     def backward_files(self, property_type='relaxation'):
-        return ['log.lammps', 'outlog', 'dump.relax']
+        if(property_type == "phonon"):
+            return ['log.lammps', 'outlog', 'dump.relax', 'FORCE_CONSTANTS', 'POSCAR']
+        else:
+            return ['log.lammps', 'outlog', 'dump.relax']

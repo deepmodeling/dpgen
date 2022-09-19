@@ -1,5 +1,6 @@
 from distutils.version import LooseVersion
 import glob
+from monty.serialization import loadfn, dumpfn
 import os
 import warnings
 from multiprocessing import Pool
@@ -12,6 +13,7 @@ from dpgen.auto_test.Interstitial import Interstitial
 from dpgen.auto_test.Surface import Surface
 from dpgen.auto_test.Vacancy import Vacancy
 from dpgen.auto_test.Gamma import Gamma
+from dpgen.auto_test.Phonon import Phonon
 from dpgen.auto_test.calculator import make_calculator
 from dpgen.dispatcher.Dispatcher import make_dispatcher
 from dpgen.dispatcher.Dispatcher import make_submission
@@ -37,6 +39,8 @@ def make_property_instance(parameters,inter_param):
         return Surface(parameters,inter_param)
     elif prop_type == 'gamma':
         return Gamma(parameters,inter_param)
+    elif prop_type == 'phonon' :
+        return Phonon(parameters,inter_param)
     else:
         raise RuntimeError(f'unknown property type {prop_type}')
 
@@ -170,6 +174,7 @@ def run_property(confs,
                                                 backward_files,
                                                 mdata,
                                                 inter_type,
+                                                property_type,
                                                 ))
                 multiple_ret.append(ret)
     pool.close()
@@ -187,10 +192,17 @@ def worker(work_path,
            forward_files,
            backward_files,
            mdata,
-           inter_type):
+           inter_type,
+           property_type):
+    if(property_type == "phonon"):
+        supercell_matrix = loadfn(os.path.join(all_task[0],'task.json'))['supercell_matrix']
+    else:
+        supercell_matrix = None
     run_tasks = [os.path.basename(ii) for ii in all_task]
-    machine, resources, command, group_size = util.get_machine_info(mdata, inter_type)
+    machine, resources, command, group_size = util.get_machine_info(mdata, inter_type, property_type , supercell_matrix)
     api_version = mdata.get('api_version', '0.9')
+
+    print(command)
     if LooseVersion(api_version) < LooseVersion('1.0'):
         warnings.warn(f"the dpdispatcher will be updated to new version."
             f"And the interface may be changed. Please check the documents for more details")

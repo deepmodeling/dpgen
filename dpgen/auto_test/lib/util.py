@@ -69,7 +69,7 @@ def make_work_path(jdata,task,reprod_opt,static,user):
     return work_path
 
 
-def get_machine_info(mdata,task_type):
+def get_machine_info(mdata,task_type , property_type , supercell_matrix):
     if task_type in ["vasp","abacus"]:
         vasp_exec=mdata['fp_command']
         group_size = mdata['fp_group_size']
@@ -84,6 +84,11 @@ def get_machine_info(mdata,task_type):
         machine=mdata['model_devi_machine']
         command = model_devi_exec + " -i in.lammps"
         command = cmd_append_log(command, "model_devi.log")
+    if (property_type == "phonon" and task_type not in ["vasp" , "abacus"]):
+        command = mdata['model_devi_command']
+        if('phonolammps' not in command):
+            command = "/root/local/deepmd-kit-2.1.0/bin/phonolammps in.lammps -c POSCAR --dim %s %s %s"%(supercell_matrix[0],supercell_matrix[1],supercell_matrix[2])
+            print(f"Warning:We done find 'phonolammps' in your command sentence . We will use 'phonolammps in.lammps -c POSCAR --dim %s %s %s'"%(supercell_matrix[0],supercell_matrix[1],supercell_matrix[2]))
     return machine, resources, command, group_size
 
 def collect_task(all_task,task_type):

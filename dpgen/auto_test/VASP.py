@@ -71,7 +71,8 @@ class VASP(Task):
                         task_param):
         sepline(ch=output_dir)
         dumpfn(task_param, os.path.join(output_dir, 'task.json'), indent=4)
-
+        task_type = output_dir.split('/')[-2].split('_')[0]
+        
         assert (os.path.exists(self.incar)), 'no INCAR file for relaxation'
         relax_incar_path = os.path.abspath(self.incar)
         incar_relax = incar_upper(Incar.from_file(relax_incar_path))
@@ -115,8 +116,9 @@ class VASP(Task):
                     raise RuntimeError("not supported calculation setting for VASP")
 
                 if not ('ISIF' in incar and incar.get('ISIF') == isif):
-                    dlog.info("%s setting ISIF to %d" % (self.make_input_file.__name__, isif))
-                    incar['ISIF'] = isif
+                    if not (task_type == 'phonon'):
+                        dlog.info("%s setting ISIF to %d" % (self.make_input_file.__name__, isif))
+                        incar['ISIF'] = isif
 
             elif cal_type == 'static':
                 nsw = 0
@@ -200,7 +202,10 @@ class VASP(Task):
             return outcar_dict
 
     def forward_files(self, property_type='relaxation'):
-        return ['INCAR', 'POSCAR', 'KPOINTS', 'POTCAR']
+        if(property_type == 'phonon'):
+            return ['INCAR', 'POSCAR', 'KPOINTS', 'POTCAR', 'phonopy_disp.yaml', 'POSCAR-001']
+        else:
+            return ['INCAR', 'POSCAR', 'KPOINTS', 'POTCAR']
 
     def forward_common_files(self, property_type='relaxation'):
         potcar_not_link_list = ['vacancy', 'interstitial']
@@ -212,4 +217,7 @@ class VASP(Task):
             return ['INCAR', 'POTCAR']
 
     def backward_files(self, property_type='relaxation'):
-        return ['OUTCAR', 'outlog', 'CONTCAR', 'OSZICAR', 'XDATCAR']
+        if(property_type == 'phonon'):
+            return ['OUTCAR', 'outlog', 'CONTCAR', 'OSZICAR', 'XDATCAR', 'vasprun.xml']
+        else:
+            return ['OUTCAR', 'outlog', 'CONTCAR', 'OSZICAR', 'XDATCAR']
