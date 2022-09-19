@@ -203,7 +203,7 @@ class VASP(Task):
 
     def forward_files(self, property_type='relaxation'):
         if(property_type == 'phonon'):
-            return ['INCAR', 'POSCAR', 'KPOINTS', 'POTCAR', 'phonopy_disp.yaml', 'POSCAR-001']
+            return ['INCAR', 'POSCAR', 'KPOINTS', 'POTCAR', 'phonopy_disp.yaml', 'POSCAR-00*']
         else:
             return ['INCAR', 'POSCAR', 'KPOINTS', 'POTCAR']
 
