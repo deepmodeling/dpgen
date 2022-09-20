@@ -156,7 +156,7 @@ class Phonon(Property):
                 if os.path.isfile('vasprun.xml'):
                     os.system('phonopy --fc vasprun.xml')
                     if os.path.isfile('FORCE_CONSTANTS'):
-                        os.system('phonopy --dim="%d %d %d" -c POSCAR-unitcell band.conf'%(supercell_matrix[0],supercell_matrix[1],supercell_matrix[2]))
+                        os.system('phonopy --dim="%s %s %s" -c POSCAR-unitcell band.conf'%(supercell_matrix[0],supercell_matrix[1],supercell_matrix[2]))
                         os.system('phonopy-bandplot --gnuplot band.yaml > band.dat')
                         print('band.dat is created')
                     else:

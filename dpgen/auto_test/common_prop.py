@@ -202,7 +202,6 @@ def worker(work_path,
     machine, resources, command, group_size = util.get_machine_info(mdata, inter_type, property_type , supercell_matrix)
     api_version = mdata.get('api_version', '0.9')
 
-    print(command)
     if LooseVersion(api_version) < LooseVersion('1.0'):
         warnings.warn(f"the dpdispatcher will be updated to new version."
             f"And the interface may be changed. Please check the documents for more details")
