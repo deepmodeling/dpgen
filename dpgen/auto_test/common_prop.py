@@ -199,9 +199,11 @@ def worker(work_path,
     else:
         supercell_matrix = None
     run_tasks = [os.path.basename(ii) for ii in all_task]
-    machine, resources, command, group_size = util.get_machine_info(mdata, inter_type, property_type , supercell_matrix)
+    machine, resources, command, group_size = util.get_machine_info(mdata, inter_type, property_type)
+    if('phonolammps' not in command):
+        command = "/root/local/deepmd-kit-2.1.0/bin/phonolammps in.lammps -c POSCAR --dim %s %s %s"%(supercell_matrix[0],supercell_matrix[1],supercell_matrix[2])
+        print(f"Warning:We done find 'phonolammps' in your command sentence . We will use '/root/local/deepmd-kit-2.1.0/bin/phonolammps in.lammps -c POSCAR --dim %s %s %s'"%(supercell_matrix[0],supercell_matrix[1],supercell_matrix[2]))
     api_version = mdata.get('api_version', '0.9')
-
     if LooseVersion(api_version) < LooseVersion('1.0'):
         warnings.warn(f"the dpdispatcher will be updated to new version."
             f"And the interface may be changed. Please check the documents for more details")

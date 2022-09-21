@@ -71,7 +71,6 @@ class VASP(Task):
                         task_param):
         sepline(ch=output_dir)
         dumpfn(task_param, os.path.join(output_dir, 'task.json'), indent=4)
-        task_type = output_dir.split('/')[-2].split('_')[0]
         
         assert (os.path.exists(self.incar)), 'no INCAR file for relaxation'
         relax_incar_path = os.path.abspath(self.incar)
@@ -202,10 +201,12 @@ class VASP(Task):
             return outcar_dict
 
     def forward_files(self, property_type='relaxation'):
+        forward_files_list = ['INCAR', 'POSCAR', 'KPOINTS', 'POTCAR']
+        forward_files_phonon = ['phonopy_disp.yaml', 'POSCAR-00*']
         if(property_type == 'phonon'):
-            return ['INCAR', 'POSCAR', 'KPOINTS', 'POTCAR', 'phonopy_disp.yaml', 'POSCAR-00*']
+            return forward_files_list.extend(forward_files_phonon)
         else:
-            return ['INCAR', 'POSCAR', 'KPOINTS', 'POTCAR']
+            return forward_files_list
 
     def forward_common_files(self, property_type='relaxation'):
         potcar_not_link_list = ['vacancy', 'interstitial']
@@ -217,7 +218,9 @@ class VASP(Task):
             return ['INCAR', 'POTCAR']
 
     def backward_files(self, property_type='relaxation'):
+        backward_files_list = ['OUTCAR', 'outlog', 'CONTCAR', 'OSZICAR', 'XDATCAR']
+        backward_files_phonon = ['vasprun.xml']
         if(property_type == 'phonon'):
-            return ['OUTCAR', 'outlog', 'CONTCAR', 'OSZICAR', 'XDATCAR', 'vasprun.xml']
+            return backward_files_list.extend(backward_files_phonon)
         else:
-            return ['OUTCAR', 'outlog', 'CONTCAR', 'OSZICAR', 'XDATCAR']
+            return backward_files_list
