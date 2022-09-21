@@ -2,6 +2,7 @@ import glob
 import json
 import os
 import re
+import numpy as np
 
 from monty.serialization import loadfn, dumpfn
 from pymatgen.analysis.defects.generators import InterstitialGenerator
@@ -147,9 +148,10 @@ class Interstitial(Property):
                     os.remove(insert_element_task)
 
                 for ii in self.insert_ele:
-                    vds = InterstitialGenerator(ss, ii)
+                    pre_vds = InterstitialGenerator()
+                    vds = pre_vds.generate(ss, {self.insert_ele[0]: [[0, 0.2, 0.5]]})
                     for jj in vds:
-                        temp = jj.generate_defect_structure(self.supercell)
+                        temp = jj.get_supercell_structure(sc_mat=np.eye(3) * self.supercell)
                         smallest_distance = list(set(temp.distance_matrix.ravel()))[1]
                         if 'conf_filters' in self.parameter and 'min_dist' in self.parameter['conf_filters']:
                             min_dist = self.parameter['conf_filters']['min_dist']
@@ -188,6 +190,9 @@ class Interstitial(Property):
 
 
                 if 'bcc_self' in self.parameter and self.parameter['bcc_self']:
+                    super_size = self.supercell[0] * self.supercell[1] * self.supercell[2]
+                    num_atom = super_size * 2
+                    chl = -num_atom - 2
                     os.chdir(path_to_work)
                     with open('POSCAR', 'r') as fin:
                         fin.readline()
@@ -210,7 +215,7 @@ class Interstitial(Property):
                     with open(insert_element_task, 'a+') as fout:
                         print(self.insert_ele[0], file=fout)
                     dumpfn(self.supercell, 'supercell.json')
-                    pos_line[-2] = '%.6f' % float(latt_param/4/super_latt_param) + ' ' + '%.6f' % float(latt_param/2/super_latt_param) + ' 0.000000 ' + self.insert_ele[0]
+                    pos_line[chl] = '%.6f' % float(latt_param/4/super_latt_param) + ' ' + '%.6f' % float(latt_param/2/super_latt_param) + ' 0.000000 ' + self.insert_ele[0]
                     with open('POSCAR', 'w+') as fout:
                         for ii in pos_line:
                                 print(ii, file=fout)
@@ -224,7 +229,7 @@ class Interstitial(Property):
                     with open(insert_element_task, 'a+') as fout:
                         print(self.insert_ele[0], file=fout)
                     dumpfn(self.supercell, 'supercell.json')
-                    pos_line[-2] = '%.6f' % float(latt_param/2/super_latt_param) + ' ' + '%.6f' % float(latt_param/2/super_latt_param) + ' 0.000000 ' + self.insert_ele[0]
+                    pos_line[chl] = '%.6f' % float(latt_param/2/super_latt_param) + ' ' + '%.6f' % float(latt_param/2/super_latt_param) + ' 0.000000 ' + self.insert_ele[0]
                     with open('POSCAR', 'w+') as fout:
                         for ii in pos_line:
                                 print(ii, file=fout)
@@ -238,7 +243,7 @@ class Interstitial(Property):
                     with open(insert_element_task, 'a+') as fout:
                         print(self.insert_ele[0], file=fout)
                     dumpfn(self.supercell, 'supercell.json')
-                    pos_line[-2] = '%.6f' % float(latt_param/4/super_latt_param) + ' ' + '%.6f' % float(latt_param/4/super_latt_param) + ' ' + '%.6f' % float(latt_param/4/super_latt_param) + ' ' + self.insert_ele[0]
+                    pos_line[chl] = '%.6f' % float(latt_param/4/super_latt_param) + ' ' + '%.6f' % float(latt_param/4/super_latt_param) + ' ' + '%.6f' % float(latt_param/4/super_latt_param) + ' ' + self.insert_ele[0]
                     with open('POSCAR', 'w+') as fout:
                         for ii in pos_line:
                                 print(ii, file=fout)
@@ -258,7 +263,7 @@ class Interstitial(Property):
                     with open(insert_element_task, 'a+') as fout:
                         print(self.insert_ele[0], file=fout)
                     dumpfn(self.supercell, 'supercell.json')
-                    pos_line[-2] = '%.6f' % float(latt_param/3/super_latt_param) + ' ' + '%.6f' % float(latt_param/3/super_latt_param) + ' ' + '%.6f' % float(latt_param/3/super_latt_param) + ' ' + self.insert_ele[0]
+                    pos_line[chl] = '%.6f' % float(latt_param/3/super_latt_param) + ' ' + '%.6f' % float(latt_param/3/super_latt_param) + ' ' + '%.6f' % float(latt_param/3/super_latt_param) + ' ' + self.insert_ele[0]
                     pos_line[replace_label] = '%.6f' % float(latt_param/3*2/super_latt_param) + ' ' + '%.6f' % float(latt_param/3*2/super_latt_param) + ' ' + '%.6f' % float(latt_param/3*2/super_latt_param) + ' ' + self.insert_ele[0]
 
                     with open('POSCAR', 'w+') as fout:
@@ -274,7 +279,7 @@ class Interstitial(Property):
                     with open(insert_element_task, 'a+') as fout:
                         print(self.insert_ele[0], file=fout)
                     dumpfn(self.supercell, 'supercell.json')
-                    pos_line[-2] = '%.6f' % float((latt_param+2.1/2**0.5)/2/super_latt_param) + ' ' + '%.6f' % float((latt_param-2.1/2**0.5)/2/super_latt_param) + ' ' + '%.6f' % float(latt_param/2/super_latt_param) + ' ' + self.insert_ele[0]
+                    pos_line[chl] = '%.6f' % float((latt_param+2.1/2**0.5)/2/super_latt_param) + ' ' + '%.6f' % float((latt_param-2.1/2**0.5)/2/super_latt_param) + ' ' + '%.6f' % float(latt_param/2/super_latt_param) + ' ' + self.insert_ele[0]
                     pos_line[replace_label] = '%.6f' % float((latt_param-2.1/2**0.5)/2/super_latt_param) + ' ' + '%.6f' % float((latt_param+2.1/2**0.5)/2/super_latt_param) + ' ' + '%.6f' % float(latt_param/2/super_latt_param) + ' ' + self.insert_ele[0]
 
                     with open('POSCAR', 'w+') as fout:
@@ -290,7 +295,7 @@ class Interstitial(Property):
                     with open(insert_element_task, 'a+') as fout:
                         print(self.insert_ele[0], file=fout)
                     dumpfn(self.supercell, 'supercell.json')
-                    pos_line[-2] = '%.6f' % float(latt_param/2/super_latt_param) + ' ' + '%.6f' % float(latt_param/2/super_latt_param) + ' ' + '%.6f' % float((latt_param-2.1)/2/super_latt_param) + ' ' + self.insert_ele[0]
+                    pos_line[chl] = '%.6f' % float(latt_param/2/super_latt_param) + ' ' + '%.6f' % float(latt_param/2/super_latt_param) + ' ' + '%.6f' % float((latt_param-2.1)/2/super_latt_param) + ' ' + self.insert_ele[0]
                     pos_line[replace_label] = '%.6f' % float(latt_param/2/super_latt_param) + ' ' + '%.6f' % float(latt_param/2/super_latt_param) + ' ' + '%.6f' % float((latt_param+2.1)/2/super_latt_param) + ' ' + self.insert_ele[0]
 
                     with open('POSCAR', 'w+') as fout:
