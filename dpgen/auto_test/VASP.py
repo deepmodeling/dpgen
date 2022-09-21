@@ -71,7 +71,7 @@ class VASP(Task):
                         task_param):
         sepline(ch=output_dir)
         dumpfn(task_param, os.path.join(output_dir, 'task.json'), indent=4)
-        
+
         assert (os.path.exists(self.incar)), 'no INCAR file for relaxation'
         relax_incar_path = os.path.abspath(self.incar)
         incar_relax = incar_upper(Incar.from_file(relax_incar_path))
