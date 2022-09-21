@@ -8,6 +8,13 @@ from pymatgen.core import Structure
 from pymatgen.io.vasp import Incar
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.analysis.defects.core import Vacancy as pmg_Vacancy
+try:
+    from pymatgen.analysis.defects.core import Vacancy as pmg_Vacancy
+except ModuleNotFoundError:
+    print("pymatgen==2022.7.19 is the final release with `pymatgen.analysis.defects` module. Please check the version of pymatgen.")
+    print("Please install `pymatgen-analysis-defects`.")
+    print("Kindly reminder: `pybind11>=2.4` need to be installed previously.")
+    os._exit(0)
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 __package__ = 'auto_test'
