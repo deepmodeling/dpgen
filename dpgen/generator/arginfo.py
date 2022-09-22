@@ -16,7 +16,7 @@ def run_mdata_arginfo() -> Argument:
 
 # basics
 def basic_args() -> List[Argument]:
-    doc_type_map = 'Atom types.'
+    doc_type_map = 'Atom types. Reminder: The elements in param.json, type.raw and data.lmp(when using lammps) should be in the same order.'
     doc_mass_map = 'Standard atomic weights (default: "auto"). if one want to use isotopes, or non-standard element names, chemical symbols, or atomic number in the type_map list, please customize the mass_map list instead of using "auto".'
     doc_use_ele_temp = 'Currently only support fp_style vasp. \n\n\
 - 0: no electron temperature. \n\n\

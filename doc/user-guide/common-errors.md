@@ -1,11 +1,14 @@
 # Common Errors
 (Errors are sorted alphabetically)
 
+## Command not found: xxx.
+There is no such software in the environment, or it is unavailable. It may be because 1. It is not installed; 2. The Conda environment is not activated; 3. You have chosen the wrong image in machine.json.
+
+## dargs.dargs.ArgumentKeyError: [at location `xxx`] undefined key xxx is not allowed in strict mode.
+Strict format check has been applied since version 0.10.7.  To avoid misleading users, some older-version keys that are already ignored or absorbed into default settings are not allowed to be present. And the expected structure of the dictionary in the param.json also differs from those before version 0.10.7. This error will occur when format check finds older-fashion keys in the json file.  Please try deleting or annotating these keys, or correspondingly modulate the json file. Example files in the newest format could be found in [examples](https://github.com/deepmodeling/dpgen/tree/master/examples).
+
 ## dargs.dargs.ArgumentTypeError: [at root location] key `xxx` gets wrong value type, requires <xxx> but gets <xx>
 Please check your parameters with [DPGEN's Document](https://docs.deepmodeling.com/projects/dpgen/en/latest/). Maybe youhave superfluous parentheses in your parameter file.
-  
-## Dargs: xxx is not allowed in strict mode.
-Strict format check has been applied since version 0.10.7.  To avoid misleading users, some older-version keys that are already ignored or absorbed into default settings are not allowed to be present. And the expected structure of the dictionary in the param.json also differs from those before version 0.10.7. This error will occur when format check finds older-fashion keys in the json file.  Please try deleting or annotating these keys, or correspondingly modulate the json file. Example files in the newest format could be found in [examples](https://github.com/deepmodeling/dpgen/tree/master/examples).
 
 ## FileNotFoundError: [Errno 2] No such file or directory: '.../01.model_devi/graph.xxx.pb'
 If you find this error occurs, please check your initial data. Your model will not be generated if the initial data is incorrect.
@@ -13,6 +16,9 @@ If you find this error occurs, please check your initial data. Your model will n
 ## json.decoder.JSONDecodeError
 Your `.json` file is incorrect. It may be a mistake in syntax or a missing comma.
 
+## OSError: [Error cannot find valid a data system] Please check your setting for data systems
+Check if the path to the dataset in the parameter file is set correctly. Note that `init_data_sys` is a list, while `sys_configs` should be a two-dimensional list. The first dimension corresponds to `sys_idx`, and the second level are some poscars under each group. Refer to the [sample file](github.com/deepmodeling/dpgen/blob/master/examples/run/dp2.x-lammps-vasp/param_CH4_deepmd-kit-2.0.1.json ). 
+ 
 ## RuntimeError: job:xxxxxxx failed 3 times
 ```
 RuntimeError: job:xxxxxxx failed 3 times
@@ -38,3 +44,6 @@ The ratio of failed jobs is larger than ratio_failure. You can set a high value 
 
 ## ValueError: Cannot load file containing picked data when allow_picked=False
 Please ensure that you write the correct path of the dataset with no excess files. 
+
+## warnings.warn("Some Gromacs commands were NOT found; "
+You can ignore this warning if you don't need Gromacs. It just show that Gromacs is not installed in you environment.
