@@ -53,7 +53,7 @@ def init_bulk_abacus_args() -> List[Argument]:
 def init_bulk_variant_type_args() -> List[Variant]:
     doc_init_fp_style = "First-principle software. If this key is absent."
     return [Variant("init_fp_style", [
-            Argument("VASP", dict, init_bulk_vasp_args(), doc="VASP"),
+            Argument("VASP", dict, init_bulk_vasp_args(), doc="No more parameters is needed to be added."),
             Argument("ABACUS", dict, init_bulk_abacus_args(), doc="ABACUS"),
         ], default_tag="VASP", optional=True, doc=doc_init_fp_style)]
 
