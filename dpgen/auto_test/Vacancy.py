@@ -5,13 +5,7 @@ import re
 import numpy as np
 
 from monty.serialization import loadfn, dumpfn
-try:
-    from pymatgen.analysis.defects.generators import VacancyGenerator
-except ModuleNotFoundError:
-    print("pymatgen==2022.7.19 is the final release with `pymatgen.analysis.defects` module. Please check the version of pymatgen.")
-    print("Please install `pymatgen-analysis-defects`.")
-    print("Kindly reminder: `pybind11>=2.4` need to be installed previously.")
-    os._exit(0)
+from pymatgen.analysis.defects.generators import VacancyGenerator
 from pymatgen.core.structure import Structure
 
 from dpgen import dlog
