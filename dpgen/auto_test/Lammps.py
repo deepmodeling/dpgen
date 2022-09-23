@@ -393,6 +393,7 @@ class Lammps(Task):
         backward_files_list = ['log.lammps', 'outlog', 'dump.relax']
         backward_files_phonon = ['FORCE_CONSTANTS', 'POSCAR']
         if(property_type == "phonon"):
-            return backward_files_list.extend(backward_files_phonon)
+            backward_files_list.extend(backward_files_phonon)
+            return backward_files_list
         else:
             return backward_files_list

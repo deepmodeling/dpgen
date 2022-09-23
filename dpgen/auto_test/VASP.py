@@ -204,7 +204,8 @@ class VASP(Task):
         forward_files_list = ['INCAR', 'POSCAR', 'KPOINTS', 'POTCAR']
         forward_files_phonon = ['phonopy_disp.yaml', 'POSCAR-00*']
         if(property_type == 'phonon'):
-            return forward_files_list.extend(forward_files_phonon)
+            forward_files_list.extend(forward_files_phonon)
+            return forward_files_list
         else:
             return forward_files_list
 
@@ -221,6 +222,7 @@ class VASP(Task):
         backward_files_list = ['OUTCAR', 'outlog', 'CONTCAR', 'OSZICAR', 'XDATCAR']
         backward_files_phonon = ['vasprun.xml']
         if(property_type == 'phonon'):
-            return backward_files_list.extend(backward_files_phonon)
+            backward_files_list.extend(backward_files_phonon)
+            return backward_files_list
         else:
             return backward_files_list
