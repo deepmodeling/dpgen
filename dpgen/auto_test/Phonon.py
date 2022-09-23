@@ -13,11 +13,13 @@ from dpgen.generator.lib.vasp import incar_upper
 class Phonon(Property):
     def __init__(self,parameter,inter_param = None):
         parameter['reproduce'] = parameter.get('reproduce', False)
+        parameter['primitive'] = parameter.get('primitive', False)
         self.reprod = parameter['reproduce']
         if not self.reprod:
             if not ('init_from_suffix' in parameter and 'output_suffix' in parameter):
                 self.band_path = parameter['band_path']
                 self.supercell_matrix = parameter['supercell_matrix']
+                self.primitive = parameter['primitive']
             parameter['cal_type'] = parameter.get('cal_type', 'relaxation')
             self.cal_type = parameter['cal_type']
             default_cal_setting = {"relax_pos": True,
@@ -84,6 +86,9 @@ class Phonon(Property):
         if os.path.islink('POSCAR'):
             os.remove('POSCAR')
         os.symlink(os.path.relpath(equi_contcar), 'POSCAR')
+        if self.primitive:
+            os.system('phonopy --symmetry')
+            os.system('cp PPOSCAR POSCAR')
         os.chdir(cwd)
 
         if refine:
