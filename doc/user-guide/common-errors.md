@@ -17,7 +17,7 @@ If you find this error occurs, please check your initial data. Your model will n
 Your `.json` file is incorrect. It may be a mistake in syntax or a missing comma.
 
 ## OSError: [Error cannot find valid a data system] Please check your setting for data systems
-Check if the path to the dataset in the parameter file is set correctly. Note that `init_data_sys` is a list, while `sys_configs` should be a two-dimensional list. The first dimension corresponds to `sys_idx`, and the second level are some poscars under each group. Refer to the [sample file](github.com/deepmodeling/dpgen/blob/master/examples/run/dp2.x-lammps-vasp/param_CH4_deepmd-kit-2.0.1.json ). 
+Check if the path to the dataset in the parameter file is set correctly. Note that `init_data_sys` is a list, while `sys_configs` should be a two-dimensional list. The first dimension corresponds to `sys_idx`, and the second level are some poscars under each group. Refer to the [sample file](https://github.com/deepmodeling/dpgen/blob/master/examples/run/dp2.x-lammps-vasp/param_CH4_deepmd-kit-2.0.1.json ). 
  
 ## RuntimeError: job:xxxxxxx failed 3 times
 ```

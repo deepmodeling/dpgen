@@ -6,7 +6,7 @@
     - Size of `sel_a` and actual types of atoms in your system.
     - Index of `sys_configs` and `sys_idx`.
 
-2. Please verify the directories of `sys_configs`. If there isn't any POSCAR for `01.model_devi` in one iteration, it may happen that you write the false path of `sys_configs`. Note that `init_data_sys` is a list, while `sys_configs` should be a two-dimensional list. The first dimension corresponds to `sys_idx`, and the second level are some poscars under each group. Refer to the [sample file](github.com/deepmodeling/dpgen/blob/master/examples/run/dp2.x-lammps-vasp/param_CH4_deepmd-kit-2.0.1.json ). 
+2. Please verify the directories of `sys_configs`. If there isn't any POSCAR for `01.model_devi` in one iteration, it may happen that you write the false path of `sys_configs`. Note that `init_data_sys` is a list, while `sys_configs` should be a two-dimensional list. The first dimension corresponds to `sys_idx`, and the second level are some poscars under each group. Refer to the [sample file](https://github.com/deepmodeling/dpgen/blob/master/examples/run/dp2.x-lammps-vasp/param_CH4_deepmd-kit-2.0.1.json ). 
 
 3. Correct format of JSON file.
 
