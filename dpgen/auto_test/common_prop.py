@@ -200,7 +200,7 @@ def worker(work_path,
         supercell_matrix = None
     run_tasks = [os.path.basename(ii) for ii in all_task]
     machine, resources, command, group_size = util.get_machine_info(mdata, inter_type, property_type)
-    if('phonolammps' not in command and not inter_type not in ['vasp','abacus']):
+    if('phonolammps' not in command and not inter_type in ['vasp','abacus']):
         command = "/root/local/deepmd-kit-2.1.0/bin/phonolammps in.lammps -c POSCAR --dim %s %s %s"%(supercell_matrix[0],supercell_matrix[1],supercell_matrix[2])
         print(f"Warning:We done find 'phonolammps' in your command sentence . We will use '/root/local/deepmd-kit-2.1.0/bin/phonolammps in.lammps -c POSCAR --dim %s %s %s'"%(supercell_matrix[0],supercell_matrix[1],supercell_matrix[2]))
     api_version = mdata.get('api_version', '0.9')
