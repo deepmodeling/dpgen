@@ -3752,6 +3752,8 @@ def run_iter (param_file, machine_file) :
         with open (record) as frec :
             for line in frec :
                 iter_rec = [int(x) for x in line.split()]
+        if len(iter_rec) == 0: 
+            raise ValueError("There should not be blank lines in record.dpgen.")
         dlog.info ("continue from iter %03d task %02d" % (iter_rec[0], iter_rec[1]))
 
     cont = True

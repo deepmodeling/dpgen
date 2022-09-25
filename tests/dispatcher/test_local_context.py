@@ -55,7 +55,7 @@ class TestLocalContext(unittest.TestCase):
         self.job  = LocalContext('loc', work_profile)
         tasks = ['task0', 'task1']
         # test uploading non-existing file
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(OSError):
             self.job.upload(tasks, ['foo'])
 
     def test_upload(self) :

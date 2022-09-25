@@ -61,7 +61,7 @@ class LazyLocalContext(object) :
                         else:
                             pass
                     else:
-                        raise RuntimeError('do not find download file ' + fname)
+                        raise OSError('do not find download file ' + fname)
 
 
     def block_checkcall(self,
