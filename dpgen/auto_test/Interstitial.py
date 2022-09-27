@@ -151,7 +151,7 @@ class Interstitial(Property):
                     pre_vds = InterstitialGenerator()
                     vds = pre_vds.generate(ss, {self.insert_ele[0]: [[0, 0.2, 0.5]]})
                     for jj in vds:
-                        temp = jj.get_supercell_structure(sc_mat=np.eye(3) * self.supercell)
+                        temp = jj.get_supercell_structure(sc_mat=np.diag(self.supercell, k=0))
                         smallest_distance = list(set(temp.distance_matrix.ravel()))[1]
                         if 'conf_filters' in self.parameter and 'min_dist' in self.parameter['conf_filters']:
                             min_dist = self.parameter['conf_filters']['min_dist']
