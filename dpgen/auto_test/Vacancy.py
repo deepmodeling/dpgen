@@ -139,7 +139,7 @@ class Vacancy(Property):
                 vds = pre_vds.generate(ss)
                 dss = []
                 for jj in vds:
-                    dss.append(jj.get_supercell_structure(sc_mat=np.eye(3)*self.supercell))
+                    dss.append(jj.get_supercell_structure(sc_mat=np.diag(self.supercell, k=0))
 
                 print('gen vacancy with supercell ' + str(self.supercell))
                 os.chdir(path_to_work)
