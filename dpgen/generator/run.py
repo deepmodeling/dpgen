@@ -2794,8 +2794,7 @@ def make_fp_gaussian(iter_index,
         with open('input', 'w') as fp:
             fp.write(ret)
         os.chdir(cwd)
-    # link pp files
-    _link_fp_vasp_pp(iter_index, jdata)
+
 
 def make_fp_cp2k (iter_index,
                   jdata):
