@@ -417,14 +417,6 @@ def run_iter(param_file, machine_file):
     jdata_arginfo = simplify_jdata_arginfo()
     jdata = normalize(jdata_arginfo, jdata)
 
-    if jdata.get('pretty_print', False):
-        fparam = SHORT_CMD+'_' + \
-            param_file.split('.')[0]+'.'+jdata.get('pretty_format', 'json')
-        dumpfn(jdata, fparam, indent=4)
-        fmachine = SHORT_CMD+'_' + \
-            machine_file.split('.')[0]+'.'+jdata.get('pretty_format', 'json')
-        dumpfn(mdata, fmachine, indent=4)
-
     if mdata.get('handlers', None):
         if mdata['handlers'].get('smtp', None):
             que = queue.Queue(-1)
