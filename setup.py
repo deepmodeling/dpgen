@@ -29,7 +29,6 @@ install_requires=[
     'dpdispatcher>=0.3.11',
     'netCDF4',
     'dargs>=0.2.9',
-    'pybind11>=2.4',
     'pymatgen-analysis-defects'
 ]
 
