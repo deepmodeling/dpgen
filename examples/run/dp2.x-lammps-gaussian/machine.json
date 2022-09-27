@@ -9,9 +9,9 @@
         "context_type": "LebesgueContext",
         "local_root" : "./",
         "remote_profile":{
-          "email": "",
-          "password": "",
-          "program_id": ,
+          "email": "xxx",
+          "password": "xxx",
+          "program_id": 123,
             "keep_backup":true,
             "input_data":{
                 "job_type": "indicate",
@@ -45,9 +45,9 @@
         "context_type": "LebesgueContext",
         "local_root" : "./",
         "remote_profile":{
-          "email": "",
-          "password": "",
-          "program_id": ,
+          "email": "xxx",
+          "password": "xxx",
+          "program_id": 123,
             "keep_backup":true,
             "input_data":{
               "job_type": "indicate",
@@ -79,9 +79,9 @@
         "context_type": "LebesgueContext",
         "local_root" : "./",
         "remote_profile":{
-          "email": "",
-          "password": "",
-          "program_id": ,
+          "email": "xxx",
+          "password": "xxx",
+          "program_id": 123,
             "input_data":{
               "api_version":2,
               "job_type": "indicate",
