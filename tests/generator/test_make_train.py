@@ -6,7 +6,8 @@ import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 __package__ = 'generator'
-from .context import make_train
+import tempfile
+from .context import make_train, run_train
 from .context import param_file
 from .context import param_file_v1
 from .context import param_file_v1_et
@@ -334,6 +335,28 @@ class TestMakeTrain(unittest.TestCase):
             '../data.init/deepmd.hdf5#',
             '../data.iters/iter.000000/02.fp/data.000',
         ])
+        # test run_train -- confirm transferred files are correct
+        with tempfile.TemporaryDirectory() as remote_root:
+            run_train(1, jdata, {
+                "api_version": "1.0",
+                "train_command": (
+                    "test -d ../data.init/deepmd"
+                    "&& test -f ../data.init/deepmd.hdf5"
+                    "&& test -d ../data.iters/iter.000000/02.fp/data.000"
+                    "&& touch frozen_model.pb lcurve.out model.ckpt.meta model.ckpt.index model.ckpt.data-00000-of-00001 checkpoint"
+                    "&& echo dp"
+                ),
+                "train_machine": {
+                    "batch_type": "shell",
+                    "local_root": "./",
+                    "remote_root": remote_root,
+                    "context_type": "local",
+                },
+                "train_resources": {
+                    "group_size": 1,
+                },
+            })
+
         # remove testing dirs
         shutil.rmtree('iter.000001')
         shutil.rmtree('iter.000000')
