@@ -20,7 +20,7 @@ import logging.handlers
 import queue
 import warnings
 import shutil
-import time
+import itertools
 import copy
 import dpdata
 import numpy as np
@@ -381,7 +381,8 @@ def make_train (iter_index,
         create_path(task_path)
         os.chdir(task_path)
         for jj in init_data_sys :
-            if not os.path.isdir(jj) :
+            # HDF5 path contains #
+            if not (os.path.isdir(jj) if "#" not in jj else os.path.isfile(jj.split("#")[0])):
                 raise RuntimeError ("data sys %s does not exists, cwd is %s" % (jj, os.getcwd()))
         os.chdir(cwd)
         # set random seed for each model
@@ -464,7 +465,9 @@ def detect_batch_size(batch_size, system=None):
         return batch_size
     elif batch_size == "auto":
         # automaticcaly set batch size, batch_size = 32 // atom_numb (>=1, <=fram_numb)
-        s = dpdata.LabeledSystem(system, fmt='deepmd/npy')
+        # check if h5 file
+        format = 'deepmd/npy' if "#" not in system else 'deepmd/hdf5'
+        s = dpdata.LabeledSystem(system, fmt=format)
         return int(min( np.ceil(32.0 / float(s["coords"].shape[1]) ), s["coords"].shape[0]))
     else:
         raise RuntimeError("Unsupported batch size")
@@ -553,18 +556,18 @@ def run_train (iter_index,
     cwd = os.getcwd()
     os.chdir(work_path)
     fp_data = glob.glob(os.path.join('data.iters', 'iter.*', '02.fp', 'data.*'))
-    for ii in init_data_sys :
+    for ii in itertools.chain(init_data_sys, fp_data) :
         sys_paths = expand_sys_str(ii)
         for single_sys in sys_paths:
-            trans_comm_data += glob.glob(os.path.join(single_sys, 'set.*'))
-            trans_comm_data += glob.glob(os.path.join(single_sys, 'type*.raw'))
-            trans_comm_data += glob.glob(os.path.join(single_sys, 'nopbc'))
-    for ii in fp_data :
-        sys_paths = expand_sys_str(ii)
-        for single_sys in sys_paths:
-            trans_comm_data += glob.glob(os.path.join(single_sys, 'set.*'))
-            trans_comm_data += glob.glob(os.path.join(single_sys, 'type*.raw'))
-            trans_comm_data += glob.glob(os.path.join(single_sys, 'nopbc'))
+            if "#" not in single_sys:
+                trans_comm_data += glob.glob(os.path.join(single_sys, 'set.*'))
+                trans_comm_data += glob.glob(os.path.join(single_sys, 'type*.raw'))
+                trans_comm_data += glob.glob(os.path.join(single_sys, 'nopbc'))
+            else:
+                # H5 file
+                trans_comm_data.append(single_sys.split("#")[0])
+    # remove duplicated files
+    trans_comm_data = list(set(trans_comm_data))
     os.chdir(cwd)
 
     try:

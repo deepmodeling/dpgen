@@ -306,6 +306,39 @@ class TestMakeTrain(unittest.TestCase):
         shutil.rmtree('iter.000001')
         shutil.rmtree('iter.000000')
         
+    def test_1_data_v1_h5(self) :
+        """Test HDF5 file as input data."""
+        dpdata.LabeledSystem("data/deepmd", fmt='deepmd/npy').to_deepmd_hdf5('data/deepmd.hdf5')
+        with open (param_file_v1, 'r') as fp :
+            jdata = json.load (fp)
+        jdata.pop('use_ele_temp', None)
+        jdata['init_data_sys'].append('deepmd.hdf5')
+        jdata['init_batch_size'].append('auto')
+        with open (machine_file_v1, 'r') as fp:
+            mdata = json.load (fp)
+        make_train(0, jdata, mdata)
+        # make fake fp results #data == fp_task_min
+        _make_fake_fp(0, 0, jdata['fp_task_min'])
+        # make iter1 train
+        make_train(1, jdata, mdata)
+        # check data is linked
+        self.assertTrue(os.path.isdir(os.path.join('iter.000001', '00.train', 'data.iters', 'iter.000000', '02.fp')))
+        # check models inputs
+        with open(os.path.join('iter.%06d' % 1, 
+                               '00.train', 
+                               '%03d' % 0,
+                               "input.json")) as fp:
+            jdata0 = json.load(fp)
+        self.assertEqual(jdata0['training']['systems'], [
+            '../data.init/deepmd',
+            '../data.init/deepmd.hdf5#',
+            '../data.iters/iter.000000/02.fp/data.000',
+        ])
+        # remove testing dirs
+        shutil.rmtree('iter.000001')
+        shutil.rmtree('iter.000000')
+        os.remove('data/deepmd.hdf5')
+
 
 if __name__ == '__main__':
     unittest.main()
