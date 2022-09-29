@@ -80,7 +80,7 @@ def init_bulk_jdata_arginfo() -> Argument:
     doc_skip_relax = "If it's true, you may directly run stage 2 (perturb and scale) using an unrelaxed POSCAR."
     doc_pert_numb = "Number of perturbations for each scaled (key `scale`) POSCAR."
     doc_pert_box = "Anisotropic Perturbation for cells (independent changes of lengths of three box vectors as well as angel among) in decimal formats. 9 elements of the 3x3 perturbation matrix will be randomly sampled from a uniform distribution (default) in the range [-pert_box, pert_box]. Such a perturbation matrix adds the identity matrix gives the actual transformation matrix for this perturbation operation."
-    doc_pert_atom = "Perturbation of each atoms (Angstrom)."
+    doc_pert_atom = "Perturbation of atom coordinates (Angstrom). Random perturbations are performed on three coordinates of each atom by adding values randomly sampled from a uniform distribution in the range [-pert_atom, pert_atom]."
     doc_md_nstep = "Steps of AIMD in stage 3. If it's not equal to settings via `NSW` in `md_incar`, DP-GEN will follow `NSW`."
     doc_coll_ndata = "Maximal number of collected data."
     doc_type_map = "The indices of elements in deepmd formats will be set in this order."
