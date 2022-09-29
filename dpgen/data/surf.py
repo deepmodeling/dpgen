@@ -478,7 +478,7 @@ def pert_scaled(jdata) :
           
     else:         
        vacuum_num = jdata['vacuum_numb'] # the total number of vacuum layers
-       head_ratio = jdata['head_ratio'] # the nearby region with denser intervals (head region)
+       head_ratio = jdata['head_ratio'] # deciding the mid_point by vacum_max * head_ratio, which point separates the nearby region with denser intervals (head region) and the far-away region with sparser intervals (tail region).
        mid_point = jdata['mid_point'] # the mid point of head region and tail region 
        head_numb  = int(vacuum_num*head_ratio)
        tail_numb = vacuum_num - head_numb

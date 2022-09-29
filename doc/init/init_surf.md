@@ -27,9 +27,9 @@ According to [the source code of pert_scaled](https://github.com/deepmodeling/dp
 
 You can use `layer_numb` (the number of layers of the slab) or `z_min` (the total thickness) to specify the thickness of the atoms below. Then `vacuum_*` parameters specify the vacuum layers above. `dpgen init_surf` will make a series of structures with the thickness of vacuum layers from `vacuum_min` to `vacuum_max`. The number of vacuum layers is controlled by the parameter `vacuum_resol`. 
 
-The layers will be generated even when the size of `vacuum_resol` is 1. When the size of `vacuum_resol` is 2 or it is empty, the whole interval range is divided into the nearby region with denser intervals (head region) and the far-away region with sparser intervals (tail region), which are divided by mid_point. 
+The layers will be generated even when the size of `vacuum_resol` is 1. When the size of `vacuum_resol` is 2 or it is empty, the whole interval range is divided into the nearby region with denser intervals (head region) and the far-away region with sparser intervals (tail region), which are divided by `mid_point`. 
 
-When the size of `vacuum_resol` is 2, each of its elements decides the number of layers in the interval.
+When the size of `vacuum_resol` is 2, two elements respectively decide the number of intervals in head region and tail region.
 
 When `vacuum_resol` is empty, the number of intervals in the head region = vacuum_num * head_ratio. `vacuum_num` and `head_ratio` are both keys in `param.json`.
 
