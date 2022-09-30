@@ -149,7 +149,7 @@ class Interstitial(Property):
 
                 for ii in self.insert_ele:
                     pre_vds = InterstitialGenerator()
-                    vds = pre_vds.generate(ss, {self.insert_ele[0]: [[0, 0.2, 0.5]]})
+                    vds = pre_vds.generate(ss, {ii: [[0.1,0.1,0.1]]})
                     for jj in vds:
                         temp = jj.get_supercell_structure(sc_mat=np.diag(self.supercell, k=0))
                         smallest_distance = list(set(temp.distance_matrix.ravel()))[1]
