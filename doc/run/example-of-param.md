@@ -17,7 +17,7 @@ The basics related keys in param.json are given as follows
   ],
 ```
 
-The basics related keys specify the basic information about the system. "type_map" gives the atom types, i.e. "H" and "C". "mass_map" gives the standard atom weights, i.e. "1" and "12". 
+The basics related keys specify the basic information about the system. {dargs:argument}`type_map <run_jdata/type_map>` gives the atom types, i.e. "H" and "C". {dargs:argument}`mass_map <run_jdata/mass_map>` gives the standard atom weights, i.e. "1" and "12". 
 
 ## data
 
@@ -40,7 +40,7 @@ The data related keys in param.json are given as follows
   ],
 ```
 
-The data related keys specify the init data for training initial DP models and structures used for model_devi calculations. "init_data_prefix" and "init_data_sys" specify the location of the init data. "sys_configs_prefix" and "sys_configs" specify the location of the structures. 
+The data related keys specify the init data for training initial DP models and structures used for model_devi calculations. {dargs:argument}`init_data_prefix <run_jdata/init_data_prefix>` and {dargs:argument}`init_data_sys <run_jdata/init_data_sys>` specify the location of the init data. {dargs:argument}`sys_configs_prefix <run_jdata/sys_configs_prefix>` and {dargs:argument}`sys_configs <run_jdata/sys_configs>` specify the location of the structures. 
 
 Here, the init data is provided at "...... /init/CH4.POSCAR.01x01x01/02.md/sys-0004-0001/deepmd". These structures are divided into two groups and provided at "....../init/CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale*/00000*/POSCAR" and "....../init/CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale*/00001*/POSCAR". 
 
@@ -53,7 +53,7 @@ The training related keys in param.json are given as follows
   "default_training_param": {
   },
 ```
-The training related keys specify the details of training tasks. "numb_models" specifies the number of models to be trained. "default_training_param" specifies the training parameters for `deepmd-kit`. 
+The training related keys specify the details of training tasks. {dargs:argument}`numb_models <run_jdata/numb_models>` specifies the number of models to be trained. "default_training_param" specifies the training parameters for `deepmd-kit`. 
 
 Here, 4 DP models will be trained in `00.train`. A detailed explanation of training parameters can be found in DeePMD-kit’s documentation (https://docs.deepmodeling.com/projects/deepmd/en/master/).
 
@@ -100,9 +100,9 @@ The exploration related keys in param.json are given as follows
     }
   ],
 ```
-The exploration related keys specify the details of exploration tasks. "model_devi_dt" specifies timestep for MD simulation. "model_devi_skip" specifies the number of structures skipped for saving in each MD. "model_devi_f_trust_lo" and "model_devi_f_trust_hi" specify the lower and upper bound of model_devi of forces for the selection. "model_devi_clean_traj" specifies whether to clean traj folders in MD. If type of model_devi_clean_traj is boolean type then it denote whether to clean traj folders in MD since they are too large.In "model_devi_jobs", "sys_idx" specifies the group of structures used for model_devi calculations, "temps" specifies the temperature (K) in MD, "press" specifies the pressure (Bar) in MD, "trj_freq" specifies the frequency of trajectory saved in MD, "nsteps" specifies the running steps of MD, "ensemble" specifies the ensemble used in MD, and "_idx" specifies the index of iteration.
+The exploration related keys specify the details of exploration tasks. {dargs:argument}`model_devi_dt <run_jdata[model_devi_engine=lammps]/model_devi_dt>` specifies timestep for MD simulation. {dargs:argument}`model_devi_skip <run_jdata[model_devi_engine=lammps]/model_devi_skip>` specifies the number of structures skipped for saving in each MD. {dargs:argument}`model_devi_f_trust_lo <run_jdata[model_devi_engine=lammps]/model_devi_f_trust_lo>` and {dargs:argument}`model_devi_f_trust_hi <run_jdata[model_devi_engine=lammps]/model_devi_f_trust_hi>` specify the lower and upper bound of model_devi of forces for the selection. {dargs:argument}`model_devi_clean_traj <run_jdata[model_devi_engine=lammps]/model_devi_clean_traj>` specifies whether to clean traj folders in MD. If type of model_devi_clean_traj is boolean type then it denote whether to clean traj folders in MD since they are too large. In {dargs:argument}`model_devi_jobs <run_jdata[model_devi_engine=lammps]/model_devi_jobs>`, {dargs:argument}`sys_idx <run_jdata[model_devi_engine=lammps]/model_devi_jobs/sys_idx>` specifies the group of structures used for model_devi calculations, {dargs:argument}`temps <run_jdata[model_devi_engine=lammps]/model_devi_jobs/temps>` specifies the temperature (K) in MD, {dargs:argument}`press <run_jdata[model_devi_engine=lammps]/model_devi_jobs/press>` specifies the pressure (Bar) in MD, {dargs:argument}`trj_freq <run_jdata[model_devi_engine=lammps]/model_devi_jobs/trj_freq>` specifies the frequency of trajectory saved in MD, {dargs:argument}`nsteps <run_jdata[model_devi_engine=lammps]/model_devi_jobs/trj_freq>` specifies the running steps of MD, {dargs}`ensemble <run_jdata[model_devi_engine=lammps]/model_devi_jobs/ensemble>` specifies the ensemble used in MD, and "_idx" specifies the index of iteration.
 
-Here, MD simulations are performed at the temperature of 100 K and the pressure of 1.0 Bar with an integrator time of 2 fs under the nvt ensemble. Two iterations are set in "model_devi_jobs". MD simulations are run for 300 and 3000 time steps with the first and second groups of structures in "sys_configs" in 00 and 01 iterations. We choose to save all structures generated in MD simulations and have set `"trj_freq"` as 10, so 30 and 300 structures are saved in 00 and 01 iterations. If the "max_devi_f" of saved structure falls between 0.05 and 0.15, DP-GEN will treat the structure as a candidate. We choose to clean traj folders in MD since they are too large. If you want to save the most recent n iterations of traj folders, you can set "model_devi_clean_traj" to be an integer.
+Here, MD simulations are performed at the temperature of 100 K and the pressure of 1.0 Bar with an integrator time of 2 fs under the nvt ensemble. Two iterations are set in {dargs:argument}`model_devi_jobs <run_jdata[model_devi_engine=lammps]/model_devi_jobs>`. MD simulations are run for 300 and 3000 time steps with the first and second groups of structures in {dargs:argument}`sys_configs <run_jdata/sys_configs>` in 00 and 01 iterations. We choose to save all structures generated in MD simulations and have set {dargs:argument}`trj_freq <run_jdata[model_devi_engine=lammps]/model_devi_jobs/trj_freq>` as 10, so 30 and 300 structures are saved in 00 and 01 iterations. If the "max_devi_f" of saved structure falls between 0.05 and 0.15, DP-GEN will treat the structure as a candidate. We choose to clean traj folders in MD since they are too large. If you want to save the most recent n iterations of traj folders, you can set {dargs:argument}`model_devi_clean_traj <run_jdata[model_devi_engine=lammps]/model_devi_clean_traj>` to be an integer.
 
 ## labeling 
 
@@ -120,8 +120,8 @@ The labeling related keys in param.json are given as follows
   "fp_incar": "....../INCAR_methane"
 ```
 
-The labeling related keys specify the details of labeling tasks. "fp_style" specifies software for First Principles. "fp_task_max" and "fp_task_min" specify the minimum and maximum of structures to be calculated in `02.fp` of each iteration. "fp_pp_path" and "fp_pp_files" specify the location of the psuedo-potential file to be used for 02.fp. "fp_incar" specifies input file for VASP. INCAR must specify KSPACING and KGAMMA.
+The labeling related keys specify the details of labeling tasks. {dargs:argument}`fp_style <run_jdata/fp_style>` specifies software for First Principles. {dargs:argument}`fp_task_max <run_jdata/fp_task_max>` and {dargs:argument}`fp_task_min <run_jdata/fp_task_min>` specify the minimum and maximum of structures to be calculated in `02.fp` of each iteration. {dargs:argument}`fp_pp_path <run_jdata[fp_style=vasp]/fp_pp_path>` and {dargs:argument}`fp_pp_files <run_jdata[fp_style=vasp]/fp_pp_files>` specify the location of the psuedo-potential file to be used for 02.fp. {dargs:argument}`run_jdata[fp_style=vasp]/fp_incar` specifies input file for VASP. INCAR must specify KSPACING and KGAMMA.
 
-Here, a minimum of 1 and a maximum of 20 structures will be labeled using the VASP code with the INCAR provided at "....../INCAR_methane" and POTCAR provided at "....../methane/POTCAR" in each iteration. Note that the order of elements in POTCAR should correspond to the order in `type_map`. 
+Here, a minimum of 1 and a maximum of 20 structures will be labeled using the VASP code with the INCAR provided at "....../INCAR_methane" and POTCAR provided at "....../methane/POTCAR" in each iteration. Note that the order of elements in POTCAR should correspond to the order in {dargs:argument}`type_map <run_jdata/type_map>`. 
 
 All the keys of the DP-GEN are explained in detail in the section Parameters.
