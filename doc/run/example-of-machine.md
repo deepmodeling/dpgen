@@ -2,7 +2,7 @@
 
 ## DPDispatcher Update Note
 
-DPDispatcher has updated and the api of machine.json is changed. DP-GEN will use the new DPDispatcher if the value of key "api_version" in machine.json is equal to or large than 1.0. And for now, DPDispatcher is maintained on a separate repo (https://github.com/deepmodeling/dpdispatcher). Please check the documents (https://deepmd.readthedocs.io/projects/dpdispatcher/en/latest/) for more information about the new DPDispatcher. 
+DPDispatcher has updated and the api of machine.json is changed. DP-GEN will use the new DPDispatcher if the value of key {dargs:argument}`api_version <run_mdata/api_version>` in machine.json is equal to or large than 1.0. And for now, DPDispatcher is maintained on a separate repo (https://github.com/deepmodeling/dpdispatcher). Please check the documents (https://deepmd.readthedocs.io/projects/dpdispatcher/en/latest/) for more information about the new DPDispatcher. 
 
 DP-GEN will use the old DPDispatcher if the key {dargs:argument}`api_version <run_mdata/api_version>` is not specified in machine.json or the {dargs:argument}`api_version <run_mdata/api_version>` is smaller than 1.0. This gurantees that the old machine.json still works.
 
