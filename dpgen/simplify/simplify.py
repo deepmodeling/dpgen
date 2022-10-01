@@ -50,7 +50,7 @@ def get_multi_system(path, jdata):
     system = get_system_cls(jdata)
     system_paths = expand_sys_str(path)
     systems = dpdata.MultiSystems(
-        *[system(s, fmt='deepmd/npy') for s in system_paths])
+        *[system(s, fmt=('deepmd/npy' if "#" not in s else 'deepmd/hdf5')) for s in system_paths])
     return systems
 
 
