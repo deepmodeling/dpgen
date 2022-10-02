@@ -20,7 +20,7 @@ def general_simplify_arginfo() -> Argument:
         arginfo
     """
     doc_labeled = "If true, the initial data is labeled."
-    doc_pick_data = "Path to the directory with the pick data with the deepmd/npy format. Systems are detected recursively."
+    doc_pick_data = "Path to the directory with the pick data with the deepmd/npy or the HDF5 file with deepmd/hdf5 format. Systems are detected recursively."
     doc_init_pick_number = "The number of initial pick data."
     doc_iter_pick_number = "The number of pick data in each iteration."
     doc_model_devi_f_trust_lo = "The lower bound of forces for the selection for the model deviation."
