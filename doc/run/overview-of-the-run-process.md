@@ -36,14 +36,14 @@ In folder iter.000000/ 00.train:
 
 In folder iter.000000/ 01.model_devi：
 
-- Folder confs contains the initial configurations for LAMMPS MD converted from POSCAR you set in "sys_configs" of param.json. 
+- Folder confs contains the initial configurations for LAMMPS MD converted from POSCAR you set in {dargs:argument}`sys_configs <run_jdata/sys_configs>` of param.json. 
 - Folder task.000.00000x contains the input and output files of the LAMMPS. In folder task.000.00000x, file model_devi.out records the model deviation of concerned labels, energy and force in MD. It serves as the criterion for selecting which structures and doing first-principle calculations.
 
 In folder iter.000000/ 02.fp：
 
-- candidate.shuffle.000.out records which structures will be selected from last step 01.model_devi.  There are always far more candidates than the maximum you expect to calculate at one time. In this condition, DP-GEN will randomly choose up to `"fp_task_max"` structures and form the folder task.*.
-- rest_accurate.shuffle.000.out records the other structures where our model is accurate ("max_devi_f" is less than `"model_devi_f_trust_lo"`, no need to calculate any more), 
-- rest_failed.shuffled.000.out records the other structures where our model is too inaccurate (larger than `"model_devi_f_trust_hi"`, there may be some error).
+- candidate.shuffle.000.out records which structures will be selected from last step 01.model_devi.  There are always far more candidates than the maximum you expect to calculate at one time. In this condition, DP-GEN will randomly choose up to {dargs:argument}`fp_task_max <run_jdata/fp_task_max>` structures and form the folder task.*.
+- rest_accurate.shuffle.000.out records the other structures where our model is accurate (`max_devi_f` is less than {dargs:argument}`model_devi_f_trust_lo <run_jdata[model_devi_engine=lammps]/model_devi_jobs/model_devi_f_trust_lo>`, no need to calculate any more), 
+- rest_failed.shuffled.000.out records the other structures where our model is too inaccurate (larger than {dargs:argument}`model_devi_f_trust_hi <run_jdata[model_devi_engine=lammps]/model_devi_jobs/model_devi_f_trust_hi>`, there may be some error).
 - data.000: After first-principle calculations, DP-GEN will collect these data and change them into the format DeePMD-kit needs. In the next iteration's 00.train, these data will be trained together as well as the initial data.
 
 DP-GEN identifies the stage of the run process by a record file, record.dpgen, which will be created and upgraded by codes. Each line contains two numbers: the first is the index of iteration, and the second, ranging from 0 to 9, records which stage in each iteration is currently running.

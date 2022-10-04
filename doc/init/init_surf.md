@@ -13,7 +13,7 @@ tasks or MD tasks will be submitted automatically according to MACHINE.json. Tha
   "skip_relax": true,
 ```
 
-Basically `init_surf` can be divided into two parts , denoted as `stages` in `PARAM`:
+Basically `init_surf` can be divided into two parts , denoted as {dargs:argument}`stages <init_surf_jdata/stages>` in `PARAM`:
 1. Build specific surface in folder `00.place_ele`
 2. Pertub and scale in folder `01.scale_pert`
 
@@ -25,13 +25,13 @@ Generally, `init_surf` does not run AIMD but only generates a lot of configurati
 
 According to [the source code of pert_scaled](https://github.com/deepmodeling/dpgen/blob/8dea29ef125f66be9641afe5ac4970433a9c9ce1/dpgen/data/surf.py#L484), init_surf will generate a series of surface structures with specified separations between the sample layer and its periodic image. There are two ways to specify the interval in generating the vacuum layers: 1) to set the interval value and 2) to set the number of intervals.
 
-You can use `layer_numb` (the number of layers of the slab) or `z_min` (the total thickness) to specify the thickness of the atoms below. Then `vacuum_*` parameters specify the vacuum layers above. `dpgen init_surf` will make a series of structures with the thickness of vacuum layers from `vacuum_min` to `vacuum_max`. The number of vacuum layers is controlled by the parameter `vacuum_resol`. 
+You can use {dargs:argument}`layer_numb <init_surf_jdata/layer_numb>` (the number of layers of the slab) or {dargs:argument}`z_min <init_surf_jdata/z_min>` (the total thickness) to specify the thickness of the atoms below. Then `vacuum_*` parameters specify the vacuum layers above. `dpgen init_surf` will make a series of structures with the thickness of vacuum layers from {dargs:argument}`vacuum_min <init_surf_jdata/vacuum_min>` to {dargs:argument}`vacuum_max <init_surf_jdata/vacuum_max>`. The number of vacuum layers is controlled by the parameter {dargs:argument}`vacuum_resol <init_surf_jdata/vacuum_resol>`. 
 
-The layers will be generated even when the size of `vacuum_resol` is 1. When the size of `vacuum_resol` is 2 or it is empty, the whole interval range is divided into the nearby region with denser intervals (head region) and the far-away region with sparser intervals (tail region), which are divided by `mid_point`. 
+The layers will be generated even when the size of {dargs:argument}`vacuum_resol <init_surf_jdata/vacuum_resol>` is 1. When the size of {dargs:argument}`vacuum_resol <init_surf_jdata/vacuum_resol>` is 2 or it is empty, the whole interval range is divided into the nearby region with denser intervals (head region) and the far-away region with sparser intervals (tail region), which are divided by {dargs:argument}`mid_point <init_surf_jdata/mid_point>`. 
 
-When the size of `vacuum_resol` is 2, two elements respectively decide the number of intervals in head region and tail region.
+When the size of {dargs:argument}`vacuum_resol <init_surf_jdata/vacuum_resol>` is 2, two elements respectively decide the number of intervals in head region and tail region.
 
-When `vacuum_resol` is empty, the number of intervals in the head region = vacuum_num * head_ratio. `vacuum_num` and `head_ratio` are both keys in `param.json`.
+When {dargs:argument}`vacuum_resol <init_surf_jdata/vacuum_resol>` is empty, the number of intervals in the head region = vacuum_num * head_ratio. {dargs:argument}`vacuum_num <init_surf_jdata/vacuum_numb>` and {dargs:argument}`head_ratio <init_surf_jdata/head_ratio>` are both keys in `param.json`.
 
 Following is an example for `PARAM`, which generates data from a typical structure fcc.
 ```json
