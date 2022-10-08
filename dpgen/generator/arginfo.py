@@ -33,8 +33,8 @@ def basic_args() -> List[Argument]:
 
 def data_args() -> List[Argument]:
     doc_init_data_prefix = 'Prefix of initial data directories.'
-    doc_init_data_sys = 'Directories of initial data. You may use either absolute or relative path here. Systems will be detected recursively in the directories.'
-    doc_sys_format = 'Format of initial data.'
+    doc_init_data_sys = 'Paths of initial data. The path can be either a system diretory containing NumPy files or an HDF5 file. You may use either absolute or relative path here. Systems will be detected recursively in the directories or the HDF5 file.'
+    doc_sys_format = 'Format of sys_configs.'
     doc_init_batch_size = 'Each number is the batch_size of corresponding system for training in init_data_sys. One recommended rule for setting the sys_batch_size and init_batch_size is that batch_size mutiply number of atoms ot the stucture should be larger than 32. If set to auto, batch size will be 32 divided by number of atoms.'
     doc_sys_configs_prefix = 'Prefix of sys_configs.'
     doc_sys_configs = 'Containing directories of structures to be explored in iterations.Wildcard characters are supported here.'

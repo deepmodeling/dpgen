@@ -29,7 +29,8 @@ install_requires=[
     'dpdispatcher>=0.3.11',
     'netCDF4',
     'dargs>=0.2.9',
-    'pymatgen-analysis-defects'
+    'h5py',
+    'pymatgen-analysis-defects',
 ]
 
 setuptools.setup(
