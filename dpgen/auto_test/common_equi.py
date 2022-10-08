@@ -172,7 +172,7 @@ def run_equi(confs,
     forward_common_files = virtual_calculator.forward_common_files()
     backward_files = virtual_calculator.backward_files()
     #    backward_files += logs
-    machine, resources, command, group_size = util.get_machine_info(mdata, inter_type)
+    machine, resources, command, group_size = util.get_machine_info(mdata, inter_type,"relaxation")
     work_path = os.getcwd()
     print("%s --> Runing... " % (work_path))
 

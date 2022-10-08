@@ -99,3 +99,10 @@ class TestEOS(unittest.TestCase):
         shutil.copy(os.path.join(self.source_path, 'CONTCAR'), os.path.join(self.equi_path, 'CONTCAR'))
         with self.assertRaises(RuntimeError):
             self.eos.make_confs(self.target_path, self.equi_path)
+
+
+def tearDown(self):
+        if os.path.exists(self.equi_path):
+            shutil.rmtree(self.equi_path)
+        if os.path.exists(self.target_path):
+            shutil.rmtree(self.target_path)

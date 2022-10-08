@@ -14,12 +14,14 @@ class Phonon(Property):
     def __init__(self,parameter,inter_param = None):
         parameter['reproduce'] = parameter.get('reproduce', False)
         parameter['primitive'] = parameter.get('primitive', False)
+        parameter['approach'] =parameter.get('approach', "linear")
         self.reprod = parameter['reproduce']
         if not self.reprod:
             if not ('init_from_suffix' in parameter and 'output_suffix' in parameter):
                 self.band_path = parameter['band_path']
                 self.supercell_matrix = parameter['supercell_matrix']
                 self.primitive = parameter['primitive']
+                self.approach = parameter['approach']
             parameter['cal_type'] = parameter.get('cal_type', 'relaxation')
             self.cal_type = parameter['cal_type']
             default_cal_setting = {"relax_pos": True,
@@ -86,6 +88,7 @@ class Phonon(Property):
         if os.path.islink('POSCAR'):
             os.remove('POSCAR')
         os.symlink(os.path.relpath(equi_contcar), 'POSCAR')
+        os.symlink(os.path.relpath(equi_contcar), 'POSCAR.orig')
         if self.primitive:
             os.system('phonopy --symmetry')
             os.system('cp PPOSCAR POSCAR')
@@ -96,20 +99,66 @@ class Phonon(Property):
         else:
             if not os.path.exists(equi_contcar):
                 raise RuntimeError("please do relaxation first")
-            n_task = 1
 
-            for ii in range(n_task):
-                output_task = os.path.join(path_to_work,'task.%06d' % ii)
+            if(self.inter_param['type'] == 'vasp'):
+                os.chdir(path_to_work)
+                os.symlink(os.path.relpath(equi_contcar), 'POSCAR-unitcell')
+                with open("POSCAR-unitcell","r") as fp:
+                    lines = fp.read().split('\n')
+                    ele_list = lines[5].split()
+                os.system('phonopy -d --dim="%d %d %d" -c POSCAR-unitcell'%(int(supercell_matrix[0]),int(supercell_matrix[1]),int(supercell_matrix[2])))
+                if(self.approach == "linear"):
+                    output_task = os.path.join(path_to_work,'task.000000')
+                    os.makedirs(output_task,exist_ok=True)
+                    os.chdir(output_task)
+                    for jj in ['INCAR', 'POTCAR', 'POSCAR', 'conf.lmp', 'in.lammps','POSCAR-unitcell','SPOSCAR']:
+                        if os.path.exists(jj):
+                            os.remove(jj)
+                    task_list.append(output_task)
+                    os.symlink(os.path.join(path_to_work,"SPOSCAR"), 'POSCAR')
+                    with open('band.conf','w') as fp:
+                        fp.write('ATOM_NAME = ')
+                        for ii in ele_list:
+                            fp.write(ii)
+                            fp.write(' ')
+                        fp.write('\n')
+                        fp.write('DIM = %s %s %s\n'%(supercell_matrix[0],supercell_matrix[1],supercell_matrix[2]))
+                        fp.write('BAND = %s\n'%band_path)
+                        fp.write('FORCE_CONSTANTS=READ\n')
+                elif(self.approach == "displacement"):
+                    poscar_list = glob.glob("POSCAR-0*")
+                    n_task = len(poscar_list)
+                    for ii in range(n_task):
+                        output_task = os.path.join(path_to_work,'task.%06d' % ii)
+                        os.makedirs(output_task,exist_ok=True)
+                        os.chdir(output_task)
+                        for jj in ['INCAR', 'POTCAR', 'POSCAR', 'conf.lmp', 'in.lammps','POSCAR-unitcell','SPOSCAR']:
+                            if os.path.exists(jj):
+                                os.remove(jj)
+                        task_list.append(output_task)
+                        os.symlink(os.path.join(path_to_work,poscar_list[ii]), 'POSCAR')
+                    os.chdir("../")
+                    with open('band.conf','w') as fp:
+                        fp.write('ATOM_NAME = ')
+                        for ii in ele_list:
+                            fp.write(ii)
+                            fp.write(' ')
+                        fp.write('\n')
+                        fp.write('DIM = %s %s %s\n'%(supercell_matrix[0],supercell_matrix[1],supercell_matrix[2]))
+                        fp.write('BAND = %s\n'%band_path)
+            
+            elif(self.inter_param['type'] == 'deepmd'):
+                os.chdir(path_to_work)
+                os.symlink(os.path.relpath(equi_contcar), 'POSCAR-unitcell')
+                output_task = os.path.join(path_to_work,'task.000000')
                 os.makedirs(output_task,exist_ok=True)
                 os.chdir(output_task)
                 for jj in ['INCAR', 'POTCAR', 'POSCAR', 'conf.lmp', 'in.lammps','POSCAR-unitcell','SPOSCAR']:
                     if os.path.exists(jj):
                         os.remove(jj)
                 task_list.append(output_task)
-                os.symlink(os.path.relpath(equi_contcar), 'POSCAR-unitcell')
-                
-                #gen band.conf
-                with open("POSCAR-unitcell",'r') as fp :
+                os.symlink(os.path.join(path_to_work,"POSCAR-unitcell"),"POSCAR")
+                with open("POSCAR",'r') as fp :
                     lines = fp.read().split('\n')
                     ele_list = lines[5].split()
                 with open('band.conf','w') as fp:
@@ -119,16 +168,12 @@ class Phonon(Property):
                         fp.write(' ')
                     fp.write('\n')
                     fp.write('DIM = %s %s %s\n'%(supercell_matrix[0],supercell_matrix[1],supercell_matrix[2]))
-                    fp.write('BAND = %s\n'%band_path)
+                    fp.write('BAND = %s\n'%band_path)    
                     fp.write('FORCE_CONSTANTS=READ\n')
-            
-                #gen POSCAR
-                if (self.inter_param['type'] == "vasp"):
-                    os.system('phonopy -d --dim="%d %d %d" -c POSCAR-unitcell'%(int(supercell_matrix[0]),int(supercell_matrix[1]),int(supercell_matrix[2])))
-                    os.symlink('SPOSCAR','POSCAR')
-                else:
-                    os.system('cp POSCAR-unitcell POSCAR')
-                
+
+            else:
+                raise RuntimeError("Phonon calculation is just supported by vasp and deepmd")
+
             os.chdir(cwd)
         return task_list
 
@@ -153,22 +198,31 @@ class Phonon(Property):
         res_data = {}
         res_data['supercell_matrix'] = supercell_matrix
         ptr_data = "conf_dir: " + os.path.dirname(output_file) + "\n"
-        if not self.reprod:
-            for ii in range(len(all_tasks)):
-                os.chdir(all_tasks[ii])
-            
+        if not self.reprod:           
             if (self.inter_param['type'] == 'vasp'):
-                if os.path.isfile('vasprun.xml'):
-                    os.system('phonopy --fc vasprun.xml')
-                    if os.path.isfile('FORCE_CONSTANTS'):
-                        os.system('phonopy --dim="%s %s %s" -c POSCAR-unitcell band.conf'%(supercell_matrix[0],supercell_matrix[1],supercell_matrix[2]))
-                        os.system('phonopy-bandplot --gnuplot band.yaml > band.dat')
-                        print('band.dat is created')
+                if(self.parameter["approach"] == "linear"):
+                    os.chdir(all_tasks[0])
+                    if os.path.isfile('vasprun.xml'):
+                        os.system('phonopy --fc vasprun.xml')
+                        if os.path.isfile('FORCE_CONSTANTS'):
+                            os.system('phonopy --dim="%s %s %s" -c POSCAR-unitcell band.conf'%(supercell_matrix[0],supercell_matrix[1],supercell_matrix[2]))
+                            os.system('phonopy-bandplot --gnuplot band.yaml > band.dat')
+                            print('band.dat is created')
+                        else:
+                            print('FORCE_CONSTANTS No such file')
                     else:
-                        print('FORCE_CONSTANTS No such file')
-                else:
-                    print('vasprun.xml No such file')
+                        print('vasprun.xml No such file')
+                elif(self.parameter["approach"] == "displacement"):
+                    os.chdir(path_to_work)
+                    os.system('phonopy -f task.0*/vasprun.xml')
+                    if os.path.exists("FORCE_SET"):
+                        print('FORCE_SET is created')
+                    else:
+                        print('FORCE_SET can not be created')
+                    os.system('phonopy --dim="%s %s %s" -c POSCAR-unitcell band.conf'%(supercell_matrix[0],supercell_matrix[1],supercell_matrix[2]))
+                    os.system('phonopy-bandplot --gnuplot band.yaml > band.dat')
             else:
+                os.chdir(all_tasks[0])
                 if os.path.isfile('FORCE_CONSTANTS'):
                     os.system('phonopy --dim="%s %s %s" -c POSCAR band.conf'%(supercell_matrix[0],supercell_matrix[1],supercell_matrix[2]))
                     os.system('phonopy-bandplot --gnuplot band.yaml > band.dat')
