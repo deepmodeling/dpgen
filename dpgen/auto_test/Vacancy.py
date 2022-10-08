@@ -2,6 +2,7 @@ import glob
 import json
 import os
 import re
+import numpy as np
 
 from monty.serialization import loadfn, dumpfn
 from pymatgen.analysis.defects.generators import VacancyGenerator
@@ -134,10 +135,11 @@ class Vacancy(Property):
                 else:
                     ss = Structure.from_file(equi_contcar)
 
-                vds = VacancyGenerator(ss)
+                pre_vds = VacancyGenerator()
+                vds = pre_vds.generate(ss)
                 dss = []
                 for jj in vds:
-                    dss.append(jj.generate_defect_structure(self.supercell))
+                    dss.append(jj.get_supercell_structure(sc_mat=np.diag(self.supercell, k=0)))
 
                 print('gen vacancy with supercell ' + str(self.supercell))
                 os.chdir(path_to_work)

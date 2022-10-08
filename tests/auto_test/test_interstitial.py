@@ -85,16 +85,16 @@ class TestInterstitial(unittest.TestCase):
             st_file = os.path.join(ii, 'POSCAR')
             self.assertTrue(os.path.isfile(st_file))
             st0 = Structure.from_file(st_file)
-            inter_site = st0[-1]
-            inter = pmg_Interstitial(ref_st, inter_site, charge=0.0)
-            st1 = inter.generate_defect_structure(self.prop_param[0]['supercell'])
+            inter_site = st0[0]
+            inter = pmg_Interstitial(ref_st, inter_site)
+            st1 = inter.get_supercell_structure(sc_mat=np.eye(3)*self.prop_param[0]['supercell'])
             self.assertEqual(st0, st1)
 
         for ii in dfm_dirs[4:]:
             st_file = os.path.join(ii, 'POSCAR')
             self.assertTrue(os.path.isfile(st_file))
             st0 = Structure.from_file(st_file)
-            inter_site1 = st0.pop(-1)
+            inter_site1 = st0.pop(0)
             inter_site2 = st0.pop(-1)
             center = (inter_site1.coords + inter_site2.coords) / 2
             self.assertTrue((center[0] - center[1]) < 1e-4)

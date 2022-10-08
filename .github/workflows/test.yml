@@ -9,8 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7, 3.8]
-        PYMATGEN_VERSION: [2019.1.13, 2019.7.30]
+        python-version: [3.8, 3.9]
+        PYMATGEN_VERSION: [2022.7.19]
 
     steps:
     - uses: actions/checkout@v2

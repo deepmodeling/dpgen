@@ -112,11 +112,11 @@ Here is an example of `param.json` for QM7 dataset:
     },
     "init_pick_number":100,
     "iter_pick_number":100,
-    "f_trust_lo":0.25,
-    "f_trust_hi":0.45,
+    "model_devi_f_trust_lo":0.25,
+    "model_devi_f_trust_hi":0.45,
     "_comment": " that's all "
 }
 ```
 
-Here `pick_data` is the directory to data to simplify where the program recursively detects systems `System` with `deepmd/npy` format. `init_pick_number` and `iter_pick_number` are the numbers of picked frames. `e_trust_lo`, `e_trust_hi` mean the range of the deviation of the frame energy, and `f_trust_lo` and `f_trust_hi` mean the range of the max deviation of atomic forces in a frame. `fp_style` can only be `gaussian` currently. Other parameters are as the same as those of generator.
+Here {dargs:argument}`pick_data <simplify_jdata/pick_data>` is the directory to data to simplify where the program recursively detects systems `System` with `deepmd/npy` format. {dargs:argument}`init_pick_number <simplify_jdata/init_pick_number>` and {dargs:argument}`iter_pick_number <simplify_jdata/iter_pick_number>` are the numbers of picked frames. {dargs:argument}`model_devi_f_trust_lo <simplify_jdata/model_devi_f_trust_lo>` and {dargs:argument}`model_devi_f_trust_hi <simplify_jdata/model_devi_f_trust_hi>` mean the range of the max deviation of atomic forces in a frame. {dargs:argument}`fp_style <simplify_jdata/fp_style>` can be either `gaussian` or `vasp` currently. Other parameters are as the same as those of generator.
 
