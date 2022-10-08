@@ -18,6 +18,8 @@ with open(path.join('dpgen', '_date.py'), 'w') as fp :
     fp.write('date = \'%s\'' % today)
 
 install_requires=[
+    'spglib>=2.0.1'
+    'phonopy>=2.11.0'    
     'numpy>=1.14.3',
     'dpdata>=0.2.6',
     'pymatgen>=2019.1.13',

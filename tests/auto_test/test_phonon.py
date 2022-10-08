@@ -71,7 +71,6 @@ class TestPhonon(unittest.TestCase):
 
         for ii in dfm_dirs:
             self.assertTrue(os.path.isfile(os.path.join(ii, 'POSCAR')))
+            print(os.path.abspath(os.path.join(ii, 'POSCAR')))
             band_conf_file = os.path.join(ii, 'band.conf')
             self.assertTrue(os.path.isfile(band_conf_file))
-            self.assertEqual(os.path.realpath(os.path.join(self.target_path, 'POSCAR.orig')),
-                             os.path.realpath(os.path.join(self.equi_path, 'CONTCAR')))
