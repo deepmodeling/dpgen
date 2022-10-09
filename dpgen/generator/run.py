@@ -2672,10 +2672,11 @@ def make_fp_abacus_scf(iter_index,
             if fp_params['basis_type'] == 'lcao':
                 assert('fp_orb_files' in jdata and type(jdata['fp_orb_files']) == list and len(jdata['fp_orb_files']) == len(fp_pp_files))
                 fp_orb_files = jdata['fp_orb_files']
-        if 'deepks_out_labels' in fp_params:
-            if fp_params['deepks_out_labels'] == 1:
-                assert('fp_dpks_descriptor' in jdata and type(jdata['fp_dpks_descriptor']) == str)
-                fp_dpks_descriptor = jdata['fp_dpks_descriptor']
+        dpks_out_labels = 0 if 'deepks_out_labels' not in fp_params else fp_params['deepks_out_labels']
+        dpks_scf = 0 if 'deepks_scf' not in fp_params else fp_params['deepks_scf']
+        if dpks_out_labels or dpks_scf:
+            assert('fp_dpks_descriptor' in jdata and type(jdata['fp_dpks_descriptor']) == str)
+            fp_dpks_descriptor = jdata['fp_dpks_descriptor']
         #user_input = True
         ret_input = make_abacus_scf_input(fp_params)
     elif 'fp_incar' in jdata.keys():
