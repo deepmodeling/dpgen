@@ -19,6 +19,7 @@ import glob
 import fnmatch
 import dpdata
 import numpy as np
+from typing import Union, List
 
 from dpgen import dlog
 from dpgen import SHORT_CMD
@@ -47,7 +48,27 @@ def get_system_cls(jdata):
     return dpdata.System
 
 
-def get_multi_system(path, jdata):
+def get_multi_system(path: Union[str, List[str]], jdata: dict) -> dpdata.MultiSystems:
+    """Get MultiSystems from a path or list of paths.
+
+    Both NumPy and HDF5 formats are supported. For details
+    of two formats, refer to DeePMD-kit documentation.
+
+    If `labeled` in jdata is True, returns MultiSystems with LabeledSystem.
+    Otherwise, returns MultiSystems with System.
+    
+    Parameters
+    ----------
+    path : str or list of str
+        path or list of paths to the dataset
+    jdata : dict
+        parameters which may contain `labeled` key
+
+    Returns
+    -------
+    dpdata.MultiSystems
+        MultiSystems with LabeledSystem or System
+    """
     system = get_system_cls(jdata)
     if not isinstance(path, (list, tuple)):
         path = [path]
