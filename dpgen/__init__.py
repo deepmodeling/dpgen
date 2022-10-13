@@ -21,10 +21,6 @@ try:
     from ._version import version as __version__
 except ImportError:
     __version__ = 'unkown'
-try:
-    from ._date import date as __date__
-except ImportError:
-    __date__ = 'unkown'
 
 def info():
     """
