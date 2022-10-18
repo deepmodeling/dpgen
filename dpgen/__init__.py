@@ -29,7 +29,6 @@ def info():
 
     print('DeepModeling\n------------')
     print('Version: ' + __version__)
-    print('Date:    ' + __date__)
     print('Path:    ' + ROOT_PATH)
     print('')
     print('Dependency')
