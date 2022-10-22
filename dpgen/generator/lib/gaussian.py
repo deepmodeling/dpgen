@@ -32,7 +32,7 @@ def _crd2frag(symbols, crds, pbc=False, cell=None, return_bonds=False):
         atom.SetVector(*position)
     # Apply period boundry conditions
     # openbabel#1853, supported in v3.1.0
-    if self.pbc:
+    if pbc:
         uc = openbabel.OBUnitCell()
         uc.SetData(
             openbabel.vector3(cell[0][0], cell[0][1], cell[0][2]),
