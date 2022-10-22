@@ -29,6 +29,7 @@ dependencies = [
     'dargs>=0.2.9',
     'h5py',
     'pymatgen-analysis-defects',
+    'openbabel-wheel',
 ]
 requires-python = ">=3.6"
 readme = "README.md"
