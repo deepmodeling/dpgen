@@ -8,14 +8,11 @@ import numpy as np
 import dpdata
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import connected_components
-from scipy.spatial import cKDTree
 try:
+    # expect openbabel >= 3.1.0
     from openbabel import openbabel
 except ImportError:
-    try:
-        import openbabel
-    except ImportError:
-        pass
+    pass
 try:
     from ase import Atoms, Atom
     from ase.data import atomic_numbers
@@ -26,14 +23,6 @@ except ImportError:
 def _crd2frag(symbols, crds, pbc=False, cell=None, return_bonds=False):
     atomnumber = len(symbols)
     all_atoms = Atoms(symbols = symbols, positions = crds, pbc=pbc, cell=cell)
-    if pbc:
-        repeated_atoms = all_atoms.repeat(2)[atomnumber:]
-        tree = cKDTree(crds)
-        d = tree.query(repeated_atoms.get_positions(), k=1)[0]
-        nearest = d < 5
-        ghost_atoms = repeated_atoms[nearest]
-        realnumber = np.where(nearest)[0] % atomnumber
-        all_atoms += ghost_atoms
     # Use openbabel to connect atoms
     mol = openbabel.OBMol()
     mol.BeginModify()
@@ -41,6 +30,17 @@ def _crd2frag(symbols, crds, pbc=False, cell=None, return_bonds=False):
         atom = mol.NewAtom(idx)
         atom.SetAtomicNum(int(num))
         atom.SetVector(*position)
+    # Apply period boundry conditions
+    # openbabel#1853, supported in v3.1.0
+    if self.pbc:
+        uc = openbabel.OBUnitCell()
+        uc.SetData(
+            openbabel.vector3(cell[0][0], cell[0][1], cell[0][2]),
+            openbabel.vector3(cell[1][0], cell[1][1], cell[1][2]),
+            openbabel.vector3(cell[2][0], cell[2][1], cell[2][2]),
+        )
+        mol.CloneData(uc)
+        mol.SetPeriodicMol()
     mol.ConnectTheDots()
     mol.PerceiveBondOrders()
     mol.EndModify()
@@ -50,13 +50,6 @@ def _crd2frag(symbols, crds, pbc=False, cell=None, return_bonds=False):
         a = bond.GetBeginAtom().GetId()
         b = bond.GetEndAtom().GetId()
         bo = bond.GetBondOrder()
-        if a >= atomnumber and b >= atomnumber:
-            # duplicated
-            continue
-        elif a >= atomnumber:
-            a = realnumber[a-atomnumber]
-        elif b >= atomnumber:
-            b = realnumber[b-atomnumber]
         bonds.extend([[a, b, bo], [b, a, bo]])
     bonds = np.array(bonds, ndmin=2).reshape((-1, 3))
     graph = csr_matrix(
@@ -77,11 +70,7 @@ def _crd2mul(symbols, crds):
     mol = openbabel.OBMol()
     conv.ReadString(mol, xyzstring)
     gjfstring = conv.WriteString(mol)
-    try:
-        mul = int(gjfstring.split('\n')[4].split()[1])
-    except IndexError:
-        # openbabel 3.0
-        mul = int(gjfstring.split('\n')[5].split()[1])
+    mul = int(gjfstring.split('\n')[5].split()[1])
     return mul  
 
 
