@@ -110,7 +110,7 @@ def model_devi_jobs_template_args() -> List[Argument]:
         Argument("lmp", str, optional=True, doc=doc_template_lmp),
         Argument("plm", str, optional=True, doc=doc_template_plm),
     ]
-    return Argument("template", list, args, [], repeat=True, doc=doc_template)
+    return Argument("template", list, args, [], optional=True, repeat=True, doc=doc_template)
 
 
 def model_devi_jobs_rev_mat_args() -> List[Argument]:
@@ -122,7 +122,7 @@ def model_devi_jobs_rev_mat_args() -> List[Argument]:
         Argument("lmp", dict, optional=True, doc=doc_rev_mat_lmp),
         Argument("plm", dict, optional=True, doc=doc_rev_mat_plm),
     ]
-    return Argument("rev_mat", dict, args, [], repeat=True, doc=doc_rev_mat)
+    return Argument("rev_mat", dict, args, [], optional=True, repeat=True, doc=doc_rev_mat)
 
 
 def model_devi_jobs_args() -> List[Argument]:
