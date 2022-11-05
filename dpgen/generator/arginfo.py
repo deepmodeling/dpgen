@@ -101,7 +101,7 @@ def training_args() -> List[Argument]:
 
 
 # Exploration
-def model_devi_jobs_template_args() -> List[Argument]:
+def model_devi_jobs_template_args() -> Argument:
     doc_template = 'Give a template for 01.model_devi.'
     doc_template_lmp = 'The path to input.lammps template'
     doc_template_plm = 'The path to input.plumed template'
@@ -110,10 +110,10 @@ def model_devi_jobs_template_args() -> List[Argument]:
         Argument("lmp", str, optional=True, doc=doc_template_lmp),
         Argument("plm", str, optional=True, doc=doc_template_plm),
     ]
-    return Argument("template", list, args, [], optional=True, repeat=True, doc=doc_template)
+    return Argument("template", list, args, [], optional=True, repeat=False, doc=doc_template)
 
 
-def model_devi_jobs_rev_mat_args() -> List[Argument]:
+def model_devi_jobs_rev_mat_args() -> Argument:
     doc_rev_mat = '' # looking forward to update
     doc_rev_mat_lmp = '' # looking forward to update
     doc_rev_mat_plm = '' # looking forward to update
@@ -122,11 +122,12 @@ def model_devi_jobs_rev_mat_args() -> List[Argument]:
         Argument("lmp", dict, optional=True, doc=doc_rev_mat_lmp),
         Argument("plm", dict, optional=True, doc=doc_rev_mat_plm),
     ]
-    return Argument("rev_mat", list, args, [], optional=True, repeat=True, doc=doc_rev_mat)
+    return Argument("rev_mat", list, args, [], optional=True, repeat=False, doc=doc_rev_mat)
 
 
 def model_devi_jobs_args() -> List[Argument]:
     # this may be not correct
+    doc_sys_rev_mat = "" # looking forward to update
     doc_sys_idx = 'Systems to be selected as the initial structure of MD and be explored. The index corresponds exactly to the sys_configs.'
     doc_temps = 'Temperature (K) in MD.'
     doc_press = 'Pressure (Bar) in MD. Required when ensemble is npt.'
@@ -144,6 +145,7 @@ def model_devi_jobs_args() -> List[Argument]:
     args = [
         model_devi_jobs_template_args(), 
         model_devi_jobs_rev_mat_args(),
+        Argument("sys_rev_mat", list, optional=True, doc=doc_sys_rev_mat),
         Argument("sys_idx", list, optional=False, doc=doc_sys_idx),
         Argument("temps", list, optional=True, doc=doc_temps),
         Argument("press", list, optional=True, doc=doc_press),
@@ -187,6 +189,7 @@ The union of the two sets is made as candidate dataset.'
     doc_model_devi_merge_traj = 'If model_devi_merge_traj is set as True, only all.lammpstrj will be generated, instead of lots of small traj files.'
     doc_model_devi_nopbc = 'Assume open boundary condition in MD simulations.'
     doc_model_devi_plumed = '' # looking forward to update
+    doc_model_devi_plumed_path = '' # looking forward to update
     doc_shuffle_poscar = 'Shuffle atoms of each frame before running simulations. The purpose is to sample the element occupation of alloys.'
     doc_use_relative = 'Calculate relative force model deviation.'
     doc_epsilon = 'The level parameter for computing the relative force model deviation.'
@@ -227,6 +230,8 @@ The union of the two sets is made as candidate dataset.'
                  doc=doc_model_devi_nopbc),
         Argument("model_devi_plumed", 
                  bool, optional=True, default=False , doc=doc_model_devi_plumed),
+        Argument("model_devi_plumed_path", 
+                 bool, optional=True, default=False , doc=doc_model_devi_plumed_path),
         Argument("shuffle_poscar", bool, optional=True, default=False, doc=doc_shuffle_poscar),
         Argument("use_relative", bool, optional=True, default=False, doc=doc_use_relative),
         Argument("epsilon", float, optional=True, doc=doc_epsilon),
