@@ -102,7 +102,9 @@ def training_args() -> List[Argument]:
 
 # Exploration
 def model_devi_jobs_template_args() -> Argument:
-    doc_template = 'Give a template for 01.model_devi.'
+    doc_template = ('Give an input file template for the supported engine software adopted in 01.model_devi. '
+                   'Through user-defined template, any freedom (function) that is permitted by the engine '
+                   'software could be inherited (invoked) in the workflow.')
     doc_template_lmp = 'The path to input.lammps template'
     doc_template_plm = 'The path to input.plumed template'
 
@@ -114,9 +116,10 @@ def model_devi_jobs_template_args() -> Argument:
 
 
 def model_devi_jobs_rev_mat_args() -> Argument:
-    doc_rev_mat = '' # looking forward to update
-    doc_rev_mat_lmp = '' # looking forward to update
-    doc_rev_mat_plm = '' # looking forward to update
+    doc_rev_mat = ('revise matrix for revising variable(s) defined in the template into the specific values (iteration-resolved).'
+                   ' Values will be broadcasted for all tasks within the iteration invoking this key.')
+    doc_rev_mat_lmp = 'revise matrix for revising variable(s) defined in the lammps template into the specific values (iteration-resolved).'
+    doc_rev_mat_plm = 'revise matrix for revising variable(s) defined in the plumed template into specific values(iteration-resolved)'
 
     args = [
         Argument("lmp", dict, optional=True, doc=doc_rev_mat_lmp),
@@ -127,7 +130,9 @@ def model_devi_jobs_rev_mat_args() -> Argument:
 
 def model_devi_jobs_args() -> List[Argument]:
     # this may be not correct
-    doc_sys_rev_mat = "" # looking forward to update
+    doc_sys_rev_mat = ('system-resolved revise matrix for revising variable(s) defined in the template into specific values. '
+                       'Values should be individually assigned to each system adopted by this iteration, through a dictionary '
+                       'where first-level keys are values of sys_idx of this iteration.')
     doc_sys_idx = 'Systems to be selected as the initial structure of MD and be explored. The index corresponds exactly to the sys_configs.'
     doc_temps = 'Temperature (K) in MD.'
     doc_press = 'Pressure (Bar) in MD. Required when ensemble is npt.'
@@ -145,7 +150,7 @@ def model_devi_jobs_args() -> List[Argument]:
     args = [
         model_devi_jobs_template_args(), 
         model_devi_jobs_rev_mat_args(),
-        Argument("sys_rev_mat", list, optional=True, doc=doc_sys_rev_mat),
+        Argument("sys_rev_mat", dict, optional=True, doc=doc_sys_rev_mat),
         Argument("sys_idx", list, optional=False, doc=doc_sys_idx),
         Argument("temps", list, optional=True, doc=doc_temps),
         Argument("press", list, optional=True, doc=doc_press),
