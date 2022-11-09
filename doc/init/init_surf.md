@@ -33,6 +33,12 @@ When the size of {dargs:argument}`vacuum_resol <init_surf_jdata/vacuum_resol>` i
 
 When {dargs:argument}`vacuum_resol <init_surf_jdata/vacuum_resol>` is empty, the number of intervals in the head region = vacuum_num * head_ratio. {dargs:argument}`vacuum_num <init_surf_jdata/vacuum_numb>` and {dargs:argument}`head_ratio <init_surf_jdata/head_ratio>` are both keys in `param.json`.
 
+- Attach files in the task path
+
+One can use the machine parameter `forward_files` to upload other files besides POSCAR, INCAR, and POTCAR. For example, "vdw_kernal.bindat" for each task. 
+
+See [the document of task parameters](https://docs.deepmodeling.com/projects/dpdispatcher/en/latest/task.html#argument:task/forward_files).
+
 Following is an example for `PARAM`, which generates data from a typical structure fcc.
 ```json
 {
