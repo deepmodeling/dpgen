@@ -155,7 +155,7 @@ def model_devi_jobs_args() -> List[Argument]:
         Argument("temps", list, optional=True, doc=doc_temps),
         Argument("press", list, optional=True, doc=doc_press),
         Argument("trj_freq", int, optional=False, doc=doc_trj_freq),
-        Argument("nsteps", int, optional=False, doc=doc_nsteps),
+        Argument("nsteps", int, optional=True, doc=doc_nsteps),
         Argument("ensemble", str, optional=False, doc=doc_ensemble),
         Argument("neidelay", int, optional=True, doc=doc_neidelay),
         Argument("taut", float, optional=True, doc=doc_taut),
