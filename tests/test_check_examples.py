@@ -53,7 +53,7 @@ input_files = (
     (run_jdata, p_examples / "run" / "dp1.x-lammps-ABACUS-pw" / "methane" / "param.json"),
     (run_jdata, p_examples / "run" / "dp1.x-lammps-ABACUS-lcao-dpks" / "methane" / "param.json"),
     (run_jdata, p_examples / "run" / "dp1.x_lammps_gaussian" / "dodecane" / "dodecane.json"),
-    #(run_jdata, p_examples / "run" / "dp-lammps-enhance_sampling" / "param.json"),
+    (run_jdata, p_examples / "run" / "dp-lammps-enhance_sampling" / "param.json"),
     #(run_jdata, p_examples / "run" / "deprecated" / "param-mg-vasp.json"),
     #(run_jdata, p_examples / "run" / "deprecated" / "param-mg-vasp-ucloud.json"),
     #(run_jdata, p_examples / "run" / "deprecated" / "param-pyridine-pwscf.json"),
