@@ -276,6 +276,7 @@ class TestPostAmberDiff(unittest.TestCase, CompLabeledSys):
         self.system_1 = list(ms.systems.values())[0]
         with open (param_amber_file, 'r') as fp :
             jdata = json.load (fp)
+        jdata['type_map'] = self.system_1.get_type_map()
         post_fp(0, jdata)
         self.system_2 = list(dpdata.MultiSystems(type_map = jdata['type_map']).from_deepmd_raw('iter.000000/02.fp/data.000').systems.values())[0]
 
