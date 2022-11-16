@@ -3660,9 +3660,9 @@ def post_fp_amber_diff(iter_index, jdata):
     for ss in system_index :
         sys_output = glob.glob(os.path.join(work_path, "task.%s.*"%ss))
         sys_output.sort()
-        all_sys=dpdata.MultiSystems()
+        all_sys=dpdata.MultiSystems(type_map=jdata['type_map'])
         for oo in sys_output :
-            sys=dpdata.MultiSystems().from_deepmd_npy(os.path.join(oo, 'dataset'))
+            sys=dpdata.MultiSystems(type_map=jdata['type_map']).from_deepmd_npy(os.path.join(oo, 'dataset'))
             all_sys.append(sys)
         sys_data_path = os.path.join(work_path, 'data.%s'%ss)
         all_sys.to_deepmd_raw(sys_data_path)

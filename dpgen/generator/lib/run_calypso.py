@@ -313,7 +313,7 @@ def gen_main(iter_index, jdata, mdata, caly_run_opt_list, gen_idx):
 def analysis(iter_index, jdata, calypso_model_devi_path):
     # Analysis
 
-    ms = dpdata.MultiSystems()
+    ms = dpdata.MultiSystems(type_map=jdata['type_map'])
 
     cwd = os.getcwd()
     iter_name = make_iter_name(iter_index)
