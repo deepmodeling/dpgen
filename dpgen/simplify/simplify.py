@@ -51,7 +51,9 @@ def get_multi_system(path, jdata):
     system = get_system_cls(jdata)
     system_paths = expand_sys_str(path)
     systems = dpdata.MultiSystems(
-        *[system(s, fmt=('deepmd/npy' if "#" not in s else 'deepmd/hdf5')) for s in system_paths])
+        *[system(s, fmt=('deepmd/npy' if "#" not in s else 'deepmd/hdf5')) for s in system_paths],
+        type_map=jdata['type_map'],
+    )
     return systems
 
 
@@ -115,7 +117,7 @@ def init_pick(iter_index, jdata, mdata):
 
 
 def _init_dump_selected_frames(systems, labels, selc_idx, sys_data_path, jdata):
-    selc_systems = dpdata.MultiSystems()
+    selc_systems = dpdata.MultiSystems(type_map=jdata['type_map'])
     for j in selc_idx:
         sys_name, sys_id = labels[j]
         selc_systems.append(systems[sys_name][sys_id])
@@ -214,12 +216,12 @@ def post_model_devi(iter_index, jdata, mdata):
     f_trust_lo = jdata['model_devi_f_trust_lo']
     f_trust_hi = jdata['model_devi_f_trust_hi']
 
-    sys_accurate = dpdata.MultiSystems()
-    sys_candinate = dpdata.MultiSystems()
-    sys_failed = dpdata.MultiSystems()
+    type_map = jdata.get("type_map", [])
+    sys_accurate = dpdata.MultiSystems(type_map=type_map)
+    sys_candinate = dpdata.MultiSystems(type_map=type_map)
+    sys_failed = dpdata.MultiSystems(type_map=type_map)
     
     labeled = jdata.get("labeled", False)
-    type_map = jdata.get("type_map", [])
     sys_entire = dpdata.MultiSystems(type_map = type_map).from_deepmd_npy(os.path.join(work_path, rest_data_name + ".old"), labeled=labeled)
     
     detail_file_name = detail_file_name_prefix
@@ -270,7 +272,7 @@ def post_model_devi(iter_index, jdata, mdata):
               (counter['candidate'], len(pick_idx), float(len(pick_idx))/counter['candidate']*100., len(rest_idx), float(len(rest_idx))/counter['candidate']*100.))
 
     # dump the picked candinate data
-    picked_systems = dpdata.MultiSystems()
+    picked_systems = dpdata.MultiSystems(type_map = type_map)
     for j in pick_idx:
         sys_name, sys_id = labels[j]
         picked_systems.append(sys_candinate[sys_name][sys_id])
@@ -280,7 +282,7 @@ def post_model_devi(iter_index, jdata, mdata):
 
 
     # dump the rest data (not picked candinate data and failed data)
-    rest_systems = dpdata.MultiSystems()
+    rest_systems = dpdata.MultiSystems(type_map = type_map)
     for j in rest_idx:
         sys_name, sys_id = labels[j]
         rest_systems.append(sys_candinate[sys_name][sys_id])
