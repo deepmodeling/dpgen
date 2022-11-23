@@ -117,12 +117,16 @@ def get_sys_index(task) :
 
 def _check_empty_iter(iter_index, max_v = 0) :
     fp_path = os.path.join(make_iter_name(iter_index), fp_name)
-    fp_tasks = glob.glob(os.path.join(fp_path, "task.*"))
-    sys_index = get_sys_index(fp_tasks)
+    # check the number of collected data
+    sys_data = glob.glob(os.path.join(fp_path, "data.*"))
     empty_sys = []
-    for ii in sys_index:
-        sys_tasks = glob.glob(os.path.join(fp_path, "task." + ii + ".*"))
-        empty_sys.append(len(sys_tasks) < max_v)
+    for ii in sys_data :
+        nframe = 0
+        sys_paths = expand_sys_str(ii)
+        for single_sys in sys_paths:
+            sys = dpdata.LabeledSystem(os.path.join(single_sys), fmt = 'deepmd/npy')
+            nframe += len(sys)
+        empty_sys.append(nframe < max_v)
     return all(empty_sys)
 
 def copy_model(numb_model, prv_iter_index, cur_iter_index) :
@@ -3656,9 +3660,9 @@ def post_fp_amber_diff(iter_index, jdata):
     for ss in system_index :
         sys_output = glob.glob(os.path.join(work_path, "task.%s.*"%ss))
         sys_output.sort()
-        all_sys=dpdata.MultiSystems()
+        all_sys=dpdata.MultiSystems(type_map=jdata['type_map'])
         for oo in sys_output :
-            sys=dpdata.MultiSystems().from_deepmd_npy(os.path.join(oo, 'dataset'))
+            sys=dpdata.MultiSystems(type_map=jdata['type_map']).from_deepmd_npy(os.path.join(oo, 'dataset'))
             all_sys.append(sys)
         sys_data_path = os.path.join(work_path, 'data.%s'%ss)
         all_sys.to_deepmd_raw(sys_data_path)

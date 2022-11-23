@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
+requires = ["setuptools>=61", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -31,7 +31,7 @@ dependencies = [
     'pymatgen-analysis-defects',
     'openbabel-wheel',
 ]
-requires-python = ">=3.6"
+requires-python = ">=3.8"
 readme = "README.md"
 keywords = ["deep potential generator", "active learning", "deepmd-kit"]
 

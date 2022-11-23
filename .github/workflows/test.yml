@@ -19,7 +19,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
-      run: pip install coverage codecov pymatgen==${{ matrix.PYMATGEN_VERSION }} -e .
+      run: pip install coverage pymatgen==${{ matrix.PYMATGEN_VERSION }} -e .
     - name: Test
       run: coverage run --source=./dpgen -m unittest -v && coverage report
-    - run: codecov
+    - uses: codecov/codecov-action@v3
