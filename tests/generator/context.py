@@ -2,7 +2,7 @@ import sys,os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from dpgen.generator.run import *
-from dpgen.generator.lib.gaussian import detect_multiplicity
+from dpgen.generator.lib.gaussian import detect_multiplicity, _crd2frag
 from dpgen.generator.lib.ele_temp import NBandsEsti
 from dpgen.generator.lib.lammps import get_dumped_forces
 from dpgen.generator.lib.lammps import get_all_dumped_forces
