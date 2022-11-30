@@ -23,3 +23,8 @@ jobs:
     - name: Test
       run: coverage run --source=./dpgen -m unittest -v && coverage report
     - uses: codecov/codecov-action@v3
+  pass:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "All jobs passed"
