@@ -85,6 +85,6 @@ class TestVacancy(unittest.TestCase):
             self.assertTrue(os.path.isfile(st_file))
             st0 = Structure.from_file(st_file)
             vac_site = equiv_site_seq.pop(0)
-            vac = pmg_Vacancy(ref_st, vac_site[0], charge=0.0)
-            st1 = vac.generate_defect_structure(self.prop_param[0]['supercell'])
+            vac = pmg_Vacancy(ref_st, vac_site[0])
+            st1 = vac.get_supercell_structure(sc_mat=np.eye(3)*self.prop_param[0]['supercell'])
             self.assertEqual(st0, st1)

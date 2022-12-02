@@ -19,10 +19,11 @@ import glob
 import fnmatch
 import dpdata
 import numpy as np
+from typing import Union, List
 
 from dpgen import dlog
 from dpgen import SHORT_CMD
-from dpgen.util import sepline, expand_sys_str
+from dpgen.util import sepline, expand_sys_str, normalize
 from distutils.version import LooseVersion
 from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, make_dispatcher, make_submission
 from dpgen.generator.run import make_train, run_train, post_train, run_fp, post_fp, fp_name, model_devi_name, train_name, train_task_fmt, sys_link_fp_vasp_pp, make_fp_vasp_incar, make_fp_vasp_kp, make_fp_vasp_cp_cvasp, data_system_fmt, model_devi_task_fmt, fp_task_fmt
@@ -30,6 +31,7 @@ from dpgen.generator.run import make_train, run_train, post_train, run_fp, post_
 from dpgen.generator.lib.utils import log_iter, make_iter_name, create_path, record_iter
 from dpgen.generator.lib.gaussian import make_gaussian_input
 from dpgen.remote.decide_machine import  convert_mdata
+from .arginfo import simplify_jdata_arginfo
 
 
 picked_data_name = "data.picked"
@@ -46,11 +48,37 @@ def get_system_cls(jdata):
     return dpdata.System
 
 
-def get_multi_system(path, jdata):
+def get_multi_system(path: Union[str, List[str]], jdata: dict) -> dpdata.MultiSystems:
+    """Get MultiSystems from a path or list of paths.
+
+    Both NumPy and HDF5 formats are supported. For details
+    of two formats, refer to DeePMD-kit documentation.
+
+    If `labeled` in jdata is True, returns MultiSystems with LabeledSystem.
+    Otherwise, returns MultiSystems with System.
+    
+    Parameters
+    ----------
+    path : str or list of str
+        path or list of paths to the dataset
+    jdata : dict
+        parameters which may contain `labeled` key
+
+    Returns
+    -------
+    dpdata.MultiSystems
+        MultiSystems with LabeledSystem or System
+    """
     system = get_system_cls(jdata)
-    system_paths = expand_sys_str(path)
+    if not isinstance(path, (list, tuple)):
+        path = [path]
+    system_paths = []
+    for pp in path:
+        system_paths.extend(expand_sys_str(pp))
     systems = dpdata.MultiSystems(
-        *[system(s, fmt='deepmd/npy') for s in system_paths])
+        *[system(s, fmt=('deepmd/npy' if "#" not in s else 'deepmd/hdf5')) for s in system_paths],
+        type_map=jdata['type_map'],
+    )
     return systems
 
 
@@ -114,7 +142,7 @@ def init_pick(iter_index, jdata, mdata):
 
 
 def _init_dump_selected_frames(systems, labels, selc_idx, sys_data_path, jdata):
-    selc_systems = dpdata.MultiSystems()
+    selc_systems = dpdata.MultiSystems(type_map=jdata['type_map'])
     for j in selc_idx:
         sys_name, sys_id = labels[j]
         selc_systems.append(systems[sys_name][sys_id])
@@ -213,12 +241,12 @@ def post_model_devi(iter_index, jdata, mdata):
     f_trust_lo = jdata['model_devi_f_trust_lo']
     f_trust_hi = jdata['model_devi_f_trust_hi']
 
-    sys_accurate = dpdata.MultiSystems()
-    sys_candinate = dpdata.MultiSystems()
-    sys_failed = dpdata.MultiSystems()
+    type_map = jdata.get("type_map", [])
+    sys_accurate = dpdata.MultiSystems(type_map=type_map)
+    sys_candinate = dpdata.MultiSystems(type_map=type_map)
+    sys_failed = dpdata.MultiSystems(type_map=type_map)
     
     labeled = jdata.get("labeled", False)
-    type_map = jdata.get("type_map", [])
     sys_entire = dpdata.MultiSystems(type_map = type_map).from_deepmd_npy(os.path.join(work_path, rest_data_name + ".old"), labeled=labeled)
     
     detail_file_name = detail_file_name_prefix
@@ -269,7 +297,7 @@ def post_model_devi(iter_index, jdata, mdata):
               (counter['candidate'], len(pick_idx), float(len(pick_idx))/counter['candidate']*100., len(rest_idx), float(len(rest_idx))/counter['candidate']*100.))
 
     # dump the picked candinate data
-    picked_systems = dpdata.MultiSystems()
+    picked_systems = dpdata.MultiSystems(type_map = type_map)
     for j in pick_idx:
         sys_name, sys_id = labels[j]
         picked_systems.append(sys_candinate[sys_name][sys_id])
@@ -279,7 +307,7 @@ def post_model_devi(iter_index, jdata, mdata):
 
 
     # dump the rest data (not picked candinate data and failed data)
-    rest_systems = dpdata.MultiSystems()
+    rest_systems = dpdata.MultiSystems(type_map = type_map)
     for j in rest_idx:
         sys_name, sys_id = labels[j]
         rest_systems.append(sys_candinate[sys_name][sys_id])
@@ -413,13 +441,8 @@ def run_iter(param_file, machine_file):
         with open(machine_file, 'r') as fp:
             mdata = json.load(fp)
 
-    if jdata.get('pretty_print', False):
-        fparam = SHORT_CMD+'_' + \
-            param_file.split('.')[0]+'.'+jdata.get('pretty_format', 'json')
-        dumpfn(jdata, fparam, indent=4)
-        fmachine = SHORT_CMD+'_' + \
-            machine_file.split('.')[0]+'.'+jdata.get('pretty_format', 'json')
-        dumpfn(mdata, fmachine, indent=4)
+    jdata_arginfo = simplify_jdata_arginfo()
+    jdata = normalize(jdata_arginfo, jdata)
 
     if mdata.get('handlers', None):
         if mdata['handlers'].get('smtp', None):

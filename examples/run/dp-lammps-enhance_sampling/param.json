@@ -93,19 +93,19 @@
   "model_devi_clean_traj":  false,
   "model_devi_plumed"    :    true,
   "model_devi_jobs":  [
-        {   "sys_idx": [0],"traj_freq": 10,"_idx": "00",
+        {   "sys_idx": [0],"trj_freq": 10,"_idx": "00",
             "template":{ "lmp": "lmp/input.lammps", "plm": "lmp/input.plumed" },
             "rev_mat":{ "lmp": {"V_NSTEPS": [20000], "V_TEMP": [300], "V_PRES": [1]},
                         "plm": {"V_TEMP":  [300], "V_STRIDE": [10]}
                       }
         },
-        {   "sys_idx": [0],"traj_freq": 10,"_idx": "01",
+        {   "sys_idx": [0],"trj_freq": 10,"_idx": "01",
             "template":{ "lmp": "lmp/input.lammps", "plm": "lmp/input.plumed" },
             "rev_mat":{ "lmp": {"V_NSTEPS": [50000], "V_TEMP": [300], "V_PRES": [1]},
                         "plm": {"V_TEMP":  [300], "V_STRIDE": [10]}
                       }
         },
-        {   "sys_idx": [1],"traj_freq": 10,"_idx": "01",
+        {   "sys_idx": [1],"trj_freq": 10,"_idx": "01",
             "template":{ "lmp": "lmp/input.lammps", "plm": "lmp/input.plumed" },
             "rev_mat":{ "lmp": {"V_NSTEPS": [300000], "V_TEMP": [300], "V_PRES": [1]},
                         "plm": {"V_TEMP":  [300], "V_STRIDE": [10]}
