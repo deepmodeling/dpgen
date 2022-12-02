@@ -3,7 +3,6 @@ import dpdata
 import numpy as np
 import unittest
 import importlib
-import textwrap
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 __package__ = 'generator'
@@ -233,6 +232,7 @@ def _write_lammps_dump(sys, dump_file, f_idx = 0) :
         for ii in range(natoms) :
             fp.write('%d %d %f %f %f\n' % (ii+1, atype[ii]+1, coord[ii][0], coord[ii][1], coord[ii][2]))
 
+
 def _make_fake_md(idx, md_descript, atom_types, type_map, ele_temp = None) :
     """
     md_descript: list of dimension
@@ -301,7 +301,7 @@ def _make_fake_md_merge_traj(idx, md_descript, atom_types, type_map, ele_temp = 
             os.makedirs(task_dir,exist_ok = True)
             for ii in range(nframes):
                 _write_lammps_dump(sys,os.path.join(task_dir,'all.lammpstrj'),ii)
-            file_content = textwrap.dedent("""\
+            file_content = """\
 0.000000000000000000e+01 0.000000000000000000e+00 0.000000000000000000e+00 0.000000000000000000e+00 0.000000000000000000e+00 0.000000000000000000e+00 0.000000000000000000e+00
 1.000000000000000000e+01 0.000000000000000000e+00 0.000000000000000000e+00 0.000000000000000000e+00 2.899999999999999800e-02 0.000000000000000000e+00 0.000000000000000000e+00
 2.000000000000000000e+01 0.000000000000000000e+00 0.000000000000000000e+00 0.000000000000000000e+00 5.799999999999999600e-02 0.000000000000000000e+00 0.000000000000000000e+00
@@ -312,7 +312,7 @@ def _make_fake_md_merge_traj(idx, md_descript, atom_types, type_map, ele_temp = 
 7.000000000000000000e+01 0.000000000000000000e+00 0.000000000000000000e+00 0.000000000000000000e+00 2.029999999999999860e-01 0.000000000000000000e+00 0.000000000000000000e+00
 8.000000000000000000e+01 0.000000000000000000e+00 0.000000000000000000e+00 0.000000000000000000e+00 2.319999999999999840e-01 0.000000000000000000e+00 0.000000000000000000e+00
 9.000000000000000000e+01 0.000000000000000000e+00 0.000000000000000000e+00 0.000000000000000000e+00 2.610000000000000098e-01 0.000000000000000000e+00 0.000000000000000000e+00
-""")
+"""
             with open(os.path.join(task_dir, 'model_devi.out') , 'w') as fp:
                 fp.write(file_content)
             if ele_temp is not None:
