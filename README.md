@@ -18,6 +18,9 @@ Yuzhi Zhang, Haidi Wang, Weijie Chen, Jinzhe Zeng, Linfeng Zhang, Han Wang, and 
 + **Highly scalable**: With modularized code structures, users and developers can easily extend DP-GEN for their most relevant needs. DP-GEN currently supports for HPC systems ([Slurm](https://slurm.schedmd.com/), [PBS](https://www.openpbs.org/), LSF and cloud machines), Deep Potential interface with DeePMD-kit, MD interface with [LAMMPS](https://www.lammps.org/), [Gromacs](http://www.gromacs.org/), [AMBER](https://ambermd.org/), Calypso and *ab-initio* calculation interface with [VASP](https://www.vasp.at/), [PWSCF](https://www.quantum-espresso.org/), [CP2K](https://www.cp2k.org/), [SIESTA](https://departments.icmab.es/leem/siesta/), [Gaussian](https://gaussian.com/), Abacus, [PWmat](http://www.pwmat.com/), etc. We're sincerely welcome and embraced to users' contributions, with more possibilities and cases to use DP-GEN.
 
 ## Download and Install
+
+DP-GEN only supports Python 3.8 and above.
+
 One can download the source code of dpgen by
 ```bash
 git clone https://github.com/deepmodeling/dpgen.git
