@@ -2197,13 +2197,7 @@ def _make_fp_vasp_inner (iter_index,
             cwd = os.getcwd()
             os.chdir(fp_task_path)
             if cluster_cutoff is None:
-                if model_devi_engine == "lammps":
-                    if model_devi_merge_traj:
-                        conf_sys.to("lammps/lmp", "conf.dump")
-                    else:
-                        os.symlink(os.path.relpath(conf_name), 'conf.dump')
-                    os.symlink(os.path.relpath(job_name), 'job.json')
-                elif model_devi_engine == "gromacs":
+                if model_devi_engine in ("lammps", "gromacs"):
                     os.symlink(os.path.relpath(conf_name), 'conf.dump')
                     os.symlink(os.path.relpath(job_name), 'job.json')
                 elif model_devi_engine == "amber":
@@ -2252,7 +2246,7 @@ def _make_fp_vasp_inner (iter_index,
             if model_devi_engine == "lammps":
                 sys = None
                 if model_devi_merge_traj:
-                    sys = dpdata.System('conf.dump', fmt = "lammps/lmp", type_map = type_map)
+                    sys = conf_sys
                 else :
                     sys = dpdata.System('conf.dump', fmt = "lammps/dump", type_map = type_map)
                 sys.to_vasp_poscar('POSCAR')
