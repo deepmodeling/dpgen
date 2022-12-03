@@ -553,7 +553,7 @@ def run_train (iter_index,
     #     else:
     #         run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in all_task]
-    
+ 
     forward_files = [train_input_file]
     if 'srtab_file_path' in jdata.keys():
         forward_files.append(zbl_file)
