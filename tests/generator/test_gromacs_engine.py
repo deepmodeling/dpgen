@@ -40,8 +40,6 @@ class TestGromacsModelDeviEngine(unittest.TestCase):
             "model_devi_dt":         0.001,
             "model_devi_f_trust_lo": 0.05,
             "model_devi_f_trust_hi": 0.10,
-            "model_devi_e_trust_lo": 1e10,
-            "model_devi_e_trust_hi": 1e10,
             "model_devi_clean_traj": False,
             "model_devi_skip":       0,
             "model_devi_nopbc":      True,
@@ -88,7 +86,9 @@ class TestGromacsModelDeviEngine(unittest.TestCase):
         shutil.copy(os.path.join(path_1, "model_devi.out"), os.path.join(path_2, "model_devi.out"))
         shutil.copytree(os.path.join(path_1, "traj"), os.path.join(path_2, "traj"))
 
-    def test_make_model_devi_gromacs(self):
+    
+    @unittest.skipIf(importlib.util.find_spec("openbabel") !=  None, "when openbabel is found, this test will be skipped. ")
+    def test_make_model_devi_gromacs_without_openbabel(self):
         flag = make_model_devi(iter_index=0,
                                jdata=self.jdata,
                                mdata={"deepmd_version": "2.0"})
@@ -100,10 +100,13 @@ class TestGromacsModelDeviEngine(unittest.TestCase):
         self._check_dir(self.model_devi_task_path, post=True)
     
     @unittest.skipIf(importlib.util.find_spec("openbabel") is None, "requires openbabel")
-    def test_make_fp_gaussian(self):
+    def test_make_model_devi_gromacs_with_openbabel(self):
+        flag = make_model_devi(iter_index=0,
+                               jdata=self.jdata,
+                               mdata={"deepmd_version": "2.0"})
+        self._copy_outputs(os.path.join(self.dirname, "outputs"), self.model_devi_task_path)
         make_fp_gaussian(iter_index=0, jdata=self.jdata)
         candi = np.loadtxt(os.path.join(self.fp_path, "candidate.shuffled.000.out"), dtype=np.str)
-        candi_ref = np.loadtxt(os.path.join(self.dirname, "outputs", "candidate.shuffled.000.out"), dtype=np.str)
         self.assertEqual(sorted([int(i) for i in candi[:,1]]), [0,10,20,30,50])
         
      

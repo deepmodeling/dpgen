@@ -14,7 +14,6 @@
     "md_nstep" : 	10,
     "pert_box":		0.03,
     "pert_atom":	0.01,
-    "deepgen_templ":	"../generator/template/",
     "coll_ndata":	5000,
     "_comment":		"that's all"
 }

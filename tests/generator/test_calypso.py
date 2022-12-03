@@ -46,9 +46,9 @@ class TestCALYPSOScript(unittest.TestCase):
         os.remove('model_devi.out')
 
     def test_make_calypso_input(self):
-        ret = make_calypso_input(["Mg","Al","Cu"],[1,1,1],[1,4],[30],[
+        ret = make_calypso_input(["Mg","Al","Cu"],[1,1,1],[1,4],30,[
                               [1.48,1.44,1.59],[1.44,1.41,1.56],[1.59,1.56,1.70]
-                              ],[0.6],[5],[3],[13],"T","T",[31],[[1,10],[1,10],[1,10]],[0],[0.01])
+                              ],0.6,5,3,13,"T","T",31,[[1,10],[1,10],[1,10]],0,0.01)
         #with open('calypso_test_path/input.dat','w') as fin:
         with open('input.dat','w') as fin:
             fin.write(ret)
@@ -69,9 +69,9 @@ class TestCALYPSOScript(unittest.TestCase):
                 break
 
     def test_parse_calypso_input(self):
-        ret = make_calypso_input(["Mg","Al","Cu"],[1,1,1],[1,4],[30],[
+        ret = make_calypso_input(["Mg","Al","Cu"],[1,1,1],[1,4],30,[
                               [1.48,1.44,1.59],[1.44,1.41,1.56],[1.59,1.56,1.70]
-                              ],[0.6],[5],[3],[13],"T","T",[31],[[1,10],[1,10],[1,10]],[0],[0.01])
+                              ],0.6,5,3,13,"T","T",31,[[1,10],[1,10],[1,10]],0,0.01)
         #with open('calypso_test_path/input.dat','w') as fin:
         with open('input.dat','w') as fin:
             fin.write(ret)

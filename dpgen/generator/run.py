@@ -20,7 +20,7 @@ import logging.handlers
 import queue
 import warnings
 import shutil
-import time
+import itertools
 import copy
 import dpdata
 import numpy as np
@@ -41,7 +41,7 @@ from dpgen.generator.lib.utils import log_iter
 from dpgen.generator.lib.utils import record_iter
 from dpgen.generator.lib.utils import log_task
 from dpgen.generator.lib.utils import symlink_user_forward_files
-from dpgen.generator.lib.lammps import make_lammps_input, get_dumped_forces
+from dpgen.generator.lib.lammps import make_lammps_input, get_dumped_forces, get_all_dumped_forces
 from dpgen.generator.lib.make_calypso import _make_model_devi_native_calypso,_make_model_devi_buffet
 from dpgen.generator.lib.run_calypso import gen_structures,analysis,run_calypso_model_devi
 from dpgen.generator.lib.parse_calypso import _parse_calypso_input,_parse_calypso_dis_mtx
@@ -50,6 +50,7 @@ from dpgen.generator.lib.vasp import make_vasp_incar_user_dict
 from dpgen.generator.lib.vasp import incar_upper
 from dpgen.generator.lib.pwscf import make_pwscf_input
 from dpgen.generator.lib.abacus_scf import make_abacus_scf_stru, make_abacus_scf_input, make_abacus_scf_kpt
+from dpgen.generator.lib.abacus_scf import get_abacus_input_parameters
 #from dpgen.generator.lib.pwscf import cvt_1frame
 from dpgen.generator.lib.pwmat import make_pwmat_input_dict
 from dpgen.generator.lib.pwmat import write_input_dict
@@ -61,15 +62,12 @@ from dpgen.generator.lib.cp2k import make_cp2k_input, make_cp2k_input_from_exter
 from dpgen.generator.lib.ele_temp import NBandsEsti
 from dpgen.remote.decide_machine import convert_mdata
 from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, make_dispatcher, make_submission
-from dpgen.util import sepline, expand_sys_str
+from dpgen.util import sepline, expand_sys_str, normalize
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar,Kpoints,Potcar
 from dpgen.auto_test.lib.vasp import make_kspacing_kpoints
-try:
-    from gromacs.fileformats.mdp import MDP
-except ImportError:
-    dlog.info("GromacsWrapper>=0.8.0 is needed for DP-GEN + Gromacs.")
-    pass
+from .arginfo import run_jdata_arginfo
+
 
 template_name = 'template'
 train_name = '00.train'
@@ -119,12 +117,16 @@ def get_sys_index(task) :
 
 def _check_empty_iter(iter_index, max_v = 0) :
     fp_path = os.path.join(make_iter_name(iter_index), fp_name)
-    fp_tasks = glob.glob(os.path.join(fp_path, "task.*"))
-    sys_index = get_sys_index(fp_tasks)
+    # check the number of collected data
+    sys_data = glob.glob(os.path.join(fp_path, "data.*"))
     empty_sys = []
-    for ii in sys_index:
-        sys_tasks = glob.glob(os.path.join(fp_path, "task." + ii + ".*"))
-        empty_sys.append(len(sys_tasks) < max_v)
+    for ii in sys_data :
+        nframe = 0
+        sys_paths = expand_sys_str(ii)
+        for single_sys in sys_paths:
+            sys = dpdata.LabeledSystem(os.path.join(single_sys), fmt = 'deepmd/npy')
+            nframe += len(sys)
+        empty_sys.append(nframe < max_v)
     return all(empty_sys)
 
 def copy_model(numb_model, prv_iter_index, cur_iter_index) :
@@ -190,9 +192,9 @@ def poscar_to_conf(poscar, conf):
     sys.to_lammps_lmp(conf)
 
 
-def dump_to_poscar(dump, poscar, type_map, fmt = "lammps/dump") :
-    sys = dpdata.System(dump, fmt = fmt, type_map = type_map)
-    sys.to_vasp_poscar(poscar)
+# def dump_to_poscar(dump, poscar, type_map, fmt = "lammps/dump") :
+#    sys = dpdata.System(dump, fmt = fmt, type_map = type_map)
+#    sys.to_vasp_poscar(poscar)
 
 def dump_to_deepmd_raw(dump, deepmd_raw, type_map, fmt='gromacs/gro', charge=None):
     system = dpdata.System(dump, fmt = fmt, type_map = type_map)
@@ -383,7 +385,8 @@ def make_train (iter_index,
         create_path(task_path)
         os.chdir(task_path)
         for jj in init_data_sys :
-            if not os.path.isdir(jj) :
+            # HDF5 path contains #
+            if not (os.path.isdir(jj) if "#" not in jj else os.path.isfile(jj.split("#")[0])):
                 raise RuntimeError ("data sys %s does not exists, cwd is %s" % (jj, os.getcwd()))
         os.chdir(cwd)
         # set random seed for each model
@@ -466,7 +469,9 @@ def detect_batch_size(batch_size, system=None):
         return batch_size
     elif batch_size == "auto":
         # automaticcaly set batch size, batch_size = 32 // atom_numb (>=1, <=fram_numb)
-        s = dpdata.LabeledSystem(system, fmt='deepmd/npy')
+        # check if h5 file
+        format = 'deepmd/npy' if "#" not in system else 'deepmd/hdf5'
+        s = dpdata.LabeledSystem(system, fmt=format)
         return int(min( np.ceil(32.0 / float(s["coords"].shape[1]) ), s["coords"].shape[0]))
     else:
         raise RuntimeError("Unsupported batch size")
@@ -555,18 +560,18 @@ def run_train (iter_index,
     cwd = os.getcwd()
     os.chdir(work_path)
     fp_data = glob.glob(os.path.join('data.iters', 'iter.*', '02.fp', 'data.*'))
-    for ii in init_data_sys :
+    for ii in itertools.chain(init_data_sys, fp_data) :
         sys_paths = expand_sys_str(ii)
         for single_sys in sys_paths:
-            trans_comm_data += glob.glob(os.path.join(single_sys, 'set.*'))
-            trans_comm_data += glob.glob(os.path.join(single_sys, 'type*.raw'))
-            trans_comm_data += glob.glob(os.path.join(single_sys, 'nopbc'))
-    for ii in fp_data :
-        sys_paths = expand_sys_str(ii)
-        for single_sys in sys_paths:
-            trans_comm_data += glob.glob(os.path.join(single_sys, 'set.*'))
-            trans_comm_data += glob.glob(os.path.join(single_sys, 'type*.raw'))
-            trans_comm_data += glob.glob(os.path.join(single_sys, 'nopbc'))
+            if "#" not in single_sys:
+                trans_comm_data += glob.glob(os.path.join(single_sys, 'set.*'))
+                trans_comm_data += glob.glob(os.path.join(single_sys, 'type*.raw'))
+                trans_comm_data += glob.glob(os.path.join(single_sys, 'nopbc'))
+            else:
+                # H5 file
+                trans_comm_data.append(single_sys.split("#")[0])
+    # remove duplicated files
+    trans_comm_data = list(set(trans_comm_data))
     os.chdir(cwd)
 
     try:
@@ -779,6 +784,7 @@ def make_model_devi (iter_index,
             return False
     else:
         # mode 1: generate structures according to the user-provided input.dat file, so calypso_input_path and model_devi_max_iter are needed
+        run_mode = 1
         if "calypso_input_path" in jdata:
             try:
                 maxiter = jdata.get('model_devi_max_iter')
@@ -788,10 +794,11 @@ def make_model_devi (iter_index,
         else:
             try:
                 maxiter = max(model_devi_jobs[-1].get('times'))
+                run_mode = 2
             except KeyError:
                 raise KeyError('did not find model_devi_jobs["times"] key')
         if (iter_index > maxiter) :
-            print(f'iter_index is {iter_index} and maxiter is {maxiter}')
+            dlog.info(f'iter_index is {iter_index} and maxiter is {maxiter}')
             return False
 
     if "sys_configs_prefix" in jdata:
@@ -802,13 +809,13 @@ def make_model_devi (iter_index,
             sys_configs.append(temp_sys_list)
     else:
         sys_configs = jdata['sys_configs']
-    shuffle_poscar = jdata['shuffle_poscar']
+    shuffle_poscar = jdata.get('shuffle_poscar', False)
 
     if model_devi_engine != 'calypso':
         cur_job = model_devi_jobs[iter_index]
         sys_idx = expand_idx(cur_job['sys_idx'])
     else:
-        cur_job = []
+        cur_job = {'model_devi_engine':'calypso','input.dat':'user_provided'}
         sys_idx = []
 
     if (len(sys_idx) != len(list(set(sys_idx)))) :
@@ -818,7 +825,7 @@ def make_model_devi (iter_index,
         cur_systems = []
         ss = sys_configs[idx]
         for ii in ss :
-            cur_systems += glob.glob(ii)
+            cur_systems += sorted(glob.glob(ii))
         # cur_systems should not be sorted, as we may add specific constrict to the similutions 
         #cur_systems.sort()
         cur_systems = [os.path.abspath(ii) for ii in cur_systems]
@@ -831,25 +838,65 @@ def make_model_devi (iter_index,
     work_path = os.path.join(iter_name, model_devi_name)
     create_path(work_path)
     if model_devi_engine == 'calypso':
-        calypso_run_opt_path = os.path.join(work_path,calypso_run_opt_name)
+        _calypso_run_opt_path = os.path.join(work_path,calypso_run_opt_name)
         calypso_model_devi_path = os.path.join(work_path,calypso_model_devi_name)
-        create_path(calypso_run_opt_path)
         create_path(calypso_model_devi_path)
         # run model devi script
         calypso_run_model_devi_script = os.path.join(calypso_model_devi_path,'calypso_run_model_devi.py')
         shutil.copyfile(calypso_run_model_devi_file,calypso_run_model_devi_script)
-        # run confs opt script
-        run_opt_script = os.path.join(calypso_run_opt_path,'calypso_run_opt.py')
-        shutil.copyfile(run_opt_file,run_opt_script)
-        # check outcar script
-        check_outcar_script = os.path.join(calypso_run_opt_path,'check_outcar.py')
-        shutil.copyfile(check_outcar_file,check_outcar_script)
+        # Create work path list
+        calypso_run_opt_path = []
+
+        # mode 1: generate structures according to the user-provided input.dat file,
+        # so calypso_input_path and model_devi_max_iter are needed
+        if run_mode == 1:
+            if jdata.get('vsc', False) and len(jdata.get('type_map')) > 1:
+                # [input.dat.Li.250, input.dat.Li.300]
+                one_ele_inputdat_list = glob.glob(
+                        f"{jdata.get('calypso_input_path')}/input.dat.{jdata.get('type_map')[0]}.*"
+                        )
+                if len(one_ele_inputdat_list) == 0:
+                    number_of_pressure = 1
+                else: 
+                    number_of_pressure = len(list(set(one_ele_inputdat_list)))
+
+                # calypso_run_opt_path = ['gen_struc_analy.000','gen_struc_analy.001']
+                for temp_idx in range(number_of_pressure):
+                    calypso_run_opt_path.append('%s.%03d'%(_calypso_run_opt_path, temp_idx))
+            elif not jdata.get('vsc', False):
+                calypso_run_opt_path.append('%s.%03d'%(_calypso_run_opt_path, 0))
+                        
+        # mode 2: control each iteration to generate structures in specific way 
+        # by providing model_devi_jobs key
+        elif run_mode == 2:
+            for iiidx, jobbs in enumerate(model_devi_jobs):
+                if iter_index in jobbs.get('times'):
+                    cur_job = model_devi_jobs[iiidx]
+                    
+            pressures_list = cur_job.get('PSTRESS', [0.0001])
+            for temp_idx in range(len(pressures_list)):
+                calypso_run_opt_path.append('%s.%03d'%(_calypso_run_opt_path, temp_idx))
+        # to different directory
+        # calypso_run_opt_path = ['gen_struc_analy.000','gen_struc_analy.001','gen_struc_analy.002',]
+        for temp_calypso_run_opt_path in calypso_run_opt_path:
+            create_path(temp_calypso_run_opt_path)
+            # run confs opt script
+            run_opt_script = os.path.join(temp_calypso_run_opt_path,'calypso_run_opt.py')
+            shutil.copyfile(run_opt_file,run_opt_script)
+            # check outcar script
+            check_outcar_script = os.path.join(temp_calypso_run_opt_path,'check_outcar.py')
+            shutil.copyfile(check_outcar_file,check_outcar_script)
+
     for mm in models :
         model_name = os.path.basename(mm)
         if model_devi_engine != 'calypso':
             os.symlink(mm, os.path.join(work_path, model_name))
         else:
-            os.symlink(mm, os.path.join(calypso_run_opt_path, model_name))
+            for temp_calypso_run_opt_path in calypso_run_opt_path:
+                models_path = os.path.join(temp_calypso_run_opt_path, model_name)
+                if not os.path.exists(models_path):
+                    os.symlink(mm, models_path)
+
     with open(os.path.join(work_path, 'cur_job.json'), 'w') as outfile:
         json.dump(cur_job, outfile, indent = 4)
 
@@ -988,7 +1035,9 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                 task_path = os.path.join(work_path, task_name)
                 # create task path
                 create_path(task_path)
-                create_path(os.path.join(task_path, 'traj'))
+                model_devi_merge_traj = jdata.get('model_devi_merge_traj', False)
+                if not model_devi_merge_traj :
+                    create_path(os.path.join(task_path, 'traj'))
                 # link conf
                 loc_conf_name = 'conf.lmp'
                 os.symlink(os.path.join(os.path.join('..','confs'), conf_name),
@@ -1118,7 +1167,9 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
                     task_path = os.path.join(work_path, task_name)
                     # dlog.info(task_path)
                     create_path(task_path)
-                    create_path(os.path.join(task_path, 'traj'))
+                    model_devi_merge_traj = jdata.get('model_devi_merge_traj', False)
+                    if not model_devi_merge_traj :
+                        create_path(os.path.join(task_path, 'traj'))
                     loc_conf_name = 'conf.lmp'
                     os.symlink(os.path.join(os.path.join('..','confs'), conf_name),
                                os.path.join(task_path, loc_conf_name) )
@@ -1166,6 +1217,10 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
         sys_counter += 1
 
 def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
+    try:
+        from gromacs.fileformats.mdp import MDP
+    except ImportError as e:
+        raise RuntimeError("GromacsWrapper>=0.8.0 is needed for DP-GEN + Gromacs.") from e
     # only support for deepmd v2.0
     if LooseVersion(mdata['deepmd_version']) < LooseVersion('2.0'):
         raise RuntimeError("Only support deepmd-kit 2.x for model_devi_engine='gromacs'")
@@ -1430,6 +1485,7 @@ def run_md_model_devi (iter_index,
     model_devi_resources = mdata['model_devi_resources']
     use_plm = jdata.get('model_devi_plumed', False)
     use_plm_path = jdata.get('model_devi_plumed_path', False)
+    model_devi_merge_traj = jdata.get('model_devi_merge_traj', False)
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, model_devi_name)
@@ -1461,8 +1517,15 @@ def run_md_model_devi (iter_index,
         command = "{ if [ ! -f dpgen.restart.10000 ]; then %s -i input.lammps -v restart 0; else %s -i input.lammps -v restart 1; fi }" % (model_devi_exec, model_devi_exec)
         command = "/bin/sh -c '%s'" % command
         commands = [command]
-        forward_files = ['conf.lmp', 'input.lammps', 'traj']
-        backward_files = ['model_devi.out', 'model_devi.log', 'traj']
+        
+        forward_files = ['conf.lmp', 'input.lammps']
+        backward_files = ['model_devi.out', 'model_devi.log']
+        if model_devi_merge_traj :
+            backward_files += ['all.lammpstrj']
+        else :
+            forward_files += ['traj']     
+            backward_files += ['traj']          
+
         if use_plm:
             forward_files += ['input.plumed']
            # backward_files += ['output.plumed']
@@ -1519,6 +1582,8 @@ def run_md_model_devi (iter_index,
     forward_files += [os.path.basename(file) for file in user_forward_files]
     backward_files += mdata.get("model_devi" + "_user_backward_files", [])
     api_version = mdata.get('api_version', '0.9')
+    if(len(run_tasks) == 0): 
+        raise RuntimeError("run_tasks for model_devi should not be empty! Please check your files.") 
     if LooseVersion(api_version) < LooseVersion('1.0'):
         warnings.warn(f"the dpdispatcher will be updated to new version."
             f"And the interface may be changed. Please check the documents for more details")
@@ -1626,17 +1691,22 @@ def check_bad_box(conf_name,
             raise RuntimeError('unknow key', key)
     return is_bad
 
-
 def _read_model_devi_file(
         task_path : str,
-        model_devi_f_avg_relative : bool = False
+        model_devi_f_avg_relative : bool = False,
+        model_devi_merge_traj : bool = False
 ):
     model_devi = np.loadtxt(os.path.join(task_path, 'model_devi.out'))
     if model_devi_f_avg_relative :
-        trajs = glob.glob(os.path.join(task_path, 'traj', '*.lammpstrj'))
-        all_f = []
-        for ii in trajs:
-            all_f.append(get_dumped_forces(ii))
+        if(model_devi_merge_traj is True) : 
+            all_traj = os.path.join(task_path, 'all.lammpstrj')
+            all_f = get_all_dumped_forces(all_traj)
+        else :
+            trajs = glob.glob(os.path.join(task_path, 'traj', '*.lammpstrj'))
+            all_f = []
+            for ii in trajs:
+                all_f.append(get_dumped_forces(ii))     
+
         all_f = np.array(all_f)
         all_f = all_f.reshape([-1,3])
         avg_f = np.sqrt(np.average(np.sum(np.square(all_f), axis = 1)))
@@ -1655,12 +1725,14 @@ def _select_by_model_devi_standard(
         model_devi_engine : str,
         model_devi_skip : int = 0,
         model_devi_f_avg_relative : bool = False,
+        model_devi_merge_traj : bool = False, 
         detailed_report_make_fp : bool = True,
 ):
     if model_devi_engine == 'calypso':
         iter_name = modd_system_task[0].split('/')[0]
         _work_path = os.path.join(iter_name, model_devi_name)
-        calypso_run_opt_path = os.path.join(_work_path,calypso_run_opt_name)
+        # calypso_run_opt_path = os.path.join(_work_path,calypso_run_opt_name)
+        calypso_run_opt_path = glob.glob('%s/%s.*'%(_work_path, calypso_run_opt_name))[0]
         numofspecies = _parse_calypso_input('NumberOfSpecies',calypso_run_opt_path)
         min_dis = _parse_calypso_dis_mtx(numofspecies,calypso_run_opt_path)
     fp_candidate = []
@@ -1675,7 +1747,7 @@ def _select_by_model_devi_standard(
     for tt in modd_system_task :
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            all_conf = _read_model_devi_file(tt, model_devi_f_avg_relative)
+            all_conf = _read_model_devi_file(tt, model_devi_f_avg_relative, model_devi_merge_traj)
 
             if all_conf.shape == (7,):
                 all_conf = all_conf.reshape(1,all_conf.shape[0])
@@ -1739,6 +1811,7 @@ def _select_by_model_devi_adaptive_trust_low(
         perc_candi_v : float,
         model_devi_skip : int = 0,
         model_devi_f_avg_relative : bool = False,
+        model_devi_merge_traj : bool = False, 
 ):
     """
     modd_system_task    model deviation tasks belonging to one system
@@ -1769,7 +1842,7 @@ def _select_by_model_devi_adaptive_trust_low(
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             model_devi = np.loadtxt(os.path.join(tt, 'model_devi.out'))
-            model_devi = _read_model_devi_file(tt, model_devi_f_avg_relative)
+            model_devi = _read_model_devi_file(tt, model_devi_f_avg_relative, model_devi_merge_traj)
             for ii in range(model_devi.shape[0]) :
                 if model_devi[ii][0] < model_devi_skip :
                     continue
@@ -1826,7 +1899,8 @@ def _select_by_model_devi_adaptive_trust_low(
     return accur, candi, failed, counter, f_trust_lo, v_trust_lo
     
 
-def _make_fp_vasp_inner (modd_path,
+def _make_fp_vasp_inner (iter_index, 
+                         modd_path,
                          work_path,
                          model_devi_skip,
                          v_trust_lo,
@@ -1839,6 +1913,7 @@ def _make_fp_vasp_inner (modd_path,
                          type_map,
                          jdata):
     """
+    iter_index          int             iter index
     modd_path           string          path of model devi
     work_path           string          path of fp
     fp_task_max         int             max number of tasks
@@ -1851,7 +1926,8 @@ def _make_fp_vasp_inner (modd_path,
     if model_devi_engine == 'calypso':
         iter_name = work_path.split('/')[0]
         _work_path = os.path.join(iter_name, model_devi_name)
-        calypso_run_opt_path = os.path.join(_work_path,calypso_run_opt_name)
+        # calypso_run_opt_path = os.path.join(_work_path,calypso_run_opt_name)
+        calypso_run_opt_path = glob.glob('%s/%s.*'%(_work_path, calypso_run_opt_name))[0]
         numofspecies = _parse_calypso_input('NumberOfSpecies',calypso_run_opt_path)
         min_dis = _parse_calypso_dis_mtx(numofspecies,calypso_run_opt_path)
 
@@ -1880,6 +1956,7 @@ def _make_fp_vasp_inner (modd_path,
     system_index = []
     for ii in modd_task :
         system_index.append(os.path.basename(ii).split('.')[1])
+
     set_tmp = set(system_index)
     system_index = list(set_tmp)
     system_index.sort()
@@ -1892,6 +1969,7 @@ def _make_fp_vasp_inner (modd_path,
     cluster_cutoff = jdata.get('cluster_cutoff', None)
     model_devi_adapt_trust_lo = jdata.get('model_devi_adapt_trust_lo', False)
     model_devi_f_avg_relative = jdata.get('model_devi_f_avg_relative', False)
+    model_devi_merge_traj = jdata.get('model_devi_merge_traj', False)
     # skip save *.out if detailed_report_make_fp is False, default is True
     detailed_report_make_fp = jdata.get("detailed_report_make_fp", True)
     # skip bad box criteria
@@ -1930,6 +2008,7 @@ def _make_fp_vasp_inner (modd_path,
                         model_devi_engine,
                         model_devi_skip,
                         model_devi_f_avg_relative = model_devi_f_avg_relative,
+                        model_devi_merge_traj = model_devi_merge_traj, 
                         detailed_report_make_fp = detailed_report_make_fp,
                     )
             else:
@@ -1944,6 +2023,7 @@ def _make_fp_vasp_inner (modd_path,
                         v_trust_hi_sys, numb_candi_v, perc_candi_v,
                         model_devi_skip = model_devi_skip,
                         model_devi_f_avg_relative = model_devi_f_avg_relative,
+                        model_devi_merge_traj = model_devi_merge_traj, 
                     )
                 dlog.info("system {0:s} {1:9s} : f_trust_lo {2:6.3f}   v_trust_lo {3:6.3f}".format(ss, 'adapted', f_trust_lo_ad, v_trust_lo_ad))
         elif model_devi_engine == "amber":
@@ -1982,6 +2062,7 @@ def _make_fp_vasp_inner (modd_path,
                                 fp_candidate.append([tt, cc])
                                 counter['candidate'] += 1
                             cc += 1
+
         else:
             raise RuntimeError('unknown model_devi_engine', model_devi_engine)
 
@@ -2042,17 +2123,34 @@ def _make_fp_vasp_inner (modd_path,
         # ----------------------------------------------------------------------------
         dlog.info("system {0:s} accurate_ratio: {1:8.4f}    thresholds: {2:6.4f} and {3:6.4f}   eff. task min and max {4:4d} {5:4d}   number of fp tasks: {6:6d}".format(ss, accurate_ratio, fp_accurate_soft_threshold, fp_accurate_threshold, fp_task_min, this_fp_task_max, numb_task))
         # make fp tasks
-        model_devi_engine = jdata.get("model_devi_engine", "lammps")
+        
+        # read all.lammpstrj, save in all_sys for each system_index
+        all_sys = []
+        trj_freq = None
+        if model_devi_merge_traj :
+            for ii in modd_system_task :
+                all_traj = os.path.join(ii, 'all.lammpstrj')
+                all_sys_per_task = dpdata.System(all_traj, fmt = 'lammps/dump', type_map = type_map)
+                all_sys.append(all_sys_per_task)
+            model_devi_jobs = jdata['model_devi_jobs']
+            cur_job = model_devi_jobs[iter_index]
+            trj_freq = int(_get_param_alias(cur_job, ['t_freq', 'trj_freq', 'traj_freq']))
+        
         count_bad_box = 0
         count_bad_cluster = 0
         fp_candidate = sorted(fp_candidate[:numb_task])
+
         for cc in range(numb_task) :
             tt = fp_candidate[cc][0]
             ii = fp_candidate[cc][1]
             ss = os.path.basename(tt).split('.')[1]
             conf_name = os.path.join(tt, "traj")
+            conf_sys = None
             if model_devi_engine == "lammps":
-                conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
+                if model_devi_merge_traj :
+                    conf_sys = all_sys[int(os.path.basename(tt).split('.')[-1])][int(int(ii) / trj_freq)]
+                else :
+                    conf_name = os.path.join(conf_name, str(ii) + '.lammpstrj')
                 ffmt = 'lammps/dump'
             elif model_devi_engine == "gromacs":
                 conf_name = os.path.join(conf_name, str(ii) + '.gromacstrj')
@@ -2099,7 +2197,13 @@ def _make_fp_vasp_inner (modd_path,
             cwd = os.getcwd()
             os.chdir(fp_task_path)
             if cluster_cutoff is None:
-                if model_devi_engine in ("lammps", "gromacs"):
+                if model_devi_engine == "lammps":                   
+                    if model_devi_merge_traj:
+                        conf_sys.to("lammps/lmp", "conf.dump")
+                    else: 
+                        os.symlink(os.path.relpath(conf_name), 'conf.dump')
+                    os.symlink(os.path.relpath(job_name), 'job.json')
+                elif model_devi_engine == "gromacs":
                     os.symlink(os.path.relpath(conf_name), 'conf.dump')
                     os.symlink(os.path.relpath(job_name), 'job.json')
                 elif model_devi_engine == "amber":
@@ -2146,7 +2250,14 @@ def _make_fp_vasp_inner (modd_path,
         for idx, task in enumerate(fp_tasks):
             os.chdir(task)
             if model_devi_engine == "lammps":
-                dump_to_poscar('conf.dump', 'POSCAR', type_map, fmt = "lammps/dump")
+                sys = None
+                if model_devi_merge_traj:
+                    sys = dpdata.System('conf.dump', fmt = "lammps/lmp", type_map = type_map)
+                else :
+                    sys = dpdata.System('conf.dump', fmt = "lammps/dump", type_map = type_map)
+                sys.to_vasp_poscar('POSCAR')
+                # dump to poscar 
+
                 if charges_map:
                     warnings.warn('"sys_charges" keyword only support for gromacs engine now.')
             elif model_devi_engine == "gromacs":
@@ -2482,7 +2593,8 @@ def _make_fp_vasp_configs(iter_index,
         f_trust_hi = jdata['model_devi_f_trust_hi']
 
     # make configs
-    fp_tasks = _make_fp_vasp_inner(modd_path, work_path,
+    fp_tasks = _make_fp_vasp_inner(iter_index, 
+                                   modd_path, work_path,
                                    model_devi_skip,
                                    v_trust_lo, v_trust_hi,
                                    f_trust_lo, f_trust_hi,
@@ -2561,7 +2673,8 @@ def make_fp_abacus_scf(iter_index,
     fp_pp_files = jdata['fp_pp_files']
     fp_orb_files = None
     fp_dpks_descriptor = None
-    assert('user_fp_params' in jdata.keys())
+    # get paramters for writting INPUT file
+    fp_params = {}
     if 'user_fp_params' in jdata.keys() :
         fp_params = jdata['user_fp_params']
         # for lcao 
@@ -2569,25 +2682,65 @@ def make_fp_abacus_scf(iter_index,
             if fp_params['basis_type'] == 'lcao':
                 assert('fp_orb_files' in jdata and type(jdata['fp_orb_files']) == list and len(jdata['fp_orb_files']) == len(fp_pp_files))
                 fp_orb_files = jdata['fp_orb_files']
-        if 'deepks_out_labels' in fp_params:
-            if fp_params['deepks_out_labels'] == 1:
-                assert('fp_dpks_descriptor' in jdata and type(jdata['fp_dpks_descriptor']) == str)
-                fp_dpks_descriptor = jdata['fp_dpks_descriptor']
+        dpks_out_labels = fp_params.get('deepks_out_labels',0)
+        dpks_scf = fp_params.get('deepks_scf',0)
+        if dpks_out_labels or dpks_scf:
+            assert('fp_dpks_descriptor' in jdata and type(jdata['fp_dpks_descriptor']) == str)
+            fp_dpks_descriptor = jdata['fp_dpks_descriptor']
         #user_input = True
+        ret_input = make_abacus_scf_input(fp_params)
+    elif 'fp_incar' in jdata.keys():
+        fp_input_path = jdata['fp_incar']
+        assert(os.path.exists(fp_input_path))
+        fp_input_path = os.path.abspath(fp_input_path)
+        fp_params = get_abacus_input_parameters(fp_input_path)
+        ret_input = make_abacus_scf_input(fp_params)
     else:
-        raise RuntimeError("Key 'user_fp_params' and its value have to be specified in parameter json file.")
+        raise RuntimeError("Set 'user_fp_params' or 'fp_incar' in json file to make INPUT of ABACUS")
+    # get paramters for writting KPT file
+    if 'kspacing' not in fp_params.keys():
+        if 'gamma_only' in fp_params.keys():
+            if fp_params["gamma_only"]==1:
+                gamma_param = {"k_points":[1,1,1,0,0,0]}
+                ret_kpt = make_abacus_scf_kpt(gamma_param)
+            else:
+                if 'k_points' in jdata.keys() :
+                    ret_kpt = make_abacus_scf_kpt(jdata)
+                elif 'fp_kpt_file' in jdata.keys():
+                    fp_kpt_path = jdata['fp_kpt_file']
+                    assert(os.path.exists(fp_kpt_path))
+                    fp_kpt_path = os.path.abspath(fp_kpt_path)
+                    fk = open(fp_kpt_path)
+                    ret_kpt = fk.read()
+                    fk.close()
+                else:
+                    raise RuntimeError("Cannot find any k-points information")
+        else:
+            if 'k_points' in jdata.keys() :
+                ret_kpt = make_abacus_scf_kpt(jdata)
+            elif 'fp_kpt_file' in jdata.keys():
+                fp_kpt_path = jdata['fp_kpt_file']
+                assert(os.path.exists(fp_kpt_path))
+                fp_kpt_path = os.path.abspath(fp_kpt_path)
+                fk = open(fp_kpt_path)
+                ret_kpt = fk.read()
+                fk.close()
+            else:
+                gamma_param = {"k_points":[1,1,1,0,0,0]}
+                ret_kpt = make_abacus_scf_kpt(gamma_param)
+                warnings.warn("Cannot find k-points information, gamma_only will be generated.")
+
     cwd = os.getcwd()
     for ii in fp_tasks:
         os.chdir(ii)
         sys_data = dpdata.System('POSCAR').data
         if 'mass_map' in jdata:
             sys_data['atom_masses'] = jdata['mass_map']
-        ret_input = make_abacus_scf_input(fp_params)
         with open('INPUT', 'w') as fp:
             fp.write(ret_input)
-        ret_kpt = make_abacus_scf_kpt(fp_params)
-        with open("KPT", "w") as fp:
-            fp.write(ret_kpt)
+        if 'kspacing' not in fp_params.keys():
+            with open("KPT", "w") as fp:
+                fp.write(ret_kpt)
         ret_stru = make_abacus_scf_stru(sys_data, fp_pp_files, fp_orb_files, fp_dpks_descriptor, fp_params)
         with open("STRU", "w") as fp:
             fp.write(ret_stru)
@@ -2655,8 +2808,7 @@ def make_fp_gaussian(iter_index,
         with open('input', 'w') as fp:
             fp.write(ret)
         os.chdir(cwd)
-    # link pp files
-    _link_fp_vasp_pp(iter_index, jdata)
+
 
 def make_fp_cp2k (iter_index,
                   jdata):
@@ -2817,7 +2969,7 @@ def make_fp (iter_index,
         make_fp_vasp(iter_index, jdata)
     elif fp_style == "pwscf" :
         make_fp_pwscf(iter_index, jdata)
-    elif fp_style == "abacus/scf" :
+    elif fp_style == "abacus" :
         make_fp_abacus_scf(iter_index, jdata)
     elif fp_style == "siesta" :
         make_fp_siesta(iter_index, jdata)
@@ -3021,8 +3173,19 @@ def run_fp (iter_index,
         forward_files = ['input'] + fp_pp_files
         backward_files = ['output']
         run_fp_inner(iter_index, jdata, mdata,  forward_files, backward_files, _qe_check_fin, log_file = 'output')
-    elif fp_style == "abacus/scf":
-        forward_files = ["INPUT", "STRU", "KPT"] + fp_pp_files
+    elif fp_style == "abacus":
+        fp_params = {}
+        if 'user_fp_params' in jdata.keys() :
+            fp_params = jdata['user_fp_params']
+        elif 'fp_incar' in jdata.keys():
+            fp_input_path = jdata['fp_incar']
+            assert(os.path.exists(fp_input_path))
+            fp_input_path = os.path.abspath(fp_input_path)
+            fp_params = get_abacus_input_parameters(fp_input_path)
+        forward_files = ["INPUT", "STRU"]
+        if 'kspacing' not in fp_params.keys():
+            forward_files = ["INPUT","STRU","KPT"]
+        forward_files += fp_pp_files
         if "fp_orb_files" in jdata:
             forward_files += jdata["fp_orb_files"]
         if "fp_dpks_descriptor" in jdata:
@@ -3065,6 +3228,7 @@ def run_fp (iter_index,
 def post_fp_check_fail(iter_index,
                        jdata,
                        rfailed = None) :
+
     ratio_failed =  rfailed if rfailed else jdata.get('ratio_failed',0.05)
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -3072,13 +3236,20 @@ def post_fp_check_fail(iter_index,
     fp_tasks.sort()
     if len(fp_tasks) == 0 :
         return
-    # check fail according to tag_failure
-    fp_failed_tags = glob.glob(os.path.join(work_path, 'task.*', 'tag_failure*'))
-    fp_failed_tasks = [os.path.dirname(ii) for ii in fp_failed_tags]
-    fp_failed_tasks = list(set(fp_failed_tasks))
-
     ntask = len(fp_tasks)
-    nfail = len(fp_failed_tasks)
+    nfail = 0
+
+    # check fail according to the number of collected data
+    sys_data = glob.glob(os.path.join(work_path, "data.*"))
+    sys_data.sort()
+    nframe = 0
+    for ii in sys_data :
+        sys_paths = expand_sys_str(ii)
+        for single_sys in sys_paths:
+            sys = dpdata.LabeledSystem(os.path.join(single_sys), fmt = 'deepmd/npy')
+            nframe += len(sys)
+    nfail = ntask - nframe
+
     rfail = float(nfail) / float(ntask)
     dlog.info("failed tasks: %6d in %6d  %6.2f %% " % (nfail, ntask, rfail * 100.))
     if rfail > ratio_failed:
@@ -3137,12 +3308,15 @@ def post_fp_vasp (iter_index,
                 else:
                     all_sys.append(_sys)
                 # save ele_temp, if any
-                with open(oo.replace('OUTCAR', 'job.json')) as fp:
-                    job_data = json.load(fp)
-                if 'ele_temp' in job_data:
-                    assert(use_ele_temp)
-                    ele_temp = job_data['ele_temp']
-                    all_te.append(ele_temp)
+                if(os.path.exists(oo.replace('OUTCAR', 'job.json')) ): 
+                    with open(oo.replace('OUTCAR', 'job.json')) as fp:
+                        job_data = json.load(fp)
+                    if 'ele_temp' in job_data:
+                        assert(use_ele_temp)
+                        ele_temp = job_data['ele_temp']
+                        all_te.append(ele_temp)
+            elif len(_sys) >= 2:
+                raise RuntimeError("The vasp parameter NSW should be set as 1") 
             else:
                 icount+=1
         all_te = np.array(all_te)
@@ -3492,9 +3666,9 @@ def post_fp_amber_diff(iter_index, jdata):
     for ss in system_index :
         sys_output = glob.glob(os.path.join(work_path, "task.%s.*"%ss))
         sys_output.sort()
-        all_sys=dpdata.MultiSystems()
+        all_sys=dpdata.MultiSystems(type_map=jdata['type_map'])
         for oo in sys_output :
-            sys=dpdata.MultiSystems().from_deepmd_npy(os.path.join(oo, 'dataset'))
+            sys=dpdata.MultiSystems(type_map=jdata['type_map']).from_deepmd_npy(os.path.join(oo, 'dataset'))
             all_sys.append(sys)
         sys_data_path = os.path.join(work_path, 'data.%s'%ss)
         all_sys.to_deepmd_raw(sys_data_path)
@@ -3503,12 +3677,11 @@ def post_fp_amber_diff(iter_index, jdata):
 def post_fp (iter_index,
              jdata) :
     fp_style = jdata['fp_style']
-    post_fp_check_fail(iter_index, jdata)
     if fp_style == "vasp" :
         post_fp_vasp(iter_index, jdata)
     elif fp_style == "pwscf" :
         post_fp_pwscf(iter_index, jdata)
-    elif fp_style == "abacus/scf":
+    elif fp_style == "abacus":
         post_fp_abacus_scf(iter_index, jdata)
     elif fp_style == "siesta":
         post_fp_siesta(iter_index, jdata)
@@ -3522,6 +3695,7 @@ def post_fp (iter_index,
         post_fp_amber_diff(iter_index, jdata)
     else :
         raise RuntimeError ("unsupported fp style")
+    post_fp_check_fail(iter_index, jdata)
     # clean traj
     clean_traj = True
     if 'model_devi_clean_traj' in jdata :
@@ -3561,6 +3735,11 @@ def run_iter (param_file, machine_file) :
        with open (machine_file, 'r') as fp:
            mdata = json.load (fp)
 
+    jdata_arginfo = run_jdata_arginfo()
+    jdata = normalize(jdata_arginfo, jdata, strict_check=False)
+
+    update_mass_map(jdata)
+        
     if jdata.get('pretty_print',False):
        #assert(jdata["pretty_format"] in ['json','yaml'])
        fparam=SHORT_CMD+'_'+param_file.split('.')[0]+'.'+jdata.get('pretty_format','json')
@@ -3586,6 +3765,8 @@ def run_iter (param_file, machine_file) :
         with open (record) as frec :
             for line in frec :
                 iter_rec = [int(x) for x in line.split()]
+        if len(iter_rec) == 0: 
+            raise ValueError("There should not be blank lines in record.dpgen.")
         dlog.info ("continue from iter %03d task %02d" % (iter_rec[0], iter_rec[1]))
 
     cont = True
@@ -3634,6 +3815,109 @@ def run_iter (param_file, machine_file) :
             record_iter (record, ii, jj)
 
 
+def get_atomic_masses(atom):
+    element_names = ['Hydrogen', 'Helium', 'Lithium', 'Beryllium', 'Boron', 'Carbon', 'Nitrogen',
+                     'Oxygen', 'Fluorine', 'Neon', 'Sodium', 'Magnesium', 'Aluminium', 'Silicon',
+                     'Phosphorus', 'Sulfur', 'Chlorine', 'Argon', 'Potassium', 'Calcium', 'Scandium',
+                     'Titanium', 'Vanadium', 'Chromium', 'Manganese', 'Iron', 'Cobalt', 'Nickel',
+                     'Copper', 'Zinc', 'Gallium', 'Germanium', 'Arsenic', 'Selenium', 'Bromine',
+                     'Krypton', 'Rubidium', 'Strontium', 'Yttrium', 'Zirconium', 'Niobium',
+                     'Molybdenum', 'Technetium', 'Ruthenium', 'Rhodium', 'Palladium', 'Silver',
+                     'Cadmium', 'Indium', 'Tin', 'Antimony', 'Tellurium', 'Iodine', 'Xenon',
+                     'Caesium', 'Barium', 'Lanthanum', 'Cerium', 'Praseodymium', 'Neodymium',
+                     'Promethium', 'Samarium', 'Europium', 'Gadolinium', 'Terbium', 'Dysprosium',
+                     'Holmium', 'Erbium', 'Thulium', 'Ytterbium', 'Lutetium', 'Hafnium', 'Tantalum',
+                     'Tungsten', 'Rhenium', 'Osmium', 'Iridium', 'Platinum', 'Gold', 'Mercury',
+                     'Thallium', 'Lead', 'Bismuth', 'Polonium', 'Astatine', 'Radon', 'Francium',
+                     'Radium', 'Actinium', 'Thorium', 'Protactinium', 'Uranium', 'Neptunium',
+                     'Plutonium', 'Americium', 'Curium', 'Berkelium', 'Californium', 'Einsteinium',
+                     'Fermium', 'Mendelevium', 'Nobelium', 'Lawrencium', 'Rutherfordium', 'Dubnium',
+                     'Seaborgium', 'Bohrium', 'Hassium', 'Meitnerium', 'Darmastadtium', 'Roentgenium',
+                     'Copernicium', 'Nihonium', 'Flerovium', 'Moscovium', 'Livermorium', 'Tennessine',
+                     'Oganesson']
+    chemical_symbols  = ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al',
+                         'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe',
+                         'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr',
+                         'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn',
+                         'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm',
+                         'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Hf', 'Ta', 'W',
+                         'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn',
+                         'Fr', 'Ra', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf',
+                         'Es', 'Fm', 'Md', 'No', 'Lr', 'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds',
+                         'Rg', 'Cn', 'Nh', 'Fl', 'Mc', 'Lv', 'Ts', 'Og']
+    atomic_number  = [ i+1 for i in range(len(chemical_symbols)) ]
+
+    # NIST Standard Reference Database 144
+    # URL: https://physics.nist.gov/cgi-bin/Compositions/stand_alone.pl?ele=&ascii=ascii&isotype=all
+    atomic_masses_common = [1.00782503223, 4.00260325413, 7.0160034366, 9.012183065, 11.00930536,
+                            12.0, 14.00307400443, 15.99491461957, 18.99840316273, 19.9924401762,
+                            22.989769282, 23.985041697, 26.98153853, 27.97692653465, 30.97376199842,
+                            31.9720711744, 34.968852682, 39.9623831237, 38.9637064864, 39.962590863,
+                            44.95590828, 47.94794198, 50.94395704, 51.94050623, 54.93804391,
+                            55.93493633, 58.93319429, 57.93534241, 62.92959772, 63.92914201,
+                            68.9255735, 73.921177761, 74.92159457, 79.9165218, 78.9183376, 83.9114977282,
+                            84.9117897379, 87.9056125, 88.9058403, 89.9046977, 92.906373, 97.90540482,
+                            96.9063667, 101.9043441, 102.905498, 105.9034804, 106.9050916, 113.90336509,
+                            114.903878776, 119.90220163, 120.903812, 129.906222748, 126.9044719,
+                            131.9041550856, 132.905451961, 137.905247, 138.9063563, 139.9054431,
+                            140.9076576, 141.907729, 144.9127559, 151.9197397, 152.921238, 157.9241123,
+                            158.9253547, 163.9291819, 164.9303288, 165.9302995, 168.9342179, 173.9388664,
+                            174.9407752, 179.946557, 180.9479958, 183.95093092, 186.9557501, 191.961477,
+                            192.9629216, 194.9647917, 196.96656879, 201.9706434, 204.9744278, 207.9766525,
+                            208.9803991, 208.9824308, 209.9871479, 222.0175782, 223.019736, 226.0254103,
+                            227.0277523, 232.0380558, 231.0358842, 238.0507884, 237.0481736, 244.0642053,
+                            243.0613813, 247.0703541, 247.0703073, 251.0795886, 252.08298, 257.0951061,
+                            258.0984315, 259.10103, 262.10961, 267.12179, 268.12567, 271.13393, 272.13826,
+                            270.13429, 276.15159, 281.16451, 280.16514, 285.17712, 284.17873, 289.19042, 
+                            288.19274, 293.20449, 292.20746, 294.21392]
+    # IUPAC Technical Report
+    # doi:10.1515/pac-2015-0305
+    atomic_masses_2013 = [1.00784, 4.002602, 6.938, 9.0121831, 10.806, 12.0096, 14.00643, 15.99903,
+                          18.99840316, 20.1797, 22.98976928, 24.304, 26.9815385, 28.084, 30.973762,
+                          32.059, 35.446, 39.948, 39.0983, 40.078, 44.955908, 47.867, 50.9415, 51.9961,
+                          54.938044, 55.845, 58.933194, 58.6934, 63.546, 65.38, 69.723, 72.63, 74.921595,
+                          78.971, 79.901, 83.798, 85.4678, 87.62, 88.90584, 91.224, 92.90637, 95.95, None,
+                          101.07, 102.9055, 106.42, 107.8682, 112.414, 114.818, 118.71, 121.76, 127.6,
+                          126.90447, 131.293, 132.905452, 137.327, 138.90547, 140.116, 140.90766, 144.242,
+                          None, 150.36, 151.964, 157.25, 158.92535, 162.5, 164.93033, 167.259, 168.93422,
+                          173.054, 174.9668, 178.49, 180.94788, 183.84, 186.207, 190.23, 192.217, 195.084,
+                          196.966569, 200.592, 204.382, 207.2, 208.9804, None, None, None, None, None, None,
+                          232.0377, 231.03588, 238.02891, None, None, None, None, None, None, None, None,
+                          None, None, None, None, None, None, None, None, None, None, None, None, None,
+                          None, None, None, None, None]
+    # IUPAC Technical Report
+    # doi:10.1515/pac-2019-0603
+    atomic_masses_2021 = [1.00784, 4.002602, 6.938, 9.0121831, 10.806, 12.0096, 14.00643, 15.99903,
+                          18.99840316, 20.1797, 22.98976928, 24.304, 26.9815384, 28.084, 30.973762,
+                          32.059, 35.446, 39.792, 39.0983, 40.078, 44.955907, 47.867, 50.9415, 51.9961,
+                          54.938043, 55.845, 58.933194, 58.6934, 63.546, 65.38, 69.723, 72.63, 74.921595,
+                          78.971, 79.901, 83.798, 85.4678, 87.62, 88.905838, 91.224, 92.90637, 95.95,
+                          None, 101.07, 102.90549, 106.42, 107.8682, 112.414, 114.818, 118.71, 121.76,
+                          127.6, 126.90447, 131.293, 132.905452, 137.327, 138.90547, 140.116, 140.90766,
+                          144.242, None, 150.36, 151.964, 157.25, 158.925354, 162.5, 164.930329, 167.259,
+                          168.934219, 173.045, 174.9668, 178.486, 180.94788, 183.84, 186.207, 190.23,
+                          192.217, 195.084, 196.96657, 200.592, 204.382, 206.14, 208.9804, None, None,
+                          None, None, None, None, 232.0377, 231.03588, 238.02891, None, None, None,
+                          None, None, None, None, None, None, None, None, None, None, None, None, None,
+                          None, None, None, None, None, None, None, None, None, None]
+
+    atomic_masses = [atomic_masses_common[n] if i is None else i for n,i in enumerate(atomic_masses_2021)]
+
+    if atom in element_names:
+        return atomic_masses[element_names.index(atom)]
+    elif atom in chemical_symbols:
+        return atomic_masses[chemical_symbols.index(atom)]
+    elif atom in atomic_number:
+        return atomic_masses[atomic_number.index(atom)]
+    else:
+        raise RuntimeError('unknown atomic identifier', atom, 'if one want to use isotopes, or non-standard element names, chemical symbols, or atomic number in the type_map list, please customize the mass_map list instead of using "auto".')
+
+
+def update_mass_map(jdata):
+    if jdata['mass_map'] == 'auto':
+        jdata['mass_map'] = [get_atomic_masses(i) for i in jdata['type_map']]
+        
+        
 def gen_run(args) :
     if args.PARAM and args.MACHINE:
         if args.debug:

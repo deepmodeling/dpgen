@@ -13,6 +13,7 @@ from dpgen import dlog
 from dpgen import ROOT_PATH
 from dpgen.remote.decide_machine import  convert_mdata
 from dpgen.dispatcher.Dispatcher import make_submission_compat
+from dpgen.generator.lib.utils import symlink_user_forward_files
 #-----PMG---------
 from pymatgen.io.vasp import Poscar
 from pymatgen.core import Structure, Element
@@ -476,13 +477,13 @@ def pert_scaled(jdata) :
           raise RuntimeError("the length of vacuum_resol must equal 1 or 2")
           
     else:         
-       vacuum_num = jdata['vacuum_numb']
-       head_ratio = jdata['head_ratio']
-       mid_point = jdata['mid_point']
+       vacuum_num = jdata['vacuum_numb'] # the total number of vacuum layers
+       head_ratio = jdata['head_ratio'] # deciding the mid_point by vacum_max * head_ratio, which point separates the nearby region with denser intervals (head region) and the far-away region with sparser intervals (tail region).
+       mid_point = jdata['mid_point'] # the mid point of head region and tail region 
        head_numb  = int(vacuum_num*head_ratio)
        tail_numb = vacuum_num - head_numb
        head_elongs = np.linspace(0,mid_point,head_numb).tolist()
-       tail_elongs = np.linspace(mid_point,vacuum_max,tail_numb+1).tolist()
+       tail_elongs = np.linspace(mid_point,vacuum_max,tail_numb+1).tolist() # the far-away region with sparser intervals (tail region)
        elongs = np.unique(head_elongs+tail_elongs).tolist()
     
     cwd = os.getcwd()
@@ -548,6 +549,13 @@ def run_vasp_relax(jdata, mdata):
     forward_files = ["POSCAR", "INCAR", "POTCAR"]
     backward_files = ["OUTCAR","CONTCAR"]
     forward_common_files = []
+    work_path_list = glob.glob(os.path.join(work_dir, "surf-*"))
+    task_format = {"fp" : "sys-*"}
+    for work_path in work_path_list :
+        symlink_user_forward_files(mdata=mdata, task_type="fp", work_path=work_path, task_format=task_format)
+    user_forward_files = mdata.get("fp" + "_user_forward_files", [])
+    forward_files += [os.path.basename(file) for file in user_forward_files]
+    backward_files += mdata.get("fp" + "_user_backward_files", [])
     #if 'cvasp' in mdata['fp_resources']:
     #    if mdata['fp_resources']['cvasp']:
     #        forward_common_files=['cvasp.py']

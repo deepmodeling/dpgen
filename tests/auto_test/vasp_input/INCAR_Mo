@@ -1,0 +1,33 @@
+#Parameters
+SYSTEM  =  Mo_hcp
+PREC    =  Accurate
+ISTART   =  0
+ICHARG  =   2
+#Electronic Relaxation 
+ENCUT   =  800     # test
+NELM    =  100
+NELMIN  =  6
+NELMDL  =  -5
+EDIFF   =  1e-06   # test
+LREAL   =  False
+ALGO    =   Normal  # or normal
+#Ionic relaxation
+IBRION  =   2
+#POTIM   =  0.3
+ISIF    =   3
+EDIFFG  =  -0.01   # test
+#ISYM    =   0
+NSW     =   100
+ISMEAR  =  1
+SIGMA   =  0.1    # test
+# Write flags
+LWAVE    =  False
+LCHARG   =  False
+#parallel related
+#KPAR   = 16
+NPAR    =  4
+#KPAR = 1
+KSPACING = 0.1    # test
+KGAMMA  = False
+
+PSTRESS = 0.0

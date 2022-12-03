@@ -6,7 +6,7 @@ import subprocess as sp
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 from dpgen.generator.lib.pwscf import make_pwscf_input
 from dpgen.generator.lib.siesta import make_siesta_input
-from dpgen.generator.run import make_vasp_incar
+from dpgen.generator.run import make_vasp_incar, update_mass_map
 import dpdata
 
 def get_lmp_info(input_file) :
@@ -85,6 +85,7 @@ def create_init_tasks(target_folder, param_file, output, fp_json, verbose = True
     output = os.path.abspath(output)
     tool_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'template')    
     jdata = json.load(open(os.path.join(target_folder, param_file)))
+    update_mass_map(jdata)
     fp_jdata = json.load(open(fp_json))
     # fp settings
     mass_map = jdata['mass_map']
@@ -141,6 +142,7 @@ def create_tasks(target_folder, param_file, output, fp_json, verbose = True, num
     output = os.path.abspath(output)
     tool_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'template')    
     jdata = json.load(open(os.path.join(target_folder, param_file)))
+    update_mass_map(jdata)
     fp_jdata = json.load(open(fp_json))
     # goto input        
     cwd = os.getcwd()

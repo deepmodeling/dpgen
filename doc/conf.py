@@ -13,6 +13,7 @@
 import os
 import sys
 import subprocess
+from datetime import date
 # import sys
 import recommonmark
 from recommonmark.transform import AutoStructify
@@ -20,9 +21,9 @@ from recommonmark.transform import AutoStructify
 
 # -- Project information -----------------------------------------------------
 
-project = 'DPGEN'
-copyright = '2020, Deep Potential'
-author = 'Deep Potential'
+project = 'DP-GEN'
+copyright = '2020-%d, DeepModeling' % date.today().year
+author = 'DeepModeling'
 
 
 # -- General configuration ---------------------------------------------------
@@ -46,6 +47,7 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.viewcode',
     'sphinxarg.ext',
+    'numpydoc',
 ]
 
 

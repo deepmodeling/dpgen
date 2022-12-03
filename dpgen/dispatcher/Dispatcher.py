@@ -397,15 +397,20 @@ def mdata_arginfo() -> List[Argument]:
         arginfo
     """
     doc_command = "Command of a program."
-    doc_mdata = "Machine and resources parameters"
+    doc_user_forward_files = "Files to be forwarded to the remote machine."
+    doc_user_backward_files = "Files to be backwarded from the remote machine."
     command_arginfo = Argument("command", str, optional=False, doc=doc_command)
     machine_arginfo = Machine.arginfo()
     machine_arginfo.name = "machine"
     resources_arginfo = Resources.arginfo()
     resources_arginfo.name = "resources"
+    user_forward_files_arginfo = Argument("user_forward_files", list, optional=True, doc=doc_user_forward_files)
+    user_backward_files_arginfo = Argument("user_backward_files", list, optional=True, doc=doc_user_backward_files)
 
     return [
         command_arginfo, machine_arginfo, resources_arginfo,
+        user_forward_files_arginfo,
+        user_backward_files_arginfo,
     ]
 
 

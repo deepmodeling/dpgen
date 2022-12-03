@@ -64,9 +64,9 @@ def update_dict(old_d, update_d):
     :old_d: old dictionary
     :update_d: some update value written in dictionary form
     """
-    import collections
+    import collections.abc
     for k, v in update_d.items():
-        if (k in old_d and isinstance(old_d[k], dict) and isinstance(update_d[k], collections.Mapping)):
+        if (k in old_d and isinstance(old_d[k], dict) and isinstance(update_d[k], collections.abc.Mapping)):
             update_dict(old_d[k], update_d[k])
         else:
             old_d[k] = update_d[k]
