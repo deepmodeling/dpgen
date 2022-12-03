@@ -221,7 +221,7 @@ def make_train (iter_index,
     training_init_model = jdata.get('training_init_model', False)
     training_reuse_iter = jdata.get('training_reuse_iter')
     training_reuse_old_ratio = jdata.get('training_reuse_old_ratio', None)
-    
+ 
     #if you want to use DP-ZBL potential , you have to give the path of your energy potential file
     if 'srtab_file_path' in jdata.keys():
         srtab_file_path = os.path.abspath(jdata.get("srtab_file_path", None)) 
