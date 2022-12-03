@@ -10,6 +10,7 @@ from dpgen.generator.lib.make_calypso import make_calypso_input,write_model_devi
 from dpgen.generator.lib.parse_calypso import _parse_calypso_input,_parse_calypso_dis_mtx
 
 param_file = 'param-mg-vasp.json'
+param_file_merge_traj = 'param-mg-vasp_merge_traj.json'
 param_file_v1 = 'param-mg-vasp-v1.json'
 param_file_v1_et = 'param-mg-vasp-v1-et.json'
 param_old_file = 'param-mg-vasp-old.json'
