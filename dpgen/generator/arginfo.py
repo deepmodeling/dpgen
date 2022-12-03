@@ -70,7 +70,7 @@ def training_args() -> List[Argument]:
     doc_training_iter0_model_path = 'The model used to init the first iter training. Number of element should be equal to numb_models.'
     doc_training_init_model = 'Iteration > 0, the model parameters will be initilized from the model trained at the previous iteration. Iteration == 0, the model parameters will be initialized from training_iter0_model_path.'
     doc_default_training_param = 'Training parameters for deepmd-kit in 00.train. You can find instructions from here: (https://github.com/deepmodeling/deepmd-kit).'
-    doc_dp_compress = 'Use dp compress to compress the model.' 
+    doc_dp_compress = 'Use dp compress to compress the model.'
     doc_training_reuse_iter = "The minimal index of iteration that continues training models from old models of last iteration."
     doc_reusing = " This option is only adopted when continuing training models from old models. This option will override default parameters."
     doc_training_reuse_old_ratio = "The probability proportion of old data during training." + doc_reusing
