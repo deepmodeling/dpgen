@@ -20,7 +20,7 @@ import logging.handlers
 import queue
 import warnings
 import shutil
-import time
+import itertools
 import copy
 import dpdata
 import numpy as np
@@ -62,10 +62,11 @@ from dpgen.generator.lib.cp2k import make_cp2k_input, make_cp2k_input_from_exter
 from dpgen.generator.lib.ele_temp import NBandsEsti
 from dpgen.remote.decide_machine import convert_mdata
 from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, make_dispatcher, make_submission
-from dpgen.util import sepline, expand_sys_str
+from dpgen.util import sepline, expand_sys_str, normalize
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar,Kpoints,Potcar
 from dpgen.auto_test.lib.vasp import make_kspacing_kpoints
+from .arginfo import run_jdata_arginfo
 
 
 template_name = 'template'
@@ -116,12 +117,16 @@ def get_sys_index(task) :
 
 def _check_empty_iter(iter_index, max_v = 0) :
     fp_path = os.path.join(make_iter_name(iter_index), fp_name)
-    fp_tasks = glob.glob(os.path.join(fp_path, "task.*"))
-    sys_index = get_sys_index(fp_tasks)
+    # check the number of collected data
+    sys_data = glob.glob(os.path.join(fp_path, "data.*"))
     empty_sys = []
-    for ii in sys_index:
-        sys_tasks = glob.glob(os.path.join(fp_path, "task." + ii + ".*"))
-        empty_sys.append(len(sys_tasks) < max_v)
+    for ii in sys_data :
+        nframe = 0
+        sys_paths = expand_sys_str(ii)
+        for single_sys in sys_paths:
+            sys = dpdata.LabeledSystem(os.path.join(single_sys), fmt = 'deepmd/npy')
+            nframe += len(sys)
+        empty_sys.append(nframe < max_v)
     return all(empty_sys)
 
 def copy_model(numb_model, prv_iter_index, cur_iter_index) :
@@ -388,7 +393,8 @@ def make_train (iter_index,
             os.system('cp %s ./'%srtab_file_path)
 
         for jj in init_data_sys :
-            if not os.path.isdir(jj) :
+            # HDF5 path contains #
+            if not (os.path.isdir(jj) if "#" not in jj else os.path.isfile(jj.split("#")[0])):
                 raise RuntimeError ("data sys %s does not exists, cwd is %s" % (jj, os.getcwd()))
         os.chdir(cwd)
         # set random seed for each model
@@ -471,7 +477,9 @@ def detect_batch_size(batch_size, system=None):
         return batch_size
     elif batch_size == "auto":
         # automaticcaly set batch size, batch_size = 32 // atom_numb (>=1, <=fram_numb)
-        s = dpdata.LabeledSystem(system, fmt='deepmd/npy')
+        # check if h5 file
+        format = 'deepmd/npy' if "#" not in system else 'deepmd/hdf5'
+        s = dpdata.LabeledSystem(system, fmt=format)
         return int(min( np.ceil(32.0 / float(s["coords"].shape[1]) ), s["coords"].shape[0]))
     else:
         raise RuntimeError("Unsupported batch size")
@@ -566,18 +574,18 @@ def run_train (iter_index,
     cwd = os.getcwd()
     os.chdir(work_path)
     fp_data = glob.glob(os.path.join('data.iters', 'iter.*', '02.fp', 'data.*'))
-    for ii in init_data_sys :
+    for ii in itertools.chain(init_data_sys, fp_data) :
         sys_paths = expand_sys_str(ii)
         for single_sys in sys_paths:
-            trans_comm_data += glob.glob(os.path.join(single_sys, 'set.*'))
-            trans_comm_data += glob.glob(os.path.join(single_sys, 'type*.raw'))
-            trans_comm_data += glob.glob(os.path.join(single_sys, 'nopbc'))
-    for ii in fp_data :
-        sys_paths = expand_sys_str(ii)
-        for single_sys in sys_paths:
-            trans_comm_data += glob.glob(os.path.join(single_sys, 'set.*'))
-            trans_comm_data += glob.glob(os.path.join(single_sys, 'type*.raw'))
-            trans_comm_data += glob.glob(os.path.join(single_sys, 'nopbc'))
+            if "#" not in single_sys:
+                trans_comm_data += glob.glob(os.path.join(single_sys, 'set.*'))
+                trans_comm_data += glob.glob(os.path.join(single_sys, 'type*.raw'))
+                trans_comm_data += glob.glob(os.path.join(single_sys, 'nopbc'))
+            else:
+                # H5 file
+                trans_comm_data.append(single_sys.split("#")[0])
+    # remove duplicated files
+    trans_comm_data = list(set(trans_comm_data))
     os.chdir(cwd)
 
     try:
@@ -1524,11 +1532,14 @@ def run_md_model_devi (iter_index,
         command = "/bin/sh -c '%s'" % command
         commands = [command]
         
-        lmp_traj_name = 'traj'
+        forward_files = ['conf.lmp', 'input.lammps']
+        backward_files = ['model_devi.out', 'model_devi.log']
         if model_devi_merge_traj :
-            lmp_traj_name = 'all.lammpstrj'
-        forward_files = ['conf.lmp', 'input.lammps', lmp_traj_name]
-        backward_files = ['model_devi.out', 'model_devi.log', lmp_traj_name]
+            backward_files += ['all.lammpstrj']
+        else :
+            forward_files += ['traj']     
+            backward_files += ['traj']          
+
         if use_plm:
             forward_files += ['input.plumed']
            # backward_files += ['output.plumed']
@@ -2200,7 +2211,13 @@ def _make_fp_vasp_inner (iter_index,
             cwd = os.getcwd()
             os.chdir(fp_task_path)
             if cluster_cutoff is None:
-                if model_devi_engine in ("lammps", "gromacs"):
+                if model_devi_engine == "lammps":                   
+                    if model_devi_merge_traj:
+                        conf_sys.to("lammps/lmp", "conf.dump")
+                    else: 
+                        os.symlink(os.path.relpath(conf_name), 'conf.dump')
+                    os.symlink(os.path.relpath(job_name), 'job.json')
+                elif model_devi_engine == "gromacs":
                     os.symlink(os.path.relpath(conf_name), 'conf.dump')
                     os.symlink(os.path.relpath(job_name), 'job.json')
                 elif model_devi_engine == "amber":
@@ -2249,7 +2266,7 @@ def _make_fp_vasp_inner (iter_index,
             if model_devi_engine == "lammps":
                 sys = None
                 if model_devi_merge_traj:
-                    sys = conf_sys
+                    sys = dpdata.System('conf.dump', fmt = "lammps/lmp", type_map = type_map)
                 else :
                     sys = dpdata.System('conf.dump', fmt = "lammps/dump", type_map = type_map)
                 sys.to_vasp_poscar('POSCAR')
@@ -2679,10 +2696,11 @@ def make_fp_abacus_scf(iter_index,
             if fp_params['basis_type'] == 'lcao':
                 assert('fp_orb_files' in jdata and type(jdata['fp_orb_files']) == list and len(jdata['fp_orb_files']) == len(fp_pp_files))
                 fp_orb_files = jdata['fp_orb_files']
-        if 'deepks_out_labels' in fp_params:
-            if fp_params['deepks_out_labels'] == 1:
-                assert('fp_dpks_descriptor' in jdata and type(jdata['fp_dpks_descriptor']) == str)
-                fp_dpks_descriptor = jdata['fp_dpks_descriptor']
+        dpks_out_labels = fp_params.get('deepks_out_labels',0)
+        dpks_scf = fp_params.get('deepks_scf',0)
+        if dpks_out_labels or dpks_scf:
+            assert('fp_dpks_descriptor' in jdata and type(jdata['fp_dpks_descriptor']) == str)
+            fp_dpks_descriptor = jdata['fp_dpks_descriptor']
         #user_input = True
         ret_input = make_abacus_scf_input(fp_params)
     elif 'fp_incar' in jdata.keys():
@@ -2804,8 +2822,7 @@ def make_fp_gaussian(iter_index,
         with open('input', 'w') as fp:
             fp.write(ret)
         os.chdir(cwd)
-    # link pp files
-    _link_fp_vasp_pp(iter_index, jdata)
+
 
 def make_fp_cp2k (iter_index,
                   jdata):
@@ -3225,6 +3242,7 @@ def run_fp (iter_index,
 def post_fp_check_fail(iter_index,
                        jdata,
                        rfailed = None) :
+
     ratio_failed =  rfailed if rfailed else jdata.get('ratio_failed',0.05)
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -3232,13 +3250,20 @@ def post_fp_check_fail(iter_index,
     fp_tasks.sort()
     if len(fp_tasks) == 0 :
         return
-    # check fail according to tag_failure
-    fp_failed_tags = glob.glob(os.path.join(work_path, 'task.*', 'tag_failure*'))
-    fp_failed_tasks = [os.path.dirname(ii) for ii in fp_failed_tags]
-    fp_failed_tasks = list(set(fp_failed_tasks))
-
     ntask = len(fp_tasks)
-    nfail = len(fp_failed_tasks)
+    nfail = 0
+
+    # check fail according to the number of collected data
+    sys_data = glob.glob(os.path.join(work_path, "data.*"))
+    sys_data.sort()
+    nframe = 0
+    for ii in sys_data :
+        sys_paths = expand_sys_str(ii)
+        for single_sys in sys_paths:
+            sys = dpdata.LabeledSystem(os.path.join(single_sys), fmt = 'deepmd/npy')
+            nframe += len(sys)
+    nfail = ntask - nframe
+
     rfail = float(nfail) / float(ntask)
     dlog.info("failed tasks: %6d in %6d  %6.2f %% " % (nfail, ntask, rfail * 100.))
     if rfail > ratio_failed:
@@ -3655,9 +3680,9 @@ def post_fp_amber_diff(iter_index, jdata):
     for ss in system_index :
         sys_output = glob.glob(os.path.join(work_path, "task.%s.*"%ss))
         sys_output.sort()
-        all_sys=dpdata.MultiSystems()
+        all_sys=dpdata.MultiSystems(type_map=jdata['type_map'])
         for oo in sys_output :
-            sys=dpdata.MultiSystems().from_deepmd_npy(os.path.join(oo, 'dataset'))
+            sys=dpdata.MultiSystems(type_map=jdata['type_map']).from_deepmd_npy(os.path.join(oo, 'dataset'))
             all_sys.append(sys)
         sys_data_path = os.path.join(work_path, 'data.%s'%ss)
         all_sys.to_deepmd_raw(sys_data_path)
@@ -3666,7 +3691,6 @@ def post_fp_amber_diff(iter_index, jdata):
 def post_fp (iter_index,
              jdata) :
     fp_style = jdata['fp_style']
-    post_fp_check_fail(iter_index, jdata)
     if fp_style == "vasp" :
         post_fp_vasp(iter_index, jdata)
     elif fp_style == "pwscf" :
@@ -3685,6 +3709,7 @@ def post_fp (iter_index,
         post_fp_amber_diff(iter_index, jdata)
     else :
         raise RuntimeError ("unsupported fp style")
+    post_fp_check_fail(iter_index, jdata)
     # clean traj
     clean_traj = True
     if 'model_devi_clean_traj' in jdata :
@@ -3724,6 +3749,9 @@ def run_iter (param_file, machine_file) :
        with open (machine_file, 'r') as fp:
            mdata = json.load (fp)
 
+    jdata_arginfo = run_jdata_arginfo()
+    jdata = normalize(jdata_arginfo, jdata, strict_check=False)
+
     update_mass_map(jdata)
         
     if jdata.get('pretty_print',False):
@@ -3751,6 +3779,8 @@ def run_iter (param_file, machine_file) :
         with open (record) as frec :
             for line in frec :
                 iter_rec = [int(x) for x in line.split()]
+        if len(iter_rec) == 0: 
+            raise ValueError("There should not be blank lines in record.dpgen.")
         dlog.info ("continue from iter %03d task %02d" % (iter_rec[0], iter_rec[1]))
 
     cont = True

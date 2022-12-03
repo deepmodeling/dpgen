@@ -7,6 +7,8 @@ from pathlib import Path
 
 from dpgen.util import normalize
 from dpgen.data.arginfo import (
+    init_bulk_jdata_arginfo,
+    init_surf_jdata_arginfo,
     init_reaction_jdata_arginfo,
 )
 from dpgen.simplify.arginfo import (
@@ -18,6 +20,8 @@ from dpgen.generator.arginfo import (
     run_mdata_arginfo,
 )
 
+init_bulk_jdata = init_bulk_jdata_arginfo()
+init_surf_jdata = init_surf_jdata_arginfo()
 init_reaction_jdata = init_reaction_jdata_arginfo()
 simplify_jdata = simplify_jdata_arginfo()
 simplify_mdata = simplify_mdata_arginfo()
@@ -30,6 +34,10 @@ p_examples = Path(__file__).parent.parent / "examples"
 # input_files : tuple[tuple[Argument, Path]]
 #   tuple of example list
 input_files = (
+    (init_bulk_jdata, p_examples / "init" / "ch4.json"),
+    (init_surf_jdata, p_examples / "init" / "surf.json"),
+    # (init_surf_jdata, p_examples / "init" / "al.json"),
+    # (init_surf_jdata, p_examples / "init" / "cu.surf.hcp.111.json"),
     (init_reaction_jdata, p_examples / "init" / "reaction.json"),
     (simplify_jdata, p_examples / "simplify" / "qm7.json"),
     (simplify_jdata, p_examples / "simplify-MAPbI3-scan-lebesgue" / "simplify_example" / "simplify.json"),
@@ -45,7 +53,7 @@ input_files = (
     (run_jdata, p_examples / "run" / "dp1.x-lammps-ABACUS-pw" / "methane" / "param.json"),
     (run_jdata, p_examples / "run" / "dp1.x-lammps-ABACUS-lcao-dpks" / "methane" / "param.json"),
     (run_jdata, p_examples / "run" / "dp1.x_lammps_gaussian" / "dodecane" / "dodecane.json"),
-    #(run_jdata, p_examples / "run" / "dp-lammps-enhance_sampling" / "param.json"),
+    (run_jdata, p_examples / "run" / "dp-lammps-enhance_sampling" / "param.json"),
     #(run_jdata, p_examples / "run" / "deprecated" / "param-mg-vasp.json"),
     #(run_jdata, p_examples / "run" / "deprecated" / "param-mg-vasp-ucloud.json"),
     #(run_jdata, p_examples / "run" / "deprecated" / "param-pyridine-pwscf.json"),

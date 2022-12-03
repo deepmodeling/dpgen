@@ -1,4 +1,3 @@
-# User Guide
 ## Discussions：
 
 <div align=center><href="https://sm.ms/image/DVrYCuwFlM4Pqni" target="_blank"><img src="https://s2.loli.net/2022/08/16/DVrYCuwFlM4Pqni.png" width="60%"></div>
@@ -30,4 +29,5 @@ For example, if you want to set specific template for LAMMPS, you can find an ex
       
 If you want to learn more about Machine parameters, please check [docs for dpdispatcher](https://docs.deepmodeling.com/projects/dpdispatcher/en/latest/)
       
-## [Pull requests - How to contribute](how-to-contribute)
+## [Pull requests - How to contribute](../contributing-guide/contributing-guide)
+
