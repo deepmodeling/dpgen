@@ -224,7 +224,7 @@ def make_train (iter_index,
     
     #if you want to use DP-ZBL potential , you have to give the path of your energy potential file
     if 'srtab_file_path' in jdata.keys():
-        srtab_file_path = jdata.get("srtab_file_path", None) 
+        srtab_file_path = os.abspath(jdata.get("srtab_file_path", None)) 
        
     if 'training_reuse_stop_batch' in jdata.keys():
         training_reuse_stop_batch = jdata['training_reuse_stop_batch']
@@ -390,7 +390,7 @@ def make_train (iter_index,
         os.chdir(task_path)
         
         if 'srtab_file_path' in jdata.keys():
-            os.system('cp %s ./'%srtab_file_path)
+            shutil.copyfile(srtab_file_path,os.getcwd())
 
         for jj in init_data_sys :
             # HDF5 path contains #
@@ -553,10 +553,9 @@ def run_train (iter_index,
     #     else:
     #         run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in all_task]
+    forward_files = [train_input_file]
     if 'srtab_file_path' in jdata.keys():
-        forward_files = [train_input_file,zbl_file]
-    else:
-        forward_files = [train_input_file]
+        forward_files.append(zbl_file)
     if training_init_model:
         forward_files += [os.path.join('old', 'model.ckpt.meta'),
                           os.path.join('old', 'model.ckpt.index'),
