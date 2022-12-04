@@ -221,7 +221,11 @@ def make_train (iter_index,
     training_init_model = jdata.get('training_init_model', False)
     training_reuse_iter = jdata.get('training_reuse_iter')
     training_reuse_old_ratio = jdata.get('training_reuse_old_ratio', None)
-
+ 
+    #if you want to use DP-ZBL potential , you have to give the path of your energy potential file
+    if 'srtab_file_path' in jdata.keys():
+        srtab_file_path = os.path.abspath(jdata.get("srtab_file_path", None)) 
+       
     if 'training_reuse_stop_batch' in jdata.keys():
         training_reuse_stop_batch = jdata['training_reuse_stop_batch']
     elif 'training_reuse_numb_steps' in jdata.keys():
@@ -384,6 +388,10 @@ def make_train (iter_index,
         task_path = os.path.join(work_path, train_task_fmt % ii)
         create_path(task_path)
         os.chdir(task_path)
+        
+        if 'srtab_file_path' in jdata.keys():
+            shutil.copyfile(srtab_file_path,os.path.basename(srtab_file_path))
+
         for jj in init_data_sys :
             # HDF5 path contains #
             if not (os.path.isdir(jj) if "#" not in jj else os.path.isfile(jj.split("#")[0])):
@@ -486,6 +494,10 @@ def run_train (iter_index,
     train_input_file = default_train_input_file
     training_reuse_iter = jdata.get('training_reuse_iter')
     training_init_model = jdata.get('training_init_model', False)
+
+    if 'srtab_file_path' in jdata.keys():
+        zbl_file=os.path.basename(jdata.get("srtab_file_path", None))
+
     if training_reuse_iter is not None and iter_index >= training_reuse_iter:
         training_init_model = True
     try:
@@ -543,6 +555,8 @@ def run_train (iter_index,
     run_tasks = [os.path.basename(ii) for ii in all_task]
 
     forward_files = [train_input_file]
+    if 'srtab_file_path' in jdata.keys():
+        forward_files.append(zbl_file)
     if training_init_model:
         forward_files += [os.path.join('old', 'model.ckpt.meta'),
                           os.path.join('old', 'model.ckpt.index'),
