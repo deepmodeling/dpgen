@@ -116,10 +116,12 @@ def make_abacus_scf_input(fp_params):
             ret += "%s %s\n" % (key, str(fp_params[key]))
     return ret
 
-def make_abacus_scf_stru(sys_data, fp_pp_files, fp_orb_files = None, fp_dpks_descriptor = None, fp_params = None):
+def make_abacus_scf_stru(sys_data, fp_pp_files, fp_orb_files = None, fp_dpks_descriptor = None, fp_params = None,type_map=None):
     atom_names = sys_data['atom_names']
     atom_numbs = sys_data['atom_numbs']
-    assert(len(atom_names) == len(fp_pp_files)), "the number of pp_files must be equal to the number of atom types. "
+    if type_map == None:
+        type_map = atom_names
+
     assert(len(atom_names) == len(atom_numbs)), "Please check the name of atoms. "
     cell = sys_data["cells"].reshape([3, 3])
     coord = sys_data['coords'].reshape([sum(atom_numbs), 3])
@@ -128,10 +130,12 @@ def make_abacus_scf_stru(sys_data, fp_pp_files, fp_orb_files = None, fp_dpks_des
 
     ret = "ATOMIC_SPECIES\n"
     for iatom in range(len(atom_names)):
+        assert (atom_names[iatom] in type_map),"element %s is not defined in type_map" % atom_names[iatom]
+        idx = type_map.index(atom_names[iatom])
         if 'atom_masses' not in sys_data:
-            ret += atom_names[iatom] + " 1.00 " + fp_pp_files[iatom] + "\n"
+            ret += atom_names[iatom] + " 1.00 " + fp_pp_files[idx] + "\n"
         else:
-            ret += atom_names[iatom] + " %.3f "%sys_data['atom_masses'][iatom] + fp_pp_files[iatom] + "\n"
+            ret += atom_names[iatom] + " %.3f "%sys_data['atom_masses'][iatom] + fp_pp_files[idx] + "\n"
 
     if fp_params is not None and "lattice_constant" in fp_params:
         ret += "\nLATTICE_CONSTANT\n"
@@ -162,9 +166,10 @@ def make_abacus_scf_stru(sys_data, fp_pp_files, fp_orb_files = None, fp_dpks_des
 
     if fp_orb_files is not None:
         ret +="\nNUMERICAL_ORBITAL\n"
-        assert(len(fp_orb_files)==len(atom_names))
+        assert(len(fp_orb_files)==len(type_map))
         for iatom in range(len(atom_names)):
-            ret += fp_orb_files[iatom] +"\n"
+            idx = type_map.index(atom_names[iatom])
+            ret += fp_orb_files[idx] +"\n"
 
     if fp_dpks_descriptor is not None:
         ret +="\nNUMERICAL_DESCRIPTOR\n"

@@ -2755,7 +2755,7 @@ def make_fp_abacus_scf(iter_index,
         if 'kspacing' not in fp_params.keys():
             with open("KPT", "w") as fp:
                 fp.write(ret_kpt)
-        ret_stru = make_abacus_scf_stru(sys_data, fp_pp_files, fp_orb_files, fp_dpks_descriptor, fp_params)
+        ret_stru = make_abacus_scf_stru(sys_data, fp_pp_files, fp_orb_files, fp_dpks_descriptor, fp_params,type_map=jdata['type_map'])
         with open("STRU", "w") as fp:
             fp.write(ret_stru)
 
