@@ -135,7 +135,6 @@
   "_fp_kpt_file":	  "./abacus/KPT",
   "_k_points":		[3,3,3,0,0,0],
   "user_fp_params":{
-    "ntype": 2,
     "ecutwfc": 80,
     "scf_thr": 1e-7,
     "scf_nmax": 50,

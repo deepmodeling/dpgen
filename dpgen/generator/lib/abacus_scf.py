@@ -1,5 +1,5 @@
 import numpy as np
-from dpdata.abacus.scf import get_cell, get_coords
+from dpdata.abacus.scf import get_cell, get_coords,get_nele_from_stru
 from dpgen.auto_test.lib import vasp
 import os
 bohr2ang = 0.52917721067
@@ -21,18 +21,13 @@ def make_abacus_scf_input(fp_params):
     ret = "INPUT_PARAMETERS\n"
     ret += "calculation scf\n"
     for key in fp_params:
-        if key == "ntype":
-            fp_params["ntype"] = int(fp_params["ntype"])
-            assert(fp_params['ntype'] >= 0 and type(fp_params["ntype"]) == int),  "'ntype' should be a positive integer."
-            ret += "ntype %d\n" % fp_params['ntype']
-        #ret += "pseudo_dir ./\n"
-        elif key == "ecutwfc":
+        if key == "ecutwfc":
             fp_params["ecutwfc"] = float(fp_params["ecutwfc"])
-            assert(fp_params["ecutwfc"] >= 0) ,  "'ntype' should be non-negative."
+            assert(fp_params["ecutwfc"] >= 0) ,  "'ecutwfc' should be non-negative."
             ret += "ecutwfc %f\n" % fp_params["ecutwfc"]
         elif key == "kspacing":
             fp_params["kspacing"] = float(fp_params["kspacing"])
-            assert(fp_params["kspacing"] >= 0) ,  "'ntype' should be non-negative."
+            assert(fp_params["kspacing"] >= 0) ,  "'kspacing' should be non-negative."
             ret += "kspacing %f\n" % fp_params["kspacing"]
         elif key == "scf_thr":
             fp_params["scf_thr"] = float(fp_params["scf_thr"])
@@ -190,14 +185,9 @@ def get_abacus_input_parameters(INPUT):
     fp.close()
     return input_parameters
 
-def get_mass_from_STRU(geometry_inlines, inlines, atom_names):
-    nele = None
-    for line in inlines:
-        if line.split() == []:
-            continue
-        if "ntype" in line and "ntype" == line.split()[0]:
-            nele = int(line.split()[1])
-    assert(nele is not None)
+def get_mass_from_STRU(geometry_inlines, atom_names):
+    nele = get_nele_from_stru(geometry_inlines)
+    assert(nele > 0)
     mass_list = [0 for i in atom_names]
     pp_file_list = [i for i in atom_names]
     for iline, line in enumerate(geometry_inlines):
@@ -266,21 +256,9 @@ def get_abacus_STRU(STRU, INPUT = None, n_ele = None):
         if line.split() == [] or len(line) == 0:
             del geometry_inlines[iline]
     geometry_inlines.append("")
-    celldm, cell = get_cell(geometry_inlines) 
-    if n_ele is None and INPUT is not None:
-        assert(os.path.isfile(INPUT)), "file %s should exists" % INPUT
-        with open(INPUT, 'r') as fp:
-            inlines = fp.read().split('\n')
-        atom_names, natoms, types, coords = get_coords(celldm, cell, geometry_inlines, inlines) 
-    elif n_ele is not None and INPUT is None:
-        assert(n_ele > 0)
-        inlines = ["ntype %d" %n_ele]
-        atom_names, natoms, types, coords = get_coords(celldm, cell, geometry_inlines, inlines)
-    else:
-        atom_names, atom_numbs = get_natoms_from_stru(geometry_inlines)
-        inlines = ["ntype %d" %len(atom_numbs)]
-        atom_names, natoms, types, coords = get_coords(celldm, cell, geometry_inlines, inlines)
-    masses, pp_files = get_mass_from_STRU(geometry_inlines, inlines, atom_names)
+    celldm, cell = get_cell(geometry_inlines)
+    atom_names, natoms, types, coords = get_coords(celldm, cell, geometry_inlines)
+    masses, pp_files = get_mass_from_STRU(geometry_inlines, atom_names)
     orb_files, dpks_descriptor = get_additional_from_STRU(geometry_inlines, len(masses))
     data = {}
     data['atom_names'] = atom_names
