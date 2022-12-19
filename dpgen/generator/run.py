@@ -2691,26 +2691,26 @@ def make_fp_abacus_scf(iter_index,
     fp_params = {}
     if 'user_fp_params' in jdata.keys() :
         fp_params = jdata['user_fp_params']
-        # for lcao 
-        if 'basis_type' in fp_params:
-            if fp_params['basis_type'] == 'lcao':
-                assert('fp_orb_files' in jdata and type(jdata['fp_orb_files']) == list and len(jdata['fp_orb_files']) == len(fp_pp_files))
-                fp_orb_files = jdata['fp_orb_files']
-        dpks_out_labels = fp_params.get('deepks_out_labels',0)
-        dpks_scf = fp_params.get('deepks_scf',0)
-        if dpks_out_labels or dpks_scf:
-            assert('fp_dpks_descriptor' in jdata and type(jdata['fp_dpks_descriptor']) == str)
-            fp_dpks_descriptor = jdata['fp_dpks_descriptor']
-        #user_input = True
-        ret_input = make_abacus_scf_input(fp_params)
     elif 'fp_incar' in jdata.keys():
         fp_input_path = jdata['fp_incar']
         assert(os.path.exists(fp_input_path))
         fp_input_path = os.path.abspath(fp_input_path)
         fp_params = get_abacus_input_parameters(fp_input_path)
-        ret_input = make_abacus_scf_input(fp_params)
     else:
         raise RuntimeError("Set 'user_fp_params' or 'fp_incar' in json file to make INPUT of ABACUS")
+    ret_input = make_abacus_scf_input(fp_params)
+    
+    #Get orbital and deepks setting
+    if 'basis_type' in fp_params:
+        if fp_params['basis_type'] == 'lcao':
+            assert('fp_orb_files' in jdata and type(jdata['fp_orb_files']) == list and len(jdata['fp_orb_files']) == len(fp_pp_files))
+            fp_orb_files = jdata['fp_orb_files']
+    dpks_out_labels = fp_params.get('deepks_out_labels',0)
+    dpks_scf = fp_params.get('deepks_scf',0)
+    if dpks_out_labels or dpks_scf:
+        assert('fp_dpks_descriptor' in jdata and type(jdata['fp_dpks_descriptor']) == str)
+        fp_dpks_descriptor = jdata['fp_dpks_descriptor']
+            
     # get paramters for writting KPT file
     if 'kspacing' not in fp_params.keys():
         if 'gamma_only' in fp_params.keys():
