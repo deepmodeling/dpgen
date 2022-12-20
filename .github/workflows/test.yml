@@ -10,7 +10,6 @@ jobs:
     strategy:
       matrix:
         python-version: [3.8, 3.9]
-        PYMATGEN_VERSION: [2022.7.19]
 
     steps:
     - uses: actions/checkout@v2
@@ -19,7 +18,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
-      run: pip install coverage pymatgen==${{ matrix.PYMATGEN_VERSION }} -e .
+      run: pip install coverage https://github.com/materialsproject/pymatgen@b56698019098247ff54f50997a67c562b4375fc3 -e .
     - name: Test
       run: coverage run --source=./dpgen -m unittest -v && coverage report
     - uses: codecov/codecov-action@v3
