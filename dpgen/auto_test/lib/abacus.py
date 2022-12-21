@@ -74,7 +74,7 @@ def poscar2stru(poscar,inter_param,stru):
     if 'deepks_desc' in inter_param:
         deepks_desc ="./pp_orb/%s\n" % inter_param['deepks_desc']
 
-    stru.to("STRU", "stru", mass = atom_mass, pp_file = pseudo, numerical_orbital = orb, numerical_descriptor = deepks_desc)
+    stru.to("stru", "STRU", mass = atom_mass, pp_file = pseudo, numerical_orbital = orb, numerical_descriptor = deepks_desc)
 
 
 def stru_fix_atom(struf,fix_atom = [True,True,True]):
@@ -187,7 +187,7 @@ def final_stru(abacus_path):
 
 def stru2Structure(struf):
     stru = dpdata.System(struf, fmt="stru")
-    stru.to('POSCAR.tmp', 'poscar')
+    stru.to('poscar','POSCAR.tmp')
     ss = Structure.from_file('POSCAR.tmp')
     os.remove('POSCAR.tmp')
     return ss

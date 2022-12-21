@@ -140,7 +140,7 @@ class Surface(Property):
 
                 if self.inter_param['type'] == 'abacus':
                     stru = dpdata.System(equi_contcar, fmt="stru")
-                    stru.to('CONTCAR.tmp', 'contcar')
+                    stru.to('contcar','CONTCAR.tmp')
                     ptypes = vasp.get_poscar_types('CONTCAR.tmp')
                     ss = Structure.from_file('CONTCAR.tmp')
                     os.remove('CONTCAR.tmp')
@@ -169,7 +169,7 @@ class Surface(Property):
                     task_list.append(output_task)
                     print("# %03d generate " % ii, output_task, " \t %d atoms" % len(all_slabs[ii].sites))
                     # make confs
-                    all_slabs[ii].to('POSCAR.tmp', 'POSCAR')
+                    all_slabs[ii].to('POSCAR', 'POSCAR.tmp')
                     vasp.regulate_poscar('POSCAR.tmp', 'POSCAR')
                     vasp.sort_poscar('POSCAR', 'POSCAR', ptypes)
                     vasp.perturb_xz('POSCAR', 'POSCAR', self.pert_xz)
