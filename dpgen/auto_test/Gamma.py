@@ -164,7 +164,7 @@ class Gamma(Property):
 
                 # rewrite new CONTCAR with direct coords
                 os.chdir(path_to_equi)
-                ss.to('POSCAR', 'CONTCAR.direct')
+                ss.to('CONTCAR.direct', 'POSCAR')
                 # re-read new CONTCAR
                 ss = Structure.from_file('CONTCAR.direct')
                 relax_a = ss.lattice.a
