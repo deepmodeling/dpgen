@@ -290,7 +290,7 @@ def make_super_cell (jdata) :
     #minor bug for element symbol behind the coordinates
     from_struct=Structure.from_file(from_file)
     from_struct.make_supercell(super_cell)
-    from_struct.to('poscar',to_file)
+    from_struct.to(to_file, 'poscar')
 
 def make_super_cell_ABACUS (jdata, stru_data) :
     out_dir = jdata['out_dir']
@@ -330,7 +330,7 @@ def make_super_cell_poscar(jdata) :
     #minor bug for element symbol behind the coordinates
     from_struct=Structure.from_file(from_file)
     from_struct.make_supercell(super_cell)
-    from_struct.to('poscar',to_file)  
+    from_struct.to(to_file, 'poscar')  
 
     # make system dir (copy)
     lines = open(to_file, 'r').read().split('\n')

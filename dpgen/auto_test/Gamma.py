@@ -153,7 +153,7 @@ class Gamma(Property):
 
                 if self.inter_param['type'] == 'abacus':
                     stru = dpdata.System(equi_contcar, fmt="stru")
-                    stru.to('contcar','CONTCAR.tmp')
+                    stru.to('CONTCAR.tmp', 'contcar')
                     ptypes = vasp.get_poscar_types('CONTCAR.tmp')
                     ss = Structure.from_file('CONTCAR.tmp')
                     os.remove('CONTCAR.tmp')
@@ -164,7 +164,7 @@ class Gamma(Property):
 
                 # rewrite new CONTCAR with direct coords
                 os.chdir(path_to_equi)
-                ss.to('POSCAR', 'CONTCAR.direct')
+                ss.to('CONTCAR.direct', 'POSCAR')
                 # re-read new CONTCAR
                 ss = Structure.from_file('CONTCAR.direct')
                 relax_a = ss.lattice.a
@@ -197,7 +197,7 @@ class Gamma(Property):
                     #print("# %03d generate " % ii, output_task)
                     print("# %03d generate " % ii, output_task, " \t %d atoms" % self.atom_num)
                     # make confs
-                    all_slabs[ii].to('POSCAR', 'POSCAR.tmp')
+                    all_slabs[ii].to('POSCAR.tmp', 'POSCAR')
                     vasp.regulate_poscar('POSCAR.tmp', 'POSCAR')
                     vasp.sort_poscar('POSCAR', 'POSCAR', ptypes)
                     if self.inter_param['type'] == 'abacus':

@@ -38,7 +38,7 @@ def gen_ele_std(ele_name, ctype):
     os.makedirs(work_path, exist_ok = True)
     fposcar = os.path.join(work_path, 'POSCAR')
     fjson = os.path.join(work_path, 'data.json')
-    struct.to('poscar', fposcar)    
+    struct.to(fposcar, 'poscar')    
     return struct
 
 def gen_element(ele_name,key) :
@@ -57,8 +57,8 @@ def gen_element(ele_name,key) :
         os.makedirs(work_path, exist_ok = True)
         fposcar = os.path.join(work_path, 'POSCAR')
         fjson = os.path.join(work_path, 'data.json')
-        ii['structure'].to('poscar', fposcar)
-        ii['structure'].to('json', fjson)
+        ii['structure'].to(fposcar, 'poscar')
+        ii['structure'].to(fjson, 'json')
 
     m = StructureMatcher() 
     for ii in global_std_crystal.keys() :
@@ -105,8 +105,8 @@ def gen_alloy(eles,key) :
         os.makedirs(work_path, exist_ok = True)
         fposcar = os.path.join(work_path, 'POSCAR')
         fjson = os.path.join(work_path, 'data.json')
-        ii['structure'].to('poscar', fposcar)
-        ii['structure'].to('json', fjson)
+        ii['structure'].to(fposcar, 'poscar')
+        ii['structure'].to(fjson, 'json')
 
 def _main() :
     parser = argparse.ArgumentParser(
