@@ -169,7 +169,7 @@ class Surface(Property):
                     task_list.append(output_task)
                     print("# %03d generate " % ii, output_task, " \t %d atoms" % len(all_slabs[ii].sites))
                     # make confs
-                    all_slabs[ii].to('POSCAR', 'POSCAR.tmp')
+                    all_slabs[ii].to('POSCAR.tmp', 'POSCAR')
                     vasp.regulate_poscar('POSCAR.tmp', 'POSCAR')
                     vasp.sort_poscar('POSCAR', 'POSCAR', ptypes)
                     vasp.perturb_xz('POSCAR', 'POSCAR', self.pert_xz)

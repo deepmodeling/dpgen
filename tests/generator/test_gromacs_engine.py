@@ -106,7 +106,7 @@ class TestGromacsModelDeviEngine(unittest.TestCase):
                                mdata={"deepmd_version": "2.0"})
         self._copy_outputs(os.path.join(self.dirname, "outputs"), self.model_devi_task_path)
         make_fp_gaussian(iter_index=0, jdata=self.jdata)
-        candi = np.loadtxt(os.path.join(self.fp_path, "candidate.shuffled.000.out"), dtype=np.str)
+        candi = np.loadtxt(os.path.join(self.fp_path, "candidate.shuffled.000.out"), dtype=str)
         self.assertEqual(sorted([int(i) for i in candi[:,1]]), [0,10,20,30,50])
         
      
