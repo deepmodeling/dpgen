@@ -198,7 +198,7 @@ def poscar_elong (poscar_in, poscar_out, elong, shift_center=True) :
        z_shift=st.lattice.c/2-z_mean
        cart_coords[:,2]=cart_coords[:,2]+z_shift
        nst=Structure(st.lattice,st.species,coords=cart_coords,coords_are_cartesian=True)
-       nst.to('poscar',poscar_out)
+       nst.to(poscar_out, 'poscar')
     else:
        with open(poscar_out, 'w') as fout:
             fout.write("".join(lines))
