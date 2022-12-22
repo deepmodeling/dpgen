@@ -16,7 +16,7 @@ from dpgen.auto_test.run import gen_test
 from dpgen.database.run import db_run
 from dpgen.tools.run_report import run_report
 from dpgen.tools.auto_gen_param import auto_gen_param
-from dpgen import info, __version__, __date__
+from dpgen import info, __version__
 
 
 

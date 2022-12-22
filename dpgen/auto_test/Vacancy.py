@@ -2,6 +2,7 @@ import glob
 import json
 import os
 import re
+import numpy as np
 
 from monty.serialization import loadfn, dumpfn
 from pymatgen.analysis.defects.generators import VacancyGenerator
@@ -13,10 +14,12 @@ from dpgen.auto_test.refine import make_refine
 from dpgen.auto_test.reproduce import make_repro
 from dpgen.auto_test.reproduce import post_repro
 
+import dpgen.auto_test.lib.abacus as abacus
+import dpgen.generator.lib.abacus_scf as abacus_scf
 
 class Vacancy(Property):
     def __init__(self,
-                 parameter):
+                 parameter,inter_param=None):
         parameter['reproduce'] = parameter.get('reproduce', False)
         self.reprod = parameter['reproduce']
         if not self.reprod:
@@ -58,6 +61,7 @@ class Vacancy(Property):
             parameter['init_from_suffix'] = parameter.get('init_from_suffix', '00')
             self.init_from_suffix = parameter['init_from_suffix']
         self.parameter = parameter
+        self.inter_param = inter_param if inter_param != None else {'type': 'vasp'}
 
     def make_confs(self,
                    path_to_work,
@@ -88,7 +92,7 @@ class Vacancy(Property):
             if 'init_data_path' not in self.parameter:
                 raise RuntimeError("please provide the initial data path to reproduce")
             init_data_path = os.path.abspath(self.parameter['init_data_path'])
-            task_list = make_repro(init_data_path, self.init_from_suffix,
+            task_list = make_repro(self.inter_param,init_data_path, self.init_from_suffix,
                                    path_to_work, self.parameter.get('reprod_last_frame', False))
             os.chdir(cwd)
 
@@ -115,34 +119,49 @@ class Vacancy(Property):
                     os.symlink(os.path.relpath(os.path.join(init_from_task, 'supercell.json')), 'supercell.json')
                 os.chdir(cwd)
             else:
-                equi_contcar = os.path.join(path_to_equi, 'CONTCAR')
+                if self.inter_param['type'] == 'abacus':
+                    CONTCAR = abacus.final_stru(path_to_equi)
+                    POSCAR = 'STRU'
+                else:
+                    CONTCAR = 'CONTCAR'
+                    POSCAR = 'POSCAR'
+
+                equi_contcar = os.path.join(path_to_equi, CONTCAR)
                 if not os.path.exists(equi_contcar):
                     raise RuntimeError("please do relaxation first")
 
-                ss = Structure.from_file(equi_contcar)
-                vds = VacancyGenerator(ss)
+                if self.inter_param['type'] == 'abacus':
+                    ss = abacus.stru2Structure(equi_contcar)
+                else:
+                    ss = Structure.from_file(equi_contcar)
+
+                pre_vds = VacancyGenerator()
+                vds = pre_vds.generate(ss)
                 dss = []
                 for jj in vds:
-                    dss.append(jj.generate_defect_structure(self.supercell))
+                    dss.append(jj.get_supercell_structure(sc_mat=np.diag(self.supercell, k=0)))
 
                 print('gen vacancy with supercell ' + str(self.supercell))
                 os.chdir(path_to_work)
-                if os.path.isfile('POSCAR'):
-                    os.remove('POSCAR')
-                if os.path.islink('POSCAR'):
-                    os.remove('POSCAR')
-                os.symlink(os.path.relpath(equi_contcar), 'POSCAR')
+                if os.path.isfile(POSCAR):
+                    os.remove(POSCAR)
+                if os.path.islink(POSCAR):
+                    os.remove(POSCAR)
+                os.symlink(os.path.relpath(equi_contcar), POSCAR)
                 #           task_poscar = os.path.join(output, 'POSCAR')
 
                 for ii in range(len(dss)):
                     output_task = os.path.join(path_to_work, 'task.%06d' % ii)
                     os.makedirs(output_task, exist_ok=True)
                     os.chdir(output_task)
-                    for jj in ['INCAR', 'POTCAR', 'POSCAR', 'conf.lmp', 'in.lammps']:
+                    for jj in ['INCAR', 'POTCAR', 'POSCAR', 'conf.lmp', 'in.lammps','STRU']:
                         if os.path.exists(jj):
                             os.remove(jj)
                     task_list.append(output_task)
                     dss[ii].to('POSCAR', 'POSCAR')
+                    if self.inter_param['type'] == 'abacus':
+                        abacus.poscar2stru("POSCAR",self.inter_param,"STRU")
+                        os.remove('POSCAR')
                     # np.savetxt('supercell.out', self.supercell, fmt='%d')
                     dumpfn(self.supercell, 'supercell.json')
                 os.chdir(cwd)

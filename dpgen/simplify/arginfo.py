@@ -20,7 +20,7 @@ def general_simplify_arginfo() -> Argument:
         arginfo
     """
     doc_labeled = "If true, the initial data is labeled."
-    doc_pick_data = "Path to the directory with the pick data with the deepmd/npy format. Systems are detected recursively."
+    doc_pick_data = "(List of) Path to the directory with the pick data with the deepmd/npy or the HDF5 file with deepmd/hdf5 format. Systems are detected recursively."
     doc_init_pick_number = "The number of initial pick data."
     doc_iter_pick_number = "The number of pick data in each iteration."
     doc_model_devi_f_trust_lo = "The lower bound of forces for the selection for the model deviation."
@@ -28,7 +28,7 @@ def general_simplify_arginfo() -> Argument:
 
     return [
         Argument("labeled", bool, optional=True, default=False, doc=doc_labeled),
-        Argument("pick_data", str, doc=doc_pick_data),
+        Argument("pick_data", [str, list], doc=doc_pick_data),
         Argument("init_pick_number", int, doc=doc_init_pick_number),
         Argument("iter_pick_number", int, doc=doc_iter_pick_number),
         Argument("model_devi_f_trust_lo", float, optional=False, doc=doc_model_devi_f_trust_lo),
@@ -71,10 +71,16 @@ def fp_args() -> List[Argument]:
     """
     doc_fp_task_max = 'Maximum of structures to be calculated in 02.fp of each iteration.'
     doc_fp_task_min = 'Minimum of structures to be calculated in 02.fp of each iteration.'
+    doc_fp_accurate_threshold = 'If the accurate ratio is larger than this number, no fp calculation will be performed, i.e. fp_task_max = 0.'
+    doc_fp_accurate_soft_threshold = 'If the accurate ratio is between this number and fp_accurate_threshold, the fp_task_max linearly decays to zero.'
 
     return [
         Argument("fp_task_max", int, optional=True, doc=doc_fp_task_max),
         Argument("fp_task_min", int, optional=True, doc=doc_fp_task_min),
+        Argument("fp_accurate_threshold", float,
+                 optional=True, doc=doc_fp_accurate_threshold),
+        Argument("fp_accurate_soft_threshold", float,
+                 optional=True, doc=doc_fp_accurate_soft_threshold),
     ]
 
 

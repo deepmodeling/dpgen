@@ -22,10 +22,13 @@ def general_mdata_arginfo(name: str, tasks: Tuple[str]) -> Argument:
     """
     
     doc_api_version = "Please set to 1.0"
+    doc_deepmd_version = "DeePMD-kit version, e.g. 2.1.3"
     doc_run_mdata = "machine.json file"
     arg_api_version = Argument("api_version", str, optional=False, doc=doc_api_version)
+    arg_deepmd_version = Argument(
+        "deepmd_version", str, optional=True, default="2", doc=doc_deepmd_version)
 
-    sub_fields = [arg_api_version]
+    sub_fields = [arg_api_version, arg_deepmd_version]
     doc_mdata = "Parameters of command, machine, and resources for %s"
     for task in tasks:
         sub_fields.append(Argument(

@@ -88,8 +88,6 @@
   "model_devi_skip": 0,
   "model_devi_f_trust_lo":  0.05,
   "model_devi_f_trust_hi":  0.15,
-  "model_devi_e_trust_lo": 1e-3,
-  "model_devi_e_trust_hi": 1e-1,
   "model_devi_clean_traj":  false,
   "model_devi_jobs": [
     {
@@ -125,7 +123,7 @@
   ],
 
   "_comment": " 02.fp ",
-  "fp_style":             "abacus/scf",
+  "fp_style":             "abacus",
   "shuffle_poscar":       false,
   "fp_task_max":          50,
   "fp_task_min":          8,

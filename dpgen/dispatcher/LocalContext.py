@@ -77,7 +77,7 @@ class LocalContext(object) :
             for jj in local_up_files :
                 if not os.path.exists(os.path.join(local_job, jj)):
                     os.chdir(cwd)
-                    raise RuntimeError('cannot find upload file ' + os.path.join(local_job, jj))
+                    raise OSError('cannot find upload file ' + os.path.join(local_job, jj))
                 if os.path.exists(os.path.join(remote_job, jj)) :
                     os.remove(os.path.join(remote_job, jj))
                 _check_file_path(jj)

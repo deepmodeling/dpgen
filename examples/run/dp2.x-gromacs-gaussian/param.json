@@ -3,7 +3,6 @@
   "mass_map": [2, 12, 14, 16, 17, 32, 35],
   "init_data_prefix": "/path/to/init/data",
   "init_data_sys": ["data.init"],
-  "init_multi_systems": true,
   "sys_configs_prefix": "/path/to/model/devi/data",
   "sys_configs": [
     ["model_devi/CHEMBL3402749_500"],
@@ -122,8 +121,6 @@
   "model_devi_dt": 0.001,
   "model_devi_f_trust_lo": 0.20,
   "model_devi_f_trust_hi": 0.60,
-  "model_devi_e_trust_lo": 1e10,
-  "model_devi_e_trust_hi": 1e10,
   "model_devi_clean_traj": false,
   "model_devi_skip": 0,
   "model_devi_nopbc": true,

@@ -5,18 +5,17 @@ from dpgen.dispatcher.Batch import Batch
 from dpgen.dispatcher.JobStatus import JobStatus
 from dpgen import dlog
 
-try:
-    import boto3
-except ModuleNotFoundError:
-    pass
-else:
-    batch_client = boto3.client('batch')
 
 class AWS(Batch):
     _query_time_interval = 30
     _job_id_map_status = {}
     _jobQueue = ""
     _query_next_allow_time = datetime.now().timestamp()
+
+    def __init__(self, context, uuid_names=True):
+        import boto3
+        self.batch_client = boto3.client('batch')
+        super().__init__(context, uuid_names)
 
     @staticmethod
     def map_aws_status_to_dpgen_status(aws_status):
@@ -47,7 +46,7 @@ class AWS(Batch):
             for status in ['SUBMITTED', 'PENDING', 'RUNNABLE', 'STARTING', 'RUNNING','SUCCEEDED', 'FAILED']:
                 nextToken = ''
                 while nextToken is not None:
-                    status_response = batch_client.list_jobs(jobQueue=cls._jobQueue, jobStatus=status, maxResults=100, nextToken=nextToken)
+                    status_response = self.batch_client.list_jobs(jobQueue=cls._jobQueue, jobStatus=status, maxResults=100, nextToken=nextToken)
                     status_list=status_response.get('jobSummaryList')
                     nextToken = status_response.get('nextToken', None)
                     for job_dict in status_list:
@@ -66,7 +65,7 @@ class AWS(Batch):
         except AttributeError:
             if self.context.check_file_exists(self.job_id_name):
                 self._job_id = self.context.read_file(self.job_id_name)
-                response_list = batch_client.describe_jobs(jobs=[self._job_id]).get('jobs')
+                response_list = self.batch_client.describe_jobs(jobs=[self._job_id]).get('jobs')
                 try:
                     response = response_list[0]
                     jobQueue = response['jobQueue']
@@ -134,7 +133,7 @@ class AWS(Batch):
         """
         jobName = os.path.join(self.context.remote_root,job_dirs.pop())[1:].replace('/','-').replace('.','_')
         jobName += ("_" + str(self.context.job_uuid))
-        response = batch_client.submit_job(jobName=jobName, 
+        response = self.batch_client.submit_job(jobName=jobName, 
                 jobQueue=res['jobQueue'], 
                 jobDefinition=res['jobDefinition'],
                 parameters={'task_command':script_str},

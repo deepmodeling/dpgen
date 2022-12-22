@@ -43,7 +43,6 @@
   "_comment": "pert xz to work around vasp bug...",
   "pert_xz": 0.01,
   "max_miller": 2,
-  "static-opt": false,
   "relax_box": false,
   "_comment": "06.phonon",
   "supercell_matrix": [

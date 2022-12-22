@@ -10,10 +10,12 @@ from .context import make_fp
 from .context import detect_multiplicity
 from .context import parse_cur_job
 from .context import param_file
+from .context import param_file_merge_traj
 from .context import param_old_file
 from .context import param_pwscf_file
 from .context import param_pwscf_old_file
 from .context import param_abacus_post_file
+from .context import param_diy_abacus_post_file
 from .context import param_siesta_file
 from .context import param_gaussian_file
 from .context import param_cp2k_file
@@ -153,10 +155,9 @@ IN.PSP3 = N.SG15.PBE.UPF\n";
 
 abacus_input_ref = "INPUT_PARAMETERS\n\
 calculation scf\n\
-ntype 2\n\
 ecutwfc 80.000000\n\
-dr2 1.000000e-07\n\
-niter 50\n\
+scf_thr 1.000000e-07\n\
+scf_nmax 50\n\
 basis_type pw\n\
 gamma_only 1\n\
 dft_functional pbe\n\
@@ -166,14 +167,14 @@ symmetry 1\n\
 nbands 5\n\
 nspin 1\n\
 ks_solver cg\n\
-smearing fixed\n\
-sigma 0.001000\n\
-force 1\n\
-stress 1\n\
-out_descriptor 0\n\
-lmax_descriptor 0\n\
+smearing_method fixed\n\
+smearing_sigma 0.001000\n\
+cal_force 1\n\
+cal_stress 1\n\
+deepks_out_labels 0\n\
+deepks_descriptor_lmax 0\n\
 deepks_scf 0\n\
-model_file model.ptg\n"
+deepks_model model.ptg\n"
 
 abacus_kpt_ref = "K_POINTS\n\
 0\n\
@@ -218,7 +219,7 @@ def _write_lammps_dump(sys, dump_file, f_idx = 0) :
     bd, tilt = _box2dumpbox(np.zeros(3), cell)
     atype = sys['atom_types']
     natoms = len(sys['atom_types'])
-    with open(dump_file, 'w') as fp:
+    with open(dump_file, 'a') as fp:
         fp.write('ITEM: TIMESTEP\n')
         fp.write('0\n')
         fp.write('ITEM: NUMBER OF ATOMS\n')
@@ -270,6 +271,52 @@ def _make_fake_md(idx, md_descript, atom_types, type_map, ele_temp = None) :
                 with open(os.path.join(task_dir, 'job.json'), 'w') as fp:
                     json.dump({"ele_temp": ele_temp[sidx][midx]}, fp)
 
+def _make_fake_md_merge_traj(idx, md_descript, atom_types, type_map, ele_temp = None) :
+    """
+    md_descript: list of dimension
+                 [n_sys][n_MD][n_frame]
+    ele_temp: list of dimension
+                 [n_sys][n_MD]
+    """
+    natoms = len(atom_types)
+    ntypes = len(type_map)
+    atom_types = np.array(atom_types, dtype = int)
+    atom_numbs = [np.sum(atom_types == ii) for ii in range(ntypes)]
+    sys = dpdata.System()
+    sys.data['atom_names'] = type_map
+    sys.data['atom_numbs'] = atom_numbs
+    sys.data['atom_types'] = atom_types
+    for sidx,ss in enumerate(md_descript) :
+        for midx,mm in enumerate(ss) :
+            nframes = len(mm)
+            cells  = np.random.random([nframes,3,3])
+            coords = np.random.random([nframes,natoms,3])
+            sys.data['coords'] = coords
+            sys.data['cells'] = cells
+            task_dir = os.path.join('iter.%06d' % idx,
+                                    '01.model_devi',
+                                    'task.%03d.%06d' % (sidx, midx))
+            cwd = os.getcwd()
+            os.makedirs(task_dir,exist_ok = True)
+            for ii in range(nframes):
+                _write_lammps_dump(sys,os.path.join(task_dir,'all.lammpstrj'),ii)
+            file_content = """\
+0.000000000000000000e+01 0.000000000000000000e+00 0.000000000000000000e+00 0.000000000000000000e+00 0.000000000000000000e+00 0.000000000000000000e+00 0.000000000000000000e+00
+1.000000000000000000e+01 0.000000000000000000e+00 0.000000000000000000e+00 0.000000000000000000e+00 2.899999999999999800e-02 0.000000000000000000e+00 0.000000000000000000e+00
+2.000000000000000000e+01 0.000000000000000000e+00 0.000000000000000000e+00 0.000000000000000000e+00 5.799999999999999600e-02 0.000000000000000000e+00 0.000000000000000000e+00
+3.000000000000000000e+01 0.000000000000000000e+00 0.000000000000000000e+00 0.000000000000000000e+00 8.699999999999999400e-02 0.000000000000000000e+00 0.000000000000000000e+00
+4.000000000000000000e+01 0.000000000000000000e+00 0.000000000000000000e+00 0.000000000000000000e+00 1.159999999999999920e-01 0.000000000000000000e+00 0.000000000000000000e+00
+5.000000000000000000e+01 0.000000000000000000e+00 0.000000000000000000e+00 0.000000000000000000e+00 1.449999999999999900e-01 0.000000000000000000e+00 0.000000000000000000e+00
+6.000000000000000000e+01 0.000000000000000000e+00 0.000000000000000000e+00 0.000000000000000000e+00 1.739999999999999880e-01 0.000000000000000000e+00 0.000000000000000000e+00
+7.000000000000000000e+01 0.000000000000000000e+00 0.000000000000000000e+00 0.000000000000000000e+00 2.029999999999999860e-01 0.000000000000000000e+00 0.000000000000000000e+00
+8.000000000000000000e+01 0.000000000000000000e+00 0.000000000000000000e+00 0.000000000000000000e+00 2.319999999999999840e-01 0.000000000000000000e+00 0.000000000000000000e+00
+9.000000000000000000e+01 0.000000000000000000e+00 0.000000000000000000e+00 0.000000000000000000e+00 2.610000000000000098e-01 0.000000000000000000e+00 0.000000000000000000e+00
+"""
+            with open(os.path.join(task_dir, 'model_devi.out') , 'w') as fp:
+                fp.write(file_content)
+            if ele_temp is not None:
+                with open(os.path.join(task_dir, 'job.json'), 'w') as fp:
+                    json.dump({"ele_temp": ele_temp[sidx][midx]}, fp)
 
 def _check_poscars(testCase, idx, fp_task_max, type_map) :
     fp_path = os.path.join('iter.%06d' % idx, '02.fp')
@@ -295,6 +342,40 @@ def _check_poscars(testCase, idx, fp_task_max, type_map) :
             sys0 = dpdata.System(traj_file, fmt = 'lammps/dump', type_map = type_map)
             sys1 = dpdata.System(poscar_file, fmt = 'vasp/poscar')
             test_atom_names(testCase, sys0, sys1)
+
+def _check_poscars_merge_traj(testCase, idx, fp_task_max, type_map ) :
+    fp_path = os.path.join('iter.%06d' % idx, '02.fp')
+    candi_files = glob.glob(os.path.join(fp_path, 'candidate.shuffled.*.out'))
+    candi_files.sort()
+    sys_idx = [str(os.path.basename(ii).split('.')[2]) for ii in candi_files]
+    for sidx,ii in zip(sys_idx, candi_files) :
+        md_task = []
+        f_idx = []
+        with open(ii) as fp:
+            for ii in fp :
+                md_task.append(ii.split()[0])
+                f_idx.append(ii.split()[1])
+        md_task = md_task[:fp_task_max]
+        f_idx = f_idx[:fp_task_max]
+        cc = 0
+        label_0 = 0
+        label_1 = 0
+
+        for tt,ff in zip(md_task, f_idx) :
+            traj_file = os.path.join(tt, 'all.lammpstrj')
+            poscar_file = os.path.join(fp_path,
+                                       'task.%03d.%06d' % (int(sidx), cc),
+                                       'POSCAR')
+            cc += 1
+            sys0 = dpdata.System(traj_file, fmt = 'lammps/dump', type_map = type_map)
+            sys1 = dpdata.System(poscar_file, fmt = 'vasp/poscar')
+            new_coords_0 = float(sys1["coords"][0][0][0])
+            new_coords_1 = float(sys1["coords"][0][1][0])
+            if (label_0 == new_coords_0 and label_1 == new_coords_1):
+                raise RuntimeError("The exact same POSCAR is generated under different first-principles calculation catalogs")
+            label_0 = new_coords_0
+            label_1 = new_coords_1
+            test_atom_names(testCase, sys0[int(int(ff)/10)], sys1)
 
 def _check_kpoints_exists(testCase, idx) :
     fp_path = os.path.join('iter.%06d' % idx, '02.fp')
@@ -575,8 +656,10 @@ class TestMakeFPABACUS(unittest.TestCase):
             shutil.rmtree('iter.000000')
         with open (param_abacus_post_file, 'r') as fp :
             jdata = json.load (fp)
+        fp.close()
         with open (machine_file, 'r') as fp:
             mdata = json.load (fp)
+        fp.close()
         md_descript = []
         nsys = 2
         nmd = 3
@@ -592,6 +675,36 @@ class TestMakeFPABACUS(unittest.TestCase):
         make_fp(0, jdata, {})
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
+        _check_abacus_input(self, 0)
+        _check_abacus_kpt(self, 0)
+        _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
+        shutil.rmtree('iter.000000')
+
+    def test_make_fp_abacus_from_input(self):
+        ## Verify if user chooses to diy ABACUS INPUT totally.
+        setUpModule()
+        if os.path.isdir('iter.000000') :
+            shutil.rmtree('iter.000000')
+        with open (param_diy_abacus_post_file, 'r') as fp :
+            jdata = json.load (fp)
+        fp.close()
+        with open (machine_file, 'r') as fp:
+            mdata = json.load (fp)
+        fp.close()
+        md_descript = []
+        nsys = 2
+        nmd = 3
+        n_frame = 10
+        for ii in range(nsys) :
+            tmp = []
+            for jj in range(nmd) :
+                tmp.append(np.arange(0, 0.29, 0.29/10))
+            md_descript.append(tmp)
+        atom_types = [0, 1, 0, 1]
+        type_map = jdata['type_map']
+        _make_fake_md(0, md_descript, atom_types, type_map)
+        make_fp(0, jdata, {})
+        _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
         _check_abacus_input(self, 0)
         _check_abacus_kpt(self, 0)
@@ -671,6 +784,37 @@ class TestMakeFPVasp(unittest.TestCase):
         _check_sel(self, 0, jdata['fp_task_max'], jdata['model_devi_f_trust_lo'], jdata['model_devi_f_trust_hi'])
         _check_poscars(self, 0, jdata['fp_task_max'], jdata['type_map'])
         # _check_incar_exists(self, 0)
+        _check_incar(self, 0)
+        _check_kpoints_exists(self, 0)
+        _check_kpoints(self,0)
+        # checked elsewhere
+        # _check_potcar(self, 0, jdata['fp_pp_path'], jdata['fp_pp_files'])
+        shutil.rmtree('iter.000000')
+    
+    def test_make_fp_vasp_merge_traj(self):
+        setUpModule()
+        if os.path.isdir('iter.000000') :
+            shutil.rmtree('iter.000000')
+        with open (param_file_merge_traj, 'r') as fp :
+            jdata = json.load (fp)
+        with open (machine_file, 'r') as fp:
+            mdata = json.load (fp)
+        md_descript = []
+        nsys = 2
+        nmd = 3
+        n_frame = 10
+        for ii in range(nsys) :
+            tmp = []
+            for jj in range(nmd) :
+                tmp.append(np.arange(0, 0.29, 0.29/10))
+            md_descript.append(tmp)
+        atom_types = [0, 1, 0, 1]
+        type_map = jdata['type_map']
+
+        _make_fake_md_merge_traj(0, md_descript, atom_types, type_map)
+        make_fp(0, jdata, {"fp_user_forward_files" : ["vdw_kernel.bindat"] })
+        _check_poscars_merge_traj(self, 0, jdata['fp_task_max'], jdata['type_map'])
+        #_check_incar_exists(self, 0)
         _check_incar(self, 0)
         _check_kpoints_exists(self, 0)
         _check_kpoints(self,0)
