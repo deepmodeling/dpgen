@@ -349,11 +349,11 @@ def fp_style_abacus_args() -> List[Argument]:
     doc_fp_pp_path = 'Directory of psuedo-potential or numerical orbital files to be used for 02.fp exists.'
     doc_fp_pp_files = 'Psuedo-potential file to be used for 02.fp. Note that the order of elements should correspond to the order in type_map.'
     doc_fp_orb_files = 'numerical orbital file to be used for 02.fp when using LCAO basis. Note that the order of elements should correspond to the order in type_map.'
-    doc_fp_incar = 'Input file for ABACUS. This is optinal but priority over user_fp_params, one can also setting the key and value of INPUT in user_fp_params.'
-    doc_fp_kpt_file = 'KPT file for ABACUS.'
+    doc_fp_incar = 'Input file for ABACUS. This is optinal but the priority is lower than user_fp_params, and you should not set user_fp_params if you want to use fp_incar.'
+    doc_fp_kpt_file = 'KPT file for ABACUS.If the "kspacing" or "gamma_only=1" is defined in INPUT or "k_points" is defined, fp_kpt_file will be ignored.'
     doc_fp_dpks_descriptor = 'DeePKS descriptor file name. The file should be in pseudopotential directory.'
     doc_user_fp_params = 'Set the key and value of INPUT.'
-    doc_k_points = 'Monkhorst-Pack k-grids setting for generating KPT file of ABACUS'
+    doc_k_points = 'Monkhorst-Pack k-grids setting for generating KPT file of ABACUS, such as: [1,1,1,0,0,0]. NB: if "kspacing" or "gamma_only=1" is defined in INPUT, k_points will be ignored.'
 
     return [
         Argument("fp_pp_path", str, optional=False, doc=doc_fp_pp_path),
