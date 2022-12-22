@@ -142,7 +142,7 @@ def stru_ele(supercell_stru, stru_out, eles, natoms, jdata, path_work):
         dpks_descriptor_name = os.path.basename(jdata['dpks_descriptor'])
     supercell_stru["atom_masses"] = jdata["atom_masses"]
     supercell_stru["atom_names"] = eles
-    stru_text = make_abacus_scf_stru(supercell_stru, pp_file_names, orb_file_names, dpks_descriptor_name)
+    stru_text = make_abacus_scf_stru(supercell_stru, pp_file_names, orb_file_names, dpks_descriptor_name,type_map=jdata['elements'])
     with open(stru_out, "w") as f:
         f.write(stru_text)
     absolute_pp_file_path = [os.path.abspath(a) for a in jdata["potcars"]]
@@ -224,7 +224,7 @@ def poscar_scale (poscar_in, poscar_out, scale) :
         fout.write("".join(lines))
 
 def poscar_scale_abacus(poscar_in, poscar_out, scale, jdata):
-    stru = get_abacus_STRU(poscar_in, n_ele=len(jdata["elements"]))
+    stru = get_abacus_STRU(poscar_in)
     stru["cells"] *= scale
     stru["coords"] *= scale
     pp_files = [os.path.basename(a) for a in jdata['potcars']]
@@ -234,7 +234,7 @@ def poscar_scale_abacus(poscar_in, poscar_out, scale, jdata):
         orb_file_names = [os.path.basename(a) for a in jdata['orb_files']]
     if 'dpks_descriptor' in jdata:
         dpks_descriptor_name = os.path.basename(jdata['dpks_descriptor'])
-    ret = make_abacus_scf_stru(stru, pp_files, orb_file_names, dpks_descriptor_name)
+    ret = make_abacus_scf_stru(stru, pp_files, orb_file_names, dpks_descriptor_name,type_map=jdata['elements'])
     #ret = make_abacus_scf_stru(stru, pp_files)
     with open(poscar_out, "w") as fp:
         fp.write(ret)
@@ -290,7 +290,7 @@ def make_super_cell (jdata) :
     #minor bug for element symbol behind the coordinates
     from_struct=Structure.from_file(from_file)
     from_struct.make_supercell(super_cell)
-    from_struct.to('poscar',to_file)
+    from_struct.to(to_file, 'poscar')
 
 def make_super_cell_ABACUS (jdata, stru_data) :
     out_dir = jdata['out_dir']
@@ -366,7 +366,7 @@ def make_super_cell_STRU(jdata) :
     to_path = path_sc
     to_file = os.path.join(to_path, 'STRU')
 
-    from_struct=get_abacus_STRU(from_file, n_ele=len(jdata["elements"]))
+    from_struct=get_abacus_STRU(from_file)
     from_struct = make_supercell_abacus(from_struct, super_cell)
     pp_file_names = [os.path.basename(a) for a in jdata['potcars']]
     orb_file_names = None
@@ -375,7 +375,7 @@ def make_super_cell_STRU(jdata) :
         orb_file_names = [os.path.basename(a) for a in jdata['orb_files']]
     if 'dpks_descriptor' in jdata:
         dpks_descriptor_name = os.path.basename(jdata['dpks_descriptor'])
-    stru_text = make_abacus_scf_stru(from_struct, pp_file_names, orb_file_names, dpks_descriptor_name)
+    stru_text = make_abacus_scf_stru(from_struct, pp_file_names, orb_file_names, dpks_descriptor_name,type_map=jdata['elements'])
     with open(to_file, "w") as fp:
         fp.write(stru_text) 
     # make system dir (copy)
@@ -734,7 +734,7 @@ def pert_scaled(jdata) :
                         stru_in = get_abacus_STRU(pos_in)
                         stru_out = shuffle_stru_data(stru_in)
                         with open(pos_out, "w") as fp:
-                            fp.write(make_abacus_scf_stru(stru_out, pp_file, orb_file_names, dpks_descriptor_name))
+                            fp.write(make_abacus_scf_stru(stru_out, pp_file, orb_file_names, dpks_descriptor_name,type_map=jdata['elements']))
                 else :
                     shutil.copy2(pos_in, pos_out)
                 os.remove(pos_in)
@@ -756,7 +756,7 @@ def pert_scaled(jdata) :
                     stru_in = get_abacus_STRU(pos_in)
                     stru_out = shuffle_stru_data(stru_in)
                     with open(pos_out, "w") as fp:
-                        fp.write(make_abacus_scf_stru(stru_out, pp_file, orb_file_names, dpks_descriptor_name))
+                        fp.write(make_abacus_scf_stru(stru_out, pp_file, orb_file_names, dpks_descriptor_name,type_map=jdata['elements']))
             else :
                 shutil.copy2(pos_in, pos_out)
             os.chdir(cwd)

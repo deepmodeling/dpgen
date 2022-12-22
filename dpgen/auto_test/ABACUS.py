@@ -151,8 +151,6 @@ class ABACUS(Task):
         if 'basis_type' not in incar:
             dlog.info("'basis_type' is not defined, set to be 'pw'!")
             self.modify_input(incar,'basis_type','pw')
-        if 'ntype' not in incar:
-            raise RuntimeError("ntype is not defined in INPUT")
         if 'lcao' in incar['basis_type'].lower() and not self.if_define_orb_file:
             mess = "The basis_type is %s, but not define orbital file!!!" % incar['basis_type']
             raise RuntimeError(mess)

@@ -155,7 +155,6 @@ IN.PSP3 = N.SG15.PBE.UPF\n";
 
 abacus_input_ref = "INPUT_PARAMETERS\n\
 calculation scf\n\
-ntype 2\n\
 ecutwfc 80.000000\n\
 scf_thr 1.000000e-07\n\
 scf_nmax 50\n\

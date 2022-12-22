@@ -1,4 +1,3 @@
-ntype		   	2
 ecutwfc   		80
 scf_thr   		1e-7
 scf_nmax   		50
