@@ -365,13 +365,15 @@ def make_train (iter_index,
         raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x or 2.x version!" )
     # set training reuse model
     if training_reuse_iter is not None and iter_index >= training_reuse_iter:
-        if LooseVersion('1') <= LooseVersion(mdata["deepmd_version"]) < LooseVersion('2'):
+        if 'numb_steps' in jinput['training'] and training_reuse_stop_batch is not None:
+            jinput['training']['numb_steps'] = training_reuse_stop_batch
+        elif 'stop_batch' in jinput['training'] and training_reuse_stop_batch is not None:
             jinput['training']['stop_batch'] = training_reuse_stop_batch
+        if LooseVersion('1') <= LooseVersion(mdata["deepmd_version"]) < LooseVersion('2'):
             jinput['training']['auto_prob_style'] \
                 ="prob_sys_size; 0:%d:%f; %d:%d:%f" \
                 %(old_range, training_reuse_old_ratio, old_range, len(init_data_sys), 1.-training_reuse_old_ratio)
         elif LooseVersion('2') <= LooseVersion(mdata["deepmd_version"]) < LooseVersion('3'):
-            jinput['training']['numb_steps'] = training_reuse_stop_batch
             jinput['training']['training_data']['auto_prob'] \
                 ="prob_sys_size; 0:%d:%f; %d:%d:%f" \
                 %(old_range, training_reuse_old_ratio, old_range, len(init_data_sys), 1.-training_reuse_old_ratio)
