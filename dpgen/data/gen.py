@@ -29,7 +29,7 @@ from pymatgen.core import Structure
 from pymatgen.io.vasp import Incar
 from dpgen.remote.decide_machine import  convert_mdata
 from dpgen import ROOT_PATH
-from dpgen.dispatcher.Dispatcher import Dispatcher, make_dispatcher, make_submission
+from dpgen.dispatcher.Dispatcher import make_submission
 
 
 
@@ -1060,19 +1060,9 @@ def run_vasp_relax(jdata, mdata):
     #        relax_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in relax_run_tasks]
 
-    api_version = mdata.get('api_version', '0.9')
+    api_version = mdata.get('api_version', '1.0')
     if Version(api_version) < Version('1.0'):
-        warnings.warn(f"the dpdispatcher will be updated to new version."
-            f"And the interface may be changed. Please check the documents for more details")
-        dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_dir, run_tasks, fp_group_size)
-        dispatcher.run_jobs(fp_resources,
-                       [fp_command],
-                       work_dir,
-                       run_tasks,
-                       fp_group_size,
-                       forward_common_files,
-                       forward_files,
-                       backward_files)
+        raise RuntimeError("API version %s has been removed. Please upgrade to 1.0." % api_version)
 
     elif Version(api_version) >= Version('1.0'):
         submission = make_submission(
@@ -1196,19 +1186,9 @@ def run_abacus_relax(jdata, mdata):
     #        relax_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in relax_run_tasks]
 
-    api_version = mdata.get('api_version', '0.9')
+    api_version = mdata.get('api_version', '1.0')
     if Version(api_version) < Version('1.0'):
-        warnings.warn(f"the dpdispatcher will be updated to new version."
-            f"And the interface may be changed. Please check the documents for more details")
-        dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_dir, run_tasks, fp_group_size)
-        dispatcher.run_jobs(fp_resources,
-                       [fp_command],
-                       work_dir,
-                       run_tasks,
-                       fp_group_size,
-                       forward_common_files,
-                       forward_files,
-                       backward_files)
+        raise RuntimeError("API version %s has been removed. Please upgrade to 1.0." % api_version)
 
     elif Version(api_version) >= Version('1.0'):
         submission = make_submission(
@@ -1263,19 +1243,9 @@ def run_vasp_md(jdata, mdata):
     run_tasks = [ii.replace(work_dir+"/", "") for ii in md_run_tasks]
     #dlog.info("md_work_dir", work_dir)
     #dlog.info("run_tasks",run_tasks)
-    api_version = mdata.get('api_version', '0.9')
+    api_version = mdata.get('api_version', '1.0')
     if Version(api_version) < Version('1.0'):
-        warnings.warn(f"the dpdispatcher will be updated to new version."
-            f"And the interface may be changed. Please check the documents for more details")
-        dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_dir, run_tasks, fp_group_size)
-        dispatcher.run_jobs(fp_resources,
-                       [fp_command],
-                       work_dir,
-                       run_tasks,
-                       fp_group_size,
-                       forward_common_files,
-                       forward_files,
-                       backward_files)
+        raise RuntimeError("API version %s has been removed. Please upgrade to 1.0." % api_version)
 
     elif Version(api_version) >= Version('1.0'):
         submission = make_submission(
@@ -1343,19 +1313,9 @@ def run_abacus_md(jdata, mdata):
     run_tasks = [ii.replace(work_dir+"/", "") for ii in md_run_tasks]
     #dlog.info("md_work_dir", work_dir)
     #dlog.info("run_tasks",run_tasks)
-    api_version = mdata.get('api_version', '0.9')
+    api_version = mdata.get('api_version', '1.0')
     if Version(api_version) < Version('1.0'):
-        warnings.warn(f"the dpdispatcher will be updated to new version."
-            f"And the interface may be changed. Please check the documents for more details")
-        dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_dir, run_tasks, fp_group_size)
-        dispatcher.run_jobs(fp_resources,
-                       [fp_command],
-                       work_dir,
-                       run_tasks,
-                       fp_group_size,
-                       forward_common_files,
-                       forward_files,
-                       backward_files)
+        raise RuntimeError("API version %s has been removed. Please upgrade to 1.0." % api_version)
 
     elif Version(api_version) >= Version('1.0'):
         submission = make_submission(

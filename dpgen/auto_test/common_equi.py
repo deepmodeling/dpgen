@@ -11,7 +11,6 @@ import dpgen.auto_test.lib.abacus as abacus
 from dpgen import dlog
 from dpgen.auto_test.calculator import make_calculator
 from dpgen.auto_test.mpdb import get_structure
-from dpgen.dispatcher.Dispatcher import make_dispatcher
 from packaging.version import Version
 from dpgen.dispatcher.Dispatcher import make_submission
 from dpgen.remote.decide_machine import convert_mdata
@@ -176,21 +175,9 @@ def run_equi(confs,
     work_path = os.getcwd()
     print("%s --> Runing... " % (work_path))
 
-    api_version = mdata.get('api_version', '0.9')
+    api_version = mdata.get('api_version', '1.0')
     if Version(api_version) < Version('1.0'):
-        warnings.warn(f"the dpdispatcher will be updated to new version."
-                      f"And the interface may be changed. Please check the documents for more details")
-        disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
-        disp.run_jobs(resources,
-                      command,
-                      work_path,
-                      run_tasks,
-                      group_size,
-                      forward_common_files,
-                      forward_files,
-                      backward_files,
-                      outlog='outlog',
-                      errlog='errlog')
+        raise RuntimeError("API version %s has been removed. Please upgrade to 1.0." % api_version)
     elif Version(api_version) >= Version('1.0'):
     
         submission = make_submission(
