@@ -66,8 +66,7 @@ input_files = (
     (run_jdata, p_examples / "run" / "dp2.x-lammps-gaussian" / "param_C4H16N4_deepmd-kit-2.0.1.json"),
     (run_jdata, p_examples / "run" / "dprc" / "generator.json"),
     # machines
-    #(run_mdata, p_examples / "machine" / "DeePMD-kit-2.x" / "lebesgue_v2_machine.json"),
-    #(run_mdata, p_examples / "machine" / "DeePMD-kit-1.x" / "machine-ali.json"),
+    (run_mdata, p_examples / "machine" / "DeePMD-kit-2.x" / "lebesgue_v2_machine.json"),
     (run_mdata, p_examples / "machine" / "DeePMD-kit-1.x" / "machine-local.json"),
     (run_mdata, p_examples / "machine" / "DeePMD-kit-1.x" / "machine-lsf-slurm-cp2k.json"),
     (run_mdata, p_examples / "machine" / "DeePMD-kit-1.x" / "machine-pbs-gaussian.json"),
@@ -78,7 +77,6 @@ input_files = (
     (run_mdata, p_examples / "run" / "dp2.x-lammps-ABACUS-lcao" / "fcc-al" / "machine.json"),
     (run_mdata, p_examples / "run" / "dp2.x-lammps-ABACUS-pw" / "fcc-al" / "machine.json"),
     (run_mdata, p_examples / "run" / "dp2.x-lammps-gaussian" / "machine.json"),
-    #(run_mdata, p_examples / "run" / "dp2.x-gromacs-gaussian" / "machine.json"),
     (simplify_mdata, p_examples / "simplify-MAPbI3-scan-lebesgue" / "simplify_example" / "machine.json"),
 )
 
