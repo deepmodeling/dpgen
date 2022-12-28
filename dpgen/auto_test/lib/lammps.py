@@ -4,7 +4,7 @@ import random, os, sys
 import dpdata
 import subprocess as sp
 import dpgen.auto_test.lib.util as util
-from distutils.version import LooseVersion
+from packaging.version import Version
 from dpdata.periodic_table import Element
 
 
@@ -103,7 +103,7 @@ def inter_deepmd(param):
     model_list = ""
     for ii in models:
         model_list += ii + " "
-    if LooseVersion(deepmd_version) < LooseVersion('1'):
+    if Version(deepmd_version) < Version('1'):
         ## DeePMD-kit version == 0.x
         if len(models) > 1:
             ret += '%s 10 model_devi.out\n' % model_list

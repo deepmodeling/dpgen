@@ -4,7 +4,7 @@ import random, os, sys, dpdata
 import numpy as np
 import subprocess as sp
 import scipy.constants as pc
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 def _sample_sphere() :
     while True:
@@ -33,7 +33,7 @@ def make_lammps_input(ensemble,
                       max_seed = 1000000,
                       nopbc = False,
                       deepmd_version = '0.1') :
-    if (ele_temp_f is not None or ele_temp_a is not None) and LooseVersion(deepmd_version) < LooseVersion('1'):
+    if (ele_temp_f is not None or ele_temp_a is not None) and Version(deepmd_version) < Version('1'):
         raise RuntimeError('the electron temperature is only supported by deepmd-kit >= 1.0.0, please upgrade your deepmd-kit')
     if ele_temp_f is not None and ele_temp_a is not None:
         raise RuntimeError('the frame style ele_temp and atom style ele_temp should not be set at the same time')
@@ -68,7 +68,7 @@ def make_lammps_input(ensemble,
     graph_list = ""
     for ii in graphs :
         graph_list += ii + " "
-    if LooseVersion(deepmd_version) < LooseVersion('1'):
+    if Version(deepmd_version) < Version('1'):
         # 0.x
         ret+= "pair_style      deepmd %s ${THERMO_FREQ} model_devi.out\n" % graph_list
     else:

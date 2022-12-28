@@ -24,7 +24,7 @@ from typing import Union, List
 from dpgen import dlog
 from dpgen import SHORT_CMD
 from dpgen.util import sepline, expand_sys_str, normalize
-from distutils.version import LooseVersion
+from packaging.version import Version
 from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, make_dispatcher, make_submission
 from dpgen.generator.run import make_train, run_train, post_train, run_fp, post_fp, fp_name, model_devi_name, train_name, train_task_fmt, sys_link_fp_vasp_pp, make_fp_vasp_incar, make_fp_vasp_kp, make_fp_vasp_cp_cvasp, data_system_fmt, model_devi_task_fmt, fp_task_fmt
 # TODO: maybe the following functions can be moved to dpgen.util
@@ -202,7 +202,7 @@ def run_model_devi(iter_index, jdata, mdata):
     backward_files = [detail_file_name]
 
     api_version = mdata.get('api_version', '0.9')
-    if LooseVersion(api_version) < LooseVersion('1.0'):
+    if Version(api_version) < Version('1.0'):
         warnings.warn(f"the dpdispatcher will be updated to new version."
             f"And the interface may be changed. Please check the documents for more details")
         dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], work_path, run_tasks, model_devi_group_size)
@@ -217,7 +217,7 @@ def run_model_devi(iter_index, jdata, mdata):
                         outlog = 'model_devi.log',
                         errlog = 'model_devi.log')
 
-    elif LooseVersion(api_version) >= LooseVersion('1.0'):
+    elif Version(api_version) >= Version('1.0'):
         submission = make_submission(
             mdata['model_devi_machine'],
             mdata['model_devi_resources'],

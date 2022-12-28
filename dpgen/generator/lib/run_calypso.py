@@ -19,7 +19,7 @@ from ase.io.vasp import write_vasp
 from ase.io.trajectory import Trajectory
 from pathlib import Path
 from itertools import combinations
-from distutils.version import LooseVersion
+from packaging.version import Version
 from dpgen import dlog
 from dpgen.generator.lib.utils import create_path
 from dpgen.generator.lib.utils import make_iter_name
@@ -122,7 +122,7 @@ def gen_structures(iter_index, jdata, mdata, caly_run_path, current_idx, length_
 
             run_tasks = [os.path.basename(ii) for ii in run_tasks_]
 
-            if LooseVersion(api_version) < LooseVersion('1.0'):
+            if Version(api_version) < Version('1.0'):
                 warnings.warn(f"the dpdispatcher will be updated to new version."
                     f"And the interface may be changed. Please check the documents for more details")
                 dispatcher=make_dispatcher(mdata['model_devi_machine'],mdata['model_devi_resources'],'./', run_tasks, model_devi_group_size)
@@ -136,7 +136,7 @@ def gen_structures(iter_index, jdata, mdata, caly_run_path, current_idx, length_
                                 backward_files,
                                 outlog = 'model_devi.log',
                                 errlog = 'model_devi.log')
-            elif LooseVersion(api_version) >= LooseVersion('1.0'):
+            elif Version(api_version) >= Version('1.0'):
                 os.chdir(cwd)
                 submission = make_submission(
                     mdata['model_devi_machine'],
@@ -169,7 +169,7 @@ def gen_structures(iter_index, jdata, mdata, caly_run_path, current_idx, length_
                 # to traj
                 shutil.copyfile(os.path.join('task.%03d'%(jjj),'traj.traj'),os.path.join('traj','%s.traj'%str(jjj+1)),)
 
-            if LooseVersion(api_version) < LooseVersion('1.0'):
+            if Version(api_version) < Version('1.0'):
                 os.rename('jr.json','jr_%s.json'%(str(ii)))
 
             tlist = glob.glob('task.*')
@@ -232,7 +232,7 @@ def gen_structures(iter_index, jdata, mdata, caly_run_path, current_idx, length_
 
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
 
-        if LooseVersion(api_version) < LooseVersion('1.0'):
+        if Version(api_version) < Version('1.0'):
             warnings.warn(f"the dpdispatcher will be updated to new version."
                 f"And the interface may be changed. Please check the documents for more details")
             dispatcher=make_dispatcher(mdata['model_devi_machine'],mdata['model_devi_resources'],'./', run_tasks, model_devi_group_size)
@@ -246,7 +246,7 @@ def gen_structures(iter_index, jdata, mdata, caly_run_path, current_idx, length_
                             backward_files,
                             outlog = 'model_devi.log',
                             errlog = 'model_devi.log')
-        elif LooseVersion(api_version) >= LooseVersion('1.0'):
+        elif Version(api_version) >= Version('1.0'):
             os.chdir(cwd)
             submission = make_submission(
                 mdata['model_devi_machine'],

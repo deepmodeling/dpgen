@@ -33,6 +33,7 @@ dependencies = [
     'h5py',
     'pymatgen-analysis-defects',
     'openbabel-wheel',
+    'packaging',
 ]
 requires-python = ">=3.8"
 readme = "README.md"
