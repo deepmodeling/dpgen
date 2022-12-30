@@ -87,11 +87,11 @@ def make_submission_compat(
         backward_files: List[str],
         outlog: str="log",
         errlog: str="err",
-        api_version: str="0.9",
+        api_version: str="1.0",
     ) -> None:
     """Make submission with compatibility of both dispatcher API v0 and v1.
 
-    If `api_version` is less than 1.0, use `make_dispatcher`. If
+    If `api_version` is less than 1.0, raise RuntimeError. If
     `api_version` is large than 1.0, use `make_submission`.
 
     Parameters
@@ -118,8 +118,8 @@ def make_submission_compat(
         path to log from stdout
     errlog : str, default=err
         path to log from stderr
-    api_version : str, default=0.9
-        API version. 1.0 is recommended
+    api_version : str, default=1.0
+        API version. 1.0 is required
     """
     if LooseVersion(api_version) < LooseVersion('1.0'):
         raise RuntimeError("API version %s has been removed. Please upgrade to 1.0." % api_version)
