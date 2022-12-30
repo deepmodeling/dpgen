@@ -15,7 +15,7 @@ If, for some reasons, the main program terminated at stage `run`, one can easily
 `relax.json` is the parameter file. An example for `deepmd` relaxation is given as:
 ```json
 {
-        "structures":   "confs/mp-*",
+        "structures":   ["confs/mp-*"],
         "interaction": {
                 "type":         "deepmd",
                 "model":        "frozen_model.pb",
