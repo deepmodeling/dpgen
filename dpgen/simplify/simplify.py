@@ -29,6 +29,7 @@ from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, make_dispatche
 from dpgen.generator.run import make_train, run_train, post_train, run_fp, post_fp, fp_name, model_devi_name, train_name, train_task_fmt, sys_link_fp_vasp_pp, make_fp_vasp_incar, make_fp_vasp_kp, make_fp_vasp_cp_cvasp, data_system_fmt, model_devi_task_fmt, fp_task_fmt
 # TODO: maybe the following functions can be moved to dpgen.util
 from dpgen.generator.lib.utils import log_iter, make_iter_name, create_path, record_iter
+from dpgen.generator.lib.utils import symlink_user_forward_files
 from dpgen.generator.lib.gaussian import make_gaussian_input
 from dpgen.remote.decide_machine import  convert_mdata
 from .arginfo import simplify_jdata_arginfo
@@ -411,6 +412,10 @@ def make_fp(iter_index, jdata, mdata):
     else:
         make_fp_configs(iter_index, jdata)
         make_fp_calculation(iter_index, jdata)
+        # Copy user defined forward_files
+        iter_name = make_iter_name(iter_index)
+        work_path = os.path.join(iter_name, fp_name)
+        symlink_user_forward_files(mdata=mdata, task_type="fp", work_path=work_path)
 
 
 def run_iter(param_file, machine_file):

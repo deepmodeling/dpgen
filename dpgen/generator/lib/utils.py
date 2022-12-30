@@ -92,6 +92,7 @@ def symlink_user_forward_files(mdata, task_type, work_path, task_format = None):
         for task in tasks:
             if os.path.isfile(os.path.join(task, os.path.basename(file))):
                 os.remove(os.path.join(task, os.path.basename(file)))
-            os.symlink(file, os.path.join(task, os.path.basename(file)))
+            abs_file = os.path.abspath(file)
+            os.symlink(abs_file, os.path.join(task, os.path.basename(file)))
     return
     
