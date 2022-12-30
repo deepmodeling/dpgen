@@ -12,7 +12,7 @@ from dpgen import dlog
 from dpgen.auto_test.calculator import make_calculator
 from dpgen.auto_test.mpdb import get_structure
 from dpgen.dispatcher.Dispatcher import make_dispatcher
-from distutils.version import LooseVersion
+from packaging.version import Version
 from dpgen.dispatcher.Dispatcher import make_submission
 from dpgen.remote.decide_machine import convert_mdata
 from dpgen.auto_test.lib.utils import create_path
@@ -177,7 +177,7 @@ def run_equi(confs,
     print("%s --> Runing... " % (work_path))
 
     api_version = mdata.get('api_version', '0.9')
-    if LooseVersion(api_version) < LooseVersion('1.0'):
+    if Version(api_version) < Version('1.0'):
         warnings.warn(f"the dpdispatcher will be updated to new version."
                       f"And the interface may be changed. Please check the documents for more details")
         disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
@@ -191,7 +191,7 @@ def run_equi(confs,
                       backward_files,
                       outlog='outlog',
                       errlog='errlog')
-    elif LooseVersion(api_version) >= LooseVersion('1.0'):
+    elif Version(api_version) >= Version('1.0'):
     
         submission = make_submission(
             mdata_machine=machine,

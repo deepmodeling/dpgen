@@ -1,4 +1,4 @@
-from distutils.version import LooseVersion
+from packaging.version import Version
 import glob
 import os
 import warnings
@@ -191,7 +191,7 @@ def worker(work_path,
     run_tasks = [os.path.basename(ii) for ii in all_task]
     machine, resources, command, group_size = util.get_machine_info(mdata, inter_type)
     api_version = mdata.get('api_version', '0.9')
-    if LooseVersion(api_version) < LooseVersion('1.0'):
+    if Version(api_version) < Version('1.0'):
         warnings.warn(f"the dpdispatcher will be updated to new version."
             f"And the interface may be changed. Please check the documents for more details")
         disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
@@ -205,7 +205,7 @@ def worker(work_path,
                   backward_files,
                   outlog='outlog',
                   errlog='errlog')
-    elif LooseVersion(api_version) >= LooseVersion('1.0'):
+    elif Version(api_version) >= Version('1.0'):
         submission = make_submission(
                 mdata_machine=machine,
                 mdata_resources=resources,

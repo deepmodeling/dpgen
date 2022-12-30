@@ -9,7 +9,7 @@ from dpgen import dlog
 import os
 import json
 import numpy as np
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 
 def convert_mdata(mdata, task_types=["train", "model_devi", "fp"]):
@@ -54,7 +54,7 @@ def convert_mdata(mdata, task_types=["train", "model_devi", "fp"]):
 
 
 # def decide_train_machine(mdata):
-# 	if LooseVersion(mdata.get('api_version', '0.9')) >= LooseVersion('1.0'):
+# 	if Version(mdata.get('api_version', '0.9')) >= Version('1.0'):
 # 		mdata['train_group_size'] = mdata['train'][0]['resources']['group_size']
 # 	if 'train' in mdata:
 # 		continue_flag = False
@@ -173,7 +173,7 @@ def convert_mdata(mdata, task_types=["train", "model_devi", "fp"]):
 # 	return mdata
 #
 # def decide_model_devi_machine(mdata):
-# 	if LooseVersion(mdata.get('api_version', '0.9')) >= LooseVersion('1.0'):
+# 	if Version(mdata.get('api_version', '0.9')) >= Version('1.0'):
 # 		mdata['model_devi_group_size'] = mdata['model_devi'][0]['resources']['group_size']
 # 	if 'model_devi' in mdata:
 # 		continue_flag = False
@@ -251,7 +251,7 @@ def convert_mdata(mdata, task_types=["train", "model_devi", "fp"]):
 # 				json.dump(profile, _outfile, indent = 4)
 # 	return mdata
 # def decide_fp_machine(mdata):
-# 	if LooseVersion(mdata.get('api_version', '0.9')) >= LooseVersion('1.0'):
+# 	if Version(mdata.get('api_version', '0.9')) >= Version('1.0'):
 # 		mdata['fp_group_size'] = mdata['fp'][0]['resources']['group_size']
 # 	if 'fp' in mdata:
 # 		#ssert isinstance(mdata['fp']['machine'], list)

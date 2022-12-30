@@ -28,7 +28,7 @@ import subprocess as sp
 import scipy.constants as pc
 from collections import Counter
 from collections.abc import Iterable
-from distutils.version import LooseVersion
+from packaging.version import Version
 from typing import List
 from numpy.linalg  import norm
 from dpgen import dlog
@@ -328,7 +328,7 @@ def make_train (iter_index,
     except KeyError:
         mdata = set_version(mdata)
     # setup data systems
-    if LooseVersion(mdata["deepmd_version"]) >= LooseVersion('1') and LooseVersion(mdata["deepmd_version"]) < LooseVersion('2'):
+    if Version(mdata["deepmd_version"]) >= Version('1') and Version(mdata["deepmd_version"]) < Version('2'):
         # 1.x
         jinput['training']['systems'] = init_data_sys
         jinput['training']['batch_size'] = init_batch_size
@@ -344,7 +344,7 @@ def make_train (iter_index,
             jinput['model']['fitting_net'].pop('numb_fparam', None)
         else:
             raise RuntimeError('invalid setting for use_ele_temp ' + str(use_ele_temp))
-    elif LooseVersion(mdata["deepmd_version"]) >= LooseVersion('2') and LooseVersion(mdata["deepmd_version"]) < LooseVersion('3'):
+    elif Version(mdata["deepmd_version"]) >= Version('2') and Version(mdata["deepmd_version"]) < Version('3'):
         # 2.x
         jinput['training']['training_data'] = {}
         jinput['training']['training_data']['systems'] = init_data_sys
@@ -369,11 +369,11 @@ def make_train (iter_index,
             jinput['training']['numb_steps'] = training_reuse_stop_batch
         elif 'stop_batch' in jinput['training'] and training_reuse_stop_batch is not None:
             jinput['training']['stop_batch'] = training_reuse_stop_batch
-        if LooseVersion('1') <= LooseVersion(mdata["deepmd_version"]) < LooseVersion('2'):
+        if Version('1') <= Version(mdata["deepmd_version"]) < Version('2'):
             jinput['training']['auto_prob_style'] \
                 ="prob_sys_size; 0:%d:%f; %d:%d:%f" \
                 %(old_range, training_reuse_old_ratio, old_range, len(init_data_sys), 1.-training_reuse_old_ratio)
-        elif LooseVersion('2') <= LooseVersion(mdata["deepmd_version"]) < LooseVersion('3'):
+        elif Version('2') <= Version(mdata["deepmd_version"]) < Version('3'):
             jinput['training']['training_data']['auto_prob'] \
                 ="prob_sys_size; 0:%d:%f; %d:%d:%f" \
                 %(old_range, training_reuse_old_ratio, old_range, len(init_data_sys), 1.-training_reuse_old_ratio)
@@ -400,7 +400,7 @@ def make_train (iter_index,
                 raise RuntimeError ("data sys %s does not exists, cwd is %s" % (jj, os.getcwd()))
         os.chdir(cwd)
         # set random seed for each model
-        if LooseVersion(mdata["deepmd_version"]) >= LooseVersion('1') and LooseVersion(mdata["deepmd_version"]) < LooseVersion('3'):
+        if Version(mdata["deepmd_version"]) >= Version('1') and Version(mdata["deepmd_version"]) < Version('3'):
             # 1.x
             if jinput['model']['descriptor']['type'] == 'hybrid':
                 for desc in jinput['model']['descriptor']['list']:
@@ -417,7 +417,7 @@ def make_train (iter_index,
             raise RuntimeError("DP-GEN currently only supports for DeePMD-kit 1.x or 2.x version!" )
         # set model activation function
         if model_devi_activation_func is not None:
-            if LooseVersion(mdata["deepmd_version"]) < LooseVersion('1'):
+            if Version(mdata["deepmd_version"]) < Version('1'):
                 raise RuntimeError('model_devi_activation_func does not suppport deepmd version', mdata['deepmd_version'])
             assert(type(model_devi_activation_func) is list and len(model_devi_activation_func) == numb_models)
             if len(np.array(model_devi_activation_func).shape) == 2 :                                    # 2-dim list for emd/fitting net-resolved assignment of actF
@@ -525,7 +525,7 @@ def run_train (iter_index,
         task_path = os.path.join(work_path, train_task_fmt % ii)
         all_task.append(task_path)
     commands = []
-    if LooseVersion(mdata["deepmd_version"]) >= LooseVersion('1') and LooseVersion(mdata["deepmd_version"]) < LooseVersion('3'):
+    if Version(mdata["deepmd_version"]) >= Version('1') and Version(mdata["deepmd_version"]) < Version('3'):
         
         # 1.x
         ## Commands are like `dp train` and `dp freeze`
@@ -600,7 +600,7 @@ def run_train (iter_index,
     user_forward_files = mdata.get("train" + "_user_forward_files", [])
     forward_files += [os.path.basename(file) for file in user_forward_files]
     backward_files += mdata.get("train" + "_user_backward_files", [])
-    if LooseVersion(api_version) < LooseVersion('1.0'):
+    if Version(api_version) < Version('1.0'):
         warnings.warn(f"the dpdispatcher will be updated to new version."
             f"And the interface may be changed. Please check the documents for more details")
         dispatcher = make_dispatcher(mdata['train_machine'], mdata['train_resources'], work_path, run_tasks, train_group_size)
@@ -615,7 +615,7 @@ def run_train (iter_index,
                         outlog = 'train.log',
                         errlog = 'train.log')
 
-    elif LooseVersion(api_version) >= LooseVersion('1.0'):
+    elif Version(api_version) >= Version('1.0'):
         submission = make_submission(
             mdata['train_machine'],
             mdata['train_resources'],
@@ -762,7 +762,7 @@ def find_only_one_key(lmp_lines, key):
 def revise_lmp_input_model(lmp_lines, task_model_list, trj_freq, deepmd_version = '1'):
     idx = find_only_one_key(lmp_lines, ['pair_style', 'deepmd'])
     graph_list = ' '.join(task_model_list)
-    if LooseVersion(deepmd_version) < LooseVersion('1'):
+    if Version(deepmd_version) < Version('1'):
         lmp_lines[idx] = "pair_style      deepmd %s %d model_devi.out\n" % (graph_list, trj_freq)
     else:
         lmp_lines[idx] = "pair_style      deepmd %s out_freq %d out_file model_devi.out\n" % (graph_list, trj_freq)
@@ -1072,7 +1072,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                         template_has_pair_deepmd=0
                         template_pair_deepmd_idx=line_idx
                 if template_has_pair_deepmd == 0:
-                    if LooseVersion(deepmd_version) < LooseVersion('1'):
+                    if Version(deepmd_version) < Version('1'):
                         if len(lmp_lines[template_pair_deepmd_idx].split()) !=  (len(models) + len(["pair_style","deepmd","10", "model_devi.out"])):
                             lmp_lines = revise_lmp_input_model(lmp_lines, task_model_list, trj_freq, deepmd_version = deepmd_version)
                     else:
@@ -1238,7 +1238,7 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
     except ImportError as e:
         raise RuntimeError("GromacsWrapper>=0.8.0 is needed for DP-GEN + Gromacs.") from e
     # only support for deepmd v2.0
-    if LooseVersion(mdata['deepmd_version']) < LooseVersion('2.0'):
+    if Version(mdata['deepmd_version']) < Version('2.0'):
         raise RuntimeError("Only support deepmd-kit 2.x for model_devi_engine='gromacs'")
     model_devi_jobs = jdata['model_devi_jobs']
     if (iter_index >= len(model_devi_jobs)) :
@@ -1600,7 +1600,7 @@ def run_md_model_devi (iter_index,
     api_version = mdata.get('api_version', '0.9')
     if(len(run_tasks) == 0): 
         raise RuntimeError("run_tasks for model_devi should not be empty! Please check your files.") 
-    if LooseVersion(api_version) < LooseVersion('1.0'):
+    if Version(api_version) < Version('1.0'):
         warnings.warn(f"the dpdispatcher will be updated to new version."
             f"And the interface may be changed. Please check the documents for more details")
         dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], work_path, run_tasks, model_devi_group_size)
@@ -1615,7 +1615,7 @@ def run_md_model_devi (iter_index,
                         outlog = 'model_devi.log',
                         errlog = 'model_devi.log')
 
-    elif LooseVersion(api_version) >= LooseVersion('1.0'):
+    elif Version(api_version) >= Version('1.0'):
         submission = make_submission(
             mdata['model_devi_machine'],
             mdata['model_devi_resources'],
@@ -3133,7 +3133,7 @@ def run_fp_inner (iter_index,
     backward_files += mdata.get("fp" + "_user_backward_files", [])
     
     api_version = mdata.get('api_version', '0.9')
-    if LooseVersion(api_version) < LooseVersion('1.0'):
+    if Version(api_version) < Version('1.0'):
         warnings.warn(f"the dpdispatcher will be updated to new version."
             f"And the interface may be changed. Please check the documents for more details")
         dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_path, run_tasks, fp_group_size)
@@ -3149,7 +3149,7 @@ def run_fp_inner (iter_index,
                         outlog = log_file,
                         errlog = log_file)
 
-    elif LooseVersion(api_version) >= LooseVersion('1.0'):
+    elif Version(api_version) >= Version('1.0'):
         submission = make_submission(
             mdata['fp_machine'],
             mdata['fp_resources'],

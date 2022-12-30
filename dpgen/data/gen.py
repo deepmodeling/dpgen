@@ -20,7 +20,7 @@ import dpgen.data.tools.fcc as fcc
 import dpgen.data.tools.bcc as bcc
 import dpgen.data.tools.diamond as diamond
 import dpgen.data.tools.sc as sc
-from distutils.version import LooseVersion
+from packaging.version import Version
 from dpgen.generator.lib.vasp import incar_upper
 from dpgen.generator.lib.utils import symlink_user_forward_files
 from dpgen.generator.lib.abacus_scf import get_abacus_input_parameters, get_abacus_STRU, make_supercell_abacus, make_abacus_scf_stru\
@@ -1061,7 +1061,7 @@ def run_vasp_relax(jdata, mdata):
     run_tasks = [os.path.basename(ii) for ii in relax_run_tasks]
 
     api_version = mdata.get('api_version', '0.9')
-    if LooseVersion(api_version) < LooseVersion('1.0'):
+    if Version(api_version) < Version('1.0'):
         warnings.warn(f"the dpdispatcher will be updated to new version."
             f"And the interface may be changed. Please check the documents for more details")
         dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_dir, run_tasks, fp_group_size)
@@ -1074,7 +1074,7 @@ def run_vasp_relax(jdata, mdata):
                        forward_files,
                        backward_files)
 
-    elif LooseVersion(api_version) >= LooseVersion('1.0'):
+    elif Version(api_version) >= Version('1.0'):
         submission = make_submission(
             mdata['fp_machine'],
             mdata['fp_resources'],
@@ -1197,7 +1197,7 @@ def run_abacus_relax(jdata, mdata):
     run_tasks = [os.path.basename(ii) for ii in relax_run_tasks]
 
     api_version = mdata.get('api_version', '0.9')
-    if LooseVersion(api_version) < LooseVersion('1.0'):
+    if Version(api_version) < Version('1.0'):
         warnings.warn(f"the dpdispatcher will be updated to new version."
             f"And the interface may be changed. Please check the documents for more details")
         dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_dir, run_tasks, fp_group_size)
@@ -1210,7 +1210,7 @@ def run_abacus_relax(jdata, mdata):
                        forward_files,
                        backward_files)
 
-    elif LooseVersion(api_version) >= LooseVersion('1.0'):
+    elif Version(api_version) >= Version('1.0'):
         submission = make_submission(
             mdata['fp_machine'],
             mdata['fp_resources'],
@@ -1264,7 +1264,7 @@ def run_vasp_md(jdata, mdata):
     #dlog.info("md_work_dir", work_dir)
     #dlog.info("run_tasks",run_tasks)
     api_version = mdata.get('api_version', '0.9')
-    if LooseVersion(api_version) < LooseVersion('1.0'):
+    if Version(api_version) < Version('1.0'):
         warnings.warn(f"the dpdispatcher will be updated to new version."
             f"And the interface may be changed. Please check the documents for more details")
         dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_dir, run_tasks, fp_group_size)
@@ -1277,7 +1277,7 @@ def run_vasp_md(jdata, mdata):
                        forward_files,
                        backward_files)
 
-    elif LooseVersion(api_version) >= LooseVersion('1.0'):
+    elif Version(api_version) >= Version('1.0'):
         submission = make_submission(
             mdata['fp_machine'],
             mdata['fp_resources'],
@@ -1344,7 +1344,7 @@ def run_abacus_md(jdata, mdata):
     #dlog.info("md_work_dir", work_dir)
     #dlog.info("run_tasks",run_tasks)
     api_version = mdata.get('api_version', '0.9')
-    if LooseVersion(api_version) < LooseVersion('1.0'):
+    if Version(api_version) < Version('1.0'):
         warnings.warn(f"the dpdispatcher will be updated to new version."
             f"And the interface may be changed. Please check the documents for more details")
         dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_dir, run_tasks, fp_group_size)
@@ -1357,7 +1357,7 @@ def run_abacus_md(jdata, mdata):
                        forward_files,
                        backward_files)
 
-    elif LooseVersion(api_version) >= LooseVersion('1.0'):
+    elif Version(api_version) >= Version('1.0'):
         submission = make_submission(
             mdata['fp_machine'],
             mdata['fp_resources'],
