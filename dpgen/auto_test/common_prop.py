@@ -13,7 +13,6 @@ from dpgen.auto_test.Surface import Surface
 from dpgen.auto_test.Vacancy import Vacancy
 from dpgen.auto_test.Gamma import Gamma
 from dpgen.auto_test.calculator import make_calculator
-from dpgen.dispatcher.Dispatcher import make_dispatcher
 from dpgen.dispatcher.Dispatcher import make_submission
 from dpgen.remote.decide_machine import convert_mdata
 from dpgen.auto_test.lib.utils import create_path
@@ -190,21 +189,9 @@ def worker(work_path,
            inter_type):
     run_tasks = [os.path.basename(ii) for ii in all_task]
     machine, resources, command, group_size = util.get_machine_info(mdata, inter_type)
-    api_version = mdata.get('api_version', '0.9')
+    api_version = mdata.get('api_version', '1.0')
     if Version(api_version) < Version('1.0'):
-        warnings.warn(f"the dpdispatcher will be updated to new version."
-            f"And the interface may be changed. Please check the documents for more details")
-        disp = make_dispatcher(machine, resources, work_path, run_tasks, group_size)
-        disp.run_jobs(resources,
-                  command,
-                  work_path,
-                  run_tasks,
-                  group_size,
-                  forward_common_files,
-                  forward_files,
-                  backward_files,
-                  outlog='outlog',
-                  errlog='errlog')
+        raise RuntimeError("API version %s has been removed. Please upgrade to 1.0." % api_version)
     elif Version(api_version) >= Version('1.0'):
         submission = make_submission(
                 mdata_machine=machine,

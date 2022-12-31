@@ -24,7 +24,7 @@ from dpgen import dlog
 from dpgen.generator.lib.utils import create_path
 from dpgen.generator.lib.utils import make_iter_name
 from dpgen.generator.lib.parse_calypso import _parse_calypso_input
-from dpgen.dispatcher.Dispatcher import make_dispatcher, make_submission
+from dpgen.dispatcher.Dispatcher import make_submission
 
 train_name = '00.train'
 model_devi_name = '01.model_devi'
@@ -40,7 +40,7 @@ def gen_structures(iter_index, jdata, mdata, caly_run_path, current_idx, length_
 
     model_devi_group_size = mdata['model_devi_group_size']
     model_devi_resources = mdata['model_devi_resources']
-    api_version = mdata.get('api_version', '0.9')
+    api_version = mdata.get('api_version', '1.0')
 
 
     iter_name = make_iter_name(iter_index)
@@ -123,19 +123,7 @@ def gen_structures(iter_index, jdata, mdata, caly_run_path, current_idx, length_
             run_tasks = [os.path.basename(ii) for ii in run_tasks_]
 
             if Version(api_version) < Version('1.0'):
-                warnings.warn(f"the dpdispatcher will be updated to new version."
-                    f"And the interface may be changed. Please check the documents for more details")
-                dispatcher=make_dispatcher(mdata['model_devi_machine'],mdata['model_devi_resources'],'./', run_tasks, model_devi_group_size)
-                dispatcher.run_jobs(mdata['model_devi_resources'],
-                                commands,
-                                './',
-                                run_tasks,
-                                model_devi_group_size,
-                                model_names,
-                                forward_files,
-                                backward_files,
-                                outlog = 'model_devi.log',
-                                errlog = 'model_devi.log')
+                raise RuntimeError("API version %s has been removed. Please upgrade to 1.0." % api_version)
             elif Version(api_version) >= Version('1.0'):
                 os.chdir(cwd)
                 submission = make_submission(
@@ -169,8 +157,6 @@ def gen_structures(iter_index, jdata, mdata, caly_run_path, current_idx, length_
                 # to traj
                 shutil.copyfile(os.path.join('task.%03d'%(jjj),'traj.traj'),os.path.join('traj','%s.traj'%str(jjj+1)),)
 
-            if Version(api_version) < Version('1.0'):
-                os.rename('jr.json','jr_%s.json'%(str(ii)))
 
             tlist = glob.glob('task.*')
             for t in tlist:
@@ -233,19 +219,7 @@ def gen_structures(iter_index, jdata, mdata, caly_run_path, current_idx, length_
         run_tasks = [os.path.basename(ii) for ii in run_tasks_]
 
         if Version(api_version) < Version('1.0'):
-            warnings.warn(f"the dpdispatcher will be updated to new version."
-                f"And the interface may be changed. Please check the documents for more details")
-            dispatcher=make_dispatcher(mdata['model_devi_machine'],mdata['model_devi_resources'],'./', run_tasks, model_devi_group_size)
-            dispatcher.run_jobs(mdata['model_devi_resources'],
-                            commands,
-                            './',
-                            run_tasks,
-                            model_devi_group_size,
-                            model_names,
-                            forward_files,
-                            backward_files,
-                            outlog = 'model_devi.log',
-                            errlog = 'model_devi.log')
+            raise RuntimeError("API version %s has been removed. Please upgrade to 1.0." % api_version)
         elif Version(api_version) >= Version('1.0'):
             os.chdir(cwd)
             submission = make_submission(

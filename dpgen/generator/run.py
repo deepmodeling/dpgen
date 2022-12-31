@@ -61,7 +61,7 @@ from dpgen.generator.lib.gaussian import make_gaussian_input, take_cluster
 from dpgen.generator.lib.cp2k import make_cp2k_input, make_cp2k_input_from_external, make_cp2k_xyz
 from dpgen.generator.lib.ele_temp import NBandsEsti
 from dpgen.remote.decide_machine import convert_mdata
-from dpgen.dispatcher.Dispatcher import Dispatcher, _split_tasks, make_dispatcher, make_submission
+from dpgen.dispatcher.Dispatcher import make_submission
 from dpgen.util import sepline, expand_sys_str, normalize
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar,Kpoints,Potcar
@@ -595,25 +595,13 @@ def run_train (iter_index,
     except Exception:
         train_group_size = 1
 
-    api_version = mdata.get('api_version', '0.9')
+    api_version = mdata.get('api_version', '1.0')
     
     user_forward_files = mdata.get("train" + "_user_forward_files", [])
     forward_files += [os.path.basename(file) for file in user_forward_files]
     backward_files += mdata.get("train" + "_user_backward_files", [])
     if Version(api_version) < Version('1.0'):
-        warnings.warn(f"the dpdispatcher will be updated to new version."
-            f"And the interface may be changed. Please check the documents for more details")
-        dispatcher = make_dispatcher(mdata['train_machine'], mdata['train_resources'], work_path, run_tasks, train_group_size)
-        dispatcher.run_jobs(mdata['train_resources'],
-                        commands,
-                        work_path,
-                        run_tasks,
-                        train_group_size,
-                        trans_comm_data,
-                        forward_files,
-                        backward_files,
-                        outlog = 'train.log',
-                        errlog = 'train.log')
+        raise RuntimeError("API version %s has been removed. Please upgrade to 1.0." % api_version)
 
     elif Version(api_version) >= Version('1.0'):
         submission = make_submission(
@@ -1597,23 +1585,11 @@ def run_md_model_devi (iter_index,
     user_forward_files = mdata.get("model_devi" + "_user_forward_files", [])
     forward_files += [os.path.basename(file) for file in user_forward_files]
     backward_files += mdata.get("model_devi" + "_user_backward_files", [])
-    api_version = mdata.get('api_version', '0.9')
+    api_version = mdata.get('api_version', '1.0')
     if(len(run_tasks) == 0): 
         raise RuntimeError("run_tasks for model_devi should not be empty! Please check your files.") 
     if Version(api_version) < Version('1.0'):
-        warnings.warn(f"the dpdispatcher will be updated to new version."
-            f"And the interface may be changed. Please check the documents for more details")
-        dispatcher = make_dispatcher(mdata['model_devi_machine'], mdata['model_devi_resources'], work_path, run_tasks, model_devi_group_size)
-        dispatcher.run_jobs(mdata['model_devi_resources'],
-                        commands,
-                        work_path,
-                        run_tasks,
-                        model_devi_group_size,
-                        model_names,
-                        forward_files,
-                        backward_files,
-                        outlog = 'model_devi.log',
-                        errlog = 'model_devi.log')
+        raise RuntimeError("API version %s has been removed. Please upgrade to 1.0." % api_version)
 
     elif Version(api_version) >= Version('1.0'):
         submission = make_submission(
@@ -3132,22 +3108,9 @@ def run_fp_inner (iter_index,
     forward_files += [os.path.basename(file) for file in user_forward_files]
     backward_files += mdata.get("fp" + "_user_backward_files", [])
     
-    api_version = mdata.get('api_version', '0.9')
+    api_version = mdata.get('api_version', '1.0')
     if Version(api_version) < Version('1.0'):
-        warnings.warn(f"the dpdispatcher will be updated to new version."
-            f"And the interface may be changed. Please check the documents for more details")
-        dispatcher = make_dispatcher(mdata['fp_machine'], mdata['fp_resources'], work_path, run_tasks, fp_group_size)
-        dispatcher.run_jobs(mdata['fp_resources'],
-                        [fp_command],
-                        work_path,
-                        run_tasks,
-                        fp_group_size,
-                        forward_common_files,
-                        forward_files,
-                        backward_files,
-                        mark_failure = mark_failure,
-                        outlog = log_file,
-                        errlog = log_file)
+        raise RuntimeError("API version %s has been removed. Please upgrade to 1.0." % api_version)
 
     elif Version(api_version) >= Version('1.0'):
         submission = make_submission(
