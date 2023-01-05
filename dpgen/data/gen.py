@@ -708,6 +708,7 @@ def pert_scaled(jdata) :
         fp_style = "abacus"
         poscar_name = "STRU"
     pert_cmd = 'python3 ' + pert_cmd + ' -etmax %f -ofmt %s %s %d %f > /dev/null' %(pert_box, fp_style, poscar_name, pert_numb, pert_atom)
+    pert_cmd = pert_cmd.replace('python3', sys.executable)
     for ii in sys_pe :
         for jj in scale :
             path_work = path_sp
