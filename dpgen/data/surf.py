@@ -1,7 +1,7 @@
 #!/usr/bin/env python3 
 
 import warnings
-import os,json,shutil,re,glob,argparse
+import os,json,shutil,re,glob,argparse,sys
 import numpy as np
 import subprocess as sp
 import dpgen.data.tools.hcp as hcp
