@@ -1,7 +1,7 @@
 #!/usr/bin/env python3 
 
 import warnings
-import os,json,shutil,re,glob,argparse
+import os,json,shutil,re,glob,argparse,sys
 import numpy as np
 import subprocess as sp
 import dpgen.data.tools.hcp as hcp
@@ -495,7 +495,7 @@ def pert_scaled(jdata) :
     sys_pe.sort()
     os.chdir(cwd)    
 
-    pert_cmd = "python "+os.path.join(ROOT_PATH, 'data/tools/create_random_disturb.py')
+    pert_cmd = sys.executable + ' ' + os.path.join(ROOT_PATH, 'data/tools/create_random_disturb.py')
     pert_cmd += ' -etmax %f -ofmt vasp POSCAR %d %f > /dev/null' %(pert_box, pert_numb, pert_atom)    
     for ii in sys_pe :
         for jj in scale :
