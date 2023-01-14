@@ -299,8 +299,7 @@ def post_model_devi(iter_index, jdata, mdata):
     rest_systems += sys_failed
     sys_data_path = os.path.join(work_path, rest_data_name)
     rest_systems.to_deepmd_raw(sys_data_path)
-    if rest_idx.size:
-        rest_systems.to_deepmd_npy(sys_data_path, set_size=rest_idx.size)
+    rest_systems.to_deepmd_npy(sys_data_path, set_size=rest_systems.get_nframes())
 
 
     # dump the accurate data -- to another directory
