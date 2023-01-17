@@ -62,7 +62,7 @@ from dpgen.generator.lib.cp2k import make_cp2k_input, make_cp2k_input_from_exter
 from dpgen.generator.lib.ele_temp import NBandsEsti
 from dpgen.remote.decide_machine import convert_mdata
 from dpgen.dispatcher.Dispatcher import make_submission
-from dpgen.util import sepline, expand_sys_str, normalize
+from dpgen.util import sepline, expand_sys_str, normalize, convert_training_data_to_hdf5
 from dpgen import ROOT_PATH
 from pymatgen.io.vasp import Incar,Kpoints,Potcar
 from dpgen.auto_test.lib.vasp import make_kspacing_kpoints
@@ -385,7 +385,7 @@ def make_train (iter_index,
             jinput['loss']['start_pref_f'] = training_reuse_start_pref_f
         jinput['learning_rate']['start_lr'] = training_reuse_start_lr
         
-
+    input_files = []
     for ii in range(numb_models) :
         task_path = os.path.join(work_path, train_task_fmt % ii)
         create_path(task_path)
@@ -429,6 +429,7 @@ def make_train (iter_index,
         # dump the input.json
         with open(os.path.join(task_path, train_input_file), 'w') as outfile:
             json.dump(jinput, outfile, indent = 4)
+        input_files.append(os.path.join(task_path, train_input_file))
 
     # link old models
     if iter_index > 0 :
@@ -454,7 +455,9 @@ def make_train (iter_index,
             _link_old_models(work_path, old_model_files, ii)
     # Copy user defined forward files
     symlink_user_forward_files(mdata=mdata, task_type="train", work_path=work_path)
-    
+    # HDF5 format for training data
+    if jdata.get('one_h5', False):
+        convert_training_data_to_hdf5(input_files, os.path.join(work_path, "data.hdf5"))
 
 
 def _link_old_models(work_path, old_model_files, ii):
@@ -568,24 +571,28 @@ def run_train (iter_index,
     backward_files+= ['model.ckpt.meta', 'model.ckpt.index', 'model.ckpt.data-00000-of-00001', 'checkpoint']
     if jdata.get("dp_compress", False):
         backward_files.append('frozen_model_compressed.pb')
-    init_data_sys_ = jdata['init_data_sys']
-    init_data_sys = []
-    for ii in init_data_sys_ :
-        init_data_sys.append(os.path.join('data.init', ii))
-    trans_comm_data = []
-    cwd = os.getcwd()
-    os.chdir(work_path)
-    fp_data = glob.glob(os.path.join('data.iters', 'iter.*', '02.fp', 'data.*'))
-    for ii in itertools.chain(init_data_sys, fp_data) :
-        sys_paths = expand_sys_str(ii)
-        for single_sys in sys_paths:
-            if "#" not in single_sys:
-                trans_comm_data += glob.glob(os.path.join(single_sys, 'set.*'))
-                trans_comm_data += glob.glob(os.path.join(single_sys, 'type*.raw'))
-                trans_comm_data += glob.glob(os.path.join(single_sys, 'nopbc'))
-            else:
-                # H5 file
-                trans_comm_data.append(single_sys.split("#")[0])
+    if not jdata.get('one_h5', False):
+        init_data_sys_ = jdata['init_data_sys']
+        init_data_sys = []
+        for ii in init_data_sys_ :
+            init_data_sys.append(os.path.join('data.init', ii))
+        trans_comm_data = []
+        cwd = os.getcwd()
+        os.chdir(work_path)
+        fp_data = glob.glob(os.path.join('data.iters', 'iter.*', '02.fp', 'data.*'))
+        for ii in itertools.chain(init_data_sys, fp_data) :
+            sys_paths = expand_sys_str(ii)
+            for single_sys in sys_paths:
+                if "#" not in single_sys:
+                    trans_comm_data += glob.glob(os.path.join(single_sys, 'set.*'))
+                    trans_comm_data += glob.glob(os.path.join(single_sys, 'type*.raw'))
+                    trans_comm_data += glob.glob(os.path.join(single_sys, 'nopbc'))
+                else:
+                    # H5 file
+                    trans_comm_data.append(single_sys.split("#")[0])
+    else:
+        cwd = os.getcwd()
+        trans_comm_data = ["data.hdf5"]
     # remove duplicated files
     trans_comm_data = list(set(trans_comm_data))
     os.chdir(cwd)
