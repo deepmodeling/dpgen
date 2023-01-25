@@ -100,6 +100,6 @@ fp_pp_files: ["C.psf", "H.psf"]
 fp_params:
   ecut: 300
   ediff: 1e-4
-  kspacing:	1
+  kspacing: 1
   mixingWeight: 0.05
   NumberPulay": 5
