@@ -16,6 +16,7 @@ repos:
     -   id: check-added-large-files
     -   id: check-merge-conflict
     -   id: check-symlinks
+        exclude: "^tests/tools/run_report_test_output/.*$"
     -   id: check-toml
 # Python
 -   repo: https://github.com/psf/black
