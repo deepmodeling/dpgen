@@ -3,9 +3,7 @@ from abc import ABC, abstractmethod
 
 class Task(ABC):
     @abstractmethod
-    def __init__(self,
-                 inter_parameter,
-                 path_to_poscar):
+    def __init__(self, inter_parameter, path_to_poscar):
         """
         Constructor
 
@@ -19,11 +17,10 @@ class Task(ABC):
         pass
 
     @abstractmethod
-    def make_potential_files(self,
-                             output_dir):
+    def make_potential_files(self, output_dir):
         """
         Prepare potential files for a computational task.
-        For example, the VASP prepares POTCAR. 
+        For example, the VASP prepares POTCAR.
         DeePMD prepares frozen model(s).
         IMPORTANT: Interaction should be stored in output_dir/inter.json
 
@@ -39,10 +36,7 @@ class Task(ABC):
         pass
 
     @abstractmethod
-    def make_input_file(self,
-                        output_dir,
-                        task_type,
-                        task_param):
+    def make_input_file(self, output_dir, task_type, task_param):
         """
         Prepare input files for a computational task
         For example, the VASP prepares INCAR.
@@ -64,10 +58,9 @@ class Task(ABC):
         pass
 
     @abstractmethod
-    def compute(self,
-                output_dir):
+    def compute(self, output_dir):
         """
-        Compute output of the task. 
+        Compute output of the task.
         IMPORTANT: The output configuration should be converted and stored in a CONTCAR file.
 
         Parameters

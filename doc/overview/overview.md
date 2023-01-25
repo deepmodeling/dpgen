@@ -23,14 +23,14 @@ Yuzhi Zhang, Haidi Wang, Weijie Chen, Jinzhe Zeng, Linfeng Zhang, Han Wang, and 
 
 DP-GEN only supports Python 3.8 and above.
 
-Please follow our [GitHub](https://github.com/deepmodeling/dpgen) webpage to download the [latest released version](https://github.com/deepmodeling/dpgen/tree/master) and [development version](https://github.com/deepmodeling/dpgen/tree/devel). 
+Please follow our [GitHub](https://github.com/deepmodeling/dpgen) webpage to download the [latest released version](https://github.com/deepmodeling/dpgen/tree/master) and [development version](https://github.com/deepmodeling/dpgen/tree/devel).
 One can download the source code of dpgen by
 ```bash
 git clone https://github.com/deepmodeling/dpgen.git
 ```
 
 DP-GEN offers multiple installation methods. It is recommend using easily methods like:
-- offline packages: find them in [releases](https://github.com/deepmodeling/dpgen/releases/), 
+- offline packages: find them in [releases](https://github.com/deepmodeling/dpgen/releases/),
 - pip: use `pip install dpgen`, see [dpgen-PyPI](https://pypi.org/project/dpgen/)
 - conda: use `conda install -c deepmodeling dpgen`, see [dpgen-conda](https://anaconda.org/deepmodeling/dpgen)
 
@@ -57,19 +57,19 @@ Before starting a new Deep Potential (DP) project, we suggest people (especially
 
 - [Convergence-Test](https://tutorials.deepmodeling.com/en/latest/CaseStudies/Convergence-Test/index.html)
 
-to ensure the data quality, the reliability of the final model, as well as the feasibility of the project, a convergence test should be done first. 
+to ensure the data quality, the reliability of the final model, as well as the feasibility of the project, a convergence test should be done first.
 
 - [Gas-phase](https://tutorials.deepmodeling.com/en/latest/CaseStudies/Gas-phase/index.html)
 
-In this tutorial, we will take the simulation of methane combustion as an example and introduce the procedure of DP-based MD simulation. 
+In this tutorial, we will take the simulation of methane combustion as an example and introduce the procedure of DP-based MD simulation.
 
 - [Mg-Y_alloy](https://tutorials.deepmodeling.com/en/latest/CaseStudies/Mg-Y_alloy/index.html)
- 
+
  We will briefly analyze the candidate configurational space of a metallic system by taking Mg-based Mg-Y binary alloy as an example. The task is divided into steps during the DP-GEN process.
 
 - [Transfer-learning](https://tutorials.deepmodeling.com/en/latest/CaseStudies/Transfer-learning/index.html)
- 
- This tutorial will introduce how to implement potential energy surface (PES) transfer-learning by using the DP-GEN software. In DP-GEN (version > 0.8.0), the “simplify” module is designed for this purpose. 
+
+ This tutorial will introduce how to implement potential energy surface (PES) transfer-learning by using the DP-GEN software. In DP-GEN (version > 0.8.0), the “simplify” module is designed for this purpose.
 
 ## License
 The project dpgen is licensed under [GNU LGPLv3.0](https://github.com/deepmodeling/dpgen/blob/master/LICENSE)

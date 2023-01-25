@@ -16,7 +16,7 @@ DPGEN's documentation
 
 .. toctree::
    :maxdepth: 2
-   :caption: Workflow 
+   :caption: Workflow
 
    run/index.rst
    init/index.rst
@@ -28,7 +28,7 @@ DPGEN's documentation
 .. toctree::
    :maxdepth: 2
    :caption: Tutorial
-   :glob:  
+   :glob:
 
    Tutorials <https://tutorials.deepmodeling.com/en/latest/Tutorials/DP-GEN/>
    Publications <https://deepmodeling.com/blog/papers/dpgen/>
@@ -64,5 +64,5 @@ How to get help from the community
 * :ref:`modindex`
 * :ref:`search`
 
-.. _feedback: 
-.. _affiliated packages: 
+.. _feedback:
+.. _affiliated packages:

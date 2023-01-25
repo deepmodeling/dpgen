@@ -79,7 +79,7 @@
         "start_pref_f": 100,
         "limit_pref_f": 1,
         "start_pref_v": 0,
-        "limit_pref_v": 0 
+        "limit_pref_v": 0
     },
     "training": {
         "stop_batch": 6000,

@@ -21,7 +21,7 @@ smearing_method		gauss
 smearing_sigma			0.002
 
 #Parameters (5.Mixing)
-mixing_type	    broyden 
+mixing_type	    broyden
 mixing_beta		0.7
 
 cal_stress 1

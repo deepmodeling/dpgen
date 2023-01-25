@@ -3,7 +3,7 @@
 
 
 def convert_mdata(mdata, task_types=["train", "model_devi", "fp"]):
-    '''
+    """
     Convert mdata for DP-GEN main process.
     New convension is like mdata["fp"]["machine"],
     DP-GEN needs mdata["fp_machine"]
@@ -23,7 +23,7 @@ def convert_mdata(mdata, task_types=["train", "model_devi", "fp"]):
     -------
     dict
         mdata converted
-    '''
+    """
     for task_type in task_types:
         if task_type in mdata:
             if isinstance(mdata[task_type], dict):

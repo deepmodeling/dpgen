@@ -1,6 +1,6 @@
 ## Refine get started and input examples
 
-Sometimes we want to refine the calculation of a property from previous results. For example, when higher convergence criteria `EDIFF` and `EDIFFG` are necessary in VASP, the new VASP calculation is desired to start from the previous output configuration, rather than starting from scratch. 
+Sometimes we want to refine the calculation of a property from previous results. For example, when higher convergence criteria `EDIFF` and `EDIFFG` are necessary in VASP, the new VASP calculation is desired to start from the previous output configuration, rather than starting from scratch.
 
 
 An example of the input file `refine.json` is given below:

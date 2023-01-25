@@ -2,22 +2,22 @@
   "type_map": ["I","Pb","C","N","H"],
   "mass_map": [126.90447, 207.2, 12.0108, 14.0067, 1.00795],
 
-  "pick_data":  "../data", 
+  "pick_data":  "../data",
   "init_data_prefix": "",
   "init_data_sys":   [],
   "sys_configs": [null],
-  "sys_batch_size":  [1], 
+  "sys_batch_size":  [1],
 
   "_comment": " 00.train ",
   "numb_models": 4,
   "model_devi_activation_func":[["tanh","tanh"],["tanh","gelu"],["gelu","gelu"],["gelu","tanh"]],
- 
+
   "default_training_param": {
     "model": {
       "type_map":           ["I","Pb","C","N","H"],
-      "descriptor": {        
+      "descriptor": {
         "type":             "se_e2_a",
-        "sel": 
+        "sel":
         [
           20,
           8,
@@ -65,7 +65,7 @@
         "disp_freq":         1000,
         "numb_test":         4,
         "save_freq":         10000,
-        "save_ckpt":         "model.ckpt", 
+        "save_ckpt":         "model.ckpt",
         "disp_training":     true,
         "time_training":     true,
         "profiling":         false,
@@ -89,6 +89,6 @@
   "init_pick_number":5,
   "iter_pick_number":5,
   "model_devi_f_trust_lo":0.30,
-  "model_devi_f_trust_hi":100.00, 
+  "model_devi_f_trust_hi":100.00,
   "cvasp": false
 }

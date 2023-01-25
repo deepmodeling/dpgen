@@ -1,6 +1,6 @@
 # Config machine.json file in order to submit task to lebesgue platform.
 
-You can login to lebesgue official website http://lebesgue.dp.tech/ . Then click [Function]-[DPGEN]-[manual]\(On the top left corner of the function panel\) from left navigator bar http://lebesgue.dp.tech/#/jobs/dpgen. 
+You can login to lebesgue official website http://lebesgue.dp.tech/ . Then click [Function]-[DPGEN]-[manual]\(On the top left corner of the function panel\) from left navigator bar http://lebesgue.dp.tech/#/jobs/dpgen.
 
 Below is the description of each json fields, please visit official documentation for more information and update.
 

@@ -1,4 +1,4 @@
-{    
+{
     "type_map":		["C", "H"],
     "mass_map":		[12.011, 1.008],
     "init_data_prefix":	"/home/jzzeng/0719dodecane/gen/",
@@ -42,7 +42,7 @@
         "limit_pref_pf":    0
       },
       "training":{
-        "set_prefix":		"set",    
+        "set_prefix":		"set",
         "stop_batch":		400000,
         "disp_file":		"lcurve.out",
         "disp_freq":		1000,

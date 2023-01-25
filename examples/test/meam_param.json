@@ -7,7 +7,7 @@
     "key_id": "key id of Material project",
     "task_type": "meam",
     "task": "all",
-    
+
     "vasp_params": {
         "ecut": 650,
         "ediff": 1e-6,

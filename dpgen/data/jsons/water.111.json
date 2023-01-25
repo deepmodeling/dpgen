@@ -6,10 +6,10 @@
     "_comment":	"if set from poscar, the options above will be ignored",
     "from_poscar":	true,
     "from_poscar_path":	"ice6.POSCAR",
-    
+
     "_comment":	"",
     "super_cell":	[1, 1, 1],
-    "potcars":		[ "/home/wanghan/Soft/vasp/potcar.52/potpaw_PBE.52/O/POTCAR", 
+    "potcars":		[ "/home/wanghan/Soft/vasp/potcar.52/potpaw_PBE.52/O/POTCAR",
 			  "/home/wanghan/Soft/vasp/potcar.52/potpaw_PBE.52/H/POTCAR"
 			],
     "encut":		900,
