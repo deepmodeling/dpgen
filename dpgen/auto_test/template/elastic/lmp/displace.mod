@@ -4,17 +4,17 @@
 # Find which reference length to use
 
 if "${dir} == 1" then &
-   "variable len0 equal ${lx0}" 
+   "variable len0 equal ${lx0}"
 if "${dir} == 2" then &
-   "variable len0 equal ${ly0}" 
+   "variable len0 equal ${ly0}"
 if "${dir} == 3" then &
-   "variable len0 equal ${lz0}" 
+   "variable len0 equal ${lz0}"
 if "${dir} == 4" then &
-   "variable len0 equal ${lz0}" 
+   "variable len0 equal ${lz0}"
 if "${dir} == 5" then &
-   "variable len0 equal ${lz0}" 
+   "variable len0 equal ${lz0}"
 if "${dir} == 6" then &
-   "variable len0 equal ${ly0}" 
+   "variable len0 equal ${ly0}"
 
 # Reset box and simulation parameters
 
@@ -47,7 +47,7 @@ if "${dir} == 6" then &
 minimize ${etol} ${ftol} ${maxiter} ${maxeval}
 
 # Obtain new stress tensor
- 
+
 variable tmp equal pxx
 variable pxx1 equal ${tmp}
 variable tmp equal pyy
@@ -101,7 +101,7 @@ if "${dir} == 6" then &
 minimize ${etol} ${ftol} ${maxiter} ${maxeval}
 
 # Obtain new stress tensor
- 
+
 variable tmp equal pe
 variable e1 equal ${tmp}
 variable tmp equal press
@@ -128,7 +128,7 @@ variable C4pos equal ${d4}
 variable C5pos equal ${d5}
 variable C6pos equal ${d6}
 
-# Combine positive and negative 
+# Combine positive and negative
 
 variable C1${dir} equal 0.5*(${C1neg}+${C1pos})
 variable C2${dir} equal 0.5*(${C2neg}+${C2pos})

@@ -16,7 +16,7 @@
     ["/home/test/software/dpgen/examples/run/dp-lammps-pwmat/scale-1.000/00000*/POSCAR"],
     ["/home/test/software/dpgen/examples/run/dp-lammps-pwmat/scale-1.000/00001*/POSCAR"]
 	],
-    
+
     "sys_batch_size":	[
 	8, 8, 8, 8
     ],
@@ -92,6 +92,6 @@
     "fp_task_min":	8,
     "fp_pp_path":	".",
     "fp_pp_files":	["C.SG15.PBE.UPF", "H.SG15.PBE.UPF"],
-    "fp_incar" : "etot.input",  
+    "fp_incar" : "etot.input",
     "_comment":		" that's all "
 }

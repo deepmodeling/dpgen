@@ -33,7 +33,7 @@
             "number_node": 1,
             "_comment" : "The number of CPUs. #SBATCH -n 4",
             "cpu_per_node": 4,
-            "_comment" : "The number of GPU cards. #SBATCH --gres=gpu:1", 
+            "_comment" : "The number of GPU cards. #SBATCH --gres=gpu:1",
             "gpu_per_node": 1,
             "queue_name": "all",
             "custom_flags": [

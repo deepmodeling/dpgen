@@ -2,13 +2,13 @@
 
 ## DPDispatcher Update Note
 
-DPDispatcher has updated and the api of machine.json is changed. DP-GEN will use the new DPDispatcher if the value of key {dargs:argument}`api_version <run_mdata/api_version>` in machine.json is equal to or large than 1.0. And for now, DPDispatcher is maintained on a separate repo (https://github.com/deepmodeling/dpdispatcher). Please check the documents (https://deepmd.readthedocs.io/projects/dpdispatcher/en/latest/) for more information about the new DPDispatcher. 
+DPDispatcher has updated and the api of machine.json is changed. DP-GEN will use the new DPDispatcher if the value of key {dargs:argument}`api_version <run_mdata/api_version>` in machine.json is equal to or large than 1.0. And for now, DPDispatcher is maintained on a separate repo (https://github.com/deepmodeling/dpdispatcher). Please check the documents (https://deepmd.readthedocs.io/projects/dpdispatcher/en/latest/) for more information about the new DPDispatcher.
 
 DP-GEN will use the old DPDispatcher if the key {dargs:argument}`api_version <run_mdata/api_version>` is not specified in machine.json or the {dargs:argument}`api_version <run_mdata/api_version>` is smaller than 1.0. This gurantees that the old machine.json still works.
 
 ## New DPDispatcher
 
-Each iteration in the run process of DP-GEN is composed of three steps: exploration, labeling, and training. Accordingly, machine.json is composed of three parts: train, model_devi, and fp. Each part is a list of dicts. Each dict can be considered as an independent environment for calculation. 
+Each iteration in the run process of DP-GEN is composed of three steps: exploration, labeling, and training. Accordingly, machine.json is composed of three parts: train, model_devi, and fp. Each part is a list of dicts. Each dict can be considered as an independent environment for calculation.
 
 In this section, we will show you how to perform train task at a local workstation, model_devi task at a local Slurm cluster, and fp task at a remote PBS cluster using the new DPDispatcher. For each task, three types of keys are needed:
 - Command: provides the command used to execute each step.
@@ -108,7 +108,7 @@ In this example, we perform the fp task at a remote PBS cluster that can be acce
 
 VASP code is used for fp task and mpi is used for parallel computing, so "mpirun -n 32" is added to specify the number of parallel threads.
 
-In the machine parameter, {dargs:argument}`context_type <run_mdata/fp/machine/context_type>` is modified to "SSHContext" and {dargs:argument}`batch_type <run_mdata/fp/resources/batch_type>` is modified to "PBS". It is worth noting that {dargs:argument}`remote_root <run_mdata/fp/machine/remote_root>` should be set to an accessible path on the remote PBS cluster. {dargs:argument}`remote_profile <run_mdata/fp/machine[SSHContext]/remote_profile>` is added to specify the information used to connect the remote cluster, including hostname, username,  port, etc. 
+In the machine parameter, {dargs:argument}`context_type <run_mdata/fp/machine/context_type>` is modified to "SSHContext" and {dargs:argument}`batch_type <run_mdata/fp/resources/batch_type>` is modified to "PBS". It is worth noting that {dargs:argument}`remote_root <run_mdata/fp/machine/remote_root>` should be set to an accessible path on the remote PBS cluster. {dargs:argument}`remote_profile <run_mdata/fp/machine[SSHContext]/remote_profile>` is added to specify the information used to connect the remote cluster, including hostname, username,  port, etc.
 
 In the resources parameter, we set {dargs:argument}`gpu_per_node <run_mdata/fp/resources/gpu_per_node>` to 0 since it is cost-effective to use the CPU for VASP calculations.
 

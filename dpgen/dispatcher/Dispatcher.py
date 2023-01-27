@@ -2,36 +2,47 @@ from distutils.version import LooseVersion
 import os
 from typing import List
 from dpdispatcher import Task, Submission, Resources, Machine
+
 # import dargs
 from dargs.dargs import Argument
 
 
-def make_submission(mdata_machine, mdata_resources, commands, work_path, run_tasks, group_size,
-    forward_common_files, forward_files, backward_files, outlog, errlog):
+def make_submission(
+    mdata_machine,
+    mdata_resources,
+    commands,
+    work_path,
+    run_tasks,
+    group_size,
+    forward_common_files,
+    forward_files,
+    backward_files,
+    outlog,
+    errlog,
+):
 
-    if mdata_machine['local_root'] != './':
+    if mdata_machine["local_root"] != "./":
         raise RuntimeError(f"local_root must be './' in dpgen's machine.json.")
-    
-    abs_local_root = os.path.abspath('./')
+
+    abs_local_root = os.path.abspath("./")
 
     abs_mdata_machine = mdata_machine.copy()
-    abs_mdata_machine['local_root'] = abs_local_root
+    abs_mdata_machine["local_root"] = abs_local_root
 
     machine = Machine.load_from_dict(abs_mdata_machine)
     resources = Resources.load_from_dict(mdata_resources)
-
 
     command = "&&".join(commands)
 
     task_list = []
     for ii in run_tasks:
         task = Task(
-            command=command, 
+            command=command,
             task_work_path=ii,
             forward_files=forward_files,
             backward_files=backward_files,
             outlog=outlog,
-            errlog=errlog
+            errlog=errlog,
         )
         task_list.append(task)
 
@@ -41,7 +52,7 @@ def make_submission(mdata_machine, mdata_resources, commands, work_path, run_tas
         resources=resources,
         task_list=task_list,
         forward_common_files=forward_common_files,
-        backward_common_files=[]
+        backward_common_files=[],
     )
     return submission
 
@@ -51,7 +62,7 @@ def mdata_arginfo() -> List[Argument]:
 
     A submission requires the following keys: command, machine,
     and resources.
-    
+
     Returns
     -------
     list[Argument]
@@ -65,30 +76,36 @@ def mdata_arginfo() -> List[Argument]:
     machine_arginfo.name = "machine"
     resources_arginfo = Resources.arginfo()
     resources_arginfo.name = "resources"
-    user_forward_files_arginfo = Argument("user_forward_files", list, optional=True, doc=doc_user_forward_files)
-    user_backward_files_arginfo = Argument("user_backward_files", list, optional=True, doc=doc_user_backward_files)
+    user_forward_files_arginfo = Argument(
+        "user_forward_files", list, optional=True, doc=doc_user_forward_files
+    )
+    user_backward_files_arginfo = Argument(
+        "user_backward_files", list, optional=True, doc=doc_user_backward_files
+    )
 
     return [
-        command_arginfo, machine_arginfo, resources_arginfo,
+        command_arginfo,
+        machine_arginfo,
+        resources_arginfo,
         user_forward_files_arginfo,
         user_backward_files_arginfo,
     ]
 
 
 def make_submission_compat(
-        machine: dict,
-        resources: dict,
-        commands: List[str],
-        work_path: str,
-        run_tasks: List[str],
-        group_size: int,
-        forward_common_files: List[str],
-        forward_files: List[str],
-        backward_files: List[str],
-        outlog: str="log",
-        errlog: str="err",
-        api_version: str="1.0",
-    ) -> None:
+    machine: dict,
+    resources: dict,
+    commands: List[str],
+    work_path: str,
+    run_tasks: List[str],
+    group_size: int,
+    forward_common_files: List[str],
+    forward_files: List[str],
+    backward_files: List[str],
+    outlog: str = "log",
+    errlog: str = "err",
+    api_version: str = "1.0",
+) -> None:
     """Make submission with compatibility of both dispatcher API v0 and v1.
 
     If `api_version` is less than 1.0, raise RuntimeError. If
@@ -121,10 +138,12 @@ def make_submission_compat(
     api_version : str, default=1.0
         API version. 1.0 is required
     """
-    if LooseVersion(api_version) < LooseVersion('1.0'):
-        raise RuntimeError("API version %s has been removed. Please upgrade to 1.0." % api_version)
+    if LooseVersion(api_version) < LooseVersion("1.0"):
+        raise RuntimeError(
+            "API version %s has been removed. Please upgrade to 1.0." % api_version
+        )
 
-    elif LooseVersion(api_version) >= LooseVersion('1.0'):
+    elif LooseVersion(api_version) >= LooseVersion("1.0"):
         submission = make_submission(
             machine,
             resources,
@@ -136,6 +155,6 @@ def make_submission_compat(
             forward_files=forward_files,
             backward_files=backward_files,
             outlog=outlog,
-            errlog=errlog)
+            errlog=errlog,
+        )
         submission.run_submission()
-

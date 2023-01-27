@@ -1,7 +1,7 @@
 {
 	"path" : "/path/to/Ti",
 	"calculator" : "vasp",
-	"_comment" : "Current only support VASP", 
+	"_comment" : "Current only support VASP",
 	"output" : "./db_Ti.json",
 	"id_prefix" : "",
 	"config_info_dict" : {

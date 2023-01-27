@@ -1,15 +1,15 @@
 {
     "type_map": [
-        "H", 
+        "H",
         "C",
         "N"
-    ], 
+    ],
     "mass_map": [
-        1, 
+        1,
         12,
         14
-    ], 
-    "init_data_prefix": "./data/deepmd/", 
+    ],
+    "init_data_prefix": "./data/deepmd/",
     "init_data_sys": [
         "data.000","data.001","data.002","data.003","data.004","data.005"
     ],
@@ -18,10 +18,10 @@
         [
             "./data/md_sys/data.ch4n2"
         ]
-    ], 
-    "_comment": " that's all ", 
+    ],
+    "_comment": " that's all ",
     "numb_models": 4,
-    "sys_format":"lammps/lmp",  
+    "sys_format":"lammps/lmp",
     "default_training_param": {
         "model": {
             "type_map": [
@@ -84,50 +84,50 @@
             "_comment": "that's all"
         }
     },
-    "model_devi_dt": 0.002, 
-    "model_devi_skip": 0, 
-    "model_devi_f_trust_lo": 0.02, 
-    "model_devi_f_trust_hi": 1.95, 
-    "model_devi_clean_traj": true, 
+    "model_devi_dt": 0.002,
+    "model_devi_skip": 0,
+    "model_devi_f_trust_lo": 0.02,
+    "model_devi_f_trust_hi": 1.95,
+    "model_devi_clean_traj": true,
     "model_devi_jobs": [
         {
             "sys_idx": [
                 0
-            ], 
+            ],
             "temps": [
                 100
-            ], 
+            ],
             "press": [
                 1
-            ], 
-            "trj_freq": 10, 
-            "nsteps": 2000, 
-            "ensemble": "nvt", 
+            ],
+            "trj_freq": 10,
+            "nsteps": 2000,
+            "ensemble": "nvt",
             "_idx": "00"
-        }, 
+        },
         {
             "sys_idx": [
                 0
-            ], 
+            ],
             "temps": [
                 100
-            ], 
+            ],
             "press": [
                 1
-            ], 
-            "trj_freq": 10, 
-            "nsteps": 5000, 
-            "ensemble": "nvt", 
+            ],
+            "trj_freq": 10,
+            "nsteps": 5000,
+            "ensemble": "nvt",
             "_idx": "01"
         }
 
-    ], 
+    ],
     "use_clusters": true,
     "cluster_cutoff": 5.0,
     "cluster_minify": true,
     "use_relative": true,
     "epsilon": 1.0,
-    "ratio_failed": 0.20, 
+    "ratio_failed": 0.20,
     "fp_style": "gaussian",
     "shuffle_poscar": false,
     "fp_task_max": 20,

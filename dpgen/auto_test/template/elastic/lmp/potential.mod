@@ -1,4 +1,4 @@
-# NOTE: This script can be modified for different pair styles 
+# NOTE: This script can be modified for different pair styles
 # See in.elastic for more info.
 
 # ================= Choose potential ========================
@@ -11,7 +11,7 @@ neigh_modify	every 1 delay 0 check yes
 
 # Setup minimization style
 min_style	cg
-min_modify	dmax ${dmax} 
+min_modify	dmax ${dmax}
 
 # Setup output
 thermo		10

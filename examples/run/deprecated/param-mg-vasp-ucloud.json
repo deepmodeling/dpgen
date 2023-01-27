@@ -1,4 +1,4 @@
-{    
+{
     "type_map":		["Mg"],
     "mass_map":		[24],
 
@@ -71,7 +71,7 @@
 
 	"_comment": " traing controls",
 	"systems":		[],
-	"set_prefix":		"set",    
+	"set_prefix":		"set",
 	"stop_batch":		400000,
 	"batch_size":		1,
 	"start_lr":		0.002,

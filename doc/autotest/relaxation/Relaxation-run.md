@@ -1,6 +1,6 @@
 ## Relaxation run
 
-The work path of each task should be in the form like `confs/mp-*/relaxation` and all task is in the form like `confs/mp-*/relaxation/relax_task`. 
+The work path of each task should be in the form like `confs/mp-*/relaxation` and all task is in the form like `confs/mp-*/relaxation/relax_task`.
 
 The `machine.json` file should be applied in this process and the machine parameters (eg. GPU or CPU) are determined according to the task type (VASP or LAMMPS). Then in each work path, the corresponding tasks would be submitted and the results would be sent back through [make_dispatcher](https://github.com/deepmodeling/dpgen/blob/devel/dpgen/dispatcher/Dispatcher.py).
 

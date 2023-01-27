@@ -31,5 +31,3 @@ onf_dir: /root/auto_test_example/deepmd/confs/std-fcc/eos_00
    ...      ...
  17.935   -3.7088
 ```
-
- 

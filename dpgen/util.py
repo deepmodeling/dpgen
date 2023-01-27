@@ -16,23 +16,25 @@ some common utilities for generator, auto_test and data
 """
 
 # constants define
-MaxLength=70
+MaxLength = 70
 
-def sepline(ch='-',sp='-',screen=False):
-    r'''
+
+def sepline(ch="-", sp="-", screen=False):
+    r"""
     seperate the output by '-'
-    '''
+    """
     if screen:
-       print(ch.center(MaxLength,sp))
+        print(ch.center(MaxLength, sp))
     else:
-       dlog.info(ch.center(MaxLength,sp))
+        dlog.info(ch.center(MaxLength, sp))
 
-def box_center(ch='',fill=' ',sp="|"):
-    r'''
+
+def box_center(ch="", fill=" ", sp="|"):
+    r"""
     put the string at the center of |  |
-    '''
-    strs=ch.center(Len,fill)
-    dlog.info(sp+strs[1:len(strs)-1:]+sp)
+    """
+    strs = ch.center(Len, fill)
+    dlog.info(sp + strs[1 : len(strs) - 1 :] + sp)
 
 
 def expand_sys_str(root_dir: Union[str, Path]) -> List[str]:
@@ -57,14 +59,19 @@ def expand_sys_str(root_dir: Union[str, Path]) -> List[str]:
             matches.append(str(root_dir))
     elif root_dir.is_file():
         # HDF5 file
-        with h5py.File(root_dir, 'r') as f:
+        with h5py.File(root_dir, "r") as f:
             # list of keys in the h5 file
             f_keys = ["/"]
             f.visit(lambda x: f_keys.append("/" + x))
-        matches = ["%s#%s"%(root_dir, d) for d in f_keys if str(Path(d) / "type.raw") in f_keys]
+        matches = [
+            "%s#%s" % (root_dir, d)
+            for d in f_keys
+            if str(Path(d) / "type.raw") in f_keys
+        ]
     else:
         raise OSError(f"{root_dir} does not exist.")
     return matches
+
 
 def normalize(arginfo: Argument, data: dict, strict_check: bool = True) -> dict:
     """Normalize and check input data.
@@ -104,14 +111,14 @@ def convert_training_data_to_hdf5(input_files: List[str], h5_file: str):
     for ii in input_files:
         ii = Path(ii)
         dd = ii.parent.absolute()
-        with open(ii, 'r+') as f:
+        with open(ii, "r+") as f:
             jinput = json.load(f)
-            if 'training_data' in jinput['training']:
+            if "training_data" in jinput["training"]:
                 # v2.0
-                p_sys = jinput['training']['training_data']['systems']
+                p_sys = jinput["training"]["training_data"]["systems"]
             else:
                 # v1.x
-                p_sys = jinput['training']['systems']
+                p_sys = jinput["training"]["systems"]
             for ii, pp in enumerate(p_sys):
                 if "#" in pp:
                     # HDF5 file
@@ -122,7 +129,9 @@ def convert_training_data_to_hdf5(input_files: List[str], h5_file: str):
                 else:
                     pp = os.path.normpath(str((dd / pp).absolute().relative_to(cwd)))
                     new_pp = os.path.normpath(os.path.relpath(pp, h5_dir))
-                p_sys[ii] = os.path.normpath(os.path.relpath(h5_file, dd)) + "#/" + str(new_pp)
+                p_sys[ii] = (
+                    os.path.normpath(os.path.relpath(h5_file, dd)) + "#/" + str(new_pp)
+                )
                 systems.append(pp)
             f.seek(0)
             json.dump(jinput, f, indent=4)
@@ -130,7 +139,7 @@ def convert_training_data_to_hdf5(input_files: List[str], h5_file: str):
 
     dlog.info("Combining %d training systems to %s...", len(systems), h5_file)
 
-    with h5py.File(h5_file, 'w') as f:
+    with h5py.File(h5_file, "w") as f:
         for ii in systems:
             if "#" in ii:
                 p1, p2 = ii.split("#")
