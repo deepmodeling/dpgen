@@ -1,6 +1,6 @@
 ## Vacancy post
 
-For `Vacancy`, we need to calculate the energy difference between a crystal structure with and without a vacancy. 
+For `Vacancy`, we need to calculate the energy difference between a crystal structure with and without a vacancy.
 The examples of the output files `result.json` in json format and `result.out` in txt format are given below.
 
 #### result.json

@@ -15,7 +15,7 @@ If, for some reasons, the main program terminated at stage `run`, one can easily
 `relax.json` is the parameter file. An example for `deepmd` relaxation is given as:
 ```json
 {
-        "structures":   "confs/mp-*",
+        "structures":   ["confs/mp-*"],
         "interaction": {
                 "type":         "deepmd",
                 "model":        "frozen_model.pb",
@@ -30,8 +30,8 @@ where the key `structures` provides the structures to relax. `interaction` is pr
 ### Task type
 There are now six task types implemented in the package: `vasp`, `abacus`, `deepmd`, `meam`, `eam_fs`, and `eam_alloy`. An `inter.json` file in json format containing the interaction parameters will be written in the directory of each task after `make`. We give input examples of the `interaction` part for each type below:
 
-**VASP**: 
-    
+**VASP**:
+
 The default of `potcar_prefix` is "".
 ```json
 	"interaction": {
@@ -41,8 +41,8 @@ The default of `potcar_prefix` is "".
 		"potcars":	{"Al": "POTCAR.al", "Mg": "POTCAR.mg"}
 	}
 ```
-**ABACUS**: 
-    
+**ABACUS**:
+
 The default of `potcar_prefix` is "". The path of potcars/orb_files/deepks_desc is `potcar_prefix` + `potcars`/`orb_files`/`deepks_desc`.
 ```json
 	"interaction": {
@@ -62,7 +62,7 @@ The default of `potcar_prefix` is "". The path of potcars/orb_files/deepks_desc 
 ```json
 	"interaction": {
 		"type":		 "deepmd",
-		"model":	 "frozen_model.pb", 
+		"model":	 "frozen_model.pb",
 		"type_map":      {"Al": 0, "Mg": 1}
 	}
 ```
@@ -81,8 +81,8 @@ Please make sure the [USER-MEAMC package](https://lammps.sandia.gov/doc/Packages
 Please make sure the [MANYBODY package](https://lammps.sandia.gov/doc/Packages_details.html#pkg-manybody) has already been installed in LAMMPS
 ```json
 	"interaction": {
-		"type":		 "eam_fs (eam_alloy)", 
-		"model":	 "AlMg.eam.fs (AlMg.eam.alloy)", 
+		"type":		 "eam_fs (eam_alloy)",
+		"model":	 "AlMg.eam.fs (AlMg.eam.alloy)",
 		"type_map":      {"Al": 1, "Mg": 2}
 	}
 ```
@@ -96,9 +96,9 @@ Now the supported property types are `eos`, `elastic`, `vacancy`, `interstitial`
 There are three operations in auto test package, namely `make`, `run`, and `post`. Here we take `eos` property as an example for property type.
 
 ### Make
-The `INCAR`, `POSCAR`, `POTCAR` input files for VASP or `in.lammps`, `conf.lmp`, and the interatomic potential files for LAMMPS will be generated in the directory `confs/mp-*/relaxation/relax_task` for relaxation or `confs/mp-*/eos_00/task.[0-9]*[0-9]` for EOS. The `machine.json` file is not needed for `make`. Example: 
+The `INCAR`, `POSCAR`, `POTCAR` input files for VASP or `in.lammps`, `conf.lmp`, and the interatomic potential files for LAMMPS will be generated in the directory `confs/mp-*/relaxation/relax_task` for relaxation or `confs/mp-*/eos_00/task.[0-9]*[0-9]` for EOS. The `machine.json` file is not needed for `make`. Example:
 ```bash
-dpgen autotest make relaxation.json 
+dpgen autotest make relaxation.json
 ```
 
 ### Run
@@ -110,5 +110,5 @@ dpgen autotest run relaxation.json machine.json
 ### Post
 The post process of calculation results would be performed. `result.json` in json format will be generated in `confs/mp-*/relaxation/relax_task` for relaxation and `result.json` in json format and `result.out` in txt format in `confs/mp-*/eos_00` for EOS. The `machine.json` file is also not needed for `post`. Example:
 ```bash
-dpgen autotest post relaxation.json 
+dpgen autotest post relaxation.json
 ```

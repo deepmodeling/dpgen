@@ -1,8 +1,8 @@
 ## Relaxation get started and input examples
 
-The relaxation of a structure should be carried out before calculating all other properties. 
+The relaxation of a structure should be carried out before calculating all other properties.
 
-First, we need input parameter file and we name it `relax.json` here. All the relaxation calculations should be taken either by `VASP`, `ABACUS`, or `LAMMPS`. Here are two input examples for `VASP` and `LAMMPS` respectively. 
+First, we need input parameter file and we name it `relax.json` here. All the relaxation calculations should be taken either by `VASP`, `ABACUS`, or `LAMMPS`. Here are two input examples for `VASP` and `LAMMPS` respectively.
 
 An example of the input file for relaxation by VASP:
 
@@ -81,5 +81,3 @@ maxiter | Int | 5000 | max iterations of minimizer
 maxeval | Int | 500000 | max number of force/energy evaluations
 
 For LAMMPS relaxation and all the property calculations, **package will help to generate `in.lammps` file for user automatically** according to the property type. We can also make the final changes in the `minimize` setting (`minimize etol ftol maxiter maxeval`) in `in.lammps`. In addition, users can apply the input file for lammps commands in the `interaction` part. For further information of the LAMMPS relaxation, we refer users to [minimize command](https://lammps.sandia.gov/doc/minimize.html).
-
-

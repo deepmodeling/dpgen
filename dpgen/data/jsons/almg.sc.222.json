@@ -3,7 +3,7 @@
     "latt":		2.5,
     "super_cell":	[2, 2, 2],
     "elements":		["Al", "Mg"],
-    "potcars":		["/home/wanghan/Soft/vasp/potcar.unknown/potpaw_PBE/Al/POTCAR", 
+    "potcars":		["/home/wanghan/Soft/vasp/potcar.unknown/potpaw_PBE/Al/POTCAR",
 			 "/home/wanghan/Soft/vasp/potcar.unknown/potpaw_PBE/Mg/POTCAR"
 			],
     "encut":		600,

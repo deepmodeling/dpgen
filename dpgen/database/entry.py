@@ -1,11 +1,11 @@
-#/usr/bin/env python
+# /usr/bin/env python
 # coding: utf-8
 # Copyright (c) The Dpmodeling Team.
 
 import json
 import warnings
 from uuid import uuid4
-from dpdata import System,LabeledSystem
+from dpdata import System, LabeledSystem
 from dpgen.database.vasp import VaspInput
 from pymatgen.core.composition import Composition
 from monty.json import MontyEncoder, MontyDecoder, MSONable
@@ -21,12 +21,20 @@ structure codes. For example, Entries can be used as inputs for DeepMD-Kit.
 class Entry(MSONable):
     """
     An lightweight Entry object containing key computed data
-    for storing purpose. 
+    for storing purpose.
 
     """
 
-    def __init__(self, composition, calculator, inputs,
-                 data, entry_id=None, attribute=None, tag=None):
+    def __init__(
+        self,
+        composition,
+        calculator,
+        inputs,
+        data,
+        entry_id=None,
+        attribute=None,
+        tag=None,
+    ):
         """
         Initializes a Entry.
 
@@ -47,15 +55,15 @@ class Entry(MSONable):
                 but must be MSONable.
         """
         self.composition = Composition(composition)
-        self.calculator  = calculator
+        self.calculator = calculator
         self.inputs = inputs
-        self.data = data 
+        self.data = data
         self.entry_id = entry_id
         self.name = self.composition.reduced_formula
         self.attribute = attribute
         self.tag = tag
 
-    #def __eq__(self,other):
+    # def __eq__(self,other):
     #    if not self.composition == other.composition:
     #       return False
     #    if not self.calculator == other.calculator:
@@ -77,9 +85,10 @@ class Entry(MSONable):
         return len(self.composition)
 
     def __repr__(self):
-        output = ["Entry {} - {}".format(self.entry_id, self.composition.formula),
-                  "calculator: {}".format(self.calculator) 
-                  ]
+        output = [
+            "Entry {} - {}".format(self.entry_id, self.composition.formula),
+            "calculator: {}".format(self.calculator),
+        ]
         return "\n".join(output)
 
     def __str__(self):
@@ -88,24 +97,25 @@ class Entry(MSONable):
     @classmethod
     def from_dict(cls, d):
         dec = MontyDecoder()
-        return cls(d["composition"], d["calculator"], 
-                   inputs={k: dec.process_decoded(v)
-                               for k, v in d.get("inputs", {}).items()},
-                   data={k: dec.process_decoded(v)
-                         for k, v in d.get("data", {}).items()},
-                   entry_id=d.get("entry_id", None),
-                   attribute=d["attribute"] if "attribute" in d else None,
-                   tag=d["tag"] if "tag" in d else None
-                   )
+        return cls(
+            d["composition"],
+            d["calculator"],
+            inputs={k: dec.process_decoded(v) for k, v in d.get("inputs", {}).items()},
+            data={k: dec.process_decoded(v) for k, v in d.get("data", {}).items()},
+            entry_id=d.get("entry_id", None),
+            attribute=d["attribute"] if "attribute" in d else None,
+            tag=d["tag"] if "tag" in d else None,
+        )
 
     def as_dict(self):
-        return {"@module": self.__class__.__module__,
-                "@class": self.__class__.__name__,
-                "composition": self.composition.as_dict(),
-                "calculator": self.calculator,
-                "inputs": json.loads(json.dumps(self.inputs,
-                                                    cls=MontyEncoder)),
-                "data": json.loads(json.dumps(self.data, cls=MontyEncoder)),
-                "entry_id": self.entry_id,
-                "attribute": self.attribute,
-                "tag": self.tag}
+        return {
+            "@module": self.__class__.__module__,
+            "@class": self.__class__.__name__,
+            "composition": self.composition.as_dict(),
+            "calculator": self.calculator,
+            "inputs": json.loads(json.dumps(self.inputs, cls=MontyEncoder)),
+            "data": json.loads(json.dumps(self.data, cls=MontyEncoder)),
+            "entry_id": self.entry_id,
+            "attribute": self.attribute,
+            "tag": self.tag,
+        }

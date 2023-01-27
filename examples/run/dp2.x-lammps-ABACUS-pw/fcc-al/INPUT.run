@@ -1,13 +1,12 @@
 ntype   1
 ecutwfc   40
-mixing_type    pulay 
+mixing_type    pulay
 mixing_beta   0.8
 symmetry   1
 nspin   1
-ks_solver    cg 
-smearing_method    fixed 
+ks_solver    cg
+smearing_method    fixed
 smearing_sigma   0.001
 scf_thr  1e-8
 cal_force  1
 kspacing  200
-

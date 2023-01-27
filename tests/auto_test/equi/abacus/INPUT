@@ -2,7 +2,6 @@ INPUT_PARAMETERS
 #Parameters (5.Mixing)
 suffix ABACUS
 calculation cell-relax
-ntype 1
 symmetry 1
 pseudo_type upf201
 ecutwfc 60

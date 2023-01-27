@@ -21,4 +21,3 @@ pert_box: 0.03
 pert_atom: 0.01
 coll_ndata: 10
 _comment: that's all
-

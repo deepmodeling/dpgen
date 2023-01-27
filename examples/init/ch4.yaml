@@ -23,4 +23,3 @@ pert_atom: 0.01
 deepgen_templ: "../generator/template/"
 coll_ndata: 5000
 _comment: that's all
-

@@ -15,22 +15,22 @@
 
 
  Copyright 2015 The Regents of the University of California
- 
- This work is licensed under the Creative Commons Attribution-ShareAlike 
- 4.0 International License. To view a copy of this license, visit 
- http://creativecommons.org/licenses/by-sa/4.0/ or send a letter to 
+
+ This work is licensed under the Creative Commons Attribution-ShareAlike
+ 4.0 International License. To view a copy of this license, visit
+ http://creativecommons.org/licenses/by-sa/4.0/ or send a letter to
  Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
- 
- This pseudopotential is part of the Schlipf-Gygi norm-conserving 
- pseudopotential library. Its construction parameters were tuned to 
- reproduce materials of a training set with very high accuracy and 
- should be suitable as a general purpose pseudopotential to treat a 
- variety of different compounds. For details of the construction and 
+
+ This pseudopotential is part of the Schlipf-Gygi norm-conserving
+ pseudopotential library. Its construction parameters were tuned to
+ reproduce materials of a training set with very high accuracy and
+ should be suitable as a general purpose pseudopotential to treat a
+ variety of different compounds. For details of the construction and
  testing of the pseudopotential please refer to:
- 
+
  [insert reference to paper here]
- 
- We kindly ask that you include this reference in all publications 
+
+ We kindly ask that you include this reference in all publications
  associated to this pseudopotential.
 
 

@@ -6,7 +6,7 @@
     "elements":		["Al"],
     "from_poscar":	true,
     "from_poscar_path":	"./Al.STRU",
-    "potcars":		["Al_ONCV_PBE-1.0.upf"], 
+    "potcars":		["Al_ONCV_PBE-1.0.upf"],
     "orb_files":	["Al_gga_9au_100Ry_4s4p1d.orb"],
     "relax_incar": 	"./INPUT.rlx",
     "md_incar" : 	"./INPUT.md",
