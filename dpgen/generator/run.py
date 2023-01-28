@@ -68,7 +68,7 @@ from dpgen.generator.lib.abacus_scf import (
     make_abacus_scf_input,
     make_abacus_scf_kpt,
 )
-from dpgen.generator.lib.abacus_scf import get_abacus_input_parameters,get_abacus_STRU
+from dpgen.generator.lib.abacus_scf import get_abacus_input_parameters, get_abacus_STRU
 
 # from dpgen.generator.lib.pwscf import cvt_1frame
 from dpgen.generator.lib.pwmat import make_pwmat_input_dict
@@ -3003,47 +3003,61 @@ def sys_link_fp_vasp_pp(iter_index, jdata):
 def _link_fp_abacus_pporb_descript(iter_index, jdata):
     # assume pp orbital files, numerical descrptors and model for dpks are all in fp_pp_path.
     fp_pp_path = os.path.abspath(jdata["fp_pp_path"])
-    
+
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
     fp_tasks = glob.glob(os.path.join(work_path, "task.*"))
     fp_tasks.sort()
     if len(fp_tasks) == 0:
         return
-    
+
     cwd = os.getcwd()
     for ii in fp_tasks:
         os.chdir(ii)
-        
-        #get value of 'deepks_model' from INPUT
+
+        # get value of 'deepks_model' from INPUT
         input_param = get_abacus_input_parameters("INPUT")
-        fp_dpks_model = input_param.get("deepks_model",None)
+        fp_dpks_model = input_param.get("deepks_model", None)
         if fp_dpks_model != None:
-            model_file = os.path.join(fp_pp_path,fp_dpks_model)
-            assert(os.path.isfile(model_file)),"Can not find the deepks model file %s, which is defined in %s/INPUT" % (model_file,ii)
+            model_file = os.path.join(fp_pp_path, fp_dpks_model)
+            assert os.path.isfile(model_file), (
+                "Can not find the deepks model file %s, which is defined in %s/INPUT"
+                % (model_file, ii)
+            )
             os.symlink(model_file, fp_dpks_model)
 
-        #get pp, orb, descriptor filenames from STRU
+        # get pp, orb, descriptor filenames from STRU
         stru_param = get_abacus_STRU("STRU")
-        pp_files = stru_param.get("pp_files",[])
-        orb_files = stru_param.get("orb_files",[])  
-        descriptor_file = stru_param.get("dpks_descriptor",None)
+        pp_files = stru_param.get("pp_files", [])
+        orb_files = stru_param.get("orb_files", [])
+        descriptor_file = stru_param.get("dpks_descriptor", None)
         pp_files = [] if pp_files == None else pp_files
         orb_files = [] if orb_files == None else orb_files
-        
+
         for jj in pp_files:
             ifile = os.path.join(fp_pp_path, jj)
-            assert(os.path.isfile(ifile)),"Can not find the pseudopotential file %s, which is defined in %s/STRU" % (ifile,ii)
+            assert os.path.isfile(ifile), (
+                "Can not find the pseudopotential file %s, which is defined in %s/STRU"
+                % (ifile, ii)
+            )
             os.symlink(ifile, jj)
-        
+
         for jj in orb_files:
             ifile = os.path.join(fp_pp_path, jj)
-            assert(os.path.isfile(ifile)),"Can not find the orbital file %s, which is defined in %s/STRU" % (ifile,ii)
+            assert os.path.isfile(
+                ifile
+            ), "Can not find the orbital file %s, which is defined in %s/STRU" % (
+                ifile,
+                ii,
+            )
             os.symlink(ifile, jj)
-            
+
         if descriptor_file != None:
             ifile = os.path.join(fp_pp_path, descriptor_file)
-            assert(os.path.isfile(ifile)),"Can not find the deepks descriptor file %s, which is defined in %s/STRU" % (ifile,ii)
+            assert os.path.isfile(ifile), (
+                "Can not find the deepks descriptor file %s, which is defined in %s/STRU"
+                % (ifile, ii)
+            )
             os.symlink(ifile, descriptor_file)
         os.chdir(cwd)
 
