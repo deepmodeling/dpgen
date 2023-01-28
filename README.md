@@ -1,8 +1,6 @@
-<div align="center">
-
 ![logo](./doc/logo.svg)
 
-</div>
+--------------------------------------------------------------------------------
 
 # DP-GEN: A concurrent learning platform for the generation of reliable deep learning based potential energy models
 
