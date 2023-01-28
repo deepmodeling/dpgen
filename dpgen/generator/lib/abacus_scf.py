@@ -342,9 +342,9 @@ def get_additional_from_STRU(geometry_inlines, nele):
             if orb_file_kw == geometry_inlines[iline].split()[0]:
                 orb_file = []
                 for iele in range(nele):
-                    orb_file.append(geometry_inlines[iline + iele + 1].rstrip())
+                    orb_file.append(geometry_inlines[iline + iele + 1].strip())
             if dpks_descriptor_kw == geometry_inlines[iline].split()[0]:
-                dpks_descriptor = geometry_inlines[iline + 1].rstrip()
+                dpks_descriptor = geometry_inlines[iline + 1].strip()
     return orb_file, dpks_descriptor
 
 
