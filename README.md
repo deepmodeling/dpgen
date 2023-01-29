@@ -1,8 +1,12 @@
+![logo](./doc/logo.svg)
+
+--------------------------------------------------------------------------------
+
 # DP-GEN: A concurrent learning platform for the generation of reliable deep learning based potential energy models
 
 [![GitHub release](https://img.shields.io/github/release/deepmodeling/dpgen.svg?maxAge=86400)](https://github.com/deepmodeling/dpgen/releases/)
 [![doi:10.1016/j.cpc.2020.107206](https://img.shields.io/badge/DOI-10.1016%2Fj.cpc.2020.107206-blue)](https://doi.org/10.1016/j.cpc.2020.107206)
-![Citations](https://citations.njzjz.win/10.1016/j.cpc.2020.107206)
+[![Citations](https://citations.njzjz.win/10.1016/j.cpc.2020.107206)](https://badge.dimensions.ai/details/doi/10.1016/j.cpc.2020.107206)
 [![conda install](https://img.shields.io/conda/dn/conda-forge/dpgen?label=conda%20install)](https://anaconda.org/conda-forge/dpgen)
 [![pip install](https://img.shields.io/pypi/dm/dpgen?label=pip%20install)](https://pypi.org/project/dpgen)
 
