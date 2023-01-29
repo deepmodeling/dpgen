@@ -108,6 +108,7 @@ def make_lammps_input(
     model_devi_merge_traj = jdata.get("model_devi_merge_traj", False)
     if model_devi_merge_traj is True:
         ret += "dump            1 all custom ${DUMP_FREQ} all.lammpstrj id type x y z fx fy fz\n"
+        ret += 'if "${restart} > 0" then "dump_modify     1 append yes"\n'
     else:
         ret += "dump            1 all custom ${DUMP_FREQ} traj/*.lammpstrj id type x y z fx fy fz\n"
     ret += "restart         10000 dpgen.restart\n"
