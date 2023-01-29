@@ -1003,14 +1003,13 @@ def make_model_devi(iter_index, jdata, mdata):
     for idx in sys_idx:
         cur_systems = []
         ss = sys_configs[idx]
-        for ii in ss:
+        for ii in ss:            
             ii_systems = sorted(glob.glob(ii))
             if ii_systems == []:
                 warnings.warn(
                     "There is no system in the path %s. Please check if the path is correct." % ii
                 )
             cur_systems += ii_systems
-        
         # cur_systems should not be sorted, as we may add specific constrict to the similutions
         # cur_systems.sort()
         cur_systems = [os.path.abspath(ii) for ii in cur_systems]
