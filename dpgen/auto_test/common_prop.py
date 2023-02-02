@@ -1,21 +1,23 @@
-from packaging.version import Version
 import glob
 import os
 import warnings
 from multiprocessing import Pool
+
+from packaging.version import Version
+
 import dpgen.auto_test.lib.util as util
 from dpgen import dlog
-from dpgen.util import sepline
-from dpgen.auto_test.EOS import EOS
+from dpgen.auto_test.calculator import make_calculator
 from dpgen.auto_test.Elastic import Elastic
+from dpgen.auto_test.EOS import EOS
+from dpgen.auto_test.Gamma import Gamma
 from dpgen.auto_test.Interstitial import Interstitial
+from dpgen.auto_test.lib.utils import create_path
 from dpgen.auto_test.Surface import Surface
 from dpgen.auto_test.Vacancy import Vacancy
-from dpgen.auto_test.Gamma import Gamma
-from dpgen.auto_test.calculator import make_calculator
 from dpgen.dispatcher.Dispatcher import make_submission
 from dpgen.remote.decide_machine import convert_mdata
-from dpgen.auto_test.lib.utils import create_path
+from dpgen.util import sepline
 
 lammps_task_type = ["deepmd", "meam", "eam_fs", "eam_alloy"]
 

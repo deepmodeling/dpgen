@@ -8,46 +8,52 @@ Iter:
 01: calculate model deviations of the rest dataset, pick up data with proper model deviaiton
 02: fp (optional, if the original dataset do not have fp data, same as generator)
 """
-import logging
-import warnings
-import queue
-import os
-import json
 import glob
+import json
+import logging
+import os
+import queue
+import warnings
+from typing import List, Union
+
 import dpdata
 import numpy as np
-from typing import Union, List
+from packaging.version import Version
 
 from dpgen import dlog
-from dpgen.util import sepline, expand_sys_str, normalize
-from packaging.version import Version
 from dpgen.dispatcher.Dispatcher import make_submission
-from dpgen.generator.run import (
-    make_train,
-    run_train,
-    post_train,
-    run_fp,
-    post_fp,
-    fp_name,
-    model_devi_name,
-    train_name,
-    train_task_fmt,
-    sys_link_fp_vasp_pp,
-    make_fp_vasp_incar,
-    make_fp_vasp_kp,
-    make_fp_vasp_cp_cvasp,
-    data_system_fmt,
-    model_devi_task_fmt,
-    fp_task_fmt,
-)
+from dpgen.generator.lib.gaussian import make_gaussian_input
 
 # TODO: maybe the following functions can be moved to dpgen.util
-from dpgen.generator.lib.utils import log_iter, make_iter_name, create_path, record_iter
-from dpgen.generator.lib.utils import symlink_user_forward_files
-from dpgen.generator.lib.gaussian import make_gaussian_input
+from dpgen.generator.lib.utils import (
+    create_path,
+    log_iter,
+    make_iter_name,
+    record_iter,
+    symlink_user_forward_files,
+)
+from dpgen.generator.run import (
+    data_system_fmt,
+    fp_name,
+    fp_task_fmt,
+    make_fp_vasp_cp_cvasp,
+    make_fp_vasp_incar,
+    make_fp_vasp_kp,
+    make_train,
+    model_devi_name,
+    model_devi_task_fmt,
+    post_fp,
+    post_train,
+    run_fp,
+    run_train,
+    sys_link_fp_vasp_pp,
+    train_name,
+    train_task_fmt,
+)
 from dpgen.remote.decide_machine import convert_mdata
-from .arginfo import simplify_jdata_arginfo
+from dpgen.util import expand_sys_str, normalize, sepline
 
+from .arginfo import simplify_jdata_arginfo
 
 picked_data_name = "data.picked"
 rest_data_name = "data.rest"
@@ -469,7 +475,7 @@ def run_iter(param_file, machine_file):
     # TODO: function of handling input json should be combined as one function
     try:
         import ruamel
-        from monty.serialization import loadfn, dumpfn
+        from monty.serialization import dumpfn, loadfn
 
         warnings.simplefilter("ignore", ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
         jdata = loadfn(param_file)

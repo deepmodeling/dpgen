@@ -1,10 +1,14 @@
-import os, sys, shutil
-import numpy as np
+import os
+import shutil
+import sys
 import unittest
+
+import numpy as np
 from monty.serialization import loadfn
-from dpgen.generator.lib import abacus_scf
-from dpgen.auto_test.lib import abacus
+
 from dpgen.auto_test.ABACUS import ABACUS
+from dpgen.auto_test.lib import abacus
+from dpgen.generator.lib import abacus_scf
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "auto_test"

@@ -1,10 +1,10 @@
 #!/usr/bin/env ovitos
 
-from ovito.io import *
-from ovito.modifiers import *
+import argparse
 
 import numpy as np
-import argparse
+from ovito.io import *
+from ovito.modifiers import *
 
 
 def copy_system(ncopy, fin, fout):

@@ -1,11 +1,12 @@
 #!/usr/bin/python3
 
 
-import uuid
 import itertools
+import uuid
 import warnings
-import numpy as np
+
 import dpdata
+import numpy as np
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import connected_components
 
@@ -15,7 +16,7 @@ try:
 except ImportError:
     pass
 try:
-    from ase import Atoms, Atom
+    from ase import Atom, Atoms
     from ase.data import atomic_numbers
 except ImportError:
     pass

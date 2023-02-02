@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 
-import os, sys, json, glob, argparse
-import numpy as np
+import argparse
+import glob
+import json
+import os
 import subprocess as sp
+import sys
+
+import numpy as np
 
 
 def file_len(fname):

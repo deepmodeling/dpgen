@@ -1,10 +1,9 @@
-import unittest
 import os
 import shutil
+import unittest
 
-import numpy as np
 import dpdata
-
+import numpy as np
 from context import dpgen
 
 

@@ -1,20 +1,23 @@
-import os, sys, json, glob, shutil
+import glob
+import json
+import os
+import shutil
+import sys
+import unittest
+
 import dpdata
 import numpy as np
-import unittest
-import dpdata
-from monty.serialization import loadfn, dumpfn
-from pymatgen.analysis.elasticity.strain import Strain, Deformation
+from monty.serialization import dumpfn, loadfn
+from pymatgen.analysis.elasticity.strain import Deformation, Strain
 from pymatgen.core import Structure
 from pymatgen.io.vasp import Incar
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "auto_test"
 
-from .context import make_kspacing_kpoints
-from .context import setUpModule
-
 from dpgen.auto_test.Elastic import Elastic
+
+from .context import make_kspacing_kpoints, setUpModule
 
 
 class TestElastic(unittest.TestCase):

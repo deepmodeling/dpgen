@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
-import os, re, shutil, logging
 import glob
+import logging
+import os
+import re
+import shutil
 
 iter_format = "%06d"
 task_format = "%02d"

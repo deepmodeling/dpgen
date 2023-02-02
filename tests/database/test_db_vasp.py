@@ -1,21 +1,21 @@
-import os, sys, shutil
-import unittest
 import json
-import numpy as np
+import os
+import shutil
+import sys
 import tarfile
+import unittest
 from glob import glob
+
+import numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "database"
-from .context import dpgen
-from .context import Entry
-from .context import VaspInput, DPPotcar
-from .context import parsing_vasp
-from dpdata import System, LabeledSystem
+from dpdata import LabeledSystem, System
+from monty.serialization import dumpfn, loadfn
 from monty.shutil import remove
-from monty.serialization import loadfn, dumpfn
-from pymatgen.io.vasp import Potcar, Poscar, Incar, Kpoints
-from .context import setUpModule
+from pymatgen.io.vasp import Incar, Kpoints, Poscar, Potcar
+
+from .context import DPPotcar, Entry, VaspInput, dpgen, parsing_vasp, setUpModule
 
 iter_pat = "02.fp/task.007.00000*"
 init_pat = "al.bcc.02x02x02/02.md/sys-0016/scale-1.000/00000*"

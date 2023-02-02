@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
-import random, os, sys, dpdata
-import numpy as np
+import os
+import random
 import subprocess as sp
+import sys
+
+import dpdata
+import numpy as np
 import scipy.constants as pc
 from packaging.version import Version
 

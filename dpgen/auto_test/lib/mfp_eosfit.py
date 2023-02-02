@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 
 from __future__ import division
+
+import argparse
 import os
 import sys
-import argparse
 
-import numpy as np
-from scipy.optimize import leastsq, root, fsolve, curve_fit
-from scipy.optimize import minimize
-from scipy.misc import derivative
-from scipy.interpolate import *
-import scipy.integrate as INT
 import matplotlib.pyplot as plt
+import numpy as np
+import scipy.integrate as INT
+from scipy.interpolate import *
+from scipy.misc import derivative
+from scipy.optimize import curve_fit, fsolve, leastsq, minimize, root
 
 kb = 1.3806488e-23  # J K^-1
 kb_ev = 8.6173324e-05  # eV K^-1

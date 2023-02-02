@@ -1,18 +1,23 @@
-import os, sys, json, glob, shutil
+import glob
+import json
+import os
+import shutil
+import sys
+import unittest
+
 import dpdata
 import numpy as np
-from monty.serialization import loadfn, dumpfn
-import unittest
+from monty.serialization import dumpfn, loadfn
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "auto_test"
 
-from .context import make_kspacing_kpoints
-from .context import setUpModule
-
 from pymatgen.io.vasp import Incar
-from dpgen.auto_test.common_equi import make_equi, post_equi
+
 from dpgen.auto_test.calculator import make_calculator
+from dpgen.auto_test.common_equi import make_equi, post_equi
+
+from .context import make_kspacing_kpoints, setUpModule
 
 
 class TestEqui(unittest.TestCase):

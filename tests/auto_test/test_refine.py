@@ -1,18 +1,22 @@
-import os, sys, json, glob, shutil
+import glob
+import json
+import os
+import shutil
+import sys
+import unittest
+
 import dpdata
 import numpy as np
-import unittest
-from monty.serialization import loadfn, dumpfn
+from monty.serialization import dumpfn, loadfn
 from pymatgen.io.vasp import Incar
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "auto_test"
 
-from .context import make_kspacing_kpoints
-from .context import setUpModule
-
 from dpgen.auto_test.common_prop import make_property
 from dpgen.auto_test.refine import make_refine
+
+from .context import make_kspacing_kpoints, setUpModule
 
 
 class TestMakeProperty(unittest.TestCase):

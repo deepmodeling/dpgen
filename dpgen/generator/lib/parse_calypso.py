@@ -1,5 +1,6 @@
-import numpy as np
 import os
+
+import numpy as np
 
 
 def _parse_calypso_input(var, input_path):

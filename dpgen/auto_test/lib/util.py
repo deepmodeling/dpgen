@@ -1,10 +1,11 @@
+import os
+import re
+
 import numpy as np
 import requests
-import os, re
+
 from dpgen import dlog
-from dpgen.auto_test.lib import vasp
-from dpgen.auto_test.lib import lammps
-from dpgen.auto_test.lib import abacus
+from dpgen.auto_test.lib import abacus, lammps, vasp
 from dpgen.auto_test.lib.utils import cmd_append_log
 
 lammps_task_type = ["deepmd", "meam", "eam_fs", "eam_alloy"]  # 06/13 revised

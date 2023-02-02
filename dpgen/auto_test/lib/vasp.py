@@ -1,11 +1,13 @@
 #!/usr/bin/python3
 import os
 import warnings
+
 import numpy as np
+from pymatgen.io.vasp import Incar, Kpoints, Potcar
+
 import dpgen.auto_test.lib.lammps as lammps
 import dpgen.auto_test.lib.util as util
 from dpgen.generator.lib.vasp import incar_upper
-from pymatgen.io.vasp import Incar, Kpoints, Potcar
 
 
 class OutcarItemError(Exception):

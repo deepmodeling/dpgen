@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import os
+
 import numpy as np
 from pymatgen.io.vasp import Incar
 

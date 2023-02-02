@@ -1,13 +1,12 @@
-import os, sys
-import numpy as np
+import os
+import sys
 import unittest
+
+import numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
-from .context import parse_cur_job
-from .context import param_file
-from .context import machine_file
-from .context import setUpModule
+from .context import machine_file, param_file, parse_cur_job, setUpModule
 
 
 class TestParseCurJob(unittest.TestCase):

@@ -1,14 +1,15 @@
 import argparse
 import copy
-import dpdata
 import glob
 import math
-import numpy as np
 import os
-import sys
 import shutil
-from deepmd.infer import calc_model_devi
+import sys
+
+import dpdata
+import numpy as np
 from deepmd.infer import DeepPot as DP
+from deepmd.infer import calc_model_devi
 
 
 def write_model_devi_out(devi, fname):

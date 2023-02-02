@@ -1,15 +1,17 @@
 import os
 import warnings
+
+from monty.serialization import dumpfn, loadfn
+
 import dpgen.auto_test.lib.lammps as lammps
 from dpgen import dlog
-from monty.serialization import loadfn, dumpfn
-from dpgen.auto_test.Task import Task
 from dpgen.auto_test.lib.lammps import (
     inter_deepmd,
-    inter_meam,
-    inter_eam_fs,
     inter_eam_alloy,
+    inter_eam_fs,
+    inter_meam,
 )
+from dpgen.auto_test.Task import Task
 
 supported_inter = ["deepmd", "meam", "eam_fs", "eam_alloy"]
 

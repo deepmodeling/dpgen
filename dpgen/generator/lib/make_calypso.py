@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
+import glob
+import json
 import os
 import shutil
-import json
-import glob
+
 import numpy as np
+
 from dpgen.generator.lib.utils import create_path
 
 

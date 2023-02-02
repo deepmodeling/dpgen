@@ -1,23 +1,22 @@
 import glob
 import os
-from shutil import copyfile
 import re
+from shutil import copyfile
 
-from monty.serialization import loadfn, dumpfn
+from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.elasticity.elastic import ElasticTensor
 from pymatgen.analysis.elasticity.strain import DeformedStructureSet, Strain
 from pymatgen.analysis.elasticity.stress import Stress
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp import Incar, Kpoints
 
+import dpgen.auto_test.lib.abacus as abacus
 import dpgen.auto_test.lib.vasp as vasp
+import dpgen.generator.lib.abacus_scf as abacus_scf
 from dpgen import dlog
 from dpgen.auto_test.Property import Property
 from dpgen.auto_test.refine import make_refine
 from dpgen.generator.lib.vasp import incar_upper
-
-import dpgen.auto_test.lib.abacus as abacus
-import dpgen.generator.lib.abacus_scf as abacus_scf
 
 
 class Elastic(Property):

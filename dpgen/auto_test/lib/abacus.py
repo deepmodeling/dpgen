@@ -1,10 +1,13 @@
 #!/usr/bin/python3
-import os, sys
+import os
+import sys
 from unicodedata import numeric
+
 import dpdata
-import dpgen.generator.lib.abacus_scf as abacus_scf
 import numpy as np
 from pymatgen.core.structure import Structure
+
+import dpgen.generator.lib.abacus_scf as abacus_scf
 
 A2BOHR = 1.8897261254578281
 MASS_DICT = {
