@@ -10,9 +10,9 @@ class Task(ABC):
         Parameters
         ----------
         inter_parameter : dict
-                A dict that specifies the interaction.
+            A dict that specifies the interaction.
         path_to_poscar : str
-                The path to POSCAR. Indicating in which system the task will be initialized.
+            The path to POSCAR. Indicating in which system the task will be initialized.
         """
         pass
 
@@ -27,9 +27,12 @@ class Task(ABC):
         Parameters
         ----------
         output_dir : str
-                The directory storing the potential files.
-        Outputs
-        -------
+            The directory storing the potential files.
+
+        Notes
+        -----
+        The following files are generated:
+
         inter.json: output file
                 The task information is stored in `output_dir/inter.json`
         """
@@ -45,15 +48,15 @@ class Task(ABC):
         Parameters
         ----------
         output_dir : str
-                The directory storing the input files.
+            The directory storing the input files.
         task_type : str
-                Can be
-                - "relaxation:": structure relaxation
-                - "static": static computation calculates the energy, force... of a strcture
-        task_parame: dict
-                The parameters of the task.
-                For example the VASP interaction can be provided with
-                { "ediff": 1e-6, "ediffg": 1e-5 }
+            Can be
+            - "relaxation:": structure relaxation
+            - "static": static computation calculates the energy, force... of a strcture
+        task_param : dict
+            The parameters of the task.
+            For example the VASP interaction can be provided with
+            { "ediff": 1e-6, "ediffg": 1e-5 }
         """
         pass
 
@@ -66,16 +69,17 @@ class Task(ABC):
         Parameters
         ----------
         output_dir : str
-                The directory storing the input and output files.
+            The directory storing the input and output files.
 
         Returns
         -------
         result_dict: dict
-                A dict that storing the result. For example:
-                { "energy": xxx, "force": [xxx] }
+            A dict that storing the result. For example:
+            { "energy": xxx, "force": [xxx] }
 
-        Outputs
-        -------
+        Notes
+        -----
+        The following files are generated:
         CONTCAR: output file
                 The output configuration is converted to CONTCAR and stored in the `output_dir`
         """
