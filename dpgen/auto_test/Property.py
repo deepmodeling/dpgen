@@ -16,8 +16,8 @@ class Property(ABC):
 
         Parameters
         ----------
-        parameters : dict
-                A dict that defines the property.
+        parameter : dict
+            A dict that defines the property.
         """
         pass
 
@@ -31,17 +31,17 @@ class Property(ABC):
         Parameters
         ----------
         path_to_work : str
-                The path where the tasks for the property are located
+            The path where the tasks for the property are located
         path_to_equi : str
-                -refine == False: The path to the directory that equilibrated the configuration.
-                -refine == True: The path to the directory that has property confs.
-        refine: str
-                To refine existing property confs or generate property confs from a equilibrated conf
+            -refine == False: The path to the directory that equilibrated the configuration.
+            -refine == True: The path to the directory that has property confs.
+        refine : str
+            To refine existing property confs or generate property confs from a equilibrated conf
 
         Returns
         -------
         task_list: list of str
-                The list of task directories.
+            The list of task directories.
         """
         pass
 
@@ -76,11 +76,11 @@ class Property(ABC):
         Parameters
         ----------
         output_file:
-                The file to output the property in json format
+            The file to output the property in json format
         print_file:
-                The file to output the property in txt format
+            The file to output the property in txt format
         path_to_work:
-                The working directory where the computational tasks locate.
+            The working directory where the computational tasks locate.
         """
         path_to_work = os.path.abspath(path_to_work)
         task_dirs = glob.glob(os.path.join(path_to_work, "task.[0-9]*[0-9]"))
@@ -113,17 +113,16 @@ class Property(ABC):
         Parameters
         ----------
         output_file:
-                The file to output the property
+            The file to output the property
         all_tasks : list of str
-                The list of directories to the tasks
+            The list of directories to the tasks
         all_res : list of str
-                The list of results
-
+            The list of results
         Returns:
         -------
-        res_data: dist
-                The dict storing the result of the property
-        ptr_data: str
-                The result printed in string format
+        res_data : dist
+            The dict storing the result of the property
+        ptr_data : str
+            The result printed in string format
         """
         pass
