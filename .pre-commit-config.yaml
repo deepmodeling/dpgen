@@ -28,5 +28,11 @@ repos:
     hooks:
     - id: isort
     files: \.py$
+# numpydoc
+-   repo: https://github.com/Carreau/velin
+    rev: 0.0.12
+    hooks:
+    - id: velin
+      args: ["--write"]
 ci:
   autoupdate_branch: devel
