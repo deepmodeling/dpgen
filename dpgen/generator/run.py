@@ -921,12 +921,13 @@ def revise_lmp_input_model(lmp_lines, task_model_list, trj_freq, deepmd_version=
     return lmp_lines
 
 
-def revise_lmp_input_dump(lmp_lines, trj_freq):
+def revise_lmp_input_dump(lmp_lines, trj_freq, revise_lmp_input_dump):
     idx = find_only_one_key(lmp_lines, ["dump", "dpgen_dump"])
-    lmp_lines[idx] = (
-        "dump            dpgen_dump all custom %d traj/*.lammpstrj id type x y z\n"
-        % trj_freq
-    )
+    if revise_lmp_input_dump:
+        lmp_lines[idx] = "dump            dpgen_dump all custom %d    all.lammpstrj id type x y z\n" % trj_freq
+    else:
+        lmp_lines[idx] = "dump            dpgen_dump all custom %d traj/*.lammpstrj id type x y z\n" % trj_freq
+
     return lmp_lines
 
 
@@ -1317,7 +1318,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                         deepmd_version=deepmd_version,
                     )
 
-                lmp_lines = revise_lmp_input_dump(lmp_lines, trj_freq)
+                lmp_lines = revise_lmp_input_dump(lmp_lines, trj_freq, model_devi_merge_traj)
                 lmp_lines = revise_by_keys(
                     lmp_lines,
                     total_rev_keys[:total_num_lmp],
