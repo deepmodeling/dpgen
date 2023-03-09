@@ -6,10 +6,10 @@ variable        TEMP_MC           equal TEMP_MC
 variable        PRES              equal press
 variable        TAU_T             equal 0.100000
 variable        TAU_P             equal 0.500000
-variable        RANDOM_SEED       equal RANDOM_SEED   
+variable        RANDOM_SEED       equal RANDOM_SEED
 variable        ELEMENT_TYPE_1    equal ELEMENT_TYPE_1
-variable        ELEMENT_TYPE_2    equal ELEMENT_TYPE_2          
-variable        N_LOOP            equal N_LOOP   
+variable        ELEMENT_TYPE_2    equal ELEMENT_TYPE_2
+variable        N_LOOP            equal N_LOOP
 
 #Initialization
 units           metal
@@ -25,8 +25,8 @@ mass            3 47.867000
 mass            4 15.999000
 
 # read in the potentia
-pair_style      deepmd ../graph.001.pb ../graph.000.pb ../graph.003.pb ../graph.002.pb  out_freq ${THERMO_FREQ} out_file model_devi.out 
-pair_coeff      
+pair_style      deepmd ../graph.001.pb ../graph.000.pb ../graph.003.pb ../graph.002.pb  out_freq ${THERMO_FREQ} out_file model_devi.out
+pair_coeff
 
 # output observables
 thermo_style    custom step temp pe ke etotal press vol lx ly lz xy xz yz

@@ -16,9 +16,9 @@
         "model":{
             "type_map":[
                          "Sr",
-                         "Pb", 
+                         "Pb",
                          "Ti",
-                         "O"               
+                         "O"
              ],
         "descriptor": {
                 "type": "se_e2_a",
@@ -78,7 +78,7 @@
    "model_devi_f_trust_hi": 0.20,
    "model_devi_clean_traj": true,
    "model_devi_jobs": [
-    {"_idx": 0, "ensemble": "npt","sys_idx": [0], "trj_freq": 10,     
+    {"_idx": 0, "ensemble": "npt","sys_idx": [0], "trj_freq": 10,
      "rev_mat":{"lmp":{
                       "${MC_NSTEPS}":[50],
                       "${MD_NSTEPS}":[1000],
@@ -89,12 +89,12 @@
                       "${ELEMENT_TYPE_1}":[1],
                       "${ELEMENT_TYPE_2}":[2],
                       "${N_LOOP}":[10]
-                      }                   
+                      }
                },
      "template":{"lmp":"template/lammps.in"}
-                                 
+
                },
-    {"_idx": 1, "ensemble": "npt","press": [1,100],"sys_idx": [0], "trj_freq": 10,     
+    {"_idx": 1, "ensemble": "npt","press": [1,100],"sys_idx": [0], "trj_freq": 10,
      "rev_mat":{"lmp":{
                       "${MC_NSTEPS}":[50],
                       "${MD_NSTEPS}":[1000],
@@ -105,10 +105,10 @@
                       "${ELEMENT_TYPE_1}":[1],
                       "${ELEMENT_TYPE_2}":[2],
                       "${N_LOOP}":[10]
-                      }                   
+                      }
                },
      "template":{"lmp":"template/lammps.in"}
-                                 
+
                }
   ],
   "fp_style": "vasp",
