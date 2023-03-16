@@ -4054,27 +4054,21 @@ def post_fp_abacus_scf(iter_index, jdata):
         sys_output.sort()
         sys_input.sort()
 
-        flag = True
+        all_sys = None
         for ii, oo in zip(sys_input, sys_output):
-            if flag:
-                _sys = dpdata.LabeledSystem(
-                    oo, fmt="abacus/scf", type_map=jdata["type_map"]
-                )
-                if len(_sys) > 0:
+            _sys = dpdata.LabeledSystem(
+                oo, fmt="abacus/scf", type_map=jdata["type_map"]
+            )
+            if len(_sys) > 0:
+                if all_sys == None:
                     all_sys = _sys
-                    flag = False
                 else:
-                    pass
-            else:
-                _sys = dpdata.LabeledSystem(
-                    oo, fmt="abacus/scf", type_map=jdata["type_map"]
-                )
-                if len(_sys) > 0:
                     all_sys.append(_sys)
 
-        sys_data_path = os.path.join(work_path, "data.%s" % ss)
-        all_sys.to_deepmd_raw(sys_data_path)
-        all_sys.to_deepmd_npy(sys_data_path, set_size=len(sys_output))
+        if all_sys != None:
+            sys_data_path = os.path.join(work_path, "data.%s" % ss)
+            all_sys.to_deepmd_raw(sys_data_path)
+            all_sys.to_deepmd_npy(sys_data_path, set_size=len(sys_output))
 
 
 def post_fp_siesta(iter_index, jdata):
