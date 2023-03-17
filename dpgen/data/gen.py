@@ -587,7 +587,7 @@ def make_abacus_relax(jdata, mdata):
                 if "relax_kpt" not in jdata:
                     raise RuntimeError("Cannot find any k-points information.")
                 else:
-                    md_kpt_path = jdata["relax_kpt"]
+                    relax_kpt_path = jdata["relax_kpt"]
                     assert os.path.isfile(relax_kpt_path), (
                         "file %s should exists" % relax_kpt_path
                     )
