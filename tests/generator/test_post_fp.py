@@ -226,6 +226,7 @@ class TestPostFPABACUS(unittest.TestCase, CompLabeledSys):
     def test_nframs_with_failed_job(self):
         self.assertEqual(self.system_2.get_nframes(), 2)
 
+
 class TestPostFPSIESTA(unittest.TestCase, CompLabeledSys):
     def setUp(self):
         self.places = 5
