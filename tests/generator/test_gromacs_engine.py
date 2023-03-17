@@ -1,15 +1,18 @@
-import os, sys, glob, shutil
-import unittest
-import json
-import numpy as np
+import glob
 import importlib
+import json
+import os
+import shutil
+import sys
+import unittest
+
+import numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
 dirname = os.path.join(os.path.abspath(os.path.dirname(__file__)), "gromacs")
 
-from .context import make_model_devi
-from .context import make_fp_gaussian
+from .context import make_fp_gaussian, make_model_devi
 
 
 def _make_fake_graphs(train_path):

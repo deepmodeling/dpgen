@@ -3,6 +3,7 @@ import os
 
 import numpy as np
 from monty.serialization import loadfn
+
 import dpgen.auto_test.lib.abacus as abacus
 
 

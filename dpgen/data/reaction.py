@@ -7,18 +7,20 @@ input: trajectory
 output: data
 """
 
-import warnings
 import glob
 import json
 import os
 import random
+import warnings
 
 import dpdata
+
 from dpgen import dlog
 from dpgen.dispatcher.Dispatcher import make_submission_compat
-from dpgen.remote.decide_machine import convert_mdata
 from dpgen.generator.run import create_path, make_fp_task_name
-from dpgen.util import sepline, normalize
+from dpgen.remote.decide_machine import convert_mdata
+from dpgen.util import normalize, sepline
+
 from .arginfo import init_reaction_jdata_arginfo
 
 reaxff_path = "00.reaxff"
@@ -215,7 +217,7 @@ def convert_data(jdata):
 def gen_init_reaction(args):
     try:
         import ruamel
-        from monty.serialization import loadfn, dumpfn
+        from monty.serialization import dumpfn, loadfn
 
         warnings.simplefilter("ignore", ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
         jdata = loadfn(args.PARAM)

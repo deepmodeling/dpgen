@@ -1,16 +1,16 @@
-import sys, os
+import os
+import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
-from dpgen.generator.run import *
-from dpgen.generator.lib.gaussian import detect_multiplicity, _crd2frag
 from dpgen.generator.lib.ele_temp import NBandsEsti
-from dpgen.generator.lib.lammps import get_dumped_forces
-from dpgen.generator.lib.lammps import get_all_dumped_forces
+from dpgen.generator.lib.gaussian import _crd2frag, detect_multiplicity
+from dpgen.generator.lib.lammps import get_all_dumped_forces, get_dumped_forces
 from dpgen.generator.lib.make_calypso import make_calypso_input, write_model_devi_out
 from dpgen.generator.lib.parse_calypso import (
-    _parse_calypso_input,
     _parse_calypso_dis_mtx,
+    _parse_calypso_input,
 )
+from dpgen.generator.run import *
 
 param_file = "param-mg-vasp.json"
 param_file_merge_traj = "param-mg-vasp_merge_traj.json"

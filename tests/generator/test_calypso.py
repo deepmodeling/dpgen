@@ -1,16 +1,24 @@
-import os, sys, json, glob, shutil, textwrap
-import dpdata
-import numpy as np
+import glob
+import json
+import os
+import shutil
+import sys
+import textwrap
 import unittest
 from pathlib import Path
+
+import dpdata
+import numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
 
-from .context import make_calypso_input
-from .context import write_model_devi_out
-from .context import _parse_calypso_input
-from .context import _parse_calypso_dis_mtx
+from .context import (
+    _parse_calypso_dis_mtx,
+    _parse_calypso_input,
+    make_calypso_input,
+    write_model_devi_out,
+)
 
 # temp dir
 test_path = Path(".").joinpath("calypso_test_path")

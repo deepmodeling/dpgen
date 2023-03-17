@@ -5,10 +5,11 @@
 
 import os
 import warnings
+
 from monty.io import zopen
+from monty.json import MontyDecoder, MSONable
 from monty.os.path import zpath
-from monty.json import MSONable, MontyDecoder
-from pymatgen.io.vasp import Potcar, Incar, Kpoints, Poscar, PotcarSingle
+from pymatgen.io.vasp import Incar, Kpoints, Poscar, Potcar, PotcarSingle
 
 """
 Classes for reading/manipulating/writing VASP input files. All major VASP input

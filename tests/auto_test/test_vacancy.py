@@ -1,21 +1,24 @@
-import os, sys, json, glob, shutil
+import glob
+import json
+import os
+import shutil
+import sys
+import unittest
+
 import dpdata
 import numpy as np
-import unittest
-import dpdata
-from monty.serialization import loadfn, dumpfn
+from monty.serialization import dumpfn, loadfn
+from pymatgen.analysis.defects.core import Vacancy as pmg_Vacancy
 from pymatgen.core import Structure
 from pymatgen.io.vasp import Incar
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-from pymatgen.analysis.defects.core import Vacancy as pmg_Vacancy
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "auto_test"
 
-from .context import make_kspacing_kpoints
-from .context import setUpModule
-
 from dpgen.auto_test.Vacancy import Vacancy
+
+from .context import make_kspacing_kpoints, setUpModule
 
 
 class TestVacancy(unittest.TestCase):

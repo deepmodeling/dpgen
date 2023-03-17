@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
-import numpy as np
+import os
+
+import ase
 import dpdata
-import ase, os
+import numpy as np
 
 
 def make_one(out_dir):

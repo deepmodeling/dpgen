@@ -1,13 +1,14 @@
 import os
-from dpgen import dlog
-from dpgen.util import sepline
-import dpgen.auto_test.lib.abacus as abacus
-import dpgen.generator.lib.abacus_scf as abacus_scf
-from dpgen.auto_test.Task import Task
 
+import numpy as np
 from dpdata import LabeledSystem
 from monty.serialization import dumpfn
-import numpy as np
+
+import dpgen.auto_test.lib.abacus as abacus
+import dpgen.generator.lib.abacus_scf as abacus_scf
+from dpgen import dlog
+from dpgen.auto_test.Task import Task
+from dpgen.util import sepline
 
 
 class ABACUS(Task):

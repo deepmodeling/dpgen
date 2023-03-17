@@ -1,4 +1,7 @@
-import os, dpdata, json
+import json
+import os
+
+import dpdata
 import numpy as np
 import scipy.constants as pc
 from pymatgen.io.vasp.inputs import Incar

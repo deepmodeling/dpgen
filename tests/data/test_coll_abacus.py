@@ -1,14 +1,16 @@
-import os, sys, json, glob, shutil
+import glob
+import json
+import os
+import shutil
+import sys
+import unittest
+
 import dpdata
 import numpy as np
-import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "data"
-from .context import coll_abacus_md
-from .context import out_dir_name
-from .context import abacus_param_file
-from .context import setUpModule
+from .context import abacus_param_file, coll_abacus_md, out_dir_name, setUpModule
 
 
 class TestCollAbacus(unittest.TestCase):

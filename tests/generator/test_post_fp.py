@@ -1,34 +1,43 @@
-import os, sys, json, glob, shutil
+import glob
+import json
+import os
+import shutil
+import sys
+import unittest
+
 import dpdata
 import numpy as np
-import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
-from .context import post_fp
-from .context import post_fp_pwscf
-from .context import post_fp_abacus_scf
-from .context import post_fp_siesta
-from .context import post_fp_vasp
-from .context import post_fp_gaussian
-from .context import post_fp_cp2k
-from .context import param_file
-from .context import param_old_file
-from .context import param_pwscf_file
-from .context import param_pwscf_old_file
-from .context import param_abacus_post_file
-from .context import param_siesta_file
-from .context import param_gaussian_file
-from .context import param_cp2k_file
-from .context import param_amber_file
-from .context import machine_file
-from .context import setUpModule
-from .comp_sys import test_atom_names
-from .comp_sys import test_atom_types
-from .comp_sys import test_coord
-from .comp_sys import test_cell
-from .comp_sys import CompLabeledSys
-from .context import param_pwmat_file
+from .comp_sys import (
+    CompLabeledSys,
+    test_atom_names,
+    test_atom_types,
+    test_cell,
+    test_coord,
+)
+from .context import (
+    machine_file,
+    param_abacus_post_file,
+    param_amber_file,
+    param_cp2k_file,
+    param_file,
+    param_gaussian_file,
+    param_old_file,
+    param_pwmat_file,
+    param_pwscf_file,
+    param_pwscf_old_file,
+    param_siesta_file,
+    post_fp,
+    post_fp_abacus_scf,
+    post_fp_cp2k,
+    post_fp_gaussian,
+    post_fp_pwscf,
+    post_fp_siesta,
+    post_fp_vasp,
+    setUpModule,
+)
 
 
 class TestPostFPVasp(unittest.TestCase):

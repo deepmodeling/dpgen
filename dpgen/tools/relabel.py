@@ -1,14 +1,21 @@
 #!/usr/bin/env python3
 
-import os, sys, json, glob, argparse, shutil
-import numpy as np
+import argparse
+import glob
+import json
+import os
+import shutil
 import subprocess as sp
+import sys
+
+import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
+import dpdata
+
 from dpgen.generator.lib.pwscf import make_pwscf_input
 from dpgen.generator.lib.siesta import make_siesta_input
 from dpgen.generator.run import make_vasp_incar, update_mass_map
-import dpdata
 
 
 def get_lmp_info(input_file):

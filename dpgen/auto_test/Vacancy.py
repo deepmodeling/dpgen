@@ -2,20 +2,18 @@ import glob
 import json
 import os
 import re
-import numpy as np
 
-from monty.serialization import loadfn, dumpfn
+import numpy as np
+from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects.generators import VacancyGenerator
 from pymatgen.core.structure import Structure
 
+import dpgen.auto_test.lib.abacus as abacus
+import dpgen.generator.lib.abacus_scf as abacus_scf
 from dpgen import dlog
 from dpgen.auto_test.Property import Property
 from dpgen.auto_test.refine import make_refine
-from dpgen.auto_test.reproduce import make_repro
-from dpgen.auto_test.reproduce import post_repro
-
-import dpgen.auto_test.lib.abacus as abacus
-import dpgen.generator.lib.abacus_scf as abacus_scf
+from dpgen.auto_test.reproduce import make_repro, post_repro
 
 
 class Vacancy(Property):

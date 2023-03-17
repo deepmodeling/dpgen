@@ -1,13 +1,14 @@
 from typing import List
+
 from dargs import Argument, Variant
 
 from dpgen.arginfo import general_mdata_arginfo
 from dpgen.generator.arginfo import (
     basic_args,
     data_args,
-    training_args,
-    fp_style_vasp_args,
     fp_style_gaussian_args,
+    fp_style_vasp_args,
+    training_args,
 )
 
 

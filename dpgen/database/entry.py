@@ -5,10 +5,12 @@
 import json
 import warnings
 from uuid import uuid4
-from dpdata import System, LabeledSystem
-from dpgen.database.vasp import VaspInput
+
+from dpdata import LabeledSystem, System
+from monty.json import MontyDecoder, MontyEncoder, MSONable
 from pymatgen.core.composition import Composition
-from monty.json import MontyEncoder, MontyDecoder, MSONable
+
+from dpgen.database.vasp import VaspInput
 
 """
 This module implements equivalents of the basic Entry objects, which

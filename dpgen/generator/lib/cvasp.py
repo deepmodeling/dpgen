@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import argparse
+
+from custodian import Custodian
+from custodian.vasp.handlers import (
+    FrozenJobErrorHandler,
+    NonConvergingErrorHandler,
+    PositiveEnergyErrorHandler,
+    StdErrHandler,
+    UnconvergedErrorHandler,
+    VaspErrorHandler,
+    WalltimeHandler,
+)
 from custodian.vasp.jobs import VaspJob as cvj
 from custodian.vasp.validators import VaspFilesValidator, VasprunXMLValidator
-from custodian.vasp.handlers import (
-    VaspErrorHandler,
-    UnconvergedErrorHandler,
-    NonConvergingErrorHandler,
-    FrozenJobErrorHandler,
-    StdErrHandler,
-    WalltimeHandler,
-    PositiveEnergyErrorHandler,
-)
-from custodian import Custodian
-import argparse
 
 handlers = [
     VaspErrorHandler(),

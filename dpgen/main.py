@@ -4,20 +4,20 @@
 
 
 import argparse
-import sys
 import itertools
-from dpgen.generator.run import gen_run
-from dpgen.data.gen import gen_init_bulk
-from dpgen.data.surf import gen_init_surf
-from dpgen.data.reaction import gen_init_reaction
-from dpgen.collect.collect import gen_collect
-from dpgen.simplify.simplify import gen_simplify
-from dpgen.auto_test.run import gen_test
-from dpgen.database.run import db_run
-from dpgen.tools.run_report import run_report
-from dpgen.tools.auto_gen_param import auto_gen_param
-from dpgen import info, __version__
+import sys
 
+from dpgen import __version__, info
+from dpgen.auto_test.run import gen_test
+from dpgen.collect.collect import gen_collect
+from dpgen.data.gen import gen_init_bulk
+from dpgen.data.reaction import gen_init_reaction
+from dpgen.data.surf import gen_init_surf
+from dpgen.database.run import db_run
+from dpgen.generator.run import gen_run
+from dpgen.simplify.simplify import gen_simplify
+from dpgen.tools.auto_gen_param import auto_gen_param
+from dpgen.tools.run_report import run_report
 
 """
 A master convenience script with many tools for driving dpgen.

@@ -1,10 +1,10 @@
-from distutils.version import LooseVersion
 import os
+from distutils.version import LooseVersion
 from typing import List
-from dpdispatcher import Task, Submission, Resources, Machine
 
 # import dargs
 from dargs.dargs import Argument
+from dpdispatcher import Machine, Resources, Submission, Task
 
 
 def make_submission(

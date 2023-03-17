@@ -3,11 +3,11 @@
 This Script is adapted from Alexander Stukowski, the author of OVITO.
 See: http://forum.ovito.org/index.php?topic=131.0 for details.
 """
+import argparse
 import os
 import sys
-import argparse
-import numpy as np
 
+import numpy as np
 from ovito.io import *
 
 supp_ofmt = ["lammps_dump", "lammps_data", "vasp"]
