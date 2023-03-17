@@ -223,6 +223,8 @@ class TestPostFPABACUS(unittest.TestCase, CompLabeledSys):
             "iter.000000/02.fp/data.000", fmt="deepmd/raw"
         )
 
+    def test_nframs_with_failed_job(self):
+        self.assertEqual(self.system_2.get_nframes(), 2)
 
 class TestPostFPSIESTA(unittest.TestCase, CompLabeledSys):
     def setUp(self):
