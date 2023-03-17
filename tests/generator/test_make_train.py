@@ -1,19 +1,29 @@
 #!/usr/bin/env python3
 
-import os, sys, json, glob, shutil, dpdata
-import numpy as np
+import glob
+import json
+import os
+import shutil
+import sys
 import unittest
+
+import dpdata
+import numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
 import tempfile
-from .context import make_train, run_train
-from .context import param_file
-from .context import param_file_v1
-from .context import param_file_v1_et
-from .context import machine_file
-from .context import machine_file_v1
-from .context import setUpModule
+
+from .context import (
+    machine_file,
+    machine_file_v1,
+    make_train,
+    param_file,
+    param_file_v1,
+    param_file_v1_et,
+    run_train,
+    setUpModule,
+)
 
 
 def _comp_sys_files(sys0, sys1):

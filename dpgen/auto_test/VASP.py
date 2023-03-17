@@ -1,13 +1,15 @@
 import os
-from dpgen import dlog
-from dpgen.util import sepline
-import dpgen.auto_test.lib.vasp as vasp
-from dpgen.auto_test.Task import Task
-from dpgen.generator.lib.vasp import incar_upper
+
 from dpdata import LabeledSystem
 from monty.serialization import dumpfn
-from pymatgen.io.vasp import Incar, Kpoints
 from pymatgen.core.structure import Structure
+from pymatgen.io.vasp import Incar, Kpoints
+
+import dpgen.auto_test.lib.vasp as vasp
+from dpgen import dlog
+from dpgen.auto_test.Task import Task
+from dpgen.generator.lib.vasp import incar_upper
+from dpgen.util import sepline
 
 
 class VASP(Task):

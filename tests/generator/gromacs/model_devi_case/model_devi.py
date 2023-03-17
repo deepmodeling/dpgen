@@ -1,9 +1,11 @@
 #!/data1/anguse/zijian/deepmd-kit-devel/virtual_tf_2/bin/python
+import json
+import os
+import sys
+
 import deepmd.DeepPot as DP
 import dpdata
 import numpy as np
-import os, sys
-import json
 
 
 def calc_model_devi_f(fs):

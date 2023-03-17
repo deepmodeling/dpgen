@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 
-import random, os, sys
-import dpdata
+import os
+import random
 import subprocess as sp
-import dpgen.auto_test.lib.util as util
-from packaging.version import Version
+import sys
+
+import dpdata
 from dpdata.periodic_table import Element
+from packaging.version import Version
+
+import dpgen.auto_test.lib.util as util
 
 
 def cvt_lammps_conf(fin, fout, type_map, ofmt="lammps/data"):

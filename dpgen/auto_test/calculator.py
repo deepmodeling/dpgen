@@ -1,6 +1,6 @@
-from dpgen.auto_test.VASP import VASP
 from dpgen.auto_test.ABACUS import ABACUS
 from dpgen.auto_test.Lammps import Lammps
+from dpgen.auto_test.VASP import VASP
 
 
 def make_calculator(inter_parameter, path_to_poscar):

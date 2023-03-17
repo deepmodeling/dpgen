@@ -1,4 +1,6 @@
-import os, sys, json
+import json
+import os
+import sys
 import unittest
 
 test_dir = os.path.abspath(os.path.join(os.path.dirname(__file__)))

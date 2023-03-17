@@ -5,22 +5,20 @@ import re
 
 import dpdata
 import numpy as np
-from monty.serialization import loadfn, dumpfn
-from pymatgen.core.structure import Structure
-from pymatgen.core.surface import SlabGenerator
-from pymatgen.io.ase import AseAtomsAdaptor
 from ase.lattice.cubic import BodyCenteredCubic as bcc
 from ase.lattice.cubic import FaceCenteredCubic as fcc
 from ase.lattice.hexagonal import HexagonalClosedPacked as hcp
+from monty.serialization import dumpfn, loadfn
+from pymatgen.core.structure import Structure
+from pymatgen.core.surface import SlabGenerator
+from pymatgen.io.ase import AseAtomsAdaptor
 
+import dpgen.auto_test.lib.abacus as abacus
 import dpgen.auto_test.lib.vasp as vasp
 from dpgen import dlog
 from dpgen.auto_test.Property import Property
 from dpgen.auto_test.refine import make_refine
-from dpgen.auto_test.reproduce import make_repro
-from dpgen.auto_test.reproduce import post_repro
-
-import dpgen.auto_test.lib.abacus as abacus
+from dpgen.auto_test.reproduce import make_repro, post_repro
 
 
 class Gamma(Property):

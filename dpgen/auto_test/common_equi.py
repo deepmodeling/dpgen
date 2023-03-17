@@ -2,19 +2,20 @@ import glob
 import os
 import shutil
 import warnings
-from monty.serialization import dumpfn
 from multiprocessing import Pool
 
+from monty.serialization import dumpfn
+from packaging.version import Version
+
+import dpgen.auto_test.lib.abacus as abacus
 import dpgen.auto_test.lib.crys as crys
 import dpgen.auto_test.lib.util as util
-import dpgen.auto_test.lib.abacus as abacus
 from dpgen import dlog
 from dpgen.auto_test.calculator import make_calculator
+from dpgen.auto_test.lib.utils import create_path
 from dpgen.auto_test.mpdb import get_structure
-from packaging.version import Version
 from dpgen.dispatcher.Dispatcher import make_submission
 from dpgen.remote.decide_machine import convert_mdata
-from dpgen.auto_test.lib.utils import create_path
 
 lammps_task_type = ["deepmd", "meam", "eam_fs", "eam_alloy"]
 

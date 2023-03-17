@@ -5,9 +5,8 @@ import logging
 from monty.serialization import loadfn
 
 from dpgen import dlog
-from dpgen.auto_test.common_equi import make_equi, run_equi, post_equi
-from dpgen.auto_test.common_prop import make_property, run_property, post_property
-
+from dpgen.auto_test.common_equi import make_equi, post_equi, run_equi
+from dpgen.auto_test.common_prop import make_property, post_property, run_property
 
 # lammps_task_type = ['deepmd', 'meam', 'eam_fs', 'eam_alloy']
 

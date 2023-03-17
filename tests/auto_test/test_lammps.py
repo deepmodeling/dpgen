@@ -1,17 +1,21 @@
-import os, sys, json, glob, shutil
+import glob
+import json
+import os
+import shutil
+import sys
+import unittest
+
 import dpdata
 import numpy as np
-import unittest
-from monty.serialization import loadfn, dumpfn
+from monty.serialization import dumpfn, loadfn
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "auto_test"
 
-from .context import make_kspacing_kpoints
-from .context import setUpModule
-
-from dpgen.auto_test.lib.lammps import inter_deepmd
 from dpgen.auto_test.Lammps import Lammps
+from dpgen.auto_test.lib.lammps import inter_deepmd
+
+from .context import make_kspacing_kpoints, setUpModule
 
 
 class TestLammps(unittest.TestCase):

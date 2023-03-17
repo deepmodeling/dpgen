@@ -1,5 +1,5 @@
-import subprocess
 import os
+import subprocess
 
 
 def stat_time(target_folder, param_file="param.json", verbose=True, mute=False):

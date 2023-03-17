@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
-import os, re, shutil, logging
+import logging
+import os
+import re
+import shutil
 
 iter_format = "%s"
 task_format = "%s"

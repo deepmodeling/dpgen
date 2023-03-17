@@ -2,11 +2,11 @@
 # coding: utf-8
 import json
 import os
-from typing import Union, List
 from pathlib import Path
+from typing import List, Union
 
-import h5py
 import dpdata
+import h5py
 from dargs import Argument
 
 from dpgen import dlog

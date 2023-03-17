@@ -1,13 +1,14 @@
-import os, sys
+import importlib
+import os
+import sys
+import unittest
+
 import dpdata
 import numpy as np
-import unittest
-import importlib
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
-from .context import check_cluster
-from .context import setUpModule
+from .context import check_cluster, setUpModule
 
 
 class Test_check_cluster(unittest.TestCase):

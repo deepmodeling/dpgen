@@ -1,41 +1,46 @@
-import os, sys, json, glob, shutil
+import glob
+import importlib
+import json
+import os
+import shutil
+import sys
+import unittest
+
 import dpdata
 import numpy as np
-import unittest
-import importlib
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
-from .context import make_fp
-from .context import detect_multiplicity
-from .context import parse_cur_job
-from .context import param_file
-from .context import param_file_merge_traj
-from .context import param_old_file
-from .context import param_pwscf_file
-from .context import param_pwscf_old_file
-from .context import param_abacus_post_file
-from .context import param_diy_abacus_post_file
-from .context import param_siesta_file
-from .context import param_gaussian_file
-from .context import param_cp2k_file
-from .context import param_cp2k_file_exinput
-from .context import param_amber_file
-from .context import ref_cp2k_file_input
-from .context import ref_cp2k_file_exinput
-from .context import machine_file
-from .context import param_diy_file
-from .context import param_multiple_trust_file
-from .context import make_kspacing_kpoints
-from .context import my_file_cmp
-from .context import setUpModule
-from .comp_sys import test_atom_names
-from .comp_sys import test_atom_types
-from .comp_sys import test_coord
-from .comp_sys import test_cell
-from pymatgen.io.vasp import Kpoints, Incar
-from .context import param_pwmat_file
 import scipy.constants as pc
+from pymatgen.io.vasp import Incar, Kpoints
+
+from .comp_sys import test_atom_names, test_atom_types, test_cell, test_coord
+from .context import (
+    detect_multiplicity,
+    machine_file,
+    make_fp,
+    make_kspacing_kpoints,
+    my_file_cmp,
+    param_abacus_post_file,
+    param_amber_file,
+    param_cp2k_file,
+    param_cp2k_file_exinput,
+    param_diy_abacus_post_file,
+    param_diy_file,
+    param_file,
+    param_file_merge_traj,
+    param_gaussian_file,
+    param_multiple_trust_file,
+    param_old_file,
+    param_pwmat_file,
+    param_pwscf_file,
+    param_pwscf_old_file,
+    param_siesta_file,
+    parse_cur_job,
+    ref_cp2k_file_exinput,
+    ref_cp2k_file_input,
+    setUpModule,
+)
 
 vasp_incar_ref = "PREC=A\n\
 ENCUT=600\n\

@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import glob
+import os
+import sys
+import time
+
 import numpy as np
-import os, sys, glob, time
-from deepmd.calculator import DP
 from ase.io import read
+from deepmd.calculator import DP
 
 """
 check if structure optimization worked well
@@ -87,8 +91,8 @@ def Write_Outcar(element, ele, volume, lat, pos, ene, force, stress, pstress):
 
 def check():
 
-    from deepmd.calculator import DP
     from ase.io import read
+    from deepmd.calculator import DP
 
     calc = DP(model="../graph.000.pb")  # init the model before iteration
 

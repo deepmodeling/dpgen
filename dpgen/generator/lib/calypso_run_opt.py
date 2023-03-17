@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os, sys, glob, time
+import glob
+import os
+import sys
+import time
+
 import numpy as np
+from ase.constraints import ExpCellFilter, UnitCellFilter
 from ase.io import read
-from ase.optimize import BFGS, QuasiNewton, LBFGS
-from ase.constraints import UnitCellFilter, ExpCellFilter
+from ase.optimize import BFGS, LBFGS, QuasiNewton
 from deepmd.calculator import DP
 
 """

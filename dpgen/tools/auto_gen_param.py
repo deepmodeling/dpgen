@@ -1,7 +1,7 @@
 #%%
-import os
 import argparse
 import json
+import os
 from collections import defaultdict
 from itertools import tee
 

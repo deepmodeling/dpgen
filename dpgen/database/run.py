@@ -2,20 +2,21 @@
 # coding: utf-8
 # Copyright (c) The Dpmodeling Team.
 
+import json
 import os
 import time
-import json
-from uuid import uuid4
-from threading import Thread
+import traceback
 from glob import glob
-from dpgen import dlog
-from dpgen import SHORT_CMD
+from threading import Thread
+from uuid import uuid4
+
+import numpy as np
+from dpdata import LabeledSystem, System
+from monty.serialization import dumpfn, loadfn
+
+from dpgen import SHORT_CMD, dlog
 from dpgen.database.entry import Entry
 from dpgen.database.vasp import VaspInput
-from dpdata import System, LabeledSystem
-from monty.serialization import loadfn, dumpfn
-import numpy as np
-import traceback
 
 OUTPUT = SHORT_CMD + "_db.json"
 SUPPORTED_CACULATOR = ["vasp", "pwscf", "gaussian"]

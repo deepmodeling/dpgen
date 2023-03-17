@@ -1,8 +1,14 @@
-import os, sys, json, glob, shutil
-from monty.serialization import loadfn
+import glob
+import json
+import os
+import shutil
+import sys
 import unittest
-from dpgen.generator.lib import abacus_scf
+
+from monty.serialization import loadfn
+
 from dpgen.auto_test.common_equi import make_equi, post_equi
+from dpgen.generator.lib import abacus_scf
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "auto_test"

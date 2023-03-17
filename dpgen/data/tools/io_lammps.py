@@ -7,10 +7,9 @@ Some functions are adapted from ASE lammpsrun.py
 
 """
 
+import ase.io
 import numpy as np
 from numpy.linalg import norm
-
-import ase.io
 
 
 def dir2car(v, A):

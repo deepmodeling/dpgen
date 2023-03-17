@@ -52,3 +52,12 @@ include = ["dpgen*"]
 
 [tool.setuptools_scm]
 write_to = "dpgen/_version.py"
+
+[tool.isort]
+profile = "black"
+
+[tool.ruff]
+target-version = "py37"
+select = [
+    "I", # isort
+]

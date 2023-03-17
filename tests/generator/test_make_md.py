@@ -1,29 +1,35 @@
-import os, sys, json, glob, shutil, copy
-import dpdata
-import numpy as np
+import copy
+import glob
+import json
+import os
+import shutil
+import sys
 import unittest
 from pathlib import Path
+
+import dpdata
+import numpy as np
 
 from dpgen.generator.run import parse_cur_job_sys_revmat
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
-from .context import make_model_devi
-from .context import parse_cur_job
-from .context import parse_cur_job_revmat
-from .context import param_file, param_amber_file
-from .context import machine_file
-from .context import my_file_cmp
-from .context import setUpModule
-from .context import find_only_one_key
-from .context import revise_lmp_input_model
-from .context import revise_lmp_input_dump
-from .context import revise_lmp_input_plm
-from .context import revise_by_keys
-from .comp_sys import test_atom_names
-from .comp_sys import test_atom_types
-from .comp_sys import test_coord
-from .comp_sys import test_cell
+from .comp_sys import test_atom_names, test_atom_types, test_cell, test_coord
+from .context import (
+    find_only_one_key,
+    machine_file,
+    make_model_devi,
+    my_file_cmp,
+    param_amber_file,
+    param_file,
+    parse_cur_job,
+    parse_cur_job_revmat,
+    revise_by_keys,
+    revise_lmp_input_dump,
+    revise_lmp_input_model,
+    revise_lmp_input_plm,
+    setUpModule,
+)
 
 
 def _make_fake_models(idx, numb_models):

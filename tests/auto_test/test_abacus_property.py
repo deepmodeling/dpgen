@@ -1,21 +1,26 @@
-import os, sys, shutil, glob
-import numpy as np
+import glob
+import os
+import shutil
+import sys
 import unittest
+
+import numpy as np
 from monty.serialization import loadfn
-from dpgen.generator.lib import abacus_scf
+
 from dpgen.auto_test.ABACUS import ABACUS
+from dpgen.generator.lib import abacus_scf
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "auto_test"
-from .context import setUpModule
-
-from dpgen.auto_test.EOS import EOS
+from dpgen.auto_test.common_prop import make_property
 from dpgen.auto_test.Elastic import Elastic
-from dpgen.auto_test.Vacancy import Vacancy
+from dpgen.auto_test.EOS import EOS
+from dpgen.auto_test.Gamma import Gamma
 from dpgen.auto_test.Interstitial import Interstitial
 from dpgen.auto_test.Surface import Surface
-from dpgen.auto_test.Gamma import Gamma
-from dpgen.auto_test.common_prop import make_property
+from dpgen.auto_test.Vacancy import Vacancy
+
+from .context import setUpModule
 
 
 class TestABACUS(unittest.TestCase):

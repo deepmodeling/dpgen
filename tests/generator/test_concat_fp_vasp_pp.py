@@ -1,14 +1,16 @@
-import os, sys, json, glob, shutil
+import glob
+import json
+import os
+import shutil
+import sys
+import unittest
+
 import dpdata
 import numpy as np
-import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
-from .context import sys_link_fp_vasp_pp
-from .context import make_iter_name
-from .context import fp_name
-from .context import setUpModule
+from .context import fp_name, make_iter_name, setUpModule, sys_link_fp_vasp_pp
 
 
 class TestConcatVASPPP(unittest.TestCase):

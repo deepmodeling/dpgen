@@ -1,7 +1,9 @@
+import os
+
 import numpy as np
 from dpdata.abacus.scf import get_cell, get_coords, get_nele_from_stru
+
 from dpgen.auto_test.lib import vasp
-import os
 
 bohr2ang = 0.52917721067
 

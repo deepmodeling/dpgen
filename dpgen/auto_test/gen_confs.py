@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 
-import os, re, argparse
-import dpgen.auto_test.lib.crys as crys
-from pymatgen.ext.matproj import MPRester, Composition
+import argparse
+import os
+import re
+
 from pymatgen.analysis.structure_matcher import StructureMatcher
+from pymatgen.ext.matproj import Composition, MPRester
+
+import dpgen.auto_test.lib.crys as crys
 
 global_std_crystal = {
     "fcc": crys.fcc,

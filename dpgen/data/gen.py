@@ -1,41 +1,42 @@
 #!/usr/bin/env python3
 
-import os
-import re
-import sys
 import argparse
 import glob
 import json
-import random
 import logging
-import warnings
+import os
+import random
+import re
 import shutil
+import subprocess as sp
+import sys
 import time
+import warnings
+
 import dpdata
 import numpy as np
-from dpgen import dlog
-import subprocess as sp
-import dpgen.data.tools.hcp as hcp
-import dpgen.data.tools.fcc as fcc
+from packaging.version import Version
+from pymatgen.core import Structure
+from pymatgen.io.vasp import Incar
+
 import dpgen.data.tools.bcc as bcc
 import dpgen.data.tools.diamond as diamond
+import dpgen.data.tools.fcc as fcc
+import dpgen.data.tools.hcp as hcp
 import dpgen.data.tools.sc as sc
-from packaging.version import Version
-from dpgen.generator.lib.vasp import incar_upper
-from dpgen.generator.lib.utils import symlink_user_forward_files
+from dpgen import ROOT_PATH, dlog
+from dpgen.dispatcher.Dispatcher import make_submission
 from dpgen.generator.lib.abacus_scf import (
     get_abacus_input_parameters,
     get_abacus_STRU,
-    make_supercell_abacus,
+    make_abacus_scf_kpt,
     make_abacus_scf_stru,
     make_kspacing_kpoints_stru,
-    make_abacus_scf_kpt,
+    make_supercell_abacus,
 )
-from pymatgen.core import Structure
-from pymatgen.io.vasp import Incar
+from dpgen.generator.lib.utils import symlink_user_forward_files
+from dpgen.generator.lib.vasp import incar_upper
 from dpgen.remote.decide_machine import convert_mdata
-from dpgen import ROOT_PATH
-from dpgen.dispatcher.Dispatcher import make_submission
 
 
 def create_path(path, back=False):
@@ -586,7 +587,7 @@ def make_abacus_relax(jdata, mdata):
                 if "relax_kpt" not in jdata:
                     raise RuntimeError("Cannot find any k-points information.")
                 else:
-                    md_kpt_path = jdata["relax_kpt"]
+                    relax_kpt_path = jdata["relax_kpt"]
                     assert os.path.isfile(relax_kpt_path), (
                         "file %s should exists" % relax_kpt_path
                     )
@@ -1468,7 +1469,7 @@ def run_abacus_md(jdata, mdata):
 def gen_init_bulk(args):
     try:
         import ruamel
-        from monty.serialization import loadfn, dumpfn
+        from monty.serialization import dumpfn, loadfn
 
         warnings.simplefilter("ignore", ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
         jdata = loadfn(args.PARAM)

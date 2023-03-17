@@ -1,5 +1,6 @@
-from dargs import Argument, ArgumentEncoder, Variant
 from typing import Dict, List
+
+from dargs import Argument, ArgumentEncoder, Variant
 
 from dpgen.arginfo import general_mdata_arginfo
 

@@ -1,6 +1,6 @@
+import subprocess as sp
 import sys
 import unittest
-import subprocess as sp
 
 
 class TestCLI(unittest.TestCase):

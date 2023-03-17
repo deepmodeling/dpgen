@@ -1,24 +1,18 @@
 """This module ensures input in the examples directory
 could pass the argument checking.
 """
-import unittest
 import json
+import unittest
 from pathlib import Path
 
-from dpgen.util import normalize
 from dpgen.data.arginfo import (
     init_bulk_jdata_arginfo,
-    init_surf_jdata_arginfo,
     init_reaction_jdata_arginfo,
+    init_surf_jdata_arginfo,
 )
-from dpgen.simplify.arginfo import (
-    simplify_jdata_arginfo,
-    simplify_mdata_arginfo,
-)
-from dpgen.generator.arginfo import (
-    run_jdata_arginfo,
-    run_mdata_arginfo,
-)
+from dpgen.generator.arginfo import run_jdata_arginfo, run_mdata_arginfo
+from dpgen.simplify.arginfo import simplify_jdata_arginfo, simplify_mdata_arginfo
+from dpgen.util import normalize
 
 init_bulk_jdata = init_bulk_jdata_arginfo()
 init_surf_jdata = init_surf_jdata_arginfo()
