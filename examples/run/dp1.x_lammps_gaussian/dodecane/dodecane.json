@@ -1,15 +1,13 @@
-{    
+{
     "type_map":		["C", "H"],
     "mass_map":		[12.011, 1.008],
     "init_data_prefix":	"/home/jzzeng/0719dodecane/gen/",
     "init_data_sys":	["init_data"],
-	  "init_multi_systems": true,
     "sys_configs":	[
 	    ["/home/jzzeng/0719dodecane/gen/data.dodecane.atomic"]
     ],
 	  "sys_format":"lammps/lmp",
     "numb_models":	4,
-    "train_param":	"input.json",
     "default_training_param" : {
       "model":{
         "type_map": ["C","H"],
@@ -44,7 +42,7 @@
         "limit_pref_pf":    0
       },
       "training":{
-        "set_prefix":		"set",    
+        "set_prefix":		"set",
         "stop_batch":		400000,
         "disp_file":		"lcurve.out",
         "disp_freq":		1000,
@@ -67,8 +65,6 @@
     "model_devi_skip":		100,
     "model_devi_f_trust_lo":	0.20,
     "model_devi_f_trust_hi":	0.45,
-    "model_devi_e_trust_lo":	1e10,
-    "model_devi_e_trust_hi":	1e10,
     "model_devi_clean_traj":	false,
     "model_devi_jobs":	[
       {"sys_idx": [0], "temps": [  3000], "trj_freq": 10, "nsteps": 2000, "ensemble": "nvt", "_idx": "00"},
@@ -80,8 +76,6 @@
     "shuffle_poscar":	false,
     "fp_task_max":	1000,
     "fp_task_min":	10,
-    "fp_pp_path":	"/home/jzzeng/",
-    "fp_pp_files":	[],
     "fp_params":	{
       "keywords": "force mn15/6-31g**",
       "nproc":  4,

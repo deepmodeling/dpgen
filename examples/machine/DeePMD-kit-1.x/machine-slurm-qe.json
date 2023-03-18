@@ -1,117 +1,112 @@
- {
-  "_comment" : "This is an example of DP-GEN on Slurm",
-  "_comment" : "Last updated on 2021.4.30 for DP-GEN 0.9.2 by Yuzhi Zhang", 
-  "train" :[
-    {
-      "_comment" : "Specify the installed path of DeePMD-kit",
-      "_comment" : "The version of DeePMD-kit should be 1.*", 
-      "command": "PATH_TO_DEEPMD/dp",
-      "_comment" : "Specify machine settings", 
-      "machine": {
-       "_comment" : "Supported batches include slurm, pbs, shell, lsf.",  
-        "batch": "slurm",
-        "_comment" : "If your jobs are executed on a local workstation, you can let hostname be localhost.",
-        "_comment" : "Otherwise you should provide the IP of machine you want to connect via ssh.",
-        "hostname": "localhost",
-        "_comment" : "The port for connection, most common settings is 22",
-        "port": 22,
-        "_comment" : "Specify your username. Sometimes you may need specify password. Exactly the name of key is password. ",
-        "username": "USERNAME",
-        "_comment" : "Specify where you want your job executes, all of tasks will be sent to work_path on this machine.",
-        "_comment" : "You should alwasy make sure that directory of work_path exits. ",
-        "work_path": "PATH_TO_WORK",
-        "_comment": "that's all"
-      },
-      "resources": {
-        "_comment" : "The number of nodes. This will generate #SBATCH -N 1 in your script. ",
-        "numb_node": 1,
-        "_comment" : "The number of GPU cards. #SBATCH --gres=gpu:1", 
-        "numb_gpu": 1,
-        "_comment" : "The number of CPUs. #SBATCH -n 4",
-        "task_per_node": 4,
-        "_comment" : "Partition. #SBATCH -p all",
-        "partition": "all",
-        "_comment" : "Memory limit. #SBATCH --mem=16G",
-        "mem_limit": 16,
-        "_comment" : "Nodelist to be excluded. #SBATCH --exclude=gpu06,gpu07", 
-        "exclude_list": [
-          "gpu06",
-          "gpu07"
-        ],
-        "_comment" : "Environment to be activated. This will generate source PATH/train_new.env . ",
-        "source_list": [
-          "PATH/train_new.env"
-        ],
-        "_comment" : " Module is a common tools on HPC clustes to manage softwares for multiple users.",
-        "_comment" : "Modules to be loaded. This will generate module load intel",
-        "module_list": ["intel"],
-        "_comment" : "Time limit. ",
-        "time_limit": "23:0:0",
-        "_comment": "that's all"
-      }
-    }
-  ],
-
-  "model_devi": [
-    {
-      "machine": {
-        "machine_type": "slurm",
-        "hostname": "localhost",
-        "port": 22,
-        "username": "USERNAME",
-        "work_path": "PATH_TO_WORK",
-        "_comment": "that's all"
-      },
-      "resources": {
-        "numb_node": 1,
-        "numb_gpu": 1,
-        "task_per_node": 4,
-        "partition": "all",
-        "mem_limit": 16,
-        "exclude_list": [
-          
-        ],
-        "source_list": [
-          "PATH/lmp_new.env"
-        ],
-        "module_list": [],
-        "time_limit": "23:0:0",
-        "_comment": "that's all"
-      },
-      "command": "lmp_serial",
-      "_comment" : "DP-GEN will put 5 tasks together in one submitting script.",  
-      "group_size": 5
-    }
-  ], 
-  "fp":
-  [
-    {
-      "machine": {
-        "machine_type": "slurm",
-        "hostname": "xxx.xxx.xxx.xxx",
-        "port": 22,
-        "username": "USERNAME",
-        "work_path": "PATH_TO_WORK"
-      },
-      "resources": {
-        "task_per_node": 8,
-        "numb_gpu": 0,
-        "exclude_list": [],
-        "_comment" : "If you set with_mpi to true, the defaulted parallelling command of Slurm, srun, will be appended as prefix.",
-        "_comment" : "If you do not want this, you can set with_mpi to false, and specify parallelling command yourself. ",
-        "_comment" : "Notice that in json format, the upper/lower case is strict. You should write true instead of True and false instead of False", 
-        "with_mpi": false,
-        "source_list": [
-        ],
-        "module_list": [
-          "mpich/3.2.1-intel-2017.1"
-        ],
-        "time_limit": "120:0:0",
-        "partition": "C032M0128G",
-        "_comment": "that's all"
-      },
-      "command": "mpirun -n 8 /gpfs/share/home/1600017784/yuzhi/soft/QE-mpi/PW/src/pw.x < input",
-      "group_size": 1
-    }
-  ]
+{
+    "_comment": "Last updated on 2021.4.30 for DP-GEN 0.9.2 by Yuzhi Zhang",
+    "train": {
+        "_comment" : "Specify the installed path of DeePMD-kit",
+        "command": "PATH_TO_DEEPMD/dp",
+        "_comment" : "Specify machine settings",
+        "machine": {
+            "batch_type": "slurm",
+            "context_type": "ssh",
+            "remote_profile": {
+                "hostname": "localhost",
+                "_comment" : "The port for connection, most common settings is 22",
+                "port": 22,
+                "_comment" : "Specify your username.",
+                "username": "USERNAME"
+            },
+            "_comment" : "You should alwasy make sure that directory of work_path exits. ",
+            "remote_root": "PATH_TO_WORK",
+            "local_root": "./"
+        },
+        "resources": {
+            "_comment" : "Environment to be activated. This will generate source PATH/train_new.env . ",
+            "source_list": [
+                "PATH/train_new.env"
+            ],
+            "_comment" : " Module is a common tools on HPC clustes to manage softwares for multiple users.",
+            "_comment" : "Modules to be loaded. This will generate module load intel",
+            "module_list": [
+                "intel"
+            ],
+            "batch_type": "slurm",
+            "_comment" : "The number of nodes. This will generate #SBATCH -N 1 in your script. ",
+            "number_node": 1,
+            "_comment" : "The number of CPUs. #SBATCH -n 4",
+            "cpu_per_node": 4,
+            "_comment" : "The number of GPU cards. #SBATCH --gres=gpu:1",
+            "gpu_per_node": 1,
+            "queue_name": "all",
+            "custom_flags": [
+                "#SBATCH -t 23:0:0",
+                "#SBATCH --mem=16G",
+                "#SBATCH --exclude=gpu06,gpu07"
+            ],
+            "kwargs": {},
+            "group_size": 1
+        }
+    },
+    "model_devi": {
+        "machine": {
+            "batch_type": "slurm",
+            "context_type": "ssh",
+            "remote_profile": {
+                "hostname": "localhost",
+                "port": 22,
+                "username": "USERNAME"
+            },
+            "remote_root": "PATH_TO_WORK",
+            "local_root": "./"
+        },
+        "resources": {
+            "source_list": [
+                "PATH/lmp_new.env"
+            ],
+            "module_list": [],
+            "batch_type": "slurm",
+            "_comment": "DP-GEN will put 5 tasks together in one submitting script.",
+            "group_size": 5,
+            "number_node": 1,
+            "cpu_per_node": 4,
+            "gpu_per_node": 1,
+            "queue_name": "all",
+            "custom_flags": [
+                "#SBATCH -t 23:0:0",
+                "#SBATCH --mem=16G",
+                "#SBATCH --exclude="
+            ],
+            "kwargs": {}
+        },
+        "command": "lmp_serial"
+    },
+    "fp": {
+        "machine": {
+            "batch_type": "slurm",
+            "context_type": "ssh",
+            "remote_profile": {
+                "hostname": "xxx.xxx.xxx.xxx",
+                "port": 22,
+                "username": "USERNAME"
+            },
+            "remote_root": "PATH_TO_WORK",
+            "local_root": "./"
+        },
+        "resources": {
+            "source_list": [],
+            "module_list": [
+                "mpich/3.2.1-intel-2017.1"
+            ],
+            "batch_type": "slurm",
+            "group_size": 1,
+            "cpu_per_node": 8,
+            "gpu_per_node": 0,
+            "queue_name": "C032M0128G",
+            "custom_flags": [
+                "#SBATCH -t 120:0:0"
+            ],
+            "kwargs": {},
+            "number_node": 1
+        },
+        "command": "mpirun -n 8 /gpfs/share/home/1600017784/yuzhi/soft/QE-mpi/PW/src/pw.x < input"
+    },
+    "api_version": "1.0"
 }

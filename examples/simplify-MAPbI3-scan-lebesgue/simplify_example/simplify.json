@@ -1,0 +1,94 @@
+{
+  "type_map": ["I","Pb","C","N","H"],
+  "mass_map": [126.90447, 207.2, 12.0108, 14.0067, 1.00795],
+
+  "pick_data":  "../data",
+  "init_data_prefix": "",
+  "init_data_sys":   [],
+  "sys_configs": [null],
+  "sys_batch_size":  [1],
+
+  "_comment": " 00.train ",
+  "numb_models": 4,
+  "model_devi_activation_func":[["tanh","tanh"],["tanh","gelu"],["gelu","gelu"],["gelu","tanh"]],
+
+  "default_training_param": {
+    "model": {
+      "type_map":           ["I","Pb","C","N","H"],
+      "descriptor": {
+        "type":             "se_e2_a",
+        "sel":
+        [
+          20,
+          8,
+          8,
+          8,
+          48
+        ],
+        "rcut_smth":        2.00,
+        "rcut":             6.00,
+        "neuron":           [25, 50, 100],
+        "resnet_dt":        false,
+        "type_one_side":     true,
+        "trainable":      true,
+	      "axis_neuron":      12,
+        "seed":             0
+      },
+      "fitting_net": {
+        "neuron":           [240, 240, 240],
+        "resnet_dt":        true,
+        "trainable":      [true, true, true, true],
+        "seed": 0
+      }
+    },
+      "loss": {
+        "start_pref_e": 0.02,
+        "limit_pref_e": 2,
+        "start_pref_f": 1000,
+        "limit_pref_f": 2,
+        "start_pref_v": 0.01,
+        "limit_pref_v": 1
+    },
+      "learning_rate": {
+        "type":              "exp",
+        "start_lr":          0.001,
+        "decay_steps":       25,
+        "decay_rate":        0.95
+    },
+      "training": {
+        "set_prefix":        "set",
+        "stop_batch":        5000,
+        "batch_size":        "auto",
+        "seed": 1,
+        "_comment":          "frequencies counted in batch",
+        "disp_file":         "lcurve.out",
+        "disp_freq":         1000,
+        "numb_test":         4,
+        "save_freq":         10000,
+        "save_ckpt":         "model.ckpt",
+        "disp_training":     true,
+        "time_training":     true,
+        "profiling":         false,
+        "profiling_file":    "timeline.json"
+    }
+  },
+
+  "_comment":                   "02.fp",
+  "fp_style":                   "vasp",
+  "fp_skip_bad_box":  "length_ratio:5;height_ratio:5",
+  "fp_accurate_threshold":       0.10,
+  "fp_accurate_soft_threshold":  0.00,
+  "fp_task_max":                 20,
+  "fp_task_min":                 5,
+  "ratio_failed":                0.30,
+  "fp_pp_path": "../vasp_inputs/",
+  "fp_pp_files": ["POTCAR_I","POTCAR_Pb_d","POTCAR_C","POTCAR_N","POTCAR_H"],
+  "fp_incar": "INCAR",
+
+  "labeled": false,
+  "init_pick_number":5,
+  "iter_pick_number":5,
+  "model_devi_f_trust_lo":0.30,
+  "model_devi_f_trust_hi":100.00,
+  "cvasp": false
+}

@@ -12,16 +12,18 @@
 #
 import os
 import subprocess
+import sys
+from datetime import date
+
 # import sys
 import recommonmark
 from recommonmark.transform import AutoStructify
 
-
 # -- Project information -----------------------------------------------------
 
-project = 'DPGEN'
-copyright = '2020, Deep Potential'
-author = 'Deep Potential'
+project = "DP-GEN"
+copyright = "2020-%d, DeepModeling" % date.today().year
+author = "DeepModeling"
 
 
 # -- General configuration ---------------------------------------------------
@@ -38,28 +40,33 @@ author = 'Deep Potential'
 # ]
 
 extensions = [
+    "deepmodeling_sphinx",
+    "dargs.sphinx",
     "sphinx_rtd_theme",
-    'myst_parser',
-    'sphinx.ext.autosummary',
+    "myst_parser",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.viewcode",
+    "sphinxarg.ext",
+    "numpydoc",
 ]
 
 
 # Tell sphinx what the primary language being documented is.
-primary_domain = 'cpp'
+primary_domain = "py"
 
 # Tell sphinx what the pygments highlight language should be.
-highlight_language = 'cpp'
+highlight_language = "py"
 
-# 
+#
 myst_heading_anchors = 4
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -67,7 +74,8 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
+html_theme = "sphinx_rtd_theme"
+html_logo = "logo.svg"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -75,6 +83,48 @@ html_theme = 'sphinx_rtd_theme'
 # html_static_path = ['_static']
 # html_css_files = ['css/custom.css']
 
-autodoc_default_flags = ['members']
+autodoc_default_flags = ["members"]
 autosummary_generate = True
-master_doc = 'index'
+master_doc = "index"
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/", None),
+    "dargs": ("https://docs.deepmodeling.com/projects/dargs/en/latest/", None),
+    "dpdata": ("https://docs.deepmodeling.com/projects/dpdata/en/latest/", None),
+    "dpdispatcher": (
+        "https://docs.deepmodeling.com/projects/dpdispatcher/en/latest/",
+        None,
+    ),
+    "ase": ("https://wiki.fysik.dtu.dk/ase/", None),
+    "numpy": ("https://docs.scipy.org/doc/numpy/", None),
+    "pamatgen": ("https://pymatgen.org/", None),
+    "monty": ("https://guide.materialsvirtuallab.org/monty/", None),
+    "paramiko": ("https://docs.paramiko.org/en/stable/", None),
+    "custodian": ("https://cloudcustodian.io/docs/", None),
+    "GromacsWrapper": ("https://gromacswrapper.readthedocs.io/en/latest/", None),
+}
+
+
+def run_apidoc(_):
+    from sphinx.ext.apidoc import main
+
+    sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+    cur_dir = os.path.abspath(os.path.dirname(__file__))
+    module = os.path.join(cur_dir, "..", "dpgen")
+    main(
+        [
+            "-M",
+            "--tocfile",
+            "api",
+            "-H",
+            "DP-GEN API",
+            "-o",
+            os.path.join(cur_dir, "api"),
+            module,
+            "--force",
+        ]
+    )
+
+
+def setup(app):
+    app.connect("builder-inited", run_apidoc)

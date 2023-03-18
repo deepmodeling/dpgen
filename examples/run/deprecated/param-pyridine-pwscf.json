@@ -1,7 +1,7 @@
-{    
+{
     "type_map":		["C", "H", "N"],
     "mass_map":		[16, 2, 14],
-    
+
     "init_data_prefix":	"/home/linfengz/SCR/wanghan/deepgen.pyridine/init",
     "init_data_sys":	["Pyridine-I",
 			 "Pyridine-II"
@@ -25,7 +25,6 @@
 
     "_comment":		" 00.train ",
     "numb_models":	4,
-    "train_param":	"input.json",
     "default_training_param" : {
 	"_comment": " model parameters",
 	"use_smooth":		true,
@@ -42,7 +41,7 @@
 
 	"_comment": " traing controls",
 	"systems":		[],
-	"set_prefix":		"set",    
+	"set_prefix":		"set",
 	"stop_batch":		400000,
 	"batch_size":		1,
 	"start_lr":		0.002,
@@ -79,8 +78,6 @@
     "model_devi_skip":		10,
     "model_devi_f_trust_lo":	0.200,
     "model_devi_f_trust_hi":	0.300,
-    "model_devi_e_trust_lo":	1e10,
-    "model_devi_e_trust_hi":	1e10,
     "model_devi_clean_traj":	true,
     "model_devi_jobs":	[
 	{"sys_idx": [0,4], "temps": [  50], "press": [1e0,1e1,1e2,1e3,1e4,2e4,4e4], "trj_freq": 10, "nsteps": 1000, "ensemble": "npt", "_idx": "00"},

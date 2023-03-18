@@ -1,0 +1,113 @@
+{
+    "api_version": "1.0",
+    "_comment": "dependent on dpdispatcher 0.4.15",
+    "train" :
+      {
+        "command": "dp",
+        "machine": {
+        "batch_type": "Lebesgue",
+        "context_type": "LebesgueContext",
+        "local_root" : "./",
+          "remote_profile":{
+          "email": "",
+          "password": "",
+          "program_id": 0,
+              "input_data":{
+                  "api_version":2,
+                  "job_type": "indicate",
+                  "log_file": "00*/lcurve.out",
+                  "grouped": true,
+                  "job_name": "simplify_MAPbI3-scan_train_job",
+                  "disk_size": 100,
+                  "scass_type":"c8_m32_1 * NVIDIA V100",
+                  "platform": "ali",
+                  "checkpoint_files": ["00*/model.ckpt*", "00*/checkpoint"],
+                  "checkpoint_time": 15,
+                  "image_name":"LBG_DeePMD-kit_2.1.1_v1.1",
+                  "on_demand":0
+              }
+          }
+        },
+        "resources": {
+          "batch_type": "Lebesgue",
+          "number_node": 15,
+          "cpu_per_node": 4,
+          "gpu_per_node": 1,
+          "queue_name": "V100_8_32",
+          "group_size": 1
+        }
+      },
+    "model_devi":
+      {
+        "command": "dp",
+        "machine": {
+        "batch_type": "Lebesgue",
+        "context_type": "LebesgueContext",
+        "local_root" : "./",
+          "remote_profile":{
+          "email": "",
+          "password": "",
+          "program_id": 0,
+              "input_data":{
+                "api_version":2,
+                "job_type": "indicate",
+                "log_file": "cubic-*/*/md.log",
+                "grouped": true,
+                "job_name": "MAPbI3-scan_md_job",
+                "disk_size": 100,
+                "scass_type":"c8_m32_1 * NVIDIA V100",
+                "platform": "ali",
+                "checkpoint_files": "sync_files",
+                "checkpoint_time": 15,
+                "image_name":"LBG_DeePMD-kit_2.1.1_v1.1",
+                "on_demand":0
+              }
+          }
+        },
+        "resources": {
+          "batch_type": "Lebesgue",
+          "number_node": 15,
+          "cpu_per_node": 4,
+          "gpu_per_node": 1,
+          "queue_name": "V100_8_32",
+          "group_size": 10
+        }
+      },
+    "fp":
+      {
+        "command": "ulimit -m unlimited; ulimit -s unlimited; mpirun -n 32 vasp_std",
+        "machine": {
+        "batch_type": "Lebesgue",
+        "context_type": "LebesgueContext",
+        "local_root" : "./",
+          "remote_profile":{
+          "email": "",
+          "password": "",
+          "program_id": 0,
+              "input_data":{
+                "api_version":2,
+                "job_type": "indicate",
+                "log_file": "**/fp.log",
+                "grouped": true,
+                "job_name": "simplify_MAPbI3-scan_fp_job",
+                "disk_size": 100,
+                "scass_type":"c32_m64_cpu",
+                "platform": "ali",
+                "checkpoint_files": "sync_files",
+                "checkpoint_time": 15,
+                "image_name":"LBG_vasp-5-4-4_v1",
+                "on_demand":0
+              }
+          }
+        },
+        "resources": {
+          "batch_type": "Lebesgue",
+          "number_node": 15,
+          "cpu_per_node": 32,
+          "gpu_per_node": 0,
+          "queue_name": "CPU",
+          "group_size": 10,
+      "source_list": ["/opt/intel/oneapi/setvars.sh"]
+        }
+      }
+  }

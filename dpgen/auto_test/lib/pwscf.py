@@ -1,13 +1,15 @@
-#!/usr/bin/python3 
+#!/usr/bin/python3
 
 import numpy as np
+
 # from lib.vasp import system_from_poscar
 
-def _make_pwscf_01_runctrl(sys_data, ecut, ediff, smearing, degauss) :
-    tot_natoms = sum(sys_data['atom_numbs'])
-    ntypes = len(sys_data['atom_names'])
+
+def _make_pwscf_01_runctrl(sys_data, ecut, ediff, smearing, degauss):
+    tot_natoms = sum(sys_data["atom_numbs"])
+    ntypes = len(sys_data["atom_names"])
     ret = ""
-    ret += '&control\n'
+    ret += "&control\n"
     ret += "calculation='scf',\n"
     ret += "restart_mode='from_scratch',\n"
     ret += "pseudo_dir='./',\n"
@@ -24,38 +26,40 @@ def _make_pwscf_01_runctrl(sys_data, ecut, ediff, smearing, degauss) :
     ret += "ecutwfc = %f,\n" % ecut
     ret += "ts_vdw_econv_thr=%e,\n" % ediff
     ret += "nosym = .TRUE.,\n"
-    if degauss is not None :
-        ret += 'degauss = %f,\n' % degauss
-    if smearing is not None :
-        ret += 'smearing = \'%s\',\n' % (smearing.lower())
+    if degauss is not None:
+        ret += "degauss = %f,\n" % degauss
+    if smearing is not None:
+        ret += "smearing = '%s',\n" % (smearing.lower())
     ret += "/\n"
     ret += "&electrons\n"
     ret += "conv_thr = %e,\n" % ediff
     ret += "/\n"
     return ret
 
-def _make_pwscf_02_species(sys_data, pps) :
-    atom_names = (sys_data['atom_names'])
-    if 'atom_masses' in sys_data:
-        atom_masses = (sys_data['atom_masses'])
-    else :
+
+def _make_pwscf_02_species(sys_data, pps):
+    atom_names = sys_data["atom_names"]
+    if "atom_masses" in sys_data:
+        atom_masses = sys_data["atom_masses"]
+    else:
         atom_masses = [1 for ii in atom_names]
     ret = ""
     ret += "ATOMIC_SPECIES\n"
     ntypes = len(atom_names)
-    assert(ntypes == len(atom_names))
-    assert(ntypes == len(atom_masses))
-    assert(ntypes == len(pps))
-    for ii in range(ntypes) :
+    assert ntypes == len(atom_names)
+    assert ntypes == len(atom_masses)
+    assert ntypes == len(pps)
+    for ii in range(ntypes):
         ret += "%s %d %s\n" % (atom_names[ii], atom_masses[ii], pps[ii])
     return ret
-        
-def _make_pwscf_03_config(sys_data) :
-    cell = sys_data['cell']
-    cell = np.reshape(cell, [3,3])
-    coordinates = sys_data['coordinates']
-    atom_names = (sys_data['atom_names'])
-    atom_numbs = (sys_data['atom_numbs'])
+
+
+def _make_pwscf_03_config(sys_data):
+    cell = sys_data["cell"]
+    cell = np.reshape(cell, [3, 3])
+    coordinates = sys_data["coordinates"]
+    atom_names = sys_data["atom_names"]
+    atom_numbs = sys_data["atom_numbs"]
     ntypes = len(atom_names)
     ret = ""
     ret += "CELL_PARAMETERS { angstrom }\n"
@@ -67,53 +71,60 @@ def _make_pwscf_03_config(sys_data) :
     ret += "ATOMIC_POSITIONS { angstrom }\n"
     cc = 0
     for ii in range(ntypes):
-        for jj in range(atom_numbs[ii]):            
-            ret += "%s %f %f %f\n" % (atom_names[ii],
-                                      coordinates[cc][0],
-                                      coordinates[cc][1],
-                                      coordinates[cc][2])
+        for jj in range(atom_numbs[ii]):
+            ret += "%s %f %f %f\n" % (
+                atom_names[ii],
+                coordinates[cc][0],
+                coordinates[cc][1],
+                coordinates[cc][2],
+            )
             cc += 1
     return ret
 
-def _kshift(nkpt) :
-    if (nkpt//2) * 2 == nkpt :
+
+def _kshift(nkpt):
+    if (nkpt // 2) * 2 == nkpt:
         return 1
-    else :
+    else:
         return 0
-            
+
+
 def _make_pwscf_04_kpoints(sys_data, kspacing):
-    cell = sys_data['cell']
-    cell = np.reshape(cell, [3,3])
+    cell = sys_data["cell"]
+    cell = np.reshape(cell, [3, 3])
     rcell = np.linalg.inv(cell)
     rcell = rcell.T
-    kpoints = [(np.ceil(2 * np.pi * np.linalg.norm(ii) / kspacing).astype(int))
-               for ii in rcell]
+    kpoints = [
+        (np.ceil(2 * np.pi * np.linalg.norm(ii) / kspacing).astype(int)) for ii in rcell
+    ]
     ret = ""
     ret += "K_POINTS { automatic }\n"
-    for ii in range(3) :
+    for ii in range(3):
         ret += "%d " % kpoints[ii]
-    for ii in range(3) :
+    for ii in range(3):
         ret += "%d " % _kshift(kpoints[ii])
     ret += "\n"
     return ret
 
-def _make_smearing(fp_params) :
+
+def _make_smearing(fp_params):
     smearing = None
-    degauss = None 
-    if 'smearing' in fp_params :
-        smearing = (fp_params['smearing']).lower()        
-    if 'sigma' in fp_params :
-        degauss = fp_params['sigma']
-    if (smearing is not None) and (smearing.split(':')[0] == 'mp') :
-        smearing = 'mp'
-    if not (smearing in [None, 'gauss', 'mp', 'fd']) :
+    degauss = None
+    if "smearing" in fp_params:
+        smearing = (fp_params["smearing"]).lower()
+    if "sigma" in fp_params:
+        degauss = fp_params["sigma"]
+    if (smearing is not None) and (smearing.split(":")[0] == "mp"):
+        smearing = "mp"
+    if not (smearing in [None, "gauss", "mp", "fd"]):
         raise RuntimeError("unknow smearing method " + smearing)
     return smearing, degauss
 
-def make_pwscf_input(sys_data, fp_pp_files, fp_params) :
-    ecut = fp_params['ecut']
-    ediff = fp_params['ediff']
-    kspacing = fp_params['kspacing']
+
+def make_pwscf_input(sys_data, fp_pp_files, fp_params):
+    ecut = fp_params["ecut"]
+    ediff = fp_params["ediff"]
+    kspacing = fp_params["kspacing"]
     smearing, degauss = _make_smearing(fp_params)
     ret = ""
     ret += _make_pwscf_01_runctrl(sys_data, ecut, ediff, smearing, degauss)
@@ -125,7 +136,7 @@ def make_pwscf_input(sys_data, fp_pp_files, fp_params) :
     ret += _make_pwscf_04_kpoints(sys_data, kspacing)
     ret += "\n"
     return ret
-    
+
 
 # sys_data = system_from_poscar('POSCAR')
 # ret = ""

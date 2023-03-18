@@ -1,79 +1,88 @@
 {
-    "_comment":		"training on localhost ",
-    "train_command":	"/gpfs/home/tzhu/anaconda3/envs/python3.6/bin/dp",
-    "train_machine":	{
-      "machine_type":	"lsf",
-      "hostname" :	"xxx.xxx.xxx.xxx",
-      "port" :	22,
-      "username":	"tzhu",
-      "work_path" :	"/gpfs/home/tzhu/jzzeng/dpgen_workdir",
-      "_comment" :	"that's all"
-        },	
-        "train_resources":	{
-      "source_list":	[ "activate deepmd" ],
-      "envs": {
-        "KMP_BLOCKTIME": 0,
-        "KMP_AFFINITY": "granularity=fine,verbose,compact,1,0"
-      },
-      "numb_gpu": 1,
-      "numb_node": 1,
-      "node_cpu": 0,
-      "partition": "newgpu",
-      "job_name": "dpgen_jzzeng",
-      "with_mpi":	false,
-      "time_limit": false,
-      "_comment":	"that's all"
-    },    
-
-
-    "_comment":		"model_devi on localhost ",
-    "model_devi_command":	"/gpfs/home/tzhu/lammps-stable_5Jun2019/src/lmp_intel_cpu_intelmpi -pk intel 0 omp 2",
-    "model_devi_group_size": 1,
-    "model_devi_machine":	{
-      "machine_type":	"lsf",
-      "hostname" :	"xxx.xxx.xxx.xxx",
-      "port" :	22,
-      "username":	"tzhu",
-      "work_path" :	"/gpfs/home/tzhu/jzzeng/dpgen_workdir",
-      "_comment" :	"that's all"
-    },	
-    "model_devi_resources":	{
-      "envs": {
-        "KMP_BLOCKTIME": 0
-      },
-      "source_list":	[ "activate deepmd" ],
-      "numb_gpu": 1,
-      "numb_node": 1,
-      "node_cpu": 0,
-      "time_limit": false,
-      "partition": "newgpu",
-      "job_name": "dpgen_jzzeng",
-      "with_mpi":	true,
-      "task_per_node": 1,
-      "_comment":	"that's all"
-    },    
-
-    "_comment":		"fp on lsf //localhost ",
-    "fp_command":	"/public/home/tzhu/g16/g16 < input",
-    "fp_group_size":	1,
-    "fp_machine":	{
-      "machine_type":	"pbs",
-      "hostname" :	"xxx.xxx.xxx.xxx",
-      "port" :	2323,
-      "username":	"tzhu",
-      "work_path" :	"/public/home/tzhu/jzzeng/dpgen_workdir",
-      "_comment" :	"that's all"
-    },	
-    "fp_resources":	{
-      "node_cpu":28,
-      "numb_node": 1,
-      "job_name": "dpgen_jzzeng",
-      "task_per_node": 28,
-      "with_mpi":	false,
-      "time_limit": "10:00:00",
-      "allow_failure": true,
-      "partition": "small",
-      "_comment":	"that's all"
+    "api_version": "1.0",
+    "train": {
+        "machine": {
+            "batch_type": "lsf",
+            "context_type": "ssh",
+            "remote_profile": {
+                "hostname": "xxx.xxx.xxx.xxx",
+                "port": 22,
+                "username": "tzhu"
+            },
+            "remote_root": "/gpfs/home/tzhu/jzzeng/dpgen_workdir",
+            "local_root": "./"
+        },
+        "resources": {
+            "source_list": [
+                "activate deepmd"
+            ],
+            "envs": {
+                "KMP_BLOCKTIME": 0,
+                "KMP_AFFINITY": "granularity=fine,verbose,compact,1,0"
+            },
+            "batch_type": "lsf",
+            "group_size": 1,
+            "number_node": 1,
+            "cpu_per_node": 0,
+            "gpu_per_node": 1,
+            "queue_name": "newgpu",
+            "kwargs": {}
+        },
+        "command": "/gpfs/home/tzhu/anaconda3/envs/python3.6/bin/dp"
     },
-    "_comment":		" that's all "
+    "model_devi": {
+        "machine": {
+            "batch_type": "lsf",
+            "context_type": "ssh",
+            "remote_profile": {
+                "hostname": "xxx.xxx.xxx.xxx",
+                "port": 22,
+                "username": "tzhu"
+            },
+            "remote_root": "/gpfs/home/tzhu/jzzeng/dpgen_workdir",
+            "local_root": "./"
+        },
+        "resources": {
+            "envs": {
+                "KMP_BLOCKTIME": 0
+            },
+            "source_list": [
+                "activate deepmd"
+            ],
+            "batch_type": "lsf",
+            "group_size": 1,
+            "number_node": 1,
+            "cpu_per_node": 0,
+            "gpu_per_node": 1,
+            "queue_name": "newgpu",
+            "kwargs": {}
+        },
+        "command": "mpirun -n 0 /gpfs/home/tzhu/lammps-stable_5Jun2019/src/lmp_intel_cpu_intelmpi -pk intel 0 omp 2"
+    },
+    "fp": {
+        "machine": {
+            "batch_type": "pbs",
+            "context_type": "ssh",
+            "remote_profile": {
+                "hostname": "xxx.xxx.xxx.xxx",
+                "port": 2323,
+                "username": "tzhu"
+            },
+            "remote_root": "/public/home/tzhu/jzzeng/dpgen_workdir",
+            "local_root": "./"
+        },
+        "resources": {
+            "batch_type": "pbs",
+            "group_size": 1,
+            "number_node": 1,
+            "cpu_per_node": 28,
+            "queue_name": "small",
+            "custom_flags": [
+                "#PBS -l walltime=10:00:00"
+            ],
+            "kwargs": {},
+            "gpu_per_node": 1
+        },
+        "command": "/public/home/tzhu/g16/g16 < input || :"
+    }
 }

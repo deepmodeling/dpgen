@@ -70,7 +70,7 @@
         },
         "training": {
             "set_prefix": "set",
-            "stop_batch": 2000,
+            "numb_steps": 2000,
             "batch_size": 1,
             "disp_file": "lcurve.out",
             "disp_freq": 1000,
@@ -88,8 +88,6 @@
     "model_devi_skip": 0,
     "model_devi_f_trust_lo": 0.05,
     "model_devi_f_trust_hi": 0.15,
-    "model_devi_e_trust_lo": 10000000000.0,
-    "model_devi_e_trust_hi": 10000000000.0,
     "model_devi_clean_traj": true,
     "model_devi_jobs": [
         {

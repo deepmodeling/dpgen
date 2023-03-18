@@ -25,7 +25,6 @@
 
     "_comment":		" 00.train ",
     "numb_models":	4,
-    "train_param":	"input.json",
     "default_training_param" : {
 	"_comment": " model parameters",
 	"use_smooth":		true,
@@ -79,8 +78,6 @@
     "model_devi_skip":		0,
     "model_devi_f_trust_lo":	0.050,
     "model_devi_f_trust_hi":	0.150,
-    "model_devi_e_trust_lo":	1e10,
-    "model_devi_e_trust_hi":	1e10,
     "model_devi_clean_traj":	false,
     "model_devi_jobs":	[
 	{"sys_idx": [0,4], "temps": [  50], "press": [1e0,1e1,1e2,1e3,1e4,2e4,4e4], "trj_freq": 10, "nsteps": 1000, "ensemble": "npt", "_idx": "00"},

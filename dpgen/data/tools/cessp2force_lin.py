@@ -40,24 +40,22 @@ import sys
 def get_outcar_files(directory, recursive):
     # walk directory (recursively) and return all OUTCAR* files
     # return list of outcars' path
-    sys.stderr.write(
-        'Searching directory %s for OUTCAR* files ...\n' % directory)
+    sys.stderr.write("Searching directory %s for OUTCAR* files ...\n" % directory)
     outcars = []
     if not recursive:
         for item in os.listdir(directory):
-            if item.startswith('OUTCAR'):
+            if item.startswith("OUTCAR"):
                 outcars.append(os.path.join(directory, item))
     else:
         for root, SubFolders, files in os.walk(directory):
             for item in files:
-                if item.startswith('OUTCAR'):
+                if item.startswith("OUTCAR"):
                     outcars.append(os.path.join(root, item))
     if len(outcars) == 0:
-        sys.stderr.write(
-            'Could not find any OUTCAR files in this directory.\n')
+        sys.stderr.write("Could not find any OUTCAR files in this directory.\n")
     else:
-        sys.stderr.write('Found the following files:\n')
-        sys.stderr.write('  {}\n'.format(('\n  ').join(outcars)))
+        sys.stderr.write("Found the following files:\n")
+        sys.stderr.write("  {}\n".format(("\n  ").join(outcars)))
         return outcars
     return outcars
 
@@ -82,18 +80,17 @@ def scan_outcar_file(file_handle):
     potcar = []
     ipt = []
     for line in file_handle:
-        if line.startswith('|'):
+        if line.startswith("|"):
             continue
-        if 'TOTAL-FORCE' in line:
+        if "TOTAL-FORCE" in line:
             configs += 1
-        if 'VRHFIN' in line:
-            atom_types.append(
-                line.split()[1].replace('=', '').replace(':', ''))
-        if 'title' in line:
+        if "VRHFIN" in line:
+            atom_types.append(line.split()[1].replace("=", "").replace(":", ""))
+        if "title" in line:
             title.append(line.split()[3][0:2])
-        if 'POTCAR' in line:
+        if "POTCAR" in line:
             potcar.append(line.split()[2][0:2])
-        if 'ions per type' in line:
+        if "ions per type" in line:
             ipt = [int(s) for s in line.split()[4:]]
 
     potcar = uniq(potcar)
@@ -105,34 +102,42 @@ def scan_outcar_file(file_handle):
     elif potcar:
         return [configs, potcar, ipt]
     else:
-        sys.stderr.write(
-            'Could not determine atom types in file %s.\n' % filename)
+        sys.stderr.write("Could not determine atom types in file %s.\n" % filename)
         sys.exit()
 
 
-def process_outcar_file_v5_dev(outcars, data, numbers, types, max_types, elements=None, windex=None, fout='potfit.configs'):
-    fw = open(fout, 'w')
+def process_outcar_file_v5_dev(
+    outcars,
+    data,
+    numbers,
+    types,
+    max_types,
+    elements=None,
+    windex=None,
+    fout="potfit.configs",
+):
+    fw = open(fout, "w")
     for i in range(len(outcars)):
-        if outcars[i].endswith('.gz'):
-            f = gzip.open(outcars[i], 'rb')
+        if outcars[i].endswith(".gz"):
+            f = gzip.open(outcars[i], "rb")
         else:
-            f = open(outcars[i], 'r')
+            f = open(outcars[i], "r")
 
         # Writing current OUTCAR's information into potfit format files.
         nconfs = data[i][0]
         natoms = sum(data[i][2])  # ipt
         if windex == None:
             windex = range(nconfs)
-        if windex == 'final':
+        if windex == "final":
             windex = [nconfs - 1]
 
         # reading current OUTCAR
         print("Reading %s ..." % outcars[i])
         count = -1
         line = f.readline()
-        while line != '':
+        while line != "":
             line = f.readline()
-            if 'Iteration' in line:
+            if "Iteration" in line:
                 energy = 0
                 box_x = []
                 box_y = []
@@ -142,55 +147,67 @@ def process_outcar_file_v5_dev(outcars, data, numbers, types, max_types, element
             # if 'energy  without' in line:
             #     # appears in each electronic-iteration steps
             #     energy = float(line.split()[6]) / natoms
-            if 'free  energy   TOTEN' in line:
-                energy = float (line.split()[4]) / natoms
+            if "free  energy   TOTEN" in line:
+                energy = float(line.split()[4]) / natoms
                 if count in windex:
                     fw.write("#N %s 1\n" % natoms)
-                    fw.write('#C ')
+                    fw.write("#C ")
                     if elements:
                         fw.write("%s " % numbers[0])
                         for j in range(1, max_types):
-                            fw.write('%s\t' % numbers[j])
+                            fw.write("%s\t" % numbers[j])
                     else:
                         fw.write(" %s" % data[i][1][0])
                         for j in range(1, max_types):
-                            fw.write(' %s' % data[i][1][j])
+                            fw.write(" %s" % data[i][1][j])
                     fw.write("\n")
-                    fw.write("## force file generated from file %s config %d\n" % (
-                        outcars[i], count))
-                    fw.write("#X %13.8f %13.8f %13.8f\n" %
-                             (box_x[0], box_x[1], box_x[2]))
-                    fw.write("#Y %13.8f %13.8f %13.8f\n" %
-                             (box_y[0], box_y[1], box_y[2]))
-                    fw.write("#Z %13.8f %13.8f %13.8f\n" %
-                             (box_z[0], box_z[1], box_z[2]))
+                    fw.write(
+                        "## force file generated from file %s config %d\n"
+                        % (outcars[i], count)
+                    )
+                    fw.write(
+                        "#X %13.8f %13.8f %13.8f\n" % (box_x[0], box_x[1], box_x[2])
+                    )
+                    fw.write(
+                        "#Y %13.8f %13.8f %13.8f\n" % (box_y[0], box_y[1], box_y[2])
+                    )
+                    fw.write(
+                        "#Z %13.8f %13.8f %13.8f\n" % (box_z[0], box_z[1], box_z[2])
+                    )
                     fw.write("#W %f\n" % (args.weight))
                     fw.write("#E %.10f\n" % (energy))
                     if stress:
                         fw.write("#S ")
                         for num in range(6):
-                            fw.write('%8.7g\t' % (stress[num]))
-                        fw.write('\n')
+                            fw.write("%8.7g\t" % (stress[num]))
+                        fw.write("\n")
                     fw.write("#F\n")
                     fw.flush()
                     for adata in atom_data:
-                        fw.write("%d %11.7g %11.7g %11.7g %11.7g %11.7g %11.7g\n" %
-                                 (adata[0], adata[1], adata[2], adata[3], adata[4], adata[5], adata[6]))
-            if 'VOLUME and BASIS' in line:
+                        fw.write(
+                            "%d %11.7g %11.7g %11.7g %11.7g %11.7g %11.7g\n"
+                            % (
+                                adata[0],
+                                adata[1],
+                                adata[2],
+                                adata[3],
+                                adata[4],
+                                adata[5],
+                                adata[6],
+                            )
+                        )
+            if "VOLUME and BASIS" in line:
                 for do in range(5):
                     # SKIP 5 lines
                     line = f.readline()
-                box_x = [float(s)
-                         for s in line.replace('-', ' -').split()[0:3]]
+                box_x = [float(s) for s in line.replace("-", " -").split()[0:3]]
                 line = f.readline()
-                box_y = [float(s)
-                         for s in line.replace('-', ' -').split()[0:3]]
+                box_y = [float(s) for s in line.replace("-", " -").split()[0:3]]
                 line = f.readline()
-                box_z = [float(s)
-                         for s in line.replace('-', ' -').split()[0:3]]
-            if 'in kB' in line:
+                box_z = [float(s) for s in line.replace("-", " -").split()[0:3]]
+            if "in kB" in line:
                 stress = [float(s) / 1602 for s in line.split()[2:8]]
-            if 'TOTAL-FORCE' in line:
+            if "TOTAL-FORCE" in line:
                 # only appears in Ion-iteration steps
                 line = f.readline()  # skip 1 line
                 adata = [0] * 7
@@ -215,25 +232,47 @@ def process_outcar_file_v5_dev(outcars, data, numbers, types, max_types, element
 
 def Parser():
     parser = argparse.ArgumentParser(
-        description='''Converts vasp output data into potfit reference configurations.''')
+        description="""Converts vasp output data into potfit reference configurations."""
+    )
 
-    parser.add_argument('-c', type=str, required=False,
-                        help='list of chemical species to use, e.g. -c Mg=0,Zn=1')
     parser.add_argument(
-        '-e', type=str, required=False, help='file with single atom energies (NYI)')
-    parser.add_argument('-r', '--recursive', action='store_true',
-                        help='scan recursively for OUTCAR files')
-    parser.add_argument('-f', '--final', action='store_true',
-                        help='use only the final configuration from OUTCAR')
-    parser.add_argument('-sr', '--configs_range', type=str,
-                        help='range of the configurations to use')
-    parser.add_argument('-w', '--weight', type=float, default=1.0,
-                        help='set configuration weight for all configurations')
+        "-c",
+        type=str,
+        required=False,
+        help="list of chemical species to use, e.g. -c Mg=0,Zn=1",
+    )
     parser.add_argument(
-        'files', type=str, nargs='*', help='list of OUTCAR files (plain or gzipped)')
+        "-e", type=str, required=False, help="file with single atom energies (NYI)"
+    )
+    parser.add_argument(
+        "-r",
+        "--recursive",
+        action="store_true",
+        help="scan recursively for OUTCAR files",
+    )
+    parser.add_argument(
+        "-f",
+        "--final",
+        action="store_true",
+        help="use only the final configuration from OUTCAR",
+    )
+    parser.add_argument(
+        "-sr", "--configs_range", type=str, help="range of the configurations to use"
+    )
+    parser.add_argument(
+        "-w",
+        "--weight",
+        type=float,
+        default=1.0,
+        help="set configuration weight for all configurations",
+    )
+    parser.add_argument(
+        "files", type=str, nargs="*", help="list of OUTCAR files (plain or gzipped)"
+    )
 
     args = parser.parse_args()
     return args
+
 
 #
 if __name__ == "__main__":
@@ -246,7 +285,7 @@ if __name__ == "__main__":
     # determine all OUTCAR files
     outcars = []
     if not args.files:
-        outcars = get_outcar_files('.', args.recursive)
+        outcars = get_outcar_files(".", args.recursive)
 
     for item in args.files:
         if os.path.isdir(item):
@@ -261,10 +300,10 @@ if __name__ == "__main__":
     data = []
     max_types = 1
     for item in outcars:
-        if item.endswith('.gz'):
-            f = gzip.open(item, 'rb')
+        if item.endswith(".gz"):
+            f = gzip.open(item, "rb")
         else:
-            f = open(item, 'r')
+            f = open(item, "r")
         data.append(scan_outcar_file(f))
         f.close()
         max_types = max(max_types, len(data[-1][1]))
@@ -273,37 +312,38 @@ if __name__ == "__main__":
     types = dict()
     numbers = dict()
     if args.c:
-        if len(args.c.split(',')) > max_types:
-            sys.stderr.write(
-                "\nERROR: There are too many items in you -c string!\n")
+        if len(args.c.split(",")) > max_types:
+            sys.stderr.write("\nERROR: There are too many items in you -c string!\n")
             sys.exit()
-        if len(args.c.split(',')) < max_types:
-            sys.stderr.write(
-                "\nERROR: There are not enough items in you -c string!\n")
+        if len(args.c.split(",")) < max_types:
+            sys.stderr.write("\nERROR: There are not enough items in you -c string!\n")
             sys.exit()
-        for item in args.c.split(','):
-            if len(item.split('=')) != 2:
+        for item in args.c.split(","):
+            if len(item.split("=")) != 2:
                 sys.stderr.write("\nERROR: Could not read the -c string.\n")
                 sys.stderr.write("Maybe a missing or extra '=' sign?\n")
                 sys.exit()
             else:
                 try:
-                    name = str(item.split('=')[0])
-                    number = int(item.split('=')[1])
-                except:
+                    name = str(item.split("=")[0])
+                    number = int(item.split("=")[1])
+                except Exception:
                     sys.stderr.write("\nERROR: Could not read the -c string\n")
                     sys.exit()
                 if number >= max_types:
                     sys.stderr.write(
-                        "\nERROR: The atom type for %s is invalid!\n" % name)
+                        "\nERROR: The atom type for %s is invalid!\n" % name
+                    )
                     sys.exit()
                 if name in types:
                     sys.stderr.write(
-                        "\nERROR: Duplicate atom type found in -c string\n")
+                        "\nERROR: Duplicate atom type found in -c string\n"
+                    )
                     sys.exit()
                 if number in numbers:
                     sys.stderr.write(
-                        "\nERROR: Duplicate atom number found in -c string\n")
+                        "\nERROR: Duplicate atom number found in -c string\n"
+                    )
                     sys.exit()
                 types[name] = number
                 numbers[number] = name
@@ -319,7 +359,8 @@ if __name__ == "__main__":
         windex = range(sr0, sr1 + 1)
 
     if args.final:
-        windex = 'final'
+        windex = "final"
 
     process_outcar_file_v5_dev(
-        outcars, data, numbers, types, max_types, windex=windex, fout='test.configs')
+        outcars, data, numbers, types, max_types, windex=windex, fout="test.configs"
+    )

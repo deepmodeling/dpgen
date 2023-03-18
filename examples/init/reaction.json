@@ -15,5 +15,5 @@
     },
     "cutoff": 3.5,
     "dataset_size": 100,
-    "qmkeywords": "b3lyp/6-31g** force"
+    "qmkeywords": "b3lyp/6-31g** force Geom=PrintInputOrient"
 }

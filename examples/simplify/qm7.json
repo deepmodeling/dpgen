@@ -16,11 +16,11 @@
     "pick_data": "/scratch/jz748/simplify/qm7",
     "init_data_prefix": "",
     "init_data_sys": [],
+    "sys_configs": [null],
     "sys_batch_size": [
         "auto"
     ],
     "numb_models": 4,
-    "train_param": "input.json",
     "default_training_param": {
         "model": {
             "type_map": [
@@ -82,7 +82,6 @@
             "numb_test": 1,
             "save_freq": 1000,
             "save_ckpt": "model.ckpt",
-            "load_ckpt": "model.ckpt",
             "disp_training": true,
             "time_training": true,
             "profiling": false,
@@ -92,11 +91,8 @@
     },
     "use_clusters": true,
     "fp_style": "gaussian",
-    "shuffle_poscar": false,
     "fp_task_max": 1000,
     "fp_task_min": 10,
-    "fp_pp_path": "/home/jzzeng/",
-    "fp_pp_files": [],
     "fp_params": {
         "keywords": "mn15/6-31g** force nosymm scf(maxcyc=512)",
         "nproc": 28,
@@ -105,9 +101,7 @@
     },
     "init_pick_number":100,
     "iter_pick_number":100,
-    "e_trust_lo":1e10,
-    "e_trust_hi":1e10,
-    "f_trust_lo":0.25,
-    "f_trust_hi":0.45,
+    "model_devi_f_trust_lo":0.10,
+    "model_devi_f_trust_hi":0.30,
     "_comment": " that's all "
 }

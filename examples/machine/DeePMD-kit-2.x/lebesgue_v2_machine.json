@@ -1,7 +1,7 @@
 {
   "api_version": "1.0",
   "deepmd_version": "2.0.1",
-  "train" :[
+  "train" :
     {
       "command": "dp",
       "machine": {
@@ -27,16 +27,16 @@
         }
       },
       "resources": {
+        "batch_type": "DpCloudServer",
         "number_node": 1,
-        "local_root":"./",
         "cpu_per_node": 4,
         "gpu_per_node": 1,
         "queue_name": "GPU",
         "group_size": 1
       }
-    }],
+    },
   "model_devi":
-    [{
+    {
       "command": "lmp -i input.lammps -v restart 0",
       "machine": {
         "batch_type": "DpCloudServer",
@@ -61,16 +61,16 @@
         }
       },
       "resources": {
+        "batch_type": "DpCloudServer",
         "number_node": 1,
-        "local_root":"./",
         "cpu_per_node": 4,
         "gpu_per_node": 1,
         "queue_name": "GPU",
         "group_size": 5
       }
-    }],
+    },
   "fp":
-    [{
+    {
       "command": "mpirun -n 16 vasp_std",
       "machine": {
         "batch_type": "DpCloudServer",
@@ -95,14 +95,13 @@
         }
       },
       "resources": {
+        "batch_type": "DpCloudServer",
         "number_node": 1,
         "cpu_per_node": 32,
         "gpu_per_node": 0,
         "queue_name": "CPU",
         "group_size": 5,
-        "local_root":"./",
 	"source_list": ["/opt/intel/oneapi/setvars.sh"]
       }
     }
-  ]
 }

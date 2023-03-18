@@ -1,0 +1,127 @@
+{
+	"model_devi_engine":"calypso",
+	"_calypso_path":"/home/zhenyu/workplace/dpgen/AA-2400/debug",
+	"_calypso_input_path":"/home/zhenyu/workplace/dpgen/AA-2400/debug/calypso_input",
+        "_model_devi_max_iter": 50,
+	"vsc":false,
+
+    "type_map": [
+	"Mg",
+        "Al",
+        "Cu"
+    ],
+    "mass_map": [
+	24,
+        27,
+        64
+    ],
+    "init_data_prefix":"/home/zhenyu/workplace/dpgen/AA-2400/data/",
+    "init_data_sys": [
+                 "data.init/data.init/AlCuMg/init.000"
+    ],
+    "_comment": " that's all ",
+
+    "training_init_model": false,
+    "training_iter0_model_path": "/home/zhenyu/workplace/dpgen/AA-2400/pb/00[0-3]",
+    "training_reuse_iter":              0,
+    "training_reuse_old_ratio":         0.9,
+    "training_reuse_start_lr":          1e-4,
+    "training_reuse_stop_batch":        1000000,
+    "training_reuse_start_pref_e":      0.2,
+    "training_reuse_start_pref_f":      100,
+
+    "numb_models": 4,
+    "default_training_param": {
+    "model": {
+        "descriptor": {
+            "type": "se_e2_a",
+            "sel": [
+                500,
+                700,
+                1100
+            ],
+            "rcut_smth": 2.0,
+            "rcut": 12.0,
+            "neuron": [
+                25,
+                50,
+                100
+            ],
+            "resnet_dt": false,
+            "axis_neuron": 12,
+            "type_one_side": true,
+            "seed": 1801819940,
+            "_activation_function": "tanh"
+        },
+        "fitting_net": {
+            "neuron": [
+                240,
+                240,
+                240
+            ],
+            "resnet_dt": true,
+            "seed": 2375417769
+        },
+        "type_map": [
+            "Mg",
+            "Al",
+            "Cu"
+        ]
+    },
+    "learning_rate": {
+        "type": "exp",
+        "start_lr": 0.001,
+        "decay_steps": 5000
+    },
+    "loss": {
+        "start_pref_e": 0.2,
+        "limit_pref_e": 2,
+        "start_pref_f": 100,
+        "limit_pref_f": 1,
+        "start_pref_v": 0,
+        "limit_pref_v": 0
+    },
+    "training": {
+        "stop_batch": 6000,
+        "seed": 3982377700,
+        "_comment": "that's all",
+        "disp_file": "lcurve.out",
+        "disp_freq": 2000,
+        "numb_test": 4,
+        "save_freq": 2000,
+        "save_ckpt": "model.ckpt",
+        "disp_training": true,
+        "time_training": true,
+        "profiling": false,
+        "profiling_file": "timeline.json",
+        "set_prefix": "set"
+    }
+	},
+    "sys_configs":"",
+    "model_devi_dt": 0.002,
+    "model_devi_skip": 0,
+    "model_devi_f_trust_lo": 0.05,
+    "model_devi_f_trust_hi": 0.15,
+    "model_devi_e_trust_lo": 10000000000.0,
+    "model_devi_e_trust_hi": 10000000000.0,
+    "model_devi_clean_traj": true,
+    "model_devi_jobs": [
+{"times":[0],"NameOfAtoms":["Mg","Al","Cu"],"NumberOfAtoms":[1,1,1],"NumberOfFormula":[1,1],"Volume":[30],"DistanceOfIon":[[1.48,1.44,1.59],[1.44,1.41,1.56],[1.59,1.56,1.70]],"PsoRatio":[0.6],"PopSize":[500],"MaxStep":[3],"ICode":[1],"Split":"T","VSC":"T","MaxNumAtom":[31],"CtrlRange":[[1,10],[1,10],[1,10]]},
+{"times":[1],"NameOfAtoms":["Mg","Al"],"NumberOfAtoms":[1,1],"NumberOfFormula":[1,1],"Volume":[30],"DistanceOfIon":[[1.48,1.44],[1.44,1.41]],"PsoRatio":[0.6],"PopSize":[500],"MaxStep":[3],"ICode":[1],"Split":"T"},
+{"times":[3],"NameOfAtoms":["Al","Cu"],"NumberOfAtoms":[1,10],"NumberOfFormula":[1,2],"Volume":[300],"DistanceOfIon":[[1.48,1.44],[1.44,1.41]],"PsoRatio":[0.6],"PopSize":[5],"MaxStep":[3],"ICode":[1],"Split":"T"},
+{"times":[2],"NameOfAtoms":["Mg","Al","Cu"],"NumberOfAtoms":[1,1,1],"NumberOfFormula":[1,1],"Volume":[30],"DistanceOfIon":[[1.48,1.44,1.59],[1.44,1.41,1.56],[1.59,1.56,1.70]],"PsoRatio":[0.6],"PopSize":[5],"MaxStep":[1],"ICode":[1],"Split":"T","VSC":"T","MaxNumAtom":[31],"CtrlRange":[[1,10],[1,10],[1,10]],"PSTRESS":[0],"fmax":[0.01]},
+{"times":[4],"NameOfAtoms":["Mg","Al","Cu"],"NumberOfAtoms":[1,1,1],"NumberOfFormula":[1,1],"Volume":30,"DistanceOfIon":[[1.48,1.44,1.59],[1.44,1.41,1.56],[1.59,1.56,1.70]],"PsoRatio":0.6,"PopSize":5,"MaxStep":1,"ICode":1,"Split":"T","VSC":"T","MaxNumAtom":31,"CtrlRange":[[1,10],[1,10],[1,10]],"PSTRESS":[0, 400 ],"fmax":0.01}
+    ],
+
+    "fp_style": "vasp",
+    "shuffle_poscar": false,
+    "fp_task_max": 10,
+    "fp_task_min": 1,
+    "fp_pp_path": "/home/zhenyu/workplace/dpgen/AA-2400/vasp_input",
+    "fp_pp_files": [
+	"POTCAR.Mg",
+        "POTCAR.Al",
+        "POTCAR.Cu"
+    ],
+    "fp_incar":"/home/zhenyu/workplace/dpgen/AA-2400/vasp_input/INCAR"
+}
