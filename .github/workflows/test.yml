@@ -9,8 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7, 3.8]
-        PYMATGEN_VERSION: [2019.1.13, 2019.7.30]
+        python-version: [3.8, 3.9]
 
     steps:
     - uses: actions/checkout@v2
@@ -19,7 +18,16 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
-      run: pip install coverage codecov pymatgen==${{ matrix.PYMATGEN_VERSION }} .
+      run: pip install coverage git+https://github.com/materialsproject/pymatgen@b56698019098247ff54f50997a67c562b4375fc3 -e .
     - name: Test
       run: coverage run --source=./dpgen -m unittest -v && coverage report
-    - run: codecov
+    - uses: codecov/codecov-action@v3
+  pass:
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+    - name: Decide whether the needed jobs succeeded or failed
+      uses: re-actors/alls-green@release/v1
+      with:
+        jobs: ${{ toJSON(needs) }}

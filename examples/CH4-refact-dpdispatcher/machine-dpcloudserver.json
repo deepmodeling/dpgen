@@ -1,6 +1,6 @@
 {
   "api_version": "1.0",
-  "train" :[
+  "train" :
     {
       "command": "dp",
       "machine": {
@@ -8,8 +8,9 @@
         "context_type": "DpCloudServerContext",
         "local_root" : "./",
         "remote_profile":{
-            "username": "yfb222333",
+            "email": "yfb222333",
             "password": "",
+            "program_id": 0,
             "input_data":{
                 "job_type": "indicate",
                 "log_file": "dp_cloud_server.log",
@@ -33,23 +34,25 @@
         }
       },
       "resources": {
+        "batch_type": "DpCloudServer",
         "number_node": 1,
         "cpu_per_node": 4,
         "gpu_per_node": 1,
         "queue_name": "GPU",
         "group_size": 1
       }
-    }],
+    },
   "model_devi":
-    [{
+    {
       "command": "lmp -i input.lammps -v restart 0",
       "machine": {
         "batch_type": "DpCloudServer",
         "context_type": "DpCloudServerContext",
         "local_root" : "./",
         "remote_profile":{
-            "username": "yfb222333",
+            "email": "yfb222333",
             "password": "",
+            "program_id": 0,
             "input_data":{
                 "job_type": "indicate",
                 "log_file": "dp_cloud_server.log",
@@ -73,23 +76,25 @@
         }
       },
       "resources": {
+        "batch_type": "DpCloudServer",
         "number_node": 1,
         "cpu_per_node": 4,
         "gpu_per_node": 1,
         "queue_name": "GPU",
         "group_size": 5
       }
-    }],
+    },
   "fp":
-    [{
+    {
       "command": "mpirun -n 16 vasp_std",
       "machine": {
         "batch_type": "DpCloudServer",
         "context_type": "DpCloudServerContext",
         "local_root" : "./",
         "remote_profile":{
-            "username": "yfb222333",
+            "email": "yfb222333",
             "password": "",
+            "program_id": 0,
             "input_data":{
                 "job_type": "indicate",
                 "log_file": "dp_cloud_server.log",
@@ -112,6 +117,7 @@
         }
       },
       "resources": {
+        "batch_type": "DpCloudServer",
         "number_node": 1,
         "cpu_per_node": 32,
         "gpu_per_node": 0,
@@ -122,5 +128,4 @@
 	]
       }
     }
-  ]
 }

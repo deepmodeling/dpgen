@@ -22,9 +22,9 @@
     ["/gpfs/share/home/1600017784/generator/Al/init/al.fcc.02x02x02/01.scale_pert/sys-0032/scale-1.000/00002*/POSCAR"],
     ["/gpfs/share/home/1600017784/generator/Al/init/al.fcc.02x02x02/01.scale_pert/sys-0032/scale-1.000/00003*/POSCAR"],
     ["/gpfs/share/home/1600017784/generator/Al/init/al.fcc.02x02x02/01.scale_pert/sys-0032/scale-1.000/00004*/POSCAR"],
-    ["/gpfs/share/home/1600017784/generator/Al/init/al.fcc.02x02x02/01.scale_pert/sys-0032/scale-1.000/00005*/POSCAR", 
+    ["/gpfs/share/home/1600017784/generator/Al/init/al.fcc.02x02x02/01.scale_pert/sys-0032/scale-1.000/00005*/POSCAR",
      "/gpfs/share/home/1600017784/generator/Al/init/al.fcc.02x02x02/01.scale_pert/sys-0032/scale-1.000/00006*/POSCAR"],
-    ["/gpfs/share/home/1600017784/generator/Al/init/al.fcc.02x02x02/01.scale_pert/sys-0032/scale-1.000/00007*/POSCAR", 
+    ["/gpfs/share/home/1600017784/generator/Al/init/al.fcc.02x02x02/01.scale_pert/sys-0032/scale-1.000/00007*/POSCAR",
      "/gpfs/share/home/1600017784/generator/Al/init/al.fcc.02x02x02/01.scale_pert/sys-0032/scale-1.000/00008*/POSCAR"],
 
     ["/gpfs/share/home/1600017784/generator/Al/init/al.hcp.02x02x02/01.scale_pert/sys-0016/scale-1.000/00000[0-4]/POSCAR"],
@@ -33,9 +33,9 @@
     ["/gpfs/share/home/1600017784/generator/Al/init/al.hcp.02x02x02/01.scale_pert/sys-0016/scale-1.000/00002*/POSCAR"],
     ["/gpfs/share/home/1600017784/generator/Al/init/al.hcp.02x02x02/01.scale_pert/sys-0016/scale-1.000/00003*/POSCAR"],
     ["/gpfs/share/home/1600017784/generator/Al/init/al.hcp.02x02x02/01.scale_pert/sys-0016/scale-1.000/00004*/POSCAR"],
-    ["/gpfs/share/home/1600017784/generator/Al/init/al.hcp.02x02x02/01.scale_pert/sys-0016/scale-1.000/00005*/POSCAR", 
+    ["/gpfs/share/home/1600017784/generator/Al/init/al.hcp.02x02x02/01.scale_pert/sys-0016/scale-1.000/00005*/POSCAR",
      "/gpfs/share/home/1600017784/generator/Al/init/al.hcp.02x02x02/01.scale_pert/sys-0016/scale-1.000/00006*/POSCAR"],
-    ["/gpfs/share/home/1600017784/generator/Al/init/al.hcp.02x02x02/01.scale_pert/sys-0016/scale-1.000/00007*/POSCAR", 
+    ["/gpfs/share/home/1600017784/generator/Al/init/al.hcp.02x02x02/01.scale_pert/sys-0016/scale-1.000/00007*/POSCAR",
      "/gpfs/share/home/1600017784/generator/Al/init/al.hcp.02x02x02/01.scale_pert/sys-0016/scale-1.000/00008*/POSCAR"],
 
     ["/gpfs/share/home/1600017784/generator/Al/init/al.bcc.02x02x02/01.scale_pert/sys-0016/scale-1.000/00000[0-4]/POSCAR"],
@@ -44,9 +44,9 @@
     ["/gpfs/share/home/1600017784/generator/Al/init/al.bcc.02x02x02/01.scale_pert/sys-0016/scale-1.000/00002*/POSCAR"],
     ["/gpfs/share/home/1600017784/generator/Al/init/al.bcc.02x02x02/01.scale_pert/sys-0016/scale-1.000/00003*/POSCAR"],
     ["/gpfs/share/home/1600017784/generator/Al/init/al.bcc.02x02x02/01.scale_pert/sys-0016/scale-1.000/00004*/POSCAR"],
-    ["/gpfs/share/home/1600017784/generator/Al/init/al.bcc.02x02x02/01.scale_pert/sys-0016/scale-1.000/00005*/POSCAR", 
+    ["/gpfs/share/home/1600017784/generator/Al/init/al.bcc.02x02x02/01.scale_pert/sys-0016/scale-1.000/00005*/POSCAR",
      "/gpfs/share/home/1600017784/generator/Al/init/al.bcc.02x02x02/01.scale_pert/sys-0016/scale-1.000/00006*/POSCAR"],
-    ["/gpfs/share/home/1600017784/generator/Al/init/al.bcc.02x02x02/01.scale_pert/sys-0016/scale-1.000/00007*/POSCAR", 
+    ["/gpfs/share/home/1600017784/generator/Al/init/al.bcc.02x02x02/01.scale_pert/sys-0016/scale-1.000/00007*/POSCAR",
      "/gpfs/share/home/1600017784/generator/Al/init/al.bcc.02x02x02/01.scale_pert/sys-0016/scale-1.000/00008*/POSCAR"]
     ],
     "sys_batch_size":	[
@@ -131,10 +131,8 @@
     "model_devi_skip":		0,
     "model_devi_f_trust_lo":	0.05,
     "model_devi_f_trust_hi":	0.20,
-    "model_devi_e_trust_lo":	1e10,
-    "model_devi_e_trust_hi":	1e10,
     "model_devi_clean_traj":	false,
-    "model_devi_jobs":	
+    "model_devi_jobs":
 [
   {
     "_idx": 0,
@@ -393,4 +391,3 @@
     "fp_incar":         "/gpfs/share/home/1600017784/start/pku_input_set/INCAR_metal_scf_gpu",
     "_comment":		" that's all "
 }
-

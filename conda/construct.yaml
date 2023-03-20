@@ -11,7 +11,7 @@ channels:
 specs:
   - python 3.8
   - pip
-  - dpgen {{ version }} 
+  - dpgen {{ version }}
 
 ignore_duplicate_files: True
 

@@ -158,37 +158,37 @@ training_reuse_iter: 2
 nsteps:
 - 10000
 model_devi_jobs:
-  - sys_idx: [0] 
+  - sys_idx: [0]
     trj_freq: 40
-  #1 
-  - sys_idx: [0] 
+  #1
+  - sys_idx: [0]
     trj_freq: 40
-  #2 
-  - sys_idx: [0] 
+  #2
+  - sys_idx: [0]
     trj_freq: 40
   #3
-  - sys_idx: [0] 
+  - sys_idx: [0]
     trj_freq: 40
-  #4 
-  - sys_idx: [0] 
+  #4
+  - sys_idx: [0]
     trj_freq: 40
-  #5 
-  - sys_idx: [0] 
+  #5
+  - sys_idx: [0]
     trj_freq: 40
-  #6 
-  - sys_idx: [0] 
+  #6
+  - sys_idx: [0]
     trj_freq: 40
-  #7 
-  - sys_idx: [0] 
+  #7
+  - sys_idx: [0]
     trj_freq: 40
-  #8 
-  - sys_idx: [0] 
+  #8
+  - sys_idx: [0]
     trj_freq: 40
   #9
-  - sys_idx: [0] 
+  - sys_idx: [0]
     trj_freq: 40
   #10
-  - sys_idx: [0] 
+  - sys_idx: [0]
     trj_freq: 40
 
 # fp_task_max: the maximum fp tasks to calculate
@@ -205,11 +205,6 @@ cutoff: 6.
 
 # do not change the value below
 sys_format: amber/rst7
-init_multi_systems: true
-model_devi_clean_traj: false
 model_devi_engine: amber
-model_devi_skip: 0
-shuffle_poscar: false
 fp_style: amber/diff
 detailed_report_make_fp: true
-use_clusters: true

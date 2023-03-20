@@ -1,7 +1,0 @@
-{
-    "hostname" :	"localhost",
-    "port" :		22,
-    "username":		"wanghan",
-    "work_path" :	"/home/wanghan/tmp",
-    "_comment" :	"that's all"
-}

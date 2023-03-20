@@ -17,7 +17,7 @@
     [
       "CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale-1.000/000000/POSCAR",
       "CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale-1.000/000001/POSCAR",
-      "CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale-1.000/00000[2-9]/POSCAR"  
+      "CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale-1.000/00000[2-9]/POSCAR"
     ],
     [
       "CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale-1.000/00001*/POSCAR"
@@ -34,7 +34,7 @@
   "default_training_param": {
     "model": {
       "type_map":           ["H","C"],
-      "descriptor": {        
+      "descriptor": {
         "type":             "se_a",
         "sel":              [16,4],
         "rcut_smth":        0.5,
@@ -123,7 +123,7 @@
   ],
 
   "_comment": " 02.fp ",
-  "fp_style":             "abacus/scf",
+  "fp_style":             "abacus",
   "shuffle_poscar":       false,
   "fp_task_max":          30,
   "fp_task_min":          8,
