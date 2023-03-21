@@ -10,42 +10,38 @@ from dpgen.auto_test.calculator import make_calculator
 
 class Property(ABC):
     @abstractmethod
-    def __init__(self,
-                 parameter):
+    def __init__(self, parameter):
         """
         Constructor
 
         Parameters
         ----------
-        parameters : dict
-                A dict that defines the property.
+        parameter : dict
+            A dict that defines the property.
         """
         pass
 
     @abstractmethod
-    def make_confs(self,
-                   path_to_work,
-                   path_to_equi,
-                   refine=False):
+    def make_confs(self, path_to_work, path_to_equi, refine=False):
         """
-        Make configurations needed to compute the property. 
+        Make configurations needed to compute the property.
         The tasks directory will be named as path_to_work/task.xxxxxx
         IMPORTANT: handel the case when the directory exists.
 
         Parameters
         ----------
         path_to_work : str
-                The path where the tasks for the property are located 
+            The path where the tasks for the property are located
         path_to_equi : str
-                -refine == False: The path to the directory that equilibrated the configuration.
-                -refine == True: The path to the directory that has property confs.
-        refine: str
-                To refine existing property confs or generate property confs from a equilibrated conf
-        
+            -refine == False: The path to the directory that equilibrated the configuration.
+            -refine == True: The path to the directory that has property confs.
+        refine : str
+            To refine existing property confs or generate property confs from a equilibrated conf
+
         Returns
         -------
         task_list: list of str
-                The list of task directories.
+            The list of task directories.
         """
         pass
 
@@ -72,10 +68,7 @@ class Property(ABC):
         """
         pass
 
-    def compute(self,
-                output_file,
-                print_file,
-                path_to_work):
+    def compute(self, output_file, print_file, path_to_work):
         """
         Postprocess the finished tasks to compute the property.
         Output the result to a json database
@@ -83,57 +76,53 @@ class Property(ABC):
         Parameters
         ----------
         output_file:
-                The file to output the property in json format
+            The file to output the property in json format
         print_file:
-                The file to output the property in txt format
+            The file to output the property in txt format
         path_to_work:
-                The working directory where the computational tasks locate.
+            The working directory where the computational tasks locate.
         """
         path_to_work = os.path.abspath(path_to_work)
-        task_dirs = glob.glob(os.path.join(path_to_work, 'task.[0-9]*[0-9]'))
+        task_dirs = glob.glob(os.path.join(path_to_work, "task.[0-9]*[0-9]"))
         task_dirs.sort()
         all_res = []
         for ii in task_dirs:
-            with open(os.path.join(ii, 'inter.json')) as fp:
+            with open(os.path.join(ii, "inter.json")) as fp:
                 idata = json.load(fp)
-            poscar = os.path.join(ii, 'POSCAR')
+            poscar = os.path.join(ii, "POSCAR")
             task = make_calculator(idata, poscar)
             res = task.compute(ii)
-            dumpfn(res, os.path.join(ii, 'result_task.json'), indent=4)
+            dumpfn(res, os.path.join(ii, "result_task.json"), indent=4)
             # all_res.append(res)
-            all_res.append(os.path.join(ii, 'result_task.json'))
+            all_res.append(os.path.join(ii, "result_task.json"))
 
         # cwd = os.getcwd()
         # os.chdir(path_to_work)
         res, ptr = self._compute_lower(output_file, task_dirs, all_res)
         #        with open(output_file, 'w') as fp:
         #            json.dump(fp, res, indent=4)
-        with open(print_file, 'w') as fp:
+        with open(print_file, "w") as fp:
             fp.write(ptr)
         # os.chdir(cwd)
 
     @abstractmethod
-    def _compute_lower(self,
-                       output_file,
-                       all_tasks,
-                       all_res):
+    def _compute_lower(self, output_file, all_tasks, all_res):
         """
         Compute the property.
 
         Parameters
         ----------
         output_file:
-                The file to output the property
+            The file to output the property
         all_tasks : list of str
-                The list of directories to the tasks
+            The list of directories to the tasks
         all_res : list of str
-                The list of results
-        
+            The list of results
         Returns:
         -------
-        res_data: dist
-                The dict storing the result of the property
-        ptr_data: str
-                The result printed in string format
+        res_data : dist
+            The dict storing the result of the property
+        ptr_data : str
+            The result printed in string format
         """
         pass

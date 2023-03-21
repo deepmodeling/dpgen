@@ -7,10 +7,9 @@ Some functions are adapted from ASE lammpsrun.py
 
 """
 
+import ase.io
 import numpy as np
 from numpy.linalg import norm
-
-import ase.io
 
 
 def dir2car(v, A):
@@ -49,9 +48,11 @@ def is_upper_triangular(mat):
     test if 3x3 matrix is upper triangular
     LAMMPS has a rule for cell matrix definition
     """
+
     def near0(x):
         """Test if a float is within .00001 of 0"""
         return abs(x) < 0.00001
+
     return near0(mat[1, 0]) and near0(mat[2, 0]) and near0(mat[2, 1])
 
 
@@ -63,7 +64,7 @@ def convert_cell(ase_cell):
     """
 
     # if ase_cell is lower triangular, cell is upper tri-angular
-    cell = np.matrix.transpose(ase_cell) 
+    cell = np.matrix.transpose(ase_cell)
 
     if not is_upper_triangular(cell):
         # rotate bases into triangular matrix
@@ -85,7 +86,7 @@ def convert_cell(ase_cell):
         trans = np.array([np.cross(B, C), np.cross(C, A), np.cross(A, B)])
         trans = trans / volume
         coord_transform = tri_mat * trans
-        return tri_mat.T # return the lower-tri-angular
+        return tri_mat.T  # return the lower-tri-angular
     else:
         return ase_cell
 
@@ -97,12 +98,12 @@ def convert_positions(pos0, cell0, cell_new, direct=False):
         cell0_inv = np.linalg.inv(cell0)
         R = np.dot(cell_new, cell0_inv)
         pos = np.dot(pos0, R)
-        '''
+        """
         print(R)
         print(R.T)
         print(np.linalg.inv(R))
         print(np.linalg.det(R))
-        '''
+        """
     return pos
 
 
@@ -158,23 +159,23 @@ def get_typeid(typeids, csymbol):
     return typeids[csymbol]
 
 
-def ase2lammpsdata(atoms, typeids=None, fout='out.lmp'):
+def ase2lammpsdata(atoms, typeids=None, fout="out.lmp"):
     # atoms: ase.Atoms
     # typeids: eg. {'Zr': 1, 'Nb': 2, 'Hf': 3}, should start with 1 and continuous
     # fout: output file name
-    fw = open(fout, 'w')
-    fw.write('# LAMMPS data written by PotGen-ASE\n')
-    fw.write('\n')
+    fw = open(fout, "w")
+    fw.write("# LAMMPS data written by PotGen-ASE\n")
+    fw.write("\n")
 
     # write number of atoms
     natoms = atoms.get_number_of_atoms()
-    fw.write('%d atoms\n' % natoms)
-    fw.write('\n')
+    fw.write("%d atoms\n" % natoms)
+    fw.write("\n")
 
     # write number of types
     ntypes = get_atoms_ntypes(atoms)
     fw.write("%d atom types\n" % ntypes)
-    fw.write('\n')
+    fw.write("\n")
 
     # write cell information
     # transfer the cell into lammps' style
@@ -193,27 +194,27 @@ def ase2lammpsdata(atoms, typeids=None, fout='out.lmp'):
     fw.write("%f\t%f\t ylo yhi\n" % (0, yhi))
     fw.write("%f\t%f\t zlo zhi\n" % (0, zhi))
     fw.write("%f\t%f\t%f\t xy xz yz\n" % (xy, xz, yz))
-    fw.write('\n')
+    fw.write("\n")
 
     # write mases
     masses = np.unique(atoms.get_masses())
-    fw.write('Masses\n')
-    fw.write('\n')
+    fw.write("Masses\n")
+    fw.write("\n")
     for i in range(ntypes):
-        fw.write('%d\t%f\n' % (i + 1, masses[i]))
+        fw.write("%d\t%f\n" % (i + 1, masses[i]))
         fw.flush()
-    fw.write('\n')
+    fw.write("\n")
 
     # convert positions
     atoms.set_cell(cell, scale_atoms=True)
     pos = atoms.get_positions()
-    '''
+    """
     pos0 = atoms.get_positions()
     pos = convert_positions(pos0, cell0, cell)   # positions in new cellmatrix
-    '''
+    """
     # === Write postions ===
-    fw.write('Atoms\n')
-    fw.write('\n')
+    fw.write("Atoms\n")
+    fw.write("\n")
     symbols = atoms.get_chemical_symbols()
     if typeids is None:
         typeids = set_atoms_typeids(atoms)
@@ -222,21 +223,24 @@ def ase2lammpsdata(atoms, typeids=None, fout='out.lmp'):
         typeid = get_typeid(typeids, cs)  # typeid start from 1~N
         # typeid = ase.data.atomic_numbers[cs]  # typeid as their atomic
         # numbers
-        fw.write('%d\t%d\t%f\t%f\t%f\n' %
-                 (i + 1, typeid, pos[i][0], pos[i][1], pos[i][2]))
+        fw.write(
+            "%d\t%d\t%f\t%f\t%f\n" % (i + 1, typeid, pos[i][0], pos[i][1], pos[i][2])
+        )
         fw.flush()
     fw.close()
     return
 
+
 # test
 if __name__ == "__main__":
     import sys
+
     fin = sys.argv[1]
     ATOMS = ase.io.read(fin)
     ase2lammpsdata(ATOMS)
-    ase2lammpsdata(ATOMS, typeids={'Al': 1}, fout=fin + '.lmp')
+    ase2lammpsdata(ATOMS, typeids={"Al": 1}, fout=fin + ".lmp")
 
-    sep = '=' * 40
+    sep = "=" * 40
 
     pos0 = ATOMS.get_positions()
     cell0 = ATOMS.get_cell()
@@ -244,24 +248,24 @@ if __name__ == "__main__":
     print(pos0)
     print(sep)
 
-    '''
+    """
     cell_new = np.eye(3)*4.05
-    '''
+    """
     delta = 4.05 * 0.02
 
-    '''
+    """
     cell_new = 4.05*np.array([[1, delta, 0],
                          [delta, 1, 0],
                          [0, 0, 1 / (1 - delta**2)]])
-    '''
-    cell_new = 4.05 * np.array([[1 + delta, 0, 0],
-                                [0, 1 + delta, 0],
-                                [0, 0, 1 / (1 + delta**2)]])
+    """
+    cell_new = 4.05 * np.array(
+        [[1 + delta, 0, 0], [0, 1 + delta, 0], [0, 0, 1 / (1 + delta**2)]]
+    )
 
     pos = convert_positions(pos0, cell0, cell_new)
     print(cell0)
     print(cell_new)
-    #print(np.linalg.det(cell0), np.linalg.det(cell_new))
+    # print(np.linalg.det(cell0), np.linalg.det(cell_new))
     print(pos)
     print(sep)
 
@@ -270,13 +274,12 @@ if __name__ == "__main__":
     pos = convert_positions(pos0, cell0, cell_new)
     print(cell0)
     print(cell_new)
-    #print(np.linalg.det(cell0), np.linalg.det(cell_new))
+    # print(np.linalg.det(cell0), np.linalg.det(cell_new))
     print(pos)
     print(sep)
 
     # test for stress tensor transformation
-    stress0 = np.array([0.000593	, 0.000593,	0.000593	,
-                        0.,	0.00,	0.00])
+    stress0 = np.array([0.000593, 0.000593, 0.000593, 0.0, 0.00, 0.00])
     stress_new = convert_stress(stress0, cell0, cell_new)
     print(stress0)
     print(stress_new)

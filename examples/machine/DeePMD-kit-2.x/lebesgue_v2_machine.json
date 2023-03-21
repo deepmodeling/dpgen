@@ -27,8 +27,8 @@
         }
       },
       "resources": {
+        "batch_type": "DpCloudServer",
         "number_node": 1,
-        "local_root":"./",
         "cpu_per_node": 4,
         "gpu_per_node": 1,
         "queue_name": "GPU",
@@ -61,8 +61,8 @@
         }
       },
       "resources": {
+        "batch_type": "DpCloudServer",
         "number_node": 1,
-        "local_root":"./",
         "cpu_per_node": 4,
         "gpu_per_node": 1,
         "queue_name": "GPU",
@@ -95,12 +95,12 @@
         }
       },
       "resources": {
+        "batch_type": "DpCloudServer",
         "number_node": 1,
         "cpu_per_node": 32,
         "gpu_per_node": 0,
         "queue_name": "CPU",
         "group_size": 5,
-        "local_root":"./",
 	"source_list": ["/opt/intel/oneapi/setvars.sh"]
       }
     }

@@ -2,7 +2,6 @@ INPUT_PARAMETERS
 #Parameters (1.General)
 suffix          ABACUS
 calculation     relax
-ntype           1
 symmetry        1
 pseudo_type     upf201
 

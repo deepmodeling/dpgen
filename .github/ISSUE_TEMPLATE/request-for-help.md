@@ -13,7 +13,7 @@ Before asking questions, you can
 search the previous issues or discussions
 check [Manual](https://github.com/deepmodeling/dpgen).
 
-Please **do not** post requests for help (e.g. with installing or using dpgen) here. 
+Please **do not** post requests for help (e.g. with installing or using dpgen) here.
 Instead go to [discussions](https://github.com/deepmodeling/dpgen/discussions).
 
 This issue tracker is for tracking dpgen development related issues only.

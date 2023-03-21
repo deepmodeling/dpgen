@@ -96,7 +96,3 @@ print "Final Stress (xx yy zz xy xz yz) = ${Pxx} ${Pyy} ${Pzz} ${Pxy} ${Pxz} ${P
 If user provides lammps input command file `in.lammps`, the `thermo_style` and `dump` commands should be the same as the above file.
 
 **interatomic potential model**: the `frozen_model.pb` in `confs/mp-*/relaxation` would link to the `frozen_model.pb` file given in the input.
-
-
-
-

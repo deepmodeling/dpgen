@@ -7,7 +7,7 @@
     "vacuum_resol":	0.2,
     "lmp_cmd":		"/home/wanghan/Soft/lammps/lammps-16Mar18/src/lmp_mpi",
     "elements":		["Al", "Mg"],
-    "potcars":		["/home/wanghan/Soft/vasp/potcar.unknown/potpaw_PBE/Al/POTCAR", 
+    "potcars":		["/home/wanghan/Soft/vasp/potcar.unknown/potpaw_PBE/Al/POTCAR",
 			 "/home/wanghan/Soft/vasp/potcar.unknown/potpaw_PBE/Mg/POTCAR"
 			],
     "encut":		600,

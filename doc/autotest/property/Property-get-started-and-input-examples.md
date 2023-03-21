@@ -61,7 +61,7 @@ Key words | data structure | example | description
 **type** | String | "eos" | property type
 skip | Boolean | true | whether to skip current property or not
 start_confs_path | String | "../vasp/confs" | start from the equilibrium configuration in other path only for the current property type
-cal_setting["input_prop"] | String | "lammps_input/lammps_high" |input commands file 
+cal_setting["input_prop"] | String | "lammps_input/lammps_high" |input commands file
 cal_setting["overwrite_interaction"] | Dict | | overwrite the interaction in the `interaction` part only for the current property type
 
 other parameters in `cal_setting` and `cal_type` in `relaxation` also apply in `property`.

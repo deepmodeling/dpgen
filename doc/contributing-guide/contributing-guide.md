@@ -10,9 +10,9 @@ Firstly, fork in DP-GEN repository. Then you can clone the repository, build a n
 
 ## How to contribute to DP-GEN
 
-Welcome to the repository of [DP-GEN](https://github.com/deepmodeling/dpgen) 
+Welcome to the repository of [DP-GEN](https://github.com/deepmodeling/dpgen)
 
-DP-GEN adopts the same convention as other software in DeepModeling Community. 
+DP-GEN adopts the same convention as other software in DeepModeling Community.
 
 You can first refer to DeePMD-kit's
 [Contributing guide](https://github.com/deepmodeling/deepmd-kit/blob/master/CONTRIBUTING.md)
@@ -21,7 +21,7 @@ and [Developer guide](https://docs.deepmodeling.com/projects/deepmd/en/master/de
 You can also read relative chapters on [Github Docs](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request).
 
 If you have no idea how to fix your problem or where to find the relative source code, please check [Code Structure](../overview/code-structure) of the DP-GEN repository on this website.
-  
+
 ### Use command line
 You can use git with the command line, or open the repository on Github Desktop. Here is a video as a demo of making changes to DP-GEN and publishing it with command line.
 
@@ -30,8 +30,8 @@ You can use git with the command line, or open the repository on Github Desktop.
 
 
 > If you have never used Github before, remember to generate your ssh key and configure the public key in Github Settings.
-> If you can't configure your username and password, please use token. 
-> The explanation from Github see [Github Blog: token authentication requirements for git operations](https://github.blog/2020-12-15-token-authentication-requirements-for-git-operations/). [A discussion on StaskOverflow](https://stackoverflow.com/questions/68775869/message-support-for-password-authentication-was-removed-please-use-a-personal) can solve this problem.  
+> If you can't configure your username and password, please use token.
+> The explanation from Github see [Github Blog: token authentication requirements for git operations](https://github.blog/2020-12-15-token-authentication-requirements-for-git-operations/). [A discussion on StaskOverflow](https://stackoverflow.com/questions/68775869/message-support-for-password-authentication-was-removed-please-use-a-personal) can solve this problem.
 
 ### Use Github Desktop
 Also, you can use Github Desktop to make PR.
@@ -48,10 +48,10 @@ Firstly, create your new branch based on devel branch.
 
 <div align=center><href="https://sm.ms/image/3Eqm162oQ8Lcg9P" target="_blank"><img src="https://s2.loli.net/2022/08/16/3Eqm162oQ8Lcg9P.png" width="40%"></div>
 
-Secondly, add your doc to the certain directory in your local repository, and add its name into index. 
+Secondly, add your doc to the certain directory in your local repository, and add its name into index.
 
-Here is an [example](https://github.com/deepmodeling/tutorials/pull/43). 
-Remember to add the filename of your doc into index! 
+Here is an [example](https://github.com/deepmodeling/tutorials/pull/43).
+Remember to add the filename of your doc into index!
 
 Thirdly, select the changes that you what to push, and commit to it. Press "Publish branch" to push your origin repository to the remote branch.
 
@@ -59,7 +59,7 @@ Thirdly, select the changes that you what to push, and commit to it. Press "Publ
 
 Finally, you can check it on github and make a pull request. Press "Compare & pull request" to make a PR.
 
-(Note: please commit pr to the devel branch)    
+(Note: please commit pr to the devel branch)
 
 <div align=center><href="https://sm.ms/image/Uj9m6zGtXRh1L3a" target="_blank"><img src="https://s2.loli.net/2022/08/16/Uj9m6zGtXRh1L3a.png" width="80%"></div>
 
@@ -69,14 +69,14 @@ Welcome to [the documents of DP-GEN](https://github.com/deepmodeling/dpgen/tree/
 - If you want to add a new directory for a new category of instructions, make a new directory and add it in doc/index.rst.
 
 Also welcome to [Tutorials repository](https://github.com/deepmodeling/tutorials)
-You can find the structure of tutorials and preparations before writing a document in [Writing Tips](https://tutorials.deepmodeling.com/en/devel/Resources/writingTips.html#). 
+You can find the structure of tutorials and preparations before writing a document in [Writing Tips](https://tutorials.deepmodeling.com/en/devel/Resources/writingTips.html#).
 
 The latest page of DP-GEN Docs
 
 <div align=center><href="https://sm.ms/image/zEPKuj3TdaHI57b" target="_blank"><img src="https://s2.loli.net/2022/08/16/zEPKuj3TdaHI57b.png" width="60%"></div>
 
 ### Examples of contributions
-- [Example 1](https://github.com/deepmodeling/dpgen/pull/758) 
+- [Example 1](https://github.com/deepmodeling/dpgen/pull/758)
 - [Example 2](https://github.com/deepmodeling/dpgen/pull/844) (a simple one for beginner)
 
 ### 1. Push your doc
@@ -106,19 +106,19 @@ dpdispatcher and dpdata are dependencies of DP-GEN. dpdispatcher is related to t
 ## About the update of the parameter file
 You may have noticed that there are arginfo.py files in many folders. This is a file used to generate parameter documentation.
 If you add or modify a parameter in DP-GEN and intend to export it to the main repository, please sync your changes in arginfo.
-  
+
 ## Tips
-  
+
 1. Please try to submit a PR after finishing all the changes
-  
+
 2. Please briefly describe what you do with `git commit -m "<conclude-the-change-you-make>"`! "No description provided." will make the maintainer feel confused.
 
 3. It is not recommended to make changes directly in the `devel` branch. It is recommended to pull a branch from devel: `git checkout -b <new-branch-name>`
-  
+
 4. When switching branches, remember to check if you want to bring the changes to the next branch!
 
 5. Please fix the errors reported by the unit test. You can firstly test on your local machine before pushing commits. Hint: The way to test the code is to go from the main directory to the tests directory, and use the command `python3 -m unittest`. You can watch the demo video for review. Sometimes you may fail unit tests due to your local circumstance. You can check whether the error reported is related to the part you modified to eliminate this problem. After submitting, as long as there is a green check mark after the PR title on the webpage, it means that the test has been passed.
 
-6. Pay attention to whether there are comments under your PR. If there is a change request, you need to check and modify the code. If there are conflicts, you need to solve them manually.  
+6. Pay attention to whether there are comments under your PR. If there is a change request, you need to check and modify the code. If there are conflicts, you need to solve them manually.
 ---
-After successfully making a PR, developers will check it and give comments. It will be merged after everything done. Then CONGRATULATIONS! You become a first-time contributor to DP-GEN!  
+After successfully making a PR, developers will check it and give comments. It will be merged after everything done. Then CONGRATULATIONS! You become a first-time contributor to DP-GEN!

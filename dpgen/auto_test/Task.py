@@ -3,46 +3,43 @@ from abc import ABC, abstractmethod
 
 class Task(ABC):
     @abstractmethod
-    def __init__(self,
-                 inter_parameter,
-                 path_to_poscar):
+    def __init__(self, inter_parameter, path_to_poscar):
         """
         Constructor
 
         Parameters
         ----------
         inter_parameter : dict
-                A dict that specifies the interaction.
+            A dict that specifies the interaction.
         path_to_poscar : str
-                The path to POSCAR. Indicating in which system the task will be initialized.
+            The path to POSCAR. Indicating in which system the task will be initialized.
         """
         pass
 
     @abstractmethod
-    def make_potential_files(self,
-                             output_dir):
+    def make_potential_files(self, output_dir):
         """
         Prepare potential files for a computational task.
-        For example, the VASP prepares POTCAR. 
+        For example, the VASP prepares POTCAR.
         DeePMD prepares frozen model(s).
         IMPORTANT: Interaction should be stored in output_dir/inter.json
 
         Parameters
         ----------
         output_dir : str
-                The directory storing the potential files.
-        Outputs
-        -------
+            The directory storing the potential files.
+
+        Notes
+        -----
+        The following files are generated:
+
         inter.json: output file
                 The task information is stored in `output_dir/inter.json`
         """
         pass
 
     @abstractmethod
-    def make_input_file(self,
-                        output_dir,
-                        task_type,
-                        task_param):
+    def make_input_file(self, output_dir, task_type, task_param):
         """
         Prepare input files for a computational task
         For example, the VASP prepares INCAR.
@@ -51,38 +48,38 @@ class Task(ABC):
         Parameters
         ----------
         output_dir : str
-                The directory storing the input files.
+            The directory storing the input files.
         task_type : str
-                Can be
-                - "relaxation:": structure relaxation
-                - "static": static computation calculates the energy, force... of a strcture
-        task_parame: dict
-                The parameters of the task.
-                For example the VASP interaction can be provided with
-                { "ediff": 1e-6, "ediffg": 1e-5 }
+            Can be
+            - "relaxation:": structure relaxation
+            - "static": static computation calculates the energy, force... of a strcture
+        task_param : dict
+            The parameters of the task.
+            For example the VASP interaction can be provided with
+            { "ediff": 1e-6, "ediffg": 1e-5 }
         """
         pass
 
     @abstractmethod
-    def compute(self,
-                output_dir):
+    def compute(self, output_dir):
         """
-        Compute output of the task. 
+        Compute output of the task.
         IMPORTANT: The output configuration should be converted and stored in a CONTCAR file.
 
         Parameters
         ----------
         output_dir : str
-                The directory storing the input and output files.
+            The directory storing the input and output files.
 
         Returns
         -------
         result_dict: dict
-                A dict that storing the result. For example:
-                { "energy": xxx, "force": [xxx] }
+            A dict that storing the result. For example:
+            { "energy": xxx, "force": [xxx] }
 
-        Outputs
-        -------
+        Notes
+        -----
+        The following files are generated:
         CONTCAR: output file
                 The output configuration is converted to CONTCAR and stored in the `output_dir`
         """

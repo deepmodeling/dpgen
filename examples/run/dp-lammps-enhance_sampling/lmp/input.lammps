@@ -19,7 +19,7 @@ mass           2  1.008
 
 
 #Interatomic potentials - DeepMD
-pair_style     deepmd 
+pair_style     deepmd
 pair_coeff     * *
 
 
@@ -38,4 +38,3 @@ thermo         ${THERMO_FREQ} #Ouputing thermodynamic properties
 dump           dpgen_dump
 #dump          2 all custom 100 vel.xyz id type vx vy vz
 run            ${NSTEPS} #25 ps
-

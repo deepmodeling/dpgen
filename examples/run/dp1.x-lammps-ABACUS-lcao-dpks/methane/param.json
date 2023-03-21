@@ -17,7 +17,7 @@
     [
       "CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale-1.000/000000/POSCAR",
       "CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale-1.000/000001/POSCAR",
-      "CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale-1.000/00000[2-9]/POSCAR"  
+      "CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale-1.000/00000[2-9]/POSCAR"
     ],
     [
       "CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale-1.000/00001*/POSCAR"
@@ -34,7 +34,7 @@
   "default_training_param": {
     "model": {
       "type_map":           ["H","C"],
-      "descriptor": {        
+      "descriptor": {
         "type":             "se_a",
         "sel":              [16,4],
         "rcut_smth":        0.5,
@@ -138,7 +138,7 @@
     "deepks_model": "model.ptg",
     "deepks_out_labels": 1,
     "basis_type": "lcao",
-    "gamma_only": 1, 
+    "gamma_only": 1,
     "ecutwfc": 80,
 	"mixing_type": "pulay",
     "mixing_beta": 0.4,

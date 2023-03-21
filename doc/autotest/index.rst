@@ -9,13 +9,13 @@ Auto test
    :caption: Guidelines
 
    Auto-test
-  
+
 .. _Main-components::
 
 .. toctree::
    :maxdepth: 2
    :caption: Main components
-   
+
    Task-type
    Property-type
    Make-run-and-post
@@ -25,7 +25,7 @@ Auto test
 .. toctree::
    :maxdepth: 2
    :caption: Structure relaxation
-   
+
    relaxation/index.rst
 
 .. _Property::
@@ -41,7 +41,7 @@ Auto test
 .. toctree::
    :maxdepth: 2
    :caption: Refine
-   
+
    refine/index.rst
 
 .. _Reproduce::
@@ -49,5 +49,5 @@ Auto test
 .. toctree::
    :maxdepth: 2
    :caption: Reproduce
-   
+
    reproduce/index.rst
