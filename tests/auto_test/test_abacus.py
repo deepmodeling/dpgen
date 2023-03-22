@@ -233,6 +233,7 @@ class TestABACUS(unittest.TestCase):
 
         compare_dict(ret, ret_ref.as_dict())
 
+
 class TestABACUSDeepKS(unittest.TestCase):
     def setUp(self):
         self.jdata = {
@@ -244,7 +245,7 @@ class TestABACUSDeepKS(unittest.TestCase):
                 "potcars": {"Al": "Al_ONCV_PBE-1.0.upf"},
                 "orb_files": {"Al": "Al_gga_9au_100Ry_4s4p1d.orb"},
                 "deepks_desc": "jle.orb",
-                "deepks_model": "model.ptg"
+                "deepks_model": "model.ptg",
             },
             "relaxation": {
                 "cal_type": "relaxation",
@@ -287,15 +288,9 @@ class TestABACUSDeepKS(unittest.TestCase):
                 os.path.join(self.equi_path, "pp_orb/Al_gga_9au_100Ry_4s4p1d.orb")
             )
         )
+        self.assertTrue(os.path.isfile(os.path.join(self.equi_path, "pp_orb/jle.orb")))
         self.assertTrue(
-            os.path.isfile(
-                os.path.join(self.equi_path, "pp_orb/jle.orb")
-            )
-        )
-        self.assertTrue(
-            os.path.isfile(
-                os.path.join(self.equi_path, "pp_orb/model.ptg")
-            )
+            os.path.isfile(os.path.join(self.equi_path, "pp_orb/model.ptg"))
         )
         self.assertTrue(os.path.isfile(os.path.join(self.equi_path, "inter.json")))
 

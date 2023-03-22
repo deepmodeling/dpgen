@@ -49,52 +49,68 @@ class ABACUS(Task):
         os.chdir(output_dir)
         if not os.path.isdir("./pp_orb"):
             os.mkdir("./pp_orb")
-        
-        pp_orb_file = []
-        for iatom,atomname in enumerate(atom_names):
-            #pseudopotential file
-            if not self.potcars:
-                raise RuntimeError("please specify the pseudopotential file for each atom type in 'potcars'")
-            if atomname not in self.potcars:
-                raise RuntimeError("please specify the pseudopotential file of '%s'" % atomname)
-            pp_orb_file.append([pp_files[iatom],self.potcars[atomname]])
 
-            #orbital file
+        pp_orb_file = []
+        for iatom, atomname in enumerate(atom_names):
+            # pseudopotential file
+            if not self.potcars:
+                raise RuntimeError(
+                    "please specify the pseudopotential file for each atom type in 'potcars'"
+                )
+            if atomname not in self.potcars:
+                raise RuntimeError(
+                    "please specify the pseudopotential file of '%s'" % atomname
+                )
+            pp_orb_file.append([pp_files[iatom], self.potcars[atomname]])
+
+            # orbital file
             if orb_files:
                 if not self.orbfile:
-                    raise RuntimeError("Orbital file is defined in STRU, so please specify the orbital file for each atom type in parameter setting file by 'orb_files'" )
+                    raise RuntimeError(
+                        "Orbital file is defined in STRU, so please specify the orbital file for each atom type in parameter setting file by 'orb_files'"
+                    )
                 if atomname not in self.orbfile:
-                    raise RuntimeError("please specify the orbital file of '%s'" % atomname)
-                pp_orb_file.append([orb_files[iatom],self.orbfile[atomname]])
+                    raise RuntimeError(
+                        "please specify the orbital file of '%s'" % atomname
+                    )
+                pp_orb_file.append([orb_files[iatom], self.orbfile[atomname]])
             elif self.orbfile:
-                dlog.warning("Orbital is not needed by STRU, so ignore the setting of 'orb_files' in parameter setting file")
+                dlog.warning(
+                    "Orbital is not needed by STRU, so ignore the setting of 'orb_files' in parameter setting file"
+                )
 
-        #dpks_descriptor
+        # dpks_descriptor
         if dpks_descriptor:
             if not self.deepks:
-                raise RuntimeError("Deepks descriptor file is defined in STRU, so please specify in parameter setting file by 'deepks_desc'" )
-            pp_orb_file.append([dpks_descriptor,self.deepks])
+                raise RuntimeError(
+                    "Deepks descriptor file is defined in STRU, so please specify in parameter setting file by 'deepks_desc'"
+                )
+            pp_orb_file.append([dpks_descriptor, self.deepks])
         elif self.deepks:
-            dlog.warning("Deepks descriptor is not needed by STRU, so ignore the setting of 'deepks_desc' in parameter setting file")
+            dlog.warning(
+                "Deepks descriptor is not needed by STRU, so ignore the setting of 'deepks_desc' in parameter setting file"
+            )
 
-        #dpks model
+        # dpks model
         if self.deepks_model:
-            pp_orb_file.append([self.deepks_model,self.deepks_model])
+            pp_orb_file.append([self.deepks_model, self.deepks_model])
 
-        #link the files
-        for file_stru,file_param in pp_orb_file:
+        # link the files
+        for file_stru, file_param in pp_orb_file:
             filename_in_stru = os.path.split(file_stru)[1]
             filename_in_para = os.path.split(file_param)[1]
             if filename_in_stru != filename_in_para:
-                dlog.warning("file name in STRU is not match that defined in parameter setting file: '%s', '%s'." %
-                             (filename_in_stru,filename_in_para))
-            
-            src_file = os.path.join(pp_dir,file_param)
+                dlog.warning(
+                    "file name in STRU is not match that defined in parameter setting file: '%s', '%s'."
+                    % (filename_in_stru, filename_in_para)
+                )
+
+            src_file = os.path.join(pp_dir, file_param)
             if not os.path.isfile(src_file):
                 raise RuntimeError("Can not find file %s" % src_file)
-            tar_file = os.path.join("pp_orb",filename_in_stru)
+            tar_file = os.path.join("pp_orb", filename_in_stru)
             if os.path.isfile(tar_file):
-                    os.remove(tar_file)
+                os.remove(tar_file)
             os.symlink(src_file, tar_file)
 
         os.chdir(cwd)
@@ -188,7 +204,7 @@ class ABACUS(Task):
             raise RuntimeError(mess)
         if "deepks_model" in incar:
             model_file = os.path.split(incar["deepks_model"])[1]
-            self.modify_input(incar, "deepks_model", os.path.join("pp_orb",model_file))
+            self.modify_input(incar, "deepks_model", os.path.join("pp_orb", model_file))
         abacus.write_input(os.path.join(output_dir, "../INPUT"), incar)
         cwd = os.getcwd()
         os.chdir(output_dir)
