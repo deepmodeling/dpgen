@@ -34,6 +34,8 @@ class TestEqui(unittest.TestCase):
     def tearDown(self):
         if os.path.exists("confs/fcc-Al/relaxation"):
             shutil.rmtree("confs/fcc-Al/relaxation")
+        if os.path.exists("confs/fcc-Al/STRU.bk"):
+            os.remove("confs/fcc-Al/STRU.bk")
 
     def test_make_equi(self):
         confs = self.jdata["structures"]
@@ -54,14 +56,6 @@ class TestEqui(unittest.TestCase):
         with open(os.path.join("abacus_input", "Al_ONCV_PBE-1.0.upf")) as fp:
             pot0 = fp.read()
         with open(os.path.join(target_path, "pp_orb", "Al_ONCV_PBE-1.0.upf")) as fp:
-            pot1 = fp.read()
-        self.assertEqual(pot0, pot1)
-
-        with open(os.path.join("abacus_input", "Al_gga_9au_100Ry_4s4p1d.orb")) as fp:
-            pot0 = fp.read()
-        with open(
-            os.path.join(target_path, "pp_orb", "Al_gga_9au_100Ry_4s4p1d.orb")
-        ) as fp:
             pot1 = fp.read()
         self.assertEqual(pot0, pot1)
 

@@ -43,7 +43,7 @@ The default of `potcar_prefix` is "".
 ```
 **ABACUS**:
 
-The default of `potcar_prefix` is "". The path of potcars/orb_files/deepks_desc is `potcar_prefix` + `potcars`/`orb_files`/`deepks_desc`.
+The default of `potcar_prefix` is "". The path of potcars/orb_files/deepks_desc is `potcar_prefix` + `potcars`/`orb_files`/`deepks_desc`/`deepks_model`.
 ```json
 	"interaction": {
 		"type":		"abacus",
@@ -52,7 +52,8 @@ The default of `potcar_prefix` is "". The path of potcars/orb_files/deepks_desc 
 		"potcars":	{"Al": "pseudo_potential.al", "Mg": "pseudo_potential.mg"},
 		"orb_files": {"Al": "numerical_orb.al", "Mg": "numerical_orb.mg"},
 		"atom_masses": {"Al": 26.9815, "Mg":24.305},
-		"deepks_desc": "jle.orb"
+		"deepks_desc": "jle.orb",
+		"deepks_model": "model.ptg"
 	}
 ```
 **deepmd**:
