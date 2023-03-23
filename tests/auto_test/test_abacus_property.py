@@ -79,6 +79,8 @@ class TestABACUS(unittest.TestCase):
             shutil.rmtree("confs/fcc-Al/interstitial_00")
         if os.path.exists("confs/fcc-Al/surface_00"):
             shutil.rmtree("confs/fcc-Al/surface_00")
+        if os.path.exists("confs/fcc-Al/gamma_00"):
+            shutil.rmtree("confs/fcc-Al/gamma_00")
 
     def test_make_property(self):
         property = {"type": "eos", "vol_start": 0.85, "vol_end": 1.15, "vol_step": 0.01}
