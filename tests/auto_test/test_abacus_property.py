@@ -102,13 +102,16 @@ class TestABACUS(unittest.TestCase):
                 ),
             )
 
-
     def test_make_property_outstru(self):
         os.remove(os.path.join(self.equi_path, "INPUT"))
-        shutil.copy(os.path.join(self.source_path, "INPUT.outstru"),
-                    os.path.join(self.equi_path, "INPUT"))
-        shutil.copy(os.path.join(self.source_path, "STRU_ION47_D"),
-                    os.path.join(self.equi_path, "OUT.ABACUS/STRU_ION47_D"))
+        shutil.copy(
+            os.path.join(self.source_path, "INPUT.outstru"),
+            os.path.join(self.equi_path, "INPUT"),
+        )
+        shutil.copy(
+            os.path.join(self.source_path, "STRU_ION47_D"),
+            os.path.join(self.equi_path, "OUT.ABACUS/STRU_ION47_D"),
+        )
         property = {"type": "eos", "vol_start": 0.85, "vol_end": 1.15, "vol_step": 0.01}
         make_property(self.jdata["structures"], self.jdata["interaction"], [property])
         self.assertTrue(os.path.exists(os.path.join(self.conf_path, "eos_00")))

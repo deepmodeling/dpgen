@@ -420,9 +420,9 @@ def final_stru(abacus_path):
                     index_ben = lines[-i].index("ION=") + 4
                     index_end = lines[-i].index("ELEC")
                     max_step = int(lines[-i][index_ben:index_end])
-                    if max_step < 2: 
+                    if max_step < 2:
                         max_step = ""
-                    else: 
+                    else:
                         max_step -= 2
                     break
             return "OUT.%s/STRU_ION%s_D" % (suffix, str(max_step))
