@@ -1,0 +1,21 @@
+INPUT_PARAMETERS
+#Parameters (5.Mixing)
+suffix ABACUS
+calculation cell-relax
+symmetry 1
+pseudo_type upf201
+ecutwfc 60
+scf_thr 1e-7
+scf_nmax 100
+basis_type pw
+smearing_method gauss
+smearing_sigma 0.002
+mixing_type pulay
+mixing_beta 0.3
+ks_solver cg
+cal_stress 1
+kspacing 0.2
+relax_nmax 100
+force_thr_ev 0.01
+stress_thr 0.1
+out_stru 1
