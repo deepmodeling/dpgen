@@ -125,7 +125,7 @@ def convert_training_data_to_hdf5(input_files: List[str], h5_file: str):
                     p1, p2 = pp.split("#")
                     ff = os.path.normpath(str((dd / p1).absolute().relative_to(cwd)))
                     pp = ff + "#" + p2
-                    new_pp = os.path.normpath(os.path.relpath(ff, h5_dir)) + "/" + p2
+                    new_pp = os.path.normpath(os.path.relpath(ff, h5_dir)) + p2
                 else:
                     pp = os.path.normpath(str((dd / pp).absolute().relative_to(cwd)))
                     new_pp = os.path.normpath(os.path.relpath(pp, h5_dir))
@@ -144,7 +144,7 @@ def convert_training_data_to_hdf5(input_files: List[str], h5_file: str):
             if "#" in ii:
                 p1, p2 = ii.split("#")
                 p1 = os.path.normpath(os.path.relpath(p1, h5_dir))
-                group = f.create_group(str(p1) + "/" + p2)
+                group = f.create_group(str(p1) + p2)
                 s = dpdata.LabeledSystem(ii, fmt="deepmd/hdf5")
                 s.to("deepmd/hdf5", group)
             else:
