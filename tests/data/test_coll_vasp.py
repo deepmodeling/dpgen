@@ -49,7 +49,6 @@ class TestCollVasp(unittest.TestCase):
         shutil.rmtree(self.odir)
 
     def test_coll(self):
-
         with open(param_file, "r") as fp:
             jdata = json.load(fp)
         jdata["out_dir"] = self.odir

@@ -129,7 +129,6 @@ def make_calypso_input(
 
 
 def _make_model_devi_buffet(jdata, calypso_run_opt_path):
-
     calypso_input_path = jdata.get("calypso_input_path")
     if jdata.get("vsc", False):
         # [input.dat.Li.250, input.dat.Li.300]
@@ -164,7 +163,6 @@ def _make_model_devi_buffet(jdata, calypso_run_opt_path):
 
 
 def _make_model_devi_native_calypso(iter_index, model_devi_jobs, calypso_run_opt_path):
-
     for iiidx, jobbs in enumerate(model_devi_jobs):
         if iter_index in jobbs.get("times"):
             cur_job = model_devi_jobs[iiidx]

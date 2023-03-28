@@ -4,7 +4,6 @@ import numpy as np
 
 
 def _parse_calypso_input(var, input_path):
-
     if os.path.basename(input_path) != "input.dat":
         input_path = os.path.join(input_path, "input.dat")
     if not os.path.exists(input_path):

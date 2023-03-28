@@ -662,7 +662,6 @@ def run_train(iter_index, jdata, mdata):
     if Version(mdata["deepmd_version"]) >= Version("1") and Version(
         mdata["deepmd_version"]
     ) < Version("3"):
-
         # 1.x
         ## Commands are like `dp train` and `dp freeze`
         ## train_command should not be None
@@ -1783,7 +1782,6 @@ def _make_model_devi_amber(
 
 
 def run_md_model_devi(iter_index, jdata, mdata):
-
     # rmdlog.info("This module has been run !")
     model_devi_exec = mdata["model_devi_command"]
 
@@ -1842,7 +1840,6 @@ def run_md_model_devi(iter_index, jdata, mdata):
             if use_plm_path:
                 forward_files += ["plmpath.pdb"]
     elif model_devi_engine == "gromacs":
-
         gromacs_settings = jdata.get("gromacs_settings", {})
         mdp_filename = gromacs_settings.get("mdp_filename", "md.mdp")
         topol_filename = gromacs_settings.get("topol_filename", "processed.top")
@@ -1956,7 +1953,6 @@ def run_md_model_devi(iter_index, jdata, mdata):
 
 
 def run_model_devi(iter_index, jdata, mdata):
-
     model_devi_engine = jdata.get("model_devi_engine", "lammps")
     if model_devi_engine != "calypso":
         run_md_model_devi(iter_index, jdata, mdata)
@@ -3851,7 +3847,6 @@ def run_fp(iter_index, jdata, mdata):
 
 
 def post_fp_check_fail(iter_index, jdata, rfailed=None):
-
     ratio_failed = rfailed if rfailed else jdata.get("ratio_failed", 0.05)
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -3880,7 +3875,6 @@ def post_fp_check_fail(iter_index, jdata, rfailed=None):
 
 
 def post_fp_vasp(iter_index, jdata, rfailed=None):
-
     ratio_failed = rfailed if rfailed else jdata.get("ratio_failed", 0.05)
     model_devi_engine = jdata.get("model_devi_engine", "lammps")
     if model_devi_engine != "calypso":
@@ -4169,7 +4163,6 @@ def post_fp_gaussian(iter_index, jdata):
 
 
 def post_fp_cp2k(iter_index, jdata, rfailed=None):
-
     ratio_failed = rfailed if rfailed else jdata.get("ratio_failed", 0.10)
     model_devi_jobs = jdata["model_devi_jobs"]
     assert iter_index < len(model_devi_jobs)
@@ -4230,7 +4223,6 @@ def post_fp_cp2k(iter_index, jdata, rfailed=None):
 
 
 def post_fp_pwmat(iter_index, jdata, rfailed=None):
-
     ratio_failed = rfailed if rfailed else jdata.get("ratio_failed", 0.05)
     model_devi_jobs = jdata["model_devi_jobs"]
     assert iter_index < len(model_devi_jobs)
@@ -4355,7 +4347,6 @@ def post_fp(iter_index, jdata):
 
 
 def set_version(mdata):
-
     deepmd_version = "1"
     mdata["deepmd_version"] = deepmd_version
     return mdata

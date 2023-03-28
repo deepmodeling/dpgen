@@ -55,7 +55,6 @@ def _main(param):
 
 
 def parsing_vasp(path, config_info_dict, skip_init, output=OUTPUT, id_prefix=None):
-
     fp_iters = os.path.join(path, ITERS_PAT)
     dlog.debug(fp_iters)
     f_fp_iters = glob(fp_iters)
@@ -114,7 +113,7 @@ def _parsing_vasp(paths, config_info_dict, id_prefix, iters=True):
                 iter_info = tmp_iter.split(".")[-1]
                 sys_info = path.split("/")[-4]
                 config_info_int = int(tmp_.split(".")[1])
-                for (key, value) in config_info_dict.items():
+                for key, value in config_info_dict.items():
                     if config_info_int in value:
                         config_info = key
                 attrib["config_info"] = config_info

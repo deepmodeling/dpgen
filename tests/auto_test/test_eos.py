@@ -74,7 +74,6 @@ class TestEOS(unittest.TestCase):
         self.assertEqual(self.prop_param[0], self.eos.task_param())
 
     def test_make_confs_0(self):
-
         if not os.path.exists(os.path.join(self.equi_path, "CONTCAR")):
             with self.assertRaises(RuntimeError):
                 self.eos.make_confs(self.target_path, self.equi_path)

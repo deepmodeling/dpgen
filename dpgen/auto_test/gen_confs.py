@@ -93,7 +93,6 @@ def gen_element_std(ele_name):
 
 
 def gen_alloy(eles, key):
-
     mpr = MPRester(key)
 
     data = mpr.query(

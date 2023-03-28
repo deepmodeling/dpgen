@@ -59,7 +59,6 @@ class TestMakeProperty(unittest.TestCase):
             shutil.rmtree("confs/std-fcc/relaxation")
 
     def test_make_eos(self):
-
         pwd = os.getcwd()
         confs = self.jdata["structures"]
         inter_param = self.jdata["interaction"]

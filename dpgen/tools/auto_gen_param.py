@@ -1,4 +1,4 @@
-#%%
+# %%
 import argparse
 import json
 import os
@@ -212,7 +212,6 @@ def get_model_devi_jobs(
     temps_intervel=0.1,
     num_temps=5,
 ):
-
     if temps_iterator is None:
         temps_iterator = default_temps_generator(
             melt_point=melt_point, temps_intervel=temps_intervel, num_temps=num_temps
@@ -243,7 +242,6 @@ def get_sys_configs(system_list):
 
 
 def get_init_data_sys(scan_dir="./", init_file_name="type.raw"):
-
     init_data_sys = []
     for t in os.walk(scan_dir):
         if init_file_name in t[2]:
@@ -272,7 +270,6 @@ def get_basic_param_json(
     temps_intervel=0.1,
     num_temps=5,
 ):
-
     init_data_sys = get_init_data_sys(scan_dir=scan_dir, init_file_name=init_file_name)
     print(f"length of init_data_sys: {len(init_data_sys)} {init_data_sys}")
     system_dict = scan_files(scan_dir, file_name, min_allow_files_num)
@@ -336,4 +333,4 @@ def auto_gen_param(args):
         raise RuntimeError("must provide melt point or PARAM")
 
 
-#%%
+# %%
