@@ -183,7 +183,6 @@ def run_equi(confs, inter_param, mdata):
             "API version %s has been removed. Please upgrade to 1.0." % api_version
         )
     elif Version(api_version) >= Version("1.0"):
-
         submission = make_submission(
             mdata_machine=machine,
             mdata_resources=resources,

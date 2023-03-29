@@ -213,7 +213,6 @@ def get_all_dumped_forces(file_name):
     exist_atoms = False
 
     for idx, ii in enumerate(lines):
-
         if "ITEM: NUMBER OF ATOMS" in ii:
             natoms = int(lines[idx + 1])
             exist_natoms = True

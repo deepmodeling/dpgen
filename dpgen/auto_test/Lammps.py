@@ -31,7 +31,6 @@ class Lammps(Task):
         self.set_inter_type_func()
 
     def set_inter_type_func(self):
-
         if self.inter_type == "deepmd":
             self.inter_func = inter_deepmd
 
@@ -45,7 +44,6 @@ class Lammps(Task):
             self.inter_func = inter_eam_alloy
 
     def set_model_param(self):
-
         if self.inter_type == "deepmd":
             model_name = os.path.basename(self.model)
             deepmd_version = self.inter.get("deepmd_version", "1.2.0")
