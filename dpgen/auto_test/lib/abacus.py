@@ -415,10 +415,10 @@ def final_stru(abacus_path):
             with open(logf) as f1:
                 lines = f1.readlines()
             for i in range(1, len(lines)):
-                if lines[-i][36:41] == "istep":
+                if lines[-i][1:5] == "STEP":
                     max_step = int(lines[-i].split()[-1])
                     break
-            return "OUT.%s/STRU_ION%d_D" % (suffix, max_step)
+            return "OUT.%s/STRU_ION%d_D" % (suffix, max_step-1)
     elif calculation == "md":
         with open(logf) as f1:
             lines = f1.readlines()
