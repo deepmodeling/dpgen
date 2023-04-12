@@ -666,7 +666,10 @@ def run_train(iter_index, jdata, mdata):
         ## Commands are like `dp train` and `dp freeze`
         ## train_command should not be None
         assert train_command
-        command = "%s train %s" % (train_command, train_input_file)
+        extra_flags = ""
+        if jdata.get("dp_train_skip_neighbor_stat", False):
+            extra_flags += " --skip-neighbor-stat"
+        command = "%s train %s%s" % (train_command, train_input_file, extra_flags)
         if training_init_model:
             command = (
                 "{ if [ ! -f model.ckpt.index ]; then %s --init-model old/model.ckpt; else %s --restart model.ckpt; fi }"
