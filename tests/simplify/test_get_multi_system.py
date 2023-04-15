@@ -1,10 +1,13 @@
 import os
+import sys
 import shutil
 import unittest
 
 import dpdata
 import numpy as np
-from context import dpgen
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+__package__ = "simplify"
+from .context import dpgen
 
 
 class TestGetMultiSystem(unittest.TestCase):

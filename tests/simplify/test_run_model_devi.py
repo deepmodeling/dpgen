@@ -1,3 +1,5 @@
+import os
+import sys
 import shutil
 import tempfile
 import textwrap
@@ -5,7 +7,9 @@ import unittest
 from pathlib import Path
 
 import dpdata
-from context import dpgen
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+__package__ = "simplify"
+from .context import dpgen
 
 
 class TestOneH5(unittest.TestCase):
