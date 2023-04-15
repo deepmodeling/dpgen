@@ -93,7 +93,7 @@ def training_args() -> List[Argument]:
     doc_model_devi_activation_func = "The activation function in the model. The shape of list should be (N_models, 2), where 2 represents the embedding and fitting network. This option will override default parameters."
     doc_srtab_file_path = "The path of the table for the short-range pairwise interaction which is needed when using DP-ZBL potential"
     doc_one_h5 = (
-        "Before training, all of the training data will be merged into one HDF5 file."
+        "When using DeePMD-kit, all of the input data will be merged into one HDF5 file."
     )
 
     return [

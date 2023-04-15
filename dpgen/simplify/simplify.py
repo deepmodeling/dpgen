@@ -218,17 +218,27 @@ def run_model_devi(iter_index, jdata, mdata):
     # models
     commands = []
     detail_file_name = detail_file_name_prefix
+    system_file_name = rest_data_name + ".old"
+    if jdata.get("one_h5", False):
+        # convert system to one h5 file
+        system_path = os.path.join(work_path, system_file_name)
+        dpdata.MultiSystems(type_map=jdata["type_map"]).from_deepmd_npy(
+            system_path, labeled=False,
+        ).to_deepmd_hdf5(
+            system_path + ".hdf5"
+        )
+        system_file_name += ".hdf5"
     command = "{dp} model-devi -m {model} -s {system} -o {detail_file}".format(
         dp=mdata.get("model_devi_command", "dp"),
         model=" ".join(task_model_list),
-        system=rest_data_name + ".old",
+        system=system_file_name,
         detail_file=detail_file_name,
     )
     commands = [command]
     # submit
     model_devi_group_size = mdata.get("model_devi_group_size", 1)
 
-    forward_files = [rest_data_name + ".old"]
+    forward_files = [system_file_name]
     backward_files = [detail_file_name]
 
     api_version = mdata.get("api_version", "1.0")
