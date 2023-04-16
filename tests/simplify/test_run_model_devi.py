@@ -1,12 +1,13 @@
 import os
-import sys
 import shutil
+import sys
 import tempfile
 import textwrap
 import unittest
 from pathlib import Path
 
 import dpdata
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "simplify"
 from .context import dpgen
