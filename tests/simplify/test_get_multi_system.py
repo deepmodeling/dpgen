@@ -48,7 +48,7 @@ class TestGetMultiSystem(unittest.TestCase):
                 with self.subTest(list_data=list_data, labeled=labeled):
                     ms = dpgen.simplify.simplify.get_multi_system(
                         self.data if list_data else self.data[0],
-                        {"labeled": labeled},
+                        {"labeled": labeled, "type_map": ["H"]},
                     )
                     assert isinstance(ms, dpdata.MultiSystems)
                     for ss in ms.systems.values():
