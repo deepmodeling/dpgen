@@ -1,9 +1,10 @@
 import shutil
+import tempfile
 import textwrap
 import unittest
-import tempfile
-import dpdata
 from pathlib import Path
+
+import dpdata
 from context import dpgen
 
 
@@ -12,14 +13,22 @@ class TestOneH5(unittest.TestCase):
         work_path = Path("iter.000000") / "01.model_devi"
         work_path.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory() as tmpdir:
-            with open(Path(tmpdir) / "test.xyz", 'w') as f:
-                f.write(textwrap.dedent("""\
+            with open(Path(tmpdir) / "test.xyz", "w") as f:
+                f.write(
+                    textwrap.dedent(
+                        """\
                     2
 
                     H 0.0 0.0 0.0
                     H 0.0 0.0 1.0
-                    """))
-            dpdata.MultiSystems(dpdata.System(Path(tmpdir) / "test.xyz", fmt="xyz")).to_deepmd_npy(work_path / (dpgen.simplify.simplify.rest_data_name + ".old"))
+                    """
+                    )
+                )
+            dpdata.MultiSystems(
+                dpdata.System(Path(tmpdir) / "test.xyz", fmt="xyz")
+            ).to_deepmd_npy(
+                work_path / (dpgen.simplify.simplify.rest_data_name + ".old")
+            )
 
     def tearDown(self) -> None:
         shutil.rmtree("iter.000000")
@@ -43,7 +52,7 @@ class TestOneH5(unittest.TestCase):
                 },
                 "model_devi_resources": {
                     "group_size": 1,
-                }
+                },
             }
             dpgen.simplify.simplify.run_model_devi(0, jdata=jdata, mdata=mdata)
 
@@ -67,6 +76,6 @@ class TestOneH5(unittest.TestCase):
                 },
                 "model_devi_resources": {
                     "group_size": 1,
-                }
+                },
             }
             dpgen.simplify.simplify.run_model_devi(0, jdata=jdata, mdata=mdata)

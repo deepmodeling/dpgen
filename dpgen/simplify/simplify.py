@@ -223,10 +223,9 @@ def run_model_devi(iter_index, jdata, mdata):
         # convert system to one h5 file
         system_path = os.path.join(work_path, system_file_name)
         dpdata.MultiSystems(type_map=jdata["type_map"]).from_deepmd_npy(
-            system_path, labeled=False,
-        ).to_deepmd_hdf5(
-            system_path + ".hdf5"
-        )
+            system_path,
+            labeled=False,
+        ).to_deepmd_hdf5(system_path + ".hdf5")
         system_file_name += ".hdf5"
     command = "{dp} model-devi -m {model} -s {system} -o {detail_file}".format(
         dp=mdata.get("model_devi_command", "dp"),
