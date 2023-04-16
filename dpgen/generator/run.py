@@ -393,8 +393,11 @@ def make_train(iter_index, jdata, mdata):
                     init_data_sys.append(
                         os.path.normpath(os.path.join("..", "data.iters", sys_single))
                     )
+                    batch_size = sys_batch_size[sys_idx] if sys_idx < len(
+                        sys_batch_size
+                    ) else "auto"
                     init_batch_size.append(
-                        detect_batch_size(sys_batch_size[sys_idx], sys_single)
+                        detect_batch_size(batch_size, sys_single)
                     )
     # establish tasks
     jinput = jdata["default_training_param"]
