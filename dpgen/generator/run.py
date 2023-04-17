@@ -425,9 +425,13 @@ def make_train(iter_index, jdata, mdata):
         mdata["deepmd_version"]
     ) < Version("3"):
         # 2.x
-        jinput["training"]["training_data"] = {}
+        jinput["training"].setdefault("training_data", {})
         jinput["training"]["training_data"]["systems"] = init_data_sys
-        jinput["training"]["training_data"]["batch_size"] = init_batch_size
+        old_batch_size = jinput["training"]["training_data"].get("batch_size", "")
+        if not (
+            isinstance(old_batch_size, str) and old_batch_size.startswith("mixed:")
+        ):
+            jinput["training"]["training_data"]["batch_size"] = init_batch_size
         jinput["model"]["type_map"] = jdata["type_map"]
         # electron temperature
         if use_ele_temp == 0:
