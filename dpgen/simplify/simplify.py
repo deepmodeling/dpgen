@@ -377,14 +377,15 @@ def make_fp_labeled(iter_index, jdata):
     work_path = os.path.join(iter_name, fp_name)
     create_path(work_path)
     picked_data_path = os.path.join(iter_name, model_devi_name, picked_data_name)
-    os.symlink(
-        os.path.abspath(picked_data_path),
-        os.path.abspath(os.path.join(work_path, "task." + fp_task_fmt % (0, 0))),
-    )
-    os.symlink(
-        os.path.abspath(picked_data_path),
-        os.path.abspath(os.path.join(work_path, "data." + data_system_fmt % 0)),
-    )
+    if os.exists(os.path.abspath(picked_data_path)):
+        os.symlink(
+            os.path.abspath(picked_data_path),
+            os.path.abspath(os.path.join(work_path, "task." + fp_task_fmt % (0, 0))),
+        )
+        os.symlink(
+            os.path.abspath(picked_data_path),
+            os.path.abspath(os.path.join(work_path, "data." + data_system_fmt % 0)),
+        )
 
 
 def make_fp_configs(iter_index, jdata):
