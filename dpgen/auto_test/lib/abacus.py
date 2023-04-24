@@ -9,6 +9,11 @@ from pymatgen.core.structure import Structure
 
 import dpgen.generator.lib.abacus_scf as abacus_scf
 
+from dpdata.vasp import poscar as dpdata_poscar 
+from dpdata.utils import uniq_atom_names
+
+from dpdata.abacus.scf import make_unlabeled_stru
+
 A2BOHR = 1.8897261254578281
 MASS_DICT = {
     "H": 1.0079,
@@ -242,7 +247,7 @@ key_words_list = [
 ]
 
 
-def poscar2stru(poscar, inter_param, stru):
+def poscar2stru(poscar, inter_param, stru="STRU"):
     """
     - poscar:           POSCAR for input
     - inter_param:      dictionary of 'interaction' from param.json
@@ -252,8 +257,12 @@ def poscar2stru(poscar, inter_param, stru):
                             - deepks_desc:  a string of deepks descriptor file
     - stru:            output filename, usally is 'STRU'
     """
-    stru = dpdata.System(poscar, fmt="vasp/poscar")
-    stru_data = stru.data
+    #if use dpdata.System, the structure will be rotated to make cell to be lower triangular
+    with open(poscar) as fp:
+            lines = [line.rstrip("\n") for line in fp]
+    stru_data = dpdata_poscar.to_system_data(lines)
+    stru_data = uniq_atom_names(stru_data)
+
     atom_mass = []
     pseudo = None
     orb = None
@@ -291,14 +300,16 @@ def poscar2stru(poscar, inter_param, stru):
     if "deepks_desc" in inter_param:
         deepks_desc = "./pp_orb/%s\n" % inter_param["deepks_desc"]
 
-    stru.to(
-        "stru",
-        "STRU",
-        mass=atom_mass,
-        pp_file=pseudo,
-        numerical_orbital=orb,
-        numerical_descriptor=deepks_desc,
-    )
+    stru_string = make_unlabeled_stru(
+            data=stru_data,
+            frame_idx=0,
+            pp_file=pseudo,
+            numerical_orbital=orb,
+            numerical_descriptor=deepks_desc,
+            mass=atom_mass,
+        )
+    with open(stru, "w") as fp:
+        fp.write(stru_string)
 
 
 def stru_fix_atom(struf, fix_atom=[True, True, True]):
