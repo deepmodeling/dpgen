@@ -387,13 +387,18 @@ def write_input(inputf, inputdict):
 
 
 def make_kspacing_kpt(struf, kspacing):
+    if isinstance(kspacing,(int,float)):
+        kspacing = [kspacing]*3
+    elif isinstance(kspacing,list) and len(kspacing) == 1:
+        kspacing = 3* kspacing
+    assert len(kspacing) == 3,"kspacing need 3 values"
     stru_data = abacus_scf.get_abacus_STRU(struf)
     cell = stru_data["cells"] / abacus_scf.bohr2ang
     volume = abs(cell[0].dot(np.cross(cell[1], cell[2])))
-    coef = 2 * np.pi / volume / kspacing
+    coef = [2 * np.pi / volume / i for i in kspacing]
     kpt = [
-        max(1, int(np.linalg.norm(np.cross(cell[x], cell[y])) * coef + 1))
-        for x, y in [[1, 2], [2, 0], [0, 1]]
+        max(1, int(np.linalg.norm(np.cross(cell[ixy[0]], cell[ixy[1]])) * coef[i] + 1))
+        for i,ixy in enumerate([[1, 2], [2, 0], [0, 1]])
     ]
     return kpt
 

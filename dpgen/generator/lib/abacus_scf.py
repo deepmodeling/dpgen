@@ -1,4 +1,4 @@
-import os
+import os,re
 
 import numpy as np
 from dpdata.abacus.scf import get_cell, get_coords, get_nele_from_stru
@@ -34,9 +34,18 @@ def make_abacus_scf_input(fp_params):
             assert fp_params["ecutwfc"] >= 0, "'ecutwfc' should be non-negative."
             ret += "ecutwfc %f\n" % fp_params["ecutwfc"]
         elif key == "kspacing":
-            fp_params["kspacing"] = float(fp_params["kspacing"])
-            assert fp_params["kspacing"] >= 0, "'kspacing' should be non-negative."
-            ret += "kspacing %f\n" % fp_params["kspacing"]
+            if isinstance(fp_params["kspacing"],(int,float)):
+                fp_params["kspacing"] = [float(fp_params["kspacing"])]
+            elif isinstance(fp_params["kspacing"],(list,tuple)):
+                fp_params["kspacing"] = list(fp_params["kspacing"])
+            elif isinstance(fp_params["kspacing"],str):
+                fp_params["kspacing"] = [float(i) for i in fp_params["kspacing"].split()]
+            assert(len(fp_params["kspacing"]) in [1,3]), "'kspacing' only accept a float, or a list of one or three float, or a string of one or three float"
+            ret += "kspacing "
+            for ikspacing in fp_params["kspacing"]:
+                assert ikspacing >= 0, "'kspacing' should be non-negative."
+                ret += "%f " % ikspacing
+            ret += "\n"
         elif key == "scf_thr":
             fp_params["scf_thr"] = float(fp_params["scf_thr"])
             ret += "scf_thr %e\n" % fp_params["scf_thr"]
@@ -266,11 +275,9 @@ def get_abacus_input_parameters(INPUT):
         inlines = fp.read().split("\n")
     input_parameters = {}
     for line in inlines:
-        if line.split() == [] or len(line.split()) < 2 or line[0] in ["#"]:
-            continue
-        parameter_name = line.split()[0]
-        parameter_value = line.split()[1]
-        input_parameters[parameter_name] = parameter_value
+        sline = re.split('[ \t]',line.split("#")[0].strip(),maxsplit=1)
+        if len(sline) == 2:
+            input_parameters[sline[0].strip()] = sline[1].strip()
     fp.close()
     return input_parameters
 
