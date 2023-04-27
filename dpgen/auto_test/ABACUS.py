@@ -216,15 +216,15 @@ class ABACUS(Task):
         os.chdir(cwd)
 
         if "kspacing" in incar:
-            if isinstance(incar["kspacing"],str):
+            if isinstance(incar["kspacing"], str):
                 kspacing = [float(i) for i in incar["kspacing"].split()]
-            elif isinstance(incar["kspacing"],(int,float)):
+            elif isinstance(incar["kspacing"], (int, float)):
                 kspacing = [incar["kspacing"]]
             else:
                 kspacing = incar["kspacing"]
             if len(kspacing) == 1:
                 kspacing = 3 * kspacing
-                
+
             if os.path.isfile(os.path.join(output_dir, "STRU")):
                 kpt = abacus.make_kspacing_kpt(
                     os.path.join(output_dir, "STRU"), kspacing

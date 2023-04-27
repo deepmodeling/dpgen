@@ -734,7 +734,7 @@ class TestMakeFPABACUS(unittest.TestCase):
             jdata = json.load(fp)
         fp.close()
         jdata["user_fp_params"]["gamma_only"] = 0
-        jdata["user_fp_params"]["kspacing"] = [0.04,0.05,0.06]
+        jdata["user_fp_params"]["kspacing"] = [0.04, 0.05, 0.06]
         with open(machine_file, "r") as fp:
             mdata = json.load(fp)
         fp.close()
@@ -751,15 +751,15 @@ class TestMakeFPABACUS(unittest.TestCase):
         type_map = jdata["type_map"]
         _make_fake_md(0, md_descript, atom_types, type_map)
         make_fp(0, jdata, {})
-        
+
         input_ref = abacus_input_ref.split("\n")
-        for ii,iline in enumerate(input_ref):
+        for ii, iline in enumerate(input_ref):
             if "gamma_only" in iline:
                 input_ref[ii] = "gamma_only 0"
             elif "kspacing" in iline:
                 input_ref[ii] = "kspacing 0.040000 0.050000 0.060000"
 
-        fp_path = os.path.join("iter.%06d" % 0, "02.fp","INPUT")
+        fp_path = os.path.join("iter.%06d" % 0, "02.fp", "INPUT")
         tasks = glob.glob(os.path.join(fp_path, "task.*"))
         for ii in tasks:
             ifile = os.path.join(ii, "INPUT")

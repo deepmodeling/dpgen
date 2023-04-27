@@ -1,4 +1,5 @@
-import os,re
+import os
+import re
 
 import numpy as np
 from dpdata.abacus.scf import get_cell, get_coords, get_nele_from_stru
@@ -34,13 +35,18 @@ def make_abacus_scf_input(fp_params):
             assert fp_params["ecutwfc"] >= 0, "'ecutwfc' should be non-negative."
             ret += "ecutwfc %f\n" % fp_params["ecutwfc"]
         elif key == "kspacing":
-            if isinstance(fp_params["kspacing"],(int,float)):
+            if isinstance(fp_params["kspacing"], (int, float)):
                 fp_params["kspacing"] = [float(fp_params["kspacing"])]
-            elif isinstance(fp_params["kspacing"],(list,tuple)):
+            elif isinstance(fp_params["kspacing"], (list, tuple)):
                 fp_params["kspacing"] = list(fp_params["kspacing"])
-            elif isinstance(fp_params["kspacing"],str):
-                fp_params["kspacing"] = [float(i) for i in fp_params["kspacing"].split()]
-            assert(len(fp_params["kspacing"]) in [1,3]), "'kspacing' only accept a float, or a list of one or three float, or a string of one or three float"
+            elif isinstance(fp_params["kspacing"], str):
+                fp_params["kspacing"] = [
+                    float(i) for i in fp_params["kspacing"].split()
+                ]
+            assert len(fp_params["kspacing"]) in [
+                1,
+                3,
+            ], "'kspacing' only accept a float, or a list of one or three float, or a string of one or three float"
             ret += "kspacing "
             for ikspacing in fp_params["kspacing"]:
                 assert ikspacing >= 0, "'kspacing' should be non-negative."
@@ -275,7 +281,7 @@ def get_abacus_input_parameters(INPUT):
         inlines = fp.read().split("\n")
     input_parameters = {}
     for line in inlines:
-        sline = re.split('[ \t]',line.split("#")[0].strip(),maxsplit=1)
+        sline = re.split("[ \t]", line.split("#")[0].strip(), maxsplit=1)
         if len(sline) == 2:
             input_parameters[sline[0].strip()] = sline[1].strip()
     fp.close()
