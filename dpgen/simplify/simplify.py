@@ -394,6 +394,8 @@ def make_fp_configs(iter_index, jdata):
     work_path = os.path.join(iter_name, fp_name)
     create_path(work_path)
     picked_data_path = os.path.join(iter_name, model_devi_name, picked_data_name)
+    if not os.path.exists(os.path.abspath(picked_data_path)):
+        return
     systems = get_multi_system(picked_data_path, jdata)
     ii = 0
     jj = 0
