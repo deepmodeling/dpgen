@@ -530,12 +530,15 @@ def run_iter(param_file, machine_file):
             task_name = "task %02d" % jj
             sepline("{} {}".format(iter_name, task_name), "-")
             jdata["model_devi_jobs"] = [{} for _ in range(ii + 1)]
-            if ii == 0 and jj < 6:
+            if ii == 0 and jj < 6 and (jj >= 3 or not jdata.get("init_data_sys", [])):
                 if jj == 0:
-                    log_iter("init_pick", ii, jj)
+                    log_iter("init_train", ii, jj)
                     init_model(ii, jdata, mdata)
+                elif jj == 3:
+                    log_iter("init_pick", ii, jj)
                     init_pick(ii, jdata, mdata)
-                dlog.info("first iter, skip step 1-5")
+                else:
+                    dlog.info("first iter, skip step 1-5")
             elif jj == 0:
                 log_iter("make_train", ii, jj)
                 make_train(ii, jdata, mdata)
