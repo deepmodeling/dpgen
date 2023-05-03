@@ -200,6 +200,22 @@ class TestABACUS(unittest.TestCase):
             kpt = f1.read().strip().split("\n")[-1].split()
         self.assertEqual(kpt, ["9", "9", "9", "0", "0", "0"])
 
+    def test_make_input_file_kspacing_three_value(self):
+        param = self.task_param.copy()
+        param["cal_setting"] = {
+            "relax_pos": False,
+            "relax_shape": True,
+            "relax_vol": True,
+            "kspacing": [0.1, 0.2, 0.3],
+        }
+        shutil.copy(
+            os.path.join(self.conf_path, "STRU"), os.path.join(self.equi_path, "STRU")
+        )
+        self.ABACUS.make_input_file(self.equi_path, "relaxation", param)
+        with open(os.path.join(self.equi_path, "KPT")) as f1:
+            kpt = f1.read().strip().split("\n")[-1].split()
+        self.assertEqual(kpt, ["9", "5", "3", "0", "0", "0"])
+
     def test_compuate(self):
         ret = self.ABACUS.compute(os.path.join(self.equi_path))
         self.assertIsNone(ret)

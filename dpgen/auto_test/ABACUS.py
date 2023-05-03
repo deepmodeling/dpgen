@@ -216,7 +216,15 @@ class ABACUS(Task):
         os.chdir(cwd)
 
         if "kspacing" in incar:
-            kspacing = float(incar["kspacing"])
+            if isinstance(incar["kspacing"], str):
+                kspacing = [float(i) for i in incar["kspacing"].split()]
+            elif isinstance(incar["kspacing"], (int, float)):
+                kspacing = [incar["kspacing"]]
+            else:
+                kspacing = incar["kspacing"]
+            if len(kspacing) == 1:
+                kspacing = 3 * kspacing
+
             if os.path.isfile(os.path.join(output_dir, "STRU")):
                 kpt = abacus.make_kspacing_kpt(
                     os.path.join(output_dir, "STRU"), kspacing
@@ -228,7 +236,7 @@ class ABACUS(Task):
             kpt = cal_setting["K_POINTS"]
         else:
             mess = "K point information is not defined\n"
-            mess += "You can set key word 'kspacing' (unit in 1/bohr) as a float value in INPUT\n"
+            mess += "You can set key word 'kspacing' (unit in 1/bohr) as one or three float value in INPUT\n"
             mess += "or set key word 'K_POINTS' as a list in 'cal_setting', e.g. [1,2,3,0,0,0]\n"
             raise RuntimeError(mess)
         abacus.write_kpt(os.path.join(output_dir, "KPT"), kpt)
