@@ -170,8 +170,13 @@ def init_pick(iter_index, jdata, mdata):
 
 def _init_dump_selected_frames(systems, labels, selc_idx, sys_data_path, jdata):
     selc_systems = dpdata.MultiSystems(type_map=jdata["type_map"])
+    sys_id_dict = defaultdict(list)
     for j in selc_idx:
         sys_name, sys_id = labels[j]
+        sys_id_dict[sys_name].append(sys_id)
+    for sys_name, sys_id in sys_id_dict.items():
+        # sys_id: list[int]
+        # System.append is slow; thus, we combine the idx of the same system
         selc_systems.append(systems[sys_name][sys_id])
     selc_systems.to_deepmd_raw(sys_data_path)
     selc_systems.to_deepmd_npy(sys_data_path, set_size=selc_idx.size)
