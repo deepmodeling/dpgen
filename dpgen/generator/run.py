@@ -283,15 +283,25 @@ def make_train(iter_index, jdata, mdata):
     model_devi_activation_func = jdata.get("model_devi_activation_func", None)
 
     auto_ratio = False
-    if training_reuse_iter is not None and isinstance(training_reuse_old_ratio, str) and training_reuse_old_ratio.startswith("auto"):
+    if (
+        training_reuse_iter is not None
+        and isinstance(training_reuse_old_ratio, str)
+        and training_reuse_old_ratio.startswith("auto")
+    ):
         s = training_reuse_old_ratio.split(":")
         if len(s) == 1:
-            new_to_old_ratio = 10.
+            new_to_old_ratio = 10.0
         elif len(s) == 2:
             new_to_old_ratio = float(s[1])
         else:
-            raise ValueError("training_reuse_old_ratio is not correct, got %s" % training_reuse_old_ratio)
-        dlog.info("Use automatic training_reuse_old_ratio to make new-to-old ratio close to %d times of the default value.", training_reuse_iter)
+            raise ValueError(
+                "training_reuse_old_ratio is not correct, got %s"
+                % training_reuse_old_ratio
+            )
+        dlog.info(
+            "Use automatic training_reuse_old_ratio to make new-to-old ratio close to %d times of the default value.",
+            training_reuse_iter,
+        )
         auto_ratio = True
         number_old_frames = 0
         number_new_frames = 0
@@ -464,7 +474,9 @@ def make_train(iter_index, jdata, mdata):
         )
     # set training reuse model
     if auto_ratio:
-        training_reuse_old_ratio = number_old_frames / (number_old_frames + number_new_frames * new_to_old_ratio)
+        training_reuse_old_ratio = number_old_frames / (
+            number_old_frames + number_new_frames * new_to_old_ratio
+        )
     if training_reuse_iter is not None and iter_index >= training_reuse_iter:
         if "numb_steps" in jinput["training"] and training_reuse_stop_batch is not None:
             jinput["training"]["numb_steps"] = training_reuse_stop_batch
