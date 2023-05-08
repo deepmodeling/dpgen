@@ -1,6 +1,6 @@
 import os
 import re
-
+import copy
 import numpy as np
 from dpdata.abacus.scf import get_cell, get_coords, get_nele_from_stru
 
@@ -392,31 +392,44 @@ def get_abacus_STRU(STRU, INPUT=None, n_ele=None):
 
 
 def make_supercell_abacus(from_struct, super_cell):
-    if "types" in from_struct:
-        from_struct["types"] = (
-            from_struct["types"] * super_cell[0] * super_cell[1] * super_cell[2]
-        )
-    for ix in range(super_cell[0]):
-        for iy in range(super_cell[1]):
-            for iz in range(super_cell[2]):
-                if ix == 0 and iy == 0 and iz == 0:
-                    continue
-                for ia in range(sum(from_struct["atom_numbs"])):
+    to_struct = copy.deepcopy(from_struct)
+
+    if "atom_types" in from_struct:
+        new_types = []
+        #to_struct["atom_types"] = (
+        #    from_struct["atom_types"] * super_cell[0] * super_cell[1] * super_cell[2]
+        #)
+        for idx_atm, ina in enumerate(from_struct["atom_numbs"]):
+            new_types += [idx_atm for i in range(ina)] * super_cell[0] * super_cell[1] * super_cell[2]
+        to_struct["atom_types"] = new_types
+    new_coord = None
+    for ia in range(sum(from_struct["atom_numbs"])):
+        for ix in range(super_cell[0]):
+            for iy in range(super_cell[1]):
+                for iz in range(super_cell[2]):
+                #if ix == 0 and iy == 0 and iz == 0:
+                #    continue
+                
                     coord = (
                         from_struct["coords"][ia]
                         + from_struct["cells"][0] * ix
                         + from_struct["cells"][1] * iy
                         + from_struct["cells"][2] * iz
                     )
-                    from_struct["coords"] = np.vstack([from_struct["coords"], coord])
-    from_struct["atom_numbs"] = [
+                    if ia == 0 and ix == 0 and iy == 0 and iz == 0:
+                        new_coord = np.array(coord)
+                    else:
+                        new_coord = np.vstack([new_coord, coord])
+    to_struct["coords"] = new_coord
+    new_numbs = [
         i * super_cell[0] * super_cell[1] * super_cell[2]
         for i in from_struct["atom_numbs"]
     ]
-    from_struct["cells"][0] *= super_cell[0]
-    from_struct["cells"][1] *= super_cell[1]
-    from_struct["cells"][2] *= super_cell[2]
-    return from_struct
+    to_struct["atom_numbs"] = new_numbs
+    to_struct["cells"][0] *= super_cell[0]
+    to_struct["cells"][1] *= super_cell[1]
+    to_struct["cells"][2] *= super_cell[2]
+    return to_struct
 
 
 def make_kspacing_kpoints_stru(stru, kspacing):
