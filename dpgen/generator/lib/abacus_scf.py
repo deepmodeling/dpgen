@@ -1,6 +1,7 @@
+import copy
 import os
 import re
-import copy
+
 import numpy as np
 from dpdata.abacus.scf import get_cell, get_coords, get_nele_from_stru
 
@@ -396,20 +397,25 @@ def make_supercell_abacus(from_struct, super_cell):
 
     if "atom_types" in from_struct:
         new_types = []
-        #to_struct["atom_types"] = (
+        # to_struct["atom_types"] = (
         #    from_struct["atom_types"] * super_cell[0] * super_cell[1] * super_cell[2]
-        #)
+        # )
         for idx_atm, ina in enumerate(from_struct["atom_numbs"]):
-            new_types += [idx_atm for i in range(ina)] * super_cell[0] * super_cell[1] * super_cell[2]
+            new_types += (
+                [idx_atm for i in range(ina)]
+                * super_cell[0]
+                * super_cell[1]
+                * super_cell[2]
+            )
         to_struct["atom_types"] = new_types
     new_coord = None
     for ia in range(sum(from_struct["atom_numbs"])):
         for ix in range(super_cell[0]):
             for iy in range(super_cell[1]):
                 for iz in range(super_cell[2]):
-                #if ix == 0 and iy == 0 and iz == 0:
-                #    continue
-                
+                    # if ix == 0 and iy == 0 and iz == 0:
+                    #    continue
+
                     coord = (
                         from_struct["coords"][ia]
                         + from_struct["cells"][0] * ix
