@@ -408,7 +408,9 @@ def make_supercell_abacus(from_struct, super_cell):
                 * super_cell[2]
             )
         to_struct["atom_types"] = new_types
-    to_atom_num = sum(from_struct["atom_numbs"]) * super_cell[0] * super_cell[1] * super_cell[2]
+    to_atom_num = (
+        sum(from_struct["atom_numbs"]) * super_cell[0] * super_cell[1] * super_cell[2]
+    )
     new_coord = np.zeros((to_atom_num, 3))
     idx_atm = 0
     for ia in range(sum(from_struct["atom_numbs"])):
