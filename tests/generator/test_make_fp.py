@@ -701,9 +701,8 @@ class TestMakeFPABACUS(unittest.TestCase):
                 my_file_cmp(
                     self,
                     os.path.join(fp_pp_path, fp_pp_files[jj]),
-                    os.path.join(ii, "pporb",fp_pp_files[jj]),
+                    os.path.join(ii, "pporb", fp_pp_files[jj]),
                 )
-
 
     def test_make_fp_abacus(self):
         setUpModule()

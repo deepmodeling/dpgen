@@ -182,7 +182,9 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
             ), "'deepks_scf' should be either 0 or 1."
             ret += "deepks_scf %d\n" % fp_params["deepks_scf"]
         elif key == "deepks_model":
-            ret += "deepks_model %s\n" % os.path.join(extra_file_path,os.path.split(fp_params["deepks_model"])[1])
+            ret += "deepks_model %s\n" % os.path.join(
+                extra_file_path, os.path.split(fp_params["deepks_model"])[1]
+            )
         elif key[0] == "_":
             pass
         elif key == "calculation":
@@ -199,7 +201,7 @@ def make_abacus_scf_stru(
     fp_dpks_descriptor=None,
     fp_params=None,
     type_map=None,
-    pporb=""   #pull all pp orb dpks files to pporb folder
+    pporb="",  # pull all pp orb dpks files to pporb folder
 ):
     atom_names = sys_data["atom_names"]
     atom_numbs = sys_data["atom_numbs"]
@@ -219,12 +221,17 @@ def make_abacus_scf_stru(
         )
         idx = type_map.index(atom_names[iatom])
         if "atom_masses" not in sys_data:
-            ret += atom_names[iatom] + " 1.00 " + os.path.join(pporb,fp_pp_files[idx]) + "\n"
+            ret += (
+                atom_names[iatom]
+                + " 1.00 "
+                + os.path.join(pporb, fp_pp_files[idx])
+                + "\n"
+            )
         else:
             ret += (
                 atom_names[iatom]
                 + " %.3f " % sys_data["atom_masses"][iatom]
-                + os.path.join(pporb,fp_pp_files[idx])
+                + os.path.join(pporb, fp_pp_files[idx])
                 + "\n"
             )
 
@@ -269,11 +276,11 @@ def make_abacus_scf_stru(
         assert len(fp_orb_files) == len(type_map)
         for iatom in range(len(atom_names)):
             idx = type_map.index(atom_names[iatom])
-            ret += os.path.join(pporb,fp_orb_files[idx]) + "\n"
+            ret += os.path.join(pporb, fp_orb_files[idx]) + "\n"
 
     if fp_dpks_descriptor is not None:
         ret += "\nNUMERICAL_DESCRIPTOR\n"
-        ret += os.path.join(pporb,fp_dpks_descriptor) + "\n"
+        ret += os.path.join(pporb, fp_dpks_descriptor) + "\n"
 
     return ret
 

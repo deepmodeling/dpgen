@@ -17,7 +17,6 @@ import json
 import logging
 import logging.handlers
 import os
-from pprint import pp
 import queue
 import random
 import shutil
@@ -26,6 +25,7 @@ import sys
 import warnings
 from collections import Counter
 from collections.abc import Iterable
+from pprint import pp
 from typing import List
 
 import dpdata
@@ -3049,12 +3049,14 @@ def _link_fp_abacus_pporb_descript(iter_index, jdata):
         input_param = get_abacus_input_parameters("INPUT")
         fp_dpks_model = input_param.get("deepks_model", None)
         if fp_dpks_model != None:
-            model_file = os.path.join(fp_pp_path, os.path.split(fp_dpks_model)[1])  #only the filename
+            model_file = os.path.join(
+                fp_pp_path, os.path.split(fp_dpks_model)[1]
+            )  # only the filename
             assert os.path.isfile(model_file), (
                 "Can not find the deepks model file %s, which is defined in %s/INPUT"
                 % (model_file, ii)
             )
-            os.symlink(model_file, fp_dpks_model) #link to the model file
+            os.symlink(model_file, fp_dpks_model)  # link to the model file
 
         # get pp, orb, descriptor filenames from STRU
         stru_param = get_abacus_STRU("STRU")
@@ -3068,9 +3070,11 @@ def _link_fp_abacus_pporb_descript(iter_index, jdata):
         if orb_files_stru:
             assert "fp_orb_files" in jdata, "need to define fp_orb_files in jdata"
         if descriptor_file_stru:
-            assert "fp_dpks_descriptor" in jdata, "need to define fp_dpks_descriptor in jdata"
+            assert (
+                "fp_dpks_descriptor" in jdata
+            ), "need to define fp_dpks_descriptor in jdata"
 
-        for idx,iatom in enumerate(atom_names):
+        for idx, iatom in enumerate(atom_names):
             type_map_idx = type_map.index(iatom)
             if iatom not in type_map:
                 raise RuntimeError(
@@ -3078,15 +3082,21 @@ def _link_fp_abacus_pporb_descript(iter_index, jdata):
                 )
             if pp_files_stru:
                 src_file = os.path.join(fp_pp_path, jdata["fp_pp_files"][type_map_idx])
-                assert os.path.isfile(src_file), f"Can not find the pseudopotential file {src_file}"
+                assert os.path.isfile(
+                    src_file
+                ), f"Can not find the pseudopotential file {src_file}"
                 os.symlink(src_file, pp_files_stru[idx])
             if orb_files_stru:
                 src_file = os.path.join(fp_pp_path, jdata["fp_orb_files"][type_map_idx])
-                assert os.path.isfile(src_file), f"Can not find the orbital file {src_file}"
+                assert os.path.isfile(
+                    src_file
+                ), f"Can not find the orbital file {src_file}"
                 os.symlink(src_file, orb_files_stru[idx])
         if descriptor_file_stru:
             src_file = os.path.join(fp_pp_path, jdata["fp_dpks_descriptor"])
-            assert os.path.isfile(src_file), f"Can not find the descriptor file {src_file}"
+            assert os.path.isfile(
+                src_file
+            ), f"Can not find the descriptor file {src_file}"
             os.symlink(src_file, descriptor_file_stru)
 
         os.chdir(cwd)
@@ -3226,7 +3236,7 @@ def make_fp_abacus_scf(iter_index, jdata):
         raise RuntimeError(
             "Set 'user_fp_params' or 'fp_incar' in json file to make INPUT of ABACUS"
         )
-    ret_input = make_abacus_scf_input(fp_params,extra_file_path=pporb_path)
+    ret_input = make_abacus_scf_input(fp_params, extra_file_path=pporb_path)
 
     # Get orbital and deepks setting
     if "basis_type" in fp_params:
@@ -3298,11 +3308,11 @@ def make_fp_abacus_scf(iter_index, jdata):
             fp_dpks_descriptor,
             fp_params,
             type_map=jdata["type_map"],
-            pporb=pporb_path
+            pporb=pporb_path,
         )
         with open("STRU", "w") as fp:
             fp.write(ret_stru)
-        
+
         if not os.path.isdir(pporb_path):
             os.makedirs(pporb_path)
 
@@ -3763,7 +3773,7 @@ def run_fp(iter_index, jdata, mdata):
             assert os.path.exists(fp_input_path)
             fp_input_path = os.path.abspath(fp_input_path)
             fp_params = get_abacus_input_parameters(fp_input_path)
-        forward_files = ["INPUT", "STRU","pporb"]
+        forward_files = ["INPUT", "STRU", "pporb"]
         if "kspacing" not in fp_params.keys():
             forward_files.append("KPT")
         backward_files = ["output", "OUT.ABACUS"]
