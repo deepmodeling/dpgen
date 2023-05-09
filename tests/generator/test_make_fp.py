@@ -179,7 +179,7 @@ cal_stress 1\n\
 deepks_out_labels 0\n\
 deepks_descriptor_lmax 0\n\
 deepks_scf 0\n\
-deepks_model model.ptg\n"
+deepks_model pporb/model.ptg\n"
 
 abacus_kpt_ref = "K_POINTS\n\
 0\n\
@@ -690,6 +690,21 @@ class TestMakeFPPwscf(unittest.TestCase):
 
 
 class TestMakeFPABACUS(unittest.TestCase):
+    def _check_pp(self, idx, fp_pp_path, fp_pp_files):
+        nfile = len(fp_pp_files)
+        fp_path = os.path.join("iter.%06d" % idx, "02.fp")
+        for ii in range(nfile):
+            self.assertTrue(os.path.isfile(os.path.join(fp_pp_path, fp_pp_files[ii])))
+        tasks = glob.glob(os.path.join(fp_path, "task.*"))
+        for ii in tasks:
+            for jj in range(nfile):
+                my_file_cmp(
+                    self,
+                    os.path.join(fp_pp_path, fp_pp_files[jj]),
+                    os.path.join(ii, "pporb",fp_pp_files[jj]),
+                )
+
+
     def test_make_fp_abacus(self):
         setUpModule()
         if os.path.isdir("iter.000000"):
@@ -723,7 +738,7 @@ class TestMakeFPABACUS(unittest.TestCase):
         _check_poscars(self, 0, jdata["fp_task_max"], jdata["type_map"])
         _check_abacus_input(self, 0)
         _check_abacus_kpt(self, 0)
-        _check_potcar(self, 0, jdata["fp_pp_path"], jdata["fp_pp_files"])
+        self._check_pp(0, jdata["fp_pp_path"], jdata["fp_pp_files"])
         shutil.rmtree("iter.000000")
 
     def test_make_fp_abacus_kspacing(self):
@@ -803,7 +818,7 @@ class TestMakeFPABACUS(unittest.TestCase):
         _check_poscars(self, 0, jdata["fp_task_max"], jdata["type_map"])
         _check_abacus_input(self, 0)
         _check_abacus_kpt(self, 0)
-        _check_potcar(self, 0, jdata["fp_pp_path"], jdata["fp_pp_files"])
+        self._check_pp(0, jdata["fp_pp_path"], jdata["fp_pp_files"])
         shutil.rmtree("iter.000000")
 
 

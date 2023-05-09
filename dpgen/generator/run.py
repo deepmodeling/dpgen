@@ -17,6 +17,7 @@ import json
 import logging
 import logging.handlers
 import os
+from pprint import pp
 import queue
 import random
 import shutil
@@ -3031,6 +3032,7 @@ def sys_link_fp_vasp_pp(iter_index, jdata):
 def _link_fp_abacus_pporb_descript(iter_index, jdata):
     # assume pp orbital files, numerical descrptors and model for dpks are all in fp_pp_path.
     fp_pp_path = os.path.abspath(jdata["fp_pp_path"])
+    type_map = jdata["type_map"]
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -3047,46 +3049,46 @@ def _link_fp_abacus_pporb_descript(iter_index, jdata):
         input_param = get_abacus_input_parameters("INPUT")
         fp_dpks_model = input_param.get("deepks_model", None)
         if fp_dpks_model != None:
-            model_file = os.path.join(fp_pp_path, fp_dpks_model)
+            model_file = os.path.join(fp_pp_path, os.path.split(fp_dpks_model)[1])  #only the filename
             assert os.path.isfile(model_file), (
                 "Can not find the deepks model file %s, which is defined in %s/INPUT"
                 % (model_file, ii)
             )
-            os.symlink(model_file, fp_dpks_model)
+            os.symlink(model_file, fp_dpks_model) #link to the model file
 
         # get pp, orb, descriptor filenames from STRU
         stru_param = get_abacus_STRU("STRU")
-        pp_files = stru_param.get("pp_files", [])
-        orb_files = stru_param.get("orb_files", [])
-        descriptor_file = stru_param.get("dpks_descriptor", None)
-        pp_files = [] if pp_files == None else pp_files
-        orb_files = [] if orb_files == None else orb_files
+        atom_names = stru_param["atom_names"]
+        pp_files_stru = stru_param.get("pp_files", None)
+        orb_files_stru = stru_param.get("orb_files", None)
+        descriptor_file_stru = stru_param.get("dpks_descriptor", None)
 
-        for jj in pp_files:
-            ifile = os.path.join(fp_pp_path, jj)
-            assert os.path.isfile(ifile), (
-                "Can not find the pseudopotential file %s, which is defined in %s/STRU"
-                % (ifile, ii)
-            )
-            os.symlink(ifile, jj)
+        if pp_files_stru:
+            assert "fp_pp_files" in jdata, "need to define fp_pp_files in jdata"
+        if orb_files_stru:
+            assert "fp_orb_files" in jdata, "need to define fp_orb_files in jdata"
+        if descriptor_file_stru:
+            assert "fp_dpks_descriptor" in jdata, "need to define fp_dpks_descriptor in jdata"
 
-        for jj in orb_files:
-            ifile = os.path.join(fp_pp_path, jj)
-            assert os.path.isfile(
-                ifile
-            ), "Can not find the orbital file %s, which is defined in %s/STRU" % (
-                ifile,
-                ii,
-            )
-            os.symlink(ifile, jj)
+        for idx,iatom in enumerate(atom_names):
+            type_map_idx = type_map.index(iatom)
+            if iatom not in type_map:
+                raise RuntimeError(
+                    "atom name %s in STRU is not defined in type_map" % (iatom)
+                )
+            if pp_files_stru:
+                src_file = os.path.join(fp_pp_path, jdata["fp_pp_files"][type_map_idx])
+                assert os.path.isfile(src_file), f"Can not find the pseudopotential file {src_file}"
+                os.symlink(src_file, pp_files_stru[idx])
+            if orb_files_stru:
+                src_file = os.path.join(fp_pp_path, jdata["fp_orb_files"][type_map_idx])
+                assert os.path.isfile(src_file), f"Can not find the orbital file {src_file}"
+                os.symlink(src_file, orb_files_stru[idx])
+        if descriptor_file_stru:
+            src_file = os.path.join(fp_pp_path, jdata["fp_dpks_descriptor"])
+            assert os.path.isfile(src_file), f"Can not find the descriptor file {src_file}"
+            os.symlink(src_file, descriptor_file_stru)
 
-        if descriptor_file != None:
-            ifile = os.path.join(fp_pp_path, descriptor_file)
-            assert os.path.isfile(ifile), (
-                "Can not find the deepks descriptor file %s, which is defined in %s/STRU"
-                % (ifile, ii)
-            )
-            os.symlink(ifile, descriptor_file)
         os.chdir(cwd)
 
 
@@ -3201,6 +3203,7 @@ def make_fp_pwscf(iter_index, jdata):
 
 def make_fp_abacus_scf(iter_index, jdata):
     # make config
+    pporb_path = "pporb"
     fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
     if len(fp_tasks) == 0:
         return
@@ -3223,7 +3226,7 @@ def make_fp_abacus_scf(iter_index, jdata):
         raise RuntimeError(
             "Set 'user_fp_params' or 'fp_incar' in json file to make INPUT of ABACUS"
         )
-    ret_input = make_abacus_scf_input(fp_params)
+    ret_input = make_abacus_scf_input(fp_params,extra_file_path=pporb_path)
 
     # Get orbital and deepks setting
     if "basis_type" in fp_params:
@@ -3295,9 +3298,13 @@ def make_fp_abacus_scf(iter_index, jdata):
             fp_dpks_descriptor,
             fp_params,
             type_map=jdata["type_map"],
+            pporb=pporb_path
         )
         with open("STRU", "w") as fp:
             fp.write(ret_stru)
+        
+        if not os.path.isdir(pporb_path):
+            os.makedirs(pporb_path)
 
         os.chdir(cwd)
     # link pp and orbital files
@@ -3756,17 +3763,9 @@ def run_fp(iter_index, jdata, mdata):
             assert os.path.exists(fp_input_path)
             fp_input_path = os.path.abspath(fp_input_path)
             fp_params = get_abacus_input_parameters(fp_input_path)
-        forward_files = ["INPUT", "STRU"]
+        forward_files = ["INPUT", "STRU","pporb"]
         if "kspacing" not in fp_params.keys():
-            forward_files = ["INPUT", "STRU", "KPT"]
-        forward_files += fp_pp_files
-        if "fp_orb_files" in jdata:
-            forward_files += jdata["fp_orb_files"]
-        if "fp_dpks_descriptor" in jdata:
-            forward_files.append(jdata["fp_dpks_descriptor"])
-        if "user_fp_params" in jdata:
-            if "deepks_model" in jdata["user_fp_params"]:
-                forward_files.append(jdata["user_fp_params"]["deepks_model"])
+            forward_files.append("KPT")
         backward_files = ["output", "OUT.ABACUS"]
         run_fp_inner(
             iter_index,
