@@ -275,7 +275,7 @@ class TestPostCP2K(unittest.TestCase, CompLabeledSys):
         self.v_places = 5
         assert os.path.isdir(
             "out_data_post_fp_cp2k"
-        ), "out data for post fp gaussian should exist"
+        ), "out data for post fp cp2k should exist"
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
         shutil.copytree("out_data_post_fp_cp2k", "iter.000000")
