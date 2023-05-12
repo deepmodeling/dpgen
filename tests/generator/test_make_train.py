@@ -491,7 +491,7 @@ class TestMakeTrain(unittest.TestCase):
             jdata0["training"]["systems"],
             [
                 "../data.hdf5#/data.init/deepmd",
-                "../data.hdf5#/data.init/deepmd.hdf5/",
+                "../data.hdf5#/data.init/deepmd.hdf5",
                 "../data.hdf5#/data.iters/iter.000000/02.fp/data.000",
             ],
         )

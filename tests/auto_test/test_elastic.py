@@ -67,7 +67,6 @@ class TestElastic(unittest.TestCase):
         self.assertEqual(self.prop_param[0], self.elastic.task_param())
 
     def test_make_confs(self):
-
         shutil.copy(
             os.path.join(self.source_path, "Al-fcc.json"),
             os.path.join(self.equi_path, "result.json"),

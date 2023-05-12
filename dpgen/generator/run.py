@@ -393,9 +393,12 @@ def make_train(iter_index, jdata, mdata):
                     init_data_sys.append(
                         os.path.normpath(os.path.join("..", "data.iters", sys_single))
                     )
-                    init_batch_size.append(
-                        detect_batch_size(sys_batch_size[sys_idx], sys_single)
+                    batch_size = (
+                        sys_batch_size[sys_idx]
+                        if sys_idx < len(sys_batch_size)
+                        else "auto"
                     )
+                    init_batch_size.append(detect_batch_size(batch_size, sys_single))
     # establish tasks
     jinput = jdata["default_training_param"]
     try:
@@ -425,9 +428,13 @@ def make_train(iter_index, jdata, mdata):
         mdata["deepmd_version"]
     ) < Version("3"):
         # 2.x
-        jinput["training"]["training_data"] = {}
+        jinput["training"].setdefault("training_data", {})
         jinput["training"]["training_data"]["systems"] = init_data_sys
-        jinput["training"]["training_data"]["batch_size"] = init_batch_size
+        old_batch_size = jinput["training"]["training_data"].get("batch_size", "")
+        if not (
+            isinstance(old_batch_size, str) and old_batch_size.startswith("mixed:")
+        ):
+            jinput["training"]["training_data"]["batch_size"] = init_batch_size
         jinput["model"]["type_map"] = jdata["type_map"]
         # electron temperature
         if use_ele_temp == 0:
@@ -662,12 +669,14 @@ def run_train(iter_index, jdata, mdata):
     if Version(mdata["deepmd_version"]) >= Version("1") and Version(
         mdata["deepmd_version"]
     ) < Version("3"):
-
         # 1.x
         ## Commands are like `dp train` and `dp freeze`
         ## train_command should not be None
         assert train_command
-        command = "%s train %s" % (train_command, train_input_file)
+        extra_flags = ""
+        if jdata.get("dp_train_skip_neighbor_stat", False):
+            extra_flags += " --skip-neighbor-stat"
+        command = "%s train %s%s" % (train_command, train_input_file, extra_flags)
         if training_init_model:
             command = (
                 "{ if [ ! -f model.ckpt.index ]; then %s --init-model old/model.ckpt; else %s --restart model.ckpt; fi }"
@@ -1783,7 +1792,6 @@ def _make_model_devi_amber(
 
 
 def run_md_model_devi(iter_index, jdata, mdata):
-
     # rmdlog.info("This module has been run !")
     model_devi_exec = mdata["model_devi_command"]
 
@@ -1842,7 +1850,6 @@ def run_md_model_devi(iter_index, jdata, mdata):
             if use_plm_path:
                 forward_files += ["plmpath.pdb"]
     elif model_devi_engine == "gromacs":
-
         gromacs_settings = jdata.get("gromacs_settings", {})
         mdp_filename = gromacs_settings.get("mdp_filename", "md.mdp")
         topol_filename = gromacs_settings.get("topol_filename", "processed.top")
@@ -1956,7 +1963,6 @@ def run_md_model_devi(iter_index, jdata, mdata):
 
 
 def run_model_devi(iter_index, jdata, mdata):
-
     model_devi_engine = jdata.get("model_devi_engine", "lammps")
     if model_devi_engine != "calypso":
         run_md_model_devi(iter_index, jdata, mdata)
@@ -3851,7 +3857,6 @@ def run_fp(iter_index, jdata, mdata):
 
 
 def post_fp_check_fail(iter_index, jdata, rfailed=None):
-
     ratio_failed = rfailed if rfailed else jdata.get("ratio_failed", 0.05)
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -3880,7 +3885,6 @@ def post_fp_check_fail(iter_index, jdata, rfailed=None):
 
 
 def post_fp_vasp(iter_index, jdata, rfailed=None):
-
     ratio_failed = rfailed if rfailed else jdata.get("ratio_failed", 0.05)
     model_devi_engine = jdata.get("model_devi_engine", "lammps")
     if model_devi_engine != "calypso":
@@ -4061,27 +4065,21 @@ def post_fp_abacus_scf(iter_index, jdata):
         sys_output.sort()
         sys_input.sort()
 
-        flag = True
+        all_sys = None
         for ii, oo in zip(sys_input, sys_output):
-            if flag:
-                _sys = dpdata.LabeledSystem(
-                    oo, fmt="abacus/scf", type_map=jdata["type_map"]
-                )
-                if len(_sys) > 0:
+            _sys = dpdata.LabeledSystem(
+                oo, fmt="abacus/scf", type_map=jdata["type_map"]
+            )
+            if len(_sys) > 0:
+                if all_sys == None:
                     all_sys = _sys
-                    flag = False
                 else:
-                    pass
-            else:
-                _sys = dpdata.LabeledSystem(
-                    oo, fmt="abacus/scf", type_map=jdata["type_map"]
-                )
-                if len(_sys) > 0:
                     all_sys.append(_sys)
 
-        sys_data_path = os.path.join(work_path, "data.%s" % ss)
-        all_sys.to_deepmd_raw(sys_data_path)
-        all_sys.to_deepmd_npy(sys_data_path, set_size=len(sys_output))
+        if all_sys != None:
+            sys_data_path = os.path.join(work_path, "data.%s" % ss)
+            all_sys.to_deepmd_raw(sys_data_path)
+            all_sys.to_deepmd_npy(sys_data_path, set_size=len(sys_output))
 
 
 def post_fp_siesta(iter_index, jdata):
@@ -4175,7 +4173,6 @@ def post_fp_gaussian(iter_index, jdata):
 
 
 def post_fp_cp2k(iter_index, jdata, rfailed=None):
-
     ratio_failed = rfailed if rfailed else jdata.get("ratio_failed", 0.10)
     model_devi_jobs = jdata["model_devi_jobs"]
     assert iter_index < len(model_devi_jobs)
@@ -4236,7 +4233,6 @@ def post_fp_cp2k(iter_index, jdata, rfailed=None):
 
 
 def post_fp_pwmat(iter_index, jdata, rfailed=None):
-
     ratio_failed = rfailed if rfailed else jdata.get("ratio_failed", 0.05)
     model_devi_jobs = jdata["model_devi_jobs"]
     assert iter_index < len(model_devi_jobs)
@@ -4361,7 +4357,6 @@ def post_fp(iter_index, jdata):
 
 
 def set_version(mdata):
-
     deepmd_version = "1"
     mdata["deepmd_version"] = deepmd_version
     return mdata

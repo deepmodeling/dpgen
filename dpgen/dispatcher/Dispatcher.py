@@ -20,7 +20,6 @@ def make_submission(
     outlog,
     errlog,
 ):
-
     if mdata_machine["local_root"] != "./":
         raise RuntimeError(f"local_root must be './' in dpgen's machine.json.")
 

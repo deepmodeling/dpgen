@@ -5,6 +5,9 @@ from unicodedata import numeric
 
 import dpdata
 import numpy as np
+from dpdata.abacus.scf import make_unlabeled_stru
+from dpdata.utils import uniq_atom_names
+from dpdata.vasp import poscar as dpdata_poscar
 from pymatgen.core.structure import Structure
 
 import dpgen.generator.lib.abacus_scf as abacus_scf
@@ -242,7 +245,7 @@ key_words_list = [
 ]
 
 
-def poscar2stru(poscar, inter_param, stru):
+def poscar2stru(poscar, inter_param, stru="STRU"):
     """
     - poscar:           POSCAR for input
     - inter_param:      dictionary of 'interaction' from param.json
@@ -252,8 +255,12 @@ def poscar2stru(poscar, inter_param, stru):
                             - deepks_desc:  a string of deepks descriptor file
     - stru:            output filename, usally is 'STRU'
     """
-    stru = dpdata.System(poscar, fmt="vasp/poscar")
-    stru_data = stru.data
+    # if use dpdata.System, the structure will be rotated to make cell to be lower triangular
+    with open(poscar) as fp:
+        lines = [line.rstrip("\n") for line in fp]
+    stru_data = dpdata_poscar.to_system_data(lines)
+    stru_data = uniq_atom_names(stru_data)
+
     atom_mass = []
     pseudo = None
     orb = None
@@ -291,14 +298,16 @@ def poscar2stru(poscar, inter_param, stru):
     if "deepks_desc" in inter_param:
         deepks_desc = "./pp_orb/%s\n" % inter_param["deepks_desc"]
 
-    stru.to(
-        "stru",
-        "STRU",
-        mass=atom_mass,
+    stru_string = make_unlabeled_stru(
+        data=stru_data,
+        frame_idx=0,
         pp_file=pseudo,
         numerical_orbital=orb,
         numerical_descriptor=deepks_desc,
+        mass=atom_mass,
     )
+    with open(stru, "w") as fp:
+        fp.write(stru_string)
 
 
 def stru_fix_atom(struf, fix_atom=[True, True, True]):
@@ -378,13 +387,18 @@ def write_input(inputf, inputdict):
 
 
 def make_kspacing_kpt(struf, kspacing):
+    if isinstance(kspacing, (int, float)):
+        kspacing = [kspacing] * 3
+    elif isinstance(kspacing, list) and len(kspacing) == 1:
+        kspacing = 3 * kspacing
+    assert len(kspacing) == 3, "kspacing need 3 values"
     stru_data = abacus_scf.get_abacus_STRU(struf)
     cell = stru_data["cells"] / abacus_scf.bohr2ang
     volume = abs(cell[0].dot(np.cross(cell[1], cell[2])))
-    coef = 2 * np.pi / volume / kspacing
+    coef = [2 * np.pi / volume / i for i in kspacing]
     kpt = [
-        max(1, int(np.linalg.norm(np.cross(cell[x], cell[y])) * coef + 1))
-        for x, y in [[1, 2], [2, 0], [0, 1]]
+        max(1, int(np.linalg.norm(np.cross(cell[ixy[0]], cell[ixy[1]])) * coef[i] + 1))
+        for i, ixy in enumerate([[1, 2], [2, 0], [0, 1]])
     ]
     return kpt
 
@@ -415,10 +429,17 @@ def final_stru(abacus_path):
             with open(logf) as f1:
                 lines = f1.readlines()
             for i in range(1, len(lines)):
-                if lines[-i][36:41] == "istep":
-                    max_step = int(lines[-i].split()[-1])
+                max_step = ""
+                if "ALGORITHM --------------- ION=" in lines[-i]:
+                    index_ben = lines[-i].index("ION=") + 4
+                    index_end = lines[-i].index("ELEC")
+                    max_step = int(lines[-i][index_ben:index_end])
+                    if max_step < 2:
+                        max_step = ""
+                    else:
+                        max_step -= 2
                     break
-            return "OUT.%s/STRU_ION%d_D" % (suffix, max_step)
+            return "OUT.%s/STRU_ION%s_D" % (suffix, str(max_step))
     elif calculation == "md":
         with open(logf) as f1:
             lines = f1.readlines()

@@ -38,10 +38,10 @@ def data_args() -> List[Argument]:
     doc_init_data_prefix = "Prefix of initial data directories."
     doc_init_data_sys = "Paths of initial data. The path can be either a system diretory containing NumPy files or an HDF5 file. You may use either absolute or relative path here. Systems will be detected recursively in the directories or the HDF5 file."
     doc_sys_format = "Format of sys_configs."
-    doc_init_batch_size = "Each number is the batch_size of corresponding system for training in init_data_sys. One recommended rule for setting the sys_batch_size and init_batch_size is that batch_size mutiply number of atoms ot the stucture should be larger than 32. If set to auto, batch size will be 32 divided by number of atoms."
+    doc_init_batch_size = "Each number is the batch_size of corresponding system for training in init_data_sys. One recommended rule for setting the sys_batch_size and init_batch_size is that batch_size mutiply number of atoms ot the stucture should be larger than 32. If set to auto, batch size will be 32 divided by number of atoms. This argument will not override the mixed batch size in `default_training_param`."
     doc_sys_configs_prefix = "Prefix of sys_configs."
     doc_sys_configs = "Containing directories of structures to be explored in iterations.Wildcard characters are supported here."
-    doc_sys_batch_size = "Each number is the batch_size for training of corresponding system in sys_configs. If set to auto, batch size will be 32 divided by number of atoms."
+    doc_sys_batch_size = "Each number is the batch_size for training of corresponding system in sys_configs. If set to auto, batch size will be 32 divided by number of atoms. This argument will not override the mixed batch size in `default_training_param`."
 
     return [
         Argument("init_data_prefix", str, optional=True, doc=doc_init_data_prefix),
@@ -73,6 +73,7 @@ def training_args() -> List[Argument]:
     doc_training_iter0_model_path = "The model used to init the first iter training. Number of element should be equal to numb_models."
     doc_training_init_model = "Iteration > 0, the model parameters will be initilized from the model trained at the previous iteration. Iteration == 0, the model parameters will be initialized from training_iter0_model_path."
     doc_default_training_param = "Training parameters for deepmd-kit in 00.train. You can find instructions from here: (https://github.com/deepmodeling/deepmd-kit)."
+    doc_dp_train_skip_neighbor_stat = "Append --skip-neighbor-stat flag to dp train."
     doc_dp_compress = "Use dp compress to compress the model."
     doc_training_reuse_iter = "The minimal index of iteration that continues training models from old models of last iteration."
     doc_reusing = " This option is only adopted when continuing training models from old models. This option will override default parameters."
@@ -91,9 +92,7 @@ def training_args() -> List[Argument]:
     )
     doc_model_devi_activation_func = "The activation function in the model. The shape of list should be (N_models, 2), where 2 represents the embedding and fitting network. This option will override default parameters."
     doc_srtab_file_path = "The path of the table for the short-range pairwise interaction which is needed when using DP-ZBL potential"
-    doc_one_h5 = (
-        "Before training, all of the training data will be merged into one HDF5 file."
-    )
+    doc_one_h5 = "When using DeePMD-kit, all of the input data will be merged into one HDF5 file."
 
     return [
         Argument("numb_models", int, optional=False, doc=doc_numb_models),
@@ -111,6 +110,13 @@ def training_args() -> List[Argument]:
             dict,
             optional=False,
             doc=doc_default_training_param,
+        ),
+        Argument(
+            "dp_train_skip_neighbor_stat",
+            bool,
+            optional=True,
+            default=False,
+            doc=doc_dp_train_skip_neighbor_stat,
         ),
         Argument(
             "dp_compress", bool, optional=True, default=False, doc=doc_dp_compress

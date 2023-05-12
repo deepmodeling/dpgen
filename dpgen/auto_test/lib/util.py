@@ -37,7 +37,6 @@ def insert_data(task, task_type, username, file_name):
 
 
 def make_work_path(jdata, task, reprod_opt, static, user):
-
     task_type = jdata["task_type"]
     conf_dir = jdata["conf_dir"]
     conf_path = os.path.abspath(conf_dir)
@@ -94,7 +93,6 @@ def get_machine_info(mdata, task_type):
 
 
 def collect_task(all_task, task_type):
-
     if task_type == "vasp":
         output_file = "OUTCAR"
         check_finished = vasp.check_finished

@@ -228,7 +228,6 @@ def poscar_elong(poscar_in, poscar_out, elong, shift_center=True):
 
 
 def make_unit_cell(jdata):
-
     from_poscar = jdata.get("from_poscar", False)
     if not from_poscar:
         latt = jdata["latt"]
@@ -249,7 +248,6 @@ def make_unit_cell(jdata):
 
 
 def make_super_cell_pymatgen(jdata):
-
     make_unit_cell(jdata)
     out_dir = jdata["out_dir"]
     path_uc = os.path.join(out_dir, global_dirname_02)

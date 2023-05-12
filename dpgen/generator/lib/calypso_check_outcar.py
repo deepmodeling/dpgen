@@ -90,7 +90,6 @@ def Write_Outcar(element, ele, volume, lat, pos, ene, force, stress, pstress):
 
 
 def check():
-
     from ase.io import read
     from deepmd.calculator import DP
 

@@ -51,7 +51,6 @@ class Test(unittest.TestCase):
         self.output = jdata["output"]
 
     def testDPPotcar(self):
-
         refd = {
             "@module": "dpgen.database.vasp",
             "@class": "DPPotcar",

@@ -37,7 +37,6 @@ calypso_model_devi_name = "model_devi_results"
 def gen_structures(
     iter_index, jdata, mdata, caly_run_path, current_idx, length_of_caly_runopt_list
 ):
-
     # run calypso
     # vsc means generate elemental, binary and ternary at the same time
     vsc = jdata.get("vsc", False)  # take CALYPSO as confs generator
@@ -343,7 +342,6 @@ def gen_structures(
 
 
 def gen_main(iter_index, jdata, mdata, caly_run_opt_list, gen_idx):
-
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, model_devi_name)
 
@@ -456,7 +454,6 @@ def analysis(iter_index, jdata, calypso_model_devi_path):
 
 
 def run_calypso_model_devi(iter_index, jdata, mdata):
-
     dlog.info("start running CALYPSO")
 
     iter_name = make_iter_name(iter_index)

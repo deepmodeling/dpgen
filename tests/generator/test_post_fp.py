@@ -76,7 +76,6 @@ class TestPostFPVasp(unittest.TestCase):
         shutil.rmtree("iter.000000")
 
     def test_post_fp_vasp_0(self):
-
         with open(param_file, "r") as fp:
             jdata = json.load(fp)
         jdata["use_ele_temp"] = 2
@@ -127,7 +126,6 @@ class TestPostFPVasp(unittest.TestCase):
         self.assertEqual(list(list(aparam)[1]), [1, 1])
 
     def test_post_fp_vasp_1(self):
-
         with open(param_file, "r") as fp:
             jdata = json.load(fp)
         jdata["use_ele_temp"] = 1
@@ -222,6 +220,9 @@ class TestPostFPABACUS(unittest.TestCase, CompLabeledSys):
         self.system_2 = dpdata.LabeledSystem(
             "iter.000000/02.fp/data.000", fmt="deepmd/raw"
         )
+
+    def test_nframs_with_failed_job(self):
+        self.assertEqual(self.system_2.get_nframes(), 2)
 
 
 class TestPostFPSIESTA(unittest.TestCase, CompLabeledSys):
