@@ -393,9 +393,12 @@ def make_train(iter_index, jdata, mdata):
                     init_data_sys.append(
                         os.path.normpath(os.path.join("..", "data.iters", sys_single))
                     )
-                    init_batch_size.append(
-                        detect_batch_size(sys_batch_size[sys_idx], sys_single)
+                    batch_size = (
+                        sys_batch_size[sys_idx]
+                        if sys_idx < len(sys_batch_size)
+                        else "auto"
                     )
+                    init_batch_size.append(detect_batch_size(batch_size, sys_single))
     # establish tasks
     jinput = jdata["default_training_param"]
     try:
@@ -425,9 +428,13 @@ def make_train(iter_index, jdata, mdata):
         mdata["deepmd_version"]
     ) < Version("3"):
         # 2.x
-        jinput["training"]["training_data"] = {}
+        jinput["training"].setdefault("training_data", {})
         jinput["training"]["training_data"]["systems"] = init_data_sys
-        jinput["training"]["training_data"]["batch_size"] = init_batch_size
+        old_batch_size = jinput["training"]["training_data"].get("batch_size", "")
+        if not (
+            isinstance(old_batch_size, str) and old_batch_size.startswith("mixed:")
+        ):
+            jinput["training"]["training_data"]["batch_size"] = init_batch_size
         jinput["model"]["type_map"] = jdata["type_map"]
         # electron temperature
         if use_ele_temp == 0:

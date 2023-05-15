@@ -726,6 +726,49 @@ class TestMakeFPABACUS(unittest.TestCase):
         _check_potcar(self, 0, jdata["fp_pp_path"], jdata["fp_pp_files"])
         shutil.rmtree("iter.000000")
 
+    def test_make_fp_abacus_kspacing(self):
+        setUpModule()
+        if os.path.isdir("iter.000000"):
+            shutil.rmtree("iter.000000")
+        with open(param_abacus_post_file, "r") as fp:
+            jdata = json.load(fp)
+        fp.close()
+        jdata["user_fp_params"]["gamma_only"] = 0
+        jdata["user_fp_params"]["kspacing"] = [0.04, 0.05, 0.06]
+        with open(machine_file, "r") as fp:
+            mdata = json.load(fp)
+        fp.close()
+        md_descript = []
+        nsys = 2
+        nmd = 3
+        n_frame = 10
+        for ii in range(nsys):
+            tmp = []
+            for jj in range(nmd):
+                tmp.append(np.arange(0, 0.29, 0.29 / 10))
+            md_descript.append(tmp)
+        atom_types = [0, 0, 0, 0, 1]
+        type_map = jdata["type_map"]
+        _make_fake_md(0, md_descript, atom_types, type_map)
+        make_fp(0, jdata, {})
+
+        input_ref = abacus_input_ref.split("\n")
+        for ii, iline in enumerate(input_ref):
+            if "gamma_only" in iline:
+                input_ref[ii] = "gamma_only 0"
+            elif "kspacing" in iline:
+                input_ref[ii] = "kspacing 0.040000 0.050000 0.060000"
+
+        fp_path = os.path.join("iter.%06d" % 0, "02.fp", "INPUT")
+        tasks = glob.glob(os.path.join(fp_path, "task.*"))
+        for ii in tasks:
+            ifile = os.path.join(ii, "INPUT")
+            with open(ifile) as fp:
+                lines = fp.read().split("\n")
+            self.assertEqual(lines, input_ref)
+
+        shutil.rmtree("iter.000000")
+
     def test_make_fp_abacus_from_input(self):
         ## Verify if user chooses to diy ABACUS INPUT totally.
         setUpModule()

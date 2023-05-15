@@ -170,8 +170,13 @@ def init_pick(iter_index, jdata, mdata):
 
 def _init_dump_selected_frames(systems, labels, selc_idx, sys_data_path, jdata):
     selc_systems = dpdata.MultiSystems(type_map=jdata["type_map"])
+    sys_id_dict = defaultdict(list)
     for j in selc_idx:
         sys_name, sys_id = labels[j]
+        sys_id_dict[sys_name].append(sys_id)
+    for sys_name, sys_id in sys_id_dict.items():
+        # sys_id: list[int]
+        # System.append is slow; thus, we combine the idx of the same system
         selc_systems.append(systems[sys_name][sys_id])
     selc_systems.to_deepmd_raw(sys_data_path)
     selc_systems.to_deepmd_npy(sys_data_path, set_size=selc_idx.size)
@@ -218,17 +223,26 @@ def run_model_devi(iter_index, jdata, mdata):
     # models
     commands = []
     detail_file_name = detail_file_name_prefix
+    system_file_name = rest_data_name + ".old"
+    if jdata.get("one_h5", False):
+        # convert system to one h5 file
+        system_path = os.path.join(work_path, system_file_name)
+        dpdata.MultiSystems(type_map=jdata["type_map"]).from_deepmd_npy(
+            system_path,
+            labeled=False,
+        ).to_deepmd_hdf5(system_path + ".hdf5")
+        system_file_name += ".hdf5"
     command = "{dp} model-devi -m {model} -s {system} -o {detail_file}".format(
         dp=mdata.get("model_devi_command", "dp"),
         model=" ".join(task_model_list),
-        system=rest_data_name + ".old",
+        system=system_file_name,
         detail_file=detail_file_name,
     )
     commands = [command]
     # submit
     model_devi_group_size = mdata.get("model_devi_group_size", 1)
 
-    forward_files = [rest_data_name + ".old"]
+    forward_files = [system_file_name]
     backward_files = [detail_file_name]
 
     api_version = mdata.get("api_version", "1.0")
@@ -368,14 +382,15 @@ def make_fp_labeled(iter_index, jdata):
     work_path = os.path.join(iter_name, fp_name)
     create_path(work_path)
     picked_data_path = os.path.join(iter_name, model_devi_name, picked_data_name)
-    os.symlink(
-        os.path.abspath(picked_data_path),
-        os.path.abspath(os.path.join(work_path, "task." + fp_task_fmt % (0, 0))),
-    )
-    os.symlink(
-        os.path.abspath(picked_data_path),
-        os.path.abspath(os.path.join(work_path, "data." + data_system_fmt % 0)),
-    )
+    if os.path.exists(os.path.abspath(picked_data_path)):
+        os.symlink(
+            os.path.abspath(picked_data_path),
+            os.path.abspath(os.path.join(work_path, "task." + fp_task_fmt % (0, 0))),
+        )
+        os.symlink(
+            os.path.abspath(picked_data_path),
+            os.path.abspath(os.path.join(work_path, "data." + data_system_fmt % 0)),
+        )
 
 
 def make_fp_configs(iter_index, jdata):
@@ -384,6 +399,8 @@ def make_fp_configs(iter_index, jdata):
     work_path = os.path.join(iter_name, fp_name)
     create_path(work_path)
     picked_data_path = os.path.join(iter_name, model_devi_name, picked_data_name)
+    if not os.path.exists(os.path.abspath(picked_data_path)):
+        return
     systems = get_multi_system(picked_data_path, jdata)
     ii = 0
     jj = 0
@@ -521,12 +538,15 @@ def run_iter(param_file, machine_file):
             task_name = "task %02d" % jj
             sepline("{} {}".format(iter_name, task_name), "-")
             jdata["model_devi_jobs"] = [{} for _ in range(ii + 1)]
-            if ii == 0 and jj < 6:
+            if ii == 0 and jj < 6 and (jj >= 3 or not jdata.get("init_data_sys", [])):
                 if jj == 0:
-                    log_iter("init_pick", ii, jj)
+                    log_iter("init_train", ii, jj)
                     init_model(ii, jdata, mdata)
+                elif jj == 3:
+                    log_iter("init_pick", ii, jj)
                     init_pick(ii, jdata, mdata)
-                dlog.info("first iter, skip step 1-5")
+                else:
+                    dlog.info("first iter, skip step 1-5")
             elif jj == 0:
                 log_iter("make_train", ii, jj)
                 make_train(ii, jdata, mdata)
