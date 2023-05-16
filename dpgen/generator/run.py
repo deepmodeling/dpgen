@@ -265,7 +265,7 @@ def make_train(iter_index, jdata, mdata):
     training_iter0_model = jdata.get("training_iter0_model_path", [])
     training_init_model = jdata.get("training_init_model", False)
     training_reuse_iter = jdata.get("training_reuse_iter")
-    training_reuse_old_ratio = jdata.get("training_reuse_old_ratio", None)
+    training_reuse_old_ratio = jdata.get("training_reuse_old_ratio", "auto")
 
     # if you want to use DP-ZBL potential , you have to give the path of your energy potential file
     if "srtab_file_path" in jdata.keys():
@@ -283,15 +283,29 @@ def make_train(iter_index, jdata, mdata):
     training_reuse_start_pref_f = jdata.get("training_reuse_start_pref_f", 100)
     model_devi_activation_func = jdata.get("model_devi_activation_func", None)
 
-    if training_reuse_iter is not None and training_reuse_old_ratio is None:
-        raise RuntimeError(
-            "training_reuse_old_ratio not found but is mandatory when using init-model (training_reuse_iter is detected in param).\n"
-            "It defines the ratio of the old-data picking probability to the all-data(old-data plus new-data) picking probability in training after training_reuse_iter.\n"
-            "Denoting the index of the current iter as N (N >= training_reuse_iter ), old-data refers to those existed before the N-1 iter, and new-data refers to that obtained by the N-1 iter.\n"
-            "A recommended strategy is making the new-to-old ratio close to 10 times of the default value, to reasonably increase the sensitivity of the model to the new-data.\n"
-            "By default, the picking probability of data from one system or one iter is proportional to the number of batches (the number of frames divided by batch_size) of that systems or iter.\n"
-            "Detailed discussion about init-model (in Chinese) please see https://mp.weixin.qq.com/s/qsKMZ0j270YhQKvwXUiFvQ"
+    auto_ratio = False
+    if (
+        training_reuse_iter is not None
+        and isinstance(training_reuse_old_ratio, str)
+        and training_reuse_old_ratio.startswith("auto")
+    ):
+        s = training_reuse_old_ratio.split(":")
+        if len(s) == 1:
+            new_to_old_ratio = 10.0
+        elif len(s) == 2:
+            new_to_old_ratio = float(s[1])
+        else:
+            raise ValueError(
+                "training_reuse_old_ratio is not correct, got %s"
+                % training_reuse_old_ratio
+            )
+        dlog.info(
+            "Use automatic training_reuse_old_ratio to make new-to-old ratio close to %d times of the default value.",
+            training_reuse_iter,
         )
+        auto_ratio = True
+        number_old_frames = 0
+        number_new_frames = 0
 
     model_devi_engine = jdata.get("model_devi_engine", "lammps")
     if iter_index > 0 and _check_empty_iter(iter_index - 1, fp_task_min):
@@ -364,6 +378,8 @@ def make_train(iter_index, jdata, mdata):
                 )
             )
             init_batch_size.append(detect_batch_size(ss, single_sys))
+            if auto_ratio:
+                number_old_frames += get_nframes(single_sys)
     old_range = None
     if iter_index > 0:
         for ii in range(iter_index):
@@ -385,6 +401,11 @@ def make_train(iter_index, jdata, mdata):
                     nframes += dpdata.LabeledSystem(
                         sys_single, fmt="deepmd/npy"
                     ).get_nframes()
+                    if auto_ratio:
+                        if ii == iter_index - 1:
+                            number_new_frames += nframes
+                        else:
+                            number_old_frames += nframes
                 if nframes < fp_task_min:
                     log_task(
                         "nframes (%d) in data sys %s is too small, skip" % (nframes, jj)
@@ -453,6 +474,10 @@ def make_train(iter_index, jdata, mdata):
             "DP-GEN currently only supports for DeePMD-kit 1.x or 2.x version!"
         )
     # set training reuse model
+    if auto_ratio:
+        training_reuse_old_ratio = number_old_frames / (
+            number_old_frames + number_new_frames * new_to_old_ratio
+        )
     if training_reuse_iter is not None and iter_index >= training_reuse_iter:
         if "numb_steps" in jinput["training"] and training_reuse_stop_batch is not None:
             jinput["training"]["numb_steps"] = training_reuse_stop_batch
