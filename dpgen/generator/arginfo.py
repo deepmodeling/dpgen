@@ -1,3 +1,4 @@
+import textwrap
 from typing import Dict, List
 
 from dargs import Argument, Variant
@@ -78,7 +79,15 @@ def training_args() -> List[Argument]:
     doc_training_reuse_iter = "The minimal index of iteration that continues training models from old models of last iteration."
     doc_reusing = " This option is only adopted when continuing training models from old models. This option will override default parameters."
     doc_training_reuse_old_ratio = (
-        "The probability proportion of old data during training." + doc_reusing
+        textwrap.dedent(
+            """\
+        The probability proportion of old data during training. It can be:\n
+        - float: directly assign the probability of old data;
+        - `auto:f`: automatic probability, where f is the new-to-old ratio;
+        - `auto`: equivalent to `auto:10`.
+    """
+        )
+        + doc_reusing
     )
     doc_training_reuse_numb_steps = "Number of training batch." + doc_reusing
     doc_training_reuse_start_lr = (
@@ -129,7 +138,8 @@ def training_args() -> List[Argument]:
         ),
         Argument(
             "training_reuse_old_ratio",
-            [None, float],
+            [str, float],
+            default="auto",
             optional=True,
             doc=doc_training_reuse_old_ratio,
         ),

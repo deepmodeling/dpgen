@@ -1,3 +1,4 @@
+import copy
 import os
 import re
 
@@ -25,8 +26,9 @@ def make_abacus_scf_kpt(fp_params):
     return ret
 
 
-def make_abacus_scf_input(fp_params):
+def make_abacus_scf_input(fp_params, extra_file_path=""):
     # Make INPUT file for abacus pw scf calculation.
+    # put extra files (such as: deepks_model) to extra_file_path folder
     ret = "INPUT_PARAMETERS\n"
     ret += "calculation scf\n"
     for key in fp_params:
@@ -181,7 +183,9 @@ def make_abacus_scf_input(fp_params):
             ), "'deepks_scf' should be either 0 or 1."
             ret += "deepks_scf %d\n" % fp_params["deepks_scf"]
         elif key == "deepks_model":
-            ret += "deepks_model %s\n" % fp_params["deepks_model"]
+            ret += "deepks_model %s\n" % os.path.join(
+                extra_file_path, os.path.split(fp_params["deepks_model"])[1]
+            )
         elif key[0] == "_":
             pass
         elif key == "calculation":
@@ -198,6 +202,7 @@ def make_abacus_scf_stru(
     fp_dpks_descriptor=None,
     fp_params=None,
     type_map=None,
+    pporb="",  # pull all pp orb dpks files to pporb folder
 ):
     atom_names = sys_data["atom_names"]
     atom_numbs = sys_data["atom_numbs"]
@@ -217,12 +222,17 @@ def make_abacus_scf_stru(
         )
         idx = type_map.index(atom_names[iatom])
         if "atom_masses" not in sys_data:
-            ret += atom_names[iatom] + " 1.00 " + fp_pp_files[idx] + "\n"
+            ret += (
+                atom_names[iatom]
+                + " 1.00 "
+                + os.path.join(pporb, fp_pp_files[idx])
+                + "\n"
+            )
         else:
             ret += (
                 atom_names[iatom]
                 + " %.3f " % sys_data["atom_masses"][iatom]
-                + fp_pp_files[idx]
+                + os.path.join(pporb, fp_pp_files[idx])
                 + "\n"
             )
 
@@ -267,11 +277,11 @@ def make_abacus_scf_stru(
         assert len(fp_orb_files) == len(type_map)
         for iatom in range(len(atom_names)):
             idx = type_map.index(atom_names[iatom])
-            ret += fp_orb_files[idx] + "\n"
+            ret += os.path.join(pporb, fp_orb_files[idx]) + "\n"
 
     if fp_dpks_descriptor is not None:
         ret += "\nNUMERICAL_DESCRIPTOR\n"
-        ret += "%s\n" % fp_dpks_descriptor
+        ret += os.path.join(pporb, fp_dpks_descriptor) + "\n"
 
     return ret
 
@@ -392,31 +402,50 @@ def get_abacus_STRU(STRU, INPUT=None, n_ele=None):
 
 
 def make_supercell_abacus(from_struct, super_cell):
-    if "types" in from_struct:
-        from_struct["types"] = (
-            from_struct["types"] * super_cell[0] * super_cell[1] * super_cell[2]
-        )
-    for ix in range(super_cell[0]):
-        for iy in range(super_cell[1]):
-            for iz in range(super_cell[2]):
-                if ix == 0 and iy == 0 and iz == 0:
-                    continue
-                for ia in range(sum(from_struct["atom_numbs"])):
+    to_struct = copy.deepcopy(from_struct)
+
+    if "atom_types" in from_struct:
+        new_types = []
+        # to_struct["atom_types"] = (
+        #    from_struct["atom_types"] * super_cell[0] * super_cell[1] * super_cell[2]
+        # )
+        for idx_atm, ina in enumerate(from_struct["atom_numbs"]):
+            new_types += (
+                [idx_atm for i in range(ina)]
+                * super_cell[0]
+                * super_cell[1]
+                * super_cell[2]
+            )
+        to_struct["atom_types"] = new_types
+    to_atom_num = (
+        sum(from_struct["atom_numbs"]) * super_cell[0] * super_cell[1] * super_cell[2]
+    )
+    new_coord = np.zeros((to_atom_num, 3))
+    idx_atm = 0
+    for ia in range(sum(from_struct["atom_numbs"])):
+        for ix in range(super_cell[0]):
+            for iy in range(super_cell[1]):
+                for iz in range(super_cell[2]):
+                    # if ix == 0 and iy == 0 and iz == 0:
+                    #    continue
+
                     coord = (
                         from_struct["coords"][ia]
                         + from_struct["cells"][0] * ix
                         + from_struct["cells"][1] * iy
                         + from_struct["cells"][2] * iz
                     )
-                    from_struct["coords"] = np.vstack([from_struct["coords"], coord])
-    from_struct["atom_numbs"] = [
+                    new_coord[idx_atm] = coord
+    to_struct["coords"] = new_coord
+    new_numbs = [
         i * super_cell[0] * super_cell[1] * super_cell[2]
         for i in from_struct["atom_numbs"]
     ]
-    from_struct["cells"][0] *= super_cell[0]
-    from_struct["cells"][1] *= super_cell[1]
-    from_struct["cells"][2] *= super_cell[2]
-    return from_struct
+    to_struct["atom_numbs"] = new_numbs
+    to_struct["cells"][0] *= super_cell[0]
+    to_struct["cells"][1] *= super_cell[1]
+    to_struct["cells"][2] *= super_cell[2]
+    return to_struct
 
 
 def make_kspacing_kpoints_stru(stru, kspacing):
