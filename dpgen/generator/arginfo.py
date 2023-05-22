@@ -722,7 +722,7 @@ def fp_style_cp2k_args() -> List[Argument]:
         "Conflict with key:user_fp_params. "
         "enable the template input provided by user."
         "some rules should be followed, read the following text in detail: \n "
-        "1. One must present a KEYWORD ABC in the section CELL so that the DP-GEN can replace the cell on-the-fly. \n" 
+        "1. One must present a KEYWORD ABC in the section CELL so that the DP-GEN can replace the cell on-the-fly. \n"
         "2. One need to add these lines under FORCE_EVAL section to print forces and stresses. \n"
         "STRESS_TENSOR ANALYTICAL \n"
         "  &PRINT \n"
