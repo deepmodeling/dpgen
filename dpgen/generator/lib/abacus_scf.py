@@ -427,6 +427,7 @@ def make_supercell_abacus(from_struct, super_cell):
                         + from_struct["cells"][2] * iz
                     )
                     new_coord[idx_atm] = coord
+                    idx_atm+=1
     to_struct["coords"] = new_coord
     new_numbs = [
         i * super_cell[0] * super_cell[1] * super_cell[2]
