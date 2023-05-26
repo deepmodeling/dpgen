@@ -1,0 +1,106 @@
+{
+  "api_version": "1.0",
+  "deepmd_version": "2.1.5",
+  "train" :[
+    {
+      "command": "dp",
+      "machine": {
+        "batch_type": "Lebesgue",
+        "context_type": "LebesgueContext",
+        "local_root" : "./",
+        "remote_profile":{
+          "email": "your lebesgue register email",
+          "password": "your lebesgue password",
+          "program_id": 0,
+            "keep_backup":true,
+            "input_data":{
+                "job_type": "container",
+                "log_file": "00*/train.log",
+                "grouped":true,
+                "job_name": "dpgen_train_job",
+                "disk_size": 100,
+                "scass_type":"c4_m15_1 * NVIDIA T4",
+                "checkpoint_files":["00*/checkpoint","00*/model.ckpt*"],
+                "checkpoint_time":30,
+                "platform": "ali",
+                "image_name":"registry.dp.tech/dptech/deepmd-kit:2.1.5-cuda11.6",
+                "on_demand":0
+            }
+        }
+      },
+      "resources": {
+        "number_node": 1,
+        "cpu_per_node": 4,
+        "gpu_per_node": 1,
+        "queue_name": "T1_4_0",
+        "group_size": 1
+      }
+    }],
+  "model_devi":[
+    {
+      "command": "lmp -i input.lammps -v restart 0",
+      "machine": {
+        "batch_type": "Lebesgue",
+        "context_type": "LebesgueContext",
+        "local_root" : "./",
+        "remote_profile":{
+          "email": "your lebesgue register email",
+          "password": "your lebesgue password",
+          "program_id": 0,
+            "keep_backup":true,
+            "input_data":{
+              "log_file": "*/model_devi.log",
+              "grouped":true,
+              "job_name": "dpgen_model_devi_job",
+              "machine_type":"c8_m32_1 * NVIDIA V100",
+              "platform": "ali",
+              "job_type": "container",
+              "image_address":"registry.dp.tech/dptech/deepmd-kit:2.1.5-cuda11.6"
+            }
+        }
+      },
+      "resources": {
+        "number_node": 1,
+        "cpu_per_node": 8,
+        "gpu_per_node": 1,
+        "queue_name": "V100_8_32",
+        "group_size": 250,
+	      "source_list": []
+      }
+    }],
+  "fp":
+    [{
+      "command": "mpirun  --allow-run-as-root --oversubscribe -n 8 /root/cp2k-7.1/exe/local/cp2k.popt -i input.inp",
+      "machine": {
+        "batch_type": "Lebesgue",
+        "context_type": "LebesgueContext",
+        "local_root" : "./",
+        "remote_profile":{
+          "email": "your lebesgue register email",
+          "password": "your lebesgue password",
+          "program_id": 0,
+            "keep_backup":true,
+            "input_data":{
+              "job_type": "indicate",
+              "log_file": "task*/fp.log",
+              "grouped":true,
+              "job_name": "dpgen_fp_job",
+              "disk_size": 100,
+              "checkpoint_files": "sync_files",
+              "checkpoint_time":30,
+              "scass_type":"c16_m32_cpu",
+              "platform": "ali",
+              "image_name":"LBG_CP2K_7.1_v1",
+              "on_demand":0
+            }
+        }
+      },
+      "resources": {
+        "number_node": 1,
+        "queue_name": "F1_4_0",
+        "group_size": 2,
+        "source_list": ["/opt/intel/oneapi/setvars.sh","/root/cp2k-7.1/tools/toolchain/install/setup"]
+      }
+    }
+  ]
+}
