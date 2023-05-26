@@ -98,5 +98,5 @@
         "group_size": 10,
 	      "source_list": ["/opt/intel/oneapi/setvars.sh"]
       }
-    }] 
+    }]
 }
