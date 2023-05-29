@@ -420,7 +420,7 @@ def make_fp(iter_index, jdata, mdata):
         make_fp_labeled(iter_index, jdata)
     else:
         make_fp_configs(iter_index, jdata)
-        jdata['model_devi_engine'] = 'lammps'
+        jdata["model_devi_engine"] = "lammps"
         make_fp_calculation(iter_index, jdata, mdata)
         # Copy user defined forward_files
         iter_name = make_iter_name(iter_index)
