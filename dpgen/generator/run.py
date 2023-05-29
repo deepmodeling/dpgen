@@ -3578,7 +3578,7 @@ def make_fp(iter_index, jdata, mdata):
 
 def make_fp_calculation(iter_index, jdata, mdata):
     """Make the input file of FP calculation.
-    
+
     Parameters
     ----------
     iter_index : int
