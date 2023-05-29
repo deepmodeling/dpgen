@@ -3127,7 +3127,25 @@ def _link_fp_abacus_pporb_descript(iter_index, jdata):
         os.chdir(cwd)
 
 
-def _make_fp_vasp_configs(iter_index, jdata):
+def _make_fp_vasp_configs(iter_index: int, jdata: dict):
+    """Read the model deviation from model_devi step, and then generate the candidated structures
+    in 02.fp directory.
+
+    Currently, the formats of generated structures are decided by model_devi_eigne.
+
+    Parameters
+    ----------
+    iter_index : int
+        The index of iteration.
+    jdata : dict
+        The json data.
+
+    Returns
+    -------
+    int
+        The number of the candidated structures.
+    """
+    # TODO: we need to unify different data formats
     fp_task_max = jdata["fp_task_max"]
     model_devi_skip = jdata["model_devi_skip"]
     type_map = jdata["type_map"]
@@ -3179,10 +3197,6 @@ def _make_fp_vasp_configs(iter_index, jdata):
 
 
 def make_fp_vasp(iter_index, jdata):
-    # make config
-    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
-    if len(fp_tasks) == 0:
-        return
     # abs path for fp_incar if it exists
     if "fp_incar" in jdata:
         jdata["fp_incar"] = os.path.abspath(jdata["fp_incar"])
@@ -3203,10 +3217,8 @@ def make_fp_vasp(iter_index, jdata):
 
 
 def make_fp_pwscf(iter_index, jdata):
-    # make config
-    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
-    if len(fp_tasks) == 0:
-        return
+    work_path = os.path.join(make_iter_name(iter_index), fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, "task.*"))
     # make pwscf input
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -3237,11 +3249,9 @@ def make_fp_pwscf(iter_index, jdata):
 
 
 def make_fp_abacus_scf(iter_index, jdata):
-    # make config
+    work_path = os.path.join(make_iter_name(iter_index), fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, "task.*"))
     pporb_path = "pporb"
-    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
-    if len(fp_tasks) == 0:
-        return
     # make abacus/pw/scf input
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -3347,10 +3357,8 @@ def make_fp_abacus_scf(iter_index, jdata):
 
 
 def make_fp_siesta(iter_index, jdata):
-    # make config
-    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
-    if len(fp_tasks) == 0:
-        return
+    work_path = os.path.join(make_iter_name(iter_index), fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, "task.*"))
     # make siesta input
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -3374,10 +3382,8 @@ def make_fp_siesta(iter_index, jdata):
 
 
 def make_fp_gaussian(iter_index, jdata):
-    # make config
-    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
-    if len(fp_tasks) == 0:
-        return
+    work_path = os.path.join(make_iter_name(iter_index), fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, "task.*"))
     # make gaussian gjf file
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -3403,10 +3409,8 @@ def make_fp_gaussian(iter_index, jdata):
 
 
 def make_fp_cp2k(iter_index, jdata):
-    # make config
-    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
-    if len(fp_tasks) == 0:
-        return
+    work_path = os.path.join(make_iter_name(iter_index), fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, "task.*"))
     # make cp2k input
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -3445,10 +3449,6 @@ def make_fp_cp2k(iter_index, jdata):
 
 
 def make_fp_pwmat(iter_index, jdata):
-    # make config
-    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
-    if len(fp_tasks) == 0:
-        return
     # abs path for fp_incar if it exists
     if "fp_incar" in jdata:
         jdata["fp_incar"] = os.path.abspath(jdata["fp_incar"])
@@ -3504,8 +3504,9 @@ def make_fp_amber_diff(iter_index: int, jdata: dict):
        Jinzhe Zeng, Timothy J. Giese, Şölen Ekesan, and Darrin M. York, Journal of Chemical
        Theory and Computation 2021 17 (11), 6993-7009
     """
-    # make config
-    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
+    assert jdata["model_devi_engine"] == "amber"
+    work_path = os.path.join(make_iter_name(iter_index), fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, "task.*"))
     # make amber input
     cwd = os.getcwd()
     # link two mdin files and param7
@@ -3558,8 +3559,36 @@ def make_fp_amber_diff(iter_index: int, jdata: dict):
 
 
 def make_fp(iter_index, jdata, mdata):
-    fp_style = jdata["fp_style"]
+    """Select the candidate strutures and make the input file of FP calculation.
 
+    Parameters
+    ----------
+    iter_index : int
+        iter index
+    jdata : dict
+        Run parameters.
+    mdata : dict
+        Machine parameters.
+    """
+    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
+    if len(fp_tasks) == 0:
+        return
+    make_fp_calculation(iter_index, jdata, mdata)
+
+
+def make_fp_calculation(iter_index, jdata, mdata):
+    """Make the input file of FP calculation.
+    
+    Parameters
+    ----------
+    iter_index : int
+        iter index
+    jdata : dict
+        Run parameters.
+    mdata : dict
+        Machine parameters.
+    """
+    fp_style = jdata["fp_style"]
     if fp_style == "vasp":
         make_fp_vasp(iter_index, jdata)
     elif fp_style == "pwscf":

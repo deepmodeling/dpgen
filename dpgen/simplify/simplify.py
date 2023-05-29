@@ -22,7 +22,6 @@ from packaging.version import Version
 
 from dpgen import dlog
 from dpgen.dispatcher.Dispatcher import make_submission
-from dpgen.generator.lib.gaussian import make_gaussian_input
 
 # TODO: maybe the following functions can be moved to dpgen.util
 from dpgen.generator.lib.utils import (
@@ -36,6 +35,7 @@ from dpgen.generator.run import (
     data_system_fmt,
     fp_name,
     fp_task_fmt,
+    make_fp_calculation,
     make_fp_vasp_cp_cvasp,
     make_fp_vasp_incar,
     make_fp_vasp_kp,
@@ -414,61 +414,14 @@ def make_fp_configs(iter_index, jdata):
         ii += 1
 
 
-def make_fp_gaussian(iter_index, jdata):
-    work_path = os.path.join(make_iter_name(iter_index), fp_name)
-    fp_tasks = glob.glob(os.path.join(work_path, "task.*"))
-    cwd = os.getcwd()
-    if "user_fp_params" in jdata.keys():
-        fp_params = jdata["user_fp_params"]
-    else:
-        fp_params = jdata["fp_params"]
-    cwd = os.getcwd()
-    for ii in fp_tasks:
-        os.chdir(ii)
-        sys_data = dpdata.System("POSCAR").data
-        ret = make_gaussian_input(sys_data, fp_params)
-        with open("input", "w") as fp:
-            fp.write(ret)
-        os.chdir(cwd)
-
-
-def make_fp_vasp(iter_index, jdata):
-    # abs path for fp_incar if it exists
-    if "fp_incar" in jdata:
-        jdata["fp_incar"] = os.path.abspath(jdata["fp_incar"])
-    # get nbands esti if it exists
-    if "fp_nbands_esti_data" in jdata:
-        nbe = NBandsEsti(jdata["fp_nbands_esti_data"])
-    else:
-        nbe = None
-    # order is critical!
-    # 1, create potcar
-    sys_link_fp_vasp_pp(iter_index, jdata)
-    # 2, create incar
-    make_fp_vasp_incar(iter_index, jdata, nbands_esti=nbe)
-    # 3, create kpoints
-    make_fp_vasp_kp(iter_index, jdata)
-    # 4, copy cvasp
-    make_fp_vasp_cp_cvasp(iter_index, jdata)
-
-
-def make_fp_calculation(iter_index, jdata):
-    fp_style = jdata["fp_style"]
-    if fp_style == "vasp":
-        make_fp_vasp(iter_index, jdata)
-    elif fp_style == "gaussian":
-        make_fp_gaussian(iter_index, jdata)
-    else:
-        raise RuntimeError("unsupported fp_style " + fp_style)
-
-
 def make_fp(iter_index, jdata, mdata):
     labeled = jdata.get("labeled", False)
     if labeled:
         make_fp_labeled(iter_index, jdata)
     else:
         make_fp_configs(iter_index, jdata)
-        make_fp_calculation(iter_index, jdata)
+        jdata['model_devi_engine'] = 'lammps'
+        make_fp_calculation(iter_index, jdata, mdata)
         # Copy user defined forward_files
         iter_name = make_iter_name(iter_index)
         work_path = os.path.join(iter_name, fp_name)
