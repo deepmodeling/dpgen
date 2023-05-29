@@ -18,7 +18,8 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
-      run: pip install coverage pymatgen==2023.3.23 -e .
+      # See https://github.com/materialsproject/api/issues/809
+      run: pip install coverage pymatgen==2023.3.23 -e . 'mp-api<0.33; python_version < "3.9"'
     - name: Test
       run: coverage run --source=./dpgen -m unittest -v && coverage report
     - uses: codecov/codecov-action@v3
