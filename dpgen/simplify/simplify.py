@@ -422,10 +422,6 @@ def make_fp(iter_index, jdata, mdata):
         make_fp_configs(iter_index, jdata)
         jdata["model_devi_engine"] = "lammps"
         make_fp_calculation(iter_index, jdata, mdata)
-        # Copy user defined forward_files
-        iter_name = make_iter_name(iter_index)
-        work_path = os.path.join(iter_name, fp_name)
-        symlink_user_forward_files(mdata=mdata, task_type="fp", work_path=work_path)
 
 
 def run_iter(param_file, machine_file):
