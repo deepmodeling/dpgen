@@ -1,4 +1,4 @@
-![logo](./doc/logo.svg)
+<picture><source media="(prefers-color-scheme: dark)" srcset="./doc/_static/logo-dark.svg"><source media="(prefers-color-scheme: light)" srcset="./doc/_static/logo.svg"><img alt="DP-GEN logo" src="./doc/_static/logo.svg"></picture>
 
 --------------------------------------------------------------------------------
 
