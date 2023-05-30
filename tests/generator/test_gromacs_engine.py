@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 __package__ = "generator"
 dirname = os.path.join(os.path.abspath(os.path.dirname(__file__)), "gromacs")
 
-from .context import make_fp_gaussian, make_model_devi
+from .context import make_fp, make_model_devi
 
 
 def _make_fake_graphs(train_path):
@@ -131,7 +131,7 @@ class TestGromacsModelDeviEngine(unittest.TestCase):
         self._copy_outputs(
             os.path.join(self.dirname, "outputs"), self.model_devi_task_path
         )
-        make_fp_gaussian(iter_index=0, jdata=self.jdata)
+        make_fp(iter_index=0, jdata=self.jdata, mdata={})
         candi = np.loadtxt(
             os.path.join(self.fp_path, "candidate.shuffled.000.out"), dtype=str
         )
