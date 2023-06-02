@@ -86,7 +86,7 @@
               "machine_type":"c32_m64_cpu",
               "platform": "ali",
               "job_type":"container",
-              "image_address":"您需提供授权凭证到 bohrium@dp.tech 邮箱获取VASP镜像名称"
+              "image_address":"You need to provide the authorization voucher to bohrium@dp.tech to obtain the name of the VASP image."
             }
         }
       },
