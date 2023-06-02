@@ -144,8 +144,14 @@ input_files = (
     (run_jdata, p_examples / "run" / "dprc" / "generator.json"),
     # machines
     (run_mdata, p_examples / "machine" / "DeePMD-kit-2.x" / "lebesgue_v2_machine.json"),
-    (run_mdata, p_examples / "machine" / "DeePMD-kit-2.x" / "lbg_v2.1.5_cp2k_machine.json"),
-    (run_mdata, p_examples / "machine" / "DeePMD-kit-2.x" / "lbg_v2.1.5_vasp_machine.json"),
+    (
+        run_mdata,
+        p_examples / "machine" / "DeePMD-kit-2.x" / "lbg_v2.1.5_cp2k_machine.json",
+    ),
+    (
+        run_mdata,
+        p_examples / "machine" / "DeePMD-kit-2.x" / "lbg_v2.1.5_vasp_machine.json",
+    ),
     (run_mdata, p_examples / "machine" / "DeePMD-kit-1.x" / "machine-local.json"),
     (
         run_mdata,
