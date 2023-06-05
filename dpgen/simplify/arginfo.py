@@ -6,7 +6,10 @@ from dpgen.arginfo import general_mdata_arginfo
 from dpgen.generator.arginfo import (
     basic_args,
     data_args,
+    fp_style_abacus_args,
+    fp_style_cp2k_args,
     fp_style_gaussian_args,
+    fp_style_siesta_args,
     fp_style_vasp_args,
     training_args,
 )
@@ -59,7 +62,7 @@ def fp_style_variant_type_args() -> Variant:
     Variant
         variant for fp style
     """
-    doc_fp_style = "Software for First Principles, if `labeled` is false. Options include “vasp”, “gaussian” up to now."
+    doc_fp_style = "Software for First Principles, if `labeled` is false."
     doc_fp_style_none = "No fp."
     doc_fp_style_vasp = "VASP."
     doc_fp_style_gaussian = "Gaussian. The command should be set as `g16 < input`."
@@ -73,6 +76,15 @@ def fp_style_variant_type_args() -> Variant:
             Argument(
                 "gaussian", dict, fp_style_gaussian_args(), doc=doc_fp_style_gaussian
             ),
+            Argument("siesta", dict, fp_style_siesta_args()),
+            Argument("cp2k", dict, fp_style_cp2k_args()),
+            Argument("abacus", dict, fp_style_abacus_args()),
+            # TODO: not supported yet, as it requires model_devi_engine to be amber
+            # Argument(
+            #     "amber/diff", dict, fp_style_amber_diff_args(), doc=doc_amber_diff
+            # ),
+            Argument("pwmat", dict, [], doc="TODO: add doc"),
+            Argument("pwscf", dict, [], doc="TODO: add doc"),
         ],
         optional=True,
         default_tag="none",

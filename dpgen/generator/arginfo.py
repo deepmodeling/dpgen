@@ -1,3 +1,4 @@
+import textwrap
 from typing import Dict, List
 
 from dargs import Argument, Variant
@@ -78,7 +79,15 @@ def training_args() -> List[Argument]:
     doc_training_reuse_iter = "The minimal index of iteration that continues training models from old models of last iteration."
     doc_reusing = " This option is only adopted when continuing training models from old models. This option will override default parameters."
     doc_training_reuse_old_ratio = (
-        "The probability proportion of old data during training." + doc_reusing
+        textwrap.dedent(
+            """\
+        The probability proportion of old data during training. It can be:\n
+        - float: directly assign the probability of old data;
+        - `auto:f`: automatic probability, where f is the new-to-old ratio;
+        - `auto`: equivalent to `auto:10`.
+    """
+        )
+        + doc_reusing
     )
     doc_training_reuse_numb_steps = "Number of training batch." + doc_reusing
     doc_training_reuse_start_lr = (
@@ -129,7 +138,8 @@ def training_args() -> List[Argument]:
         ),
         Argument(
             "training_reuse_old_ratio",
-            [None, float],
+            [str, float],
+            default="auto",
             optional=True,
             doc=doc_training_reuse_old_ratio,
         ),
@@ -708,7 +718,23 @@ def fp_style_siesta_args() -> List[Argument]:
 
 def fp_style_cp2k_args() -> List[Argument]:
     doc_user_fp_params = "Parameters for cp2k calculation. find detail in manual.cp2k.org. only the kind section must be set before use. we assume that you have basic knowledge for cp2k input."
-    doc_external_input_path = "Conflict with key:user_fp_params, use the template input provided by user, some rules should be followed, read the following text in detail."
+    doc_external_input_path = (
+        "Conflict with key:user_fp_params.\n"
+        "enable the template input provided by user.\n"
+        "some rules should be followed, read the following text in detail: \n"
+        "\n"
+        "1. One must present a KEYWORD ABC in the section CELL so that the DP-GEN can replace the cell on-the-fly. \n"
+        "2. One need to add these lines under FORCE_EVAL section to print forces and stresses::\n"
+        "\n"
+        "    STRESS_TENSOR ANALYTICAL\n"
+        "      &PRINT\n"
+        "        &FORCES ON\n"
+        "        &END FORCES\n"
+        "        &STRESS_TENSOR ON\n"
+        "        &END STRESS_TENSOR\n"
+        "      &END PRINT\n"
+        "\n"
+    )
     doc_ratio_failed = "Check the ratio of unsuccessfully terminated jobs. If too many FP tasks are not converged, RuntimeError will be raised."
 
     return [

@@ -25,6 +25,7 @@ import sys
 import warnings
 from collections import Counter
 from collections.abc import Iterable
+from pprint import pp
 from typing import List
 
 import dpdata
@@ -264,7 +265,7 @@ def make_train(iter_index, jdata, mdata):
     training_iter0_model = jdata.get("training_iter0_model_path", [])
     training_init_model = jdata.get("training_init_model", False)
     training_reuse_iter = jdata.get("training_reuse_iter")
-    training_reuse_old_ratio = jdata.get("training_reuse_old_ratio", None)
+    training_reuse_old_ratio = jdata.get("training_reuse_old_ratio", "auto")
 
     # if you want to use DP-ZBL potential , you have to give the path of your energy potential file
     if "srtab_file_path" in jdata.keys():
@@ -282,15 +283,29 @@ def make_train(iter_index, jdata, mdata):
     training_reuse_start_pref_f = jdata.get("training_reuse_start_pref_f", 100)
     model_devi_activation_func = jdata.get("model_devi_activation_func", None)
 
-    if training_reuse_iter is not None and training_reuse_old_ratio is None:
-        raise RuntimeError(
-            "training_reuse_old_ratio not found but is mandatory when using init-model (training_reuse_iter is detected in param).\n"
-            "It defines the ratio of the old-data picking probability to the all-data(old-data plus new-data) picking probability in training after training_reuse_iter.\n"
-            "Denoting the index of the current iter as N (N >= training_reuse_iter ), old-data refers to those existed before the N-1 iter, and new-data refers to that obtained by the N-1 iter.\n"
-            "A recommended strategy is making the new-to-old ratio close to 10 times of the default value, to reasonably increase the sensitivity of the model to the new-data.\n"
-            "By default, the picking probability of data from one system or one iter is proportional to the number of batches (the number of frames divided by batch_size) of that systems or iter.\n"
-            "Detailed discussion about init-model (in Chinese) please see https://mp.weixin.qq.com/s/qsKMZ0j270YhQKvwXUiFvQ"
+    auto_ratio = False
+    if (
+        training_reuse_iter is not None
+        and isinstance(training_reuse_old_ratio, str)
+        and training_reuse_old_ratio.startswith("auto")
+    ):
+        s = training_reuse_old_ratio.split(":")
+        if len(s) == 1:
+            new_to_old_ratio = 10.0
+        elif len(s) == 2:
+            new_to_old_ratio = float(s[1])
+        else:
+            raise ValueError(
+                "training_reuse_old_ratio is not correct, got %s"
+                % training_reuse_old_ratio
+            )
+        dlog.info(
+            "Use automatic training_reuse_old_ratio to make new-to-old ratio close to %d times of the default value.",
+            training_reuse_iter,
         )
+        auto_ratio = True
+        number_old_frames = 0
+        number_new_frames = 0
 
     model_devi_engine = jdata.get("model_devi_engine", "lammps")
     if iter_index > 0 and _check_empty_iter(iter_index - 1, fp_task_min):
@@ -363,6 +378,8 @@ def make_train(iter_index, jdata, mdata):
                 )
             )
             init_batch_size.append(detect_batch_size(ss, single_sys))
+            if auto_ratio:
+                number_old_frames += get_nframes(single_sys)
     old_range = None
     if iter_index > 0:
         for ii in range(iter_index):
@@ -384,6 +401,11 @@ def make_train(iter_index, jdata, mdata):
                     nframes += dpdata.LabeledSystem(
                         sys_single, fmt="deepmd/npy"
                     ).get_nframes()
+                    if auto_ratio:
+                        if ii == iter_index - 1:
+                            number_new_frames += nframes
+                        else:
+                            number_old_frames += nframes
                 if nframes < fp_task_min:
                     log_task(
                         "nframes (%d) in data sys %s is too small, skip" % (nframes, jj)
@@ -452,6 +474,10 @@ def make_train(iter_index, jdata, mdata):
             "DP-GEN currently only supports for DeePMD-kit 1.x or 2.x version!"
         )
     # set training reuse model
+    if auto_ratio:
+        training_reuse_old_ratio = number_old_frames / (
+            number_old_frames + number_new_frames * new_to_old_ratio
+        )
     if training_reuse_iter is not None and iter_index >= training_reuse_iter:
         if "numb_steps" in jinput["training"] and training_reuse_stop_batch is not None:
             jinput["training"]["numb_steps"] = training_reuse_stop_batch
@@ -3031,6 +3057,7 @@ def sys_link_fp_vasp_pp(iter_index, jdata):
 def _link_fp_abacus_pporb_descript(iter_index, jdata):
     # assume pp orbital files, numerical descrptors and model for dpks are all in fp_pp_path.
     fp_pp_path = os.path.abspath(jdata["fp_pp_path"])
+    type_map = jdata["type_map"]
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -3047,50 +3074,78 @@ def _link_fp_abacus_pporb_descript(iter_index, jdata):
         input_param = get_abacus_input_parameters("INPUT")
         fp_dpks_model = input_param.get("deepks_model", None)
         if fp_dpks_model != None:
-            model_file = os.path.join(fp_pp_path, fp_dpks_model)
+            model_file = os.path.join(
+                fp_pp_path, os.path.split(fp_dpks_model)[1]
+            )  # only the filename
             assert os.path.isfile(model_file), (
                 "Can not find the deepks model file %s, which is defined in %s/INPUT"
                 % (model_file, ii)
             )
-            os.symlink(model_file, fp_dpks_model)
+            os.symlink(model_file, fp_dpks_model)  # link to the model file
 
         # get pp, orb, descriptor filenames from STRU
         stru_param = get_abacus_STRU("STRU")
-        pp_files = stru_param.get("pp_files", [])
-        orb_files = stru_param.get("orb_files", [])
-        descriptor_file = stru_param.get("dpks_descriptor", None)
-        pp_files = [] if pp_files == None else pp_files
-        orb_files = [] if orb_files == None else orb_files
+        atom_names = stru_param["atom_names"]
+        pp_files_stru = stru_param.get("pp_files", None)
+        orb_files_stru = stru_param.get("orb_files", None)
+        descriptor_file_stru = stru_param.get("dpks_descriptor", None)
 
-        for jj in pp_files:
-            ifile = os.path.join(fp_pp_path, jj)
-            assert os.path.isfile(ifile), (
-                "Can not find the pseudopotential file %s, which is defined in %s/STRU"
-                % (ifile, ii)
-            )
-            os.symlink(ifile, jj)
+        if pp_files_stru:
+            assert "fp_pp_files" in jdata, "need to define fp_pp_files in jdata"
+        if orb_files_stru:
+            assert "fp_orb_files" in jdata, "need to define fp_orb_files in jdata"
+        if descriptor_file_stru:
+            assert (
+                "fp_dpks_descriptor" in jdata
+            ), "need to define fp_dpks_descriptor in jdata"
 
-        for jj in orb_files:
-            ifile = os.path.join(fp_pp_path, jj)
+        for idx, iatom in enumerate(atom_names):
+            type_map_idx = type_map.index(iatom)
+            if iatom not in type_map:
+                raise RuntimeError(
+                    "atom name %s in STRU is not defined in type_map" % (iatom)
+                )
+            if pp_files_stru:
+                src_file = os.path.join(fp_pp_path, jdata["fp_pp_files"][type_map_idx])
+                assert os.path.isfile(
+                    src_file
+                ), f"Can not find the pseudopotential file {src_file}"
+                os.symlink(src_file, pp_files_stru[idx])
+            if orb_files_stru:
+                src_file = os.path.join(fp_pp_path, jdata["fp_orb_files"][type_map_idx])
+                assert os.path.isfile(
+                    src_file
+                ), f"Can not find the orbital file {src_file}"
+                os.symlink(src_file, orb_files_stru[idx])
+        if descriptor_file_stru:
+            src_file = os.path.join(fp_pp_path, jdata["fp_dpks_descriptor"])
             assert os.path.isfile(
-                ifile
-            ), "Can not find the orbital file %s, which is defined in %s/STRU" % (
-                ifile,
-                ii,
-            )
-            os.symlink(ifile, jj)
+                src_file
+            ), f"Can not find the descriptor file {src_file}"
+            os.symlink(src_file, descriptor_file_stru)
 
-        if descriptor_file != None:
-            ifile = os.path.join(fp_pp_path, descriptor_file)
-            assert os.path.isfile(ifile), (
-                "Can not find the deepks descriptor file %s, which is defined in %s/STRU"
-                % (ifile, ii)
-            )
-            os.symlink(ifile, descriptor_file)
         os.chdir(cwd)
 
 
-def _make_fp_vasp_configs(iter_index, jdata):
+def _make_fp_vasp_configs(iter_index: int, jdata: dict):
+    """Read the model deviation from model_devi step, and then generate the candidated structures
+    in 02.fp directory.
+
+    Currently, the formats of generated structures are decided by model_devi_eigne.
+
+    Parameters
+    ----------
+    iter_index : int
+        The index of iteration.
+    jdata : dict
+        The json data.
+
+    Returns
+    -------
+    int
+        The number of the candidated structures.
+    """
+    # TODO: we need to unify different data formats
     fp_task_max = jdata["fp_task_max"]
     model_devi_skip = jdata["model_devi_skip"]
     type_map = jdata["type_map"]
@@ -3142,10 +3197,6 @@ def _make_fp_vasp_configs(iter_index, jdata):
 
 
 def make_fp_vasp(iter_index, jdata):
-    # make config
-    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
-    if len(fp_tasks) == 0:
-        return
     # abs path for fp_incar if it exists
     if "fp_incar" in jdata:
         jdata["fp_incar"] = os.path.abspath(jdata["fp_incar"])
@@ -3166,10 +3217,8 @@ def make_fp_vasp(iter_index, jdata):
 
 
 def make_fp_pwscf(iter_index, jdata):
-    # make config
-    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
-    if len(fp_tasks) == 0:
-        return
+    work_path = os.path.join(make_iter_name(iter_index), fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, "task.*"))
     # make pwscf input
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -3200,10 +3249,9 @@ def make_fp_pwscf(iter_index, jdata):
 
 
 def make_fp_abacus_scf(iter_index, jdata):
-    # make config
-    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
-    if len(fp_tasks) == 0:
-        return
+    work_path = os.path.join(make_iter_name(iter_index), fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, "task.*"))
+    pporb_path = "pporb"
     # make abacus/pw/scf input
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -3223,7 +3271,7 @@ def make_fp_abacus_scf(iter_index, jdata):
         raise RuntimeError(
             "Set 'user_fp_params' or 'fp_incar' in json file to make INPUT of ABACUS"
         )
-    ret_input = make_abacus_scf_input(fp_params)
+    ret_input = make_abacus_scf_input(fp_params, extra_file_path=pporb_path)
 
     # Get orbital and deepks setting
     if "basis_type" in fp_params:
@@ -3295,9 +3343,13 @@ def make_fp_abacus_scf(iter_index, jdata):
             fp_dpks_descriptor,
             fp_params,
             type_map=jdata["type_map"],
+            pporb=pporb_path,
         )
         with open("STRU", "w") as fp:
             fp.write(ret_stru)
+
+        if not os.path.isdir(pporb_path):
+            os.makedirs(pporb_path)
 
         os.chdir(cwd)
     # link pp and orbital files
@@ -3305,10 +3357,8 @@ def make_fp_abacus_scf(iter_index, jdata):
 
 
 def make_fp_siesta(iter_index, jdata):
-    # make config
-    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
-    if len(fp_tasks) == 0:
-        return
+    work_path = os.path.join(make_iter_name(iter_index), fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, "task.*"))
     # make siesta input
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -3332,10 +3382,8 @@ def make_fp_siesta(iter_index, jdata):
 
 
 def make_fp_gaussian(iter_index, jdata):
-    # make config
-    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
-    if len(fp_tasks) == 0:
-        return
+    work_path = os.path.join(make_iter_name(iter_index), fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, "task.*"))
     # make gaussian gjf file
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -3361,10 +3409,8 @@ def make_fp_gaussian(iter_index, jdata):
 
 
 def make_fp_cp2k(iter_index, jdata):
-    # make config
-    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
-    if len(fp_tasks) == 0:
-        return
+    work_path = os.path.join(make_iter_name(iter_index), fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, "task.*"))
     # make cp2k input
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -3403,10 +3449,6 @@ def make_fp_cp2k(iter_index, jdata):
 
 
 def make_fp_pwmat(iter_index, jdata):
-    # make config
-    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
-    if len(fp_tasks) == 0:
-        return
     # abs path for fp_incar if it exists
     if "fp_incar" in jdata:
         jdata["fp_incar"] = os.path.abspath(jdata["fp_incar"])
@@ -3462,8 +3504,9 @@ def make_fp_amber_diff(iter_index: int, jdata: dict):
        Jinzhe Zeng, Timothy J. Giese, Şölen Ekesan, and Darrin M. York, Journal of Chemical
        Theory and Computation 2021 17 (11), 6993-7009
     """
-    # make config
-    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
+    assert jdata["model_devi_engine"] == "amber"
+    work_path = os.path.join(make_iter_name(iter_index), fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, "task.*"))
     # make amber input
     cwd = os.getcwd()
     # link two mdin files and param7
@@ -3516,8 +3559,36 @@ def make_fp_amber_diff(iter_index: int, jdata: dict):
 
 
 def make_fp(iter_index, jdata, mdata):
-    fp_style = jdata["fp_style"]
+    """Select the candidate strutures and make the input file of FP calculation.
 
+    Parameters
+    ----------
+    iter_index : int
+        iter index
+    jdata : dict
+        Run parameters.
+    mdata : dict
+        Machine parameters.
+    """
+    fp_tasks = _make_fp_vasp_configs(iter_index, jdata)
+    if len(fp_tasks) == 0:
+        return
+    make_fp_calculation(iter_index, jdata, mdata)
+
+
+def make_fp_calculation(iter_index, jdata, mdata):
+    """Make the input file of FP calculation.
+
+    Parameters
+    ----------
+    iter_index : int
+        iter index
+    jdata : dict
+        Run parameters.
+    mdata : dict
+        Machine parameters.
+    """
+    fp_style = jdata["fp_style"]
     if fp_style == "vasp":
         make_fp_vasp(iter_index, jdata)
     elif fp_style == "pwscf":
@@ -3756,17 +3827,9 @@ def run_fp(iter_index, jdata, mdata):
             assert os.path.exists(fp_input_path)
             fp_input_path = os.path.abspath(fp_input_path)
             fp_params = get_abacus_input_parameters(fp_input_path)
-        forward_files = ["INPUT", "STRU"]
+        forward_files = ["INPUT", "STRU", "pporb"]
         if "kspacing" not in fp_params.keys():
-            forward_files = ["INPUT", "STRU", "KPT"]
-        forward_files += fp_pp_files
-        if "fp_orb_files" in jdata:
-            forward_files += jdata["fp_orb_files"]
-        if "fp_dpks_descriptor" in jdata:
-            forward_files.append(jdata["fp_dpks_descriptor"])
-        if "user_fp_params" in jdata:
-            if "deepks_model" in jdata["user_fp_params"]:
-                forward_files.append(jdata["user_fp_params"]["deepks_model"])
+            forward_files.append("KPT")
         backward_files = ["output", "OUT.ABACUS"]
         run_fp_inner(
             iter_index,
