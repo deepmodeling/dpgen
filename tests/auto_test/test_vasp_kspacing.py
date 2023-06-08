@@ -1,18 +1,14 @@
 import glob
-import json
 import os
-import shutil
 import sys
 import unittest
 
-import dpdata
 import numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "auto_test"
-from pymatgen.io.vasp import Incar, Kpoints
 
-from .context import make_kspacing_kpoints, setUpModule
+from .context import make_kspacing_kpoints
 
 
 class TestVASPMakeKpoint(unittest.TestCase):

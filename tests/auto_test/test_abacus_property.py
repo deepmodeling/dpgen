@@ -20,8 +20,6 @@ from dpgen.auto_test.Interstitial import Interstitial
 from dpgen.auto_test.Surface import Surface
 from dpgen.auto_test.Vacancy import Vacancy
 
-from .context import setUpModule
-
 
 class TestABACUS(unittest.TestCase):
     def setUp(self):

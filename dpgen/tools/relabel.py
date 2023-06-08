@@ -5,17 +5,14 @@ import glob
 import json
 import os
 import shutil
-import subprocess as sp
 import sys
-
-import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 import dpdata
 
 from dpgen.generator.lib.pwscf import make_pwscf_input
 from dpgen.generator.lib.siesta import make_siesta_input
-from dpgen.generator.run import make_vasp_incar, update_mass_map
+from dpgen.generator.run import update_mass_map
 
 
 def get_lmp_info(input_file):
@@ -180,7 +177,7 @@ def create_tasks(
     os.chdir(target_folder)
     fp_pp_path = os.path.abspath(fp_pp_path)
     os.chdir(cwd_)
-    # fp_params = fp_jdata['fp_params']
+    fp_params = fp_jdata["fp_params"]
     # collect tasks from iter dirs
     sys_tasks = [[] for ii in sys]
     sys_tasks_record = [[] for ii in sys]

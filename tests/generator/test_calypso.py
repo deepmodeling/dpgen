@@ -1,13 +1,8 @@
-import glob
-import json
 import os
-import shutil
 import sys
-import textwrap
 import unittest
 from pathlib import Path
 
-import dpdata
 import numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))

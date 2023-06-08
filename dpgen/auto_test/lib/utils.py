@@ -29,7 +29,7 @@ def create_path(path):
 
 
 def replace(file_name, pattern, subst):
-    file_handel = open(file_name, "r")
+    file_handel = open(file_name)
     file_string = file_handel.read()
     file_handel.close()
     file_string = re.sub(pattern, subst, file_string)
@@ -71,4 +71,4 @@ def log_task(message):
 
 def record_iter(record, confs, ii, jj):
     with open(record, "a") as frec:
-        frec.write("%s %s %s\n" % (confs, ii, jj))
+        frec.write(f"{confs} {ii} {jj}\n")

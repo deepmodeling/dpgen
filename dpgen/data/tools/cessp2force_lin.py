@@ -102,7 +102,7 @@ def scan_outcar_file(file_handle):
     elif potcar:
         return [configs, potcar, ipt]
     else:
-        sys.stderr.write("Could not determine atom types in file %s.\n" % filename)
+        sys.stderr.write("Could not determine atom types in file.\n")
         sys.exit()
 
 
@@ -121,12 +121,12 @@ def process_outcar_file_v5_dev(
         if outcars[i].endswith(".gz"):
             f = gzip.open(outcars[i], "rb")
         else:
-            f = open(outcars[i], "r")
+            f = open(outcars[i])
 
         # Writing current OUTCAR's information into potfit format files.
         nconfs = data[i][0]
         natoms = sum(data[i][2])  # ipt
-        if windex == None:
+        if windex is None:
             windex = range(nconfs)
         if windex == "final":
             windex = [nconfs - 1]
@@ -165,15 +165,9 @@ def process_outcar_file_v5_dev(
                         "## force file generated from file %s config %d\n"
                         % (outcars[i], count)
                     )
-                    fw.write(
-                        "#X %13.8f %13.8f %13.8f\n" % (box_x[0], box_x[1], box_x[2])
-                    )
-                    fw.write(
-                        "#Y %13.8f %13.8f %13.8f\n" % (box_y[0], box_y[1], box_y[2])
-                    )
-                    fw.write(
-                        "#Z %13.8f %13.8f %13.8f\n" % (box_z[0], box_z[1], box_z[2])
-                    )
+                    fw.write(f"#X {box_x[0]:13.8f} {box_x[1]:13.8f} {box_x[2]:13.8f}\n")
+                    fw.write(f"#Y {box_y[0]:13.8f} {box_y[1]:13.8f} {box_y[2]:13.8f}\n")
+                    fw.write(f"#Z {box_z[0]:13.8f} {box_z[1]:13.8f} {box_z[2]:13.8f}\n")
                     fw.write("#W %f\n" % (args.weight))
                     fw.write("#E %.10f\n" % (energy))
                     if stress:
@@ -303,7 +297,7 @@ if __name__ == "__main__":
         if item.endswith(".gz"):
             f = gzip.open(item, "rb")
         else:
-            f = open(item, "r")
+            f = open(item)
         data.append(scan_outcar_file(f))
         f.close()
         max_types = max(max_types, len(data[-1][1]))
@@ -350,7 +344,7 @@ if __name__ == "__main__":
 
     # process all the outcar files
     sr = args.configs_range
-    if sr == None:
+    if sr is None:
         windex = None
     else:
         sr = sr.split()

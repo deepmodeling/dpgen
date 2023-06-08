@@ -11,8 +11,7 @@ from dpgen.auto_test.calculator import make_calculator
 class Property(ABC):
     @abstractmethod
     def __init__(self, parameter):
-        """
-        Constructor
+        """Constructor.
 
         Parameters
         ----------
@@ -23,8 +22,7 @@ class Property(ABC):
 
     @abstractmethod
     def make_confs(self, path_to_work, path_to_equi, refine=False):
-        """
-        Make configurations needed to compute the property.
+        """Make configurations needed to compute the property.
         The tasks directory will be named as path_to_work/task.xxxxxx
         IMPORTANT: handel the case when the directory exists.
 
@@ -47,31 +45,24 @@ class Property(ABC):
 
     @abstractmethod
     def post_process(self, task_list):
-        """
-        post_process the KPOINTS file in elastic.
-        """
+        """post_process the KPOINTS file in elastic."""
         pass
 
     @property
     @abstractmethod
     def task_type(self):
-        """
-        Return the type of each computational task, for example, 'relaxation', 'static'....
-        """
+        """Return the type of each computational task, for example, 'relaxation', 'static'...."""
         pass
 
     @property
     @abstractmethod
     def task_param(self):
-        """
-        Return the parameter of each computational task, for example, {'ediffg': 1e-4}
-        """
+        """Return the parameter of each computational task, for example, {'ediffg': 1e-4}."""
         pass
 
     def compute(self, output_file, print_file, path_to_work):
-        """
-        Postprocess the finished tasks to compute the property.
-        Output the result to a json database
+        """Postprocess the finished tasks to compute the property.
+        Output the result to a json database.
 
         Parameters
         ----------
@@ -107,8 +98,7 @@ class Property(ABC):
 
     @abstractmethod
     def _compute_lower(self, output_file, all_tasks, all_res):
-        """
-        Compute the property.
+        """Compute the property.
 
         Parameters
         ----------

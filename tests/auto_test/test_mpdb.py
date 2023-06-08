@@ -2,15 +2,12 @@ import os
 import sys
 import unittest
 
-from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Structure
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "auto_test"
 from dpgen.auto_test.mpdb import get_structure
-
-from .context import make_kspacing_kpoints, setUpModule
 
 try:
     os.environ["MAPI_KEY"]

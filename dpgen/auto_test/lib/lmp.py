@@ -170,7 +170,7 @@ def from_system_data(system):
     ret += "0 %f xlo xhi\n" % system["cell"][0][0]
     ret += "0 %f ylo yhi\n" % system["cell"][1][1]
     ret += "0 %f zlo zhi\n" % system["cell"][2][2]
-    ret += "%f %f %f xy xz yz\n" % (
+    ret += "{:f} {:f} {:f} xy xz yz\n".format(
         system["cell"][1][0],
         system["cell"][2][0],
         system["cell"][2][1],

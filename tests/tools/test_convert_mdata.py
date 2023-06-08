@@ -8,8 +8,6 @@ sys.path.insert(0, os.path.join(test_dir, ".."))
 __package__ = "tools"
 from dpgen.remote.decide_machine import convert_mdata
 
-from .context import setUpModule
-
 
 class TestConvertMdata(unittest.TestCase):
     machine_file = "machine_fp_single.json"

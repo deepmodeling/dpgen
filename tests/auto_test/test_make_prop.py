@@ -1,13 +1,10 @@
 import glob
-import json
 import os
 import shutil
 import sys
 import unittest
 
-import dpdata
-import numpy as np
-from monty.serialization import dumpfn, loadfn
+from monty.serialization import loadfn
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "auto_test"
@@ -15,8 +12,6 @@ __package__ = "auto_test"
 from pymatgen.io.vasp import Incar
 
 from dpgen.auto_test.common_prop import make_property
-
-from .context import make_kspacing_kpoints, setUpModule
 
 
 class TestMakeProperty(unittest.TestCase):

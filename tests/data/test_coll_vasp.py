@@ -1,4 +1,3 @@
-import glob
 import json
 import os
 import shutil
@@ -10,12 +9,12 @@ import numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "data"
-from .context import coll_vasp_md, out_dir_name, param_file, setUpModule
+from .context import coll_vasp_md, out_dir_name, param_file
 
 
 class TestCollVasp(unittest.TestCase):
     def setUp(self):
-        with open(param_file, "r") as fp:
+        with open(param_file) as fp:
             jdata = json.load(fp)
         self.odir = out_dir_name(jdata)
         assert os.path.isdir("out_data_02_md"), "out data for post fp vasp should exist"
@@ -49,7 +48,7 @@ class TestCollVasp(unittest.TestCase):
         shutil.rmtree(self.odir)
 
     def test_coll(self):
-        with open(param_file, "r") as fp:
+        with open(param_file) as fp:
             jdata = json.load(fp)
         jdata["out_dir"] = self.odir
         coll_vasp_md(jdata)

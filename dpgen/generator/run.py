@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 
-"""
-init: data
+"""init: data
 iter:
         00.train
         01.model_devi
         02.vasp
-        03.data
+        03.data.
 """
 
 import argparse
@@ -20,12 +19,10 @@ import os
 import queue
 import random
 import shutil
-import subprocess as sp
 import sys
 import warnings
 from collections import Counter
 from collections.abc import Iterable
-from pprint import pp
 from typing import List
 
 import dpdata
@@ -33,7 +30,7 @@ import numpy as np
 import scipy.constants as pc
 from numpy.linalg import norm
 from packaging.version import Version
-from pymatgen.io.vasp import Incar, Kpoints, Potcar
+from pymatgen.io.vasp import Incar, Kpoints
 
 from dpgen import ROOT_PATH, SHORT_CMD, dlog
 from dpgen.auto_test.lib.vasp import make_kspacing_kpoints
@@ -68,26 +65,21 @@ from dpgen.generator.lib.parse_calypso import (
 
 # from dpgen.generator.lib.pwscf import cvt_1frame
 from dpgen.generator.lib.pwmat import (
-    input_upper,
     make_pwmat_input_dict,
     make_pwmat_input_user_dict,
     write_input_dict,
 )
 from dpgen.generator.lib.pwscf import make_pwscf_input
 from dpgen.generator.lib.run_calypso import (
-    analysis,
-    gen_structures,
     run_calypso_model_devi,
 )
 from dpgen.generator.lib.siesta import make_siesta_input
 from dpgen.generator.lib.utils import (
-    copy_file_list,
     create_path,
     log_iter,
     log_task,
     make_iter_name,
     record_iter,
-    replace,
     symlink_user_forward_files,
 )
 from dpgen.generator.lib.vasp import (
@@ -196,7 +188,7 @@ def poscar_natoms(lines):
 
 
 def poscar_shuffle(poscar_in, poscar_out):
-    with open(poscar_in, "r") as fin:
+    with open(poscar_in) as fin:
         lines = list(fin)
     numb_atoms = poscar_natoms(lines)
     idx = np.arange(8, 8 + numb_atoms)
@@ -530,7 +522,7 @@ def make_train(iter_index, jdata, mdata):
                 os.path.isdir(jj) if "#" not in jj else os.path.isfile(jj.split("#")[0])
             ):
                 raise RuntimeError(
-                    "data sys %s does not exists, cwd is %s" % (jj, os.getcwd())
+                    f"data sys {jj} does not exists, cwd is {os.getcwd()}"
                 )
         os.chdir(cwd)
         # set random seed for each model
@@ -625,9 +617,8 @@ def make_train(iter_index, jdata, mdata):
 
 
 def _link_old_models(work_path, old_model_files, ii):
-    """
-    link the `ii`th old model given by `old_model_files` to
-    the `ii`th training task in `work_path`
+    """Link the `ii`th old model given by `old_model_files` to
+    the `ii`th training task in `work_path`.
     """
     task_path = os.path.join(work_path, train_task_fmt % ii)
     task_old_path = os.path.join(task_path, "old")
@@ -654,6 +645,12 @@ def detect_batch_size(batch_size, system=None):
         )
     else:
         raise RuntimeError("Unsupported batch size")
+
+
+def get_nframes(system):
+    format = "deepmd/npy" if "#" not in system else "deepmd/hdf5"
+    s = dpdata.LabeledSystem(system, fmt=format)
+    return s.get_nframes()
 
 
 def run_train(iter_index, jdata, mdata):
@@ -702,17 +699,11 @@ def run_train(iter_index, jdata, mdata):
         extra_flags = ""
         if jdata.get("dp_train_skip_neighbor_stat", False):
             extra_flags += " --skip-neighbor-stat"
-        command = "%s train %s%s" % (train_command, train_input_file, extra_flags)
+        command = f"{train_command} train {train_input_file}{extra_flags}"
         if training_init_model:
-            command = (
-                "{ if [ ! -f model.ckpt.index ]; then %s --init-model old/model.ckpt; else %s --restart model.ckpt; fi }"
-                % (command, command)
-            )
+            command = f"{{ if [ ! -f model.ckpt.index ]; then {command} --init-model old/model.ckpt; else {command} --restart model.ckpt; fi }}"
         else:
-            command = (
-                "{ if [ ! -f model.ckpt.index ]; then %s; else %s --restart model.ckpt; fi }"
-                % (command, command)
-            )
+            command = f"{{ if [ ! -f model.ckpt.index ]; then {command}; else {command} --restart model.ckpt; fi }}"
         command = "/bin/sh -c '%s'" % command
         commands.append(command)
         command = "%s freeze" % train_command
@@ -840,8 +831,7 @@ def _get_param_alias(jdata, names):
         if ii in jdata:
             return jdata[ii]
     raise ValueError(
-        "one of the keys %s should be in jdata %s"
-        % (str(names), (json.dumps(jdata, indent=4)))
+        f"one of the keys {str(names)} should be in jdata {json.dumps(jdata, indent=4)}"
     )
 
 
@@ -983,7 +973,7 @@ def revise_lmp_input_plm(lmp_lines, in_plm, out_plm="output.plumed"):
     idx = find_only_one_key(lmp_lines, ["fix", "dpgen_plm"])
     lmp_lines[
         idx
-    ] = "fix            dpgen_plm all plumed plumedfile %s outfile %s\n" % (
+    ] = "fix            dpgen_plm all plumed plumedfile {} outfile {}\n".format(
         in_plm,
         out_plm,
     )
@@ -1833,7 +1823,7 @@ def run_md_model_devi(iter_index, jdata, mdata):
 
     all_task = glob.glob(os.path.join(work_path, "task.*"))
     all_task.sort()
-    fp = open(os.path.join(work_path, "cur_job.json"), "r")
+    fp = open(os.path.join(work_path, "cur_job.json"))
     cur_job = json.load(fp)
 
     run_tasks_ = all_task
@@ -1854,10 +1844,7 @@ def run_md_model_devi(iter_index, jdata, mdata):
 
     model_devi_engine = jdata.get("model_devi_engine", "lammps")
     if model_devi_engine == "lammps":
-        command = (
-            "{ if [ ! -f dpgen.restart.10000 ]; then %s -i input.lammps -v restart 0; else %s -i input.lammps -v restart 1; fi }"
-            % (model_devi_exec, model_devi_exec)
-        )
+        command = f"{{ if [ ! -f dpgen.restart.10000 ]; then {model_devi_exec} -i input.lammps -v restart 0; else {model_devi_exec} -i input.lammps -v restart 1; fi }}"
         command = "/bin/sh -c '%s'" % command
         commands = [command]
 
@@ -1900,20 +1887,17 @@ def run_md_model_devi(iter_index, jdata, mdata):
             deffnm,
             maxwarn,
         )
-        command += "&& %s mdrun -deffnm %s -cpi" % (model_devi_exec, deffnm)
+        command += f"&& {model_devi_exec} mdrun -deffnm {deffnm} -cpi"
         if ndx_filename:
             command += f'&& echo -e "{grp_name}\\n{grp_name}\\n" | {model_devi_exec} trjconv -s {ref_filename} -f {deffnm}.trr -n {ndx_filename} -o {traj_filename} -pbc mol -ur compact -center'
         else:
-            command += (
-                '&& echo -e "%s\\n%s\\n" | %s trjconv -s %s -f %s.trr -o %s -pbc mol -ur compact -center'
-                % (
-                    grp_name,
-                    grp_name,
-                    model_devi_exec,
-                    ref_filename,
-                    deffnm,
-                    traj_filename,
-                )
+            command += '&& echo -e "{}\\n{}\\n" | {} trjconv -s {} -f {}.trr -o {} -pbc mol -ur compact -center'.format(
+                grp_name,
+                grp_name,
+                model_devi_exec,
+                ref_filename,
+                deffnm,
+                traj_filename,
             )
         command += "&& if [ ! -d traj ]; then \n mkdir traj; fi\n"
         command += f"python -c \"import dpdata;system = dpdata.System('{traj_filename}', fmt='gromacs/gro'); [system.to_gromacs_gro('traj/%d.gromacstrj' % (i * {trj_freq}), frame_idx=i) for i in range(system.get_nframes())]; system.to_deepmd_npy('traj_deepmd')\""
@@ -2113,9 +2097,7 @@ def _select_by_model_devi_standard(
         iter_name = modd_system_task[0].split("/")[0]
         _work_path = os.path.join(iter_name, model_devi_name)
         # calypso_run_opt_path = os.path.join(_work_path,calypso_run_opt_name)
-        calypso_run_opt_path = glob.glob(
-            "%s/%s.*" % (_work_path, calypso_run_opt_name)
-        )[0]
+        calypso_run_opt_path = glob.glob(f"{_work_path}/{calypso_run_opt_name}.*")[0]
         numofspecies = _parse_calypso_input("NumberOfSpecies", calypso_run_opt_path)
         min_dis = _parse_calypso_dis_mtx(numofspecies, calypso_run_opt_path)
     fp_candidate = []
@@ -2213,17 +2195,17 @@ def _select_by_model_devi_adaptive_trust_low(
     model_devi_f_avg_relative: bool = False,
     model_devi_merge_traj: bool = False,
 ):
-    """
-    modd_system_task    model deviation tasks belonging to one system
+    """modd_system_task    model deviation tasks belonging to one system
     f_trust_hi
     numb_candi_f        number of candidate due to the f model deviation
     perc_candi_f        percentage of candidate due to the f model deviation
     v_trust_hi
     numb_candi_v        number of candidate due to the v model deviation
     perc_candi_v        percentage of candidate due to the v model deviation
-    model_devi_skip
+    model_devi_skip.
 
-    returns
+    Returns
+    -------
     accur               the accurate set
     candi               the candidate set
     failed              the failed set
@@ -2316,31 +2298,27 @@ def _make_fp_vasp_inner(
     type_map,
     jdata,
 ):
-    """
-    iter_index          int             iter index
+    """iter_index          int             iter index
     modd_path           string          path of model devi
     work_path           string          path of fp
     fp_task_max         int             max number of tasks
     fp_link_files       [string]        linked files for fp, POTCAR for example
-    fp_params           map             parameters for fp
+    fp_params           map             parameters for fp.
     """
-
     # --------------------------------------------------------------------------------------------------------------------------------------
     model_devi_engine = jdata.get("model_devi_engine", "lammps")
     if model_devi_engine == "calypso":
         iter_name = work_path.split("/")[0]
         _work_path = os.path.join(iter_name, model_devi_name)
         # calypso_run_opt_path = os.path.join(_work_path,calypso_run_opt_name)
-        calypso_run_opt_path = glob.glob(
-            "%s/%s.*" % (_work_path, calypso_run_opt_name)
-        )[0]
+        calypso_run_opt_path = glob.glob(f"{_work_path}/{calypso_run_opt_name}.*")[0]
         numofspecies = _parse_calypso_input("NumberOfSpecies", calypso_run_opt_path)
         min_dis = _parse_calypso_dis_mtx(numofspecies, calypso_run_opt_path)
 
         calypso_total_fp_num = 300
         modd_path = os.path.join(modd_path, calypso_model_devi_name)
         model_devi_skip = -1
-        with open(os.path.join(modd_path, "Model_Devi.out"), "r") as summfile:
+        with open(os.path.join(modd_path, "Model_Devi.out")) as summfile:
             summary = np.loadtxt(summfile)
         summaryfmax = summary[:, -4]
         dis = summary[:, -1]
@@ -2354,7 +2332,7 @@ def _make_fp_vasp_inner(
         tot = len(summaryfmax) - nan_num
         candi_num = tot - acc_num - fail_num
         dlog.info(
-            "summary  accurate_ratio: {0:8.4f}%  candidata_ratio: {1:8.4f}%  failed_ratio: {2:8.4f}%  in {3:d} structures".format(
+            "summary  accurate_ratio: {:8.4f}%  candidata_ratio: {:8.4f}%  failed_ratio: {:8.4f}%  in {:d} structures".format(
                 acc_num * 100 / tot, candi_num * 100 / tot, fail_num * 100 / tot, tot
             )
         )
@@ -2451,7 +2429,7 @@ def _make_fp_vasp_inner(
                     model_devi_merge_traj=model_devi_merge_traj,
                 )
                 dlog.info(
-                    "system {0:s} {1:9s} : f_trust_lo {2:6.3f}   v_trust_lo {3:6.3f}".format(
+                    "system {:s} {:9s} : f_trust_lo {:6.3f}   v_trust_lo {:6.3f}".format(
                         ss, "adapted", f_trust_lo_ad, v_trust_lo_ad
                     )
                 )
@@ -2504,13 +2482,11 @@ def _make_fp_vasp_inner(
         fp_sum = sum(counter.values())
 
         if fp_sum == 0:
-            dlog.info(
-                "system {0:s} has no fp task, maybe the model devi is nan %".format(ss)
-            )
+            dlog.info(f"system {ss:s} has no fp task, maybe the model devi is nan %")
             continue
         for cc_key, cc_value in counter.items():
             dlog.info(
-                "system {0:s} {1:9s} : {2:6d} in {3:6d} {4:6.2f} %".format(
+                "system {:s} {:9s} : {:6d} in {:6d} {:6.2f} %".format(
                     ss, cc_key, cc_value, fp_sum, cc_value / fp_sum * 100
                 )
             )
@@ -2586,7 +2562,7 @@ def _make_fp_vasp_inner(
                 numb_task = 0
         # ----------------------------------------------------------------------------
         dlog.info(
-            "system {0:s} accurate_ratio: {1:8.4f}    thresholds: {2:6.4f} and {3:6.4f}   eff. task min and max {4:4d} {5:4d}   number of fp tasks: {6:6d}".format(
+            "system {:s} accurate_ratio: {:8.4f}    thresholds: {:6.4f} and {:6.4f}   eff. task min and max {:4d} {:4d}   number of fp tasks: {:6d}".format(
                 ss,
                 accurate_ratio,
                 fp_accurate_soft_threshold,
@@ -2601,6 +2577,7 @@ def _make_fp_vasp_inner(
         # read all.lammpstrj, save in all_sys for each system_index
         all_sys = []
         trj_freq = None
+        netcdftraj = None
         if model_devi_merge_traj:
             for ii in modd_system_task:
                 all_traj = os.path.join(ii, "all.lammpstrj")
@@ -2665,7 +2642,7 @@ def _make_fp_vasp_inner(
             if cluster_cutoff is not None:
                 # take clusters
                 jj = fp_candidate[cc][2]
-                poscar_name = "{}.cluster.{}.POSCAR".format(conf_name, jj)
+                poscar_name = f"{conf_name}.cluster.{jj}.POSCAR"
                 new_system = take_cluster(conf_name, type_map, jj, jdata)
                 new_system.to_vasp_poscar(poscar_name)
             fp_task_name = make_fp_task_name(int(ss), cc)
@@ -2725,19 +2702,19 @@ def _make_fp_vasp_inner(
             os.chdir(cwd)
         if count_bad_box > 0:
             dlog.info(
-                "system {0:s} skipped {1:6d} confs with bad box, {2:6d} remains".format(
+                "system {:s} skipped {:6d} confs with bad box, {:6d} remains".format(
                     ss, count_bad_box, numb_task - count_bad_box
                 )
             )
         if count_bad_cluster > 0:
             dlog.info(
-                "system {0:s} skipped {1:6d} confs with bad cluster, {2:6d} remains".format(
+                "system {:s} skipped {:6d} confs with bad cluster, {:6d} remains".format(
                     ss, count_bad_cluster, numb_task - count_bad_cluster
                 )
             )
     if model_devi_engine == "calypso":
         dlog.info(
-            "summary  accurate_ratio: {0:8.4f}%  candidata_ratio: {1:8.4f}%  failed_ratio: {2:8.4f}%  in {3:d} structures".format(
+            "summary  accurate_ratio: {:8.4f}%  candidata_ratio: {:8.4f}%  failed_ratio: {:8.4f}%  in {:d} structures".format(
                 acc_num * 100 / tot, candi_num * 100 / tot, fail_num * 100 / tot, tot
             )
         )
@@ -2928,7 +2905,7 @@ def _make_fp_pwmat_input(iter_index, jdata):
 
 def make_fp_vasp_cp_cvasp(iter_index, jdata):
     # Move cvasp interface to jdata
-    if ("cvasp" in jdata) and (jdata["cvasp"] == True):
+    if ("cvasp" in jdata) and (jdata["cvasp"] is True):
         pass
     else:
         return
@@ -3073,14 +3050,13 @@ def _link_fp_abacus_pporb_descript(iter_index, jdata):
         # get value of 'deepks_model' from INPUT
         input_param = get_abacus_input_parameters("INPUT")
         fp_dpks_model = input_param.get("deepks_model", None)
-        if fp_dpks_model != None:
+        if fp_dpks_model is not None:
             model_file = os.path.join(
                 fp_pp_path, os.path.split(fp_dpks_model)[1]
             )  # only the filename
-            assert os.path.isfile(model_file), (
-                "Can not find the deepks model file %s, which is defined in %s/INPUT"
-                % (model_file, ii)
-            )
+            assert os.path.isfile(
+                model_file
+            ), f"Can not find the deepks model file {model_file}, which is defined in {ii}/INPUT"
             os.symlink(model_file, fp_dpks_model)  # link to the model file
 
         # get pp, orb, descriptor filenames from STRU
@@ -3156,7 +3132,7 @@ def _make_fp_vasp_configs(iter_index: int, jdata: dict):
     modd_path = os.path.join(iter_name, model_devi_name)
     task_min = -1
     if os.path.isfile(os.path.join(modd_path, "cur_job.json")):
-        cur_job = json.load(open(os.path.join(modd_path, "cur_job.json"), "r"))
+        cur_job = json.load(open(os.path.join(modd_path, "cur_job.json")))
         if "task_min" in cur_job:
             task_min = cur_job["task_min"]
     else:
@@ -3615,7 +3591,7 @@ def make_fp_calculation(iter_index, jdata, mdata):
 
 def _vasp_check_fin(ii):
     if os.path.isfile(os.path.join(ii, "OUTCAR")):
-        with open(os.path.join(ii, "OUTCAR"), "r") as fp:
+        with open(os.path.join(ii, "OUTCAR")) as fp:
             content = fp.read()
             count = content.count("Elapse")
             if count != 1:
@@ -3627,7 +3603,7 @@ def _vasp_check_fin(ii):
 
 def _qe_check_fin(ii):
     if os.path.isfile(os.path.join(ii, "output")):
-        with open(os.path.join(ii, "output"), "r") as fp:
+        with open(os.path.join(ii, "output")) as fp:
             content = fp.read()
             count = content.count("JOB DONE")
             if count != 1:
@@ -3639,7 +3615,7 @@ def _qe_check_fin(ii):
 
 def _abacus_scf_check_fin(ii):
     if os.path.isfile(os.path.join(ii, "OUT.ABACUS/running_scf.log")):
-        with open(os.path.join(ii, "OUT.ABACUS/running_scf.log"), "r") as fp:
+        with open(os.path.join(ii, "OUT.ABACUS/running_scf.log")) as fp:
             content = fp.read()
             count = content.count("!FINAL_ETOT_IS")
             if count != 1:
@@ -3651,7 +3627,7 @@ def _abacus_scf_check_fin(ii):
 
 def _siesta_check_fin(ii):
     if os.path.isfile(os.path.join(ii, "output")):
-        with open(os.path.join(ii, "output"), "r") as fp:
+        with open(os.path.join(ii, "output")) as fp:
             content = fp.read()
             count = content.count("End of run")
             if count != 1:
@@ -3663,7 +3639,7 @@ def _siesta_check_fin(ii):
 
 def _gaussian_check_fin(ii):
     if os.path.isfile(os.path.join(ii, "output")):
-        with open(os.path.join(ii, "output"), "r") as fp:
+        with open(os.path.join(ii, "output")) as fp:
             content = fp.read()
             count = content.count("termination")
             if count == 0:
@@ -3675,7 +3651,7 @@ def _gaussian_check_fin(ii):
 
 def _cp2k_check_fin(ii):
     if os.path.isfile(os.path.join(ii, "output")):
-        with open(os.path.join(ii, "output"), "r") as fp:
+        with open(os.path.join(ii, "output")) as fp:
             content = fp.read()
             count = content.count("SCF run converged")
             if count == 0:
@@ -3687,7 +3663,7 @@ def _cp2k_check_fin(ii):
 
 def _pwmat_check_fin(ii):
     if os.path.isfile(os.path.join(ii, "REPORT")):
-        with open(os.path.join(ii, "REPORT"), "r") as fp:
+        with open(os.path.join(ii, "REPORT")) as fp:
             content = fp.read()
             count = content.count("time")
             if count != 1:
@@ -3741,9 +3717,8 @@ def run_fp_inner(
                 "-x high_level.nc -y rc.nc -frc high_level.mdfrc -inf high_level.mdinfo && "
             )
             + (
-                'dpamber corr --cutoff %f --parm7_file ../qmmm$SYS.parm7 --nc rc.nc --hl high_level --ll low_level --qm_region "$QM_REGION"'
-            )
-            % (jdata["cutoff"],)
+                'dpamber corr --cutoff {:f} --parm7_file ../qmmm$SYS.parm7 --nc rc.nc --hl high_level --ll low_level --qm_region "$QM_REGION"'
+            ).format(jdata["cutoff"])
         )
 
     fp_run_tasks = fp_tasks
@@ -3787,10 +3762,10 @@ def run_fp(iter_index, jdata, mdata):
         forward_files = ["POSCAR", "INCAR", "POTCAR", "KPOINTS"]
         backward_files = ["fp.log", "OUTCAR", "vasprun.xml"]
         # Move cvasp interface to jdata
-        if ("cvasp" in jdata) and (jdata["cvasp"] == True):
+        if ("cvasp" in jdata) and (jdata["cvasp"] is True):
             mdata["fp_resources"]["cvasp"] = True
         if ("cvasp" in mdata["fp_resources"]) and (
-            mdata["fp_resources"]["cvasp"] == True
+            mdata["fp_resources"]["cvasp"] is True
         ):
             dlog.info("cvasp is on !")
             forward_files.append("cvasp.py")
@@ -4134,12 +4109,12 @@ def post_fp_abacus_scf(iter_index, jdata):
                 oo, fmt="abacus/scf", type_map=jdata["type_map"]
             )
             if len(_sys) > 0:
-                if all_sys == None:
+                if all_sys is None:
                     all_sys = _sys
                 else:
                     all_sys.append(_sys)
 
-        if all_sys != None:
+        if all_sys is not None:
             sys_data_path = os.path.join(work_path, "data.%s" % ss)
             all_sys.to_deepmd_raw(sys_data_path)
             all_sys.to_deepmd_npy(sys_data_path, set_size=len(sys_output))
@@ -4340,7 +4315,7 @@ def post_fp_pwmat(iter_index, jdata, rfailed=None):
     dlog.info("failed frame number: %s " % icount)
     dlog.info("total frame number: %s " % tcount)
     reff = icount / tcount
-    dlog.info("ratio of failed frame:  {:.2%}".format(reff))
+    dlog.info(f"ratio of failed frame:  {reff:.2%}")
 
     if reff > ratio_failed:
         raise RuntimeError("find too many unsuccessfully terminated jobs")
@@ -4434,9 +4409,9 @@ def run_iter(param_file, machine_file):
         jdata = loadfn(param_file)
         mdata = loadfn(machine_file)
     except Exception:
-        with open(param_file, "r") as fp:
+        with open(param_file) as fp:
             jdata = json.load(fp)
-        with open(machine_file, "r") as fp:
+        with open(machine_file) as fp:
             mdata = json.load(fp)
 
     jdata_arginfo = run_jdata_arginfo()
@@ -4495,7 +4470,7 @@ def run_iter(param_file, machine_file):
             if ii * max_tasks + jj <= iter_rec[0] * max_tasks + iter_rec[1]:
                 continue
             task_name = "task %02d" % jj
-            sepline("{} {}".format(iter_name, task_name), "-")
+            sepline(f"{iter_name} {task_name}", "-")
             if jj == 0:
                 log_iter("make_train", ii, jj)
                 make_train(ii, jdata, mdata)

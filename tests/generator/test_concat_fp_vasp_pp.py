@@ -1,16 +1,11 @@
-import glob
-import json
 import os
 import shutil
 import sys
 import unittest
 
-import dpdata
-import numpy as np
-
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
-from .context import fp_name, make_iter_name, setUpModule, sys_link_fp_vasp_pp
+from .context import fp_name, make_iter_name, sys_link_fp_vasp_pp
 
 
 class TestConcatVASPPP(unittest.TestCase):
@@ -53,10 +48,10 @@ class TestConcatVASPPP(unittest.TestCase):
         )
         self.assertTrue(os.path.isfile(os.path.join(work_path, "POTCAR.000")))
         self.assertTrue(os.path.isfile(os.path.join(work_path, "POTCAR.001")))
-        with open((os.path.join(work_path, "POTCAR.000"))) as fp:
+        with open(os.path.join(work_path, "POTCAR.000")) as fp:
             pot = fp.read()
             self.assertEqual(pot, "O\nH\n")
-        with open((os.path.join(work_path, "POTCAR.001"))) as fp:
+        with open(os.path.join(work_path, "POTCAR.001")) as fp:
             pot = fp.read()
             self.assertEqual(pot, "H\nC\n")
         for ii in ["task.000.000000", "task.000.000001"]:

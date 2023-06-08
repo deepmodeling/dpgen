@@ -1,5 +1,4 @@
 # /usr/bin/env python
-# coding: utf-8
 # Copyright (c) PThe Dpmodeling Team.
 
 
@@ -19,13 +18,13 @@ files.
 
 class DPPotcar(MSONable):
     def __init__(self, symbols=None, functional="PBE", pp_file=None, pp_lists=None):
-        if pp_lists and pp_file is None:
+        if pp_lists is not None and pp_file is None:
             for pp in pp_lists:
                 assert isinstance(pp, PotcarSingle)
             self.potcars = pp_lists
-        elif pp_file and pp_list is None:
+        elif pp_file is not None and pp_lists is None:
             self.potcars = Potcar.from_file(pp_file)
-        elif pp_file and pp_list:
+        elif pp_file is not None and pp_lists is not None:
             self.potcars = Potcar.from_file(pp_file)
         else:
             try:
@@ -84,7 +83,7 @@ class DPPotcar(MSONable):
             potcars = Potcar.from_file(filename)
             return cls(pp_lists=potcars)
         except Exception:
-            with open(filename, "r") as f:
+            with open(filename) as f:
                 content = f.readlines()
             functional = content[0].strip().split(":")[-1].strip()
             symbols = content[1].strip().split()
@@ -96,10 +95,10 @@ class DPPotcar(MSONable):
 
 
 class VaspInput(dict, MSONable):
-    """
-    Class to contain a set of vasp input objects corresponding to a run.
+    """Class to contain a set of vasp input objects corresponding to a run.
 
     Args:
+    ----
         incar: Incar object.
         kpoints: Kpoints object.
         poscar: Poscar object.
@@ -146,14 +145,16 @@ class VaspInput(dict, MSONable):
         return cls(**sub_d)
 
     def write_input(self, output_dir=".", make_dir_if_not_present=True):
-        """
-        Write VASP input to a directory.
+        """Write VASP input to a directory.
 
-        Args:
-            output_dir (str): Directory to write to. Defaults to current
-                directory (".").
-            make_dir_if_not_present (bool): Create the directory if not
-                present. Defaults to True.
+        Parameters
+        ----------
+        output_dir : str
+            Directory to write to. Defaults to current
+            directory (".").
+        make_dir_if_not_present : bool
+            Create the directory if not
+            present. Defaults to True.
         """
         if make_dir_if_not_present and not os.path.exists(output_dir):
             os.makedirs(output_dir)
@@ -163,16 +164,18 @@ class VaspInput(dict, MSONable):
 
     @staticmethod
     def from_directory(input_dir, optional_files=None):
-        """
-        Read in a set of VASP input from a directory. Note that only the
+        """Read in a set of VASP input from a directory. Note that only the
         standard INCAR, POSCAR, POTCAR and KPOINTS files are read unless
         optional_filenames is specified.
 
-        Args:
-            input_dir (str): Directory to read VASP input from.
-            optional_files (dict): Optional files to read in as well as a
-                dict of {filename: Object type}. Object type must have a
-                static method from_file.
+        Parameters
+        ----------
+        input_dir : str
+            Directory to read VASP input from.
+        optional_files : dict
+            Optional files to read in as well as a
+            dict of {filename: Object type}. Object type must have a
+            static method from_file.
         """
         sub_d = {}
         try:

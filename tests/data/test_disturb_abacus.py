@@ -8,7 +8,7 @@ from dpgen.data.tools.create_random_disturb import create_disturbs_abacus_dev
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "data"
-from .context import *
+from .context import abacus_stru_file, get_abacus_STRU
 
 
 class TestPertAbacus(unittest.TestCase):

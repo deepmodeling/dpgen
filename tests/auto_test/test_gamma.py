@@ -1,33 +1,16 @@
 import glob
-import json
 import os
 import shutil
 import sys
 import unittest
 
-import dpdata
-import numpy as np
-from ase.lattice.cubic import BodyCenteredCubic as bcc
-from ase.lattice.cubic import FaceCenteredCubic as fcc
-from ase.lattice.hexagonal import HexagonalClosedPacked as hcp
-from monty.serialization import dumpfn, loadfn
 from pymatgen.core.structure import Structure
-from pymatgen.core.surface import SlabGenerator
-from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.io.vasp import Incar
-
-import dpgen.auto_test.lib.vasp as vasp
-from dpgen import dlog
-from dpgen.auto_test.Property import Property
-from dpgen.auto_test.refine import make_refine
-from dpgen.auto_test.reproduce import make_repro, post_repro
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "auto_test"
 
 from dpgen.auto_test.Gamma import Gamma
-
-from .context import make_kspacing_kpoints, setUpModule
 
 
 class TestGamma(unittest.TestCase):
@@ -115,7 +98,7 @@ class TestGamma(unittest.TestCase):
             st1_file = os.path.join(ii, "POSCAR.tmp")
             self.assertTrue(os.path.isfile(st1_file))
             st1 = Structure.from_file(st1_file)
-            with open(st1_file, mode="r") as f:
+            with open(st1_file) as f:
                 z_coord_str = f.readlines()[-1].split()[-2]
                 z_coord = float(z_coord_str)
             self.assertTrue(z_coord <= 1)

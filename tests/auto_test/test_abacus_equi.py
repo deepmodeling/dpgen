@@ -1,5 +1,3 @@
-import glob
-import json
 import os
 import shutil
 import sys
@@ -12,7 +10,6 @@ from dpgen.generator.lib import abacus_scf
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "auto_test"
-from .context import setUpModule
 
 
 class TestEqui(unittest.TestCase):
