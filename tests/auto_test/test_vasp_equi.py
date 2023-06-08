@@ -11,6 +11,7 @@ __package__ = "auto_test"
 from pymatgen.io.vasp import Incar
 
 from dpgen.auto_test.common_equi import make_equi, post_equi
+
 from .context import setUpModule  # noqa: F401
 
 

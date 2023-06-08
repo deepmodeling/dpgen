@@ -12,6 +12,7 @@ __package__ = "auto_test"
 
 from dpgen.auto_test.VASP import VASP
 from dpgen.generator.lib.vasp import incar_upper
+
 from .context import setUpModule  # noqa: F401
 
 

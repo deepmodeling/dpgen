@@ -22,6 +22,7 @@ from dpgen.auto_test.Vacancy import Vacancy
 
 from .context import setUpModule  # noqa: F401
 
+
 class TestABACUS(unittest.TestCase):
     def setUp(self):
         self.jdata = {

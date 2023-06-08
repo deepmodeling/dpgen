@@ -12,9 +12,9 @@ from .context import (
     _parse_calypso_dis_mtx,
     _parse_calypso_input,
     make_calypso_input,
+    setUpModule,  # noqa: F401
     write_model_devi_out,
 )
-from .context import setUpModule  # noqa: F401
 
 # temp dir
 test_path = Path(".").joinpath("calypso_test_path")

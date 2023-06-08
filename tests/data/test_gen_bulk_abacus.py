@@ -7,6 +7,7 @@ import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "data"
+from .context import setUpModule  # noqa: F401
 from .context_bulk import (
     abacus_param_file,
     create_path,
@@ -21,7 +22,6 @@ from .context_bulk import (
     place_element_ABACUS,
 )
 
-from .context import setUpModule  # noqa: F401
 
 class TestGenBulkABACUS(unittest.TestCase):
     def setUp(self):

@@ -4,8 +4,10 @@ import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
-from .context import NBandsEsti
-from .context import setUpModule  # noqa: F401
+from .context import (
+    NBandsEsti,
+    setUpModule,  # noqa: F401
+)
 
 
 class TestNBandsEsti(unittest.TestCase):

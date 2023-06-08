@@ -9,8 +9,12 @@ import numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "data"
-from .context import coll_vasp_md, out_dir_name, param_file
-from .context import setUpModule  # noqa: F401
+from .context import (
+    coll_vasp_md,
+    out_dir_name,
+    param_file,
+    setUpModule,  # noqa: F401
+)
 
 
 class TestCollVasp(unittest.TestCase):

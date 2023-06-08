@@ -12,8 +12,14 @@ from dpdata import LabeledSystem
 from monty.serialization import loadfn
 from pymatgen.io.vasp import Incar, Kpoints, Poscar, Potcar
 
-from .context import DPPotcar, Entry, VaspInput, dpgen, parsing_vasp
-from .context import setUpModule  # noqa: F401
+from .context import (
+    DPPotcar,
+    Entry,
+    VaspInput,
+    dpgen,
+    parsing_vasp,
+    setUpModule,  # noqa: F401
+)
 
 iter_pat = "02.fp/task.007.00000*"
 init_pat = "al.bcc.02x02x02/02.md/sys-0016/scale-1.000/00000*"

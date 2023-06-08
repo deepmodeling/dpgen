@@ -38,9 +38,8 @@ from .context import (
     param_siesta_file,
     ref_cp2k_file_exinput,
     ref_cp2k_file_input,
-    setUpModule,
+    setUpModule,  # noqa: F401
 )
-from .context import setUpModule  # noqa: F401
 
 vasp_incar_ref = "PREC=A\n\
 ENCUT=600\n\

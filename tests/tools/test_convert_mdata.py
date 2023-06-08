@@ -7,6 +7,7 @@ test_dir = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 sys.path.insert(0, os.path.join(test_dir, ".."))
 __package__ = "tools"
 from dpgen.remote.decide_machine import convert_mdata
+
 from .context import setUpModule  # noqa: F401
 
 

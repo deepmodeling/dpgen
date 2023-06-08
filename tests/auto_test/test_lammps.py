@@ -10,6 +10,7 @@ __package__ = "auto_test"
 
 from dpgen.auto_test.Lammps import Lammps
 from dpgen.auto_test.lib.lammps import inter_deepmd
+
 from .context import setUpModule  # noqa: F401
 
 

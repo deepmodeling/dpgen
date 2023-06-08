@@ -9,6 +9,7 @@ from pymatgen.core import Element, Structure
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "data"
+from .context import setUpModule  # noqa: F401
 from .context_surf import (
     create_path,
     make_scale,
@@ -20,7 +21,6 @@ from .context_surf import (
     place_element,
 )
 
-from .context import setUpModule  # noqa: F401
 
 class TestGenSurf(unittest.TestCase):
     def setUp(self):

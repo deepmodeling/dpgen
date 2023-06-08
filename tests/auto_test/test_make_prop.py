@@ -12,6 +12,7 @@ __package__ = "auto_test"
 from pymatgen.io.vasp import Incar
 
 from dpgen.auto_test.common_prop import make_property
+
 from .context import setUpModule  # noqa: F401
 
 
