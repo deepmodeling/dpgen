@@ -2,6 +2,14 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+from dpgen.generator.lib.ele_temp import NBandsEsti  # noqa: F403
+from dpgen.generator.lib.gaussian import _crd2frag, detect_multiplicity  # noqa: F403
+from dpgen.generator.lib.lammps import get_all_dumped_forces, get_dumped_forces  # noqa: F403
+from dpgen.generator.lib.make_calypso import make_calypso_input, write_model_devi_out  # noqa: F403
+from dpgen.generator.lib.parse_calypso import (
+    _parse_calypso_dis_mtx,  # noqa: F403
+    _parse_calypso_input,  # noqa: F403
+)
 from dpgen.generator.run import *  # noqa: F403
 
 param_file = "param-mg-vasp.json"
