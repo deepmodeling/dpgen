@@ -21,6 +21,7 @@ from .context_bulk import (
     place_element_ABACUS,
 )
 
+from .context import setUpModule  # noqa: F401
 
 class TestGenBulkABACUS(unittest.TestCase):
     def setUp(self):

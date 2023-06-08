@@ -11,6 +11,7 @@ __package__ = "generator"
 dirname = os.path.join(os.path.abspath(os.path.dirname(__file__)), "gromacs")
 
 from .context import make_fp, make_model_devi
+from .context import setUpModule  # noqa: F401
 
 
 def _make_fake_graphs(train_path):

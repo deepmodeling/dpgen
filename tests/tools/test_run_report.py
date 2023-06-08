@@ -7,6 +7,7 @@ test_dir = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 sys.path.insert(0, os.path.join(test_dir, ".."))
 __package__ = "tools"
 from .context import stat_sys
+from .context import setUpModule  # noqa: F401
 
 
 class TestRunReport(unittest.TestCase):

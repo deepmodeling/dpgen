@@ -20,6 +20,7 @@ from .context_surf_poscar import (
     place_element,
 )
 
+from .context import setUpModule  # noqa: F401
 
 class TestGenSurfPOSCAR(unittest.TestCase):
     def setUp(self):

@@ -14,6 +14,7 @@ from .context import (
     make_calypso_input,
     write_model_devi_out,
 )
+from .context import setUpModule  # noqa: F401
 
 # temp dir
 test_path = Path(".").joinpath("calypso_test_path")

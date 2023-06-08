@@ -40,6 +40,7 @@ from .context import (
     ref_cp2k_file_input,
     setUpModule,
 )
+from .context import setUpModule  # noqa: F401
 
 vasp_incar_ref = "PREC=A\n\
 ENCUT=600\n\

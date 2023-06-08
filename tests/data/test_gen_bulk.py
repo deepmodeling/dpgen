@@ -21,6 +21,7 @@ from .context_bulk import (
     place_element,
 )
 
+from .context import setUpModule  # noqa: F401
 
 class TestGenBulk(unittest.TestCase):
     def setUp(self):

@@ -24,6 +24,7 @@ from .context import (
     post_fp,
     post_fp_vasp,
 )
+from .context import setUpModule  # noqa: F401
 
 
 class TestPostFPVasp(unittest.TestCase):

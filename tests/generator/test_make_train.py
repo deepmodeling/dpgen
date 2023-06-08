@@ -23,6 +23,7 @@ from .context import (
     param_file_v1_et,
     run_train,
 )
+from .context import setUpModule  # noqa: F401
 
 
 def _comp_sys_files(sys0, sys1):

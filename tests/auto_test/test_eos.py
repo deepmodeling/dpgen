@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 __package__ = "auto_test"
 
 from dpgen.auto_test.EOS import EOS
+from .context import setUpModule  # noqa: F401
 
 
 class TestEOS(unittest.TestCase):

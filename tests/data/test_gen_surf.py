@@ -20,6 +20,7 @@ from .context_surf import (
     place_element,
 )
 
+from .context import setUpModule  # noqa: F401
 
 class TestGenSurf(unittest.TestCase):
     def setUp(self):
