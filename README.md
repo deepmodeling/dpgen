@@ -10,7 +10,7 @@
 [![conda install](https://img.shields.io/conda/dn/conda-forge/dpgen?label=conda%20install)](https://anaconda.org/conda-forge/dpgen)
 [![pip install](https://img.shields.io/pypi/dm/dpgen?label=pip%20install)](https://pypi.org/project/dpgen)
 
-DP-GEN (Deep Generator) is a software written in Python, delicately designed to generate a deep learning based model of interatomic potential energy and force field. DP-GEN is dependent on [DeePMD-kit](https://github.com/deepmodeling/deepmd-kit/). With highly scalable interface with common softwares for molecular simulation, DP-GEN is capable to  automatically prepare scripts and maintain job queues on HPC machines (High Performance Cluster) and analyze results.
+DP-GEN (Deep Potential Generator) is a software written in Python, delicately designed to generate a deep learning based model of interatomic potential energy and force field. DP-GEN is dependent on [DeePMD-kit](https://github.com/deepmodeling/deepmd-kit/). With highly scalable interface with common softwares for molecular simulation, DP-GEN is capable to  automatically prepare scripts and maintain job queues on HPC machines (High Performance Cluster) and analyze results.
 
 If you use this software in any publication, please cite:
 
