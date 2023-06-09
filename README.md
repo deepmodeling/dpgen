@@ -47,7 +47,7 @@ dpgen -h
 
 DP-GEN contains the following workflows:
 
-* [`dpgen run`](https://docs.deepmodeling.com/projects/dpgen/en/latest/run/): Main process of Deep Generator.
+* [`dpgen run`](https://docs.deepmodeling.com/projects/dpgen/en/latest/run/): Main process of Deep Potential Generator.
 * [Init](https://docs.deepmodeling.com/projects/dpgen/en/latest/init/): Generating initial data.
   * `dpgen init_bulk`: Generating initial data for bulk systems.
   * `dpgen init_surf`: Generating initial data for surface systems.
