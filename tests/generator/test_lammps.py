@@ -1,17 +1,17 @@
-import glob
-import json
 import os
-import shutil
 import sys
 import textwrap
 import unittest
 
-import dpdata
 import numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
-from .context import get_all_dumped_forces, get_dumped_forces
+from .context import (
+    get_all_dumped_forces,
+    get_dumped_forces,
+    setUpModule,  # noqa: F401
+)
 
 
 class TestGetDumpForce(unittest.TestCase):
@@ -54,7 +54,7 @@ ITEM: ATOMS id type x y z fx fy fz
             self.assertAlmostEqual(ff[ii], self.expected_f[ii])
 
 
-class TestGetDumpForce(unittest.TestCase):
+class TestGetDumpForce2(unittest.TestCase):
     def setUp(self):
         file_content = textwrap.dedent(
             """\

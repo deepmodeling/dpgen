@@ -191,7 +191,7 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
         elif key == "calculation":
             pass
         else:
-            ret += "%s %s\n" % (key, str(fp_params[key]))
+            ret += f"{key} {str(fp_params[key])}\n"
     return ret
 
 
@@ -206,7 +206,7 @@ def make_abacus_scf_stru(
 ):
     atom_names = sys_data["atom_names"]
     atom_numbs = sys_data["atom_numbs"]
-    if type_map == None:
+    if type_map is None:
         type_map = atom_names
 
     assert len(atom_names) == len(atom_numbs), "Please check the name of atoms. "
@@ -376,7 +376,7 @@ def get_additional_from_STRU(geometry_inlines, nele):
 def get_abacus_STRU(STRU, INPUT=None, n_ele=None):
     # read in geometry from STRU file. n_ele is the number of elements.
     # Either n_ele or INPUT should be provided.
-    with open(STRU, "r") as fp:
+    with open(STRU) as fp:
         geometry_inlines = fp.read().split("\n")
     for iline, line in enumerate(geometry_inlines):
         if line.split() == [] or len(line) == 0:

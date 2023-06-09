@@ -58,7 +58,7 @@ def make_refine(init_from_suffix, output_suffix, path_to_work):
             os.symlink(os.path.relpath(init_poscar), POSCAR)
         else:
             raise FileNotFoundError(
-                "no %s or %s in the init_from directory" % (CONTCAR, POSCAR)
+                f"no {CONTCAR} or {POSCAR} in the init_from directory"
             )
     os.chdir(cwd)
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf-8
 import json
 import os
 from pathlib import Path
@@ -20,9 +19,7 @@ MaxLength = 70
 
 
 def sepline(ch="-", sp="-", screen=False):
-    r"""
-    seperate the output by '-'
-    """
+    r"""Seperate the output by '-'."""
     if screen:
         print(ch.center(MaxLength, sp))
     else:
@@ -30,10 +27,8 @@ def sepline(ch="-", sp="-", screen=False):
 
 
 def box_center(ch="", fill=" ", sp="|"):
-    r"""
-    put the string at the center of |  |
-    """
-    strs = ch.center(Len, fill)
+    r"""Put the string at the center of |  |."""
+    strs = ch.center(MaxLength, fill)
     dlog.info(sp + strs[1 : len(strs) - 1 :] + sp)
 
 
@@ -64,9 +59,7 @@ def expand_sys_str(root_dir: Union[str, Path]) -> List[str]:
             f_keys = ["/"]
             f.visit(lambda x: f_keys.append("/" + x))
         matches = [
-            "%s#%s" % (root_dir, d)
-            for d in f_keys
-            if str(Path(d) / "type.raw") in f_keys
+            f"{root_dir}#{d}" for d in f_keys if str(Path(d) / "type.raw") in f_keys
         ]
     else:
         raise OSError(f"{root_dir} does not exist.")

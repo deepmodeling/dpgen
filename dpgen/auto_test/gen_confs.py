@@ -5,7 +5,7 @@ import os
 import re
 
 from pymatgen.analysis.structure_matcher import StructureMatcher
-from pymatgen.ext.matproj import Composition, MPRester
+from pymatgen.ext.matproj import MPRester
 
 import dpgen.auto_test.lib.crys as crys
 
@@ -136,10 +136,10 @@ def _main():
 
     print("generate %s" % (args.elements))
     if len(args.elements) == 1:
-        gen_element(args.elements[0], key)
+        gen_element(args.elements[0], args.key)
         # gen_element_std(args.elements[0])
     else:
-        gen_alloy(args.elements, key)
+        gen_alloy(args.elements, args.key)
 
 
 if __name__ == "__main__":

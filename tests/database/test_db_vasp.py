@@ -6,16 +6,20 @@ import tarfile
 import unittest
 from glob import glob
 
-import numpy as np
-
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "database"
-from dpdata import LabeledSystem, System
-from monty.serialization import dumpfn, loadfn
-from monty.shutil import remove
+from dpdata import LabeledSystem
+from monty.serialization import loadfn
 from pymatgen.io.vasp import Incar, Kpoints, Poscar, Potcar
 
-from .context import DPPotcar, Entry, VaspInput, dpgen, parsing_vasp, setUpModule
+from .context import (
+    DPPotcar,
+    Entry,
+    VaspInput,
+    dpgen,
+    parsing_vasp,
+    setUpModule,  # noqa: F401
+)
 
 iter_pat = "02.fp/task.007.00000*"
 init_pat = "al.bcc.02x02x02/02.md/sys-0016/scale-1.000/00000*"
@@ -44,7 +48,7 @@ class Test(unittest.TestCase):
         self.ref_entries = loadfn(os.path.join(self.cwd, "data/entries.json"))
         self.init_path = sorted(glob(os.path.join(self.r_init_path, init_pat)))
         self.iter_path = sorted(glob(os.path.join(self.r_iter_path, iter_pat)))
-        with open("param_Al.json", "r") as fr:
+        with open("param_Al.json") as fr:
             jdata = json.load(fr)
         self.config_info_dict = jdata["config_info_dict"]
         self.skip_init = jdata["skip_init"]

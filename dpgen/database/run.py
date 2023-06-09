@@ -1,17 +1,12 @@
 # /usr/bin/env python
-# coding: utf-8
 # Copyright (c) The Dpmodeling Team.
 
 import json
 import os
-import time
-import traceback
 from glob import glob
-from threading import Thread
 from uuid import uuid4
 
-import numpy as np
-from dpdata import LabeledSystem, System
+from dpdata import LabeledSystem
 from monty.serialization import dumpfn, loadfn
 
 from dpgen import SHORT_CMD, dlog
@@ -32,7 +27,7 @@ def db_run(args):
 
 
 def _main(param):
-    with open(param, "r") as fp:
+    with open(param) as fp:
         jdata = json.load(fp)
     calculator = jdata["calculator"]
     path = jdata["path"]
@@ -82,7 +77,7 @@ def _parsing_vasp(paths, config_info_dict, id_prefix, iters=True):
         iter_record = []
         iter_record_new = []
         try:
-            with open("record.database", "r") as f_record:
+            with open("record.database") as f_record:
                 iter_record = [i.split()[0] for i in f_record.readlines()]
             iter_record.sort()
             dlog.info("iter_record")
@@ -120,7 +115,7 @@ def _parsing_vasp(paths, config_info_dict, id_prefix, iters=True):
                 attrib["task_info"] = task_info
                 attrib["iter_info"] = iter_info
                 attrib["sys_info"] = sys_info
-                with open(f_outcar, "r") as fin_outcar:
+                with open(f_outcar) as fin_outcar:
                     infile_outcar = fin_outcar.readlines()
                 for line in infile_outcar:
                     if "running on" in line:

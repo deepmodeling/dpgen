@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
 
-from __future__ import division
 
 import argparse
 import os
-import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy.integrate as INT
-from scipy.interpolate import *
-from scipy.misc import derivative
-from scipy.optimize import curve_fit, fsolve, leastsq, minimize, root
+from scipy.interpolate import BPoly, LSQUnivariateSpline, UnivariateSpline, interp1d
+from scipy.optimize import fsolve, leastsq
 
 kb = 1.3806488e-23  # J K^-1
 kb_ev = 8.6173324e-05  # eV K^-1
@@ -81,9 +77,8 @@ def res_murnaghan(pars, y, x):
 
 
 def murnaghan(vol, pars):
-    """
-    Four-parameters murnaghan EOS.
-    From PRB 28,5480 (1983)
+    """Four-parameters murnaghan EOS.
+    From PRB 28,5480 (1983).
     """
     e0 = pars[0]
     b0 = pars[1]
@@ -108,10 +103,9 @@ def res_birch(pars, y, x):
 
 
 def birch(v, parameters):
-    """
-    From Intermetallic compounds: Principles and Practice, Vol. I: Princples
+    """From Intermetallic compounds: Principles and Practice, Vol. I: Princples
     Chapter 9 pages 195-210 by M. Mehl. B. Klein, D. Papaconstantopoulos
-    paper downloaded from Web
+    paper downloaded from Web.
 
     case where n=0
     """
@@ -146,9 +140,7 @@ def calc_props_mBM4(pars):
 
 
 def mBM4(vol, pars):
-    """
-    Birch-Murnaghan 4 pars equation from PRB 70, 224107, 3-order BM
-    """
+    """Birch-Murnaghan 4 pars equation from PRB 70, 224107, 3-order BM."""
     e0 = pars[0]
     b0 = pars[1]
     bp = pars[2]
@@ -171,9 +163,7 @@ def res_mBM5(pars, y, x):
 
 
 def mBM5(vol, pars):
-    """
-    modified BM5 EOS, Shang SL comput mater sci, 2010: 1040-1048
-    """
+    """Modified BM5 EOS, Shang SL comput mater sci, 2010: 1040-1048."""
     e0 = pars[0]
     b0 = pars[1]
     bp = pars[2]
@@ -207,9 +197,7 @@ def res_mBM4poly(pars, y, x):
 
 
 def mBM4poly(vol, parameters):
-    """
-    modified BM5 EOS, Shang SL comput mater sci, 2010: 1040-1048, original expressions.
-    """
+    """Modified BM5 EOS, Shang SL comput mater sci, 2010: 1040-1048, original expressions."""
     a = parameters[0]
     b = parameters[1]
     c = parameters[2]
@@ -283,9 +271,7 @@ def res_mBM5poly(pars, y, x):
 
 
 def mBM5poly(vol, pars):
-    """
-    modified BM5 EOS, Shang SL comput mater sci, 2010: 1040-1048, original expressions.
-    """
+    """Modified BM5 EOS, Shang SL comput mater sci, 2010: 1040-1048, original expressions."""
     a = pars[0]
     b = pars[1]
     c = pars[2]
@@ -395,9 +381,7 @@ def calc_props_BM4(pars):
 
 
 def BM4(vol, pars):
-    """
-    Birch-Murnaghan 4 pars equation from PRB 70, 224107, 3-order
-    """
+    """Birch-Murnaghan 4 pars equation from PRB 70, 224107, 3-order."""
     e0 = pars[0]
     b0 = pars[1]
     bp = pars[2]
@@ -416,9 +400,7 @@ def res_BM5(pars, y, x):
 
 
 def BM5(vol, pars):
-    """
-    Birch-Murnaghan 5 pars equation from PRB 70, 224107, 4-Order
-    """
+    """Birch-Murnaghan 5 pars equation from PRB 70, 224107, 4-Order."""
     e0 = pars[0]
     b0 = pars[1]
     b0p = pars[2]
@@ -445,9 +427,8 @@ def BM5(vol, pars):
 
 
 def rBM4(vol, pars):
-    """
-    Implementions as Alberto Otero-de-la-Roza, i.e. rBM4 is used here
-    Comput Physics Comm, 2011, 182: 1708-1720
+    """Implementions as Alberto Otero-de-la-Roza, i.e. rBM4 is used here
+    Comput Physics Comm, 2011, 182: 1708-1720.
     """
     e0 = pars[0]
     b0 = pars[1]
@@ -466,10 +447,9 @@ def res_rBM4(pars, y, x):
 
 
 def rBM4_pv(vol, pars):
-    """
-    Implementions as Alberto Otero-de-la-Roza, i.e. rBM4 is used here
+    """Implementions as Alberto Otero-de-la-Roza, i.e. rBM4 is used here
     Comput Physics Comm, 2011, 182: 1708-1720
-    Fit for V-P relations
+    Fit for V-P relations.
     """
     e0 = pars[0]
     b0 = pars[1]
@@ -482,15 +462,14 @@ def rBM4_pv(vol, pars):
     return P
 
 
-def res_rBM4_pv(par, y, x):
+def res_rBM4_pv(pars, y, x):
     res = y - rBM4_pv(x, pars)
     return res
 
 
 def rBM5(vol, pars):
-    """
-    Implementions as Alberto Otero-de-la-Roza, i.e. rBM5 is used here
-    Comput Physics Comm, 2011, 182: 1708-1720
+    """Implementions as Alberto Otero-de-la-Roza, i.e. rBM5 is used here
+    Comput Physics Comm, 2011, 182: 1708-1720.
     """
     e0 = pars[0]
     b0 = pars[1]
@@ -514,10 +493,9 @@ def res_rBM5(pars, y, x):
 
 
 def rBM5_pv(vol, pars):
-    """
-    Implementions as Alberto Otero-de-la-Roza, i.e. rBM5 is used here
+    """Implementions as Alberto Otero-de-la-Roza, i.e. rBM5 is used here
     Comput Physics Comm, 2011, 182: 1708-1720
-    Fit for V-P relations
+    Fit for V-P relations.
     """
     e0 = pars[0]
     b0 = pars[1]
@@ -538,7 +516,7 @@ def rBM5_pv(vol, pars):
     return P
 
 
-def res_rBM5_pv(par, y, x):
+def res_rBM5_pv(pars, y, x):
     res = y - rBM5_pv(x, pars)
     return res
 
@@ -551,9 +529,7 @@ def res_universal(pars, y, x):
 
 
 def universal(vol, parameters):
-    """
-    Universal equation of state(Vinet P et al., J. Phys.: Condens. Matter 1, p1941 (1989))
-    """
+    """Universal equation of state(Vinet P et al., J. Phys.: Condens. Matter 1, p1941 (1989))."""
     e0 = parameters[0]
     b0 = parameters[1]
     bp = parameters[2]
@@ -580,8 +556,7 @@ def res_LOG4(pars, y, x):
 
 
 def LOG4(vol, pars):
-    """
-    Natrual strain (Poirier-Tarantola)EOS with 4 paramters
+    """Natrual strain (Poirier-Tarantola)EOS with 4 paramters
     Seems only work in near-equillibrium range.
     """
     e0 = pars[0]
@@ -622,8 +597,7 @@ def calc_props_LOG4(pars):
 
 
 def rPT4(vol, pars):
-    """
-    Natrual strain EOS with 4 paramters
+    """Natrual strain EOS with 4 paramters
     Seems only work in near-equillibrium range.
     Implementions as Alberto Otero-de-la-Roza, i.e. rPT4 is used here
     Comput Physics Comm, 2011, 182: 1708-1720,
@@ -647,8 +621,7 @@ def res_rPT4(pars, y, x):
 
 
 def rPT4_pv(vol, pars):
-    """
-    Natrual strain (Poirier-Tarantola)EOS with 4 paramters
+    """Natrual strain (Poirier-Tarantola)EOS with 4 paramters
     Seems only work in near-equillibrium range.
     Implementions as Alberto Otero-de-la-Roza, i.e. rPT4 is used here
     Comput Physics Comm, 2011, 182: 1708-1720,
@@ -677,9 +650,7 @@ def res_LOG5(pars, y, x):
 
 
 def LOG5(vol, parameters):
-    """
-    Natrual strain (Poirier-Tarantola)EOS with 5 paramters
-    """
+    """Natrual strain (Poirier-Tarantola)EOS with 5 paramters."""
     e0 = parameters[0]
     b0 = parameters[1]
     b0p = parameters[2]
@@ -708,8 +679,7 @@ def LOG5(vol, parameters):
 
 
 def rPT5(vol, pars):
-    """
-    Natrual strain EOS with 4 paramters
+    """Natrual strain EOS with 4 paramters
     Seems only work in near-equillibrium range.
     Implementions as Alberto Otero-de-la-Roza, i.e. rPT5 is used here
     Comput Physics Comm, 2011, 182: 1708-1720,
@@ -738,8 +708,7 @@ def res_rPT5(pars, y, x):
 
 
 def rPT5_pv(vol, pars):
-    """
-    Natrual strain (Poirier-Tarantola)EOS with 5 paramters
+    """Natrual strain (Poirier-Tarantola)EOS with 5 paramters
     Implementions as Alberto Otero-de-la-Roza, i.e. rPT5 is used here
     Comput Physics Comm, 2011, 182: 1708-1720,
     in their article, labeled as PT3 (3-order), however, we mention it as
@@ -788,8 +757,7 @@ def calc_props_vinet(pars):
 
 
 def vinet(vol, pars):
-    """
-    Vinet equation from PRB 70, 224107
+    """Vinet equation from PRB 70, 224107
     Following, Shang Shunli et al., comput mater sci, 2010: 1040-1048, original expressions.
     """
     e0 = pars[0]
@@ -816,14 +784,14 @@ def vinet_pv(vol, pars):
     return P
 
 
-def res_vinet_pv(par, y, x):
+def res_vinet_pv(pars, y, x):
     res = y - vinet(x, pars)
     return res
 
 
 # ----------------------------------------------------------------------------------------
 def Li4p(V, parameters):
-    """Li JH, APL, 87, 194111 (2005)"""
+    """Li JH, APL, 87, 194111 (2005)."""
     E0 = parameters[0]
     B0 = parameters[1]
     BP = parameters[2]
@@ -884,9 +852,7 @@ def res_morse(p, en, volume):
 
 
 def morse_AB(volume, p):
-    """
-    morse_AB EOS formula from Song's FVT souces
-    """
+    """morse_AB EOS formula from Song's FVT souces."""
     # p0 = [e0, b0, bp, v0, bpp]
     E0 = p[0]
     A = p[1]
@@ -909,9 +875,8 @@ def res_morse_AB(p, en, volume):
 
 
 def morse_3p(volume, p):
-    """
-    morse_AB EOS formula from Song's FVT souces
-    A= 0.5*B
+    """morse_AB EOS formula from Song's FVT souces
+    A= 0.5*B.
     """
     # p0 = [e0, b0, bp, v0, bpp]
     E0 = p[0]
@@ -935,8 +900,7 @@ def res_morse_3p(p, en, volume):
 
 
 def morse_6p(vol, par):
-    """
-    Generalized Morse EOS proposed by Qin, see:
+    """Generalized Morse EOS proposed by Qin, see:
     Qin et al. Phys Rev B, 2008, 78, 214108.
     Qin et al. Phys Rev B, 2008, 77, 220103(R).
     """
@@ -985,9 +949,7 @@ def res_morse_6p(p, en, volume):
 
 # ----------------------------------------------------------------------------------------
 def mie(v, p):
-    """
-    Mie model for song's FVT
-    """
+    """Mie model for song's FVT."""
     # p0 = [e0, b0, bp, v0, bpp]
     E0 = p[0]
     m = p[1]
@@ -1006,9 +968,7 @@ def res_mie(p, e, v):
 
 
 def mie_simple(v, p):
-    """
-    Mie_simple model for song's FVT
-    """
+    """Mie_simple model for song's FVT."""
     # p0 = [e0, b0, bp, v0, bpp]
     E0 = p[0]
     m = 4
@@ -1028,9 +988,8 @@ def res_mie_simple(p, e, v):
 
 # ----------------------------------------------------------------------------------------
 def TEOS(v, par):
-    """
-    Holland, et al, Journal of Metamorphic Geology, 2011, 29(3): 333-383
-    Modified Tait equation of Huang & Chow
+    """Holland, et al, Journal of Metamorphic Geology, 2011, 29(3): 333-383
+    Modified Tait equation of Huang & Chow.
     """
     e0 = par[0]
     b0 = par[1]
@@ -1056,8 +1015,7 @@ def res_TEOS(p, e, v):
 
 # ----------------------------------------------------------------------------------------
 def SJX_v2(vol, par):
-    """
-    Sun Jiuxun, et al. J phys Chem Solids, 2005, 66: 773-782.
+    """Sun Jiuxun, et al. J phys Chem Solids, 2005, 66: 773-782.
     They said it is satified for the limiting condition at high pressure.
     """
     e0 = par[0]
@@ -1087,9 +1045,7 @@ def res_SJX_v2(p, e, v):
 
 
 def SJX_5p(vol, par):
-    """
-    SJX_5p's five parameters EOS, Physica B: Condens Mater, 2011, 406: 1276-1282
-    """
+    """SJX_5p's five parameters EOS, Physica B: Condens Mater, 2011, 406: 1276-1282."""
     e0 = par[0]
     a = par[1]
     b = par[2]
@@ -1188,7 +1144,7 @@ def read_vlp(fin, fstart, fend):
             cellc.append(c)
             cellba.append(ba)
             cellca.append(ca)
-    print("\n** Vmin = %f, Vmax = %f" % (min(vol), max(vol)))
+    print(f"\n** Vmin = {min(vol):f}, Vmax = {max(vol):f}")
 
     # some special conditions
     if fstart <= 0:
@@ -1268,7 +1224,7 @@ def read_velp(fin, fstart, fend):
             cellc.append(c)
             cellba.append(ba)
             cellca.append(ca)
-    print("\n** Vmin = %f, Vmax = %f" % (min(vol), max(vol)))
+    print(f"\n** Vmin = {min(vol):f}, Vmax = {max(vol):f}")
 
     # some special conditions
     if fstart <= 0:
@@ -1351,8 +1307,7 @@ def repro_vp(func, vol_i, pars):
 def ext_vec(
     func, fin, p0, fs, fe, vols=None, vole=None, ndata=101, refit=0, show_fig=False
 ):
-    """
-    extrapolate the data points for E-V based on the fitted parameters in small or
+    """Extrapolate the data points for E-V based on the fitted parameters in small or
     very large volume range.
     """
     # read fitted-parameters
@@ -1381,7 +1336,7 @@ def ext_vec(
             cax = cellca[-1]
         else:
             cax = sca(vx)
-        fw.write("%f\t%f\t%f\n" % (vx, ex, cax))
+        fw.write(f"{vx:f}\t{ex:f}\t{cax:f}\n")
         fw.flush()
     fw.close()
 
@@ -1406,7 +1361,7 @@ def ext_splint(xp, yp, order=3, method="unispl"):
         SPLINT = interp1d
         return SPLINT(xp, yp, order, bounds_error=False)
     elif method == "piecepoly":
-        SPLINT = PiecewisePolynomial
+        SPLINT = BPoly.from_derivatives
         return SPLINT(xp, yp, order)
     else:
         if method == "unispl":
@@ -1429,9 +1384,7 @@ def ext_velp(
     fout="ext_velp.dat",
     show_fig=False,
 ):
-    """
-    extrapolate the lattice parameters based on input data
-    """
+    """Extrapolate the lattice parameters based on input data."""
     # read file
     vol, eng, cella, cellb, cellc, cellba, cellca = read_velp(fin, fstart, fend)
 
@@ -1488,8 +1441,7 @@ def ext_velp(
     )
     for i in range(ndata):
         fw.write(
-            "%12.6f\t%12.6f\t%12.6f\t%12.6f\t%12.6f\t%12.6f\t%12.6f\t%12.6f\n"
-            % (
+            "{:12.6f}\t{:12.6f}\t{:12.6f}\t{:12.6f}\t{:12.6f}\t{:12.6f}\t{:12.6f}\t{:12.6f}\n".format(
                 vv[i],
                 ee[i],
                 cellaa[i],
@@ -1612,16 +1564,16 @@ def lsqfit_eos(
     if func == "morse_AB":
         e0, A, B, v0 = popt
         print("%12s\t%12s\t%12s\t%12s" % ("V0(A**3)", "A", "B", "E0(eV)"))
-        print("%12f\t%12f\t%12f\t%12f\n" % (v0, A, B, e0))
+        print(f"{v0:12f}\t{A:12f}\t{B:12f}\t{e0:12f}\n")
     elif func == "morse_3p":
         e0, A, v0 = popt
         B = 0.5 * A
         print("%12s\t%12s\t%12s\t%12s" % ("V0(A**3)", "A", "B", "E0(eV)"))
-        print("%12f\t%12f\t%12f\t%12f\n" % (v0, A, B, e0))
+        print(f"{v0:12f}\t{A:12f}\t{B:12f}\t{e0:12f}\n")
     elif func in ["mie", "mie_simple"]:
         e0, m, n, v0 = popt
         print("%12s\t%12s\t%12s\t%12s" % ("V0(A**3)", "m", "n", "E0(eV)"))
-        print("%12f\t%12f\t%12f\t%12f\n" % (v0, m, n, e0))
+        print(f"{v0:12f}\t{m:12f}\t{n:12f}\t{e0:12f}\n")
     elif func == "morse_6p":
         e0, b0, bp, v0, bpp, m, n = calc_props_morse_6p(popt)
         b0 = eV2GPa * b0
@@ -1630,9 +1582,7 @@ def lsqfit_eos(
             "%12s\t%12s\t%12s\t%12s\t%12s\t%12s\t%12s"
             % ("V0(A**3)", "B0(GPa)", "Bp", "E0(eV)", "Bpp(1/GPa)", "m", "n")
         )
-        print(
-            "%12f\t%12f\t%12f\t%12f\t%12f\t%12f\t%12f\n" % (v0, b0, bp, e0, bpp, m, n)
-        )
+        print(f"{v0:12f}\t{b0:12f}\t{bp:12f}\t{e0:12f}\t{bpp:12f}\t{m:12f}\t{n:12f}\n")
     elif func == "SJX_5p":
         e0, b0, bp, v0, n = calc_props_SJX_5p(popt)
         b0 = eV2GPa * b0
@@ -1640,7 +1590,7 @@ def lsqfit_eos(
             "%12s\t%12s\t%12s\t%12s\t%12s"
             % ("V0(A**3)", "B0(GPa)", "Bp", "E0(eV)", "n")
         )
-        print("%12f\t%12f\t%12f\t%12f\t%12f\n" % (v0, b0, bp, e0, n))
+        print(f"{v0:12f}\t{b0:12f}\t{bp:12f}\t{e0:12f}\t{n:12f}\n")
     elif func in ["mBM4poly", "mBM5poly", "mBM4", "LOG4", "vinet", "morse", "BM4"]:
         prop_func = eval("calc_props_" + func)
         e0, b0, bp, v0, bpp = prop_func(popt)
@@ -1650,7 +1600,7 @@ def lsqfit_eos(
             "%12s\t%12s\t%12s\t%12s\t%12s"
             % ("V0(A**3)", "B0(GPa)", "Bp", "E0(eV)", "Bpp(1/GPa)")
         )
-        print("%12f\t%12f\t%12f\t%12f\t%12f\n" % (v0, b0, bp, e0, bpp))
+        print(f"{v0:12f}\t{b0:12f}\t{bp:12f}\t{e0:12f}\t{bpp:12f}\n")
     else:
         e0, b0, bp, v0, bpp = popt
         b0 = eV2GPa * b0
@@ -1659,7 +1609,7 @@ def lsqfit_eos(
             "%12s\t%12s\t%12s\t%12s\t%12s"
             % ("V0(A**3)", "B0(GPa)", "Bp", "E0(eV)", "Bpp(1/GPa)")
         )
-        print("%12f\t%12f\t%12f\t%12f\t%12f\n" % (v0, b0, bp, e0, bpp))
+        print(f"{v0:12f}\t{b0:12f}\t{bp:12f}\t{e0:12f}\t{bpp:12f}\n")
 
     # write the fitted results in fit.out
     fw = open(fout, "w+")
@@ -1712,12 +1662,17 @@ def lsqfit_eos(
     )
     for i in range(len(vol)):
         fve.write(
-            "%20f\t%20f\t%20f\t%20f\n"
-            % (vol[i], repro_en[i], en[i], 100 * np.abs((en[i] - repro_en[i]) / en[i]))
+            "{:20f}\t{:20f}\t{:20f}\t{:20f}\n".format(
+                vol[i], repro_en[i], en[i], 100 * np.abs((en[i] - repro_en[i]) / en[i])
+            )
         )
         fve.flush()
         p_tmp = repro_press[i]
-        fvp.write("%20f\t%20f\t%20f\t%20f\n" % (vol[i], p_tmp, p_tmp / 100, p_tmp * 10))
+        fvp.write(
+            "{:20f}\t{:20f}\t{:20f}\t{:20f}\n".format(
+                vol[i], p_tmp, p_tmp / 100, p_tmp * 10
+            )
+        )
         fvp.flush()
     fve.close()
     fvp.close()

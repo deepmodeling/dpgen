@@ -7,10 +7,8 @@ import dpdata
 import numpy as np
 from ase.lattice.cubic import BodyCenteredCubic as bcc
 from ase.lattice.cubic import FaceCenteredCubic as fcc
-from ase.lattice.hexagonal import HexagonalClosedPacked as hcp
 from monty.serialization import dumpfn, loadfn
 from pymatgen.core.structure import Structure
-from pymatgen.core.surface import SlabGenerator
 from pymatgen.io.ase import AseAtomsAdaptor
 
 import dpgen.auto_test.lib.abacus as abacus
@@ -22,9 +20,7 @@ from dpgen.auto_test.reproduce import make_repro, post_repro
 
 
 class Gamma(Property):
-    """
-    Calculation of common gamma lines for bcc and fcc
-    """
+    """Calculation of common gamma lines for bcc and fcc."""
 
     def __init__(self, parameter, inter_param=None):
         parameter["reproduce"] = parameter.get("reproduce", False)
@@ -95,7 +91,7 @@ class Gamma(Property):
             parameter["init_from_suffix"] = parameter.get("init_from_suffix", "00")
             self.init_from_suffix = parameter["init_from_suffix"]
         self.parameter = parameter
-        self.inter_param = inter_param if inter_param != None else {"type": "vasp"}
+        self.inter_param = inter_param if inter_param is not None else {"type": "vasp"}
 
     def make_confs(self, path_to_work, path_to_equi, refine=False):
         path_to_work = os.path.abspath(path_to_work)
@@ -359,7 +355,7 @@ class Gamma(Property):
             + fix_dict[self.add_fix[2]]
             + "\n"
         )
-        with open(poscar, "r") as fin1:
+        with open(poscar) as fin1:
             contents = fin1.readlines()
             contents.insert(insert_pos - 1, "Selective dynamics\n")
             for ii in range(insert_pos, 0, 1):
@@ -387,7 +383,7 @@ class Gamma(Property):
             + fix_dict[self.add_fix[2]]
             + "\n"
         )
-        with open(inLammps, "r") as fin1:
+        with open(inLammps) as fin1:
             contents = fin1.readlines()
             for ii in range(len(contents)):
                 upper = re.search("variable        N equal count\(all\)", contents[ii])

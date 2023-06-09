@@ -11,13 +11,10 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
-import subprocess
 import sys
 from datetime import date
 
 # import sys
-import recommonmark
-from recommonmark.transform import AutoStructify
 
 # -- Project information -----------------------------------------------------
 

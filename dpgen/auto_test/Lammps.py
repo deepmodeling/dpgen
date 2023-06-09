@@ -138,36 +138,40 @@ class Lammps(Task):
 
         # deal with user input in.lammps for relaxation
         if os.path.isfile(self.in_lammps) and task_type == "relaxation":
-            with open(self.in_lammps, "r") as fin:
+            with open(self.in_lammps) as fin:
                 fc = fin.read()
         # user input in.lammps for property calculation
         if "input_prop" in cal_setting and os.path.isfile(cal_setting["input_prop"]):
-            with open(os.path.abspath(cal_setting["input_prop"]), "r") as fin:
+            with open(os.path.abspath(cal_setting["input_prop"])) as fin:
                 fc = fin.read()
 
         else:
             if "etol" in cal_setting:
                 dlog.info(
-                    "%s setting etol to %s"
-                    % (self.make_input_file.__name__, cal_setting["etol"])
+                    "{} setting etol to {}".format(
+                        self.make_input_file.__name__, cal_setting["etol"]
+                    )
                 )
                 etol = cal_setting["etol"]
             if "ftol" in cal_setting:
                 dlog.info(
-                    "%s setting ftol to %s"
-                    % (self.make_input_file.__name__, cal_setting["ftol"])
+                    "{} setting ftol to {}".format(
+                        self.make_input_file.__name__, cal_setting["ftol"]
+                    )
                 )
                 ftol = cal_setting["ftol"]
             if "maxiter" in cal_setting:
                 dlog.info(
-                    "%s setting maxiter to %s"
-                    % (self.make_input_file.__name__, cal_setting["maxiter"])
+                    "{} setting maxiter to {}".format(
+                        self.make_input_file.__name__, cal_setting["maxiter"]
+                    )
                 )
                 maxiter = cal_setting["maxiter"]
             if "maxeval" in cal_setting:
                 dlog.info(
-                    "%s setting maxeval to %s"
-                    % (self.make_input_file.__name__, cal_setting["maxeval"])
+                    "{} setting maxeval to {}".format(
+                        self.make_input_file.__name__, cal_setting["maxeval"]
+                    )
                 )
                 maxeval = cal_setting["maxeval"]
 
@@ -300,7 +304,7 @@ class Lammps(Task):
             force = []
             virial = []
             stress = []
-            with open(dump_lammps, "r") as fin:
+            with open(dump_lammps) as fin:
                 dump = fin.read().split("\n")
             dumptime = []
             for idx, ii in enumerate(dump):
@@ -354,7 +358,7 @@ class Lammps(Task):
                         fz = float(dump[idx + 9 + jj].split()[7])
                         force[-1].append([fx, fy, fz])
 
-            with open(log_lammps, "r") as fp:
+            with open(log_lammps) as fp:
                 if "Total wall time:" not in fp.read():
                     warnings.warn("lammps not finished " + log_lammps + " skip")
                     return None

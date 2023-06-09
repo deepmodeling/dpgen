@@ -1,13 +1,11 @@
 #!/usr/bin/env python
-# coding: utf-8
 # Copyright (c) DeepGenerator Development Team.
 
 
 import argparse
-import itertools
 import sys
 
-from dpgen import __version__, info
+from dpgen import info
 from dpgen.auto_test.run import gen_test
 from dpgen.collect.collect import gen_collect
 from dpgen.data.gen import gen_init_bulk

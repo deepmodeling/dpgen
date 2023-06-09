@@ -4,7 +4,6 @@ import glob
 import math
 import os
 import shutil
-import sys
 
 import dpdata
 import numpy as np
@@ -22,7 +21,7 @@ def write_model_devi_out(devi, fname):
             f"min_devi_{item}",
             f"avg_devi_{item}",
         )
-    header += "%16s" % str("min_dis")
+    header += "%16s" % "min_dis"
     np.savetxt(
         fname,
         devi,
