@@ -23,6 +23,7 @@ from .context import (
     param_siesta_file,
     post_fp,
     post_fp_vasp,
+    param_custom_fp_file,
     setUpModule,  # noqa: F401
 )
 
@@ -322,6 +323,35 @@ class TestPostAmberDiff(unittest.TestCase, CompLabeledSys):
             .systems.values()
         )[0]
 
+
+class TestPostFPCustom(unittest.TestCase, CompLabeledSys):
+    def setUp(self):
+        self.places = 5
+        self.e_places = 5
+        self.f_places = 5
+        self.v_places = 2
+        assert os.path.isdir(
+            "out_data_post_fp_pwmat"
+        ), "out data for post fp pwmat should exist"
+        if os.path.isdir("iter.000000"):
+            shutil.rmtree("iter.000000")
+        with open(param_custom_fp_file) as fp:
+            jdata = json.load(fp)
+        fp_params = jdata["fp_params"]
+        output_fn = fp_params["output_fn"]
+        output_fmt = fp_params["output_fmt"]
+        type_map = ['Type_0']
+        ss = dpdata.LabeledSystem(os.path.join("data", "deepmd"), fmt="deepmd/raw", type_map=type_map)
+        output_filename = os.path.join("iter.000000", "02.fp", "task.000.000000", output_fn)
+        os.makedirs(os.path.dirname(output_filename), exist_ok=True)
+        ss.to(output_fmt, output_filename)
+        post_fp(0, jdata)
+        self.system_1 = ss
+        self.system_2 = list(
+            dpdata.MultiSystems(type_map=type_map)
+            .from_deepmd_raw("iter.000000/02.fp/data.000")
+            .systems.values()
+        )[0]
 
 if __name__ == "__main__":
     unittest.main()

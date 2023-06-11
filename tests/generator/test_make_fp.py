@@ -38,6 +38,7 @@ from .context import (
     param_siesta_file,
     ref_cp2k_file_exinput,
     ref_cp2k_file_input,
+    param_custom_fp_file,
     setUpModule,  # noqa: F401
 )
 
@@ -1309,6 +1310,59 @@ class TestMakeFPPWmat(unittest.TestCase):
         _check_potcar(self, 0, jdata["fp_pp_path"], jdata["fp_pp_files"])
         os.system("rm -r iter.000000")
         # shutil.rmtree('iter.000000')
+
+
+class TestMakeFPCustom(unittest.TestCase):
+    def test_make_fp_custom(self):
+        setUpModule()
+        if os.path.isdir("iter.000000"):
+            shutil.rmtree("iter.000000")
+        with open(param_custom_fp_file) as fp:
+            jdata = json.load(fp)
+        with open(machine_file) as fp:
+            mdata = json.load(fp)
+        md_descript = []
+        nsys = 2
+        nmd = 3
+        n_frame = 10
+        for ii in range(nsys):
+            tmp = []
+            for jj in range(nmd):
+                tmp.append(np.arange(0, 0.29, 0.29 / 10))
+            md_descript.append(tmp)
+        atom_types = [0, 1, 2, 2, 0, 1]
+        type_map = jdata["type_map"]
+        _make_fake_md(0, md_descript, atom_types, type_map)
+        make_fp(0, jdata, {})
+        # check input.h5 can be read
+        fp_params = jdata['fp_params']
+        input_fn = fp_params["input_fn"]
+        input_fmt = fp_params["input_fmt"]
+        fp_task_max = jdata["fp_task_max"]
+        type_map = jdata["type_map"]
+
+        fp_path = os.path.join("iter.%06d" % 0, "02.fp")
+        candi_files = glob.glob(os.path.join(fp_path, "candidate.shuffled.*.out"))
+        candi_files.sort()
+        sys_idx = [str(os.path.basename(ii).split(".")[2]) for ii in candi_files]
+        for sidx, ii in zip(sys_idx, candi_files):
+            md_task = []
+            f_idx = []
+            with open(ii) as fp:
+                for line in fp:
+                    md_task.append(line.split()[0])
+                    f_idx.append(line.split()[1])
+            md_task = md_task[:fp_task_max]
+            f_idx = f_idx[:fp_task_max]
+            for cc, (tt, ff) in enumerate(zip(md_task, f_idx)):
+                traj_file = os.path.join(tt, "traj", "%d.lammpstrj" % int(ff))
+                input_file = os.path.join(
+                    fp_path, "task.%03d.%06d" % (int(sidx), cc), input_fn
+                )
+                system1 = dpdata.System(traj_file, "lammps/dump", type_map=type_map)
+                system2 = dpdata.System(input_file, input_fmt, type_map=type_map)
+                assert(system1.formula, system2.formula)
+        shutil.rmtree("iter.000000")
 
 
 if __name__ == "__main__":

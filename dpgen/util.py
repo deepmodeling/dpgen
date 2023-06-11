@@ -3,6 +3,9 @@ import json
 import os
 from pathlib import Path
 from typing import List, Union
+from contextlib import (
+    contextmanager,
+)
 
 import dpdata
 import h5py
@@ -145,3 +148,29 @@ def convert_training_data_to_hdf5(input_files: List[str], h5_file: str):
                 group = f.create_group(str(pp))
                 s = dpdata.LabeledSystem(ii, fmt="deepmd/npy")
                 s.to("deepmd/hdf5", group)
+
+@contextmanager
+def set_directory(path: Path):
+    """Sets the current working path within the context.
+
+    Parameters
+    ----------
+    path : Path
+        The path to the cwd
+
+    Yields
+    ------
+    None
+
+    Examples
+    --------
+    >>> with set_directory("some_path"):
+    ...    do_something()
+    """
+    cwd = Path().absolute()
+    path.mkdir(exist_ok=True, parents=True)
+    try:
+        os.chdir(path)
+        yield
+    finally:
+        os.chdir(cwd)

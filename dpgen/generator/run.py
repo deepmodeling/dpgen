@@ -24,6 +24,7 @@ import warnings
 from collections import Counter
 from collections.abc import Iterable
 from typing import List
+from pathlib import Path
 
 import dpdata
 import numpy as np
@@ -88,7 +89,7 @@ from dpgen.generator.lib.vasp import (
     write_incar_dict,
 )
 from dpgen.remote.decide_machine import convert_mdata
-from dpgen.util import convert_training_data_to_hdf5, expand_sys_str, normalize, sepline
+from dpgen.util import convert_training_data_to_hdf5, expand_sys_str, normalize, sepline, set_directory
 
 from .arginfo import run_jdata_arginfo
 
@@ -3534,6 +3535,30 @@ def make_fp_amber_diff(iter_index: int, jdata: dict):
     os.chdir(cwd)
 
 
+def make_fp_custom(iter_index, jdata):
+    """Make input file for customized FP style.
+
+    Convert the POSCAR file to custom format.
+
+    Parameters
+    ----------
+    iter_index : int
+        iter index
+    jdata : dict
+        Run parameters.
+    """
+    work_path = os.path.join(make_iter_name(iter_index), fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, "task.*"))
+    fp_params = jdata["fp_params"]
+    input_fn = fp_params["input_fn"]
+    input_fmt = fp_params["input_fmt"]
+    
+    for ii in fp_tasks:
+        with set_directory(Path(ii)):
+            system = dpdata.System("POSCAR", fmt="vasp/poscar")
+            system.to(input_fmt, input_fn)
+
+
 def make_fp(iter_index, jdata, mdata):
     """Select the candidate strutures and make the input file of FP calculation.
 
@@ -3581,6 +3606,8 @@ def make_fp_calculation(iter_index, jdata, mdata):
         make_fp_pwmat(iter_index, jdata)
     elif fp_style == "amber/diff":
         make_fp_amber_diff(iter_index, jdata)
+    elif fp_style == "custom":
+        make_fp_custom(iter_index, jdata)
     else:
         raise RuntimeError("unsupported fp style")
     # Copy user defined forward_files
@@ -3889,6 +3916,19 @@ def run_fp(iter_index, jdata, mdata):
             None,
             log_file="output",
             forward_common_files=forward_common_files,
+        )
+    elif fp_style == "custom":
+        fp_params = jdata["fp_params"]
+        forward_files = [fp_params["input_fn"]]
+        backward_files = [fp_params["output_fn"]]
+        run_fp_inner(
+            iter_index,
+            jdata,
+            mdata,
+            forward_files,
+            backward_files,
+            None,
+            log_file="output",
         )
     else:
         raise RuntimeError("unsupported fp style")
@@ -4354,6 +4394,53 @@ def post_fp_amber_diff(iter_index, jdata):
         all_sys.to_deepmd_npy(sys_data_path, set_size=len(sys_output), prec=np.float64)
 
 
+def post_fp_custom(iter_index, jdata):
+    """Post fp for custom fp. Collect data from user-defined `output_fn`.
+    
+    Parameters
+    ----------
+    iter_index : int
+        The index of the current iteration.
+    jdata : dict
+        The parameter data.
+    """
+    model_devi_jobs = jdata["model_devi_jobs"]
+    assert iter_index < len(model_devi_jobs)
+
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, "task.*"))
+    fp_tasks.sort()
+    if len(fp_tasks) == 0:
+        return
+
+    system_index = []
+    for ii in fp_tasks:
+        system_index.append(os.path.basename(ii).split(".")[1])
+    system_index.sort()
+    set_tmp = set(system_index)
+    system_index = list(set_tmp)
+    system_index.sort()
+
+    fp_params = jdata["fp_params"]
+    output_fn = fp_params["output_fn"]
+    output_fmt = fp_params["output_fmt"]
+
+    for ss in system_index:
+        sys_output = glob.glob(os.path.join(work_path, "task.%s.*" % ss))
+        sys_output.sort()
+        all_sys = dpdata.MultiSystems(type_map=jdata["type_map"])
+        for oo in sys_output:
+            if os.path.exists(os.path.join(oo, output_fn)):
+                sys = dpdata.LabeledSystem(
+                    os.path.join(oo, output_fn), fmt=output_fmt
+                )
+                all_sys.append(sys)
+        sys_data_path = os.path.join(work_path, "data.%s" % ss)
+        all_sys.to_deepmd_raw(sys_data_path)
+        all_sys.to_deepmd_npy(sys_data_path, set_size=len(sys_output), prec=np.float64)
+
+
 def post_fp(iter_index, jdata):
     fp_style = jdata["fp_style"]
     if fp_style == "vasp":
@@ -4372,6 +4459,8 @@ def post_fp(iter_index, jdata):
         post_fp_pwmat(iter_index, jdata)
     elif fp_style == "amber/diff":
         post_fp_amber_diff(iter_index, jdata)
+    elif fp_style == "custom":
+        post_fp_custom(iter_index, jdata)
     else:
         raise RuntimeError("unsupported fp style")
     post_fp_check_fail(iter_index, jdata)
