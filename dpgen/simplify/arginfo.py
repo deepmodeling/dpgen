@@ -108,6 +108,7 @@ def fp_args() -> List[Argument]:
     )
     doc_fp_accurate_threshold = "If the accurate ratio is larger than this number, no fp calculation will be performed, i.e. fp_task_max = 0."
     doc_fp_accurate_soft_threshold = "If the accurate ratio is between this number and fp_accurate_threshold, the fp_task_max linearly decays to zero."
+    doc_ratio_failed = "Check the ratio of unsuccessfully terminated jobs. If too many FP tasks are not converged, RuntimeError will be raised."
 
     return [
         Argument("fp_task_max", int, optional=True, doc=doc_fp_task_max),
@@ -121,6 +122,7 @@ def fp_args() -> List[Argument]:
             optional=True,
             doc=doc_fp_accurate_soft_threshold,
         ),
+        Argument("ratio_failed", float, optional=True, doc=doc_ratio_failed),
     ]
 
 
