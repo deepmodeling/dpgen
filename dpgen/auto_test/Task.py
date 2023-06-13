@@ -4,8 +4,7 @@ from abc import ABC, abstractmethod
 class Task(ABC):
     @abstractmethod
     def __init__(self, inter_parameter, path_to_poscar):
-        """
-        Constructor
+        """Constructor.
 
         Parameters
         ----------
@@ -18,11 +17,10 @@ class Task(ABC):
 
     @abstractmethod
     def make_potential_files(self, output_dir):
-        """
-        Prepare potential files for a computational task.
+        """Prepare potential files for a computational task.
         For example, the VASP prepares POTCAR.
         DeePMD prepares frozen model(s).
-        IMPORTANT: Interaction should be stored in output_dir/inter.json
+        IMPORTANT: Interaction should be stored in output_dir/inter.json.
 
         Parameters
         ----------
@@ -40,8 +38,7 @@ class Task(ABC):
 
     @abstractmethod
     def make_input_file(self, output_dir, task_type, task_param):
-        """
-        Prepare input files for a computational task
+        """Prepare input files for a computational task
         For example, the VASP prepares INCAR.
         LAMMPS (including DeePMD, MEAM...) prepares in.lammps.
 
@@ -62,8 +59,7 @@ class Task(ABC):
 
     @abstractmethod
     def compute(self, output_dir):
-        """
-        Compute output of the task.
+        """Compute output of the task.
         IMPORTANT: The output configuration should be converted and stored in a CONTCAR file.
 
         Parameters
@@ -89,25 +85,19 @@ class Task(ABC):
     @staticmethod
     @abstractmethod
     def forward_files(self):
-        """
-        Return forward files.
-        """
+        """Return forward files."""
         pass
 
     @property
     @staticmethod
     @abstractmethod
     def forward_common_files(self):
-        """
-        Return forward common files.
-        """
+        """Return forward common files."""
         pass
 
     @property
     @staticmethod
     @abstractmethod
     def backward_files(self):
-        """
-        Return backward files.
-        """
+        """Return backward files."""
         pass

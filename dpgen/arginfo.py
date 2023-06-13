@@ -20,7 +20,6 @@ def general_mdata_arginfo(name: str, tasks: Tuple[str]) -> Argument:
     Argument
         arginfo
     """
-
     doc_api_version = "Please set to 1.0"
     doc_deepmd_version = "DeePMD-kit version, e.g. 2.1.3"
     doc_run_mdata = "machine.json file"

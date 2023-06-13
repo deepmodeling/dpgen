@@ -1,6 +1,5 @@
 import os
 
-import numpy as np
 from dpdata import LabeledSystem
 from monty.serialization import dumpfn
 
@@ -22,7 +21,7 @@ class ABACUS(Task):
         self.deepks = inter_parameter.get("deepks_desc", None)
         self.deepks_model = inter_parameter.get("deepks_model", None)
         self.path_to_poscar = path_to_poscar
-        self.if_define_orb_file = False if self.orbfile == None else True
+        self.if_define_orb_file = False if self.orbfile is None else True
 
     def make_potential_files(self, output_dir):
         stru = os.path.abspath(os.path.join(output_dir, "STRU"))
@@ -41,7 +40,7 @@ class ABACUS(Task):
         else:
             stru_path = output_dir
 
-        if pp_files == None:
+        if pp_files is None:
             raise RuntimeError("No pseudopotential information in STRU file")
 
         pp_dir = os.path.abspath(self.potcar_prefix)
@@ -101,8 +100,7 @@ class ABACUS(Task):
             filename_in_para = os.path.split(file_param)[1]
             if filename_in_stru != filename_in_para:
                 dlog.warning(
-                    "file name in STRU is not match that defined in parameter setting file: '%s', '%s'."
-                    % (filename_in_stru, filename_in_para)
+                    f"file name in STRU is not match that defined in parameter setting file: '{filename_in_stru}', '{filename_in_para}'."
                 )
 
             src_file = os.path.join(pp_dir, file_param)
@@ -119,7 +117,7 @@ class ABACUS(Task):
 
     def modify_input(self, incar, x, y):
         if x in incar and incar[x] != y:
-            dlog.info("setting %s to %s" % (x, y))
+            dlog.info(f"setting {x} to {y}")
         incar[x] = y
 
     def make_input_file(self, output_dir, task_type, task_param):

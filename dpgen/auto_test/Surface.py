@@ -11,7 +11,6 @@ from pymatgen.core.surface import generate_all_slabs
 
 import dpgen.auto_test.lib.abacus as abacus
 import dpgen.auto_test.lib.vasp as vasp
-import dpgen.generator.lib.abacus_scf as abacus_scf
 from dpgen import dlog
 from dpgen.auto_test.Property import Property
 from dpgen.auto_test.refine import make_refine
@@ -83,7 +82,7 @@ class Surface(Property):
             parameter["init_from_suffix"] = parameter.get("init_from_suffix", "00")
             self.init_from_suffix = parameter["init_from_suffix"]
         self.parameter = parameter
-        self.inter_param = inter_param if inter_param != None else {"type": "vasp"}
+        self.inter_param = inter_param if inter_param is not None else {"type": "vasp"}
 
     def make_confs(self, path_to_work, path_to_equi, refine=False):
         path_to_work = os.path.abspath(path_to_work)

@@ -6,7 +6,7 @@ from collections import defaultdict
 from itertools import tee
 
 
-class System(object):
+class System:
     current_num_of_system = 0
     current_num_of_sub_systems = 0
 
@@ -49,7 +49,7 @@ class System(object):
         return self.sub_system_list
 
 
-class Iteration(object):
+class Iteration:
     current_num_of_itearation = 0
     current_num_of_sub_itearation = 0
 
@@ -133,8 +133,7 @@ def get_system_list(
     map_iterator=None,
     file_name="POSCAR",
 ):
-    """
-    :type map_iterator: Iterable use to generate sys_configs
+    """:type map_iterator: Iterable use to generate sys_configs
     :Exmaple [['000000', '000001',], ['00000[2-9]',], ['00001?', '000020',],]
     """
     if sub_iteration_num != len(map_list):

@@ -1,23 +1,18 @@
-"""
-calypso as model devi engine:
-       1. gen_structures
-       2. analysis
-       3. model devi
+"""calypso as model devi engine:
+1. gen_structures
+2. analysis
+3. model devi.
 """
 
-import copy
 import glob
-import math
 import os
 import random
-import re
 import shutil
 import sys
 from itertools import combinations
 from pathlib import Path
 
 import dpdata
-import numpy as np
 from ase.io.trajectory import Trajectory
 from ase.io.vasp import write_vasp
 from packaging.version import Version
@@ -91,7 +86,7 @@ def gen_structures(
             PickUpStep = 1
             try:
                 os.mkdir("opt")
-            except:
+            except Exception:
                 pass
 
         popsize = int(_parse_calypso_input("PopSize", "."))
@@ -109,7 +104,7 @@ def gen_structures(
             for pop in range(ii * int(popsize), (ii + 1) * int(popsize)):
                 try:
                     os.mkdir("task.%03d" % pop)
-                except:
+                except Exception:
                     shutil.rmtree("task.%03d" % pop)
                     os.mkdir("task.%03d" % pop)
                 shutil.copyfile(
@@ -241,7 +236,7 @@ def gen_structures(
             shutil.copyfile(name, "POSCAR_%s" % (idx + 1))
             try:
                 os.mkdir("task.%04d" % (idx + 1))
-            except:
+            except Exception:
                 shutil.rmtree("task.%04d" % (idx + 1))
                 os.mkdir("task.%04d" % (idx + 1))
             shutil.copyfile(
@@ -481,7 +476,7 @@ def run_calypso_model_devi(iter_index, jdata, mdata):
             lines = ["1 0\n"]
             f.close()
         else:
-            f = open(record_calypso_path, "r")
+            f = open(record_calypso_path)
             lines = f.readlines()
             f.close()
 

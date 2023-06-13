@@ -10,7 +10,6 @@ from pymatgen.core.structure import Structure
 
 import dpgen.auto_test.lib.abacus as abacus
 import dpgen.auto_test.lib.lammps as lammps
-import dpgen.generator.lib.abacus_scf as abacus_scf
 from dpgen.auto_test.Property import Property
 from dpgen.auto_test.refine import make_refine
 from dpgen.auto_test.reproduce import make_repro, post_repro
@@ -76,7 +75,7 @@ class Interstitial(Property):
             parameter["init_from_suffix"] = parameter.get("init_from_suffix", "00")
             self.init_from_suffix = parameter["init_from_suffix"]
         self.parameter = parameter
-        self.inter_param = inter_param if inter_param != None else {"type": "vasp"}
+        self.inter_param = inter_param if inter_param is not None else {"type": "vasp"}
 
     def make_confs(self, path_to_work, path_to_equi, refine=False):
         path_to_work = os.path.abspath(path_to_work)
@@ -248,7 +247,7 @@ class Interstitial(Property):
                     num_atom = super_size * 2
                     chl = -num_atom - 2
                     os.chdir(path_to_work)
-                    with open("POSCAR", "r") as fin:
+                    with open("POSCAR") as fin:
                         fin.readline()
                         scale = float(fin.readline().split()[0])
                         latt_param = float(fin.readline().split()[0])
@@ -257,7 +256,7 @@ class Interstitial(Property):
                     if not os.path.isfile("task.000000/POSCAR"):
                         raise RuntimeError("need task.000000 structure as reference")
 
-                    with open("task.000000/POSCAR", "r") as fin:
+                    with open("task.000000/POSCAR") as fin:
                         pos_line = fin.read().split("\n")
 
                     super_latt_param = float(pos_line[2].split()[0])
@@ -467,13 +466,13 @@ class Interstitial(Property):
 
     def post_process(self, task_list):
         if True:
-            fin1 = open(os.path.join(task_list[0], "..", "element.out"), "r")
+            fin1 = open(os.path.join(task_list[0], "..", "element.out"))
             for ii in task_list:
                 conf = os.path.join(ii, "conf.lmp")
                 inter = os.path.join(ii, "inter.json")
                 insert_ele = fin1.readline().split()[0]
                 if os.path.isfile(conf):
-                    with open(conf, "r") as fin2:
+                    with open(conf) as fin2:
                         conf_line = fin2.read().split("\n")
                         insert_line = conf_line[-2]
                     type_map = loadfn(inter)["type_map"]
@@ -505,9 +504,7 @@ class Interstitial(Property):
         ptr_data = os.path.dirname(output_file) + "\n"
 
         if not self.reprod:
-            with open(
-                os.path.join(os.path.dirname(output_file), "element.out"), "r"
-            ) as fin:
+            with open(os.path.join(os.path.dirname(output_file), "element.out")) as fin:
                 fc = fin.read().split("\n")
             ptr_data += "Insert_ele-Struct: Inter_E(eV)  E(eV) equi_E(eV)\n"
             idid = -1
@@ -528,7 +525,7 @@ class Interstitial(Property):
                 supercell_index = loadfn(os.path.join(ii, "supercell.json"))
                 # insert_ele = loadfn(os.path.join(ii, 'task.json'))['insert_ele'][0]
                 insert_ele = fc[idid]
-                ptr_data += "%s: %7.3f  %7.3f %7.3f \n" % (
+                ptr_data += "{}: {:7.3f}  {:7.3f} {:7.3f} \n".format(
                     insert_ele + "-" + str(supercell_index) + "-" + structure_dir,
                     evac,
                     task_result["energies"][-1],

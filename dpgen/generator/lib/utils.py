@@ -30,7 +30,7 @@ def create_path(path):
 
 
 def replace(file_name, pattern, subst):
-    file_handel = open(file_name, "r")
+    file_handel = open(file_name)
     file_string = file_handel.read()
     file_handel.close()
     file_string = re.sub(pattern, subst, file_string)
@@ -76,18 +76,20 @@ def record_iter(record, ii, jj):
 
 
 def symlink_user_forward_files(mdata, task_type, work_path, task_format=None):
-    """
-    Symlink user-defined forward_common_files
-    Current path should be work_path, such as 00.train
+    """Symlink user-defined forward_common_files
+    Current path should be work_path, such as 00.train.
 
     Parameters
-    ---------
+    ----------
     mdata : dict
         machine parameters
-    task_type: str
+    task_type : str
         task_type, such as "train"
     work_path : str
         work_path, such as "iter.000001/00.train"
+    task_format : dict
+        formats of tasks
+
     Returns
     -------
     None
@@ -100,7 +102,7 @@ def symlink_user_forward_files(mdata, task_type, work_path, task_format=None):
     for file in user_forward_files:
         assert os.path.isfile(
             file
-        ), "user_forward_file %s of %s stage doesn't exist. " % (file, task_type)
+        ), f"user_forward_file {file} of {task_type} stage doesn't exist. "
         tasks = glob.glob(os.path.join(work_path, task_format[task_type]))
         for task in tasks:
             if os.path.isfile(os.path.join(task, os.path.basename(file))):

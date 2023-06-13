@@ -1,14 +1,10 @@
 #!/usr/bin/env ovitos
-"""
-This Script is adapted from Alexander Stukowski, the author of OVITO.
+"""This Script is adapted from Alexander Stukowski, the author of OVITO.
 See: http://forum.ovito.org/index.php?topic=131.0 for details.
 """
 import argparse
-import os
-import sys
 
-import numpy as np
-from ovito.io import *
+from ovito.io import export_file, import_file
 
 supp_ofmt = ["lammps_dump", "lammps_data", "vasp"]
 supp_exts = ["dump", "lmp", "poscar/POSCAR"]
@@ -35,7 +31,7 @@ else:
         ofmt = "lammps_data"
     elif ext == "poscar" or ext == "POSCAR":
         ofmt = "vasp"
-if not ofmt in supp_ofmt:
+if ofmt not in supp_ofmt:
     raise RuntimeError(
         "output format " + ofmt + " is not supported. use one of " + str(supp_ofmt)
     )

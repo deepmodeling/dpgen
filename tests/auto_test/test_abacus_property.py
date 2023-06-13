@@ -20,7 +20,7 @@ from dpgen.auto_test.Interstitial import Interstitial
 from dpgen.auto_test.Surface import Surface
 from dpgen.auto_test.Vacancy import Vacancy
 
-from .context import setUpModule
+from .context import setUpModule  # noqa: F401
 
 
 class TestABACUS(unittest.TestCase):

@@ -7,14 +7,26 @@ import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "data"
-from .context import setUpModule
-from .context_bulk import *
+from .context import setUpModule  # noqa: F401
+from .context_bulk import (
+    abacus_param_file,
+    create_path,
+    get_abacus_STRU,
+    make_abacus_relax,
+    make_scale_ABACUS,
+    make_super_cell_ABACUS,
+    make_super_cell_STRU,
+    make_unit_cell_ABACUS,
+    out_dir_name,
+    pert_scaled,
+    place_element_ABACUS,
+)
 
 
 class TestGenBulkABACUS(unittest.TestCase):
     def setUp(self):
         self.alloy = []
-        with open(abacus_param_file, "r") as fp:
+        with open(abacus_param_file) as fp:
             jdata = json.load(fp)
         out_dir = out_dir_name(jdata)
         self.out_dir = out_dir

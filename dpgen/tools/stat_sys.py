@@ -1,14 +1,9 @@
 #!/usr/bin/env python3
 
-import argparse
 import glob
 import json
 import os
-import shutil
-import subprocess as sp
 import sys
-
-import numpy as np
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 from dpgen.tools.relabel import get_lmp_info
@@ -62,7 +57,7 @@ def stat_sys(target_folder, param_file="param.json", verbose=True, mute=False):
                 os.path.join(ii, "01.model_devi", linked_keys[-3], "input.lammps")
             )
             trait = [ens, temp, pres]
-            if not trait in sys_tasks_trait[sys_idx]:
+            if trait not in sys_tasks_trait[sys_idx]:
                 sys_tasks_trait[sys_idx].append(trait)
                 sys_tasks_trait_count[sys_idx].append(0)
             t_idx = sys_tasks_trait[sys_idx].index(trait)
@@ -103,4 +98,4 @@ def stat_sys(target_folder, param_file="param.json", verbose=True, mute=False):
 
 
 def run_report(args):
-    stat_tasks(args.JOB_DIR, args.param, args.verbose)
+    stat_sys(args.JOB_DIR, args.param, args.verbose)

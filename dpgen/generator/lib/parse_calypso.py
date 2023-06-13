@@ -9,7 +9,7 @@ def _parse_calypso_input(var, input_path):
     if not os.path.exists(input_path):
         raise FileNotFoundError(input_path)
 
-    f = open(input_path, "r")
+    f = open(input_path)
     lines = f.readlines()
     f.close()
 
@@ -21,9 +21,9 @@ def _parse_calypso_input(var, input_path):
 
 def _parse_calypso_dis_mtx(numberofspecies, input_path):
     try:
-        f = open(input_path, "r")
-    except:
-        f = open(os.path.join(input_path, "input.dat"), "r")
+        f = open(input_path)
+    except Exception:
+        f = open(os.path.join(input_path, "input.dat"))
     while True:
         line = f.readline()
         if len(line) == 0:

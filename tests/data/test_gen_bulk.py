@@ -9,14 +9,24 @@ from pymatgen.core import Composition, Structure
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "data"
-from .context import setUpModule
-from .context_bulk import *
+from .context import setUpModule  # noqa: F401
+from .context_bulk import (
+    create_path,
+    make_scale,
+    make_super_cell,
+    make_unit_cell,
+    make_vasp_relax,
+    out_dir_name,
+    param_file,
+    pert_scaled,
+    place_element,
+)
 
 
 class TestGenBulk(unittest.TestCase):
     def setUp(self):
         self.alloy = []
-        with open(param_file, "r") as fp:
+        with open(param_file) as fp:
             jdata = json.load(fp)
         if "init_fp_style" not in jdata:
             jdata["init_fp_style"] = "VASP"

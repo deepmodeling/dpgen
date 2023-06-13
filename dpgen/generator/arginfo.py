@@ -1,5 +1,5 @@
 import textwrap
-from typing import Dict, List
+from typing import List
 
 from dargs import Argument, Variant
 

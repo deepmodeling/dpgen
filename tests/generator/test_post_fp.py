@@ -1,4 +1,3 @@
-import glob
 import json
 import os
 import shutil
@@ -12,31 +11,19 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 __package__ = "generator"
 from .comp_sys import (
     CompLabeledSys,
-    test_atom_names,
-    test_atom_types,
-    test_cell,
-    test_coord,
 )
 from .context import (
-    machine_file,
     param_abacus_post_file,
     param_amber_file,
     param_cp2k_file,
     param_file,
     param_gaussian_file,
-    param_old_file,
     param_pwmat_file,
     param_pwscf_file,
-    param_pwscf_old_file,
     param_siesta_file,
     post_fp,
-    post_fp_abacus_scf,
-    post_fp_cp2k,
-    post_fp_gaussian,
-    post_fp_pwscf,
-    post_fp_siesta,
     post_fp_vasp,
-    setUpModule,
+    setUpModule,  # noqa: F401
 )
 
 
@@ -76,7 +63,7 @@ class TestPostFPVasp(unittest.TestCase):
         shutil.rmtree("iter.000000")
 
     def test_post_fp_vasp_0(self):
-        with open(param_file, "r") as fp:
+        with open(param_file) as fp:
             jdata = json.load(fp)
         jdata["use_ele_temp"] = 2
         post_fp_vasp(0, jdata, rfailed=0.3)
@@ -126,7 +113,7 @@ class TestPostFPVasp(unittest.TestCase):
         self.assertEqual(list(list(aparam)[1]), [1, 1])
 
     def test_post_fp_vasp_1(self):
-        with open(param_file, "r") as fp:
+        with open(param_file) as fp:
             jdata = json.load(fp)
         jdata["use_ele_temp"] = 1
         post_fp_vasp(0, jdata, rfailed=0.3)
@@ -173,7 +160,7 @@ class TestPostFPVasp(unittest.TestCase):
         self.assertEqual(list(fparam), [100000])
 
     def test_post_fp_vasp_2(self):
-        with open(param_file, "r") as fp:
+        with open(param_file) as fp:
             jdata = json.load(fp)
         jdata["use_ele_temp"] = 1
         with self.assertRaises(RuntimeError):
@@ -192,7 +179,7 @@ class TestPostFPPWSCF(unittest.TestCase, CompLabeledSys):
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
         shutil.copytree("out_data_post_fp_pwscf", "iter.000000")
-        with open(param_pwscf_file, "r") as fp:
+        with open(param_pwscf_file) as fp:
             jdata = json.load(fp)
         post_fp(0, jdata)
         self.system_1 = dpdata.LabeledSystem("iter.000000/orig", fmt="deepmd/raw")
@@ -213,7 +200,7 @@ class TestPostFPABACUS(unittest.TestCase, CompLabeledSys):
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
         shutil.copytree("out_data_post_fp_abacus", "iter.000000")
-        with open(param_abacus_post_file, "r") as fp:
+        with open(param_abacus_post_file) as fp:
             jdata = json.load(fp)
         post_fp(0, jdata)
         self.system_1 = dpdata.LabeledSystem("iter.000000/orig", fmt="deepmd/raw")
@@ -237,7 +224,7 @@ class TestPostFPSIESTA(unittest.TestCase, CompLabeledSys):
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
         shutil.copytree("out_data_post_fp_siesta", "iter.000000")
-        with open(param_siesta_file, "r") as fp:
+        with open(param_siesta_file) as fp:
             jdata = json.load(fp)
         post_fp(0, jdata)
         self.system_1 = dpdata.LabeledSystem("iter.000000/orig", fmt="deepmd/raw")
@@ -258,7 +245,7 @@ class TestPostGaussian(unittest.TestCase, CompLabeledSys):
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
         shutil.copytree("out_data_post_fp_gaussian", "iter.000000")
-        with open(param_gaussian_file, "r") as fp:
+        with open(param_gaussian_file) as fp:
             jdata = json.load(fp)
         post_fp(0, jdata)
         self.system_1 = dpdata.LabeledSystem("iter.000000/orig", fmt="deepmd/raw")
@@ -279,7 +266,7 @@ class TestPostCP2K(unittest.TestCase, CompLabeledSys):
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
         shutil.copytree("out_data_post_fp_cp2k", "iter.000000")
-        with open(param_cp2k_file, "r") as fp:
+        with open(param_cp2k_file) as fp:
             jdata = json.load(fp)
         post_fp(0, jdata)
         self.system_1 = dpdata.LabeledSystem("iter.000000/orig", fmt="deepmd/raw")
@@ -300,7 +287,7 @@ class TestPostFPPWmat(unittest.TestCase, CompLabeledSys):
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
         shutil.copytree("out_data_post_fp_pwmat", "iter.000000")
-        with open(param_pwmat_file, "r") as fp:
+        with open(param_pwmat_file) as fp:
             jdata = json.load(fp)
         post_fp(0, jdata)
         self.system_1 = dpdata.LabeledSystem("iter.000000/orig", fmt="deepmd/raw")
@@ -325,7 +312,7 @@ class TestPostAmberDiff(unittest.TestCase, CompLabeledSys):
             os.path.join("iter.000000", "02.fp", "task.000.000000", "dataset")
         )
         self.system_1 = list(ms.systems.values())[0]
-        with open(param_amber_file, "r") as fp:
+        with open(param_amber_file) as fp:
             jdata = json.load(fp)
         jdata["type_map"] = self.system_1.get_atom_names()
         post_fp(0, jdata)

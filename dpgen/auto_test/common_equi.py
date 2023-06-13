@@ -1,8 +1,6 @@
 import glob
 import os
 import shutil
-import warnings
-from multiprocessing import Pool
 
 from monty.serialization import dumpfn
 from packaging.version import Version

@@ -1,10 +1,9 @@
-"""
-input: trajectory
+"""input: trajectory
 00: ReaxFF MD (lammps)
 01: build dataset (mddatasetbuilder)
 02: fp (gaussian)
 03: convert to deepmd data
-output: data
+output: data.
 """
 
 import glob
@@ -106,7 +105,7 @@ def run_reaxff(jdata, mdata, log_file="reaxff_log"):
 
 
 def link_trj(jdata):
-    """link lammpstrj"""
+    """Link lammpstrj."""
     create_path(build_path)
     task_path = os.path.join(build_path, "task.000")
     create_path(task_path)
@@ -217,17 +216,17 @@ def convert_data(jdata):
 def gen_init_reaction(args):
     try:
         import ruamel
-        from monty.serialization import dumpfn, loadfn
+        from monty.serialization import loadfn
 
         warnings.simplefilter("ignore", ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
         jdata = loadfn(args.PARAM)
         if args.MACHINE is not None:
             mdata = loadfn(args.MACHINE)
     except Exception:
-        with open(args.PARAM, "r") as fp:
+        with open(args.PARAM) as fp:
             jdata = json.load(fp)
         if args.MACHINE is not None:
-            with open(args.MACHINE, "r") as fp:
+            with open(args.MACHINE) as fp:
                 mdata = json.load(fp)
 
     jdata_arginfo = init_reaction_jdata_arginfo()
