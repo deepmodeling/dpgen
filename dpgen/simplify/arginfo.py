@@ -8,6 +8,7 @@ from dpgen.generator.arginfo import (
     data_args,
     fp_style_abacus_args,
     fp_style_cp2k_args,
+    fp_style_custom_args,
     fp_style_gaussian_args,
     fp_style_siesta_args,
     fp_style_vasp_args,
@@ -66,6 +67,11 @@ def fp_style_variant_type_args() -> Variant:
     doc_fp_style_none = "No fp."
     doc_fp_style_vasp = "VASP."
     doc_fp_style_gaussian = "Gaussian. The command should be set as `g16 < input`."
+    doc_custom = (
+        "Custom FP code. You need to provide the input and output file format and name. "
+        "The command argument in the machine file should be the script to run custom FP codes. "
+        "The extra forward and backward files can be defined in the machine file."
+    )
 
     return Variant(
         "fp_style",
@@ -85,6 +91,7 @@ def fp_style_variant_type_args() -> Variant:
             # ),
             Argument("pwmat", dict, [], doc="TODO: add doc"),
             Argument("pwscf", dict, [], doc="TODO: add doc"),
+            Argument("custom", dict, fp_style_custom_args(), doc=doc_custom),
         ],
         optional=True,
         default_tag="none",

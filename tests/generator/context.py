@@ -40,6 +40,7 @@ param_abacus_post_file = "param-methane-abacus.json"
 param_diy_abacus_post_file = "param-methane-abacus-diy.json"
 param_amber_file = "param-amber.json"
 param_multiple_trust_file = "param-mg-vasp-multi-trust.json"
+param_custom_fp_file = "param-custom-fp.json"
 
 
 def my_file_cmp(test, f0, f1):
