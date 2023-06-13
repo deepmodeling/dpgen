@@ -4249,7 +4249,7 @@ def post_fp_cp2k(iter_index, jdata, rfailed=None):
                 all_sys.append(_sys)
 
         icount += len(all_sys)
-        if all_sys is not None:
+        if (all_sys is not None) and (len(all_sys) > 0):
             sys_data_path = os.path.join(work_path, "data.%s" % ss)
             all_sys.to_deepmd_raw(sys_data_path)
             all_sys.to_deepmd_npy(sys_data_path, set_size=len(sys_output))
