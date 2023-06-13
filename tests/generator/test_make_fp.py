@@ -25,6 +25,7 @@ from .context import (
     param_amber_file,
     param_cp2k_file,
     param_cp2k_file_exinput,
+    param_custom_fp_file,
     param_diy_abacus_post_file,
     param_diy_file,
     param_file,
@@ -38,7 +39,6 @@ from .context import (
     param_siesta_file,
     ref_cp2k_file_exinput,
     ref_cp2k_file_input,
-    param_custom_fp_file,
     setUpModule,  # noqa: F401
 )
 
@@ -1335,7 +1335,7 @@ class TestMakeFPCustom(unittest.TestCase):
         _make_fake_md(0, md_descript, atom_types, type_map)
         make_fp(0, jdata, {})
         # check input.h5 can be read
-        fp_params = jdata['fp_params']
+        fp_params = jdata["fp_params"]
         input_fn = fp_params["input_fn"]
         input_fmt = fp_params["input_fmt"]
         fp_task_max = jdata["fp_task_max"]
@@ -1361,7 +1361,7 @@ class TestMakeFPCustom(unittest.TestCase):
                 )
                 system1 = dpdata.System(traj_file, "lammps/dump", type_map=type_map)
                 system2 = dpdata.System(input_file, input_fmt, type_map=type_map)
-                assert(system1.formula, system2.formula)
+                assert (system1.formula, system2.formula)
         shutil.rmtree("iter.000000")
 
 

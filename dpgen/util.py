@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 import json
 import os
-from pathlib import Path
-from typing import List, Union
 from contextlib import (
     contextmanager,
 )
+from pathlib import Path
+from typing import List, Union
 
 import dpdata
 import h5py
@@ -148,6 +148,7 @@ def convert_training_data_to_hdf5(input_files: List[str], h5_file: str):
                 group = f.create_group(str(pp))
                 s = dpdata.LabeledSystem(ii, fmt="deepmd/npy")
                 s.to("deepmd/hdf5", group)
+
 
 @contextmanager
 def set_directory(path: Path):

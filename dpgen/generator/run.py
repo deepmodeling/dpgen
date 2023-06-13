@@ -23,8 +23,8 @@ import sys
 import warnings
 from collections import Counter
 from collections.abc import Iterable
-from typing import List
 from pathlib import Path
+from typing import List
 
 import dpdata
 import numpy as np
@@ -89,7 +89,13 @@ from dpgen.generator.lib.vasp import (
     write_incar_dict,
 )
 from dpgen.remote.decide_machine import convert_mdata
-from dpgen.util import convert_training_data_to_hdf5, expand_sys_str, normalize, sepline, set_directory
+from dpgen.util import (
+    convert_training_data_to_hdf5,
+    expand_sys_str,
+    normalize,
+    sepline,
+    set_directory,
+)
 
 from .arginfo import run_jdata_arginfo
 
@@ -3552,7 +3558,7 @@ def make_fp_custom(iter_index, jdata):
     fp_params = jdata["fp_params"]
     input_fn = fp_params["input_fn"]
     input_fmt = fp_params["input_fmt"]
-    
+
     for ii in fp_tasks:
         with set_directory(Path(ii)):
             system = dpdata.System("POSCAR", fmt="vasp/poscar")
@@ -4396,7 +4402,7 @@ def post_fp_amber_diff(iter_index, jdata):
 
 def post_fp_custom(iter_index, jdata):
     """Post fp for custom fp. Collect data from user-defined `output_fn`.
-    
+
     Parameters
     ----------
     iter_index : int
@@ -4432,9 +4438,7 @@ def post_fp_custom(iter_index, jdata):
         all_sys = dpdata.MultiSystems(type_map=jdata["type_map"])
         for oo in sys_output:
             if os.path.exists(os.path.join(oo, output_fn)):
-                sys = dpdata.LabeledSystem(
-                    os.path.join(oo, output_fn), fmt=output_fmt
-                )
+                sys = dpdata.LabeledSystem(os.path.join(oo, output_fn), fmt=output_fmt)
                 all_sys.append(sys)
         sys_data_path = os.path.join(work_path, "data.%s" % ss)
         all_sys.to_deepmd_raw(sys_data_path)
