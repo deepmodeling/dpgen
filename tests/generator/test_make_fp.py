@@ -1361,7 +1361,7 @@ class TestMakeFPCustom(unittest.TestCase):
                 )
                 system1 = dpdata.System(traj_file, "lammps/dump", type_map=type_map)
                 system2 = dpdata.System(input_file, input_fmt, type_map=type_map)
-                assert (system1.formula, system2.formula)
+                assert (system1.formula == system2.formula)
         shutil.rmtree("iter.000000")
 
 
