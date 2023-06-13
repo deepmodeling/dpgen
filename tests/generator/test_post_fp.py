@@ -340,7 +340,7 @@ class TestPostFPCustom(unittest.TestCase, CompLabeledSys):
         fp_params = jdata["fp_params"]
         output_fn = fp_params["output_fn"]
         output_fmt = fp_params["output_fmt"]
-        type_map = ["Type_0"]
+        type_map = jdata["type_map"] + ["Type_0"]
         ss = dpdata.LabeledSystem(
             os.path.join("data", "deepmd"), fmt="deepmd/raw", type_map=type_map
         )
