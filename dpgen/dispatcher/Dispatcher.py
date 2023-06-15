@@ -20,7 +20,7 @@ def make_submission(
     outlog,
     errlog,
 ):
-    if mdata_machine["local_root"] != "./":
+    if mdata_machine.get("local_root", "./") != "./":
         raise RuntimeError("local_root must be './' in dpgen's machine.json.")
 
     abs_local_root = os.path.abspath("./")
