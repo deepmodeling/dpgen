@@ -4,6 +4,7 @@ import os
 import shutil
 import sys
 import unittest
+import numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "data"
@@ -20,6 +21,7 @@ from .context_bulk import (
     out_dir_name,
     pert_scaled,
     place_element_ABACUS,
+    abacus_ref_Cu_coord
 )
 
 
