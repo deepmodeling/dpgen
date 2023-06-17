@@ -14,6 +14,7 @@ import logging
 import os
 import queue
 import warnings
+from collections import defaultdict
 from typing import List, Union
 
 import dpdata
@@ -29,24 +30,18 @@ from dpgen.generator.lib.utils import (
     log_iter,
     make_iter_name,
     record_iter,
-    symlink_user_forward_files,
 )
 from dpgen.generator.run import (
     data_system_fmt,
     fp_name,
     fp_task_fmt,
     make_fp_calculation,
-    make_fp_vasp_cp_cvasp,
-    make_fp_vasp_incar,
-    make_fp_vasp_kp,
     make_train,
     model_devi_name,
-    model_devi_task_fmt,
     post_fp,
     post_train,
     run_fp,
     run_train,
-    sys_link_fp_vasp_pp,
     train_name,
     train_task_fmt,
 )
@@ -137,7 +132,7 @@ def init_model(iter_index, jdata, mdata):
 
 
 def init_pick(iter_index, jdata, mdata):
-    """pick up init data from dataset randomly"""
+    """Pick up init data from dataset randomly."""
     pick_data = jdata["pick_data"]
     init_pick_number = jdata["init_pick_number"]
     # use MultiSystems with System
@@ -183,7 +178,7 @@ def _init_dump_selected_frames(systems, labels, selc_idx, sys_data_path, jdata):
 
 
 def make_model_devi(iter_index, jdata, mdata):
-    """calculate the model deviation of the rest idx"""
+    """Calculate the model deviation of the rest idx."""
     pick_data = jdata["pick_data"]
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, model_devi_name)
@@ -208,7 +203,7 @@ def make_model_devi(iter_index, jdata, mdata):
 
 
 def run_model_devi(iter_index, jdata, mdata):
-    """submit dp test tasks"""
+    """Submit dp test tasks."""
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, model_devi_name)
     # generate command
@@ -269,7 +264,7 @@ def run_model_devi(iter_index, jdata, mdata):
 
 
 def post_model_devi(iter_index, jdata, mdata):
-    """calculate the model deviation"""
+    """Calculate the model deviation."""
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, model_devi_name)
 
@@ -314,7 +309,7 @@ def post_model_devi(iter_index, jdata, mdata):
     fp_sum = sum(counter.values())
     for cc_key, cc_value in counter.items():
         dlog.info(
-            "{0:9s} : {1:6d} in {2:6d} {3:6.2f} %".format(
+            "{:9s} : {:6d} in {:6d} {:6.2f} %".format(
                 cc_key, cc_value, fp_sum, cc_value / fp_sum * 100
             )
         )
@@ -341,7 +336,7 @@ def post_model_devi(iter_index, jdata, mdata):
         dlog.info("no candidate")
     else:
         dlog.info(
-            "total candidate {0:6d}   picked {1:6d} ({2:6.2f} %) rest {3:6d} ({4:6.2f} % )".format(
+            "total candidate {:6d}   picked {:6d} ({:6.2f} %) rest {:6d} ({:6.2f} % )".format(
                 counter["candidate"],
                 len(pick_idx),
                 float(len(pick_idx)) / counter["candidate"] * 100.0,
@@ -425,7 +420,7 @@ def make_fp(iter_index, jdata, mdata):
 
 
 def run_iter(param_file, machine_file):
-    """init (iter 0): init_pick
+    """Init (iter 0): init_pick.
 
     tasks (iter > 0):
     00 make_train (same as generator)
@@ -441,15 +436,15 @@ def run_iter(param_file, machine_file):
     # TODO: function of handling input json should be combined as one function
     try:
         import ruamel
-        from monty.serialization import dumpfn, loadfn
+        from monty.serialization import loadfn
 
         warnings.simplefilter("ignore", ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
         jdata = loadfn(param_file)
         mdata = loadfn(machine_file)
     except Exception:
-        with open(param_file, "r") as fp:
+        with open(param_file) as fp:
             jdata = json.load(fp)
-        with open(machine_file, "r") as fp:
+        with open(machine_file) as fp:
             mdata = json.load(fp)
 
     jdata_arginfo = simplify_jdata_arginfo()
@@ -485,7 +480,7 @@ def run_iter(param_file, machine_file):
             if ii * max_tasks + jj <= iter_rec[0] * max_tasks + iter_rec[1]:
                 continue
             task_name = "task %02d" % jj
-            sepline("{} {}".format(iter_name, task_name), "-")
+            sepline(f"{iter_name} {task_name}", "-")
             jdata["model_devi_jobs"] = [{} for _ in range(ii + 1)]
             if ii == 0 and jj < 6 and (jj >= 3 or not jdata.get("init_data_sys", [])):
                 if jj == 0:

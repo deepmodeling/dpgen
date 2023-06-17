@@ -1,13 +1,8 @@
-import glob
-import json
 import os
-import shutil
 import sys
-import textwrap
 import unittest
 from pathlib import Path
 
-import dpdata
 import numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -17,6 +12,7 @@ from .context import (
     _parse_calypso_dis_mtx,
     _parse_calypso_input,
     make_calypso_input,
+    setUpModule,  # noqa: F401
     write_model_devi_out,
 )
 

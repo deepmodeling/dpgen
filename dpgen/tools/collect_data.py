@@ -5,9 +5,6 @@ import glob
 import json
 import os
 import subprocess as sp
-import sys
-
-import numpy as np
 
 
 def file_len(fname):

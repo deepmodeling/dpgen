@@ -5,10 +5,8 @@ import os
 import shutil
 import sys
 import unittest
-from pathlib import Path
 
 import dpdata
-import numpy as np
 
 from dpgen.generator.run import parse_cur_job_sys_revmat
 
@@ -28,7 +26,6 @@ from .context import (
     revise_lmp_input_dump,
     revise_lmp_input_model,
     revise_lmp_input_plm,
-    setUpModule,
 )
 
 
@@ -143,9 +140,9 @@ class TestMakeModelDevi(unittest.TestCase):
     def test_make_model_devi(self):
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
-        with open(param_file, "r") as fp:
+        with open(param_file) as fp:
             jdata = json.load(fp)
-        with open(machine_file, "r") as fp:
+        with open(machine_file) as fp:
             mdata = json.load(fp)
         _make_fake_models(0, jdata["numb_models"])
         make_model_devi(0, jdata, mdata)
@@ -158,10 +155,10 @@ class TestMakeModelDevi(unittest.TestCase):
     def test_make_model_devi_nopbc_npt(self):
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
-        with open(param_file, "r") as fp:
+        with open(param_file) as fp:
             jdata = json.load(fp)
             jdata["model_devi_nopbc"] = True
-        with open(machine_file, "r") as fp:
+        with open(machine_file) as fp:
             mdata = json.load(fp)
         _make_fake_models(0, jdata["numb_models"])
         cwd = os.getcwd()
@@ -172,11 +169,11 @@ class TestMakeModelDevi(unittest.TestCase):
     def test_make_model_devi_nopbc_nvt(self):
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
-        with open(param_file, "r") as fp:
+        with open(param_file) as fp:
             jdata = json.load(fp)
             jdata["model_devi_nopbc"] = True
             jdata["model_devi_jobs"][0]["ensemble"] = "nvt"
-        with open(machine_file, "r") as fp:
+        with open(machine_file) as fp:
             mdata = json.load(fp)
         _make_fake_models(0, jdata["numb_models"])
         make_model_devi(0, jdata, mdata)
@@ -532,9 +529,9 @@ class TestMakeMDAMBER(unittest.TestCase):
     def test_make_model_devi(self):
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
-        with open(param_amber_file, "r") as fp:
+        with open(param_amber_file) as fp:
             jdata = json.load(fp)
-        with open(machine_file, "r") as fp:
+        with open(machine_file) as fp:
             mdata = json.load(fp)
         jdata["sys_prefix"] = os.path.abspath(jdata["sys_prefix"])
         _make_fake_models(0, jdata["numb_models"])

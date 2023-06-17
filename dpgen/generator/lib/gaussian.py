@@ -72,7 +72,7 @@ def _crd2mul(symbols, crds):
             f"{atomnumber}\nDPGEN\n",
             "\n".join(
                 [
-                    "{:2s} {:22.15f} {:22.15f} {:22.15f}".format(s, x, y, z)
+                    f"{s:2s} {x:22.15f} {y:22.15f} {z:22.15f}"
                     for s, (x, y, z) in zip(symbols, crds)
                 ]
             ),
@@ -167,20 +167,20 @@ def make_gaussian_input(sys_data, fp_params):
     buff = []
     # keywords, e.g., force b3lyp/6-31g**
     if use_fragment_guesses:
-        keywords[0] = "{} guess=fragment={}".format(keywords[0], frag_numb)
+        keywords[0] = f"{keywords[0]} guess=fragment={frag_numb}"
 
     chkkeywords = []
     if len(keywords) > 1:
-        chkkeywords.append("%chk={}.chk".format(str(uuid.uuid1())))
+        chkkeywords.append(f"%chk={str(uuid.uuid1())}.chk")
 
-    nprockeywords = "%nproc={:d}".format(nproc)
+    nprockeywords = f"%nproc={nproc:d}"
     titlekeywords = "DPGEN"
-    chargekeywords = "{} {}".format(charge, multiplicity)
+    chargekeywords = f"{charge} {multiplicity}"
 
     buff = [
         *chkkeywords,
         nprockeywords,
-        "#{}".format(keywords[0]),
+        f"#{keywords[0]}",
         "",
         titlekeywords,
         "",
@@ -193,7 +193,7 @@ def make_gaussian_input(sys_data, fp_params):
                 "%s(Fragment=%d) %f %f %f" % (symbol, frag_index[ii] + 1, *coordinate)
             )
         else:
-            buff.append("%s %f %f %f" % (symbol, *coordinate))
+            buff.append("{} {:f} {:f} {:f}".format(symbol, *coordinate))
     if "basis_set" in fp_params:
         # custom basis set
         buff.extend(["", fp_params["basis_set"], ""])
@@ -203,7 +203,7 @@ def make_gaussian_input(sys_data, fp_params):
                 "\n--link1--",
                 *chkkeywords,
                 nprockeywords,
-                "#{}".format(kw),
+                f"#{kw}",
                 "",
                 titlekeywords,
                 "",

@@ -1,6 +1,5 @@
 import os
 
-from pymatgen.core import Structure
 from pymatgen.ext.matproj import MPRester, MPRestError
 
 from dpgen import dlog

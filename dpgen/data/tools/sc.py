@@ -14,11 +14,11 @@ def poscar_unit(latt):
     ret = ""
     ret += "SC : a = %f \n" % latt
     ret += "%.16f\n" % (latt)
-    ret += "%.16f %.16f %.16f\n" % (box[0][0], box[0][1], box[0][2])
-    ret += "%.16f %.16f %.16f\n" % (box[1][0], box[1][1], box[1][2])
-    ret += "%.16f %.16f %.16f\n" % (box[2][0], box[2][1], box[2][2])
+    ret += f"{box[0][0]:.16f} {box[0][1]:.16f} {box[0][2]:.16f}\n"
+    ret += f"{box[1][0]:.16f} {box[1][1]:.16f} {box[1][2]:.16f}\n"
+    ret += f"{box[2][0]:.16f} {box[2][1]:.16f} {box[2][2]:.16f}\n"
     ret += "Type\n"
     ret += "%d\n" % numb_atoms()
     ret += "Direct\n"
-    ret += "%.16f %.16f %.16f\n" % (0.0, 0.0, 0.0)
+    ret += f"{0.0:.16f} {0.0:.16f} {0.0:.16f}\n"
     return ret

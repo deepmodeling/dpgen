@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 
-import os
 import random
-import subprocess as sp
-import sys
 
 import dpdata
 import numpy as np
@@ -101,10 +98,7 @@ def make_lammps_input(
             keywords += "fparam ${ELE_TEMP}"
         if ele_temp_a is not None:
             keywords += "aparam ${ELE_TEMP}"
-        ret += (
-            "pair_style      deepmd %s out_freq ${THERMO_FREQ} out_file model_devi.out %s\n"
-            % (graph_list, keywords)
-        )
+        ret += f"pair_style      deepmd {graph_list} out_freq ${{THERMO_FREQ}} out_file model_devi.out {keywords}\n"
     ret += "pair_coeff      * *\n"
     ret += "\n"
     ret += "thermo_style    custom step temp pe ke etotal press vol lx ly lz xy xz yz\n"
@@ -135,7 +129,7 @@ def make_lammps_input(
         pka_vec = _sample_sphere()
         pka_vec *= pka_vn
         ret += "group           first id 1\n"
-        ret += 'if "${restart} == 0" then "velocity        first set %f %f %f"\n' % (
+        ret += 'if "${{restart}} == 0" then "velocity        first set {:f} {:f} {:f}"\n'.format(
             pka_vec[0],
             pka_vec[1],
             pka_vec[2],

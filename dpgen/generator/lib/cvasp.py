@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import argparse
 
@@ -37,9 +36,8 @@ def runvasp(
     auto_npar=False,
     ediffg=-0.05,
 ):
-    """
-    cmd example:
-    cmd=['mpirun', '-np', '32' , '-machinefile', 'hosts','vasp_std']
+    """Cmd example:
+    cmd=['mpirun', '-np', '32' , '-machinefile', 'hosts','vasp_std'].
     """
     if opt:
         jobs = cvj.full_opt_run(

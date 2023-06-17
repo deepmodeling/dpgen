@@ -1,4 +1,3 @@
-import glob
 import json
 import os
 import shutil
@@ -10,12 +9,17 @@ import numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "data"
-from .context import abacus_param_file, coll_abacus_md, out_dir_name, setUpModule
+from .context import (
+    abacus_param_file,
+    coll_abacus_md,
+    out_dir_name,
+    setUpModule,  # noqa: F401
+)
 
 
 class TestCollAbacus(unittest.TestCase):
     def setUp(self):
-        with open(abacus_param_file, "r") as fp:
+        with open(abacus_param_file) as fp:
             jdata = json.load(fp)
         self.odir = out_dir_name(jdata)
         assert os.path.isdir(
@@ -40,7 +44,7 @@ class TestCollAbacus(unittest.TestCase):
         shutil.rmtree(self.odir)
 
     def test_coll(self):
-        with open(abacus_param_file, "r") as fp:
+        with open(abacus_param_file) as fp:
             jdata = json.load(fp)
         jdata["out_dir"] = self.odir
         print(os.getcwd())

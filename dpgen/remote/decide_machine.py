@@ -1,12 +1,10 @@
 #!/usr/bin/env python
-# coding: utf-8
 
 
 def convert_mdata(mdata, task_types=["train", "model_devi", "fp"]):
-    """
-    Convert mdata for DP-GEN main process.
+    """Convert mdata for DP-GEN main process.
     New convension is like mdata["fp"]["machine"],
-    DP-GEN needs mdata["fp_machine"]
+    DP-GEN needs mdata["fp_machine"].
 
     Notice that we deprecate the function which can automatically select one most avalaible machine,
     since this function was only used by Angus, and only supports for Slurm.

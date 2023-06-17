@@ -1,6 +1,4 @@
-import glob
 import importlib
-import json
 import os
 import shutil
 import sys
@@ -12,7 +10,11 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 __package__ = "generator"
 dirname = os.path.join(os.path.abspath(os.path.dirname(__file__)), "gromacs")
 
-from .context import make_fp, make_model_devi
+from .context import (
+    make_fp,
+    make_model_devi,
+    setUpModule,  # noqa: F401
+)
 
 
 def _make_fake_graphs(train_path):
@@ -53,7 +55,6 @@ class TestGromacsModelDeviEngine(unittest.TestCase):
             ],
             "shuffle_poscar": False,
             "fp_style": "gaussian",
-            "shuffle_poscar": False,
             "fp_task_max": 20,
             "fp_task_min": 1,
             "fp_pp_path": "./",
@@ -105,7 +106,7 @@ class TestGromacsModelDeviEngine(unittest.TestCase):
         shutil.copytree(os.path.join(path_1, "traj"), os.path.join(path_2, "traj"))
 
     @unittest.skipIf(
-        importlib.util.find_spec("openbabel") != None,
+        importlib.util.find_spec("openbabel") is not None,
         "when openbabel is found, this test will be skipped. ",
     )
     def test_make_model_devi_gromacs_without_openbabel(self):
