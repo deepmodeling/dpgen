@@ -29,6 +29,7 @@ from dpgen import ROOT_PATH, dlog
 from dpgen.dispatcher.Dispatcher import make_submission_compat
 from dpgen.generator.lib.utils import symlink_user_forward_files
 from dpgen.remote.decide_machine import convert_mdata
+from dpgen.util import load_file
 
 
 def create_path(path):
@@ -602,26 +603,14 @@ def run_vasp_relax(jdata, mdata):
 
 
 def gen_init_surf(args):
-    try:
-        import ruamel
-        from monty.serialization import loadfn
-
-        warnings.simplefilter("ignore", ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
-        jdata = loadfn(args.PARAM)
-        if args.MACHINE is not None:
-            mdata = loadfn(args.MACHINE)
-    except Exception:
-        with open(args.PARAM) as fp:
-            jdata = json.load(fp)
-        if args.MACHINE is not None:
-            with open(args.MACHINE) as fp:
-                mdata = json.load(fp)
+    jdata = load_file(args.PARAM)
 
     out_dir = out_dir_name(jdata)
     jdata["out_dir"] = out_dir
     dlog.info("# working dir %s" % out_dir)
 
     if args.MACHINE is not None:
+        mdata = load_file(args.MACHINE)
         # Decide a proper machine
         mdata = convert_mdata(mdata, ["fp"])
         # disp = make_dispatcher(mdata["fp_machine"])

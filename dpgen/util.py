@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import json
 import os
+import warnings
 from contextlib import (
     contextmanager,
 )
@@ -175,3 +176,35 @@ def set_directory(path: Path):
         yield
     finally:
         os.chdir(cwd)
+
+
+def load_file(filename: Union[str, os.PathLike]) -> dict:
+    """Load data from a JSON or YAML file.
+    
+    Parameters
+    ----------
+    filename : str or os.PathLike
+        The filename to load data from, whose suffix should be .json, .yaml, or .yml
+
+    Returns
+    -------
+    dict
+        The data loaded from the file
+
+    Raises
+    ------
+    ValueError
+        If the file format is not supported
+    """
+    filename = str(filename)
+    if filename.endswith(".json"):
+        with open(filename, "r") as fp:
+            data = json.load(fp)
+    elif filename.endswith(".yaml") or filename.endswith(".yml"):
+        from ruamel.yaml import YAML
+        yaml = YAML(typ="safe", pure=True)
+        with open(filename, "r") as fp:
+            data = yaml.load(fp)
+    else:
+        raise ValueError(f"Unsupported file format: {filename}")
+    return data
