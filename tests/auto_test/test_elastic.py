@@ -1,14 +1,9 @@
 import glob
-import json
 import os
 import shutil
 import sys
 import unittest
 
-import dpdata
-import numpy as np
-from monty.serialization import dumpfn, loadfn
-from pymatgen.analysis.elasticity.strain import Deformation, Strain
 from pymatgen.core import Structure
 from pymatgen.io.vasp import Incar
 
@@ -17,7 +12,7 @@ __package__ = "auto_test"
 
 from dpgen.auto_test.Elastic import Elastic
 
-from .context import make_kspacing_kpoints, setUpModule
+from .context import setUpModule  # noqa: F401
 
 
 class TestElastic(unittest.TestCase):
@@ -67,7 +62,6 @@ class TestElastic(unittest.TestCase):
         self.assertEqual(self.prop_param[0], self.elastic.task_param())
 
     def test_make_confs(self):
-
         shutil.copy(
             os.path.join(self.source_path, "Al-fcc.json"),
             os.path.join(self.equi_path, "result.json"),

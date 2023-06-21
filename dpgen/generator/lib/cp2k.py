@@ -1,4 +1,3 @@
-import dpdata
 import numpy as np
 
 default_config = {
@@ -32,10 +31,9 @@ default_config = {
 
 
 def update_dict(old_d, update_d):
-    """
-    a method to recursive update dict
+    """A method to recursive update dict
     :old_d: old dictionary
-    :update_d: some update value written in dictionary form
+    :update_d: some update value written in dictionary form.
     """
     import collections.abc
 
@@ -51,8 +49,7 @@ def update_dict(old_d, update_d):
 
 
 def iterdict(d, out_list, flag=None):
-    """
-    :doc: a recursive expansion of dictionary into cp2k input
+    """:doc: a recursive expansion of dictionary into cp2k input
     :k: current key
     :v: current value
     :d: current dictionary under expansion
@@ -64,7 +61,7 @@ def iterdict(d, out_list, flag=None):
         # if value is dictionary
         if isinstance(v, dict):
             # flag == None, it is now in top level section of cp2k
-            if flag == None:
+            if flag is None:
                 out_list.append("&" + k)
                 out_list.append("&END " + k)
                 iterdict(v, out_list, k)
@@ -98,7 +95,7 @@ def iterdict(d, out_list, flag=None):
 
         else:
             v = str(v)
-            if flag == None:
+            if flag is None:
                 out_list.append(k + " " + v)
                 print(k, ":", v)
             else:
@@ -154,7 +151,7 @@ def make_cp2k_xyz(sys_data):
 
 def make_cp2k_input_from_external(sys_data, exinput_path):
     # read the input content as string
-    with open(exinput_path, "r") as f:
+    with open(exinput_path) as f:
         exinput = f.readlines()
 
     # find the ABC cell string

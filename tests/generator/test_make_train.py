@@ -22,7 +22,7 @@ from .context import (
     param_file_v1,
     param_file_v1_et,
     run_train,
-    setUpModule,
+    setUpModule,  # noqa: F401
 )
 
 
@@ -52,7 +52,7 @@ def _comp_init_data(testCase, iter_idx, init_data_prefix, init_data_sys):
         sys1 = os.path.join("iter.%06d" % iter_idx, "00.train", "data.init", ii)
         testCase.assertTrue(
             _comp_sys_files(sys0, sys1),
-            "systems %s %s are not identical" % (sys0, sys1),
+            f"systems {sys0} {sys1} are not identical",
         )
 
 
@@ -197,7 +197,7 @@ def _check_model_inputs_v1(testCase, iter_idx, jdata, reuse=False):
             old_ratio = jdata["training_reuse_old_ratio"]
             testCase.assertEqual(
                 jdata0["training"]["auto_prob_style"],
-                "prob_sys_size; 0:1:%f; 1:2:%f" % (old_ratio, 1 - old_ratio),
+                f"prob_sys_size; 0:1:{old_ratio:f}; 1:2:{1 - old_ratio:f}",
             )
 
 
@@ -230,9 +230,9 @@ class TestMakeTrain(unittest.TestCase):
     def test_0(self):
         # No longer support for DeePMD-kit-0.x version.
         return
-        with open(param_file, "r") as fp:
+        with open(param_file) as fp:
             jdata = json.load(fp)
-        with open(machine_file, "r") as fp:
+        with open(machine_file) as fp:
             mdata = json.load(fp)
         fp_task_min = jdata["fp_task_min"]
         make_train(0, jdata, mdata)
@@ -250,9 +250,9 @@ class TestMakeTrain(unittest.TestCase):
     def test_1_data(self):
         # No longer support for DeePMD-kit-0.x version.
         return
-        with open(param_file, "r") as fp:
+        with open(param_file) as fp:
             jdata = json.load(fp)
-        with open(machine_file, "r") as fp:
+        with open(machine_file) as fp:
             mdata = json.load(fp)
         make_train(0, jdata, mdata)
         # make fake fp results #data == fp_task_min
@@ -276,9 +276,9 @@ class TestMakeTrain(unittest.TestCase):
     def test_1_skip(self):
         # No longer support for DeePMD-kit-0.x version.
         return
-        with open(param_file, "r") as fp:
+        with open(param_file) as fp:
             jdata = json.load(fp)
-        with open(machine_file, "r") as fp:
+        with open(machine_file) as fp:
             mdata = json.load(fp)
         make_train(0, jdata, mdata)
         # make fake fp results #data == fp_task_min - 1
@@ -295,10 +295,10 @@ class TestMakeTrain(unittest.TestCase):
         shutil.rmtree("iter.000000")
 
     def test_1_data_v1(self):
-        with open(param_file_v1, "r") as fp:
+        with open(param_file_v1) as fp:
             jdata = json.load(fp)
             jdata.pop("use_ele_temp", None)
-        with open(machine_file_v1, "r") as fp:
+        with open(machine_file_v1) as fp:
             mdata = json.load(fp)
         make_train(0, jdata, mdata)
         # make fake fp results #data == fp_task_min
@@ -320,7 +320,7 @@ class TestMakeTrain(unittest.TestCase):
         shutil.rmtree("iter.000000")
 
     def test_1_data_reuse_v1(self):
-        with open(param_file_v1, "r") as fp:
+        with open(param_file_v1) as fp:
             jdata = json.load(fp)
             jdata.pop("use_ele_temp", None)
             jdata["training_reuse_iter"] = 1
@@ -329,7 +329,7 @@ class TestMakeTrain(unittest.TestCase):
             jdata["training_reuse_start_lr"] = 1e-4
             jdata["training_reuse_start_pref_e"] = 0.1
             jdata["training_reuse_start_pref_f"] = 100
-        with open(machine_file_v1, "r") as fp:
+        with open(machine_file_v1) as fp:
             mdata = json.load(fp)
         make_train(0, jdata, mdata)
         # make fake fp results #data == fp_task_min
@@ -364,9 +364,9 @@ class TestMakeTrain(unittest.TestCase):
         shutil.rmtree("iter.000000")
 
     def test_1_data_v1_eletron_temp(self):
-        with open(param_file_v1_et, "r") as fp:
+        with open(param_file_v1_et) as fp:
             jdata = json.load(fp)
-        with open(machine_file_v1, "r") as fp:
+        with open(machine_file_v1) as fp:
             mdata = json.load(fp)
         make_train(0, jdata, mdata)
         # make fake fp results #data == fp_task_min
@@ -392,12 +392,12 @@ class TestMakeTrain(unittest.TestCase):
         dpdata.LabeledSystem("data/deepmd", fmt="deepmd/npy").to_deepmd_hdf5(
             "data/deepmd.hdf5"
         )
-        with open(param_file_v1, "r") as fp:
+        with open(param_file_v1) as fp:
             jdata = json.load(fp)
         jdata.pop("use_ele_temp", None)
         jdata["init_data_sys"].append("deepmd.hdf5")
         jdata["init_batch_size"].append("auto")
-        with open(machine_file_v1, "r") as fp:
+        with open(machine_file_v1) as fp:
             mdata = json.load(fp)
         make_train(0, jdata, mdata)
         # make fake fp results #data == fp_task_min
@@ -461,13 +461,13 @@ class TestMakeTrain(unittest.TestCase):
         dpdata.LabeledSystem("data/deepmd", fmt="deepmd/npy").to_deepmd_hdf5(
             "data/deepmd.hdf5"
         )
-        with open(param_file_v1, "r") as fp:
+        with open(param_file_v1) as fp:
             jdata = json.load(fp)
         jdata.pop("use_ele_temp", None)
         jdata["init_data_sys"].append("deepmd.hdf5")
         jdata["init_batch_size"].append("auto")
         jdata["one_h5"] = True
-        with open(machine_file_v1, "r") as fp:
+        with open(machine_file_v1) as fp:
             mdata = json.load(fp)
         make_train(0, jdata, mdata)
         # make fake fp results #data == fp_task_min
@@ -491,7 +491,7 @@ class TestMakeTrain(unittest.TestCase):
             jdata0["training"]["systems"],
             [
                 "../data.hdf5#/data.init/deepmd",
-                "../data.hdf5#/data.init/deepmd.hdf5/",
+                "../data.hdf5#/data.init/deepmd.hdf5",
                 "../data.hdf5#/data.iters/iter.000000/02.fp/data.000",
             ],
         )

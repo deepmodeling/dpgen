@@ -4,10 +4,8 @@ import argparse
 import glob
 import json
 import os
-import sys
 
 import dpdata
-import numpy as np
 
 from dpgen.generator.run import data_system_fmt
 

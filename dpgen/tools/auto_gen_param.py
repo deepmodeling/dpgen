@@ -1,4 +1,4 @@
-#%%
+# %%
 import argparse
 import json
 import os
@@ -6,7 +6,7 @@ from collections import defaultdict
 from itertools import tee
 
 
-class System(object):
+class System:
     current_num_of_system = 0
     current_num_of_sub_systems = 0
 
@@ -49,7 +49,7 @@ class System(object):
         return self.sub_system_list
 
 
-class Iteration(object):
+class Iteration:
     current_num_of_itearation = 0
     current_num_of_sub_itearation = 0
 
@@ -133,8 +133,7 @@ def get_system_list(
     map_iterator=None,
     file_name="POSCAR",
 ):
-    """
-    :type map_iterator: Iterable use to generate sys_configs
+    """:type map_iterator: Iterable use to generate sys_configs
     :Exmaple [['000000', '000001',], ['00000[2-9]',], ['00001?', '000020',],]
     """
     if sub_iteration_num != len(map_list):
@@ -212,7 +211,6 @@ def get_model_devi_jobs(
     temps_intervel=0.1,
     num_temps=5,
 ):
-
     if temps_iterator is None:
         temps_iterator = default_temps_generator(
             melt_point=melt_point, temps_intervel=temps_intervel, num_temps=num_temps
@@ -243,7 +241,6 @@ def get_sys_configs(system_list):
 
 
 def get_init_data_sys(scan_dir="./", init_file_name="type.raw"):
-
     init_data_sys = []
     for t in os.walk(scan_dir):
         if init_file_name in t[2]:
@@ -272,7 +269,6 @@ def get_basic_param_json(
     temps_intervel=0.1,
     num_temps=5,
 ):
-
     init_data_sys = get_init_data_sys(scan_dir=scan_dir, init_file_name=init_file_name)
     print(f"length of init_data_sys: {len(init_data_sys)} {init_data_sys}")
     system_dict = scan_files(scan_dir, file_name, min_allow_files_num)
@@ -336,4 +332,4 @@ def auto_gen_param(args):
         raise RuntimeError("must provide melt point or PARAM")
 
 
-#%%
+# %%

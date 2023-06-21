@@ -1,4 +1,3 @@
-import json
 import os
 
 import dpdata
@@ -7,7 +6,7 @@ import scipy.constants as pc
 from pymatgen.io.vasp.inputs import Incar
 
 
-class NBandsEsti(object):
+class NBandsEsti:
     def __init__(self, test_list):
         if type(test_list) is list:
             ele_t = []

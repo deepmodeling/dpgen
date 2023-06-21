@@ -9,7 +9,11 @@ import numpy as np
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
 from .comp_sys import CompSys
-from .context import _crd2frag, setUpModule, take_cluster
+from .context import (
+    _crd2frag,
+    setUpModule,  # noqa: F401
+    take_cluster,
+)
 
 
 @unittest.skipIf(importlib.util.find_spec("openbabel") is None, "requires openbabel")

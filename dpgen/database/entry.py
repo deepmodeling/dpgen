@@ -1,16 +1,10 @@
 # /usr/bin/env python
-# coding: utf-8
 # Copyright (c) The Dpmodeling Team.
 
 import json
-import warnings
-from uuid import uuid4
 
-from dpdata import LabeledSystem, System
 from monty.json import MontyDecoder, MontyEncoder, MSONable
 from pymatgen.core.composition import Composition
-
-from dpgen.database.vasp import VaspInput
 
 """
 This module implements equivalents of the basic Entry objects, which
@@ -21,10 +15,30 @@ structure codes. For example, Entries can be used as inputs for DeepMD-Kit.
 
 
 class Entry(MSONable):
-    """
-    An lightweight Entry object containing key computed data
+    """An lightweight Entry object containing key computed data
     for storing purpose.
 
+    Parameters
+    ----------
+    composition : Composition
+        Composition of the entry. For
+        flexibility, this can take the form of all the typical input
+        taken by a Composition, including a {symbol: amt} dict,
+        a string formula, and others.
+    inputs : dict
+        An dict of parameters associated with
+        the entry. Defaults to None.
+    data : dict
+        An dict of any additional data associated
+        with the entry. Defaults to None.
+    entry_id : obj
+        An optional id to uniquely identify the entry.
+    attribute :
+        Optional attribute of the entry. This can be used to
+        specify that the entry is a newly found compound, or to specify
+        a particular label for the entry, or else ... Used for further
+        analysis and plotting purposes. An attribute can be anything
+        but must be MSONable.
     """
 
     def __init__(
@@ -37,25 +51,7 @@ class Entry(MSONable):
         attribute=None,
         tag=None,
     ):
-        """
-        Initializes a Entry.
-
-        Args:
-            composition (Composition): Composition of the entry. For
-                flexibility, this can take the form of all the typical input
-                taken by a Composition, including a {symbol: amt} dict,
-                a string formula, and others.
-            inputs (dict): An dict of parameters associated with
-                the entry. Defaults to None.
-            data (dict): An dict of any additional data associated
-                with the entry. Defaults to None.
-            entry_id (obj): An optional id to uniquely identify the entry.
-            attribute: Optional attribute of the entry. This can be used to
-                specify that the entry is a newly found compound, or to specify
-                a particular label for the entry, or else ... Used for further
-                analysis and plotting purposes. An attribute can be anything
-                but must be MSONable.
-        """
+        """Initializes a Entry."""
         self.composition = Composition(composition)
         self.calculator = calculator
         self.inputs = inputs
@@ -88,8 +84,8 @@ class Entry(MSONable):
 
     def __repr__(self):
         output = [
-            "Entry {} - {}".format(self.entry_id, self.composition.formula),
-            "calculator: {}".format(self.calculator),
+            f"Entry {self.entry_id} - {self.composition.formula}",
+            f"calculator: {self.calculator}",
         ]
         return "\n".join(output)
 

@@ -14,7 +14,6 @@ import numpy as np
 from ase.build import general_surface
 
 # -----ASE-------
-from ase.io import read
 from pymatgen.core import Element, Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 
@@ -48,7 +47,7 @@ def create_path(path):
 
 
 def replace(file_name, pattern, subst):
-    file_handel = open(file_name, "r")
+    file_handel = open(file_name)
     file_string = file_handel.read()
     file_handel.close()
     file_string = re.sub(pattern, subst, file_string)
@@ -126,7 +125,7 @@ def poscar_ele(poscar_in, poscar_out, eles, natoms):
         ele_line += str(ii) + " "
     for ii in natoms:
         natom_line += str(ii) + " "
-    with open(poscar_in, "r") as fin:
+    with open(poscar_in) as fin:
         lines = list(fin)
         lines[5] = ele_line + "\n"
         lines[6] = natom_line + "\n"
@@ -142,13 +141,13 @@ def _poscar_natoms(lines):
 
 
 def poscar_natoms(poscar_in):
-    with open(poscar_in, "r") as fin:
+    with open(poscar_in) as fin:
         lines = list(fin)
         return _poscar_natoms(lines)
 
 
 def poscar_shuffle(poscar_in, poscar_out):
-    with open(poscar_in, "r") as fin:
+    with open(poscar_in) as fin:
         lines = list(fin)
     numb_atoms = _poscar_natoms(lines)
     idx = np.arange(8, 8 + numb_atoms)
@@ -169,39 +168,8 @@ def poscar_scale_direct(str_in, scale):
     return lines
 
 
-def poscar_scale_cartesian(str_in, scale):
-    lines = str_in.copy()
-    numb_atoms = _poscar_natoms(lines)
-    # scale box
-    for ii in range(2, 5):
-        boxl = lines[ii].split()
-        boxv = [float(ii) for ii in boxl]
-        boxv = np.array(boxv) * scale
-        lines[ii] = "%.16e %.16e %.16e\n" % (boxv[0], boxv[1], boxv[2])
-    # scale coord
-    for ii in range(8, 8 + numb_atoms):
-        cl = lines[ii].split()
-        cv = [float(ii) for ii in cl]
-        cv = np.array(cv) * scale
-        lines[ii] = "%.16e %.16e %.16e\n" % (cv[0], cv[1], cv[2])
-    return lines
-
-
-def poscar_scale(poscar_in, poscar_out, scale):
-    with open(poscar_in, "r") as fin:
-        lines = list(fin)
-    if "D" == lines[7][0] or "d" == lines[7][0]:
-        lines = poscar_scale_direct(lines, scale)
-    elif "C" == lines[7][0] or "c" == lines[7][0]:
-        lines = poscar_scale_cartesian(lines, scale)
-    else:
-        raise RuntimeError("Unknow poscar style at line 7: %s" % lines[7])
-    with open(poscar_out, "w") as fout:
-        fout.write("".join(lines))
-
-
 def poscar_elong(poscar_in, poscar_out, elong, shift_center=True):
-    with open(poscar_in, "r") as fin:
+    with open(poscar_in) as fin:
         lines = list(fin)
     if lines[7][0].upper() != "C":
         raise RuntimeError("only works for Cartesian POSCAR")
@@ -210,7 +178,7 @@ def poscar_elong(poscar_in, poscar_out, elong, shift_center=True):
     boxzl = np.linalg.norm(boxz)
     elong_ratio = elong / boxzl
     boxz = boxz * (1.0 + elong_ratio)
-    lines[4] = "%.16e %.16e %.16e\n" % (boxz[0], boxz[1], boxz[2])
+    lines[4] = f"{boxz[0]:.16e} {boxz[1]:.16e} {boxz[2]:.16e}\n"
     if shift_center:
         poscar_str = "".join(lines)
         st = Structure.from_str(poscar_str, fmt="poscar")
@@ -228,7 +196,6 @@ def poscar_elong(poscar_in, poscar_out, elong, shift_center=True):
 
 
 def make_unit_cell(jdata):
-
     from_poscar = jdata.get("from_poscar", False)
     if not from_poscar:
         latt = jdata["latt"]
@@ -249,7 +216,6 @@ def make_unit_cell(jdata):
 
 
 def make_super_cell_pymatgen(jdata):
-
     make_unit_cell(jdata)
     out_dir = jdata["out_dir"]
     path_uc = os.path.join(out_dir, global_dirname_02)
@@ -417,15 +383,6 @@ def make_vasp_relax(jdata):
     os.chdir(cwd)
 
 
-def poscar_scale_direct(str_in, scale):
-    lines = str_in.copy()
-    numb_atoms = _poscar_natoms(lines)
-    pscale = float(lines[1])
-    pscale = pscale * scale
-    lines[1] = str(pscale) + "\n"
-    return lines
-
-
 def poscar_scale_cartesian(str_in, scale):
     lines = str_in.copy()
     numb_atoms = _poscar_natoms(lines)
@@ -434,18 +391,18 @@ def poscar_scale_cartesian(str_in, scale):
         boxl = lines[ii].split()
         boxv = [float(ii) for ii in boxl]
         boxv = np.array(boxv) * scale
-        lines[ii] = "%.16e %.16e %.16e\n" % (boxv[0], boxv[1], boxv[2])
+        lines[ii] = f"{boxv[0]:.16e} {boxv[1]:.16e} {boxv[2]:.16e}\n"
     # scale coord
     for ii in range(8, 8 + numb_atoms):
         cl = lines[ii].split()
         cv = [float(ii) for ii in cl]
         cv = np.array(cv) * scale
-        lines[ii] = "%.16e %.16e %.16e\n" % (cv[0], cv[1], cv[2])
+        lines[ii] = f"{cv[0]:.16e} {cv[1]:.16e} {cv[2]:.16e}\n"
     return lines
 
 
 def poscar_scale(poscar_in, poscar_out, scale):
-    with open(poscar_in, "r") as fin:
+    with open(poscar_in) as fin:
         lines = list(fin)
     if "D" == lines[7][0] or "d" == lines[7][0]:
         lines = poscar_scale_direct(lines, scale)
@@ -584,7 +541,7 @@ def pert_scaled(jdata):
 
 def _vasp_check_fin(ii):
     if os.path.isfile(os.path.join(ii, "OUTCAR")):
-        with open(os.path.join(ii, "OUTCAR"), "r") as fp:
+        with open(os.path.join(ii, "OUTCAR")) as fp:
             content = fp.read()
             count = content.count("Elapse")
             if count != 1:
@@ -647,17 +604,17 @@ def run_vasp_relax(jdata, mdata):
 def gen_init_surf(args):
     try:
         import ruamel
-        from monty.serialization import dumpfn, loadfn
+        from monty.serialization import loadfn
 
         warnings.simplefilter("ignore", ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
         jdata = loadfn(args.PARAM)
         if args.MACHINE is not None:
             mdata = loadfn(args.MACHINE)
     except Exception:
-        with open(args.PARAM, "r") as fp:
+        with open(args.PARAM) as fp:
             jdata = json.load(fp)
         if args.MACHINE is not None:
-            with open(args.MACHINE, "r") as fp:
+            with open(args.MACHINE) as fp:
                 mdata = json.load(fp)
 
     out_dir = out_dir_name(jdata)

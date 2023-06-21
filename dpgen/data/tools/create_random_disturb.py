@@ -3,8 +3,6 @@
 import argparse
 import glob
 import os
-import shutil
-import sys
 
 import ase.io
 import numpy as np
@@ -244,9 +242,7 @@ def create_disturbs_abacus_dev(
 
 
 def create_random_alloys(fin, alloy_dist, ifmt="vasp", ofmt="vasp"):
-    """
-    In fact, atomsk also gives us the convinient tool to do this
-    """
+    """In fact, atomsk also gives us the convinient tool to do this."""
     # alloy_dist = {'Zr': 0.80, 'Nb': 0.20}
     atomic_symbols = alloy_dist.keys()
     atomic_ratios = alloy_dist.values()

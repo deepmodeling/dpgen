@@ -17,7 +17,7 @@ def _convert_dict(idict):
             ws = "'" + idict[key] + "'"
         else:
             ws = str(idict[key])
-        lines.append("%s=%s," % (key, ws))
+        lines.append(f"{key}={ws},")
     return lines
 
 
@@ -110,7 +110,7 @@ def _make_pwscf_03_config(sys_data):
     cc = 0
     for ii in range(ntypes):
         for jj in range(atom_numbs[ii]):
-            ret += "%s %f %f %f\n" % (
+            ret += "{} {:f} {:f} {:f}\n".format(
                 atom_names[ii],
                 coordinates[cc][0],
                 coordinates[cc][1],
@@ -157,7 +157,7 @@ def _make_smearing(fp_params):
         degauss = fp_params["sigma"]
     if (smearing is not None) and (smearing.split(":")[0] == "mp"):
         smearing = "mp"
-    if not (smearing in [None, "gauss", "mp", "fd"]):
+    if smearing not in [None, "gauss", "mp", "fd"]:
         raise RuntimeError("unknow smearing method " + smearing)
     return smearing, degauss
 
