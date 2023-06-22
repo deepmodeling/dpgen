@@ -5,8 +5,8 @@
     "latt": 3.76,
     "super_cell": [
         1,
-        1,
-        1
+        2,
+        2
     ],
     "elements": [
         "Cu", "W"

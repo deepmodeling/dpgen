@@ -5,11 +5,14 @@ import shutil
 import sys
 import unittest
 
+import numpy as np
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "data"
 from .context import setUpModule  # noqa: F401
 from .context_bulk import (
     abacus_param_file,
+    abacus_ref_Cu_coord,
     create_path,
     get_abacus_STRU,
     make_abacus_relax,
@@ -39,6 +42,7 @@ class TestGenBulkABACUS(unittest.TestCase):
         create_path(out_dir)
 
     def tearDown(self):
+        # pass
         shutil.rmtree(self.root_dir)
 
     def test(self):
@@ -80,14 +84,20 @@ class TestGenBulkABACUS(unittest.TestCase):
         # struct0=Structure.from_file(os.path.join(path,"STRU"))
         alloys = glob.glob(os.path.join(path, "sys-*"))
         stru0 = get_abacus_STRU(os.path.join(alloys[0], "STRU"))
-        self.assertEqual(len(alloys), stru0["coords"].shape[0])
+        self.assertEqual(
+            jdata["super_cell"][0] * jdata["super_cell"][1] * jdata["super_cell"][2],
+            stru0["coords"].shape[0],
+        )
         for ii in alloys:
             elem_numb = [int(i) for i in ii.split("/")[-1].split("-")[1:]]
             struct = get_abacus_STRU(os.path.join(ii, "STRU"))
             self.assertEqual(struct["atom_numbs"], elem_numb)
+            if os.path.basename(ii) == "sys-0004":
+                np.testing.assert_almost_equal(
+                    struct["coords"], abacus_ref_Cu_coord, decimal=3
+                )
         path = self.out_dir + "/01.scale_pert"
         alloys = glob.glob(os.path.join(path, "sys-*"))
-        self.assertEqual(len(alloys), stru0["coords"].shape[0])
         for ii in alloys:
             scales = glob.glob(os.path.join(ii, "scale-*"))
             self.assertEqual(len(scales), self.scale_numb)
