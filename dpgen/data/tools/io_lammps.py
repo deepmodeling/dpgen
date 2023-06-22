@@ -163,7 +163,7 @@ def ase2lammpsdata(atoms, typeids=None, fout="out.lmp"):
     fw.write("\n")
 
     # write number of atoms
-    natoms = atoms.get_number_of_atoms()
+    natoms = atoms.get_global_number_of_atoms()
     fw.write("%d atoms\n" % natoms)
     fw.write("\n")
 
