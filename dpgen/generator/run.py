@@ -4505,6 +4505,7 @@ def run_iter(param_file, machine_file):
 
     if jdata.get("pretty_print", False):
         from monty.serialization import dumpfn
+
         # assert(jdata["pretty_format"] in ['json','yaml'])
         fparam = (
             SHORT_CMD

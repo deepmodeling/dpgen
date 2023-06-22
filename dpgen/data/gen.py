@@ -2,13 +2,11 @@
 
 import argparse
 import glob
-import json
 import os
 import re
 import shutil
 import subprocess as sp
 import sys
-import warnings
 
 import dpdata
 import numpy as np

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import json
 import os
-import warnings
 from contextlib import (
     contextmanager,
 )
@@ -180,7 +179,7 @@ def set_directory(path: Path):
 
 def load_file(filename: Union[str, os.PathLike]) -> dict:
     """Load data from a JSON or YAML file.
-    
+
     Parameters
     ----------
     filename : str or os.PathLike
@@ -198,12 +197,13 @@ def load_file(filename: Union[str, os.PathLike]) -> dict:
     """
     filename = str(filename)
     if filename.endswith(".json"):
-        with open(filename, "r") as fp:
+        with open(filename) as fp:
             data = json.load(fp)
     elif filename.endswith(".yaml") or filename.endswith(".yml"):
         from ruamel.yaml import YAML
+
         yaml = YAML(typ="safe", pure=True)
-        with open(filename, "r") as fp:
+        with open(filename) as fp:
             data = yaml.load(fp)
     else:
         raise ValueError(f"Unsupported file format: {filename}")
