@@ -9,11 +9,9 @@ Iter:
 02: fp (optional, if the original dataset do not have fp data, same as generator)
 """
 import glob
-import json
 import logging
 import os
 import queue
-import warnings
 from collections import defaultdict
 from typing import List, Union
 
@@ -46,7 +44,7 @@ from dpgen.generator.run import (
     train_task_fmt,
 )
 from dpgen.remote.decide_machine import convert_mdata
-from dpgen.util import expand_sys_str, normalize, sepline
+from dpgen.util import expand_sys_str, load_file, normalize, sepline
 
 from .arginfo import simplify_jdata_arginfo
 
@@ -433,19 +431,8 @@ def run_iter(param_file, machine_file):
     07 run_fp (same as generator)
     08 post_fp (same as generator)
     """
-    # TODO: function of handling input json should be combined as one function
-    try:
-        import ruamel
-        from monty.serialization import loadfn
-
-        warnings.simplefilter("ignore", ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
-        jdata = loadfn(param_file)
-        mdata = loadfn(machine_file)
-    except Exception:
-        with open(param_file) as fp:
-            jdata = json.load(fp)
-        with open(machine_file) as fp:
-            mdata = json.load(fp)
+    jdata = load_file(param_file)
+    mdata = load_file(machine_file)
 
     jdata_arginfo = simplify_jdata_arginfo()
     jdata = normalize(jdata_arginfo, jdata)

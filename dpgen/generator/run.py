@@ -92,6 +92,7 @@ from dpgen.remote.decide_machine import convert_mdata
 from dpgen.util import (
     convert_training_data_to_hdf5,
     expand_sys_str,
+    load_file,
     normalize,
     sepline,
     set_directory,
@@ -4494,18 +4495,8 @@ def set_version(mdata):
 
 
 def run_iter(param_file, machine_file):
-    try:
-        import ruamel
-        from monty.serialization import dumpfn, loadfn
-
-        warnings.simplefilter("ignore", ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
-        jdata = loadfn(param_file)
-        mdata = loadfn(machine_file)
-    except Exception:
-        with open(param_file) as fp:
-            jdata = json.load(fp)
-        with open(machine_file) as fp:
-            mdata = json.load(fp)
+    jdata = load_file(param_file)
+    mdata = load_file(machine_file)
 
     jdata_arginfo = run_jdata_arginfo()
     jdata = normalize(jdata_arginfo, jdata, strict_check=False)
@@ -4513,6 +4504,8 @@ def run_iter(param_file, machine_file):
     update_mass_map(jdata)
 
     if jdata.get("pretty_print", False):
+        from monty.serialization import dumpfn
+
         # assert(jdata["pretty_format"] in ['json','yaml'])
         fparam = (
             SHORT_CMD
