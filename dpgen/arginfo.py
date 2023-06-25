@@ -58,7 +58,7 @@ def check_nd_list(dimesion: int = 2) -> Callable:
     callable
         check function
     """
-    
+
     def check(value, dimension=dimesion):
         if value is None:
             # do not check null
@@ -67,9 +67,11 @@ def check_nd_list(dimesion: int = 2) -> Callable:
             if not isinstance(value, list):
                 return False
         if dimension > 1:
-            if not all(check(v, dimension=dimesion-1) for v in value):
+            if not all(check(v, dimension=dimesion - 1) for v in value):
                 return False
         return True
+
     return check
+
 
 errmsg_nd_list = "Must be a %d-dimension list."

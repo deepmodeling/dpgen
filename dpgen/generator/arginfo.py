@@ -3,7 +3,7 @@ from typing import List
 
 from dargs import Argument, Variant
 
-from dpgen.arginfo import general_mdata_arginfo, check_nd_list, errmsg_nd_list
+from dpgen.arginfo import check_nd_list, errmsg_nd_list, general_mdata_arginfo
 
 
 def run_mdata_arginfo() -> Argument:
@@ -54,7 +54,14 @@ def data_args() -> List[Argument]:
             "init_batch_size", [list, str], optional=True, doc=doc_init_batch_size
         ),
         Argument("sys_configs_prefix", str, optional=True, doc=doc_sys_configs_prefix),
-        Argument("sys_configs", list, optional=False, doc=doc_sys_configs, extra_check=check_nd_list(2), extra_check_errmsg=errmsg_nd_list % 2),
+        Argument(
+            "sys_configs",
+            list,
+            optional=False,
+            doc=doc_sys_configs,
+            extra_check=check_nd_list(2),
+            extra_check_errmsg=errmsg_nd_list % 2,
+        ),
         Argument("sys_batch_size", list, optional=True, doc=doc_sys_batch_size),
     ]
 
@@ -502,7 +509,14 @@ def model_devi_amber_args() -> List[Argument]:
         Argument("qm_region", list, optional=False, doc=doc_qm_region),
         Argument("qm_charge", list, optional=False, doc=doc_qm_charge),
         Argument("nsteps", list, optional=False, doc=doc_nsteps),
-        Argument("r", list, optional=False, doc=doc_r, extra_check=check_nd_list(2), extra_check_errmsg=errmsg_nd_list % 2),
+        Argument(
+            "r",
+            list,
+            optional=False,
+            doc=doc_r,
+            extra_check=check_nd_list(2),
+            extra_check_errmsg=errmsg_nd_list % 2,
+        ),
         Argument("disang_prefix", str, optional=True, doc=doc_disang_prefix),
         Argument("disang", list, optional=False, doc=doc_disang),
         # post model devi args
