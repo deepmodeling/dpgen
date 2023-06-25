@@ -848,13 +848,13 @@ def fp_style_variant_type_args() -> Variant:
 
 
 def fp_args() -> List[Argument]:
-    doc_fp_task_max = "Maximum number of structures to be calculated in each system in 02.fp of each iteration."
-    doc_fp_task_min = "Minimum number of structures to be calculated in each system in 02.fp of each iteration."
+    doc_fp_task_max = "Maximum number of structures to be calculated in each system in 02.fp of each iteration. If the number of candidate structures exceeds `fp_task_max`, `fp_task_max` structures will be randomly picked from the candidates and labeled."
+    doc_fp_task_min = "Skip the training in the next iteration if the number of structures is no more than `fp_task_min`."
     doc_fp_accurate_threshold = "If the accurate ratio is larger than this number, no fp calculation will be performed, i.e. fp_task_max = 0."
     doc_fp_accurate_soft_threshold = "If the accurate ratio is between this number and fp_accurate_threshold, the fp_task_max linearly decays to zero."
-    doc_fp_cluster_vacuum = "If the vacuum size is smaller than this value, this cluster will not be choosen for labeling."
+    doc_fp_cluster_vacuum = "If the vacuum size is smaller than this value, this cluster will not be chosen for labeling."
     doc_detailed_report_make_fp = (
-        "If set to true, detailed report will be generated for each iteration."
+        "If set to true, a detailed report will be generated for each iteration."
     )
     doc_ratio_failed = "Check the ratio of unsuccessfully terminated jobs. If too many FP tasks are not converged, RuntimeError will be raised."
 
