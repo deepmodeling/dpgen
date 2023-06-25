@@ -54,7 +54,7 @@ def create_disturbs_ase(
 
     # read-in by ase
     atoms = ase.io.read(fin)
-    natoms = atoms.get_number_of_atoms()
+    natoms = atoms.get_global_number_of_atoms()
     pos0 = atoms.get_positions()
 
     # creat nfile ofmt files.
@@ -119,7 +119,7 @@ def create_disturbs_ase_dev(
 
     # read-in by ase
     atoms = ase.io.read(fin)
-    natoms = atoms.get_number_of_atoms()
+    natoms = atoms.get_global_number_of_atoms()
     cell0 = atoms.get_cell()
 
     # creat nfile ofmt files.
@@ -186,7 +186,7 @@ def create_disturbs_abacus_dev(
 
     # read-in by ase
     # atoms = ase.io.read(fin)
-    # natoms = atoms.get_number_of_atoms()
+    # natoms = atoms.get_global_number_of_atoms()
     # cell0 = atoms.get_cell()
 
     stru = get_abacus_STRU(fin)
