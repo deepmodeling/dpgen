@@ -848,7 +848,7 @@ def fp_style_variant_type_args() -> Variant:
 
 
 def fp_args() -> List[Argument]:
-    doc_fp_task_max = "Maximum number of structures to be calculated in each system in 02.fp of each iteration. If the number of structures exceeds `fp_task_max`, they will be randomly picked."
+    doc_fp_task_max = "Maximum number of structures to be calculated in each system in 02.fp of each iteration. If the number of candidate structures exceeds `fp_task_max`, `fp_task_max` structures will be randomly picked from the candidates and labeled."
     doc_fp_task_min = "Skip the training in the next iteration if the number of structures is no more than `fp_task_min`."
     doc_fp_accurate_threshold = "If the accurate ratio is larger than this number, no fp calculation will be performed, i.e. fp_task_max = 0."
     doc_fp_accurate_soft_threshold = "If the accurate ratio is between this number and fp_accurate_threshold, the fp_task_max linearly decays to zero."
