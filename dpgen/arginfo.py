@@ -1,11 +1,11 @@
-from typing import Callable, Tuple
+from typing import Callable
 
 from dargs import Argument
 
 from dpgen.dispatcher.Dispatcher import mdata_arginfo
 
 
-def general_mdata_arginfo(name: str, tasks: Tuple[str]) -> Argument:
+def general_mdata_arginfo(name: str, tasks: tuple[str]) -> Argument:
     """Generate arginfo for general mdata.
 
     Parameters

@@ -13,7 +13,7 @@ import logging
 import os
 import queue
 from collections import defaultdict
-from typing import List, Union
+from typing import Union
 
 import dpdata
 import numpy as np
@@ -62,7 +62,7 @@ def get_system_cls(jdata):
     return dpdata.System
 
 
-def get_multi_system(path: Union[str, List[str]], jdata: dict) -> dpdata.MultiSystems:
+def get_multi_system(path: Union[str, list[str]], jdata: dict) -> dpdata.MultiSystems:
     """Get MultiSystems from a path or list of paths.
 
     Both NumPy and HDF5 formats are supported. For details

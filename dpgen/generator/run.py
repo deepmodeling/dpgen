@@ -24,7 +24,6 @@ import warnings
 from collections import Counter
 from collections.abc import Iterable
 from pathlib import Path
-from typing import List
 
 import dpdata
 import numpy as np
@@ -2089,7 +2088,7 @@ def _read_model_devi_file(
 
 
 def _select_by_model_devi_standard(
-    modd_system_task: List[str],
+    modd_system_task: list[str],
     f_trust_lo: float,
     f_trust_hi: float,
     v_trust_lo: float,
@@ -2192,7 +2191,7 @@ def _select_by_model_devi_standard(
 
 
 def _select_by_model_devi_adaptive_trust_low(
-    modd_system_task: List[str],
+    modd_system_task: list[str],
     f_trust_hi: float,
     numb_candi_f: int,
     perc_candi_f: float,

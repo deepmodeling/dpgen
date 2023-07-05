@@ -5,7 +5,7 @@ from contextlib import (
     contextmanager,
 )
 from pathlib import Path
-from typing import List, Union
+from typing import Union
 
 import dpdata
 import h5py
@@ -35,7 +35,7 @@ def box_center(ch="", fill=" ", sp="|"):
     dlog.info(sp + strs[1 : len(strs) - 1 :] + sp)
 
 
-def expand_sys_str(root_dir: Union[str, Path]) -> List[str]:
+def expand_sys_str(root_dir: Union[str, Path]) -> list[str]:
     """Recursively iterate over directories taking those that contain `type.raw` file.
 
     If root_dir is a file but not a directory, it will be assumed as an HDF5 file.
@@ -91,7 +91,7 @@ def normalize(arginfo: Argument, data: dict, strict_check: bool = True) -> dict:
     return data
 
 
-def convert_training_data_to_hdf5(input_files: List[str], h5_file: str):
+def convert_training_data_to_hdf5(input_files: list[str], h5_file: str):
     """Convert training data to HDF5 format and update the input files.
 
     Parameters

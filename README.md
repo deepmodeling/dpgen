@@ -23,7 +23,7 @@ Yuzhi Zhang, Haidi Wang, Weijie Chen, Jinzhe Zeng, Linfeng Zhang, Han Wang, and 
 
 ## Download and Install
 
-DP-GEN only supports Python 3.8 and above.
+DP-GEN only supports Python 3.9 and above.
 
 One can download the source code of dpgen by
 ```bash
