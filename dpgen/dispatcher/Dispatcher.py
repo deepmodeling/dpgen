@@ -1,6 +1,5 @@
 import os
 from distutils.version import LooseVersion
-from typing import List
 
 # import dargs
 from dargs.dargs import Argument
@@ -56,7 +55,7 @@ def make_submission(
     return submission
 
 
-def mdata_arginfo() -> List[Argument]:
+def mdata_arginfo() -> list[Argument]:
     """This method generates arginfo for a single mdata.
 
     A submission requires the following keys: command, machine,
@@ -94,13 +93,13 @@ def mdata_arginfo() -> List[Argument]:
 def make_submission_compat(
     machine: dict,
     resources: dict,
-    commands: List[str],
+    commands: list[str],
     work_path: str,
-    run_tasks: List[str],
+    run_tasks: list[str],
     group_size: int,
-    forward_common_files: List[str],
-    forward_files: List[str],
-    backward_files: List[str],
+    forward_common_files: list[str],
+    forward_files: list[str],
+    backward_files: list[str],
     outlog: str = "log",
     errlog: str = "err",
     api_version: str = "1.0",
