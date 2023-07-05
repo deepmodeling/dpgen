@@ -1,5 +1,3 @@
-from typing import List
-
 from dargs import Argument, Variant
 
 from dpgen.arginfo import general_mdata_arginfo
@@ -99,7 +97,7 @@ def fp_style_variant_type_args() -> Variant:
     )
 
 
-def fp_args() -> List[Argument]:
+def fp_args() -> list[Argument]:
     """Generate arginfo for fp.
 
     Returns
