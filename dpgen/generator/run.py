@@ -301,7 +301,7 @@ def make_train(iter_index, jdata, mdata):
             )
         dlog.info(
             "Use automatic training_reuse_old_ratio to make new-to-old ratio close to %d times of the default value.",
-            training_reuse_iter,
+            new_to_old_ratio,
         )
         auto_ratio = True
         number_old_frames = 0
