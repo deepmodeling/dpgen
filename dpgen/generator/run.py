@@ -400,11 +400,11 @@ def make_train(iter_index, jdata, mdata):
                     nframes += dpdata.LabeledSystem(
                         sys_single, fmt="deepmd/npy"
                     ).get_nframes()
-                    if auto_ratio:
-                        if ii == iter_index - 1:
-                            number_new_frames += nframes
-                        else:
-                            number_old_frames += nframes
+                if auto_ratio:
+                    if ii == iter_index - 1:
+                        number_new_frames += nframes
+                    else:
+                        number_old_frames += nframes
                 if nframes < fp_task_min:
                     log_task(
                         "nframes (%d) in data sys %s is too small, skip" % (nframes, jj)
