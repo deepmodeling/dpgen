@@ -980,10 +980,7 @@ def revise_lmp_input_plm(lmp_lines, in_plm, out_plm="output.plumed"):
     idx = find_only_one_key(lmp_lines, ["fix", "dpgen_plm"])
     lmp_lines[
         idx
-    ] = "fix            dpgen_plm all plumed plumedfile {} outfile {}\n".format(
-        in_plm,
-        out_plm,
-    )
+    ] = f"fix            dpgen_plm all plumed plumedfile {in_plm} outfile {out_plm}\n"
     return lmp_lines
 
 
