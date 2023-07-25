@@ -21,7 +21,7 @@ Yuzhi Zhang, Haidi Wang, Weijie Chen, Jinzhe Zeng, Linfeng Zhang, Han Wang, and 
 
 ## Download and install
 
-DP-GEN only supports Python 3.8 and above.
+DP-GEN only supports Python 3.9 and above.
 
 Please follow our [GitHub](https://github.com/deepmodeling/dpgen) webpage to download the [latest released version](https://github.com/deepmodeling/dpgen/tree/master) and [development version](https://github.com/deepmodeling/dpgen/tree/devel).
 One can download the source code of dpgen by

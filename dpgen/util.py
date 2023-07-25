@@ -5,7 +5,7 @@ from contextlib import (
     contextmanager,
 )
 from pathlib import Path
-from typing import List, Union
+from typing import Union
 
 import dpdata
 import h5py
@@ -35,7 +35,7 @@ def box_center(ch="", fill=" ", sp="|"):
     dlog.info(sp + strs[1 : len(strs) - 1 :] + sp)
 
 
-def expand_sys_str(root_dir: Union[str, Path]) -> List[str]:
+def expand_sys_str(root_dir: Union[str, Path]) -> list[str]:
     """Recursively iterate over directories taking those that contain `type.raw` file.
 
     If root_dir is a file but not a directory, it will be assumed as an HDF5 file.
@@ -91,7 +91,7 @@ def normalize(arginfo: Argument, data: dict, strict_check: bool = True) -> dict:
     return data
 
 
-def convert_training_data_to_hdf5(input_files: List[str], h5_file: str):
+def convert_training_data_to_hdf5(input_files: list[str], h5_file: str):
     """Convert training data to HDF5 format and update the input files.
 
     Parameters
@@ -175,3 +175,36 @@ def set_directory(path: Path):
         yield
     finally:
         os.chdir(cwd)
+
+
+def load_file(filename: Union[str, os.PathLike]) -> dict:
+    """Load data from a JSON or YAML file.
+
+    Parameters
+    ----------
+    filename : str or os.PathLike
+        The filename to load data from, whose suffix should be .json, .yaml, or .yml
+
+    Returns
+    -------
+    dict
+        The data loaded from the file
+
+    Raises
+    ------
+    ValueError
+        If the file format is not supported
+    """
+    filename = str(filename)
+    if filename.endswith(".json"):
+        with open(filename) as fp:
+            data = json.load(fp)
+    elif filename.endswith(".yaml") or filename.endswith(".yml"):
+        from ruamel.yaml import YAML
+
+        yaml = YAML(typ="safe", pure=True)
+        with open(filename) as fp:
+            data = yaml.load(fp)
+    else:
+        raise ValueError(f"Unsupported file format: {filename}")
+    return data

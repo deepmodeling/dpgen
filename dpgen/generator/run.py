@@ -24,7 +24,6 @@ import warnings
 from collections import Counter
 from collections.abc import Iterable
 from pathlib import Path
-from typing import List
 
 import dpdata
 import numpy as np
@@ -92,6 +91,7 @@ from dpgen.remote.decide_machine import convert_mdata
 from dpgen.util import (
     convert_training_data_to_hdf5,
     expand_sys_str,
+    load_file,
     normalize,
     sepline,
     set_directory,
@@ -300,7 +300,7 @@ def make_train(iter_index, jdata, mdata):
             )
         dlog.info(
             "Use automatic training_reuse_old_ratio to make new-to-old ratio close to %d times of the default value.",
-            training_reuse_iter,
+            new_to_old_ratio,
         )
         auto_ratio = True
         number_old_frames = 0
@@ -400,11 +400,11 @@ def make_train(iter_index, jdata, mdata):
                     nframes += dpdata.LabeledSystem(
                         sys_single, fmt="deepmd/npy"
                     ).get_nframes()
-                    if auto_ratio:
-                        if ii == iter_index - 1:
-                            number_new_frames += nframes
-                        else:
-                            number_old_frames += nframes
+                if auto_ratio:
+                    if ii == iter_index - 1:
+                        number_new_frames += nframes
+                    else:
+                        number_old_frames += nframes
                 if nframes < fp_task_min:
                     log_task(
                         "nframes (%d) in data sys %s is too small, skip" % (nframes, jj)
@@ -980,10 +980,7 @@ def revise_lmp_input_plm(lmp_lines, in_plm, out_plm="output.plumed"):
     idx = find_only_one_key(lmp_lines, ["fix", "dpgen_plm"])
     lmp_lines[
         idx
-    ] = "fix            dpgen_plm all plumed plumedfile {} outfile {}\n".format(
-        in_plm,
-        out_plm,
-    )
+    ] = f"fix            dpgen_plm all plumed plumedfile {in_plm} outfile {out_plm}\n"
     return lmp_lines
 
 
@@ -2088,7 +2085,7 @@ def _read_model_devi_file(
 
 
 def _select_by_model_devi_standard(
-    modd_system_task: List[str],
+    modd_system_task: list[str],
     f_trust_lo: float,
     f_trust_hi: float,
     v_trust_lo: float,
@@ -2191,7 +2188,7 @@ def _select_by_model_devi_standard(
 
 
 def _select_by_model_devi_adaptive_trust_low(
-    modd_system_task: List[str],
+    modd_system_task: list[str],
     f_trust_hi: float,
     numb_candi_f: int,
     perc_candi_f: float,
@@ -4494,18 +4491,8 @@ def set_version(mdata):
 
 
 def run_iter(param_file, machine_file):
-    try:
-        import ruamel
-        from monty.serialization import dumpfn, loadfn
-
-        warnings.simplefilter("ignore", ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
-        jdata = loadfn(param_file)
-        mdata = loadfn(machine_file)
-    except Exception:
-        with open(param_file) as fp:
-            jdata = json.load(fp)
-        with open(machine_file) as fp:
-            mdata = json.load(fp)
+    jdata = load_file(param_file)
+    mdata = load_file(machine_file)
 
     jdata_arginfo = run_jdata_arginfo()
     jdata = normalize(jdata_arginfo, jdata, strict_check=False)
@@ -4513,6 +4500,8 @@ def run_iter(param_file, machine_file):
     update_mass_map(jdata)
 
     if jdata.get("pretty_print", False):
+        from monty.serialization import dumpfn
+
         # assert(jdata["pretty_format"] in ['json','yaml'])
         fparam = (
             SHORT_CMD

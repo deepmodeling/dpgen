@@ -1,9 +1,8 @@
 import textwrap
-from typing import List
 
 from dargs import Argument, Variant
 
-from dpgen.arginfo import general_mdata_arginfo
+from dpgen.arginfo import check_nd_list, errmsg_nd_list, general_mdata_arginfo
 
 
 def run_mdata_arginfo() -> Argument:
@@ -18,7 +17,7 @@ def run_mdata_arginfo() -> Argument:
 
 
 # basics
-def basic_args() -> List[Argument]:
+def basic_args() -> list[Argument]:
     doc_type_map = "Atom types. Reminder: The elements in param.json, type.raw and data.lmp(when using lammps) should be in the same order."
     doc_mass_map = 'Standard atomic weights (default: "auto"). if one want to use isotopes, or non-standard element names, chemical symbols, or atomic number in the type_map list, please customize the mass_map list instead of using "auto".'
     doc_use_ele_temp = "Currently only support fp_style vasp. \n\n\
@@ -35,13 +34,13 @@ def basic_args() -> List[Argument]:
     ]
 
 
-def data_args() -> List[Argument]:
+def data_args() -> list[Argument]:
     doc_init_data_prefix = "Prefix of initial data directories."
     doc_init_data_sys = "Paths of initial data. The path can be either a system diretory containing NumPy files or an HDF5 file. You may use either absolute or relative path here. Systems will be detected recursively in the directories or the HDF5 file."
     doc_sys_format = "Format of sys_configs."
     doc_init_batch_size = "Each number is the batch_size of corresponding system for training in init_data_sys. One recommended rule for setting the sys_batch_size and init_batch_size is that batch_size mutiply number of atoms ot the stucture should be larger than 32. If set to auto, batch size will be 32 divided by number of atoms. This argument will not override the mixed batch size in `default_training_param`."
     doc_sys_configs_prefix = "Prefix of sys_configs."
-    doc_sys_configs = "Containing directories of structures to be explored in iterations.Wildcard characters are supported here."
+    doc_sys_configs = "2D list. Containing directories of structures to be explored in iterations for each system. Wildcard characters are supported here."
     doc_sys_batch_size = "Each number is the batch_size for training of corresponding system in sys_configs. If set to auto, batch size will be 32 divided by number of atoms. This argument will not override the mixed batch size in `default_training_param`."
 
     return [
@@ -54,7 +53,14 @@ def data_args() -> List[Argument]:
             "init_batch_size", [list, str], optional=True, doc=doc_init_batch_size
         ),
         Argument("sys_configs_prefix", str, optional=True, doc=doc_sys_configs_prefix),
-        Argument("sys_configs", list, optional=False, doc=doc_sys_configs),
+        Argument(
+            "sys_configs",
+            list,
+            optional=False,
+            doc=doc_sys_configs,
+            extra_check=check_nd_list(2),
+            extra_check_errmsg=errmsg_nd_list % 2,
+        ),
         Argument("sys_batch_size", list, optional=True, doc=doc_sys_batch_size),
     ]
 
@@ -62,7 +68,7 @@ def data_args() -> List[Argument]:
 # Training
 
 
-def training_args() -> List[Argument]:
+def training_args() -> list[Argument]:
     """Traning arguments.
 
     Returns
@@ -219,7 +225,7 @@ def model_devi_jobs_rev_mat_args() -> Argument:
     )
 
 
-def model_devi_jobs_args() -> List[Argument]:
+def model_devi_jobs_args() -> list[Argument]:
     # this may be not correct
     doc_sys_rev_mat = (
         "system-resolved revise matrix for revising variable(s) defined in the template into specific values. "
@@ -285,7 +291,7 @@ def model_devi_jobs_args() -> List[Argument]:
     )
 
 
-def model_devi_lmp_args() -> List[Argument]:
+def model_devi_lmp_args() -> list[Argument]:
     doc_model_devi_dt = "Timestep for MD. 0.002 is recommend."
     doc_model_devi_skip = "Number of structures skipped for fp in each MD."
     doc_model_devi_f_trust_lo = "Lower bound of forces for the selection. If list or dict, should be set for each index in sys_configs, respectively."
@@ -431,7 +437,7 @@ The union of the two sets is made as candidate dataset."
     ]
 
 
-def model_devi_amber_args() -> List[Argument]:
+def model_devi_amber_args() -> list[Argument]:
     """Amber engine arguments."""
     doc_model_devi_jobs = (
         "List of dicts. The list including the dict for information of each cycle."
@@ -466,7 +472,7 @@ def model_devi_amber_args() -> List[Argument]:
         "List of ints. The number of steps to run. Each number maps to a system."
     )
     doc_r = (
-        "3D or 4D list of floats. Constrict values for the enhanced sampling. "
+        "2D or 3D list of floats. Constrict values for the enhanced sampling. "
         "The first dimension maps to systems. "
         "The second dimension maps to confs in each system. The third dimension is the "
         "constrict value. It can be a single float for 1D or list of floats for nD."
@@ -502,7 +508,14 @@ def model_devi_amber_args() -> List[Argument]:
         Argument("qm_region", list, optional=False, doc=doc_qm_region),
         Argument("qm_charge", list, optional=False, doc=doc_qm_charge),
         Argument("nsteps", list, optional=False, doc=doc_nsteps),
-        Argument("r", list, optional=False, doc=doc_r),
+        Argument(
+            "r",
+            list,
+            optional=False,
+            doc=doc_r,
+            extra_check=check_nd_list(2),
+            extra_check_errmsg=errmsg_nd_list % 2,
+        ),
         Argument("disang_prefix", str, optional=True, doc=doc_disang_prefix),
         Argument("disang", list, optional=False, doc=doc_disang),
         # post model devi args
@@ -521,7 +534,7 @@ def model_devi_amber_args() -> List[Argument]:
     ]
 
 
-def model_devi_args() -> List[Variant]:
+def model_devi_args() -> list[Variant]:
     doc_model_devi_engine = "Engine for the model deviation task."
     doc_amber = "Amber DPRc engine. The command argument in the machine file should be path to sander."
     return [
@@ -542,7 +555,7 @@ def model_devi_args() -> List[Variant]:
 
 # Labeling
 # vasp
-def fp_style_vasp_args() -> List[Argument]:
+def fp_style_vasp_args() -> list[Argument]:
     doc_fp_pp_path = "Directory of psuedo-potential file to be used for 02.fp exists."
     doc_fp_pp_files = "Psuedo-potential file to be used for 02.fp. Note that the order of elements should correspond to the order in type_map."
     doc_fp_incar = "Input file for VASP. INCAR must specify KSPACING and KGAMMA."
@@ -565,7 +578,7 @@ def fp_style_vasp_args() -> List[Argument]:
 
 
 # abacus
-def fp_style_abacus_args() -> List[Argument]:
+def fp_style_abacus_args() -> list[Argument]:
     doc_fp_pp_path = "Directory of psuedo-potential or numerical orbital files to be used for 02.fp exists."
     doc_fp_pp_files = "Psuedo-potential file to be used for 02.fp. Note that the order of elements should correspond to the order in type_map."
     doc_fp_orb_files = "numerical orbital file to be used for 02.fp when using LCAO basis. Note that the order of elements should correspond to the order in type_map."
@@ -590,7 +603,7 @@ def fp_style_abacus_args() -> List[Argument]:
 
 
 # gaussian
-def fp_style_gaussian_args() -> List[Argument]:
+def fp_style_gaussian_args() -> list[Argument]:
     """Gaussian fp style arguments.
 
     Returns
@@ -679,7 +692,7 @@ def fp_style_gaussian_args() -> List[Argument]:
 
 
 # siesta
-def fp_style_siesta_args() -> List[Argument]:
+def fp_style_siesta_args() -> list[Argument]:
     doc_ecut = "Define the plane wave cutoff for grid."
     doc_ediff = "Tolerance of Density Matrix."
     doc_kspacing = "Sample factor in Brillouin zones."
@@ -712,7 +725,7 @@ def fp_style_siesta_args() -> List[Argument]:
 # cp2k
 
 
-def fp_style_cp2k_args() -> List[Argument]:
+def fp_style_cp2k_args() -> list[Argument]:
     doc_user_fp_params = "Parameters for cp2k calculation. find detail in manual.cp2k.org. only the kind section must be set before use. we assume that you have basic knowledge for cp2k input."
     doc_external_input_path = (
         "Conflict with key:user_fp_params.\n"
@@ -746,7 +759,7 @@ def fp_style_cp2k_args() -> List[Argument]:
     ]
 
 
-def fp_style_amber_diff_args() -> List[Argument]:
+def fp_style_amber_diff_args() -> list[Argument]:
     """Arguments for FP style amber/diff.
 
     Returns
@@ -783,7 +796,7 @@ def fp_style_amber_diff_args() -> List[Argument]:
     ]
 
 
-def fp_style_custom_args() -> List[Argument]:
+def fp_style_custom_args() -> list[Argument]:
     """Arguments for FP style custom.
 
     Returns
@@ -847,14 +860,14 @@ def fp_style_variant_type_args() -> Variant:
     )
 
 
-def fp_args() -> List[Argument]:
-    doc_fp_task_max = "Maximum number of structures to be calculated in each system in 02.fp of each iteration."
-    doc_fp_task_min = "Minimum number of structures to be calculated in each system in 02.fp of each iteration."
+def fp_args() -> list[Argument]:
+    doc_fp_task_max = "Maximum number of structures to be calculated in each system in 02.fp of each iteration. If the number of candidate structures exceeds `fp_task_max`, `fp_task_max` structures will be randomly picked from the candidates and labeled."
+    doc_fp_task_min = "Skip the training in the next iteration if the number of structures is no more than `fp_task_min`."
     doc_fp_accurate_threshold = "If the accurate ratio is larger than this number, no fp calculation will be performed, i.e. fp_task_max = 0."
     doc_fp_accurate_soft_threshold = "If the accurate ratio is between this number and fp_accurate_threshold, the fp_task_max linearly decays to zero."
-    doc_fp_cluster_vacuum = "If the vacuum size is smaller than this value, this cluster will not be choosen for labeling."
+    doc_fp_cluster_vacuum = "If the vacuum size is smaller than this value, this cluster will not be chosen for labeling."
     doc_detailed_report_make_fp = (
-        "If set to true, detailed report will be generated for each iteration."
+        "If set to true, a detailed report will be generated for each iteration."
     )
     doc_ratio_failed = "Check the ratio of unsuccessfully terminated jobs. If too many FP tasks are not converged, RuntimeError will be raised."
 

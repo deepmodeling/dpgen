@@ -409,13 +409,8 @@ def make_supercell_abacus(from_struct, super_cell):
         # to_struct["atom_types"] = (
         #    from_struct["atom_types"] * super_cell[0] * super_cell[1] * super_cell[2]
         # )
-        for idx_atm, ina in enumerate(from_struct["atom_numbs"]):
-            new_types += (
-                [idx_atm for i in range(ina)]
-                * super_cell[0]
-                * super_cell[1]
-                * super_cell[2]
-            )
+        for idx_atm in from_struct["atom_types"]:
+            new_types += [idx_atm] * super_cell[0] * super_cell[1] * super_cell[2]
         to_struct["atom_types"] = new_types
     to_atom_num = (
         sum(from_struct["atom_numbs"]) * super_cell[0] * super_cell[1] * super_cell[2]
@@ -436,6 +431,8 @@ def make_supercell_abacus(from_struct, super_cell):
                         + from_struct["cells"][2] * iz
                     )
                     new_coord[idx_atm] = coord
+                    idx_atm += 1
+
     to_struct["coords"] = new_coord
     new_numbs = [
         i * super_cell[0] * super_cell[1] * super_cell[2]

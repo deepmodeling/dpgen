@@ -102,13 +102,14 @@ class Property(ABC):
 
         Parameters
         ----------
-        output_file:
+        output_file
             The file to output the property
         all_tasks : list of str
             The list of directories to the tasks
         all_res : list of str
             The list of results
-        Returns:
+
+        Returns
         -------
         res_data : dist
             The dict storing the result of the property

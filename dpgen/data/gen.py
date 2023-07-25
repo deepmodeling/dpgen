@@ -2,13 +2,11 @@
 
 import argparse
 import glob
-import json
 import os
 import re
 import shutil
 import subprocess as sp
 import sys
-import warnings
 
 import dpdata
 import numpy as np
@@ -33,6 +31,7 @@ from dpgen.generator.lib.abacus_scf import (
 from dpgen.generator.lib.utils import symlink_user_forward_files
 from dpgen.generator.lib.vasp import incar_upper
 from dpgen.remote.decide_machine import convert_mdata
+from dpgen.util import load_file
 
 
 def create_path(path, back=False):
@@ -1465,22 +1464,9 @@ def run_abacus_md(jdata, mdata):
 
 
 def gen_init_bulk(args):
-    try:
-        import ruamel
-        from monty.serialization import loadfn
-
-        warnings.simplefilter("ignore", ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
-        jdata = loadfn(args.PARAM)
-        if args.MACHINE is not None:
-            mdata = loadfn(args.MACHINE)
-    except Exception:
-        with open(args.PARAM) as fp:
-            jdata = json.load(fp)
-        if args.MACHINE is not None:
-            with open(args.MACHINE) as fp:
-                mdata = json.load(fp)
-
+    jdata = load_file(args.PARAM)
     if args.MACHINE is not None:
+        mdata = load_file(args.MACHINE)
         # Selecting a proper machine
         mdata = convert_mdata(mdata, ["fp"])
         # disp = make_dispatcher(mdata["fp_machine"])
