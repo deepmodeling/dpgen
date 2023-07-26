@@ -49,6 +49,11 @@ def expand_sys_str(root_dir: Union[str, Path]) -> list[str]:
     -------
     List[str]
         list of string pointing to system directories
+
+    Raises
+    ------
+    RuntimeError
+        No system was found in the directory
     """
     root_dir = Path(root_dir)
     if root_dir.is_dir():
@@ -66,6 +71,8 @@ def expand_sys_str(root_dir: Union[str, Path]) -> list[str]:
         ]
     else:
         raise OSError(f"{root_dir} does not exist.")
+    if len(matches) == 0:
+        raise RuntimeError("%s does not contain any systems!" % root_dir)
     return matches
 
 
