@@ -1775,10 +1775,23 @@ def _make_model_devi_amber(
             create_path(task_path)
             # link restart file
             loc_conf_name = "init.rst7"
-            os.symlink(
-                os.path.join(os.path.join("..", "confs"), conf_name + ".rst7"),
-                os.path.join(task_path, loc_conf_name),
-            )
+            if cur_job.get("restart_from_iter") is None:
+                os.symlink(
+                    os.path.join(os.path.join("..", "confs"), conf_name + ".rst7"),
+                    os.path.join(task_path, loc_conf_name),
+                )
+            else:
+                restart_from_iter = cur_job["restart_from_iter"]
+                restart_iter_name = make_iter_name(restart_from_iter)
+                os.symlink(
+                    os.path.relpath(
+                        os.path.join(
+                            restart_iter_name, model_devi_name, task_name, "rc.rst7"
+                        ),
+                        task_path,
+                    ),
+                    os.path.join(task_path, loc_conf_name),
+                )
             cwd_ = os.getcwd()
             # chdir to task path
             os.chdir(task_path)

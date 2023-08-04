@@ -485,6 +485,7 @@ def model_devi_amber_args() -> list[Argument]:
     )
     doc_model_devi_f_trust_lo = "Lower bound of forces for the selection. If dict, should be set for each index in sys_idx, respectively."
     doc_model_devi_f_trust_hi = "Upper bound of forces for the selection. If dict, should be set for each index in sys_idx, respectively."
+    doc_restart_from_iter = "The iteration index to restart the simulation from. If not given, the simulation is restarted from `sys_configs`."
 
     return [
         # make model devi args
@@ -497,6 +498,9 @@ def model_devi_amber_args() -> list[Argument]:
             sub_fields=[
                 Argument("sys_idx", list, optional=False, doc=doc_sys_idx),
                 Argument("trj_freq", int, optional=False, doc=doc_trj_freq),
+                Argument(
+                    "restart_from_iter", int, optional=True, doc=doc_restart_from_iter
+                ),
             ],
         ),
         Argument("low_level", str, optional=False, doc=doc_low_level),
