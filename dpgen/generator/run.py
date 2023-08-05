@@ -2970,7 +2970,7 @@ def make_fp_vasp_kp(iter_index, jdata):
         assert os.path.exists("POSCAR")
         # make kpoints
         ret = make_kspacing_kpoints("POSCAR", kspacing, gamma)
-        if pymgv == "new"
+        if pymgv == "new":
             kp = Kpoints.from_str(ret)
         elif pymgv == "old":
             kp = Kpoints.from_string(ret)
