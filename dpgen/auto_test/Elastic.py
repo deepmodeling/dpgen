@@ -50,7 +50,7 @@ class Elastic(Property):
         # parameter['reproduce'] = False
         # self.reprod = parameter['reproduce']
         self.parameter = parameter
-        self.inter_param = inter_param if inter_param != None else {"type": "vasp"}
+        self.inter_param = inter_param if inter_param is not None else {"type": "vasp"}
 
     def make_confs(self, path_to_work, path_to_equi, refine=False):
         path_to_work = os.path.abspath(path_to_work)
@@ -205,7 +205,7 @@ class Elastic(Property):
             if self.inter_param["type"] == "abacus":
                 input_aba = abacus_scf.get_abacus_input_parameters("INPUT")
                 if "kspacing" in input_aba:
-                    kspacing = float(input_aba["kspacing"])
+                    kspacing = [float(i) for i in input_aba["kspacing"].split()]
                     kpt = abacus.make_kspacing_kpt(poscar_start, kspacing)
                     kpt += [0, 0, 0]
                     abacus.write_kpt("KPT", kpt)

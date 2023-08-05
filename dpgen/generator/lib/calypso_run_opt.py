@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
-import glob
 import os
-import sys
 import time
 
 import numpy as np
-from ase.constraints import ExpCellFilter, UnitCellFilter
+from ase.constraints import UnitCellFilter
 from ase.io import read
-from ase.optimize import BFGS, LBFGS, QuasiNewton
+from ase.optimize import LBFGS
 from deepmd.calculator import DP
 
 """
@@ -19,7 +16,7 @@ PSTRESS and fmax should exist in input.dat
 
 
 def Get_Element_Num(elements):
-    """Using the Atoms.symples to Know Element&Num"""
+    """Using the Atoms.symples to Know Element&Num."""
     element = []
     ele = {}
     element.append(elements[0])
@@ -32,12 +29,12 @@ def Get_Element_Num(elements):
 
 
 def Write_Contcar(element, ele, lat, pos):
-    """Write CONTCAR"""
+    """Write CONTCAR."""
     f = open("CONTCAR", "w")
     f.write("ASE-DPKit-Optimization\n")
     f.write("1.0\n")
     for i in range(3):
-        f.write("%15.10f %15.10f %15.10f\n" % tuple(lat[i]))
+        f.write("{:15.10f} {:15.10f} {:15.10f}\n".format(*tuple(lat[i])))
     for x in element:
         f.write(x + "  ")
     f.write("\n")
@@ -48,11 +45,11 @@ def Write_Contcar(element, ele, lat, pos):
     na = sum(ele.values())
     dpos = np.dot(pos, np.linalg.inv(lat))
     for i in range(na):
-        f.write("%15.10f %15.10f %15.10f\n" % tuple(dpos[i]))
+        f.write("{:15.10f} {:15.10f} {:15.10f}\n".format(*tuple(dpos[i])))
 
 
 def Write_Outcar(element, ele, volume, lat, pos, ene, force, stress, pstress):
-    """Write OUTCAR"""
+    """Write OUTCAR."""
     f = open("OUTCAR", "w")
     for x in element:
         f.write("VRHFIN =" + str(x) + "\n")
@@ -72,23 +69,22 @@ def Write_Outcar(element, ele, volume, lat, pos, ene, force, stress, pstress):
     f.write("\n")
     ext_pressure = np.sum(stress[0] + stress[1] + stress[2]) / 3.0 - pstress
     f.write(
-        "external pressure = %20.6f kB    Pullay stress = %20.6f  kB\n"
-        % (ext_pressure, pstress)
+        f"external pressure = {ext_pressure:20.6f} kB    Pullay stress = {pstress:20.6f}  kB\n"
     )
     f.write("volume of cell : %20.6f\n" % volume)
     f.write("direct lattice vectors\n")
     for i in range(3):
-        f.write("%10.6f %10.6f %10.6f\n" % tuple(lat[i]))
+        f.write("{:10.6f} {:10.6f} {:10.6f}\n".format(*tuple(lat[i])))
     f.write("POSITION                                       TOTAL-FORCE(eV/Angst)\n")
     f.write("-------------------------------------------------------------------\n")
     na = sum(ele.values())
     for i in range(na):
-        f.write("%15.6f %15.6f %15.6f" % tuple(pos[i]))
-        f.write("%15.6f %15.6f %15.6f\n" % tuple(force[i]))
+        f.write("{:15.6f} {:15.6f} {:15.6f}".format(*tuple(pos[i])))
+        f.write("{:15.6f} {:15.6f} {:15.6f}\n".format(*tuple(force[i])))
     f.write("-------------------------------------------------------------------\n")
-    f.write("energy  without entropy= %20.6f %20.6f\n" % (ene, ene / na))
+    f.write(f"energy  without entropy= {ene:20.6f} {ene / na:20.6f}\n")
     enthalpy = ene + pstress * volume / 1602.17733
-    f.write("enthalpy is  TOTEN    = %20.6f %20.6f\n" % (enthalpy, enthalpy / na))
+    f.write(f"enthalpy is  TOTEN    = {enthalpy:20.6f} {enthalpy / na:20.6f}\n")
 
 
 def read_stress_fmax():
@@ -96,12 +92,12 @@ def read_stress_fmax():
     fmax = 0.01
     # assert os.path.exists('./input.dat'), 'input.dat does not exist!'
     try:
-        f = open("input.dat", "r")
-    except:
+        f = open("input.dat")
+    except Exception:
         assert os.path.exists(
             "../input.dat"
         ), " now we are in %s, do not find ../input.dat" % (os.getcwd())
-        f = open("../input.dat", "r")
+        f = open("../input.dat")
     lines = f.readlines()
     f.close()
     for line in lines:
@@ -115,8 +111,7 @@ def read_stress_fmax():
 
 
 def run_opt(fmax, stress):
-    """Using the ASE&DP to Optimize Configures"""
-
+    """Using the ASE&DP to Optimize Configures."""
     calc = DP(model="../graph.000.pb")  # init the model before iteration
     os.system("mv OUTCAR OUTCAR-last")
 
@@ -165,7 +160,7 @@ def run_opt(fmax, stress):
     stop = time.time()
     _cwd = os.getcwd()
     _cwd = os.path.basename(_cwd)
-    print("%s is done, time: %s" % (_cwd, stop - start))
+    print(f"{_cwd} is done, time: {stop - start}")
 
 
 def run():

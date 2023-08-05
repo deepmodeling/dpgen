@@ -1,11 +1,11 @@
-from typing import Tuple
+from typing import Callable
 
 from dargs import Argument
 
 from dpgen.dispatcher.Dispatcher import mdata_arginfo
 
 
-def general_mdata_arginfo(name: str, tasks: Tuple[str]) -> Argument:
+def general_mdata_arginfo(name: str, tasks: tuple[str]) -> Argument:
     """Generate arginfo for general mdata.
 
     Parameters
@@ -20,7 +20,6 @@ def general_mdata_arginfo(name: str, tasks: Tuple[str]) -> Argument:
     Argument
         arginfo
     """
-
     doc_api_version = "Please set to 1.0"
     doc_deepmd_version = "DeePMD-kit version, e.g. 2.1.3"
     doc_run_mdata = "machine.json file"
@@ -44,3 +43,35 @@ def general_mdata_arginfo(name: str, tasks: Tuple[str]) -> Argument:
             )
         )
     return Argument(name, dict, sub_fields=sub_fields, doc=doc_run_mdata)
+
+
+def check_nd_list(dimesion: int = 2) -> Callable:
+    """Return a method to check if the input is a nd list.
+
+    Parameters
+    ----------
+    dimesion : int, default=2
+        dimension of the array
+
+    Returns
+    -------
+    callable
+        check function
+    """
+
+    def check(value, dimension=dimesion):
+        if value is None:
+            # do not check null
+            return True
+        if dimension:
+            if not isinstance(value, list):
+                return False
+        if dimension > 1:
+            if not all(check(v, dimension=dimesion - 1) for v in value):
+                return False
+        return True
+
+    return check
+
+
+errmsg_nd_list = "Must be a %d-dimension list."

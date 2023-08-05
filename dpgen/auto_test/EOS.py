@@ -76,7 +76,7 @@ class EOS(Property):
             parameter["init_from_suffix"] = parameter.get("init_from_suffix", "00")
             self.init_from_suffix = parameter["init_from_suffix"]
         self.parameter = parameter
-        self.inter_param = inter_param if inter_param != None else {"type": "vasp"}
+        self.inter_param = inter_param if inter_param is not None else {"type": "vasp"}
 
     def make_confs(self, path_to_work, path_to_equi, refine=False):
         path_to_work = os.path.abspath(path_to_work)
@@ -259,7 +259,7 @@ class EOS(Property):
                 res_data[vol] = task_result["energies"][-1] / sum(
                     task_result["atom_numbs"]
                 )
-                ptr_data += "%7.3f  %8.4f \n" % (
+                ptr_data += "{:7.3f}  {:8.4f} \n".format(
                     vol,
                     task_result["energies"][-1] / sum(task_result["atom_numbs"]),
                 )

@@ -3,9 +3,8 @@ import os
 import warnings
 
 import numpy as np
-from pymatgen.io.vasp import Incar, Kpoints, Potcar
+from pymatgen.io.vasp import Incar, Kpoints
 
-import dpgen.auto_test.lib.lammps as lammps
 import dpgen.auto_test.lib.util as util
 from dpgen.generator.lib.vasp import incar_upper
 
@@ -30,14 +29,14 @@ class OutcarItemError(Exception):
 
 
 def regulate_poscar(poscar_in, poscar_out):
-    with open(poscar_in, "r") as fp:
+    with open(poscar_in) as fp:
         lines = fp.read().split("\n")
     names = lines[5].split()
     counts = [int(ii) for ii in lines[6].split()]
     assert len(names) == len(counts)
     uniq_name = []
     for ii in names:
-        if not (ii in uniq_name):
+        if ii not in uniq_name:
             uniq_name.append(ii)
     uniq_count = np.zeros(len(uniq_name), dtype=int)
     for nn, cc in zip(names, counts):
@@ -63,7 +62,7 @@ def regulate_poscar(poscar_in, poscar_out):
 
 
 def sort_poscar(poscar_in, poscar_out, new_names):
-    with open(poscar_in, "r") as fp:
+    with open(poscar_in) as fp:
         lines = fp.read().split("\n")
     names = lines[5].split()
     counts = [int(ii) for ii in lines[6].split()]
@@ -91,7 +90,7 @@ def sort_poscar(poscar_in, poscar_out, new_names):
 
 
 def perturb_xz(poscar_in, poscar_out, pert=0.01):
-    with open(poscar_in, "r") as fp:
+    with open(poscar_in) as fp:
         lines = fp.read().split("\n")
     zz = lines[4]
     az = [float(ii) for ii in zz.split()]
@@ -115,7 +114,7 @@ def reciprocal_box(box):
 def make_kspacing_kpoints(poscar, kspacing, kgamma):
     if type(kspacing) is not list:
         kspacing = [kspacing, kspacing, kspacing]
-    with open(poscar, "r") as fp:
+    with open(poscar) as fp:
         lines = fp.read().split("\n")
     scale = float(lines[1])
     box = []
@@ -135,7 +134,7 @@ def make_kspacing_kpoints(poscar, kspacing, kgamma):
 def get_energies(fname):
     if not check_finished(fname):
         warnings.warn("incomplete outcar: " + fname)
-    with open(fname, "r") as fp:
+    with open(fname) as fp:
         lines = fp.read().split("\n")
     try:
         ener = _get_energies(lines)
@@ -147,7 +146,7 @@ def get_energies(fname):
 def get_boxes(fname):
     if not check_finished(fname):
         warnings.warn("incomplete outcar: " + fname)
-    with open(fname, "r") as fp:
+    with open(fname) as fp:
         lines = fp.read().split("\n")
     try:
         ener = _get_boxes(lines)
@@ -159,7 +158,7 @@ def get_boxes(fname):
 def get_nev(fname):
     if not check_finished(fname):
         warnings.warn("incomplete outcar: " + fname)
-    with open(fname, "r") as fp:
+    with open(fname) as fp:
         lines = fp.read().split("\n")
     try:
         natoms = _get_natoms(lines)
@@ -174,7 +173,7 @@ def get_nev(fname):
 def get_stress(fname):
     if not check_finished(fname):
         warnings.warn("incomplete outcar: " + fname)
-    with open(fname, "r") as fp:
+    with open(fname) as fp:
         lines = fp.read().split("\n")
     try:
         stress = _get_stress(lines)[-1]
@@ -184,7 +183,7 @@ def get_stress(fname):
 
 
 def check_finished(fname):
-    with open(fname, "r") as fp:
+    with open(fname) as fp:
         return "Elapsed time (sec):" in fp.read()
 
 
@@ -397,13 +396,13 @@ def make_vasp_phonon_incar(
 
 
 def get_poscar_types(fname):
-    with open(fname, "r") as fp:
+    with open(fname) as fp:
         lines = fp.read().split("\n")
     return lines[5].split()
 
 
 def get_poscar_natoms(fname):
-    with open(fname, "r") as fp:
+    with open(fname) as fp:
         lines = fp.read().split("\n")
     return [int(ii) for ii in lines[6].split()]
 
@@ -432,24 +431,24 @@ def _poscar_scale_cartesian(str_in, scale):
         boxl = lines[ii].split()
         boxv = [float(ii) for ii in boxl]
         boxv = np.array(boxv) * scale
-        lines[ii] = "%.16e %.16e %.16e\n" % (boxv[0], boxv[1], boxv[2])
+        lines[ii] = f"{boxv[0]:.16e} {boxv[1]:.16e} {boxv[2]:.16e}\n"
     # scale coord
     for ii in range(8, 8 + numb_atoms):
         cl = lines[ii].split()
         cv = [float(ii) for ii in cl]
         cv = np.array(cv) * scale
-        lines[ii] = "%.16e %.16e %.16e\n" % (cv[0], cv[1], cv[2])
+        lines[ii] = f"{cv[0]:.16e} {cv[1]:.16e} {cv[2]:.16e}\n"
     return lines
 
 
 def poscar_natoms(poscar_in):
-    with open(poscar_in, "r") as fin:
+    with open(poscar_in) as fin:
         lines = list(fin)
     return _poscar_natoms(lines)
 
 
 def poscar_scale(poscar_in, poscar_out, scale):
-    with open(poscar_in, "r") as fin:
+    with open(poscar_in) as fin:
         lines = list(fin)
     if "D" == lines[7][0] or "d" == lines[7][0]:
         lines = _poscar_scale_direct(lines, scale)
@@ -462,7 +461,7 @@ def poscar_scale(poscar_in, poscar_out, scale):
 
 
 def poscar_vol(poscar_in):
-    with open(poscar_in, "r") as fin:
+    with open(poscar_in) as fin:
         lines = list(fin)
     box = []
     for ii in range(2, 5):

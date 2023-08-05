@@ -9,8 +9,17 @@ from pymatgen.core import Element, Structure
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "data"
-from .context import setUpModule
-from .context_surf import *
+from .context import setUpModule  # noqa: F401
+from .context_surf import (
+    create_path,
+    make_scale,
+    make_super_cell_pymatgen,
+    make_vasp_relax,
+    out_dir_name,
+    param_file,
+    pert_scaled,
+    place_element,
+)
 
 
 class TestGenSurf(unittest.TestCase):
@@ -30,7 +39,7 @@ class TestGenSurf(unittest.TestCase):
             "elong-7.000",
             "elong-8.000",
         ]
-        with open(param_file, "r") as fp:
+        with open(param_file) as fp:
             jdata = json.load(fp)
         out_dir = out_dir_name(jdata)
         jdata["out_dir"] = out_dir

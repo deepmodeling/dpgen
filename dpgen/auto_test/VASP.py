@@ -41,7 +41,7 @@ class VASP(Task):
                     for jj in ele_pot_list:
                         if ii == jj:
                             with open(
-                                os.path.join(self.potcar_prefix, self.potcars[jj]), "r"
+                                os.path.join(self.potcar_prefix, self.potcars[jj])
                             ) as fin:
                                 for line in fin:
                                     print(line.strip("\n"), file=fp)
@@ -54,7 +54,6 @@ class VASP(Task):
                             if ii == jj:
                                 with open(
                                     os.path.join(self.potcar_prefix, self.potcars[jj]),
-                                    "r",
                                 ) as fin:
                                     for line in fin:
                                         print(line.strip("\n"), file=fp)
@@ -137,36 +136,41 @@ class VASP(Task):
 
             if "ediff" in cal_setting:
                 dlog.info(
-                    "%s setting EDIFF to %s"
-                    % (self.make_input_file.__name__, cal_setting["ediff"])
+                    "{} setting EDIFF to {}".format(
+                        self.make_input_file.__name__, cal_setting["ediff"]
+                    )
                 )
                 incar["EDIFF"] = cal_setting["ediff"]
 
             if "ediffg" in cal_setting:
                 dlog.info(
-                    "%s setting EDIFFG to %s"
-                    % (self.make_input_file.__name__, cal_setting["ediffg"])
+                    "{} setting EDIFFG to {}".format(
+                        self.make_input_file.__name__, cal_setting["ediffg"]
+                    )
                 )
                 incar["EDIFFG"] = cal_setting["ediffg"]
 
             if "encut" in cal_setting:
                 dlog.info(
-                    "%s setting ENCUT to %s"
-                    % (self.make_input_file.__name__, cal_setting["encut"])
+                    "{} setting ENCUT to {}".format(
+                        self.make_input_file.__name__, cal_setting["encut"]
+                    )
                 )
                 incar["ENCUT"] = cal_setting["encut"]
 
             if "kspacing" in cal_setting:
                 dlog.info(
-                    "%s setting KSPACING to %s"
-                    % (self.make_input_file.__name__, cal_setting["kspacing"])
+                    "{} setting KSPACING to {}".format(
+                        self.make_input_file.__name__, cal_setting["kspacing"]
+                    )
                 )
                 incar["KSPACING"] = cal_setting["kspacing"]
 
             if "kgamma" in cal_setting:
                 dlog.info(
-                    "%s setting KGAMMA to %s"
-                    % (self.make_input_file.__name__, cal_setting["kgamma"])
+                    "{} setting KGAMMA to {}".format(
+                        self.make_input_file.__name__, cal_setting["kgamma"]
+                    )
                 )
                 incar["KGAMMA"] = cal_setting["kgamma"]
 
@@ -208,7 +212,7 @@ class VASP(Task):
         else:
             ls = LabeledSystem(outcar)
             stress = []
-            with open(outcar, "r") as fin:
+            with open(outcar) as fin:
                 lines = fin.read().split("\n")
             for line in lines:
                 if "in kB" in line:

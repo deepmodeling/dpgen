@@ -1,17 +1,14 @@
-"""
-input: trajectory
+"""input: trajectory
 00: ReaxFF MD (lammps)
 01: build dataset (mddatasetbuilder)
 02: fp (gaussian)
 03: convert to deepmd data
-output: data
+output: data.
 """
 
 import glob
-import json
 import os
 import random
-import warnings
 
 import dpdata
 
@@ -19,7 +16,7 @@ from dpgen import dlog
 from dpgen.dispatcher.Dispatcher import make_submission_compat
 from dpgen.generator.run import create_path, make_fp_task_name
 from dpgen.remote.decide_machine import convert_mdata
-from dpgen.util import normalize, sepline
+from dpgen.util import load_file, normalize, sepline
 
 from .arginfo import init_reaction_jdata_arginfo
 
@@ -106,7 +103,7 @@ def run_reaxff(jdata, mdata, log_file="reaxff_log"):
 
 
 def link_trj(jdata):
-    """link lammpstrj"""
+    """Link lammpstrj."""
     create_path(build_path)
     task_path = os.path.join(build_path, "task.000")
     create_path(task_path)
@@ -215,20 +212,8 @@ def convert_data(jdata):
 
 
 def gen_init_reaction(args):
-    try:
-        import ruamel
-        from monty.serialization import dumpfn, loadfn
-
-        warnings.simplefilter("ignore", ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
-        jdata = loadfn(args.PARAM)
-        if args.MACHINE is not None:
-            mdata = loadfn(args.MACHINE)
-    except Exception:
-        with open(args.PARAM, "r") as fp:
-            jdata = json.load(fp)
-        if args.MACHINE is not None:
-            with open(args.MACHINE, "r") as fp:
-                mdata = json.load(fp)
+    jdata = load_file(args.PARAM)
+    mdata = load_file(args.MACHINE)
 
     jdata_arginfo = init_reaction_jdata_arginfo()
     jdata = normalize(jdata_arginfo, jdata)

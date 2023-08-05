@@ -1,5 +1,4 @@
 import glob
-import json
 import os
 import shutil
 import sys
@@ -7,7 +6,7 @@ import unittest
 
 import dpdata
 import numpy as np
-from monty.serialization import dumpfn, loadfn
+from monty.serialization import loadfn
 from pymatgen.io.vasp import Incar
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -15,7 +14,7 @@ __package__ = "auto_test"
 
 from dpgen.auto_test.EOS import EOS
 
-from .context import make_kspacing_kpoints, setUpModule
+from .context import setUpModule  # noqa: F401
 
 
 class TestEOS(unittest.TestCase):
@@ -74,7 +73,6 @@ class TestEOS(unittest.TestCase):
         self.assertEqual(self.prop_param[0], self.eos.task_param())
 
     def test_make_confs_0(self):
-
         if not os.path.exists(os.path.join(self.equi_path, "CONTCAR")):
             with self.assertRaises(RuntimeError):
                 self.eos.make_confs(self.target_path, self.equi_path)

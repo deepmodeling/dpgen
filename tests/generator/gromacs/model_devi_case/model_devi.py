@@ -9,9 +9,7 @@ import numpy as np
 
 
 def calc_model_devi_f(fs):
-    """
-    fs : numpy.ndarray, size of `n_models x n_frames x n_atoms x 3`
-    """
+    """Fs : numpy.ndarray, size of `n_models x n_frames x n_atoms x 3`."""
     fs_mean = np.mean(fs, axis=0)
     # print(fs_mean.shape)
     fs_err = np.sum((fs - fs_mean) ** 2, axis=-1)

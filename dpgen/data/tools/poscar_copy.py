@@ -2,9 +2,8 @@
 
 import argparse
 
-import numpy as np
-from ovito.io import *
-from ovito.modifiers import *
+from ovito.io import export_file, import_file
+from ovito.modifiers import ShowPeriodicImagesModifier
 
 
 def copy_system(ncopy, fin, fout):

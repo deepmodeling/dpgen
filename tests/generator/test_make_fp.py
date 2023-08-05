@@ -14,7 +14,7 @@ __package__ = "generator"
 import scipy.constants as pc
 from pymatgen.io.vasp import Incar, Kpoints
 
-from .comp_sys import test_atom_names, test_atom_types, test_cell, test_coord
+from .comp_sys import test_atom_names
 from .context import (
     detect_multiplicity,
     machine_file,
@@ -25,6 +25,7 @@ from .context import (
     param_amber_file,
     param_cp2k_file,
     param_cp2k_file_exinput,
+    param_custom_fp_file,
     param_diy_abacus_post_file,
     param_diy_file,
     param_file,
@@ -36,10 +37,9 @@ from .context import (
     param_pwscf_file,
     param_pwscf_old_file,
     param_siesta_file,
-    parse_cur_job,
     ref_cp2k_file_exinput,
     ref_cp2k_file_input,
-    setUpModule,
+    setUpModule,  # noqa: F401
 )
 
 vasp_incar_ref = "PREC=A\n\
@@ -179,7 +179,7 @@ cal_stress 1\n\
 deepks_out_labels 0\n\
 deepks_descriptor_lmax 0\n\
 deepks_scf 0\n\
-deepks_model model.ptg\n"
+deepks_model pporb/model.ptg\n"
 
 abacus_kpt_ref = "K_POINTS\n\
 0\n\
@@ -232,7 +232,7 @@ def _write_lammps_dump(sys, dump_file, f_idx=0):
         fp.write(str(natoms) + "\n")
         fp.write("ITEM: BOX BOUNDS xy xz yz pp pp pp\n")
         for ii in range(3):
-            fp.write("%f %f %f\n" % (bd[ii][0], bd[ii][1], tilt[ii]))
+            fp.write(f"{bd[ii][0]:f} {bd[ii][1]:f} {tilt[ii]:f}\n")
         fp.write("ITEM: ATOMS id type x y z\n")
         for ii in range(natoms):
             fp.write(
@@ -242,11 +242,10 @@ def _write_lammps_dump(sys, dump_file, f_idx=0):
 
 
 def _make_fake_md(idx, md_descript, atom_types, type_map, ele_temp=None):
-    """
-    md_descript: list of dimension
+    """md_descript: list of dimension
                  [n_sys][n_MD][n_frame]
     ele_temp: list of dimension
-                 [n_sys][n_MD]
+                 [n_sys][n_MD].
     """
     natoms = len(atom_types)
     ntypes = len(type_map)
@@ -281,11 +280,10 @@ def _make_fake_md(idx, md_descript, atom_types, type_map, ele_temp=None):
 
 
 def _make_fake_md_merge_traj(idx, md_descript, atom_types, type_map, ele_temp=None):
-    """
-    md_descript: list of dimension
+    """md_descript: list of dimension
                  [n_sys][n_MD][n_frame]
     ele_temp: list of dimension
-                 [n_sys][n_MD]
+                 [n_sys][n_MD].
     """
     natoms = len(atom_types)
     ntypes = len(type_map)
@@ -626,9 +624,9 @@ class TestMakeFPPwscf(unittest.TestCase):
         setUpModule()
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
-        with open(param_pwscf_file, "r") as fp:
+        with open(param_pwscf_file) as fp:
             jdata = json.load(fp)
-        with open(machine_file, "r") as fp:
+        with open(machine_file) as fp:
             mdata = json.load(fp)
         md_descript = []
         nsys = 2
@@ -659,9 +657,9 @@ class TestMakeFPPwscf(unittest.TestCase):
         setUpModule()
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
-        with open(param_pwscf_old_file, "r") as fp:
+        with open(param_pwscf_old_file) as fp:
             jdata = json.load(fp)
-        with open(machine_file, "r") as fp:
+        with open(machine_file) as fp:
             mdata = json.load(fp)
         md_descript = []
         nsys = 2
@@ -690,14 +688,28 @@ class TestMakeFPPwscf(unittest.TestCase):
 
 
 class TestMakeFPABACUS(unittest.TestCase):
+    def _check_pp(self, idx, fp_pp_path, fp_pp_files):
+        nfile = len(fp_pp_files)
+        fp_path = os.path.join("iter.%06d" % idx, "02.fp")
+        for ii in range(nfile):
+            self.assertTrue(os.path.isfile(os.path.join(fp_pp_path, fp_pp_files[ii])))
+        tasks = glob.glob(os.path.join(fp_path, "task.*"))
+        for ii in tasks:
+            for jj in range(nfile):
+                my_file_cmp(
+                    self,
+                    os.path.join(fp_pp_path, fp_pp_files[jj]),
+                    os.path.join(ii, "pporb", fp_pp_files[jj]),
+                )
+
     def test_make_fp_abacus(self):
         setUpModule()
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
-        with open(param_abacus_post_file, "r") as fp:
+        with open(param_abacus_post_file) as fp:
             jdata = json.load(fp)
         fp.close()
-        with open(machine_file, "r") as fp:
+        with open(machine_file) as fp:
             mdata = json.load(fp)
         fp.close()
         md_descript = []
@@ -723,7 +735,50 @@ class TestMakeFPABACUS(unittest.TestCase):
         _check_poscars(self, 0, jdata["fp_task_max"], jdata["type_map"])
         _check_abacus_input(self, 0)
         _check_abacus_kpt(self, 0)
-        _check_potcar(self, 0, jdata["fp_pp_path"], jdata["fp_pp_files"])
+        self._check_pp(0, jdata["fp_pp_path"], jdata["fp_pp_files"])
+        shutil.rmtree("iter.000000")
+
+    def test_make_fp_abacus_kspacing(self):
+        setUpModule()
+        if os.path.isdir("iter.000000"):
+            shutil.rmtree("iter.000000")
+        with open(param_abacus_post_file) as fp:
+            jdata = json.load(fp)
+        fp.close()
+        jdata["user_fp_params"]["gamma_only"] = 0
+        jdata["user_fp_params"]["kspacing"] = [0.04, 0.05, 0.06]
+        with open(machine_file) as fp:
+            mdata = json.load(fp)
+        fp.close()
+        md_descript = []
+        nsys = 2
+        nmd = 3
+        n_frame = 10
+        for ii in range(nsys):
+            tmp = []
+            for jj in range(nmd):
+                tmp.append(np.arange(0, 0.29, 0.29 / 10))
+            md_descript.append(tmp)
+        atom_types = [0, 0, 0, 0, 1]
+        type_map = jdata["type_map"]
+        _make_fake_md(0, md_descript, atom_types, type_map)
+        make_fp(0, jdata, {})
+
+        input_ref = abacus_input_ref.split("\n")
+        for ii, iline in enumerate(input_ref):
+            if "gamma_only" in iline:
+                input_ref[ii] = "gamma_only 0"
+            elif "kspacing" in iline:
+                input_ref[ii] = "kspacing 0.040000 0.050000 0.060000"
+
+        fp_path = os.path.join("iter.%06d" % 0, "02.fp", "INPUT")
+        tasks = glob.glob(os.path.join(fp_path, "task.*"))
+        for ii in tasks:
+            ifile = os.path.join(ii, "INPUT")
+            with open(ifile) as fp:
+                lines = fp.read().split("\n")
+            self.assertEqual(lines, input_ref)
+
         shutil.rmtree("iter.000000")
 
     def test_make_fp_abacus_from_input(self):
@@ -731,10 +786,10 @@ class TestMakeFPABACUS(unittest.TestCase):
         setUpModule()
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
-        with open(param_diy_abacus_post_file, "r") as fp:
+        with open(param_diy_abacus_post_file) as fp:
             jdata = json.load(fp)
         fp.close()
-        with open(machine_file, "r") as fp:
+        with open(machine_file) as fp:
             mdata = json.load(fp)
         fp.close()
         md_descript = []
@@ -760,7 +815,7 @@ class TestMakeFPABACUS(unittest.TestCase):
         _check_poscars(self, 0, jdata["fp_task_max"], jdata["type_map"])
         _check_abacus_input(self, 0)
         _check_abacus_kpt(self, 0)
-        _check_potcar(self, 0, jdata["fp_pp_path"], jdata["fp_pp_files"])
+        self._check_pp(0, jdata["fp_pp_path"], jdata["fp_pp_files"])
         shutil.rmtree("iter.000000")
 
 
@@ -769,7 +824,7 @@ class TestMakeFPAMBERDiff(unittest.TestCase):
         setUpModule()
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
-        with open(param_amber_file, "r") as fp:
+        with open(param_amber_file) as fp:
             jdata = json.load(fp)
         jdata["mdin_prefix"] = os.path.abspath(jdata["mdin_prefix"])
         task_dir = os.path.join(
@@ -794,9 +849,9 @@ class TestMakeFPSIESTA(unittest.TestCase):
         setUpModule()
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
-        with open(param_siesta_file, "r") as fp:
+        with open(param_siesta_file) as fp:
             jdata = json.load(fp)
-        with open(machine_file, "r") as fp:
+        with open(machine_file) as fp:
             mdata = json.load(fp)
         md_descript = []
         nsys = 2
@@ -829,9 +884,9 @@ class TestMakeFPVasp(unittest.TestCase):
         setUpModule()
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
-        with open(param_file, "r") as fp:
+        with open(param_file) as fp:
             jdata = json.load(fp)
-        with open(machine_file, "r") as fp:
+        with open(machine_file) as fp:
             mdata = json.load(fp)
         md_descript = []
         nsys = 2
@@ -866,9 +921,9 @@ class TestMakeFPVasp(unittest.TestCase):
         setUpModule()
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
-        with open(param_file_merge_traj, "r") as fp:
+        with open(param_file_merge_traj) as fp:
             jdata = json.load(fp)
-        with open(machine_file, "r") as fp:
+        with open(machine_file) as fp:
             mdata = json.load(fp)
         md_descript = []
         nsys = 2
@@ -897,9 +952,9 @@ class TestMakeFPVasp(unittest.TestCase):
         setUpModule()
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
-        with open(param_old_file, "r") as fp:
+        with open(param_old_file) as fp:
             jdata = json.load(fp)
-        with open(machine_file, "r") as fp:
+        with open(machine_file) as fp:
             mdata = json.load(fp)
         md_descript = []
         nsys = 2
@@ -933,9 +988,9 @@ class TestMakeFPVasp(unittest.TestCase):
     def test_make_fp_vasp_less_sel(self):
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
-        with open(param_file, "r") as fp:
+        with open(param_file) as fp:
             jdata = json.load(fp)
-        with open(machine_file, "r") as fp:
+        with open(machine_file) as fp:
             mdata = json.load(fp)
         md_descript = []
         nsys = 1
@@ -971,10 +1026,10 @@ class TestMakeFPVasp(unittest.TestCase):
         setUpModule()
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
-        with open(param_diy_file, "r") as fp:
+        with open(param_diy_file) as fp:
             jdata = json.load(fp)
         fp.close()
-        with open(machine_file, "r") as fp:
+        with open(machine_file) as fp:
             mdata = json.load(fp)
         fp.close()
         md_descript = []
@@ -1011,10 +1066,10 @@ class TestMakeFPVasp(unittest.TestCase):
         setUpModule()
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
-        with open(param_diy_file, "r") as fp:
+        with open(param_diy_file) as fp:
             jdata = json.load(fp)
         fp.close()
-        with open(machine_file, "r") as fp:
+        with open(machine_file) as fp:
             mdata = json.load(fp)
         fp.close()
         md_descript = []
@@ -1052,10 +1107,10 @@ class TestMakeFPVasp(unittest.TestCase):
         setUpModule()
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
-        with open(param_multiple_trust_file, "r") as fp:
+        with open(param_multiple_trust_file) as fp:
             jdata = json.load(fp)
         fp.close()
-        with open(machine_file, "r") as fp:
+        with open(machine_file) as fp:
             mdata = json.load(fp)
         fp.close()
         md_descript = []
@@ -1094,10 +1149,10 @@ class TestMakeFPGaussian(unittest.TestCase):
         setUpModule()
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
-        with open(param_gaussian_file, "r") as fp:
+        with open(param_gaussian_file) as fp:
             jdata = json.load(fp)
         jdata["user_fp_params"]["multiplicity"] = multiplicity
-        with open(machine_file, "r") as fp:
+        with open(machine_file) as fp:
             mdata = json.load(fp)
         md_descript = []
         nsys = 2
@@ -1154,9 +1209,9 @@ class TestMakeFPCP2K(unittest.TestCase):
         setUpModule()
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
-        with open(param_cp2k_file, "r") as fp:
+        with open(param_cp2k_file) as fp:
             jdata = json.load(fp)
-        with open(machine_file, "r") as fp:
+        with open(machine_file) as fp:
             mdata = json.load(fp)
         md_descript = []
         nsys = 2
@@ -1179,7 +1234,7 @@ class TestMakeFPCP2K(unittest.TestCase):
             jdata["model_devi_f_trust_hi"],
         )
         _check_poscars(self, 0, jdata["fp_task_max"], jdata["type_map"])
-        with open(ref_cp2k_file_input, "r") as f:
+        with open(ref_cp2k_file_input) as f:
             cp2k_input_ref = "".join(f.readlines())
         _check_cp2k_input_head(self, 0, cp2k_input_ref)
         _check_potcar(self, 0, jdata["fp_pp_path"], jdata["fp_pp_files"])
@@ -1189,9 +1244,9 @@ class TestMakeFPCP2K(unittest.TestCase):
         setUpModule()
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
-        with open(param_cp2k_file_exinput, "r") as fp:
+        with open(param_cp2k_file_exinput) as fp:
             jdata = json.load(fp)
-        with open(machine_file, "r") as fp:
+        with open(machine_file) as fp:
             mdata = json.load(fp)
         md_descript = []
         nsys = 2
@@ -1214,7 +1269,7 @@ class TestMakeFPCP2K(unittest.TestCase):
             jdata["model_devi_f_trust_hi"],
         )
         _check_poscars(self, 0, jdata["fp_task_max"], jdata["type_map"])
-        with open(ref_cp2k_file_exinput, "r") as f:
+        with open(ref_cp2k_file_exinput) as f:
             cp2k_exinput_ref = "".join(f.readlines())
         _check_cp2k_input_head(self, 0, cp2k_exinput_ref)
         _check_potcar(self, 0, jdata["fp_pp_path"], jdata["fp_pp_files"])
@@ -1226,9 +1281,9 @@ class TestMakeFPPWmat(unittest.TestCase):
         setUpModule()
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
-        with open(param_pwmat_file, "r") as fp:
+        with open(param_pwmat_file) as fp:
             jdata = json.load(fp)
-        with open(machine_file, "r") as fp:
+        with open(machine_file) as fp:
             mdata = json.load(fp)
         md_descript = []
         nsys = 2
@@ -1255,6 +1310,59 @@ class TestMakeFPPWmat(unittest.TestCase):
         _check_potcar(self, 0, jdata["fp_pp_path"], jdata["fp_pp_files"])
         os.system("rm -r iter.000000")
         # shutil.rmtree('iter.000000')
+
+
+class TestMakeFPCustom(unittest.TestCase):
+    def test_make_fp_custom(self):
+        setUpModule()
+        if os.path.isdir("iter.000000"):
+            shutil.rmtree("iter.000000")
+        with open(param_custom_fp_file) as fp:
+            jdata = json.load(fp)
+        with open(machine_file) as fp:
+            mdata = json.load(fp)
+        md_descript = []
+        nsys = 2
+        nmd = 3
+        n_frame = 10
+        for ii in range(nsys):
+            tmp = []
+            for jj in range(nmd):
+                tmp.append(np.arange(0, 0.29, 0.29 / 10))
+            md_descript.append(tmp)
+        atom_types = [0, 1, 2, 2, 0, 1]
+        type_map = jdata["type_map"]
+        _make_fake_md(0, md_descript, atom_types, type_map)
+        make_fp(0, jdata, {})
+        # check input.h5 can be read
+        fp_params = jdata["fp_params"]
+        input_fn = fp_params["input_fn"]
+        input_fmt = fp_params["input_fmt"]
+        fp_task_max = jdata["fp_task_max"]
+        type_map = jdata["type_map"]
+
+        fp_path = os.path.join("iter.%06d" % 0, "02.fp")
+        candi_files = glob.glob(os.path.join(fp_path, "candidate.shuffled.*.out"))
+        candi_files.sort()
+        sys_idx = [str(os.path.basename(ii).split(".")[2]) for ii in candi_files]
+        for sidx, ii in zip(sys_idx, candi_files):
+            md_task = []
+            f_idx = []
+            with open(ii) as fp:
+                for line in fp:
+                    md_task.append(line.split()[0])
+                    f_idx.append(line.split()[1])
+            md_task = md_task[:fp_task_max]
+            f_idx = f_idx[:fp_task_max]
+            for cc, (tt, ff) in enumerate(zip(md_task, f_idx)):
+                traj_file = os.path.join(tt, "traj", "%d.lammpstrj" % int(ff))
+                input_file = os.path.join(
+                    fp_path, "task.%03d.%06d" % (int(sidx), cc), input_fn
+                )
+                system1 = dpdata.System(traj_file, "lammps/dump", type_map=type_map)
+                system2 = dpdata.System(input_file, input_fmt, type_map=type_map)
+                assert system1.formula == system2.formula
+        shutil.rmtree("iter.000000")
 
 
 if __name__ == "__main__":

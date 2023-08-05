@@ -4,7 +4,6 @@ import re
 import numpy as np
 import requests
 
-from dpgen import dlog
 from dpgen.auto_test.lib import abacus, lammps, vasp
 from dpgen.auto_test.lib.utils import cmd_append_log
 
@@ -28,16 +27,12 @@ def voigt_to_stress(inpt):
 def insert_data(task, task_type, username, file_name):
     assert task in ["eos", "elastic", "surf"]
     assert task_type in ["vasp", "deepmd"]
-    url = (
-        "http://115.27.161.2:5000/insert_test_data?username=%s&expr_type=%s&data_type=%s"
-        % (username, task_type, task)
-    )
+    url = f"http://115.27.161.2:5000/insert_test_data?username={username}&expr_type={task_type}&data_type={task}"
     res = requests.post(url, data=open(file_name).read())
     print("Successful upload!")
 
 
 def make_work_path(jdata, task, reprod_opt, static, user):
-
     task_type = jdata["task_type"]
     conf_dir = jdata["conf_dir"]
     conf_path = os.path.abspath(conf_dir)
@@ -94,7 +89,6 @@ def get_machine_info(mdata, task_type):
 
 
 def collect_task(all_task, task_type):
-
     if task_type == "vasp":
         output_file = "OUTCAR"
         check_finished = vasp.check_finished

@@ -1,23 +1,18 @@
-"""
-calypso as model devi engine:
-       1. gen_structures
-       2. analysis
-       3. model devi
+"""calypso as model devi engine:
+1. gen_structures
+2. analysis
+3. model devi.
 """
 
-import copy
 import glob
-import math
 import os
 import random
-import re
 import shutil
 import sys
 from itertools import combinations
 from pathlib import Path
 
 import dpdata
-import numpy as np
 from ase.io.trajectory import Trajectory
 from ase.io.vasp import write_vasp
 from packaging.version import Version
@@ -37,7 +32,6 @@ calypso_model_devi_name = "model_devi_results"
 def gen_structures(
     iter_index, jdata, mdata, caly_run_path, current_idx, length_of_caly_runopt_list
 ):
-
     # run calypso
     # vsc means generate elemental, binary and ternary at the same time
     vsc = jdata.get("vsc", False)  # take CALYPSO as confs generator
@@ -92,7 +86,7 @@ def gen_structures(
             PickUpStep = 1
             try:
                 os.mkdir("opt")
-            except:
+            except Exception:
                 pass
 
         popsize = int(_parse_calypso_input("PopSize", "."))
@@ -110,7 +104,7 @@ def gen_structures(
             for pop in range(ii * int(popsize), (ii + 1) * int(popsize)):
                 try:
                     os.mkdir("task.%03d" % pop)
-                except:
+                except Exception:
                     shutil.rmtree("task.%03d" % pop)
                     os.mkdir("task.%03d" % pop)
                 shutil.copyfile(
@@ -242,7 +236,7 @@ def gen_structures(
             shutil.copyfile(name, "POSCAR_%s" % (idx + 1))
             try:
                 os.mkdir("task.%04d" % (idx + 1))
-            except:
+            except Exception:
                 shutil.rmtree("task.%04d" % (idx + 1))
                 os.mkdir("task.%04d" % (idx + 1))
             shutil.copyfile(
@@ -343,7 +337,6 @@ def gen_structures(
 
 
 def gen_main(iter_index, jdata, mdata, caly_run_opt_list, gen_idx):
-
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, model_devi_name)
 
@@ -456,7 +449,6 @@ def analysis(iter_index, jdata, calypso_model_devi_path):
 
 
 def run_calypso_model_devi(iter_index, jdata, mdata):
-
     dlog.info("start running CALYPSO")
 
     iter_name = make_iter_name(iter_index)
@@ -484,7 +476,7 @@ def run_calypso_model_devi(iter_index, jdata, mdata):
             lines = ["1 0\n"]
             f.close()
         else:
-            f = open(record_calypso_path, "r")
+            f = open(record_calypso_path)
             lines = f.readlines()
             f.close()
 

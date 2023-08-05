@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 
-"""
-
-ASE Atoms convert to LAMMPS configuration
-Some functions are adapted from ASE lammpsrun.py
+"""ASE Atoms convert to LAMMPS configuration
+Some functions are adapted from ASE lammpsrun.py.
 
 """
 
@@ -13,12 +11,12 @@ from numpy.linalg import norm
 
 
 def dir2car(v, A):
-    """Direct to cartesian coordinates"""
+    """Direct to cartesian coordinates."""
     return np.dot(v, A)
 
 
 def car2dir(v, Ainv):
-    """Cartesian to direct coordinates"""
+    """Cartesian to direct coordinates."""
     return np.dot(v, Ainv)
 
 
@@ -44,25 +42,22 @@ def stress6_to_stress9(s6):
 
 
 def is_upper_triangular(mat):
-    """
-    test if 3x3 matrix is upper triangular
-    LAMMPS has a rule for cell matrix definition
+    """Test if 3x3 matrix is upper triangular
+    LAMMPS has a rule for cell matrix definition.
     """
 
     def near0(x):
-        """Test if a float is within .00001 of 0"""
+        """Test if a float is within .00001 of 0."""
         return abs(x) < 0.00001
 
     return near0(mat[1, 0]) and near0(mat[2, 0]) and near0(mat[2, 1])
 
 
 def convert_cell(ase_cell):
-    """
-    Convert a parallel piped (forming right hand basis)
+    """Convert a parallel piped (forming right hand basis)
     to lower triangular matrix LAMMPS can accept. This
-    function transposes cell matrix so the bases are column vectors
+    function transposes cell matrix so the bases are column vectors.
     """
-
     # if ase_cell is lower triangular, cell is upper tri-angular
     cell = np.matrix.transpose(ase_cell)
 
@@ -168,7 +163,7 @@ def ase2lammpsdata(atoms, typeids=None, fout="out.lmp"):
     fw.write("\n")
 
     # write number of atoms
-    natoms = atoms.get_number_of_atoms()
+    natoms = atoms.get_global_number_of_atoms()
     fw.write("%d atoms\n" % natoms)
     fw.write("\n")
 
@@ -190,10 +185,10 @@ def ase2lammpsdata(atoms, typeids=None, fout="out.lmp"):
     xz = cell[2, 0]
     yz = cell[2, 1]
 
-    fw.write("%f\t%f\t xlo xhi\n" % (0, xhi))
-    fw.write("%f\t%f\t ylo yhi\n" % (0, yhi))
-    fw.write("%f\t%f\t zlo zhi\n" % (0, zhi))
-    fw.write("%f\t%f\t%f\t xy xz yz\n" % (xy, xz, yz))
+    fw.write(f"{0:f}\t{xhi:f}\t xlo xhi\n")
+    fw.write(f"{0:f}\t{yhi:f}\t ylo yhi\n")
+    fw.write(f"{0:f}\t{zhi:f}\t zlo zhi\n")
+    fw.write(f"{xy:f}\t{xz:f}\t{yz:f}\t xy xz yz\n")
     fw.write("\n")
 
     # write mases
