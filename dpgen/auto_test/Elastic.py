@@ -221,7 +221,7 @@ class Elastic(Property):
                 kspacing = incar.get("KSPACING")
                 kgamma = incar.get("KGAMMA", False)
                 ret = vasp.make_kspacing_kpoints(poscar_start, kspacing, kgamma)
-                pymgv == "old":
+                pymgv = "old"
                 try:
                     kp = Kpoints.from_string(ret)
                 except:
