@@ -2847,7 +2847,7 @@ def make_vasp_incar_ele_temp(jdata, filename, ele_temp, nbands_esti=None):
     with open(filename) as fp:
         incar = fp.read()
     pymgv = "old"
-    try: 
+    try:
         incar = incar_upper(Incar.from_string(incar))
     except:
         incar = incar_upper(Incar.from_str(incar))
@@ -2941,7 +2941,7 @@ def make_fp_vasp_kp(iter_index, jdata):
         with open("INCAR") as fp:
             incar = fp.read()
         pymgv = "old"
-        try: 
+        try:
             standard_incar = incar_upper(Incar.from_string(incar))
         except:
             standard_incar = incar_upper(Incar.from_str(incar))
