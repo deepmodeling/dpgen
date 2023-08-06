@@ -413,7 +413,7 @@ def poscar_scale(poscar_in, poscar_out, scale):
     pymgv = "old"
     try:
         poscar = Poscar.from_string("".join(lines))
-    except:
+    except AttributeError:
         poscar = Poscar.from_str("".join(lines))
         pymgv = "new"
     if pymgv == "old":
