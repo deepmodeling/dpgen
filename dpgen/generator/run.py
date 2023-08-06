@@ -2862,7 +2862,7 @@ def make_vasp_incar_ele_temp(jdata, filename, ele_temp, nbands_esti=None):
     pymgv = "old"
     try:
         incar = incar_upper(Incar.from_string(incar))
-    except:
+    except AttributeError:
         incar = incar_upper(Incar.from_str(incar))
         pymgv = "new"
     if pymgv == "old":
@@ -2956,7 +2956,7 @@ def make_fp_vasp_kp(iter_index, jdata):
         pymgv = "old"
         try:
             standard_incar = incar_upper(Incar.from_string(incar))
-        except:
+        except AttributeError:
             standard_incar = incar_upper(Incar.from_str(incar))
             pymgv = "new"
         if pymgv == "old":
