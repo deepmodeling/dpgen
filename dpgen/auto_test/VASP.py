@@ -199,7 +199,7 @@ class VASP(Task):
             kp = Kpoints.from_string(ret)
         except:
             kp = Kpoints.from_str(ret)
-            pymgv = “new”
+            pymgv = "new"
         if pymgv == "old":
             kp = Kpoints.from_string(ret)
         kp.write_file(os.path.join(output_dir, "KPOINTS"))
