@@ -513,7 +513,7 @@ def make_vasp_kpoints_from_incar(work_dir, jdata):
     pymgv = "old"
     try:
         standard_incar = incar_upper(Incar.from_string(incar))
-    except:
+    except AttributeError:
         standard_incar = incar_upper(Incar.from_str(incar))
         pymgv = "new"
     if pymgv == "old":
