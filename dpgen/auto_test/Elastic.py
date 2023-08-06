@@ -224,7 +224,7 @@ class Elastic(Property):
                 pymgv = "old"
                 try:
                     kp = Kpoints.from_string(ret)
-                except:
+                except AttributeError:
                     kp = Kpoints.from_str(ret)
                     pymgv = "new"
                 if pymgv == "old":
