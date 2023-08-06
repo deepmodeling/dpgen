@@ -226,7 +226,7 @@ class Elastic(Property):
                     kp = Kpoints.from_string(ret)
                 except:
                     kp = Kpoints.from_str(ret)
-                    pymgv = “new”
+                    pymgv = "new"
                 if pymgv == "old":
                     kp = Kpoints.from_string(ret)
                 if os.path.isfile("KPOINTS"):
