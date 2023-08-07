@@ -516,8 +516,6 @@ def make_vasp_kpoints_from_incar(work_dir, jdata):
     except AttributeError:
         standard_incar = incar_upper(Incar.from_str(incar))
         pymgv = "new"
-    if pymgv == "old":
-        standard_incar = incar_upper(Incar.from_string(incar))
     if fp_aniso_kspacing is None:
         try:
             kspacing = standard_incar["KSPACING"]
