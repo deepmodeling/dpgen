@@ -227,8 +227,6 @@ class Elastic(Property):
                 except AttributeError:
                     kp = Kpoints.from_str(ret)
                     pymgv = "new"
-                if pymgv == "old":
-                    kp = Kpoints.from_string(ret)
                 if os.path.isfile("KPOINTS"):
                     os.remove("KPOINTS")
                 kp.write_file("KPOINTS")
