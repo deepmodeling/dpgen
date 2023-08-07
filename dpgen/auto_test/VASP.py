@@ -199,9 +199,7 @@ class VASP(Task):
             kp = Kpoints.from_string(ret)
         except AttributeError:
             kp = Kpoints.from_str(ret)
-            pymgv = "new"
-        if pymgv == "old":
-            kp = Kpoints.from_string(ret)
+            pymgv = "new"       
         kp.write_file(os.path.join(output_dir, "KPOINTS"))
 
     def compute(self, output_dir):
