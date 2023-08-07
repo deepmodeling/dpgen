@@ -2865,8 +2865,6 @@ def make_vasp_incar_ele_temp(jdata, filename, ele_temp, nbands_esti=None):
     except AttributeError:
         incar = incar_upper(Incar.from_str(incar))
         pymgv = "new"
-    if pymgv == "old":
-        incar = incar_upper(Incar.from_string(incar))
     incar["ISMEAR"] = -1
     incar["SIGMA"] = ele_temp * pc.Boltzmann / pc.electron_volt
     incar.write_file("INCAR")
@@ -2959,8 +2957,6 @@ def make_fp_vasp_kp(iter_index, jdata):
         except AttributeError:
             standard_incar = incar_upper(Incar.from_str(incar))
             pymgv = "new"
-        if pymgv == "old":
-            standard_incar = incar_upper(Incar.from_string(incar))
         if fp_aniso_kspacing is None:
             try:
                 kspacing = standard_incar["KSPACING"]
