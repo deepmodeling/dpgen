@@ -194,12 +194,10 @@ class VASP(Task):
             os.symlink("../INCAR", "INCAR")
         os.chdir(cwd)
         ret = vasp.make_kspacing_kpoints(self.path_to_poscar, kspacing, kgamma)
-        pymgv = "old"
         try:
             kp = Kpoints.from_string(ret)
         except AttributeError:
             kp = Kpoints.from_str(ret)
-            pymgv = "new"
         kp.write_file(os.path.join(output_dir, "KPOINTS"))
 
     def compute(self, output_dir):
