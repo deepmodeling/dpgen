@@ -510,12 +510,10 @@ def make_vasp_kpoints_from_incar(work_dir, jdata):
     assert os.path.exists("INCAR")
     with open("INCAR") as fp:
         incar = fp.read()
-    pymgv = "old"
     try:
         standard_incar = incar_upper(Incar.from_string(incar))
     except AttributeError:
         standard_incar = incar_upper(Incar.from_str(incar))
-        pymgv = "new"
     if fp_aniso_kspacing is None:
         try:
             kspacing = standard_incar["KSPACING"]
@@ -538,9 +536,9 @@ def make_vasp_kpoints_from_incar(work_dir, jdata):
     assert os.path.exists("POSCAR")
     # make kpoints
     ret = make_kspacing_kpoints("POSCAR", kspacing, gamma)
-    if pymgv == "new":
-        kp = Kpoints.from_str(ret)
-    elif pymgv == "old":
+    try:
         kp = Kpoints.from_string(ret)
+    except AttributeError:
+        kp = Kpoints.from_str(ret)
     kp.write_file("KPOINTS")
     os.chdir(cwd)
