@@ -2859,22 +2859,20 @@ def make_pwmat_input(jdata, filename):
 def make_vasp_incar_ele_temp(jdata, filename, ele_temp, nbands_esti=None):
     with open(filename) as fp:
         incar = fp.read()
-    pymgv = "old"
     try:
         incar = incar_upper(Incar.from_string(incar))
     except AttributeError:
         incar = incar_upper(Incar.from_str(incar))
-        pymgv = "new"
     incar["ISMEAR"] = -1
     incar["SIGMA"] = ele_temp * pc.Boltzmann / pc.electron_volt
     incar.write_file("INCAR")
     if nbands_esti is not None:
         nbands = nbands_esti.predict(".")
         with open(filename) as fp:
-            if pymgv == "new":
-                incar = Incar.from_str(fp.read())
-            elif pymgv == "old":
+            try:
                 incar = Incar.from_string(fp.read())
+            except AttributeError:
+                incar = Incar.from_str(fp.read())
         incar["NBANDS"] = nbands
         incar.write_file("INCAR")
 
@@ -2951,12 +2949,10 @@ def make_fp_vasp_kp(iter_index, jdata):
         assert os.path.exists("INCAR")
         with open("INCAR") as fp:
             incar = fp.read()
-        pymgv = "old"
         try:
             standard_incar = incar_upper(Incar.from_string(incar))
         except AttributeError:
             standard_incar = incar_upper(Incar.from_str(incar))
-            pymgv = "new"
         if fp_aniso_kspacing is None:
             try:
                 kspacing = standard_incar["KSPACING"]
@@ -2979,10 +2975,10 @@ def make_fp_vasp_kp(iter_index, jdata):
         assert os.path.exists("POSCAR")
         # make kpoints
         ret = make_kspacing_kpoints("POSCAR", kspacing, gamma)
-        if pymgv == "new":
-            kp = Kpoints.from_str(ret)
-        elif pymgv == "old":
+        try:
             kp = Kpoints.from_string(ret)
+        except AttributeError:
+            kp = Kpoints.from_str(ret)
         kp.write_file("KPOINTS")
         os.chdir(cwd)
 
