@@ -1090,8 +1090,8 @@ def coll_vasp_md(jdata):
         arg_cvt = " "
         if len(valid_outcars) == 0:
             raise RuntimeError(
-                "MD dir: {}: find no valid outcar in sys {}, "
-                "check if your vasp md simulation is correctly done".format(path_md, ii)
+                f"MD dir: {path_md}: find no valid outcar in sys {ii}, "
+                "check if your vasp md simulation is correctly done"
             )
 
         flag = True
@@ -1228,10 +1228,8 @@ def coll_abacus_md(jdata):
         arg_cvt = " "
         if len(valid_outcars) == 0:
             raise RuntimeError(
-                "MD dir: {}: find no valid OUT.ABACUS in sys {}, "
-                "check if your abacus md simulation is correctly done.".format(
-                    path_md, ii
-                )
+                f"MD dir: {path_md}: find no valid OUT.ABACUS in sys {ii}, "
+                "check if your abacus md simulation is correctly done."
             )
 
         flag = True

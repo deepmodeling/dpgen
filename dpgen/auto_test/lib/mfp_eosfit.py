@@ -1669,9 +1669,7 @@ def lsqfit_eos(
         fve.flush()
         p_tmp = repro_press[i]
         fvp.write(
-            "{:20f}\t{:20f}\t{:20f}\t{:20f}\n".format(
-                vol[i], p_tmp, p_tmp / 100, p_tmp * 10
-            )
+            f"{vol[i]:20f}\t{p_tmp:20f}\t{p_tmp / 100:20f}\t{p_tmp * 10:20f}\n"
         )
         fvp.flush()
     fve.close()
