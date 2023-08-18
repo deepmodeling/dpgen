@@ -576,7 +576,7 @@ def make_abacus_relax(jdata, mdata):
     )  # a dictionary in which all of the values are strings
     if "kspacing" not in standard_incar:
         if "gamma_only" in standard_incar:
-            if type(standard_incar["gamma_only"]) == str:
+            if isinstance(standard_incar["gamma_only"], str):
                 standard_incar["gamma_only"] = int(eval(standard_incar["gamma_only"]))
             if standard_incar["gamma_only"] == 0:
                 if "relax_kpt" not in jdata:
@@ -917,7 +917,7 @@ def make_abacus_md(jdata, mdata):
     #        "Cannot find any k-points information."
     if "kspacing" not in standard_incar:
         if "gamma_only" in standard_incar:
-            if type(standard_incar["gamma_only"]) == str:
+            if isinstance(standard_incar["gamma_only"], str):
                 standard_incar["gamma_only"] = int(eval(standard_incar["gamma_only"]))
             if standard_incar["gamma_only"] == 0:
                 if "md_kpt" not in jdata:

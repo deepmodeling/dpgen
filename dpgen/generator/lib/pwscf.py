@@ -8,12 +8,12 @@ import numpy as np
 def _convert_dict(idict):
     lines = []
     for key in idict.keys():
-        if type(idict[key]) == bool:
+        if isinstance(idict[key], bool):
             if idict[key]:
                 ws = ".TRUE."
             else:
                 ws = ".FALSE."
-        elif type(idict[key]) == str:
+        elif isinstance(idict[key], str):
             ws = "'" + idict[key] + "'"
         else:
             ws = str(idict[key])

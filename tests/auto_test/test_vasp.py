@@ -147,10 +147,10 @@ class TestVASP(unittest.TestCase):
             for key in dict1:
                 if key == "stress":
                     self.assertTrue((np.array(dict1[key]["data"]) == dict2[key]).all())
-                elif type(dict1[key]) is dict:
+                elif isinstance(dict1[key], dict):
                     compare_dict(dict1[key], dict2[key])
                 else:
-                    if type(dict1[key]) is np.ndarray:
+                    if isinstance(dict1[key], np.ndarray):
                         self.assertTrue((dict1[key] == dict2[key]).all())
                     else:
                         self.assertTrue(dict1[key] == dict2[key])

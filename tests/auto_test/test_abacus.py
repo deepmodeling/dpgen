@@ -237,10 +237,10 @@ class TestABACUS(unittest.TestCase):
         def compare_dict(dict1, dict2):
             self.assertEqual(dict1.keys(), dict2.keys())
             for key in dict1:
-                if type(dict1[key]) is dict:
+                if isinstance(dict1[key], dict):
                     compare_dict(dict1[key], dict2[key])
                 else:
-                    if type(dict1[key]) is np.ndarray:
+                    if isinstance(dict1[key], np.ndarray):
                         np.testing.assert_almost_equal(
                             dict1[key], dict2[key], decimal=5
                         )

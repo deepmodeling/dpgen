@@ -210,9 +210,9 @@ def poscar_shuffle(poscar_in, poscar_out):
 def expand_idx(in_list):
     ret = []
     for ii in in_list:
-        if type(ii) == int:
+        if isinstance(ii, int):
             ret.append(ii)
-        elif type(ii) == str:
+        elif isinstance(ii, str):
             step_str = ii.split(":")
             if len(step_str) > 1:
                 step = int(step_str[1])
@@ -566,7 +566,7 @@ def make_train(iter_index, jdata, mdata):
                     mdata["deepmd_version"],
                 )
             assert (
-                type(model_devi_activation_func) is list
+                isinstance(model_devi_activation_func, list)
                 and len(model_devi_activation_func) == numb_models
             )
             if (
@@ -601,7 +601,7 @@ def make_train(iter_index, jdata, mdata):
             old_model_files = glob.glob(os.path.join(prev_task_path, "model.ckpt*"))
             _link_old_models(work_path, old_model_files, ii)
     else:
-        if type(training_iter0_model) == str:
+        if isinstance(training_iter0_model, str):
             training_iter0_model = [training_iter0_model]
         iter0_models = []
         for ii in training_iter0_model:
@@ -640,7 +640,7 @@ def _link_old_models(work_path, old_model_files, ii):
 
 
 def detect_batch_size(batch_size, system=None):
-    if type(batch_size) == int:
+    if isinstance(batch_size, int):
         return batch_size
     elif batch_size == "auto":
         # automaticcaly set batch size, batch_size = 32 // atom_numb (>=1, <=fram_numb)
@@ -1439,7 +1439,7 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
         for cc in ss:
             for tt_ in temps:
                 if use_ele_temp:
-                    if type(tt_) == list:
+                    if isinstance(tt_, list):
                         tt = tt_[0]
                         if use_ele_temp == 1:
                             te_f = tt_[1]
@@ -1448,7 +1448,7 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
                             te_f = None
                             te_a = tt_[1]
                     else:
-                        assert type(tt_) == float or type(tt_) == int
+                        assert isinstance(tt_, (float, int))
                         tt = float(tt_)
                         if use_ele_temp == 1:
                             te_f = tt
@@ -3258,7 +3258,7 @@ def make_fp_abacus_scf(iter_index, jdata):
         if fp_params["basis_type"] == "lcao":
             assert (
                 "fp_orb_files" in jdata
-                and type(jdata["fp_orb_files"]) == list
+                and isinstance(jdata["fp_orb_files"], list)
                 and len(jdata["fp_orb_files"]) == len(fp_pp_files)
             )
             fp_orb_files = jdata["fp_orb_files"]
@@ -3266,7 +3266,7 @@ def make_fp_abacus_scf(iter_index, jdata):
     dpks_scf = fp_params.get("deepks_scf", 0)
     if dpks_out_labels or dpks_scf:
         assert (
-            "fp_dpks_descriptor" in jdata and type(jdata["fp_dpks_descriptor"]) == str
+            "fp_dpks_descriptor" in jdata and isinstance(jdata["fp_dpks_descriptor"], str)
         )
         fp_dpks_descriptor = jdata["fp_dpks_descriptor"]
 
