@@ -101,7 +101,9 @@ def make_calypso_input(
     ret += "NumberOfParallel = 4\n"
     assert split is not None
     ret += "Split = %s\n" % (split)
-    assert pstress is not None and (isinstance(pstress, int) or isinstance(pstress, float))
+    assert pstress is not None and (
+        isinstance(pstress, int) or isinstance(pstress, float)
+    )
     ret += "PSTRESS = %f\n" % (pstress)
     assert fmax is not None or isinstance(fmax, float)
     ret += "fmax = %f\n" % (fmax)

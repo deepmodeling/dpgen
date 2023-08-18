@@ -3265,8 +3265,8 @@ def make_fp_abacus_scf(iter_index, jdata):
     dpks_out_labels = fp_params.get("deepks_out_labels", 0)
     dpks_scf = fp_params.get("deepks_scf", 0)
     if dpks_out_labels or dpks_scf:
-        assert (
-            "fp_dpks_descriptor" in jdata and isinstance(jdata["fp_dpks_descriptor"], str)
+        assert "fp_dpks_descriptor" in jdata and isinstance(
+            jdata["fp_dpks_descriptor"], str
         )
         fp_dpks_descriptor = jdata["fp_dpks_descriptor"]
 

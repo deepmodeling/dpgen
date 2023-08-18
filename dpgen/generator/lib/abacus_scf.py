@@ -59,8 +59,8 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
             ret += "scf_thr %e\n" % fp_params["scf_thr"]
         elif key == "scf_nmax":
             fp_params["scf_nmax"] = int(fp_params["scf_nmax"])
-            assert (
-                fp_params["scf_nmax"] >= 0 and isinstance(fp_params["scf_nmax"], int)
+            assert fp_params["scf_nmax"] >= 0 and isinstance(
+                fp_params["scf_nmax"], int
             ), "'scf_nmax' should be a positive integer."
             ret += "scf_nmax %d\n" % fp_params["scf_nmax"]
         elif key == "basis_type":
@@ -103,8 +103,8 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
             ret += "symmetry %d\n" % fp_params["symmetry"]
         elif key == "nbands":
             fp_params["nbands"] = int(fp_params["nbands"])
-            assert (
-                fp_params["nbands"] > 0 and isinstance(fp_params["nbands"], int)
+            assert fp_params["nbands"] > 0 and isinstance(
+                fp_params["nbands"], int
             ), "'nbands' should be a positive integer."
             ret += "nbands %d\n" % fp_params["nbands"]
         elif key == "nspin":
