@@ -113,7 +113,7 @@ def _update_input_dict(input_dict_, user_dict):
 def write_input_dict(input_dict):
     lines = []
     for key in input_dict:
-        if type(input_dict[key]) == bool:
+        if isinstance(input_dict[key], bool):
             if input_dict[key]:
                 rs = "T"
             else:

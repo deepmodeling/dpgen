@@ -59,7 +59,7 @@ def _update_incar_dict(incar_dict_, user_dict):
 def write_incar_dict(incar_dict):
     lines = []
     for key in incar_dict:
-        if type(incar_dict[key]) == bool:
+        if isinstance(incar_dict[key], bool):
             if incar_dict[key]:
                 rs = "T"
             else:

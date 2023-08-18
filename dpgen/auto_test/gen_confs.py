@@ -50,7 +50,7 @@ def gen_ele_std(ele_name, ctype):
 
 
 def gen_element(ele_name, key):
-    assert type(ele_name) == str
+    assert isinstance(ele_name, str)
     mpr = MPRester(key)
     data = mpr.query(
         {"elements": [ele_name], "nelements": 1},
@@ -87,7 +87,7 @@ def gen_element(ele_name, key):
 
 
 def gen_element_std(ele_name):
-    assert type(ele_name) == str
+    assert isinstance(ele_name, str)
     for ii in global_std_crystal.keys():
         ss = gen_ele_std(ele_name, ii)
 

@@ -59,8 +59,8 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
             ret += "scf_thr %e\n" % fp_params["scf_thr"]
         elif key == "scf_nmax":
             fp_params["scf_nmax"] = int(fp_params["scf_nmax"])
-            assert (
-                fp_params["scf_nmax"] >= 0 and type(fp_params["scf_nmax"]) == int
+            assert fp_params["scf_nmax"] >= 0 and isinstance(
+                fp_params["scf_nmax"], int
             ), "'scf_nmax' should be a positive integer."
             ret += "scf_nmax %d\n" % fp_params["scf_nmax"]
         elif key == "basis_type":
@@ -73,7 +73,7 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
         elif key == "dft_functional":
             ret += "dft_functional %s\n" % fp_params["dft_functional"]
         elif key == "gamma_only":
-            if type(fp_params["gamma_only"]) == str:
+            if isinstance(fp_params["gamma_only"], str):
                 fp_params["gamma_only"] = int(eval(fp_params["gamma_only"]))
             assert (
                 fp_params["gamma_only"] == 0 or fp_params["gamma_only"] == 1
@@ -95,7 +95,7 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
             ), "'mixing_beta' should between 0 and 1."
             ret += "mixing_beta %f\n" % fp_params["mixing_beta"]
         elif key == "symmetry":
-            if type(fp_params["symmetry"]) == str:
+            if isinstance(fp_params["symmetry"], str):
                 fp_params["symmetry"] = int(eval(fp_params["symmetry"]))
             assert (
                 fp_params["symmetry"] == 0 or fp_params["symmetry"] == 1
@@ -103,8 +103,8 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
             ret += "symmetry %d\n" % fp_params["symmetry"]
         elif key == "nbands":
             fp_params["nbands"] = int(fp_params["nbands"])
-            assert (
-                fp_params["nbands"] > 0 and type(fp_params["nbands"]) == int
+            assert fp_params["nbands"] > 0 and isinstance(
+                fp_params["nbands"], int
             ), "'nbands' should be a positive integer."
             ret += "nbands %d\n" % fp_params["nbands"]
         elif key == "nspin":
@@ -143,14 +143,14 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
             ), "'smearing_sigma' should be non-negative."
             ret += "smearing_sigma %f\n" % fp_params["smearing_sigma"]
         elif key == "cal_force":
-            if type(fp_params["cal_force"]) == str:
+            if isinstance(fp_params["cal_force"], str):
                 fp_params["cal_force"] = int(eval(fp_params["cal_force"]))
             assert (
                 fp_params["cal_force"] == 0 or fp_params["cal_force"] == 1
             ), "'cal_force' should be either 0 or 1."
             ret += "cal_force %d\n" % fp_params["cal_force"]
         elif key == "cal_stress":
-            if type(fp_params["cal_stress"]) == str:
+            if isinstance(fp_params["cal_stress"], str):
                 fp_params["cal_stress"] = int(eval(fp_params["cal_stress"]))
             assert (
                 fp_params["cal_stress"] == 0 or fp_params["cal_stress"] == 1
@@ -158,7 +158,7 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
             ret += "cal_stress %d\n" % fp_params["cal_stress"]
         # paras for deepks
         elif key == "deepks_out_labels":
-            if type(fp_params["deepks_out_labels"]) == str:
+            if isinstance(fp_params["deepks_out_labels"], str):
                 fp_params["deepks_out_labels"] = int(
                     eval(fp_params["deepks_out_labels"])
                 )
@@ -176,7 +176,7 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
             ), "'deepks_descriptor_lmax' should be  a positive integer."
             ret += "deepks_descriptor_lmax %d\n" % fp_params["deepks_descriptor_lmax"]
         elif key == "deepks_scf":
-            if type(fp_params["deepks_scf"]) == str:
+            if isinstance(fp_params["deepks_scf"], str):
                 fp_params["deepks_scf"] = int(eval(fp_params["deepks_scf"]))
             assert (
                 fp_params["deepks_scf"] == 0 or fp_params["deepks_scf"] == 1
@@ -447,7 +447,7 @@ def make_supercell_abacus(from_struct, super_cell):
 
 def make_kspacing_kpoints_stru(stru, kspacing):
     # adapted from dpgen.autotest.lib.vasp.make_kspacing_kpoints
-    if type(kspacing) is not list:
+    if not isinstance(kspacing, list):
         kspacing = [kspacing, kspacing, kspacing]
     box = stru["cells"]
     rbox = vasp.reciprocal_box(box)

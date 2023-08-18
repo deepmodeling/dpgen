@@ -105,7 +105,7 @@ def init_model(iter_index, jdata, mdata):
         return
     iter0_models = []
     training_iter0_model = jdata.get("training_iter0_model_path", [])
-    if type(training_iter0_model) == str:
+    if isinstance(training_iter0_model, str):
         training_iter0_model = [training_iter0_model]
     for ii in training_iter0_model:
         model_is = glob.glob(ii)

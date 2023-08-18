@@ -112,7 +112,7 @@ def reciprocal_box(box):
 
 
 def make_kspacing_kpoints(poscar, kspacing, kgamma):
-    if type(kspacing) is not list:
+    if not isinstance(kspacing, list):
         kspacing = [kspacing, kspacing, kspacing]
     with open(poscar) as fp:
         lines = fp.read().split("\n")

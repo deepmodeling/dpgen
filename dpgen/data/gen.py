@@ -576,7 +576,7 @@ def make_abacus_relax(jdata, mdata):
     )  # a dictionary in which all of the values are strings
     if "kspacing" not in standard_incar:
         if "gamma_only" in standard_incar:
-            if type(standard_incar["gamma_only"]) == str:
+            if isinstance(standard_incar["gamma_only"], str):
                 standard_incar["gamma_only"] = int(eval(standard_incar["gamma_only"]))
             if standard_incar["gamma_only"] == 0:
                 if "relax_kpt" not in jdata:
@@ -917,7 +917,7 @@ def make_abacus_md(jdata, mdata):
     #        "Cannot find any k-points information."
     if "kspacing" not in standard_incar:
         if "gamma_only" in standard_incar:
-            if type(standard_incar["gamma_only"]) == str:
+            if isinstance(standard_incar["gamma_only"], str):
                 standard_incar["gamma_only"] = int(eval(standard_incar["gamma_only"]))
             if standard_incar["gamma_only"] == 0:
                 if "md_kpt" not in jdata:
@@ -1090,8 +1090,8 @@ def coll_vasp_md(jdata):
         arg_cvt = " "
         if len(valid_outcars) == 0:
             raise RuntimeError(
-                "MD dir: {}: find no valid outcar in sys {}, "
-                "check if your vasp md simulation is correctly done".format(path_md, ii)
+                f"MD dir: {path_md}: find no valid outcar in sys {ii}, "
+                "check if your vasp md simulation is correctly done"
             )
 
         flag = True
@@ -1228,10 +1228,8 @@ def coll_abacus_md(jdata):
         arg_cvt = " "
         if len(valid_outcars) == 0:
             raise RuntimeError(
-                "MD dir: {}: find no valid OUT.ABACUS in sys {}, "
-                "check if your abacus md simulation is correctly done.".format(
-                    path_md, ii
-                )
+                f"MD dir: {path_md}: find no valid OUT.ABACUS in sys {ii}, "
+                "check if your abacus md simulation is correctly done."
             )
 
         flag = True

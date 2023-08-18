@@ -39,7 +39,7 @@ def make_calypso_input(
     assert (
         numberofformula is not None
         and len(numberofformula) == 2
-        and type(numberofformula) is list
+        and isinstance(numberofformula, list)
     )
     ret += "NumberOfFormula = %s\n" % (" ".join(list(map(str, numberofformula))))
     ret += "# The volume per formula unit. Unit is in angstrom^3.\n"
@@ -66,9 +66,9 @@ def make_calypso_input(
     ret += (
         "# The population size. Normally, it has a larger number for larger systems.\n"
     )
-    assert popsize is not None and type(popsize) is int
+    assert popsize is not None and isinstance(popsize, int)
     ret += "PopSize = %d\n" % (popsize)
-    assert maxstep is not None and type(maxstep) is int
+    assert maxstep is not None and isinstance(maxstep, int)
     ret += "# The Max step for iteration\n"
     ret += "MaxStep = %d\n" % (maxstep)
     ret += "#It determines which method should be adopted in generation the random structure. \n"
@@ -79,7 +79,7 @@ def make_calypso_input(
     ret += "# 0 combination of all method\n"
     ret += "# If GenType=3 or 4, it determined the small unit to grow the whole structure\n"
     ret += "# It determines which local optimization method should be interfaced in the simulation.\n"
-    assert icode is not None and type(icode) is int
+    assert icode is not None and isinstance(icode, int)
     ret += "ICode= %d\n" % (icode)
     ret += "# ICode= 1 interfaced with VASP\n"
     ret += "# ICode= 2 interfaced with SIESTA\n"
@@ -101,9 +101,11 @@ def make_calypso_input(
     ret += "NumberOfParallel = 4\n"
     assert split is not None
     ret += "Split = %s\n" % (split)
-    assert pstress is not None and (type(pstress) is int or type(pstress) is float)
+    assert pstress is not None and (
+        isinstance(pstress, int) or isinstance(pstress, float)
+    )
     ret += "PSTRESS = %f\n" % (pstress)
-    assert fmax is not None or type(fmax) is float
+    assert fmax is not None or isinstance(fmax, float)
     ret += "fmax = %f\n" % (fmax)
     ret += "################################ End of The Basic Parameters of CALYPSO #######################\n"
     if vsc == "T":

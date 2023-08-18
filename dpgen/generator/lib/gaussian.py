@@ -115,7 +115,7 @@ def make_gaussian_input(sys_data, fp_params):
     else:
         keywords = fp_params["keywords"]
 
-    if type(keywords) == str:
+    if isinstance(keywords, str):
         keywords = [keywords]
     else:
         keywords = keywords.copy()
@@ -128,7 +128,7 @@ def make_gaussian_input(sys_data, fp_params):
 
     use_fragment_guesses = False
     multiplicity = fp_params.get("multiplicity", "auto")
-    if type(multiplicity) == int:
+    if isinstance(multiplicity, int):
         multiplicity = fp_params["multiplicity"]
         mult_auto = False
     elif multiplicity == "auto":
