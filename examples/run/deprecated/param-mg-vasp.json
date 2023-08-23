@@ -1,153 +1,474 @@
 {
-    "type_map":		["Mg"],
-    "mass_map":		[24],
-
-    "init_data_prefix":	"/home/linfengz/SCR/wanghan/data/mgop/",
-    "init_data_sys":	["mg.fcc.01x01x01/02.md/sys-0004/deepmd",
-			 "mg.hcp.01x01x01/02.md/sys-0002/deepmd",
-			 "mg.diamond.01x01x01/02.md/sys-0002/deepmd"
-			],
-    "init_batch_size":	[8, 16, 16],
-    "sys_configs":	[
-	["/home/linfengz/SCR/wanghan/data/mgop/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale*/00009?/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale*/0000[7-8]?/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale*/0000[5-6]?/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale*/0000[0-4]?/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/mg.hcp.02x02x02/01.scale_pert/sys-0016/scale*/00009?/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/mg.hcp.02x02x02/01.scale_pert/sys-0016/scale*/0000[7-8]?/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/mg.hcp.02x02x02/01.scale_pert/sys-0016/scale*/0000[5-6]?/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/mg.hcp.02x02x02/01.scale_pert/sys-0016/scale*/0000[0-4]?/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/surf.mg.fcc.01x01x01/01.scale_pert/surf-100/sys-0012/scale*/elong*/000003/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/surf.mg.fcc.01x01x01/01.scale_pert/surf-100/sys-0012/scale*/elong*/000001/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/surf.mg.fcc.01x01x01/01.scale_pert/surf-100/sys-0012/scale*/elong*/000002/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/surf.mg.fcc.01x01x01/01.scale_pert/surf-110/sys-0016/scale*/elong*/000003/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/surf.mg.fcc.01x01x01/01.scale_pert/surf-110/sys-0016/scale*/elong*/000001/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/surf.mg.fcc.01x01x01/01.scale_pert/surf-110/sys-0016/scale*/elong*/000002/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/surf.mg.fcc.01x01x01/01.scale_pert/surf-111/sys-0012/scale*/elong*/000003/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/surf.mg.fcc.01x01x01/01.scale_pert/surf-111/sys-0012/scale*/elong*/000001/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/surf.mg.fcc.01x01x01/01.scale_pert/surf-111/sys-0012/scale*/elong*/000002/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/surf.mg.hcp.01x01x01/01.scale_pert/surf-001/sys-0012/scale*/elong*/000003/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/surf.mg.hcp.01x01x01/01.scale_pert/surf-001/sys-0012/scale*/elong*/000001/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/surf.mg.hcp.01x01x01/01.scale_pert/surf-001/sys-0012/scale*/elong*/000002/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/surf.mg.hcp.01x01x01/01.scale_pert/surf-100/sys-0012/scale*/elong*/000003/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/surf.mg.hcp.01x01x01/01.scale_pert/surf-100/sys-0012/scale*/elong*/000001/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/surf.mg.hcp.01x01x01/01.scale_pert/surf-100/sys-0012/scale*/elong*/000002/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/surf.mg.hcp.01x01x01/01.scale_pert/surf-110/sys-0016/scale*/elong*/000003/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/surf.mg.hcp.01x01x01/01.scale_pert/surf-110/sys-0016/scale*/elong*/000001/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/surf.mg.hcp.01x01x01/01.scale_pert/surf-110/sys-0016/scale*/elong*/000002/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/mg.diamond.02x02x02/01.scale_pert/sys-0016/scale*/00009?/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/mg.diamond.02x02x02/01.scale_pert/sys-0016/scale*/0000[7-8]?/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/mg.diamond.02x02x02/01.scale_pert/sys-0016/scale*/0000[5-6]?/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/mg.diamond.02x02x02/01.scale_pert/sys-0016/scale*/0000[0-4]?/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/mg.sc.02x02x02/01.scale_pert/sys-0008/scale*/00009?/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/mg.sc.02x02x02/01.scale_pert/sys-0008/scale*/0000[7-8]?/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/mg.sc.02x02x02/01.scale_pert/sys-0008/scale*/0000[5-6]?/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/mgop/mg.sc.02x02x02/01.scale_pert/sys-0008/scale*/0000[0-4]?/POSCAR"]
+  "type_map": [
+    "Mg"
+  ],
+  "mass_map": [
+    24
+  ],
+  "init_data_prefix": "/home/linfengz/SCR/wanghan/data/mgop/",
+  "init_data_sys": [
+    "mg.fcc.01x01x01/02.md/sys-0004/deepmd",
+    "mg.hcp.01x01x01/02.md/sys-0002/deepmd",
+    "mg.diamond.01x01x01/02.md/sys-0002/deepmd"
+  ],
+  "init_batch_size": [
+    8,
+    16,
+    16
+  ],
+  "sys_configs": [
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale*/00009?/POSCAR"
     ],
-    "_comment":		"0  1  2  3",
-    "_comment":		"4  5  6  7",
-    "sys_batch_size":	[1, 1, 1, 1,
-			 2, 2, 2, 2,
-			 3, 3, 3, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2,
-			 2, 2, 2, 2,
-			 4, 4, 4, 4
-			],
-
-    "_comment":		" 00.train ",
-    "numb_models":	4,
-    "default_training_param" : {
-	"_comment": " model parameters",
-	"use_smooth":		true,
-	"sel_a":		[90],
-	"rcut_smth":		2.00,
-	"rcut":			6.00,
-	"filter_neuron":	[25, 50, 100],
-	"filter_resnet_dt":	false,
-	"n_axis_neuron":	12,
-	"n_neuron":		[240, 240, 240],
-	"resnet_dt":		true,
-	"coord_norm":		true,
-	"type_fitting_net":	false,
-
-	"_comment": " traing controls",
-	"systems":		[],
-	"set_prefix":		"set",
-	"stop_batch":		400000,
-	"batch_size":		1,
-	"start_lr":		0.002,
-	"decay_steps":		2000,
-	"decay_rate":		0.95,
-	"seed":			0,
-
-	"start_pref_e":		0.02,
-	"limit_pref_e":		2,
-	"start_pref_f":		1000,
-	"limit_pref_f":		1,
-	"start_pref_v":		0.0,
-	"limit_pref_v":		0.0,
-
-	"_comment": " display and restart",
-	"_comment": " frequencies counted in batch",
-	"disp_file":		"lcurve.out",
-	"disp_freq":		2000,
-	"numb_test":		10,
-	"save_freq":		20000,
-	"save_ckpt":		"model.ckpt",
-	"load_ckpt":		"model.ckpt",
-	"disp_training":	true,
-	"time_training":	true,
-	"profiling":		false,
-	"profiling_file":	"timeline.json",
-
-	"_comment":		"that's all"
-    },
-
-    "_comment":		" 01.model_devi ",
-    "_comment": "model_devi_skip: the first x of the recorded frames",
-    "model_devi_dt":		0.002,
-    "model_devi_skip":		0,
-    "model_devi_f_trust_lo":	0.050,
-    "model_devi_f_trust_hi":	0.150,
-    "model_devi_clean_traj":	true,
-    "model_devi_jobs":	[
-	{"sys_idx": [0,4,26,30], "temps": [  50], "press": [1.0], "trj_freq": 10, "nsteps": 1000, "ensemble": "nvt", "_idx": "00"},
-	{"sys_idx": [1,5,27,31], "temps": [  50], "press": [1.0], "trj_freq": 10, "nsteps": 3000, "ensemble": "nvt", "_idx": "01"},
-	{"sys_idx": [2,6,28,32], "temps": [  50], "press": [1.0], "trj_freq": 10, "nsteps": 3000, "ensemble": "nvt", "_idx": "02"},
-	{"sys_idx": [3,7,29,33], "temps": [  50], "press": [1.0], "trj_freq": 10, "nsteps": 3000, "ensemble": "nvt", "_idx": "03"},
-	{"sys_idx": [0,4,26,30], "temps": [ 100], "press": [1.0], "trj_freq": 10, "nsteps": 1000, "ensemble": "nvt", "_idx": "04"},
-	{"sys_idx": [1,5,27,31], "temps": [ 100], "press": [1.0], "trj_freq": 10, "nsteps": 3000, "ensemble": "nvt", "_idx": "05"},
-	{"sys_idx": [2,6,28,32], "temps": [ 100], "press": [1.0], "trj_freq": 10, "nsteps": 3000, "ensemble": "nvt", "_idx": "06"},
-	{"sys_idx": [3,7,29,33], "temps": [ 100], "press": [1.0], "trj_freq": 10, "nsteps": 3000, "ensemble": "nvt", "_idx": "07"},
-	{"sys_idx": [0,4,26,30], "temps": [ 300], "press": [1.0], "trj_freq": 10, "nsteps": 1000, "ensemble": "nvt", "_idx": "08"},
-	{"sys_idx": [1,5,27,31], "temps": [ 300], "press": [1.0], "trj_freq": 10, "nsteps": 3000, "ensemble": "nvt", "_idx": "09"},
-	{"sys_idx": [2,6,28,32], "temps": [ 300], "press": [1.0], "trj_freq": 10, "nsteps": 3000, "ensemble": "nvt", "_idx": "10"},
-	{"sys_idx": [3,7,29,33], "temps": [ 300], "press": [1.0], "trj_freq": 10, "nsteps": 3000, "ensemble": "nvt", "_idx": "11"}
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale*/0000[7-8]?/POSCAR"
     ],
-
-    "_comment":		" 02.fp ",
-    "fp_style":		"vasp",
-    "shuffle_poscar":	false,
-    "fp_task_max":	100,
-    "fp_task_min":	10,
-    "fp_pp_path":	"/home/linfengz/SCR/wanghan/data/mgop/",
-    "fp_pp_files":	["POTCAR"],
-    "fp_params":	{
-	"_comment": "given in unit depending on the fp method",
-	"ecut":		600,
-	"ediff":	1e-6,
-	"kspacing":	0.16,
-	"_comment": "gauss, mp:N(methfessel-paxton:order by default order=1), fd(Fermi-Dirac)",
-	"smearing":	"mp",
-	"sigma":	0.25,
-	"_comment": "only for vasp, can be NONE, SCAN, TPSS, RTPSS, M06L or MBJ",
-	"metagga":	"NONE",
-	"npar":		1,
-	"kpar":		1,
-	"user_vasp_params": {
-	    "EDIFF" :	1e-5
-	},
-	"_comment":	" that's all "
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale*/0000[5-6]?/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale*/0000[0-4]?/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/mg.hcp.02x02x02/01.scale_pert/sys-0016/scale*/00009?/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/mg.hcp.02x02x02/01.scale_pert/sys-0016/scale*/0000[7-8]?/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/mg.hcp.02x02x02/01.scale_pert/sys-0016/scale*/0000[5-6]?/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/mg.hcp.02x02x02/01.scale_pert/sys-0016/scale*/0000[0-4]?/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/surf.mg.fcc.01x01x01/01.scale_pert/surf-100/sys-0012/scale*/elong*/000003/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/surf.mg.fcc.01x01x01/01.scale_pert/surf-100/sys-0012/scale*/elong*/000001/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/surf.mg.fcc.01x01x01/01.scale_pert/surf-100/sys-0012/scale*/elong*/000002/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/surf.mg.fcc.01x01x01/01.scale_pert/surf-110/sys-0016/scale*/elong*/000003/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/surf.mg.fcc.01x01x01/01.scale_pert/surf-110/sys-0016/scale*/elong*/000001/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/surf.mg.fcc.01x01x01/01.scale_pert/surf-110/sys-0016/scale*/elong*/000002/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/surf.mg.fcc.01x01x01/01.scale_pert/surf-111/sys-0012/scale*/elong*/000003/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/surf.mg.fcc.01x01x01/01.scale_pert/surf-111/sys-0012/scale*/elong*/000001/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/surf.mg.fcc.01x01x01/01.scale_pert/surf-111/sys-0012/scale*/elong*/000002/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/surf.mg.hcp.01x01x01/01.scale_pert/surf-001/sys-0012/scale*/elong*/000003/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/surf.mg.hcp.01x01x01/01.scale_pert/surf-001/sys-0012/scale*/elong*/000001/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/surf.mg.hcp.01x01x01/01.scale_pert/surf-001/sys-0012/scale*/elong*/000002/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/surf.mg.hcp.01x01x01/01.scale_pert/surf-100/sys-0012/scale*/elong*/000003/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/surf.mg.hcp.01x01x01/01.scale_pert/surf-100/sys-0012/scale*/elong*/000001/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/surf.mg.hcp.01x01x01/01.scale_pert/surf-100/sys-0012/scale*/elong*/000002/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/surf.mg.hcp.01x01x01/01.scale_pert/surf-110/sys-0016/scale*/elong*/000003/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/surf.mg.hcp.01x01x01/01.scale_pert/surf-110/sys-0016/scale*/elong*/000001/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/surf.mg.hcp.01x01x01/01.scale_pert/surf-110/sys-0016/scale*/elong*/000002/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/mg.diamond.02x02x02/01.scale_pert/sys-0016/scale*/00009?/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/mg.diamond.02x02x02/01.scale_pert/sys-0016/scale*/0000[7-8]?/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/mg.diamond.02x02x02/01.scale_pert/sys-0016/scale*/0000[5-6]?/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/mg.diamond.02x02x02/01.scale_pert/sys-0016/scale*/0000[0-4]?/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/mg.sc.02x02x02/01.scale_pert/sys-0008/scale*/00009?/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/mg.sc.02x02x02/01.scale_pert/sys-0008/scale*/0000[7-8]?/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/mg.sc.02x02x02/01.scale_pert/sys-0008/scale*/0000[5-6]?/POSCAR"
+    ],
+    [
+      "/home/linfengz/SCR/wanghan/data/mgop/mg.sc.02x02x02/01.scale_pert/sys-0008/scale*/0000[0-4]?/POSCAR"
+    ]
+  ],
+  "_comment1": "0  1  2  3",
+  "_comment2": "4  5  6  7",
+  "sys_batch_size": [
+    1,
+    1,
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    4,
+    4,
+    4,
+    4
+  ],
+  "_comment3": " 00.train ",
+  "numb_models": 4,
+  "default_training_param": {
+    "model": {
+      "descriptor": {
+        "seed": 0,
+        "type": "se_a",
+        "sel": [
+          90
+        ],
+        "rcut": 6.0,
+        "rcut_smth": 2.0,
+        "neuron": [
+          25,
+          50,
+          100
+        ],
+        "axis_neuron": 12,
+        "resnet_dt": false
+      },
+      "fitting_net": {
+        "seed": 0,
+        "neuron": [
+          240,
+          240,
+          240
+        ],
+        "resnet_dt": true
+      }
     },
-
-    "_comment":		" that's all "
+    "learning_rate": {
+      "type": "exp",
+      "decay_steps": 2000,
+      "start_lr": 0.002,
+      "stop_lr": 7.010533249765748e-08
+    },
+    "loss": {
+      "start_pref_e": 0.02,
+      "limit_pref_e": 2,
+      "start_pref_f": 1000,
+      "limit_pref_f": 1,
+      "start_pref_v": 0.0,
+      "limit_pref_v": 0.0
+    },
+    "training": {
+      "seed": 0,
+      "stop_batch": 400000,
+      "disp_file": "lcurve.out",
+      "disp_freq": 2000,
+      "save_freq": 20000,
+      "save_ckpt": "model.ckpt",
+      "disp_training": true,
+      "time_training": true,
+      "profiling": false,
+      "training_data": {
+        "systems": [],
+        "set_prefix": "set",
+        "batch_size": 1
+      }
+    }
+  },
+  "_comment9": " 01.model_devi ",
+  "_comment10": "model_devi_skip: the first x of the recorded frames",
+  "model_devi_dt": 0.002,
+  "model_devi_skip": 0,
+  "model_devi_f_trust_lo": 0.05,
+  "model_devi_f_trust_hi": 0.15,
+  "model_devi_clean_traj": true,
+  "model_devi_jobs": [
+    {
+      "sys_idx": [
+        0,
+        4,
+        26,
+        30
+      ],
+      "temps": [
+        50
+      ],
+      "press": [
+        1.0
+      ],
+      "trj_freq": 10,
+      "nsteps": 1000,
+      "ensemble": "nvt",
+      "_idx": "00"
+    },
+    {
+      "sys_idx": [
+        1,
+        5,
+        27,
+        31
+      ],
+      "temps": [
+        50
+      ],
+      "press": [
+        1.0
+      ],
+      "trj_freq": 10,
+      "nsteps": 3000,
+      "ensemble": "nvt",
+      "_idx": "01"
+    },
+    {
+      "sys_idx": [
+        2,
+        6,
+        28,
+        32
+      ],
+      "temps": [
+        50
+      ],
+      "press": [
+        1.0
+      ],
+      "trj_freq": 10,
+      "nsteps": 3000,
+      "ensemble": "nvt",
+      "_idx": "02"
+    },
+    {
+      "sys_idx": [
+        3,
+        7,
+        29,
+        33
+      ],
+      "temps": [
+        50
+      ],
+      "press": [
+        1.0
+      ],
+      "trj_freq": 10,
+      "nsteps": 3000,
+      "ensemble": "nvt",
+      "_idx": "03"
+    },
+    {
+      "sys_idx": [
+        0,
+        4,
+        26,
+        30
+      ],
+      "temps": [
+        100
+      ],
+      "press": [
+        1.0
+      ],
+      "trj_freq": 10,
+      "nsteps": 1000,
+      "ensemble": "nvt",
+      "_idx": "04"
+    },
+    {
+      "sys_idx": [
+        1,
+        5,
+        27,
+        31
+      ],
+      "temps": [
+        100
+      ],
+      "press": [
+        1.0
+      ],
+      "trj_freq": 10,
+      "nsteps": 3000,
+      "ensemble": "nvt",
+      "_idx": "05"
+    },
+    {
+      "sys_idx": [
+        2,
+        6,
+        28,
+        32
+      ],
+      "temps": [
+        100
+      ],
+      "press": [
+        1.0
+      ],
+      "trj_freq": 10,
+      "nsteps": 3000,
+      "ensemble": "nvt",
+      "_idx": "06"
+    },
+    {
+      "sys_idx": [
+        3,
+        7,
+        29,
+        33
+      ],
+      "temps": [
+        100
+      ],
+      "press": [
+        1.0
+      ],
+      "trj_freq": 10,
+      "nsteps": 3000,
+      "ensemble": "nvt",
+      "_idx": "07"
+    },
+    {
+      "sys_idx": [
+        0,
+        4,
+        26,
+        30
+      ],
+      "temps": [
+        300
+      ],
+      "press": [
+        1.0
+      ],
+      "trj_freq": 10,
+      "nsteps": 1000,
+      "ensemble": "nvt",
+      "_idx": "08"
+    },
+    {
+      "sys_idx": [
+        1,
+        5,
+        27,
+        31
+      ],
+      "temps": [
+        300
+      ],
+      "press": [
+        1.0
+      ],
+      "trj_freq": 10,
+      "nsteps": 3000,
+      "ensemble": "nvt",
+      "_idx": "09"
+    },
+    {
+      "sys_idx": [
+        2,
+        6,
+        28,
+        32
+      ],
+      "temps": [
+        300
+      ],
+      "press": [
+        1.0
+      ],
+      "trj_freq": 10,
+      "nsteps": 3000,
+      "ensemble": "nvt",
+      "_idx": "10"
+    },
+    {
+      "sys_idx": [
+        3,
+        7,
+        29,
+        33
+      ],
+      "temps": [
+        300
+      ],
+      "press": [
+        1.0
+      ],
+      "trj_freq": 10,
+      "nsteps": 3000,
+      "ensemble": "nvt",
+      "_idx": "11"
+    }
+  ],
+  "_comment11": " 02.fp ",
+  "fp_style": "vasp",
+  "shuffle_poscar": false,
+  "fp_task_max": 100,
+  "fp_task_min": 10,
+  "fp_pp_path": "/home/linfengz/SCR/wanghan/data/mgop/",
+  "fp_pp_files": [
+    "POTCAR"
+  ],
+  "fp_params": {
+    "_comment12": "given in unit depending on the fp method",
+    "ecut": 600,
+    "ediff": 1e-06,
+    "kspacing": 0.16,
+    "_comment13": "gauss, mp:N(methfessel-paxton:order by default order=1), fd(Fermi-Dirac)",
+    "smearing": "mp",
+    "sigma": 0.25,
+    "_comment14": "only for vasp, can be NONE, SCAN, TPSS, RTPSS, M06L or MBJ",
+    "metagga": "NONE",
+    "npar": 1,
+    "kpar": 1,
+    "user_vasp_params": {
+      "EDIFF": 1e-05
+    },
+    "_comment15": " that's all "
+  },
+  "_comment16": " that's all "
 }

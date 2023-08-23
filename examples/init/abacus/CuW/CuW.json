@@ -1,43 +1,52 @@
 {
-    "init_fp_style":    "ABACUS",
-    "stages":    [1, 2, 3, 4],
-    "cell_type": "fcc",
-    "latt": 3.76,
-    "super_cell": [
-        1,
-        1,
-        1
-    ],
-    "elements": [
-        "Cu", "W"
-    ],
-    "atom_masses": [63.55, 183.8],
-    "potcars": [
-        "Cu_ONCV_PBE-1.0.upf",
-	    "W_ONCV_PBE-1.0.upf"
-    ],
-    "orb_files":[
-        "Cu_gga_9au_60Ry_4s2p2d1f.orb",
-        "W_gga_10au_60Ry_4s2p2d2f.orb"
-    ],
-    "relax_incar": "INPUT",
-    "relax_kpt": "KPT",
-    "md_kpt": "KPT",
-    "md_incar": "INPUT.md",
-	"dpks_descriptor": "jle.orb",
-	"dpks_model": "model.ptg",
-    "scale": [
-        0.99
-    ],
-    "skip_relax": true,
-    "pert_numb": 2,
-    "md_nstep": 2,
-    "pert_box": 0.01,
-    "pert_atom": 0.01,
-    "coll_ndata": 12,
-    "type_map": [
-        "Cu",
-        "W"
-    ],
-    "_comment": "that's all"
+  "init_fp_style": "ABACUS",
+  "stages": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "cell_type": "fcc",
+  "latt": 3.76,
+  "super_cell": [
+    1,
+    1,
+    1
+  ],
+  "elements": [
+    "Cu",
+    "W"
+  ],
+  "atom_masses": [
+    63.55,
+    183.8
+  ],
+  "potcars": [
+    "Cu_ONCV_PBE-1.0.upf",
+    "W_ONCV_PBE-1.0.upf"
+  ],
+  "orb_files": [
+    "Cu_gga_9au_60Ry_4s2p2d1f.orb",
+    "W_gga_10au_60Ry_4s2p2d2f.orb"
+  ],
+  "relax_incar": "INPUT",
+  "relax_kpt": "KPT",
+  "md_kpt": "KPT",
+  "md_incar": "INPUT.md",
+  "dpks_descriptor": "jle.orb",
+  "dpks_model": "model.ptg",
+  "scale": [
+    0.99
+  ],
+  "skip_relax": true,
+  "pert_numb": 2,
+  "md_nstep": 2,
+  "pert_box": 0.01,
+  "pert_atom": 0.01,
+  "coll_ndata": 12,
+  "type_map": [
+    "Cu",
+    "W"
+  ],
+  "_comment1": "that's all"
 }

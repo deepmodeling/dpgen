@@ -1,54 +1,55 @@
 {
-    "_comment":		"training on localhost ",
-    "deepmd_path":	"/home/wanghan/local/deepmd/0.10.1/",
-    "train_machine":	{
-	"machine_type":	"local",
-	"hostname" :	"127.0.0.1",
-	"port" :	22,
-	"username":	"wanghan",
-	"work_path" :	"/home/wanghan/tmp/subs/",
-	"_comment" :	"that's all"
-    },	
-    "train_resources":	{
-	"envs":		{
-	    "PYTHONPATH" : "/home/wanghan/local/tensorflow/1.8.py/lib/python3.6/site-packages/"
-	},
-	"_comment":	"that's all"
-    },    
-
-
-    "_comment":		"model_devi on localhost ",
-    "model_devi_command":	"/home/wanghan/local/bin/lmp_mpi_010",
-    "model_devi_group_size": 5,
-    "model_devi_machine":	{
-	"machine_type":	"local",
-	"hostname" :	"127.0.0.1",
-	"port" :	22,
-	"username":	"wanghan",
-	"work_path" :	"/home/wanghan/tmp/subs/",
-	"_comment" :	"that's all"
-    },	
-    "model_devi_resources":	{
-	"_comment":	"that's all"
-    },    
-
-    "_comment":		"fp on localhost ",
-    "fp_command":	"/home/wanghan/local/bin/vasp_std",
-    "fp_group_size":	2,
-    "fp_machine":	{
-	"machine_type":	"local",
-	"hostname" :	"127.0.0.1",
-	"port" :	22,
-	"username":	"wanghan",
-	"work_path" :	"/home/wanghan/tmp/subs/",
-	"_comment" :	"that's all"
-    },	
-    "fp_resources":	{
-	"module_list":  ["mpi"],
-	"task_per_node":4,
-	"with_mpi":	true,
-	"_comment":	"that's all"
+  "_comment1": "training on localhost ",
+  "deepmd_path": "/home/wanghan/local/deepmd/0.10.1/",
+  "train_machine": {
+    "machine_type": "local",
+    "hostname": "127.0.0.1",
+    "port": 22,
+    "username": "wanghan",
+    "work_path": "/home/wanghan/tmp/subs/",
+    "_comment2": "that's all"
+  },
+  "train_resources": {
+    "envs": {
+      "PYTHONPATH": "/home/wanghan/local/tensorflow/1.8.py/lib/python3.6/site-packages/"
     },
-  "fp_user_forward_files" : ["vdw_kernel.bindat"],
-    "_comment":		" that's all "
+    "_comment3": "that's all"
+  },
+  "_comment4": "model_devi on localhost ",
+  "model_devi_command": "/home/wanghan/local/bin/lmp_mpi_010",
+  "model_devi_group_size": 5,
+  "model_devi_machine": {
+    "machine_type": "local",
+    "hostname": "127.0.0.1",
+    "port": 22,
+    "username": "wanghan",
+    "work_path": "/home/wanghan/tmp/subs/",
+    "_comment5": "that's all"
+  },
+  "model_devi_resources": {
+    "_comment6": "that's all"
+  },
+  "_comment7": "fp on localhost ",
+  "fp_command": "/home/wanghan/local/bin/vasp_std",
+  "fp_group_size": 2,
+  "fp_machine": {
+    "machine_type": "local",
+    "hostname": "127.0.0.1",
+    "port": 22,
+    "username": "wanghan",
+    "work_path": "/home/wanghan/tmp/subs/",
+    "_comment8": "that's all"
+  },
+  "fp_resources": {
+    "module_list": [
+      "mpi"
+    ],
+    "task_per_node": 4,
+    "with_mpi": true,
+    "_comment9": "that's all"
+  },
+  "fp_user_forward_files": [
+    "vdw_kernel.bindat"
+  ],
+  "_comment10": " that's all "
 }

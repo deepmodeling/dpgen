@@ -1,98 +1,98 @@
 {
-    "train": {
-        "machine": {
-            "batch_type": "slurm",
-            "context_type": "ssh",
-            "remote_profile": {
-                "hostname": "210.34.15.205",
-                "port": 22,
-                "username": "ybzhuang"
-            },
-            "remote_root": "/home/ybzhuang/workdir",
-            "local_root": "./"
-        },
-        "resources": {
-            "source_list": [],
-            "module_list": [
-                "deepmd/1.2"
-            ],
-            "batch_type": "slurm",
-            "number_node": 1,
-            "cpu_per_node": 1,
-            "gpu_per_node": 1,
-            "queue_name": "emergency",
-            "custom_flags": [
-                "#SBATCH -t 96:0:0"
-            ],
-            "kwargs": {},
-            "wait_time": 60,
-            "group_size": 1
-        },
-        "command": "/share/apps/deepmd/compress/bin/python3.8-m deepmd"
+  "train": {
+    "machine": {
+      "batch_type": "slurm",
+      "context_type": "ssh",
+      "remote_profile": {
+        "hostname": "210.34.15.205",
+        "port": 22,
+        "username": "ybzhuang"
+      },
+      "remote_root": "/home/ybzhuang/workdir",
+      "local_root": "./"
     },
-    "model_devi": {
-        "machine": {
-            "batch_type": "slurm",
-            "context_type": "ssh",
-            "remote_profile": {
-                "hostname": "210.34.15.205",
-                "port": 22,
-                "username": "ybzhuang"
-            },
-            "remote_root": "/home/ybzhuang/workdir",
-            "local_root": "./"
-        },
-        "resources": {
-            "source_list": [],
-            "module_list": [
-                "deepmd/1.2"
-            ],
-            "batch_type": "slurm",
-            "group_size": 5,
-            "number_node": 1,
-            "cpu_per_node": 1,
-            "gpu_per_node": 1,
-            "queue_name": "emergency",
-            "custom_flags": [
-                "#SBATCH -t 96:0:0"
-            ],
-            "kwargs": {},
-            "wait_time": 60
-        },
-        "command": "lmp_mpi"
+    "resources": {
+      "source_list": [],
+      "module_list": [
+        "deepmd/1.2"
+      ],
+      "batch_type": "slurm",
+      "number_node": 1,
+      "cpu_per_node": 1,
+      "gpu_per_node": 1,
+      "queue_name": "emergency",
+      "custom_flags": [
+        "#SBATCH -t 96:0:0"
+      ],
+      "kwargs": {},
+      "wait_time": 60,
+      "group_size": 1
     },
-    "fp": {
-        "machine": {
-            "batch_type": "lsf",
-            "context_type": "ssh",
-            "remote_profile": {
-                "hostname": "localhost",
-                "port": 6666,
-                "username": "ybzhuang"
-            },
-            "remote_root": "/data/ybzhuang/methane-dpgen/dpgen-tutorial-2020-08-23/dpgen-tutorial-mathane/workpath",
-            "local_root": "./"
-        },
-        "resources": {
-            "source_list": [],
-            "module_list": [
-                "intel/17.5.239",
-                "mpi/intel/2017.5.239",
-                "gcc/5.5.0",
-                "cp2k/7.1"
-            ],
-            "batch_type": "lsf",
-            "group_size": 50,
-            "number_node": 1,
-            "cpu_per_node": 32,
-            "queue_name": "53-medium",
-            "custom_flags": [
-                "#BSUB -W 12:00:00"
-            ],
-            "kwargs": {},
-            "gpu_per_node": 1
-        },
-        "command": "mpirun -n 32 cp2k.popt -i input.inp"
+    "command": "/share/apps/deepmd/compress/bin/python3.8-m deepmd"
+  },
+  "model_devi": {
+    "machine": {
+      "batch_type": "slurm",
+      "context_type": "ssh",
+      "remote_profile": {
+        "hostname": "210.34.15.205",
+        "port": 22,
+        "username": "ybzhuang"
+      },
+      "remote_root": "/home/ybzhuang/workdir",
+      "local_root": "./"
     },
-    "api_version": "1.0"
+    "resources": {
+      "source_list": [],
+      "module_list": [
+        "deepmd/1.2"
+      ],
+      "batch_type": "slurm",
+      "group_size": 5,
+      "number_node": 1,
+      "cpu_per_node": 1,
+      "gpu_per_node": 1,
+      "queue_name": "emergency",
+      "custom_flags": [
+        "#SBATCH -t 96:0:0"
+      ],
+      "kwargs": {},
+      "wait_time": 60
+    },
+    "command": "lmp_mpi"
+  },
+  "fp": {
+    "machine": {
+      "batch_type": "lsf",
+      "context_type": "ssh",
+      "remote_profile": {
+        "hostname": "localhost",
+        "port": 6666,
+        "username": "ybzhuang"
+      },
+      "remote_root": "/data/ybzhuang/methane-dpgen/dpgen-tutorial-2020-08-23/dpgen-tutorial-mathane/workpath",
+      "local_root": "./"
+    },
+    "resources": {
+      "source_list": [],
+      "module_list": [
+        "intel/17.5.239",
+        "mpi/intel/2017.5.239",
+        "gcc/5.5.0",
+        "cp2k/7.1"
+      ],
+      "batch_type": "lsf",
+      "group_size": 50,
+      "number_node": 1,
+      "cpu_per_node": 32,
+      "queue_name": "53-medium",
+      "custom_flags": [
+        "#BSUB -W 12:00:00"
+      ],
+      "kwargs": {},
+      "gpu_per_node": 1
+    },
+    "command": "mpirun -n 32 cp2k.popt -i input.inp"
+  },
+  "api_version": "1.0"
 }

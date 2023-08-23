@@ -1,140 +1,150 @@
 {
-    "type_map": [
+  "type_map": [
+    "H",
+    "C",
+    "N"
+  ],
+  "mass_map": [
+    1,
+    12,
+    14
+  ],
+  "init_data_prefix": "./data/deepmd/",
+  "init_data_sys": [
+    "data.000",
+    "data.001",
+    "data.002",
+    "data.003",
+    "data.004",
+    "data.005"
+  ],
+  "init_batch_size": [
+    "auto",
+    "auto",
+    "auto",
+    "auto",
+    "auto",
+    "auto"
+  ],
+  "sys_configs": [
+    [
+      "./data/md_sys/data.ch4n2"
+    ]
+  ],
+  "_comment1": " that's all ",
+  "numb_models": 4,
+  "sys_format": "lammps/lmp",
+  "default_training_param": {
+    "model": {
+      "type_map": [
         "H",
         "C",
         "N"
-    ],
-    "mass_map": [
-        1,
-        12,
-        14
-    ],
-    "init_data_prefix": "./data/deepmd/",
-    "init_data_sys": [
-        "data.000","data.001","data.002","data.003","data.004","data.005"
-    ],
-    "init_batch_size":  ["auto","auto","auto","auto","auto","auto"],
-    "sys_configs": [
-        [
-            "./data/md_sys/data.ch4n2"
-        ]
-    ],
-    "_comment": " that's all ",
-    "numb_models": 4,
-    "sys_format":"lammps/lmp",
-    "default_training_param": {
-        "model": {
-            "type_map": [
-                "H",
-                "C",
-                "N"
-            ],
-            "descriptor": {
-                "type": "se_e2_a",
-                "sel": [
-                    16,
-                    4,
-                    4
-                ],
-                "rcut_smth": 0.5,
-                "rcut": 5.0,
-                "neuron": [
-                    25,
-                    50,
-                    100
-                ],
-                "resnet_dt": true,
-                "axis_neuron": 12,
-                "seed": 1
-            },
-            "fitting_net": {
-                "neuron": [
-                    120,
-                    120,
-                    120
-                ],
-                "resnet_dt": false,
-                "seed": 1
-            }
-        },
-        "learning_rate": {
-            "type": "exp",
-            "start_lr": 0.001,
-            "decay_steps": 200
-        },
-        "loss": {
-            "start_pref_f": 1000,
-            "limit_pref_f": 1,
-            "start_pref_v": 0.0,
-            "limit_pref_v": 0.0
-        },
-        "training": {
-            "_set_prefix": "set",
-            "stop_batch": 20000,
-            "_batch_size": 1,
-            "disp_file": "lcurve.out",
-            "disp_freq": 1000,
-            "numb_test": 4,
-            "save_freq": 1000,
-            "save_ckpt": "model.ckpt",
-            "disp_training": true,
-            "time_training": true,
-            "profiling": false,
-            "profiling_file": "timeline.json",
-            "_comment": "that's all"
-        }
+      ],
+      "descriptor": {
+        "type": "se_e2_a",
+        "sel": [
+          16,
+          4,
+          4
+        ],
+        "rcut_smth": 0.5,
+        "rcut": 5.0,
+        "neuron": [
+          25,
+          50,
+          100
+        ],
+        "resnet_dt": true,
+        "axis_neuron": 12,
+        "seed": 1
+      },
+      "fitting_net": {
+        "neuron": [
+          120,
+          120,
+          120
+        ],
+        "resnet_dt": false,
+        "seed": 1
+      }
     },
-    "model_devi_dt": 0.002,
-    "model_devi_skip": 0,
-    "model_devi_f_trust_lo": 0.02,
-    "model_devi_f_trust_hi": 1.95,
-    "model_devi_clean_traj": true,
-    "model_devi_jobs": [
-        {
-            "sys_idx": [
-                0
-            ],
-            "temps": [
-                100
-            ],
-            "press": [
-                1
-            ],
-            "trj_freq": 10,
-            "nsteps": 2000,
-            "ensemble": "nvt",
-            "_idx": "00"
-        },
-        {
-            "sys_idx": [
-                0
-            ],
-            "temps": [
-                100
-            ],
-            "press": [
-                1
-            ],
-            "trj_freq": 10,
-            "nsteps": 5000,
-            "ensemble": "nvt",
-            "_idx": "01"
-        }
-
-    ],
-    "use_clusters": true,
-    "cluster_cutoff": 5.0,
-    "cluster_minify": true,
-    "use_relative": true,
-    "epsilon": 1.0,
-    "ratio_failed": 0.20,
-    "fp_style": "gaussian",
-    "shuffle_poscar": false,
-    "fp_task_max": 20,
-    "fp_task_min": 5,
-    "fp_params":{
-            "keywords": "force B3LYP 6-31g(d,p) nosymm",
-            "nproc":2 ,
-            "multiplicity": "auto"
+    "learning_rate": {
+      "type": "exp",
+      "start_lr": 0.001,
+      "decay_steps": 200
+    },
+    "loss": {
+      "start_pref_f": 1000,
+      "limit_pref_f": 1,
+      "start_pref_v": 0.0,
+      "limit_pref_v": 0.0
+    },
+    "training": {
+      "_set_prefix": "set",
+      "stop_batch": 20000,
+      "_batch_size": 1,
+      "disp_file": "lcurve.out",
+      "disp_freq": 1000,
+      "save_freq": 1000,
+      "save_ckpt": "model.ckpt",
+      "disp_training": true,
+      "time_training": true,
+      "profiling": false,
+      "profiling_file": "timeline.json",
+      "_comment2": "that's all"
     }
+  },
+  "model_devi_dt": 0.002,
+  "model_devi_skip": 0,
+  "model_devi_f_trust_lo": 0.02,
+  "model_devi_f_trust_hi": 1.95,
+  "model_devi_clean_traj": true,
+  "model_devi_jobs": [
+    {
+      "sys_idx": [
+        0
+      ],
+      "temps": [
+        100
+      ],
+      "press": [
+        1
+      ],
+      "trj_freq": 10,
+      "nsteps": 2000,
+      "ensemble": "nvt",
+      "_idx": "00"
+    },
+    {
+      "sys_idx": [
+        0
+      ],
+      "temps": [
+        100
+      ],
+      "press": [
+        1
+      ],
+      "trj_freq": 10,
+      "nsteps": 5000,
+      "ensemble": "nvt",
+      "_idx": "01"
+    }
+  ],
+  "use_clusters": true,
+  "cluster_cutoff": 5.0,
+  "cluster_minify": true,
+  "use_relative": true,
+  "epsilon": 1.0,
+  "ratio_failed": 0.2,
+  "fp_style": "gaussian",
+  "shuffle_poscar": false,
+  "fp_task_max": 20,
+  "fp_task_min": 5,
+  "fp_params": {
+    "keywords": "force B3LYP 6-31g(d,p) nosymm",
+    "nproc": 2,
+    "multiplicity": "auto"
+  }
 }

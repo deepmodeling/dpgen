@@ -1,88 +1,88 @@
 {
-    "api_version": "1.0",
-    "train": {
-        "machine": {
-            "batch_type": "lsf",
-            "context_type": "ssh",
-            "remote_profile": {
-                "hostname": "xxx.xxx.xxx.xxx",
-                "port": 22,
-                "username": "tzhu"
-            },
-            "remote_root": "/gpfs/home/tzhu/jzzeng/dpgen_workdir",
-            "local_root": "./"
-        },
-        "resources": {
-            "source_list": [
-                "activate deepmd"
-            ],
-            "envs": {
-                "KMP_BLOCKTIME": 0,
-                "KMP_AFFINITY": "granularity=fine,verbose,compact,1,0"
-            },
-            "batch_type": "lsf",
-            "group_size": 1,
-            "number_node": 1,
-            "cpu_per_node": 0,
-            "gpu_per_node": 1,
-            "queue_name": "newgpu",
-            "kwargs": {}
-        },
-        "command": "/gpfs/home/tzhu/anaconda3/envs/python3.6/bin/dp"
+  "api_version": "1.0",
+  "train": {
+    "machine": {
+      "batch_type": "lsf",
+      "context_type": "ssh",
+      "remote_profile": {
+        "hostname": "xxx.xxx.xxx.xxx",
+        "port": 22,
+        "username": "tzhu"
+      },
+      "remote_root": "/gpfs/home/tzhu/jzzeng/dpgen_workdir",
+      "local_root": "./"
     },
-    "model_devi": {
-        "machine": {
-            "batch_type": "lsf",
-            "context_type": "ssh",
-            "remote_profile": {
-                "hostname": "xxx.xxx.xxx.xxx",
-                "port": 22,
-                "username": "tzhu"
-            },
-            "remote_root": "/gpfs/home/tzhu/jzzeng/dpgen_workdir",
-            "local_root": "./"
-        },
-        "resources": {
-            "envs": {
-                "KMP_BLOCKTIME": 0
-            },
-            "source_list": [
-                "activate deepmd"
-            ],
-            "batch_type": "lsf",
-            "group_size": 1,
-            "number_node": 1,
-            "cpu_per_node": 0,
-            "gpu_per_node": 1,
-            "queue_name": "newgpu",
-            "kwargs": {}
-        },
-        "command": "mpirun -n 0 /gpfs/home/tzhu/lammps-stable_5Jun2019/src/lmp_intel_cpu_intelmpi -pk intel 0 omp 2"
+    "resources": {
+      "source_list": [
+        "activate deepmd"
+      ],
+      "envs": {
+        "KMP_BLOCKTIME": 0,
+        "KMP_AFFINITY": "granularity=fine,verbose,compact,1,0"
+      },
+      "batch_type": "lsf",
+      "group_size": 1,
+      "number_node": 1,
+      "cpu_per_node": 0,
+      "gpu_per_node": 1,
+      "queue_name": "newgpu",
+      "kwargs": {}
     },
-    "fp": {
-        "machine": {
-            "batch_type": "pbs",
-            "context_type": "ssh",
-            "remote_profile": {
-                "hostname": "xxx.xxx.xxx.xxx",
-                "port": 2323,
-                "username": "tzhu"
-            },
-            "remote_root": "/public/home/tzhu/jzzeng/dpgen_workdir",
-            "local_root": "./"
-        },
-        "resources": {
-            "batch_type": "pbs",
-            "group_size": 1,
-            "number_node": 1,
-            "cpu_per_node": 28,
-            "queue_name": "small",
-            "custom_flags": [
-                "#PBS -l walltime=10:00:00"
-            ],
-            "kwargs": {},
-            "gpu_per_node": 1
-        },
-        "command": "/public/home/tzhu/g16/g16 < input || :"
-    }
+    "command": "/gpfs/home/tzhu/anaconda3/envs/python3.6/bin/dp"
+  },
+  "model_devi": {
+    "machine": {
+      "batch_type": "lsf",
+      "context_type": "ssh",
+      "remote_profile": {
+        "hostname": "xxx.xxx.xxx.xxx",
+        "port": 22,
+        "username": "tzhu"
+      },
+      "remote_root": "/gpfs/home/tzhu/jzzeng/dpgen_workdir",
+      "local_root": "./"
+    },
+    "resources": {
+      "envs": {
+        "KMP_BLOCKTIME": 0
+      },
+      "source_list": [
+        "activate deepmd"
+      ],
+      "batch_type": "lsf",
+      "group_size": 1,
+      "number_node": 1,
+      "cpu_per_node": 0,
+      "gpu_per_node": 1,
+      "queue_name": "newgpu",
+      "kwargs": {}
+    },
+    "command": "mpirun -n 0 /gpfs/home/tzhu/lammps-stable_5Jun2019/src/lmp_intel_cpu_intelmpi -pk intel 0 omp 2"
+  },
+  "fp": {
+    "machine": {
+      "batch_type": "pbs",
+      "context_type": "ssh",
+      "remote_profile": {
+        "hostname": "xxx.xxx.xxx.xxx",
+        "port": 2323,
+        "username": "tzhu"
+      },
+      "remote_root": "/public/home/tzhu/jzzeng/dpgen_workdir",
+      "local_root": "./"
+    },
+    "resources": {
+      "batch_type": "pbs",
+      "group_size": 1,
+      "number_node": 1,
+      "cpu_per_node": 28,
+      "queue_name": "small",
+      "custom_flags": [
+        "#PBS -l walltime=10:00:00"
+      ],
+      "kwargs": {},
+      "gpu_per_node": 1
+    },
+    "command": "/public/home/tzhu/g16/g16 < input || :"
+  }
 }

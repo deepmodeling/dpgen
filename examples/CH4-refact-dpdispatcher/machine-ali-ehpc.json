@@ -1,83 +1,92 @@
 {
   "api_version": "1.0",
-  "train":
-    {
-      "command": "dp",
-      "machine": {
-        "batch_type": "PBS",
-        "context_type": "SSHContext",
-        "local_root": "./",
-        "remote_root": "/home/fengbo/work_path_dpdispatcher_test",
-        "remote_profile": {
-            "hostname": "39.xxx.xx.xx",
-            "username": "fengbo"
-        }
-      },
-      "resources": {
-        "batch_type": "PBS",
-        "number_node": 1,
-        "cpu_per_node": 4,
-        "gpu_per_node": 1,
-        "queue_name": "T4_4_15",
-        "group_size": 1,
-        "custom_flags":["#SBATCH --mem=32G"],
-        "strategy": {"if_cuda_multi_devices": true},
-        "para_deg": 3,
-        "source_list": ["/home/fengbo/deepmd.1.2.4.env"]
+  "train": {
+    "command": "dp",
+    "machine": {
+      "batch_type": "PBS",
+      "context_type": "SSHContext",
+      "local_root": "./",
+      "remote_root": "/home/fengbo/work_path_dpdispatcher_test",
+      "remote_profile": {
+        "hostname": "39.xxx.xx.xx",
+        "username": "fengbo"
       }
     },
-  "model_devi":
-    {
-      "command": "lmp",
-      "machine":{
-        "batch_type": "PBS",
-        "context_type": "SSHContext",
-        "local_root": "./",
-        "remote_root": "/home/fengbo/work_path_dpdispatcher_test",
-        "remote_profile": {
-          "hostname": "39.xxx.xx.xx",
-          "username": "fengbo"
-        }
+    "resources": {
+      "batch_type": "PBS",
+      "number_node": 1,
+      "cpu_per_node": 4,
+      "gpu_per_node": 1,
+      "queue_name": "T4_4_15",
+      "group_size": 1,
+      "custom_flags": [
+        "#SBATCH --mem=32G"
+      ],
+      "strategy": {
+        "if_cuda_multi_devices": true
       },
-      "resources": {
-        "batch_type": "PBS",
-        "number_node": 1,
-        "cpu_per_node": 4,
-        "gpu_per_node": 1,
-        "queue_name": "T4_4_15",
-        "group_size": 5,
-        "source_list": ["/home/fengbo/deepmd.1.2.4.env"]
-      },
-      "_comments" : "In user_forward_files, define input files to be uploaded.",
-      "user_forward_files" : [],
-      "_comments" : "In user_backward_files, define output files to be collected.",
-      "user_backward_files" : ["HILLS"]
-    },
-  "fp":
-    {
-      "command": "vasp_std",
-      "machine":{
-        "batch_type": "PBS",
-        "context_type": "SSHContext",
-        "local_root": "./",
-        "remote_root": "/home/fengbo/work_path_dpdispatcher_test",
-        "remote_profile": {
-          "hostname": "39.xxx.xx.xx",
-          "username": "fengbo"
-        }
-      },
-      "resources": {
-        "batch_type": "PBS",
-        "number_node": 1,
-        "cpu_per_node": 32,
-        "gpu_per_node": 0,
-        "queue_name": "G_32_128",
-        "group_size": 1,
-        "source_list": ["~/vasp.env"]
-      },
-      "_comments" : "In user_forward_files, define input files to be uploaded.",
-      "user_forward_files" : ["vdw_kernel.bindat"],
-      "_comments" : "In user_backward_files, define output files to be collected.",
-      "user_backward_files" : []
+      "para_deg": 3,
+      "source_list": [
+        "/home/fengbo/deepmd.1.2.4.env"
+      ]
     }
+  },
+  "model_devi": {
+    "command": "lmp",
+    "machine": {
+      "batch_type": "PBS",
+      "context_type": "SSHContext",
+      "local_root": "./",
+      "remote_root": "/home/fengbo/work_path_dpdispatcher_test",
+      "remote_profile": {
+        "hostname": "39.xxx.xx.xx",
+        "username": "fengbo"
+      }
+    },
+    "resources": {
+      "batch_type": "PBS",
+      "number_node": 1,
+      "cpu_per_node": 4,
+      "gpu_per_node": 1,
+      "queue_name": "T4_4_15",
+      "group_size": 5,
+      "source_list": [
+        "/home/fengbo/deepmd.1.2.4.env"
+      ]
+    },
+    "_comments": "In user_backward_files, define output files to be collected.",
+    "user_forward_files": [],
+    "user_backward_files": [
+      "HILLS"
+    ]
+  },
+  "fp": {
+    "command": "vasp_std",
+    "machine": {
+      "batch_type": "PBS",
+      "context_type": "SSHContext",
+      "local_root": "./",
+      "remote_root": "/home/fengbo/work_path_dpdispatcher_test",
+      "remote_profile": {
+        "hostname": "39.xxx.xx.xx",
+        "username": "fengbo"
+      }
+    },
+    "resources": {
+      "batch_type": "PBS",
+      "number_node": 1,
+      "cpu_per_node": 32,
+      "gpu_per_node": 0,
+      "queue_name": "G_32_128",
+      "group_size": 1,
+      "source_list": [
+        "~/vasp.env"
+      ]
+    },
+    "_comments": "In user_backward_files, define output files to be collected.",
+    "user_forward_files": [
+      "vdw_kernel.bindat"
+    ],
+    "user_backward_files": []
+  }
 }

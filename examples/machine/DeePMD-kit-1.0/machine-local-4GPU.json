@@ -1,90 +1,90 @@
 {
-    "_comment" : "This is an example of DP-GEN on Local device running with 4 GPUs",
-    "_comment": "Last updated on 2021.5.9 for DP-GEN 0.9.2 by Ke XU",
-    "train": {
-        "_comment" : "Specify the installed path of DeePMD-kit",
-        "command": "/home/user/anaconda3/bin/dp",
-        "_comment" : "Specify machine settings",
-        "machine": {
-            "_comment": "Supported batches include slurm, pbs, shell, lsf.",
-            "batch_type": "shell",
-            "context_type": "local",
-            "remote_root": "/tmp/dpwork",
-            "local_root": "./"
-        },
-        "resources": {
-            "module_list": [],
-            "_comment": "Environment to be activated. This will generate source xxx/psxevars.sh in scripts. ",
-            "source_list": [
-                "/opt/intel/parallel_studio_xe_2020/psxevars.sh"
-            ],
-            "batch_type": "shell",
-            "_comment": "DP-GEN will put 4 tasks together in one submitting script.",
-            "group_size": 4,
-            "_comment" : "The number of nodes.",
-            "number_node": 1,
-            "_comment" : "The number of CPUs.",
-            "cpu_per_node": 4,
-            "_comment" : "If you choose to run with multiple GPUs simultaneously, just ignore numb_gpu.",
-            "gpu_per_node": 0,
-            "kwargs": {},
-            "strategy": {
-                "_comment" : "Allow the multi-GPU task running.",
-                "if_cuda_multi_devices": true
-            },
-            "para_deg": 4,
-            "queue_name": ""
-        }
+  "_comment1": "This is an example of DP-GEN on Local device running with 4 GPUs",
+  "_comment2": "Last updated on 2021.5.9 for DP-GEN 0.9.2 by Ke XU",
+  "train": {
+    "_comment3": "Specify the installed path of DeePMD-kit",
+    "command": "/home/user/anaconda3/bin/dp",
+    "_comment4": "Specify machine settings",
+    "machine": {
+      "_comment5": "Supported batches include slurm, pbs, shell, lsf.",
+      "batch_type": "shell",
+      "context_type": "local",
+      "remote_root": "/tmp/dpwork",
+      "local_root": "./"
     },
-    "model_devi": {
-        "machine": {
-            "batch_type": "shell",
-            "context_type": "local",
-            "remote_root": "/tmp/dpwork",
-            "local_root": "./"
-        },
-        "resources": {
-            "source_list": [],
-            "module_list": [],
-            "batch_type": "shell",
-            "group_size": 4,
-            "number_node": 1,
-            "cpu_per_node": 4,
-            "gpu_per_node": 0,
-            "kwargs": {},
-            "strategy": {
-                "if_cuda_multi_devices": true
-            },
-            "para_deg": 4,
-            "queue_name": ""
-        },
-        "command": "/home/user/Soft/Deepmd/lammps-stable_29Oct2020/src/lmp_mpi"
+    "resources": {
+      "module_list": [],
+      "_comment6": "Environment to be activated. This will generate source xxx/psxevars.sh in scripts. ",
+      "source_list": [
+        "/opt/intel/parallel_studio_xe_2020/psxevars.sh"
+      ],
+      "batch_type": "shell",
+      "_comment7": "DP-GEN will put 4 tasks together in one submitting script.",
+      "group_size": 4,
+      "_comment8": "The number of nodes.",
+      "number_node": 1,
+      "_comment9": "The number of CPUs.",
+      "cpu_per_node": 4,
+      "_comment10": "If you choose to run with multiple GPUs simultaneously, just ignore numb_gpu.",
+      "gpu_per_node": 0,
+      "kwargs": {},
+      "strategy": {
+        "_comment11": "Allow the multi-GPU task running.",
+        "if_cuda_multi_devices": true
+      },
+      "para_deg": 4,
+      "queue_name": ""
+    }
+  },
+  "model_devi": {
+    "machine": {
+      "batch_type": "shell",
+      "context_type": "local",
+      "remote_root": "/tmp/dpwork",
+      "local_root": "./"
     },
-    "fp": {
-        "machine": {
-            "batch_type": "shell",
-            "context_type": "local",
-            "remote_root": "/tmp/dpwork",
-            "local_root": "./"
-        },
-        "resources": {
-            "_comment" : "Load the intel compiler.",
-            "source_list": [
-                "/opt/intel/parallel_studio_xe_2020/psxevars.sh"
-            ],
-            "_comment": "This will generate export PATH=/home/user/Soft/VASP/vasp.5.4.4-allbak/bin:$PATH in scripts;",
-            "envs": {
-                "PATH": "/home/user/Soft/VASP/vasp.5.4.4-allbak/bin:$PATH"
-            },
-            "batch_type": "shell",
-            "group_size": 1,
-            "cpu_per_node": 16,
-            "kwargs": {},
-            "queue_name": "",
-            "number_node": 1,
-            "gpu_per_node": 1
-        },
-        "command": "mpirun -n 16 vasp_std || :"
+    "resources": {
+      "source_list": [],
+      "module_list": [],
+      "batch_type": "shell",
+      "group_size": 4,
+      "number_node": 1,
+      "cpu_per_node": 4,
+      "gpu_per_node": 0,
+      "kwargs": {},
+      "strategy": {
+        "if_cuda_multi_devices": true
+      },
+      "para_deg": 4,
+      "queue_name": ""
     },
-    "api_version": "1.0"
+    "command": "/home/user/Soft/Deepmd/lammps-stable_29Oct2020/src/lmp_mpi"
+  },
+  "fp": {
+    "machine": {
+      "batch_type": "shell",
+      "context_type": "local",
+      "remote_root": "/tmp/dpwork",
+      "local_root": "./"
+    },
+    "resources": {
+      "_comment12": "Load the intel compiler.",
+      "source_list": [
+        "/opt/intel/parallel_studio_xe_2020/psxevars.sh"
+      ],
+      "_comment13": "This will generate export PATH=/home/user/Soft/VASP/vasp.5.4.4-allbak/bin:$PATH in scripts;",
+      "envs": {
+        "PATH": "/home/user/Soft/VASP/vasp.5.4.4-allbak/bin:$PATH"
+      },
+      "batch_type": "shell",
+      "group_size": 1,
+      "cpu_per_node": 16,
+      "kwargs": {},
+      "queue_name": "",
+      "number_node": 1,
+      "gpu_per_node": 1
+    },
+    "command": "mpirun -n 16 vasp_std || :"
+  },
+  "api_version": "1.0"
 }

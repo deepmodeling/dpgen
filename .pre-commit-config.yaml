@@ -12,7 +12,7 @@ repos:
         exclude: "^tests/.*$"
     -   id: check-yaml
         exclude: "^conda/.*$"
-    #-   id: check-json
+    -   id: check-json
     -   id: check-added-large-files
     -   id: check-merge-conflict
     -   id: check-symlinks

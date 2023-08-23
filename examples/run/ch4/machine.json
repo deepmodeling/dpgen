@@ -1,75 +1,77 @@
 {
-    "deepmd_path":	"/sharedext4/local/deepmd-kit-0.12.4/",
-    "train_machine":	{
-	"machine_type":	"slurm",
-	"hostname" :	"localhost",
-	"port" :	22,
-	"username":	"root",
-	"work_path" :	"/sharedext4/generator/example/deep.gen/generator/ch4/",
-	"_comment" :	"that's all"
-    },
-    "train_resources":	{
-	"numb_node":	1,
-	"numb_gpu":	1,
-	"task_per_node":8,
-	"partition" : "GPU-H",
-	"exclude_list" : [],
-	"source_list":	[ "/sharedext4/local/deepmd-kit-0.12.4/bin/activate" ],
-	"module_list":	[ ],
-	"time_limit":	"23:0:0",
-	"mem_limit":	32,
-	"_comment":	"that's all"
-    },
-
-    "model_devi_command":	"/sharedext4/softwares/lammps/bin/lmp_serial",
-    "model_devi_group_size":	1,
-    "_comment":		"model_devi on localhost",
-    "model_devi_machine":	{
-	"machine_type":	"slurm",
-	"hostname" :	"localhost",
-	"port" :	22,
-	"username":	"root",
-	"work_path" :	"/sharedext4/generator/example/deep.gen/generator/ch4/",
-	"_comment" :	"that's all"
-    },
-    "_comment": " if use GPU, numb_nodes(nn) should always be 1 ",
-    "_comment": " if numb_nodes(nn) = 1 multi-threading rather than mpi is assumed",
-    "model_devi_resources":	{
-	"numb_node":	1,
-	"numb_gpu":	0,
-	"task_per_node":1,
-	"source_list":	["/sharedext4/local/deepmd-kit-0.12.4/bin/lammps.activate" ],
-	"module_list":	[ ],
-	"time_limit":	"19:0:0",
-	"mem_limit":	32,
-	"partition" : "GPU-All",
-	"_comment":	"that's all"
-    },
-
-    "_comment":         "fp on localhost ",
-    "fp_command":       "/sharedext4/vasp/vasp.5.4.4/bin/vasp_std",
-    "fp_group_size":    1,
-    "fp_machine":       {
-        "machine_type": "slurm",
-        "hostname" :    "localhost",
-        "port" :        22,
-        "username":     "root",
-        "work_path" :   "/sharedext4/generator/example/deep.gen/generator/ch4/",
-        "_comment" :    "that's all"
-    },
-    "fp_resources":     {
-        "numb_node":    1,
-        "task_per_node":1,
-        "numb_gpu":     0,
-	"exclude_list" : [],
-        "source_list":  ["/sharedext4/softwares/source/vasp_cpu.activate" ],
-        "module_list":  [],
-	"with_mpi" : 1,
-	"time_limit":   "1:0:0",
-	"partition" : "GPU-All",
-        "_comment":     "that's all"
-    },
-
-
-    "_comment":		" that's all "
+  "deepmd_path": "/sharedext4/local/deepmd-kit-0.12.4/",
+  "train_machine": {
+    "machine_type": "slurm",
+    "hostname": "localhost",
+    "port": 22,
+    "username": "root",
+    "work_path": "/sharedext4/generator/example/deep.gen/generator/ch4/",
+    "_comment1": "that's all"
+  },
+  "train_resources": {
+    "numb_node": 1,
+    "numb_gpu": 1,
+    "task_per_node": 8,
+    "partition": "GPU-H",
+    "exclude_list": [],
+    "source_list": [
+      "/sharedext4/local/deepmd-kit-0.12.4/bin/activate"
+    ],
+    "module_list": [],
+    "time_limit": "23:0:0",
+    "mem_limit": 32,
+    "_comment2": "that's all"
+  },
+  "model_devi_command": "/sharedext4/softwares/lammps/bin/lmp_serial",
+  "model_devi_group_size": 1,
+  "_comment3": "model_devi on localhost",
+  "model_devi_machine": {
+    "machine_type": "slurm",
+    "hostname": "localhost",
+    "port": 22,
+    "username": "root",
+    "work_path": "/sharedext4/generator/example/deep.gen/generator/ch4/",
+    "_comment4": "that's all"
+  },
+  "_comment5": " if use GPU, numb_nodes(nn) should always be 1 ",
+  "_comment6": " if numb_nodes(nn) = 1 multi-threading rather than mpi is assumed",
+  "model_devi_resources": {
+    "numb_node": 1,
+    "numb_gpu": 0,
+    "task_per_node": 1,
+    "source_list": [
+      "/sharedext4/local/deepmd-kit-0.12.4/bin/lammps.activate"
+    ],
+    "module_list": [],
+    "time_limit": "19:0:0",
+    "mem_limit": 32,
+    "partition": "GPU-All",
+    "_comment7": "that's all"
+  },
+  "_comment8": "fp on localhost ",
+  "fp_command": "/sharedext4/vasp/vasp.5.4.4/bin/vasp_std",
+  "fp_group_size": 1,
+  "fp_machine": {
+    "machine_type": "slurm",
+    "hostname": "localhost",
+    "port": 22,
+    "username": "root",
+    "work_path": "/sharedext4/generator/example/deep.gen/generator/ch4/",
+    "_comment9": "that's all"
+  },
+  "fp_resources": {
+    "numb_node": 1,
+    "task_per_node": 1,
+    "numb_gpu": 0,
+    "exclude_list": [],
+    "source_list": [
+      "/sharedext4/softwares/source/vasp_cpu.activate"
+    ],
+    "module_list": [],
+    "with_mpi": 1,
+    "time_limit": "1:0:0",
+    "partition": "GPU-All",
+    "_comment10": "that's all"
+  },
+  "_comment11": " that's all "
 }

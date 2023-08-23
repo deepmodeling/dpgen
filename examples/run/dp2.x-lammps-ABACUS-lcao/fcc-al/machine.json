@@ -1,103 +1,105 @@
 {
   "api_version": "1.0",
   "deepmd_version": "2.0.1",
-  "train" :
-    {
-      "command": "dp",
-      "machine": {
-        "batch_type": "Lebesgue",
-        "context_type": "LebesgueContext",
-        "local_root" : "./",
-        "remote_profile":{
-          "email": "",
-          "password": "",
-          "program_id": 0,
-            "keep_backup":true,
-            "input_data":{
-                "job_type": "indicate",
-                "log_file": "00*/train.log",
-                "grouped":true,
-                "job_name": "dpgen_train_job",
-                "disk_size": 200,
-                "scass_type":"",
-                "checkpoint_files":["00*/checkpoint","00*/model.ckpt*"],
-                "checkpoint_time":30,
-                "platform": "",
-		"region":"",
-                "image_name":"",
-                "on_demand":0
-            }
+  "train": {
+    "command": "dp",
+    "machine": {
+      "batch_type": "Lebesgue",
+      "context_type": "LebesgueContext",
+      "local_root": "./",
+      "remote_profile": {
+        "email": "",
+        "password": "",
+        "program_id": 0,
+        "keep_backup": true,
+        "input_data": {
+          "job_type": "indicate",
+          "log_file": "00*/train.log",
+          "grouped": true,
+          "job_name": "dpgen_train_job",
+          "disk_size": 200,
+          "scass_type": "",
+          "checkpoint_files": [
+            "00*/checkpoint",
+            "00*/model.ckpt*"
+          ],
+          "checkpoint_time": 30,
+          "platform": "",
+          "region": "",
+          "image_name": "",
+          "on_demand": 0
         }
-      },
-      "resources": {
-        "batch_type": "Lebesgue",
-        "group_size": 1
       }
     },
-  "model_devi":
-    {
-      "command": "lmp -i input.lammps -v restart 0",
-      "machine": {
-        "batch_type": "Lebesgue",
-        "context_type": "LebesgueContext",
-        "local_root" : "./",
-        "remote_profile":{
-          "email": "",
-          "password": "",
-          "program_id": 0,
-            "keep_backup":true,
-            "input_data":{
-              "job_type": "indicate",
-              "log_file": "*/model_devi.log",
-              "grouped":true,
-              "job_name": "dpgen_model_devi_job",
-              "disk_size": 200,
-              "scass_type":"",
-              "platform": "",
-		"region":"",
-              "image_name":"",
-              "checkpoint_files": "sync_files",
-              "checkpoint_time":30,
-              "on_demand":0
-            }
-        }
-      },
-      "resources": {
-        "batch_type": "Lebesgue",
-        "group_size": 50
-      }
-    },
-  "fp":
-    {
-      "command": "OMP_NUM_THREADS=1 mpirun -n 8 abacus",
-      "machine": {
-        "batch_type": "Lebesgue",
-        "context_type": "LebesgueContext",
-        "local_root" : "./",
-        "remote_profile":{
-          "email": "",
-          "password": "",
-          "program_id": 0,
-            "keep_backup":true,
-            "input_data":{
-              "job_type": "indicate",
-              "log_file": "task*/fp.log",
-              "grouped":true,
-              "job_name": "dpgen_fp_job",
-              "disk_size": 100,
-              "checkpoint_files": "sync_files",
-              "checkpoint_time":30,
-              "scass_type":"",
-              "platform": "",
-              "image_name":"",
-              "on_demand":0
-            }
-        }
-      },
-      "resources": {
-        "batch_type": "Lebesgue",
-        "group_size": 50,
-        "source_list": [""]
-      }
+    "resources": {
+      "batch_type": "Lebesgue",
+      "group_size": 1
     }
+  },
+  "model_devi": {
+    "command": "lmp -i input.lammps -v restart 0",
+    "machine": {
+      "batch_type": "Lebesgue",
+      "context_type": "LebesgueContext",
+      "local_root": "./",
+      "remote_profile": {
+        "email": "",
+        "password": "",
+        "program_id": 0,
+        "keep_backup": true,
+        "input_data": {
+          "job_type": "indicate",
+          "log_file": "*/model_devi.log",
+          "grouped": true,
+          "job_name": "dpgen_model_devi_job",
+          "disk_size": 200,
+          "scass_type": "",
+          "platform": "",
+          "region": "",
+          "image_name": "",
+          "checkpoint_files": "sync_files",
+          "checkpoint_time": 30,
+          "on_demand": 0
+        }
+      }
+    },
+    "resources": {
+      "batch_type": "Lebesgue",
+      "group_size": 50
+    }
+  },
+  "fp": {
+    "command": "OMP_NUM_THREADS=1 mpirun -n 8 abacus",
+    "machine": {
+      "batch_type": "Lebesgue",
+      "context_type": "LebesgueContext",
+      "local_root": "./",
+      "remote_profile": {
+        "email": "",
+        "password": "",
+        "program_id": 0,
+        "keep_backup": true,
+        "input_data": {
+          "job_type": "indicate",
+          "log_file": "task*/fp.log",
+          "grouped": true,
+          "job_name": "dpgen_fp_job",
+          "disk_size": 100,
+          "checkpoint_files": "sync_files",
+          "checkpoint_time": 30,
+          "scass_type": "",
+          "platform": "",
+          "image_name": "",
+          "on_demand": 0
+        }
+      }
+    },
+    "resources": {
+      "batch_type": "Lebesgue",
+      "group_size": 50,
+      "source_list": [
+        ""
+      ]
+    }
+  }
 }

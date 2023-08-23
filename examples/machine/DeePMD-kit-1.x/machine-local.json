@@ -1,65 +1,65 @@
 {
-    "api_version": "1.0",
-    "train": {
-        "_comment": "training on localhost",
-        "machine": {
-            "batch_type": "shell",
-            "context_type": "local",
-            "remote_root": "/home/wanghan/tmp/subs/",
-            "local_root": "./"
-        },
-        "resources": {
-            "envs": {},
-            "batch_type": "shell",
-            "group_size": 1,
-            "kwargs": {},
-            "queue_name": "",
-            "number_node": 1,
-            "cpu_per_node": 1,
-            "gpu_per_node": 1
-        },
-        "command": "/home/wanghan/local/deepmd/1.*/dp"
+  "api_version": "1.0",
+  "train": {
+    "_comment1": "training on localhost",
+    "machine": {
+      "batch_type": "shell",
+      "context_type": "local",
+      "remote_root": "/home/wanghan/tmp/subs/",
+      "local_root": "./"
     },
-    "model_devi": {
-        "_comment": "model devi on localhost",
-        "machine": {
-            "_comment": "If lazy_local, calculations are done directly in current folders.",
-            "batch_type": "shell",
-            "context_type": "lazylocal",
-            "local_root": "./"
-        },
-        "resources": {
-            "batch_type": "shell",
-            "group_size": 5,
-            "kwargs": {},
-            "queue_name": "",
-            "number_node": 1,
-            "cpu_per_node": 1,
-            "gpu_per_node": 1
-        },
-        "command": "/home/wanghan/local/bin/lmp_mpi_010"
+    "resources": {
+      "envs": {},
+      "batch_type": "shell",
+      "group_size": 1,
+      "kwargs": {},
+      "queue_name": "",
+      "number_node": 1,
+      "cpu_per_node": 1,
+      "gpu_per_node": 1
     },
-    "fp": {
-        "_comment": "fp on localhost",
-        "machine": {
-            "batch_type": "shell",
-            "context_type": "local",
-            "remote_root": "/home/wanghan/tmp/subs/",
-            "local_root": "./"
-        },
-        "resources": {
-            "module_list": [
-                "mpi"
-            ],
-            "_comment": "that's all",
-            "batch_type": "shell",
-            "group_size": 2,
-            "cpu_per_node": 4,
-            "kwargs": {},
-            "queue_name": "",
-            "number_node": 1,
-            "gpu_per_node": 1
-        },
-        "command": "mpirun -n 4 /home/wanghan/local/bin/vasp_std"
-    }
+    "command": "/home/wanghan/local/deepmd/1.*/dp"
+  },
+  "model_devi": {
+    "_comment2": "model devi on localhost",
+    "machine": {
+      "_comment3": "If lazy_local, calculations are done directly in current folders.",
+      "batch_type": "shell",
+      "context_type": "lazylocal",
+      "local_root": "./"
+    },
+    "resources": {
+      "batch_type": "shell",
+      "group_size": 5,
+      "kwargs": {},
+      "queue_name": "",
+      "number_node": 1,
+      "cpu_per_node": 1,
+      "gpu_per_node": 1
+    },
+    "command": "/home/wanghan/local/bin/lmp_mpi_010"
+  },
+  "fp": {
+    "_comment4": "fp on localhost",
+    "machine": {
+      "batch_type": "shell",
+      "context_type": "local",
+      "remote_root": "/home/wanghan/tmp/subs/",
+      "local_root": "./"
+    },
+    "resources": {
+      "module_list": [
+        "mpi"
+      ],
+      "_comment5": "that's all",
+      "batch_type": "shell",
+      "group_size": 2,
+      "cpu_per_node": 4,
+      "kwargs": {},
+      "queue_name": "",
+      "number_node": 1,
+      "gpu_per_node": 1
+    },
+    "command": "mpirun -n 4 /home/wanghan/local/bin/vasp_std"
+  }
 }
