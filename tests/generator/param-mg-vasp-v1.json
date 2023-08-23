@@ -13,7 +13,7 @@
     ],
     "sys_batch_size":	[1,1],
 
-    "_comment":		" 00.train ",
+    "_comment1":		" 00.train ",
     "numb_models":	4,
     "default_training_param" : {
 	"model" : {
@@ -57,8 +57,8 @@
 
 	    "seed":		1,
 
-	    "_comment": " display and restart",
-	    "_comment": " frequencies counted in batch",
+	    "_comment2": " display and restart",
+	    "_comment3": " frequencies counted in batch",
 	    "disp_file":	"lcurve.out",
 	    "disp_freq":	1000,
 	    "numb_test":	1,
@@ -72,8 +72,8 @@
 	}
     },
 
-    "_comment":		" 01.model_devi ",
-    "_comment": "model_devi_skip: the first x of the recorded frames",
+    "_comment4":		" 01.model_devi ",
+    "_comment5": "model_devi_skip: the first x of the recorded frames",
     "model_devi_dt":		0.002,
     "model_devi_skip":		0,
     "model_devi_f_trust_lo":	0.05,
@@ -82,7 +82,7 @@
     "model_devi_jobs":	[
 	{ "_idx": 0, "ensemble": "npt", "nsteps": 50, "press": [1.0,2.0], "sys_idx": [0, 1], "temps": [50,100], "trj_freq": 10 }
     ],
-    "_comment":		" 02.fp ",
+    "_comment6":		" 02.fp ",
     "fp_style":		"vasp",
     "shuffle_poscar":	false,
     "fp_task_max":	8,
@@ -90,6 +90,6 @@
     "fp_pp_path":	"/home/wanghan/study/deep.md/dpgen/almg/vasp",
     "fp_pp_files":	["POTCAR.Al", "POTCAR.Mg"],
     "fp_incar":         "/home/wanghan/study/deep.md/dpgen/almg/vasp/INCAR",
-    "_comment":		" that's all "
+    "_comment7":		" that's all "
 }
 
