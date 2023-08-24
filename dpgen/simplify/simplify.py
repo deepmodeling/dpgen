@@ -268,6 +268,8 @@ def post_model_devi(iter_index, jdata, mdata):
 
     f_trust_lo = jdata["model_devi_f_trust_lo"]
     f_trust_hi = jdata["model_devi_f_trust_hi"]
+    e_trust_lo = jdata["model_devi_e_trust_lo"]
+    e_trust_hi = jdata["model_devi_e_trust_hi"]
 
     type_map = jdata.get("type_map", [])
     sys_accurate = dpdata.MultiSystems(type_map=type_map)
@@ -285,16 +287,27 @@ def post_model_devi(iter_index, jdata, mdata):
             if line.startswith("# data.rest.old"):
                 name = (line.split()[1]).split("/")[-1]
             elif line.startswith("#"):
-                pass
+                columns = line.split()[1:]
+                cidx_step = columns.index("step")
+                cidx_max_devi_f = columns.index("max_devi_f")
+                try:
+                    cidx_devi_e = columns.index("devi_e")
+                except ValueError:
+                    # DeePMD-kit < 2.2.2
+                    cidx_devi_e = None
             else:
-                idx = int(line.split()[0])
-                f_devi = float(line.split()[4])
+                idx = int(line.split()[cidx_step])
+                f_devi = float(line.split()[cidx_max_devi_f])
+                if cidx_devi_e is not None:
+                    e_devi = float(line.split()[cidx_devi_e])
+                else:
+                    e_devi = 0.0
                 subsys = sys_entire[name][idx]
-                if f_trust_lo <= f_devi < f_trust_hi:
-                    sys_candinate.append(subsys)
-                elif f_devi >= f_trust_hi:
+                if f_devi >= f_trust_hi or e_devi >= e_trust_hi:
                     sys_failed.append(subsys)
-                elif f_devi < f_trust_lo:
+                elif f_trust_lo <= f_devi < f_trust_hi or e_trust_lo <= e_devi < e_trust_hi:
+                    sys_candinate.append(subsys)
+                elif f_devi < f_trust_lo and e_devi < e_trust_lo:
                     sys_accurate.append(subsys)
                 else:
                     raise RuntimeError("reach a place that should NOT be reached...")
