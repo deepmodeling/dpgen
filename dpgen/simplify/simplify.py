@@ -305,7 +305,10 @@ def post_model_devi(iter_index, jdata, mdata):
                 subsys = sys_entire[name][idx]
                 if f_devi >= f_trust_hi or e_devi >= e_trust_hi:
                     sys_failed.append(subsys)
-                elif f_trust_lo <= f_devi < f_trust_hi or e_trust_lo <= e_devi < e_trust_hi:
+                elif (
+                    f_trust_lo <= f_devi < f_trust_hi
+                    or e_trust_lo <= e_devi < e_trust_hi
+                ):
                     sys_candinate.append(subsys)
                 elif f_devi < f_trust_lo and e_devi < e_trust_lo:
                     sys_accurate.append(subsys)
