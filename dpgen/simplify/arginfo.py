@@ -32,6 +32,8 @@ def general_simplify_arginfo() -> Argument:
     doc_model_devi_f_trust_hi = (
         "The higher bound of forces for the selection for the model deviation."
     )
+    doc_model_devi_e_trust_lo = "The lower bound of energy per atom for the selection for the model deviation. Requires DeePMD-kit version >=2.2.2."
+    doc_model_devi_e_trust_hi = "The higher bound of energy per atom for the selection for the model deviation. Requires DeePMD-kit version >=2.2.2."
 
     return [
         Argument("labeled", bool, optional=True, default=False, doc=doc_labeled),
@@ -49,6 +51,20 @@ def general_simplify_arginfo() -> Argument:
             float,
             optional=False,
             doc=doc_model_devi_f_trust_hi,
+        ),
+        Argument(
+            "model_devi_e_trust_lo",
+            float,
+            optional=True,
+            default=float("inf"),
+            doc=doc_model_devi_e_trust_lo,
+        ),
+        Argument(
+            "model_devi_e_trust_hi",
+            float,
+            optional=True,
+            default=float("inf"),
+            doc=doc_model_devi_e_trust_hi,
         ),
     ]
 
