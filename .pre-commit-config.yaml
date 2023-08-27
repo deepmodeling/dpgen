@@ -20,7 +20,8 @@ repos:
         exclude: "^tests/tools/run_report_test_output/.*$"
     -   id: check-toml
     -   id: pretty-format-json
-        args: ["--no-sort-keys", "--indent 4"]
+        args: ["--no-sort-keys", "--indent=4"]
+        exclude: "^examples/CH4-lebesgue/.*$"
 
 # Python
 -   repo: https://github.com/psf/black
