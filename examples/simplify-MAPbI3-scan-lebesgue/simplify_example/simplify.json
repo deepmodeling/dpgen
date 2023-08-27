@@ -1,147 +1,147 @@
 {
-  "type_map": [
-    "I",
-    "Pb",
-    "C",
-    "N",
-    "H"
-  ],
-  "mass_map": [
-    126.90447,
-    207.2,
-    12.0108,
-    14.0067,
-    1.00795
-  ],
-  "pick_data": "../data",
-  "init_data_prefix": "",
-  "init_data_sys": [],
-  "sys_configs": [
-    null
-  ],
-  "sys_batch_size": [
-    1
-  ],
-  "_comment1": " 00.train ",
-  "numb_models": 4,
-  "model_devi_activation_func": [
-    [
-      "tanh",
-      "tanh"
-    ],
-    [
-      "tanh",
-      "gelu"
-    ],
-    [
-      "gelu",
-      "gelu"
-    ],
-    [
-      "gelu",
-      "tanh"
-    ]
-  ],
-  "default_training_param": {
-    "model": {
-      "type_map": [
+    "type_map": [
         "I",
         "Pb",
         "C",
         "N",
         "H"
-      ],
-      "descriptor": {
-        "type": "se_e2_a",
-        "sel": [
-          20,
-          8,
-          8,
-          8,
-          48
+    ],
+    "mass_map": [
+        126.90447,
+        207.2,
+        12.0108,
+        14.0067,
+        1.00795
+    ],
+    "pick_data": "../data",
+    "init_data_prefix": "",
+    "init_data_sys": [],
+    "sys_configs": [
+        null
+    ],
+    "sys_batch_size": [
+        1
+    ],
+    "_comment1": " 00.train ",
+    "numb_models": 4,
+    "model_devi_activation_func": [
+        [
+            "tanh",
+            "tanh"
         ],
-        "rcut_smth": 2.0,
-        "rcut": 6.0,
-        "neuron": [
-          25,
-          50,
-          100
+        [
+            "tanh",
+            "gelu"
         ],
-        "resnet_dt": false,
-        "type_one_side": true,
-        "trainable": true,
-        "axis_neuron": 12,
-        "seed": 0
-      },
-      "fitting_net": {
-        "neuron": [
-          240,
-          240,
-          240
+        [
+            "gelu",
+            "gelu"
         ],
-        "resnet_dt": true,
-        "trainable": [
-          true,
-          true,
-          true,
-          true
-        ],
-        "seed": 0
-      }
+        [
+            "gelu",
+            "tanh"
+        ]
+    ],
+    "default_training_param": {
+        "model": {
+            "type_map": [
+                "I",
+                "Pb",
+                "C",
+                "N",
+                "H"
+            ],
+            "descriptor": {
+                "type": "se_e2_a",
+                "sel": [
+                    20,
+                    8,
+                    8,
+                    8,
+                    48
+                ],
+                "rcut_smth": 2.0,
+                "rcut": 6.0,
+                "neuron": [
+                    25,
+                    50,
+                    100
+                ],
+                "resnet_dt": false,
+                "type_one_side": true,
+                "trainable": true,
+                "axis_neuron": 12,
+                "seed": 0
+            },
+            "fitting_net": {
+                "neuron": [
+                    240,
+                    240,
+                    240
+                ],
+                "resnet_dt": true,
+                "trainable": [
+                    true,
+                    true,
+                    true,
+                    true
+                ],
+                "seed": 0
+            }
+        },
+        "loss": {
+            "start_pref_e": 0.02,
+            "limit_pref_e": 2,
+            "start_pref_f": 1000,
+            "limit_pref_f": 2,
+            "start_pref_v": 0.01,
+            "limit_pref_v": 1
+        },
+        "learning_rate": {
+            "type": "exp",
+            "start_lr": 0.001,
+            "decay_steps": 25,
+            "stop_lr": 3.505266624882874e-08
+        },
+        "training": {
+            "stop_batch": 5000,
+            "seed": 1,
+            "_comment2": "frequencies counted in batch",
+            "disp_file": "lcurve.out",
+            "disp_freq": 1000,
+            "save_freq": 10000,
+            "save_ckpt": "model.ckpt",
+            "disp_training": true,
+            "time_training": true,
+            "profiling": false,
+            "profiling_file": "timeline.json",
+            "training_data": {
+                "set_prefix": "set",
+                "batch_size": "auto"
+            }
+        }
     },
-    "loss": {
-      "start_pref_e": 0.02,
-      "limit_pref_e": 2,
-      "start_pref_f": 1000,
-      "limit_pref_f": 2,
-      "start_pref_v": 0.01,
-      "limit_pref_v": 1
-    },
-    "learning_rate": {
-      "type": "exp",
-      "start_lr": 0.001,
-      "decay_steps": 25,
-      "stop_lr": 3.505266624882874e-08
-    },
-    "training": {
-      "stop_batch": 5000,
-      "seed": 1,
-      "_comment2": "frequencies counted in batch",
-      "disp_file": "lcurve.out",
-      "disp_freq": 1000,
-      "save_freq": 10000,
-      "save_ckpt": "model.ckpt",
-      "disp_training": true,
-      "time_training": true,
-      "profiling": false,
-      "profiling_file": "timeline.json",
-      "training_data": {
-        "set_prefix": "set",
-        "batch_size": "auto"
-      }
-    }
-  },
-  "_comment3": "02.fp",
-  "fp_style": "vasp",
-  "fp_skip_bad_box": "length_ratio:5;height_ratio:5",
-  "fp_accurate_threshold": 0.1,
-  "fp_accurate_soft_threshold": 0.0,
-  "fp_task_max": 20,
-  "fp_task_min": 5,
-  "ratio_failed": 0.3,
-  "fp_pp_path": "../vasp_inputs/",
-  "fp_pp_files": [
-    "POTCAR_I",
-    "POTCAR_Pb_d",
-    "POTCAR_C",
-    "POTCAR_N",
-    "POTCAR_H"
-  ],
-  "fp_incar": "INCAR",
-  "labeled": false,
-  "init_pick_number": 5,
-  "iter_pick_number": 5,
-  "model_devi_f_trust_lo": 0.3,
-  "model_devi_f_trust_hi": 100.0,
-  "cvasp": false
+    "_comment3": "02.fp",
+    "fp_style": "vasp",
+    "fp_skip_bad_box": "length_ratio:5;height_ratio:5",
+    "fp_accurate_threshold": 0.1,
+    "fp_accurate_soft_threshold": 0.0,
+    "fp_task_max": 20,
+    "fp_task_min": 5,
+    "ratio_failed": 0.3,
+    "fp_pp_path": "../vasp_inputs/",
+    "fp_pp_files": [
+        "POTCAR_I",
+        "POTCAR_Pb_d",
+        "POTCAR_C",
+        "POTCAR_N",
+        "POTCAR_H"
+    ],
+    "fp_incar": "INCAR",
+    "labeled": false,
+    "init_pick_number": 5,
+    "iter_pick_number": 5,
+    "model_devi_f_trust_lo": 0.3,
+    "model_devi_f_trust_hi": 100.0,
+    "cvasp": false
 }

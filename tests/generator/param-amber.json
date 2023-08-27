@@ -1,66 +1,66 @@
 {
-  "model_devi_jobs": [
-    {
-      "sys_idx": [
+    "model_devi_jobs": [
+        {
+            "sys_idx": [
+                0
+            ]
+        }
+    ],
+    "use_multi_systems": true,
+    "model_devi_engine": "amber",
+    "fp_style": "amber/diff",
+    "numb_models": 4,
+    "mdin_prefix": "amber",
+    "parm7_prefix": "amber",
+    "sys_prefix": "amber",
+    "disang_prefix": "amber",
+    "sys_configs": [
+        [
+            "init_-1.20.rst7"
+        ]
+    ],
+    "disang": [
+        "init_-1.20.disang"
+    ],
+    "parm7": [
+        "MON.parm7"
+    ],
+    "mdin": [
+        "ml.mdin"
+    ],
+    "qm_region": [
+        ":1"
+    ],
+    "qm_charge": [
         0
-      ]
+    ],
+    "r": [
+        [
+            -1.2
+        ]
+    ],
+    "nsteps": [
+        1000
+    ],
+    "type_map": [
+        "C",
+        "H",
+        "O",
+        "N",
+        "P",
+        "HW",
+        "OW"
+    ],
+    "shuffle_poscar": false,
+    "low_level": "DFTB2",
+    "high_level": "PBE0",
+    "cutoff": 6.0,
+    "fp_task_max": 1000,
+    "model_devi_skip": 0,
+    "model_devi_f_trust_lo": 0.1,
+    "model_devi_f_trust_hi": 0.25,
+    "fp_params": {
+        "low_level_mdin": "ml.mdin",
+        "high_level_mdin": "ml.mdin"
     }
-  ],
-  "use_multi_systems": true,
-  "model_devi_engine": "amber",
-  "fp_style": "amber/diff",
-  "numb_models": 4,
-  "mdin_prefix": "amber",
-  "parm7_prefix": "amber",
-  "sys_prefix": "amber",
-  "disang_prefix": "amber",
-  "sys_configs": [
-    [
-      "init_-1.20.rst7"
-    ]
-  ],
-  "disang": [
-    "init_-1.20.disang"
-  ],
-  "parm7": [
-    "MON.parm7"
-  ],
-  "mdin": [
-    "ml.mdin"
-  ],
-  "qm_region": [
-    ":1"
-  ],
-  "qm_charge": [
-    0
-  ],
-  "r": [
-    [
-      -1.2
-    ]
-  ],
-  "nsteps": [
-    1000
-  ],
-  "type_map": [
-    "C",
-    "H",
-    "O",
-    "N",
-    "P",
-    "HW",
-    "OW"
-  ],
-  "shuffle_poscar": false,
-  "low_level": "DFTB2",
-  "high_level": "PBE0",
-  "cutoff": 6.0,
-  "fp_task_max": 1000,
-  "model_devi_skip": 0,
-  "model_devi_f_trust_lo": 0.1,
-  "model_devi_f_trust_hi": 0.25,
-  "fp_params": {
-    "low_level_mdin": "ml.mdin",
-    "high_level_mdin": "ml.mdin"
-  }
 }

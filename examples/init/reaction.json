@@ -1,19 +1,19 @@
 {
-  "type_map": [
-    "H",
-    "O"
-  ],
-  "reaxff": {
-    "data": "data.hydrogen",
-    "ff": "ffield.reax.cho",
-    "control": "lmp_control",
-    "temp": 3000,
-    "tau_t": 100,
-    "dt": 0.1,
-    "nstep": 10000,
-    "dump_freq": 100
-  },
-  "cutoff": 3.5,
-  "dataset_size": 100,
-  "qmkeywords": "b3lyp/6-31g** force Geom=PrintInputOrient"
+    "type_map": [
+        "H",
+        "O"
+    ],
+    "reaxff": {
+        "data": "data.hydrogen",
+        "ff": "ffield.reax.cho",
+        "control": "lmp_control",
+        "temp": 3000,
+        "tau_t": 100,
+        "dt": 0.1,
+        "nstep": 10000,
+        "dump_freq": 100
+    },
+    "cutoff": 3.5,
+    "dataset_size": 100,
+    "qmkeywords": "b3lyp/6-31g** force Geom=PrintInputOrient"
 }

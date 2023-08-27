@@ -1,32 +1,32 @@
 {
-  "cell_type": "fcc",
-  "super_cell": [
-    1,
-    1,
-    1
-  ],
-  "elements": [
-    "Al"
-  ],
-  "from_poscar": false,
-  "from_poscar_path": "example/POSCAR",
-  "potcars": [
-    "example/POTCAR"
-  ],
-  "relax_incar": "example/INCAR.rlx",
-  "md_incar": "example/INCAR.md",
-  "scale": [
-    1.0
-  ],
-  "skip_relax": false,
-  "pert_numb": 2,
-  "md_nstep": 1,
-  "pert_box": 0.03,
-  "pert_atom": 0.01,
-  "coll_ndata": 10,
-  "type_map": [
-    "Mg",
-    "Al"
-  ],
-  "_comment1": "that's all"
+    "cell_type": "fcc",
+    "super_cell": [
+        1,
+        1,
+        1
+    ],
+    "elements": [
+        "Al"
+    ],
+    "from_poscar": false,
+    "from_poscar_path": "example/POSCAR",
+    "potcars": [
+        "example/POTCAR"
+    ],
+    "relax_incar": "example/INCAR.rlx",
+    "md_incar": "example/INCAR.md",
+    "scale": [
+        1.0
+    ],
+    "skip_relax": false,
+    "pert_numb": 2,
+    "md_nstep": 1,
+    "pert_box": 0.03,
+    "pert_atom": 0.01,
+    "coll_ndata": 10,
+    "type_map": [
+        "Mg",
+        "Al"
+    ],
+    "_comment1": "that's all"
 }

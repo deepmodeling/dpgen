@@ -1,17 +1,17 @@
 {
-  "fp": [
-    {
-      "command": "vasp_std",
-      "machine": {
-        "batch_type": "PBS"
-      },
-      "resources": {
-        "group_size": 8
-      },
-      "_comments": "In user_forward_files, define input files to be uploaded.",
-      "user_forward_files": [
-        "vdw_kernel.bindat"
-      ]
-    }
-  ]
+    "fp": [
+        {
+            "command": "vasp_std",
+            "machine": {
+                "batch_type": "PBS"
+            },
+            "resources": {
+                "group_size": 8
+            },
+            "_comments": "In user_forward_files, define input files to be uploaded.",
+            "user_forward_files": [
+                "vdw_kernel.bindat"
+            ]
+        }
+    ]
 }

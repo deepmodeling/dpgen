@@ -1,8 +1,8 @@
 {
-  "type": "deepmd",
-  "model": "frozen_model.pb",
-  "deepmd_version": "2.1.0",
-  "type_map": {
-    "Mo": 0
-  }
+    "type": "deepmd",
+    "model": "frozen_model.pb",
+    "deepmd_version": "2.1.0",
+    "type_map": {
+        "Mo": 0
+    }
 }

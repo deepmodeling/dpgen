@@ -1,140 +1,5 @@
 {
-  "type_map": [
-    "H",
-    "C",
-    "N",
-    "O",
-    "F",
-    "S",
-    "Cl"
-  ],
-  "mass_map": [
-    2,
-    12,
-    14,
-    16,
-    17,
-    32,
-    35
-  ],
-  "init_data_prefix": "/path/to/init/data",
-  "init_data_sys": [
-    "data.init"
-  ],
-  "sys_configs_prefix": "/path/to/model/devi/data",
-  "sys_configs": [
-    [
-      "model_devi/CHEMBL3402749_500"
-    ],
-    [
-      "model_devi/CHEMBL3402741_400"
-    ],
-    [
-      "model_devi/CHEMBL3402748_5300"
-    ],
-    [
-      "model_devi/CHEMBL3402743_42"
-    ],
-    [
-      "model_devi/CHEMBL3402761_1"
-    ],
-    [
-      "model_devi/CHEMBL3402756_2.7"
-    ],
-    [
-      "model_devi/CHEMBL3402750_400"
-    ],
-    [
-      "model_devi/CHEMBL3402764_90"
-    ],
-    [
-      "model_devi/CHEMBL3402758_10"
-    ],
-    [
-      "model_devi/CHEMBL3402754_40"
-    ],
-    [
-      "model_devi/CHEMBL3402747_3400"
-    ],
-    [
-      "model_devi/CHEMBL3402762_1"
-    ],
-    [
-      "model_devi/CHEMBL3402744_300"
-    ],
-    [
-      "model_devi/CHEMBL3402752_30000"
-    ],
-    [
-      "model_devi/CHEMBL3402742_23"
-    ],
-    [
-      "model_devi/CHEMBL3402759_5.7"
-    ],
-    [
-      "model_devi/CHEMBL3402745_200"
-    ],
-    [
-      "model_devi/CHEMBL3402757_6.5"
-    ],
-    [
-      "model_devi/CHEMBL3402755_4200"
-    ],
-    [
-      "model_devi/CHEMBL3402751_2100"
-    ],
-    [
-      "model_devi/CHEMBL3402753_200"
-    ],
-    [
-      "model_devi/CHEMBL3402763_90"
-    ],
-    [
-      "model_devi/CHEMBL3402765_11-charged-pKa-8.1"
-    ],
-    [
-      "model_devi/CHEMBL3402760_1"
-    ]
-  ],
-  "sys_charges": [
-    0,
-    1,
-    0,
-    1,
-    0,
-    1,
-    0,
-    1,
-    1,
-    0,
-    0,
-    1,
-    0,
-    0,
-    1,
-    1,
-    0,
-    1,
-    0,
-    0,
-    0,
-    1,
-    1,
-    1
-  ],
-  "sys_format": "gromacs/gro",
-  "numb_models": 4,
-  "training_reuse_iter": 1,
-  "training_reuse_old_ratio": 0.3,
-  "training_reuse_start_lr": 0.0001,
-  "training_reuse_decay_steps": 500,
-  "training_reuse_numb_steps": 200000,
-  "training_reuse_start_pref_e": 1,
-  "training_reuse_start_pref_f": 100,
-  "train_param": "input.json",
-  "default_training_param": {
-    "model": {
-      "type_map": [
+    "type_map": [
         "H",
         "C",
         "N",
@@ -142,140 +7,275 @@
         "F",
         "S",
         "Cl"
-      ],
-      "descriptor": {
-        "type": "se_e2_a",
-        "sel": [
-          40,
-          48,
-          48,
-          48,
-          48,
-          48,
-          48
-        ],
-        "rcut_smth": 0.5,
-        "rcut": 6.0,
-        "neuron": [
-          25,
-          50,
-          100
-        ],
-        "resnet_dt": false,
-        "axis_neuron": 16,
-        "type_one_side": true
-      },
-      "fitting_net": {
-        "neuron": [
-          240,
-          240,
-          240
-        ],
-        "resnet_dt": true,
-        "type": "ener"
-      }
-    },
-    "learning_rate": {
-      "type": "exp",
-      "start_lr": 0.001,
-      "decay_steps": 5000
-    },
-    "loss": {
-      "start_pref_e": 0.02,
-      "limit_pref_e": 8,
-      "start_pref_f": 1000,
-      "limit_pref_f": 1,
-      "start_pref_v": 0,
-      "limit_pref_v": 0
-    },
-    "training": {
-      "numb_steps": 1000000,
-      "disp_file": "lcurve.out",
-      "disp_freq": 1000,
-      "save_freq": 1000,
-      "save_ckpt": "model.ckpt"
-    }
-  },
-  "model_devi_engine": "gromacs",
-  "gromacs_settings": {
-    "mdp_filename": "md.mdp",
-    "topol_filename": "processed.top",
-    "conf_filename": "npt.gro",
-    "index_filename": "index.raw",
-    "ref_filename": "em.tpr",
-    "model_devi_script": "model_devi.py",
-    "traj_filename": "deepmd_traj.gro",
-    "group_name": "Other"
-  },
-  "model_devi_dt": 0.001,
-  "model_devi_f_trust_lo": 0.2,
-  "model_devi_f_trust_hi": 0.6,
-  "model_devi_clean_traj": false,
-  "model_devi_skip": 0,
-  "model_devi_nopbc": true,
-  "model_devi_activation_func": [
-    [
-      "tanh",
-      "tanh"
     ],
-    [
-      "tanh",
-      "tanh"
-    ],
-    [
-      "tanh",
-      "tanh"
-    ],
-    [
-      "tanh",
-      "tanh"
-    ]
-  ],
-  "model_devi_jobs": [
-    {
-      "_idx": 0,
-      "ensemble": "nvt",
-      "nsteps": 100,
-      "press": [],
-      "sys_idx": [
-        0,
-        1,
+    "mass_map": [
         2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
         12,
-        13,
         14,
-        15,
         16,
         17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23
-      ],
-      "temps": [],
-      "trj_freq": 1
+        32,
+        35
+    ],
+    "init_data_prefix": "/path/to/init/data",
+    "init_data_sys": [
+        "data.init"
+    ],
+    "sys_configs_prefix": "/path/to/model/devi/data",
+    "sys_configs": [
+        [
+            "model_devi/CHEMBL3402749_500"
+        ],
+        [
+            "model_devi/CHEMBL3402741_400"
+        ],
+        [
+            "model_devi/CHEMBL3402748_5300"
+        ],
+        [
+            "model_devi/CHEMBL3402743_42"
+        ],
+        [
+            "model_devi/CHEMBL3402761_1"
+        ],
+        [
+            "model_devi/CHEMBL3402756_2.7"
+        ],
+        [
+            "model_devi/CHEMBL3402750_400"
+        ],
+        [
+            "model_devi/CHEMBL3402764_90"
+        ],
+        [
+            "model_devi/CHEMBL3402758_10"
+        ],
+        [
+            "model_devi/CHEMBL3402754_40"
+        ],
+        [
+            "model_devi/CHEMBL3402747_3400"
+        ],
+        [
+            "model_devi/CHEMBL3402762_1"
+        ],
+        [
+            "model_devi/CHEMBL3402744_300"
+        ],
+        [
+            "model_devi/CHEMBL3402752_30000"
+        ],
+        [
+            "model_devi/CHEMBL3402742_23"
+        ],
+        [
+            "model_devi/CHEMBL3402759_5.7"
+        ],
+        [
+            "model_devi/CHEMBL3402745_200"
+        ],
+        [
+            "model_devi/CHEMBL3402757_6.5"
+        ],
+        [
+            "model_devi/CHEMBL3402755_4200"
+        ],
+        [
+            "model_devi/CHEMBL3402751_2100"
+        ],
+        [
+            "model_devi/CHEMBL3402753_200"
+        ],
+        [
+            "model_devi/CHEMBL3402763_90"
+        ],
+        [
+            "model_devi/CHEMBL3402765_11-charged-pKa-8.1"
+        ],
+        [
+            "model_devi/CHEMBL3402760_1"
+        ]
+    ],
+    "sys_charges": [
+        0,
+        1,
+        0,
+        1,
+        0,
+        1,
+        0,
+        1,
+        1,
+        0,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1
+    ],
+    "sys_format": "gromacs/gro",
+    "numb_models": 4,
+    "training_reuse_iter": 1,
+    "training_reuse_old_ratio": 0.3,
+    "training_reuse_start_lr": 0.0001,
+    "training_reuse_decay_steps": 500,
+    "training_reuse_numb_steps": 200000,
+    "training_reuse_start_pref_e": 1,
+    "training_reuse_start_pref_f": 100,
+    "train_param": "input.json",
+    "default_training_param": {
+        "model": {
+            "type_map": [
+                "H",
+                "C",
+                "N",
+                "O",
+                "F",
+                "S",
+                "Cl"
+            ],
+            "descriptor": {
+                "type": "se_e2_a",
+                "sel": [
+                    40,
+                    48,
+                    48,
+                    48,
+                    48,
+                    48,
+                    48
+                ],
+                "rcut_smth": 0.5,
+                "rcut": 6.0,
+                "neuron": [
+                    25,
+                    50,
+                    100
+                ],
+                "resnet_dt": false,
+                "axis_neuron": 16,
+                "type_one_side": true
+            },
+            "fitting_net": {
+                "neuron": [
+                    240,
+                    240,
+                    240
+                ],
+                "resnet_dt": true,
+                "type": "ener"
+            }
+        },
+        "learning_rate": {
+            "type": "exp",
+            "start_lr": 0.001,
+            "decay_steps": 5000
+        },
+        "loss": {
+            "start_pref_e": 0.02,
+            "limit_pref_e": 8,
+            "start_pref_f": 1000,
+            "limit_pref_f": 1,
+            "start_pref_v": 0,
+            "limit_pref_v": 0
+        },
+        "training": {
+            "numb_steps": 1000000,
+            "disp_file": "lcurve.out",
+            "disp_freq": 1000,
+            "save_freq": 1000,
+            "save_ckpt": "model.ckpt"
+        }
+    },
+    "model_devi_engine": "gromacs",
+    "gromacs_settings": {
+        "mdp_filename": "md.mdp",
+        "topol_filename": "processed.top",
+        "conf_filename": "npt.gro",
+        "index_filename": "index.raw",
+        "ref_filename": "em.tpr",
+        "model_devi_script": "model_devi.py",
+        "traj_filename": "deepmd_traj.gro",
+        "group_name": "Other"
+    },
+    "model_devi_dt": 0.001,
+    "model_devi_f_trust_lo": 0.2,
+    "model_devi_f_trust_hi": 0.6,
+    "model_devi_clean_traj": false,
+    "model_devi_skip": 0,
+    "model_devi_nopbc": true,
+    "model_devi_activation_func": [
+        [
+            "tanh",
+            "tanh"
+        ],
+        [
+            "tanh",
+            "tanh"
+        ],
+        [
+            "tanh",
+            "tanh"
+        ],
+        [
+            "tanh",
+            "tanh"
+        ]
+    ],
+    "model_devi_jobs": [
+        {
+            "_idx": 0,
+            "ensemble": "nvt",
+            "nsteps": 100,
+            "press": [],
+            "sys_idx": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21,
+                22,
+                23
+            ],
+            "temps": [],
+            "trj_freq": 1
+        }
+    ],
+    "fp_style": "gaussian",
+    "shuffle_poscar": false,
+    "fp_task_max": 50,
+    "fp_task_min": 1,
+    "fp_pp_path": "./",
+    "fp_pp_files": [],
+    "fp_params": {
+        "keywords": "force m062x/6-31** nosymm",
+        "nproc": 28,
+        "multiplicity": 1
     }
-  ],
-  "fp_style": "gaussian",
-  "shuffle_poscar": false,
-  "fp_task_max": 50,
-  "fp_task_min": 1,
-  "fp_pp_path": "./",
-  "fp_pp_files": [],
-  "fp_params": {
-    "keywords": "force m062x/6-31** nosymm",
-    "nproc": 28,
-    "multiplicity": 1
-  }
 }

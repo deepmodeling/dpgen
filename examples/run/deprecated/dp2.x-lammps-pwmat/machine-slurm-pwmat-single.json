@@ -1,80 +1,80 @@
 {
-  "train": [
-    {
-      "machine": {
-        "machine_type": "slurm",
-        "hostname": "mstation",
-        "port": 22,
-        "username": "test",
-        "password": "PWmat2019",
-        "work_path": "/home/test/software/dpgen/examples/run/dp-lammps-pwmat/work_train"
-      },
-      "resources": {
-        "numb_node": 1,
-        "numb_gpu": 4,
-        "task_per_node": 4,
-        "partition": "control",
-        "exclude_list": [],
-        "source_list": [
-          "/home/test/software/dpgen/examples/run/dp-lammps-pwmat/train.env"
-        ],
-        "module_list": [],
-        "time_limit": "23:0:0"
-      },
-      "deepmd_path": "/home/test/anaconda2/envs/python3/"
-    }
-  ],
-  "model_devi": [
-    {
-      "machine": {
-        "machine_type": "slurm",
-        "hostname": "mstation",
-        "port": 22,
-        "username": "test",
-        "password": "PWmat2019",
-        "work_path": "/home/test/software/dpgen/examples/run/dp-lammps-pwmat/work_model"
-      },
-      "resources": {
-        "numb_node": 1,
-        "numb_gpu": 4,
-        "task_per_node": 4,
-        "partition": "control",
-        "exclude_list": [],
-        "source_list": [
-          "/home/test/software/dpgen/examples/run/dp-lammps-pwmat/train.env"
-        ],
-        "module_list": [],
-        "time_limit": "23:0:0"
-      },
-      "command": "srun --mpi=pmi2 lmp_mpi",
-      "group_size": 10
-    }
-  ],
-  "fp": [
-    {
-      "machine": {
-        "machine_type": "slurm",
-        "hostname": "mstation",
-        "port": 22,
-        "username": "test",
-        "password": "PWmat2019",
-        "work_path": "/home/test/software/dpgen/examples/run/dp-lammps-pwmat/work_fp"
-      },
-      "resources": {
-        "task_per_node": 4,
-        "numb_gpu": 4,
-        "exclude_list": [],
-        "with_mpi": false,
-        "source_list": [],
-        "module_list": [
-          "cuda/8.0"
-        ],
-        "time_limit": "120:0:0",
-        "partition": "control",
-        "_comment1": "that's All"
-      },
-      "command": "mpirun -np 4 PWmat",
-      "group_size": 5
-    }
-  ]
+    "train": [
+        {
+            "machine": {
+                "machine_type": "slurm",
+                "hostname": "mstation",
+                "port": 22,
+                "username": "test",
+                "password": "PWmat2019",
+                "work_path": "/home/test/software/dpgen/examples/run/dp-lammps-pwmat/work_train"
+            },
+            "resources": {
+                "numb_node": 1,
+                "numb_gpu": 4,
+                "task_per_node": 4,
+                "partition": "control",
+                "exclude_list": [],
+                "source_list": [
+                    "/home/test/software/dpgen/examples/run/dp-lammps-pwmat/train.env"
+                ],
+                "module_list": [],
+                "time_limit": "23:0:0"
+            },
+            "deepmd_path": "/home/test/anaconda2/envs/python3/"
+        }
+    ],
+    "model_devi": [
+        {
+            "machine": {
+                "machine_type": "slurm",
+                "hostname": "mstation",
+                "port": 22,
+                "username": "test",
+                "password": "PWmat2019",
+                "work_path": "/home/test/software/dpgen/examples/run/dp-lammps-pwmat/work_model"
+            },
+            "resources": {
+                "numb_node": 1,
+                "numb_gpu": 4,
+                "task_per_node": 4,
+                "partition": "control",
+                "exclude_list": [],
+                "source_list": [
+                    "/home/test/software/dpgen/examples/run/dp-lammps-pwmat/train.env"
+                ],
+                "module_list": [],
+                "time_limit": "23:0:0"
+            },
+            "command": "srun --mpi=pmi2 lmp_mpi",
+            "group_size": 10
+        }
+    ],
+    "fp": [
+        {
+            "machine": {
+                "machine_type": "slurm",
+                "hostname": "mstation",
+                "port": 22,
+                "username": "test",
+                "password": "PWmat2019",
+                "work_path": "/home/test/software/dpgen/examples/run/dp-lammps-pwmat/work_fp"
+            },
+            "resources": {
+                "task_per_node": 4,
+                "numb_gpu": 4,
+                "exclude_list": [],
+                "with_mpi": false,
+                "source_list": [],
+                "module_list": [
+                    "cuda/8.0"
+                ],
+                "time_limit": "120:0:0",
+                "partition": "control",
+                "_comment1": "that's All"
+            },
+            "command": "mpirun -np 4 PWmat",
+            "group_size": 5
+        }
+    ]
 }

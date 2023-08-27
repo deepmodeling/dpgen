@@ -1,52 +1,52 @@
 {
-  "train_machine": {
-    "machine_type": "shell",
-    "lazy_local": true
-  },
-  "train_resources": {
-    "numb_node": 1,
-    "numb_gpu": 0,
-    "task_per_node": 4,
-    "exclude_list": [],
-    "source_list": [
-      "/home/wanghan/study/deep.md/venvs/py3.6-tf1.8/bin/active"
-    ],
-    "envs": {},
-    "_comment1": "that's All"
-  },
-  "python_path": "/home/wanghan/study/deep.md/venvs/py3.6-tf1.8/bin/python",
-  "model_devi_machine": {
-    "machine_type": "shell",
-    "work_path": "/home/wanghan/study/deep.md/dpgen/almg/tmp"
-  },
-  "model_devi_resources": {
-    "numb_node": 1,
-    "task_per_node": 4,
-    "with_mpi": true,
-    "module_list": [
-      "mpi"
-    ],
-    "exclude_list": [],
-    "source_list": [],
-    "_comment2": "that's All"
-  },
-  "model_devi_command": "/home/wanghan/local/bin/lmp_mpi_1_1_0",
-  "model_devi_group_size": 10,
-  "fp_machine": {
-    "machine_type": "shell",
-    "work_path": "/home/wanghan/study/deep.md/dpgen/almg/tmp"
-  },
-  "fp_resources": {
-    "cvasp": false,
-    "task_per_node": 4,
-    "exclude_list": [],
-    "with_mpi": true,
-    "module_list": [
-      "mpi"
-    ],
-    "source_list": [],
-    "_comment3": "that's All"
-  },
-  "fp_command": "/home/wanghan/local/bin/vasp_std",
-  "fp_group_size": 5
+    "train_machine": {
+        "machine_type": "shell",
+        "lazy_local": true
+    },
+    "train_resources": {
+        "numb_node": 1,
+        "numb_gpu": 0,
+        "task_per_node": 4,
+        "exclude_list": [],
+        "source_list": [
+            "/home/wanghan/study/deep.md/venvs/py3.6-tf1.8/bin/active"
+        ],
+        "envs": {},
+        "_comment1": "that's All"
+    },
+    "python_path": "/home/wanghan/study/deep.md/venvs/py3.6-tf1.8/bin/python",
+    "model_devi_machine": {
+        "machine_type": "shell",
+        "work_path": "/home/wanghan/study/deep.md/dpgen/almg/tmp"
+    },
+    "model_devi_resources": {
+        "numb_node": 1,
+        "task_per_node": 4,
+        "with_mpi": true,
+        "module_list": [
+            "mpi"
+        ],
+        "exclude_list": [],
+        "source_list": [],
+        "_comment2": "that's All"
+    },
+    "model_devi_command": "/home/wanghan/local/bin/lmp_mpi_1_1_0",
+    "model_devi_group_size": 10,
+    "fp_machine": {
+        "machine_type": "shell",
+        "work_path": "/home/wanghan/study/deep.md/dpgen/almg/tmp"
+    },
+    "fp_resources": {
+        "cvasp": false,
+        "task_per_node": 4,
+        "exclude_list": [],
+        "with_mpi": true,
+        "module_list": [
+            "mpi"
+        ],
+        "source_list": [],
+        "_comment3": "that's All"
+    },
+    "fp_command": "/home/wanghan/local/bin/vasp_std",
+    "fp_group_size": 5
 }

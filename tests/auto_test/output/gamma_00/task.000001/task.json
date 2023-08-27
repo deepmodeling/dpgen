@@ -1,34 +1,34 @@
 {
-  "type": "gamma",
-  "skip": false,
-  "lattice_type": "bcc",
-  "miller_index": [
-    1,
-    1,
-    0
-  ],
-  "displace_direction": [
-    1,
-    1,
-    1
-  ],
-  "min_supercell_size": [
-    5,
-    5,
-    10
-  ],
-  "min_vacuum_size": 20,
-  "add_fix": [
-    "true",
-    "true",
-    "false"
-  ],
-  "n_steps": 20,
-  "reproduce": false,
-  "cal_type": "relaxation",
-  "cal_setting": {
-    "relax_pos": true,
-    "relax_shape": false,
-    "relax_vol": false
-  }
+    "type": "gamma",
+    "skip": false,
+    "lattice_type": "bcc",
+    "miller_index": [
+        1,
+        1,
+        0
+    ],
+    "displace_direction": [
+        1,
+        1,
+        1
+    ],
+    "min_supercell_size": [
+        5,
+        5,
+        10
+    ],
+    "min_vacuum_size": 20,
+    "add_fix": [
+        "true",
+        "true",
+        "false"
+    ],
+    "n_steps": 20,
+    "reproduce": false,
+    "cal_type": "relaxation",
+    "cal_setting": {
+        "relax_pos": true,
+        "relax_shape": false,
+        "relax_vol": false
+    }
 }

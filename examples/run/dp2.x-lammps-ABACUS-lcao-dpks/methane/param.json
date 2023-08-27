@@ -1,171 +1,171 @@
 {
-  "type_map": [
-    "H",
-    "C"
-  ],
-  "mass_map": [
-    1.0,
-    12.0
-  ],
-  "_comment1": "initial data set for Training and the number of frames in each training  batch",
-  "init_data_prefix": "/home/mhchen_pkuhpc/mhchen_cls/lustre2/5_liurenxi/5_ABACUS_dpgen_interface/5_dpgen_examples/dpgen-example/run_abacus/",
-  "init_data_sys": [
-    "abacus_init_data"
-  ],
-  "init_batch_size": [
-    8
-  ],
-  "_comment2": "configurations for starting MD in Exploration and batch sizes when traning snapshots derived from these configs (if they were selected)",
-  "sys_configs_prefix": "/home/mhchen_pkuhpc/mhchen_cls/lustre2/5_liurenxi/5_ABACUS_dpgen_interface/5_dpgen_examples/dpgen-example/run",
-  "sys_configs": [
-    [
-      "CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale-1.000/000000/POSCAR",
-      "CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale-1.000/000001/POSCAR",
-      "CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale-1.000/00000[2-9]/POSCAR"
-    ],
-    [
-      "CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale-1.000/00001*/POSCAR"
-    ]
-  ],
-  "sys_batch_size": [
-    8,
-    8
-  ],
-  "_comment3": " 00.train ",
-  "numb_models": 4,
-  "default_training_param": {
-    "model": {
-      "type_map": [
+    "type_map": [
         "H",
         "C"
-      ],
-      "descriptor": {
-        "type": "se_a",
-        "sel": [
-          16,
-          4
+    ],
+    "mass_map": [
+        1.0,
+        12.0
+    ],
+    "_comment1": "initial data set for Training and the number of frames in each training  batch",
+    "init_data_prefix": "/home/mhchen_pkuhpc/mhchen_cls/lustre2/5_liurenxi/5_ABACUS_dpgen_interface/5_dpgen_examples/dpgen-example/run_abacus/",
+    "init_data_sys": [
+        "abacus_init_data"
+    ],
+    "init_batch_size": [
+        8
+    ],
+    "_comment2": "configurations for starting MD in Exploration and batch sizes when traning snapshots derived from these configs (if they were selected)",
+    "sys_configs_prefix": "/home/mhchen_pkuhpc/mhchen_cls/lustre2/5_liurenxi/5_ABACUS_dpgen_interface/5_dpgen_examples/dpgen-example/run",
+    "sys_configs": [
+        [
+            "CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale-1.000/000000/POSCAR",
+            "CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale-1.000/000001/POSCAR",
+            "CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale-1.000/00000[2-9]/POSCAR"
         ],
-        "rcut_smth": 0.5,
-        "rcut": 5.0,
-        "neuron": [
-          10,
-          20,
-          40
-        ],
-        "resnet_dt": false,
-        "axis_neuron": 12,
-        "seed": 0
-      },
-      "fitting_net": {
-        "neuron": [
-          120,
-          120,
-          120
-        ],
-        "resnet_dt": true,
-        "coord_norm": true,
-        "type_fitting_net": false,
-        "seed": 0
-      }
+        [
+            "CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale-1.000/00001*/POSCAR"
+        ]
+    ],
+    "sys_batch_size": [
+        8,
+        8
+    ],
+    "_comment3": " 00.train ",
+    "numb_models": 4,
+    "default_training_param": {
+        "model": {
+            "type_map": [
+                "H",
+                "C"
+            ],
+            "descriptor": {
+                "type": "se_a",
+                "sel": [
+                    16,
+                    4
+                ],
+                "rcut_smth": 0.5,
+                "rcut": 5.0,
+                "neuron": [
+                    10,
+                    20,
+                    40
+                ],
+                "resnet_dt": false,
+                "axis_neuron": 12,
+                "seed": 0
+            },
+            "fitting_net": {
+                "neuron": [
+                    120,
+                    120,
+                    120
+                ],
+                "resnet_dt": true,
+                "coord_norm": true,
+                "type_fitting_net": false,
+                "seed": 0
+            }
+        },
+        "loss": {
+            "start_pref_e": 0.02,
+            "limit_pref_e": 2,
+            "start_pref_f": 1000,
+            "limit_pref_f": 1,
+            "start_pref_v": 0,
+            "limit_pref_v": 0
+        },
+        "learning_rate": {
+            "type": "exp",
+            "start_lr": 0.001,
+            "decay_steps": 180,
+            "stop_lr": 0.0005655675757628467
+        },
+        "training": {
+            "numb_steps": 2000,
+            "disp_file": "lcurve.out",
+            "disp_freq": 1000,
+            "save_freq": 1000,
+            "save_ckpt": "model.ckpt",
+            "disp_training": true,
+            "time_training": true,
+            "profiling": false,
+            "profiling_file": "timeline.json",
+            "_comment4": "that's all",
+            "training_data": {
+                "set_prefix": "set",
+                "batch_size": 1
+            }
+        }
     },
-    "loss": {
-      "start_pref_e": 0.02,
-      "limit_pref_e": 2,
-      "start_pref_f": 1000,
-      "limit_pref_f": 1,
-      "start_pref_v": 0,
-      "limit_pref_v": 0
-    },
-    "learning_rate": {
-      "type": "exp",
-      "start_lr": 0.001,
-      "decay_steps": 180,
-      "stop_lr": 0.0005655675757628467
-    },
-    "training": {
-      "numb_steps": 2000,
-      "disp_file": "lcurve.out",
-      "disp_freq": 1000,
-      "save_freq": 1000,
-      "save_ckpt": "model.ckpt",
-      "disp_training": true,
-      "time_training": true,
-      "profiling": false,
-      "profiling_file": "timeline.json",
-      "_comment4": "that's all",
-      "training_data": {
-        "set_prefix": "set",
-        "batch_size": 1
-      }
+    "_comment5": " 01.model_devi ",
+    "model_devi_dt": 0.002,
+    "model_devi_skip": 0,
+    "model_devi_f_trust_lo": 0.05,
+    "model_devi_f_trust_hi": 0.15,
+    "model_devi_clean_traj": false,
+    "model_devi_jobs": [
+        {
+            "sys_idx": [
+                0
+            ],
+            "temps": [
+                100
+            ],
+            "press": [
+                1
+            ],
+            "trj_freq": 10,
+            "nsteps": 3000,
+            "ensemble": "nvt",
+            "_idx": "00"
+        },
+        {
+            "sys_idx": [
+                1
+            ],
+            "temps": [
+                150
+            ],
+            "press": [
+                1
+            ],
+            "trj_freq": 10,
+            "nsteps": 9000,
+            "ensemble": "nvt",
+            "_idx": "01"
+        }
+    ],
+    "_comment6": " 02.fp ",
+    "fp_style": "abacus",
+    "shuffle_poscar": false,
+    "fp_task_max": 50,
+    "fp_task_min": 8,
+    "fp_pp_path": "./",
+    "fp_pp_files": [
+        "H_ONCV_PBE-1.0.upf",
+        "C_ONCV_PBE-1.0.upf"
+    ],
+    "fp_orb_files": [
+        "H_gga_8au_60Ry_2s1p.orb",
+        "C_gga_8au_60Ry_2s2p1d.orb"
+    ],
+    "fp_dpks_descriptor": "jle.orb",
+    "user_fp_params": {
+        "ntype": 2,
+        "cal_force": 1,
+        "cal_stress": 1,
+        "deepks_model": "model.ptg",
+        "deepks_out_labels": 1,
+        "basis_type": "lcao",
+        "gamma_only": 1,
+        "ecutwfc": 80,
+        "mixing_type": "pulay",
+        "mixing_beta": 0.4,
+        "symmetry": 1,
+        "nbands": 5,
+        "nspin": 1,
+        "smearing_method": "fixed"
     }
-  },
-  "_comment5": " 01.model_devi ",
-  "model_devi_dt": 0.002,
-  "model_devi_skip": 0,
-  "model_devi_f_trust_lo": 0.05,
-  "model_devi_f_trust_hi": 0.15,
-  "model_devi_clean_traj": false,
-  "model_devi_jobs": [
-    {
-      "sys_idx": [
-        0
-      ],
-      "temps": [
-        100
-      ],
-      "press": [
-        1
-      ],
-      "trj_freq": 10,
-      "nsteps": 3000,
-      "ensemble": "nvt",
-      "_idx": "00"
-    },
-    {
-      "sys_idx": [
-        1
-      ],
-      "temps": [
-        150
-      ],
-      "press": [
-        1
-      ],
-      "trj_freq": 10,
-      "nsteps": 9000,
-      "ensemble": "nvt",
-      "_idx": "01"
-    }
-  ],
-  "_comment6": " 02.fp ",
-  "fp_style": "abacus",
-  "shuffle_poscar": false,
-  "fp_task_max": 50,
-  "fp_task_min": 8,
-  "fp_pp_path": "./",
-  "fp_pp_files": [
-    "H_ONCV_PBE-1.0.upf",
-    "C_ONCV_PBE-1.0.upf"
-  ],
-  "fp_orb_files": [
-    "H_gga_8au_60Ry_2s1p.orb",
-    "C_gga_8au_60Ry_2s2p1d.orb"
-  ],
-  "fp_dpks_descriptor": "jle.orb",
-  "user_fp_params": {
-    "ntype": 2,
-    "cal_force": 1,
-    "cal_stress": 1,
-    "deepks_model": "model.ptg",
-    "deepks_out_labels": 1,
-    "basis_type": "lcao",
-    "gamma_only": 1,
-    "ecutwfc": 80,
-    "mixing_type": "pulay",
-    "mixing_beta": 0.4,
-    "symmetry": 1,
-    "nbands": 5,
-    "nspin": 1,
-    "smearing_method": "fixed"
-  }
 }
