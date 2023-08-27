@@ -21,7 +21,7 @@ repos:
     -   id: check-toml
     -   id: pretty-format-json
         args: ["--no-sort-keys", "--indent 4"]
-        
+
 # Python
 -   repo: https://github.com/psf/black
     rev: 23.7.0
