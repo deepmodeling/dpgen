@@ -11,17 +11,29 @@
     ],
     "init_data_prefix": "./data/deepmd/",
     "init_data_sys": [
-        "data.000","data.001","data.002","data.003","data.004","data.005"
+        "data.000",
+        "data.001",
+        "data.002",
+        "data.003",
+        "data.004",
+        "data.005"
     ],
-    "init_batch_size":  ["auto","auto","auto","auto","auto","auto"],
+    "init_batch_size": [
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto"
+    ],
     "sys_configs": [
         [
             "./data/md_sys/data.ch4n2"
         ]
     ],
-    "_comment": " that's all ",
+    "_comment1": " that's all ",
     "numb_models": 4,
-    "sys_format":"lammps/lmp",
+    "sys_format": "lammps/lmp",
     "default_training_param": {
         "model": {
             "type_map": [
@@ -74,14 +86,13 @@
             "_batch_size": 1,
             "disp_file": "lcurve.out",
             "disp_freq": 1000,
-            "numb_test": 4,
             "save_freq": 1000,
             "save_ckpt": "model.ckpt",
             "disp_training": true,
             "time_training": true,
             "profiling": false,
             "profiling_file": "timeline.json",
-            "_comment": "that's all"
+            "_comment2": "that's all"
         }
     },
     "model_devi_dt": 0.002,
@@ -120,21 +131,20 @@
             "ensemble": "nvt",
             "_idx": "01"
         }
-
     ],
     "use_clusters": true,
     "cluster_cutoff": 5.0,
     "cluster_minify": true,
     "use_relative": true,
     "epsilon": 1.0,
-    "ratio_failed": 0.20,
+    "ratio_failed": 0.2,
     "fp_style": "gaussian",
     "shuffle_poscar": false,
     "fp_task_max": 20,
     "fp_task_min": 5,
-    "fp_params":{
-            "keywords": "force B3LYP 6-31g(d,p) nosymm",
-            "nproc":2 ,
-            "multiplicity": "auto"
+    "fp_params": {
+        "keywords": "force B3LYP 6-31g(d,p) nosymm",
+        "nproc": 2,
+        "multiplicity": "auto"
     }
 }

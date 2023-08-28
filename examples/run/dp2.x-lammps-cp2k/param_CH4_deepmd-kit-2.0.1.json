@@ -19,7 +19,7 @@
             "./data/CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale-1.000/00001*/POSCAR"
         ]
     ],
-    "_comment": " that's all ",
+    "_comment1": " that's all ",
     "numb_models": 4,
     "default_training_param": {
         "model": {
@@ -73,14 +73,13 @@
             "_batch_size": 1,
             "disp_file": "lcurve.out",
             "disp_freq": 1000,
-            "numb_test": 4,
             "save_freq": 1000,
             "save_ckpt": "model.ckpt",
             "disp_training": true,
             "time_training": true,
             "profiling": false,
             "profiling_file": "timeline.json",
-            "_comment": "that's all"
+            "_comment2": "that's all"
         }
     },
     "model_devi_dt": 0.002,
@@ -119,24 +118,32 @@
             "ensemble": "nvt",
             "_idx": "01"
         }
-
     ],
-    "ratio_failed": 0.20,
+    "ratio_failed": 0.2,
     "fp_style": "cp2k",
     "shuffle_poscar": false,
     "fp_task_max": 30,
     "fp_task_min": 1,
-    "user_fp_params":   {
-        "FORCE_EVAL":{
-            "DFT":{
+    "user_fp_params": {
+        "FORCE_EVAL": {
+            "DFT": {
                 "BASIS_SET_FILE_NAME": "BASIS_MOLOPT",
                 "POTENTIAL_FILE_NAME": "GTH_POTENTIALS"
             },
-            "SUBSYS":{
-                "KIND":{
-                    "_": ["C","H"],
-                    "POTENTIAL": ["GTH-PBE-q4", "GTH-PBE-q1"],
-                    "BASIS_SET": ["DZVP-MOLOPT-GTH","DZVP-MOLOPT-GTH"]
+            "SUBSYS": {
+                "KIND": {
+                    "_": [
+                        "C",
+                        "H"
+                    ],
+                    "POTENTIAL": [
+                        "GTH-PBE-q4",
+                        "GTH-PBE-q1"
+                    ],
+                    "BASIS_SET": [
+                        "DZVP-MOLOPT-GTH",
+                        "DZVP-MOLOPT-GTH"
+                    ]
                 }
             }
         }

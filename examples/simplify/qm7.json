@@ -16,7 +16,9 @@
     "pick_data": "/scratch/jz748/simplify/qm7",
     "init_data_prefix": "",
     "init_data_sys": [],
-    "sys_configs": [null],
+    "sys_configs": [
+        null
+    ],
     "sys_batch_size": [
         "auto"
     ],
@@ -39,8 +41,8 @@
                     3,
                     1
                 ],
-                "rcut_smth": 1.00,
-                "rcut": 6.00,
+                "rcut_smth": 1.0,
+                "rcut": 6.0,
                 "neuron": [
                     25,
                     50,
@@ -62,7 +64,7 @@
             "type": "exp",
             "start_lr": 0.001,
             "decay_steps": 10,
-            "decay_rate": 0.99
+            "stop_lr": 4.317124741065782e-08
         },
         "loss": {
             "start_pref_e": 0.02,
@@ -75,19 +77,20 @@
             "limit_pref_pf": 0
         },
         "training": {
-            "set_prefix": "set",
             "stop_batch": 10000,
             "disp_file": "lcurve.out",
             "disp_freq": 1000,
-            "numb_test": 1,
             "save_freq": 1000,
             "save_ckpt": "model.ckpt",
             "disp_training": true,
             "time_training": true,
             "profiling": false,
-            "profiling_file": "timeline.json"
+            "profiling_file": "timeline.json",
+            "training_data": {
+                "set_prefix": "set"
+            }
         },
-        "_comment": "that's all"
+        "_comment1": "that's all"
     },
     "use_clusters": true,
     "fp_style": "gaussian",
@@ -97,11 +100,11 @@
         "keywords": "mn15/6-31g** force nosymm scf(maxcyc=512)",
         "nproc": 28,
         "multiplicity": 1,
-        "_comment": " that's all "
+        "_comment2": " that's all "
     },
-    "init_pick_number":100,
-    "iter_pick_number":100,
-    "model_devi_f_trust_lo":0.10,
-    "model_devi_f_trust_hi":0.30,
-    "_comment": " that's all "
+    "init_pick_number": 100,
+    "iter_pick_number": 100,
+    "model_devi_f_trust_lo": 0.1,
+    "model_devi_f_trust_hi": 0.3,
+    "_comment3": " that's all "
 }

@@ -1,7 +1,7 @@
 {
     "api_version": "1.0",
     "train": {
-        "_comment": "training on localhost",
+        "_comment1": "training on localhost",
         "machine": {
             "batch_type": "shell",
             "context_type": "local",
@@ -21,9 +21,9 @@
         "command": "/home/wanghan/local/deepmd/1.*/dp"
     },
     "model_devi": {
-        "_comment": "model devi on localhost",
+        "_comment2": "model devi on localhost",
         "machine": {
-            "_comment": "If lazy_local, calculations are done directly in current folders.",
+            "_comment3": "If lazy_local, calculations are done directly in current folders.",
             "batch_type": "shell",
             "context_type": "lazylocal",
             "local_root": "./"
@@ -40,7 +40,7 @@
         "command": "/home/wanghan/local/bin/lmp_mpi_010"
     },
     "fp": {
-        "_comment": "fp on localhost",
+        "_comment4": "fp on localhost",
         "machine": {
             "batch_type": "shell",
             "context_type": "local",
@@ -51,7 +51,7 @@
             "module_list": [
                 "mpi"
             ],
-            "_comment": "that's all",
+            "_comment5": "that's all",
             "batch_type": "shell",
             "group_size": 2,
             "cpu_per_node": 4,

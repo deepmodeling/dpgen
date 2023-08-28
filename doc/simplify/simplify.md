@@ -70,7 +70,7 @@ Here is an example of `param.json` for QM7 dataset:
         "learning_rate": {
             "type": "exp",
             "start_lr": 0.001,
-            "decay_steps": 10,
+            "stop_lr": 5e-8,
             "decay_rate": 0.99
         },
         "loss": {
@@ -85,12 +85,11 @@ Here is an example of `param.json` for QM7 dataset:
         },
         "training": {
             "set_prefix": "set",
-            "stop_batch": 10000,
+            "numb_steps": 10000,
             "disp_file": "lcurve.out",
             "disp_freq": 1000,
             "numb_test": 1,
             "save_freq": 1000,
-            "save_ckpt": "model.ckpt",
             "disp_training": true,
             "time_training": true,
             "profiling": false,

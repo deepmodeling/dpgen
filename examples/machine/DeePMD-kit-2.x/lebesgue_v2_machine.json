@@ -1,107 +1,106 @@
 {
-  "api_version": "1.0",
-  "deepmd_version": "2.0.1",
-  "train" :
-    {
-      "command": "dp",
-      "machine": {
-        "batch_type": "DpCloudServer",
-        "context_type": "DpCloudServerContext",
-        "local_root" : "./",
-        "remote_profile":{
-          "email": "your lebesgue register email",
-          "password": "your lebesgue password",
-          "program_id": 0,
-            "input_data":{
-                "api_version":2,
-                "job_type": "indicate",
-                "log_file": "00*/train.log",
-                "grouped":true,
-                "job_name": "dpgen_train_job",
-                "disk_size": 100,
-                "scass_type":"c8_m60_1 * NVIDIA P100",
-                "platform": "ali",
-                "image_name":"deepmd-kit:2.0.1",
-                "on_demand":0
+    "api_version": "1.0",
+    "deepmd_version": "2.0.1",
+    "train": {
+        "command": "dp",
+        "machine": {
+            "batch_type": "DpCloudServer",
+            "context_type": "DpCloudServerContext",
+            "local_root": "./",
+            "remote_profile": {
+                "email": "your lebesgue register email",
+                "password": "your lebesgue password",
+                "program_id": 0,
+                "input_data": {
+                    "api_version": 2,
+                    "job_type": "indicate",
+                    "log_file": "00*/train.log",
+                    "grouped": true,
+                    "job_name": "dpgen_train_job",
+                    "disk_size": 100,
+                    "scass_type": "c8_m60_1 * NVIDIA P100",
+                    "platform": "ali",
+                    "image_name": "deepmd-kit:2.0.1",
+                    "on_demand": 0
+                }
             }
+        },
+        "resources": {
+            "batch_type": "DpCloudServer",
+            "number_node": 1,
+            "cpu_per_node": 4,
+            "gpu_per_node": 1,
+            "queue_name": "GPU",
+            "group_size": 1
         }
-      },
-      "resources": {
-        "batch_type": "DpCloudServer",
-        "number_node": 1,
-        "cpu_per_node": 4,
-        "gpu_per_node": 1,
-        "queue_name": "GPU",
-        "group_size": 1
-      }
     },
-  "model_devi":
-    {
-      "command": "lmp -i input.lammps -v restart 0",
-      "machine": {
-        "batch_type": "DpCloudServer",
-        "context_type": "DpCloudServerContext",
-        "local_root" : "./",
-        "remote_profile":{
-          "email": "your lebesgue register email",
-          "password": "your lebesgue password",
-          "program_id": 0,
-            "input_data":{
-              "api_version":2,
-              "job_type": "indicate",
-              "log_file": "*/model_devi.log",
-              "grouped":true,
-              "job_name": "dpgen_model_devi_job",
-              "disk_size": 200,
-              "scass_type":"c8_m60_1 * NVIDIA P100",
-              "platform": "ali",
-              "image_name":"deepmd-kit:2.0.1",
-              "on_demand":0
+    "model_devi": {
+        "command": "lmp -i input.lammps -v restart 0",
+        "machine": {
+            "batch_type": "DpCloudServer",
+            "context_type": "DpCloudServerContext",
+            "local_root": "./",
+            "remote_profile": {
+                "email": "your lebesgue register email",
+                "password": "your lebesgue password",
+                "program_id": 0,
+                "input_data": {
+                    "api_version": 2,
+                    "job_type": "indicate",
+                    "log_file": "*/model_devi.log",
+                    "grouped": true,
+                    "job_name": "dpgen_model_devi_job",
+                    "disk_size": 200,
+                    "scass_type": "c8_m60_1 * NVIDIA P100",
+                    "platform": "ali",
+                    "image_name": "deepmd-kit:2.0.1",
+                    "on_demand": 0
+                }
             }
+        },
+        "resources": {
+            "batch_type": "DpCloudServer",
+            "number_node": 1,
+            "cpu_per_node": 4,
+            "gpu_per_node": 1,
+            "queue_name": "GPU",
+            "group_size": 5
         }
-      },
-      "resources": {
-        "batch_type": "DpCloudServer",
-        "number_node": 1,
-        "cpu_per_node": 4,
-        "gpu_per_node": 1,
-        "queue_name": "GPU",
-        "group_size": 5
-      }
     },
-  "fp":
-    {
-      "command": "mpirun -n 16 vasp_std",
-      "machine": {
-        "batch_type": "DpCloudServer",
-        "context_type": "DpCloudServerContext",
-        "local_root" : "./",
-        "remote_profile":{
-          "email": "your lebesgue register email",
-          "password": "your lebesgue password",
-          "program_id": 0,
-            "input_data":{
-              "api_version":2,
-              "job_type": "indicate",
-              "log_file": "task*/fp.log",
-              "grouped":true,
-              "job_name": "dpgen_fp_job",
-              "disk_size": 100,
-              "scass_type":"c8_m8_cpu",
-              "platform": "ali",
-              "image_name":"vasp:5.4.4",
-              "on_demand":0
+    "fp": {
+        "command": "mpirun -n 16 vasp_std",
+        "machine": {
+            "batch_type": "DpCloudServer",
+            "context_type": "DpCloudServerContext",
+            "local_root": "./",
+            "remote_profile": {
+                "email": "your lebesgue register email",
+                "password": "your lebesgue password",
+                "program_id": 0,
+                "input_data": {
+                    "api_version": 2,
+                    "job_type": "indicate",
+                    "log_file": "task*/fp.log",
+                    "grouped": true,
+                    "job_name": "dpgen_fp_job",
+                    "disk_size": 100,
+                    "scass_type": "c8_m8_cpu",
+                    "platform": "ali",
+                    "image_name": "vasp:5.4.4",
+                    "on_demand": 0
+                }
             }
+        },
+        "resources": {
+            "batch_type": "DpCloudServer",
+            "number_node": 1,
+            "cpu_per_node": 32,
+            "gpu_per_node": 0,
+            "queue_name": "CPU",
+            "group_size": 5,
+            "source_list": [
+                "/opt/intel/oneapi/setvars.sh"
+            ]
         }
-      },
-      "resources": {
-        "batch_type": "DpCloudServer",
-        "number_node": 1,
-        "cpu_per_node": 32,
-        "gpu_per_node": 0,
-        "queue_name": "CPU",
-        "group_size": 5,
-	"source_list": ["/opt/intel/oneapi/setvars.sh"]
-      }
     }
 }

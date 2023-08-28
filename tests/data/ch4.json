@@ -1,26 +1,46 @@
 {
-    "init_fp_style":    "ABACUS",
-    "stages":           [1, 2, 3, 4],
-    "super_cell":	[1, 1, 1],
-    "_comment":         "if from_poscar = true, the cell_type and super_cell keys are actually useless",
+    "init_fp_style": "ABACUS",
+    "stages": [
+        1,
+        2,
+        3,
+        4
+    ],
+    "super_cell": [
+        1,
+        1,
+        1
+    ],
+    "_comment1": "if from_poscar = true, the cell_type and super_cell keys are actually useless",
     "cell_type": "fcc",
-    "elements":		["H","C"],
-    "atom_masses":      [1, 12],
-    "_comment":         "if from_poscar = false, you have to set atom_masse.",
-    "out_dir":          "./",
-    "from_poscar":	true,
-    "from_poscar_path":	"./STRU",
-    "potcars":		["./H_ONCV_PBE-1.0.upf", "./C_ONCV_PBE-1.0.upf"],
-    "relax_incar": 	"./INPUT",
+    "elements": [
+        "H",
+        "C"
+    ],
+    "atom_masses": [
+        1,
+        12
+    ],
+    "_comment2": "if from_poscar = false, you have to set atom_masse.",
+    "out_dir": "./",
+    "from_poscar": true,
+    "from_poscar_path": "./STRU",
+    "potcars": [
+        "./H_ONCV_PBE-1.0.upf",
+        "./C_ONCV_PBE-1.0.upf"
+    ],
+    "relax_incar": "./INPUT",
     "relax_kspacing": 10,
-    "md_incar" : 	"./INPUT.md",
+    "md_incar": "./INPUT.md",
     "md_kspacing": 10,
-    "scale":		[0.95],
-    "skip_relax":	false,
-    "pert_numb":	2,
-    "md_nstep" : 	3,
-    "pert_box":		0.03,
-    "pert_atom":	0.01,
-    "coll_ndata":	10,
-    "_comment":		"that's all"
+    "scale": [
+        0.95
+    ],
+    "skip_relax": false,
+    "pert_numb": 2,
+    "md_nstep": 3,
+    "pert_box": 0.03,
+    "pert_atom": 0.01,
+    "coll_ndata": 10,
+    "_comment3": "that's all"
 }

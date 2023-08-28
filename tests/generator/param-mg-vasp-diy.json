@@ -1,89 +1,133 @@
 {
-    "type_map":		["Mg", "Al"],
-    "mass_map":		[24, 27],
-
-    "init_data_prefix":	"data",
-    "init_data_sys":	["deepmd"
-			],
-    "init_batch_size":	[16],
-    "sys_configs":	[
-	["data/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale*/000010/POSCAR"],
-	["data/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale*/00000[8-9]/POSCAR"]
+    "type_map": [
+        "Mg",
+        "Al"
     ],
-    "_comment":		"0  1  2  3",
-    "_comment":		"4  5  6  7",
-    "sys_batch_size":	[1, 1
-			],
-
-    "_comment":		" 00.train ",
-    "numb_models":	4,
-    "default_training_param" : {
-	"_comment": " model parameters",
-	"use_smooth":		true,
-	"sel_a":		[90],
-	"rcut_smth":		2.00,
-	"rcut":			6.00,
-	"filter_neuron":	[25, 50, 100],
-	"filter_resnet_dt":	false,
-	"n_axis_neuron":	12,
-	"n_neuron":		[240, 240, 240],
-	"resnet_dt":		true,
-	"coord_norm":		true,
-	"type_fitting_net":	false,
-
-	"_comment": " traing controls",
-	"systems":		[],
-	"set_prefix":		"set",
-	"stop_batch":		400000,
-	"batch_size":		1,
-	"start_lr":		0.002,
-	"decay_steps":		2000,
-	"decay_rate":		0.95,
-	"seed":			0,
-
-	"start_pref_e":		0.02,
-	"limit_pref_e":		2,
-	"start_pref_f":		1000,
-	"limit_pref_f":		1,
-	"start_pref_v":		0.0,
-	"limit_pref_v":		0.0,
-
-	"_comment": " display and restart",
-	"_comment": " frequencies counted in batch",
-	"disp_file":		"lcurve.out",
-	"disp_freq":		2000,
-	"numb_test":		10,
-	"save_freq":		20000,
-	"save_ckpt":		"model.ckpt",
-	"load_ckpt":		"model.ckpt",
-	"disp_training":	true,
-	"time_training":	true,
-	"profiling":		false,
-	"profiling_file":	"timeline.json",
-
-	"_comment":		"that's all"
+    "mass_map": [
+        24,
+        27
+    ],
+    "init_data_prefix": "data",
+    "init_data_sys": [
+        "deepmd"
+    ],
+    "init_batch_size": [
+        16
+    ],
+    "sys_configs": [
+        [
+            "data/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale*/000010/POSCAR"
+        ],
+        [
+            "data/mg.fcc.02x02x02/01.scale_pert/sys-0032/scale*/00000[8-9]/POSCAR"
+        ]
+    ],
+    "_comment1": "0  1  2  3",
+    "_comment2": "4  5  6  7",
+    "sys_batch_size": [
+        1,
+        1
+    ],
+    "_comment3": " 00.train ",
+    "numb_models": 4,
+    "default_training_param": {
+        "model": {
+            "descriptor": {
+                "seed": 0,
+                "type": "se_a",
+                "sel": [
+                    90
+                ],
+                "rcut": 6.0,
+                "rcut_smth": 2.0,
+                "neuron": [
+                    25,
+                    50,
+                    100
+                ],
+                "axis_neuron": 12,
+                "resnet_dt": false
+            },
+            "fitting_net": {
+                "seed": 0,
+                "neuron": [
+                    240,
+                    240,
+                    240
+                ],
+                "resnet_dt": true
+            }
+        },
+        "learning_rate": {
+            "type": "exp",
+            "decay_steps": 2000,
+            "start_lr": 0.002,
+            "stop_lr": 7.010533249765748e-08
+        },
+        "loss": {
+            "start_pref_e": 0.02,
+            "limit_pref_e": 2,
+            "start_pref_f": 1000,
+            "limit_pref_f": 1,
+            "start_pref_v": 0.0,
+            "limit_pref_v": 0.0
+        },
+        "training": {
+            "seed": 0,
+            "stop_batch": 400000,
+            "disp_file": "lcurve.out",
+            "disp_freq": 2000,
+            "save_freq": 20000,
+            "save_ckpt": "model.ckpt",
+            "disp_training": true,
+            "time_training": true,
+            "profiling": false,
+            "training_data": {
+                "systems": [],
+                "set_prefix": "set",
+                "batch_size": 1
+            }
+        }
     },
-
-    "_comment":		" 01.model_devi ",
-    "_comment": "model_devi_skip: the first x of the recorded frames",
-    "model_devi_dt":		0.002,
-    "model_devi_skip":		0,
-    "model_devi_f_trust_lo":	0.050,
-    "model_devi_f_trust_hi":	0.150,
-    "model_devi_clean_traj":	false,
-    "model_devi_jobs":	[
-	{"sys_idx": [0,1], "temps": [50,100], "press": [1.0,2.0], "trj_freq": 10, "nsteps": 1000, "ensemble": "npt", "_idx": "00"}
+    "_comment9": " 01.model_devi ",
+    "_comment10": "model_devi_skip: the first x of the recorded frames",
+    "model_devi_dt": 0.002,
+    "model_devi_skip": 0,
+    "model_devi_f_trust_lo": 0.05,
+    "model_devi_f_trust_hi": 0.15,
+    "model_devi_clean_traj": false,
+    "model_devi_jobs": [
+        {
+            "sys_idx": [
+                0,
+                1
+            ],
+            "temps": [
+                50,
+                100
+            ],
+            "press": [
+                1.0,
+                2.0
+            ],
+            "trj_freq": 10,
+            "nsteps": 1000,
+            "ensemble": "npt",
+            "_idx": "00"
+        }
     ],
-
-    "_comment":		" 02.fp ",
-    "fp_style":		"vasp",
-    "shuffle_poscar":	false,
-    "fp_task_max":	100,
-    "fp_task_min":	10,
-    "fp_pp_path":	".",
-    "fp_pp_files":	["vasp/potcars/POTCAR.mg", "vasp/potcars/POTCAR.al"],
-    "_comment":		" user provided vasp script ",
-    "fp_incar" :	"vasp/INCAR.diy",
+    "_comment11": " 02.fp ",
+    "fp_style": "vasp",
+    "shuffle_poscar": false,
+    "fp_task_max": 100,
+    "fp_task_min": 10,
+    "fp_pp_path": ".",
+    "fp_pp_files": [
+        "vasp/potcars/POTCAR.mg",
+        "vasp/potcars/POTCAR.al"
+    ],
+    "_comment12": " user provided vasp script ",
+    "fp_incar": "vasp/INCAR.diy",
     "fp_nbands_esti_data": "vasp/nbands_esti.out",
-    "_comment":		" that's all "
+    "_comment13": " that's all "
 }

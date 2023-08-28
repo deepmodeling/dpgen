@@ -54,19 +54,19 @@ input_files = (
         run_jdata,
         p_examples
         / "run"
-        / "dp1.x-lammps-vasp"
+        / "dp2.x-lammps-vasp"
         / "CH4"
-        / "param_CH4_deepmd-kit-1.1.0.json",
+        / "param_CH4_deepmd-kit-2.x.json",
     ),
     (
         run_jdata,
         p_examples
         / "run"
-        / "dp1.x-lammps-vasp"
+        / "dp2.x-lammps-vasp"
         / "Al"
-        / "param_al_all_gpu-deepmd-kit-1.1.0.json",
+        / "param_al_all_gpu-deepmd-kit-2.x.json",
     ),
-    (run_jdata, p_examples / "run" / "dp1.x-lammps-vasp-et" / "param_elet.json"),
+    (run_jdata, p_examples / "run" / "dp2.x-lammps-vasp-et" / "param_elet.json"),
     (
         run_jdata,
         p_examples / "run" / "dp2.x-lammps-ABACUS-lcao" / "fcc-al" / "run_param.json",
@@ -77,19 +77,19 @@ input_files = (
     ),
     (
         run_jdata,
-        p_examples / "run" / "dp1.x-lammps-cp2k" / "methane" / "param-ch4.json",
+        p_examples / "run" / "dp2.x-lammps-cp2k" / "methane" / "param-ch4.json",
     ),
     (
         run_jdata,
-        p_examples / "run" / "dp1.x-lammps-ABACUS-pw" / "methane" / "param.json",
+        p_examples / "run" / "dp2.x-lammps-ABACUS-pw" / "methane" / "param.json",
     ),
     (
         run_jdata,
-        p_examples / "run" / "dp1.x-lammps-ABACUS-lcao-dpks" / "methane" / "param.json",
+        p_examples / "run" / "dp2.x-lammps-ABACUS-lcao-dpks" / "methane" / "param.json",
     ),
     (
         run_jdata,
-        p_examples / "run" / "dp1.x_lammps_gaussian" / "dodecane" / "dodecane.json",
+        p_examples / "run" / "dp2.x_lammps_gaussian" / "dodecane" / "dodecane.json",
     ),
     (run_jdata, p_examples / "run" / "dp-lammps-enhance_sampling" / "param.json"),
     # (run_jdata, p_examples / "run" / "deprecated" / "param-mg-vasp.json"),
@@ -101,17 +101,17 @@ input_files = (
         p_examples
         / "run"
         / "deprecated"
-        / "dp0.12-lammps-cp2k"
+        / "dp2.x-lammps-cp2k"
         / "CH4"
         / "param_CH4.json",
     ),
-    # (run_jdata, p_examples / "run" / "deprecated" / "dp0.12-lammps-pwmat" / "param_CH4.json"),
+    # (run_jdata, p_examples / "run" / "deprecated" / "dp2.x-lammps-pwmat" / "param_CH4.json"),
     (
         run_jdata,
         p_examples
         / "run"
         / "deprecated"
-        / "dp0.12-lammps-siesta"
+        / "dp2.x-lammps-siesta"
         / "dp-lammps-siesta"
         / "CH4"
         / "param_CH4.json",
@@ -121,7 +121,7 @@ input_files = (
         p_examples
         / "run"
         / "deprecated"
-        / "dp0.12-lammps-vasp"
+        / "dp2.x-lammps-vasp"
         / "Al"
         / "param_al_all_gpu.json",
     ),
@@ -130,7 +130,7 @@ input_files = (
         p_examples
         / "run"
         / "deprecated"
-        / "dp0.12-lammps-vasp"
+        / "dp2.x-lammps-vasp"
         / "CH4"
         / "param_CH4.json",
     ),
