@@ -41,6 +41,14 @@ class TestSimplifyModelDevi(unittest.TestCase):
             + self.system.formula
             + "\n step max_devi_v min_devi_v avg_devi_v max_devi_f min_devi_f avg_devi_f devi_e",
         )
+        np.savetxt(
+            self.work_path / "true_error",
+            model_devi,
+            fmt=["%12d"] + ["%19.6e" for _ in range(7)],
+            header="data.rest.old/"
+            + self.system.formula
+            + "\n step max_devi_v min_devi_v avg_devi_v max_devi_f min_devi_f avg_devi_f devi_e",
+        )
 
     def tearDown(self):
         shutil.rmtree("iter.000001", ignore_errors=True)
@@ -114,3 +122,21 @@ class TestSimplifyModelDevi(unittest.TestCase):
             {},
         )
         assert (self.work_path / "data.accurate" / self.system.formula).exists()
+
+    def test_post_model_devi_true_error_candidate(self):
+        dpgen.simplify.simplify.post_model_devi(
+            1,
+            {
+                "model_devi_e_trust_lo": 0.15,
+                "model_devi_e_trust_hi": 0.25,
+                "model_devi_f_trust_lo": float("inf"),
+                "model_devi_f_trust_hi": float("inf"),
+                "true_error_e_trust_lo": float("inf"),
+                "true_error_e_trust_hi": float("inf"),
+                "true_error_f_trust_lo": 0.15,
+                "true_error_f_trust_hi": 0.25,
+                "iter_pick_number": 1,
+            },
+            {},
+        )
+        assert (self.work_path / "data.picked" / self.system.formula).exists()

@@ -52,6 +52,7 @@ picked_data_name = "data.picked"
 rest_data_name = "data.rest"
 accurate_data_name = "data.accurate"
 detail_file_name_prefix = "details"
+true_error_file_name = "true_error"
 sys_name_fmt = "sys." + data_system_fmt
 sys_name_pattern = "sys.[0-9]*[0-9]"
 
@@ -238,6 +239,20 @@ def run_model_devi(iter_index, jdata, mdata):
     forward_files = [system_file_name]
     backward_files = [detail_file_name]
 
+    f_trust_lo_err = jdata.get("true_error_f_trust_lo", float("inf"))
+    e_trust_lo_err = jdata.get("true_error_e_trust_lo", float("inf"))
+    if f_trust_lo_err < float("inf") or e_trust_lo_err < float("inf"):
+        command_true_error = (
+            "{dp} model-devi -m {model} -s {system} -o {detail_file}".format(
+                dp=mdata.get("model_devi_command", "dp"),
+                model=" ".join(task_model_list),
+                system=system_file_name,
+                detail_file=true_error_file_name,
+            )
+        )
+        commands.append(command_true_error)
+        backward_files.append(true_error_file_name)
+
     api_version = mdata.get("api_version", "1.0")
     if Version(api_version) < Version("1.0"):
         raise RuntimeError(
@@ -270,6 +285,11 @@ def post_model_devi(iter_index, jdata, mdata):
     f_trust_hi = jdata["model_devi_f_trust_hi"]
     e_trust_lo = jdata["model_devi_e_trust_lo"]
     e_trust_hi = jdata["model_devi_e_trust_hi"]
+    f_trust_lo_err = jdata.get("true_error_f_trust_lo", float("inf"))
+    f_trust_hi_err = jdata.get("true_error_f_trust_hi", float("inf"))
+    e_trust_lo_err = jdata.get("true_error_e_trust_lo", float("inf"))
+    e_trust_hi_err = jdata.get("true_error_e_trust_hi", float("inf"))
+    use_true_error = f_trust_lo_err < float("inf") or e_trust_lo_err < float("inf")
 
     type_map = jdata.get("type_map", [])
     sys_accurate = dpdata.MultiSystems(type_map=type_map)
@@ -282,38 +302,86 @@ def post_model_devi(iter_index, jdata, mdata):
     )
 
     detail_file_name = detail_file_name_prefix
-    with open(os.path.join(work_path, detail_file_name)) as f:
-        for line in f:
-            if line.startswith("# data.rest.old"):
-                name = (line.split()[1]).split("/")[-1]
-            elif line.startswith("#"):
-                columns = line.split()[1:]
-                cidx_step = columns.index("step")
-                cidx_max_devi_f = columns.index("max_devi_f")
-                try:
+    if not use_true_error:
+        with open(os.path.join(work_path, detail_file_name)) as f:
+            for line in f:
+                if line.startswith("# data.rest.old"):
+                    name = (line.split()[1]).split("/")[-1]
+                elif line.startswith("#"):
+                    columns = line.split()[1:]
+                    cidx_step = columns.index("step")
+                    cidx_max_devi_f = columns.index("max_devi_f")
+                    try:
+                        cidx_devi_e = columns.index("devi_e")
+                    except ValueError:
+                        # DeePMD-kit < 2.2.2
+                        cidx_devi_e = None
+                else:
+                    idx = int(line.split()[cidx_step])
+                    f_devi = float(line.split()[cidx_max_devi_f])
+                    if cidx_devi_e is not None:
+                        e_devi = float(line.split()[cidx_devi_e])
+                    else:
+                        e_devi = 0.0
+                    subsys = sys_entire[name][idx]
+                    if f_devi >= f_trust_hi or e_devi >= e_trust_hi:
+                        sys_failed.append(subsys)
+                    elif (
+                        f_trust_lo <= f_devi < f_trust_hi
+                        or e_trust_lo <= e_devi < e_trust_hi
+                    ):
+                        sys_candinate.append(subsys)
+                    elif f_devi < f_trust_lo and e_devi < e_trust_lo:
+                        sys_accurate.append(subsys)
+                    else:
+                        raise RuntimeError(
+                            "reach a place that should NOT be reached..."
+                        )
+    else:
+        with open(os.path.join(work_path, detail_file_name)) as f, open(
+            os.path.join(work_path, true_error_file_name)
+        ) as f_err:
+            for line, line_err in zip(f, f_err):
+                if line.startswith("# data.rest.old"):
+                    name = (line.split()[1]).split("/")[-1]
+                elif line.startswith("#"):
+                    columns = line.split()[1:]
+                    cidx_step = columns.index("step")
+                    cidx_max_devi_f = columns.index("max_devi_f")
                     cidx_devi_e = columns.index("devi_e")
-                except ValueError:
-                    # DeePMD-kit < 2.2.2
-                    cidx_devi_e = None
-            else:
-                idx = int(line.split()[cidx_step])
-                f_devi = float(line.split()[cidx_max_devi_f])
-                if cidx_devi_e is not None:
+                else:
+                    idx = int(line.split()[cidx_step])
+                    f_devi = float(line.split()[cidx_max_devi_f])
+                    f_err = float(line_err.split()[cidx_max_devi_f])
                     e_devi = float(line.split()[cidx_devi_e])
-                else:
-                    e_devi = 0.0
-                subsys = sys_entire[name][idx]
-                if f_devi >= f_trust_hi or e_devi >= e_trust_hi:
-                    sys_failed.append(subsys)
-                elif (
-                    f_trust_lo <= f_devi < f_trust_hi
-                    or e_trust_lo <= e_devi < e_trust_hi
-                ):
-                    sys_candinate.append(subsys)
-                elif f_devi < f_trust_lo and e_devi < e_trust_lo:
-                    sys_accurate.append(subsys)
-                else:
-                    raise RuntimeError("reach a place that should NOT be reached...")
+                    e_err = float(line_err.split()[cidx_devi_e])
+
+                    subsys = sys_entire[name][idx]
+                    if (
+                        f_devi >= f_trust_hi
+                        or e_devi >= e_trust_hi
+                        or f_err >= f_trust_hi_err
+                        or e_err >= e_trust_hi_err
+                    ):
+                        sys_failed.append(subsys)
+                    elif (
+                        f_trust_lo <= f_devi < f_trust_hi
+                        or e_trust_lo <= e_devi < e_trust_hi
+                        or f_trust_lo_err <= f_err < f_trust_hi_err
+                        or e_trust_lo_err <= e_err < e_trust_hi_err
+                    ):
+                        sys_candinate.append(subsys)
+                    elif (
+                        f_devi < f_trust_lo
+                        and e_devi < e_trust_lo
+                        and f_err < f_trust_lo_err
+                        and e_err < e_trust_lo_err
+                    ):
+                        sys_accurate.append(subsys)
+                    else:
+                        raise RuntimeError(
+                            "reach a place that should NOT be reached..."
+                        )
 
     counter = {
         "candidate": sys_candinate.get_nframes(),
