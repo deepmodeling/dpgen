@@ -543,7 +543,6 @@ class TestMakeMDAMBER(unittest.TestCase):
         _check_pb(self, 0)
         self._check_input(0)
 
-
     def test_restart_from_iter(self):
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
@@ -553,10 +552,12 @@ class TestMakeMDAMBER(unittest.TestCase):
             jdata = json.load(fp)
         with open(machine_file) as fp:
             mdata = json.load(fp)
-        jdata["model_devi_jobs"].append({
-            "sys_idx": [0],
-            "restart_from_iter": 0,
-        })
+        jdata["model_devi_jobs"].append(
+            {
+                "sys_idx": [0],
+                "restart_from_iter": 0,
+            }
+        )
         jdata["sys_configs_prefix"] = os.path.abspath(jdata["sys_configs_prefix"])
         jdata["disang_prefix"] = os.path.abspath(jdata["disang_prefix"])
         jdata["mdin_prefix"] = os.path.abspath(jdata["mdin_prefix"])
@@ -566,15 +567,24 @@ class TestMakeMDAMBER(unittest.TestCase):
         _check_pb(self, 0)
         self._check_input(0)
         restart_text = "This is the fake restart file to test `restart_from_iter`"
-        with open(os.path.join("iter.%06d" % 0, "01.model_devi", "task.000.000000", "rc.rst7"), 'w') as fw:
+        with open(
+            os.path.join(
+                "iter.%06d" % 0, "01.model_devi", "task.000.000000", "rc.rst7"
+            ),
+            "w",
+        ) as fw:
             fw.write(restart_text)
         _make_fake_models(1, jdata["numb_models"])
         make_model_devi(1, jdata, mdata)
         _check_pb(self, 1)
         self._check_input(1)
-        with open(os.path.join("iter.%06d" % 1, "01.model_devi", "task.000.000000", "init.rst7")) as f:
+        with open(
+            os.path.join(
+                "iter.%06d" % 1, "01.model_devi", "task.000.000000", "init.rst7"
+            )
+        ) as f:
             assert f.read() == restart_text
-    
+
     def _check_input(self, iter_idx: int):
         md_dir = os.path.join("iter.%06d" % iter_idx, "01.model_devi")
         assert os.path.isfile(os.path.join(md_dir, "init0.mdin"))
