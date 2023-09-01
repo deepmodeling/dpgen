@@ -565,10 +565,15 @@ class TestMakeMDAMBER(unittest.TestCase):
         make_model_devi(0, jdata, mdata)
         _check_pb(self, 0)
         self._check_input(0)
+        restart_text = "This is the fake restart file to test `restart_from_iter`"
+        with open(os.path.join("iter.%06d" % 0, "01.model_devi", "task.000.000000", "rc.rst7"), 'w') as fw:
+            fw.write(restart_text)
         _make_fake_models(1, jdata["numb_models"])
         make_model_devi(1, jdata, mdata)
         _check_pb(self, 1)
         self._check_input(1)
+        with open(os.path.join("iter.%06d" % 1, "01.model_devi", "task.000.000000", "init.rst7")) as f:
+            assert f.read() == restart_text
     
     def _check_input(self, iter_idx: int):
         md_dir = os.path.join("iter.%06d" % iter_idx, "01.model_devi")
