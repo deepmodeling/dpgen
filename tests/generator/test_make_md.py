@@ -533,12 +533,51 @@ class TestMakeMDAMBER(unittest.TestCase):
             jdata = json.load(fp)
         with open(machine_file) as fp:
             mdata = json.load(fp)
-        jdata["sys_prefix"] = os.path.abspath(jdata["sys_prefix"])
+        # TODO: these should be normalized in the main program
+        jdata["sys_configs_prefix"] = os.path.abspath(jdata["sys_configs_prefix"])
+        jdata["disang_prefix"] = os.path.abspath(jdata["disang_prefix"])
+        jdata["mdin_prefix"] = os.path.abspath(jdata["mdin_prefix"])
+        jdata["parm7_prefix"] = os.path.abspath(jdata["mdin_prefix"])
         _make_fake_models(0, jdata["numb_models"])
         make_model_devi(0, jdata, mdata)
         _check_pb(self, 0)
-        _check_confs(self, 0, jdata)
-        _check_traj_dir(self, 0)
+        self._check_input(0)
+
+
+    def test_restart_from_iter(self):
+        if os.path.isdir("iter.000000"):
+            shutil.rmtree("iter.000000")
+        if os.path.isdir("iter.000001"):
+            shutil.rmtree("iter.000001")
+        with open(param_amber_file) as fp:
+            jdata = json.load(fp)
+        with open(machine_file) as fp:
+            mdata = json.load(fp)
+        jdata["model_devi_jobs"].append({
+            "sys_idx": [0],
+            "restart_from_iter": 0,
+        })
+        jdata["sys_configs_prefix"] = os.path.abspath(jdata["sys_configs_prefix"])
+        jdata["disang_prefix"] = os.path.abspath(jdata["disang_prefix"])
+        jdata["mdin_prefix"] = os.path.abspath(jdata["mdin_prefix"])
+        jdata["parm7_prefix"] = os.path.abspath(jdata["mdin_prefix"])
+        _make_fake_models(0, jdata["numb_models"])
+        make_model_devi(0, jdata, mdata)
+        _check_pb(self, 0)
+        self._check_input(0)
+        _make_fake_models(1, jdata["numb_models"])
+        make_model_devi(1, jdata, mdata)
+        _check_pb(self, 1)
+        self._check_input(1)
+    
+    def _check_input(self, iter_idx: int):
+        md_dir = os.path.join("iter.%06d" % iter_idx, "01.model_devi")
+        assert os.path.isfile(os.path.join(md_dir, "init0.mdin"))
+        assert os.path.isfile(os.path.join(md_dir, "qmmm0.parm7"))
+        tasks = glob.glob(os.path.join(md_dir, "task.*"))
+        for tt in tasks:
+            assert os.path.isfile(os.path.join(tt, "init.rst7"))
+            assert os.path.isfile(os.path.join(tt, "TEMPLATE.disang"))
 
 
 if __name__ == "__main__":
