@@ -84,3 +84,29 @@ class TestOneH5(unittest.TestCase):
                 },
             }
             dpgen.simplify.simplify.run_model_devi(0, jdata=jdata, mdata=mdata)
+
+    def test_true_error(self):
+        jdata = {
+            "type_map": ["H"],
+            "true_error_f_trust_lo": 0.15,
+            "true_error_f_trust_hi": 0.25,
+        }
+        with tempfile.TemporaryDirectory() as remote_root:
+            mdata = {
+                "model_devi_command": (
+                    f"test -d {dpgen.simplify.simplify.rest_data_name}.old"
+                    f"&& touch {dpgen.simplify.simplify.detail_file_name_prefix}"
+                    f"&& touch {dpgen.simplify.simplify.true_error_file_name}"
+                    "&& echo dp"
+                ),
+                "model_devi_machine": {
+                    "context_type": "LocalContext",
+                    "batch_type": "shell",
+                    "local_root": "./",
+                    "remote_root": remote_root,
+                },
+                "model_devi_resources": {
+                    "group_size": 1,
+                },
+            }
+            dpgen.simplify.simplify.run_model_devi(0, jdata=jdata, mdata=mdata)
