@@ -12,7 +12,7 @@
     "numb_models": 4,
     "mdin_prefix": "amber",
     "parm7_prefix": "amber",
-    "sys_prefix": "amber",
+    "sys_configs_prefix": "amber",
     "disang_prefix": "amber",
     "sys_configs": [
         [
