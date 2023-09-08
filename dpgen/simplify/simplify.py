@@ -44,7 +44,7 @@ from dpgen.generator.run import (
     train_task_fmt,
 )
 from dpgen.remote.decide_machine import convert_mdata
-from dpgen.util import expand_sys_str, load_file, normalize, sepline
+from dpgen.util import expand_sys_str, load_file, normalize, sepline, setup_ele_temp
 
 from .arginfo import simplify_jdata_arginfo
 
