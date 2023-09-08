@@ -24,6 +24,7 @@ from .context import (
     param_siesta_file,
     post_fp,
     post_fp_vasp,
+    setup_ele_temp,
     setUpModule,  # noqa: F401
 )
 
@@ -59,14 +60,21 @@ class TestPostFPVasp(unittest.TestCase):
         self.ref_e = np.array(self.ref_e)
         self.ref_f = np.array(self.ref_f)
         self.ref_v = np.array(self.ref_v)
+        # backup dpdata system data type
+        self._system_dtypes = dpdata.System.DTYPES
+        self._labeled_system_dtypes = dpdata.LabeledSystem.DTYPES
 
     def tearDown(self):
         shutil.rmtree("iter.000000")
+        # recover
+        dpdata.System.DTYPES = self._system_dtypes
+        dpdata.LabeledSystem.DTYPES = self._labeled_system_dtypes
 
     def test_post_fp_vasp_0(self):
         with open(param_file) as fp:
             jdata = json.load(fp)
         jdata["use_ele_temp"] = 2
+        setup_ele_temp(True)
         post_fp_vasp(0, jdata, rfailed=0.3)
 
         sys = dpdata.LabeledSystem("iter.000000/02.fp/data.000/", fmt="deepmd/raw")
@@ -117,6 +125,7 @@ class TestPostFPVasp(unittest.TestCase):
         with open(param_file) as fp:
             jdata = json.load(fp)
         jdata["use_ele_temp"] = 1
+        setup_ele_temp(False)
         post_fp_vasp(0, jdata, rfailed=0.3)
 
         sys = dpdata.LabeledSystem("iter.000000/02.fp/data.001/", fmt="deepmd/raw")
