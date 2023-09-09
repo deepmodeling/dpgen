@@ -9,9 +9,9 @@ from typing import Union
 
 import dpdata
 import h5py
-from dargs import Argument
-from dpdata.data_type import DataType, Axis
 import numpy as np
+from dargs import Argument
+from dpdata.data_type import Axis, DataType
 
 from dpgen import dlog
 
@@ -221,7 +221,7 @@ def load_file(filename: Union[str, os.PathLike]) -> dict:
 
 def setup_ele_temp(atomic: bool):
     """Set electronic temperature as required input data.
-    
+
     Parameters
     ----------
     atomic : bool

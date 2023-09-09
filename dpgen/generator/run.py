@@ -4038,10 +4038,12 @@ def post_fp_vasp(iter_index, jdata, rfailed=None):
                                 "should not get ele temp at setting: use_ele_temp == 0"
                             )
                         elif use_ele_temp == 1:
-                            _sys.data['fparam'] = np.array(ele_temp).reshape(1,1)
+                            _sys.data["fparam"] = np.array(ele_temp).reshape(1, 1)
                         elif use_ele_temp == 2:
                             tile_te = np.tile(ele_temp, [_sys.get_natoms()])
-                            _sys.data['aparam'] = tile_te.reshape(1, _sys.get_natoms(), 1)
+                            _sys.data["aparam"] = tile_te.reshape(
+                                1, _sys.get_natoms(), 1
+                            )
                         else:
                             raise RuntimeError(
                                 "invalid setting of use_ele_temp " + str(use_ele_temp)
