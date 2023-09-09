@@ -276,11 +276,11 @@ def make_train(iter_index, jdata, mdata):
     elif "training_reuse_numb_steps" in jdata.keys():
         training_reuse_stop_batch = jdata["training_reuse_numb_steps"]
     else:
-        training_reuse_stop_batch = 400000
+        training_reuse_stop_batch = None
 
-    training_reuse_start_lr = jdata.get("training_reuse_start_lr", 1e-4)
-    training_reuse_start_pref_e = jdata.get("training_reuse_start_pref_e", 0.1)
-    training_reuse_start_pref_f = jdata.get("training_reuse_start_pref_f", 100)
+    training_reuse_start_lr = jdata.get("training_reuse_start_lr")
+    training_reuse_start_pref_e = jdata.get("training_reuse_start_pref_e")
+    training_reuse_start_pref_f = jdata.get("training_reuse_start_pref_f")
     model_devi_activation_func = jdata.get("model_devi_activation_func", None)
 
     auto_ratio = False
@@ -509,11 +509,12 @@ def make_train(iter_index, jdata, mdata):
             raise RuntimeError(
                 "Unsupported DeePMD-kit version: %s" % mdata["deepmd_version"]
             )
-        if jinput["loss"].get("start_pref_e") is not None:
+        if jinput["loss"].get("start_pref_e") is not None and training_reuse_start_pref_e is not None:
             jinput["loss"]["start_pref_e"] = training_reuse_start_pref_e
-        if jinput["loss"].get("start_pref_f") is not None:
+        if jinput["loss"].get("start_pref_f") is not None and training_reuse_start_pref_f is not None:
             jinput["loss"]["start_pref_f"] = training_reuse_start_pref_f
-        jinput["learning_rate"]["start_lr"] = training_reuse_start_lr
+        if training_reuse_start_lr is not None:
+            jinput["learning_rate"]["start_lr"] = training_reuse_start_lr
 
     input_files = []
     for ii in range(numb_models):
