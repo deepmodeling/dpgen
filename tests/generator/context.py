@@ -17,6 +17,7 @@ from dpgen.generator.lib.parse_calypso import (
     _parse_calypso_input,  # noqa: F401
 )
 from dpgen.generator.run import *  # noqa: F403
+from dpgen.util import setup_ele_temp  # noqa: F401
 
 param_file = "param-mg-vasp.json"
 param_file_merge_traj = "param-mg-vasp_merge_traj.json"

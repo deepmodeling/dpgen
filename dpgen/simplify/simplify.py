@@ -44,7 +44,7 @@ from dpgen.generator.run import (
     train_task_fmt,
 )
 from dpgen.remote.decide_machine import convert_mdata
-from dpgen.util import expand_sys_str, load_file, normalize, sepline
+from dpgen.util import expand_sys_str, load_file, normalize, sepline, setup_ele_temp
 
 from .arginfo import simplify_jdata_arginfo
 
@@ -518,6 +518,13 @@ def run_iter(param_file, machine_file):
 
     jdata_arginfo = simplify_jdata_arginfo()
     jdata = normalize(jdata_arginfo, jdata)
+
+    # set up electron temperature
+    use_ele_temp = jdata.get("use_ele_temp", 0)
+    if use_ele_temp == 1:
+        setup_ele_temp(False)
+    elif use_ele_temp == 2:
+        setup_ele_temp(True)
 
     if mdata.get("handlers", None):
         if mdata["handlers"].get("smtp", None):

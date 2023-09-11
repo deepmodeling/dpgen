@@ -19,7 +19,7 @@ classifiers = [
 ]
 dependencies = [
     'numpy>=1.14.3',
-    'dpdata>=0.2.6,!=0.2.11',
+    'dpdata>=0.2.16',
     'pymatgen>=2022.11.1',
     'ase',
     'monty>2.0.0',
