@@ -509,9 +509,15 @@ def make_train(iter_index, jdata, mdata):
             raise RuntimeError(
                 "Unsupported DeePMD-kit version: %s" % mdata["deepmd_version"]
             )
-        if jinput["loss"].get("start_pref_e") is not None and training_reuse_start_pref_e is not None:
+        if (
+            jinput["loss"].get("start_pref_e") is not None
+            and training_reuse_start_pref_e is not None
+        ):
             jinput["loss"]["start_pref_e"] = training_reuse_start_pref_e
-        if jinput["loss"].get("start_pref_f") is not None and training_reuse_start_pref_f is not None:
+        if (
+            jinput["loss"].get("start_pref_f") is not None
+            and training_reuse_start_pref_f is not None
+        ):
             jinput["loss"]["start_pref_f"] = training_reuse_start_pref_f
         if training_reuse_start_lr is not None:
             jinput["learning_rate"]["start_lr"] = training_reuse_start_lr
