@@ -226,7 +226,7 @@ def run_model_devi(iter_index, jdata, mdata):
             labeled=False,
         ).to_deepmd_hdf5(system_path + ".hdf5")
         system_file_name += ".hdf5"
-    command = "{dp} model-devi -m {model} -s {system} -o {detail_file}".format(
+    command = "rm -f {detail_file} && {dp} model-devi -m {model} -s {system} -o {detail_file}".format(
         dp=mdata.get("model_devi_command", "dp"),
         model=" ".join(task_model_list),
         system=system_file_name,
@@ -242,7 +242,7 @@ def run_model_devi(iter_index, jdata, mdata):
     f_trust_lo_err = jdata.get("true_error_f_trust_lo", float("inf"))
     e_trust_lo_err = jdata.get("true_error_e_trust_lo", float("inf"))
     if f_trust_lo_err < float("inf") or e_trust_lo_err < float("inf"):
-        command_true_error = "{dp} model-devi -m {model} -s {system} -o {detail_file} --real_error".format(
+        command_true_error = "rm -f {detail_file} && {dp} model-devi -m {model} -s {system} -o {detail_file} --real_error".format(
             dp=mdata.get("model_devi_command", "dp"),
             model=" ".join(task_model_list),
             system=system_file_name,
