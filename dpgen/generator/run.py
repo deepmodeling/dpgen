@@ -637,7 +637,7 @@ def make_train(iter_index, jdata, mdata):
     )
     if copied_models is not None:
         for ii in range(len(copied_models)):
-            _link_old_models(work_path, old_model_files, ii, basename="init.pb")
+            _link_old_models(work_path, [copied_models[ii]], ii, basename="init.pb")
     # Copy user defined forward files
     symlink_user_forward_files(mdata=mdata, task_type="train", work_path=work_path)
     # HDF5 format for training data
