@@ -24,6 +24,7 @@ import warnings
 from collections import Counter
 from collections.abc import Iterable
 from pathlib import Path
+from typing import Optional
 
 import dpdata
 import numpy as np
@@ -282,6 +283,8 @@ def make_train(iter_index, jdata, mdata):
     training_reuse_start_pref_e = jdata.get("training_reuse_start_pref_e")
     training_reuse_start_pref_f = jdata.get("training_reuse_start_pref_f")
     model_devi_activation_func = jdata.get("model_devi_activation_func", None)
+    training_init_frozen_model = jdata.get("training_init_frozen_model")
+    training_finetune_model = jdata.get("training_finetune_model")
 
     auto_ratio = False
     if (
@@ -624,6 +627,17 @@ def make_train(iter_index, jdata, mdata):
         for ii in range(len(iter0_models)):
             old_model_files = glob.glob(os.path.join(iter0_models[ii], "model.ckpt*"))
             _link_old_models(work_path, old_model_files, ii)
+    copied_models = next(
+        (
+            item
+            for item in (training_init_frozen_model, training_finetune_model)
+            if item is not None
+        ),
+        None,
+    )
+    if copied_models is not None:
+        for ii in range(len(copied_models)):
+            _link_old_models(work_path, old_model_files, ii, basename="init.pb")
     # Copy user defined forward files
     symlink_user_forward_files(mdata=mdata, task_type="train", work_path=work_path)
     # HDF5 format for training data
@@ -631,7 +645,7 @@ def make_train(iter_index, jdata, mdata):
         convert_training_data_to_hdf5(input_files, os.path.join(work_path, "data.hdf5"))
 
 
-def _link_old_models(work_path, old_model_files, ii):
+def _link_old_models(work_path, old_model_files, ii, basename: Optional[str] = None):
     """Link the `ii`th old model given by `old_model_files` to
     the `ii`th training task in `work_path`.
     """
@@ -641,7 +655,10 @@ def _link_old_models(work_path, old_model_files, ii):
     cwd = os.getcwd()
     for jj in old_model_files:
         absjj = os.path.abspath(jj)
-        basejj = os.path.basename(jj)
+        if basename is None:
+            basejj = os.path.basename(jj)
+        else:
+            basejj = basename
         os.chdir(task_old_path)
         os.symlink(os.path.relpath(absjj), basejj)
         os.chdir(cwd)
@@ -676,6 +693,8 @@ def run_train(iter_index, jdata, mdata):
     train_input_file = default_train_input_file
     training_reuse_iter = jdata.get("training_reuse_iter")
     training_init_model = jdata.get("training_init_model", False)
+    training_init_frozen_model = jdata.get("training_init_frozen_model")
+    training_finetune_model = jdata.get("training_finetune_model")
 
     if "srtab_file_path" in jdata.keys():
         zbl_file = os.path.basename(jdata.get("srtab_file_path", None))
@@ -686,6 +705,16 @@ def run_train(iter_index, jdata, mdata):
         mdata["deepmd_version"]
     except KeyError:
         mdata = set_version(mdata)
+
+    if (
+        training_init_model
+        + (training_init_frozen_model is not None)
+        + (training_finetune_model is not None)
+        > 1
+    ):
+        raise RuntimeError(
+            "training_init_model, training_init_frozen_model, and training_finetune_model are mutually exclusive."
+        )
 
     train_command = mdata.get("train_command", "dp")
     train_resources = mdata["train_resources"]
@@ -712,13 +741,17 @@ def run_train(iter_index, jdata, mdata):
         ## train_command should not be None
         assert train_command
         extra_flags = ""
+        init_flag = ""
         if jdata.get("dp_train_skip_neighbor_stat", False):
             extra_flags += " --skip-neighbor-stat"
-        command = f"{train_command} train {train_input_file}{extra_flags}"
         if training_init_model:
-            command = f"{{ if [ ! -f model.ckpt.index ]; then {command} --init-model old/model.ckpt; else {command} --restart model.ckpt; fi }}"
-        else:
-            command = f"{{ if [ ! -f model.ckpt.index ]; then {command}; else {command} --restart model.ckpt; fi }}"
+            init_flag = " --init-model old/model.ckpt"
+        elif training_init_frozen_model is not None:
+            init_flag = " --init-frz-model old/init.pb"
+        elif training_finetune_model is not None:
+            init_flag = " --finetune old/init.pb"
+        command = f"{train_command} train {train_input_file}{extra_flags}"
+        command = f"{{ if [ ! -f model.ckpt.index ]; then {command}{init_flag}; else {command} --restart model.ckpt; fi }}"
         command = "/bin/sh -c '%s'" % command
         commands.append(command)
         command = "%s freeze" % train_command
@@ -750,6 +783,9 @@ def run_train(iter_index, jdata, mdata):
             os.path.join("old", "model.ckpt.index"),
             os.path.join("old", "model.ckpt.data-00000-of-00001"),
         ]
+    elif training_init_frozen_model is not None or training_finetune_model is not None:
+        forward_files.append(os.path.join("old", "init.pb"))
+
     backward_files = ["frozen_model.pb", "lcurve.out", "train.log"]
     backward_files += [
         "model.ckpt.meta",
