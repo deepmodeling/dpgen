@@ -108,8 +108,8 @@ def training_args() -> list[Argument]:
     doc_model_devi_activation_func = "The activation function in the model. The shape of list should be (N_models, 2), where 2 represents the embedding and fitting network. This option will override default parameters."
     doc_srtab_file_path = "The path of the table for the short-range pairwise interaction which is needed when using DP-ZBL potential"
     doc_one_h5 = "When using DeePMD-kit, all of the input data will be merged into one HDF5 file."
-    doc_training_init_frozen_model = "Initilize the model parameters from the given frozen models. Number of element should be equal to numb_models."
-    doc_training_finetune_model = "Finetune the model parameters from the given frozen models. Number of element should be equal to numb_models."
+    doc_training_init_frozen_model = "At interation 0, initilize the model parameters from the given frozen models. Number of element should be equal to numb_models."
+    doc_training_finetune_model = "At interation 0, finetune the model parameters from the given frozen models. Number of element should be equal to numb_models."
 
     return [
         Argument("numb_models", int, optional=False, doc=doc_numb_models),
