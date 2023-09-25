@@ -283,10 +283,12 @@ def make_train(iter_index, jdata, mdata):
     training_reuse_start_pref_e = jdata.get("training_reuse_start_pref_e")
     training_reuse_start_pref_f = jdata.get("training_reuse_start_pref_f")
     model_devi_activation_func = jdata.get("model_devi_activation_func", None)
-    training_init_frozen_model = jdata.get(
-        "training_init_frozen_model"
-    ) if iter_index == 0 else None
-    training_finetune_model = jdata.get("training_finetune_model") if iter_index == 0 else None
+    training_init_frozen_model = (
+        jdata.get("training_init_frozen_model") if iter_index == 0 else None
+    )
+    training_finetune_model = (
+        jdata.get("training_finetune_model") if iter_index == 0 else None
+    )
 
     auto_ratio = False
     if (
@@ -695,10 +697,12 @@ def run_train(iter_index, jdata, mdata):
     train_input_file = default_train_input_file
     training_reuse_iter = jdata.get("training_reuse_iter")
     training_init_model = jdata.get("training_init_model", False)
-    training_init_frozen_model = jdata.get(
-        "training_init_frozen_model"
-    ) if iter_index == 0 else None
-    training_finetune_model = jdata.get("training_finetune_model") if iter_index == 0 else None
+    training_init_frozen_model = (
+        jdata.get("training_init_frozen_model") if iter_index == 0 else None
+    )
+    training_finetune_model = (
+        jdata.get("training_finetune_model") if iter_index == 0 else None
+    )
 
     if "srtab_file_path" in jdata.keys():
         zbl_file = os.path.basename(jdata.get("srtab_file_path", None))
