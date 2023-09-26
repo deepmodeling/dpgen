@@ -523,7 +523,6 @@ class TestMakeTrain(unittest.TestCase):
         shutil.rmtree("iter.000001")
         shutil.rmtree("iter.000000")
 
-
     def test_training_finetune_model(self):
         """Test `training_finetune_model`."""
         with open(param_file_v1) as fp:
@@ -531,9 +530,11 @@ class TestMakeTrain(unittest.TestCase):
         jdata.pop("use_ele_temp", None)
         numb_models = 4
         temp_file = "_temp.pb"
-        with open(temp_file, 'w') as fw:
+        with open(temp_file, "w") as fw:
             pass
-        jdata["training_finetune_model"] = [os.path.abspath(temp_file) for _ in range(numb_models)]
+        jdata["training_finetune_model"] = [
+            os.path.abspath(temp_file) for _ in range(numb_models)
+        ]
         with open(machine_file_v1) as fp:
             mdata = json.load(fp)
         make_train(0, jdata, mdata)
@@ -572,7 +573,6 @@ class TestMakeTrain(unittest.TestCase):
 
         # remove testing dirs
         shutil.rmtree("iter.000000")
-
 
     def test_training_init_frozen_model(self):
         """Test `training_init_frozen_model`."""
@@ -581,9 +581,11 @@ class TestMakeTrain(unittest.TestCase):
         jdata.pop("use_ele_temp", None)
         numb_models = 4
         temp_file = "_temp.pb"
-        with open(temp_file, 'w') as fw:
+        with open(temp_file, "w") as fw:
             pass
-        jdata["training_init_frozen_model"] = [os.path.abspath(temp_file) for _ in range(numb_models)]
+        jdata["training_init_frozen_model"] = [
+            os.path.abspath(temp_file) for _ in range(numb_models)
+        ]
         with open(machine_file_v1) as fp:
             mdata = json.load(fp)
         make_train(0, jdata, mdata)
@@ -622,6 +624,7 @@ class TestMakeTrain(unittest.TestCase):
 
         # remove testing dirs
         shutil.rmtree("iter.000000")
+
 
 if __name__ == "__main__":
     unittest.main()
