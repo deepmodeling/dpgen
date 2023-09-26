@@ -710,7 +710,10 @@ def make_scale_ABACUS(jdata):
                 assert os.path.isfile(pos_src)
             else:
                 try:
-                    from dpgen.auto_test.lib.abacus import final_stru as abacus_final_stru
+                    from dpgen.auto_test.lib.abacus import (
+                        final_stru as abacus_final_stru,
+                    )
+
                     pos_src = abacus_final_stru(os.path.join(init_path, ii))
                     pos_src = os.path.join(init_path, ii, pos_src)
                     assert os.path.isfile(pos_src)
