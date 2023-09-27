@@ -1,5 +1,6 @@
 #!/usr/bin/python3
-import os,glob
+import glob
+import os
 
 import dpdata
 import numpy as np
@@ -315,10 +316,12 @@ def final_stru(abacus_path):
             # find the final name by STRU_ION*_D,
             # for abacus version < v3.2.2, there has no STRU_ION_D file but has STRU_ION0_D STRU_ION1_D ... STRU_ION10_D ...
             # so we need to find the last STRU_ION*_D file
-            stru_ions = glob.glob(os.path.join(abacus_path, f"OUT.{suffix}/STRU_ION*_D"))
+            stru_ions = glob.glob(
+                os.path.join(abacus_path, f"OUT.{suffix}/STRU_ION*_D")
+            )
             if len(stru_ions) > 0:
                 # sort the file name by the number in the file name
-                stru_ions.sort(key=lambda x: int(x.split('_')[-2][3:]))
+                stru_ions.sort(key=lambda x: int(x.split("_")[-2][3:]))
                 final_stru_ion = os.path.basename(stru_ions[-1])
                 return f"OUT.{suffix}/{final_stru_ion}"
             else:
