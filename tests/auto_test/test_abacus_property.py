@@ -174,6 +174,9 @@ class TestABACUS(unittest.TestCase):
         os.remove(
             os.path.realpath(os.path.join(self.equi_path, "OUT.ABACUS", "STRU_ION_D"))
         )
+        os.remove(
+            os.path.realpath(os.path.join(self.equi_path, "STRU"))
+        )
         with self.assertRaises(RuntimeError):
             elastic.make_confs(work_path, self.equi_path, refine=False)
 
