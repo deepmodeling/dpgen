@@ -523,6 +523,108 @@ class TestMakeTrain(unittest.TestCase):
         shutil.rmtree("iter.000001")
         shutil.rmtree("iter.000000")
 
+    def test_training_finetune_model(self):
+        """Test `training_finetune_model`."""
+        with open(param_file_v1) as fp:
+            jdata = json.load(fp)
+        jdata.pop("use_ele_temp", None)
+        numb_models = 4
+        temp_file = "_temp.pb"
+        with open(temp_file, "w") as fw:
+            pass
+        jdata["training_finetune_model"] = [
+            os.path.abspath(temp_file) for _ in range(numb_models)
+        ]
+        with open(machine_file_v1) as fp:
+            mdata = json.load(fp)
+        make_train(0, jdata, mdata)
+        # check file exists
+        for ii in range(numb_models):
+            self.assertTrue(
+                os.path.isfile(
+                    os.path.join(
+                        "iter.000000", "00.train", "%03d" % ii, "old", "init.pb"
+                    )
+                )
+            )
+        # test run_train -- confirm transferred files are correct
+        with tempfile.TemporaryDirectory() as remote_root:
+            run_train(
+                0,
+                jdata,
+                {
+                    "api_version": "1.0",
+                    "train_command": (
+                        "test -f ./old/init.pb"
+                        "&& touch frozen_model.pb lcurve.out model.ckpt.meta model.ckpt.index model.ckpt.data-00000-of-00001 checkpoint"
+                        "&& echo dp"
+                    ),
+                    "train_machine": {
+                        "batch_type": "shell",
+                        "local_root": "./",
+                        "remote_root": remote_root,
+                        "context_type": "local",
+                    },
+                    "train_resources": {
+                        "group_size": 1,
+                    },
+                },
+            )
+
+        # remove testing dirs
+        shutil.rmtree("iter.000000")
+
+    def test_training_init_frozen_model(self):
+        """Test `training_init_frozen_model`."""
+        with open(param_file_v1) as fp:
+            jdata = json.load(fp)
+        jdata.pop("use_ele_temp", None)
+        numb_models = 4
+        temp_file = "_temp.pb"
+        with open(temp_file, "w") as fw:
+            pass
+        jdata["training_init_frozen_model"] = [
+            os.path.abspath(temp_file) for _ in range(numb_models)
+        ]
+        with open(machine_file_v1) as fp:
+            mdata = json.load(fp)
+        make_train(0, jdata, mdata)
+        # check file exists
+        for ii in range(numb_models):
+            self.assertTrue(
+                os.path.isfile(
+                    os.path.join(
+                        "iter.000000", "00.train", "%03d" % ii, "old", "init.pb"
+                    )
+                )
+            )
+        # test run_train -- confirm transferred files are correct
+        with tempfile.TemporaryDirectory() as remote_root:
+            run_train(
+                0,
+                jdata,
+                {
+                    "api_version": "1.0",
+                    "train_command": (
+                        "test -f ./old/init.pb"
+                        "&& touch frozen_model.pb lcurve.out model.ckpt.meta model.ckpt.index model.ckpt.data-00000-of-00001 checkpoint"
+                        "&& echo dp"
+                    ),
+                    "train_machine": {
+                        "batch_type": "shell",
+                        "local_root": "./",
+                        "remote_root": remote_root,
+                        "context_type": "local",
+                    },
+                    "train_resources": {
+                        "group_size": 1,
+                    },
+                },
+            )
+
+        # remove testing dirs
+        shutil.rmtree("iter.000000")
+
 
 if __name__ == "__main__":
     unittest.main()
