@@ -18,7 +18,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
-      run: pip install coverage 'pymatgen-analysis-defects<2023.08.22' -e .
+      run: pip install -e .[test]
     - name: Test
       run: coverage run --source=./dpgen -m unittest -v && coverage report
     - uses: codecov/codecov-action@v3

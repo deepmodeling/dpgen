@@ -16,6 +16,7 @@ from dpgen.generator.run import gen_run
 from dpgen.simplify.simplify import gen_simplify
 from dpgen.tools.auto_gen_param import auto_gen_param
 from dpgen.tools.run_report import run_report
+from dpgen.gui import start_dpgui
 
 """
 A master convenience script with many tools for driving dpgen.
@@ -206,6 +207,29 @@ def main_parser() -> argparse.ArgumentParser:
     parser_db.add_argument("PARAM", type=str, help="parameter file, json format")
 
     parser_db.set_defaults(func=db_run)
+
+    # gui
+    parser_gui = subparsers.add_parser(
+        "gui",
+        help="Serve DP-GUI.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser_gui.add_argument(
+        "-p",
+        "--port",
+        type=int,
+        default=6042,
+        help="The port to serve DP-GUI on.",
+    )
+    parser_gui.add_argument(
+        "--bind_all",
+        action="store_true",
+        help=(
+            "Serve on all public interfaces. This will expose your DP-GUI instance "
+            "to the network on both IPv4 and IPv6 (where available)."
+        ),
+    )
+    parser_gui.set_defaults(func=start_dpgui)
     return parser
 
 
