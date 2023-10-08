@@ -13,10 +13,10 @@ from dpgen.data.reaction import gen_init_reaction
 from dpgen.data.surf import gen_init_surf
 from dpgen.database.run import db_run
 from dpgen.generator.run import gen_run
+from dpgen.gui import start_dpgui
 from dpgen.simplify.simplify import gen_simplify
 from dpgen.tools.auto_gen_param import auto_gen_param
 from dpgen.tools.run_report import run_report
-from dpgen.gui import start_dpgui
 
 """
 A master convenience script with many tools for driving dpgen.
