@@ -43,8 +43,30 @@ Homepage = "https://github.com/deepmodeling/dpgen"
 documentation = "https://docs.deepmodeling.com/projects/dpgen"
 repository = "https://github.com/deepmodeling/dpgen"
 
-[project.entry-points.console_scripts]
+[project.scripts]
 dpgen = "dpgen.main:main"
+
+[project.entry-points."dpgui"]
+"DP-GEN Run" = "dpgen.generator.arginfo:run_jdata_arginfo"
+"DP-GEN Run Machine" = "dpgen.generator.arginfo:run_jdata_arginfo"
+"DP-GEN Simplify" = "dpgen.simplify.arginfo:simplify_jdata_arginfo"
+"DP-GEN Simplify Machine" = "dpgen.simplify.arginfo:simplify_mdata_arginfo"
+"DP-GEN init_bulk" = "dpgen.data.arginfo:init_bulk_jdata_arginfo"
+"DP-GEN init_bulk Machine" = "dpgen.data.arginfo:init_bulk_mdata_arginfo"
+"DP-GEN init_surf" = "dpgen.data.arginfo:init_surf_jdata_arginfo"
+"DP-GEN init_surf Machine" = "dpgen.data.arginfo:init_surf_mdata_arginfo"
+"DP-GEN init_reaction" = "dpgen.data.arginfo:init_reaction_jdata_arginfo"
+"DP-GEN init_reaction Machine" = "dpgen.data.arginfo:init_reaction_mdata_arginfo"
+
+[project.optional-dependencies]
+test = [
+    "dpgui",
+    "coverage",
+    "pymatgen-analysis-defects<2023.08.22",
+]
+gui = [
+    "dpgui",
+]
 
 [tool.setuptools.packages.find]
 include = ["dpgen*"]
