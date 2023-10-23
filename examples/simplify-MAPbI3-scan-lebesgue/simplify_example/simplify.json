@@ -17,7 +17,6 @@
     "init_data_prefix": "",
     "init_data_sys": [],
     "sys_configs": [
-        null
     ],
     "sys_batch_size": [
         1

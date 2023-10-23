@@ -1,8 +1,9 @@
 import textwrap
+from typing import Union
 
 from dargs import Argument, Variant
 
-from dpgen.arginfo import check_nd_list, errmsg_nd_list, general_mdata_arginfo
+from dpgen.arginfo import general_mdata_arginfo
 
 
 def run_mdata_arginfo() -> Argument:
@@ -26,9 +27,9 @@ def basic_args() -> list[Argument]:
 - 2: electron temperature as atom parameter."
 
     return [
-        Argument("type_map", list, optional=False, doc=doc_type_map),
+        Argument("type_map", list[str], optional=False, doc=doc_type_map),
         Argument(
-            "mass_map", [list, str], optional=True, default="auto", doc=doc_mass_map
+            "mass_map", [list[float], str], optional=True, default="auto", doc=doc_mass_map
         ),
         Argument("use_ele_temp", int, optional=True, default=0, doc=doc_use_ele_temp),
     ]
@@ -45,23 +46,21 @@ def data_args() -> list[Argument]:
 
     return [
         Argument("init_data_prefix", str, optional=True, doc=doc_init_data_prefix),
-        Argument("init_data_sys", list, optional=False, doc=doc_init_data_sys),
+        Argument("init_data_sys", list[str], optional=False, doc=doc_init_data_sys),
         Argument(
             "sys_format", str, optional=True, default="vasp/poscar", doc=doc_sys_format
         ),
         Argument(
-            "init_batch_size", [list, str], optional=True, doc=doc_init_batch_size
+            "init_batch_size", [list[Union[int, str]], str], optional=True, doc=doc_init_batch_size
         ),
         Argument("sys_configs_prefix", str, optional=True, doc=doc_sys_configs_prefix),
         Argument(
             "sys_configs",
-            list,
+            list[list[str]],
             optional=False,
             doc=doc_sys_configs,
-            extra_check=check_nd_list(2),
-            extra_check_errmsg=errmsg_nd_list % 2,
         ),
-        Argument("sys_batch_size", list, optional=True, doc=doc_sys_batch_size),
+        Argument("sys_batch_size", list[Union[int, str]], optional=True, doc=doc_sys_batch_size),
     ]
 
 
@@ -115,7 +114,7 @@ def training_args() -> list[Argument]:
         Argument("numb_models", int, optional=False, doc=doc_numb_models),
         Argument(
             "training_iter0_model_path",
-            list,
+            list[str],
             optional=True,
             doc=doc_training_iter0_model_path,
         ),
@@ -182,7 +181,7 @@ def training_args() -> list[Argument]:
         ),
         Argument(
             "model_devi_activation_func",
-            [None, list],
+            [None, list[list[str]]],
             optional=True,
             doc=doc_model_devi_activation_func,
         ),
@@ -190,13 +189,13 @@ def training_args() -> list[Argument]:
         Argument("one_h5", bool, optional=True, default=False, doc=doc_one_h5),
         Argument(
             "training_init_frozen_model",
-            list,
+            list[str],
             optional=True,
             doc=doc_training_init_frozen_model,
         ),
         Argument(
             "training_finetune_model",
-            list,
+            list[str],
             optional=True,
             doc=doc_training_finetune_model,
         ),
@@ -218,7 +217,7 @@ def model_devi_jobs_template_args() -> Argument:
         Argument("plm", str, optional=True, doc=doc_template_plm),
     ]
     return Argument(
-        "template", list, args, [], optional=True, repeat=False, doc=doc_template
+        "template", dict, args, [], optional=True, repeat=False, doc=doc_template
     )
 
 
@@ -235,7 +234,7 @@ def model_devi_jobs_rev_mat_args() -> Argument:
         Argument("plm", dict, optional=True, doc=doc_rev_mat_plm),
     ]
     return Argument(
-        "rev_mat", list, args, [], optional=True, repeat=False, doc=doc_rev_mat
+        "rev_mat", dict, args, [], optional=True, repeat=False, doc=doc_rev_mat
     )
 
 
@@ -264,9 +263,9 @@ def model_devi_jobs_args() -> list[Argument]:
         model_devi_jobs_template_args(),
         model_devi_jobs_rev_mat_args(),
         Argument("sys_rev_mat", dict, optional=True, doc=doc_sys_rev_mat),
-        Argument("sys_idx", list, optional=False, doc=doc_sys_idx),
-        Argument("temps", list, optional=True, doc=doc_temps),
-        Argument("press", list, optional=True, doc=doc_press),
+        Argument("sys_idx", list[int], optional=False, doc=doc_sys_idx),
+        Argument("temps", list[float], optional=True, doc=doc_temps),
+        Argument("press", list[float], optional=True, doc=doc_press),
         Argument("trj_freq", int, optional=False, doc=doc_trj_freq),
         Argument("nsteps", int, optional=True, doc=doc_nsteps),
         Argument("ensemble", str, optional=True, doc=doc_ensemble),
@@ -342,26 +341,26 @@ The union of the two sets is made as candidate dataset."
         Argument("model_devi_skip", int, optional=False, doc=doc_model_devi_skip),
         Argument(
             "model_devi_f_trust_lo",
-            [float, list, dict],
+            [float, list[float], dict],
             optional=False,
             doc=doc_model_devi_f_trust_lo,
         ),
         Argument(
             "model_devi_f_trust_hi",
-            [float, list, dict],
+            [float, list[float], dict],
             optional=False,
             doc=doc_model_devi_f_trust_hi,
         ),
         Argument(
             "model_devi_v_trust_lo",
-            [float, list, dict],
+            [float, list[float], dict],
             optional=True,
             default=1e10,
             doc=doc_model_devi_v_trust_lo,
         ),
         Argument(
             "model_devi_v_trust_hi",
-            [float, list, dict],
+            [float, list[float], dict],
             optional=True,
             default=1e10,
             doc=doc_model_devi_v_trust_hi,
@@ -510,7 +509,7 @@ def model_devi_amber_args() -> list[Argument]:
             repeat=True,
             doc=doc_model_devi_jobs,
             sub_fields=[
-                Argument("sys_idx", list, optional=False, doc=doc_sys_idx),
+                Argument("sys_idx", list[int], optional=False, doc=doc_sys_idx),
                 Argument("trj_freq", int, optional=False, doc=doc_trj_freq),
                 Argument(
                     "restart_from_iter", int, optional=True, doc=doc_restart_from_iter
@@ -520,32 +519,30 @@ def model_devi_amber_args() -> list[Argument]:
         Argument("low_level", str, optional=False, doc=doc_low_level),
         Argument("cutoff", float, optional=False, doc=doc_cutoff),
         Argument("parm7_prefix", str, optional=True, doc=doc_parm7_prefix),
-        Argument("parm7", list, optional=False, doc=doc_parm7),
+        Argument("parm7", list[str], optional=False, doc=doc_parm7),
         Argument("mdin_prefix", str, optional=True, doc=doc_mdin_prefix),
-        Argument("mdin", list, optional=False, doc=doc_mdin),
-        Argument("qm_region", list, optional=False, doc=doc_qm_region),
-        Argument("qm_charge", list, optional=False, doc=doc_qm_charge),
-        Argument("nsteps", list, optional=False, doc=doc_nsteps),
+        Argument("mdin", list[str], optional=False, doc=doc_mdin),
+        Argument("qm_region", list[str], optional=False, doc=doc_qm_region),
+        Argument("qm_charge", list[int], optional=False, doc=doc_qm_charge),
+        Argument("nsteps", list[int], optional=False, doc=doc_nsteps),
         Argument(
             "r",
-            list,
+            list[list[Union[float, list[float]]]],
             optional=False,
             doc=doc_r,
-            extra_check=check_nd_list(2),
-            extra_check_errmsg=errmsg_nd_list % 2,
         ),
         Argument("disang_prefix", str, optional=True, doc=doc_disang_prefix),
-        Argument("disang", list, optional=False, doc=doc_disang),
+        Argument("disang", list[str], optional=False, doc=doc_disang),
         # post model devi args
         Argument(
             "model_devi_f_trust_lo",
-            [float, list, dict],
+            [float, list[float], dict],
             optional=False,
             doc=doc_model_devi_f_trust_lo,
         ),
         Argument(
             "model_devi_f_trust_hi",
-            [float, list, dict],
+            [float, list[float], dict],
             optional=False,
             doc=doc_model_devi_f_trust_hi,
         ),
@@ -587,9 +584,9 @@ def fp_style_vasp_args() -> list[Argument]:
 
     return [
         Argument("fp_pp_path", str, optional=False, doc=doc_fp_pp_path),
-        Argument("fp_pp_files", list, optional=False, doc=doc_fp_pp_files),
+        Argument("fp_pp_files", list[str], optional=False, doc=doc_fp_pp_files),
         Argument("fp_incar", str, optional=False, doc=doc_fp_incar),
-        Argument("fp_aniso_kspacing", list, optional=True, doc=doc_fp_aniso_kspacing),
+        Argument("fp_aniso_kspacing", list[float], optional=True, doc=doc_fp_aniso_kspacing),
         Argument("cvasp", bool, optional=True, doc=doc_cvasp),
         Argument("fp_skip_bad_box", str, optional=True, doc=doc_fp_skip_bad_box),
     ]
@@ -610,13 +607,13 @@ def fp_style_abacus_args() -> list[Argument]:
 
     return [
         Argument("fp_pp_path", str, optional=False, doc=doc_fp_pp_path),
-        Argument("fp_pp_files", list, optional=False, doc=doc_fp_pp_files),
-        Argument("fp_orb_files", list, optional=True, doc=doc_fp_orb_files),
+        Argument("fp_pp_files", list[str], optional=False, doc=doc_fp_pp_files),
+        Argument("fp_orb_files", list[str], optional=True, doc=doc_fp_orb_files),
         Argument("fp_incar", str, optional=True, doc=doc_fp_incar),
         Argument("fp_kpt_file", str, optional=True, doc=doc_fp_kpt_file),
         Argument("fp_dpks_descriptor", str, optional=True, doc=doc_fp_dpks_descriptor),
         Argument("user_fp_params", dict, optional=True, doc=doc_user_fp_params),
-        Argument("k_points", list, optional=True, doc=doc_k_points),
+        Argument("k_points", list[int], optional=True, doc=doc_k_points),
     ]
 
 
@@ -646,7 +643,7 @@ def fp_style_gaussian_args() -> list[Argument]:
     )
 
     args = [
-        Argument("keywords", [str, list], optional=False, doc=doc_keywords),
+        Argument("keywords", [str, list[str]], optional=False, doc=doc_keywords),
         Argument(
             "multiplicity",
             [int, str],
@@ -736,7 +733,7 @@ def fp_style_siesta_args() -> list[Argument]:
         Argument("cluster_cutoff", float, optional=True, doc=doc_cluster_cutoff),
         Argument("fp_params", dict, args, [], optional=False, doc=doc_fp_params_siesta),
         Argument("fp_pp_path", str, optional=False, doc=doc_fp_pp_path),
-        Argument("fp_pp_files", list, optional=False, doc=doc_fp_pp_files),
+        Argument("fp_pp_files", list[str], optional=False, doc=doc_fp_pp_files),
     ]
 
 

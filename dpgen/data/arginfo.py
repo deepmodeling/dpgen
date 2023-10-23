@@ -47,7 +47,7 @@ def init_bulk_abacus_args() -> list[Argument]:
     return [
         Argument("relax_kpt", str, optional=True, doc=doc_relax_kpt),
         Argument("md_kpt", str, optional=True, doc=doc_md_kpt),
-        Argument("atom_masses", list, optional=True, doc=doc_atom_masses),
+        Argument("atom_masses", list[float], optional=True, doc=doc_atom_masses),
     ]
 
 
@@ -105,25 +105,25 @@ def init_bulk_jdata_arginfo() -> Argument:
         "init_bulk_jdata",
         dict,
         [
-            Argument("stages", list, optional=False, doc=doc_stages),
-            Argument("elements", list, optional=False, doc=doc_elements),
-            Argument("potcars", list, optional=True, doc=doc_potcars),
+            Argument("stages", list[int], optional=False, doc=doc_stages),
+            Argument("elements", list[str], optional=False, doc=doc_elements),
+            Argument("potcars", list[str], optional=True, doc=doc_potcars),
             Argument("cell_type", str, optional=True, doc=doc_cell_type),
-            Argument("super_cell", list, optional=False, doc=doc_super_cell),
+            Argument("super_cell", list[int], optional=False, doc=doc_super_cell),
             Argument(
                 "from_poscar", bool, optional=True, default=False, doc=doc_from_poscar
             ),
             Argument("from_poscar_path", str, optional=True, doc=doc_from_poscar_path),
             Argument("relax_incar", str, optional=True, doc=doc_relax_incar),
             Argument("md_incar", str, optional=True, doc=doc_md_incar),
-            Argument("scale", list, optional=False, doc=doc_scale),
+            Argument("scale", list[float], optional=False, doc=doc_scale),
             Argument("skip_relax", bool, optional=False, doc=doc_skip_relax),
             Argument("pert_numb", int, optional=False, doc=doc_pert_numb),
             Argument("pert_box", float, optional=False, doc=doc_pert_box),
             Argument("pert_atom", float, optional=False, doc=doc_pert_atom),
             Argument("md_nstep", int, optional=False, doc=doc_md_nstep),
             Argument("coll_ndata", int, optional=False, doc=doc_coll_ndata),
-            Argument("type_map", list, optional=True, doc=doc_type_map),
+            Argument("type_map", list[str], optional=True, doc=doc_type_map),
         ],
         sub_variants=init_bulk_variant_type_args(),
         doc=doc_init_bulk,
@@ -171,11 +171,11 @@ def init_surf_jdata_arginfo() -> Argument:
         "init_surf_jdata",
         dict,
         [
-            Argument("stages", list, optional=False, doc=doc_stages),
-            Argument("elements", list, optional=False, doc=doc_elements),
-            Argument("potcars", list, optional=True, doc=doc_potcars),
+            Argument("stages", list[int], optional=False, doc=doc_stages),
+            Argument("elements", list[str], optional=False, doc=doc_elements),
+            Argument("potcars", list[str], optional=True, doc=doc_potcars),
             Argument("cell_type", str, optional=True, doc=doc_cell_type),
-            Argument("super_cell", list, optional=False, doc=doc_super_cell),
+            Argument("super_cell", list[int], optional=False, doc=doc_super_cell),
             Argument(
                 "from_poscar", bool, optional=True, default=False, doc=doc_from_poscar
             ),
@@ -185,13 +185,13 @@ def init_surf_jdata_arginfo() -> Argument:
             Argument("z_min", int, optional=True, doc=doc_z_min),
             Argument("vacuum_max", float, optional=False, doc=doc_vacuum_max),
             Argument("vacuum_min", float, optional=True, doc=doc_vacuum_min),
-            Argument("vacuum_resol", list, optional=False, doc=doc_vacuum_resol),
+            Argument("vacuum_resol", list[float], optional=False, doc=doc_vacuum_resol),
             Argument("vacuum_numb", int, optional=True, doc=doc_vacuum_numb),
             Argument("mid_point", float, optional=True, doc=doc_mid_point),
             Argument("head_ratio", float, optional=True, doc=doc_head_ratio),
-            Argument("millers", list, optional=False, doc=doc_millers),
+            Argument("millers", list[list[int]], optional=False, doc=doc_millers),
             Argument("relax_incar", str, optional=True, doc=doc_relax_incar),
-            Argument("scale", list, optional=False, doc=doc_scale),
+            Argument("scale", list[float], optional=False, doc=doc_scale),
             Argument("skip_relax", bool, optional=False, doc=doc_skip_relax),
             Argument("pert_numb", int, optional=False, doc=doc_pert_numb),
             Argument("pert_box", float, optional=False, doc=doc_pert_box),
@@ -233,7 +233,7 @@ def init_reaction_jdata_arginfo() -> Argument:
         "init_reaction_jdata",
         dict,
         [
-            Argument("type_map", list, doc=doc_type_map),
+            Argument("type_map", list[str], doc=doc_type_map),
             Argument(
                 "reaxff",
                 dict,
