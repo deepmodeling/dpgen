@@ -16,8 +16,7 @@
     "pick_data": "/scratch/jz748/simplify/qm7",
     "init_data_prefix": "",
     "init_data_sys": [],
-    "sys_configs": [
-    ],
+    "sys_configs": [],
     "sys_batch_size": [
         "auto"
     ],

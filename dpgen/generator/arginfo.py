@@ -29,7 +29,11 @@ def basic_args() -> list[Argument]:
     return [
         Argument("type_map", list[str], optional=False, doc=doc_type_map),
         Argument(
-            "mass_map", [list[float], str], optional=True, default="auto", doc=doc_mass_map
+            "mass_map",
+            [list[float], str],
+            optional=True,
+            default="auto",
+            doc=doc_mass_map,
         ),
         Argument("use_ele_temp", int, optional=True, default=0, doc=doc_use_ele_temp),
     ]
@@ -51,7 +55,10 @@ def data_args() -> list[Argument]:
             "sys_format", str, optional=True, default="vasp/poscar", doc=doc_sys_format
         ),
         Argument(
-            "init_batch_size", [list[Union[int, str]], str], optional=True, doc=doc_init_batch_size
+            "init_batch_size",
+            [list[Union[int, str]], str],
+            optional=True,
+            doc=doc_init_batch_size,
         ),
         Argument("sys_configs_prefix", str, optional=True, doc=doc_sys_configs_prefix),
         Argument(
@@ -60,7 +67,12 @@ def data_args() -> list[Argument]:
             optional=False,
             doc=doc_sys_configs,
         ),
-        Argument("sys_batch_size", list[Union[int, str]], optional=True, doc=doc_sys_batch_size),
+        Argument(
+            "sys_batch_size",
+            list[Union[int, str]],
+            optional=True,
+            doc=doc_sys_batch_size,
+        ),
     ]
 
 
@@ -586,7 +598,9 @@ def fp_style_vasp_args() -> list[Argument]:
         Argument("fp_pp_path", str, optional=False, doc=doc_fp_pp_path),
         Argument("fp_pp_files", list[str], optional=False, doc=doc_fp_pp_files),
         Argument("fp_incar", str, optional=False, doc=doc_fp_incar),
-        Argument("fp_aniso_kspacing", list[float], optional=True, doc=doc_fp_aniso_kspacing),
+        Argument(
+            "fp_aniso_kspacing", list[float], optional=True, doc=doc_fp_aniso_kspacing
+        ),
         Argument("cvasp", bool, optional=True, doc=doc_cvasp),
         Argument("fp_skip_bad_box", str, optional=True, doc=doc_fp_skip_bad_box),
     ]

@@ -1,4 +1,3 @@
-from typing import Callable
 
 from dargs import Argument
 
@@ -43,4 +42,3 @@ def general_mdata_arginfo(name: str, tasks: tuple[str]) -> Argument:
             )
         )
     return Argument(name, dict, sub_fields=sub_fields, doc=doc_run_mdata)
-
