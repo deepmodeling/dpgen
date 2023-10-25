@@ -41,7 +41,7 @@ def general_simplify_arginfo() -> Argument:
 
     return [
         Argument("labeled", bool, optional=True, default=False, doc=doc_labeled),
-        Argument("pick_data", [str, list], doc=doc_pick_data),
+        Argument("pick_data", [str, list[str]], doc=doc_pick_data),
         Argument("init_pick_number", int, doc=doc_init_pick_number),
         Argument("iter_pick_number", int, doc=doc_iter_pick_number),
         Argument(
