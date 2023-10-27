@@ -1927,14 +1927,9 @@ def run_md_model_devi(iter_index, jdata, mdata):
         commands = [command]
 
         forward_files = ["conf.lmp", "input.lammps"]
-        backward_files = ["model_devi.out", "model_devi.log"]
+        backward_files = ["model_devi*.out", "model_devi.log"]
         if model_devi_merge_traj:
-            if nbeads is None:
-                backward_files += ["all.lammpstrj"]
-            else:
-                num_digits = np.ceil(np.log10(nbeads+1)).astype(int)
-                for ibead in range(nbeads):
-                    backward_files += [f"all.lammpstrj.{ibead+1:0{num_digits}d}"]
+            backward_files += ["all.lammpstrj*"]
         else:
             forward_files += ["traj"]
             backward_files += ["traj"]
