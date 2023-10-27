@@ -49,6 +49,7 @@ def make_lammps_input(
         raise RuntimeError(
             "the frame style ele_temp and atom style ele_temp should not be set at the same time"
         )
+    ret = "variable        NSTEPS          equal %d\n" % nsteps
     if nbeads is not None:
         if nbeads <= 0:
             raise ValueError("The number of beads should be positive. Check your nbeads setting.")
@@ -56,7 +57,6 @@ def make_lammps_input(
         while power < nbeads:
             power *= 10
         ret += "variable        ibead           uloop %d pad\n"%(power-1)
-    ret = "variable        NSTEPS          equal %d\n" % nsteps
     ret += "variable        THERMO_FREQ     equal %d\n" % trj_freq
     ret += "variable        DUMP_FREQ       equal %d\n" % trj_freq
     ret += "variable        TEMP            equal %f\n" % temp
