@@ -114,7 +114,7 @@ def make_lammps_input(
             keywords += "fparam ${ELE_TEMP}"
         if ele_temp_a is not None:
             keywords += "aparam ${ELE_TEMP}"
-        if nbeads in None:
+        if nbeads is None:
             ret += f"pair_style      deepmd {graph_list} out_freq ${{THERMO_FREQ}} out_file model_devi.out {keywords}\n"
         else:
             ret += f"pair_style      deepmd {graph_list} out_freq ${{THERMO_FREQ}} out_file model_devi${{ibead}}.out {keywords}\n"
