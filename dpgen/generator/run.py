@@ -913,7 +913,11 @@ def parse_cur_job(cur_job):
         dt = _get_param_alias(cur_job, ["dt"])
     else:
         dt = None
-    return ensemble, nsteps, trj_freq, temps, press, pka_e, dt
+    if "nbeads" in cur_job:
+        nbeads = _get_param_alias(cur_job, ["nbeads"])
+    else:
+        nbeads = None
+    return ensemble, nsteps, trj_freq, temps, press, pka_e, dt, nbeads
 
 
 def expand_matrix_values(target_list, cur_idx=0):
@@ -1454,7 +1458,7 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
     if iter_index >= len(model_devi_jobs):
         return False
     cur_job = model_devi_jobs[iter_index]
-    ensemble, nsteps, trj_freq, temps, press, pka_e, dt = parse_cur_job(cur_job)
+    ensemble, nsteps, trj_freq, temps, press, pka_e, dt, nbeads = parse_cur_job(cur_job)
     if dt is not None:
         model_devi_dt = dt
     sys_idx = expand_idx(cur_job["sys_idx"])
@@ -1557,6 +1561,7 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
                         ele_temp_a=te_a,
                         nopbc=nopbc,
                         deepmd_version=deepmd_version,
+                        nbeads=nbeads,
                     )
                     job = {}
                     job["ensemble"] = ensemble
