@@ -57,6 +57,8 @@ def make_lammps_input(
         while power < nbeads:
             power *= 10
         ret += "variable        ibead           uloop %d pad\n"%(power-1)
+    if nbeads is not None:
+        ret += "atom_modify        map yes\n"
     ret += "variable        THERMO_FREQ     equal %d\n" % trj_freq
     ret += "variable        DUMP_FREQ       equal %d\n" % trj_freq
     ret += "variable        TEMP            equal %f\n" % temp
