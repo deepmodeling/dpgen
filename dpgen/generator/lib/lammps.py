@@ -189,9 +189,9 @@ def make_lammps_input(
             raise RuntimeError("unknown emsemble " + ensemble)
     else:
         if ensemble == "npt" or ensemble == "npt-i" or ensemble == "npt-iso":
-            ret += "fix 1 all pimd/langevin fmmode physical ensemble npt integrator obabo thermostat PILE_L ${ibead} temp ${TEMP} tau ${TAU_T} scale 1.0 barostat BZP iso ${PRESS} taup ${TAU_P}\n"
+            ret += "fix 1 all pimd/langevin fmmode physical ensemble npt integrator obabo thermostat PILE_L ${ibead} temp ${TEMP} tau ${TAU_T} scale 1.0 barostat BZP iso ${PRES} taup ${TAU_P}\n"
         elif ensemble == "npt-a" or ensemble == "npt-aniso":
-            ret += "fix 1 all pimd/langevin fmmode physical ensemble npt integrator obabo thermostat PILE_L ${ibead} temp ${TEMP} tau ${TAU_T} scale 1.0 barostat BZP aniso ${PRESS} taup ${TAU_P}\n"
+            ret += "fix 1 all pimd/langevin fmmode physical ensemble npt integrator obabo thermostat PILE_L ${ibead} temp ${TEMP} tau ${TAU_T} scale 1.0 barostat BZP aniso ${PRES} taup ${TAU_P}\n"
         elif ensemble == "nvt":
             ret += "fix 1 all pimd/langevin fmmode physical ensemble nvt integrator obabo thermostat PILE_L ${ibead} temp ${TEMP} tau ${TAU_T} scale 1.0\n"
         elif ensemble == "nve":
