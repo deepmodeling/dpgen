@@ -61,7 +61,7 @@ def make_lammps_input(
     ret += "variable        DUMP_FREQ       equal %d\n" % trj_freq
     ret += "variable        TEMP            equal %f\n" % temp
     if nbeads is not None:
-        ret += "variable        TEMP_NBEADS            equal %f\n" % temp*nbeads
+        ret += "variable        TEMP_NBEADS            equal %f\n" % (temp*nbeads)
     if ele_temp_f is not None:
         ret += "variable        ELE_TEMP        equal %f\n" % ele_temp_f
     if ele_temp_a is not None:
