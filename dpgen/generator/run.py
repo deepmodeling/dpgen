@@ -1918,14 +1918,23 @@ def run_md_model_devi(iter_index, jdata, mdata):
 
     model_devi_engine = jdata.get("model_devi_engine", "lammps")
     if model_devi_engine == "lammps":
-        command = f"{{ if [ ! -f dpgen.restart.10000 ]; then {model_devi_exec} -i input.lammps -v restart 0; else {model_devi_exec} -i input.lammps -v restart 1; fi }}"
+        nbeads = jdata["model_devi_jobs"][iter_index].get("nbeads")
+        if nbeads is None:
+            command = f"{{ if [ ! -f dpgen.restart.10000 ]; then {model_devi_exec} -i input.lammps -v restart 0; else {model_devi_exec} -i input.lammps -v restart 1; fi }}"
+        else:
+            command = f"{{ if [ ! -f dpgen.restart.10000 ]; then {model_devi_exec} -p {nbeads}x1 -i input.lammps -v restart 0; else {model_devi_exec} -p {nbeads}x1 -i input.lammps -v restart 1; fi }}"
         command = "/bin/sh -c '%s'" % command
         commands = [command]
 
         forward_files = ["conf.lmp", "input.lammps"]
         backward_files = ["model_devi.out", "model_devi.log"]
         if model_devi_merge_traj:
-            backward_files += ["all.lammpstrj"]
+            if nbeads is None:
+                backward_files += ["all.lammpstrj"]
+            else:
+                num_digits = np.ceil(np.log10(nbeads+1)).astype(int)
+                for ibead in range(nbeads):
+                    backward_files += [f"all.lammpstrj.{ibead+1:0{num_digits}d}"]
         else:
             forward_files += ["traj"]
             backward_files += ["traj"]
