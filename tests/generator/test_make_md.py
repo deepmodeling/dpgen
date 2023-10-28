@@ -107,7 +107,7 @@ def _check_pt(testCase, idx, jdata):
     tasks = glob.glob(os.path.join(md_dir, "task.*"))
     tasks.sort()
     cur_job = jdata["model_devi_jobs"][idx]
-    ensemble, nsteps, trj_freq, temps, press, pka_e, dt = parse_cur_job(cur_job)
+    ensemble, nsteps, trj_freq, temps, press, pka_e, dt, nbeads = parse_cur_job(cur_job)
     testCase.assertTrue(ensemble, "npt")
     # get poscars
     sys_idx = cur_job["sys_idx"]
