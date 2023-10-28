@@ -2218,7 +2218,8 @@ def _read_model_devi_file(
                     )
                     frame_number = int(original_filename.split(".")[0])
                     new_filename = os.path.join(
-                        base_path, f"{frame_number + ibead * (int(last_step)+1):d}.lammpstrj"
+                        base_path,
+                        f"{frame_number + ibead * (int(last_step)+1):d}.lammpstrj",
                     )
                     os.rename(traj_files_sorted[ibead][itraj], new_filename)
     model_devi = np.loadtxt(os.path.join(task_path, "model_devi.out"))
