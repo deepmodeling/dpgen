@@ -1465,6 +1465,10 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
         raise RuntimeError(
             "model_devi_f_avg_relative has not been supported for pimd. Set model_devi_f_avg_relative to False."
         )
+    if (nbeads is not None) and (model_devi_merge_traj):
+        raise RuntimeError(
+            "model_devi_merge_traj has not been supported for pimd. Set model_devi_merge_traj to False."
+        )
     if dt is not None:
         model_devi_dt = dt
     sys_idx = expand_idx(cur_job["sys_idx"])
