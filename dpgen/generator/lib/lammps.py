@@ -52,18 +52,20 @@ def make_lammps_input(
     ret = "variable        NSTEPS          equal %d\n" % nsteps
     if nbeads is not None:
         if nbeads <= 0:
-            raise ValueError("The number of beads should be positive. Check your nbeads setting.")
+            raise ValueError(
+                "The number of beads should be positive. Check your nbeads setting."
+            )
         power = 1
         while power < nbeads:
             power *= 10
-        ret += "variable        ibead           uloop %d pad\n"%(power-1)
+        ret += "variable        ibead           uloop %d pad\n" % (power - 1)
     if nbeads is not None:
         ret += "atom_modify        map yes\n"
     ret += "variable        THERMO_FREQ     equal %d\n" % trj_freq
     ret += "variable        DUMP_FREQ       equal %d\n" % trj_freq
     ret += "variable        TEMP            equal %f\n" % temp
     if nbeads is not None:
-        ret += "variable        TEMP_NBEADS            equal %f\n" % (temp*nbeads)
+        ret += "variable        TEMP_NBEADS            equal %f\n" % (temp * nbeads)
     if ele_temp_f is not None:
         ret += "variable        ELE_TEMP        equal %f\n" % ele_temp_f
     if ele_temp_a is not None:
@@ -93,7 +95,7 @@ def make_lammps_input(
         ret += (
             'if "${restart} > 0" then "read_restart dpgen.restart${ibead}.*" else "read_data %s"\n'
             % conf_file
-        )       
+        )
     ret += "change_box   all triclinic\n"
     for jj in range(len(mass_map)):
         ret += "mass            %d %f\n" % (jj + 1, mass_map[jj])
@@ -144,13 +146,15 @@ def make_lammps_input(
     ret += "\n"
     if pka_e is None:
         if nbeads is None:
-            ret += 'if "${restart} == 0" then "velocity        all create ${TEMP} %d"' % (
-                random.randrange(max_seed - 1) + 1
+            ret += (
+                'if "${restart} == 0" then "velocity        all create ${TEMP} %d"'
+                % (random.randrange(max_seed - 1) + 1)
             )
         else:
-            ret += 'if "${restart} == 0" then "velocity        all create ${TEMP_NBEADS} %d"' % (
-                random.randrange(max_seed - 1) + 1
-            )            
+            ret += (
+                'if "${restart} == 0" then "velocity        all create ${TEMP_NBEADS} %d"'
+                % (random.randrange(max_seed - 1) + 1)
+            )
     else:
         sys = dpdata.System(conf_file, fmt="lammps/lmp")
         sys_data = sys.data
@@ -199,7 +203,11 @@ def make_lammps_input(
         elif ensemble == "nve":
             ret += "fix 1 all pimd/langevin fmmode physical ensemble nve integrator obabo temp ${TEMP}\n"
         else:
-            raise RuntimeError("unknown emsemble " + ensemble + " for fix pimd/langevin\nrefer to https://docs.lammps.org/fix_pimd.html for more information") 
+            raise RuntimeError(
+                "unknown emsemble "
+                + ensemble
+                + " for fix pimd/langevin\nrefer to https://docs.lammps.org/fix_pimd.html for more information"
+            )
     if nopbc:
         ret += "velocity        all zero linear\n"
         ret += "fix             fm all momentum 1 linear 1 1 1\n"
