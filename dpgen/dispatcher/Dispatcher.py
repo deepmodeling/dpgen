@@ -1,9 +1,9 @@
 import os
-from packaging.version import Version
 
 # import dargs
 from dargs.dargs import Argument
 from dpdispatcher import Machine, Resources, Submission, Task
+from packaging.version import Version
 
 
 def make_submission(
