@@ -2188,7 +2188,6 @@ def _read_model_devi_file(
             num_digits = np.ceil(np.log10(num_beads + 1)).astype(int)
             traj_files_sorted = []
             for ibead in range(num_beads):
-                # pattern = os.path.join(task_path, f"*lammpstrj{N_str}")
                 traj_files = glob.glob(
                     os.path.join(
                         task_path, "traj", f"*lammpstrj{ibead+1:0{num_digits}d}"
