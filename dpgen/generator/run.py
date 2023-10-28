@@ -1461,6 +1461,7 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
     cur_job = model_devi_jobs[iter_index]
     ensemble, nsteps, trj_freq, temps, press, pka_e, dt, nbeads = parse_cur_job(cur_job)
     model_devi_f_avg_relative = jdata.get("model_devi_f_avg_relative", False)
+    model_devi_merge_traj = jdata.get("model_devi_merge_traj", False)
     if (nbeads is not None) and model_devi_f_avg_relative:
         raise RuntimeError(
             "model_devi_f_avg_relative has not been supported for pimd. Set model_devi_f_avg_relative to False."
