@@ -2148,36 +2148,69 @@ def _read_model_devi_file(
     model_devi_merge_traj: bool = False,
 ):
     model_devi_files = glob.glob(os.path.join(task_path, "model_devi*.out"))
-    model_devi_files_sorted = sorted(model_devi_files, key=lambda x: int(re.search(r"(\d+)", x).group(1)))
+    model_devi_files_sorted = sorted(
+        model_devi_files, key=lambda x: int(re.search(r"(\d+)", x).group(1))
+    )
     if len(model_devi_files_sorted) > 1:
-        with open(model_devi_files_sorted[0], "r") as f:
+        with open(model_devi_files_sorted[0]) as f:
             first_line = f.readline()
         num_beads = len(model_devi_files_sorted)
         model_devi_contents = []
         for file in model_devi_files_sorted:
             model_devi_contents.append(np.loadtxt(file))
-        assert all(model_devi_content.shape[0] == model_devi_contents[0].shape[0] for model_devi_content in model_devi_contents), "Not all beads generated the same number of lines in the model_devi$\{ibead\}.out file. Check your pimd task carefully."
+        assert all(
+            model_devi_content.shape[0] == model_devi_contents[0].shape[0]
+            for model_devi_content in model_devi_contents
+        ), "Not all beads generated the same number of lines in the model_devi$\{ibead\}.out file. Check your pimd task carefully."
         for file in model_devi_files_sorted:
             os.remove(file)
         last_step = model_devi_contents[0][-1, 0]
         for ibead in range(1, num_beads):
-            model_devi_contents[ibead][:, 0] = model_devi_contents[ibead][:, 0] + ibead * (last_step+1)
+            model_devi_contents[ibead][:, 0] = model_devi_contents[ibead][
+                :, 0
+            ] + ibead * (last_step + 1)
         model_devi = np.concatenate(model_devi_contents, axis=0)
-        np.savetxt(os.path.join(task_path, "model_devi.out"), model_devi, fmt="%16.6e", header=first_line, comments="")
-        
+        np.savetxt(
+            os.path.join(task_path, "model_devi.out"),
+            model_devi,
+            fmt="%16.6e",
+            header=first_line,
+            comments="",
+        )
+
         if not model_devi_merge_traj:
-            num_digits = np.ceil(np.log10(num_beads+1)).astype(int)
+            num_digits = np.ceil(np.log10(num_beads + 1)).astype(int)
             traj_files_sorted = []
             for ibead in range(num_beads):
                 # pattern = os.path.join(task_path, f"*lammpstrj{N_str}")
-                traj_files = glob.glob(os.path.join(task_path, "traj", f"*lammpstrj{ibead+1:0{num_digits}d}"))
-                traj_files_sorted.append(sorted(traj_files, key=lambda x: int(re.search(r"^(\d+)\.lammpstrj", os.path.basename(x)).group(1))))
-            assert all(len(traj_list) == len(traj_files_sorted[0]) for traj_list in traj_files_sorted), "Not all beads generated the same number of frames. Check your pimd task carefully."
+                traj_files = glob.glob(
+                    os.path.join(
+                        task_path, "traj", f"*lammpstrj{ibead+1:0{num_digits}d}"
+                    )
+                )
+                traj_files_sorted.append(
+                    sorted(
+                        traj_files,
+                        key=lambda x: int(
+                            re.search(r"^(\d+)\.lammpstrj", os.path.basename(x)).group(
+                                1
+                            )
+                        ),
+                    )
+                )
+            assert all(
+                len(traj_list) == len(traj_files_sorted[0])
+                for traj_list in traj_files_sorted
+            ), "Not all beads generated the same number of frames. Check your pimd task carefully."
             for ibead in range(num_beads):
                 for itraj in range(len(traj_files_sorted[0])):
-                    base_path, original_filename = os.path.split(traj_files_sorted[ibead][itraj])
-                    frame_number = int(original_filename.split('.')[0])
-                    new_filename = os.path.join(base_path, f"{frame_number + ibead * (last_step+1)}.lammpstrj")
+                    base_path, original_filename = os.path.split(
+                        traj_files_sorted[ibead][itraj]
+                    )
+                    frame_number = int(original_filename.split(".")[0])
+                    new_filename = os.path.join(
+                        base_path, f"{frame_number + ibead * (last_step+1)}.lammpstrj"
+                    )
                     os.rename(traj_files_sorted[ibead][itraj], new_filename)
     model_devi = np.loadtxt(os.path.join(task_path, "model_devi.out"))
     if model_devi_f_avg_relative:
