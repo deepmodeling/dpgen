@@ -2143,7 +2143,7 @@ def _read_model_devi_file(
     model_devi_f_avg_relative: bool = False,
     model_devi_merge_traj: bool = False,
 ):
-    model_devi_files = glob.glob("model_devi*.out")
+    model_devi_files = glob.glob(os.path.join(task_path, "model_devi*.out"))
     if len(model_devi_files_sorted) > 1:
         model_devi_files_sorted = sorted(model_devi_files, key=lambda x: int(re.search(r"(\d+)", x).group(1)))
         with open('model_devi.out', 'w') as outfile:
