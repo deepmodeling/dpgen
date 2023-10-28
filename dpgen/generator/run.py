@@ -2178,10 +2178,12 @@ def _read_model_devi_file(
                 :, 0
             ] + ibead * (last_step + 1)
         model_devi = np.concatenate(model_devi_contents, axis=0)
+        num_columns = model_devi.shape[1]
+        formats = ['%12d'] + ['%8.6e'] * (num_columns - 1)
         np.savetxt(
             os.path.join(task_path, "model_devi.out"),
             model_devi,
-            fmt="%16.6e",
+            fmt=formats,
             header=first_line.rstrip(),
             comments="",
         )
@@ -2216,7 +2218,7 @@ def _read_model_devi_file(
                     )
                     frame_number = int(original_filename.split(".")[0])
                     new_filename = os.path.join(
-                        base_path, f"{frame_number + ibead * (last_step+1)}.lammpstrj"
+                        base_path, f"{frame_number + ibead * (int(last_step)+1):d}.lammpstrj"
                     )
                     os.rename(traj_files_sorted[ibead][itraj], new_filename)
     model_devi = np.loadtxt(os.path.join(task_path, "model_devi.out"))
