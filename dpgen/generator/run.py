@@ -2175,7 +2175,7 @@ def _read_model_devi_file(
             os.path.join(task_path, "model_devi.out"),
             model_devi,
             fmt="%16.6e",
-            header=first_line,
+            header=first_line.rstrip(),
             comments="",
         )
 
