@@ -1942,8 +1942,10 @@ def run_md_model_devi(iter_index, jdata, mdata):
         if nbeads is None:
             backward_files += ["model_devi.out"]
         else:
-            num_digits = np.ceil(np.log10(nbeads+1)).astype(int)
-            backward_files += [f"model_devi{i+1:0{num_digits}d}.out" for i in range(nbeads)]
+            num_digits = np.ceil(np.log10(nbeads + 1)).astype(int)
+            backward_files += [
+                f"model_devi{i+1:0{num_digits}d}.out" for i in range(nbeads)
+            ]
         if model_devi_merge_traj:
             backward_files += ["all.lammpstrj"]
         else:
