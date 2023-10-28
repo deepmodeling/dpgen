@@ -262,7 +262,9 @@ def model_devi_jobs_args() -> list[Argument]:
     doc_press = "Pressure (Bar) in MD. Required when ensemble is npt."
     doc_trj_freq = "Frequecy of trajectory saved in MD."
     doc_nsteps = "Running steps of MD. It is not optional when not using a template."
-    doc_nbeads = "Number of beads in PIMD. If not given, classical MD will be performed."
+    doc_nbeads = (
+        "Number of beads in PIMD. If not given, classical MD will be performed."
+    )
     doc_ensemble = "Determining which ensemble used in MD, options include “npt” and “nvt”. It is not optional when not using a template."
     doc_neidelay = "delay building until this many steps since last build."
     doc_taut = "Coupling time of thermostat (ps)."
