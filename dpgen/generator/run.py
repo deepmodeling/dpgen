@@ -18,6 +18,7 @@ import logging.handlers
 import os
 import queue
 import random
+import re
 import shutil
 import sys
 import warnings
@@ -1459,6 +1460,11 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
         return False
     cur_job = model_devi_jobs[iter_index]
     ensemble, nsteps, trj_freq, temps, press, pka_e, dt, nbeads = parse_cur_job(cur_job)
+    model_devi_f_avg_relative = jdata.get("model_devi_f_avg_relative", False)
+    if (nbeads is not None) and model_devi_f_avg_relative:
+        raise RuntimeError(
+            "model_devi_f_avg_relative has not been supported for pimd. Set model_devi_f_avg_relative to False."
+        )
     if dt is not None:
         model_devi_dt = dt
     sys_idx = expand_idx(cur_job["sys_idx"])
@@ -2137,6 +2143,14 @@ def _read_model_devi_file(
     model_devi_f_avg_relative: bool = False,
     model_devi_merge_traj: bool = False,
 ):
+    model_devi_files = glob.glob("model_devi*.out")
+    if len(model_devi_files_sorted) > 1:
+        model_devi_files_sorted = sorted(model_devi_files, key=lambda x: int(re.search(r"(\d+)", x).group(1)))
+        with open('model_devi.out', 'w') as outfile:
+            for file in model_devi_files_sorted:
+                with open(file, 'r') as infile:
+                    outfile.write(infile.read())
+                os.remove(file)
     model_devi = np.loadtxt(os.path.join(task_path, "model_devi.out"))
     if model_devi_f_avg_relative:
         if model_devi_merge_traj is True:
