@@ -1,0 +1,38 @@
+name: Generic issue
+description: For issues that do not fit any of the other categories.
+assignees: []
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: "Please provide a clear and concise description of what the question is."
+      placeholder:
+      value:
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: DP-GEN Version
+      description: "`dpgen --version`"
+    validations:
+      required: true
+  - type: textarea
+    id: other-version
+    attributes:
+      label: Platform, Python Version, etc
+      description: "If applicable, specify what platform you are running on."
+      placeholder:
+      value:
+    validations:
+      required: false
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: "Please explain the issue in detail here."
+      placeholder:
+      value:
+    validations:
+      required: true
