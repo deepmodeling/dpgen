@@ -23,22 +23,14 @@ Yuzhi Zhang, Haidi Wang, Weijie Chen, Jinzhe Zeng, Linfeng Zhang, Han Wang, and 
 
 ## Download and Install
 
-DP-GEN only supports Python 3.9 and above.
+DP-GEN only supports Python 3.9 and above. You can use one of the following methods to install DP-GEN:
 
-One can download the source code of dpgen by
-```bash
-git clone https://github.com/deepmodeling/dpgen.git
-```
-then you may install DP-GEN easily by:
-```bash
-cd dpgen
-pip install --user .
-```
-With this command, the dpgen executable is install to `$HOME/.local/bin/dpgen`. You may want to export the `PATH` by
-```bash
-export PATH=$HOME/.local/bin:$PATH
-```
+- Install via pip: `pip install dpgen`
+- Install via conda: `conda install -c conda-forge dpgen``
+- Install from source code: `git clone https://github.com/deepmodeling/dpgen && pip install ./dpgen`
+
 To test if the installation is successful, you may execute
+
 ```bash
 dpgen -h
 ```
