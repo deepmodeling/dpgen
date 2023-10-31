@@ -112,7 +112,7 @@
             ],
             "nbeads": 4,
             "trj_freq": 10,
-            "nsteps": 1000,
+            "nsteps": 1,
             "ensemble": "npt",
             "_idx": "00"
         }
