@@ -17,6 +17,7 @@ from .context import (
     find_only_one_key,
     machine_file,
     make_model_devi,
+    run_model_devi,
     my_file_cmp,
     param_amber_file,
     param_file,
@@ -197,6 +198,18 @@ class TestMakeModelDevi(unittest.TestCase):
         _check_traj_dir(self, 0)
         _check_pt(self, 0, jdata)
         # shutil.rmtree('iter.000000')
+
+    def test_run_model_devi_pimd(self):
+        if os.path.isdir("iter.000000"):
+            shutil.rmtree("iter.000000")
+        with open(param_pimd_file) as fp:
+            jdata = json.load(fp)
+        print(machine_file)
+        with open(machine_file) as fp:
+            mdata = json.load(fp)
+        _make_fake_models(0, jdata["numb_models"])
+        make_model_devi(0, jdata, mdata)
+        run_model_devi(0, jdata, mdata)
 
 
 class TestMakeModelDeviRevMat(unittest.TestCase):
