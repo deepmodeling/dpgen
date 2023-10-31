@@ -710,13 +710,16 @@ def make_scale_ABACUS(jdata):
                 assert os.path.isfile(pos_src)
             else:
                 try:
-                    pos_src = os.path.join(
-                        os.path.join(init_path, ii), "OUT.ABACUS/STRU_ION_D"
+                    from dpgen.auto_test.lib.abacus import (
+                        final_stru as abacus_final_stru,
                     )
+
+                    pos_src = abacus_final_stru(os.path.join(init_path, ii))
+                    pos_src = os.path.join(init_path, ii, pos_src)
                     assert os.path.isfile(pos_src)
                 except Exception:
                     raise RuntimeError(
-                        "not file %s, vasp relaxation should be run before scale poscar"
+                        "Can not find STRU_ION_D in OUT.ABACUS!!!\nABACUS relaxation should be run before scale poscar"
                     )
             scale_path = os.path.join(work_path, ii)
             scale_path = os.path.join(scale_path, "scale-%.3f" % jj)
