@@ -212,22 +212,23 @@ class TestMakeModelDevi(unittest.TestCase):
         _make_fake_models(0, jdata["numb_models"])
         make_model_devi(0, jdata, mdata)
         with tempfile.TemporaryDirectory() as remote_root:
-            run_model_devi(0, jdata,                 {
-                        "api_version": "1.0",
-                        "model_devi_command": (
-                            "lmp"
-                        ),
-                        "model_devi_machine": {
-                            "batch_type": "shell",
-                            "local_root": "./",
-                            "remote_root": remote_root,
-                            "context_type": "local",
-                        },
-                        "model_devi_group_size": 1,
-                        "model_devi_resources": {
-                            "group_size": 1,
-                        },
+            run_model_devi(
+                0,
+                jdata,
+                {
+                    "api_version": "1.0",
+                    "model_devi_command": ("lmp"),
+                    "model_devi_machine": {
+                        "batch_type": "shell",
+                        "local_root": "./",
+                        "remote_root": remote_root,
+                        "context_type": "local",
                     },
+                    "model_devi_group_size": 1,
+                    "model_devi_resources": {
+                        "group_size": 1,
+                    },
+                },
             )
 
 
