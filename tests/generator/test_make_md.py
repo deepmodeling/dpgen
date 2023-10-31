@@ -20,6 +20,7 @@ from .context import (
     my_file_cmp,
     param_amber_file,
     param_file,
+    param_pimd_file,
     parse_cur_job,
     parse_cur_job_revmat,
     revise_by_keys,
@@ -95,7 +96,7 @@ def _check_traj_dir(testCase, idx):
 def _get_lammps_pt(lmp_input):
     with open(lmp_input) as fp:
         for ii in fp:
-            if "variable" in ii and "TEMP" in ii:
+            if "variable" in ii and "TEMP" in ii and "TEMP_NBEADS" not in ii:
                 lt = float(ii.split()[3])
             if "variable" in ii and "PRES" in ii:
                 lp = float(ii.split()[3])
@@ -151,6 +152,20 @@ class TestMakeModelDevi(unittest.TestCase):
         _check_traj_dir(self, 0)
         _check_pt(self, 0, jdata)
         # shutil.rmtree('iter.000000')
+
+    def test_make_model_devi_pimd(self):
+        if os.path.isdir("iter.000000"):
+            shutil.rmtree("iter.000000")
+        with open(param_pimd_file) as fp:
+            jdata = json.load(fp)
+        with open(machine_file) as fp:
+            mdata = json.load(fp)
+        _make_fake_models(0, jdata["numb_models"])
+        make_model_devi(0, jdata, mdata)
+        _check_pb(self, 0)
+        _check_confs(self, 0, jdata)
+        _check_traj_dir(self, 0)
+        _check_pt(self, 0, jdata)
 
     def test_make_model_devi_nopbc_npt(self):
         if os.path.isdir("iter.000000"):

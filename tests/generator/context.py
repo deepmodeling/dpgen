@@ -20,6 +20,7 @@ from dpgen.generator.run import *  # noqa: F403
 from dpgen.util import setup_ele_temp  # noqa: F401
 
 param_file = "param-mg-vasp.json"
+param_pimd_file = "param-mg-pimd-vasp.json"
 param_file_merge_traj = "param-mg-vasp_merge_traj.json"
 param_file_v1 = "param-mg-vasp-v1.json"
 param_file_v1_et = "param-mg-vasp-v1-et.json"
