@@ -233,7 +233,6 @@ class TestMakeModelDevi(unittest.TestCase):
                     "model_devi_resources": {
                         "group_size": 1,
                     },
-                },
             )
 
 
