@@ -229,6 +229,11 @@ class TestMakeModelDevi(unittest.TestCase):
                             "cpu_per_node": 4,
                         },
                     },
+                    "model_devi_group_size": 1,
+                    "model_devi_resources": {
+                        "group_size": 1,
+                    },
+                },
             )
 
 
