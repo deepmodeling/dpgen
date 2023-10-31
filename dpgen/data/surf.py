@@ -410,7 +410,10 @@ def poscar_scale(poscar_in, poscar_out, scale):
     else:
         raise RuntimeError("Unknow poscar style at line 7: %s" % lines[7])
 
-    poscar = Poscar.from_string("".join(lines))
+    try:
+        poscar = Poscar.from_string("".join(lines))
+    except AttributeError:
+        poscar = Poscar.from_str("".join(lines))
     with open(poscar_out, "w") as fout:
         fout.write(poscar.get_string(direct=False))
 

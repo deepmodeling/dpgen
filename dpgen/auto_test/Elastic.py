@@ -221,7 +221,10 @@ class Elastic(Property):
                 kspacing = incar.get("KSPACING")
                 kgamma = incar.get("KGAMMA", False)
                 ret = vasp.make_kspacing_kpoints(poscar_start, kspacing, kgamma)
-                kp = Kpoints.from_string(ret)
+                try:
+                    kp = Kpoints.from_string(ret)
+                except AttributeError:
+                    kp = Kpoints.from_str(ret)
                 if os.path.isfile("KPOINTS"):
                     os.remove("KPOINTS")
                 kp.write_file("KPOINTS")
