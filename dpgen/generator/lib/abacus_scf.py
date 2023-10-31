@@ -45,10 +45,13 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
                 fp_params["kspacing"] = [
                     float(i) for i in fp_params["kspacing"].split()
                 ]
-            assert len(fp_params["kspacing"]) in [
-                1,
-                3,
-            ], "'kspacing' only accept a float, or a list of one or three float, or a string of one or three float"
+            assert (
+                len(fp_params["kspacing"])
+                in [
+                    1,
+                    3,
+                ]
+            ), "'kspacing' only accept a float, or a list of one or three float, or a string of one or three float"
             ret += "kspacing "
             for ikspacing in fp_params["kspacing"]:
                 assert ikspacing >= 0, "'kspacing' should be non-negative."
@@ -116,25 +119,31 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
             ), "'nspin' can anly take 1, 2 or 4"
             ret += "nspin %d\n" % fp_params["nspin"]
         elif key == "ks_solver":
-            assert fp_params["ks_solver"] in [
-                "cg",
-                "dav",
-                "lapack",
-                "genelpa",
-                "hpseps",
-                "scalapack_gvx",
-            ], "'ks_sover' should in 'cgx', 'dav', 'lapack', 'genelpa', 'hpseps', 'scalapack_gvx'."
+            assert (
+                fp_params["ks_solver"]
+                in [
+                    "cg",
+                    "dav",
+                    "lapack",
+                    "genelpa",
+                    "hpseps",
+                    "scalapack_gvx",
+                ]
+            ), "'ks_sover' should in 'cgx', 'dav', 'lapack', 'genelpa', 'hpseps', 'scalapack_gvx'."
             ret += "ks_solver %s\n" % fp_params["ks_solver"]
         elif key == "smearing_method":
-            assert fp_params["smearing_method"] in [
-                "gauss",
-                "gaussian",
-                "fd",
-                "fixed",
-                "mp",
-                "mp2",
-                "mv",
-            ], "'smearing_method' should in 'gauss', 'gaussian', 'fd', 'fixed', 'mp', 'mp2', 'mv'. "
+            assert (
+                fp_params["smearing_method"]
+                in [
+                    "gauss",
+                    "gaussian",
+                    "fd",
+                    "fixed",
+                    "mp",
+                    "mp2",
+                    "mv",
+                ]
+            ), "'smearing_method' should in 'gauss', 'gaussian', 'fd', 'fixed', 'mp', 'mp2', 'mv'. "
             ret += "smearing_method %s\n" % fp_params["smearing_method"]
         elif key == "smearing_sigma":
             fp_params["smearing_sigma"] = float(fp_params["smearing_sigma"])
