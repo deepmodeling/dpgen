@@ -63,6 +63,8 @@ test = [
     "dpgui",
     "coverage",
     "pymatgen-analysis-defects<2023.08.22",
+    # To be fixed: https://github.com/Becksteinlab/GromacsWrapper/issues/263
+    'setuptools; python_version >= "3.12"',
 ]
 gui = [
     "dpgui",

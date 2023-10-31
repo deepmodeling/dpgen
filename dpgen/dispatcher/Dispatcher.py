@@ -1,9 +1,9 @@
 import os
-from distutils.version import LooseVersion
 
 # import dargs
 from dargs.dargs import Argument
 from dpdispatcher import Machine, Resources, Submission, Task
+from packaging.version import Version
 
 
 def make_submission(
@@ -136,12 +136,12 @@ def make_submission_compat(
     api_version : str, default=1.0
         API version. 1.0 is required
     """
-    if LooseVersion(api_version) < LooseVersion("1.0"):
+    if Version(api_version) < Version("1.0"):
         raise RuntimeError(
             "API version %s has been removed. Please upgrade to 1.0." % api_version
         )
 
-    elif LooseVersion(api_version) >= LooseVersion("1.0"):
+    elif Version(api_version) >= Version("1.0"):
         submission = make_submission(
             machine,
             resources,

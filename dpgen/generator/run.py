@@ -1933,7 +1933,7 @@ def run_md_model_devi(iter_index, jdata, mdata):
         if nbeads is None:
             command = f"{{ if [ ! -f dpgen.restart.10000 ]; then {model_devi_exec} -i input.lammps -v restart 0; else {model_devi_exec} -i input.lammps -v restart 1; fi }}"
         else:
-            command = f"{{ if [ ! -f dpgen.restart.10000 ]; then {model_devi_exec} -p {nbeads}x1 -i input.lammps -v restart 0; else {model_devi_exec} -p {nbeads}x1 -i input.lammps -v restart 1; fi }}"
+            command = f"{{ all_exist=true; for i in $(seq -w 1 {nbeads}); do [[ ! -f dpgen.restart${{i}}.10000 ]] && {{ all_exist=false; break; }}; done; $all_exist && {{ {model_devi_exec} -p {nbeads}x1 -i input.lammps -v restart 0; }} || {{ {model_devi_exec} -p {nbeads}x1 -i input.lammps -v restart 1; }} }}"
         command = "/bin/sh -c '%s'" % command
         commands = [command]
 
@@ -3018,14 +3018,20 @@ def make_pwmat_input(jdata, filename):
 def make_vasp_incar_ele_temp(jdata, filename, ele_temp, nbands_esti=None):
     with open(filename) as fp:
         incar = fp.read()
-    incar = incar_upper(Incar.from_string(incar))
+    try:
+        incar = incar_upper(Incar.from_string(incar))
+    except AttributeError:
+        incar = incar_upper(Incar.from_str(incar))
     incar["ISMEAR"] = -1
     incar["SIGMA"] = ele_temp * pc.Boltzmann / pc.electron_volt
     incar.write_file("INCAR")
     if nbands_esti is not None:
         nbands = nbands_esti.predict(".")
         with open(filename) as fp:
-            incar = Incar.from_string(fp.read())
+            try:
+                incar = Incar.from_string(fp.read())
+            except AttributeError:
+                incar = Incar.from_str(fp.read())
         incar["NBANDS"] = nbands
         incar.write_file("INCAR")
 
@@ -3102,7 +3108,10 @@ def make_fp_vasp_kp(iter_index, jdata):
         assert os.path.exists("INCAR")
         with open("INCAR") as fp:
             incar = fp.read()
-        standard_incar = incar_upper(Incar.from_string(incar))
+        try:
+            standard_incar = incar_upper(Incar.from_string(incar))
+        except AttributeError:
+            standard_incar = incar_upper(Incar.from_str(incar))
         if fp_aniso_kspacing is None:
             try:
                 kspacing = standard_incar["KSPACING"]
@@ -3125,7 +3134,10 @@ def make_fp_vasp_kp(iter_index, jdata):
         assert os.path.exists("POSCAR")
         # make kpoints
         ret = make_kspacing_kpoints("POSCAR", kspacing, gamma)
-        kp = Kpoints.from_string(ret)
+        try:
+            kp = Kpoints.from_string(ret)
+        except AttributeError:
+            kp = Kpoints.from_str(ret)
         kp.write_file("KPOINTS")
         os.chdir(cwd)
 
