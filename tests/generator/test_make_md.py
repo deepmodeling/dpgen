@@ -12,10 +12,13 @@ from dpgen.generator.run import parse_cur_job_sys_revmat
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
+import tempfile
+
 from .comp_sys import test_atom_names, test_atom_types, test_cell, test_coord
 from .context import (
     find_only_one_key,
     machine_file,
+    machine_file_v1,
     make_model_devi,
     run_model_devi,
     my_file_cmp,
@@ -204,12 +207,28 @@ class TestMakeModelDevi(unittest.TestCase):
             shutil.rmtree("iter.000000")
         with open(param_pimd_file) as fp:
             jdata = json.load(fp)
-        print(machine_file)
-        with open(machine_file) as fp:
+        with open(machine_file_v1) as fp:
             mdata = json.load(fp)
         _make_fake_models(0, jdata["numb_models"])
         make_model_devi(0, jdata, mdata)
-        run_model_devi(0, jdata, mdata)
+        with tempfile.TemporaryDirectory() as remote_root:
+            run_model_devi(0, jdata,                 {
+                        "api_version": "1.0",
+                        "model_devi_command": (
+                            "lmp"
+                        ),
+                        "model_devi_machine": {
+                            "batch_type": "shell",
+                            "local_root": "./",
+                            "remote_root": remote_root,
+                            "context_type": "local",
+                        },
+                        "model_devi_group_size": 1,
+                        "model_devi_resources": {
+                            "group_size": 1,
+                        },
+                    },
+            )
 
 
 class TestMakeModelDeviRevMat(unittest.TestCase):
