@@ -17,7 +17,6 @@ from .context import (
     find_only_one_key,
     machine_file,
     make_model_devi,
-    run_model_devi,
     my_file_cmp,
     param_amber_file,
     param_file,
@@ -28,6 +27,7 @@ from .context import (
     revise_lmp_input_dump,
     revise_lmp_input_model,
     revise_lmp_input_plm,
+    run_model_devi,
 )
 
 
