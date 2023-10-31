@@ -5,7 +5,7 @@
 [![GitHub release](https://img.shields.io/github/release/deepmodeling/dpgen.svg?maxAge=86400)](https://github.com/deepmodeling/dpgen/releases/)
 [![doi:10.1016/j.cpc.2020.107206](https://img.shields.io/badge/DOI-10.1016%2Fj.cpc.2020.107206-blue)](https://doi.org/10.1016/j.cpc.2020.107206)
 ![Citations](https://citations.njzjz.win/10.1016/j.cpc.2020.107206)
-[![conda install](https://img.shields.io/conda/dn/deepmodeling/dpgen?label=conda%20install)](https://anaconda.org/deepmodeling/dpgen)
+[![conda install](https://img.shields.io/conda/dn/conda-forge/dpgen?label=conda%20install)](https://anaconda.org/conda-forge/dpgen)
 [![pip install](https://img.shields.io/pypi/dm/dpgen?label=pip%20install)](https://pypi.org/project/dpgen)
 
 DP-GEN (Deep Generator)  is a software written in Python, delicately designed to generate a deep learning based model of interatomic potential energy and force field. DP-GEN is dependent on [DeepMD-kit](https://github.com/deepmodeling/deepmd-kit/blob/master/README.md). With highly scalable interface with common softwares for molecular simulation, DP-GEN is capable to  automatically prepare scripts and maintain job queues on HPC machines (High Performance Cluster) and analyze results.
@@ -21,27 +21,16 @@ Yuzhi Zhang, Haidi Wang, Weijie Chen, Jinzhe Zeng, Linfeng Zhang, Han Wang, and 
 
 ## Download and install
 
-DP-GEN only supports Python 3.9 and above.
+DP-GEN only supports Python 3.9 and above. You can use one of the following methods to install DP-GEN:
 
-Please follow our [GitHub](https://github.com/deepmodeling/dpgen) webpage to download the [latest released version](https://github.com/deepmodeling/dpgen/tree/master) and [development version](https://github.com/deepmodeling/dpgen/tree/devel).
-One can download the source code of dpgen by
-```bash
-git clone https://github.com/deepmodeling/dpgen.git
-```
-
-DP-GEN offers multiple installation methods. It is recommend using easily methods like:
-- offline packages: find them in [releases](https://github.com/deepmodeling/dpgen/releases/),
-- pip: use `pip install dpgen`, see [dpgen-PyPI](https://pypi.org/project/dpgen/)
-- conda: use `conda install -c deepmodeling dpgen`, see [dpgen-conda](https://anaconda.org/deepmodeling/dpgen)
-
+- Install via pip: `pip install dpgen`
+- Install via conda: `conda install -c conda-forge dpgen``
+- Install from source code: `git clone https://github.com/deepmodeling/dpgen && pip install ./dpgen`
 
 To test if the installation is successful, you may execute
+
 ```bash
 dpgen -h
-```
-or just
-```
-dpgen
 ```
 
 ## Use DP-GEN
