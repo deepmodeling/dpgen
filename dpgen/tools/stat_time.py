@@ -51,9 +51,7 @@ def stat_time(target_folder, param_file="param.json", verbose=True, mute=False):
             # log example :
             #   .//iter.000000/00.train//003/train.log:# DEEPMD: wall time: 7960.265 s
             # print(log.split(':'))
-            file_path, text1, text2, wall_time = log.split(
-                ":"
-            )  # pylint: disable=unused-variable
+            file_path, text1, text2, wall_time = log.split(":")  # pylint: disable=unused-variable
             abs_file_path = os.path.abspath(file_path)
             # stage=='00.train'
 
@@ -122,9 +120,7 @@ def stat_time(target_folder, param_file="param.json", verbose=True, mute=False):
             # log example:
             #   .//iter.000002/01.model_devi//task.018.000075/log.lammps:Total wall time: 0:00:39
             # print(log)
-            file_path, text1, hour, min, sec = log.split(
-                ":"
-            )  # pylint: disable=unused-variable
+            file_path, text1, hour, min, sec = log.split(":")  # pylint: disable=unused-variable
             abs_file_path = os.path.abspath(file_path)
             wall_time_sec = 3600 * int(hour) + 60 * int(min) + 1 * int(sec)
             total_core_sec += wall_time_sec * paral_cores

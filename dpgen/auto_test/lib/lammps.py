@@ -189,7 +189,9 @@ def make_lammps_eval(conf, type_map, interaction, param):
     ret += (
         "thermo_style    custom step pe pxx pyy pzz pxy pxz pyz lx ly lz vol c_mype\n"
     )
-    ret += "dump            1 all custom 100 dump.relax id type xs ys zs fx fy fz\n"  # 06/09 give dump.relax
+    ret += (
+        "dump            1 all custom 100 dump.relax id type xs ys zs fx fy fz\n"
+    )  # 06/09 give dump.relax
     ret += "run    0\n"
     ret += "variable        N equal count(all)\n"
     ret += "variable        V equal vol\n"
@@ -352,9 +354,7 @@ def make_lammps_press_relax(
     ret += "variable        bp		equal %f\n" % bp
     ret += "variable	    xx		equal %f\n" % scale2equi
     ret += "variable        yeta	equal 1.5*(${bp}-1)\n"
-    ret += (
-        "variable        Px0		equal 3*${B0}*(1-${xx})/${xx}^2*exp(${yeta}*(1-${xx}))\n"
-    )
+    ret += "variable        Px0		equal 3*${B0}*(1-${xx})/${xx}^2*exp(${yeta}*(1-${xx}))\n"
     ret += "variable        Px		equal ${Px0}*${GPa2bar}\n"
     ret += "units       metal\n"
     ret += "dimension   3\n"

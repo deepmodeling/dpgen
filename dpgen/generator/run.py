@@ -494,24 +494,26 @@ def make_train(iter_index, jdata, mdata):
         ):
             jinput["training"]["stop_batch"] = training_reuse_stop_batch
         if Version("1") <= Version(mdata["deepmd_version"]) < Version("2"):
-            jinput["training"][
-                "auto_prob_style"
-            ] = "prob_sys_size; 0:%d:%f; %d:%d:%f" % (
-                old_range,
-                training_reuse_old_ratio,
-                old_range,
-                len(init_data_sys),
-                1.0 - training_reuse_old_ratio,
+            jinput["training"]["auto_prob_style"] = (
+                "prob_sys_size; 0:%d:%f; %d:%d:%f"
+                % (
+                    old_range,
+                    training_reuse_old_ratio,
+                    old_range,
+                    len(init_data_sys),
+                    1.0 - training_reuse_old_ratio,
+                )
             )
         elif Version("2") <= Version(mdata["deepmd_version"]) < Version("3"):
-            jinput["training"]["training_data"][
-                "auto_prob"
-            ] = "prob_sys_size; 0:%d:%f; %d:%d:%f" % (
-                old_range,
-                training_reuse_old_ratio,
-                old_range,
-                len(init_data_sys),
-                1.0 - training_reuse_old_ratio,
+            jinput["training"]["training_data"]["auto_prob"] = (
+                "prob_sys_size; 0:%d:%f; %d:%d:%f"
+                % (
+                    old_range,
+                    training_reuse_old_ratio,
+                    old_range,
+                    len(init_data_sys),
+                    1.0 - training_reuse_old_ratio,
+                )
             )
         else:
             raise RuntimeError(
@@ -1008,11 +1010,12 @@ def revise_lmp_input_model(lmp_lines, task_model_list, trj_freq, deepmd_version=
             trj_freq,
         )
     else:
-        lmp_lines[
-            idx
-        ] = "pair_style      deepmd %s out_freq %d out_file model_devi.out\n" % (
-            graph_list,
-            trj_freq,
+        lmp_lines[idx] = (
+            "pair_style      deepmd %s out_freq %d out_file model_devi.out\n"
+            % (
+                graph_list,
+                trj_freq,
+            )
         )
     return lmp_lines
 

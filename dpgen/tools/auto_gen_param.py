@@ -149,9 +149,7 @@ def get_system_list(
                 map_list=map_list, data_list=data_list
             )
         else:
-            origin_one, new_map_iterator = tee(
-                map_iterator
-            )  # pylint: disable=unused-variable
+            origin_one, new_map_iterator = tee(map_iterator)  # pylint: disable=unused-variable
         # tee means copy;new_map_generator will become a copy of map_iterator
         system = System(system_prefix)
         for idx2 in range(sub_iteration_num):
