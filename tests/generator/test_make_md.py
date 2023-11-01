@@ -1,15 +1,15 @@
 import copy
 import glob
 import json
+import numpy as np
 import os
 import shutil
 import sys
 import unittest
 
 import dpdata
-import numpy as np
 
-from dpgen.generator.run import _read_model_devi_file, parse_cur_job_sys_revmat
+from dpgen.generator.run import parse_cur_job_sys_revmat, _read_model_devi_file
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
@@ -142,6 +142,8 @@ class TestMakeModelDevi(unittest.TestCase):
     def tearDown(self):
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
+        if os.path.isdir("test_model_devi_pimd"):
+            shutil.rmtree("test_model_devi_pimd")
 
     def test_make_model_devi(self):
         if os.path.isdir("iter.000000"):
@@ -238,7 +240,8 @@ class TestMakeModelDevi(unittest.TestCase):
 
     def test_read_model_devi_file(self):
         path = "test_model_devi_pimd"
-        header = "#       step         max_devi_v         min_devi_v         avg_devi_v         max_devi_f         min_devi_f         avg_devi_f"
+        if os.path.isdir(path):
+            shutil.rmtree(path)
         os.makedirs(path, exist_ok=True)
         os.makedirs(os.path.join(path, "traj"), exist_ok=True)
         for i in range(4):
@@ -248,15 +251,15 @@ class TestMakeModelDevi(unittest.TestCase):
         model_devi_array = np.zeros([3, 7])
         model_devi_array[:, 0] = np.array([0, 2, 4])
         for i in range(4):
-            np.savetxt(
-                os.path.join(path, f"model_devi{i+1}.out"), model_devi_array, fmt="%d"
-            )
+            np.savetxt(os.path.join(path, f"model_devi{i+1}.out"), model_devi_array, fmt="%d")
         _read_model_devi_file(path)
         model_devi_total_array = np.zeros([12, 7])
-        model_devi_total_array[:, 0] = np.array(
-            [0, 2, 4, 5, 7, 9, 10, 12, 14, 15, 17, 19]
-        )
-
+        total_steps = np.array([0, 2, 4, 5, 7, 9, 10, 12, 14, 15, 17, 19])
+        model_devi_total_array[:, 0] = total_steps
+        model_devi_out = np.loadtxt(os.path.join(path, "model_devi.out"))
+        np.testing.assert_array_almost_equal(model_devi_out, model_devi_total_array)
+        for istep in total_steps:
+            self.assertTrue(os.path.isfile(os.path.join(path, f"traj/{istep}.lammpstrj")))
 
 class TestMakeModelDeviRevMat(unittest.TestCase):
     def tearDown(self):
