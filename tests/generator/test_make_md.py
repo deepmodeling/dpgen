@@ -253,7 +253,9 @@ class TestMakeModelDevi(unittest.TestCase):
             )
         _read_model_devi_file(path)
         model_devi_total_array = np.zeros([12, 7])
-        model_devi_total_array[:, 0] = np.array([0, 2, 4, 5, 7, 9, 10, 12, 14, 15, 17, 19])
+        model_devi_total_array[:, 0] = np.array(
+            [0, 2, 4, 5, 7, 9, 10, 12, 14, 15, 17, 19]
+        )
 
 
 class TestMakeModelDeviRevMat(unittest.TestCase):
