@@ -211,7 +211,7 @@ class TestMakeModelDevi(unittest.TestCase):
             mdata = json.load(fp)
         _make_fake_models(0, jdata["numb_models"])
         make_model_devi(0, jdata, mdata)
-        with tempfile.TemporaryDirectory(delete=False) as remote_root:
+        with tempfile.TemporaryDirectory() as remote_root:
             run_model_devi(
                 0,
                 jdata,
