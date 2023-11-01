@@ -2166,6 +2166,8 @@ def _read_model_devi_file(
     if len(model_devi_files_sorted) > 1:
         with open(model_devi_files_sorted[0]) as f:
             first_line = f.readline()
+        if not (first_line.startswith("#")):
+            first_line = "#"
         num_beads = len(model_devi_files_sorted)
         model_devi_contents = []
         for file in model_devi_files_sorted:
