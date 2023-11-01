@@ -238,7 +238,7 @@ class TestMakeModelDevi(unittest.TestCase):
                 },
             )
 
-    def test_read_model_devi_file(self):
+    def test_read_model_devi_file_pimd(self):
         path = "test_model_devi_pimd"
         if os.path.isdir(path):
             shutil.rmtree(path)
