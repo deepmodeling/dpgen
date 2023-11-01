@@ -1,15 +1,15 @@
 import copy
 import glob
 import json
-import numpy as np
 import os
 import shutil
 import sys
 import unittest
 
 import dpdata
+import numpy as np
 
-from dpgen.generator.run import parse_cur_job_sys_revmat, _read_model_devi_file
+from dpgen.generator.run import _read_model_devi_file, parse_cur_job_sys_revmat
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
@@ -248,10 +248,13 @@ class TestMakeModelDevi(unittest.TestCase):
         model_devi_array = np.zeros([3, 7])
         model_devi_array[:, 0] = np.array([0, 2, 4])
         for i in range(4):
-            np.savetxt(os.path.join(path, f"model_devi{i+1}.out"), model_devi_array, fmt="%d")
+            np.savetxt(
+                os.path.join(path, f"model_devi{i+1}.out"), model_devi_array, fmt="%d"
+            )
         _read_model_devi_file(path)
         model_devi_total_array = np.zeros([12, 7])
         model_devi_total_array[:, 0] = np.array([0, 2, 4, 5, 7, 9, 10, 12, 14, 15, 17, 19])
+
 
 class TestMakeModelDeviRevMat(unittest.TestCase):
     def tearDown(self):
