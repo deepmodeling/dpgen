@@ -217,7 +217,8 @@ class TestMakeModelDevi(unittest.TestCase):
                 jdata,
                 {
                     "api_version": "1.0",
-                    "model_devi_command": ("echo lmp"),
+                    "model_devi_command": ("touch model_devi1.out model_devi2.out model_devi3.out model_devi4.out"
+                                           "&& echo lmp"),
                     "model_devi_machine": {
                         "batch_type": "shell",
                         "local_root": "./",
