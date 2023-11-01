@@ -238,6 +238,7 @@ class TestMakeModelDevi(unittest.TestCase):
 
     def test_read_model_devi_file(self):
         path = "test_model_devi_pimd"
+        header = "#       step         max_devi_v         min_devi_v         avg_devi_v         max_devi_f         min_devi_f         avg_devi_f"
         os.makedirs(path, exist_ok=True)
         os.makedirs(os.path.join(path, "traj"), exist_ok=True)
         for i in range(4):
@@ -249,6 +250,8 @@ class TestMakeModelDevi(unittest.TestCase):
         for i in range(4):
             np.savetxt(os.path.join(path, f"model_devi{i+1}.out"), model_devi_array, fmt="%d")
         _read_model_devi_file(path)
+        model_devi_total_array = np.zeros([12, 7])
+        model_devi_total_array[:, 0] = np.array([0, 2, 4, 5, 7, 9, 10, 12, 14, 15, 17, 19])
 
 class TestMakeModelDeviRevMat(unittest.TestCase):
     def tearDown(self):
