@@ -2179,7 +2179,7 @@ def _read_model_devi_file(
             ] + ibead * (last_step + 1)
         model_devi = np.concatenate(model_devi_contents, axis=0)
         num_columns = model_devi.shape[1]
-        formats = ["%12d"] + ["%12.6e"] * (num_columns - 1)
+        formats = ["%12d"] + ["%22.6e"] * (num_columns - 1)
         np.savetxt(
             os.path.join(task_path, "model_devi.out"),
             model_devi,
