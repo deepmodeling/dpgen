@@ -7,25 +7,31 @@ import sys
 import unittest
 
 import dpdata
+import numpy as np
 
-from dpgen.generator.run import parse_cur_job_sys_revmat
+from dpgen.generator.run import _read_model_devi_file, parse_cur_job_sys_revmat
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
+import tempfile
+
 from .comp_sys import test_atom_names, test_atom_types, test_cell, test_coord
 from .context import (
     find_only_one_key,
     machine_file,
+    machine_file_v1,
     make_model_devi,
     my_file_cmp,
     param_amber_file,
     param_file,
+    param_pimd_file,
     parse_cur_job,
     parse_cur_job_revmat,
     revise_by_keys,
     revise_lmp_input_dump,
     revise_lmp_input_model,
     revise_lmp_input_plm,
+    run_model_devi,
 )
 
 
@@ -95,7 +101,7 @@ def _check_traj_dir(testCase, idx):
 def _get_lammps_pt(lmp_input):
     with open(lmp_input) as fp:
         for ii in fp:
-            if "variable" in ii and "TEMP" in ii:
+            if "variable" in ii and "TEMP" in ii and "TEMP_NBEADS" not in ii:
                 lt = float(ii.split()[3])
             if "variable" in ii and "PRES" in ii:
                 lp = float(ii.split()[3])
@@ -107,7 +113,7 @@ def _check_pt(testCase, idx, jdata):
     tasks = glob.glob(os.path.join(md_dir, "task.*"))
     tasks.sort()
     cur_job = jdata["model_devi_jobs"][idx]
-    ensemble, nsteps, trj_freq, temps, press, pka_e, dt = parse_cur_job(cur_job)
+    ensemble, nsteps, trj_freq, temps, press, pka_e, dt, nbeads = parse_cur_job(cur_job)
     testCase.assertTrue(ensemble, "npt")
     # get poscars
     sys_idx = cur_job["sys_idx"]
@@ -136,6 +142,8 @@ class TestMakeModelDevi(unittest.TestCase):
     def tearDown(self):
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
+        if os.path.isdir("test_model_devi_pimd"):
+            shutil.rmtree("test_model_devi_pimd")
 
     def test_make_model_devi(self):
         if os.path.isdir("iter.000000"):
@@ -151,6 +159,20 @@ class TestMakeModelDevi(unittest.TestCase):
         _check_traj_dir(self, 0)
         _check_pt(self, 0, jdata)
         # shutil.rmtree('iter.000000')
+
+    def test_make_model_devi_pimd(self):
+        if os.path.isdir("iter.000000"):
+            shutil.rmtree("iter.000000")
+        with open(param_pimd_file) as fp:
+            jdata = json.load(fp)
+        with open(machine_file) as fp:
+            mdata = json.load(fp)
+        _make_fake_models(0, jdata["numb_models"])
+        make_model_devi(0, jdata, mdata)
+        _check_pb(self, 0)
+        _check_confs(self, 0, jdata)
+        _check_traj_dir(self, 0)
+        _check_pt(self, 0, jdata)
 
     def test_make_model_devi_nopbc_npt(self):
         if os.path.isdir("iter.000000"):
@@ -182,6 +204,66 @@ class TestMakeModelDevi(unittest.TestCase):
         _check_traj_dir(self, 0)
         _check_pt(self, 0, jdata)
         # shutil.rmtree('iter.000000')
+
+    def test_run_model_devi_pimd(self):
+        if os.path.isdir("iter.000000"):
+            shutil.rmtree("iter.000000")
+        with open(param_pimd_file) as fp:
+            jdata = json.load(fp)
+        with open(machine_file_v1) as fp:
+            mdata = json.load(fp)
+        _make_fake_models(0, jdata["numb_models"])
+        make_model_devi(0, jdata, mdata)
+        with tempfile.TemporaryDirectory() as remote_root:
+            run_model_devi(
+                0,
+                jdata,
+                {
+                    "api_version": "1.0",
+                    "model_devi_command": (
+                        "touch model_devi1.out model_devi2.out model_devi3.out model_devi4.out"
+                        "&& echo lmp"
+                    ),
+                    "model_devi_machine": {
+                        "batch_type": "shell",
+                        "local_root": "./",
+                        "remote_root": remote_root,
+                        "context_type": "local",
+                    },
+                    "model_devi_group_size": 1,
+                    "model_devi_resources": {
+                        "group_size": 1,
+                        "cpu_per_node": 4,
+                    },
+                },
+            )
+
+    def test_read_model_devi_file_pimd(self):
+        path = "test_model_devi_pimd"
+        if os.path.isdir(path):
+            shutil.rmtree(path)
+        os.makedirs(path, exist_ok=True)
+        os.makedirs(os.path.join(path, "traj"), exist_ok=True)
+        for i in range(4):
+            for j in range(0, 5, 2):
+                with open(os.path.join(path, f"traj/{j}.lammpstrj{i+1}"), "a"):
+                    pass
+        model_devi_array = np.zeros([3, 7])
+        model_devi_array[:, 0] = np.array([0, 2, 4])
+        for i in range(4):
+            np.savetxt(
+                os.path.join(path, f"model_devi{i+1}.out"), model_devi_array, fmt="%d"
+            )
+        _read_model_devi_file(path)
+        model_devi_total_array = np.zeros([12, 7])
+        total_steps = np.array([0, 2, 4, 5, 7, 9, 10, 12, 14, 15, 17, 19])
+        model_devi_total_array[:, 0] = total_steps
+        model_devi_out = np.loadtxt(os.path.join(path, "model_devi.out"))
+        np.testing.assert_array_almost_equal(model_devi_out, model_devi_total_array)
+        for istep in total_steps:
+            self.assertTrue(
+                os.path.isfile(os.path.join(path, f"traj/{istep}.lammpstrj"))
+            )
 
 
 class TestMakeModelDeviRevMat(unittest.TestCase):
