@@ -46,7 +46,7 @@ def make_repro(
         if os.path.exists(os.path.join(path_to_work, "element.out")):
             os.remove(os.path.join(path_to_work, "element.out"))
         fout_element = open(os.path.join(path_to_work, "element.out"), "a+")
-        fin_element = open(os.path.join(init_data_path_todo, "element.out"), "r")
+        fin_element = open(os.path.join(init_data_path_todo, "element.out"))
 
     for ii in init_data_task_todo:
         # get frame number
@@ -153,7 +153,7 @@ def post_repro(
             output_ener_tot.extend(output_task_result["energies"])
 
             init_epa = init_ener[jj - idid] / natoms
-            ptr_data += "%s %7.3f  %7.3f  %7.3f\n" % (
+            ptr_data += "{} {:7.3f}  {:7.3f}  {:7.3f}\n".format(
                 ii,
                 init_epa,
                 output_epa,

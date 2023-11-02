@@ -1,109 +1,111 @@
 {
-  "api_version": "1.0",
-  "deepmd_version": "2.1.0",
-  "train" :
-  {
-      "command": "dp",
-      "machine": {
-        "batch_type": "Lebesgue",
-        "context_type": "LebesgueContext",
-        "local_root" : "./",
-        "remote_profile":{
-          "email": "xxx",
-          "password": "xxx",
-          "program_id": 123,
-            "keep_backup":true,
-            "input_data":{
-                "job_type": "indicate",
-                "log_file": "00*/train.log",
-                "grouped":true,
-                "job_name": "dpgen_train_job",
-                "disk_size": 100,
-                "scass_type":"c4_m15_1 * NVIDIA T4",
-                "checkpoint_files":["00*/checkpoint","00*/model.ckpt*"],
-                "checkpoint_time":30,
-                "platform": "ali",
-                "image_name":"LBG_DeePMD-kit_2.1.0_v1",
-                "on_demand":0
+    "api_version": "1.0",
+    "deepmd_version": "2.1.0",
+    "train": {
+        "command": "dp",
+        "machine": {
+            "batch_type": "Lebesgue",
+            "context_type": "LebesgueContext",
+            "local_root": "./",
+            "remote_profile": {
+                "email": "xxx",
+                "password": "xxx",
+                "program_id": 123,
+                "keep_backup": true,
+                "input_data": {
+                    "job_type": "indicate",
+                    "log_file": "00*/train.log",
+                    "grouped": true,
+                    "job_name": "dpgen_train_job",
+                    "disk_size": 100,
+                    "scass_type": "c4_m15_1 * NVIDIA T4",
+                    "checkpoint_files": [
+                        "00*/checkpoint",
+                        "00*/model.ckpt*"
+                    ],
+                    "checkpoint_time": 30,
+                    "platform": "ali",
+                    "image_name": "LBG_DeePMD-kit_2.1.0_v1",
+                    "on_demand": 0
+                }
             }
+        },
+        "resources": {
+            "batch_type": "Lebesgue",
+            "number_node": 1,
+            "cpu_per_node": 4,
+            "gpu_per_node": 1,
+            "queue_name": "T4_4_15",
+            "group_size": 1
         }
-      },
-      "resources": {
-	"batch_type": "Lebesgue",
-        "number_node": 1,
-        "cpu_per_node": 4,
-        "gpu_per_node": 1,
-        "queue_name": "T4_4_15",
-        "group_size": 1
-      }
     },
-  "model_devi":
-    {
-      "command": "lmp",
-      "machine": {
-        "batch_type": "Lebesgue",
-        "context_type": "LebesgueContext",
-        "local_root" : "./",
-        "remote_profile":{
-          "email": "xxx",
-          "password": "xxx",
-          "program_id": 123,
-            "keep_backup":true,
-            "input_data":{
-              "job_type": "indicate",
-              "log_file": "*/model_devi.log",
-              "grouped":true,
-              "job_name": "dpgen_model_devi_job",
-              "disk_size": 200,
-              "scass_type":"c4_m15_1 * NVIDIA T4",
-              "platform": "ali",
-              "image_name":"LBG_DeePMD-kit_2.1.0_v1",
-              "on_demand":0
+    "model_devi": {
+        "command": "lmp",
+        "machine": {
+            "batch_type": "Lebesgue",
+            "context_type": "LebesgueContext",
+            "local_root": "./",
+            "remote_profile": {
+                "email": "xxx",
+                "password": "xxx",
+                "program_id": 123,
+                "keep_backup": true,
+                "input_data": {
+                    "job_type": "indicate",
+                    "log_file": "*/model_devi.log",
+                    "grouped": true,
+                    "job_name": "dpgen_model_devi_job",
+                    "disk_size": 200,
+                    "scass_type": "c4_m15_1 * NVIDIA T4",
+                    "platform": "ali",
+                    "image_name": "LBG_DeePMD-kit_2.1.0_v1",
+                    "on_demand": 0
+                }
             }
+        },
+        "resources": {
+            "batch_type": "Lebesgue",
+            "number_node": 1,
+            "cpu_per_node": 4,
+            "gpu_per_node": 1,
+            "queue_name": "T4_4_15",
+            "group_size": 50
         }
-      },
-      "resources": {
-	"batch_type": "Lebesgue",
-        "number_node": 1,
-        "cpu_per_node": 4,
-        "gpu_per_node": 1,
-        "queue_name": "T4_4_15",
-        "group_size": 50
-      }
     },
-  "fp":
-    {
-      "command": "g09 < input > output ||:",
-      "machine": {
-        "batch_type": "Lebesgue",
-        "context_type": "LebesgueContext",
-        "local_root" : "./",
-        "remote_profile":{
-          "email": "xxx",
-          "password": "xxx",
-          "program_id": 123,
-            "input_data":{
-              "api_version":2,
-              "job_type": "indicate",
-              "log_file": "task*/fp.log",
-              "grouped":true,
-              "job_name": "dpgen_fp_job",
-              "disk_size": 100,
-              "scass_type":"c16_m32_cpu",
-              "platform": "ali",
-              "image_name":"LBG_Gaussian_09_v2",
-              "on_demand":0
+    "fp": {
+        "command": "g09 < input > output ||:",
+        "machine": {
+            "batch_type": "Lebesgue",
+            "context_type": "LebesgueContext",
+            "local_root": "./",
+            "remote_profile": {
+                "email": "xxx",
+                "password": "xxx",
+                "program_id": 123,
+                "input_data": {
+                    "api_version": 2,
+                    "job_type": "indicate",
+                    "log_file": "task*/fp.log",
+                    "grouped": true,
+                    "job_name": "dpgen_fp_job",
+                    "disk_size": 100,
+                    "scass_type": "c16_m32_cpu",
+                    "platform": "ali",
+                    "image_name": "LBG_Gaussian_09_v2",
+                    "on_demand": 0
+                }
             }
+        },
+        "resources": {
+            "batch_type": "Lebesgue",
+            "source_list": [
+                "/root/g09.sh"
+            ],
+            "number_node": 1,
+            "cpu_per_node": 16,
+            "gpu_per_node": 0,
+            "queue_name": "CPU",
+            "group_size": 10
         }
-      },
-      "resources": {
-	"batch_type": "Lebesgue",
-        "source_list": ["/root/g09.sh"],
-        "number_node": 1,
-        "cpu_per_node": 16,
-        "gpu_per_node": 0,
-        "queue_name": "CPU",
-        "group_size": 10
-      }
     }
 }

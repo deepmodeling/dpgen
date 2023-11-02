@@ -12,7 +12,7 @@ from dpgen.generator.lib import abacus_scf
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "auto_test"
-from .context import setUpModule
+from .context import setUpModule  # noqa: F401
 
 
 class TestABACUS(unittest.TestCase):
@@ -62,7 +62,7 @@ class TestABACUS(unittest.TestCase):
         self.assertTrue(
             os.path.isfile(os.path.join(self.equi_path, "pp_orb/Al_ONCV_PBE-1.0.upf"))
         )
-        self.assertTrue(
+        self.assertFalse(
             os.path.isfile(
                 os.path.join(self.equi_path, "pp_orb/Al_gga_9au_100Ry_4s4p1d.orb")
             )
@@ -200,6 +200,22 @@ class TestABACUS(unittest.TestCase):
             kpt = f1.read().strip().split("\n")[-1].split()
         self.assertEqual(kpt, ["9", "9", "9", "0", "0", "0"])
 
+    def test_make_input_file_kspacing_three_value(self):
+        param = self.task_param.copy()
+        param["cal_setting"] = {
+            "relax_pos": False,
+            "relax_shape": True,
+            "relax_vol": True,
+            "kspacing": [0.1, 0.2, 0.3],
+        }
+        shutil.copy(
+            os.path.join(self.conf_path, "STRU"), os.path.join(self.equi_path, "STRU")
+        )
+        self.ABACUS.make_input_file(self.equi_path, "relaxation", param)
+        with open(os.path.join(self.equi_path, "KPT")) as f1:
+            kpt = f1.read().strip().split("\n")[-1].split()
+        self.assertEqual(kpt, ["9", "5", "3", "0", "0", "0"])
+
     def test_compuate(self):
         ret = self.ABACUS.compute(os.path.join(self.equi_path))
         self.assertIsNone(ret)
@@ -221,10 +237,10 @@ class TestABACUS(unittest.TestCase):
         def compare_dict(dict1, dict2):
             self.assertEqual(dict1.keys(), dict2.keys())
             for key in dict1:
-                if type(dict1[key]) is dict:
+                if isinstance(dict1[key], dict):
                     compare_dict(dict1[key], dict2[key])
                 else:
-                    if type(dict1[key]) is np.ndarray:
+                    if isinstance(dict1[key], np.ndarray):
                         np.testing.assert_almost_equal(
                             dict1[key], dict2[key], decimal=5
                         )
@@ -232,3 +248,88 @@ class TestABACUS(unittest.TestCase):
                         self.assertTrue(dict1[key] == dict2[key])
 
         compare_dict(ret, ret_ref.as_dict())
+
+
+class TestABACUSDeepKS(unittest.TestCase):
+    def setUp(self):
+        self.jdata = {
+            "structures": ["confs/fcc-Al-deepks"],
+            "interaction": {
+                "type": "abacus",
+                "incar": "abacus_input/INPUT.dpks",
+                "potcar_prefix": "abacus_input",
+                "potcars": {"Al": "Al_ONCV_PBE-1.0.upf"},
+                "orb_files": {"Al": "Al_gga_9au_100Ry_4s4p1d.orb"},
+                "deepks_desc": "jle.orb",
+                "deepks_model": "model.ptg",
+            },
+            "relaxation": {
+                "cal_type": "relaxation",
+                "cal_setting": {
+                    "relax_pos": True,
+                    "relax_shape": True,
+                    "relax_vol": True,
+                },
+            },
+        }
+
+        self.conf_path = "confs/fcc-Al-deepks"
+        self.equi_path = "confs/fcc-Al-deepks/relaxation/relax_task"
+        self.source_path = "equi/abacus"
+        if not os.path.exists(self.equi_path):
+            os.makedirs(self.equi_path)
+
+        self.confs = self.jdata["structures"]
+        inter_param = self.jdata["interaction"]
+        self.task_param = self.jdata["relaxation"]
+        self.ABACUS = ABACUS(inter_param, os.path.join(self.conf_path, "STRU"))
+
+    def tearDown(self):
+        if os.path.exists("confs/fcc-Al-deepks/relaxation"):
+            shutil.rmtree("confs/fcc-Al-deepks/relaxation")
+
+    def test_make_potential_files(self):
+        if not os.path.exists(os.path.join(self.equi_path, "STRU")):
+            with self.assertRaises(FileNotFoundError):
+                self.ABACUS.make_potential_files(self.equi_path)
+        shutil.copy(
+            os.path.join(self.conf_path, "STRU"), os.path.join(self.equi_path, "STRU")
+        )
+        self.ABACUS.make_potential_files(self.equi_path)
+        self.assertTrue(
+            os.path.isfile(os.path.join(self.equi_path, "pp_orb/Al_ONCV_PBE-1.0.upf"))
+        )
+        self.assertTrue(
+            os.path.isfile(
+                os.path.join(self.equi_path, "pp_orb/Al_gga_9au_100Ry_4s4p1d.orb")
+            )
+        )
+        self.assertTrue(os.path.isfile(os.path.join(self.equi_path, "pp_orb/jle.orb")))
+        self.assertTrue(
+            os.path.isfile(os.path.join(self.equi_path, "pp_orb/model.ptg"))
+        )
+        self.assertTrue(os.path.isfile(os.path.join(self.equi_path, "inter.json")))
+
+    def test_make_input_file_1(self):
+        param = self.task_param.copy()
+        param["cal_setting"] = {
+            "relax_pos": True,
+            "relax_shape": True,
+            "relax_vol": False,
+        }
+        shutil.copy(
+            os.path.join(self.conf_path, "STRU"), os.path.join(self.equi_path, "STRU")
+        )
+        self.ABACUS.make_input_file(self.equi_path, "relaxation", param)
+        self.assertTrue(os.path.isfile(os.path.join(self.equi_path, "task.json")))
+        self.assertTrue(os.path.isfile(os.path.join(self.equi_path, "KPT")))
+        self.assertTrue(os.path.isfile(os.path.join(self.equi_path, "INPUT")))
+        abacus_input = abacus_scf.get_abacus_input_parameters(
+            os.path.join(self.equi_path, "INPUT")
+        )
+        self.assertEqual(abacus_input["calculation"].lower(), "cell-relax")
+        self.assertEqual(abacus_input["fixed_axes"].lower(), "volume")
+        self.assertEqual(abacus_input["deepks_model"].lower(), "pp_orb/model.ptg")
+        self.assertTrue(
+            abacus.check_stru_fixed(os.path.join(self.equi_path, "STRU"), fixed=False)
+        )

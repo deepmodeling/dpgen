@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 
-import os
 
 import numpy as np
 
@@ -18,7 +17,7 @@ def _make_pwmat_kp_mp(kpoints):
 
 
 def _make_kspacing_kpoints(config, kspacing):
-    with open(config, "r") as fp:
+    with open(config) as fp:
         lines = fp.read().split("\n")
     box = []
     for idx, ii in enumerate(lines):
@@ -63,8 +62,8 @@ def make_pwmat_input_dict(
                     "94 4 3 " + str(icmix) + " " + str(sigma) + " " + str(smearing)
                 )
             else:
-                SCF_ITER0_1 = "6 4 3 0.0000 " + str(simga) + " 2"
-                SCF_ITER0_2 = "94 4 3 " + str(icmix) + " " + str(simga) + " 2"
+                SCF_ITER0_1 = "6 4 3 0.0000 " + str(sigma) + " 2"
+                SCF_ITER0_2 = "94 4 3 " + str(icmix) + " " + str(sigma) + " 2"
 
         else:
             if smearing is not None:
@@ -107,21 +106,21 @@ def _update_input_dict(input_dict_, user_dict):
         return input_dict_
     input_dict = input_dict_
     for ii in user_dict:
-        input_dict[ci] = user_dict[ii]
+        input_dict[ii] = user_dict[ii]
     return input_dict
 
 
 def write_input_dict(input_dict):
     lines = []
     for key in input_dict:
-        if type(input_dict[key]) == bool:
+        if isinstance(input_dict[key], bool):
             if input_dict[key]:
                 rs = "T"
             else:
                 rs = "F"
         else:
             rs = str(input_dict[key])
-        lines.append("%s=%s" % (key, rs))
+        lines.append(f"{key}={rs}")
     return "\n".join(lines)
 
 
@@ -135,25 +134,25 @@ def _make_smearing(fp_params):
         smearing = fp_params["smearing"]
     if "sigma" in fp_params:
         sigma = fp_params["sigma"]
-    if icmix == None:
-        if smearing == None:
-            if sigma == None:
+    if icmix is None:
+        if smearing is None:
+            if sigma is None:
                 return None, None, None
             else:
                 return None, None, sigma
         else:
-            if sigma == None:
+            if sigma is None:
                 return None, smearing, None
             else:
                 return None, smearing, sigma
     else:
-        if smearing == None:
-            if sigma == None:
+        if smearing is None:
+            if sigma is None:
                 return icmix, None, None
             else:
                 return icmix, None, sigma
         else:
-            if sigma == None:
+            if sigma is None:
                 return icmix, smearing, None
             else:
                 return icmix, smearing, sigma
@@ -206,4 +205,5 @@ def input_upper(dinput):
     standard_input = {}
     for key, val in dinput.items():
         standard_input[key.upper()] = val
-    return Input(standard_input)
+    # return Input(standard_input)
+    return standard_input

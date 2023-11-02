@@ -1,12 +1,14 @@
-from typing import List
-
 from dargs import Argument, Variant
 
 from dpgen.arginfo import general_mdata_arginfo
 from dpgen.generator.arginfo import (
     basic_args,
     data_args,
+    fp_style_abacus_args,
+    fp_style_cp2k_args,
+    fp_style_custom_args,
     fp_style_gaussian_args,
+    fp_style_siesta_args,
     fp_style_vasp_args,
     training_args,
 )
@@ -30,10 +32,16 @@ def general_simplify_arginfo() -> Argument:
     doc_model_devi_f_trust_hi = (
         "The higher bound of forces for the selection for the model deviation."
     )
+    doc_model_devi_e_trust_lo = "The lower bound of energy per atom for the selection for the model deviation. Requires DeePMD-kit version >=2.2.2."
+    doc_model_devi_e_trust_hi = "The higher bound of energy per atom for the selection for the model deviation. Requires DeePMD-kit version >=2.2.2."
+    doc_true_error_f_trust_lo = "The lower bound of forces for the selection for the true error. Requires DeePMD-kit version >=2.2.4."
+    doc_true_error_f_trust_hi = "The higher bound of forces for the selection for the true error. Requires DeePMD-kit version >=2.2.4."
+    doc_true_error_e_trust_lo = "The lower bound of energy per atom for the selection for the true error. Requires DeePMD-kit version >=2.2.4."
+    doc_true_error_e_trust_hi = "The higher bound of energy per atom for the selection for the true error. Requires DeePMD-kit version >=2.2.4."
 
     return [
         Argument("labeled", bool, optional=True, default=False, doc=doc_labeled),
-        Argument("pick_data", [str, list], doc=doc_pick_data),
+        Argument("pick_data", [str, list[str]], doc=doc_pick_data),
         Argument("init_pick_number", int, doc=doc_init_pick_number),
         Argument("iter_pick_number", int, doc=doc_iter_pick_number),
         Argument(
@@ -48,6 +56,48 @@ def general_simplify_arginfo() -> Argument:
             optional=False,
             doc=doc_model_devi_f_trust_hi,
         ),
+        Argument(
+            "model_devi_e_trust_lo",
+            float,
+            optional=True,
+            default=1e10,
+            doc=doc_model_devi_e_trust_lo,
+        ),
+        Argument(
+            "model_devi_e_trust_hi",
+            float,
+            optional=True,
+            default=1e10,
+            doc=doc_model_devi_e_trust_hi,
+        ),
+        Argument(
+            "true_error_f_trust_lo",
+            float,
+            optional=True,
+            default=1e10,
+            doc=doc_true_error_f_trust_lo,
+        ),
+        Argument(
+            "true_error_f_trust_hi",
+            float,
+            optional=True,
+            default=1e10,
+            doc=doc_true_error_f_trust_hi,
+        ),
+        Argument(
+            "true_error_e_trust_lo",
+            float,
+            optional=True,
+            default=1e10,
+            doc=doc_true_error_e_trust_lo,
+        ),
+        Argument(
+            "true_error_e_trust_hi",
+            float,
+            optional=True,
+            default=1e10,
+            doc=doc_true_error_e_trust_hi,
+        ),
     ]
 
 
@@ -59,10 +109,15 @@ def fp_style_variant_type_args() -> Variant:
     Variant
         variant for fp style
     """
-    doc_fp_style = "Software for First Principles, if `labeled` is false. Options include “vasp”, “gaussian” up to now."
+    doc_fp_style = "Software for First Principles, if `labeled` is false."
     doc_fp_style_none = "No fp."
     doc_fp_style_vasp = "VASP."
     doc_fp_style_gaussian = "Gaussian. The command should be set as `g16 < input`."
+    doc_custom = (
+        "Custom FP code. You need to provide the input and output file format and name. "
+        "The command argument in the machine file should be the script to run custom FP codes. "
+        "The extra forward and backward files can be defined in the machine file."
+    )
 
     return Variant(
         "fp_style",
@@ -73,6 +128,16 @@ def fp_style_variant_type_args() -> Variant:
             Argument(
                 "gaussian", dict, fp_style_gaussian_args(), doc=doc_fp_style_gaussian
             ),
+            Argument("siesta", dict, fp_style_siesta_args()),
+            Argument("cp2k", dict, fp_style_cp2k_args()),
+            Argument("abacus", dict, fp_style_abacus_args()),
+            # TODO: not supported yet, as it requires model_devi_engine to be amber
+            # Argument(
+            #     "amber/diff", dict, fp_style_amber_diff_args(), doc=doc_amber_diff
+            # ),
+            Argument("pwmat", dict, [], doc="TODO: add doc"),
+            Argument("pwscf", dict, [], doc="TODO: add doc"),
+            Argument("custom", dict, fp_style_custom_args(), doc=doc_custom),
         ],
         optional=True,
         default_tag="none",
@@ -80,7 +145,7 @@ def fp_style_variant_type_args() -> Variant:
     )
 
 
-def fp_args() -> List[Argument]:
+def fp_args() -> list[Argument]:
     """Generate arginfo for fp.
 
     Returns
@@ -96,6 +161,7 @@ def fp_args() -> List[Argument]:
     )
     doc_fp_accurate_threshold = "If the accurate ratio is larger than this number, no fp calculation will be performed, i.e. fp_task_max = 0."
     doc_fp_accurate_soft_threshold = "If the accurate ratio is between this number and fp_accurate_threshold, the fp_task_max linearly decays to zero."
+    doc_ratio_failed = "Check the ratio of unsuccessfully terminated jobs. If too many FP tasks are not converged, RuntimeError will be raised."
 
     return [
         Argument("fp_task_max", int, optional=True, doc=doc_fp_task_max),
@@ -109,6 +175,7 @@ def fp_args() -> List[Argument]:
             optional=True,
             doc=doc_fp_accurate_soft_threshold,
         ),
+        Argument("ratio_failed", float, optional=True, doc=doc_ratio_failed),
     ]
 
 

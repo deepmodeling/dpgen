@@ -1,6 +1,5 @@
 import os
 
-import numpy as np
 from dpdata import LabeledSystem
 from monty.serialization import dumpfn
 
@@ -20,8 +19,9 @@ class ABACUS(Task):
         self.potcars = inter_parameter.get("potcars", None)
         self.orbfile = inter_parameter.get("orb_files", None)
         self.deepks = inter_parameter.get("deepks_desc", None)
+        self.deepks_model = inter_parameter.get("deepks_model", None)
         self.path_to_poscar = path_to_poscar
-        self.if_define_orb_file = False if self.orbfile == None else True
+        self.if_define_orb_file = False if self.orbfile is None else True
 
     def make_potential_files(self, output_dir):
         stru = os.path.abspath(os.path.join(output_dir, "STRU"))
@@ -40,7 +40,7 @@ class ABACUS(Task):
         else:
             stru_path = output_dir
 
-        if pp_files == None:
+        if pp_files is None:
             raise RuntimeError("No pseudopotential information in STRU file")
 
         pp_dir = os.path.abspath(self.potcar_prefix)
@@ -48,35 +48,68 @@ class ABACUS(Task):
         os.chdir(output_dir)
         if not os.path.isdir("./pp_orb"):
             os.mkdir("./pp_orb")
-        for i in range(len(atom_names)):
-            pp_orb_file = [[pp_files[i], self.potcars]]
-            if orb_files != None:
-                pp_orb_file.append([orb_files[i], self.orbfile])
-            elif self.orbfile != None:
-                assert atom_names[i] in self.orbfile, (
-                    "orb_file of %s is not defined" % atom_names[i]
+
+        pp_orb_file = []
+        for iatom, atomname in enumerate(atom_names):
+            # pseudopotential file
+            if not self.potcars:
+                raise RuntimeError(
+                    "please specify the pseudopotential file for each atom type in 'potcars'"
                 )
-                pp_orb_file.append([self.orbfile[atom_names[i]], self.orbfile])
+            if atomname not in self.potcars:
+                raise RuntimeError(
+                    "please specify the pseudopotential file of '%s'" % atomname
+                )
+            pp_orb_file.append([pp_files[iatom], self.potcars[atomname]])
 
-            if dpks_descriptor != None:
-                pp_orb_file.append([dpks_descriptor[i], self.deepks])
-            elif self.deepks != None:
-                pp_orb_file.append([self.deepks, self.deepks])
+            # orbital file
+            if orb_files:
+                if not self.orbfile:
+                    raise RuntimeError(
+                        "Orbital file is defined in STRU, so please specify the orbital file for each atom type in parameter setting file by 'orb_files'"
+                    )
+                if atomname not in self.orbfile:
+                    raise RuntimeError(
+                        "please specify the orbital file of '%s'" % atomname
+                    )
+                pp_orb_file.append([orb_files[iatom], self.orbfile[atomname]])
+            elif self.orbfile:
+                dlog.warning(
+                    "Orbital is not needed by STRU, so ignore the setting of 'orb_files' in parameter setting file"
+                )
 
-            for tmpf, tmpdict in pp_orb_file:
-                atom = atom_names[i]
-                if os.path.isfile(os.path.join(stru_path, tmpf)):
-                    linked_file = os.path.join(stru_path, tmpf)
-                elif tmpdict != None and os.path.isfile(
-                    os.path.join(pp_dir, tmpdict[atom])
-                ):
-                    linked_file = os.path.join(pp_dir, tmpdict[atom])
-                else:
-                    raise RuntimeError("Can not find file %s" % tmpf.split("/")[-1])
-                target_file = os.path.join("./pp_orb/", tmpf.split("/")[-1])
-                if os.path.isfile(target_file):
-                    os.remove(target_file)
-                os.symlink(linked_file, target_file)
+        # dpks_descriptor
+        if dpks_descriptor:
+            if not self.deepks:
+                raise RuntimeError(
+                    "Deepks descriptor file is defined in STRU, so please specify in parameter setting file by 'deepks_desc'"
+                )
+            pp_orb_file.append([dpks_descriptor, self.deepks])
+        elif self.deepks:
+            dlog.warning(
+                "Deepks descriptor is not needed by STRU, so ignore the setting of 'deepks_desc' in parameter setting file"
+            )
+
+        # dpks model
+        if self.deepks_model:
+            pp_orb_file.append([self.deepks_model, self.deepks_model])
+
+        # link the files
+        for file_stru, file_param in pp_orb_file:
+            filename_in_stru = os.path.split(file_stru)[1]
+            filename_in_para = os.path.split(file_param)[1]
+            if filename_in_stru != filename_in_para:
+                dlog.warning(
+                    f"file name in STRU is not match that defined in parameter setting file: '{filename_in_stru}', '{filename_in_para}'."
+                )
+
+            src_file = os.path.join(pp_dir, file_param)
+            if not os.path.isfile(src_file):
+                raise RuntimeError("Can not find file %s" % src_file)
+            tar_file = os.path.join("pp_orb", filename_in_stru)
+            if os.path.isfile(tar_file):
+                os.remove(tar_file)
+            os.symlink(src_file, tar_file)
 
         os.chdir(cwd)
 
@@ -84,7 +117,7 @@ class ABACUS(Task):
 
     def modify_input(self, incar, x, y):
         if x in incar and incar[x] != y:
-            dlog.info("setting %s to %s" % (x, y))
+            dlog.info(f"setting {x} to {y}")
         incar[x] = y
 
     def make_input_file(self, output_dir, task_type, task_param):
@@ -167,6 +200,9 @@ class ABACUS(Task):
                 % incar["basis_type"]
             )
             raise RuntimeError(mess)
+        if "deepks_model" in incar:
+            model_file = os.path.split(incar["deepks_model"])[1]
+            self.modify_input(incar, "deepks_model", os.path.join("pp_orb", model_file))
         abacus.write_input(os.path.join(output_dir, "../INPUT"), incar)
         cwd = os.getcwd()
         os.chdir(output_dir)
@@ -178,7 +214,15 @@ class ABACUS(Task):
         os.chdir(cwd)
 
         if "kspacing" in incar:
-            kspacing = float(incar["kspacing"])
+            if isinstance(incar["kspacing"], str):
+                kspacing = [float(i) for i in incar["kspacing"].split()]
+            elif isinstance(incar["kspacing"], (int, float)):
+                kspacing = [incar["kspacing"]]
+            else:
+                kspacing = incar["kspacing"]
+            if len(kspacing) == 1:
+                kspacing = 3 * kspacing
+
             if os.path.isfile(os.path.join(output_dir, "STRU")):
                 kpt = abacus.make_kspacing_kpt(
                     os.path.join(output_dir, "STRU"), kspacing
@@ -190,7 +234,7 @@ class ABACUS(Task):
             kpt = cal_setting["K_POINTS"]
         else:
             mess = "K point information is not defined\n"
-            mess += "You can set key word 'kspacing' (unit in 1/bohr) as a float value in INPUT\n"
+            mess += "You can set key word 'kspacing' (unit in 1/bohr) as one or three float value in INPUT\n"
             mess += "or set key word 'K_POINTS' as a list in 'cal_setting', e.g. [1,2,3,0,0,0]\n"
             raise RuntimeError(mess)
         abacus.write_kpt(os.path.join(output_dir, "KPT"), kpt)

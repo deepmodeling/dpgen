@@ -1,39 +1,39 @@
 {
-    "_comment": "Last updated on 2021.4.30 for DP-GEN 0.9.2 by Yuzhi Zhang",
+    "_comment1": "Last updated on 2021.4.30 for DP-GEN 0.9.2 by Yuzhi Zhang",
     "train": {
-        "_comment" : "Specify the installed path of DeePMD-kit",
+        "_comment2": "Specify the installed path of DeePMD-kit",
         "command": "PATH_TO_DEEPMD/dp",
-        "_comment" : "Specify machine settings",
+        "_comment3": "Specify machine settings",
         "machine": {
             "batch_type": "slurm",
             "context_type": "ssh",
             "remote_profile": {
                 "hostname": "localhost",
-                "_comment" : "The port for connection, most common settings is 22",
+                "_comment4": "The port for connection, most common settings is 22",
                 "port": 22,
-                "_comment" : "Specify your username.",
+                "_comment5": "Specify your username.",
                 "username": "USERNAME"
             },
-            "_comment" : "You should alwasy make sure that directory of work_path exits. ",
+            "_comment6": "You should alwasy make sure that directory of work_path exits. ",
             "remote_root": "PATH_TO_WORK",
             "local_root": "./"
         },
         "resources": {
-            "_comment" : "Environment to be activated. This will generate source PATH/train_new.env . ",
+            "_comment7": "Environment to be activated. This will generate source PATH/train_new.env . ",
             "source_list": [
                 "PATH/train_new.env"
             ],
-            "_comment" : " Module is a common tools on HPC clustes to manage softwares for multiple users.",
-            "_comment" : "Modules to be loaded. This will generate module load intel",
+            "_comment8": " Module is a common tools on HPC clustes to manage softwares for multiple users.",
+            "_comment9": "Modules to be loaded. This will generate module load intel",
             "module_list": [
                 "intel"
             ],
             "batch_type": "slurm",
-            "_comment" : "The number of nodes. This will generate #SBATCH -N 1 in your script. ",
+            "_comment10": "The number of nodes. This will generate #SBATCH -N 1 in your script. ",
             "number_node": 1,
-            "_comment" : "The number of CPUs. #SBATCH -n 4",
+            "_comment11": "The number of CPUs. #SBATCH -n 4",
             "cpu_per_node": 4,
-            "_comment" : "The number of GPU cards. #SBATCH --gres=gpu:1",
+            "_comment12": "The number of GPU cards. #SBATCH --gres=gpu:1",
             "gpu_per_node": 1,
             "queue_name": "all",
             "custom_flags": [
@@ -63,7 +63,7 @@
             ],
             "module_list": [],
             "batch_type": "slurm",
-            "_comment": "DP-GEN will put 5 tasks together in one submitting script.",
+            "_comment13": "DP-GEN will put 5 tasks together in one submitting script.",
             "group_size": 5,
             "number_node": 1,
             "cpu_per_node": 4,

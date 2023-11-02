@@ -1,13 +1,11 @@
 #!/usr/bin/env python
-# coding: utf-8
 # Copyright (c) DeepGenerator Development Team.
 
 
 import argparse
-import itertools
 import sys
 
-from dpgen import __version__, info
+from dpgen import info
 from dpgen.auto_test.run import gen_test
 from dpgen.collect.collect import gen_collect
 from dpgen.data.gen import gen_init_bulk
@@ -15,6 +13,7 @@ from dpgen.data.reaction import gen_init_reaction
 from dpgen.data.surf import gen_init_surf
 from dpgen.database.run import db_run
 from dpgen.generator.run import gen_run
+from dpgen.gui import start_dpgui
 from dpgen.simplify.simplify import gen_simplify
 from dpgen.tools.auto_gen_param import auto_gen_param
 from dpgen.tools.run_report import run_report
@@ -208,6 +207,29 @@ def main_parser() -> argparse.ArgumentParser:
     parser_db.add_argument("PARAM", type=str, help="parameter file, json format")
 
     parser_db.set_defaults(func=db_run)
+
+    # gui
+    parser_gui = subparsers.add_parser(
+        "gui",
+        help="Serve DP-GUI.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser_gui.add_argument(
+        "-p",
+        "--port",
+        type=int,
+        default=6042,
+        help="The port to serve DP-GUI on.",
+    )
+    parser_gui.add_argument(
+        "--bind_all",
+        action="store_true",
+        help=(
+            "Serve on all public interfaces. This will expose your DP-GUI instance "
+            "to the network on both IPv4 and IPv6 (where available)."
+        ),
+    )
+    parser_gui.set_defaults(func=start_dpgui)
     return parser
 
 

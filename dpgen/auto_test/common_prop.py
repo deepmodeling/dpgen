@@ -1,6 +1,5 @@
 import glob
 import os
-import warnings
 from multiprocessing import Pool
 
 from packaging.version import Version
@@ -23,9 +22,7 @@ lammps_task_type = ["deepmd", "meam", "eam_fs", "eam_alloy"]
 
 
 def make_property_instance(parameters, inter_param):
-    """
-    Make an instance of Property
-    """
+    """Make an instance of Property."""
     prop_type = parameters["type"]
     if prop_type == "eos":
         return EOS(parameters, inter_param)

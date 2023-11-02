@@ -1,4 +1,3 @@
-import json
 import os
 
 import dpdata
@@ -7,9 +6,9 @@ import scipy.constants as pc
 from pymatgen.io.vasp.inputs import Incar
 
 
-class NBandsEsti(object):
+class NBandsEsti:
     def __init__(self, test_list):
-        if type(test_list) is list:
+        if isinstance(test_list, list):
             ele_t = []
             vol = []
             d_nbd = []
@@ -29,7 +28,7 @@ class NBandsEsti(object):
             self.pref = np.average(alpha)
             # print(np.average(alpha), np.std(alpha), self.err/self.pref)
             # print((ele_t), vol, d_nbd, nbd, alpha)
-        elif type(test_list) is str:
+        elif isinstance(test_list, str):
             with open(test_list) as fp:
                 self.pref = float(fp.readline())
                 self.err = float(fp.readline())

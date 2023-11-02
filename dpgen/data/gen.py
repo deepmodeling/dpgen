@@ -2,16 +2,11 @@
 
 import argparse
 import glob
-import json
-import logging
 import os
-import random
 import re
 import shutil
 import subprocess as sp
 import sys
-import time
-import warnings
 
 import dpdata
 import numpy as np
@@ -31,12 +26,12 @@ from dpgen.generator.lib.abacus_scf import (
     get_abacus_STRU,
     make_abacus_scf_kpt,
     make_abacus_scf_stru,
-    make_kspacing_kpoints_stru,
     make_supercell_abacus,
 )
 from dpgen.generator.lib.utils import symlink_user_forward_files
 from dpgen.generator.lib.vasp import incar_upper
 from dpgen.remote.decide_machine import convert_mdata
+from dpgen.util import load_file
 
 
 def create_path(path, back=False):
@@ -62,7 +57,7 @@ def create_path(path, back=False):
 
 
 def replace(file_name, pattern, subst):
-    file_handel = open(file_name, "r")
+    file_handel = open(file_name)
     file_string = file_handel.read()
     file_handel.close()
     file_string = re.sub(pattern, subst, file_string)
@@ -130,7 +125,7 @@ def poscar_ele(poscar_in, poscar_out, eles, natoms):
         ele_line += str(ii) + " "
     for ii in natoms:
         natom_line += str(ii) + " "
-    with open(poscar_in, "r") as fin:
+    with open(poscar_in) as fin:
         lines = list(fin)
         lines[5] = ele_line + "\n"
         lines[6] = natom_line + "\n"
@@ -188,7 +183,7 @@ def poscar_natoms(lines):
 
 
 def poscar_shuffle(poscar_in, poscar_out):
-    with open(poscar_in, "r") as fin:
+    with open(poscar_in) as fin:
         lines = list(fin)
     numb_atoms = poscar_natoms(lines)
     idx = np.arange(8, 8 + numb_atoms)
@@ -229,18 +224,18 @@ def poscar_scale_cartesian(str_in, scale):
         boxl = lines[ii].split()
         boxv = [float(ii) for ii in boxl]
         boxv = np.array(boxv) * scale
-        lines[ii] = "%.16e %.16e %.16e\n" % (boxv[0], boxv[1], boxv[2])
+        lines[ii] = f"{boxv[0]:.16e} {boxv[1]:.16e} {boxv[2]:.16e}\n"
     # scale coord
     for ii in range(8, 8 + numb_atoms):
         cl = lines[ii].split()
         cv = [float(ii) for ii in cl]
         cv = np.array(cv) * scale
-        lines[ii] = "%.16e %.16e %.16e\n" % (cv[0], cv[1], cv[2])
+        lines[ii] = f"{cv[0]:.16e} {cv[1]:.16e} {cv[2]:.16e}\n"
     return lines
 
 
 def poscar_scale(poscar_in, poscar_out, scale):
-    with open(poscar_in, "r") as fin:
+    with open(poscar_in) as fin:
         lines = list(fin)
     if "D" == lines[7][0] or "d" == lines[7][0]:
         lines = poscar_scale_direct(lines, scale)
@@ -366,7 +361,7 @@ def make_super_cell_poscar(jdata):
     from_struct.to(to_file, "poscar")
 
     # make system dir (copy)
-    lines = open(to_file, "r").read().split("\n")
+    lines = open(to_file).read().split("\n")
     natoms_str = lines[6]
     natoms_list = [int(ii) for ii in natoms_str.split()]
     dlog.info(natoms_list)
@@ -581,7 +576,7 @@ def make_abacus_relax(jdata, mdata):
     )  # a dictionary in which all of the values are strings
     if "kspacing" not in standard_incar:
         if "gamma_only" in standard_incar:
-            if type(standard_incar["gamma_only"]) == str:
+            if isinstance(standard_incar["gamma_only"], str):
                 standard_incar["gamma_only"] = int(eval(standard_incar["gamma_only"]))
             if standard_incar["gamma_only"] == 0:
                 if "relax_kpt" not in jdata:
@@ -715,13 +710,16 @@ def make_scale_ABACUS(jdata):
                 assert os.path.isfile(pos_src)
             else:
                 try:
-                    pos_src = os.path.join(
-                        os.path.join(init_path, ii), "OUT.ABACUS/STRU_ION_D"
+                    from dpgen.auto_test.lib.abacus import (
+                        final_stru as abacus_final_stru,
                     )
+
+                    pos_src = abacus_final_stru(os.path.join(init_path, ii))
+                    pos_src = os.path.join(init_path, ii, pos_src)
                     assert os.path.isfile(pos_src)
                 except Exception:
                     raise RuntimeError(
-                        "not file %s, vasp relaxation should be run before scale poscar"
+                        "Can not find STRU_ION_D in OUT.ABACUS!!!\nABACUS relaxation should be run before scale poscar"
                     )
             scale_path = os.path.join(work_path, ii)
             scale_path = os.path.join(scale_path, "scale-%.3f" % jj)
@@ -922,7 +920,7 @@ def make_abacus_md(jdata, mdata):
     #        "Cannot find any k-points information."
     if "kspacing" not in standard_incar:
         if "gamma_only" in standard_incar:
-            if type(standard_incar["gamma_only"]) == str:
+            if isinstance(standard_incar["gamma_only"], str):
                 standard_incar["gamma_only"] = int(eval(standard_incar["gamma_only"]))
             if standard_incar["gamma_only"] == 0:
                 if "md_kpt" not in jdata:
@@ -1079,7 +1077,7 @@ def coll_vasp_md(jdata):
                 # dlog.info("OUTCAR",outcar)
                 if os.path.isfile(outcar):
                     # dlog.info("*"*40)
-                    with open(outcar, "r") as fin:
+                    with open(outcar) as fin:
                         nforce = fin.read().count("TOTAL-FORCE")
                     # dlog.info("nforce is", nforce)
                     # dlog.info("md_nstep", md_nstep)
@@ -1095,8 +1093,8 @@ def coll_vasp_md(jdata):
         arg_cvt = " "
         if len(valid_outcars) == 0:
             raise RuntimeError(
-                "MD dir: %s: find no valid outcar in sys %s, "
-                "check if your vasp md simulation is correctly done" % (path_md, ii)
+                f"MD dir: {path_md}: find no valid outcar in sys {ii}, "
+                "check if your vasp md simulation is correctly done"
             )
 
         flag = True
@@ -1127,7 +1125,7 @@ def coll_vasp_md(jdata):
 
 def _vasp_check_fin(ii):
     if os.path.isfile(os.path.join(ii, "OUTCAR")):
-        with open(os.path.join(ii, "OUTCAR"), "r") as fp:
+        with open(os.path.join(ii, "OUTCAR")) as fp:
             content = fp.read()
             count = content.count("Elapse")
             if count != 1:
@@ -1233,8 +1231,8 @@ def coll_abacus_md(jdata):
         arg_cvt = " "
         if len(valid_outcars) == 0:
             raise RuntimeError(
-                "MD dir: %s: find no valid OUT.ABACUS in sys %s, "
-                "check if your abacus md simulation is correctly done." % (path_md, ii)
+                f"MD dir: {path_md}: find no valid OUT.ABACUS in sys {ii}, "
+                "check if your abacus md simulation is correctly done."
             )
 
         flag = True
@@ -1467,22 +1465,9 @@ def run_abacus_md(jdata, mdata):
 
 
 def gen_init_bulk(args):
-    try:
-        import ruamel
-        from monty.serialization import dumpfn, loadfn
-
-        warnings.simplefilter("ignore", ruamel.yaml.error.MantissaNoDotYAML1_1Warning)
-        jdata = loadfn(args.PARAM)
-        if args.MACHINE is not None:
-            mdata = loadfn(args.MACHINE)
-    except Exception:
-        with open(args.PARAM, "r") as fp:
-            jdata = json.load(fp)
-        if args.MACHINE is not None:
-            with open(args.MACHINE, "r") as fp:
-                mdata = json.load(fp)
-
+    jdata = load_file(args.PARAM)
     if args.MACHINE is not None:
+        mdata = load_file(args.MACHINE)
         # Selecting a proper machine
         mdata = convert_mdata(mdata, ["fp"])
         # disp = make_dispatcher(mdata["fp_machine"])

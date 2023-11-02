@@ -1,0 +1,156 @@
+{
+    "type_map": [
+        "H",
+        "C"
+    ],
+    "mass_map": [
+        1,
+        12
+    ],
+    "init_data_prefix": "/public/data/deepmd-tutorial/data/",
+    "init_data_sys": [
+        "deepmd"
+    ],
+    "init_batch_size": [
+        8
+    ],
+    "sys_configs": [
+        [
+            "/public/data/deepmd-tutorial/data/CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale-1.000/00000*/POSCAR"
+        ],
+        [
+            "/public/data/deepmd-tutorial/data/CH4.POSCAR.01x01x01/01.scale_pert/sys-0004-0001/scale-1.000/00001*/POSCAR"
+        ]
+    ],
+    "sys_batch_size": [
+        8,
+        8,
+        8,
+        8
+    ],
+    "_comment1": " that's all ",
+    "numb_models": 4,
+    "default_training_param": {
+        "model": {
+            "descriptor": {
+                "seed": 0,
+                "type": "se_a",
+                "sel": [
+                    16,
+                    4
+                ],
+                "rcut": 5,
+                "rcut_smth": 0.5,
+                "neuron": [
+                    10,
+                    20,
+                    40
+                ],
+                "axis_neuron": 12,
+                "resnet_dt": false
+            },
+            "fitting_net": {
+                "seed": 0,
+                "neuron": [
+                    120,
+                    120,
+                    120
+                ],
+                "resnet_dt": true
+            }
+        },
+        "learning_rate": {
+            "type": "exp",
+            "decay_steps": 200,
+            "start_lr": 0.001,
+            "stop_lr": 3.505266624882874e-08
+        },
+        "loss": {
+            "start_pref_e": 0.02,
+            "limit_pref_e": 2,
+            "start_pref_f": 1000,
+            "limit_pref_f": 1,
+            "start_pref_v": 0,
+            "limit_pref_v": 0
+        },
+        "training": {
+            "seed": 0,
+            "stop_batch": 40000,
+            "disp_file": "lcurve.out",
+            "disp_freq": 1000,
+            "save_freq": 1000,
+            "save_ckpt": "model.ckpt",
+            "disp_training": true,
+            "time_training": true,
+            "profiling": false,
+            "training_data": {
+                "systems": [],
+                "set_prefix": "set",
+                "batch_size": 1
+            }
+        }
+    },
+    "model_devi_dt": 0.002,
+    "model_devi_skip": 0,
+    "model_devi_f_trust_lo": 0.05,
+    "model_devi_f_trust_hi": 0.15,
+    "model_devi_clean_traj": true,
+    "model_devi_jobs": [
+        {
+            "sys_idx": [
+                0
+            ],
+            "temps": [
+                100
+            ],
+            "press": [
+                1
+            ],
+            "trj_freq": 10,
+            "nsteps": 1000,
+            "ensemble": "nvt",
+            "_idx": "00"
+        },
+        {
+            "sys_idx": [
+                1
+            ],
+            "temps": [
+                100
+            ],
+            "press": [
+                1
+            ],
+            "trj_freq": 10,
+            "nsteps": 5000,
+            "ensemble": "nvt",
+            "_idx": "01"
+        }
+    ],
+    "fp_style": "cp2k",
+    "shuffle_poscar": false,
+    "fp_task_max": 20,
+    "fp_task_min": 5,
+    "fp_params": {
+        "cutoff": "400",
+        "rel_cutoff": "50",
+        "functional": "PBE",
+        "pair_potential_path": "dftd3.dat",
+        "pair_ref_functional": "PBE",
+        "basis_path": "BASIS_MOLOPT",
+        "pp_path": "GTH_POTENTIALS",
+        "element_list": [
+            "H",
+            "C"
+        ],
+        "basis_list": [
+            "DZVP-MOLOPT-GTH",
+            "DZVP-MOLOPT-GTH"
+        ],
+        "_comment3": "elment_list, basis_list, pp_list should be one to one correspondance",
+        "pp_list": [
+            "GTH-PBE-q1",
+            "GTH-PBE-q4"
+        ]
+    }
+}

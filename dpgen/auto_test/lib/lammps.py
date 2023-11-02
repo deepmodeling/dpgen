@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 
 import os
-import random
-import subprocess as sp
-import sys
 
 import dpdata
 from dpdata.periodic_table import Element
@@ -13,9 +10,8 @@ import dpgen.auto_test.lib.util as util
 
 
 def cvt_lammps_conf(fin, fout, type_map, ofmt="lammps/data"):
-    """
-    Format convert from fin to fout, specify the output format by ofmt
-    Imcomplete situation
+    """Format convert from fin to fout, specify the output format by ofmt
+    Imcomplete situation.
     """
     supp_ofmt = ["lammps/dump", "lammps/data", "vasp/poscar"]
     supp_exts = ["dump", "lmp", "poscar/POSCAR"]
@@ -26,7 +22,7 @@ def cvt_lammps_conf(fin, fout, type_map, ofmt="lammps/data"):
         ofmt = "lammps/data"
     elif "poscar" in fout or "POSCAR" in fout:
         ofmt = "vasp/poscar"
-    if not ofmt in supp_ofmt:
+    if ofmt not in supp_ofmt:
         raise RuntimeError(
             "output format " + ofmt + " is not supported. use one of " + str(supp_ofmt)
         )
@@ -40,15 +36,14 @@ def cvt_lammps_conf(fin, fout, type_map, ofmt="lammps/data"):
 
 
 def apply_type_map(conf_file, deepmd_type_map, ptypes):
-    """
-    apply type map.
+    """Apply type map.
     conf_file:          conf file converted from POSCAR
     deepmd_type_map:    deepmd atom type map
-    ptypes:             atom types defined in POSCAR
+    ptypes:             atom types defined in POSCAR.
     """
     natoms = _get_conf_natom(conf_file)
     ntypes = len(deepmd_type_map)
-    with open(conf_file, "r") as fp:
+    with open(conf_file) as fp:
         lines = fp.read().split("\n")
     # with open(conf_file+'.bk', 'w') as fp:
     #     fp.write("\n".join(lines))
@@ -85,7 +80,7 @@ def apply_type_map(conf_file, deepmd_type_map, ptypes):
 
 
 def _get_ntype(conf):
-    with open(conf, "r") as fp:
+    with open(conf) as fp:
         lines = fp.read().split("\n")
     for ii in lines:
         if "atom types" in ii:
@@ -94,7 +89,7 @@ def _get_ntype(conf):
 
 
 def _get_conf_natom(conf):
-    with open(conf, "r") as fp:
+    with open(conf) as fp:
         lines = fp.read().split("\n")
     for ii in lines:
         if "atoms" in ii:
@@ -194,7 +189,9 @@ def make_lammps_eval(conf, type_map, interaction, param):
     ret += (
         "thermo_style    custom step pe pxx pyy pzz pxy pxz pyz lx ly lz vol c_mype\n"
     )
-    ret += "dump            1 all custom 100 dump.relax id type xs ys zs fx fy fz\n"  # 06/09 give dump.relax
+    ret += (
+        "dump            1 all custom 100 dump.relax id type xs ys zs fx fy fz\n"
+    )  # 06/09 give dump.relax
     ret += "run    0\n"
     ret += "variable        N equal count(all)\n"
     ret += "variable        V equal vol\n"
@@ -357,9 +354,7 @@ def make_lammps_press_relax(
     ret += "variable        bp		equal %f\n" % bp
     ret += "variable	    xx		equal %f\n" % scale2equi
     ret += "variable        yeta	equal 1.5*(${bp}-1)\n"
-    ret += (
-        "variable        Px0		equal 3*${B0}*(1-${xx})/${xx}^2*exp(${yeta}*(1-${xx}))\n"
-    )
+    ret += "variable        Px0		equal 3*${B0}*(1-${xx})/${xx}^2*exp(${yeta}*(1-${xx}))\n"
     ret += "variable        Px		equal ${Px0}*${GPa2bar}\n"
     ret += "units       metal\n"
     ret += "dimension   3\n"
@@ -405,9 +400,7 @@ def make_lammps_press_relax(
 def make_lammps_phonon(
     conf, masses, interaction, param, etol=0, ftol=1e-10, maxiter=5000, maxeval=500000
 ):
-    """
-    make lammps input for elastic calculation
-    """
+    """Make lammps input for elastic calculation."""
     ret = ""
     ret += "clear\n"
     ret += "units 	metal\n"
@@ -426,7 +419,7 @@ def make_lammps_phonon(
 
 def _get_epa(lines):
     for ii in lines:
-        if ("Final energy per atoms" in ii) and (not "print" in ii):
+        if ("Final energy per atoms" in ii) and ("print" not in ii):
             return float(ii.split("=")[1].split()[0])
     raise RuntimeError(
         'cannot find key "Final energy per atoms" in lines, something wrong'
@@ -435,7 +428,7 @@ def _get_epa(lines):
 
 def _get_vpa(lines):
     for ii in lines:
-        if ("Final volume per atoms" in ii) and (not "print" in ii):
+        if ("Final volume per atoms" in ii) and ("print" not in ii):
             return float(ii.split("=")[1].split()[0])
     raise RuntimeError(
         'cannot find key "Final volume per atoms" in lines, something wrong'
@@ -444,7 +437,7 @@ def _get_vpa(lines):
 
 def _get_natoms(lines):
     for ii in lines:
-        if ("Total number of atoms" in ii) and (not "print" in ii):
+        if ("Total number of atoms" in ii) and ("print" not in ii):
             return int(ii.split("=")[1].split()[0])
     raise RuntimeError(
         'cannot find key "Total number of atoms" in lines, something wrong'
@@ -452,10 +445,8 @@ def _get_natoms(lines):
 
 
 def get_nev(log):
-    """
-    get natoms, energy_per_atom and volume_per_atom from lammps log
-    """
-    with open(log, "r") as fp:
+    """Get natoms, energy_per_atom and volume_per_atom from lammps log."""
+    with open(log) as fp:
         lines = fp.read().split("\n")
     epa = _get_epa(lines)
     vpa = _get_vpa(lines)
@@ -464,34 +455,28 @@ def get_nev(log):
 
 
 def get_base_area(log):
-    """
-    get base area
-    """
-    with open(log, "r") as fp:
+    """Get base area."""
+    with open(log) as fp:
         lines = fp.read().split("\n")
     for ii in lines:
-        if ("Final Base area" in ii) and (not "print" in ii):
+        if ("Final Base area" in ii) and ("print" not in ii):
             return float(ii.split("=")[1].split()[0])
 
 
 def get_stress(log):
-    """
-    get stress from lammps log
-    """
-    with open(log, "r") as fp:
+    """Get stress from lammps log."""
+    with open(log) as fp:
         lines = fp.read().split("\n")
     for ii in lines:
-        if ("Final Stress" in ii) and (not "print" in ii):
+        if ("Final Stress" in ii) and ("print" not in ii):
             vstress = [float(jj) for jj in ii.split("=")[1].split()]
     stress = util.voigt_to_stress(vstress)
     return stress
 
 
 def poscar_from_last_dump(dump, poscar_out, deepmd_type_map):
-    """
-    get poscar from the last frame of a lammps MD traj (dump format)
-    """
-    with open(dump, "r") as fp:
+    """Get poscar from the last frame of a lammps MD traj (dump format)."""
+    with open(dump) as fp:
         lines = fp.read().split("\n")
     step_idx = -1
     for idx, ii in enumerate(lines):
@@ -503,7 +488,7 @@ def poscar_from_last_dump(dump, poscar_out, deepmd_type_map):
         fp.write("\n".join(lines[step_idx:]))
     cvt_lammps_conf("tmp_dump", poscar_out, ofmt="vasp")
     os.remove("tmp_dump")
-    with open(poscar_out, "r") as fp:
+    with open(poscar_out) as fp:
         lines = fp.read().split("\n")
     types = [deepmd_type_map[int(ii.split("_")[1])] for ii in lines[5].split()]
     lines[5] = " ".join(types)
@@ -512,15 +497,15 @@ def poscar_from_last_dump(dump, poscar_out, deepmd_type_map):
 
 
 def check_finished_new(fname, keyword):
-    with open(fname, "r") as fp:
+    with open(fname) as fp:
         lines = fp.read().split("\n")
     flag = False
     for jj in lines:
-        if (keyword in jj) and (not "print" in jj):
+        if (keyword in jj) and ("print" not in jj):
             flag = True
     return flag
 
 
 def check_finished(fname):
-    with open(fname, "r") as fp:
+    with open(fname) as fp:
         return "Total wall time:" in fp.read()

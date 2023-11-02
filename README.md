@@ -1,4 +1,4 @@
-![logo](./doc/logo.svg)
+<picture><source media="(prefers-color-scheme: dark)" srcset="./doc/_static/logo-dark.svg"><source media="(prefers-color-scheme: light)" srcset="./doc/_static/logo.svg"><img alt="DP-GEN logo" src="./doc/_static/logo.svg"></picture>
 
 --------------------------------------------------------------------------------
 
@@ -10,7 +10,7 @@
 [![conda install](https://img.shields.io/conda/dn/conda-forge/dpgen?label=conda%20install)](https://anaconda.org/conda-forge/dpgen)
 [![pip install](https://img.shields.io/pypi/dm/dpgen?label=pip%20install)](https://pypi.org/project/dpgen)
 
-DP-GEN (Deep Generator) is a software written in Python, delicately designed to generate a deep learning based model of interatomic potential energy and force field. DP-GEN is dependent on [DeePMD-kit](https://github.com/deepmodeling/deepmd-kit/). With highly scalable interface with common softwares for molecular simulation, DP-GEN is capable to  automatically prepare scripts and maintain job queues on HPC machines (High Performance Cluster) and analyze results.
+DP-GEN (Deep Potential GENerator) is a software written in Python, delicately designed to generate a deep learning based model of interatomic potential energy and force field. DP-GEN is dependent on [DeePMD-kit](https://github.com/deepmodeling/deepmd-kit/). With highly scalable interface with common softwares for molecular simulation, DP-GEN is capable to  automatically prepare scripts and maintain job queues on HPC machines (High Performance Cluster) and analyze results.
 
 If you use this software in any publication, please cite:
 
@@ -23,22 +23,14 @@ Yuzhi Zhang, Haidi Wang, Weijie Chen, Jinzhe Zeng, Linfeng Zhang, Han Wang, and 
 
 ## Download and Install
 
-DP-GEN only supports Python 3.8 and above.
+DP-GEN only supports Python 3.9 and above. You can use one of the following methods to install DP-GEN:
 
-One can download the source code of dpgen by
-```bash
-git clone https://github.com/deepmodeling/dpgen.git
-```
-then you may install DP-GEN easily by:
-```bash
-cd dpgen
-pip install --user .
-```
-With this command, the dpgen executable is install to `$HOME/.local/bin/dpgen`. You may want to export the `PATH` by
-```bash
-export PATH=$HOME/.local/bin:$PATH
-```
+- Install via pip: `pip install dpgen`
+- Install via conda: `conda install -c conda-forge dpgen``
+- Install from source code: `git clone https://github.com/deepmodeling/dpgen && pip install ./dpgen`
+
 To test if the installation is successful, you may execute
+
 ```bash
 dpgen -h
 ```
@@ -47,7 +39,7 @@ dpgen -h
 
 DP-GEN contains the following workflows:
 
-* [`dpgen run`](https://docs.deepmodeling.com/projects/dpgen/en/latest/run/): Main process of Deep Generator.
+* [`dpgen run`](https://docs.deepmodeling.com/projects/dpgen/en/latest/run/): Main process of Deep Potential Generator.
 * [Init](https://docs.deepmodeling.com/projects/dpgen/en/latest/init/): Generating initial data.
   * `dpgen init_bulk`: Generating initial data for bulk systems.
   * `dpgen init_surf`: Generating initial data for surface systems.

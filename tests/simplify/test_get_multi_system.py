@@ -1,10 +1,14 @@
 import os
 import shutil
+import sys
 import unittest
 
 import dpdata
 import numpy as np
-from context import dpgen
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+__package__ = "simplify"
+from .context import dpgen
 
 
 class TestGetMultiSystem(unittest.TestCase):
@@ -44,7 +48,7 @@ class TestGetMultiSystem(unittest.TestCase):
                 with self.subTest(list_data=list_data, labeled=labeled):
                     ms = dpgen.simplify.simplify.get_multi_system(
                         self.data if list_data else self.data[0],
-                        {"labeled": labeled},
+                        {"labeled": labeled, "type_map": ["H"]},
                     )
                     assert isinstance(ms, dpdata.MultiSystems)
                     for ss in ms.systems.values():

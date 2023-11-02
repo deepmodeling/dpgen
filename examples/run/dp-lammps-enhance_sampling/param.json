@@ -1,126 +1,223 @@
 {
-  "type_map": ["C", "H"],
-  "mass_map": [12.0, 1.0],
-
-  "_comment": "initial data set for Training and the number of frames in each training  batch",
-  "init_data_prefix": "someplace/tutorial-dpgen-enhance",
-  "init_data_sys":   [
-    "raw_file"
-  ],
-  "init_batch_size": [
-    4
-  ],
-
-  "_comment": "configurations for starting MD in Exploration and batch sizes when traning snapshots derived from these configs (if they were selected)",
-  "sys_configs_prefix": "someplace/tutorial-dpgen-enhance",
-  "sys_configs":    [
-    [
-     "configs/POSCAR_[0-9]"
+    "type_map": [
+        "C",
+        "H"
     ],
-    [
-     "configs/POSCAR_0"
-    ]
-  ],
-
-  "_comment": " 00.train ",
-  "numb_models":            4,
-  "training_init_model":    true,
-  "training_reuse_iter":    1,
-  "training_reuse_old_ratio": 0.2,
-  "training_reuse_stop_batch": 100000,
-  "training_reuse_start_lr":      0.0001,
-  "training_reuse_start_pref_e":  0.1,
-  "training_reuse_start_pref_f":  200,
-  "default_training_param": {
-    "model": {
-      "type_map":           ["C","H"],
-      "descriptor": {
-        "type":             "se_a",
-        "sel":              [2,6],
-        "rcut_smth":         0.5,
-        "rcut":              5.0,
-        "neuron":           [20,40,80],
-        "resnet_dt":        false,
-        "axis_neuron":      6,
-        "seed":             0
-      },
-      "fitting_net": {
-        "neuron":           [120,120,120],
-        "resnet_dt":        true,
-        "coord_norm":       true,
-        "type_fitting_net": false,
-        "seed":             0
-      }
-    },
-      "loss": {
-        "start_pref_e":      0.02,
-        "limit_pref_e":      1,
-        "start_pref_f":      1000,
-        "limit_pref_f":      1,
-        "start_pref_v":      0,
-        "limit_pref_v":      0
-    },
-      "learning_rate": {
-        "type":              "exp",
-        "start_lr":          0.001,
-        "decay_steps":       500,
-        "decay_rate":        0.95
-    },
-      "training": {
-        "systems":           [],
-        "set_prefix":        "set",
-        "stop_batch":        200000,
-        "batch_size":        1,
-        "seed":              1,
-        "_comment":          "frequencies counted in batch",
-        "disp_file":         "lcurve.out",
-        "disp_freq":         100,
-        "numb_test":         10,
-        "save_freq":         1000,
-        "save_ckpt":         "model.ckpt",
-        "disp_training":     true,
-        "time_training":     true,
-        "profiling":         false,
-        "profiling_file":    "timeline.json"
-    }
-  },
-
-  "_comment": " 01.model_devi ",
-  "model_devi_dt": 0.0005,
-  "model_devi_skip": 0,
-  "model_devi_f_trust_lo":  0.08,
-  "model_devi_f_trust_hi":  0.25,
-  "model_devi_clean_traj":  false,
-  "model_devi_plumed"    :    true,
-  "model_devi_jobs":  [
-        {   "sys_idx": [0],"trj_freq": 10,"_idx": "00",
-            "template":{ "lmp": "lmp/input.lammps", "plm": "lmp/input.plumed" },
-            "rev_mat":{ "lmp": {"V_NSTEPS": [20000], "V_TEMP": [300], "V_PRES": [1]},
-                        "plm": {"V_TEMP":  [300], "V_STRIDE": [10]}
-                      }
+    "mass_map": [
+        12.0,
+        1.0
+    ],
+    "_comment1": "initial data set for Training and the number of frames in each training  batch",
+    "init_data_prefix": "someplace/tutorial-dpgen-enhance",
+    "init_data_sys": [
+        "raw_file"
+    ],
+    "init_batch_size": [
+        4
+    ],
+    "_comment2": "configurations for starting MD in Exploration and batch sizes when traning snapshots derived from these configs (if they were selected)",
+    "sys_configs_prefix": "someplace/tutorial-dpgen-enhance",
+    "sys_configs": [
+        [
+            "configs/POSCAR_[0-9]"
+        ],
+        [
+            "configs/POSCAR_0"
+        ]
+    ],
+    "_comment3": " 00.train ",
+    "numb_models": 4,
+    "training_init_model": true,
+    "training_reuse_iter": 1,
+    "training_reuse_old_ratio": 0.2,
+    "training_reuse_stop_batch": 100000,
+    "training_reuse_start_lr": 0.0001,
+    "training_reuse_start_pref_e": 0.1,
+    "training_reuse_start_pref_f": 200,
+    "default_training_param": {
+        "model": {
+            "type_map": [
+                "C",
+                "H"
+            ],
+            "descriptor": {
+                "type": "se_a",
+                "sel": [
+                    2,
+                    6
+                ],
+                "rcut_smth": 0.5,
+                "rcut": 5.0,
+                "neuron": [
+                    20,
+                    40,
+                    80
+                ],
+                "resnet_dt": false,
+                "axis_neuron": 6,
+                "seed": 0
+            },
+            "fitting_net": {
+                "neuron": [
+                    120,
+                    120,
+                    120
+                ],
+                "resnet_dt": true,
+                "coord_norm": true,
+                "type_fitting_net": false,
+                "seed": 0
+            }
         },
-        {   "sys_idx": [0],"trj_freq": 10,"_idx": "01",
-            "template":{ "lmp": "lmp/input.lammps", "plm": "lmp/input.plumed" },
-            "rev_mat":{ "lmp": {"V_NSTEPS": [50000], "V_TEMP": [300], "V_PRES": [1]},
-                        "plm": {"V_TEMP":  [300], "V_STRIDE": [10]}
-                      }
+        "loss": {
+            "start_pref_e": 0.02,
+            "limit_pref_e": 1,
+            "start_pref_f": 1000,
+            "limit_pref_f": 1,
+            "start_pref_v": 0,
+            "limit_pref_v": 0
         },
-        {   "sys_idx": [1],"trj_freq": 10,"_idx": "01",
-            "template":{ "lmp": "lmp/input.lammps", "plm": "lmp/input.plumed" },
-            "rev_mat":{ "lmp": {"V_NSTEPS": [300000], "V_TEMP": [300], "V_PRES": [1]},
-                        "plm": {"V_TEMP":  [300], "V_STRIDE": [10]}
-                      }
+        "learning_rate": {
+            "type": "exp",
+            "start_lr": 0.001,
+            "decay_steps": 500,
+            "stop_lr": 1.2286894111517773e-12
+        },
+        "training": {
+            "stop_batch": 200000,
+            "seed": 1,
+            "_comment4": "frequencies counted in batch",
+            "disp_file": "lcurve.out",
+            "disp_freq": 100,
+            "save_freq": 1000,
+            "save_ckpt": "model.ckpt",
+            "disp_training": true,
+            "time_training": true,
+            "profiling": false,
+            "profiling_file": "timeline.json",
+            "training_data": {
+                "systems": [],
+                "set_prefix": "set",
+                "batch_size": 1
+            }
         }
-  ],
-
-  "_comment": " 02.fp ",
-  "fp_style":         "vasp",
-  "shuffle_poscar":   false,
-  "fp_task_max":      150,
-  "_comment":         "the maximum number of stcs to calc.",
-  "fp_task_min":      5,
-  "fp_pp_path":       "./",
-  "fp_pp_files":      ["POTCAR_C", "POTCAR_H"],
-  "fp_incar" :        "INCAR",
-  "_comment":         " that's all "
+    },
+    "_comment5": " 01.model_devi ",
+    "model_devi_dt": 0.0005,
+    "model_devi_skip": 0,
+    "model_devi_f_trust_lo": 0.08,
+    "model_devi_f_trust_hi": 0.25,
+    "model_devi_clean_traj": false,
+    "model_devi_plumed": true,
+    "model_devi_jobs": [
+        {
+            "sys_idx": [
+                0
+            ],
+            "trj_freq": 10,
+            "_idx": "00",
+            "template": {
+                "lmp": "lmp/input.lammps",
+                "plm": "lmp/input.plumed"
+            },
+            "rev_mat": {
+                "lmp": {
+                    "V_NSTEPS": [
+                        20000
+                    ],
+                    "V_TEMP": [
+                        300
+                    ],
+                    "V_PRES": [
+                        1
+                    ]
+                },
+                "plm": {
+                    "V_TEMP": [
+                        300
+                    ],
+                    "V_STRIDE": [
+                        10
+                    ]
+                }
+            }
+        },
+        {
+            "sys_idx": [
+                0
+            ],
+            "trj_freq": 10,
+            "_idx": "01",
+            "template": {
+                "lmp": "lmp/input.lammps",
+                "plm": "lmp/input.plumed"
+            },
+            "rev_mat": {
+                "lmp": {
+                    "V_NSTEPS": [
+                        50000
+                    ],
+                    "V_TEMP": [
+                        300
+                    ],
+                    "V_PRES": [
+                        1
+                    ]
+                },
+                "plm": {
+                    "V_TEMP": [
+                        300
+                    ],
+                    "V_STRIDE": [
+                        10
+                    ]
+                }
+            }
+        },
+        {
+            "sys_idx": [
+                1
+            ],
+            "trj_freq": 10,
+            "_idx": "01",
+            "template": {
+                "lmp": "lmp/input.lammps",
+                "plm": "lmp/input.plumed"
+            },
+            "rev_mat": {
+                "lmp": {
+                    "V_NSTEPS": [
+                        300000
+                    ],
+                    "V_TEMP": [
+                        300
+                    ],
+                    "V_PRES": [
+                        1
+                    ]
+                },
+                "plm": {
+                    "V_TEMP": [
+                        300
+                    ],
+                    "V_STRIDE": [
+                        10
+                    ]
+                }
+            }
+        }
+    ],
+    "_comment6": " 02.fp ",
+    "fp_style": "vasp",
+    "shuffle_poscar": false,
+    "fp_task_max": 150,
+    "_comment7": "the maximum number of stcs to calc.",
+    "fp_task_min": 5,
+    "fp_pp_path": "./",
+    "fp_pp_files": [
+        "POTCAR_C",
+        "POTCAR_H"
+    ],
+    "fp_incar": "INCAR",
+    "_comment8": " that's all "
 }

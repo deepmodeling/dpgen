@@ -1,20 +1,34 @@
 {
-    "cell_type":	"hcp",
-    "latt":		4.48,
-    "super_cell":	[2, 2, 2],
-    "elements":		["Mg"],
-    "potcars":		["/home/wanghan/Soft/vasp/potcar.unknown/potpaw_PBE/Mg/POTCAR"
-			],
-    "encut":		600,
-    "kspacing_relax":	0.16,
-    "kspacing_md":	0.06,
-    "kgamma":		false,
-    "scale":		[0.96, 0.98, 1.00, 1.02, 1.04, 1.06],
-    "skip_relax":	false,
-    "pert_numb":	100,
-    "pert_box":		0.03,
-    "pert_atom":	0.01,
-    "md_temp":		100,
-    "md_nstep":		10,
-    "_comment":		"that's all"
+    "cell_type": "hcp",
+    "latt": 4.48,
+    "super_cell": [
+        2,
+        2,
+        2
+    ],
+    "elements": [
+        "Mg"
+    ],
+    "potcars": [
+        "/home/wanghan/Soft/vasp/potcar.unknown/potpaw_PBE/Mg/POTCAR"
+    ],
+    "encut": 600,
+    "kspacing_relax": 0.16,
+    "kspacing_md": 0.06,
+    "kgamma": false,
+    "scale": [
+        0.96,
+        0.98,
+        1.0,
+        1.02,
+        1.04,
+        1.06
+    ],
+    "skip_relax": false,
+    "pert_numb": 100,
+    "pert_box": 0.03,
+    "pert_atom": 0.01,
+    "md_temp": 100,
+    "md_nstep": 10,
+    "_comment1": "that's all"
 }

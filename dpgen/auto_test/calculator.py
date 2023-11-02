@@ -4,9 +4,7 @@ from dpgen.auto_test.VASP import VASP
 
 
 def make_calculator(inter_parameter, path_to_poscar):
-    """
-    Make an instance of Task
-    """
+    """Make an instance of Task."""
     inter_type = inter_parameter["type"]
     if inter_type == "vasp":
         return VASP(inter_parameter, path_to_poscar)

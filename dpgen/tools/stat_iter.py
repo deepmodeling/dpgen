@@ -3,7 +3,6 @@
 import json
 import os
 import subprocess
-import sys
 from collections import defaultdict
 
 import dpdata
@@ -27,14 +26,10 @@ def stat_iter(target_folder, param_file="param.json", verbose=True, mute=False):
             num, relative_path_doc = line.strip().split(" ")
             path_doc = os.path.abspath(relative_path_doc)
             num = int(num)
-            prefix, iter_dirname, stage, out_filename = path_doc.rsplit(
-                "/", 3
-            )  # pylint: disable=unused-variable
+            prefix, iter_dirname, stage, out_filename = path_doc.rsplit("/", 3)  # pylint: disable=unused-variable
             pk_id, out_filename = path_doc.rsplit("/", 1)
             iter = int(iter_dirname.split(".")[-1])  # pylint: disable=unused-variable
-            out_id = int(
-                out_filename.strip().split(".")[-2]
-            )  # pylint: disable=unused-variable
+            out_id = int(out_filename.strip().split(".")[-2])  # pylint: disable=unused-variable
             out_type = out_filename.strip().split(".")[0]
             iter_dict[pk_id][out_type] += num
     # for ii in
@@ -53,9 +48,7 @@ def stat_iter(target_folder, param_file="param.json", verbose=True, mute=False):
         if line:
             # [/home/felix/workplace/SiC/iter.000002/02.fp/task.018.000040/OUTCAR]
             path_doc = os.path.abspath(line)
-            pk_id, task_dirname, OUTCAR_filename = path_doc.rsplit(
-                "/", 2
-            )  # pylint: disable=unused-variable
+            pk_id, task_dirname, OUTCAR_filename = path_doc.rsplit("/", 2)  # pylint: disable=unused-variable
             try:
                 _sys = dpdata.LabeledSystem(path_doc, type_map=jdata["type_map"])
             except Exception:

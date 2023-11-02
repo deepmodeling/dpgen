@@ -1,8 +1,6 @@
 #!/usr/bin/python3
 
-import os
 
-import numpy as np
 from pymatgen.io.vasp import Incar
 
 
@@ -61,14 +59,14 @@ def _update_incar_dict(incar_dict_, user_dict):
 def write_incar_dict(incar_dict):
     lines = []
     for key in incar_dict:
-        if type(incar_dict[key]) == bool:
+        if isinstance(incar_dict[key], bool):
             if incar_dict[key]:
                 rs = "T"
             else:
                 rs = "F"
         else:
             rs = str(incar_dict[key])
-        lines.append("%s=%s" % (key, rs))
+        lines.append(f"{key}={rs}")
     return "\n".join(lines)
 
 
@@ -79,7 +77,7 @@ def _make_smearing(fp_params):
         smearing = fp_params["smearing"]
     if "sigma" in fp_params:
         sigma = fp_params["sigma"]
-    if smearing == None:
+    if smearing is None:
         return None, sigma
     smearing_method = (smearing.split(":")[0]).lower()
     if smearing_method == "mp":

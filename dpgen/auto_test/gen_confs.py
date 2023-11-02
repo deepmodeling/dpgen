@@ -5,7 +5,7 @@ import os
 import re
 
 from pymatgen.analysis.structure_matcher import StructureMatcher
-from pymatgen.ext.matproj import Composition, MPRester
+from pymatgen.ext.matproj import MPRester
 
 import dpgen.auto_test.lib.crys as crys
 
@@ -50,7 +50,7 @@ def gen_ele_std(ele_name, ctype):
 
 
 def gen_element(ele_name, key):
-    assert type(ele_name) == str
+    assert isinstance(ele_name, str)
     mpr = MPRester(key)
     data = mpr.query(
         {"elements": [ele_name], "nelements": 1},
@@ -87,13 +87,12 @@ def gen_element(ele_name, key):
 
 
 def gen_element_std(ele_name):
-    assert type(ele_name) == str
+    assert isinstance(ele_name, str)
     for ii in global_std_crystal.keys():
         ss = gen_ele_std(ele_name, ii)
 
 
 def gen_alloy(eles, key):
-
     mpr = MPRester(key)
 
     data = mpr.query(
@@ -137,10 +136,10 @@ def _main():
 
     print("generate %s" % (args.elements))
     if len(args.elements) == 1:
-        gen_element(args.elements[0], key)
+        gen_element(args.elements[0], args.key)
         # gen_element_std(args.elements[0])
     else:
-        gen_alloy(args.elements, key)
+        gen_alloy(args.elements, args.key)
 
 
 if __name__ == "__main__":

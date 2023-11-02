@@ -1,14 +1,5 @@
 #!/usr/bin/env python3
 
-import argparse
-import glob
-import json
-import os
-import shutil
-import subprocess as sp
-import sys
-
-import numpy as np
 
 from dpgen.tools.stat_iter import stat_iter
 from dpgen.tools.stat_sys import stat_sys

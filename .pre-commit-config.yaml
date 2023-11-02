@@ -2,7 +2,7 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
     # there are many log files in tests
     # TODO: seperate py files and log files
@@ -12,22 +12,27 @@ repos:
         exclude: "^tests/.*$"
     -   id: check-yaml
         exclude: "^conda/.*$"
-    #-   id: check-json
+    -   id: check-json
+        exclude: "^examples/CH4-lebesgue/.*$"
     -   id: check-added-large-files
     -   id: check-merge-conflict
     -   id: check-symlinks
         exclude: "^tests/tools/run_report_test_output/.*$"
     -   id: check-toml
+    -   id: pretty-format-json
+        args:
+          - "--autofix"
+          - "--no-sort-keys"
+          - "--indent=4"
+        exclude: "^examples/CH4-lebesgue/.*$"
+
 # Python
--   repo: https://github.com/psf/black
-    rev: 22.12.0
-    hooks:
-    -   id: black-jupyter
--   repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.253
+-   repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.3
     hooks:
     - id: ruff
       args: ["--fix"]
+    - id: ruff-format
 # numpydoc
 -   repo: https://github.com/Carreau/velin
     rev: 0.0.12

@@ -1,123 +1,341 @@
-{    
-    "type_map":		["C", "H", "N"],
-    "mass_map":		[16, 2, 14],
-    
-    "init_data_prefix":	"/home/linfengz/SCR/wanghan/deepgen.pyridine/init",
-    "init_data_sys":	["Pyridine-I",
-			 "Pyridine-II"
-			],
-    "init_batch_size":	[1, 1],
-    "sys_configs":	[
-	["/home/linfengz/SCR/wanghan/data/pyridine/pyI.POSCAR.01x01x01/01.scale_pert/sys-0080-0080-0016/scale-1.000/00009?/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/pyridine/pyI.POSCAR.01x01x01/01.scale_pert/sys-0080-0080-0016/scale-1.000/0000[7-8]?/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/pyridine/pyI.POSCAR.01x01x01/01.scale_pert/sys-0080-0080-0016/scale-1.000/0000[5-6]?/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/pyridine/pyI.POSCAR.01x01x01/01.scale_pert/sys-0080-0080-0016/scale-1.000/0000[0-4]?/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/pyridine/pyII.POSCAR.01x01x01/01.scale_pert/sys-0080-0080-0016/scale-1.000/00009?/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/pyridine/pyII.POSCAR.01x01x01/01.scale_pert/sys-0080-0080-0016/scale-1.000/0000[7-8]?/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/pyridine/pyII.POSCAR.01x01x01/01.scale_pert/sys-0080-0080-0016/scale-1.000/0000[5-6]?/POSCAR"],
-	["/home/linfengz/SCR/wanghan/data/pyridine/pyII.POSCAR.01x01x01/01.scale_pert/sys-0080-0080-0016/scale-1.000/0000[0-4]?/POSCAR"]
+{
+    "type_map": [
+        "C",
+        "H",
+        "N"
     ],
-    "_comment":		"0  1  2  3",
-    "_comment":		"4  5  6  7",
-    "sys_batch_size":	[1, 1, 1, 1,
-			 1, 1, 1, 1
-			],
-
-    "_comment":		" 00.train ",
-    "numb_models":	4,
-    "default_training_param" : {
-	"_comment": " model parameters",
-	"use_smooth":		true,
-	"sel_a":		[81, 81, 20],
-	"rcut_smth":		0.50,
-	"rcut":			6.50,
-	"filter_neuron":	[25, 50, 100],
-	"filter_resnet_dt":	false,
-	"n_axis_neuron":	12,
-	"n_neuron":		[240, 240, 240],
-	"resnet_dt":		true,
-	"coord_norm":		true,
-	"type_fitting_net":	false,
-
-	"_comment": " traing controls",
-	"systems":		[],
-	"set_prefix":		"set",    
-	"stop_batch":		400000,
-	"batch_size":		1,
-	"start_lr":		0.002,
-	"decay_steps":		2000,
-	"decay_rate":		0.95,
-	"seed":			0,
-
-	"start_pref_e":		0.02,
-	"limit_pref_e":		2,
-	"start_pref_f":		1000,
-	"limit_pref_f":		1,
-	"start_pref_v":		0.0,
-	"limit_pref_v":		0.0,
-
-	"_comment": " display and restart",
-	"_comment": " frequencies counted in batch",
-	"disp_file":		"lcurve.out",
-	"disp_freq":		2000,
-	"numb_test":		10,
-	"save_freq":		20000,
-	"save_ckpt":		"model.ckpt",
-	"load_ckpt":		"model.ckpt",
-	"disp_training":	true,
-	"time_training":	true,
-	"profiling":		false,
-	"profiling_file":	"timeline.json",
-
-	"_comment":		"that's all"
-    },
-
-    "_comment":		" 01.model_devi ",
-    "_comment": "model_devi_skip: the first x of the recorded frames",
-    "model_devi_dt":		0.001,
-    "model_devi_skip":		0,
-    "model_devi_f_trust_lo":	0.050,
-    "model_devi_f_trust_hi":	0.150,
-    "model_devi_clean_traj":	false,
-    "model_devi_jobs":	[
-	{"sys_idx": [0,4], "temps": [  50], "press": [1e0,1e1,1e2,1e3,1e4,2e4,4e4], "trj_freq": 10, "nsteps": 1000, "ensemble": "npt", "_idx": "00"},
-	{"sys_idx": [1,5], "temps": [  50], "press": [1e0,1e1,1e2,1e3,1e4,2e4,4e4], "trj_freq": 10, "nsteps": 1000, "ensemble": "npt", "_idx": "01"},
-	{"sys_idx": [0,4], "temps": [  50], "press": [1e0,1e1,1e2,1e3,1e4,2e4,4e4], "trj_freq": 10, "nsteps": 1000, "ensemble": "npt", "_idx": "02"},
-	{"sys_idx": [1,5], "temps": [  50], "press": [1e0,1e1,1e2,1e3,1e4,2e4,4e4], "trj_freq": 10, "nsteps": 1000, "ensemble": "npt", "_idx": "03"},
-	{"sys_idx": [0,4], "temps": [ 100], "press": [1e0,1e1,1e2,1e3,1e4,2e4,4e4], "trj_freq": 10, "nsteps": 1000, "ensemble": "npt", "_idx": "04"},
-	{"sys_idx": [1,5], "temps": [ 100], "press": [1e0,1e1,1e2,1e3,1e4,2e4,4e4], "trj_freq": 10, "nsteps": 1000, "ensemble": "npt", "_idx": "05"},
-	{"sys_idx": [0,4], "temps": [ 100], "press": [1e0,1e1,1e2,1e3,1e4,2e4,4e4], "trj_freq": 10, "nsteps": 1000, "ensemble": "npt", "_idx": "06"},
-	{"sys_idx": [1,5], "temps": [ 100], "press": [1e0,1e1,1e2,1e3,1e4,2e4,4e4], "trj_freq": 10, "nsteps": 1000, "ensemble": "npt", "_idx": "07"}
+    "mass_map": [
+        16,
+        2,
+        14
     ],
-
-    "_comment":		" 02.fp ",
-    "fp_style":		"pwscf",
-    "shuffle_poscar":	false,
-    "fp_task_max":	100,
-    "fp_task_min":	10,
-    "fp_pp_path":	".",
-    "fp_pp_files":	["C_HSCV_PBE-1.0.UPF", "H_HSCV_PBE-1.0.UPF", "N_HSCV_PBE-1.0.UPF"],
-    "user_fp_params":	{
-	"_comment": "pseudo_dir will be added automatically",
-	"control":	{
-	    "calculation":	"scf",
-	    "restart_mode":	"from_scratch",
-	    "outdir":		"./OUT",
-	    "tprnfor":		true,
-	    "tstress":		true,
-	    "disk_io":		"none"
-	},
-	"_comment": "ibrav, nat and ntyp will be added automatically",
-	"system":	{
-	    "vdw_corr":		"TS",
-	    "ecutwfc":		110,
-	    "ts_vdw_econv_thr":	1e-8,
-	    "nosym":		true
-	},
-	"electrons":	{
-	    "conv_thr":		1e-8
-	},
-	"kspacing":	0.6
+    "init_data_prefix": "/home/linfengz/SCR/wanghan/deepgen.pyridine/init",
+    "init_data_sys": [
+        "Pyridine-I",
+        "Pyridine-II"
+    ],
+    "init_batch_size": [
+        1,
+        1
+    ],
+    "sys_configs": [
+        [
+            "/home/linfengz/SCR/wanghan/data/pyridine/pyI.POSCAR.01x01x01/01.scale_pert/sys-0080-0080-0016/scale-1.000/00009?/POSCAR"
+        ],
+        [
+            "/home/linfengz/SCR/wanghan/data/pyridine/pyI.POSCAR.01x01x01/01.scale_pert/sys-0080-0080-0016/scale-1.000/0000[7-8]?/POSCAR"
+        ],
+        [
+            "/home/linfengz/SCR/wanghan/data/pyridine/pyI.POSCAR.01x01x01/01.scale_pert/sys-0080-0080-0016/scale-1.000/0000[5-6]?/POSCAR"
+        ],
+        [
+            "/home/linfengz/SCR/wanghan/data/pyridine/pyI.POSCAR.01x01x01/01.scale_pert/sys-0080-0080-0016/scale-1.000/0000[0-4]?/POSCAR"
+        ],
+        [
+            "/home/linfengz/SCR/wanghan/data/pyridine/pyII.POSCAR.01x01x01/01.scale_pert/sys-0080-0080-0016/scale-1.000/00009?/POSCAR"
+        ],
+        [
+            "/home/linfengz/SCR/wanghan/data/pyridine/pyII.POSCAR.01x01x01/01.scale_pert/sys-0080-0080-0016/scale-1.000/0000[7-8]?/POSCAR"
+        ],
+        [
+            "/home/linfengz/SCR/wanghan/data/pyridine/pyII.POSCAR.01x01x01/01.scale_pert/sys-0080-0080-0016/scale-1.000/0000[5-6]?/POSCAR"
+        ],
+        [
+            "/home/linfengz/SCR/wanghan/data/pyridine/pyII.POSCAR.01x01x01/01.scale_pert/sys-0080-0080-0016/scale-1.000/0000[0-4]?/POSCAR"
+        ]
+    ],
+    "_comment1": "0  1  2  3",
+    "_comment2": "4  5  6  7",
+    "sys_batch_size": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+    ],
+    "_comment3": " 00.train ",
+    "numb_models": 4,
+    "default_training_param": {
+        "model": {
+            "descriptor": {
+                "seed": 0,
+                "type": "se_a",
+                "sel": [
+                    81,
+                    81,
+                    20
+                ],
+                "rcut": 6.5,
+                "rcut_smth": 0.5,
+                "neuron": [
+                    25,
+                    50,
+                    100
+                ],
+                "axis_neuron": 12,
+                "resnet_dt": false
+            },
+            "fitting_net": {
+                "seed": 0,
+                "neuron": [
+                    240,
+                    240,
+                    240
+                ],
+                "resnet_dt": true
+            }
+        },
+        "learning_rate": {
+            "type": "exp",
+            "decay_steps": 2000,
+            "start_lr": 0.002,
+            "stop_lr": 7.010533249765748e-08
+        },
+        "loss": {
+            "start_pref_e": 0.02,
+            "limit_pref_e": 2,
+            "start_pref_f": 1000,
+            "limit_pref_f": 1,
+            "start_pref_v": 0.0,
+            "limit_pref_v": 0.0
+        },
+        "training": {
+            "seed": 0,
+            "stop_batch": 400000,
+            "disp_file": "lcurve.out",
+            "disp_freq": 2000,
+            "save_freq": 20000,
+            "save_ckpt": "model.ckpt",
+            "disp_training": true,
+            "time_training": true,
+            "profiling": false,
+            "training_data": {
+                "systems": [],
+                "set_prefix": "set",
+                "batch_size": 1
+            }
+        }
     },
-    "_comment":		" that's all "
+    "_comment9": " 01.model_devi ",
+    "_comment10": "model_devi_skip: the first x of the recorded frames",
+    "model_devi_dt": 0.001,
+    "model_devi_skip": 0,
+    "model_devi_f_trust_lo": 0.05,
+    "model_devi_f_trust_hi": 0.15,
+    "model_devi_clean_traj": false,
+    "model_devi_jobs": [
+        {
+            "sys_idx": [
+                0,
+                4
+            ],
+            "temps": [
+                50
+            ],
+            "press": [
+                1.0,
+                10.0,
+                100.0,
+                1000.0,
+                10000.0,
+                20000.0,
+                40000.0
+            ],
+            "trj_freq": 10,
+            "nsteps": 1000,
+            "ensemble": "npt",
+            "_idx": "00"
+        },
+        {
+            "sys_idx": [
+                1,
+                5
+            ],
+            "temps": [
+                50
+            ],
+            "press": [
+                1.0,
+                10.0,
+                100.0,
+                1000.0,
+                10000.0,
+                20000.0,
+                40000.0
+            ],
+            "trj_freq": 10,
+            "nsteps": 1000,
+            "ensemble": "npt",
+            "_idx": "01"
+        },
+        {
+            "sys_idx": [
+                0,
+                4
+            ],
+            "temps": [
+                50
+            ],
+            "press": [
+                1.0,
+                10.0,
+                100.0,
+                1000.0,
+                10000.0,
+                20000.0,
+                40000.0
+            ],
+            "trj_freq": 10,
+            "nsteps": 1000,
+            "ensemble": "npt",
+            "_idx": "02"
+        },
+        {
+            "sys_idx": [
+                1,
+                5
+            ],
+            "temps": [
+                50
+            ],
+            "press": [
+                1.0,
+                10.0,
+                100.0,
+                1000.0,
+                10000.0,
+                20000.0,
+                40000.0
+            ],
+            "trj_freq": 10,
+            "nsteps": 1000,
+            "ensemble": "npt",
+            "_idx": "03"
+        },
+        {
+            "sys_idx": [
+                0,
+                4
+            ],
+            "temps": [
+                100
+            ],
+            "press": [
+                1.0,
+                10.0,
+                100.0,
+                1000.0,
+                10000.0,
+                20000.0,
+                40000.0
+            ],
+            "trj_freq": 10,
+            "nsteps": 1000,
+            "ensemble": "npt",
+            "_idx": "04"
+        },
+        {
+            "sys_idx": [
+                1,
+                5
+            ],
+            "temps": [
+                100
+            ],
+            "press": [
+                1.0,
+                10.0,
+                100.0,
+                1000.0,
+                10000.0,
+                20000.0,
+                40000.0
+            ],
+            "trj_freq": 10,
+            "nsteps": 1000,
+            "ensemble": "npt",
+            "_idx": "05"
+        },
+        {
+            "sys_idx": [
+                0,
+                4
+            ],
+            "temps": [
+                100
+            ],
+            "press": [
+                1.0,
+                10.0,
+                100.0,
+                1000.0,
+                10000.0,
+                20000.0,
+                40000.0
+            ],
+            "trj_freq": 10,
+            "nsteps": 1000,
+            "ensemble": "npt",
+            "_idx": "06"
+        },
+        {
+            "sys_idx": [
+                1,
+                5
+            ],
+            "temps": [
+                100
+            ],
+            "press": [
+                1.0,
+                10.0,
+                100.0,
+                1000.0,
+                10000.0,
+                20000.0,
+                40000.0
+            ],
+            "trj_freq": 10,
+            "nsteps": 1000,
+            "ensemble": "npt",
+            "_idx": "07"
+        }
+    ],
+    "_comment11": " 02.fp ",
+    "fp_style": "pwscf",
+    "shuffle_poscar": false,
+    "fp_task_max": 100,
+    "fp_task_min": 10,
+    "fp_pp_path": ".",
+    "fp_pp_files": [
+        "C_HSCV_PBE-1.0.UPF",
+        "H_HSCV_PBE-1.0.UPF",
+        "N_HSCV_PBE-1.0.UPF"
+    ],
+    "user_fp_params": {
+        "_comment12": "pseudo_dir will be added automatically",
+        "control": {
+            "calculation": "scf",
+            "restart_mode": "from_scratch",
+            "outdir": "./OUT",
+            "tprnfor": true,
+            "tstress": true,
+            "disk_io": "none"
+        },
+        "_comment13": "ibrav, nat and ntyp will be added automatically",
+        "system": {
+            "vdw_corr": "TS",
+            "ecutwfc": 110,
+            "ts_vdw_econv_thr": 1e-08,
+            "nosym": true
+        },
+        "electrons": {
+            "conv_thr": 1e-08
+        },
+        "kspacing": 0.6
+    },
+    "_comment14": " that's all "
 }

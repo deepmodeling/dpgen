@@ -20,7 +20,7 @@ from dpgen.auto_test.Interstitial import Interstitial
 from dpgen.auto_test.Surface import Surface
 from dpgen.auto_test.Vacancy import Vacancy
 
-from .context import setUpModule
+from .context import setUpModule  # noqa: F401
 
 
 class TestABACUS(unittest.TestCase):
@@ -79,8 +79,39 @@ class TestABACUS(unittest.TestCase):
             shutil.rmtree("confs/fcc-Al/interstitial_00")
         if os.path.exists("confs/fcc-Al/surface_00"):
             shutil.rmtree("confs/fcc-Al/surface_00")
+        if os.path.exists("confs/fcc-Al/gamma_00"):
+            shutil.rmtree("confs/fcc-Al/gamma_00")
 
     def test_make_property(self):
+        property = {"type": "eos", "vol_start": 0.85, "vol_end": 1.15, "vol_step": 0.01}
+        make_property(self.jdata["structures"], self.jdata["interaction"], [property])
+        self.assertTrue(os.path.exists(os.path.join(self.conf_path, "eos_00")))
+        self.assertTrue(os.path.exists(os.path.join(self.conf_path, "eos_00", "INPUT")))
+        for ii in glob.glob(os.path.join(self.conf_path, "eos_00", "task.*")):
+            self.assertTrue(os.path.exists(os.path.join(ii, "INPUT")))
+            self.assertTrue(os.path.exists(os.path.join(ii, "pp_orb")))
+            self.assertTrue(os.path.exists(os.path.join(ii, "KPT")))
+            self.assertTrue(os.path.exists(os.path.join(ii, "STRU")))
+            self.assertEqual(
+                os.path.realpath(os.path.join(ii, "pp_orb", "Al_ONCV_PBE-1.0.upf")),
+                os.path.realpath(
+                    os.path.join(
+                        self.jdata["interaction"]["potcar_prefix"],
+                        "Al_ONCV_PBE-1.0.upf",
+                    )
+                ),
+            )
+
+    def test_make_property_outstru(self):
+        os.remove(os.path.join(self.equi_path, "INPUT"))
+        shutil.copy(
+            os.path.join(self.source_path, "INPUT.outstru"),
+            os.path.join(self.equi_path, "INPUT"),
+        )
+        shutil.copy(
+            os.path.join(self.source_path, "STRU_ION47_D"),
+            os.path.join(self.equi_path, "OUT.ABACUS/STRU_ION47_D"),
+        )
         property = {"type": "eos", "vol_start": 0.85, "vol_end": 1.15, "vol_step": 0.01}
         make_property(self.jdata["structures"], self.jdata["interaction"], [property])
         self.assertTrue(os.path.exists(os.path.join(self.conf_path, "eos_00")))
@@ -143,6 +174,7 @@ class TestABACUS(unittest.TestCase):
         os.remove(
             os.path.realpath(os.path.join(self.equi_path, "OUT.ABACUS", "STRU_ION_D"))
         )
+        os.remove(os.path.realpath(os.path.join(self.equi_path, "STRU")))
         with self.assertRaises(RuntimeError):
             elastic.make_confs(work_path, self.equi_path, refine=False)
 

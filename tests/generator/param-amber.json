@@ -1,7 +1,9 @@
 {
     "model_devi_jobs": [
         {
-            "sys_idx": [0]
+            "sys_idx": [
+                0
+            ]
         }
     ],
     "use_multi_systems": true,
@@ -10,7 +12,7 @@
     "numb_models": 4,
     "mdin_prefix": "amber",
     "parm7_prefix": "amber",
-    "sys_prefix": "amber",
+    "sys_configs_prefix": "amber",
     "disang_prefix": "amber",
     "sys_configs": [
         [
@@ -33,19 +35,29 @@
         0
     ],
     "r": [
-        [-1.20]
+        [
+            -1.2
+        ]
     ],
     "nsteps": [
         1000
     ],
-    "type_map": ["C", "H", "O", "N", "P", "HW", "OW"],
+    "type_map": [
+        "C",
+        "H",
+        "O",
+        "N",
+        "P",
+        "HW",
+        "OW"
+    ],
     "shuffle_poscar": false,
     "low_level": "DFTB2",
     "high_level": "PBE0",
     "cutoff": 6.0,
     "fp_task_max": 1000,
     "model_devi_skip": 0,
-    "model_devi_f_trust_lo": 0.10,
+    "model_devi_f_trust_lo": 0.1,
     "model_devi_f_trust_hi": 0.25,
     "fp_params": {
         "low_level_mdin": "ml.mdin",

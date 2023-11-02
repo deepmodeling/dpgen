@@ -1,14 +1,10 @@
-import glob
-import json
 import os
 import shutil
 import sys
 import unittest
 
-import dpdata
 import numpy as np
-from dpdata import LabeledSystem
-from monty.serialization import dumpfn, loadfn
+from monty.serialization import loadfn
 from pymatgen.io.vasp import Incar
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -17,7 +13,7 @@ __package__ = "auto_test"
 from dpgen.auto_test.VASP import VASP
 from dpgen.generator.lib.vasp import incar_upper
 
-from .context import make_kspacing_kpoints, setUpModule
+from .context import setUpModule  # noqa: F401
 
 
 class TestVASP(unittest.TestCase):
@@ -123,7 +119,7 @@ class TestVASP(unittest.TestCase):
         incar = incar_upper(Incar.from_file(os.path.join(self.equi_path, "INCAR")))
         self.assertEqual(incar["ISIF"], 6)
 
-    def test_make_input_file_5(self):
+    def test_make_input_file_6(self):
         param = self.task_param.copy()
         param["cal_setting"] = {
             "relax_pos": False,
@@ -151,10 +147,10 @@ class TestVASP(unittest.TestCase):
             for key in dict1:
                 if key == "stress":
                     self.assertTrue((np.array(dict1[key]["data"]) == dict2[key]).all())
-                elif type(dict1[key]) is dict:
+                elif isinstance(dict1[key], dict):
                     compare_dict(dict1[key], dict2[key])
                 else:
-                    if type(dict1[key]) is np.ndarray:
+                    if isinstance(dict1[key], np.ndarray):
                         self.assertTrue((dict1[key] == dict2[key]).all())
                     else:
                         self.assertTrue(dict1[key] == dict2[key])

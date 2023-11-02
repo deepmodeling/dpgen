@@ -9,14 +9,14 @@
     "init_data_sys": [
         "Al.STRU.02x01x01/02.md/sys-0008/deepmd"
     ],
-    "sys_format":"abacus/stru",
+    "sys_format": "abacus/stru",
     "sys_configs_prefix": "./",
     "sys_configs": [
         [
             "Al.STRU.02x01x01/01.scale_pert/sys-0008/scale*/00000*/STRU"
         ]
     ],
-    "_comment": " that's all ",
+    "_comment1": " that's all ",
     "numb_models": 4,
     "default_training_param": {
         "model": {
@@ -66,14 +66,13 @@
             "stop_batch": 20000,
             "disp_file": "lcurve.out",
             "disp_freq": 1000,
-            "numb_test": 4,
             "save_freq": 1000,
             "save_ckpt": "model.ckpt",
             "disp_training": true,
             "time_training": true,
             "profiling": false,
             "profiling_file": "timeline.json",
-            "_comment": "that's all"
+            "_comment2": "that's all"
         }
     },
     "model_devi_dt": 0.002,
@@ -82,29 +81,69 @@
     "model_devi_f_trust_hi": 0.15,
     "model_devi_clean_traj": false,
     "model_devi_jobs": [
-        { "sys_idx": [0], "temps": [100], "press": [1.0], "trj_freq": 10,"nsteps": 300, "ensemble": "nvt", "_idx": "00"},
-        { "sys_idx": [0], "temps": [100, 300], "press": [1.0, 100.0], "trj_freq": 10,"nsteps": 300, "ensemble": "nvt", "_idx": "01"}
-
+        {
+            "sys_idx": [
+                0
+            ],
+            "temps": [
+                100
+            ],
+            "press": [
+                1.0
+            ],
+            "trj_freq": 10,
+            "nsteps": 300,
+            "ensemble": "nvt",
+            "_idx": "00"
+        },
+        {
+            "sys_idx": [
+                0
+            ],
+            "temps": [
+                100,
+                300
+            ],
+            "press": [
+                1.0,
+                100.0
+            ],
+            "trj_freq": 10,
+            "nsteps": 300,
+            "ensemble": "nvt",
+            "_idx": "01"
+        }
     ],
     "fp_style": "abacus",
     "shuffle_poscar": false,
     "fp_task_max": 20,
     "fp_task_min": 5,
     "fp_pp_path": "./",
-    "fp_pp_files": ["Al_ONCV_PBE-1.0.upf"],
-    "fp_orb_files": ["Al_gga_9au_100Ry_4s4p1d.orb"],
-    "k_points": [1,1,1,0,0,0],
-    "user_fp_params":{
-    	"ntype": 1,
-	"symmetry": 0,
-	"basis_type": "lcao",
-   	"ecutwfc": 100,
-    	"scf_thr": 1e-8,
-    	"scf_nmax": 100,
-   	"smearing_method": "gauss",
-    	"smearing_sigma": 0.002,
-    	"mixing_type": "pulay",
-    	"mixing_beta": 0.3,
-    	"cal_force": 1
-  	}
+    "fp_pp_files": [
+        "Al_ONCV_PBE-1.0.upf"
+    ],
+    "fp_orb_files": [
+        "Al_gga_9au_100Ry_4s4p1d.orb"
+    ],
+    "k_points": [
+        1,
+        1,
+        1,
+        0,
+        0,
+        0
+    ],
+    "user_fp_params": {
+        "ntype": 1,
+        "symmetry": 0,
+        "basis_type": "lcao",
+        "ecutwfc": 100,
+        "scf_thr": 1e-08,
+        "scf_nmax": 100,
+        "smearing_method": "gauss",
+        "smearing_sigma": 0.002,
+        "mixing_type": "pulay",
+        "mixing_beta": 0.3,
+        "cal_force": 1
+    }
 }
