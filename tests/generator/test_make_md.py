@@ -235,7 +235,7 @@ class TestMakeModelDevi(unittest.TestCase):
                     "model_devi_group_size": 1,
                 },
             )
-    
+
     def test_run_model_devi_pimd(self):
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
