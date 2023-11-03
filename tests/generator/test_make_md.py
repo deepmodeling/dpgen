@@ -205,6 +205,37 @@ class TestMakeModelDevi(unittest.TestCase):
         _check_pt(self, 0, jdata)
         # shutil.rmtree('iter.000000')
 
+    def test_run_model_devi(self):
+        if os.path.isdir("iter.000000"):
+            shutil.rmtree("iter.000000")
+        with open(param_file) as fp:
+            jdata = json.load(fp)
+        _make_fake_models(0, jdata["numb_models"])
+        make_model_devi(0, jdata, {})
+        with tempfile.TemporaryDirectory() as remote_root:
+            run_model_devi(
+                0,
+                jdata,
+                {
+                    "api_version": "1.0",
+                    "model_devi_command": (
+                        "test -f input.lammps"
+                        "&& touch model_devi.out log.lammps traj/0.lammpstrj"
+                        "&& echo lmp"
+                    ),
+                    "model_devi_machine": {
+                        "batch_type": "shell",
+                        "local_root": "./",
+                        "remote_root": remote_root,
+                        "context_type": "local",
+                    },
+                    "model_devi_resources": {
+                        "group_size": 1,
+                    },
+                    "model_devi_group_size": 1,
+                },
+            )
+
     def test_run_model_devi_pimd(self):
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")
