@@ -88,7 +88,7 @@ def _make_pwscf_02_species(sys_data, pps):
     assert ntypes == len(atom_masses)
     assert ntypes == len(pps)
     for ii in range(ntypes):
-        ret += "%s %d %s\n" % (atom_names[ii], atom_masses[ii], pps[ii])
+        ret += "%s %f %s\n" % (atom_names[ii], atom_masses[ii], pps[ii])
     return ret
 
 
