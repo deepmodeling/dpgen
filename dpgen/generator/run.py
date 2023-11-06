@@ -635,9 +635,7 @@ def make_train(iter_index, jdata, mdata):
             old_model_path = os.path.join(iter0_models[ii], "model.ckpt*")
             old_model_files = glob.glob(old_model_path)
             if not len(old_model_files):
-                raise FileNotFoundError(
-                    f"{old_model_path} not found!"
-                )
+                raise FileNotFoundError(f"{old_model_path} not found!")
             _link_old_models(work_path, old_model_files, ii)
     copied_models = next(
         (
