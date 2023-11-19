@@ -920,7 +920,7 @@ def fp_style_variant_type_args() -> Variant:
                 "amber/diff", dict, fp_style_amber_diff_args(), doc=doc_amber_diff
             ),
             Argument("pwmat", dict, [], doc="TODO: add doc"),
-            Argument("pwscf", dict, [], doc=fp_style_pwscf_args()),
+            Argument("pwscf", dict, fp_style_pwscf_args()),
             Argument("custom", dict, fp_style_custom_args(), doc=doc_custom),
         ],
         optional=False,
