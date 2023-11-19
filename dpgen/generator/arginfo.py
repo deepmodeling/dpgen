@@ -789,6 +789,7 @@ def fp_style_cp2k_args() -> list[Argument]:
         ),
     ]
 
+
 # amber/diff
 def fp_style_amber_diff_args() -> list[Argument]:
     """Arguments for FP style amber/diff.
@@ -826,9 +827,11 @@ def fp_style_amber_diff_args() -> list[Argument]:
         ),
     ]
 
+
 # pwscf
 def fp_style_pwscf_args() -> list[Argument]:
     """Arguments for FP style pwscf (Quantum Espresso).
+
     Returns
     -------
     list[dargs.Argument]
@@ -837,7 +840,9 @@ def fp_style_pwscf_args() -> list[Argument]:
     doc_fp_pp_path = "Directory of psuedo-potential file to be used for 02.fp exists."
     doc_fp_pp_files = "Psuedo-potential file to be used for 02.fp. Note that the order of elements should correspond to the order in type_map."
     doc_user_fp_params = "Parameters for pwscf calculation. Find details at https://www.quantum-espresso.org/Doc/INPUT_PW.html. When user_fp_params is set, the settings in fp_params will be ignored. kspacing must be set in user_fp_params. kspacing is the spacing between kpoints, and helps to determin KPOINTS in pwscf."
-    doc_fp_params = "Parameters for pwscf calculation. It has lower priority than user_fp_params."
+    doc_fp_params = (
+        "Parameters for pwscf calculation. It has lower priority than user_fp_params."
+    )
     doc_ecut = "ecutwfc in pwscf."
     doc_ediff = "conv_thr and ts_vdw_econv_thr in pwscf."
     doc_kspacing = "The spacing between kpoints. Helps to determin KPOINTS in pwscf."
@@ -847,19 +852,17 @@ def fp_style_pwscf_args() -> list[Argument]:
     args = [
         Argument("ecut", float, optional=False, doc=doc_ecut),
         Argument("ediff", float, optional=False, doc=doc_ediff),
-        
         Argument("smearing", str, optional=False, doc=doc_smearing),
         Argument("sigma", float, optional=False, doc=doc_sigma),
     ]
     return [
         Argument("fp_pp_path", str, optional=False, doc=doc_fp_pp_path),
         Argument("fp_pp_files", list[str], optional=False, doc=doc_fp_pp_files),
-        Argument(
-            "fp_params", dict, args, [], optional=False, doc=doc_fp_params
-        ),
+        Argument("fp_params", dict, args, [], optional=False, doc=doc_fp_params),
         Argument("user_fp_params", dict, optional=True, doc=doc_user_fp_params),
         Argument("kspacing", float, optional=False, doc=doc_kspacing),
     ]
+
 
 def fp_style_custom_args() -> list[Argument]:
     """Arguments for FP style custom.
