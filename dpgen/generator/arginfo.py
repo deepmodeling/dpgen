@@ -858,7 +858,7 @@ def fp_style_pwscf_args() -> list[Argument]:
     return [
         Argument("fp_pp_path", str, optional=False, doc=doc_fp_pp_path),
         Argument("fp_pp_files", list[str], optional=False, doc=doc_fp_pp_files),
-        Argument("fp_params", dict, args, [], optional=False, doc=doc_fp_params),
+        Argument("fp_params", dict, args, [], optional=True, doc=doc_fp_params),
         Argument("user_fp_params", dict, optional=True, doc=doc_user_fp_params),
         Argument("kspacing", float, optional=False, doc=doc_kspacing),
     ]
