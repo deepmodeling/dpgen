@@ -790,13 +790,14 @@ def fp_style_cp2k_args() -> list[Argument]:
     ]
 
 
+# amber/diff
 def fp_style_amber_diff_args() -> list[Argument]:
     """Arguments for FP style amber/diff.
 
     Returns
     -------
     list[dargs.Argument]
-        list of Gaussian fp style arguments
+        list of amber/diff fp style arguments
     """
     doc_fp_params_gaussian = "Parameters for FP calculation."
     doc_high_level = (
@@ -827,13 +828,49 @@ def fp_style_amber_diff_args() -> list[Argument]:
     ]
 
 
+# pwscf
+def fp_style_pwscf_args() -> list[Argument]:
+    """Arguments for FP style pwscf (Quantum Espresso).
+
+    Returns
+    -------
+    list[dargs.Argument]
+        list of pwscf fp style arguments
+    """
+    doc_fp_pp_path = "Directory of psuedo-potential file to be used for 02.fp exists."
+    doc_fp_pp_files = "Psuedo-potential file to be used for 02.fp. Note that the order of elements should correspond to the order in type_map."
+    doc_user_fp_params = "Parameters for pwscf calculation. Find details at https://www.quantum-espresso.org/Doc/INPUT_PW.html. When user_fp_params is set, the settings in fp_params will be ignored. If one wants to use user_fp_params, kspacing must be set in user_fp_params. kspacing is the spacing between kpoints, and helps to determin KPOINTS in pwscf."
+    doc_fp_params = (
+        "Parameters for pwscf calculation. It has lower priority than user_fp_params."
+    )
+    doc_ecut = "ecutwfc in pwscf."
+    doc_ediff = "conv_thr and ts_vdw_econv_thr in pwscf."
+    doc_kspacing = "The spacing between kpoints. Helps to determin KPOINTS in pwscf."
+    doc_smearing = "smearing in pwscf."
+    doc_sigma = "degauss in pwscf."
+
+    args = [
+        Argument("ecut", float, optional=False, doc=doc_ecut),
+        Argument("ediff", float, optional=False, doc=doc_ediff),
+        Argument("smearing", str, optional=False, doc=doc_smearing),
+        Argument("sigma", float, optional=False, doc=doc_sigma),
+        Argument("kspacing", float, optional=False, doc=doc_kspacing),
+    ]
+    return [
+        Argument("fp_pp_path", str, optional=False, doc=doc_fp_pp_path),
+        Argument("fp_pp_files", list[str], optional=False, doc=doc_fp_pp_files),
+        Argument("fp_params", dict, args, [], optional=True, doc=doc_fp_params),
+        Argument("user_fp_params", dict, optional=True, doc=doc_user_fp_params),
+    ]
+
+
 def fp_style_custom_args() -> list[Argument]:
     """Arguments for FP style custom.
 
     Returns
     -------
     list[dargs.Argument]
-        list of Gaussian fp style arguments
+        list of custom fp style arguments
     """
     doc_fp_params_custom = "Parameters for FP calculation."
     doc_input_fmt = "Input dpdata format of the custom FP code. Such format should only need the first argument as the file name."
@@ -883,7 +920,7 @@ def fp_style_variant_type_args() -> Variant:
                 "amber/diff", dict, fp_style_amber_diff_args(), doc=doc_amber_diff
             ),
             Argument("pwmat", dict, [], doc="TODO: add doc"),
-            Argument("pwscf", dict, [], doc="TODO: add doc"),
+            Argument("pwscf", dict, fp_style_pwscf_args()),
             Argument("custom", dict, fp_style_custom_args(), doc=doc_custom),
         ],
         optional=False,
