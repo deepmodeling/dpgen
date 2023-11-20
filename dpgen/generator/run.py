@@ -1957,6 +1957,9 @@ def run_md_model_devi(iter_index, jdata, mdata):
             backward_files += [
                 f"model_devi{i+1:0{num_digits}d}.out" for i in range(nbeads)
             ]
+            backward_files += [
+                f"log.lammps.{i:d}" for i in range(nbeads)
+            ]
         if model_devi_merge_traj:
             backward_files += ["all.lammpstrj"]
         else:
