@@ -252,7 +252,7 @@ class TestMakeModelDevi(unittest.TestCase):
                 {
                     "api_version": "1.0",
                     "model_devi_command": (
-                        "touch model_devi1.out model_devi2.out model_devi3.out model_devi4.out"
+                        "touch model_devi1.out model_devi2.out model_devi3.out model_devi4.out log.lammps.0 log.lammps.1 log.lammps.2 log.lammps.3"
                         "&& echo lmp"
                     ),
                     "model_devi_machine": {
