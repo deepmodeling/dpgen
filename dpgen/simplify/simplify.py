@@ -550,7 +550,7 @@ def run_iter(param_file, machine_file):
     ii = -1
     while cont:
         ii += 1
-        if (ii + 1) * max_tasks - 1 <= iter_rec[0] * max_tasks + iter_rec[1]:
+        if ii < iter_rec[0]:
             continue
         iter_name = make_iter_name(ii)
         sepline(iter_name, "=")
