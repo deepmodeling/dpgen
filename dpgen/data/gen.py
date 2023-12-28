@@ -237,9 +237,9 @@ def poscar_scale_cartesian(str_in, scale):
 def poscar_scale(poscar_in, poscar_out, scale):
     with open(poscar_in) as fin:
         lines = list(fin)
-    
+
     # Determine if "Selective dynamics" is present
-    if lines[7].strip().lower().startswith('s'):
+    if lines[7].strip().lower().startswith("s"):
         coord_type_line = 8  # If present, coordinates type is on line 9
     else:
         coord_type_line = 7  # If not, coordinates type is on line 8
@@ -250,12 +250,13 @@ def poscar_scale(poscar_in, poscar_out, scale):
     elif "C" == lines[coord_type_line][0] or "c" == lines[coord_type_line][0]:
         lines = poscar_scale_cartesian(lines, scale)
     else:
-        raise RuntimeError(f"Unknown poscar style at line {coord_type_line + 1}: {lines[coord_type_line]}")
+        raise RuntimeError(
+            f"Unknown poscar style at line {coord_type_line + 1}: {lines[coord_type_line]}"
+        )
 
     # Write scaled positions back to output file
     with open(poscar_out, "w") as fout:
         fout.write("".join(lines))
-
 
 
 def poscar_scale_abacus(poscar_in, poscar_out, scale, jdata):
