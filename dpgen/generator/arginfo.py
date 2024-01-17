@@ -325,10 +325,12 @@ def model_devi_lmp_args() -> list[Argument]:
     doc_model_devi_f_trust_hi = "Upper bound of forces for the selection. If list or dict, should be set for each index in sys_configs, respectively."
     doc_model_devi_v_trust_lo = "Lower bound of virial for the selection. If list or dict, should be set for each index in sys_configs, respectively. Should be used with DeePMD-kit v2.x."
     doc_model_devi_v_trust_hi = "Upper bound of virial for the selection. If list or dict, should be set for each index in sys_configs, respectively. Should be used with DeePMD-kit v2.x."
-    doc_model_devi_adapt_trust_lo = "Adaptively determines the lower trust levels of force and virial. This option should be used together with model_devi_numb_candi_f, model_devi_numb_candi_v and optionally with model_devi_perc_candi_f and model_devi_perc_candi_v. dpgen will make two sets:\n\n\
+    doc_model_devi_adapt_trust_lo = (
+        "Adaptively determines the lower trust levels of force and virial. This option should be used together with model_devi_numb_candi_f, model_devi_numb_candi_v and optionally with model_devi_perc_candi_f and model_devi_perc_candi_v. dpgen will make two sets:\n\n\
 - 1. From the frames with force model deviation lower than model_devi_f_trust_hi, select max(model_devi_numb_candi_f, model_devi_perc_candi_f*n_frames) frames with largest force model deviation. \n\n\
 - 2. From the frames with virial model deviation lower than model_devi_v_trust_hi, select max(model_devi_numb_candi_v, model_devi_perc_candi_v*n_frames) frames with largest virial model deviation. \n\n\
 The union of the two sets is made as candidate dataset."
+    )
     doc_model_devi_numb_candi_f = "See model_devi_adapt_trust_lo."
     doc_model_devi_numb_candi_v = "See model_devi_adapt_trust_lo."
     doc_model_devi_perc_candi_f = "See model_devi_adapt_trust_lo."
