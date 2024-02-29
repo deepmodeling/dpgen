@@ -2171,7 +2171,7 @@ def _read_model_devi_file(
     if len(model_devi_files) > 1:
         model_devi_files_sorted = sorted(
             model_devi_files,
-            key=lambda x: int(re.search(r"model_devi(\d+)", x).group(1)),
+            key=lambda x: int(re.search(r"model_devi(\d+)\.out", x).group(1)),
         )
     else:
         model_devi_files_sorted = model_devi_files
