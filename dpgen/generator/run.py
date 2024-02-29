@@ -2168,9 +2168,10 @@ def _read_model_devi_file(
     model_devi_merge_traj: bool = False,
 ):
     model_devi_files = glob.glob(os.path.join(task_path, "model_devi*.out"))
-    model_devi_files_sorted = sorted(
-        model_devi_files, key=lambda x: int(re.search(r"(\d+)", x).group(1))
-    )
+    if len(model_devi_files) > 1: 
+        model_devi_files_sorted = sorted(model_devi_files, key=lambda x: int(re.search(r"model_devi(\d+)", x).group(1)))
+    else:
+        model_devi_files_sorted = model_devi_files
     if len(model_devi_files_sorted) > 1:
         with open(model_devi_files_sorted[0]) as f:
             first_line = f.readline()
