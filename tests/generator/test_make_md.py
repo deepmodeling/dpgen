@@ -286,15 +286,19 @@ class TestMakeModelDevi(unittest.TestCase):
         total_steps = np.array([0, 2, 4, 5, 7, 9, 10, 12, 14, 15, 17, 19])
         model_devi_total_array[:, 0] = total_steps
         for i in range(4):
-            model_devi_array[:, 4] = 0.1 * (i+1) * np.arange(1, 4)
-            model_devi_total_array[i*3:(i+1)*3, 4] = model_devi_array[:, 4]
+            model_devi_array[:, 4] = 0.1 * (i + 1) * np.arange(1, 4)
+            model_devi_total_array[i * 3 : (i + 1) * 3, 4] = model_devi_array[:, 4]
             np.savetxt(
-                os.path.join(path, f"model_devi{i+1}.out"), model_devi_array, fmt="%.12e"
+                os.path.join(path, f"model_devi{i+1}.out"),
+                model_devi_array,
+                fmt="%.12e",
             )
         _read_model_devi_file(path)
         model_devi_out = np.loadtxt(os.path.join(path, "model_devi.out"))
         traj_files = glob.glob(os.path.join(path, "traj/*.lammpstrj"))
-        traj_files = sorted(traj_files, key=lambda x: int(re.search(r"(\d+).lammpstrj", x).group(1)))
+        traj_files = sorted(
+            traj_files, key=lambda x: int(re.search(r"(\d+).lammpstrj", x).group(1))
+        )
         for idx, traj in enumerate(traj_files):
             traj_content = np.loadtxt(traj)
             ibead = idx // 3
@@ -305,6 +309,7 @@ class TestMakeModelDevi(unittest.TestCase):
             self.assertTrue(
                 os.path.isfile(os.path.join(path, f"traj/{istep}.lammpstrj"))
             )
+
 
 class TestMakeModelDeviRevMat(unittest.TestCase):
     def tearDown(self):
