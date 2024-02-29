@@ -2,8 +2,8 @@ import copy
 import glob
 import json
 import os
-import shutil
 import re
+import shutil
 import sys
 import unittest
 
