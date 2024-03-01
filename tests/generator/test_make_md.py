@@ -2,6 +2,7 @@ import copy
 import glob
 import json
 import os
+import re
 import shutil
 import sys
 import unittest
@@ -274,22 +275,36 @@ class TestMakeModelDevi(unittest.TestCase):
         if os.path.isdir(path):
             shutil.rmtree(path)
         os.makedirs(path, exist_ok=True)
+        path = os.path.join(path, "iter.000000/01.model_devi/task.000.000000")
         os.makedirs(os.path.join(path, "traj"), exist_ok=True)
         for i in range(4):
             for j in range(0, 5, 2):
-                with open(os.path.join(path, f"traj/{j}.lammpstrj{i+1}"), "a"):
-                    pass
+                with open(os.path.join(path, f"traj/{j}.lammpstrj{i+1}"), "a") as fp:
+                    fp.write(f"{i} {j}\n")
         model_devi_array = np.zeros([3, 7])
         model_devi_array[:, 0] = np.array([0, 2, 4])
-        for i in range(4):
-            np.savetxt(
-                os.path.join(path, f"model_devi{i+1}.out"), model_devi_array, fmt="%d"
-            )
-        _read_model_devi_file(path)
         model_devi_total_array = np.zeros([12, 7])
         total_steps = np.array([0, 2, 4, 5, 7, 9, 10, 12, 14, 15, 17, 19])
         model_devi_total_array[:, 0] = total_steps
+        for i in range(4):
+            model_devi_array[:, 4] = 0.1 * (i + 1) * np.arange(1, 4)
+            model_devi_total_array[i * 3 : (i + 1) * 3, 4] = model_devi_array[:, 4]
+            np.savetxt(
+                os.path.join(path, f"model_devi{i+1}.out"),
+                model_devi_array,
+                fmt="%.12e",
+            )
+        _read_model_devi_file(path)
         model_devi_out = np.loadtxt(os.path.join(path, "model_devi.out"))
+        traj_files = glob.glob(os.path.join(path, "traj/*.lammpstrj"))
+        traj_files = sorted(
+            traj_files, key=lambda x: int(re.search(r"(\d+).lammpstrj", x).group(1))
+        )
+        for idx, traj in enumerate(traj_files):
+            traj_content = np.loadtxt(traj)
+            ibead = idx // 3
+            istep = (idx % 3) * 2
+            np.testing.assert_array_almost_equal(traj_content, np.array([ibead, istep]))
         np.testing.assert_array_almost_equal(model_devi_out, model_devi_total_array)
         for istep in total_steps:
             self.assertTrue(
