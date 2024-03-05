@@ -56,7 +56,7 @@ def iterdict(d, out_list, flag=None, indent=0):
     :d: current dictionary under expansion
     :flag: used to record dictionary state. if flag is None,
     it means we are in top level dict. flag is a string.
-    :indent: the intents for current section.
+    :indent: intent for current section.
     """
     for k, v in d.items():
         k = str(k)  # cast key into string
