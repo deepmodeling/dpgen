@@ -8,6 +8,7 @@ import os
 import dpdata
 
 from dpgen.generator.run import data_system_fmt
+from dpgen.util import expand_sys_str
 
 
 def collect_data(
@@ -18,7 +19,8 @@ def collect_data(
     # goto input
     cwd = os.getcwd()
     os.chdir(target_folder)
-    jdata = json.load(open(param_file))
+    with open(param_file) as fp:
+        jdata = json.load(fp)
     sys_configs_prefix = jdata.get("sys_configs_prefix", "")
     sys_configs = jdata.get("sys_configs", [])
     if verbose:
@@ -46,6 +48,7 @@ def collect_data(
     for ii in range(len(iters)):
         iter_data = glob.glob(os.path.join(iters[ii], "02.fp", "data.[0-9]*[0-9]"))
         iter_data.sort()
+        iter_data = sum([expand_sys_str(ii) for ii in iter_data], [])
         for jj in iter_data:
             sys = dpdata.LabeledSystem(jj, fmt="deepmd/npy")
             if merge:

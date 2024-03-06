@@ -19,6 +19,7 @@ import os
 import queue
 import random
 import re
+import shlex
 import shutil
 import sys
 import warnings
@@ -632,7 +633,10 @@ def make_train(iter_index, jdata, mdata):
                 % numb_models
             )
         for ii in range(len(iter0_models)):
-            old_model_files = glob.glob(os.path.join(iter0_models[ii], "model.ckpt*"))
+            old_model_path = os.path.join(iter0_models[ii], "model.ckpt*")
+            old_model_files = glob.glob(old_model_path)
+            if not len(old_model_files):
+                raise FileNotFoundError(f"{old_model_path} not found!")
             _link_old_models(work_path, old_model_files, ii)
     copied_models = next(
         (
@@ -763,7 +767,7 @@ def run_train(iter_index, jdata, mdata):
             init_flag = " --finetune old/init.pb"
         command = f"{train_command} train {train_input_file}{extra_flags}"
         command = f"{{ if [ ! -f model.ckpt.index ]; then {command}{init_flag}; else {command} --restart model.ckpt; fi }}"
-        command = "/bin/sh -c '%s'" % command
+        command = "/bin/sh -c %s" % shlex.quote(command)
         commands.append(command)
         command = "%s freeze" % train_command
         commands.append(command)
@@ -1941,7 +1945,7 @@ def run_md_model_devi(iter_index, jdata, mdata):
             command = f"{{ if [ ! -f dpgen.restart.10000 ]; then {model_devi_exec} -i input.lammps -v restart 0; else {model_devi_exec} -i input.lammps -v restart 1; fi }}"
         else:
             command = f"{{ all_exist=true; for i in $(seq -w 1 {nbeads}); do [[ ! -f dpgen.restart${{i}}.10000 ]] && {{ all_exist=false; break; }}; done; $all_exist && {{ {model_devi_exec} -p {nbeads}x1 -i input.lammps -v restart 1; }} || {{ {model_devi_exec} -p {nbeads}x1 -i input.lammps -v restart 0; }} }}"
-        command = "/bin/bash -c '%s'" % command
+        command = "/bin/bash -c %s" % shlex.quote(command)
         commands = [command]
 
         forward_files = ["conf.lmp", "input.lammps"]
@@ -1953,6 +1957,7 @@ def run_md_model_devi(iter_index, jdata, mdata):
             backward_files += [
                 f"model_devi{i+1:0{num_digits}d}.out" for i in range(nbeads)
             ]
+            backward_files += [f"log.lammps.{i:d}" for i in range(nbeads)]
         if model_devi_merge_traj:
             backward_files += ["all.lammpstrj"]
         else:
@@ -2163,10 +2168,11 @@ def _read_model_devi_file(
     model_devi_merge_traj: bool = False,
 ):
     model_devi_files = glob.glob(os.path.join(task_path, "model_devi*.out"))
-    model_devi_files_sorted = sorted(
-        model_devi_files, key=lambda x: int(re.search(r"(\d+)", x).group(1))
-    )
-    if len(model_devi_files_sorted) > 1:
+    if len(model_devi_files) > 1:
+        model_devi_files_sorted = sorted(
+            model_devi_files,
+            key=lambda x: int(re.search(r"model_devi(\d+)\.out", x).group(1)),
+        )
         with open(model_devi_files_sorted[0]) as f:
             first_line = f.readline()
         if not (first_line.startswith("#")):
@@ -2179,8 +2185,6 @@ def _read_model_devi_file(
             model_devi_content.shape[0] == model_devi_contents[0].shape[0]
             for model_devi_content in model_devi_contents
         ), "Not all beads generated the same number of lines in the model_devi$\{ibead\}.out file. Check your pimd task carefully."
-        for file in model_devi_files_sorted:
-            os.remove(file)
         last_step = model_devi_contents[0][-1, 0]
         for ibead in range(1, num_beads):
             model_devi_contents[ibead][:, 0] = model_devi_contents[ibead][
@@ -4727,6 +4731,8 @@ def run_iter(param_file, machine_file):
     ii = -1
     while cont:
         ii += 1
+        if ii < iter_rec[0]:
+            continue
         iter_name = make_iter_name(ii)
         sepline(iter_name, "=")
         for jj in range(numb_task):

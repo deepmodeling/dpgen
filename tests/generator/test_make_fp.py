@@ -414,7 +414,10 @@ def _check_kpoints(testCase, idx):
         ret = make_kspacing_kpoints(
             os.path.join(os.path.join(ii, "POSCAR")), kspacing, gamma
         )
-        kpoints_ref = Kpoints.from_string(ret)
+        try:
+            kpoints_ref = Kpoints.from_string(ret)
+        except AttributeError:
+            kpoints_ref = Kpoints.from_str(ret)
         testCase.assertEqual(repr(kpoints), repr(kpoints_ref))
 
 
@@ -496,12 +499,21 @@ def _check_incar_ele_temp(testCase, idx, ele_temp):
         tidx = int(bname.split(".")[2])
         with open("INCAR") as fp:
             incar = fp.read()
-            incar0 = Incar.from_string(incar)
+            try:
+                incar0 = Incar.from_string(incar)
+            except AttributeError:
+                incar0 = Incar.from_str(incar)
             # make_fake_md: the frames in a system shares the same ele_temp
-            incar1 = Incar.from_string(
-                vasp_incar_ele_temp_ref
-                % (ele_temp[sidx][0] * pc.Boltzmann / pc.electron_volt)
-            )
+            try:
+                incar1 = Incar.from_string(
+                    vasp_incar_ele_temp_ref
+                    % (ele_temp[sidx][0] * pc.Boltzmann / pc.electron_volt)
+                )
+            except AttributeError:
+                incar1 = Incar.from_str(
+                    vasp_incar_ele_temp_ref
+                    % (ele_temp[sidx][0] * pc.Boltzmann / pc.electron_volt)
+                )
             for ii in incar0.keys():
                 # skip checking nbands...
                 if ii == "NBANDS":

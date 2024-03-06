@@ -8,6 +8,7 @@ from dpgen.generator.arginfo import (
     fp_style_cp2k_args,
     fp_style_custom_args,
     fp_style_gaussian_args,
+    fp_style_pwscf_args,
     fp_style_siesta_args,
     fp_style_vasp_args,
     training_args,
@@ -112,6 +113,7 @@ def fp_style_variant_type_args() -> Variant:
     doc_fp_style = "Software for First Principles, if `labeled` is false."
     doc_fp_style_none = "No fp."
     doc_fp_style_vasp = "VASP."
+    doc_fp_style_pwscf = "pwscf (Quantum Espresso)."
     doc_fp_style_gaussian = "Gaussian. The command should be set as `g16 < input`."
     doc_custom = (
         "Custom FP code. You need to provide the input and output file format and name. "
@@ -136,7 +138,7 @@ def fp_style_variant_type_args() -> Variant:
             #     "amber/diff", dict, fp_style_amber_diff_args(), doc=doc_amber_diff
             # ),
             Argument("pwmat", dict, [], doc="TODO: add doc"),
-            Argument("pwscf", dict, [], doc="TODO: add doc"),
+            Argument("pwscf", dict, fp_style_pwscf_args(), doc=doc_fp_style_pwscf),
             Argument("custom", dict, fp_style_custom_args(), doc=doc_custom),
         ],
         optional=True,
