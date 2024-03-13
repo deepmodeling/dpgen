@@ -15,7 +15,11 @@ class TestCollectData(unittest.TestCase):
         )
 
     def test_collect_data(self):
-        with tempfile.TemporaryDirectory() as inpdir, tempfile.TemporaryDirectory() as outdir, tempfile.NamedTemporaryFile() as param_file:
+        with (
+            tempfile.TemporaryDirectory() as inpdir,
+            tempfile.TemporaryDirectory() as outdir,
+            tempfile.NamedTemporaryFile() as param_file,
+        ):
             self.data.to_deepmd_npy(Path(inpdir) / "iter.000000" / "02.fp" / "data.000")
             self.data.to_deepmd_npy(
                 Path(inpdir) / "iter.000001" / "02.fp" / "data.000" / "aa"

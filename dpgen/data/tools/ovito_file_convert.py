@@ -2,6 +2,7 @@
 """This Script is adapted from Alexander Stukowski, the author of OVITO.
 See: http://forum.ovito.org/index.php?topic=131.0 for details.
 """
+
 import argparse
 
 from ovito.io import export_file, import_file
