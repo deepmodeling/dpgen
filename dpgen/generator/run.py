@@ -591,21 +591,21 @@ def make_train(iter_index, jdata, mdata):
             if (
                 len(np.array(model_devi_activation_func).shape) == 2
             ):  # 2-dim list for emd/fitting net-resolved assignment of actF
-                jinput["model"]["descriptor"][
-                    "activation_function"
-                ] = model_devi_activation_func[ii][0]
-                jinput["model"]["fitting_net"][
-                    "activation_function"
-                ] = model_devi_activation_func[ii][1]
+                jinput["model"]["descriptor"]["activation_function"] = (
+                    model_devi_activation_func[ii][0]
+                )
+                jinput["model"]["fitting_net"]["activation_function"] = (
+                    model_devi_activation_func[ii][1]
+                )
             if (
                 len(np.array(model_devi_activation_func).shape) == 1
             ):  # for backward compatibility, 1-dim list, not net-resolved
-                jinput["model"]["descriptor"][
-                    "activation_function"
-                ] = model_devi_activation_func[ii]
-                jinput["model"]["fitting_net"][
-                    "activation_function"
-                ] = model_devi_activation_func[ii]
+                jinput["model"]["descriptor"]["activation_function"] = (
+                    model_devi_activation_func[ii]
+                )
+                jinput["model"]["fitting_net"]["activation_function"] = (
+                    model_devi_activation_func[ii]
+                )
         # dump the input.json
         with open(os.path.join(task_path, train_input_file), "w") as outfile:
             json.dump(jinput, outfile, indent=4)
@@ -1042,9 +1042,9 @@ def revise_lmp_input_dump(lmp_lines, trj_freq, model_devi_merge_traj=False):
 
 def revise_lmp_input_plm(lmp_lines, in_plm, out_plm="output.plumed"):
     idx = find_only_one_key(lmp_lines, ["fix", "dpgen_plm"])
-    lmp_lines[
-        idx
-    ] = f"fix            dpgen_plm all plumed plumedfile {in_plm} outfile {out_plm}\n"
+    lmp_lines[idx] = (
+        f"fix            dpgen_plm all plumed plumedfile {in_plm} outfile {out_plm}\n"
+    )
     return lmp_lines
 
 
@@ -1815,9 +1815,10 @@ def _make_model_devi_amber(
     nsteps = jdata["nsteps"]
 
     for ii, pp in enumerate(mdin):
-        with open(pp) as f, open(
-            os.path.join(work_path, "init%d.mdin" % ii), "w"
-        ) as fw:
+        with (
+            open(pp) as f,
+            open(os.path.join(work_path, "init%d.mdin" % ii), "w") as fw,
+        ):
             mdin_str = f.read()
             # freq, nstlim, qm_region, qm_theory, qm_charge, rcut, graph
             mdin_str = (
@@ -1883,9 +1884,10 @@ def _make_model_devi_amber(
                 if not isinstance(r, Iterable) or isinstance(r, str):
                     r = [r]
                 # disang file should include RVAL, RVAL2, ...
-                with open(disang[sys_idx[sys_counter]]) as f, open(
-                    "TEMPLATE.disang", "w"
-                ) as fw:
+                with (
+                    open(disang[sys_idx[sys_counter]]) as f,
+                    open("TEMPLATE.disang", "w") as fw,
+                ):
                     tl = f.read()
                     for ii, rr in enumerate(r):
                         if isinstance(rr, Iterable) and not isinstance(rr, str):
@@ -1999,14 +2001,7 @@ def run_md_model_devi(iter_index, jdata, mdata):
         if ndx_filename:
             command += f'&& echo -e "{grp_name}\\n{grp_name}\\n" | {model_devi_exec} trjconv -s {ref_filename} -f {deffnm}.trr -n {ndx_filename} -o {traj_filename} -pbc mol -ur compact -center'
         else:
-            command += '&& echo -e "{}\\n{}\\n" | {} trjconv -s {} -f {}.trr -o {} -pbc mol -ur compact -center'.format(
-                grp_name,
-                grp_name,
-                model_devi_exec,
-                ref_filename,
-                deffnm,
-                traj_filename,
-            )
+            command += f'&& echo -e "{grp_name}\\n{grp_name}\\n" | {model_devi_exec} trjconv -s {ref_filename} -f {deffnm}.trr -o {traj_filename} -pbc mol -ur compact -center'
         command += "&& if [ ! -d traj ]; then \n mkdir traj; fi\n"
         command += f"python -c \"import dpdata;system = dpdata.System('{traj_filename}', fmt='gromacs/gro'); [system.to_gromacs_gro('traj/%d.gromacstrj' % (i * {trj_freq}), frame_idx=i) for i in range(system.get_nframes())]; system.to_deepmd_npy('traj_deepmd')\""
         command += f"&& dp model-devi -m ../graph.000.pb ../graph.001.pb ../graph.002.pb ../graph.003.pb -s traj_deepmd -o model_devi.out -f {trj_freq}"
@@ -2508,9 +2503,7 @@ def _make_fp_vasp_inner(
         tot = len(summaryfmax) - nan_num
         candi_num = tot - acc_num - fail_num
         dlog.info(
-            "summary  accurate_ratio: {:8.4f}%  candidata_ratio: {:8.4f}%  failed_ratio: {:8.4f}%  in {:d} structures".format(
-                acc_num * 100 / tot, candi_num * 100 / tot, fail_num * 100 / tot, tot
-            )
+            f"summary  accurate_ratio: {acc_num * 100 / tot:8.4f}%  candidata_ratio: {candi_num * 100 / tot:8.4f}%  failed_ratio: {fail_num * 100 / tot:8.4f}%  in {tot:d} structures"
         )
     # --------------------------------------------------------------------------------------------------------------------------------------
 
@@ -2662,9 +2655,7 @@ def _make_fp_vasp_inner(
             continue
         for cc_key, cc_value in counter.items():
             dlog.info(
-                "system {:s} {:9s} : {:6d} in {:6d} {:6.2f} %".format(
-                    ss, cc_key, cc_value, fp_sum, cc_value / fp_sum * 100
-                )
+                f"system {ss:s} {cc_key:9s} : {cc_value:6d} in {fp_sum:6d} {cc_value / fp_sum * 100:6.2f} %"
             )
         random.shuffle(fp_candidate)
         if detailed_report_make_fp:
@@ -2738,15 +2729,7 @@ def _make_fp_vasp_inner(
                 numb_task = 0
         # ----------------------------------------------------------------------------
         dlog.info(
-            "system {:s} accurate_ratio: {:8.4f}    thresholds: {:6.4f} and {:6.4f}   eff. task min and max {:4d} {:4d}   number of fp tasks: {:6d}".format(
-                ss,
-                accurate_ratio,
-                fp_accurate_soft_threshold,
-                fp_accurate_threshold,
-                fp_task_min,
-                this_fp_task_max,
-                numb_task,
-            )
+            f"system {ss:s} accurate_ratio: {accurate_ratio:8.4f}    thresholds: {fp_accurate_soft_threshold:6.4f} and {fp_accurate_threshold:6.4f}   eff. task min and max {fp_task_min:4d} {this_fp_task_max:4d}   number of fp tasks: {numb_task:6d}"
         )
         # make fp tasks
 
@@ -2878,21 +2861,15 @@ def _make_fp_vasp_inner(
             os.chdir(cwd)
         if count_bad_box > 0:
             dlog.info(
-                "system {:s} skipped {:6d} confs with bad box, {:6d} remains".format(
-                    ss, count_bad_box, numb_task - count_bad_box
-                )
+                f"system {ss:s} skipped {count_bad_box:6d} confs with bad box, {numb_task - count_bad_box:6d} remains"
             )
         if count_bad_cluster > 0:
             dlog.info(
-                "system {:s} skipped {:6d} confs with bad cluster, {:6d} remains".format(
-                    ss, count_bad_cluster, numb_task - count_bad_cluster
-                )
+                f"system {ss:s} skipped {count_bad_cluster:6d} confs with bad cluster, {numb_task - count_bad_cluster:6d} remains"
             )
     if model_devi_engine == "calypso":
         dlog.info(
-            "summary  accurate_ratio: {:8.4f}%  candidata_ratio: {:8.4f}%  failed_ratio: {:8.4f}%  in {:d} structures".format(
-                acc_num * 100 / tot, candi_num * 100 / tot, fail_num * 100 / tot, tot
-            )
+            f"summary  accurate_ratio: {acc_num * 100 / tot:8.4f}%  candidata_ratio: {candi_num * 100 / tot:8.4f}%  failed_ratio: {fail_num * 100 / tot:8.4f}%  in {tot:d} structures"
         )
     if cluster_cutoff is None:
         cwd = os.getcwd()

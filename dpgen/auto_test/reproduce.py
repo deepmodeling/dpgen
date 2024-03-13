@@ -153,12 +153,7 @@ def post_repro(
             output_ener_tot.extend(output_task_result["energies"])
 
             init_epa = init_ener[jj - idid] / natoms
-            ptr_data += "{} {:7.3f}  {:7.3f}  {:7.3f}\n".format(
-                ii,
-                init_epa,
-                output_epa,
-                output_epa - init_epa,
-            )
+            ptr_data += f"{ii} {init_epa:7.3f}  {output_epa:7.3f}  {output_epa - init_epa:7.3f}\n"
         idid += nframe
         output_ener = np.array(output_ener)
         output_ener = np.reshape(output_ener, [-1, 1])
