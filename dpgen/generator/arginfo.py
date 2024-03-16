@@ -610,6 +610,14 @@ def fp_style_vasp_args() -> list[Argument]:
     ]
 
 
+# gpaw
+def fp_style_gpaw_args() -> list[Argument]:
+    doc_fp_gpaw_runfile = "Input file to run GPAW."
+    return [
+        Argument("fp_gpaw_runfile", str, optional=False, doc=doc_fp_gpaw_runfile),
+    ]
+
+
 # abacus
 def fp_style_abacus_args() -> list[Argument]:
     doc_fp_pp_path = "Directory of psuedo-potential or numerical orbital files to be used for 02.fp exists."
@@ -924,6 +932,7 @@ def fp_style_variant_type_args() -> Variant:
             Argument("pwmat", dict, [], doc="TODO: add doc"),
             Argument("pwscf", dict, fp_style_pwscf_args()),
             Argument("custom", dict, fp_style_custom_args(), doc=doc_custom),
+            Argument("gpaw", dict, fp_style_gpaw_args()),
         ],
         optional=False,
         doc=doc_fp_style,
