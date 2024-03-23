@@ -88,7 +88,7 @@ def _make_pwscf_02_species(sys_data, pps):
     assert ntypes == len(atom_masses)
     assert ntypes == len(pps)
     for ii in range(ntypes):
-        ret += "%s %d %s\n" % (atom_names[ii], atom_masses[ii], pps[ii])
+        ret += f"{atom_names[ii]} {atom_masses[ii]} {pps[ii]}\n"
     return ret
 
 
@@ -110,12 +110,7 @@ def _make_pwscf_03_config(sys_data):
     cc = 0
     for ii in range(ntypes):
         for jj in range(atom_numbs[ii]):
-            ret += "{} {:f} {:f} {:f}\n".format(
-                atom_names[ii],
-                coordinates[cc][0],
-                coordinates[cc][1],
-                coordinates[cc][2],
-            )
+            ret += f"{atom_names[ii]} {coordinates[cc][0]:f} {coordinates[cc][1]:f} {coordinates[cc][2]:f}\n"
             cc += 1
     return ret
 

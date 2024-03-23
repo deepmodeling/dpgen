@@ -189,9 +189,7 @@ def make_lammps_eval(conf, type_map, interaction, param):
     ret += (
         "thermo_style    custom step pe pxx pyy pzz pxy pxz pyz lx ly lz vol c_mype\n"
     )
-    ret += (
-        "dump            1 all custom 100 dump.relax id type xs ys zs fx fy fz\n"
-    )  # 06/09 give dump.relax
+    ret += "dump            1 all custom 100 dump.relax id type xs ys zs fx fy fz\n"  # 06/09 give dump.relax
     ret += "run    0\n"
     ret += "variable        N equal count(all)\n"
     ret += "variable        V equal vol\n"

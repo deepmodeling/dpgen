@@ -1,6 +1,7 @@
 """This module ensures input in the examples directory
 could pass the argument checking.
 """
+
 import json
 import unittest
 from pathlib import Path
@@ -47,6 +48,10 @@ input_files = (
     ),
     (
         run_jdata,
+        p_examples / "run" / "dp2.x-lammps-pwscf" / "param_CH4_deepmd-kit-2.0.1.json",
+    ),
+    (
+        run_jdata,
         p_examples / "run" / "dp2.x-lammps-cp2k" / "param_CH4_deepmd-kit-2.0.1.json",
     ),
     # (run_jdata, p_examples / "run" / "dp2.x-gromacs-gaussian" / "param.json"),
@@ -63,6 +68,22 @@ input_files = (
         p_examples
         / "run"
         / "dp2.x-lammps-vasp"
+        / "Al"
+        / "param_al_all_gpu-deepmd-kit-2.x.json",
+    ),
+    (
+        run_jdata,
+        p_examples
+        / "run"
+        / "dp2.x-lammps-pwscf"
+        / "CH4"
+        / "param_CH4_deepmd-kit-2.x.json",
+    ),
+    (
+        run_jdata,
+        p_examples
+        / "run"
+        / "dp2.x-lammps-pwscf"
         / "Al"
         / "param_al_all_gpu-deepmd-kit-2.x.json",
     ),

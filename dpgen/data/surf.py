@@ -415,7 +415,10 @@ def poscar_scale(poscar_in, poscar_out, scale):
     except AttributeError:
         poscar = Poscar.from_str("".join(lines))
     with open(poscar_out, "w") as fout:
-        fout.write(poscar.get_string(direct=False))
+        try:
+            fout.write(poscar.get_string(direct=False))
+        except AttributeError:
+            fout.write(poscar.get_str(direct=False))
 
 
 def make_scale(jdata):

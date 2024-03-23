@@ -8,6 +8,7 @@ Iter:
 01: calculate model deviations of the rest dataset, pick up data with proper model deviaiton
 02: fp (optional, if the original dataset do not have fp data, same as generator)
 """
+
 import glob
 import logging
 import os
@@ -336,9 +337,10 @@ def post_model_devi(iter_index, jdata, mdata):
                             "reach a place that should NOT be reached..."
                         )
     else:
-        with open(os.path.join(work_path, detail_file_name)) as f, open(
-            os.path.join(work_path, true_error_file_name)
-        ) as f_err:
+        with (
+            open(os.path.join(work_path, detail_file_name)) as f,
+            open(os.path.join(work_path, true_error_file_name)) as f_err,
+        ):
             for line, line_err in zip(f, f_err):
                 if line.startswith("# data.rest.old"):
                     name = (line.split()[1]).split("/")[-1]
@@ -389,9 +391,7 @@ def post_model_devi(iter_index, jdata, mdata):
     fp_sum = sum(counter.values())
     for cc_key, cc_value in counter.items():
         dlog.info(
-            "{:9s} : {:6d} in {:6d} {:6.2f} %".format(
-                cc_key, cc_value, fp_sum, cc_value / fp_sum * 100
-            )
+            f"{cc_key:9s} : {cc_value:6d} in {fp_sum:6d} {cc_value / fp_sum * 100:6.2f} %"
         )
 
     if counter["candidate"] == 0 and counter["failed"] > 0:
@@ -550,6 +550,8 @@ def run_iter(param_file, machine_file):
     ii = -1
     while cont:
         ii += 1
+        if ii < iter_rec[0]:
+            continue
         iter_name = make_iter_name(ii)
         sepline(iter_name, "=")
         for jj in range(numb_task):

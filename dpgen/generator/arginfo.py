@@ -90,7 +90,7 @@ def training_args() -> list[Argument]:
     doc_numb_models = "Number of models to be trained in 00.train. 4 is recommend."
     doc_training_iter0_model_path = "The model used to init the first iter training. Number of element should be equal to numb_models."
     doc_training_init_model = "Iteration > 0, the model parameters will be initilized from the model trained at the previous iteration. Iteration == 0, the model parameters will be initialized from training_iter0_model_path."
-    doc_default_training_param = "Training parameters for deepmd-kit in 00.train. You can find instructions from here: (https://github.com/deepmodeling/deepmd-kit)."
+    doc_default_training_param = "Training parameters for deepmd-kit in 00.train. You can find instructions from `DeePMD-kit documentation <https://docs.deepmodeling.org/projects/deepmd/>`_."
     doc_dp_train_skip_neighbor_stat = "Append --skip-neighbor-stat flag to dp train."
     doc_dp_compress = "Use dp compress to compress the model."
     doc_training_reuse_iter = "The minimal index of iteration that continues training models from old models of last iteration."
@@ -221,8 +221,8 @@ def model_devi_jobs_template_args() -> Argument:
         "Through user-defined template, any freedom (function) that is permitted by the engine "
         "software could be inherited (invoked) in the workflow."
     )
-    doc_template_lmp = "The path to input.lammps template"
-    doc_template_plm = "The path to input.plumed template"
+    doc_template_lmp = "The path to input.lammps template. Instructions can be found in `LAMMPS documentation <https://docs.lammps.org/>`_."
+    doc_template_plm = "The path to input.plumed template. Instructions can be found in `PLUMED documentation <https://www.plumed.org/doc>`_."
 
     args = [
         Argument("lmp", str, optional=True, doc=doc_template_lmp),
@@ -325,10 +325,12 @@ def model_devi_lmp_args() -> list[Argument]:
     doc_model_devi_f_trust_hi = "Upper bound of forces for the selection. If list or dict, should be set for each index in sys_configs, respectively."
     doc_model_devi_v_trust_lo = "Lower bound of virial for the selection. If list or dict, should be set for each index in sys_configs, respectively. Should be used with DeePMD-kit v2.x."
     doc_model_devi_v_trust_hi = "Upper bound of virial for the selection. If list or dict, should be set for each index in sys_configs, respectively. Should be used with DeePMD-kit v2.x."
-    doc_model_devi_adapt_trust_lo = "Adaptively determines the lower trust levels of force and virial. This option should be used together with model_devi_numb_candi_f, model_devi_numb_candi_v and optionally with model_devi_perc_candi_f and model_devi_perc_candi_v. dpgen will make two sets:\n\n\
+    doc_model_devi_adapt_trust_lo = (
+        "Adaptively determines the lower trust levels of force and virial. This option should be used together with model_devi_numb_candi_f, model_devi_numb_candi_v and optionally with model_devi_perc_candi_f and model_devi_perc_candi_v. dpgen will make two sets:\n\n\
 - 1. From the frames with force model deviation lower than model_devi_f_trust_hi, select max(model_devi_numb_candi_f, model_devi_perc_candi_f*n_frames) frames with largest force model deviation. \n\n\
 - 2. From the frames with virial model deviation lower than model_devi_v_trust_hi, select max(model_devi_numb_candi_v, model_devi_perc_candi_v*n_frames) frames with largest virial model deviation. \n\n\
 The union of the two sets is made as candidate dataset."
+    )
     doc_model_devi_numb_candi_f = "See model_devi_adapt_trust_lo."
     doc_model_devi_numb_candi_v = "See model_devi_adapt_trust_lo."
     doc_model_devi_perc_candi_f = "See model_devi_adapt_trust_lo."
@@ -790,13 +792,14 @@ def fp_style_cp2k_args() -> list[Argument]:
     ]
 
 
+# amber/diff
 def fp_style_amber_diff_args() -> list[Argument]:
     """Arguments for FP style amber/diff.
 
     Returns
     -------
     list[dargs.Argument]
-        list of Gaussian fp style arguments
+        list of amber/diff fp style arguments
     """
     doc_fp_params_gaussian = "Parameters for FP calculation."
     doc_high_level = (
@@ -827,13 +830,49 @@ def fp_style_amber_diff_args() -> list[Argument]:
     ]
 
 
+# pwscf
+def fp_style_pwscf_args() -> list[Argument]:
+    """Arguments for FP style pwscf (Quantum Espresso).
+
+    Returns
+    -------
+    list[dargs.Argument]
+        list of pwscf fp style arguments
+    """
+    doc_fp_pp_path = "Directory of psuedo-potential file to be used for 02.fp exists."
+    doc_fp_pp_files = "Psuedo-potential file to be used for 02.fp. Note that the order of elements should correspond to the order in type_map."
+    doc_user_fp_params = "Parameters for pwscf calculation. Find details at https://www.quantum-espresso.org/Doc/INPUT_PW.html. When user_fp_params is set, the settings in fp_params will be ignored. If one wants to use user_fp_params, kspacing must be set in user_fp_params. kspacing is the spacing between kpoints, and helps to determin KPOINTS in pwscf."
+    doc_fp_params = (
+        "Parameters for pwscf calculation. It has lower priority than user_fp_params."
+    )
+    doc_ecut = "ecutwfc in pwscf."
+    doc_ediff = "conv_thr and ts_vdw_econv_thr in pwscf."
+    doc_kspacing = "The spacing between kpoints. Helps to determin KPOINTS in pwscf."
+    doc_smearing = "smearing in pwscf."
+    doc_sigma = "degauss in pwscf."
+
+    args = [
+        Argument("ecut", float, optional=False, doc=doc_ecut),
+        Argument("ediff", float, optional=False, doc=doc_ediff),
+        Argument("smearing", str, optional=False, doc=doc_smearing),
+        Argument("sigma", float, optional=False, doc=doc_sigma),
+        Argument("kspacing", float, optional=False, doc=doc_kspacing),
+    ]
+    return [
+        Argument("fp_pp_path", str, optional=False, doc=doc_fp_pp_path),
+        Argument("fp_pp_files", list[str], optional=False, doc=doc_fp_pp_files),
+        Argument("fp_params", dict, args, [], optional=True, doc=doc_fp_params),
+        Argument("user_fp_params", dict, optional=True, doc=doc_user_fp_params),
+    ]
+
+
 def fp_style_custom_args() -> list[Argument]:
     """Arguments for FP style custom.
 
     Returns
     -------
     list[dargs.Argument]
-        list of Gaussian fp style arguments
+        list of custom fp style arguments
     """
     doc_fp_params_custom = "Parameters for FP calculation."
     doc_input_fmt = "Input dpdata format of the custom FP code. Such format should only need the first argument as the file name."
@@ -883,7 +922,7 @@ def fp_style_variant_type_args() -> Variant:
                 "amber/diff", dict, fp_style_amber_diff_args(), doc=doc_amber_diff
             ),
             Argument("pwmat", dict, [], doc="TODO: add doc"),
-            Argument("pwscf", dict, [], doc="TODO: add doc"),
+            Argument("pwscf", dict, fp_style_pwscf_args()),
             Argument("custom", dict, fp_style_custom_args(), doc=doc_custom),
         ],
         optional=False,
