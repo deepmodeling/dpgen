@@ -169,11 +169,7 @@ def make_lammps_input(
         pka_vec = _sample_sphere()
         pka_vec *= pka_vn
         ret += "group           first id 1\n"
-        ret += 'if "${{restart}} == 0" then "velocity        first set {:f} {:f} {:f}"\n'.format(
-            pka_vec[0],
-            pka_vec[1],
-            pka_vec[2],
-        )
+        ret += f'if "${{restart}} == 0" then "velocity        first set {pka_vec[0]:f} {pka_vec[1]:f} {pka_vec[2]:f}"\n'
         ret += "fix	       2 all momentum 1 linear 1 1 1\n"
     ret += "\n"
     if ensemble.split("-")[0] == "npt":

@@ -1441,16 +1441,7 @@ def ext_velp(
     )
     for i in range(ndata):
         fw.write(
-            "{:12.6f}\t{:12.6f}\t{:12.6f}\t{:12.6f}\t{:12.6f}\t{:12.6f}\t{:12.6f}\t{:12.6f}\n".format(
-                vv[i],
-                ee[i],
-                cellaa[i],
-                cellbb[i],
-                cellcc[i],
-                cellbaba[i],
-                cellcaca[i],
-                cellca_cal[i],
-            )
+            f"{vv[i]:12.6f}\t{ee[i]:12.6f}\t{cellaa[i]:12.6f}\t{cellbb[i]:12.6f}\t{cellcc[i]:12.6f}\t{cellbaba[i]:12.6f}\t{cellcaca[i]:12.6f}\t{cellca_cal[i]:12.6f}\n"
         )
         fw.flush()
     fw.close()
@@ -1662,9 +1653,7 @@ def lsqfit_eos(
     )
     for i in range(len(vol)):
         fve.write(
-            "{:20f}\t{:20f}\t{:20f}\t{:20f}\n".format(
-                vol[i], repro_en[i], en[i], 100 * np.abs((en[i] - repro_en[i]) / en[i])
-            )
+            f"{vol[i]:20f}\t{repro_en[i]:20f}\t{en[i]:20f}\t{100 * np.abs((en[i] - repro_en[i]) / en[i]):20f}\n"
         )
         fve.flush()
         p_tmp = repro_press[i]
