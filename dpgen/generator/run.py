@@ -4094,6 +4094,18 @@ def run_fp(iter_index, jdata, mdata):
             None,
             log_file="output",
         )
+    elif fp_style == "gpaw":
+        forward_files = ["gpaw_singlepoint.py"]
+        backward_files = ["conf_ase.traj", "calc.txt", "output"]
+        run_fp_inner(
+            iter_index,
+            jdata,
+            mdata,
+            forward_files,
+            backward_files,
+            _pwmat_check_fin,
+            log_file="output",
+        )
     else:
         raise RuntimeError("unsupported fp style")
 
