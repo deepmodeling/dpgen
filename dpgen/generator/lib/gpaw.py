@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+### This file may not need
+
 import random
 
 import dpdata
@@ -132,38 +134,6 @@ def make_gpaw_input_aimd(ensemble,
         ret += "restart         10000 dpgen.restart\n"
     else:
         ret += "restart         10000 dpgen.restart${ibead}\n"
-    ret += "\n"
-    if pka_e is None:
-        if nbeads is None:
-            ret += (
-                'if "${restart} == 0" then "velocity        all create ${TEMP} %d"'
-                % (random.randrange(max_seed - 1) + 1)
-            )
-        else:
-            ret += (
-                'if "${restart} == 0" then "velocity        all create ${TEMP_NBEADS} %d"'
-                % (random.randrange(max_seed - 1) + 1)
-            )
-    else:
-        sys = dpdata.System(conf_file, fmt="lammps/lmp")
-        sys_data = sys.data
-        pka_mass = mass_map[sys_data["atom_types"][0] - 1]
-        pka_vn = (
-            pka_e
-            * pc.electron_volt
-            / (0.5 * pka_mass * 1e-3 / pc.Avogadro * (pc.angstrom / pc.pico) ** 2)
-        )
-        pka_vn = np.sqrt(pka_vn)
-        print(pka_vn)
-        pka_vec = _sample_sphere()
-        pka_vec *= pka_vn
-        ret += "group           first id 1\n"
-        ret += 'if "${{restart}} == 0" then "velocity        first set {:f} {:f} {:f}"\n'.format(
-            pka_vec[0],
-            pka_vec[1],
-            pka_vec[2],
-        )
-        ret += "fix	       2 all momentum 1 linear 1 1 1\n"
     ret += "\n"
     if ensemble.split("-")[0] == "npt":
         assert pres is not None
