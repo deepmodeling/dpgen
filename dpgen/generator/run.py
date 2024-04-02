@@ -3723,6 +3723,30 @@ def make_fp_custom(iter_index, jdata):
             system.to(input_fmt, input_fn)
 
 
+def make_fp_gpaw(iter_index, jdata):
+    """Make input file for customized FP style.
+
+    Convert the POSCAR file to ase_traj format.
+
+    Parameters
+    ----------
+    iter_index : int
+        iter index
+    jdata : dict
+        Run parameters.
+    """
+    work_path = os.path.join(make_iter_name(iter_index), fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, "task.*"))
+    fp_params = jdata["fp_params"]
+    input_fn = fp_params["input_fn"]
+    input_fmt = fp_params["input_fmt"]
+
+    for ii in fp_tasks:
+        with set_directory(Path(ii)):
+            system = dpdata.System("POSCAR", fmt="vasp/poscar")
+            system.to(input_fmt, input_fn)
+
+
 def make_fp(iter_index, jdata, mdata):
     """Select the candidate strutures and make the input file of FP calculation.
 
@@ -4095,7 +4119,8 @@ def run_fp(iter_index, jdata, mdata):
             log_file="output",
         )
     elif fp_style == "gpaw":
-        forward_files = ["gpaw_singlepoint.py"]
+        fp_gpaw_runfile = jdata.get("fp_gpaw_runfile", "gpaw_singlepoint.py")  # get value from `jdata` dict, if not found set default value is "gpaw_singlepoint.py"
+        forward_files = [].append(fp_gpaw_runfile)
         backward_files = ["conf_ase.traj", "calc.txt", "output"]
         run_fp_inner(
             iter_index,
@@ -4103,7 +4128,7 @@ def run_fp(iter_index, jdata, mdata):
             mdata,
             forward_files,
             backward_files,
-            _pwmat_check_fin,
+            None,
             log_file="output",
         )
     else:
