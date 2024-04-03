@@ -3726,7 +3726,7 @@ def make_fp_custom(iter_index, jdata):
 def make_fp_gpaw(iter_index, jdata):
     """Make input file for customized FP style.
 
-    Convert the POSCAR file to ase_traj format.
+    Convert the POSCAR file to ase_traj format (no need).
 
     Parameters
     ----------
@@ -3735,16 +3735,15 @@ def make_fp_gpaw(iter_index, jdata):
     jdata : dict
         Run parameters.
     """
+    ## create symbolic link of the gpaw input file in the task directory
     work_path = os.path.join(make_iter_name(iter_index), fp_name)
     fp_tasks = glob.glob(os.path.join(work_path, "task.*"))
-    fp_params = jdata["fp_params"]
-    input_fn = fp_params["input_fn"]
-    input_fmt = fp_params["input_fmt"]
-
+    gpaw_runfile = jdata["fp_gpaw_runfile"]
+    gpaw_runfile_source = Path(gpaw_runfile).resolve()
     for ii in fp_tasks:
-        with set_directory(Path(ii)):
-            system = dpdata.System("POSCAR", fmt="vasp/poscar")
-            system.to(input_fmt, input_fn)
+        with set_directory(Path(ii)):  # create file `gpaw_runfile` in the current directory and link to the source file
+            gpaw_runfile_target = Path(gpaw_runfile).resolve()
+            os.symlink(str(gpaw_runfile_source), str(gpaw_runfile_target))
 
 
 def make_fp(iter_index, jdata, mdata):
@@ -3796,6 +3795,8 @@ def make_fp_calculation(iter_index, jdata, mdata):
         make_fp_amber_diff(iter_index, jdata)
     elif fp_style == "custom":
         make_fp_custom(iter_index, jdata)
+    elif fp_style == "gpaw":
+        make_fp_gpaw(iter_index, jdata)
     else:
         raise RuntimeError("unsupported fp style")
     # Copy user defined forward_files
@@ -4119,8 +4120,8 @@ def run_fp(iter_index, jdata, mdata):
             log_file="output",
         )
     elif fp_style == "gpaw":
-        fp_gpaw_runfile = jdata.get("fp_gpaw_runfile", "gpaw_singlepoint.py")  # get value from `jdata` dict, if not found set default value is "gpaw_singlepoint.py"
-        forward_files = [].append(fp_gpaw_runfile)
+        gpaw_runfile = jdata["fp_gpaw_runfile"]
+        forward_files = ["POSCAR"] + [gpaw_runfile]
         backward_files = ["conf_ase.traj", "calc.txt", "output"]
         run_fp_inner(
             iter_index,

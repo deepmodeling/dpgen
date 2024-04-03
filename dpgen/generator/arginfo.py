@@ -899,7 +899,7 @@ def fp_style_custom_args() -> list[Argument]:
 def fp_style_gpaw_args() -> list[Argument]:
     doc_fp_gpaw_runfile = "Input file to run GPAW."
     return [
-        Argument("fp_gpaw_runfile", str, optional=True, doc=doc_fp_gpaw_runfile),
+        Argument("fp_gpaw_runfile", str, optional=True, default="gpaw_singlepoint.py", doc=doc_fp_gpaw_runfile)
     ]
 
 
