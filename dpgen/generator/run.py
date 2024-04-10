@@ -4439,7 +4439,9 @@ def post_fp_cp2k(iter_index, jdata, rfailed=None):
         tcount += len(sys_output)
         all_sys = dpdata.MultiSystems(type_map=jdata["type_map"])
         for oo in sys_output:
-            _sys = dpdata.LabeledSystem(oo, fmt="cp2kdata/e_f", type_map=jdata["type_map"])
+            _sys = dpdata.LabeledSystem(
+                oo, fmt="cp2kdata/e_f", type_map=jdata["type_map"]
+            )
             all_sys.append(_sys)
             icount += 1
 
