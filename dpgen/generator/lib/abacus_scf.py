@@ -401,9 +401,9 @@ def get_abacus_STRU(STRU, INPUT=None, n_ele=None):
     data["atom_types"] = types
     data["cells"] = cell
     data["coords"] = coords
-    data[
-        "atom_masses"
-    ] = masses  # Notice that this key is not defined in dpdata system.
+    data["atom_masses"] = (
+        masses  # Notice that this key is not defined in dpdata system.
+    )
     data["pp_files"] = pp_files
     data["orb_files"] = orb_files
     data["dpks_descriptor"] = dpks_descriptor

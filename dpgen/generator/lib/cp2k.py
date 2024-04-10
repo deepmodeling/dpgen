@@ -48,13 +48,15 @@ def update_dict(old_d, update_d):
             old_d[k] = update_d[k]
 
 
-def iterdict(d, out_list, flag=None):
-    """:doc: a recursive expansion of dictionary into cp2k input
+def iterdict(d, out_list, flag=None, indent=0):
+    """
+    :doc: a recursive expansion of dictionary into cp2k input
     :k: current key
     :v: current value
     :d: current dictionary under expansion
     :flag: used to record dictionary state. if flag is None,
     it means we are in top level dict. flag is a string.
+    :indent: intent for current section.
     """
     for k, v in d.items():
         k = str(k)  # cast key into string
@@ -64,16 +66,17 @@ def iterdict(d, out_list, flag=None):
             if flag is None:
                 out_list.append("&" + k)
                 out_list.append("&END " + k)
-                iterdict(v, out_list, k)
+                iterdict(v, out_list, k, indent + 2)
             # flag is not None, now it has name of section
             else:
-                index = out_list.index("&END " + flag)
-                out_list.insert(index, "&" + k)
-                out_list.insert(index + 1, "&END " + k)
-                iterdict(v, out_list, k)
+                index = out_list.index(" " * (indent - 2) + "&END " + flag)
+                out_list.insert(index, " " * indent + "&" + k + " #" + flag)
+                out_list.insert(index + 1, " " * indent + "&END " + k + " #" + flag)
+                # the flag now contains its parent section name, separed by "#".
+                iterdict(v, out_list, k + " #" + flag, indent + 2)
         elif isinstance(v, list):
             #            print("we have encountered the repeat section!")
-            index = out_list.index("&" + flag)
+            index = out_list.index(" " * (indent - 2) + "&" + flag)
             # delete the current constructed repeat section
             del out_list[index : index + 2]
             # do a loop over key and corresponding list
@@ -83,14 +86,22 @@ def iterdict(d, out_list, flag=None):
                 k_tmp_list.append(str(k_tmp))
                 v_list_tmp_list.append(v_tmp)
             for repeat_keyword in zip(*v_list_tmp_list):
-                out_list.insert(index, "&" + flag)
-                out_list.insert(index + 1, "&END " + flag)
+                out_list.insert(index, " " * (indent - 2) + "&" + flag)
+                out_list.insert(index + 1, " " * (indent - 2) + "&END " + flag)
                 for idx, k_tmp in enumerate(k_tmp_list):
                     if k_tmp == "_":
-                        out_list[index] = "&" + flag + " " + repeat_keyword[idx]
+                        out_list[index] = (
+                            " " * (indent - 2)
+                            + "&"
+                            + flag.split(" #")[0]
+                            + " "
+                            + repeat_keyword[idx]
+                        )
                     else:
-                        out_list.insert(index + 1, k_tmp + " " + repeat_keyword[idx])
-
+                        out_list.insert(
+                            index + 1,
+                            " " * (indent) + k_tmp + " " + repeat_keyword[idx],
+                        )
             break
 
         else:
@@ -100,12 +111,14 @@ def iterdict(d, out_list, flag=None):
                 print(k, ":", v)
             else:
                 if k == "_":
-                    index = out_list.index("&" + flag)
-                    out_list[index] = "&" + flag + " " + v
+                    index = out_list.index(" " * (indent - 2) + "&" + flag)
+                    out_list[index] = (
+                        " " * (indent - 2) + "&" + flag.split(" #")[0] + " " + v
+                    )
 
                 else:
-                    index = out_list.index("&END " + flag)
-                    out_list.insert(index, k + " " + v)
+                    index = out_list.index(" " * (indent - 2) + "&END " + flag)
+                    out_list.insert(index, " " * indent + k + " " + v)
 
 
 def make_cp2k_input(sys_data, fp_params):
