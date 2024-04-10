@@ -4439,14 +4439,14 @@ def post_fp_cp2k(iter_index, jdata, rfailed=None):
         tcount += len(sys_output)
         all_sys = dpdata.MultiSystems(type_map=jdata["type_map"])
         for oo in sys_output:
-            _sys = dpdata.LabeledSystem(oo, fmt="cp2k/output")
+            _sys = dpdata.LabeledSystem(oo, fmt="cp2kdata/e_f", type_map=jdata["type_map"])
             all_sys.append(_sys)
+            icount += 1
 
-        icount += len(all_sys)
         if (all_sys is not None) and (len(all_sys) > 0):
             sys_data_path = os.path.join(work_path, "data.%s" % ss)
             all_sys.to_deepmd_raw(sys_data_path)
-            all_sys.to_deepmd_npy(sys_data_path, set_size=len(sys_output))
+            all_sys.to_deepmd_npy(sys_data_path)
 
     if tcount == 0:
         rfail = 0.0
