@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61", "setuptools_scm[toml]>=6.2"]
+requires = ["setuptools>=61", "setuptools_scm[toml]>=7"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -19,7 +19,8 @@ classifiers = [
 ]
 dependencies = [
     'numpy>=1.14.3',
-    'dpdata>=0.2.16',
+    'dpdata>=0.2.17',
+    'cp2kdata>=0.6.6',
     'pymatgen>=2022.11.1',
     'ase',
     'monty>2.0.0',
