@@ -186,7 +186,11 @@ def make_model_devi(iter_index, jdata, mdata):
     # link the model
     train_path = os.path.join(iter_name, train_name)
     train_path = os.path.abspath(train_path)
-    models = glob.glob(os.path.join(train_path, "graph*pb"))
+    if jdata.get("train_backend", "tensorflow") == "tensorflow":
+        models = glob.glob(os.path.join(train_path, "graph*pb"))
+    elif jdata.get("train_backend", "tensorflow") == "torch":
+        models = glob.glob(os.path.join(train_path, "model*pth"))
+
     for mm in models:
         model_name = os.path.basename(mm)
         os.symlink(mm, os.path.join(work_path, model_name))

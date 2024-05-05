@@ -801,15 +801,20 @@ def run_train(iter_index, jdata, mdata):
     elif training_init_frozen_model is not None or training_finetune_model is not None:
         forward_files.append(os.path.join("old", "init.pb"))
 
-    backward_files = ["frozen_model.pb", "lcurve.out", "train.log"]
+    if jdata.get("train_backend", "tensorflow") == "tensorflow":
+        backward_files = ["frozen_model.pb", "lcurve.out", "train.log"]
+        if jdata.get("dp_compress", False):
+            backward_files.append("frozen_model_compressed.pb")
+    elif jdata.get("train_backend", "tensorflow") == "pytorch":
+        backward_files = ["frozen_model.pth", "lcurve.out", "train.log"]
+
     backward_files += [
         "model.ckpt.meta",
         "model.ckpt.index",
         "model.ckpt.data-00000-of-00001",
         "checkpoint",
     ]
-    if jdata.get("dp_compress", False):
-        backward_files.append("frozen_model_compressed.pb")
+
     if not jdata.get("one_h5", False):
         init_data_sys_ = jdata["init_data_sys"]
         init_data_sys = []
@@ -881,12 +886,18 @@ def post_train(iter_index, jdata, mdata):
         return
     # symlink models
     for ii in range(numb_models):
-        if not jdata.get("dp_compress", False):
-            model_name = "frozen_model.pb"
-        else:
-            model_name = "frozen_model_compressed.pb"
+        if jdata.get("train_backend", "tensorflow") == "tensorflow":
+            if not jdata.get("dp_compress", False):
+                model_name = "frozen_model.pb"
+            else:
+                model_name = "frozen_model_compressed.pb"
+            ofile = os.path.join(work_path, "graph.%03d.pb" % ii)
+
+        elif jdata.get("train_backend", "tensorflow") == "pytorch":
+            model_name = "frozen_model.pth"
+            ofile = os.path.join(work_path, "graph.%03d.pth" % ii)
+
         task_file = os.path.join(train_task_fmt % ii, model_name)
-        ofile = os.path.join(work_path, "graph.%03d.pb" % ii)
         if os.path.isfile(ofile):
             os.remove(ofile)
         os.symlink(task_file, ofile)
@@ -1937,7 +1948,12 @@ def run_md_model_devi(iter_index, jdata, mdata):
     run_tasks = [os.path.basename(ii) for ii in run_tasks_]
     # dlog.info("all_task is ", all_task)
     # dlog.info("run_tasks in run_model_deviation",run_tasks_)
-    all_models = glob.glob(os.path.join(work_path, "graph*pb"))
+
+    if jdata.get("train_backend", "tensorflow") == "tensorflow":
+        all_models = glob.glob(os.path.join(work_path, "graph*pb"))
+    elif jdata.get("train_backend", "tensorflow") == "torch":
+        all_models = glob.glob(os.path.join(work_path, "graph*pth"))
+
     model_names = [os.path.basename(ii) for ii in all_models]
 
     model_devi_engine = jdata.get("model_devi_engine", "lammps")
