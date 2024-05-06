@@ -125,6 +125,16 @@ check_outcar_file = os.path.join(ROOT_PATH, "generator/lib/calypso_check_outcar.
 run_opt_file = os.path.join(ROOT_PATH, "generator/lib/calypso_run_opt.py")
 
 
+def _get_model_suffix(jdata):
+    """return the model suffix based on the backend"""
+    backend = jdata.get("train_backend", "tensorflow")
+    if backend == "tensorflow":
+        suffix = ".pb"
+    elif backend == "pytorch":
+        suffix = ".pth"
+    return suffix
+
+
 def get_job_names(jdata):
     jobkeys = []
     for ii in jdata.keys():
@@ -172,7 +182,7 @@ def _check_empty_iter(iter_index, max_v=0):
     return all(empty_sys)
 
 
-def copy_model(numb_model, prv_iter_index, cur_iter_index):
+def copy_model(numb_model, prv_iter_index, cur_iter_index, suffix=".pb"):
     cwd = os.getcwd()
     prv_train_path = os.path.join(make_iter_name(prv_iter_index), train_name)
     cur_train_path = os.path.join(make_iter_name(cur_iter_index), train_name)
@@ -183,9 +193,7 @@ def copy_model(numb_model, prv_iter_index, cur_iter_index):
         prv_train_task = os.path.join(prv_train_path, train_task_fmt % ii)
         os.chdir(cur_train_path)
         os.symlink(os.path.relpath(prv_train_task), train_task_fmt % ii)
-        os.symlink(
-            os.path.join(train_task_fmt % ii, "frozen_model.pb"), "graph.%03d.pb" % ii
-        )
+        os.symlink(os.path.join(train_task_fmt % ii, "frozen_model" + suffix), "graph.%03d%s" % (ii, suffix))
         os.chdir(cwd)
     with open(os.path.join(cur_train_path, "copied"), "w") as fp:
         None
@@ -316,10 +324,11 @@ def make_train(iter_index, jdata, mdata):
         number_old_frames = 0
         number_new_frames = 0
 
+    suffix = _get_model_suffix(jdata)
     model_devi_engine = jdata.get("model_devi_engine", "lammps")
     if iter_index > 0 and _check_empty_iter(iter_index - 1, fp_task_min):
         log_task("prev data is empty, copy prev model")
-        copy_model(numb_models, iter_index - 1, iter_index)
+        copy_model(numb_models, iter_index - 1, iter_index, suffix)
         return
     elif (
         model_devi_engine != "calypso"
@@ -327,7 +336,7 @@ def make_train(iter_index, jdata, mdata):
         and _check_skip_train(model_devi_jobs[iter_index - 1])
     ):
         log_task("skip training at step %d " % (iter_index - 1))
-        copy_model(numb_models, iter_index - 1, iter_index)
+        copy_model(numb_models, iter_index - 1, iter_index, suffix)
         return
     else:
         iter_name = make_iter_name(iter_index)
@@ -648,7 +657,7 @@ def make_train(iter_index, jdata, mdata):
     )
     if copied_models is not None:
         for ii in range(len(copied_models)):
-            _link_old_models(work_path, [copied_models[ii]], ii, basename="init.pb")
+            _link_old_models(work_path, [copied_models[ii]], ii, basename="init" + suffix)
     # Copy user defined forward files
     symlink_user_forward_files(mdata=mdata, task_type="train", work_path=work_path)
     # HDF5 format for training data
@@ -700,6 +709,7 @@ def run_train(iter_index, jdata, mdata):
     # print("debug:run_train:mdata", mdata)
     # load json param
     numb_models = jdata["numb_models"]
+    suffix = _get_model_suffix(jdata)
     # train_param = jdata['train_param']
     train_input_file = default_train_input_file
     training_reuse_iter = jdata.get("training_reuse_iter")
@@ -762,9 +772,9 @@ def run_train(iter_index, jdata, mdata):
         if training_init_model:
             init_flag = " --init-model old/model.ckpt"
         elif training_init_frozen_model is not None:
-            init_flag = " --init-frz-model old/init.pb"
+            init_flag = " --init-frz-model old/init%s" % suffix
         elif training_finetune_model is not None:
-            init_flag = " --finetune old/init.pb"
+            init_flag = " --finetune old/init%s" % suffix
         command = f"{train_command} train {train_input_file}{extra_flags}"
         command = f"{{ if [ ! -f model.ckpt.index ]; then {command}{init_flag}; else {command} --restart model.ckpt; fi }}"
         command = "/bin/sh -c %s" % shlex.quote(command)
@@ -799,21 +809,15 @@ def run_train(iter_index, jdata, mdata):
             os.path.join("old", "model.ckpt.data-00000-of-00001"),
         ]
     elif training_init_frozen_model is not None or training_finetune_model is not None:
-        forward_files.append(os.path.join("old", "init.pb"))
+        forward_files.append(os.path.join("old", "init%s" % suffix))
 
-    if jdata.get("train_backend", "tensorflow") == "tensorflow":
-        backward_files = ["frozen_model.pb", "lcurve.out", "train.log"]
+    backward_files = ["frozen_model" + suffix, "lcurve.out", "train.log", "checkpoint"]
+    if suffix == ".pb":
+        backward_files += ["model.ckpt.meta",
+                           "model.ckpt.index",
+                           "model.ckpt.data-00000-of-00001"]
         if jdata.get("dp_compress", False):
-            backward_files.append("frozen_model_compressed.pb")
-    elif jdata.get("train_backend", "tensorflow") == "pytorch":
-        backward_files = ["frozen_model.pth", "lcurve.out", "train.log"]
-
-    backward_files += [
-        "model.ckpt.meta",
-        "model.ckpt.index",
-        "model.ckpt.data-00000-of-00001",
-        "checkpoint",
-    ]
+            backward_files.append("frozen_model_compressed%s" % suffix)
 
     if not jdata.get("one_h5", False):
         init_data_sys_ = jdata["init_data_sys"]
@@ -885,18 +889,14 @@ def post_train(iter_index, jdata, mdata):
         log_task("copied model, do not post train")
         return
     # symlink models
+    suffix = _get_model_suffix(jdata)
     for ii in range(numb_models):
-        if jdata.get("train_backend", "tensorflow") == "tensorflow":
-            if not jdata.get("dp_compress", False):
-                model_name = "frozen_model.pb"
-            else:
-                model_name = "frozen_model_compressed.pb"
-            ofile = os.path.join(work_path, "graph.%03d.pb" % ii)
+        model_name = "frozen_model" + suffix
+        if suffix == ".pb":
+            if jdata.get("dp_compress", False):
+                model_name = "frozen_model_compressed" + suffix
 
-        elif jdata.get("train_backend", "tensorflow") == "pytorch":
-            model_name = "frozen_model.pth"
-            ofile = os.path.join(work_path, "graph.%03d.pth" % ii)
-
+        ofile = os.path.join(work_path, "graph.%03d%s" % (ii, suffix))
         task_file = os.path.join(train_task_fmt % ii, model_name)
         if os.path.isfile(ofile):
             os.remove(ofile)
@@ -1137,7 +1137,8 @@ def make_model_devi(iter_index, jdata, mdata):
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
     train_path = os.path.abspath(train_path)
-    models = sorted(glob.glob(os.path.join(train_path, "graph*pb")))
+    suffix = _get_model_suffix(jdata)
+    models = sorted(glob.glob(os.path.join(train_path, "graph*%s" % suffix)))
     work_path = os.path.join(iter_name, model_devi_name)
     create_path(work_path)
     if model_devi_engine == "calypso":
@@ -1318,7 +1319,8 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
     train_path = os.path.abspath(train_path)
-    models = sorted(glob.glob(os.path.join(train_path, "graph*pb")))
+    suffix = _get_model_suffix(jdata)
+    models = sorted(glob.glob(os.path.join(train_path, "graph*%s" % suffix)))
     task_model_list = []
     for ii in models:
         task_model_list.append(os.path.join("..", os.path.basename(ii)))
@@ -1515,7 +1517,8 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
     train_path = os.path.abspath(train_path)
-    models = glob.glob(os.path.join(train_path, "graph*pb"))
+    suffix = _get_model_suffix(jdata)
+    models = sorted(glob.glob(os.path.join(train_path, "graph*%s" % suffix)))
     task_model_list = []
     for ii in models:
         task_model_list.append(os.path.join("..", os.path.basename(ii)))
@@ -1657,7 +1660,8 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
     iter_name = make_iter_name(iter_index)
     train_path = os.path.join(iter_name, train_name)
     train_path = os.path.abspath(train_path)
-    models = glob.glob(os.path.join(train_path, "graph*pb"))
+    suffix = _get_model_suffix(jdata)
+    models = sorted(glob.glob(os.path.join(train_path, "graph*%s" % suffix)))
     task_model_list = []
     for ii in models:
         task_model_list.append(os.path.join("..", os.path.basename(ii)))
@@ -1840,7 +1844,8 @@ def _make_model_devi_amber(
                 .replace("@qm_theory@", jdata["low_level"])
                 .replace("@rcut@", str(jdata["cutoff"]))
             )
-            models = sorted(glob.glob(os.path.join(train_path, "graph.*.pb")))
+            suffix = _get_model_suffix(jdata)
+            models = sorted(glob.glob(os.path.join(train_path, "graph.*%s" % suffix)))
             task_model_list = []
             for ii in models:
                 task_model_list.append(os.path.join("..", os.path.basename(ii)))
@@ -1949,11 +1954,8 @@ def run_md_model_devi(iter_index, jdata, mdata):
     # dlog.info("all_task is ", all_task)
     # dlog.info("run_tasks in run_model_deviation",run_tasks_)
 
-    if jdata.get("train_backend", "tensorflow") == "tensorflow":
-        all_models = glob.glob(os.path.join(work_path, "graph*pb"))
-    elif jdata.get("train_backend", "tensorflow") == "torch":
-        all_models = glob.glob(os.path.join(work_path, "graph*pth"))
-
+    suffix = _get_model_suffix(jdata)
+    all_models = glob.glob(os.path.join(work_path, "graph*" + suffix))
     model_names = [os.path.basename(ii) for ii in all_models]
 
     model_devi_engine = jdata.get("model_devi_engine", "lammps")
@@ -2020,7 +2022,7 @@ def run_md_model_devi(iter_index, jdata, mdata):
             command += f'&& echo -e "{grp_name}\\n{grp_name}\\n" | {model_devi_exec} trjconv -s {ref_filename} -f {deffnm}.trr -o {traj_filename} -pbc mol -ur compact -center'
         command += "&& if [ ! -d traj ]; then \n mkdir traj; fi\n"
         command += f"python -c \"import dpdata;system = dpdata.System('{traj_filename}', fmt='gromacs/gro'); [system.to_gromacs_gro('traj/%d.gromacstrj' % (i * {trj_freq}), frame_idx=i) for i in range(system.get_nframes())]; system.to_deepmd_npy('traj_deepmd')\""
-        command += f"&& dp model-devi -m ../graph.000.pb ../graph.001.pb ../graph.002.pb ../graph.003.pb -s traj_deepmd -o model_devi.out -f {trj_freq}"
+        command += f"&& dp model-devi -m ../graph.000{suffix} ../graph.001{suffix} ../graph.002{suffix} ../graph.003{suffix} -s traj_deepmd -o model_devi.out -f {trj_freq}"
         commands = [command]
 
         forward_files = [

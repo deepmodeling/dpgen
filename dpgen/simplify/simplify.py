@@ -43,6 +43,7 @@ from dpgen.generator.run import (
     run_train,
     train_name,
     train_task_fmt,
+    _get_model_suffix,
 )
 from dpgen.remote.decide_machine import convert_mdata
 from dpgen.util import expand_sys_str, load_file, normalize, sepline, setup_ele_temp
@@ -186,10 +187,8 @@ def make_model_devi(iter_index, jdata, mdata):
     # link the model
     train_path = os.path.join(iter_name, train_name)
     train_path = os.path.abspath(train_path)
-    if jdata.get("train_backend", "tensorflow") == "tensorflow":
-        models = glob.glob(os.path.join(train_path, "graph*pb"))
-    elif jdata.get("train_backend", "tensorflow") == "torch":
-        models = glob.glob(os.path.join(train_path, "model*pth"))
+    suffix = _get_model_suffix(jdata)
+    models = glob.glob(os.path.join(train_path, "graph*" + suffix))
 
     for mm in models:
         model_name = os.path.basename(mm)
