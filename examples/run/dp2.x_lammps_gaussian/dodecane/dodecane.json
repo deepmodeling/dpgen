@@ -75,8 +75,7 @@
             "time_training": true,
             "profiling": false,
             "profiling_file": "timeline.json",
-            "training_data": {
-            }
+            "training_data": {}
         }
     },
     "use_clusters": true,
