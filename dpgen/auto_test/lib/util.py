@@ -48,13 +48,13 @@ def make_work_path(jdata, task, reprod_opt, static, user):
                 task_type = task_type + "-static-scf_incar"
             else:
                 kspacing = jdata["vasp_params"]["kspacing"]
-                task_type = task_type + "-static-k%.2f" % (kspacing)
+                task_type = task_type + f"-static-k{kspacing:.2f}"
         else:
             if "relax_incar" in jdata.keys():
                 task_type = task_type + "-relax_incar"
             else:
                 kspacing = jdata["vasp_params"]["kspacing"]
-                task_type = task_type + "-k%.2f" % (kspacing)
+                task_type = task_type + f"-k{kspacing:.2f}"
     elif task_type in lammps_task_type:
         if static:
             task_type = task_type + "-static"
@@ -63,7 +63,7 @@ def make_work_path(jdata, task, reprod_opt, static, user):
                 task_type = task_type + "-reprod-relax_incar"
             else:
                 kspacing = jdata["vasp_params"]["kspacing"]
-                task_type = task_type + "-reprod-k%.2f" % (kspacing)
+                task_type = task_type + f"-reprod-k{kspacing:.2f}"
 
     work_path = os.path.join(task_path, task_type)
     assert os.path.isdir(work_path)

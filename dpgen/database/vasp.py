@@ -50,7 +50,7 @@ class DPPotcar(MSONable):
         if self.potcars is not None:
             return str(self.potcars)
         else:
-            ret = "Functional: %s\n" % self.functional
+            ret = f"Functional: {self.functional}\n"
             ret += " ".join(self.symbols) + "\n"
             return ret
 

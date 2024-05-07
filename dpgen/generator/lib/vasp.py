@@ -90,7 +90,7 @@ def _make_smearing(fp_params):
     elif smearing_method == "fd":
         return -1, sigma
     else:
-        raise RuntimeError("unsuppported smearing method %s " % smearing_method)
+        raise RuntimeError(f"unsuppported smearing method {smearing_method} ")
 
 
 def _make_metagga(fp_params):

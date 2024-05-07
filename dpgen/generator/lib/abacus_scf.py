@@ -35,7 +35,7 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
         if key == "ecutwfc":
             fp_params["ecutwfc"] = float(fp_params["ecutwfc"])
             assert fp_params["ecutwfc"] >= 0, "'ecutwfc' should be non-negative."
-            ret += "ecutwfc %f\n" % fp_params["ecutwfc"]
+            ret += "ecutwfc {:f}\n".format(fp_params["ecutwfc"])
         elif key == "kspacing":
             if isinstance(fp_params["kspacing"], (int, float)):
                 fp_params["kspacing"] = [float(fp_params["kspacing"])]
@@ -55,11 +55,11 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
             ret += "kspacing "
             for ikspacing in fp_params["kspacing"]:
                 assert ikspacing >= 0, "'kspacing' should be non-negative."
-                ret += "%f " % ikspacing
+                ret += f"{ikspacing:f} "
             ret += "\n"
         elif key == "scf_thr":
             fp_params["scf_thr"] = float(fp_params["scf_thr"])
-            ret += "scf_thr %e\n" % fp_params["scf_thr"]
+            ret += "scf_thr {:e}\n".format(fp_params["scf_thr"])
         elif key == "scf_nmax":
             fp_params["scf_nmax"] = int(fp_params["scf_nmax"])
             assert fp_params["scf_nmax"] >= 0 and isinstance(
@@ -72,9 +72,9 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
                 "lcao",
                 "lcao_in_pw",
             ], "'basis_type' must in 'pw', 'lcao' or 'lcao_in_pw'."
-            ret += "basis_type %s\n" % fp_params["basis_type"]
+            ret += "basis_type {}\n".format(fp_params["basis_type"])
         elif key == "dft_functional":
-            ret += "dft_functional %s\n" % fp_params["dft_functional"]
+            ret += "dft_functional {}\n".format(fp_params["dft_functional"])
         elif key == "gamma_only":
             if isinstance(fp_params["gamma_only"], str):
                 fp_params["gamma_only"] = int(eval(fp_params["gamma_only"]))
@@ -90,13 +90,13 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
                 "pulay-kerker",
                 "broyden",
             ]
-            ret += "mixing_type %s\n" % fp_params["mixing_type"]
+            ret += "mixing_type {}\n".format(fp_params["mixing_type"])
         elif key == "mixing_beta":
             fp_params["mixing_beta"] = float(fp_params["mixing_beta"])
             assert (
                 fp_params["mixing_beta"] >= 0 and fp_params["mixing_beta"] < 1
             ), "'mixing_beta' should between 0 and 1."
-            ret += "mixing_beta %f\n" % fp_params["mixing_beta"]
+            ret += "mixing_beta {:f}\n".format(fp_params["mixing_beta"])
         elif key == "symmetry":
             if isinstance(fp_params["symmetry"], str):
                 fp_params["symmetry"] = int(eval(fp_params["symmetry"]))
@@ -130,7 +130,7 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
                     "scalapack_gvx",
                 ]
             ), "'ks_sover' should in 'cgx', 'dav', 'lapack', 'genelpa', 'hpseps', 'scalapack_gvx'."
-            ret += "ks_solver %s\n" % fp_params["ks_solver"]
+            ret += "ks_solver {}\n".format(fp_params["ks_solver"])
         elif key == "smearing_method":
             assert (
                 fp_params["smearing_method"]
@@ -144,13 +144,13 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
                     "mv",
                 ]
             ), "'smearing_method' should in 'gauss', 'gaussian', 'fd', 'fixed', 'mp', 'mp2', 'mv'. "
-            ret += "smearing_method %s\n" % fp_params["smearing_method"]
+            ret += "smearing_method {}\n".format(fp_params["smearing_method"])
         elif key == "smearing_sigma":
             fp_params["smearing_sigma"] = float(fp_params["smearing_sigma"])
             assert (
                 fp_params["smearing_sigma"] >= 0
             ), "'smearing_sigma' should be non-negative."
-            ret += "smearing_sigma %f\n" % fp_params["smearing_sigma"]
+            ret += "smearing_sigma {:f}\n".format(fp_params["smearing_sigma"])
         elif key == "cal_force":
             if isinstance(fp_params["cal_force"], str):
                 fp_params["cal_force"] = int(eval(fp_params["cal_force"]))
@@ -192,8 +192,10 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
             ), "'deepks_scf' should be either 0 or 1."
             ret += "deepks_scf %d\n" % fp_params["deepks_scf"]
         elif key == "deepks_model":
-            ret += "deepks_model %s\n" % os.path.join(
-                extra_file_path, os.path.split(fp_params["deepks_model"])[1]
+            ret += "deepks_model {}\n".format(
+                os.path.join(
+                    extra_file_path, os.path.split(fp_params["deepks_model"])[1]
+                )
             )
         elif key[0] == "_":
             pass
@@ -226,9 +228,9 @@ def make_abacus_scf_stru(
 
     ret = "ATOMIC_SPECIES\n"
     for iatom in range(len(atom_names)):
-        assert atom_names[iatom] in type_map, (
-            "element %s is not defined in type_map" % atom_names[iatom]
-        )
+        assert (
+            atom_names[iatom] in type_map
+        ), f"element {atom_names[iatom]} is not defined in type_map"
         idx = type_map.index(atom_names[iatom])
         if "atom_masses" not in sys_data:
             ret += (
@@ -240,7 +242,7 @@ def make_abacus_scf_stru(
         else:
             ret += (
                 atom_names[iatom]
-                + " %.3f " % sys_data["atom_masses"][iatom]
+                + " {:.3f} ".format(sys_data["atom_masses"][iatom])
                 + os.path.join(pporb, fp_pp_files[idx])
                 + "\n"
             )

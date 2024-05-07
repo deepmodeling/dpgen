@@ -204,7 +204,7 @@ def convert_data(jdata):
         type_map=jdata["type_map"],
     )
     s.to_deepmd_npy(data_path)
-    dlog.info("Initial data is avaiable in %s" % os.path.abspath(data_path))
+    dlog.info(f"Initial data is avaiable in {os.path.abspath(data_path)}")
 
 
 def gen_init_reaction(args):
