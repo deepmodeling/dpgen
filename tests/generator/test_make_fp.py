@@ -519,7 +519,7 @@ def _check_incar_ele_temp(testCase, idx, ele_temp):
                 if ii == "NBANDS":
                     continue
                 testCase.assertAlmostEqual(
-                    incar0[ii], incar1[ii], msg="key %s differ" % (ii), places=5
+                    incar0[ii], incar1[ii], msg=f"key {ii} differ", places=5
                 )
         os.chdir(cwd)
 

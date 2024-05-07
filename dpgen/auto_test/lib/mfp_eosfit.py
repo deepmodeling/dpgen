@@ -1085,7 +1085,7 @@ def calc_props_SJX_5p(par):
 
 def read_ve(fin):
     if not os.path.exists(fin):
-        print("Could not find input file: [%s]" % fin)
+        print(f"Could not find input file: [{fin}]")
         os.sys.exit(-1)
     lines = open(fin).readlines()
     nline = len(lines)
@@ -1107,7 +1107,7 @@ def read_ve(fin):
 
 def read_vlp(fin, fstart, fend):
     if not os.path.exists(fin):
-        print(">> Could not find input file: [%s]" % fin)
+        print(f">> Could not find input file: [{fin}]")
         os.sys.exit(-1)
     lines = open(fin).readlines()
     nline = len(lines)
@@ -1192,7 +1192,7 @@ def read_vlp(fin, fstart, fend):
 
 def read_velp(fin, fstart, fend):
     if not os.path.exists(fin):
-        print(">> Could not find input file: [%s]" % fin)
+        print(f">> Could not find input file: [{fin}]")
         os.sys.exit(-1)
     lines = open(fin).readlines()
     nline = len(lines)
@@ -1348,7 +1348,7 @@ def ext_vec(
     if show_fig:
         plt.show()
     plt.close()
-    print("\n>> Storing the extrapolate results in %s\n" % fout)
+    print(f"\n>> Storing the extrapolate results in {fout}\n")
     print("\n>> DONE!")
 
     return
@@ -1445,7 +1445,7 @@ def ext_velp(
         )
         fw.flush()
     fw.close()
-    print("\n>> Storing the extrapolate results in %s\n" % fout)
+    print(f"\n>> Storing the extrapolate results in {fout}\n")
     print("\n>> DONE!")
     return
 
@@ -1455,7 +1455,7 @@ def lsqfit_eos(
 ):
     # make the screen output better.
     print("\n")
-    print("\t>> We are using [ %s ] to fit the V-E relationship << \t" % func)
+    print(f"\t>> We are using [ {func} ] to fit the V-E relationship << \t")
     print("\n")
 
     fs = fstart
@@ -1605,7 +1605,7 @@ def lsqfit_eos(
     # write the fitted results in fit.out
     fw = open(fout, "w+")
     for i in range(len(popt)):
-        fw.write("%f\n" % popt[i])
+        fw.write(f"{popt[i]:f}\n")
         fw.flush()
     fw.close()
 
@@ -1621,14 +1621,14 @@ def lsqfit_eos(
     fit_res = sum(res_opt)
     fit_var = np.var(fvec)
     fit_std = np.std(fvec)
-    print("\nfitted residuals\t= %16e\n" % fit_res)
-    print("fitted variations\t= %16e\n" % fit_var)
-    print("standard deviations\t= %16e\n" % fit_std)
+    print(f"\nfitted residuals\t= {fit_res:16e}\n")
+    print(f"fitted variations\t= {fit_var:16e}\n")
+    print(f"standard deviations\t= {fit_std:16e}\n")
     # if fit_res > 1e-4:
     #    print("\n>> Residuals seems too large, please refit it by swithing argument --refit 1!\n")
     #    show = 'F'  # reset show tag, not to show the figure.
     plt.plot(vol, en, "o", vol_i, en_i)
-    plt.title("EoS fitted by: %s model" % str(func))
+    plt.title(f"EoS fitted by: {str(func)} model")
     plt.legend(["calc", func + "-fit"], loc="best")
     plt.xlabel("Volume (A**3)")
     plt.ylabel("Energy (eV)")

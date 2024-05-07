@@ -23,16 +23,16 @@ def _make_pwscf_01_runctrl(sys_data, ecut, ediff, smearing, degauss):
     ret += "nat  = %d,\n" % tot_natoms
     ret += "ntyp = %d,\n" % ntypes
     ret += "vdw_corr = 'TS',\n"
-    ret += "ecutwfc = %f,\n" % ecut
-    ret += "ts_vdw_econv_thr=%e,\n" % ediff
+    ret += f"ecutwfc = {ecut:f},\n"
+    ret += f"ts_vdw_econv_thr={ediff:e},\n"
     ret += "nosym = .TRUE.,\n"
     if degauss is not None:
-        ret += "degauss = %f,\n" % degauss
+        ret += f"degauss = {degauss:f},\n"
     if smearing is not None:
-        ret += "smearing = '%s',\n" % (smearing.lower())
+        ret += f"smearing = '{smearing.lower()}',\n"
     ret += "/\n"
     ret += "&electrons\n"
-    ret += "conv_thr = %e,\n" % ediff
+    ret += f"conv_thr = {ediff:e},\n"
     ret += "/\n"
     return ret
 
@@ -65,7 +65,7 @@ def _make_pwscf_03_config(sys_data):
     ret += "CELL_PARAMETERS { angstrom }\n"
     for ii in range(3):
         for jj in range(3):
-            ret += "%f " % cell[ii][jj]
+            ret += f"{cell[ii][jj]:f} "
         ret += "\n"
     ret += "\n"
     ret += "ATOMIC_POSITIONS { angstrom }\n"

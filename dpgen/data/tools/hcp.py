@@ -15,7 +15,7 @@ def gen_box():
 def poscar_unit(latt):
     box = gen_box()
     ret = ""
-    ret += "HCP : a = %f / sqrt(2)\n" % latt
+    ret += f"HCP : a = {latt:f} / sqrt(2)\n"
     ret += "%.16f\n" % (latt / np.sqrt(2))
     ret += f"{box[0][0]:.16f} {box[0][1]:.16f} {box[0][2]:.16f}\n"
     ret += f"{box[1][0]:.16f} {box[1][1]:.16f} {box[1][2]:.16f}\n"

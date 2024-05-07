@@ -17,10 +17,10 @@ def _make_siesta_01_common(sys_data, ecut, ediff, mixingWeight, NumberPulay):
     ret += "WriteMDXmol       T\n"
     ret += "WriteMDHistory    T\n\n"
 
-    ret += "MeshCutoff            %s" % str(ecut)
+    ret += f"MeshCutoff            {str(ecut)}"
     ret += " Ry\n"
-    ret += "DM.MixingWeight       %f\n" % mixingWeight
-    ret += "DM.Tolerance          %e\n" % ediff
+    ret += f"DM.MixingWeight       {mixingWeight:f}\n"
+    ret += f"DM.Tolerance          {ediff:e}\n"
     ret += "DM.UseSaveDM          true\n"
     ret += "DM.NumberPulay         %d\n" % NumberPulay
     ret += "MD.UseSaveXV           T\n\n"
@@ -98,7 +98,7 @@ def _make_siesta_04_ucVectorCoord(sys_data):
     ret += "%block LatticeVectors\n"
     for ii in range(3):
         for jj in range(3):
-            ret += "%f " % cell[ii][jj]
+            ret += f"{cell[ii][jj]:f} "
         ret += "\n"
     ret += "%endblock LatticeVectors\n"
 

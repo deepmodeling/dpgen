@@ -54,12 +54,12 @@ def gen_structures(
     model_names = [os.path.basename(ii) for ii in all_models]
 
     deepmdkit_python = mdata.get("model_devi_deepmdkit_python")
-    command = "%s calypso_run_opt.py  1>> model_devi.log 2>> model_devi.log" % (
-        deepmdkit_python
+    command = (
+        f"{deepmdkit_python} calypso_run_opt.py  1>> model_devi.log 2>> model_devi.log"
     )
     # command = "%s calypso_run_opt.py %s 1>> model_devi.log 2>> model_devi.log" % (deepmdkit_python,os.path.abspath(calypso_run_opt_path))
     # command += "  ||  %s check_outcar.py %s " % (deepmdkit_python,os.path.abspath(calypso_run_opt_path))
-    command += "  ||  %s check_outcar.py  " % (deepmdkit_python)
+    command += f"  ||  {deepmdkit_python} check_outcar.py  "
     commands = [command]
 
     cwd = os.getcwd()
@@ -72,11 +72,11 @@ def gen_structures(
     if not vsc:
         Lpickup = _parse_calypso_input("PickUp", ".")
         PickUpStep = _parse_calypso_input("PickStep", ".")
-        if os.path.exists("tag_pickup_%s" % (str(PickUpStep))):
-            dlog.info("caution! tag_pickup_%s exists!" % str(PickUpStep))
+        if os.path.exists(f"tag_pickup_{str(PickUpStep)}"):
+            dlog.info(f"caution! tag_pickup_{str(PickUpStep)} exists!")
             Lpickup = "F"
         if Lpickup == "T":
-            ftag = open("tag_pickup_%s" % (str(PickUpStep)), "w")
+            ftag = open(f"tag_pickup_{str(PickUpStep)}", "w")
             ftag.close()
             os.remove("step")
             fstep = open("step", "w")
@@ -93,13 +93,13 @@ def gen_structures(
         maxstep = int(_parse_calypso_input("MaxStep", "."))
 
         for ii in range(int(PickUpStep) - 1, maxstep + 1):
-            dlog.info("CALYPSO step %s" % ii)
+            dlog.info(f"CALYPSO step {ii}")
             if ii == maxstep:
-                os.system("%s" % run_calypso)
+                os.system(f"{run_calypso}")
                 break
             # run calypso
 
-            os.system("%s" % (run_calypso))
+            os.system(f"{run_calypso}")
 
             for pop in range(ii * int(popsize), (ii + 1) * int(popsize)):
                 try:
@@ -116,7 +116,7 @@ def gen_structures(
                     os.path.join("task.%03d" % pop, "check_outcar.py"),
                 )
                 shutil.copyfile(
-                    "POSCAR_%s" % str(pop - ii * int(popsize) + 1),
+                    f"POSCAR_{str(pop - ii * int(popsize) + 1)}",
                     os.path.join("task.%03d" % (pop), "POSCAR"),
                 )
                 shutil.copyfile(
@@ -134,8 +134,7 @@ def gen_structures(
 
             if Version(api_version) < Version("1.0"):
                 raise RuntimeError(
-                    "API version %s has been removed. Please upgrade to 1.0."
-                    % api_version
+                    f"API version {api_version} has been removed. Please upgrade to 1.0."
                 )
             elif Version(api_version) >= Version("1.0"):
                 os.chdir(cwd)
@@ -163,32 +162,30 @@ def gen_structures(
             for jjj in range(ii * int(popsize), (ii + 1) * int(popsize)):
                 # to opt directory
                 shutil.copyfile(
-                    "POSCAR_%s" % str(jjj + 1 - ii * int(popsize)),
-                    os.path.join(sstep, "POSCAR_%s" % str(jjj + 1 - ii * int(popsize))),
+                    f"POSCAR_{str(jjj + 1 - ii * int(popsize))}",
+                    os.path.join(sstep, f"POSCAR_{str(jjj + 1 - ii * int(popsize))}"),
                 )
                 shutil.copyfile(
                     os.path.join("task.%03d" % (jjj), "OUTCAR"),
-                    os.path.join(sstep, "OUTCAR_%s" % str(jjj + 1 - ii * int(popsize))),
+                    os.path.join(sstep, f"OUTCAR_{str(jjj + 1 - ii * int(popsize))}"),
                 )
                 shutil.copyfile(
                     os.path.join("task.%03d" % (jjj), "CONTCAR"),
-                    os.path.join(
-                        sstep, "CONTCAR_%s" % str(jjj + 1 - ii * int(popsize))
-                    ),
+                    os.path.join(sstep, f"CONTCAR_{str(jjj + 1 - ii * int(popsize))}"),
                 )
                 # to run calypso directory
                 shutil.copyfile(
                     os.path.join("task.%03d" % (jjj), "OUTCAR"),
-                    "OUTCAR_%s" % str(jjj + 1 - ii * int(popsize)),
+                    f"OUTCAR_{str(jjj + 1 - ii * int(popsize))}",
                 )
                 shutil.copyfile(
                     os.path.join("task.%03d" % (jjj), "CONTCAR"),
-                    "CONTCAR_%s" % str(jjj + 1 - ii * int(popsize)),
+                    f"CONTCAR_{str(jjj + 1 - ii * int(popsize))}",
                 )
                 # to traj
                 shutil.copyfile(
                     os.path.join("task.%03d" % (jjj), "traj.traj"),
-                    os.path.join("traj", "%s.traj" % str(jjj + 1)),
+                    os.path.join("traj", f"{str(jjj + 1)}.traj"),
                 )
 
             tlist = glob.glob("task.*")
@@ -224,12 +221,12 @@ def gen_structures(
             if not os.path.exists(com):
                 os.mkdir(com)
             # shutil.copyfile(os.path.join(calypso_input_path,'input.dat.%s'%com),os.path.join(com,'input.dat'))
-            shutil.copyfile("input.dat.%s" % com, os.path.join(com, "input.dat"))
+            shutil.copyfile(f"input.dat.{com}", os.path.join(com, "input.dat"))
             os.chdir(com)
             os.system(run_calypso)
             os.chdir(pwd)
 
-        shutil.copyfile("input.dat.%s" % component[-1], "input.dat")
+        shutil.copyfile(f"input.dat.{component[-1]}", "input.dat")
 
         name_list = Path(".").glob("*/POSCAR_*")
         for idx, name in enumerate(name_list):
@@ -248,7 +245,7 @@ def gen_structures(
                 os.path.join("task.%04d" % (idx + 1), "check_outcar.py"),
             )
             shutil.copyfile(
-                "POSCAR_%s" % str(idx + 1),
+                f"POSCAR_{str(idx + 1)}",
                 os.path.join("task.%04d" % (idx + 1), "POSCAR"),
             )
             shutil.copyfile(
@@ -266,7 +263,7 @@ def gen_structures(
 
         if Version(api_version) < Version("1.0"):
             raise RuntimeError(
-                "API version %s has been removed. Please upgrade to 1.0." % api_version
+                f"API version {api_version} has been removed. Please upgrade to 1.0."
             )
         elif Version(api_version) >= Version("1.0"):
             os.chdir(cwd)
@@ -292,30 +289,30 @@ def gen_structures(
         for jjj in range(len(all_task)):
             # to opt directory
             shutil.copyfile(
-                "POSCAR_%s" % str(jjj + 1),
-                os.path.join("opt", "POSCAR_%s" % str(jjj + 1)),
+                f"POSCAR_{str(jjj + 1)}",
+                os.path.join("opt", f"POSCAR_{str(jjj + 1)}"),
             )
             shutil.copyfile(
                 os.path.join("task.%04d" % (jjj + 1), "OUTCAR"),
-                os.path.join("opt", "OUTCAR_%s" % str(jjj + 1)),
+                os.path.join("opt", f"OUTCAR_{str(jjj + 1)}"),
             )
             shutil.copyfile(
                 os.path.join("task.%04d" % (jjj + 1), "CONTCAR"),
-                os.path.join("opt", "CONTCAR_%s" % str(jjj + 1)),
+                os.path.join("opt", f"CONTCAR_{str(jjj + 1)}"),
             )
             # to run calypso directory
             shutil.copyfile(
                 os.path.join("task.%04d" % (jjj + 1), "OUTCAR"),
-                "OUTCAR_%s" % str(jjj + 1),
+                f"OUTCAR_{str(jjj + 1)}",
             )
             shutil.copyfile(
                 os.path.join("task.%04d" % (jjj + 1), "CONTCAR"),
-                "CONTCAR_%s" % str(jjj + 1),
+                f"CONTCAR_{str(jjj + 1)}",
             )
             # to traj
             shutil.copyfile(
                 os.path.join("task.%04d" % (jjj + 1), "traj.traj"),
-                os.path.join("traj", "%s.traj" % str(jjj + 1)),
+                os.path.join("traj", f"{str(jjj + 1)}.traj"),
             )
 
         tlist = glob.glob("task.*")
@@ -324,7 +321,7 @@ def gen_structures(
         # --------------------------------------------------------------
 
     if current_idx < length_of_caly_runopt_list - 1:
-        tobewrite = "1 %s\n" % (str(current_idx + 1))
+        tobewrite = f"1 {str(current_idx + 1)}\n"
     elif current_idx == length_of_caly_runopt_list - 1:
         tobewrite = "2\n"
 
@@ -458,7 +455,7 @@ def run_calypso_model_devi(iter_index, jdata, mdata):
     calypso_model_devi_path = os.path.join(work_path, calypso_model_devi_name)
 
     _caly_run_opt_list = glob.glob(
-        os.path.join(work_path, "%s.*" % (str(calypso_run_opt_name)))
+        os.path.join(work_path, f"{str(calypso_run_opt_name)}.*")
     )
     caly_run_opt_list = _caly_run_opt_list.copy()
     # check if gen_struc_analy.000.bk000 in caly_run_opt_list
