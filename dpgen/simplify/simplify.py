@@ -31,6 +31,7 @@ from dpgen.generator.lib.utils import (
     record_iter,
 )
 from dpgen.generator.run import (
+    _get_model_suffix,
     data_system_fmt,
     fp_name,
     fp_task_fmt,
@@ -43,7 +44,6 @@ from dpgen.generator.run import (
     run_train,
     train_name,
     train_task_fmt,
-    _get_model_suffix,
 )
 from dpgen.remote.decide_machine import convert_mdata
 from dpgen.util import expand_sys_str, load_file, normalize, sepline, setup_ele_temp
