@@ -126,7 +126,7 @@ run_opt_file = os.path.join(ROOT_PATH, "generator/lib/calypso_run_opt.py")
 
 
 def _get_model_suffix(jdata) -> str:
-    """Return the model suffix based on the backend"""
+    """return the model suffix based on the backend"""
     backend = jdata.get("train_backend", "tensorflow")
     if backend == "tensorflow":
         suffix = ".pb"
@@ -193,10 +193,7 @@ def copy_model(numb_model, prv_iter_index, cur_iter_index, suffix=".pb"):
         prv_train_task = os.path.join(prv_train_path, train_task_fmt % ii)
         os.chdir(cur_train_path)
         os.symlink(os.path.relpath(prv_train_task), train_task_fmt % ii)
-        os.symlink(
-            os.path.join(train_task_fmt % ii, "frozen_model%s" % suffix),
-            "graph.%03d%s" % (ii, suffix),
-        )
+        os.symlink(os.path.join(train_task_fmt % ii, "frozen_model%s" % suffix), "graph.%03d%s" % (ii, suffix))
         os.chdir(cwd)
     with open(os.path.join(cur_train_path, "copied"), "w") as fp:
         None
@@ -660,9 +657,7 @@ def make_train(iter_index, jdata, mdata):
     )
     if copied_models is not None:
         for ii in range(len(copied_models)):
-            _link_old_models(
-                work_path, [copied_models[ii]], ii, basename="init%s" % suffix
-            )
+            _link_old_models(work_path, [copied_models[ii]], ii, basename="init%s" % suffix)
     # Copy user defined forward files
     symlink_user_forward_files(mdata=mdata, task_type="train", work_path=work_path)
     # HDF5 format for training data
@@ -816,18 +811,11 @@ def run_train(iter_index, jdata, mdata):
     elif training_init_frozen_model is not None or training_finetune_model is not None:
         forward_files.append(os.path.join("old", "init%s" % suffix))
 
-    backward_files = [
-        "frozen_model%s" % suffix,
-        "lcurve.out",
-        "train.log",
-        "checkpoint",
-    ]
+    backward_files = ["frozen_model%s" % suffix, "lcurve.out", "train.log", "checkpoint"]
     if suffix == ".pb":
-        backward_files += [
-            "model.ckpt.meta",
-            "model.ckpt.index",
-            "model.ckpt.data-00000-of-00001",
-        ]
+        backward_files += ["model.ckpt.meta",
+                           "model.ckpt.index",
+                           "model.ckpt.data-00000-of-00001"]
         if jdata.get("dp_compress", False):
             backward_files.append("frozen_model_compressed%s" % suffix)
 
