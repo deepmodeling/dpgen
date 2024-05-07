@@ -132,6 +132,8 @@ def _get_model_suffix(jdata) -> str:
         suffix = ".pb"
     elif backend == "pytorch":
         suffix = ".pth"
+    else:
+        raise ValueError(f"The backend {backend} is not available. Supported backends are: 'tensorflow', 'pytorch'.")
     return suffix
 
 
@@ -814,22 +816,24 @@ def run_train(iter_index, jdata, mdata):
             os.path.join("old", "model.ckpt.data-00000-of-00001"),
         ]
     elif training_init_frozen_model is not None or training_finetune_model is not None:
-        forward_files.append(os.path.join("old", "init%s" % suffix))
+        forward_files.append(os.path.join("old", f"init{suffix}"))
 
     backward_files = [
-        "frozen_model%s" % suffix,
+        f"frozen_model{suffix}",
+        f"model.ckpt{suffix}",
         "lcurve.out",
         "train.log",
         "checkpoint",
     ]
+    if jdata.get("dp_compress", False):
+        backward_files.append(f"frozen_model_compressed{suffix}")
+
     if suffix == ".pb":
         backward_files += [
             "model.ckpt.meta",
             "model.ckpt.index",
             "model.ckpt.data-00000-of-00001",
         ]
-        if jdata.get("dp_compress", False):
-            backward_files.append("frozen_model_compressed%s" % suffix)
 
     if not jdata.get("one_h5", False):
         init_data_sys_ = jdata["init_data_sys"]
@@ -903,10 +907,9 @@ def post_train(iter_index, jdata, mdata):
     # symlink models
     suffix = _get_model_suffix(jdata)
     for ii in range(numb_models):
-        model_name = "frozen_model%s" % suffix
-        if suffix == ".pb":
-            if jdata.get("dp_compress", False):
-                model_name = "frozen_model_compressed%s" % suffix
+        model_name = f"frozen_model{suffix}"
+        if jdata.get("dp_compress", False):
+            model_name = f"frozen_model_compressed{suffix}"
 
         ofile = os.path.join(work_path, "graph.%03d%s" % (ii, suffix))
         task_file = os.path.join(train_task_fmt % ii, model_name)

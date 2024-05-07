@@ -87,6 +87,7 @@ def training_args() -> list[Argument]:
     list[dargs.Argument]
         List of training arguments.
     """
+    doc_train_backend = "The backend of the training. Currently only support tensorflow and pytorch."
     doc_numb_models = "Number of models to be trained in 00.train. 4 is recommend."
     doc_training_iter0_model_path = "The model used to init the first iter training. Number of element should be equal to numb_models."
     doc_training_init_model = "Iteration > 0, the model parameters will be initilized from the model trained at the previous iteration. Iteration == 0, the model parameters will be initialized from training_iter0_model_path."
@@ -123,6 +124,7 @@ def training_args() -> list[Argument]:
     doc_training_finetune_model = "At interation 0, finetune the model parameters from the given frozen models. Number of element should be equal to numb_models."
 
     return [
+        Argument("train_backend", int, optional='tensorflow', doc=doc_train_backend),
         Argument("numb_models", int, optional=False, doc=doc_numb_models),
         Argument(
             "training_iter0_model_path",
