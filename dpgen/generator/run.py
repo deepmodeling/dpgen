@@ -133,7 +133,9 @@ def _get_model_suffix(jdata) -> str:
     elif backend == "pytorch":
         suffix = ".pth"
     else:
-        raise ValueError(f"The backend {backend} is not available. Supported backends are: 'tensorflow', 'pytorch'.")
+        raise ValueError(
+            f"The backend {backend} is not available. Supported backends are: 'tensorflow', 'pytorch'."
+        )
     return suffix
 
 
