@@ -114,7 +114,6 @@
             "profiling": false,
             "training_data": {
                 "systems": [],
-                "set_prefix": "set",
                 "batch_size": 1
             }
         }

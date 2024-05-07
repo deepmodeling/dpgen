@@ -97,7 +97,6 @@
             "profiling_file": "timeline.json",
             "training_data": {
                 "systems": [],
-                "set_prefix": "set",
                 "batch_size": 1
             }
         }
