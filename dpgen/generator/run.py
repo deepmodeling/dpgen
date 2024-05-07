@@ -127,11 +127,13 @@ run_opt_file = os.path.join(ROOT_PATH, "generator/lib/calypso_run_opt.py")
 
 def _get_model_suffix(jdata) -> str:
     """Return the model suffix based on the backend"""
+    suffix_map = {
+        "tensorflow": ".pb",
+        "pytorch": ".pth"
+    }
     backend = jdata.get("train_backend", "tensorflow")
-    if backend == "tensorflow":
-        suffix = ".pb"
-    elif backend == "pytorch":
-        suffix = ".pth"
+    if backend in suffix_map:
+        suffix = suffix_map[backend]
     else:
         raise ValueError(
             f"The backend {backend} is not available. Supported backends are: 'tensorflow', 'pytorch'."
@@ -784,9 +786,9 @@ def run_train(iter_index, jdata, mdata):
         if training_init_model:
             init_flag = " --init-model old/model.ckpt"
         elif training_init_frozen_model is not None:
-            init_flag = " --init-frz-model old/init%s" % suffix
+            init_flag = f" --init-frz-model old/init{suffix}"
         elif training_finetune_model is not None:
-            init_flag = " --finetune old/init%s" % suffix
+            init_flag = f" --finetune old/init{suffix}"
         command = f"{train_command} train {train_input_file}{extra_flags}"
         command = f"{{ if [ ! -f model.ckpt.index ]; then {command}{init_flag}; else {command} --restart model.ckpt; fi }}"
         command = "/bin/sh -c %s" % shlex.quote(command)
