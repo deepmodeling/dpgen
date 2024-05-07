@@ -2197,7 +2197,7 @@ def _read_model_devi_file(
         assert all(
             model_devi_content.shape[0] == model_devi_contents[0].shape[0]
             for model_devi_content in model_devi_contents
-        ), "Not all beads generated the same number of lines in the model_devi$\{ibead\}.out file. Check your pimd task carefully."
+        ), r"Not all beads generated the same number of lines in the model_devi${ibead}.out file. Check your pimd task carefully."
         last_step = model_devi_contents[0][-1, 0]
         for ibead in range(1, num_beads):
             model_devi_contents[ibead][:, 0] = model_devi_contents[ibead][
