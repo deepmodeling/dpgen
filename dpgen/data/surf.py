@@ -113,7 +113,7 @@ def class_cell_type(jdata):
     elif ct == "bcc":
         cell_type = bcc
     else:
-        raise RuntimeError("unknow cell type %s" % ct)
+        raise RuntimeError(f"unknow cell type {ct}")
     return cell_type
 
 
@@ -408,7 +408,7 @@ def poscar_scale(poscar_in, poscar_out, scale):
     elif "C" == lines[7][0] or "c" == lines[7][0]:
         lines = poscar_scale_cartesian(lines, scale)
     else:
-        raise RuntimeError("Unknow poscar style at line 7: %s" % lines[7])
+        raise RuntimeError(f"Unknow poscar style at line 7: {lines[7]}")
 
     try:
         poscar = Poscar.from_string("".join(lines))
@@ -450,7 +450,7 @@ def make_scale(jdata):
                         "not file %s, vasp relaxation should be run before scale poscar"
                     )
             scale_path = os.path.join(work_path, ii)
-            scale_path = os.path.join(scale_path, "scale-%.3f" % jj)
+            scale_path = os.path.join(scale_path, f"scale-{jj:.3f}")
             create_path(scale_path)
             os.chdir(scale_path)
             poscar_scale(pos_src, "POSCAR", jj)
@@ -515,7 +515,7 @@ def pert_scaled(jdata):
         for jj in scale:
             path_scale = path_sp
             path_scale = os.path.join(path_scale, ii)
-            path_scale = os.path.join(path_scale, "scale-%.3f" % jj)
+            path_scale = os.path.join(path_scale, f"scale-{jj:.3f}")
             assert os.path.isdir(path_scale)
             os.chdir(path_scale)
             dlog.info(os.getcwd())
@@ -523,7 +523,7 @@ def pert_scaled(jdata):
             assert os.path.isfile(poscar_in)
             for ll in elongs:
                 path_elong = path_scale
-                path_elong = os.path.join(path_elong, "elong-%3.3f" % ll)
+                path_elong = os.path.join(path_elong, f"elong-{ll:3.3f}")
                 create_path(path_elong)
                 os.chdir(path_elong)
                 poscar_elong(poscar_in, "POSCAR", ll)
@@ -611,7 +611,7 @@ def gen_init_surf(args):
 
     out_dir = out_dir_name(jdata)
     jdata["out_dir"] = out_dir
-    dlog.info("# working dir %s" % out_dir)
+    dlog.info(f"# working dir {out_dir}")
 
     if args.MACHINE is not None:
         mdata = load_file(args.MACHINE)

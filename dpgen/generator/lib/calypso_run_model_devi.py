@@ -70,7 +70,7 @@ def Modd(all_models, type_map):
             new_index = 0
             for index, frameid in enumerate(temp_sl):
                 pdata = structures_data[frameid]
-                pdata.to_vasp_poscar(os.path.join(put_poscar, "%s.poscar" % str(index)))
+                pdata.to_vasp_poscar(os.path.join(put_poscar, f"{str(index)}.poscar"))
                 nopbc = pdata.nopbc
                 coord = pdata.data["coords"]
                 cell = pdata.data["cells"] if not nopbc else None

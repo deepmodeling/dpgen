@@ -134,7 +134,7 @@ def _main():
     )
     args = parser.parse_args()
 
-    print("generate %s" % (args.elements))
+    print(f"generate {args.elements}")
     if len(args.elements) == 1:
         gen_element(args.elements[0], args.key)
         # gen_element_std(args.elements[0])

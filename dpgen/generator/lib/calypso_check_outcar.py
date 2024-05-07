@@ -55,18 +55,18 @@ def Write_Outcar(element, ele, volume, lat, pos, ene, force, stress, pstress):
         "\nDirection     XX             YY             ZZ             XY             YZ             ZX\n"
     )
     f.write("in kB")
-    f.write("%15.6f" % stress[0])
-    f.write("%15.6f" % stress[1])
-    f.write("%15.6f" % stress[2])
-    f.write("%15.6f" % stress[3])
-    f.write("%15.6f" % stress[4])
-    f.write("%15.6f" % stress[5])
+    f.write(f"{stress[0]:15.6f}")
+    f.write(f"{stress[1]:15.6f}")
+    f.write(f"{stress[2]:15.6f}")
+    f.write(f"{stress[3]:15.6f}")
+    f.write(f"{stress[4]:15.6f}")
+    f.write(f"{stress[5]:15.6f}")
     f.write("\n")
     ext_pressure = np.sum(stress[0] + stress[1] + stress[2]) / 3.0 - pstress
     f.write(
         f"external pressure = {ext_pressure:20.6f} kB    Pullay stress = {pstress:20.6f}  kB\n"
     )
-    f.write("volume of cell : %20.6f\n" % volume)
+    f.write(f"volume of cell : {volume:20.6f}\n")
     f.write("direct lattice vectors\n")
     for i in range(3):
         f.write("{:10.6f} {:10.6f} {:10.6f}\n".format(*tuple(lat[i])))

@@ -248,7 +248,7 @@ def create_tasks(
             print("# working on " + sys_dir)
         for tt, rr in zip(sys_tasks[si], sys_tasks_record[si]):
             # copy poscar
-            source_path = os.path.join(("iter.%s/02.fp" % rr.split()[1]), rr.split()[9])
+            source_path = os.path.join((f"iter.{rr.split()[1]}/02.fp"), rr.split()[9])
             source_file = os.path.join(source_path, "POSCAR")
             target_path = os.path.join(sys_dir, "task.%06d" % sys_tasks_cc[si])
             sys_tasks_cc[si] += 1

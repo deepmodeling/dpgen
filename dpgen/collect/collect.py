@@ -100,7 +100,7 @@ def collect_data(
         ii.to("deepmd/npy", os.path.join(output, out_dir))
     # dump iter data
     for kk in coll_data.keys():
-        out_dir = "sys.%s" % kk
+        out_dir = f"sys.{kk}"
         nframes = coll_data[kk].get_nframes()
         coll_data[kk].to("deepmd/npy", os.path.join(output, out_dir), set_size=nframes)
         # coll_data[kk].to('deepmd/npy', os.path.join(output, out_dir))

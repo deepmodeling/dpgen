@@ -138,7 +138,7 @@ def make_submission_compat(
     """
     if Version(api_version) < Version("1.0"):
         raise RuntimeError(
-            "API version %s has been removed. Please upgrade to 1.0." % api_version
+            f"API version {api_version} has been removed. Please upgrade to 1.0."
         )
 
     elif Version(api_version) >= Version("1.0"):
