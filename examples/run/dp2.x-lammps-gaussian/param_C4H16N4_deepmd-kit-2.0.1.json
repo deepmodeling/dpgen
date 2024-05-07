@@ -81,7 +81,6 @@
             "limit_pref_v": 0.0
         },
         "training": {
-            "_set_prefix": "set",
             "stop_batch": 20000,
             "_batch_size": 1,
             "disp_file": "lcurve.out",

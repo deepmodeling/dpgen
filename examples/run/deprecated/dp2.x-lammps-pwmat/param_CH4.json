@@ -88,7 +88,6 @@
                 "systems": [
                     "./00.data/"
                 ],
-                "set_prefix": "set",
                 "batch_size": 1
             }
         }
