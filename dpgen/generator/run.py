@@ -751,6 +751,9 @@ def run_train(iter_index, jdata, mdata):
         )
 
     train_command = mdata.get("train_command", "dp")
+    if suffix == ".pth":
+        assert (train_command == "dp --pt"), "For pytorch backend, 'train_command' should be 'dp --pt'"
+
     train_resources = mdata["train_resources"]
 
     # paths
@@ -788,10 +791,10 @@ def run_train(iter_index, jdata, mdata):
         command = f"{{ if [ ! -f model.ckpt.index ]; then {command}{init_flag}; else {command} --restart model.ckpt; fi }}"
         command = "/bin/sh -c %s" % shlex.quote(command)
         commands.append(command)
-        command = "%s freeze" % train_command
+        command = f"{train_command} freeze"
         commands.append(command)
         if jdata.get("dp_compress", False):
-            commands.append("%s compress" % train_command)
+            commands.append(f"{train_command} compress")
     else:
         raise RuntimeError(
             "DP-GEN currently only supports for DeePMD-kit 1.x or 2.x version!"
@@ -822,7 +825,6 @@ def run_train(iter_index, jdata, mdata):
 
     backward_files = [
         f"frozen_model{suffix}",
-        f"model.ckpt{suffix}",
         "lcurve.out",
         "train.log",
         "checkpoint",
@@ -830,12 +832,11 @@ def run_train(iter_index, jdata, mdata):
     if jdata.get("dp_compress", False):
         backward_files.append(f"frozen_model_compressed{suffix}")
 
-    if suffix == ".pb":
-        backward_files += [
-            "model.ckpt.meta",
-            "model.ckpt.index",
-            "model.ckpt.data-00000-of-00001",
-        ]
+    backward_files += [
+        "model.ckpt.meta",
+        "model.ckpt.index",
+        "model.ckpt.data-00000-of-00001",
+    ]
 
     if not jdata.get("one_h5", False):
         init_data_sys_ = jdata["init_data_sys"]

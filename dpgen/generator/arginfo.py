@@ -126,7 +126,7 @@ def training_args() -> list[Argument]:
     doc_training_finetune_model = "At interation 0, finetune the model parameters from the given frozen models. Number of element should be equal to numb_models."
 
     return [
-        Argument("train_backend", str, optional="tensorflow", doc=doc_train_backend),
+        Argument("train_backend", str, optional=True, default='tensorflow', doc=doc_train_backend),
         Argument("numb_models", int, optional=False, doc=doc_numb_models),
         Argument(
             "training_iter0_model_path",
