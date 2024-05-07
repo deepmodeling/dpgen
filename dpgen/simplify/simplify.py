@@ -188,7 +188,7 @@ def make_model_devi(iter_index, jdata, mdata):
     train_path = os.path.join(iter_name, train_name)
     train_path = os.path.abspath(train_path)
     suffix = _get_model_suffix(jdata)
-    models = glob.glob(os.path.join(train_path, "graph*%s" % suffix))
+    models = glob.glob(os.path.join(train_path, f"graph*{suffix}"))
 
     for mm in models:
         model_name = os.path.basename(mm)
