@@ -749,10 +749,11 @@ def run_train(iter_index, jdata, mdata):
         )
 
     train_command = mdata.get("train_command", "dp")
-    if suffix == ".pth":
-        assert (
-            train_command == "dp --pt"
-        ), "For pytorch backend, 'train_command' should be 'dp --pt'"
+    assert train_command == "dp", "The 'train_command' should be 'dp'"
+    if suffix == ".pb":
+        train_command += " --tf"
+    elif suffix == ".pth":
+        train_command += " --pt"
 
     train_resources = mdata["train_resources"]
 
