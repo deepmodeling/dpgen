@@ -196,7 +196,10 @@ def copy_model(numb_model, prv_iter_index, cur_iter_index, suffix=".pb"):
         prv_train_task = os.path.join(prv_train_path, train_task_fmt % ii)
         os.chdir(cur_train_path)
         os.symlink(os.path.relpath(prv_train_task), train_task_fmt % ii)
-        os.symlink(os.path.join(train_task_fmt % ii, "frozen_model%s" % suffix), "graph.%03d%s" % (ii, suffix))
+        os.symlink(
+            os.path.join(train_task_fmt % ii, "frozen_model%s" % suffix),
+            "graph.%03d%s" % (ii, suffix),
+        )
         os.chdir(cwd)
     with open(os.path.join(cur_train_path, "copied"), "w") as fp:
         None
@@ -659,7 +662,9 @@ def make_train(iter_index, jdata, mdata):
     )
     if copied_models is not None:
         for ii in range(len(copied_models)):
-            _link_old_models(work_path, [copied_models[ii]], ii, basename="init%s" % suffix)
+            _link_old_models(
+                work_path, [copied_models[ii]], ii, basename="init%s" % suffix
+            )
     # Copy user defined forward files
     symlink_user_forward_files(mdata=mdata, task_type="train", work_path=work_path)
     # HDF5 format for training data
@@ -828,11 +833,14 @@ def run_train(iter_index, jdata, mdata):
     if jdata.get("dp_compress", False):
         backward_files.append(f"frozen_model_compressed{suffix}")
 
-    backward_files += [
-        "model.ckpt.meta",
-        "model.ckpt.index",
-        "model.ckpt.data-00000-of-00001",
-    ]
+    if suffix == ".pb":
+        backward_files += [
+            "model.ckpt.meta",
+            "model.ckpt.index",
+            "model.ckpt.data-00000-of-00001",
+        ]
+    elif suffix == ".pth":
+        backward_files += ["model.ckpt.pt"]
 
     if not jdata.get("one_h5", False):
         init_data_sys_ = jdata["init_data_sys"]
@@ -3771,9 +3779,13 @@ def make_fp_gpaw(iter_index, jdata):
     fp_tasks = glob.glob(os.path.join(work_path, "task.*"))
     gpaw_runfile = jdata["fp_gpaw_runfile"]
     gpaw_runfile_source = Path(gpaw_runfile).resolve()
-    assert os.path.exists(gpaw_runfile_source), f"Can not find gpaw runfile {gpaw_runfile_source}"
+    assert os.path.exists(
+        gpaw_runfile_source
+    ), f"Can not find gpaw runfile {gpaw_runfile_source}"
     for ii in fp_tasks:
-        with set_directory(Path(ii)):  # create file `gpaw_runfile` in the current directory and symlink it to the source file
+        with set_directory(
+            Path(ii)
+        ):  # create file `gpaw_runfile` in the current directory and symlink it to the source file
             Path(gpaw_runfile).symlink_to(gpaw_runfile_source)
 
 
@@ -4692,8 +4704,8 @@ def post_fp_gpaw(iter_index, jdata):
     system_index = list(set_tmp)
     system_index.sort()
 
-    output_fn = 'conf_ase.traj'
-    output_fmt = 'ase/traj'
+    output_fn = "conf_ase.traj"
+    output_fmt = "ase/traj"
 
     for ss in system_index:
         sys_output = glob.glob(os.path.join(work_path, "task.%s.*" % ss))
