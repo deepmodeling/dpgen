@@ -196,10 +196,7 @@ def copy_model(numb_model, prv_iter_index, cur_iter_index, suffix=".pb"):
         prv_train_task = os.path.join(prv_train_path, train_task_fmt % ii)
         os.chdir(cur_train_path)
         os.symlink(os.path.relpath(prv_train_task), train_task_fmt % ii)
-        os.symlink(
-            os.path.join(train_task_fmt % ii, "frozen_model%s" % suffix),
-            "graph.%03d%s" % (ii, suffix),
-        )
+        os.symlink(os.path.join(train_task_fmt % ii, "frozen_model%s" % suffix), "graph.%03d%s" % (ii, suffix))
         os.chdir(cwd)
     with open(os.path.join(cur_train_path, "copied"), "w") as fp:
         None
@@ -662,9 +659,7 @@ def make_train(iter_index, jdata, mdata):
     )
     if copied_models is not None:
         for ii in range(len(copied_models)):
-            _link_old_models(
-                work_path, [copied_models[ii]], ii, basename="init%s" % suffix
-            )
+            _link_old_models(work_path, [copied_models[ii]], ii, basename="init%s" % suffix)
     # Copy user defined forward files
     symlink_user_forward_files(mdata=mdata, task_type="train", work_path=work_path)
     # HDF5 format for training data
@@ -2215,7 +2210,7 @@ def _read_model_devi_file(
         assert all(
             model_devi_content.shape[0] == model_devi_contents[0].shape[0]
             for model_devi_content in model_devi_contents
-        ), r"Not all beads generated the same number of lines in the model_devi${ibead}.out file. Check your pimd task carefully."
+        ), "Not all beads generated the same number of lines in the model_devi$\{ibead\}.out file. Check your pimd task carefully."
         last_step = model_devi_contents[0][-1, 0]
         for ibead in range(1, num_beads):
             model_devi_contents[ibead][:, 0] = model_devi_contents[ibead][
@@ -3759,6 +3754,29 @@ def make_fp_custom(iter_index, jdata):
             system.to(input_fmt, input_fn)
 
 
+def make_fp_gpaw(iter_index, jdata):
+    """Make input file for customized FP style.
+
+    Convert the POSCAR file to ase_traj format (no need).
+
+    Parameters
+    ----------
+    iter_index : int
+        iter index
+    jdata : dict
+        Run parameters.
+    """
+    ## create symbolic link of the gpaw input file in the task directory
+    work_path = os.path.join(make_iter_name(iter_index), fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, "task.*"))
+    gpaw_runfile = jdata["fp_gpaw_runfile"]
+    gpaw_runfile_source = Path(gpaw_runfile).resolve()
+    assert os.path.exists(gpaw_runfile_source), f"Can not find gpaw runfile {gpaw_runfile_source}"
+    for ii in fp_tasks:
+        with set_directory(Path(ii)):  # create file `gpaw_runfile` in the current directory and symlink it to the source file
+            Path(gpaw_runfile).symlink_to(gpaw_runfile_source)
+
+
 def make_fp(iter_index, jdata, mdata):
     """Select the candidate strutures and make the input file of FP calculation.
 
@@ -3808,6 +3826,8 @@ def make_fp_calculation(iter_index, jdata, mdata):
         make_fp_amber_diff(iter_index, jdata)
     elif fp_style == "custom":
         make_fp_custom(iter_index, jdata)
+    elif fp_style == "gpaw":
+        make_fp_gpaw(iter_index, jdata)
     else:
         raise RuntimeError("unsupported fp style")
     # Copy user defined forward_files
@@ -4129,6 +4149,19 @@ def run_fp(iter_index, jdata, mdata):
             backward_files,
             None,
             log_file="output",
+        )
+    elif fp_style == "gpaw":
+        gpaw_runfile = jdata["fp_gpaw_runfile"]
+        forward_files = ["POSCAR"] + [gpaw_runfile]
+        backward_files = ["conf_ase.traj", "calc.txt", "run.log"]
+        run_fp_inner(
+            iter_index,
+            jdata,
+            mdata,
+            forward_files,
+            backward_files,
+            None,
+            log_file="run.log",
         )
     else:
         raise RuntimeError("unsupported fp style")
@@ -4631,6 +4664,50 @@ def post_fp_custom(iter_index, jdata):
         all_sys.to_deepmd_npy(sys_data_path, set_size=len(sys_output), prec=np.float64)
 
 
+def post_fp_gpaw(iter_index, jdata):
+    """Post fp for custom fp. Collect data from user-defined `output_fn`.
+
+    Parameters
+    ----------
+    iter_index : int
+        The index of the current iteration.
+    jdata : dict
+        The parameter data.
+    """
+    model_devi_jobs = jdata["model_devi_jobs"]
+    assert iter_index < len(model_devi_jobs)
+
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, "task.*"))
+    fp_tasks.sort()
+    if len(fp_tasks) == 0:
+        return
+
+    system_index = []
+    for ii in fp_tasks:
+        system_index.append(os.path.basename(ii).split(".")[1])
+    system_index.sort()
+    set_tmp = set(system_index)
+    system_index = list(set_tmp)
+    system_index.sort()
+
+    output_fn = 'conf_ase.traj'
+    output_fmt = 'ase/traj'
+
+    for ss in system_index:
+        sys_output = glob.glob(os.path.join(work_path, "task.%s.*" % ss))
+        sys_output.sort()
+        all_sys = dpdata.MultiSystems(type_map=jdata["type_map"])
+        for oo in sys_output:
+            if os.path.exists(os.path.join(oo, output_fn)):
+                sys = dpdata.LabeledSystem(os.path.join(oo, output_fn), fmt=output_fmt)
+                all_sys.append(sys)
+        sys_data_path = os.path.join(work_path, "data.%s" % ss)
+        all_sys.to_deepmd_raw(sys_data_path)
+        all_sys.to_deepmd_npy(sys_data_path, set_size=len(sys_output), prec=np.float64)
+
+
 def post_fp(iter_index, jdata):
     fp_style = jdata["fp_style"]
     if fp_style == "vasp":
@@ -4651,6 +4728,8 @@ def post_fp(iter_index, jdata):
         post_fp_amber_diff(iter_index, jdata)
     elif fp_style == "custom":
         post_fp_custom(iter_index, jdata)
+    elif fp_style == "gpaw":
+        post_fp_gpaw(iter_index, jdata)
     else:
         raise RuntimeError("unsupported fp style")
     post_fp_check_fail(iter_index, jdata)
