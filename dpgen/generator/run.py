@@ -833,11 +833,14 @@ def run_train(iter_index, jdata, mdata):
     if jdata.get("dp_compress", False):
         backward_files.append(f"frozen_model_compressed{suffix}")
 
-    backward_files += [
-        "model.ckpt.meta",
-        "model.ckpt.index",
-        "model.ckpt.data-00000-of-00001",
-    ]
+    if suffix == ".pb":
+        backward_files += [
+            "model.ckpt.meta",
+            "model.ckpt.index",
+            "model.ckpt.data-00000-of-00001",
+        ]
+    elif suffix == ".pth":
+        backward_files += ["model.ckpt.pt"]
 
     if not jdata.get("one_h5", False):
         init_data_sys_ = jdata["init_data_sys"]
