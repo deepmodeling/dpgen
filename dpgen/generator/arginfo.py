@@ -905,20 +905,6 @@ def fp_style_custom_args() -> list[Argument]:
     ]
 
 
-# gpaw
-def fp_style_gpaw_args() -> list[Argument]:
-    doc_fp_gpaw_runfile = "Input file to run GPAW."
-    return [
-        Argument(
-            "fp_gpaw_runfile",
-            str,
-            optional=True,
-            default="gpaw_singlepoint.py",
-            doc=doc_fp_gpaw_runfile,
-        )
-    ]
-
-
 def fp_style_variant_type_args() -> Variant:
     doc_fp_style = "Software for First Principles."
     doc_amber_diff = (
@@ -948,7 +934,6 @@ def fp_style_variant_type_args() -> Variant:
             Argument("pwmat", dict, [], doc="TODO: add doc"),
             Argument("pwscf", dict, fp_style_pwscf_args()),
             Argument("custom", dict, fp_style_custom_args(), doc=doc_custom),
-            Argument("gpaw", dict, fp_style_gpaw_args()),
         ],
         optional=False,
         doc=doc_fp_style,
