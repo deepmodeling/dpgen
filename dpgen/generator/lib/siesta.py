@@ -20,14 +20,14 @@ def _make_siesta_01_common(sys_data, fp_params):
 
     if "ecut" in fp_params.keys():
         ecut = fp_params["ecut"]
-        ret += "MeshCutoff            %s" % str(ecut)
+        ret += f"MeshCutoff            {str(ecut)}"
         ret += " Ry\n"
     if "ediff" in fp_params.keys():
         ediff = fp_params["ediff"]
-        ret += "DM.Tolerance          %e\n" % ediff
+        ret += f"DM.Tolerance          {ediff:e}\n"
     if "mixWeight" in fp_params.keys():
         mixingWeight = fp_params["mixingWeight"]
-        ret += "DM.MixingWeight       %f\n" % mixingWeight
+        ret += f"DM.MixingWeight       {mixingWeight:f}\n"
     if "NumberPulay" in fp_params.keys():
         NumberPulay = fp_params["NumberPulay"]
         ret += "DM.NumberPulay         %d\n" % NumberPulay
@@ -108,7 +108,7 @@ def _make_siesta_04_ucVectorCoord(sys_data):
     ret += "%block LatticeVectors\n"
     for ii in range(3):
         for jj in range(3):
-            ret += "%f " % cell[ii][jj]
+            ret += f"{cell[ii][jj]:f} "
         ret += "\n"
     ret += "%endblock LatticeVectors\n"
 

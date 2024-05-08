@@ -29,7 +29,7 @@ def convert_mdata(mdata, task_types=["train", "model_devi", "fp"]):
             elif isinstance(mdata[task_type], (list, tuple)):
                 task_data = mdata[task_type][0]
             else:
-                raise TypeError("mdata/%s should be dict or list!" % task_type)
+                raise TypeError(f"mdata/{task_type} should be dict or list!")
             for key, item in task_data.items():
                 if "comments" not in key:
                     mdata[task_type + "_" + key] = item

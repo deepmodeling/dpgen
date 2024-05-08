@@ -127,11 +127,14 @@ run_opt_file = os.path.join(ROOT_PATH, "generator/lib/calypso_run_opt.py")
 
 def _get_model_suffix(jdata) -> str:
     """Return the model suffix based on the backend"""
+    suffix_map = {"tensorflow": ".pb", "pytorch": ".pth"}
     backend = jdata.get("train_backend", "tensorflow")
-    if backend == "tensorflow":
-        suffix = ".pb"
-    elif backend == "pytorch":
-        suffix = ".pth"
+    if backend in suffix_map:
+        suffix = suffix_map[backend]
+    else:
+        raise ValueError(
+            f"The backend {backend} is not available. Supported backends are: 'tensorflow', 'pytorch'."
+        )
     return suffix
 
 
@@ -313,8 +316,7 @@ def make_train(iter_index, jdata, mdata):
             new_to_old_ratio = float(s[1])
         else:
             raise ValueError(
-                "training_reuse_old_ratio is not correct, got %s"
-                % training_reuse_old_ratio
+                f"training_reuse_old_ratio is not correct, got {training_reuse_old_ratio}"
             )
         dlog.info(
             "Use automatic training_reuse_old_ratio to make new-to-old ratio close to %d times of the default value.",
@@ -527,7 +529,7 @@ def make_train(iter_index, jdata, mdata):
             )
         else:
             raise RuntimeError(
-                "Unsupported DeePMD-kit version: %s" % mdata["deepmd_version"]
+                "Unsupported DeePMD-kit version: {}".format(mdata["deepmd_version"])
             )
         if (
             jinput["loss"].get("start_pref_e") is not None
@@ -742,6 +744,12 @@ def run_train(iter_index, jdata, mdata):
         )
 
     train_command = mdata.get("train_command", "dp")
+    assert train_command == "dp", "The 'train_command' should be 'dp'"
+    if suffix == ".pb":
+        train_command += " --tf"
+    elif suffix == ".pth":
+        train_command += " --pt"
+
     train_resources = mdata["train_resources"]
 
     # paths
@@ -772,17 +780,17 @@ def run_train(iter_index, jdata, mdata):
         if training_init_model:
             init_flag = " --init-model old/model.ckpt"
         elif training_init_frozen_model is not None:
-            init_flag = " --init-frz-model old/init%s" % suffix
+            init_flag = f" --init-frz-model old/init{suffix}"
         elif training_finetune_model is not None:
-            init_flag = " --finetune old/init%s" % suffix
+            init_flag = f" --finetune old/init{suffix}"
         command = f"{train_command} train {train_input_file}{extra_flags}"
         command = f"{{ if [ ! -f model.ckpt.index ]; then {command}{init_flag}; else {command} --restart model.ckpt; fi }}"
-        command = "/bin/sh -c %s" % shlex.quote(command)
+        command = f"/bin/sh -c {shlex.quote(command)}"
         commands.append(command)
-        command = "%s freeze" % train_command
+        command = f"{train_command} freeze"
         commands.append(command)
         if jdata.get("dp_compress", False):
-            commands.append("%s compress" % train_command)
+            commands.append(f"{train_command} compress")
     else:
         raise RuntimeError(
             "DP-GEN currently only supports for DeePMD-kit 1.x or 2.x version!"
@@ -809,15 +817,22 @@ def run_train(iter_index, jdata, mdata):
             os.path.join("old", "model.ckpt.data-00000-of-00001"),
         ]
     elif training_init_frozen_model is not None or training_finetune_model is not None:
-        forward_files.append(os.path.join("old", "init%s" % suffix))
+        forward_files.append(os.path.join("old", f"init{suffix}"))
 
-    backward_files = ["frozen_model%s" % suffix, "lcurve.out", "train.log", "checkpoint"]
-    if suffix == ".pb":
-        backward_files += ["model.ckpt.meta",
-                           "model.ckpt.index",
-                           "model.ckpt.data-00000-of-00001"]
-        if jdata.get("dp_compress", False):
-            backward_files.append("frozen_model_compressed%s" % suffix)
+    backward_files = [
+        f"frozen_model{suffix}",
+        "lcurve.out",
+        "train.log",
+        "checkpoint",
+    ]
+    if jdata.get("dp_compress", False):
+        backward_files.append(f"frozen_model_compressed{suffix}")
+
+    backward_files += [
+        "model.ckpt.meta",
+        "model.ckpt.index",
+        "model.ckpt.data-00000-of-00001",
+    ]
 
     if not jdata.get("one_h5", False):
         init_data_sys_ = jdata["init_data_sys"]
@@ -857,7 +872,7 @@ def run_train(iter_index, jdata, mdata):
     backward_files += mdata.get("train" + "_user_backward_files", [])
     if Version(api_version) < Version("1.0"):
         raise RuntimeError(
-            "API version %s has been removed. Please upgrade to 1.0." % api_version
+            f"API version {api_version} has been removed. Please upgrade to 1.0."
         )
 
     elif Version(api_version) >= Version("1.0"):
@@ -891,10 +906,9 @@ def post_train(iter_index, jdata, mdata):
     # symlink models
     suffix = _get_model_suffix(jdata)
     for ii in range(numb_models):
-        model_name = "frozen_model%s" % suffix
-        if suffix == ".pb":
-            if jdata.get("dp_compress", False):
-                model_name = "frozen_model_compressed%s" % suffix
+        model_name = f"frozen_model{suffix}"
+        if jdata.get("dp_compress", False):
+            model_name = f"frozen_model_compressed{suffix}"
 
         ofile = os.path.join(work_path, "graph.%03d%s" % (ii, suffix))
         task_file = os.path.join(train_task_fmt % ii, model_name)
@@ -1012,7 +1026,7 @@ def find_only_one_key(lmp_lines, key):
     if len(found) > 1:
         raise RuntimeError("found %d keywords %s" % (len(found), key))
     if len(found) == 0:
-        raise RuntimeError("failed to find keyword %s" % (key))
+        raise RuntimeError(f"failed to find keyword {key}")
     return found[0]
 
 
@@ -1125,8 +1139,7 @@ def make_model_devi(iter_index, jdata, mdata):
             ii_systems = sorted(glob.glob(ii))
             if ii_systems == []:
                 warnings.warn(
-                    "There is no system in the path %s. Please check if the path is correct."
-                    % ii
+                    f"There is no system in the path {ii}. Please check if the path is correct."
                 )
             cur_systems += ii_systems
         # cur_systems should not be sorted, as we may add specific constrict to the similutions
@@ -1965,7 +1978,7 @@ def run_md_model_devi(iter_index, jdata, mdata):
             command = f"{{ if [ ! -f dpgen.restart.10000 ]; then {model_devi_exec} -i input.lammps -v restart 0; else {model_devi_exec} -i input.lammps -v restart 1; fi }}"
         else:
             command = f"{{ all_exist=true; for i in $(seq -w 1 {nbeads}); do [[ ! -f dpgen.restart${{i}}.10000 ]] && {{ all_exist=false; break; }}; done; $all_exist && {{ {model_devi_exec} -p {nbeads}x1 -i input.lammps -v restart 1; }} || {{ {model_devi_exec} -p {nbeads}x1 -i input.lammps -v restart 0; }} }}"
-        command = "/bin/bash -c %s" % shlex.quote(command)
+        command = f"/bin/bash -c {shlex.quote(command)}"
         commands = [command]
 
         forward_files = ["conf.lmp", "input.lammps"]
@@ -2038,8 +2051,8 @@ def run_md_model_devi(iter_index, jdata, mdata):
         if ndx_filename:
             forward_files.append(ndx_filename)
         backward_files = [
-            "%s.tpr" % deffnm,
-            "%s.log" % deffnm,
+            f"{deffnm}.tpr",
+            f"{deffnm}.log",
             traj_filename,
             "model_devi.out",
             "traj",
@@ -2073,7 +2086,7 @@ def run_md_model_devi(iter_index, jdata, mdata):
         )
     if Version(api_version) < Version("1.0"):
         raise RuntimeError(
-            "API version %s has been removed. Please upgrade to 1.0." % api_version
+            f"API version {api_version} has been removed. Please upgrade to 1.0."
         )
 
     elif Version(api_version) >= Version("1.0"):
@@ -2680,17 +2693,17 @@ def _make_fp_vasp_inner(
             random.shuffle(fp_rest_failed)
             random.shuffle(fp_rest_accurate)
             with open(
-                os.path.join(work_path, "candidate.shuffled.%s.out" % ss), "w"
+                os.path.join(work_path, f"candidate.shuffled.{ss}.out"), "w"
             ) as fp:
                 for ii in fp_candidate:
                     fp.write(" ".join([str(nn) for nn in ii]) + "\n")
             with open(
-                os.path.join(work_path, "rest_accurate.shuffled.%s.out" % ss), "w"
+                os.path.join(work_path, f"rest_accurate.shuffled.{ss}.out"), "w"
             ) as fp:
                 for ii in fp_rest_accurate:
                     fp.write(" ".join([str(nn) for nn in ii]) + "\n")
             with open(
-                os.path.join(work_path, "rest_failed.shuffled.%s.out" % ss), "w"
+                os.path.join(work_path, f"rest_failed.shuffled.{ss}.out"), "w"
             ) as fp:
                 for ii in fp_rest_failed:
                     fp.write(" ".join([str(nn) for nn in ii]) + "\n")
@@ -3195,22 +3208,22 @@ def sys_link_fp_vasp_pp(iter_index, jdata):
     system_idx_str.sort()
     for ii in system_idx_str:
         potcars = []
-        sys_tasks = glob.glob(os.path.join(work_path, "task.%s.*" % ii))
+        sys_tasks = glob.glob(os.path.join(work_path, f"task.{ii}.*"))
         assert len(sys_tasks) != 0
         sys_poscar = os.path.join(sys_tasks[0], "POSCAR")
         sys = dpdata.System(sys_poscar, fmt="vasp/poscar")
         for ele_name in sys["atom_names"]:
             ele_idx = jdata["type_map"].index(ele_name)
             potcars.append(fp_pp_files[ele_idx])
-        with open(os.path.join(work_path, "POTCAR.%s" % ii), "w") as fp_pot:
+        with open(os.path.join(work_path, f"POTCAR.{ii}"), "w") as fp_pot:
             for jj in potcars:
                 with open(os.path.join(fp_pp_path, jj)) as fp:
                     fp_pot.write(fp.read())
-        sys_tasks = glob.glob(os.path.join(work_path, "task.%s.*" % ii))
+        sys_tasks = glob.glob(os.path.join(work_path, f"task.{ii}.*"))
         cwd = os.getcwd()
         for jj in sys_tasks:
             os.chdir(jj)
-            os.symlink(os.path.join("..", "POTCAR.%s" % ii), "POTCAR")
+            os.symlink(os.path.join("..", f"POTCAR.{ii}"), "POTCAR")
             os.chdir(cwd)
 
 
@@ -3262,7 +3275,7 @@ def _link_fp_abacus_pporb_descript(iter_index, jdata):
             type_map_idx = type_map.index(iatom)
             if iatom not in type_map:
                 raise RuntimeError(
-                    "atom name %s in STRU is not defined in type_map" % (iatom)
+                    f"atom name {iatom} in STRU is not defined in type_map"
                 )
             if pp_files_stru:
                 src_file = os.path.join(fp_pp_path, jdata["fp_pp_files"][type_map_idx])
@@ -3968,7 +3981,7 @@ def run_fp_inner(
     api_version = mdata.get("api_version", "1.0")
     if Version(api_version) < Version("1.0"):
         raise RuntimeError(
-            "API version %s has been removed. Please upgrade to 1.0." % api_version
+            f"API version {api_version} has been removed. Please upgrade to 1.0."
         )
 
     elif Version(api_version) >= Version("1.0"):
@@ -4210,7 +4223,7 @@ def post_fp_vasp(iter_index, jdata, rfailed=None):
     tcount = 0
     icount = 0
     for ss in system_index:
-        sys_outcars = glob.glob(os.path.join(work_path, "task.%s.*/OUTCAR" % ss))
+        sys_outcars = glob.glob(os.path.join(work_path, f"task.{ss}.*/OUTCAR"))
         sys_outcars.sort()
         tcount += len(sys_outcars)
         all_sys = None
@@ -4226,7 +4239,7 @@ def post_fp_vasp(iter_index, jdata, rfailed=None):
                     )
                 except Exception:
                     _sys = dpdata.LabeledSystem()
-                    dlog.info("Failed fp path: %s" % oo.replace("OUTCAR", ""))
+                    dlog.info("Failed fp path: {}".format(oo.replace("OUTCAR", "")))
             if len(_sys) == 1:
                 # save ele_temp, if any
                 if os.path.exists(oo.replace("OUTCAR", "job.json")):
@@ -4263,7 +4276,7 @@ def post_fp_vasp(iter_index, jdata, rfailed=None):
                 icount += 1
         all_te = np.array(all_te)
         if all_sys is not None:
-            sys_data_path = os.path.join(work_path, "data.%s" % ss)
+            sys_data_path = os.path.join(work_path, f"data.{ss}")
             all_sys.to_deepmd_raw(sys_data_path)
             all_sys.to_deepmd_npy(sys_data_path, set_size=len(sys_outcars))
 
@@ -4303,8 +4316,8 @@ def post_fp_pwscf(iter_index, jdata):
 
     cwd = os.getcwd()
     for ss in system_index:
-        sys_output = glob.glob(os.path.join(work_path, "task.%s.*/output" % ss))
-        sys_input = glob.glob(os.path.join(work_path, "task.%s.*/input" % ss))
+        sys_output = glob.glob(os.path.join(work_path, f"task.{ss}.*/output"))
+        sys_input = glob.glob(os.path.join(work_path, f"task.{ss}.*/input"))
         sys_output.sort()
         sys_input.sort()
 
@@ -4326,7 +4339,7 @@ def post_fp_pwscf(iter_index, jdata):
                 if len(_sys) > 0:
                     all_sys.append(_sys)
 
-        sys_data_path = os.path.join(work_path, "data.%s" % ss)
+        sys_data_path = os.path.join(work_path, f"data.{ss}")
         all_sys.to_deepmd_raw(sys_data_path)
         all_sys.to_deepmd_npy(sys_data_path, set_size=len(sys_output))
 
@@ -4352,8 +4365,8 @@ def post_fp_abacus_scf(iter_index, jdata):
 
     cwd = os.getcwd()
     for ss in system_index:
-        sys_output = glob.glob(os.path.join(work_path, "task.%s.*" % ss))
-        sys_input = glob.glob(os.path.join(work_path, "task.%s.*/INPUT" % ss))
+        sys_output = glob.glob(os.path.join(work_path, f"task.{ss}.*"))
+        sys_input = glob.glob(os.path.join(work_path, f"task.{ss}.*/INPUT"))
         sys_output.sort()
         sys_input.sort()
 
@@ -4369,7 +4382,7 @@ def post_fp_abacus_scf(iter_index, jdata):
                     all_sys.append(_sys)
 
         if all_sys is not None:
-            sys_data_path = os.path.join(work_path, "data.%s" % ss)
+            sys_data_path = os.path.join(work_path, f"data.{ss}")
             all_sys.to_deepmd_raw(sys_data_path)
             all_sys.to_deepmd_npy(sys_data_path, set_size=len(sys_output))
 
@@ -4395,8 +4408,8 @@ def post_fp_siesta(iter_index, jdata):
 
     cwd = os.getcwd()
     for ss in system_index:
-        sys_output = glob.glob(os.path.join(work_path, "task.%s.*/output" % ss))
-        sys_input = glob.glob(os.path.join(work_path, "task.%s.*/input" % ss))
+        sys_output = glob.glob(os.path.join(work_path, f"task.{ss}.*/output"))
+        sys_input = glob.glob(os.path.join(work_path, f"task.{ss}.*/input"))
         sys_output.sort()
         sys_input.sort()
         for idx, oo in enumerate(sys_output):
@@ -4416,7 +4429,7 @@ def post_fp_siesta(iter_index, jdata):
             else:
                 all_sys.append(_sys)
 
-        sys_data_path = os.path.join(work_path, "data.%s" % ss)
+        sys_data_path = os.path.join(work_path, f"data.{ss}")
         all_sys.to_deepmd_raw(sys_data_path)
         all_sys.to_deepmd_npy(sys_data_path, set_size=len(sys_output))
 
@@ -4442,7 +4455,7 @@ def post_fp_gaussian(iter_index, jdata):
 
     cwd = os.getcwd()
     for ss in system_index:
-        sys_output = glob.glob(os.path.join(work_path, "task.%s.*/output" % ss))
+        sys_output = glob.glob(os.path.join(work_path, f"task.{ss}.*/output"))
         sys_output.sort()
         for idx, oo in enumerate(sys_output):
             sys = dpdata.LabeledSystem(oo, fmt="gaussian/log")
@@ -4459,7 +4472,7 @@ def post_fp_gaussian(iter_index, jdata):
                     all_sys = sys
             else:
                 all_sys.append(sys)
-        sys_data_path = os.path.join(work_path, "data.%s" % ss)
+        sys_data_path = os.path.join(work_path, f"data.{ss}")
         all_sys.to_deepmd_raw(sys_data_path)
         all_sys.to_deepmd_npy(sys_data_path, set_size=len(sys_output))
 
@@ -4490,7 +4503,7 @@ def post_fp_cp2k(iter_index, jdata, rfailed=None):
     # icount: num of converged fp tasks
     icount = 0
     for ss in system_index:
-        sys_output = glob.glob(os.path.join(work_path, "task.%s.*/output" % ss))
+        sys_output = glob.glob(os.path.join(work_path, f"task.{ss}.*/output"))
         sys_output.sort()
         tcount += len(sys_output)
         all_sys = dpdata.MultiSystems(type_map=jdata["type_map"])
@@ -4502,7 +4515,7 @@ def post_fp_cp2k(iter_index, jdata, rfailed=None):
             icount += 1
 
         if (all_sys is not None) and (len(all_sys) > 0):
-            sys_data_path = os.path.join(work_path, "data.%s" % ss)
+            sys_data_path = os.path.join(work_path, f"data.{ss}")
             all_sys.to_deepmd_raw(sys_data_path)
             all_sys.to_deepmd_npy(sys_data_path)
 
@@ -4547,7 +4560,7 @@ def post_fp_pwmat(iter_index, jdata, rfailed=None):
     tcount = 0
     icount = 0
     for ss in system_index:
-        sys_output = glob.glob(os.path.join(work_path, "task.%s.*/OUT.MLMD" % ss))
+        sys_output = glob.glob(os.path.join(work_path, f"task.{ss}.*/OUT.MLMD"))
         sys_output.sort()
         tcount += len(sys_output)
         all_sys = None
@@ -4561,11 +4574,11 @@ def post_fp_pwmat(iter_index, jdata, rfailed=None):
             else:
                 icount += 1
         if all_sys is not None:
-            sys_data_path = os.path.join(work_path, "data.%s" % ss)
+            sys_data_path = os.path.join(work_path, f"data.{ss}")
             all_sys.to_deepmd_raw(sys_data_path)
             all_sys.to_deepmd_npy(sys_data_path, set_size=len(sys_output))
-    dlog.info("failed frame number: %s " % icount)
-    dlog.info("total frame number: %s " % tcount)
+    dlog.info(f"failed frame number: {icount} ")
+    dlog.info(f"total frame number: {tcount} ")
     reff = icount / tcount
     dlog.info(f"ratio of failed frame:  {reff:.2%}")
 
@@ -4593,7 +4606,7 @@ def post_fp_amber_diff(iter_index, jdata):
     system_index.sort()
 
     for ss in system_index:
-        sys_output = glob.glob(os.path.join(work_path, "task.%s.*" % ss))
+        sys_output = glob.glob(os.path.join(work_path, f"task.{ss}.*"))
         sys_output.sort()
         all_sys = dpdata.MultiSystems(type_map=jdata["type_map"])
         for oo in sys_output:
@@ -4601,7 +4614,7 @@ def post_fp_amber_diff(iter_index, jdata):
                 os.path.join(oo, "dataset")
             )
             all_sys.append(sys)
-        sys_data_path = os.path.join(work_path, "data.%s" % ss)
+        sys_data_path = os.path.join(work_path, f"data.{ss}")
         all_sys.to_deepmd_raw(sys_data_path)
         all_sys.to_deepmd_npy(sys_data_path, set_size=len(sys_output), prec=np.float64)
 
@@ -4639,14 +4652,14 @@ def post_fp_custom(iter_index, jdata):
     output_fmt = fp_params["output_fmt"]
 
     for ss in system_index:
-        sys_output = glob.glob(os.path.join(work_path, "task.%s.*" % ss))
+        sys_output = glob.glob(os.path.join(work_path, f"task.{ss}.*"))
         sys_output.sort()
         all_sys = dpdata.MultiSystems(type_map=jdata["type_map"])
         for oo in sys_output:
             if os.path.exists(os.path.join(oo, output_fn)):
                 sys = dpdata.LabeledSystem(os.path.join(oo, output_fn), fmt=output_fmt)
                 all_sys.append(sys)
-        sys_data_path = os.path.join(work_path, "data.%s" % ss)
+        sys_data_path = os.path.join(work_path, f"data.{ss}")
         all_sys.to_deepmd_raw(sys_data_path)
         all_sys.to_deepmd_npy(sys_data_path, set_size=len(sys_output), prec=np.float64)
 

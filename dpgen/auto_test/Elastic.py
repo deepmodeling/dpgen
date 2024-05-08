@@ -55,7 +55,7 @@ class Elastic(Property):
     def make_confs(self, path_to_work, path_to_equi, refine=False):
         path_to_work = os.path.abspath(path_to_work)
         if os.path.exists(path_to_work):
-            dlog.warning("%s already exists" % path_to_work)
+            dlog.warning(f"{path_to_work} already exists")
         else:
             os.makedirs(path_to_work)
         path_to_equi = os.path.abspath(path_to_equi)
@@ -288,10 +288,10 @@ class Elastic(Property):
         res_data["GV"] = GV
         res_data["EV"] = EV
         res_data["uV"] = uV
-        ptr_data += "# Bulk   Modulus BV = %.2f GPa\n" % BV
-        ptr_data += "# Shear  Modulus GV = %.2f GPa\n" % GV
-        ptr_data += "# Youngs Modulus EV = %.2f GPa\n" % EV
-        ptr_data += "# Poission Ratio uV = %.2f\n " % uV
+        ptr_data += f"# Bulk   Modulus BV = {BV:.2f} GPa\n"
+        ptr_data += f"# Shear  Modulus GV = {GV:.2f} GPa\n"
+        ptr_data += f"# Youngs Modulus EV = {EV:.2f} GPa\n"
+        ptr_data += f"# Poission Ratio uV = {uV:.2f}\n "
 
         dumpfn(res_data, output_file, indent=4)
 
