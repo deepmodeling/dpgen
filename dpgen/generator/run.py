@@ -198,7 +198,7 @@ def copy_model(numb_model, prv_iter_index, cur_iter_index, suffix=".pb"):
         os.symlink(os.path.relpath(prv_train_task), train_task_fmt % ii)
         os.symlink(
             os.path.join(train_task_fmt % ii, f"frozen_model{suffix}"),
-            "graph.%03d%s" % (ii, suffix)
+            "graph.%03d%s" % (ii, suffix),
         )
         os.chdir(cwd)
     with open(os.path.join(cur_train_path, "copied"), "w") as fp:
