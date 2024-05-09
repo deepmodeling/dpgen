@@ -748,8 +748,8 @@ def run_train(iter_index, jdata, mdata):
             "training_init_model, training_init_frozen_model, and training_finetune_model are mutually exclusive."
         )
 
-    train_command = mdata.get("train_command", "dp")
-    assert train_command.strip() == "dp", "The 'train_command' should be 'dp'"
+    train_command = mdata.get("train_command", "dp").strip()
+    assert train_command == "dp", "The 'train_command' should be 'dp'"
     if suffix == ".pb":
         train_command += " --tf"
     elif suffix == ".pth":
