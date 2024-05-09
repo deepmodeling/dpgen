@@ -3765,8 +3765,6 @@ def make_fp_custom(iter_index, jdata):
 def make_fp_gpaw(iter_index, jdata):
     """Make input file for customized FP style.
 
-    Convert the POSCAR file to ase_traj format (no need).
-
     Parameters
     ----------
     iter_index : int
@@ -3783,9 +3781,8 @@ def make_fp_gpaw(iter_index, jdata):
         gpaw_runfile_source
     ), f"Can not find gpaw runfile {gpaw_runfile_source}"
     for ii in fp_tasks:
-        with set_directory(
-            Path(ii)
-        ):  # create file `gpaw_runfile` in the current directory and symlink it to the source file
+        with set_directory(Path(ii)):
+            # create file `gpaw_runfile` in the current directory and symlink it to the source file
             Path(gpaw_runfile).symlink_to(gpaw_runfile_source)
 
 
