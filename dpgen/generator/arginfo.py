@@ -4,6 +4,7 @@ from typing import Union
 from dargs import Argument, Variant
 
 from dpgen.arginfo import general_mdata_arginfo
+from dpgen.generator.lib.gpaw import fp_style_gpaw_args
 
 
 def run_mdata_arginfo() -> Argument:
@@ -902,20 +903,6 @@ def fp_style_custom_args() -> list[Argument]:
                 Argument("output_fn", str, optional=False, doc=doc_output_fn),
             ],
         ),
-    ]
-
-
-# gpaw
-def fp_style_gpaw_args() -> list[Argument]:
-    doc_fp_gpaw_runfile = "Input file to run GPAW."
-    return [
-        Argument(
-            "fp_gpaw_runfile",
-            str,
-            optional=True,
-            default="gpaw_singlepoint.py",
-            doc=doc_fp_gpaw_runfile,
-        )
     ]
 
 
