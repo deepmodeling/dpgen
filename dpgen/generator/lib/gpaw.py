@@ -11,9 +11,12 @@ from pathlib import Path
 from dargs import Argument
 from dpgen.generator.lib.utils import make_iter_name
 from dpgen.util import set_directory
-from dpgen.generator.run import fp_name
+# from dpgen.generator.run import fp_name   # can not import since it will cause circular import
 import dpdata
 import numpy as np
+
+
+fp_name = "02.fp"
 
 
 ### functinos for `arginfo.py`
