@@ -126,7 +126,7 @@ run_opt_file = os.path.join(ROOT_PATH, "generator/lib/calypso_run_opt.py")
 
 
 def _get_model_suffix(jdata) -> str:
-    """Return the model suffix based on the backend"""
+    """Return the model suffix based on the backend."""
     suffix_map = {"tensorflow": ".pb", "pytorch": ".pth"}
     backend = jdata.get("train_backend", "tensorflow")
     if backend in suffix_map:
