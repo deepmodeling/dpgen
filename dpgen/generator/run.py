@@ -2001,8 +2001,8 @@ def run_md_model_devi(iter_index, jdata, mdata):
         else:
             command += f'&& echo -e "{grp_name}\\n{grp_name}\\n" | {model_devi_exec} trjconv -s {ref_filename} -f {deffnm}.trr -o {traj_filename} -pbc mol -ur compact -center'
         command += "&& if [ ! -d traj ]; then \n mkdir traj; fi\n"
-        command += f"python -c \"import dpdata;system = dpdata.System('{traj_filename}', fmt='gromacs/gro'); [system.to_gromacs_gro('traj/%d.gromacstrj' % (i * {trj_freq}), frame_idx=i) for i in range(system.get_nframes())]; system.to_deepmd_npy('traj_deepmd')\""        
-        _rel_model_names = ' '.join([str(os.path.join('..', ii)) for ii in model_names])
+        command += f"python -c \"import dpdata;system = dpdata.System('{traj_filename}', fmt='gromacs/gro'); [system.to_gromacs_gro('traj/%d.gromacstrj' % (i * {trj_freq}), frame_idx=i) for i in range(system.get_nframes())]; system.to_deepmd_npy('traj_deepmd')\""
+        _rel_model_names = " ".join([str(os.path.join("..", ii)) for ii in model_names])
         command += f"&& dp model-devi -m {_rel_model_names} -s traj_deepmd -o model_devi.out -f {trj_freq}"
         del _rel_model_names
         commands = [command]
