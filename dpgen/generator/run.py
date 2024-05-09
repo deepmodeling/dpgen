@@ -197,7 +197,7 @@ def copy_model(numb_model, prv_iter_index, cur_iter_index, suffix=".pb"):
         os.chdir(cur_train_path)
         os.symlink(os.path.relpath(prv_train_task), train_task_fmt % ii)
         os.symlink(
-            os.path.join(train_task_fmt % ii, "frozen_model%s" % suffix),
+            os.path.join(train_task_fmt % ii, f"frozen_model{suffix}"),
             "graph.%03d%s" % (ii, suffix),
         )
         os.chdir(cwd)
@@ -663,7 +663,7 @@ def make_train(iter_index, jdata, mdata):
     if copied_models is not None:
         for ii in range(len(copied_models)):
             _link_old_models(
-                work_path, [copied_models[ii]], ii, basename="init%s" % suffix
+                work_path, [copied_models[ii]], ii, basename=f"init{suffix}"
             )
     # Copy user defined forward files
     symlink_user_forward_files(mdata=mdata, task_type="train", work_path=work_path)
@@ -1159,7 +1159,7 @@ def make_model_devi(iter_index, jdata, mdata):
     train_path = os.path.join(iter_name, train_name)
     train_path = os.path.abspath(train_path)
     suffix = _get_model_suffix(jdata)
-    models = sorted(glob.glob(os.path.join(train_path, "graph*%s" % suffix)))
+    models = sorted(glob.glob(os.path.join(train_path, f"graph*{suffix}")))
     work_path = os.path.join(iter_name, model_devi_name)
     create_path(work_path)
     if model_devi_engine == "calypso":
@@ -1341,7 +1341,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
     train_path = os.path.join(iter_name, train_name)
     train_path = os.path.abspath(train_path)
     suffix = _get_model_suffix(jdata)
-    models = sorted(glob.glob(os.path.join(train_path, "graph*%s" % suffix)))
+    models = sorted(glob.glob(os.path.join(train_path, f"graph*{suffix}")))
     task_model_list = []
     for ii in models:
         task_model_list.append(os.path.join("..", os.path.basename(ii)))
@@ -1539,7 +1539,7 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
     train_path = os.path.join(iter_name, train_name)
     train_path = os.path.abspath(train_path)
     suffix = _get_model_suffix(jdata)
-    models = sorted(glob.glob(os.path.join(train_path, "graph*%s" % suffix)))
+    models = sorted(glob.glob(os.path.join(train_path, f"graph*{suffix}")))
     task_model_list = []
     for ii in models:
         task_model_list.append(os.path.join("..", os.path.basename(ii)))
@@ -1682,7 +1682,7 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
     train_path = os.path.join(iter_name, train_name)
     train_path = os.path.abspath(train_path)
     suffix = _get_model_suffix(jdata)
-    models = sorted(glob.glob(os.path.join(train_path, "graph*%s" % suffix)))
+    models = sorted(glob.glob(os.path.join(train_path, f"graph*{suffix}")))
     task_model_list = []
     for ii in models:
         task_model_list.append(os.path.join("..", os.path.basename(ii)))
@@ -1976,7 +1976,7 @@ def run_md_model_devi(iter_index, jdata, mdata):
     # dlog.info("run_tasks in run_model_deviation",run_tasks_)
 
     suffix = _get_model_suffix(jdata)
-    all_models = glob.glob(os.path.join(work_path, "graph*%s" % suffix))
+    all_models = glob.glob(os.path.join(work_path, f"graph*{suffix}"))
     model_names = [os.path.basename(ii) for ii in all_models]
 
     model_devi_engine = jdata.get("model_devi_engine", "lammps")
