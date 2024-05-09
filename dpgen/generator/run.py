@@ -749,7 +749,7 @@ def run_train(iter_index, jdata, mdata):
         )
 
     train_command = mdata.get("train_command", "dp").strip()
-    # assert train_command == "dp", "The 'train_command' should be 'dp'"  # should modify tests for this command
+    # assert train_command == "dp", "The 'train_command' should be 'dp'"     # the tests should be updated to run this command
     if suffix == ".pb":
         train_command += " --tf"
     elif suffix == ".pth":
