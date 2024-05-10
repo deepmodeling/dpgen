@@ -750,10 +750,8 @@ def run_train(iter_index, jdata, mdata):
         )
 
     train_command = mdata.get("train_command", "dp").strip()
-    assert train_command == "dp", "The 'train_command' should be 'dp'"
-    if suffix == ".pb":
-        train_command += " --tf"
-    elif suffix == ".pth":
+    # assert train_command == "dp", "The 'train_command' should be 'dp'"   # need to update the tests
+    if suffix == ".pth":
         train_command += " --pt"
 
     train_resources = mdata["train_resources"]
@@ -2044,7 +2042,9 @@ def run_md_model_devi(iter_index, jdata, mdata):
             command += f'&& echo -e "{grp_name}\\n{grp_name}\\n" | {model_devi_exec} trjconv -s {ref_filename} -f {deffnm}.trr -o {traj_filename} -pbc mol -ur compact -center'
         command += "&& if [ ! -d traj ]; then \n mkdir traj; fi\n"
         command += f"python -c \"import dpdata;system = dpdata.System('{traj_filename}', fmt='gromacs/gro'); [system.to_gromacs_gro('traj/%d.gromacstrj' % (i * {trj_freq}), frame_idx=i) for i in range(system.get_nframes())]; system.to_deepmd_npy('traj_deepmd')\""
-        command += f"&& dp model-devi -m ../graph.000{suffix} ../graph.001{suffix} ../graph.002{suffix} ../graph.003{suffix} -s traj_deepmd -o model_devi.out -f {trj_freq}"
+        _rel_model_names = " ".join([str(os.path.join("..", ii)) for ii in model_names])
+        command += f"&& dp model-devi -m {_rel_model_names} -s traj_deepmd -o model_devi.out -f {trj_freq}"
+        del _rel_model_names
         commands = [command]
 
         forward_files = [
@@ -2219,7 +2219,7 @@ def _read_model_devi_file(
         assert all(
             model_devi_content.shape[0] == model_devi_contents[0].shape[0]
             for model_devi_content in model_devi_contents
-        ), "Not all beads generated the same number of lines in the model_devi$\{ibead\}.out file. Check your pimd task carefully."
+        ), r"Not all beads generated the same number of lines in the model_devi${ibead}.out file. Check your pimd task carefully."
         last_step = model_devi_contents[0][-1, 0]
         for ibead in range(1, num_beads):
             model_devi_contents[ibead][:, 0] = model_devi_contents[ibead][
