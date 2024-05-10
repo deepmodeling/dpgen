@@ -750,9 +750,7 @@ def run_train(iter_index, jdata, mdata):
 
     train_command = mdata.get("train_command", "dp").strip()
     # assert train_command == "dp", "The 'train_command' should be 'dp'"     # the tests should be updated to run this command
-    if suffix == ".pb":
-        train_command += " --tf"
-    elif suffix == ".pth":
+    if suffix == ".pth":
         train_command += " --pt"
 
     train_resources = mdata["train_resources"]
@@ -2220,7 +2218,7 @@ def _read_model_devi_file(
         assert all(
             model_devi_content.shape[0] == model_devi_contents[0].shape[0]
             for model_devi_content in model_devi_contents
-        ), "Not all beads generated the same number of lines in the model_devi$\{ibead\}.out file. Check your pimd task carefully."
+        ), r"Not all beads generated the same number of lines in the model_devi${ibead}.out file. Check your pimd task carefully."
         last_step = model_devi_contents[0][-1, 0]
         for ibead in range(1, num_beads):
             model_devi_contents[ibead][:, 0] = model_devi_contents[ibead][
