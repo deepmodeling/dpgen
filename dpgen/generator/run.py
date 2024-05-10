@@ -814,11 +814,14 @@ def run_train(iter_index, jdata, mdata):
     if "srtab_file_path" in jdata.keys():
         forward_files.append(zbl_file)
     if training_init_model:
-        forward_files += [
-            os.path.join("old", "model.ckpt.meta"),
-            os.path.join("old", "model.ckpt.index"),
-            os.path.join("old", "model.ckpt.data-00000-of-00001"),
-        ]
+        if suffix == ".pb":
+            forward_files += [
+                os.path.join("old", "model.ckpt.meta"),
+                os.path.join("old", "model.ckpt.index"),
+                os.path.join("old", "model.ckpt.data-00000-of-00001"),
+            ]
+        elif suffix == ".pth":
+            forward_files += [os.path.join("old", "model.ckpt.pt"))
     elif training_init_frozen_model is not None or training_finetune_model is not None:
         forward_files.append(os.path.join("old", f"init{suffix}"))
 
