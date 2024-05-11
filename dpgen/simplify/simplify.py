@@ -31,6 +31,7 @@ from dpgen.generator.lib.utils import (
     record_iter,
 )
 from dpgen.generator.run import (
+    _get_model_suffix,
     data_system_fmt,
     fp_name,
     fp_task_fmt,
@@ -186,7 +187,9 @@ def make_model_devi(iter_index, jdata, mdata):
     # link the model
     train_path = os.path.join(iter_name, train_name)
     train_path = os.path.abspath(train_path)
-    models = glob.glob(os.path.join(train_path, "graph*pb"))
+    suffix = _get_model_suffix(jdata)
+    models = glob.glob(os.path.join(train_path, f"graph*{suffix}"))
+
     for mm in models:
         model_name = os.path.basename(mm)
         os.symlink(mm, os.path.join(work_path, model_name))
