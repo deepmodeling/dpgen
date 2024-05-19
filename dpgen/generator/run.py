@@ -127,7 +127,7 @@ run_opt_file = os.path.join(ROOT_PATH, "generator/lib/calypso_run_opt.py")
 
 
 def _get_model_suffix(jdata) -> str:
-    """Return the model suffix based on the backend"""
+    """Return the model suffix based on the backend."""
     suffix_map = {"tensorflow": ".pb", "pytorch": ".pth"}
     backend = jdata.get("train_backend", "tensorflow")
     if backend in suffix_map:
@@ -1868,7 +1868,7 @@ def _make_model_devi_amber(
                 .replace("@rcut@", str(jdata["cutoff"]))
             )
             suffix = _get_model_suffix(jdata)
-            models = sorted(glob.glob(os.path.join(train_path, "graph.*%s" % suffix)))
+            models = sorted(glob.glob(os.path.join(train_path, f"graph.*{suffix}")))
             task_model_list = []
             for ii in models:
                 task_model_list.append(os.path.join("..", os.path.basename(ii)))
