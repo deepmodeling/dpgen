@@ -386,7 +386,7 @@ class Gamma(Property):
         with open(inLammps) as fin1:
             contents = fin1.readlines()
             for ii in range(len(contents)):
-                upper = re.search("variable        N equal count\(all\)", contents[ii])
+                upper = re.search(r"variable        N equal count\(all\)", contents[ii])
                 lower = re.search("min_style       cg", contents[ii])
                 if lower:
                     lower_id = ii
