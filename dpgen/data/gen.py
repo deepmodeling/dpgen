@@ -22,7 +22,6 @@ import dpgen.data.tools.sc as sc
 from dpgen.data.tools.gpaw_init import (
     make_gpaw_relax,
     run_gpaw_relax,
-    make_scale_gpaw,
     make_gpaw_md,
     run_gpaw_md,
     coll_gpaw_md,
@@ -1567,14 +1566,11 @@ def gen_init_bulk(args):
                     make_gpaw_relax(jdata, {"fp_resources": {}})
         elif stage == 2:
             dlog.info("Current stage is 2, perturb and scale")
-            if jdata["init_fp_style"] == "VASP":
+            if jdata["init_fp_style"] == "VASP" or jdata["init_fp_style"] == "GPAW":
                 make_scale(jdata)
                 pert_scaled(jdata)
             elif jdata["init_fp_style"] == "ABACUS":
                 make_scale_ABACUS(jdata)
-                pert_scaled(jdata)
-            elif jdata["init_fp_style"] == "GPAW":
-                make_scale_gpaw(jdata)
                 pert_scaled(jdata)
         elif stage == 3:
             dlog.info("Current stage is 3, run a short md")

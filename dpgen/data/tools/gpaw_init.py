@@ -2,9 +2,17 @@
 import os
 import shutil
 import glob
+
+from ase.io import Trajectory
+from ase.io.vasp import write_vasp
+
 from packaging.version import Version
 from dpgen.generator.lib.utils import symlink_user_forward_files
 from dpgen.dispatcher.Dispatcher import make_submission
+
+### use from...import... may cause circular import
+import dpgen.data.gen.create_path as create_path
+import dpgen.data.gen.poscar_scale as poscar_scale
 
 global_dirname_02 = "00.place_ele"
 global_dirname_03 = "01.scale_pert"
@@ -88,13 +96,19 @@ def run_gpaw_relax(jdata, mdata):
             errlog="fp.log",
         )
         submission.run_submission()
+
+    ### Convert `conf_ase.traj` to `CONTCAR` to be used in the next step
+    for ii in relax_tasks:
+        os.chdir(ii)
+        if os.path.isfile("conf_ase.traj"):
+            traj = Trajectory('conf_ase.traj')
+            write_vasp('CONTCAR', traj[-1])
+        os.chdir(work_dir)
     return
 
 
 ##### ANCHOR: Stage 2 - scale and perturb
-def make_scale_gpaw(jdata):
-
-    return
+# Use the same `make_scale(jdata)` function as VASP
 
 
 ##### ANCHOR: Stage 3 - run AIMD
@@ -103,13 +117,19 @@ def make_gpaw_md(jdata, mdata):
     print("not implemented yet")
     return
 
+
 def run_gpaw_md(jdata, mdata):
 
     print("not implemented yet")
     return
 
 ##### ANCHOR: Stage 4 - collect data
+
+
 def coll_gpaw_md(jdata):
 
     print("not implemented yet")
     return
+
+
+##### ANCHOR: Support functions
