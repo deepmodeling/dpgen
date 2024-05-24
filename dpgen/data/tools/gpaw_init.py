@@ -11,8 +11,8 @@ from dpgen.generator.lib.utils import symlink_user_forward_files
 from dpgen.dispatcher.Dispatcher import make_submission
 
 ### use from...import... may cause circular import
-import dpgen.data.gen.create_path as create_path
-import dpgen.data.gen.poscar_scale as poscar_scale
+# import dpgen.data.gen.create_path as create_path
+
 
 global_dirname_02 = "00.place_ele"
 global_dirname_03 = "01.scale_pert"
