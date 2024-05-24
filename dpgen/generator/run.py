@@ -3956,6 +3956,8 @@ def run_fp_inner(
                 'dpamber corr --cutoff {:f} --parm7_file ../qmmm$SYS.parm7 --nc rc.nc --hl high_level --ll low_level --qm_region "$QM_REGION"'
             ).format(jdata["cutoff"])
         )
+    if fp_style == "gpaw":
+        fp_command = f"{fp_command} {jdata.get("fp_gpaw_runfile")}"
 
     fp_run_tasks = fp_tasks
     # for ii in fp_tasks :
