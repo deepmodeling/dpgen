@@ -3957,7 +3957,7 @@ def run_fp_inner(
             ).format(jdata["cutoff"])
         )
     if fp_style == "gpaw":
-        fp_command = f"{fp_command} {jdata.get("fp_gpaw_runfile")}"
+        fp_command = f"{fp_command} {jdata.get('fp_gpaw_runfile')}"
 
     fp_run_tasks = fp_tasks
     # for ii in fp_tasks :
