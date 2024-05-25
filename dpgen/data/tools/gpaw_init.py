@@ -61,7 +61,7 @@ def run_gpaw_relax(jdata, mdata):
     forward_files = ["POSCAR", "gpaw_runfile.py"]
     user_forward_files = mdata.get("fp" + "_user_forward_files", [])
     forward_files += [os.path.basename(file) for file in user_forward_files]
-    backward_files = ["conf_ase.traj", "calc.txt", "run.log"]
+    backward_files = ["CONF_ASE.traj", "calc.txt", "fp.log"]
     backward_files += mdata.get("fp" + "_user_backward_files", [])
     forward_common_files = []
 
@@ -97,11 +97,11 @@ def run_gpaw_relax(jdata, mdata):
         )
         submission.run_submission()
 
-    ### Convert `conf_ase.traj` to `CONTCAR` to be used in the next step
+    ### Convert `CONF_ASE.traj` to `CONTCAR` to be used in the next step
     for ii in relax_tasks:
         os.chdir(ii)
-        if os.path.isfile("conf_ase.traj"):
-            traj = Trajectory('conf_ase.traj')
+        if os.path.isfile("CONF_ASE.traj"):
+            traj = Trajectory('CONF_ASE.traj')
             write_vasp('CONTCAR', traj[-1])
         os.chdir(work_dir)
     return
