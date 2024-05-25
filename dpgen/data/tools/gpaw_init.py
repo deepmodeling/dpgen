@@ -53,6 +53,7 @@ def make_gpaw_relax(jdata, mdata):
 
 
 def run_gpaw_relax(jdata, mdata):
+    check_gpaw_input(jdata["relax_incar"])
     fp_command = mdata["fp_command"].strip() + " gpaw_runfile.py"
     fp_group_size = mdata["fp_group_size"]
     # machine_type = mdata['fp_machine']['machine_type']
@@ -133,3 +134,22 @@ def coll_gpaw_md(jdata):
 
 
 ##### ANCHOR: Support functions
+def check_gpaw_input(input_file: str)->None:
+    """
+    Check the input files for the GPAW calculation
+    """
+    if not os.path.isfile(input_file):
+        raise FileNotFoundError(f"File not found: input_file")
+    else:
+        with open(input_file, "r") as f:
+            text = f.read()
+            if "txt='calc.txt'" not in text:
+                raise ValueError(
+                    f"The GPAW calculator in file {input_file} did not contain field: txt='calc.txt'. It should be set for backward files."
+                )
+
+            if "'CONF_ASE.traj'" not in text:
+                raise ValueError(
+                    f"The GPAW input file {input_file} did not output the trajectory file 'CONF_ASE.traj'. It should be set for backward files."
+                )
+    return
