@@ -97,7 +97,7 @@ def run_gpaw_relax(jdata, mdata):
 
     ### Submit the jobs
     if Version(mdata.get("api_version", "1.0")) < Version("1.0"):
-        raise RuntimeError(f"API version < 1.0 has been removed. Please upgrade to 1.0 or newer.")
+        raise RuntimeError(f"Your API version is no longer supported. Please upgrade to version 1.0 or newer.")
 
     submission = make_submission(
         mdata["fp_machine"],
@@ -264,7 +264,7 @@ def run_gpaw_md(jdata, mdata):
 
     ### Submit the jobs
     if Version(mdata.get("api_version", "1.0")) < Version("1.0"):
-        raise RuntimeError(f"API version < 1.0 has been removed. Please upgrade to 1.0 or newer.")
+        raise RuntimeError(f"Your API version is no longer supported. Please upgrade to version 1.0 or newer.")
 
     submission = make_submission(
         mdata["fp_machine"],
