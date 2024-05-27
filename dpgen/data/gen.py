@@ -674,7 +674,6 @@ def make_scale(jdata):
                 pos_src = os.path.join(os.path.join(init_path, ii), "POSCAR")
             else:
                 pos_src = os.path.join(os.path.join(init_path, ii), "CONTCAR")
-
             if not os.path.isfile(pos_src):
                 raise RuntimeError(
                     f"file {pos_src} not found, vasp relaxation should be run before scale poscar"
@@ -1460,7 +1459,6 @@ def run_abacus_md(jdata, mdata):
         submission.run_submission()
 
 
-
 from dpgen.data.tools.gpaw_init import (
     make_gpaw_relax,
     run_gpaw_relax,
@@ -1569,7 +1567,7 @@ def gen_init_bulk(args):
                     make_gpaw_relax(jdata, {"fp_resources": {}})
         elif stage == 2:
             dlog.info("Current stage is 2, perturb and scale")
-            if jdata["init_fp_style"] == "VASP" :
+            if jdata["init_fp_style"] == "VASP":
                 make_scale(jdata)
                 pert_scaled(jdata)
             elif jdata["init_fp_style"] == "ABACUS":
