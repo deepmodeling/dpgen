@@ -3,30 +3,33 @@
 - functions for `run.py`
 """
 
-
-import os
 import glob
+import os
 from pathlib import Path
 
-from dargs import Argument
-from dpgen.generator.lib.utils import make_iter_name
-from dpgen.util import set_directory
 import dpdata
 import numpy as np
+from dargs import Argument
+
+from dpgen.generator.lib.utils import make_iter_name
+from dpgen.util import set_directory
 
 from ..run import fp_name
+
 # fp_name = "02.fp"
 
 
 ### ANCHOR functions for `arginfo.py`
 def fp_style_gpaw_args() -> list[Argument]:
-    args = [Argument("fp_gpaw_runfile",
-                     str,
-                     optional=True,
-                     default="gpaw_singlepoint.py",
-                     doc="Input file to run GPAW.",
-                     )
-            ]
+    args = [
+        Argument(
+            "fp_gpaw_runfile",
+            str,
+            optional=True,
+            default="gpaw_singlepoint.py",
+            doc="Input file to run GPAW.",
+        )
+    ]
     return args
 
 

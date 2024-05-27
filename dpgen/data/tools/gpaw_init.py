@@ -2,27 +2,28 @@
 NOTE: do not use `return` in the functions that run dpdispatcher.submission
 """
 
-
+import glob
 import os
 import shutil
-import glob
-import sys
 import subprocess as sp
-
-from ase.io import Trajectory
-from ase.io.vasp import write_vasp
+import sys
 
 import dpdata
+from ase.io import Trajectory
+from ase.io.vasp import write_vasp
 from packaging.version import Version
-from dpgen.generator.lib.utils import symlink_user_forward_files
+
 from dpgen.dispatcher.Dispatcher import make_submission
+from dpgen.generator.lib.utils import symlink_user_forward_files
 
 ### use from...import... may cause circular import. To avoid this, functions in `gen` file must be defined before importing `gpaw_init`
-from ..gen import (create_path,
-                   poscar_shuffle,
-                   global_dirname_02,
-                   global_dirname_03,
-                   global_dirname_04)
+from ..gen import (
+    create_path,
+    global_dirname_02,
+    global_dirname_03,
+    global_dirname_04,
+    poscar_shuffle,
+)
 
 # global_dirname_02 = "00.place_ele"
 # global_dirname_03 = "01.scale_pert"
@@ -61,7 +62,6 @@ def make_gpaw_relax(jdata, mdata):
     )
 
 
-
 def run_gpaw_relax(jdata, mdata):
     check_gpaw_input(jdata["relax_incar"])
     fp_command = mdata["fp_command"] + " gpaw_relax.py"
@@ -88,7 +88,9 @@ def run_gpaw_relax(jdata, mdata):
 
     ### Submit the jobs
     if Version(mdata.get("api_version", "1.0")) < Version("1.0"):
-        raise RuntimeError(f"Your API version is no longer supported. Please upgrade to version 1.0 or newer.")
+        raise RuntimeError(
+            "Your API version is no longer supported. Please upgrade to version 1.0 or newer."
+        )
 
     submission = make_submission(
         mdata["fp_machine"],
@@ -110,7 +112,6 @@ def run_gpaw_relax(jdata, mdata):
         if os.path.isfile(f"{ii}/CONF_ASE.traj"):
             traj = Trajectory(f"{ii}/CONF_ASE.traj")
             write_vasp(f"{ii}/CONTCAR", traj[-1])
-
 
 
 ##### ANCHOR: Stage 2 - scale and perturb
@@ -255,7 +256,9 @@ def run_gpaw_md(jdata, mdata):
 
     ### Submit the jobs
     if Version(mdata.get("api_version", "1.0")) < Version("1.0"):
-        raise RuntimeError(f"Your API version is no longer supported. Please upgrade to version 1.0 or newer.")
+        raise RuntimeError(
+            "Your API version is no longer supported. Please upgrade to version 1.0 or newer."
+        )
 
     submission = make_submission(
         mdata["fp_machine"],
@@ -271,7 +274,6 @@ def run_gpaw_md(jdata, mdata):
         errlog="fp.log",
     )
     submission.run_submission()
-
 
 
 ##### ANCHOR: Stage 4 - collect data
@@ -355,7 +357,7 @@ def check_gpaw_input(input_file: str) -> None:
     """
     Check the input files for the GPAW calculation
     """
-    with open(input_file, "r") as f:
+    with open(input_file) as f:
         text = f.read()
 
     if "calc.txt" not in text:

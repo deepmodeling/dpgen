@@ -19,7 +19,6 @@ import dpgen.data.tools.diamond as diamond
 import dpgen.data.tools.fcc as fcc
 import dpgen.data.tools.hcp as hcp
 import dpgen.data.tools.sc as sc
-
 from dpgen import ROOT_PATH, dlog
 from dpgen.dispatcher.Dispatcher import make_submission
 from dpgen.generator.lib.abacus_scf import (
@@ -1458,12 +1457,12 @@ def run_abacus_md(jdata, mdata):
 
 
 from dpgen.data.tools.gpaw_init import (
-    make_gpaw_relax,
-    run_gpaw_relax,
-    pert_scaled_gpaw,
-    make_gpaw_md,
-    run_gpaw_md,
     coll_gpaw_md,
+    make_gpaw_md,
+    make_gpaw_relax,
+    pert_scaled_gpaw,
+    run_gpaw_md,
+    run_gpaw_relax,
 )
 
 
@@ -1505,7 +1504,7 @@ def gen_init_bulk(args):
                     nsw_flag = True
                     nsw_steps = int(standard_incar["md_nstep"])
             elif jdata["init_fp_style"] == "GPAW":
-                nsw_flag = False   # set md_nstep in gpaw_input
+                nsw_flag = False  # set md_nstep in gpaw_input
 
             if nsw_flag:
                 if nsw_steps != md_nstep_jdata:

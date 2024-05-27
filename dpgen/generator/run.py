@@ -101,7 +101,6 @@ from dpgen.util import (
     setup_ele_temp,
 )
 
-
 template_name = "template"
 train_name = "00.train"
 train_task_fmt = "%03d"
@@ -125,7 +124,7 @@ run_opt_file = os.path.join(ROOT_PATH, "generator/lib/calypso_run_opt.py")
 
 
 from .arginfo import run_jdata_arginfo
-from dpgen.generator.lib.gpaw import (make_fp_gpaw, post_fp_gpaw)
+
 
 def _get_model_suffix(jdata) -> str:
     """Return the model suffix based on the backend."""
