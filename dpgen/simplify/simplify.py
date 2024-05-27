@@ -257,7 +257,9 @@ def run_model_devi(iter_index, jdata, mdata):
 
     ### Submit the jobs
     if Version(mdata.get("api_version", "1.0")) < Version("1.0"):
-        raise RuntimeError(f"Your API version is no longer supported. Please upgrade to version 1.0 or newer.")
+        raise RuntimeError(
+            "Your API version is no longer supported. Please upgrade to version 1.0 or newer."
+        )
 
     submission = make_submission(
         mdata["model_devi_machine"],
