@@ -19,13 +19,7 @@ import dpgen.data.tools.diamond as diamond
 import dpgen.data.tools.fcc as fcc
 import dpgen.data.tools.hcp as hcp
 import dpgen.data.tools.sc as sc
-from dpgen.data.tools.gpaw_init import (
-    make_gpaw_relax,
-    run_gpaw_relax,
-    make_gpaw_md,
-    run_gpaw_md,
-    coll_gpaw_md,
-)
+
 from dpgen import ROOT_PATH, dlog
 from dpgen.dispatcher.Dispatcher import make_submission
 from dpgen.generator.lib.abacus_scf import (
@@ -678,15 +672,13 @@ def make_scale(jdata):
         for jj in scale:
             if skip_relax:
                 pos_src = os.path.join(os.path.join(init_path, ii), "POSCAR")
-                assert os.path.isfile(pos_src)
             else:
-                try:
-                    pos_src = os.path.join(os.path.join(init_path, ii), "CONTCAR")
-                    assert os.path.isfile(pos_src)
-                except Exception:
-                    raise RuntimeError(
-                        "not file %s, vasp relaxation should be run before scale poscar"
-                    )
+                pos_src = os.path.join(os.path.join(init_path, ii), "CONTCAR")
+
+            if not os.path.isfile(pos_src):
+                raise RuntimeError(
+                    f"file {pos_src} not found, vasp relaxation should be run before scale poscar"
+                )
             scale_path = os.path.join(work_path, ii)
             scale_path = os.path.join(scale_path, f"scale-{jj:.3f}")
             create_path(scale_path)
@@ -1468,6 +1460,17 @@ def run_abacus_md(jdata, mdata):
         submission.run_submission()
 
 
+
+from dpgen.data.tools.gpaw_init import (
+    make_gpaw_relax,
+    run_gpaw_relax,
+    pert_scaled_gpaw,
+    make_gpaw_md,
+    run_gpaw_md,
+    coll_gpaw_md,
+)
+
+
 def gen_init_bulk(args):
     jdata = load_file(args.PARAM)
     if args.MACHINE is not None:
@@ -1566,12 +1569,15 @@ def gen_init_bulk(args):
                     make_gpaw_relax(jdata, {"fp_resources": {}})
         elif stage == 2:
             dlog.info("Current stage is 2, perturb and scale")
-            if jdata["init_fp_style"] == "VASP" or jdata["init_fp_style"] == "GPAW":
+            if jdata["init_fp_style"] == "VASP" :
                 make_scale(jdata)
                 pert_scaled(jdata)
             elif jdata["init_fp_style"] == "ABACUS":
                 make_scale_ABACUS(jdata)
                 pert_scaled(jdata)
+            elif jdata["init_fp_style"] == "GPAW":
+                make_scale(jdata)
+                pert_scaled_gpaw(jdata)
         elif stage == 3:
             dlog.info("Current stage is 3, run a short md")
             if args.MACHINE is not None:

@@ -1,6 +1,16 @@
+"""
+NOTE: do not use `return` in the functions that run dpdispatcher.submission
+"""
+
+
 import os
 import shutil
 import glob
+import sys
+import subprocess as sp
+
+from ase.io import Trajectory
+from ase.io.vasp import write_vasp
 
 import dpdata
 from packaging.version import Version
@@ -8,14 +18,24 @@ from dpgen.generator.lib.utils import symlink_user_forward_files
 from dpgen.dispatcher.Dispatcher import make_submission
 
 ### use from...import... may cause circular import
-import dpgen.data.gen.create_path as create_path
+# from ..gen import create_path
 
-from ase.io import Trajectory
-from ase.io.vasp import write_vasp
 
-global_dirname_02 = "00.place_ele"
-global_dirname_03 = "01.scale_pert"
-global_dirname_04 = "02.md"
+### To avoid circular import, use the following
+from .. import gen
+def create_path(path, back=False):
+    return gen.create_path(path, back)
+
+def poscar_shuffle(poscar_in, poscar_out):
+    return gen.poscar_shuffle(poscar_in, poscar_out)
+
+global_dirname_02 = gen.global_dirname_02  # must define this variable in the `gen` module before importing `gpaw_init`
+global_dirname_03 = gen.global_dirname_03
+global_dirname_04 = gen.global_dirname_04
+
+# global_dirname_02 = "00.place_ele"
+# global_dirname_03 = "01.scale_pert"
+# global_dirname_04 = "02.md"
 
 
 ##### ANCHOR: Stage 1 - Geometry Optimization/ relaxation
@@ -48,12 +68,12 @@ def make_gpaw_relax(jdata, mdata):
         work_path=os.path.join(os.path.basename(out_dir), global_dirname_02),
         task_format={"fp": "sys-*"},
     )
-    return
+
 
 
 def run_gpaw_relax(jdata, mdata):
     check_gpaw_input(jdata["relax_incar"])
-    fp_command = mdata["fp_command"].strip() + " gpaw_relax.py"
+    fp_command = mdata["fp_command"] + " gpaw_relax.py"
     fp_group_size = mdata["fp_group_size"]
     # machine_type = mdata['fp_machine']['machine_type']
     work_dir = os.path.join(jdata["out_dir"], global_dirname_02)
@@ -75,40 +95,94 @@ def run_gpaw_relax(jdata, mdata):
     relax_run_tasks = relax_tasks
     run_tasks = [os.path.basename(ii) for ii in relax_run_tasks]
 
-    api_version = mdata.get("api_version", "1.0")
-    if Version(api_version) < Version("1.0"):
-        raise RuntimeError(
-            f"API version {api_version} has been removed. Please upgrade to 1.0."
-        )
+    ### Submit the jobs
+    if Version(mdata.get("api_version", "1.0")) < Version("1.0"):
+        raise RuntimeError(f"API version < 1.0 has been removed. Please upgrade to 1.0 or newer.")
 
-    elif Version(api_version) >= Version("1.0"):
-        submission = make_submission(
-            mdata["fp_machine"],
-            mdata["fp_resources"],
-            commands=[fp_command],
-            work_path=work_dir,
-            run_tasks=run_tasks,
-            group_size=fp_group_size,
-            forward_common_files=forward_common_files,
-            forward_files=forward_files,
-            backward_files=backward_files,
-            outlog="fp.log",
-            errlog="fp.log",
-        )
-        submission.run_submission()
+    submission = make_submission(
+        mdata["fp_machine"],
+        mdata["fp_resources"],
+        commands=[fp_command],
+        work_path=work_dir,
+        run_tasks=run_tasks,
+        group_size=fp_group_size,
+        forward_common_files=forward_common_files,
+        forward_files=forward_files,
+        backward_files=backward_files,
+        outlog="fp.log",
+        errlog="fp.log",
+    )
+    submission.run_submission()
 
     ### Convert `CONF_ASE.traj` to `CONTCAR` to be used in the next step
     for ii in relax_tasks:
-        os.chdir(ii)
-        if os.path.isfile("CONF_ASE.traj"):
-            traj = Trajectory('CONF_ASE.traj')
-            write_vasp('CONTCAR', traj[-1])
-        os.chdir(work_dir)
-    return
+        if os.path.isfile(f"{ii}/CONF_ASE.traj"):
+            traj = Trajectory(f"{ii}/CONF_ASE.traj")
+            write_vasp(f"{ii}/CONTCAR", traj[-1])
+
 
 
 ##### ANCHOR: Stage 2 - scale and perturb
 # Use the same `make_scale(jdata)` function as VASP
+def pert_scaled_gpaw(jdata):
+    out_dir = jdata["out_dir"]
+    scale = jdata["scale"]
+    pert_box = jdata["pert_box"]
+    pert_atom = jdata["pert_atom"]
+    pert_numb = jdata["pert_numb"]
+    from_poscar = jdata.get("from_poscar", False)
+
+    cwd = os.getcwd()
+    path_sp = os.path.join(out_dir, global_dirname_03)
+    assert os.path.isdir(path_sp)
+    os.chdir(path_sp)
+    sys_pe = glob.glob("sys-*")
+    sys_pe.sort()
+    os.chdir(cwd)
+
+    pert_cmd = os.path.dirname(__file__)
+    # pert_cmd = os.path.join(pert_cmd, "tools")
+    pert_cmd = os.path.join(pert_cmd, "create_random_disturb.py")
+
+    fp_style = "vasp"
+    poscar_name = "POSCAR"
+
+    pert_cmd = (
+        sys.executable
+        + " "
+        + pert_cmd
+        + f" -etmax {pert_box} -ofmt {fp_style} {poscar_name} {pert_numb} {pert_atom} > /dev/null"
+    )
+
+    for ii in sys_pe:
+        for jj in scale:
+            path_work = path_sp
+            path_work = os.path.join(path_work, ii)
+            path_work = os.path.join(path_work, f"scale-{jj:.3f}")
+            assert os.path.isdir(path_work)
+            os.chdir(path_work)
+            sp.check_call(pert_cmd, shell=True)
+            for kk in range(pert_numb):
+                pos_in = f"POSCAR{(kk + 1)}.vasp"
+                dir_out = f"{(kk + 1):06d}"
+                create_path(dir_out)
+                pos_out = os.path.join(dir_out, "POSCAR")
+                if not from_poscar:
+                    poscar_shuffle(pos_in, pos_out)
+                else:
+                    shutil.copy2(pos_in, pos_out)
+                os.remove(pos_in)
+
+            kk = -1
+            pos_in = "POSCAR"
+            dir_out = f"{(kk + 1):06d}"
+            create_path(dir_out)
+            pos_out = os.path.join(dir_out, "POSCAR")
+            if not from_poscar:
+                poscar_shuffle(pos_in, pos_out)
+            else:
+                shutil.copy2(pos_in, pos_out)
+            os.chdir(cwd)
 
 
 ##### ANCHOR: Stage 3 - run AIMD
@@ -138,13 +212,13 @@ def make_gpaw_md(jdata, mdata):
                 path_work = path_md
                 path_work = os.path.join(path_work, ii)
                 path_work = os.path.join(path_work, f"scale-{jj:.3f}")
-                path_work = os.path.join(path_work, "%06d" % kk)
+                path_work = os.path.join(path_work, f"{kk:06d}")
                 create_path(path_work)
                 os.chdir(path_work)
                 path_pos = path_ps
                 path_pos = os.path.join(path_pos, ii)
                 path_pos = os.path.join(path_pos, f"scale-{jj:.3f}")
-                path_pos = os.path.join(path_pos, "%06d" % kk)
+                path_pos = os.path.join(path_pos, f"{kk:06d}")
                 init_pos = os.path.join(path_pos, "POSCAR")
                 shutil.copy2(init_pos, "POSCAR")
                 try:
@@ -159,12 +233,11 @@ def make_gpaw_md(jdata, mdata):
         work_path=os.path.join(os.path.basename(out_dir), global_dirname_04),
         task_format={"fp": "sys-*/scale*/00*"},
     )
-    return
 
 
 def run_gpaw_md(jdata, mdata):
     check_gpaw_input(jdata["md_incar"])
-    fp_command = mdata["fp_command"].strip() + " gpaw_aimd.py"
+    fp_command = mdata["fp_command"] + " gpaw_aimd.py"
     fp_group_size = mdata["fp_group_size"]
     # machine_type = mdata['fp_machine']['machine_type']
     work_dir = os.path.join(jdata["out_dir"], global_dirname_04)
@@ -188,35 +261,29 @@ def run_gpaw_md(jdata, mdata):
 
     md_run_tasks = md_tasks
     run_tasks = [ii.replace(work_dir + "/", "") for ii in md_run_tasks]
-    # dlog.info("md_work_dir", work_dir)
-    # dlog.info("run_tasks",run_tasks)
-    api_version = mdata.get("api_version", "1.0")
-    if Version(api_version) < Version("1.0"):
-        raise RuntimeError(
-            f"API version {api_version} has been removed. Please upgrade to 1.0."
-        )
 
-    elif Version(api_version) >= Version("1.0"):
-        submission = make_submission(
-            mdata["fp_machine"],
-            mdata["fp_resources"],
-            commands=[fp_command],
-            work_path=work_dir,
-            run_tasks=run_tasks,
-            group_size=fp_group_size,
-            forward_common_files=forward_common_files,
-            forward_files=forward_files,
-            backward_files=backward_files,
-            outlog="fp.log",
-            errlog="fp.log",
-        )
-        submission.run_submission()
+    ### Submit the jobs
+    if Version(mdata.get("api_version", "1.0")) < Version("1.0"):
+        raise RuntimeError(f"API version < 1.0 has been removed. Please upgrade to 1.0 or newer.")
 
-    return
+    submission = make_submission(
+        mdata["fp_machine"],
+        mdata["fp_resources"],
+        commands=[fp_command],
+        work_path=work_dir,
+        run_tasks=run_tasks,
+        group_size=fp_group_size,
+        forward_common_files=forward_common_files,
+        forward_files=forward_files,
+        backward_files=backward_files,
+        outlog="fp.log",
+        errlog="fp.log",
+    )
+    submission.run_submission()
+
+
 
 ##### ANCHOR: Stage 4 - collect data
-
-
 def coll_gpaw_md(jdata):
     out_dir = jdata["out_dir"]
     md_nstep = jdata["md_nstep"]
@@ -238,7 +305,7 @@ def coll_gpaw_md(jdata):
         valid_outcars = []
         for jj in scale:
             for kk in range(pert_numb):
-                path_work = os.path.join(f"scale-{jj:.3f}", "%06d" % kk)
+                path_work = os.path.join(f"scale-{jj:.3f}", f"{kk:06d}")
                 outcar = os.path.join(path_work, "OUTCAR")
                 # dlog.info("OUTCAR",outcar)
                 if os.path.isfile(outcar):
