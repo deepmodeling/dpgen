@@ -17,21 +17,12 @@ from packaging.version import Version
 from dpgen.generator.lib.utils import symlink_user_forward_files
 from dpgen.dispatcher.Dispatcher import make_submission
 
-### use from...import... may cause circular import
-# from ..gen import create_path
-
-
-### To avoid circular import, use the following
-from .. import gen
-def create_path(path, back=False):
-    return gen.create_path(path, back)
-
-def poscar_shuffle(poscar_in, poscar_out):
-    return gen.poscar_shuffle(poscar_in, poscar_out)
-
-global_dirname_02 = gen.global_dirname_02  # must define this variable in the `gen` module before importing `gpaw_init`
-global_dirname_03 = gen.global_dirname_03
-global_dirname_04 = gen.global_dirname_04
+### use from...import... may cause circular import. To avoid this, functions in `gen` file must be defined before importing `gpaw_init`
+from ..gen import (create_path,
+                   poscar_shuffle,
+                   global_dirname_02,
+                   global_dirname_03,
+                   global_dirname_04)
 
 # global_dirname_02 = "00.place_ele"
 # global_dirname_03 = "01.scale_pert"

@@ -102,8 +102,6 @@ from dpgen.util import (
 )
 
 
-from .arginfo import run_jdata_arginfo
-
 template_name = "template"
 train_name = "00.train"
 train_task_fmt = "%03d"
@@ -125,6 +123,8 @@ calypso_run_model_devi_file = os.path.join(
 check_outcar_file = os.path.join(ROOT_PATH, "generator/lib/calypso_check_outcar.py")
 run_opt_file = os.path.join(ROOT_PATH, "generator/lib/calypso_run_opt.py")
 
+
+from .arginfo import run_jdata_arginfo
 from dpgen.generator.lib.gpaw import (make_fp_gpaw, post_fp_gpaw)
 
 def _get_model_suffix(jdata) -> str:

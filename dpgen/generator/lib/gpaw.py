@@ -14,8 +14,7 @@ from dpgen.util import set_directory
 import dpdata
 import numpy as np
 
-from .. import run
-fp_name = run.fp_name
+from ..run import fp_name
 # fp_name = "02.fp"
 
 
