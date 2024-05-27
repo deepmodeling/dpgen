@@ -1161,7 +1161,7 @@ def run_vasp_relax(jdata, mdata):
     ### Submit the jobs
     if Version(mdata.get("api_version", "1.0")) < Version("1.0"):
         raise RuntimeError(
-            "Your API version is no longer supported. Please upgrade to version 1.0 or newer."
+            "API version below 1.0 is no longer supported. Please upgrade to version 1.0 or newer."
         )
 
     submission = make_submission(
@@ -1300,7 +1300,7 @@ def run_abacus_relax(jdata, mdata):
     ### Submit the jobs
     if Version(mdata.get("api_version", "1.0")) < Version("1.0"):
         raise RuntimeError(
-            "Your API version is no longer supported. Please upgrade to version 1.0 or newer."
+            "API version below 1.0 is no longer supported. Please upgrade to version 1.0 or newer."
         )
 
     submission = make_submission(
@@ -1361,7 +1361,7 @@ def run_vasp_md(jdata, mdata):
     ### Submit the jobs
     if Version(mdata.get("api_version", "1.0")) < Version("1.0"):
         raise RuntimeError(
-            "Your API version is no longer supported. Please upgrade to version 1.0 or newer."
+            "API version below 1.0 is no longer supported. Please upgrade to version 1.0 or newer."
         )
 
     submission = make_submission(
@@ -1437,7 +1437,7 @@ def run_abacus_md(jdata, mdata):
     ### Submit the jobs
     if Version(mdata.get("api_version", "1.0")) < Version("1.0"):
         raise RuntimeError(
-            "Your API version is no longer supported. Please upgrade to version 1.0 or newer."
+            "API version below 1.0 is no longer supported. Please upgrade to version 1.0 or newer."
         )
 
     submission = make_submission(
