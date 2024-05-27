@@ -14,10 +14,12 @@ from dpgen.util import set_directory
 import dpdata
 import numpy as np
 
-fp_name = "02.fp"
+from .. import run
+fp_name = run.fp_name
+# fp_name = "02.fp"
 
 
-### functinos for `arginfo.py`
+### ANCHOR functions for `arginfo.py`
 def fp_style_gpaw_args() -> list[Argument]:
     args = [Argument("fp_gpaw_runfile",
                      str,
@@ -29,7 +31,7 @@ def fp_style_gpaw_args() -> list[Argument]:
     return args
 
 
-### functions for `run.py`
+### ANCHOR functions for `run.py`
 def make_fp_gpaw(iter_index, jdata):
     """Make input file for customized FP style.
 

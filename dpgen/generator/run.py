@@ -100,7 +100,7 @@ from dpgen.util import (
     set_directory,
     setup_ele_temp,
 )
-from dpgen.generator.lib.gpaw import (make_fp_gpaw, post_fp_gpaw)
+
 
 from .arginfo import run_jdata_arginfo
 
@@ -125,6 +125,7 @@ calypso_run_model_devi_file = os.path.join(
 check_outcar_file = os.path.join(ROOT_PATH, "generator/lib/calypso_check_outcar.py")
 run_opt_file = os.path.join(ROOT_PATH, "generator/lib/calypso_run_opt.py")
 
+from dpgen.generator.lib.gpaw import (make_fp_gpaw, post_fp_gpaw)
 
 def _get_model_suffix(jdata) -> str:
     """Return the model suffix based on the backend."""
