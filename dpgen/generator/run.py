@@ -101,6 +101,7 @@ from dpgen.util import (
     setup_ele_temp,
 )
 
+from .arginfo import run_jdata_arginfo
 
 template_name = "template"
 train_name = "00.train"
@@ -123,9 +124,6 @@ calypso_run_model_devi_file = os.path.join(
 check_outcar_file = os.path.join(ROOT_PATH, "generator/lib/calypso_check_outcar.py")
 run_opt_file = os.path.join(ROOT_PATH, "generator/lib/calypso_run_opt.py")
 
-
-from .arginfo import run_jdata_arginfo
-from dpgen.generator.lib.gpaw import (make_fp_gpaw, post_fp_gpaw)
 
 def _get_model_suffix(jdata) -> str:
     """Return the model suffix based on the backend."""
@@ -3954,8 +3952,6 @@ def run_fp_inner(
                 'dpamber corr --cutoff {:f} --parm7_file ../qmmm$SYS.parm7 --nc rc.nc --hl high_level --ll low_level --qm_region "$QM_REGION"'
             ).format(jdata["cutoff"])
         )
-    if fp_style == "gpaw":
-        fp_command = f"{fp_command} {jdata.get('fp_gpaw_runfile')}"
 
     fp_run_tasks = fp_tasks
     # for ii in fp_tasks :
@@ -4137,19 +4133,6 @@ def run_fp(iter_index, jdata, mdata):
             backward_files,
             None,
             log_file="output",
-        )
-    elif fp_style == "gpaw":
-        gpaw_runfile = jdata["fp_gpaw_runfile"]
-        forward_files = ["POSCAR", gpaw_runfile]
-        backward_files = ["CONF_ASE.traj", "calc.txt", "fp.log"]
-        run_fp_inner(
-            iter_index,
-            jdata,
-            mdata,
-            forward_files,
-            backward_files,
-            None,
-            log_file="fp.log",
         )
     else:
         raise RuntimeError("unsupported fp style")
