@@ -19,6 +19,7 @@ import dpgen.data.tools.diamond as diamond
 import dpgen.data.tools.fcc as fcc
 import dpgen.data.tools.hcp as hcp
 import dpgen.data.tools.sc as sc
+
 from dpgen import ROOT_PATH, dlog
 from dpgen.dispatcher.Dispatcher import make_submission
 from dpgen.generator.lib.abacus_scf import (
@@ -1456,6 +1457,16 @@ def run_abacus_md(jdata, mdata):
     submission.run_submission()
 
 
+from dpgen.data.tools.gpaw_init import (
+    make_gpaw_relax,
+    run_gpaw_relax,
+    pert_scaled_gpaw,
+    make_gpaw_md,
+    run_gpaw_md,
+    coll_gpaw_md,
+)
+
+
 def gen_init_bulk(args):
     jdata = load_file(args.PARAM)
     if args.MACHINE is not None:
@@ -1471,7 +1482,7 @@ def gen_init_bulk(args):
     # Decide whether to use a given poscar
     from_poscar = jdata.get("from_poscar", False)
     # Verify md_nstep
-    md_nstep_jdata = jdata["md_nstep"]
+    md_nstep_jdata = jdata.get("md_nstep", None)
     if "init_fp_style" not in jdata:
         jdata["init_fp_style"] = "VASP"
     try:
@@ -1493,6 +1504,9 @@ def gen_init_bulk(args):
                 if "md_nstep" in standard_incar:
                     nsw_flag = True
                     nsw_steps = int(standard_incar["md_nstep"])
+            elif jdata["init_fp_style"] == "GPAW":
+                nsw_flag = False   # set md_nstep in gpaw_input
+
             if nsw_flag:
                 if nsw_steps != md_nstep_jdata:
                     dlog.info(
@@ -1519,12 +1533,12 @@ def gen_init_bulk(args):
             create_path(out_dir)
             shutil.copy2(args.PARAM, os.path.join(out_dir, "param.json"))
             if from_poscar:
-                if jdata["init_fp_style"] == "VASP":
+                if jdata["init_fp_style"] == "VASP" or jdata["init_fp_style"] == "GPAW":
                     make_super_cell_poscar(jdata)
                 elif jdata["init_fp_style"] == "ABACUS":
                     make_super_cell_STRU(jdata)
             else:
-                if jdata["init_fp_style"] == "VASP":
+                if jdata["init_fp_style"] == "VASP" or jdata["init_fp_style"] == "GPAW":
                     make_unit_cell(jdata)
                     make_super_cell(jdata)
                     place_element(jdata)
@@ -1539,11 +1553,16 @@ def gen_init_bulk(args):
                 elif jdata["init_fp_style"] == "ABACUS":
                     make_abacus_relax(jdata, mdata)
                     run_abacus_relax(jdata, mdata)
+                elif jdata["init_fp_style"] == "GPAW":
+                    make_gpaw_relax(jdata, mdata)
+                    run_gpaw_relax(jdata, mdata)
             else:
                 if jdata["init_fp_style"] == "VASP":
                     make_vasp_relax(jdata, {"fp_resources": {}})
                 elif jdata["init_fp_style"] == "ABACUS":
                     make_abacus_relax(jdata, {"fp_resources": {}})
+                elif jdata["init_fp_style"] == "GPAW":
+                    make_gpaw_relax(jdata, {"fp_resources": {}})
         elif stage == 2:
             dlog.info("Current stage is 2, perturb and scale")
             if jdata["init_fp_style"] == "VASP":
@@ -1552,6 +1571,9 @@ def gen_init_bulk(args):
             elif jdata["init_fp_style"] == "ABACUS":
                 make_scale_ABACUS(jdata)
                 pert_scaled(jdata)
+            elif jdata["init_fp_style"] == "GPAW":
+                make_scale(jdata)
+                pert_scaled_gpaw(jdata)
         elif stage == 3:
             dlog.info("Current stage is 3, run a short md")
             if args.MACHINE is not None:
@@ -1561,11 +1583,16 @@ def gen_init_bulk(args):
                 elif jdata["init_fp_style"] == "ABACUS":
                     make_abacus_md(jdata, mdata)
                     run_abacus_md(jdata, mdata)
+                elif jdata["init_fp_style"] == "GPAW":
+                    make_gpaw_md(jdata, mdata)
+                    run_gpaw_md(jdata, mdata)
             else:
                 if jdata["init_fp_style"] == "VASP":
                     make_vasp_md(jdata, {"fp_resources": {}})
                 elif jdata["init_fp_style"] == "ABACUS":
                     make_abacus_md(jdata, {"fp_resources": {}})
+                elif jdata["init_fp_style"] == "GPAW":
+                    make_gpaw_md(jdata, {"fp_resources": {}})
 
         elif stage == 4:
             dlog.info("Current stage is 4, collect data")
@@ -1573,6 +1600,8 @@ def gen_init_bulk(args):
                 coll_vasp_md(jdata)
             elif jdata["init_fp_style"] == "ABACUS":
                 coll_abacus_md(jdata)
+            elif jdata["init_fp_style"] == "GPAW":
+                coll_gpaw_md(jdata)
         else:
             raise RuntimeError("unknown stage %d" % stage)
 
