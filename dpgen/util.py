@@ -34,7 +34,7 @@ def sepline(ch="-", sp="-", screen=False):
 def box_center(ch="", fill=" ", sp="|"):
     r"""Put the string at the center of |  |."""
     strs = ch.center(MaxLength, fill)
-    dlog.info(sp + strs[1 : len(strs) - 1 :] + sp)
+    dlog.info(sp + strs[1: len(strs) - 1:] + sp)
 
 
 def expand_sys_str(root_dir: Union[str, Path]) -> list[str]:

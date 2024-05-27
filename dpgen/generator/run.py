@@ -84,6 +84,7 @@ from dpgen.generator.lib.utils import (
     make_iter_name,
     record_iter,
     symlink_user_forward_files,
+    check_api_version,
 )
 from dpgen.generator.lib.vasp import (
     incar_upper,
@@ -879,10 +880,7 @@ def run_train(iter_index, jdata, mdata):
     backward_files += mdata.get("train" + "_user_backward_files", [])
 
     ### Submit the jobs
-    if Version(mdata.get("api_version", "1.0")) < Version("1.0"):
-        raise RuntimeError(
-            "API version below 1.0 is no longer supported. Please upgrade to version 1.0 or newer."
-        )
+    check_api_version(mdata)
 
     submission = make_submission(
         mdata["train_machine"],
@@ -2095,10 +2093,7 @@ def run_md_model_devi(iter_index, jdata, mdata):
         )
 
     ### Submit the jobs
-    if Version(mdata.get("api_version", "1.0")) < Version("1.0"):
-        raise RuntimeError(
-            "API version below 1.0 is no longer supported. Please upgrade to version 1.0 or newer."
-        )
+    check_api_version(mdata)
 
     submission = make_submission(
         mdata["model_devi_machine"],
@@ -3964,10 +3959,7 @@ def run_fp_inner(
     backward_files += mdata.get("fp" + "_user_backward_files", [])
 
     ### Submit the jobs
-    if Version(mdata.get("api_version", "1.0")) < Version("1.0"):
-        raise RuntimeError(
-            "API version below 1.0 is no longer supported. Please upgrade to version 1.0 or newer."
-        )
+    check_api_version(mdata)
 
     submission = make_submission(
         mdata["fp_machine"],
