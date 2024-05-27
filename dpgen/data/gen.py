@@ -27,7 +27,7 @@ from dpgen.generator.lib.abacus_scf import (
     make_abacus_scf_stru,
     make_supercell_abacus,
 )
-from dpgen.generator.lib.utils import symlink_user_forward_files, check_api_version
+from dpgen.generator.lib.utils import check_api_version, symlink_user_forward_files
 from dpgen.generator.lib.vasp import incar_upper
 from dpgen.remote.decide_machine import convert_mdata
 from dpgen.util import load_file

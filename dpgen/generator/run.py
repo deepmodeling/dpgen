@@ -78,13 +78,13 @@ from dpgen.generator.lib.run_calypso import (
 )
 from dpgen.generator.lib.siesta import make_siesta_input
 from dpgen.generator.lib.utils import (
+    check_api_version,
     create_path,
     log_iter,
     log_task,
     make_iter_name,
     record_iter,
     symlink_user_forward_files,
-    check_api_version,
 )
 from dpgen.generator.lib.vasp import (
     incar_upper,

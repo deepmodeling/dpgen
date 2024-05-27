@@ -24,11 +24,11 @@ from dpgen.dispatcher.Dispatcher import make_submission
 
 # TODO: maybe the following functions can be moved to dpgen.util
 from dpgen.generator.lib.utils import (
+    check_api_version,
     create_path,
     log_iter,
     make_iter_name,
     record_iter,
-    check_api_version,
 )
 from dpgen.generator.run import (
     _get_model_suffix,
