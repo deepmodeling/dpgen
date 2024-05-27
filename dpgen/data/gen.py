@@ -671,15 +671,12 @@ def make_scale(jdata):
         for jj in scale:
             if skip_relax:
                 pos_src = os.path.join(os.path.join(init_path, ii), "POSCAR")
-                assert os.path.isfile(pos_src)
             else:
-                try:
-                    pos_src = os.path.join(os.path.join(init_path, ii), "CONTCAR")
-                    assert os.path.isfile(pos_src)
-                except Exception:
-                    raise RuntimeError(
-                        "not file %s, vasp relaxation should be run before scale poscar"
-                    )
+                pos_src = os.path.join(os.path.join(init_path, ii), "CONTCAR")
+            if not os.path.isfile(pos_src):
+                raise RuntimeError(
+                    f"file {pos_src} not found, vasp relaxation should be run before scale poscar"
+                )
             scale_path = os.path.join(work_path, ii)
             scale_path = os.path.join(scale_path, f"scale-{jj:.3f}")
             create_path(scale_path)
