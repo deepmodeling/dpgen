@@ -1158,27 +1158,24 @@ def run_vasp_relax(jdata, mdata):
     #        relax_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in relax_run_tasks]
 
-    api_version = mdata.get("api_version", "1.0")
-    if Version(api_version) < Version("1.0"):
-        raise RuntimeError(
-            f"API version {api_version} has been removed. Please upgrade to 1.0."
-        )
+    ### Submit the jobs
+    if Version(mdata.get("api_version", "1.0")) < Version("1.0"):
+        raise RuntimeError(f"Your API version is no longer supported. Please upgrade to version 1.0 or newer.")
 
-    elif Version(api_version) >= Version("1.0"):
-        submission = make_submission(
-            mdata["fp_machine"],
-            mdata["fp_resources"],
-            commands=[fp_command],
-            work_path=work_dir,
-            run_tasks=run_tasks,
-            group_size=fp_group_size,
-            forward_common_files=forward_common_files,
-            forward_files=forward_files,
-            backward_files=backward_files,
-            outlog="fp.log",
-            errlog="fp.log",
-        )
-        submission.run_submission()
+    submission = make_submission(
+        mdata["fp_machine"],
+        mdata["fp_resources"],
+        commands=[fp_command],
+        work_path=work_dir,
+        run_tasks=run_tasks,
+        group_size=fp_group_size,
+        forward_common_files=forward_common_files,
+        forward_files=forward_files,
+        backward_files=backward_files,
+        outlog="fp.log",
+        errlog="fp.log",
+    )
+    submission.run_submission()
 
 
 def coll_abacus_md(jdata):
@@ -1298,27 +1295,24 @@ def run_abacus_relax(jdata, mdata):
     #        relax_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in relax_run_tasks]
 
-    api_version = mdata.get("api_version", "1.0")
-    if Version(api_version) < Version("1.0"):
-        raise RuntimeError(
-            f"API version {api_version} has been removed. Please upgrade to 1.0."
-        )
+    ### Submit the jobs
+    if Version(mdata.get("api_version", "1.0")) < Version("1.0"):
+        raise RuntimeError(f"Your API version is no longer supported. Please upgrade to version 1.0 or newer.")
 
-    elif Version(api_version) >= Version("1.0"):
-        submission = make_submission(
-            mdata["fp_machine"],
-            mdata["fp_resources"],
-            commands=[fp_command],
-            work_path=work_dir,
-            run_tasks=run_tasks,
-            group_size=fp_group_size,
-            forward_common_files=forward_common_files,
-            forward_files=forward_files,
-            backward_files=backward_files,
-            outlog="fp.log",
-            errlog="fp.log",
-        )
-        submission.run_submission()
+    submission = make_submission(
+        mdata["fp_machine"],
+        mdata["fp_resources"],
+        commands=[fp_command],
+        work_path=work_dir,
+        run_tasks=run_tasks,
+        group_size=fp_group_size,
+        forward_common_files=forward_common_files,
+        forward_files=forward_files,
+        backward_files=backward_files,
+        outlog="fp.log",
+        errlog="fp.log",
+    )
+    submission.run_submission()
 
 
 def run_vasp_md(jdata, mdata):
@@ -1359,27 +1353,25 @@ def run_vasp_md(jdata, mdata):
     run_tasks = [ii.replace(work_dir + "/", "") for ii in md_run_tasks]
     # dlog.info("md_work_dir", work_dir)
     # dlog.info("run_tasks",run_tasks)
-    api_version = mdata.get("api_version", "1.0")
-    if Version(api_version) < Version("1.0"):
-        raise RuntimeError(
-            f"API version {api_version} has been removed. Please upgrade to 1.0."
-        )
 
-    elif Version(api_version) >= Version("1.0"):
-        submission = make_submission(
-            mdata["fp_machine"],
-            mdata["fp_resources"],
-            commands=[fp_command],
-            work_path=work_dir,
-            run_tasks=run_tasks,
-            group_size=fp_group_size,
-            forward_common_files=forward_common_files,
-            forward_files=forward_files,
-            backward_files=backward_files,
-            outlog="fp.log",
-            errlog="fp.log",
-        )
-        submission.run_submission()
+    ### Submit the jobs
+    if Version(mdata.get("api_version", "1.0")) < Version("1.0"):
+        raise RuntimeError(f"Your API version is no longer supported. Please upgrade to version 1.0 or newer.")
+
+    submission = make_submission(
+        mdata["fp_machine"],
+        mdata["fp_resources"],
+        commands=[fp_command],
+        work_path=work_dir,
+        run_tasks=run_tasks,
+        group_size=fp_group_size,
+        forward_common_files=forward_common_files,
+        forward_files=forward_files,
+        backward_files=backward_files,
+        outlog="fp.log",
+        errlog="fp.log",
+    )
+    submission.run_submission()
 
 
 def run_abacus_md(jdata, mdata):
@@ -1435,27 +1427,25 @@ def run_abacus_md(jdata, mdata):
     run_tasks = [ii.replace(work_dir + "/", "") for ii in md_run_tasks]
     # dlog.info("md_work_dir", work_dir)
     # dlog.info("run_tasks",run_tasks)
-    api_version = mdata.get("api_version", "1.0")
-    if Version(api_version) < Version("1.0"):
-        raise RuntimeError(
-            f"API version {api_version} has been removed. Please upgrade to 1.0."
-        )
 
-    elif Version(api_version) >= Version("1.0"):
-        submission = make_submission(
-            mdata["fp_machine"],
-            mdata["fp_resources"],
-            commands=[fp_command],
-            work_path=work_dir,
-            run_tasks=run_tasks,
-            group_size=fp_group_size,
-            forward_common_files=forward_common_files,
-            forward_files=forward_files,
-            backward_files=backward_files,
-            outlog="fp.log",
-            errlog="fp.log",
-        )
-        submission.run_submission()
+    ### Submit the jobs
+    if Version(mdata.get("api_version", "1.0")) < Version("1.0"):
+        raise RuntimeError(f"Your API version is no longer supported. Please upgrade to version 1.0 or newer.")
+
+    submission = make_submission(
+        mdata["fp_machine"],
+        mdata["fp_resources"],
+        commands=[fp_command],
+        work_path=work_dir,
+        run_tasks=run_tasks,
+        group_size=fp_group_size,
+        forward_common_files=forward_common_files,
+        forward_files=forward_files,
+        backward_files=backward_files,
+        outlog="fp.log",
+        errlog="fp.log",
+    )
+    submission.run_submission()
 
 
 def gen_init_bulk(args):
