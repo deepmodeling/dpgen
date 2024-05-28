@@ -115,7 +115,7 @@ def symlink_user_forward_files(mdata, task_type, work_path, task_format=None):
 
 
 def check_api_version(mdata):
-    """Check if the API version in metadata is at least 1.0."""
+    """Check if the API version in mdata is at least 1.0."""
     if Version(mdata.get("api_version", "1.0")) < Version("1.0"):
         raise RuntimeError(
             "API version below 1.0 is no longer supported. Please upgrade to version 1.0 or newer."
