@@ -4437,17 +4437,19 @@ def post_fp_cp2k(iter_index, jdata, rfailed=None):
         sys_output = glob.glob(os.path.join(work_path, "task.%s.*/output" % ss))
         sys_output.sort()
         tcount += len(sys_output)
+        log_file_path = os.path.join(work_path, f"{ss}.fp-fail.log")
         all_sys = dpdata.MultiSystems(type_map=jdata["type_map"])
         for oo in sys_output:
-            _sys = dpdata.LabeledSystem(oo, fmt="cp2k/output")
-            # _sys.check_type_map(type_map = jdata['type_map'])
-            # if all_sys is None:
-            #     all_sys = _sys
-            # else:
-            #     all_sys.append(_sys)
+            with open(oo, 'r') as file:
+                content = file.read()
+            if 'SCF run NOT converged' in content:
+                with open(log_file_path, 'a') as log_file:
+                    log_file.write(f"Skipping file {oo} due to SCF run NOT converged\n")
+                continue
+            _sys = dpdata.LabeledSystem(oo, fmt="cp2kdata/e_f", type_map=jdata["type_map"])
             all_sys.append(_sys)
+            icount += 1
 
-        icount += len(all_sys)
         if (all_sys is not None) and (len(all_sys) > 0):
             sys_data_path = os.path.join(work_path, "data.%s" % ss)
             all_sys.to_deepmd_raw(sys_data_path)
