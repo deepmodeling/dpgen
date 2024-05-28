@@ -138,21 +138,20 @@ def make_submission_compat(
     """
     if Version(api_version) < Version("1.0"):
         raise RuntimeError(
-            f"API version {api_version} has been removed. Please upgrade to 1.0."
+            "API version below 1.0 is no longer supported. Please upgrade to version 1.0 or newer."
         )
 
-    elif Version(api_version) >= Version("1.0"):
-        submission = make_submission(
-            machine,
-            resources,
-            commands=commands,
-            work_path=work_path,
-            run_tasks=run_tasks,
-            group_size=group_size,
-            forward_common_files=forward_common_files,
-            forward_files=forward_files,
-            backward_files=backward_files,
-            outlog=outlog,
-            errlog=errlog,
-        )
-        submission.run_submission()
+    submission = make_submission(
+        machine,
+        resources,
+        commands=commands,
+        work_path=work_path,
+        run_tasks=run_tasks,
+        group_size=group_size,
+        forward_common_files=forward_common_files,
+        forward_files=forward_files,
+        backward_files=backward_files,
+        outlog=outlog,
+        errlog=errlog,
+    )
+    submission.run_submission()
