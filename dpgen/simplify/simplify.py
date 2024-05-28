@@ -255,7 +255,7 @@ def run_model_devi(iter_index, jdata, mdata):
         commands.append(command_true_error)
         backward_files.append(true_error_file_name)
 
-    ### Submit the jobs
+    ### Submit jobs
     check_api_version(mdata)
 
     submission = make_submission(

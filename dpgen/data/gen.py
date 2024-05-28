@@ -1157,7 +1157,7 @@ def run_vasp_relax(jdata, mdata):
     #        relax_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in relax_run_tasks]
 
-    ### Submit the jobs
+    ### Submit jobs
     check_api_version(mdata)
 
     submission = make_submission(
@@ -1293,7 +1293,7 @@ def run_abacus_relax(jdata, mdata):
     #        relax_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in relax_run_tasks]
 
-    ### Submit the jobs
+    ### Submit jobs
     check_api_version(mdata)
 
     submission = make_submission(
@@ -1351,7 +1351,7 @@ def run_vasp_md(jdata, mdata):
     # dlog.info("md_work_dir", work_dir)
     # dlog.info("run_tasks",run_tasks)
 
-    ### Submit the jobs
+    ### Submit jobs
     check_api_version(mdata)
 
     submission = make_submission(
@@ -1424,7 +1424,7 @@ def run_abacus_md(jdata, mdata):
     # dlog.info("md_work_dir", work_dir)
     # dlog.info("run_tasks",run_tasks)
 
-    ### Submit the jobs
+    ### Submit jobs
     check_api_version(mdata)
 
     submission = make_submission(

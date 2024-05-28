@@ -879,7 +879,7 @@ def run_train(iter_index, jdata, mdata):
     forward_files += [os.path.basename(file) for file in user_forward_files]
     backward_files += mdata.get("train" + "_user_backward_files", [])
 
-    ### Submit the jobs
+    ### Submit jobs
     check_api_version(mdata)
 
     submission = make_submission(
@@ -2092,7 +2092,7 @@ def run_md_model_devi(iter_index, jdata, mdata):
             "run_tasks for model_devi should not be empty! Please check your files."
         )
 
-    ### Submit the jobs
+    ### Submit jobs
     check_api_version(mdata)
 
     submission = make_submission(
@@ -3958,7 +3958,7 @@ def run_fp_inner(
     forward_files += [os.path.basename(file) for file in user_forward_files]
     backward_files += mdata.get("fp" + "_user_backward_files", [])
 
-    ### Submit the jobs
+    ### Submit jobs
     check_api_version(mdata)
 
     submission = make_submission(
