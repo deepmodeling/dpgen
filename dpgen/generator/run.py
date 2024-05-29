@@ -78,6 +78,7 @@ from dpgen.generator.lib.run_calypso import (
 )
 from dpgen.generator.lib.siesta import make_siesta_input
 from dpgen.generator.lib.utils import (
+    check_api_version,
     create_path,
     log_iter,
     log_task,
@@ -874,31 +875,27 @@ def run_train(iter_index, jdata, mdata):
     except Exception:
         train_group_size = 1
 
-    api_version = mdata.get("api_version", "1.0")
-
     user_forward_files = mdata.get("train" + "_user_forward_files", [])
     forward_files += [os.path.basename(file) for file in user_forward_files]
     backward_files += mdata.get("train" + "_user_backward_files", [])
-    if Version(api_version) < Version("1.0"):
-        raise RuntimeError(
-            f"API version {api_version} has been removed. Please upgrade to 1.0."
-        )
 
-    elif Version(api_version) >= Version("1.0"):
-        submission = make_submission(
-            mdata["train_machine"],
-            mdata["train_resources"],
-            commands=commands,
-            work_path=work_path,
-            run_tasks=run_tasks,
-            group_size=train_group_size,
-            forward_common_files=trans_comm_data,
-            forward_files=forward_files,
-            backward_files=backward_files,
-            outlog="train.log",
-            errlog="train.log",
-        )
-        submission.run_submission()
+    ### Submit jobs
+    check_api_version(mdata)
+
+    submission = make_submission(
+        mdata["train_machine"],
+        mdata["train_resources"],
+        commands=commands,
+        work_path=work_path,
+        run_tasks=run_tasks,
+        group_size=train_group_size,
+        forward_common_files=trans_comm_data,
+        forward_files=forward_files,
+        backward_files=backward_files,
+        outlog="train.log",
+        errlog="train.log",
+    )
+    submission.run_submission()
 
 
 def post_train(iter_index, jdata, mdata):
@@ -2090,31 +2087,28 @@ def run_md_model_devi(iter_index, jdata, mdata):
     user_forward_files = mdata.get("model_devi" + "_user_forward_files", [])
     forward_files += [os.path.basename(file) for file in user_forward_files]
     backward_files += mdata.get("model_devi" + "_user_backward_files", [])
-    api_version = mdata.get("api_version", "1.0")
     if len(run_tasks) == 0:
         raise RuntimeError(
             "run_tasks for model_devi should not be empty! Please check your files."
         )
-    if Version(api_version) < Version("1.0"):
-        raise RuntimeError(
-            f"API version {api_version} has been removed. Please upgrade to 1.0."
-        )
 
-    elif Version(api_version) >= Version("1.0"):
-        submission = make_submission(
-            mdata["model_devi_machine"],
-            mdata["model_devi_resources"],
-            commands=commands,
-            work_path=work_path,
-            run_tasks=run_tasks,
-            group_size=model_devi_group_size,
-            forward_common_files=model_names,
-            forward_files=forward_files,
-            backward_files=backward_files,
-            outlog="model_devi.log",
-            errlog="model_devi.log",
-        )
-        submission.run_submission()
+    ### Submit jobs
+    check_api_version(mdata)
+
+    submission = make_submission(
+        mdata["model_devi_machine"],
+        mdata["model_devi_resources"],
+        commands=commands,
+        work_path=work_path,
+        run_tasks=run_tasks,
+        group_size=model_devi_group_size,
+        forward_common_files=model_names,
+        forward_files=forward_files,
+        backward_files=backward_files,
+        outlog="model_devi.log",
+        errlog="model_devi.log",
+    )
+    submission.run_submission()
 
 
 def run_model_devi(iter_index, jdata, mdata):
@@ -3964,27 +3958,23 @@ def run_fp_inner(
     forward_files += [os.path.basename(file) for file in user_forward_files]
     backward_files += mdata.get("fp" + "_user_backward_files", [])
 
-    api_version = mdata.get("api_version", "1.0")
-    if Version(api_version) < Version("1.0"):
-        raise RuntimeError(
-            f"API version {api_version} has been removed. Please upgrade to 1.0."
-        )
+    ### Submit jobs
+    check_api_version(mdata)
 
-    elif Version(api_version) >= Version("1.0"):
-        submission = make_submission(
-            mdata["fp_machine"],
-            mdata["fp_resources"],
-            commands=[fp_command],
-            work_path=work_path,
-            run_tasks=run_tasks,
-            group_size=fp_group_size,
-            forward_common_files=forward_common_files,
-            forward_files=forward_files,
-            backward_files=backward_files,
-            outlog=log_file,
-            errlog=log_file,
-        )
-        submission.run_submission()
+    submission = make_submission(
+        mdata["fp_machine"],
+        mdata["fp_resources"],
+        commands=[fp_command],
+        work_path=work_path,
+        run_tasks=run_tasks,
+        group_size=fp_group_size,
+        forward_common_files=forward_common_files,
+        forward_files=forward_files,
+        backward_files=backward_files,
+        outlog=log_file,
+        errlog=log_file,
+    )
+    submission.run_submission()
 
 
 def run_fp(iter_index, jdata, mdata):

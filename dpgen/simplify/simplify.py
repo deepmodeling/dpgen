@@ -18,13 +18,13 @@ from typing import Union
 
 import dpdata
 import numpy as np
-from packaging.version import Version
 
 from dpgen import dlog
 from dpgen.dispatcher.Dispatcher import make_submission
 
 # TODO: maybe the following functions can be moved to dpgen.util
 from dpgen.generator.lib.utils import (
+    check_api_version,
     create_path,
     log_iter,
     make_iter_name,
@@ -255,27 +255,23 @@ def run_model_devi(iter_index, jdata, mdata):
         commands.append(command_true_error)
         backward_files.append(true_error_file_name)
 
-    api_version = mdata.get("api_version", "1.0")
-    if Version(api_version) < Version("1.0"):
-        raise RuntimeError(
-            f"API version {api_version} has been removed. Please upgrade to 1.0."
-        )
+    ### Submit jobs
+    check_api_version(mdata)
 
-    elif Version(api_version) >= Version("1.0"):
-        submission = make_submission(
-            mdata["model_devi_machine"],
-            mdata["model_devi_resources"],
-            commands=commands,
-            work_path=work_path,
-            run_tasks=run_tasks,
-            group_size=model_devi_group_size,
-            forward_common_files=model_names,
-            forward_files=forward_files,
-            backward_files=backward_files,
-            outlog="model_devi.log",
-            errlog="model_devi.log",
-        )
-        submission.run_submission()
+    submission = make_submission(
+        mdata["model_devi_machine"],
+        mdata["model_devi_resources"],
+        commands=commands,
+        work_path=work_path,
+        run_tasks=run_tasks,
+        group_size=model_devi_group_size,
+        forward_common_files=model_names,
+        forward_files=forward_files,
+        backward_files=backward_files,
+        outlog="model_devi.log",
+        errlog="model_devi.log",
+    )
+    submission.run_submission()
 
 
 def post_model_devi(iter_index, jdata, mdata):
