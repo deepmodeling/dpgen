@@ -501,26 +501,25 @@ def pert_scaled(jdata):
     sys_pe.sort()
     os.chdir(cwd)
 
+    python_exec = os.path.join(
+        os.path.dirname(__file__), "tools", "create_random_disturb.py"
+    )
     pert_cmd = (
         sys.executable
-        + " "
-        + os.path.join(ROOT_PATH, "data/tools/create_random_disturb.py")
+        + f" {python_exec} -etmax {pert_box} -ofmt vasp POSCAR {pert_numb} {pert_atom} > /dev/null"
     )
-    pert_cmd += " -etmax %f -ofmt vasp POSCAR %d %f > /dev/null" % (
-        pert_box,
-        pert_numb,
-        pert_atom,
-    )
+
+    ### Loop over each system and scale
     for ii in sys_pe:
         for jj in scale:
-            path_scale = path_sp
-            path_scale = os.path.join(path_scale, ii)
-            path_scale = os.path.join(path_scale, f"scale-{jj:.3f}")
+            path_scale = os.path.join(path_sp, ii, f"scale-{jj:.3f}")
             assert os.path.isdir(path_scale)
             os.chdir(path_scale)
             dlog.info(os.getcwd())
             poscar_in = os.path.join(path_scale, "POSCAR")
             assert os.path.isfile(poscar_in)
+
+            ### Loop over each perturbation
             for ll in elongs:
                 path_elong = path_scale
                 path_elong = os.path.join(path_elong, f"elong-{ll:3.3f}")
@@ -529,18 +528,13 @@ def pert_scaled(jdata):
                 poscar_elong(poscar_in, "POSCAR", ll)
                 sp.check_call(pert_cmd, shell=True)
                 for kk in range(pert_numb):
-                    pos_in = "POSCAR%d.vasp" % (kk + 1)
-                    dir_out = "%06d" % (kk + 1)
+                    pos_in = f"POSCAR{kk}.vasp"
+                    dir_out = f"{kk:06d}"
                     create_path(dir_out)
                     pos_out = os.path.join(dir_out, "POSCAR")
                     poscar_shuffle(pos_in, pos_out)
                     os.remove(pos_in)
-                kk = -1
-                pos_in = "POSCAR"
-                dir_out = "%06d" % (kk + 1)
-                create_path(dir_out)
-                pos_out = os.path.join(dir_out, "POSCAR")
-                poscar_shuffle(pos_in, pos_out)
+
                 os.chdir(cwd)
 
 

@@ -69,7 +69,7 @@ class TestGenBulk(unittest.TestCase):
             self.assertEqual(len(scales), self.scale_numb)
             for scale in scales:
                 perts = glob.glob(os.path.join(scale, "[0-9]*"))
-                self.assertEqual(len(perts), self.pert_numb + 1)
+                self.assertEqual(len(perts), self.pert_numb)
 
 
 if __name__ == "__main__":
