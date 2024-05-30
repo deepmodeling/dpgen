@@ -727,7 +727,7 @@ def make_scale_ABACUS(jdata):
 
 def pert_scaled(jdata):
     ### Extract data from jdata
-    jdata["init_fp_style"] = jdata.get("init_fp_style", "VASP")
+    init_fp_style = jdata.get("init_fp_style", "VASP")
     out_dir = jdata["out_dir"]
     scale = jdata["scale"]
     pert_box = jdata["pert_box"]
@@ -754,13 +754,14 @@ def pert_scaled(jdata):
     os.chdir(cwd)
 
     ### Construct the perturbation command
-    python_exec = os.path.join(os.path.dirname(__file__), "tools", "create_random_disturb.py")
-    fp_style = "vasp"
-    poscar_name = "POSCAR"
-    if jdata["init_fp_style"] == "ABACUS":
+    if init_fp_style == "VASP":
+        fp_style = "vasp"
+        poscar_name = "POSCAR"
+    elif init_fp_style == "ABACUS":
         fp_style = "abacus"
         poscar_name = "STRU"
 
+    python_exec = os.path.join(os.path.dirname(__file__), "tools", "create_random_disturb.py")
     pert_cmd = sys.executable + f" {python_exec} -etmax {pert_box} -ofmt {fp_style} {poscar_name} {pert_numb} {pert_atom} > /dev/null"
 
     ### Loop over each system and scale
