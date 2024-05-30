@@ -727,7 +727,6 @@ def make_scale_ABACUS(jdata):
 
 def pert_scaled(jdata):
     ### Extract data from jdata
-    init_fp_style = jdata.get("init_fp_style", "VASP")
     out_dir = jdata["out_dir"]
     scale = jdata["scale"]
     pert_box = jdata["pert_box"]
@@ -754,6 +753,7 @@ def pert_scaled(jdata):
     os.chdir(cwd)
 
     ### Construct the perturbation command
+    init_fp_style = jdata.get("init_fp_style", "VASP")
     if init_fp_style == "VASP":
         fp_style = "vasp"
         poscar_name = "POSCAR"
