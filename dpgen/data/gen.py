@@ -726,8 +726,8 @@ def make_scale_ABACUS(jdata):
 
 
 def pert_scaled(jdata):
-    if "init_fp_style" not in jdata:
-        jdata["init_fp_style"] = "VASP"
+    ### Extract data from jdata
+    jdata["init_fp_style"] = jdata.get("init_fp_style", "VASP")
     out_dir = jdata["out_dir"]
     scale = jdata["scale"]
     pert_box = jdata["pert_box"]
@@ -744,6 +744,7 @@ def pert_scaled(jdata):
     if "from_poscar" in jdata:
         from_poscar = jdata["from_poscar"]
 
+    ### Get the current working directory and the system path
     cwd = os.getcwd()
     path_sp = os.path.join(out_dir, global_dirname_03)
     assert os.path.isdir(path_sp)
@@ -752,35 +753,31 @@ def pert_scaled(jdata):
     sys_pe.sort()
     os.chdir(cwd)
 
-    pert_cmd = os.path.dirname(__file__)
-    pert_cmd = os.path.join(pert_cmd, "tools")
-    pert_cmd = os.path.join(pert_cmd, "create_random_disturb.py")
+    ### Construct the perturbation command
+    python_exec = os.path.join(os.path.dirname(__file__), "tools", "create_random_disturb.py")
     fp_style = "vasp"
     poscar_name = "POSCAR"
     if jdata["init_fp_style"] == "ABACUS":
         fp_style = "abacus"
         poscar_name = "STRU"
-    pert_cmd = (
-        sys.executable
-        + " "
-        + pert_cmd
-        + " -etmax %f -ofmt %s %s %d %f > /dev/null"
-        % (pert_box, fp_style, poscar_name, pert_numb, pert_atom)
-    )
+
+    pert_cmd = sys.executable + f" {python_exec} -etmax {pert_box} -ofmt {fp_style} {poscar_name} {pert_numb} {pert_atom} > /dev/null"
+
+    ### Loop over each system and scale
     for ii in sys_pe:
         for jj in scale:
-            path_work = path_sp
-            path_work = os.path.join(path_work, ii)
-            path_work = os.path.join(path_work, f"scale-{jj:.3f}")
+            path_work = os.path.join(path_sp, ii, f"scale-{jj:.3f}")
             assert os.path.isdir(path_work)
             os.chdir(path_work)
             sp.check_call(pert_cmd, shell=True)
+
+            ### Loop over each perturbation
             for kk in range(pert_numb):
                 if fp_style == "vasp":
-                    pos_in = "POSCAR%d.vasp" % (kk + 1)
+                    pos_in = f"POSCAR{kk}.vasp"
                 elif fp_style == "abacus":
-                    pos_in = "STRU%d.abacus" % (kk + 1)
-                dir_out = "%06d" % (kk + 1)
+                    pos_in = f"STRU{kk}.abacus"
+                dir_out = f"{kk:06d}"
                 create_path(dir_out)
                 if fp_style == "vasp":
                     pos_out = os.path.join(dir_out, "POSCAR")
@@ -805,35 +802,7 @@ def pert_scaled(jdata):
                 else:
                     shutil.copy2(pos_in, pos_out)
                 os.remove(pos_in)
-            kk = -1
-            if fp_style == "vasp":
-                pos_in = "POSCAR"
-            elif fp_style == "abacus":
-                pos_in = "STRU"
-            dir_out = "%06d" % (kk + 1)
-            create_path(dir_out)
-            if fp_style == "vasp":
-                pos_out = os.path.join(dir_out, "POSCAR")
-            elif fp_style == "abacus":
-                pos_out = os.path.join(dir_out, "STRU")
-            if not from_poscar:
-                if fp_style == "vasp":
-                    poscar_shuffle(pos_in, pos_out)
-                elif fp_style == "abacus":
-                    stru_in = get_abacus_STRU(pos_in)
-                    stru_out = shuffle_stru_data(stru_in)
-                    with open(pos_out, "w") as fp:
-                        fp.write(
-                            make_abacus_scf_stru(
-                                stru_out,
-                                pp_file,
-                                orb_file_names,
-                                dpks_descriptor_name,
-                                type_map=jdata["elements"],
-                            )
-                        )
-            else:
-                shutil.copy2(pos_in, pos_out)
+
             os.chdir(cwd)
 
 
