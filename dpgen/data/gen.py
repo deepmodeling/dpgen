@@ -754,14 +754,19 @@ def pert_scaled(jdata):
     os.chdir(cwd)
 
     ### Construct the perturbation command
-    python_exec = os.path.join(os.path.dirname(__file__), "tools", "create_random_disturb.py")
+    python_exec = os.path.join(
+        os.path.dirname(__file__), "tools", "create_random_disturb.py"
+    )
     fp_style = "vasp"
     poscar_name = "POSCAR"
     if jdata["init_fp_style"] == "ABACUS":
         fp_style = "abacus"
         poscar_name = "STRU"
 
-    pert_cmd = sys.executable + f" {python_exec} -etmax {pert_box} -ofmt {fp_style} {poscar_name} {pert_numb} {pert_atom} > /dev/null"
+    pert_cmd = (
+        sys.executable
+        + f" {python_exec} -etmax {pert_box} -ofmt {fp_style} {poscar_name} {pert_numb} {pert_atom} > /dev/null"
+    )
 
     ### Loop over each system and scale
     for ii in sys_pe:
