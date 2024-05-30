@@ -354,15 +354,16 @@ def make_vasp_relax(jdata):
     out_dir = jdata["out_dir"]
     potcars = jdata["potcars"]
     cwd = os.getcwd()
-
     work_dir = os.path.join(out_dir, global_dirname_02)
     assert os.path.isdir(work_dir)
     work_dir = os.path.abspath(work_dir)
+
     if os.path.isfile(os.path.join(work_dir, "INCAR")):
         os.remove(os.path.join(work_dir, "INCAR"))
     if os.path.isfile(os.path.join(work_dir, "POTCAR")):
         os.remove(os.path.join(work_dir, "POTCAR"))
     shutil.copy2(jdata["relax_incar"], os.path.join(work_dir, "INCAR"))
+
     out_potcar = os.path.join(work_dir, "POTCAR")
     with open(out_potcar, "w") as outfile:
         for fname in potcars:
@@ -440,15 +441,12 @@ def make_scale(jdata):
         for jj in scale:
             if skip_relax:
                 pos_src = os.path.join(os.path.join(init_path, ii), "POSCAR")
-                assert os.path.isfile(pos_src)
             else:
-                try:
-                    pos_src = os.path.join(os.path.join(init_path, ii), "CONTCAR")
-                    assert os.path.isfile(pos_src)
-                except Exception:
-                    raise RuntimeError(
-                        "not file %s, vasp relaxation should be run before scale poscar"
-                    )
+                pos_src = os.path.join(os.path.join(init_path, ii), "CONTCAR")
+            if not os.path.isfile(pos_src):
+                raise RuntimeError(
+                    f"file {pos_src} not found, vasp relaxation should be run before scale poscar"
+                )
             scale_path = os.path.join(work_path, ii)
             scale_path = os.path.join(scale_path, f"scale-{jj:.3f}")
             create_path(scale_path)
@@ -501,6 +499,7 @@ def pert_scaled(jdata):
     sys_pe.sort()
     os.chdir(cwd)
 
+    ### Construct the perturbation command
     python_exec = os.path.join(
         os.path.dirname(__file__), "tools", "create_random_disturb.py"
     )
@@ -521,8 +520,7 @@ def pert_scaled(jdata):
 
             ### Loop over each perturbation
             for ll in elongs:
-                path_elong = path_scale
-                path_elong = os.path.join(path_elong, f"elong-{ll:3.3f}")
+                path_elong = os.path.join(path_scale, f"elong-{ll:3.3f}")
                 create_path(path_elong)
                 os.chdir(path_elong)
                 poscar_elong(poscar_in, "POSCAR", ll)
