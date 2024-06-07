@@ -4472,13 +4472,15 @@ def post_fp_cp2k(iter_index, jdata, rfailed=None):
         log_file_path = os.path.join(work_path, f"{ss}.fp-fail.log")
         all_sys = dpdata.MultiSystems(type_map=jdata["type_map"])
         for oo in sys_output:
-            with open(oo, 'r') as file:
+            with open(oo) as file:
                 content = file.read()
-            if 'SCF run NOT converged' in content:
-                with open(log_file_path, 'a') as log_file:
+            if "SCF run NOT converged" in content:
+                with open(log_file_path, "a") as log_file:
                     log_file.write(f"Skipping file {oo} due to SCF run NOT converged\n")
                 continue
-            _sys = dpdata.LabeledSystem(oo, fmt="cp2kdata/e_f", type_map=jdata["type_map"])
+            _sys = dpdata.LabeledSystem(
+                oo, fmt="cp2kdata/e_f", type_map=jdata["type_map"]
+            )
             all_sys.append(_sys)
             icount += 1
 
