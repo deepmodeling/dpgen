@@ -281,7 +281,7 @@ class TestPostCP2K(unittest.TestCase, CompLabeledSys):
         post_fp(0, jdata)
         self.system_1 = dpdata.LabeledSystem("iter.000000/orig", fmt="deepmd/raw")
         self.system_2 = dpdata.LabeledSystem(
-            "iter.000000/02.fp/data.000", fmt="deepmd/raw"
+            "iter.000000/02.fp/data.000/C2H2N2", fmt="deepmd/raw"
         )
 
 

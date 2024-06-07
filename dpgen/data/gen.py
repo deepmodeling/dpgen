@@ -10,7 +10,6 @@ import sys
 
 import dpdata
 import numpy as np
-from packaging.version import Version
 from pymatgen.core import Structure
 from pymatgen.io.vasp import Incar
 
@@ -28,7 +27,7 @@ from dpgen.generator.lib.abacus_scf import (
     make_abacus_scf_stru,
     make_supercell_abacus,
 )
-from dpgen.generator.lib.utils import symlink_user_forward_files
+from dpgen.generator.lib.utils import check_api_version, symlink_user_forward_files
 from dpgen.generator.lib.vasp import incar_upper
 from dpgen.remote.decide_machine import convert_mdata
 from dpgen.util import load_file
@@ -114,7 +113,7 @@ def class_cell_type(jdata):
     elif ct == "bcc":
         cell_type = bcc
     else:
-        raise RuntimeError("unknown cell type %s" % ct)
+        raise RuntimeError(f"unknown cell type {ct}")
     return cell_type
 
 
@@ -242,7 +241,7 @@ def poscar_scale(poscar_in, poscar_out, scale):
     elif "C" == lines[7][0] or "c" == lines[7][0]:
         lines = poscar_scale_cartesian(lines, scale)
     else:
-        raise RuntimeError("Unknow poscar style at line 7: %s" % lines[7])
+        raise RuntimeError(f"Unknow poscar style at line 7: {lines[7]}")
     with open(poscar_out, "w") as fout:
         fout.write("".join(lines))
 
@@ -305,8 +304,8 @@ def make_super_cell(jdata):
     super_cell = jdata["super_cell"]
     path_uc = os.path.join(out_dir, global_dirname_02)
     path_sc = os.path.join(out_dir, global_dirname_02)
-    assert os.path.isdir(path_uc), "path %s should exists" % path_uc
-    assert os.path.isdir(path_sc), "path %s should exists" % path_sc
+    assert os.path.isdir(path_uc), f"path {path_uc} should exists"
+    assert os.path.isdir(path_sc), f"path {path_sc} should exists"
 
     # for ii in scale :
     from_path = path_uc
@@ -325,8 +324,8 @@ def make_super_cell_ABACUS(jdata, stru_data):
     super_cell = jdata["super_cell"]
     path_uc = os.path.join(out_dir, global_dirname_02)
     path_sc = os.path.join(out_dir, global_dirname_02)
-    assert os.path.isdir(path_uc), "path %s should exists" % path_uc
-    assert os.path.isdir(path_sc), "path %s should exists" % path_sc
+    assert os.path.isdir(path_uc), f"path {path_uc} should exists"
+    assert os.path.isdir(path_sc), f"path {path_sc} should exists"
 
     # for ii in scale :
     # from_path = path_uc
@@ -348,7 +347,7 @@ def make_super_cell_poscar(jdata):
     path_sc = os.path.join(out_dir, global_dirname_02)
     create_path(path_sc)
     from_poscar_path = jdata["from_poscar_path"]
-    assert os.path.isfile(from_poscar_path), "file %s should exists" % from_poscar_path
+    assert os.path.isfile(from_poscar_path), f"file {from_poscar_path} should exists"
 
     from_file = os.path.join(path_sc, "POSCAR.copied")
     shutil.copy2(from_poscar_path, from_file)
@@ -388,7 +387,7 @@ def make_super_cell_STRU(jdata):
     path_sc = os.path.join(out_dir, global_dirname_02)
     create_path(path_sc)
     from_poscar_path = jdata["from_poscar_path"]
-    assert os.path.isfile(from_poscar_path), "file %s should exists" % from_poscar_path
+    assert os.path.isfile(from_poscar_path), f"file {from_poscar_path} should exists"
 
     from_file = os.path.join(path_sc, "STRU.copied")
     shutil.copy2(from_poscar_path, from_file)
@@ -583,9 +582,9 @@ def make_abacus_relax(jdata, mdata):
                     raise RuntimeError("Cannot find any k-points information.")
                 else:
                     relax_kpt_path = jdata["relax_kpt"]
-                    assert os.path.isfile(relax_kpt_path), (
-                        "file %s should exists" % relax_kpt_path
-                    )
+                    assert os.path.isfile(
+                        relax_kpt_path
+                    ), f"file {relax_kpt_path} should exists"
             else:
                 gamma_param = {"k_points": [1, 1, 1, 0, 0, 0]}
                 ret_kpt = make_abacus_scf_kpt(gamma_param)
@@ -594,9 +593,9 @@ def make_abacus_relax(jdata, mdata):
                 raise RuntimeError("Cannot find any k-points information.")
             else:
                 relax_kpt_path = jdata["relax_kpt"]
-                assert os.path.isfile(relax_kpt_path), (
-                    "file %s should exists" % relax_kpt_path
-                )
+                assert os.path.isfile(
+                    relax_kpt_path
+                ), f"file {relax_kpt_path} should exists"
 
     out_dir = jdata["out_dir"]
     cwd = os.getcwd()
@@ -671,17 +670,14 @@ def make_scale(jdata):
         for jj in scale:
             if skip_relax:
                 pos_src = os.path.join(os.path.join(init_path, ii), "POSCAR")
-                assert os.path.isfile(pos_src)
             else:
-                try:
-                    pos_src = os.path.join(os.path.join(init_path, ii), "CONTCAR")
-                    assert os.path.isfile(pos_src)
-                except Exception:
-                    raise RuntimeError(
-                        "not file %s, vasp relaxation should be run before scale poscar"
-                    )
+                pos_src = os.path.join(os.path.join(init_path, ii), "CONTCAR")
+            if not os.path.isfile(pos_src):
+                raise RuntimeError(
+                    f"file {pos_src} not found, vasp relaxation should be run before scale poscar"
+                )
             scale_path = os.path.join(work_path, ii)
-            scale_path = os.path.join(scale_path, "scale-%.3f" % jj)
+            scale_path = os.path.join(scale_path, f"scale-{jj:.3f}")
             create_path(scale_path)
             os.chdir(scale_path)
             poscar_scale(pos_src, "POSCAR", jj)
@@ -722,7 +718,7 @@ def make_scale_ABACUS(jdata):
                         "Can not find STRU_ION_D in OUT.ABACUS!!!\nABACUS relaxation should be run before scale poscar"
                     )
             scale_path = os.path.join(work_path, ii)
-            scale_path = os.path.join(scale_path, "scale-%.3f" % jj)
+            scale_path = os.path.join(scale_path, f"scale-{jj:.3f}")
             create_path(scale_path)
             os.chdir(scale_path)
             poscar_scale_abacus(pos_src, "STRU", jj, jdata)
@@ -775,7 +771,7 @@ def pert_scaled(jdata):
         for jj in scale:
             path_work = path_sp
             path_work = os.path.join(path_work, ii)
-            path_work = os.path.join(path_work, "scale-%.3f" % jj)
+            path_work = os.path.join(path_work, f"scale-{jj:.3f}")
             assert os.path.isdir(path_work)
             os.chdir(path_work)
             sp.check_call(pert_cmd, shell=True)
@@ -873,13 +869,13 @@ def make_vasp_md(jdata, mdata):
             for kk in range(pert_numb + 1):
                 path_work = path_md
                 path_work = os.path.join(path_work, ii)
-                path_work = os.path.join(path_work, "scale-%.3f" % jj)
+                path_work = os.path.join(path_work, f"scale-{jj:.3f}")
                 path_work = os.path.join(path_work, "%06d" % kk)
                 create_path(path_work)
                 os.chdir(path_work)
                 path_pos = path_ps
                 path_pos = os.path.join(path_pos, ii)
-                path_pos = os.path.join(path_pos, "scale-%.3f" % jj)
+                path_pos = os.path.join(path_pos, f"scale-{jj:.3f}")
                 path_pos = os.path.join(path_pos, "%06d" % kk)
                 init_pos = os.path.join(path_pos, "POSCAR")
                 shutil.copy2(init_pos, "POSCAR")
@@ -927,9 +923,9 @@ def make_abacus_md(jdata, mdata):
                     raise RuntimeError("Cannot find any k-points information.")
                 else:
                     md_kpt_path = jdata["md_kpt"]
-                    assert os.path.isfile(md_kpt_path), (
-                        "file %s should exists" % md_kpt_path
-                    )
+                    assert os.path.isfile(
+                        md_kpt_path
+                    ), f"file {md_kpt_path} should exists"
             else:
                 ret_kpt = make_abacus_scf_kpt({"k_points": [1, 1, 1, 0, 0, 0]})
         else:
@@ -937,9 +933,7 @@ def make_abacus_md(jdata, mdata):
                 raise RuntimeError("Cannot find any k-points information.")
             else:
                 md_kpt_path = jdata["md_kpt"]
-                assert os.path.isfile(md_kpt_path), (
-                    "file %s should exists" % md_kpt_path
-                )
+                assert os.path.isfile(md_kpt_path), f"file {md_kpt_path} should exists"
 
     out_dir = jdata["out_dir"]
     potcars = jdata["potcars"]
@@ -996,13 +990,13 @@ def make_abacus_md(jdata, mdata):
             for kk in range(pert_numb + 1):
                 path_work = path_md
                 path_work = os.path.join(path_work, ii)
-                path_work = os.path.join(path_work, "scale-%.3f" % jj)
+                path_work = os.path.join(path_work, f"scale-{jj:.3f}")
                 path_work = os.path.join(path_work, "%06d" % kk)
                 create_path(path_work)
                 os.chdir(path_work)
                 path_pos = path_ps
                 path_pos = os.path.join(path_pos, ii)
-                path_pos = os.path.join(path_pos, "scale-%.3f" % jj)
+                path_pos = os.path.join(path_pos, f"scale-{jj:.3f}")
                 path_pos = os.path.join(path_pos, "%06d" % kk)
                 init_pos = os.path.join(path_pos, "STRU")
                 if "kspacing" not in standard_incar:
@@ -1072,7 +1066,7 @@ def coll_vasp_md(jdata):
         valid_outcars = []
         for jj in scale:
             for kk in range(pert_numb):
-                path_work = os.path.join("scale-%.3f" % jj, "%06d" % kk)
+                path_work = os.path.join(f"scale-{jj:.3f}", "%06d" % kk)
                 outcar = os.path.join(path_work, "OUTCAR")
                 # dlog.info("OUTCAR",outcar)
                 if os.path.isfile(outcar):
@@ -1087,8 +1081,7 @@ def coll_vasp_md(jdata):
                         valid_outcars.append(outcar)
                     else:
                         dlog.info(
-                            "WARNING : in directory %s nforce in OUTCAR is not equal to settings in INCAR"
-                            % (os.getcwd())
+                            f"WARNING : in directory {os.getcwd()} nforce in OUTCAR is not equal to settings in INCAR"
                         )
         arg_cvt = " "
         if len(valid_outcars) == 0:
@@ -1164,27 +1157,23 @@ def run_vasp_relax(jdata, mdata):
     #        relax_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in relax_run_tasks]
 
-    api_version = mdata.get("api_version", "1.0")
-    if Version(api_version) < Version("1.0"):
-        raise RuntimeError(
-            "API version %s has been removed. Please upgrade to 1.0." % api_version
-        )
+    ### Submit jobs
+    check_api_version(mdata)
 
-    elif Version(api_version) >= Version("1.0"):
-        submission = make_submission(
-            mdata["fp_machine"],
-            mdata["fp_resources"],
-            commands=[fp_command],
-            work_path=work_dir,
-            run_tasks=run_tasks,
-            group_size=fp_group_size,
-            forward_common_files=forward_common_files,
-            forward_files=forward_files,
-            backward_files=backward_files,
-            outlog="fp.log",
-            errlog="fp.log",
-        )
-        submission.run_submission()
+    submission = make_submission(
+        mdata["fp_machine"],
+        mdata["fp_resources"],
+        commands=[fp_command],
+        work_path=work_dir,
+        run_tasks=run_tasks,
+        group_size=fp_group_size,
+        forward_common_files=forward_common_files,
+        forward_files=forward_files,
+        backward_files=backward_files,
+        outlog="fp.log",
+        errlog="fp.log",
+    )
+    submission.run_submission()
 
 
 def coll_abacus_md(jdata):
@@ -1208,8 +1197,8 @@ def coll_abacus_md(jdata):
         valid_outcars = []
         for jj in scale:
             for kk in range(pert_numb + 1):
-                path_work = os.path.join("scale-%.3f" % jj, "%06d" % kk)
-                print("path_work = %s" % path_work)
+                path_work = os.path.join(f"scale-{jj:.3f}", "%06d" % kk)
+                print(f"path_work = {path_work}")
                 # outcar = os.path.join(path_work, 'OUT.ABACUS/')
                 outcar = path_work
                 # dlog.info("OUTCAR",outcar)
@@ -1220,13 +1209,13 @@ def coll_abacus_md(jdata):
                             print(outcar)
                         else:
                             dlog.info(
-                                "WARNING : file %s does not have !FINAL_ETOT_IS note. MD simulation is not completed normally."
-                                % os.path.join(outcar, "OUT.ABACUS/running_md.log")
+                                "WARNING : file {} does not have !FINAL_ETOT_IS note. MD simulation is not completed normally.".format(
+                                    os.path.join(outcar, "OUT.ABACUS/running_md.log")
+                                )
                             )
                 else:
                     dlog.info(
-                        "WARNING : in directory %s NO running_md.log file found."
-                        % (os.getcwd())
+                        f"WARNING : in directory {os.getcwd()} NO running_md.log file found."
                     )
         arg_cvt = " "
         if len(valid_outcars) == 0:
@@ -1304,27 +1293,23 @@ def run_abacus_relax(jdata, mdata):
     #        relax_run_tasks.append(ii)
     run_tasks = [os.path.basename(ii) for ii in relax_run_tasks]
 
-    api_version = mdata.get("api_version", "1.0")
-    if Version(api_version) < Version("1.0"):
-        raise RuntimeError(
-            "API version %s has been removed. Please upgrade to 1.0." % api_version
-        )
+    ### Submit jobs
+    check_api_version(mdata)
 
-    elif Version(api_version) >= Version("1.0"):
-        submission = make_submission(
-            mdata["fp_machine"],
-            mdata["fp_resources"],
-            commands=[fp_command],
-            work_path=work_dir,
-            run_tasks=run_tasks,
-            group_size=fp_group_size,
-            forward_common_files=forward_common_files,
-            forward_files=forward_files,
-            backward_files=backward_files,
-            outlog="fp.log",
-            errlog="fp.log",
-        )
-        submission.run_submission()
+    submission = make_submission(
+        mdata["fp_machine"],
+        mdata["fp_resources"],
+        commands=[fp_command],
+        work_path=work_dir,
+        run_tasks=run_tasks,
+        group_size=fp_group_size,
+        forward_common_files=forward_common_files,
+        forward_files=forward_files,
+        backward_files=backward_files,
+        outlog="fp.log",
+        errlog="fp.log",
+    )
+    submission.run_submission()
 
 
 def run_vasp_md(jdata, mdata):
@@ -1365,27 +1350,24 @@ def run_vasp_md(jdata, mdata):
     run_tasks = [ii.replace(work_dir + "/", "") for ii in md_run_tasks]
     # dlog.info("md_work_dir", work_dir)
     # dlog.info("run_tasks",run_tasks)
-    api_version = mdata.get("api_version", "1.0")
-    if Version(api_version) < Version("1.0"):
-        raise RuntimeError(
-            "API version %s has been removed. Please upgrade to 1.0." % api_version
-        )
 
-    elif Version(api_version) >= Version("1.0"):
-        submission = make_submission(
-            mdata["fp_machine"],
-            mdata["fp_resources"],
-            commands=[fp_command],
-            work_path=work_dir,
-            run_tasks=run_tasks,
-            group_size=fp_group_size,
-            forward_common_files=forward_common_files,
-            forward_files=forward_files,
-            backward_files=backward_files,
-            outlog="fp.log",
-            errlog="fp.log",
-        )
-        submission.run_submission()
+    ### Submit jobs
+    check_api_version(mdata)
+
+    submission = make_submission(
+        mdata["fp_machine"],
+        mdata["fp_resources"],
+        commands=[fp_command],
+        work_path=work_dir,
+        run_tasks=run_tasks,
+        group_size=fp_group_size,
+        forward_common_files=forward_common_files,
+        forward_files=forward_files,
+        backward_files=backward_files,
+        outlog="fp.log",
+        errlog="fp.log",
+    )
+    submission.run_submission()
 
 
 def run_abacus_md(jdata, mdata):
@@ -1441,27 +1423,24 @@ def run_abacus_md(jdata, mdata):
     run_tasks = [ii.replace(work_dir + "/", "") for ii in md_run_tasks]
     # dlog.info("md_work_dir", work_dir)
     # dlog.info("run_tasks",run_tasks)
-    api_version = mdata.get("api_version", "1.0")
-    if Version(api_version) < Version("1.0"):
-        raise RuntimeError(
-            "API version %s has been removed. Please upgrade to 1.0." % api_version
-        )
 
-    elif Version(api_version) >= Version("1.0"):
-        submission = make_submission(
-            mdata["fp_machine"],
-            mdata["fp_resources"],
-            commands=[fp_command],
-            work_path=work_dir,
-            run_tasks=run_tasks,
-            group_size=fp_group_size,
-            forward_common_files=forward_common_files,
-            forward_files=forward_files,
-            backward_files=backward_files,
-            outlog="fp.log",
-            errlog="fp.log",
-        )
-        submission.run_submission()
+    ### Submit jobs
+    check_api_version(mdata)
+
+    submission = make_submission(
+        mdata["fp_machine"],
+        mdata["fp_resources"],
+        commands=[fp_command],
+        work_path=work_dir,
+        run_tasks=run_tasks,
+        group_size=fp_group_size,
+        forward_common_files=forward_common_files,
+        forward_files=forward_files,
+        backward_files=backward_files,
+        outlog="fp.log",
+        errlog="fp.log",
+    )
+    submission.run_submission()
 
 
 def gen_init_bulk(args):
@@ -1475,7 +1454,7 @@ def gen_init_bulk(args):
     # Decide work path
     out_dir = out_dir_name(jdata)
     jdata["out_dir"] = out_dir
-    dlog.info("# working dir %s" % out_dir)
+    dlog.info(f"# working dir {out_dir}")
     # Decide whether to use a given poscar
     from_poscar = jdata.get("from_poscar", False)
     # Verify md_nstep
@@ -1517,7 +1496,7 @@ def gen_init_bulk(args):
     for ele in jdata["elements"]:
         temp_elements.append(ele[0].upper() + ele[1:])
     jdata["elements"] = temp_elements
-    dlog.info("Elements are %s" % " ".join(jdata["elements"]))
+    dlog.info("Elements are {}".format(" ".join(jdata["elements"])))
 
     ## Iteration
     stage_list = [int(i) for i in jdata["stages"]]

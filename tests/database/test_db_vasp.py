@@ -111,7 +111,7 @@ class Test(unittest.TestCase):
             Incar.from_dict(ret0.inputs["INCAR"]), Incar.from_dict(r0.inputs["INCAR"])
         )
         self.assertEqual(
-            str(r0.inputs["KPOINTS"]), str(Kpoints.from_dict(ret0.inputs["KPOINTS"]))
+            r0.inputs["KPOINTS"], Kpoints.from_dict(ret0.inputs["KPOINTS"])
         )
 
         self.assertEqual(ret0.inputs["POTCAR"], r0.inputs["POTCAR"].as_dict())

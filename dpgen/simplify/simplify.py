@@ -18,19 +18,20 @@ from typing import Union
 
 import dpdata
 import numpy as np
-from packaging.version import Version
 
 from dpgen import dlog
 from dpgen.dispatcher.Dispatcher import make_submission
 
 # TODO: maybe the following functions can be moved to dpgen.util
 from dpgen.generator.lib.utils import (
+    check_api_version,
     create_path,
     log_iter,
     make_iter_name,
     record_iter,
 )
 from dpgen.generator.run import (
+    _get_model_suffix,
     data_system_fmt,
     fp_name,
     fp_task_fmt,
@@ -186,7 +187,9 @@ def make_model_devi(iter_index, jdata, mdata):
     # link the model
     train_path = os.path.join(iter_name, train_name)
     train_path = os.path.abspath(train_path)
-    models = glob.glob(os.path.join(train_path, "graph*pb"))
+    suffix = _get_model_suffix(jdata)
+    models = glob.glob(os.path.join(train_path, f"graph*{suffix}"))
+
     for mm in models:
         model_name = os.path.basename(mm)
         os.symlink(mm, os.path.join(work_path, model_name))
@@ -252,27 +255,23 @@ def run_model_devi(iter_index, jdata, mdata):
         commands.append(command_true_error)
         backward_files.append(true_error_file_name)
 
-    api_version = mdata.get("api_version", "1.0")
-    if Version(api_version) < Version("1.0"):
-        raise RuntimeError(
-            "API version %s has been removed. Please upgrade to 1.0." % api_version
-        )
+    ### Submit jobs
+    check_api_version(mdata)
 
-    elif Version(api_version) >= Version("1.0"):
-        submission = make_submission(
-            mdata["model_devi_machine"],
-            mdata["model_devi_resources"],
-            commands=commands,
-            work_path=work_path,
-            run_tasks=run_tasks,
-            group_size=model_devi_group_size,
-            forward_common_files=model_names,
-            forward_files=forward_files,
-            backward_files=backward_files,
-            outlog="model_devi.log",
-            errlog="model_devi.log",
-        )
-        submission.run_submission()
+    submission = make_submission(
+        mdata["model_devi_machine"],
+        mdata["model_devi_resources"],
+        commands=commands,
+        work_path=work_path,
+        run_tasks=run_tasks,
+        group_size=model_devi_group_size,
+        forward_common_files=model_names,
+        forward_files=forward_files,
+        backward_files=backward_files,
+        outlog="model_devi.log",
+        errlog="model_devi.log",
+    )
+    submission.run_submission()
 
 
 def post_model_devi(iter_index, jdata, mdata):

@@ -17,8 +17,9 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
+    - run: pip install uv
     - name: Install dependencies
-      run: pip install -e .[test]
+      run: uv pip install --system -e .[test]
     - name: Test
       run: coverage run --source=./dpgen -m unittest -v && coverage report
     - uses: codecov/codecov-action@v4

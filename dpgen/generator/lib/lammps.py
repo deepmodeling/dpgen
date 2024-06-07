@@ -63,16 +63,16 @@ def make_lammps_input(
         ret += "atom_modify        map yes\n"
     ret += "variable        THERMO_FREQ     equal %d\n" % trj_freq
     ret += "variable        DUMP_FREQ       equal %d\n" % trj_freq
-    ret += "variable        TEMP            equal %f\n" % temp
+    ret += f"variable        TEMP            equal {temp:f}\n"
     if nbeads is not None:
         ret += "variable        TEMP_NBEADS            equal %f\n" % (temp * nbeads)
     if ele_temp_f is not None:
-        ret += "variable        ELE_TEMP        equal %f\n" % ele_temp_f
+        ret += f"variable        ELE_TEMP        equal {ele_temp_f:f}\n"
     if ele_temp_a is not None:
-        ret += "variable        ELE_TEMP        equal %f\n" % ele_temp_a
-    ret += "variable        PRES            equal %f\n" % pres
-    ret += "variable        TAU_T           equal %f\n" % tau_t
-    ret += "variable        TAU_P           equal %f\n" % tau_p
+        ret += f"variable        ELE_TEMP        equal {ele_temp_a:f}\n"
+    ret += f"variable        PRES            equal {pres:f}\n"
+    ret += f"variable        TAU_T           equal {tau_t:f}\n"
+    ret += f"variable        TAU_P           equal {tau_p:f}\n"
     ret += "\n"
     ret += "units           metal\n"
     if nopbc:
@@ -87,15 +87,9 @@ def make_lammps_input(
     ret += "\n"
     ret += "box          tilt large\n"
     if nbeads is None:
-        ret += (
-            'if "${restart} > 0" then "read_restart dpgen.restart.*" else "read_data %s"\n'
-            % conf_file
-        )
+        ret += f'if "${{restart}} > 0" then "read_restart dpgen.restart.*" else "read_data {conf_file}"\n'
     else:
-        ret += (
-            'if "${restart} > 0" then "read_restart dpgen.restart${ibead}.*" else "read_data %s"\n'
-            % conf_file
-        )
+        ret += f'if "${{restart}} > 0" then "read_restart dpgen.restart${{ibead}}.*" else "read_data {conf_file}"\n'
     ret += "change_box   all triclinic\n"
     for jj in range(len(mass_map)):
         ret += "mass            %d %f\n" % (jj + 1, mass_map[jj])
@@ -104,16 +98,16 @@ def make_lammps_input(
         graph_list += ii + " "
     if Version(deepmd_version) < Version("1"):
         # 0.x
-        ret += "pair_style      deepmd %s ${THERMO_FREQ} model_devi.out\n" % graph_list
+        ret += f"pair_style      deepmd {graph_list} ${{THERMO_FREQ}} model_devi.out\n"
     else:
         # 1.x
         keywords = ""
         if jdata.get("use_clusters", False):
             keywords += "atomic "
         if jdata.get("use_relative", False):
-            keywords += "relative %s " % jdata["epsilon"]
+            keywords += "relative {} ".format(jdata["epsilon"])
         if jdata.get("use_relative_v", False):
-            keywords += "relative_v %s " % jdata["epsilon_v"]
+            keywords += "relative_v {} ".format(jdata["epsilon_v"])
         if ele_temp_f is not None:
             keywords += "fparam ${ELE_TEMP}"
         if ele_temp_a is not None:
@@ -175,7 +169,7 @@ def make_lammps_input(
     if ensemble.split("-")[0] == "npt":
         assert pres is not None
         if nopbc:
-            raise RuntimeError("ensemble %s is conflicting with nopbc" % ensemble)
+            raise RuntimeError(f"ensemble {ensemble} is conflicting with nopbc")
     if nbeads is None:
         if ensemble == "npt" or ensemble == "npt-i" or ensemble == "npt-iso":
             ret += "fix             1 all npt temp ${TEMP} ${TEMP} ${TAU_T} iso ${PRES} ${PRES} ${TAU_P}\n"
@@ -208,7 +202,7 @@ def make_lammps_input(
         ret += "velocity        all zero linear\n"
         ret += "fix             fm all momentum 1 linear 1 1 1\n"
     ret += "\n"
-    ret += "timestep        %f\n" % dt
+    ret += f"timestep        {dt:f}\n"
     ret += "run             ${NSTEPS} upto\n"
     return ret
 

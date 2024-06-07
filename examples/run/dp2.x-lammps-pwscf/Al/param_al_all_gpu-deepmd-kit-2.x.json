@@ -158,7 +158,6 @@
             "_comment6": "that's all",
             "training_data": {
                 "systems": [],
-                "set_prefix": "set",
                 "batch_size": 1
             }
         }

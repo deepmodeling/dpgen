@@ -96,7 +96,7 @@ class Gamma(Property):
     def make_confs(self, path_to_work, path_to_equi, refine=False):
         path_to_work = os.path.abspath(path_to_work)
         if os.path.exists(path_to_work):
-            dlog.warning("%s already exists" % path_to_work)
+            dlog.warning(f"{path_to_work} already exists")
         else:
             os.makedirs(path_to_work)
         path_to_equi = os.path.abspath(path_to_equi)
@@ -386,7 +386,7 @@ class Gamma(Property):
         with open(inLammps) as fin1:
             contents = fin1.readlines()
             for ii in range(len(contents)):
-                upper = re.search("variable        N equal count\(all\)", contents[ii])
+                upper = re.search(r"variable        N equal count\(all\)", contents[ii])
                 lower = re.search("min_style       cg", contents[ii])
                 if lower:
                     lower_id = ii

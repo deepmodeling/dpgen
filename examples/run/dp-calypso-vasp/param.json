@@ -89,8 +89,7 @@
             "disp_training": true,
             "time_training": true,
             "profiling": false,
-            "profiling_file": "timeline.json",
-            "set_prefix": "set"
+            "profiling_file": "timeline.json"
         }
     },
     "sys_configs": "",
