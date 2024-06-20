@@ -23,7 +23,7 @@ import dpgen.data.tools.diamond as diamond
 import dpgen.data.tools.fcc as fcc
 import dpgen.data.tools.hcp as hcp
 import dpgen.data.tools.sc as sc
-from dpgen import dlog
+from dpgen import ROOT_PATH, dlog
 from dpgen.dispatcher.Dispatcher import make_submission_compat
 from dpgen.generator.lib.utils import symlink_user_forward_files
 from dpgen.remote.decide_machine import convert_mdata
