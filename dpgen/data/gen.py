@@ -872,7 +872,7 @@ def make_vasp_md(jdata, mdata):
 
     for ii in sys_ps:
         for jj in scale:
-            for kk in range(pert_numb):
+            for kk in range(pert_numb + 1):
                 path_work = path_md
                 path_work = os.path.join(path_work, ii)
                 path_work = os.path.join(path_work, f"scale-{jj:.3f}")
@@ -993,7 +993,7 @@ def make_abacus_md(jdata, mdata):
 
     for ii in sys_ps:
         for jj in scale:
-            for kk in range(pert_numb):
+            for kk in range(pert_numb + 1):
                 path_work = path_md
                 path_work = os.path.join(path_work, ii)
                 path_work = os.path.join(path_work, f"scale-{jj:.3f}")
