@@ -123,8 +123,7 @@ def create_disturbs_ase_dev(
     cell0 = atoms.get_cell()
 
     # creat nfile ofmt files.
-    # for fid in range(1, nfile + 1):     # C.Thang Nguyen: Why not start from 0?
-    for fid in range(nfile):
+    for fid in range(1, nfile + 1):
         # Use copy(), otherwise it will modify the input atoms every time.
         atoms_d = atoms.copy()
 
@@ -195,7 +194,7 @@ def create_disturbs_abacus_dev(
     cell0 = stru["cells"]
 
     # creat nfile ofmt files.
-    for fid in range(nfile):
+    for fid in range(1, nfile + 1):
         # Use copy(), otherwise it will modify the input atoms every time.
         stru_d = stru.copy()
 

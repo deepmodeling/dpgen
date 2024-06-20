@@ -526,12 +526,20 @@ def pert_scaled(jdata):
                 poscar_elong(poscar_in, "POSCAR", ll)
                 sp.check_call(pert_cmd, shell=True)
                 for kk in range(pert_numb):
-                    pos_in = f"POSCAR{kk}.vasp"
-                    dir_out = f"{kk:06d}"
+                    pos_in = f"POSCAR{kk+1}.vasp"
+                    dir_out = f"{kk+1:06d}"
                     create_path(dir_out)
                     pos_out = os.path.join(dir_out, "POSCAR")
                     poscar_shuffle(pos_in, pos_out)
                     os.remove(pos_in)
+
+                ### Handle special case (unperturbed ?)
+                kk = -1
+                pos_in = "POSCAR"
+                dir_out = f"{kk+1:06d}"
+                create_path(dir_out)
+                pos_out = os.path.join(dir_out, "POSCAR")
+                poscar_shuffle(pos_in, pos_out)
 
                 os.chdir(cwd)
 

@@ -17,7 +17,7 @@ from .context import (
 
 class TestPertAbacus(unittest.TestCase):
     def setUp(self):
-        create_disturbs_abacus_dev(abacus_stru_file, 2)
+        create_disturbs_abacus_dev(abacus_stru_file, 1)
 
     def tearDown(self):
         if os.path.isfile("STRU.hcp1.abacus"):

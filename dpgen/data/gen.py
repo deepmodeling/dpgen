@@ -780,10 +780,10 @@ def pert_scaled(jdata):
             ### Loop over each perturbation
             for kk in range(pert_numb):
                 if fp_style == "vasp":
-                    pos_in = f"POSCAR{kk}.vasp"
+                    pos_in = f"POSCAR{kk+1}.vasp"
                 elif fp_style == "abacus":
-                    pos_in = f"STRU{kk}.abacus"
-                dir_out = f"{kk:06d}"
+                    pos_in = f"STRU{kk+1}.abacus"
+                dir_out = f"{kk+1:06d}"
                 create_path(dir_out)
                 if fp_style == "vasp":
                     pos_out = os.path.join(dir_out, "POSCAR")
@@ -808,6 +808,37 @@ def pert_scaled(jdata):
                 else:
                     shutil.copy2(pos_in, pos_out)
                 os.remove(pos_in)
+
+            ### Handle special case (unperturbed ?)
+            kk = -1
+            if fp_style == "vasp":
+                pos_in = "POSCAR"
+            elif fp_style == "abacus":
+                pos_in = "STRU"
+            dir_out = f"{kk+1:06d}"
+            create_path(dir_out)
+            if fp_style == "vasp":
+                pos_out = os.path.join(dir_out, "POSCAR")
+            elif fp_style == "abacus":
+                pos_out = os.path.join(dir_out, "STRU")
+            if not from_poscar:
+                if fp_style == "vasp":
+                    poscar_shuffle(pos_in, pos_out)
+                elif fp_style == "abacus":
+                    stru_in = get_abacus_STRU(pos_in)
+                    stru_out = shuffle_stru_data(stru_in)
+                    with open(pos_out, "w") as fp:
+                        fp.write(
+                            make_abacus_scf_stru(
+                                stru_out,
+                                pp_file,
+                                orb_file_names,
+                                dpks_descriptor_name,
+                                type_map=jdata["elements"],
+                            )
+                        )
+            else:
+                shutil.copy2(pos_in, pos_out)
 
             os.chdir(cwd)
 
