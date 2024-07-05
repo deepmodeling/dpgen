@@ -12,6 +12,7 @@ from dpgen.generator.arginfo import (
     fp_style_siesta_args,
     fp_style_vasp_args,
     training_args,
+    training_args_common,
 )
 
 
@@ -201,6 +202,7 @@ def simplify_jdata_arginfo() -> Argument:
             *data_args(),
             *general_simplify_arginfo(),
             # simplify use the same training method as run
+            *training_args_common(),
             *fp_args(),
         ],
         sub_variants=[
