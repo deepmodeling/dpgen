@@ -78,6 +78,7 @@ def data_args() -> list[Argument]:
 
 # Training
 
+
 def training_args_common() -> list[Argument]:
     doc_numb_models = "Number of models to be trained in 00.train. 4 is recommend."
     return [
@@ -239,6 +240,7 @@ def training_args() -> Variant:
         default_tag="dp",
         doc=doc_mlp_engine,
     )
+
 
 # Exploration
 def model_devi_jobs_template_args() -> Argument:
@@ -1004,6 +1006,10 @@ def run_jdata_arginfo() -> Argument:
         "run_jdata",
         dict,
         sub_fields=basic_args() + data_args() + training_args_common() + fp_args(),
-        sub_variants=[training_args(), *model_devi_args(), fp_style_variant_type_args()],
+        sub_variants=[
+            training_args(),
+            *model_devi_args(),
+            fp_style_variant_type_args(),
+        ],
         doc=doc_run_jdata,
     )

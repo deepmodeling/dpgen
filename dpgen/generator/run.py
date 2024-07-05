@@ -140,7 +140,7 @@ def _get_model_suffix(jdata) -> str:
             )
         return suffix
     else:
-        raise ValueError("Unsupported engine: {}".format(mlp_engine))
+        raise ValueError(f"Unsupported engine: {mlp_engine}")
 
 
 def get_job_names(jdata):
@@ -278,7 +278,7 @@ def make_train(iter_index, jdata, mdata):
     if mlp_engine == "dp":
         return make_train_dp(iter_index, jdata, mdata)
     else:
-        raise ValueError("Unsupported engine: {}".format(mlp_engine))
+        raise ValueError(f"Unsupported engine: {mlp_engine}")
 
 
 def make_train_dp(iter_index, jdata, mdata):
@@ -730,7 +730,7 @@ def run_train(iter_index, jdata, mdata):
     if mlp_engine == "dp":
         return make_train_dp(iter_index, jdata, mdata)
     else:
-        raise ValueError("Unsupported engine: {}".format(mlp_engine))
+        raise ValueError(f"Unsupported engine: {mlp_engine}")
 
 
 def run_train_dp(iter_index, jdata, mdata):
@@ -923,7 +923,7 @@ def post_train(iter_index, jdata, mdata):
     if mlp_engine == "dp":
         return post_train_dp(iter_index, jdata, mdata)
     else:
-        raise ValueError("Unsupported engine: {}".format(mlp_engine))
+        raise ValueError(f"Unsupported engine: {mlp_engine}")
 
 
 def post_train_dp(iter_index, jdata, mdata):
