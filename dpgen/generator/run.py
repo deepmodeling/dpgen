@@ -128,7 +128,8 @@ run_opt_file = os.path.join(ROOT_PATH, "generator/lib/calypso_run_opt.py")
 
 def _get_model_suffix(jdata) -> str:
     """Return the model suffix based on the backend."""
-    if jdata.get("mlp_engine", "dp") == "dp":
+    mlp_engine = jdata.get("mlp_engine", "dp")
+    if mlp_engine == "dp":
         suffix_map = {"tensorflow": ".pb", "pytorch": ".pth"}
         backend = jdata.get("train_backend", "tensorflow")
         if backend in suffix_map:
@@ -139,7 +140,7 @@ def _get_model_suffix(jdata) -> str:
             )
         return suffix
     else:
-        raise ValueError("Unsupported engine: {}".format(jdata.get("mlp_engine")))
+        raise ValueError("Unsupported engine: {}".format(mlp_engine))
 
 
 def get_job_names(jdata):
@@ -273,10 +274,11 @@ def dump_to_deepmd_raw(dump, deepmd_raw, type_map, fmt="gromacs/gro", charge=Non
 
 
 def make_train(iter_index, jdata, mdata):
-    if jdata.get("mlp_engine", "dp"):
+    mlp_engine = jdata.get("mlp_engine", "dp")
+    if mlp_engine == "dp":
         return make_train_dp(iter_index, jdata, mdata)
     else:
-        raise ValueError("Unsupported engine: {}".format(jdata.get("mlp_engine")))
+        raise ValueError("Unsupported engine: {}".format(mlp_engine))
 
 
 def make_train_dp(iter_index, jdata, mdata):
@@ -724,10 +726,11 @@ def get_nframes(system):
 
 
 def run_train(iter_index, jdata, mdata):
-    if jdata.get("mlp_engine", "dp"):
+    mlp_engine = jdata.get("mlp_engine", "dp")
+    if mlp_engine == "dp":
         return make_train_dp(iter_index, jdata, mdata)
     else:
-        raise ValueError("Unsupported engine: {}".format(jdata.get("mlp_engine")))
+        raise ValueError("Unsupported engine: {}".format(mlp_engine))
 
 
 def run_train_dp(iter_index, jdata, mdata):
@@ -916,10 +919,11 @@ def run_train_dp(iter_index, jdata, mdata):
 
 
 def post_train(iter_index, jdata, mdata):
-    if jdata.get("mlp_engine", "dp"):
+    mlp_engine = jdata.get("mlp_engine", "dp")
+    if mlp_engine == "dp":
         return post_train_dp(iter_index, jdata, mdata)
     else:
-        raise ValueError("Unsupported engine: {}".format(jdata.get("mlp_engine")))
+        raise ValueError("Unsupported engine: {}".format(mlp_engine))
 
 
 def post_train_dp(iter_index, jdata, mdata):
