@@ -79,7 +79,7 @@ def data_args() -> list[Argument]:
 # Training
 
 
-def training_args() -> list[Argument]:
+def training_args_dp() -> list[Argument]:
     """Traning arguments.
 
     Returns
@@ -223,6 +223,18 @@ def training_args() -> list[Argument]:
         ),
     ]
 
+
+def training_args() -> Variant:
+    doc_mlp_engine = "Machine learning potential engine. Currently, only DeePMD-kit (defualt) is supported."
+    doc_dp = "DeePMD-kit."
+    return Variant(
+        "mlp_engine",
+        [
+            Argument("dp", dict, training_args_dp(), doc=doc_dp),
+        ],
+        default_tag="dp",
+        doc=doc_mlp_engine,
+    )
 
 # Exploration
 def model_devi_jobs_template_args() -> Argument:
@@ -987,7 +999,7 @@ def run_jdata_arginfo() -> Argument:
     return Argument(
         "run_jdata",
         dict,
-        sub_fields=basic_args() + data_args() + training_args() + fp_args(),
-        sub_variants=model_devi_args() + [fp_style_variant_type_args()],
+        sub_fields=basic_args() + data_args() + fp_args(),
+        sub_variants=[training_args(), *model_devi_args(), fp_style_variant_type_args()],
         doc=doc_run_jdata,
     )

@@ -201,10 +201,10 @@ def simplify_jdata_arginfo() -> Argument:
             *data_args(),
             *general_simplify_arginfo(),
             # simplify use the same training method as run
-            *training_args(),
             *fp_args(),
         ],
         sub_variants=[
+            training_args(),
             fp_style_variant_type_args(),
         ],
         doc=doc_run_jdata,
