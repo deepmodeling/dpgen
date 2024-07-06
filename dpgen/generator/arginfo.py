@@ -79,7 +79,14 @@ def data_args() -> list[Argument]:
 # Training
 
 
-def training_args() -> list[Argument]:
+def training_args_common() -> list[Argument]:
+    doc_numb_models = "Number of models to be trained in 00.train. 4 is recommend."
+    return [
+        Argument("numb_models", int, optional=False, doc=doc_numb_models),
+    ]
+
+
+def training_args_dp() -> list[Argument]:
     """Traning arguments.
 
     Returns
@@ -90,7 +97,6 @@ def training_args() -> list[Argument]:
     doc_train_backend = (
         "The backend of the training. Currently only support tensorflow and pytorch."
     )
-    doc_numb_models = "Number of models to be trained in 00.train. 4 is recommend."
     doc_training_iter0_model_path = "The model used to init the first iter training. Number of element should be equal to numb_models."
     doc_training_init_model = "Iteration > 0, the model parameters will be initilized from the model trained at the previous iteration. Iteration == 0, the model parameters will be initialized from training_iter0_model_path."
     doc_default_training_param = "Training parameters for deepmd-kit in 00.train. You can find instructions from `DeePMD-kit documentation <https://docs.deepmodeling.org/projects/deepmd/>`_."
@@ -133,7 +139,6 @@ def training_args() -> list[Argument]:
             default="tensorflow",
             doc=doc_train_backend,
         ),
-        Argument("numb_models", int, optional=False, doc=doc_numb_models),
         Argument(
             "training_iter0_model_path",
             list[str],
@@ -222,6 +227,19 @@ def training_args() -> list[Argument]:
             doc=doc_training_finetune_model,
         ),
     ]
+
+
+def training_args() -> Variant:
+    doc_mlp_engine = "Machine learning potential engine. Currently, only DeePMD-kit (defualt) is supported."
+    doc_dp = "DeePMD-kit."
+    return Variant(
+        "mlp_engine",
+        [
+            Argument("dp", dict, training_args_dp(), doc=doc_dp),
+        ],
+        default_tag="dp",
+        doc=doc_mlp_engine,
+    )
 
 
 # Exploration
@@ -987,7 +1005,11 @@ def run_jdata_arginfo() -> Argument:
     return Argument(
         "run_jdata",
         dict,
-        sub_fields=basic_args() + data_args() + training_args() + fp_args(),
-        sub_variants=model_devi_args() + [fp_style_variant_type_args()],
+        sub_fields=basic_args() + data_args() + training_args_common() + fp_args(),
+        sub_variants=[
+            training_args(),
+            *model_devi_args(),
+            fp_style_variant_type_args(),
+        ],
         doc=doc_run_jdata,
     )
