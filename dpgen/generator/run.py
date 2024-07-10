@@ -728,7 +728,7 @@ def get_nframes(system):
 def run_train(iter_index, jdata, mdata):
     mlp_engine = jdata.get("mlp_engine", "dp")
     if mlp_engine == "dp":
-        return make_train_dp(iter_index, jdata, mdata)
+        return run_train_dp(iter_index, jdata, mdata)
     else:
         raise ValueError(f"Unsupported engine: {mlp_engine}")
 
