@@ -27,6 +27,7 @@ dependencies = [
     'paramiko',
     'custodian',
     'GromacsWrapper>=0.8.0',
+    'GromacsWrapper>=0.9.0; python_version >= "3.12"',
     'dpdispatcher>=0.3.11',
     'netCDF4',
     'dargs>=0.4.0',
@@ -64,8 +65,9 @@ test = [
     "dpgui",
     "coverage",
     "pymatgen-analysis-defects<2023.08.22",
-    # To be fixed: https://github.com/Becksteinlab/GromacsWrapper/issues/263
-    'setuptools; python_version >= "3.12"',
+    # https://github.com/materialsproject/pymatgen/issues/3882
+    # https://github.com/kuelumbus/rdkit-pypi/issues/102
+    "numpy<2",
 ]
 gui = [
     "dpgui",

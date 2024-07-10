@@ -103,6 +103,14 @@ def get_multi_system(path: Union[str, list[str]], jdata: dict) -> dpdata.MultiSy
 
 
 def init_model(iter_index, jdata, mdata):
+    mlp_engine = jdata.get("mlp_engine", "dp")
+    if mlp_engine == "dp":
+        init_model_dp(iter_index, jdata, mdata)
+    else:
+        raise TypeError(f"unsupported engine {mlp_engine}")
+
+
+def init_model_dp(iter_index, jdata, mdata):
     training_init_model = jdata.get("training_init_model", False)
     if not training_init_model:
         return

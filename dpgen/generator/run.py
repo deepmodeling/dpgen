@@ -128,15 +128,19 @@ run_opt_file = os.path.join(ROOT_PATH, "generator/lib/calypso_run_opt.py")
 
 def _get_model_suffix(jdata) -> str:
     """Return the model suffix based on the backend."""
-    suffix_map = {"tensorflow": ".pb", "pytorch": ".pth"}
-    backend = jdata.get("train_backend", "tensorflow")
-    if backend in suffix_map:
-        suffix = suffix_map[backend]
+    mlp_engine = jdata.get("mlp_engine", "dp")
+    if mlp_engine == "dp":
+        suffix_map = {"tensorflow": ".pb", "pytorch": ".pth"}
+        backend = jdata.get("train_backend", "tensorflow")
+        if backend in suffix_map:
+            suffix = suffix_map[backend]
+        else:
+            raise ValueError(
+                f"The backend {backend} is not available. Supported backends are: 'tensorflow', 'pytorch'."
+            )
+        return suffix
     else:
-        raise ValueError(
-            f"The backend {backend} is not available. Supported backends are: 'tensorflow', 'pytorch'."
-        )
-    return suffix
+        raise ValueError(f"Unsupported engine: {mlp_engine}")
 
 
 def get_job_names(jdata):
@@ -270,6 +274,14 @@ def dump_to_deepmd_raw(dump, deepmd_raw, type_map, fmt="gromacs/gro", charge=Non
 
 
 def make_train(iter_index, jdata, mdata):
+    mlp_engine = jdata.get("mlp_engine", "dp")
+    if mlp_engine == "dp":
+        return make_train_dp(iter_index, jdata, mdata)
+    else:
+        raise ValueError(f"Unsupported engine: {mlp_engine}")
+
+
+def make_train_dp(iter_index, jdata, mdata):
     # load json param
     # train_param = jdata['train_param']
     train_input_file = default_train_input_file
@@ -714,6 +726,14 @@ def get_nframes(system):
 
 
 def run_train(iter_index, jdata, mdata):
+    mlp_engine = jdata.get("mlp_engine", "dp")
+    if mlp_engine == "dp":
+        return run_train_dp(iter_index, jdata, mdata)
+    else:
+        raise ValueError(f"Unsupported engine: {mlp_engine}")
+
+
+def run_train_dp(iter_index, jdata, mdata):
     # print("debug:run_train:mdata", mdata)
     # load json param
     numb_models = jdata["numb_models"]
@@ -899,6 +919,14 @@ def run_train(iter_index, jdata, mdata):
 
 
 def post_train(iter_index, jdata, mdata):
+    mlp_engine = jdata.get("mlp_engine", "dp")
+    if mlp_engine == "dp":
+        return post_train_dp(iter_index, jdata, mdata)
+    else:
+        raise ValueError(f"Unsupported engine: {mlp_engine}")
+
+
+def post_train_dp(iter_index, jdata, mdata):
     # load json param
     numb_models = jdata["numb_models"]
     # paths
