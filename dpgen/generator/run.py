@@ -583,7 +583,9 @@ def make_train_dp(iter_index, jdata, mdata):
             mdata["deepmd_version"]
         ) < Version("3"):
             # 1.x
-            if jinput["model"]["descriptor"]["type"] == "hybrid":
+            if "descriptor" not in jinput["model"]:
+                pass
+            elif jinput["model"]["descriptor"]["type"] == "hybrid":
                 for desc in jinput["model"]["descriptor"]["list"]:
                     desc["seed"] = random.randrange(sys.maxsize) % (2**32)
             elif jinput["model"]["descriptor"]["type"] == "loc_frame":
@@ -592,9 +594,10 @@ def make_train_dp(iter_index, jdata, mdata):
                 jinput["model"]["descriptor"]["seed"] = random.randrange(
                     sys.maxsize
                 ) % (2**32)
-            jinput["model"]["fitting_net"]["seed"] = random.randrange(sys.maxsize) % (
-                2**32
-            )
+            if "fitting_net" in jinput["model"]:
+                jinput["model"]["fitting_net"]["seed"] = random.randrange(
+                    sys.maxsize
+                ) % (2**32)
             if "type_embedding" in jinput["model"]:
                 jinput["model"]["type_embedding"]["seed"] = random.randrange(
                     sys.maxsize
