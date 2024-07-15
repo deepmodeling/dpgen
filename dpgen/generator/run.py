@@ -2345,9 +2345,8 @@ def _select_by_model_devi_standard(
         numofspecies = _parse_calypso_input("NumberOfSpecies", calypso_run_opt_path)
         min_dis = _parse_calypso_dis_mtx(numofspecies, calypso_run_opt_path)
     fp_candidate = []
-    if detailed_report_make_fp:
-        fp_rest_accurate = []
-        fp_rest_failed = []
+    fp_rest_accurate = []
+    fp_rest_failed = []
     cc = 0
     counter = Counter()
     counter["candidate"] = 0
