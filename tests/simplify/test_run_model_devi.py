@@ -17,6 +17,9 @@ class TestOneH5(unittest.TestCase):
     def setUp(self):
         work_path = Path("iter.000000") / "01.model_devi"
         work_path.mkdir(parents=True, exist_ok=True)
+        # fake models
+        for ii in range(4):
+            (work_path / f"graph.{ii:03d}.pb").torch()
         with tempfile.TemporaryDirectory() as tmpdir:
             with open(Path(tmpdir) / "test.xyz", "w") as f:
                 f.write(
