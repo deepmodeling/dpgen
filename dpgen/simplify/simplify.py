@@ -221,7 +221,9 @@ def run_model_devi(iter_index, jdata, mdata):
     commands = []
     run_tasks = ["."]
     # get models
-    models = glob.glob(os.path.join(work_path, "graph*pb"))
+    suffix = _get_model_suffix(jdata)
+    models = glob.glob(os.path.join(work_path, f"graph*{suffix}"))
+    assert len(models) > 0, "No model file found."
     model_names = [os.path.basename(ii) for ii in models]
     task_model_list = []
     for ii in model_names:
