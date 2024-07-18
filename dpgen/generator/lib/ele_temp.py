@@ -3,7 +3,6 @@ import os
 import dpdata
 import numpy as np
 import scipy.constants as pc
-from pymatgen.io.vasp.inputs import Incar
 
 
 class NBandsEsti:
@@ -86,10 +85,14 @@ class NBandsEsti:
 
     @classmethod
     def _get_incar_ele_temp(self, fname):
+        from pymatgen.io.vasp.inputs import Incar
+
         incar = Incar.from_file(fname)
         return incar["SIGMA"]
 
     @classmethod
     def _get_incar_nbands(self, fname):
+        from pymatgen.io.vasp.inputs import Incar
+
         incar = Incar.from_file(fname)
         return incar.get("NBANDS")

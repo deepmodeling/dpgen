@@ -4,7 +4,6 @@
 import json
 
 from monty.json import MontyDecoder, MontyEncoder, MSONable
-from pymatgen.core.composition import Composition
 
 """
 This module implements equivalents of the basic Entry objects, which
@@ -52,6 +51,8 @@ class Entry(MSONable):
         tag=None,
     ):
         """Initializes a Entry."""
+        from pymatgen.core.composition import Composition
+
         self.composition = Composition(composition)
         self.calculator = calculator
         self.inputs = inputs
