@@ -1,9 +1,6 @@
 #!/usr/bin/python3
 
 
-from pymatgen.io.vasp import Incar
-
-
 def _make_vasp_incar_dict(
     ecut,
     ediff,
@@ -133,6 +130,8 @@ def make_vasp_incar_user_dict(fp_params):
 
 
 def incar_upper(dincar):
+    from pymatgen.io.vasp import Incar
+
     standard_incar = {}
     for key, val in dincar.items():
         standard_incar[key.upper()] = val

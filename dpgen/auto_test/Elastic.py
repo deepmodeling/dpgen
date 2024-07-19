@@ -4,11 +4,6 @@ import re
 from shutil import copyfile
 
 from monty.serialization import dumpfn, loadfn
-from pymatgen.analysis.elasticity.elastic import ElasticTensor
-from pymatgen.analysis.elasticity.strain import DeformedStructureSet, Strain
-from pymatgen.analysis.elasticity.stress import Stress
-from pymatgen.core.structure import Structure
-from pymatgen.io.vasp import Incar, Kpoints
 
 import dpgen.auto_test.lib.abacus as abacus
 import dpgen.auto_test.lib.vasp as vasp
@@ -53,6 +48,9 @@ class Elastic(Property):
         self.inter_param = inter_param if inter_param is not None else {"type": "vasp"}
 
     def make_confs(self, path_to_work, path_to_equi, refine=False):
+        from pymatgen.analysis.elasticity.strain import DeformedStructureSet, Strain
+        from pymatgen.core.structure import Structure
+
         path_to_work = os.path.abspath(path_to_work)
         if os.path.exists(path_to_work):
             dlog.warning(f"{path_to_work} already exists")
@@ -189,6 +187,8 @@ class Elastic(Property):
         return task_list
 
     def post_process(self, task_list):
+        from pymatgen.io.vasp import Incar, Kpoints
+
         if self.inter_param["type"] == "abacus":
             POSCAR = "STRU"
             INCAR = "INPUT"
@@ -250,6 +250,9 @@ class Elastic(Property):
         return self.parameter
 
     def _compute_lower(self, output_file, all_tasks, all_res):
+        from pymatgen.analysis.elasticity.elastic import ElasticTensor
+        from pymatgen.analysis.elasticity.stress import Stress
+
         output_file = os.path.abspath(output_file)
         res_data = {}
         ptr_data = os.path.dirname(output_file) + "\n"

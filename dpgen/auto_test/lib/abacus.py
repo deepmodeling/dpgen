@@ -7,7 +7,6 @@ import numpy as np
 from dpdata.abacus.scf import make_unlabeled_stru
 from dpdata.utils import uniq_atom_names
 from dpdata.vasp import poscar as dpdata_poscar
-from pymatgen.core.structure import Structure
 
 import dpgen.generator.lib.abacus_scf as abacus_scf
 
@@ -343,6 +342,8 @@ def final_stru(abacus_path):
 
 
 def stru2Structure(struf):
+    from pymatgen.core.structure import Structure
+
     stru = dpdata.System(struf, fmt="stru")
     stru.to("poscar", "POSCAR.tmp")
     ss = Structure.from_file("POSCAR.tmp")

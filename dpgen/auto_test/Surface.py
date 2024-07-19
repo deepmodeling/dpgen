@@ -6,8 +6,6 @@ import re
 import dpdata
 import numpy as np
 from monty.serialization import dumpfn, loadfn
-from pymatgen.core.structure import Structure
-from pymatgen.core.surface import generate_all_slabs
 
 import dpgen.auto_test.lib.abacus as abacus
 import dpgen.auto_test.lib.vasp as vasp
@@ -85,6 +83,9 @@ class Surface(Property):
         self.inter_param = inter_param if inter_param is not None else {"type": "vasp"}
 
     def make_confs(self, path_to_work, path_to_equi, refine=False):
+        from pymatgen.core.structure import Structure
+        from pymatgen.core.surface import generate_all_slabs
+
         path_to_work = os.path.abspath(path_to_work)
         if os.path.exists(path_to_work):
             dlog.warning(f"{path_to_work} already exists")

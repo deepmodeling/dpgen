@@ -89,6 +89,7 @@ select = [
     "F", # pyflakes
     "D", # pydocstyle
     "UP", # pyupgrade
+    "TID253", # banned-module-level-imports
 ]
 ignore = [
     "E501", # line too long
@@ -111,6 +112,14 @@ ignore = [
     "D404", # TODO: first word of the docstring should not be This
 ]
 ignore-init-module-imports = true
+
+[tool.ruff.lint.flake8-tidy-imports]
+banned-module-level-imports = [
+    "pymatgen",
+]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**" = ["TID253"]
 
 [tool.ruff.pydocstyle]
 convention = "numpy"
