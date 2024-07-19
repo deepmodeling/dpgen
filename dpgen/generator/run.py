@@ -33,7 +33,6 @@ import numpy as np
 import scipy.constants as pc
 from numpy.linalg import norm
 from packaging.version import Version
-from pymatgen.io.vasp import Incar, Kpoints
 
 from dpgen import ROOT_PATH, SHORT_CMD, dlog
 from dpgen.auto_test.lib.vasp import make_kspacing_kpoints
@@ -3078,6 +3077,8 @@ def make_pwmat_input(jdata, filename):
 
 
 def make_vasp_incar_ele_temp(jdata, filename, ele_temp, nbands_esti=None):
+    from pymatgen.io.vasp import Incar
+
     with open(filename) as fp:
         incar = fp.read()
     try:
@@ -3155,6 +3156,8 @@ def make_fp_vasp_cp_cvasp(iter_index, jdata):
 
 
 def make_fp_vasp_kp(iter_index, jdata):
+    from pymatgen.io.vasp import Incar, Kpoints
+
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
     fp_aniso_kspacing = jdata.get("fp_aniso_kspacing")

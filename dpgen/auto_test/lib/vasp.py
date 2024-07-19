@@ -3,7 +3,6 @@ import os
 import warnings
 
 import numpy as np
-from pymatgen.io.vasp import Incar, Kpoints
 
 import dpgen.auto_test.lib.util as util
 from dpgen.generator.lib.vasp import incar_upper
@@ -503,6 +502,8 @@ def make_vasp_kpoints(kpoints, kgamma=False):
 
 
 def make_vasp_kpoints_from_incar(work_dir, jdata):
+    from pymatgen.io.vasp import Incar, Kpoints
+
     cwd = os.getcwd()
     fp_aniso_kspacing = jdata.get("fp_aniso_kspacing")
     os.chdir(work_dir)

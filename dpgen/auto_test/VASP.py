@@ -2,8 +2,6 @@ import os
 
 from dpdata import LabeledSystem
 from monty.serialization import dumpfn
-from pymatgen.core.structure import Structure
-from pymatgen.io.vasp import Incar, Kpoints
 
 import dpgen.auto_test.lib.vasp as vasp
 from dpgen import dlog
@@ -22,6 +20,8 @@ class VASP(Task):
         self.path_to_poscar = path_to_poscar
 
     def make_potential_files(self, output_dir):
+        from pymatgen.core.structure import Structure
+
         potcar_not_link_list = ["vacancy", "interstitial"]
         task_type = output_dir.split("/")[-2].split("_")[0]
 
@@ -69,6 +69,8 @@ class VASP(Task):
         dumpfn(self.inter, os.path.join(output_dir, "inter.json"), indent=4)
 
     def make_input_file(self, output_dir, task_type, task_param):
+        from pymatgen.io.vasp import Incar, Kpoints
+
         sepline(ch=output_dir)
         dumpfn(task_param, os.path.join(output_dir, "task.json"), indent=4)
 
