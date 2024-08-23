@@ -8,7 +8,6 @@ import warnings
 from monty.io import zopen
 from monty.json import MontyDecoder, MSONable
 from monty.os.path import zpath
-from pymatgen.io.vasp import Incar, Kpoints, Poscar, Potcar, PotcarSingle
 
 """
 Classes for reading/manipulating/writing VASP input files. All major VASP input
@@ -18,6 +17,8 @@ files.
 
 class DPPotcar(MSONable):
     def __init__(self, symbols=None, functional="PBE", pp_file=None, pp_lists=None):
+        from pymatgen.io.vasp import Potcar, PotcarSingle
+
         if pp_lists is not None and pp_file is None:
             for pp in pp_lists:
                 assert isinstance(pp, PotcarSingle)
@@ -79,6 +80,8 @@ class DPPotcar(MSONable):
 
     @classmethod
     def from_file(cls, filename):
+        from pymatgen.io.vasp import Potcar
+
         try:
             potcars = Potcar.from_file(filename)
             return cls(pp_lists=potcars)
@@ -177,6 +180,8 @@ class VaspInput(dict, MSONable):
             dict of {filename: Object type}. Object type must have a
             static method from_file.
         """
+        from pymatgen.io.vasp import Incar, Kpoints, Poscar
+
         sub_d = {}
         try:
             for fname, ftype in [

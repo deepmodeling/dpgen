@@ -709,7 +709,7 @@ def fp_style_gaussian_args() -> list[Argument]:
         Argument("basis_set", str, optional=True, doc=doc_basis_set),
         Argument(
             "keywords_high_multiplicity",
-            str,
+            [str, list[str]],
             optional=True,
             doc=doc_keywords_high_multiplicity,
         ),

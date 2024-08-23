@@ -10,8 +10,6 @@ import sys
 
 import dpdata
 import numpy as np
-from pymatgen.core import Structure
-from pymatgen.io.vasp import Incar
 
 import dpgen.data.tools.bcc as bcc
 import dpgen.data.tools.diamond as diamond
@@ -300,6 +298,8 @@ def make_unit_cell_ABACUS(jdata):
 
 
 def make_super_cell(jdata):
+    from pymatgen.core import Structure
+
     out_dir = jdata["out_dir"]
     super_cell = jdata["super_cell"]
     path_uc = os.path.join(out_dir, global_dirname_02)
@@ -342,6 +342,8 @@ def make_super_cell_ABACUS(jdata, stru_data):
 
 
 def make_super_cell_poscar(jdata):
+    from pymatgen.core import Structure
+
     out_dir = jdata["out_dir"]
     super_cell = jdata["super_cell"]
     path_sc = os.path.join(out_dir, global_dirname_02)
@@ -1450,6 +1452,8 @@ def run_abacus_md(jdata, mdata):
 
 
 def gen_init_bulk(args):
+    from pymatgen.io.vasp import Incar
+
     jdata = load_file(args.PARAM)
     if args.MACHINE is not None:
         mdata = load_file(args.MACHINE)
