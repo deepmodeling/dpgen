@@ -103,6 +103,14 @@ def get_multi_system(path: Union[str, list[str]], jdata: dict) -> dpdata.MultiSy
 
 
 def init_model(iter_index, jdata, mdata):
+    mlp_engine = jdata.get("mlp_engine", "dp")
+    if mlp_engine == "dp":
+        init_model_dp(iter_index, jdata, mdata)
+    else:
+        raise TypeError(f"unsupported engine {mlp_engine}")
+
+
+def init_model_dp(iter_index, jdata, mdata):
     training_init_model = jdata.get("training_init_model", False)
     if not training_init_model:
         return
@@ -213,7 +221,9 @@ def run_model_devi(iter_index, jdata, mdata):
     commands = []
     run_tasks = ["."]
     # get models
-    models = glob.glob(os.path.join(work_path, "graph*pb"))
+    suffix = _get_model_suffix(jdata)
+    models = glob.glob(os.path.join(work_path, f"graph*{suffix}"))
+    assert len(models) > 0, "No model file found."
     model_names = [os.path.basename(ii) for ii in models]
     task_model_list = []
     for ii in model_names:

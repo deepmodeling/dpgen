@@ -12,12 +12,7 @@ import numpy as np
 from ase.build import general_surface
 
 # -----ASE-------
-from pymatgen.core import Element, Structure
-from pymatgen.io.ase import AseAtomsAdaptor
-
 # -----PMG---------
-from pymatgen.io.vasp import Poscar
-
 import dpgen.data.tools.bcc as bcc
 import dpgen.data.tools.diamond as diamond
 import dpgen.data.tools.fcc as fcc
@@ -168,6 +163,8 @@ def poscar_scale_direct(str_in, scale):
 
 
 def poscar_elong(poscar_in, poscar_out, elong, shift_center=True):
+    from pymatgen.core import Structure
+
     with open(poscar_in) as fin:
         lines = list(fin)
     if lines[7][0].upper() != "C":
@@ -215,6 +212,9 @@ def make_unit_cell(jdata):
 
 
 def make_super_cell_pymatgen(jdata):
+    from pymatgen.core import Element, Structure
+    from pymatgen.io.ase import AseAtomsAdaptor
+
     make_unit_cell(jdata)
     out_dir = jdata["out_dir"]
     path_uc = os.path.join(out_dir, global_dirname_02)
@@ -401,6 +401,8 @@ def poscar_scale_cartesian(str_in, scale):
 
 
 def poscar_scale(poscar_in, poscar_out, scale):
+    from pymatgen.io.vasp import Poscar
+
     with open(poscar_in) as fin:
         lines = list(fin)
     if "D" == lines[7][0] or "d" == lines[7][0]:
