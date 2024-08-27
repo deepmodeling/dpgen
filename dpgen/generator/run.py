@@ -205,8 +205,8 @@ def copy_model(numb_model, prv_iter_index, cur_iter_index, suffix=".pb"):
             "graph.%03d%s" % (ii, suffix),
         )
         os.chdir(cwd)
-    # with open(os.path.join(cur_train_path, "copied"), "w") as fp:
-    #     None
+    with open(os.path.join(cur_train_path, "copied"), "w") as fp:
+        None
 
 
 def poscar_natoms(lines):
