@@ -4,7 +4,6 @@ from typing import Union
 from dargs import Argument, Variant
 
 from dpgen.arginfo import general_mdata_arginfo
-from dpgen.generator.lib.gpaw import fp_style_gpaw_args
 
 
 def run_mdata_arginfo() -> Argument:
@@ -52,9 +51,7 @@ def data_args() -> list[Argument]:
     return [
         Argument("init_data_prefix", str, optional=True, doc=doc_init_data_prefix),
         Argument("init_data_sys", list[str], optional=False, doc=doc_init_data_sys),
-        Argument(
-            "sys_format", str, optional=True, default="vasp/poscar", doc=doc_sys_format
-        ),
+        Argument("sys_format", str, optional=True, default="vasp/poscar", doc=doc_sys_format),
         Argument(
             "init_batch_size",
             [list[Union[int, str]], str],
@@ -117,9 +114,7 @@ def training_args_dp() -> list[Argument]:
         + doc_reusing
     )
     doc_training_reuse_numb_steps = "Number of training batch." + doc_reusing
-    doc_training_reuse_start_lr = (
-        "The learning rate the start of the training." + doc_reusing
-    )
+    doc_training_reuse_start_lr = "The learning rate the start of the training." + doc_reusing
     doc_training_reuse_start_pref_e = (
         "The prefactor of energy loss at the start of the training." + doc_reusing
     )
@@ -146,9 +141,7 @@ def training_args_dp() -> list[Argument]:
             optional=True,
             doc=doc_training_iter0_model_path,
         ),
-        Argument(
-            "training_init_model", bool, optional=True, doc=doc_training_init_model
-        ),
+        Argument("training_init_model", bool, optional=True, doc=doc_training_init_model),
         Argument(
             "default_training_param",
             dict,
@@ -162,9 +155,7 @@ def training_args_dp() -> list[Argument]:
             default=False,
             doc=doc_dp_train_skip_neighbor_stat,
         ),
-        Argument(
-            "dp_compress", bool, optional=True, default=False, doc=doc_dp_compress
-        ),
+        Argument("dp_compress", bool, optional=True, default=False, doc=doc_dp_compress),
         Argument(
             "training_reuse_iter",
             [None, int],
@@ -231,7 +222,9 @@ def training_args_dp() -> list[Argument]:
 
 
 def training_args() -> Variant:
-    doc_mlp_engine = "Machine learning potential engine. Currently, only DeePMD-kit (defualt) is supported."
+    doc_mlp_engine = (
+        "Machine learning potential engine. Currently, only DeePMD-kit (defualt) is supported."
+    )
     doc_dp = "DeePMD-kit."
     return Variant(
         "mlp_engine",
@@ -257,9 +250,7 @@ def model_devi_jobs_template_args() -> Argument:
         Argument("lmp", str, optional=True, doc=doc_template_lmp),
         Argument("plm", str, optional=True, doc=doc_template_plm),
     ]
-    return Argument(
-        "template", dict, args, [], optional=True, repeat=False, doc=doc_template
-    )
+    return Argument("template", dict, args, [], optional=True, repeat=False, doc=doc_template)
 
 
 def model_devi_jobs_rev_mat_args() -> Argument:
@@ -274,9 +265,7 @@ def model_devi_jobs_rev_mat_args() -> Argument:
         Argument("lmp", dict, optional=True, doc=doc_rev_mat_lmp),
         Argument("plm", dict, optional=True, doc=doc_rev_mat_plm),
     ]
-    return Argument(
-        "rev_mat", dict, args, [], optional=True, repeat=False, doc=doc_rev_mat
-    )
+    return Argument("rev_mat", dict, args, [], optional=True, repeat=False, doc=doc_rev_mat)
 
 
 def model_devi_jobs_args() -> list[Argument]:
@@ -342,9 +331,7 @@ def model_devi_jobs_args() -> list[Argument]:
     ]
 
     doc_model_devi_jobs = "Settings for exploration in 01.model_devi. Each dict in the list corresponds to one iteration. The index of model_devi_jobs exactly accord with index of iterations"
-    return Argument(
-        "model_devi_jobs", list, args, [], repeat=True, doc=doc_model_devi_jobs
-    )
+    return Argument("model_devi_jobs", list, args, [], repeat=True, doc=doc_model_devi_jobs)
 
 
 def model_devi_lmp_args() -> list[Argument]:
@@ -372,13 +359,9 @@ The union of the two sets is made as candidate dataset."
     doc_model_devi_plumed_path = ""  # looking forward to update
     doc_shuffle_poscar = "Shuffle atoms of each frame before running simulations. The purpose is to sample the element occupation of alloys."
     doc_use_relative = "Calculate relative force model deviation."
-    doc_epsilon = (
-        "The level parameter for computing the relative force model deviation."
-    )
+    doc_epsilon = "The level parameter for computing the relative force model deviation."
     doc_use_relative_v = "Calculate relative virial model deviation."
-    doc_epsilon_v = (
-        "The level parameter for computing the relative virial model deviation."
-    )
+    doc_epsilon_v = "The level parameter for computing the relative virial model deviation."
 
     return [
         model_devi_jobs_args(),
@@ -481,16 +464,10 @@ The union of the two sets is made as candidate dataset."
             default=False,
             doc=doc_model_devi_plumed_path,
         ),
-        Argument(
-            "shuffle_poscar", bool, optional=True, default=False, doc=doc_shuffle_poscar
-        ),
-        Argument(
-            "use_relative", bool, optional=True, default=False, doc=doc_use_relative
-        ),
+        Argument("shuffle_poscar", bool, optional=True, default=False, doc=doc_shuffle_poscar),
+        Argument("use_relative", bool, optional=True, default=False, doc=doc_use_relative),
         Argument("epsilon", float, optional=True, doc=doc_epsilon),
-        Argument(
-            "use_relative_v", bool, optional=True, default=False, doc=doc_use_relative_v
-        ),
+        Argument("use_relative_v", bool, optional=True, default=False, doc=doc_use_relative_v),
         Argument("epsilon_v", float, optional=True, doc=doc_epsilon_v),
     ]
 
@@ -502,9 +479,7 @@ def model_devi_amber_args() -> list[Argument]:
     )
     doc_sys_idx = "List of ints. List of systems to run."
     doc_trj_freq = "Frequency to dump trajectory."
-    doc_low_level = (
-        "Low level method. The value will be filled into mdin file as @qm_theory@."
-    )
+    doc_low_level = "Low level method. The value will be filled into mdin file as @qm_theory@."
     doc_cutoff = "Cutoff radius for the DPRc model."
     doc_parm7_prefix = "The path prefix to AMBER PARM7 files."
     doc_parm7 = "List of paths to AMBER PARM7 files. Each file maps to a system."
@@ -520,15 +495,9 @@ def model_devi_amber_args() -> list[Argument]:
         "`@rcut@`: cutoff radius of the DPRc model; "
         "`@GRAPH_FILE0@`, `@GRAPH_FILE1@`, ... : graph files."
     )
-    doc_qm_region = (
-        "List of strings. AMBER mask of the QM region. Each mask maps to a system."
-    )
-    doc_qm_charge = (
-        "List of ints. Charge of the QM region. Each charge maps to a system."
-    )
-    doc_nsteps = (
-        "List of ints. The number of steps to run. Each number maps to a system."
-    )
+    doc_qm_region = "List of strings. AMBER mask of the QM region. Each mask maps to a system."
+    doc_qm_charge = "List of ints. Charge of the QM region. Each charge maps to a system."
+    doc_nsteps = "List of ints. The number of steps to run. Each number maps to a system."
     doc_r = (
         "2D or 3D list of floats. Constrict values for the enhanced sampling. "
         "The first dimension maps to systems. "
@@ -556,9 +525,7 @@ def model_devi_amber_args() -> list[Argument]:
             sub_fields=[
                 Argument("sys_idx", list[int], optional=False, doc=doc_sys_idx),
                 Argument("trj_freq", int, optional=False, doc=doc_trj_freq),
-                Argument(
-                    "restart_from_iter", int, optional=True, doc=doc_restart_from_iter
-                ),
+                Argument("restart_from_iter", int, optional=True, doc=doc_restart_from_iter),
             ],
         ),
         Argument("low_level", str, optional=False, doc=doc_low_level),
@@ -596,7 +563,9 @@ def model_devi_amber_args() -> list[Argument]:
 
 def model_devi_args() -> list[Variant]:
     doc_model_devi_engine = "Engine for the model deviation task."
-    doc_amber = "Amber DPRc engine. The command argument in the machine file should be path to sander."
+    doc_amber = (
+        "Amber DPRc engine. The command argument in the machine file should be path to sander."
+    )
     return [
         Variant(
             "model_devi_engine",
@@ -620,20 +589,14 @@ def fp_style_vasp_args() -> list[Argument]:
     doc_fp_pp_files = "Psuedo-potential file to be used for 02.fp. Note that the order of elements should correspond to the order in type_map."
     doc_fp_incar = "Input file for VASP. INCAR must specify KSPACING and KGAMMA."
     doc_fp_aniso_kspacing = "Set anisotropic kspacing. Usually useful for 1-D or 2-D materials. Only support VASP. If it is setting the KSPACING key in INCAR will be ignored."
-    doc_cvasp = (
-        "If cvasp is true, DP-GEN will use Custodian to help control VASP calculation."
-    )
-    doc_fp_skip_bad_box = (
-        "Skip the configurations that are obviously unreasonable before 02.fp"
-    )
+    doc_cvasp = "If cvasp is true, DP-GEN will use Custodian to help control VASP calculation."
+    doc_fp_skip_bad_box = "Skip the configurations that are obviously unreasonable before 02.fp"
 
     return [
         Argument("fp_pp_path", str, optional=False, doc=doc_fp_pp_path),
         Argument("fp_pp_files", list[str], optional=False, doc=doc_fp_pp_files),
         Argument("fp_incar", str, optional=False, doc=doc_fp_incar),
-        Argument(
-            "fp_aniso_kspacing", list[float], optional=True, doc=doc_fp_aniso_kspacing
-        ),
+        Argument("fp_aniso_kspacing", list[float], optional=True, doc=doc_fp_aniso_kspacing),
         Argument("cvasp", bool, optional=True, doc=doc_cvasp),
         Argument("fp_skip_bad_box", str, optional=True, doc=doc_fp_skip_bad_box),
     ]
@@ -641,7 +604,9 @@ def fp_style_vasp_args() -> list[Argument]:
 
 # abacus
 def fp_style_abacus_args() -> list[Argument]:
-    doc_fp_pp_path = "Directory of psuedo-potential or numerical orbital files to be used for 02.fp exists."
+    doc_fp_pp_path = (
+        "Directory of psuedo-potential or numerical orbital files to be used for 02.fp exists."
+    )
     doc_fp_pp_files = "Psuedo-potential file to be used for 02.fp. Note that the order of elements should correspond to the order in type_map."
     doc_fp_orb_files = "numerical orbital file to be used for 02.fp when using LCAO basis. Note that the order of elements should correspond to the order in type_map."
     doc_fp_incar = "Input file for ABACUS. This is optinal but the priority is lower than user_fp_params, and you should not set user_fp_params if you want to use fp_incar."
@@ -673,7 +638,9 @@ def fp_style_gaussian_args() -> list[Argument]:
     list[dargs.Argument]
         list of Gaussian fp style arguments
     """
-    doc_keywords = "Keywords for Gaussian input, e.g. force b3lyp/6-31g**. If a list, run multiple steps."
+    doc_keywords = (
+        "Keywords for Gaussian input, e.g. force b3lyp/6-31g**. If a list, run multiple steps."
+    )
     doc_multiplicity = (
         "Spin multiplicity for Gaussian input. If `auto`, multiplicity will be detected automatically, "
         "with the following rules: when fragment_guesses=True, multiplicity will +1 for each radical, "
@@ -682,7 +649,9 @@ def fp_style_gaussian_args() -> list[Argument]:
     )
     doc_nproc = "The number of processors for Gaussian input."
     doc_charge = "Molecule charge. Only used when charge is not provided by the system."
-    doc_fragment_guesses = "Initial guess generated from fragment guesses. If True, `multiplicity` should be `auto`."
+    doc_fragment_guesses = (
+        "Initial guess generated from fragment guesses. If True, `multiplicity` should be `auto`."
+    )
     doc_basis_set = "Custom basis set."
     doc_keywords_high_multiplicity = (
         "Keywords for points with multiple raicals. `multiplicity` should be `auto`. "
@@ -716,9 +685,7 @@ def fp_style_gaussian_args() -> list[Argument]:
         ),
     ]
 
-    doc_use_clusters = (
-        "If set to true, clusters will be taken instead of the whole system."
-    )
+    doc_use_clusters = "If set to true, clusters will be taken instead of the whole system."
     doc_cluster_cutoff = (
         "The soft cutoff radius of clusters if `use_clusters` is set to true. Molecules will be taken "
         "as whole even if part of atoms is out of the cluster. Use `cluster_cutoff_hard` to only "
@@ -737,19 +704,11 @@ def fp_style_gaussian_args() -> list[Argument]:
     doc_fp_params_gaussian = "Parameters for Gaussian calculation."
 
     return [
-        Argument(
-            "use_clusters", bool, optional=True, default=False, doc=doc_use_clusters
-        ),
+        Argument("use_clusters", bool, optional=True, default=False, doc=doc_use_clusters),
         Argument("cluster_cutoff", float, optional=True, doc=doc_cluster_cutoff),
-        Argument(
-            "cluster_cutoff_hard", float, optional=True, doc=doc_cluster_cutoff_hard
-        ),
-        Argument(
-            "cluster_minify", bool, optional=True, default=False, doc=doc_cluster_minify
-        ),
-        Argument(
-            "fp_params", dict, args, [], optional=False, doc=doc_fp_params_gaussian
-        ),
+        Argument("cluster_cutoff_hard", float, optional=True, doc=doc_cluster_cutoff_hard),
+        Argument("cluster_minify", bool, optional=True, default=False, doc=doc_cluster_minify),
+        Argument("fp_params", dict, args, [], optional=False, doc=doc_fp_params_gaussian),
     ]
 
 
@@ -760,7 +719,9 @@ def fp_style_siesta_args() -> list[Argument]:
     doc_kspacing = "Sample factor in Brillouin zones."
     doc_mixingweight = "Proportion a of output Density Matrix to be used for the input Density Matrix of next SCF cycle (linear mixing)."
     doc_NumberPulay = "Controls the Pulay convergence accelerator."
-    doc_fp_pp_path = "Directory of psuedo-potential or numerical orbital files to be used for 02.fp exists."
+    doc_fp_pp_path = (
+        "Directory of psuedo-potential or numerical orbital files to be used for 02.fp exists."
+    )
     doc_fp_pp_files = "Psuedo-potential file to be used for 02.fp. Note that the order of elements should correspond to the order in type_map."
 
     args = [
@@ -815,9 +776,7 @@ def fp_style_cp2k_args() -> list[Argument]:
             doc=doc_user_fp_params,
             alias=["fp_params"],
         ),
-        Argument(
-            "external_input_path", str, optional=True, doc=doc_external_input_path
-        ),
+        Argument("external_input_path", str, optional=True, doc=doc_external_input_path),
     ]
 
 
@@ -850,9 +809,7 @@ def fp_style_amber_diff_args() -> list[Argument]:
             optional=False,
             doc=doc_fp_params_gaussian,
             sub_fields=[
-                Argument(
-                    "high_level_mdin", str, optional=False, doc=doc_high_level_mdin
-                ),
+                Argument("high_level_mdin", str, optional=False, doc=doc_high_level_mdin),
                 Argument("low_level_mdin", str, optional=False, doc=doc_low_level_mdin),
             ],
         ),
@@ -871,9 +828,7 @@ def fp_style_pwscf_args() -> list[Argument]:
     doc_fp_pp_path = "Directory of psuedo-potential file to be used for 02.fp exists."
     doc_fp_pp_files = "Psuedo-potential file to be used for 02.fp. Note that the order of elements should correspond to the order in type_map."
     doc_user_fp_params = "Parameters for pwscf calculation. Find details at https://www.quantum-espresso.org/Doc/INPUT_PW.html. When user_fp_params is set, the settings in fp_params will be ignored. If one wants to use user_fp_params, kspacing must be set in user_fp_params. kspacing is the spacing between kpoints, and helps to determin KPOINTS in pwscf."
-    doc_fp_params = (
-        "Parameters for pwscf calculation. It has lower priority than user_fp_params."
-    )
+    doc_fp_params = "Parameters for pwscf calculation. It has lower priority than user_fp_params."
     doc_ecut = "ecutwfc in pwscf."
     doc_ediff = "conv_thr and ts_vdw_econv_thr in pwscf."
     doc_kspacing = "The spacing between kpoints. Helps to determin KPOINTS in pwscf."
@@ -947,13 +902,10 @@ def fp_style_variant_type_args() -> Variant:
             Argument("siesta", dict, fp_style_siesta_args()),
             Argument("cp2k", dict, fp_style_cp2k_args()),
             Argument("abacus", dict, fp_style_abacus_args()),
-            Argument(
-                "amber/diff", dict, fp_style_amber_diff_args(), doc=doc_amber_diff
-            ),
+            Argument("amber/diff", dict, fp_style_amber_diff_args(), doc=doc_amber_diff),
             Argument("pwmat", dict, [], doc="TODO: add doc"),
             Argument("pwscf", dict, fp_style_pwscf_args()),
             Argument("custom", dict, fp_style_custom_args(), doc=doc_custom),
-            Argument("gpaw", dict, fp_style_gpaw_args()),
         ],
         optional=False,
         doc=doc_fp_style,
@@ -974,9 +926,7 @@ def fp_args() -> list[Argument]:
     return [
         Argument("fp_task_max", int, optional=False, doc=doc_fp_task_max),
         Argument("fp_task_min", int, optional=False, doc=doc_fp_task_min),
-        Argument(
-            "fp_accurate_threshold", float, optional=True, doc=doc_fp_accurate_threshold
-        ),
+        Argument("fp_accurate_threshold", float, optional=True, doc=doc_fp_accurate_threshold),
         Argument(
             "fp_accurate_soft_threshold",
             float,
