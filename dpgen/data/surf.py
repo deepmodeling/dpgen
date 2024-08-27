@@ -18,7 +18,7 @@ import dpgen.data.tools.diamond as diamond
 import dpgen.data.tools.fcc as fcc
 import dpgen.data.tools.hcp as hcp
 import dpgen.data.tools.sc as sc
-from dpgen import ROOT_PATH, dlog
+from dpgen import dlog
 from dpgen.dispatcher.Dispatcher import make_submission_compat
 from dpgen.generator.lib.utils import symlink_user_forward_files
 from dpgen.remote.decide_machine import convert_mdata
@@ -354,15 +354,16 @@ def make_vasp_relax(jdata):
     out_dir = jdata["out_dir"]
     potcars = jdata["potcars"]
     cwd = os.getcwd()
-
     work_dir = os.path.join(out_dir, global_dirname_02)
     assert os.path.isdir(work_dir)
     work_dir = os.path.abspath(work_dir)
+
     if os.path.isfile(os.path.join(work_dir, "INCAR")):
         os.remove(os.path.join(work_dir, "INCAR"))
     if os.path.isfile(os.path.join(work_dir, "POTCAR")):
         os.remove(os.path.join(work_dir, "POTCAR"))
     shutil.copy2(jdata["relax_incar"], os.path.join(work_dir, "INCAR"))
+
     out_potcar = os.path.join(work_dir, "POTCAR")
     with open(out_potcar, "w") as outfile:
         for fname in potcars:
@@ -442,15 +443,12 @@ def make_scale(jdata):
         for jj in scale:
             if skip_relax:
                 pos_src = os.path.join(os.path.join(init_path, ii), "POSCAR")
-                assert os.path.isfile(pos_src)
             else:
-                try:
-                    pos_src = os.path.join(os.path.join(init_path, ii), "CONTCAR")
-                    assert os.path.isfile(pos_src)
-                except Exception:
-                    raise RuntimeError(
-                        "not file %s, vasp relaxation should be run before scale poscar"
-                    )
+                pos_src = os.path.join(os.path.join(init_path, ii), "CONTCAR")
+            if not os.path.isfile(pos_src):
+                raise RuntimeError(
+                    f"file {pos_src} not found, vasp relaxation should be run before scale poscar"
+                )
             scale_path = os.path.join(work_path, ii)
             scale_path = os.path.join(scale_path, f"scale-{jj:.3f}")
             create_path(scale_path)
@@ -503,46 +501,45 @@ def pert_scaled(jdata):
     sys_pe.sort()
     os.chdir(cwd)
 
-    pert_cmd = (
-        sys.executable
-        + " "
-        + os.path.join(ROOT_PATH, "data/tools/create_random_disturb.py")
+    ### Construct the perturbation command
+    python_exec = os.path.join(
+        os.path.dirname(__file__), "tools", "create_random_disturb.py"
     )
-    pert_cmd += " -etmax %f -ofmt vasp POSCAR %d %f > /dev/null" % (
-        pert_box,
-        pert_numb,
-        pert_atom,
-    )
+    pert_cmd = f"{sys.executable} {python_exec} -etmax {pert_box} -ofmt vasp POSCAR {pert_numb} {pert_atom} > /dev/null"
+
+    ### Loop over each system and scale
     for ii in sys_pe:
         for jj in scale:
-            path_scale = path_sp
-            path_scale = os.path.join(path_scale, ii)
-            path_scale = os.path.join(path_scale, f"scale-{jj:.3f}")
+            path_scale = os.path.join(path_sp, ii, f"scale-{jj:.3f}")
             assert os.path.isdir(path_scale)
             os.chdir(path_scale)
             dlog.info(os.getcwd())
             poscar_in = os.path.join(path_scale, "POSCAR")
             assert os.path.isfile(poscar_in)
+
+            ### Loop over each perturbation
             for ll in elongs:
-                path_elong = path_scale
-                path_elong = os.path.join(path_elong, f"elong-{ll:3.3f}")
+                path_elong = os.path.join(path_scale, f"elong-{ll:3.3f}")
                 create_path(path_elong)
                 os.chdir(path_elong)
                 poscar_elong(poscar_in, "POSCAR", ll)
                 sp.check_call(pert_cmd, shell=True)
                 for kk in range(pert_numb):
-                    pos_in = "POSCAR%d.vasp" % (kk + 1)
-                    dir_out = "%06d" % (kk + 1)
+                    pos_in = f"POSCAR{kk+1}.vasp"
+                    dir_out = f"{kk+1:06d}"
                     create_path(dir_out)
                     pos_out = os.path.join(dir_out, "POSCAR")
                     poscar_shuffle(pos_in, pos_out)
                     os.remove(pos_in)
+
+                ### Handle special case (unperturbed ?)
                 kk = -1
                 pos_in = "POSCAR"
-                dir_out = "%06d" % (kk + 1)
+                dir_out = f"{kk+1:06d}"
                 create_path(dir_out)
                 pos_out = os.path.join(dir_out, "POSCAR")
                 poscar_shuffle(pos_in, pos_out)
+
                 os.chdir(cwd)
 
 
