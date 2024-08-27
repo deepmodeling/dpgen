@@ -205,8 +205,8 @@ def copy_model(numb_model, prv_iter_index, cur_iter_index, suffix=".pb"):
             "graph.%03d%s" % (ii, suffix),
         )
         os.chdir(cwd)
-    with open(os.path.join(cur_train_path, "copied"), "w") as fp:
-        None
+    # with open(os.path.join(cur_train_path, "copied"), "w") as fp:
+    #     None
 
 
 def poscar_natoms(lines):
@@ -390,7 +390,12 @@ def make_train_dp(iter_index, jdata, mdata):
         for single_sys in sys_paths:
             init_data_sys.append(
                 Path(
-                    f"../data.init/{ii}/{os.path.relpath(single_sys, os.path.join(init_data_prefix, ii))}"
+                    os.path.join(
+                        "..",
+                        "data.init",
+                        ii,
+                        os.path.relpath(single_sys, os.path.join(init_data_prefix, ii)),
+                    )
                 ).as_posix()
             )
             init_batch_size.append(detect_batch_size(ss, single_sys))
