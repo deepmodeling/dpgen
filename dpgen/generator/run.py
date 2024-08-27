@@ -390,11 +390,15 @@ def make_train_dp(iter_index, jdata, mdata):
         for single_sys in sys_paths:
             init_data_sys.append(
                 Path(
-                    os.path.join(
-                        "..",
-                        "data.init",
-                        ii,
-                        os.path.relpath(single_sys, os.path.join(init_data_prefix, ii)),
+                    os.path.normpath(
+                        os.path.join(
+                            "..",
+                            "data.init",
+                            ii,
+                            os.path.relpath(
+                                single_sys, os.path.join(init_data_prefix, ii)
+                            ),
+                        )
                     )
                 ).as_posix()
             )
