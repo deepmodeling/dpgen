@@ -3821,8 +3821,6 @@ def make_fp_calculation(iter_index, jdata, mdata):
         make_fp_amber_diff(iter_index, jdata)
     elif fp_style == "custom":
         make_fp_custom(iter_index, jdata)
-    elif fp_style == "gpaw":
-        make_fp_gpaw(iter_index, jdata, fp_name)
     else:
         raise RuntimeError("unsupported fp style")
     # Copy user defined forward_files
@@ -4140,19 +4138,6 @@ def run_fp(iter_index, jdata, mdata):
             backward_files,
             None,
             log_file="output",
-        )
-    elif fp_style == "gpaw":
-        gpaw_runfile = jdata["fp_gpaw_runfile"]
-        forward_files = ["POSCAR", gpaw_runfile]
-        backward_files = ["conf_ase.traj", "calc.txt", "run.log"]
-        run_fp_inner(
-            iter_index,
-            jdata,
-            mdata,
-            forward_files,
-            backward_files,
-            None,
-            log_file="run.log",
         )
     else:
         raise RuntimeError("unsupported fp style")
@@ -4675,8 +4660,6 @@ def post_fp(iter_index, jdata):
         post_fp_amber_diff(iter_index, jdata)
     elif fp_style == "custom":
         post_fp_custom(iter_index, jdata)
-    elif fp_style == "gpaw":
-        post_fp_gpaw(iter_index, jdata, fp_name)
     else:
         raise RuntimeError("unsupported fp style")
     post_fp_check_fail(iter_index, jdata)
