@@ -1559,7 +1559,7 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
     models = sorted(glob.glob(os.path.join(train_path, f"graph*{suffix}")))
     task_model_list = []
     for ii in models:
-        task_model_list.append(os.path.join("..", os.path.basename(ii)))
+        task_model_list.append(Path(f"../{Path(ii).name}").as_posix())
     work_path = os.path.join(iter_name, model_devi_name)
 
     sys_counter = 0
