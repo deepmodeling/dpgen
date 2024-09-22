@@ -5,6 +5,7 @@ ROOT_PATH = __path__[0]
 NAME = "dpgen"
 SHORT_CMD = "dpgen"
 dlog = logging.getLogger(__name__)
+dlog.propagate = False
 dlog.setLevel(logging.INFO)
 dlogf = logging.FileHandler(os.getcwd() + os.sep + SHORT_CMD + ".log", delay=True)
 dlogf_formatter = logging.Formatter("%(asctime)s - %(levelname)s : %(message)s")
