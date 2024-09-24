@@ -107,20 +107,20 @@ class CompLabeledSys(CompSys):
         self.assertEqual(self.system_1.get_nframes(), self.system_2.get_nframes())
         for ff in range(self.system_1.get_nframes()):
             if abs(self.system_2.data["energies"][ff]) < 1e-12:
-              self.assertAlmostEqual(
-                self.system_1.data["energies"][ff],
-                self.system_2.data["energies"][ff],
-                places=self.e_places,
-                msg="energies[%d] failed" % (ff),
-              )
+                self.assertAlmostEqual(
+                    self.system_1.data["energies"][ff],
+                    self.system_2.data["energies"][ff],
+                    places=self.e_places,
+                    msg="energies[%d] failed" % (ff),
+                )
             else:
-              self.assertAlmostEqual(
-                  self.system_1.data["energies"][ff]/
-                  self.system_2.data["energies"][ff],
-                  1.0,
-                  places=self.e_places,
-                  msg="energies[%d] failed" % (ff),
-              )
+                self.assertAlmostEqual(
+                    self.system_1.data["energies"][ff]
+                    / self.system_2.data["energies"][ff],
+                    1.0,
+                    places=self.e_places,
+                    msg="energies[%d] failed" % (ff),
+                )
 
     def test_force(self):
         self.assertEqual(self.system_1.get_nframes(), self.system_2.get_nframes())
