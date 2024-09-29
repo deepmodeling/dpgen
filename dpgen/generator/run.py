@@ -4693,7 +4693,7 @@ def post_fp(iter_index, jdata):
 
 
 def set_version(mdata):
-    deepmd_version = "1"
+    deepmd_version = "2"
     mdata["deepmd_version"] = deepmd_version
     return mdata
 
