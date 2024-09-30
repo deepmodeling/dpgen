@@ -1,9 +1,9 @@
 # https://github.com/sphinx-doc/sphinx/issues/11662
 sphinx>=4.0.2,!=7.2.5
 recommonmark
-sphinx_rtd_theme
+sphinx_rtd_theme>=0.6
 sphinx_markdown_tables
-sphinx-argparse
+sphinx-argparse<0.5.0
 myst-parser
 deepmodeling_sphinx>=0.1.1
 dargs>=0.3.1

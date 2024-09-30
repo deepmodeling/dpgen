@@ -11,6 +11,7 @@ dlogf_formatter = logging.Formatter("%(asctime)s - %(levelname)s : %(message)s")
 # dlogf_formatter=logging.Formatter('%(asctime)s - %(name)s - [%(filename)s:%(funcName)s - %(lineno)d ] - %(levelname)s \n %(message)s')
 dlogf.setFormatter(dlogf_formatter)
 dlog.addHandler(dlogf)
+logging.basicConfig(level=logging.WARNING)
 
 __author__ = "Han Wang"
 __copyright__ = "Copyright 2019"

@@ -33,7 +33,6 @@ import numpy as np
 import scipy.constants as pc
 from numpy.linalg import norm
 from packaging.version import Version
-from pymatgen.io.vasp import Incar, Kpoints
 
 from dpgen import ROOT_PATH, SHORT_CMD, dlog
 from dpgen.auto_test.lib.vasp import make_kspacing_kpoints
@@ -217,19 +216,6 @@ def poscar_natoms(lines):
     return numb_atoms
 
 
-def poscar_shuffle(poscar_in, poscar_out):
-    with open(poscar_in) as fin:
-        lines = list(fin)
-    numb_atoms = poscar_natoms(lines)
-    idx = np.arange(8, 8 + numb_atoms)
-    np.random.shuffle(idx)
-    out_lines = lines[0:8]
-    for ii in range(numb_atoms):
-        out_lines.append(lines[idx[ii]])
-    with open(poscar_out, "w") as fout:
-        fout.write("".join(out_lines))
-
-
 def expand_idx(in_list):
     ret = []
     for ii in in_list:
@@ -286,8 +272,7 @@ def make_train_dp(iter_index, jdata, mdata):
     # train_param = jdata['train_param']
     train_input_file = default_train_input_file
     numb_models = jdata["numb_models"]
-    init_data_prefix = jdata["init_data_prefix"]
-    init_data_prefix = os.path.abspath(init_data_prefix)
+    init_data_prefix = os.path.abspath(jdata["init_data_prefix"])
     init_data_sys_ = jdata["init_data_sys"]
     fp_task_min = jdata["fp_task_min"]
     model_devi_jobs = jdata["model_devi_jobs"]
@@ -404,14 +389,17 @@ def make_train_dp(iter_index, jdata, mdata):
         sys_paths = expand_sys_str(os.path.join(init_data_prefix, ii))
         for single_sys in sys_paths:
             init_data_sys.append(
-                os.path.normpath(
-                    os.path.join(
-                        "..",
-                        "data.init",
-                        ii,
-                        os.path.relpath(single_sys, os.path.join(init_data_prefix, ii)),
+                Path(
+                    os.path.normpath(
+                        os.path.join(
+                            "../data.init",
+                            ii,
+                            os.path.relpath(
+                                single_sys, os.path.join(init_data_prefix, ii)
+                            ),
+                        )
                     )
-                )
+                ).as_posix()
             )
             init_batch_size.append(detect_batch_size(ss, single_sys))
             if auto_ratio:
@@ -449,7 +437,9 @@ def make_train_dp(iter_index, jdata, mdata):
                     continue
                 for sys_single in sys_paths:
                     init_data_sys.append(
-                        os.path.normpath(os.path.join("..", "data.iters", sys_single))
+                        Path(
+                            os.path.normpath(os.path.join("../data.iters", sys_single))
+                        ).as_posix()
                     )
                     batch_size = (
                         sys_batch_size[sys_idx]
@@ -583,7 +573,9 @@ def make_train_dp(iter_index, jdata, mdata):
             mdata["deepmd_version"]
         ) < Version("3"):
             # 1.x
-            if jinput["model"]["descriptor"]["type"] == "hybrid":
+            if "descriptor" not in jinput["model"]:
+                pass
+            elif jinput["model"]["descriptor"]["type"] == "hybrid":
                 for desc in jinput["model"]["descriptor"]["list"]:
                     desc["seed"] = random.randrange(sys.maxsize) % (2**32)
             elif jinput["model"]["descriptor"]["type"] == "loc_frame":
@@ -592,9 +584,10 @@ def make_train_dp(iter_index, jdata, mdata):
                 jinput["model"]["descriptor"]["seed"] = random.randrange(
                     sys.maxsize
                 ) % (2**32)
-            jinput["model"]["fitting_net"]["seed"] = random.randrange(sys.maxsize) % (
-                2**32
-            )
+            if "fitting_net" in jinput["model"]:
+                jinput["model"]["fitting_net"]["seed"] = random.randrange(
+                    sys.maxsize
+                ) % (2**32)
             if "type_embedding" in jinput["model"]:
                 jinput["model"]["type_embedding"]["seed"] = random.randrange(
                     sys.maxsize
@@ -728,7 +721,7 @@ def get_nframes(system):
 def run_train(iter_index, jdata, mdata):
     mlp_engine = jdata.get("mlp_engine", "dp")
     if mlp_engine == "dp":
-        return make_train_dp(iter_index, jdata, mdata)
+        return run_train_dp(iter_index, jdata, mdata)
     else:
         raise ValueError(f"Unsupported engine: {mlp_engine}")
 
@@ -774,8 +767,6 @@ def run_train_dp(iter_index, jdata, mdata):
     if suffix == ".pth":
         train_command += " --pt"
 
-    train_resources = mdata["train_resources"]
-
     # paths
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, train_name)
@@ -808,7 +799,13 @@ def run_train_dp(iter_index, jdata, mdata):
         elif training_finetune_model is not None:
             init_flag = f" --finetune old/init{suffix}"
         command = f"{train_command} train {train_input_file}{extra_flags}"
-        command = f"{{ if [ ! -f model.ckpt.index ]; then {command}{init_flag}; else {command} --restart model.ckpt; fi }}"
+        if suffix == ".pb":
+            ckpt_suffix = ".index"
+        elif suffix == ".pth":
+            ckpt_suffix = ".pt"
+        else:
+            raise RuntimeError(f"Unknown suffix {suffix}")
+        command = f"{{ if [ ! -f model.ckpt{ckpt_suffix} ]; then {command}{init_flag}; else {command} --restart model.ckpt; fi }}"
         command = f"/bin/sh -c {shlex.quote(command)}"
         commands.append(command)
         command = f"{train_command} freeze"
@@ -1264,6 +1261,7 @@ def make_model_devi(iter_index, jdata, mdata):
     conf_path = os.path.join(work_path, "confs")
     create_path(conf_path)
     sys_counter = 0
+    rng = np.random.default_rng()
     for ss in conf_systems:
         conf_counter = 0
         for cc in ss:
@@ -1271,17 +1269,9 @@ def make_model_devi(iter_index, jdata, mdata):
                 conf_name = make_model_devi_conf_name(
                     sys_idx[sys_counter], conf_counter
                 )
-                orig_poscar_name = conf_name + ".orig.poscar"
                 poscar_name = conf_name + ".poscar"
                 lmp_name = conf_name + ".lmp"
-                if shuffle_poscar:
-                    os.symlink(cc, os.path.join(conf_path, orig_poscar_name))
-                    poscar_shuffle(
-                        os.path.join(conf_path, orig_poscar_name),
-                        os.path.join(conf_path, poscar_name),
-                    )
-                else:
-                    os.symlink(cc, os.path.join(conf_path, poscar_name))
+                os.symlink(cc, os.path.join(conf_path, poscar_name))
                 if "sys_format" in jdata:
                     fmt = jdata["sys_format"]
                 else:
@@ -1291,6 +1281,8 @@ def make_model_devi(iter_index, jdata, mdata):
                     fmt=fmt,
                     type_map=jdata["type_map"],
                 )
+                if shuffle_poscar:
+                    system.data["coords"] = rng.permuted(system.data["coords"], axis=1)
                 if jdata.get("model_devi_nopbc", False):
                     system.remove_pbc()
                 system.to_lammps_lmp(os.path.join(conf_path, lmp_name))
@@ -1568,7 +1560,7 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
     models = sorted(glob.glob(os.path.join(train_path, f"graph*{suffix}")))
     task_model_list = []
     for ii in models:
-        task_model_list.append(os.path.join("..", os.path.basename(ii)))
+        task_model_list.append(Path(f"../{Path(ii).name}").as_posix())
     work_path = os.path.join(iter_name, model_devi_name)
 
     sys_counter = 0
@@ -2336,9 +2328,8 @@ def _select_by_model_devi_standard(
         numofspecies = _parse_calypso_input("NumberOfSpecies", calypso_run_opt_path)
         min_dis = _parse_calypso_dis_mtx(numofspecies, calypso_run_opt_path)
     fp_candidate = []
-    if detailed_report_make_fp:
-        fp_rest_accurate = []
-        fp_rest_failed = []
+    fp_rest_accurate = []
+    fp_rest_failed = []
     cc = 0
     counter = Counter()
     counter["candidate"] = 0
@@ -3070,6 +3061,8 @@ def make_pwmat_input(jdata, filename):
 
 
 def make_vasp_incar_ele_temp(jdata, filename, ele_temp, nbands_esti=None):
+    from pymatgen.io.vasp import Incar
+
     with open(filename) as fp:
         incar = fp.read()
     try:
@@ -3147,6 +3140,8 @@ def make_fp_vasp_cp_cvasp(iter_index, jdata):
 
 
 def make_fp_vasp_kp(iter_index, jdata):
+    from pymatgen.io.vasp import Incar, Kpoints
+
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
     fp_aniso_kspacing = jdata.get("fp_aniso_kspacing")
@@ -4698,7 +4693,7 @@ def post_fp(iter_index, jdata):
 
 
 def set_version(mdata):
-    deepmd_version = "1"
+    deepmd_version = "2"
     mdata["deepmd_version"] = deepmd_version
     return mdata
 
