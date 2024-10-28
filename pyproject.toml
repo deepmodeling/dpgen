@@ -32,7 +32,7 @@ dependencies = [
     'netCDF4',
     'dargs>=0.4.0',
     'h5py',
-    'pymatgen-analysis-defects',
+    'pymatgen-analysis-defects>=2023.08.22',
     'openbabel-wheel',
     'packaging',
 ]
@@ -64,7 +64,6 @@ dpgen = "dpgen.main:main"
 test = [
     "dpgui",
     "coverage",
-    "pymatgen-analysis-defects<2023.08.22",
 ]
 gui = [
     "dpgui",
