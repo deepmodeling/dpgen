@@ -79,6 +79,12 @@ html_logo = "_static/logo.svg"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
+html_theme_options = {
+   "logo": {
+      "image_light": "_static/logo.svg",
+      "image_dark": "_static/logo-dark.svg",
+   }
+}
 
 autodoc_default_flags = ["members"]
 autosummary_generate = True
