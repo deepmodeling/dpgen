@@ -64,6 +64,7 @@ dpgen = "dpgen.main:main"
 test = [
     "dpgui",
     "coverage",
+    "pymatgen-analysis-defects>=2024.10.22",
 ]
 gui = [
     "dpgui",
