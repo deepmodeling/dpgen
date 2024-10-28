@@ -93,6 +93,8 @@ class TestInterstitial(unittest.TestCase):
             st1 = inter.get_supercell_structure(
                 sc_mat=np.eye(3) * self.prop_param[0]["supercell"]
             )
+            st0 = st0.remove_charges()
+            st1 = st1.remove_charges()
             self.assertEqual(st0, st1)
 
         for ii in dfm_dirs[4:]:
