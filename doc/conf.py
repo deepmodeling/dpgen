@@ -80,10 +80,10 @@ html_logo = "_static/logo.svg"
 html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
 html_theme_options = {
-   "logo": {
-      "image_light": "_static/logo.svg",
-      "image_dark": "_static/logo-dark.svg",
-   }
+    "logo": {
+        "image_light": "_static/logo.svg",
+        "image_dark": "_static/logo-dark.svg",
+    }
 }
 
 autodoc_default_flags = ["members"]
