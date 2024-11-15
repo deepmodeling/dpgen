@@ -767,7 +767,7 @@ def run_train_dp(iter_index, jdata, mdata):
     if suffix == ".pth":
         train_command += " --pt"
     elif suffix == ".savedmodel":
-        train_command += "--jax"
+        train_command += " --jax"
 
     # paths
     iter_name = make_iter_name(iter_index)
