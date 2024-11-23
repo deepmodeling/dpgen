@@ -84,7 +84,6 @@ Here is an example of `param.json` for QM7 dataset:
             "limit_pref_pf": 0
         },
         "training": {
-            "set_prefix": "set",
             "numb_steps": 10000,
             "disp_file": "lcurve.out",
             "disp_freq": 1000,

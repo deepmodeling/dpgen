@@ -79,7 +79,7 @@ def create_disturbs_ase(
         pos = pos0 + dpos
         atoms_d.set_positions(pos)
         fout = fin + str(fid) + "." + ofmt
-        print("Creating %s ..." % fout)
+        print(f"Creating {fout} ...")
         if ofmt in ["lmp", "lammps_data"]:
             # for lammps, use my personal output functions
             io_lammps.ase2lammpsdata(atoms_d, fout)
@@ -158,7 +158,7 @@ def create_disturbs_ase_dev(
 
         # Writing it
         fout = fin + str(fid) + "." + ofmt
-        print("Creating %s ..." % fout)
+        print(f"Creating {fout} ...")
         if ofmt in ["lmp", "lammps_data"]:
             # for lammps, use my personal output functions
             io_lammps.ase2lammpsdata(atoms_d, fout=fout)
@@ -230,7 +230,7 @@ def create_disturbs_abacus_dev(
 
         # Writing it
         fout = fin + str(fid) + "." + ofmt
-        print("Creating %s ..." % fout)
+        print(f"Creating {fout} ...")
         ret = make_abacus_scf_stru(
             stru_d, stru_d["pp_files"], stru_d["orb_files"], stru_d["dpks_descriptor"]
         )

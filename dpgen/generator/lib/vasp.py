@@ -1,9 +1,6 @@
 #!/usr/bin/python3
 
 
-from pymatgen.io.vasp import Incar
-
-
 def _make_vasp_incar_dict(
     ecut,
     ediff,
@@ -90,7 +87,7 @@ def _make_smearing(fp_params):
     elif smearing_method == "fd":
         return -1, sigma
     else:
-        raise RuntimeError("unsuppported smearing method %s " % smearing_method)
+        raise RuntimeError(f"unsuppported smearing method {smearing_method} ")
 
 
 def _make_metagga(fp_params):
@@ -133,6 +130,8 @@ def make_vasp_incar_user_dict(fp_params):
 
 
 def incar_upper(dincar):
+    from pymatgen.io.vasp import Incar
+
     standard_incar = {}
     for key, val in dincar.items():
         standard_incar[key.upper()] = val

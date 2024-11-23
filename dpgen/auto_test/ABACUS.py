@@ -26,7 +26,7 @@ class ABACUS(Task):
     def make_potential_files(self, output_dir):
         stru = os.path.abspath(os.path.join(output_dir, "STRU"))
         if not os.path.isfile(stru):
-            raise FileNotFoundError("No file %s" % stru)
+            raise FileNotFoundError(f"No file {stru}")
         stru_data = abacus_scf.get_abacus_STRU(stru)
         atom_names = stru_data["atom_names"]
         orb_files = stru_data["orb_files"]
@@ -58,7 +58,7 @@ class ABACUS(Task):
                 )
             if atomname not in self.potcars:
                 raise RuntimeError(
-                    "please specify the pseudopotential file of '%s'" % atomname
+                    f"please specify the pseudopotential file of '{atomname}'"
                 )
             pp_orb_file.append([pp_files[iatom], self.potcars[atomname]])
 
@@ -70,7 +70,7 @@ class ABACUS(Task):
                     )
                 if atomname not in self.orbfile:
                     raise RuntimeError(
-                        "please specify the orbital file of '%s'" % atomname
+                        f"please specify the orbital file of '{atomname}'"
                     )
                 pp_orb_file.append([orb_files[iatom], self.orbfile[atomname]])
             elif self.orbfile:
@@ -105,7 +105,7 @@ class ABACUS(Task):
 
             src_file = os.path.join(pp_dir, file_param)
             if not os.path.isfile(src_file):
-                raise RuntimeError("Can not find file %s" % src_file)
+                raise RuntimeError(f"Can not find file {src_file}")
             tar_file = os.path.join("pp_orb", filename_in_stru)
             if os.path.isfile(tar_file):
                 os.remove(tar_file)
@@ -138,8 +138,7 @@ class ABACUS(Task):
             incar_prop = os.path.abspath(cal_setting["input_prop"])
             incar = abacus_scf.get_abacus_input_parameters(incar_prop)
             dlog.info(
-                "Detected 'input_prop' in 'relaxation', use %s as INPUT, and ignore 'cal_setting'"
-                % incar_prop
+                f"Detected 'input_prop' in 'relaxation', use {incar_prop} as INPUT, and ignore 'cal_setting'"
             )
 
         # revise INCAR based on the INCAR provided in the "interaction"
@@ -195,9 +194,8 @@ class ABACUS(Task):
             dlog.info("'basis_type' is not defined, set to be 'pw'!")
             self.modify_input(incar, "basis_type", "pw")
         if "lcao" in incar["basis_type"].lower() and not self.if_define_orb_file:
-            mess = (
-                "The basis_type is %s, but not define orbital file!!!"
-                % incar["basis_type"]
+            mess = "The basis_type is {}, but not define orbital file!!!".format(
+                incar["basis_type"]
             )
             raise RuntimeError(mess)
         if "deepks_model" in incar:

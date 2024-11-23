@@ -40,7 +40,7 @@ def _main(param):
         skip_init = jdata["skip_init"]
     ## The mapping from sys_info to sys_configs
     assert calculator.lower() in SUPPORTED_CACULATOR
-    dlog.info("data collection from: %s" % path)
+    dlog.info(f"data collection from: {path}")
     if calculator == "vasp":
         parsing_vasp(path, config_info_dict, skip_init, output, id_prefix)
     elif calculator == "gaussian":
@@ -53,18 +53,18 @@ def parsing_vasp(path, config_info_dict, skip_init, output=OUTPUT, id_prefix=Non
     fp_iters = os.path.join(path, ITERS_PAT)
     dlog.debug(fp_iters)
     f_fp_iters = glob(fp_iters)
-    dlog.info("len iterations data: %s" % len(f_fp_iters))
+    dlog.info(f"len iterations data: {len(f_fp_iters)}")
     fp_init = os.path.join(path, INIT_PAT)
     dlog.debug(fp_init)
     f_fp_init = glob(fp_init)
     if skip_init:
         entries = _parsing_vasp(f_fp_iters, config_info_dict, id_prefix)
-        dlog.info("len collected data: %s" % len(entries))
+        dlog.info(f"len collected data: {len(entries)}")
     else:
-        dlog.info("len initialization data: %s" % len(f_fp_init))
+        dlog.info(f"len initialization data: {len(f_fp_init)}")
         entries = _parsing_vasp(f_fp_init, config_info_dict, id_prefix, iters=False)
         entries.extend(_parsing_vasp(f_fp_iters, config_info_dict, id_prefix))
-        dlog.info("len collected data: %s" % len(entries))
+        dlog.info(f"len collected data: {len(entries)}")
     # print(output)
     # print(entries)
     dumpfn(entries, output, indent=4)
@@ -142,7 +142,7 @@ def _parsing_vasp(paths, config_info_dict, id_prefix, iters=True):
             icount += 1
         except Exception:
             # dlog.info(str(Exception))
-            dlog.info("failed for %s" % (path))
+            dlog.info(f"failed for {path}")
             # pass
     if iters:
         iter_record.sort()

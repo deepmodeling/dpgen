@@ -1,4 +1,5 @@
 {
+    "deepmd_version": "1",
     "train_machine": {
         "machine_type": "shell",
         "lazy_local": true

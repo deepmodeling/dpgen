@@ -18,7 +18,7 @@ def poscar_unit(latt):
     box = gen_box()
     ret = ""
     ret += "DIAMOND\n"
-    ret += "%.16f\n" % (latt)
+    ret += f"{latt:.16f}\n"
     ret += f"{box[0][0]:.16f} {box[0][1]:.16f} {box[0][2]:.16f}\n"
     ret += f"{box[1][0]:.16f} {box[1][1]:.16f} {box[1][2]:.16f}\n"
     ret += f"{box[2][0]:.16f} {box[2][1]:.16f} {box[2][2]:.16f}\n"

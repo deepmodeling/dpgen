@@ -6,6 +6,8 @@ import os
 import re
 import shutil
 
+from packaging.version import Version
+
 iter_format = "%06d"
 task_format = "%02d"
 log_iter_head = "iter " + iter_format + " task " + task_format + ": "
@@ -109,4 +111,13 @@ def symlink_user_forward_files(mdata, task_type, work_path, task_format=None):
                 os.remove(os.path.join(task, os.path.basename(file)))
             abs_file = os.path.abspath(file)
             os.symlink(abs_file, os.path.join(task, os.path.basename(file)))
+    return
+
+
+def check_api_version(mdata):
+    """Check if the API version in mdata is at least 1.0."""
+    if Version(mdata.get("api_version", "1.0")) < Version("1.0"):
+        raise RuntimeError(
+            "API version below 1.0 is no longer supported. Please upgrade to version 1.0 or newer."
+        )
     return

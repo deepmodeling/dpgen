@@ -5,8 +5,6 @@ import re
 
 import numpy as np
 from monty.serialization import dumpfn, loadfn
-from pymatgen.analysis.defects.generators import InterstitialGenerator
-from pymatgen.core.structure import Structure
 
 import dpgen.auto_test.lib.abacus as abacus
 import dpgen.auto_test.lib.lammps as lammps
@@ -78,6 +76,9 @@ class Interstitial(Property):
         self.inter_param = inter_param if inter_param is not None else {"type": "vasp"}
 
     def make_confs(self, path_to_work, path_to_equi, refine=False):
+        from pymatgen.analysis.defects.generators import InterstitialGenerator
+        from pymatgen.core.structure import Structure
+
         path_to_work = os.path.abspath(path_to_work)
         path_to_equi = os.path.abspath(path_to_equi)
 
@@ -269,9 +270,9 @@ class Interstitial(Property):
                         print(self.insert_ele[0], file=fout)
                     dumpfn(self.supercell, "supercell.json")
                     pos_line[chl] = (
-                        "%.6f" % float(latt_param / 4 / super_latt_param)
+                        f"{float(latt_param / 4 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f" % float(latt_param / 2 / super_latt_param)
+                        + f"{float(latt_param / 2 / super_latt_param):.6f}"
                         + " 0.000000 "
                         + self.insert_ele[0]
                     )
@@ -291,9 +292,9 @@ class Interstitial(Property):
                         print(self.insert_ele[0], file=fout)
                     dumpfn(self.supercell, "supercell.json")
                     pos_line[chl] = (
-                        "%.6f" % float(latt_param / 2 / super_latt_param)
+                        f"{float(latt_param / 2 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f" % float(latt_param / 2 / super_latt_param)
+                        + f"{float(latt_param / 2 / super_latt_param):.6f}"
                         + " 0.000000 "
                         + self.insert_ele[0]
                     )
@@ -313,11 +314,11 @@ class Interstitial(Property):
                         print(self.insert_ele[0], file=fout)
                     dumpfn(self.supercell, "supercell.json")
                     pos_line[chl] = (
-                        "%.6f" % float(latt_param / 4 / super_latt_param)
+                        f"{float(latt_param / 4 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f" % float(latt_param / 4 / super_latt_param)
+                        + f"{float(latt_param / 4 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f" % float(latt_param / 4 / super_latt_param)
+                        + f"{float(latt_param / 4 / super_latt_param):.6f}"
                         + " "
                         + self.insert_ele[0]
                     )
@@ -354,20 +355,20 @@ class Interstitial(Property):
                         print(self.insert_ele[0], file=fout)
                     dumpfn(self.supercell, "supercell.json")
                     pos_line[chl] = (
-                        "%.6f" % float(latt_param / 3 / super_latt_param)
+                        f"{float(latt_param / 3 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f" % float(latt_param / 3 / super_latt_param)
+                        + f"{float(latt_param / 3 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f" % float(latt_param / 3 / super_latt_param)
+                        + f"{float(latt_param / 3 / super_latt_param):.6f}"
                         + " "
                         + self.insert_ele[0]
                     )
                     pos_line[replace_label] = (
-                        "%.6f" % float(latt_param / 3 * 2 / super_latt_param)
+                        f"{float(latt_param / 3 * 2 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f" % float(latt_param / 3 * 2 / super_latt_param)
+                        + f"{float(latt_param / 3 * 2 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f" % float(latt_param / 3 * 2 / super_latt_param)
+                        + f"{float(latt_param / 3 * 2 / super_latt_param):.6f}"
                         + " "
                         + self.insert_ele[0]
                     )
@@ -388,24 +389,20 @@ class Interstitial(Property):
                         print(self.insert_ele[0], file=fout)
                     dumpfn(self.supercell, "supercell.json")
                     pos_line[chl] = (
-                        "%.6f"
-                        % float((latt_param + 2.1 / 2**0.5) / 2 / super_latt_param)
+                        f"{float((latt_param + 2.1 / 2**0.5) / 2 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f"
-                        % float((latt_param - 2.1 / 2**0.5) / 2 / super_latt_param)
+                        + f"{float((latt_param - 2.1 / 2**0.5) / 2 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f" % float(latt_param / 2 / super_latt_param)
+                        + f"{float(latt_param / 2 / super_latt_param):.6f}"
                         + " "
                         + self.insert_ele[0]
                     )
                     pos_line[replace_label] = (
-                        "%.6f"
-                        % float((latt_param - 2.1 / 2**0.5) / 2 / super_latt_param)
+                        f"{float((latt_param - 2.1 / 2**0.5) / 2 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f"
-                        % float((latt_param + 2.1 / 2**0.5) / 2 / super_latt_param)
+                        + f"{float((latt_param + 2.1 / 2**0.5) / 2 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f" % float(latt_param / 2 / super_latt_param)
+                        + f"{float(latt_param / 2 / super_latt_param):.6f}"
                         + " "
                         + self.insert_ele[0]
                     )
@@ -426,20 +423,20 @@ class Interstitial(Property):
                         print(self.insert_ele[0], file=fout)
                     dumpfn(self.supercell, "supercell.json")
                     pos_line[chl] = (
-                        "%.6f" % float(latt_param / 2 / super_latt_param)
+                        f"{float(latt_param / 2 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f" % float(latt_param / 2 / super_latt_param)
+                        + f"{float(latt_param / 2 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f" % float((latt_param - 2.1) / 2 / super_latt_param)
+                        + f"{float((latt_param - 2.1) / 2 / super_latt_param):.6f}"
                         + " "
                         + self.insert_ele[0]
                     )
                     pos_line[replace_label] = (
-                        "%.6f" % float(latt_param / 2 / super_latt_param)
+                        f"{float(latt_param / 2 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f" % float(latt_param / 2 / super_latt_param)
+                        + f"{float(latt_param / 2 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f" % float((latt_param + 2.1) / 2 / super_latt_param)
+                        + f"{float((latt_param + 2.1) / 2 / super_latt_param):.6f}"
                         + " "
                         + self.insert_ele[0]
                     )
@@ -483,9 +480,9 @@ class Interstitial(Property):
                         conf_line[-2] = (
                             "%6.d" % int(insert_line.split()[0])
                             + "%7.d" % type_num
-                            + "%16.10f" % float(insert_line.split()[2])
-                            + "%16.10f" % float(insert_line.split()[3])
-                            + "%16.10f" % float(insert_line.split()[4])
+                            + f"{float(insert_line.split()[2]):16.10f}"
+                            + f"{float(insert_line.split()[3]):16.10f}"
+                            + f"{float(insert_line.split()[4]):16.10f}"
                         )
                         with open(conf, "w+") as fout:
                             for jj in conf_line:

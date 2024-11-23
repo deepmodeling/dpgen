@@ -84,9 +84,7 @@
             "time_training": true,
             "profiling": false,
             "profiling_file": "timeline.json",
-            "training_data": {
-                "set_prefix": "set"
-            }
+            "training_data": {}
         },
         "_comment1": "that's all"
     },

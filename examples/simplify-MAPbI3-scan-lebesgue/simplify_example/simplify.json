@@ -114,7 +114,6 @@
             "profiling": false,
             "profiling_file": "timeline.json",
             "training_data": {
-                "set_prefix": "set",
                 "batch_size": "auto"
             }
         }

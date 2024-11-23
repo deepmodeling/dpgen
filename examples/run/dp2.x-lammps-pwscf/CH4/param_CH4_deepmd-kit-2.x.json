@@ -81,7 +81,6 @@
             "profiling_file": "timeline.json",
             "_comment2": "that's all",
             "training_data": {
-                "set_prefix": "set",
                 "batch_size": 1
             }
         }

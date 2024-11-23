@@ -8,8 +8,6 @@ import numpy as np
 from ase.lattice.cubic import BodyCenteredCubic as bcc
 from ase.lattice.cubic import FaceCenteredCubic as fcc
 from monty.serialization import dumpfn, loadfn
-from pymatgen.core.structure import Structure
-from pymatgen.io.ase import AseAtomsAdaptor
 
 import dpgen.auto_test.lib.abacus as abacus
 import dpgen.auto_test.lib.vasp as vasp
@@ -94,9 +92,11 @@ class Gamma(Property):
         self.inter_param = inter_param if inter_param is not None else {"type": "vasp"}
 
     def make_confs(self, path_to_work, path_to_equi, refine=False):
+        from pymatgen.core.structure import Structure
+
         path_to_work = os.path.abspath(path_to_work)
         if os.path.exists(path_to_work):
-            dlog.warning("%s already exists" % path_to_work)
+            dlog.warning(f"{path_to_work} already exists")
         else:
             os.makedirs(path_to_work)
         path_to_equi = os.path.abspath(path_to_equi)
@@ -287,6 +287,8 @@ class Gamma(Property):
         return directions
 
     def __gen_slab_ase(self, symbol, lat_param):
+        from pymatgen.io.ase import AseAtomsAdaptor
+
         if not self.lattice_type:
             raise RuntimeError("Error! Please provide the input lattice type!")
         elif self.lattice_type == "bcc":
@@ -386,7 +388,7 @@ class Gamma(Property):
         with open(inLammps) as fin1:
             contents = fin1.readlines()
             for ii in range(len(contents)):
-                upper = re.search("variable        N equal count\(all\)", contents[ii])
+                upper = re.search(r"variable        N equal count\(all\)", contents[ii])
                 lower = re.search("min_style       cg", contents[ii])
                 if lower:
                     lower_id = ii

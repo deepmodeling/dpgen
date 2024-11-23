@@ -167,9 +167,9 @@ def from_system_data(system):
     ntypes = len(system["atom_numbs"])
     ret += "%d atoms\n" % natoms
     ret += "%d atom types\n" % ntypes
-    ret += "0 %f xlo xhi\n" % system["cell"][0][0]
-    ret += "0 %f ylo yhi\n" % system["cell"][1][1]
-    ret += "0 %f zlo zhi\n" % system["cell"][2][2]
+    ret += "0 {:f} xlo xhi\n".format(system["cell"][0][0])
+    ret += "0 {:f} ylo yhi\n".format(system["cell"][1][1])
+    ret += "0 {:f} zlo zhi\n".format(system["cell"][2][2])
     ret += "{:f} {:f} {:f} xy xz yz\n".format(
         system["cell"][1][0],
         system["cell"][2][0],

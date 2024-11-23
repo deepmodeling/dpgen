@@ -3,7 +3,6 @@ import os
 import warnings
 
 import numpy as np
-from pymatgen.io.vasp import Incar, Kpoints
 
 import dpgen.auto_test.lib.util as util
 from dpgen.generator.lib.vasp import incar_upper
@@ -273,14 +272,14 @@ def make_vasp_static_incar(
     ret += "ENCUT=%d\n" % ecut
     ret += "# ISYM=0\n"
     ret += "ALGO=normal\n"
-    ret += "EDIFF=%e\n" % ediff
+    ret += f"EDIFF={ediff:e}\n"
     ret += "EDIFFG=-0.01\n"
     ret += "LREAL=A\n"
     ret += "NPAR=%d\n" % npar
     ret += "KPAR=%d\n" % kpar
     ret += "\n"
     ret += "ISMEAR=%d\n" % ismear
-    ret += "SIGMA=%f\n" % sigma
+    ret += f"SIGMA={sigma:f}\n"
     ret += "\n"
     ret += "ISTART=0\n"
     ret += "ICHARG=2\n"
@@ -295,7 +294,7 @@ def make_vasp_static_incar(
     ret += "PSTRESS=0\n"
     ret += "\n"
     if kspacing is not None:
-        ret += "KSPACING=%f\n" % kspacing
+        ret += f"KSPACING={kspacing:f}\n"
     if kgamma is not None:
         if kgamma:
             ret += "KGAMMA=T\n"
@@ -323,14 +322,14 @@ def make_vasp_relax_incar(
     ret += "ENCUT=%d\n" % ecut
     ret += "# ISYM=0\n"
     ret += "ALGO=normal\n"
-    ret += "EDIFF=%e\n" % ediff
+    ret += f"EDIFF={ediff:e}\n"
     ret += "EDIFFG=-0.01\n"
     ret += "LREAL=A\n"
     ret += "NPAR=%d\n" % npar
     ret += "KPAR=%d\n" % kpar
     ret += "\n"
     ret += "ISMEAR=%d\n" % ismear
-    ret += "SIGMA=%f\n" % sigma
+    ret += f"SIGMA={sigma:f}\n"
     ret += "\n"
     ret += "ISTART=0\n"
     ret += "ICHARG=2\n"
@@ -346,7 +345,7 @@ def make_vasp_relax_incar(
     ret += "PSTRESS=0\n"
     ret += "\n"
     if kspacing is not None:
-        ret += "KSPACING=%f\n" % kspacing
+        ret += f"KSPACING={kspacing:f}\n"
     if kgamma is not None:
         if kgamma:
             ret += "KGAMMA=T\n"
@@ -364,14 +363,14 @@ def make_vasp_phonon_incar(
     ret += "ENCUT=%d\n" % ecut
     ret += "# ISYM=0\n"
     ret += "ALGO=normal\n"
-    ret += "EDIFF=%e\n" % ediff
+    ret += f"EDIFF={ediff:e}\n"
     ret += "EDIFFG=-0.01\n"
     ret += "LREAL=A\n"
     # ret += 'NPAR=%d\n' % npar
     ret += "KPAR=%d\n" % kpar
     ret += "\n"
     ret += "ISMEAR=%d\n" % ismear
-    ret += "SIGMA=%f\n" % sigma
+    ret += f"SIGMA={sigma:f}\n"
     ret += "\n"
     ret += "ISTART=0\n"
     ret += "ICHARG=2\n"
@@ -386,7 +385,7 @@ def make_vasp_phonon_incar(
     ret += "PSTRESS=0\n"
     ret += "\n"
     if kspacing is not None:
-        ret += "KSPACING=%f\n" % kspacing
+        ret += f"KSPACING={kspacing:f}\n"
     if kgamma is not None:
         if kgamma:
             ret += "KGAMMA=T\n"
@@ -455,7 +454,7 @@ def poscar_scale(poscar_in, poscar_out, scale):
     elif "C" == lines[7][0] or "c" == lines[7][0]:
         lines = _poscar_scale_cartesian(lines, scale)
     else:
-        raise RuntimeError("Unknow poscar coord style at line 7: %s" % lines[7])
+        raise RuntimeError(f"Unknow poscar coord style at line 7: {lines[7]}")
     with open(poscar_out, "w") as fout:
         fout.write("".join(lines))
 
@@ -503,6 +502,8 @@ def make_vasp_kpoints(kpoints, kgamma=False):
 
 
 def make_vasp_kpoints_from_incar(work_dir, jdata):
+    from pymatgen.io.vasp import Incar, Kpoints
+
     cwd = os.getcwd()
     fp_aniso_kspacing = jdata.get("fp_aniso_kspacing")
     os.chdir(work_dir)

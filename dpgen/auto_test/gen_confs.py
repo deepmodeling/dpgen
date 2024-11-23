@@ -4,9 +4,6 @@ import argparse
 import os
 import re
 
-from pymatgen.analysis.structure_matcher import StructureMatcher
-from pymatgen.ext.matproj import MPRester
-
 import dpgen.auto_test.lib.crys as crys
 
 global_std_crystal = {
@@ -20,6 +17,8 @@ global_std_crystal = {
 
 
 def test_fit(struct, data):
+    from pymatgen.analysis.structure_matcher import StructureMatcher
+
     m = StructureMatcher()
     for ii in data:
         if m.fit(ii["structure"], struct):
@@ -50,6 +49,9 @@ def gen_ele_std(ele_name, ctype):
 
 
 def gen_element(ele_name, key):
+    from pymatgen.analysis.structure_matcher import StructureMatcher
+    from pymatgen.ext.matproj import MPRester
+
     assert isinstance(ele_name, str)
     mpr = MPRester(key)
     data = mpr.query(
@@ -93,6 +95,8 @@ def gen_element_std(ele_name):
 
 
 def gen_alloy(eles, key):
+    from pymatgen.ext.matproj import MPRester
+
     mpr = MPRester(key)
 
     data = mpr.query(
@@ -134,7 +138,7 @@ def _main():
     )
     args = parser.parse_args()
 
-    print("generate %s" % (args.elements))
+    print(f"generate {args.elements}")
     if len(args.elements) == 1:
         gen_element(args.elements[0], args.key)
         # gen_element_std(args.elements[0])
