@@ -263,7 +263,6 @@ class TestPostGaussian(unittest.TestCase, CompLabeledSys):
             "iter.000000/02.fp/data.000", fmt="deepmd/raw"
         )
 
-
 class TestPostCP2K(unittest.TestCase, CompLabeledSys):
     def setUp(self):
         self.places = 5
