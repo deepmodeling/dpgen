@@ -283,7 +283,8 @@ class Interstitial(Property):
                     os.chdir(cwd)
 
                     output_task2 = os.path.join(
-                        path_to_work, "task.%06d" % (len(dss) + 1)  # noqa: UP031
+                        path_to_work,
+                        "task.%06d" % (len(dss) + 1),  # noqa: UP031
                     )
                     os.makedirs(output_task2, exist_ok=True)
                     os.chdir(output_task2)
@@ -305,7 +306,8 @@ class Interstitial(Property):
                     os.chdir(cwd)
 
                     output_task3 = os.path.join(
-                        path_to_work, "task.%06d" % (len(dss) + 2)  # noqa: UP031
+                        path_to_work,
+                        "task.%06d" % (len(dss) + 2),  # noqa: UP031
                     )
                     os.makedirs(output_task3, exist_ok=True)
                     os.chdir(output_task3)
@@ -346,7 +348,8 @@ class Interstitial(Property):
                                 replace_label = idx
 
                     output_task4 = os.path.join(
-                        path_to_work, "task.%06d" % (len(dss) + 3)  # noqa: UP031
+                        path_to_work,
+                        "task.%06d" % (len(dss) + 3),  # noqa: UP031
                     )
                     os.makedirs(output_task4, exist_ok=True)
                     os.chdir(output_task4)
@@ -380,7 +383,8 @@ class Interstitial(Property):
                     os.chdir(cwd)
 
                     output_task5 = os.path.join(
-                        path_to_work, "task.%06d" % (len(dss) + 4)  # noqa: UP031
+                        path_to_work,
+                        "task.%06d" % (len(dss) + 4),  # noqa: UP031
                     )
                     os.makedirs(output_task5, exist_ok=True)
                     os.chdir(output_task5)
@@ -414,7 +418,8 @@ class Interstitial(Property):
                     os.chdir(cwd)
 
                     output_task6 = os.path.join(
-                        path_to_work, "task.%06d" % (len(dss) + 5)  # noqa: UP031
+                        path_to_work,
+                        "task.%06d" % (len(dss) + 5),  # noqa: UP031
                     )
                     os.makedirs(output_task6, exist_ok=True)
                     os.chdir(output_task6)
