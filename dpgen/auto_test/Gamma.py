@@ -474,7 +474,7 @@ class Gamma(Property):
                 miller_index = loadfn(os.path.join(ii, "miller.json"))
                 ptr_data += (
                     "%-25s     %7.2f   %7.3f    %8.3f %8.3f\n"  # noqa: UP031
-                    % (  
+                    % (
                         str(miller_index) + "-" + structure_dir + ":",
                         int(ii[-4:]) / self.n_steps,
                         sfe,

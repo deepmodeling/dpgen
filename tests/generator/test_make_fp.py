@@ -263,12 +263,15 @@ def _make_fake_md(idx, md_descript, atom_types, type_map, ele_temp=None):
             sys.data["coords"] = coords
             sys.data["cells"] = cells
             task_dir = os.path.join(
-                "iter.%06d" % idx, "01.model_devi", "task.%03d.%06d" % (sidx, midx)  # noqa: UP031  # noqa: UP031
+                "iter.%06d" % idx,
+                "01.model_devi",
+                "task.%03d.%06d" % (sidx, midx),  # noqa: UP031  # noqa: UP031
             )
             os.makedirs(os.path.join(task_dir, "traj"), exist_ok=True)
             for ii in range(nframes):
                 _write_lammps_dump(
-                    sys, os.path.join(task_dir, "traj", "%d.lammpstrj" % ii)  # noqa: UP031
+                    sys,
+                    os.path.join(task_dir, "traj", "%d.lammpstrj" % ii),  # noqa: UP031
                 )
             md_out = np.zeros([nframes, 7])
             md_out[:, 0] = np.arange(nframes)
@@ -301,7 +304,9 @@ def _make_fake_md_merge_traj(idx, md_descript, atom_types, type_map, ele_temp=No
             sys.data["coords"] = coords
             sys.data["cells"] = cells
             task_dir = os.path.join(
-                "iter.%06d" % idx, "01.model_devi", "task.%03d.%06d" % (sidx, midx)  # noqa: UP031  # noqa: UP031
+                "iter.%06d" % idx,
+                "01.model_devi",
+                "task.%03d.%06d" % (sidx, midx),  # noqa: UP031  # noqa: UP031
             )
             cwd = os.getcwd()
             os.makedirs(task_dir, exist_ok=True)
@@ -344,7 +349,9 @@ def _check_poscars(testCase, idx, fp_task_max, type_map):
         for tt, ff in zip(md_task, f_idx):
             traj_file = os.path.join(tt, "traj", "%d.lammpstrj" % int(ff))  # noqa: UP031
             poscar_file = os.path.join(
-                fp_path, "task.%03d.%06d" % (int(sidx), cc), "POSCAR"  # noqa: UP031
+                fp_path,
+                "task.%03d.%06d" % (int(sidx), cc),
+                "POSCAR",  # noqa: UP031
             )
             cc += 1
             sys0 = dpdata.System(traj_file, fmt="lammps/dump", type_map=type_map)
@@ -373,7 +380,9 @@ def _check_poscars_merge_traj(testCase, idx, fp_task_max, type_map):
         for tt, ff in zip(md_task, f_idx):
             traj_file = os.path.join(tt, "all.lammpstrj")
             poscar_file = os.path.join(
-                fp_path, "task.%03d.%06d" % (int(sidx), cc), "POSCAR"  # noqa: UP031
+                fp_path,
+                "task.%03d.%06d" % (int(sidx), cc),
+                "POSCAR",  # noqa: UP031
             )
             cc += 1
             sys0 = dpdata.System(traj_file, fmt="lammps/dump", type_map=type_map)
@@ -840,7 +849,9 @@ class TestMakeFPAMBERDiff(unittest.TestCase):
             jdata = json.load(fp)
         jdata["mdin_prefix"] = os.path.abspath(jdata["mdin_prefix"])
         task_dir = os.path.join(
-            "iter.%06d" % 0, "01.model_devi", "task.%03d.%06d" % (0, 0)  # noqa: UP031  # noqa: UP031
+            "iter.%06d" % 0,
+            "01.model_devi",
+            "task.%03d.%06d" % (0, 0),  # noqa: UP031  # noqa: UP031
         )
         os.makedirs(task_dir, exist_ok=True)
         with open(os.path.join(task_dir, "rc.mdout"), "w") as f:
@@ -1369,7 +1380,9 @@ class TestMakeFPCustom(unittest.TestCase):
             for cc, (tt, ff) in enumerate(zip(md_task, f_idx)):
                 traj_file = os.path.join(tt, "traj", "%d.lammpstrj" % int(ff))  # noqa: UP031
                 input_file = os.path.join(
-                    fp_path, "task.%03d.%06d" % (int(sidx), cc), input_fn  # noqa: UP031
+                    fp_path,
+                    "task.%03d.%06d" % (int(sidx), cc),
+                    input_fn,  # noqa: UP031
                 )
                 system1 = dpdata.System(traj_file, "lammps/dump", type_map=type_map)
                 system2 = dpdata.System(input_file, input_fmt, type_map=type_map)

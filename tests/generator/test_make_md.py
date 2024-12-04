@@ -47,7 +47,8 @@ def _make_fake_models(idx, numb_models):
             fp.write(str(ii))
         if not os.path.isfile("graph.%03d.pb" % ii):  # noqa: UP031
             os.symlink(
-                os.path.join("%03d" % ii, "forzen_model.pb"), "graph.%03d.pb" % ii  # noqa: UP031  # noqa: UP031
+                os.path.join("%03d" % ii, "forzen_model.pb"),
+                "graph.%03d.pb" % ii,  # noqa: UP031  # noqa: UP031
             )
     os.chdir(pwd)
 
@@ -697,7 +698,10 @@ class TestMakeMDAMBER(unittest.TestCase):
         restart_text = "This is the fake restart file to test `restart_from_iter`"
         with open(
             os.path.join(
-                "iter.%06d" % 0, "01.model_devi", "task.000.000000", "rc.rst7"  # noqa: UP031
+                "iter.%06d" % 0,
+                "01.model_devi",
+                "task.000.000000",
+                "rc.rst7",  # noqa: UP031
             ),
             "w",
         ) as fw:
@@ -708,7 +712,10 @@ class TestMakeMDAMBER(unittest.TestCase):
         self._check_input(1)
         with open(
             os.path.join(
-                "iter.%06d" % 1, "01.model_devi", "task.000.000000", "init.rst7"  # noqa: UP031
+                "iter.%06d" % 1,
+                "01.model_devi",
+                "task.000.000000",
+                "init.rst7",  # noqa: UP031
             )
         ) as f:
             assert f.read() == restart_text

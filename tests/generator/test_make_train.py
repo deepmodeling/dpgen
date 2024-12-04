@@ -204,7 +204,9 @@ def _check_model_inputs_v1(testCase, iter_idx, jdata, reuse=False):
 def _make_fake_fp(iter_idx, sys_idx, nframes):
     for ii in range(nframes):
         dirname = os.path.join(
-            "iter.%06d" % iter_idx, "02.fp", "task.%03d.%06d" % (sys_idx, ii)  # noqa: UP031  # noqa: UP031
+            "iter.%06d" % iter_idx,
+            "02.fp",
+            "task.%03d.%06d" % (sys_idx, ii),  # noqa: UP031  # noqa: UP031
         )
         os.makedirs(dirname, exist_ok=True)
     dirname = os.path.join("iter.%06d" % iter_idx, "02.fp", "data.%03d" % sys_idx)  # noqa: UP031  # noqa: UP031
@@ -543,7 +545,11 @@ class TestMakeTrain(unittest.TestCase):
             self.assertTrue(
                 os.path.isfile(
                     os.path.join(
-                        "iter.000000", "00.train", "%03d" % ii, "old", "init.pb"  # noqa: UP031
+                        "iter.000000",
+                        "00.train",
+                        "%03d" % ii,
+                        "old",
+                        "init.pb",  # noqa: UP031
                     )
                 )
             )
@@ -594,7 +600,11 @@ class TestMakeTrain(unittest.TestCase):
             self.assertTrue(
                 os.path.isfile(
                     os.path.join(
-                        "iter.000000", "00.train", "%03d" % ii, "old", "init.pb"  # noqa: UP031
+                        "iter.000000",
+                        "00.train",
+                        "%03d" % ii,
+                        "old",
+                        "init.pb",  # noqa: UP031
                     )
                 )
             )
