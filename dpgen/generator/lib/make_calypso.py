@@ -29,7 +29,7 @@ def make_calypso_input(
     assert nameofatoms is not None
     ret += "SystemName = {}\n".format("".join(nameofatoms))
     ret += "# Number of different atomic species in the simulation.\n"
-    ret += "NumberOfSpecies = %d\n" % (len(nameofatoms))
+    ret += "NumberOfSpecies = %d\n" % (len(nameofatoms))  # noqa: UP031
     ret += "# Element symbols of the different chemical species.\n"
     ret += "NameOfAtoms = {}\n".format(" ".join(nameofatoms))
     ret += "# Number of atoms for each chemical species in one formula unit. \n"
@@ -54,7 +54,7 @@ def make_calypso_input(
     assert len(distanceofion[0]) == len(nameofatoms)
     ret += "@DistanceOfIon \n"
     for temp in distanceofion:
-        ret += "%4s \n" % (" ".join(list(map(str, temp))))
+        ret += "%4s \n" % (" ".join(list(map(str, temp))))  # noqa: UP031
     ret += "@End\n"
     ret += "# It determines which algorithm should be adopted in the simulation.\n"
     ret += "Ialgo = 2\n"
@@ -67,10 +67,10 @@ def make_calypso_input(
         "# The population size. Normally, it has a larger number for larger systems.\n"
     )
     assert popsize is not None and isinstance(popsize, int)
-    ret += "PopSize = %d\n" % (popsize)
+    ret += "PopSize = %d\n" % (popsize)  # noqa: UP031
     assert maxstep is not None and isinstance(maxstep, int)
     ret += "# The Max step for iteration\n"
-    ret += "MaxStep = %d\n" % (maxstep)
+    ret += "MaxStep = %d\n" % (maxstep)  # noqa: UP031
     ret += "#It determines which method should be adopted in generation the random structure. \n"
     ret += "GenType= 1 \n"
     ret += "# 1 under symmetric constraints\n"
@@ -80,7 +80,7 @@ def make_calypso_input(
     ret += "# If GenType=3 or 4, it determined the small unit to grow the whole structure\n"
     ret += "# It determines which local optimization method should be interfaced in the simulation.\n"
     assert icode is not None and isinstance(icode, int)
-    ret += "ICode= %d\n" % (icode)
+    ret += "ICode= %d\n" % (icode)  # noqa: UP031
     ret += "# ICode= 1 interfaced with VASP\n"
     ret += "# ICode= 2 interfaced with SIESTA\n"
     ret += "# ICode= 3 interfaced with GULP\n"
@@ -122,7 +122,7 @@ def make_calypso_input(
         ret += "# The Variation Range for each type atom \n"
         ret += "@CtrlRange\n"
         for ttemp in ctrlrange:
-            ret += "%4s \n" % (" ".join(list(map(str, ttemp))))
+            ret += "%4s \n" % (" ".join(list(map(str, ttemp))))  # noqa: UP031
         ret += "@end\n"
         ret += "###################End Parameters for VSC ##########################\n"
     return ret
@@ -226,14 +226,14 @@ def _make_model_devi_native_calypso(iter_index, model_devi_jobs, calypso_run_opt
 def write_model_devi_out(devi, fname):
     assert devi.shape[1] == 8
     # assert devi.shape[1] == 7
-    header = "%5s" % "step"
+    header = "%5s" % "step"  # noqa: UP031
     for item in "vf":
-        header += "%16s%16s%16s" % (
+        header += "%16s%16s%16s" % (  # noqa: UP031
             f"max_devi_{item}",
             f"min_devi_{item}",
             f"avg_devi_{item}",
         )
-    header += "%16s" % "min_dis"
+    header += "%16s" % "min_dis"  # noqa: UP031
     np.savetxt(
         fname,
         devi,

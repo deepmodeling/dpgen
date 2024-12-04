@@ -55,7 +55,7 @@ def Write_Outcar(element, ele, volume, lat, pos, ene, force, stress, pstress):
         f.write("VRHFIN =" + str(x) + "\n")
     f.write("ions per type =")
     for x in element:
-        f.write("%5d" % ele[x])
+        f.write("%5d" % ele[x])  # noqa: UP031
     f.write(
         "\nDirection     XX             YY             ZZ             XY             YZ             ZX\n"
     )

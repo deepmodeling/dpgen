@@ -20,7 +20,7 @@ def make_refine(init_from_suffix, output_suffix, path_to_work):
 
     task_list = []
     for ii in range(task_num):
-        output_task = os.path.join(output, "task.%06d" % ii)
+        output_task = os.path.join(output, "task.%06d" % ii)  # noqa: UP031
         os.makedirs(output_task, exist_ok=True)
         os.chdir(output_task)
         for jj in [
@@ -35,7 +35,7 @@ def make_refine(init_from_suffix, output_suffix, path_to_work):
             if os.path.exists(jj):
                 os.remove(jj)
         task_list.append(output_task)
-        init_from_task = os.path.join(init_from, "task.%06d" % ii)
+        init_from_task = os.path.join(init_from, "task.%06d" % ii)  # noqa: UP031
         if not os.path.exists(init_from_task):
             raise FileNotFoundError(
                 "the initial task directory does not exist for refine"

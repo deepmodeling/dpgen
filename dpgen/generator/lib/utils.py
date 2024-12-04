@@ -23,7 +23,7 @@ def create_path(path):
         dirname = os.path.dirname(path)
         counter = 0
         while True:
-            bk_dirname = dirname + ".bk%03d" % counter
+            bk_dirname = dirname + ".bk%03d" % counter  # noqa: UP031
             if not os.path.isdir(bk_dirname):
                 shutil.move(dirname, bk_dirname)
                 break
@@ -74,7 +74,7 @@ def log_task(message):
 
 def record_iter(record, ii, jj):
     with open(record, "a") as frec:
-        frec.write("%d %d\n" % (ii, jj))
+        frec.write("%d %d\n" % (ii, jj))  # noqa: UP031
 
 
 def symlink_user_forward_files(mdata, task_type, work_path, task_format=None):

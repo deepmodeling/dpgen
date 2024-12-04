@@ -117,14 +117,14 @@ def create_init_tasks(target_folder, param_file, output, fp_json, verbose=True):
             os.path.join(init_data_prefix, ii), fmt="deepmd/npy", type_map=type_map
         )
         nframes = sys.get_nframes()
-        sys_dir = os.path.join(output, "init_system.%03d" % idx)
+        sys_dir = os.path.join(output, "init_system.%03d" % idx)  # noqa: UP031
         os.makedirs(sys_dir, exist_ok=True)
         if verbose:
             print("# working on " + sys_dir)
         with open(os.path.join(sys_dir, "record"), "w") as fp:
             fp.write(os.path.join(init_data_prefix, ii) + "\n")
         for ff in range(nframes):
-            task_dir = os.path.join(sys_dir, "task.%06d" % ff)
+            task_dir = os.path.join(sys_dir, "task.%06d" % ff)  # noqa: UP031
             os.makedirs(task_dir, exist_ok=True)
             sys.to_vasp_poscar(os.path.join(task_dir, "POSCAR"), frame_idx=ff)
             # make fp
@@ -192,7 +192,7 @@ def create_tasks(
         )
         iter_tasks.sort()
         if verbose:
-            print("# check iter " + ii + " with %6d tasks" % len(iter_tasks))
+            print("# check iter " + ii + " with %6d tasks" % len(iter_tasks))  # noqa: UP031
         for jj in iter_tasks:
             sys_idx = int(os.path.basename(jj).split(".")[-2])
             sys_tasks[sys_idx].append(jj)
@@ -215,7 +215,7 @@ def create_tasks(
                 os.path.join(ii, "01.model_devi", linked_keys[-3], "input.lammps")
             )
             human_record = (
-                "iter: %s   system: %s   model_devi_task: %s   frame: %6d   fp_task: %s   ens: %s   temp: %10.2f   pres: %10.2f"
+                "iter: %s   system: %s   model_devi_task: %s   frame: %6d   fp_task: %s   ens: %s   temp: %10.2f   pres: %10.2f"  # noqa: UP031
                 % (
                     task_record_keys[1],
                     task_record_keys[3],
@@ -243,14 +243,14 @@ def create_tasks(
     if fp_style == "siesta":
         copy_pp_files(output, fp_pp_path, fp_pp_files)
     for si in range(numb_sys):
-        sys_dir = os.path.join(output, "system.%03d" % si)
+        sys_dir = os.path.join(output, "system.%03d" % si)  # noqa: UP031
         if verbose:
             print("# working on " + sys_dir)
         for tt, rr in zip(sys_tasks[si], sys_tasks_record[si]):
             # copy poscar
             source_path = os.path.join((f"iter.{rr.split()[1]}/02.fp"), rr.split()[9])
             source_file = os.path.join(source_path, "POSCAR")
-            target_path = os.path.join(sys_dir, "task.%06d" % sys_tasks_cc[si])
+            target_path = os.path.join(sys_dir, "task.%06d" % sys_tasks_cc[si])  # noqa: UP031
             sys_tasks_cc[si] += 1
             os.makedirs(target_path, exist_ok=True)
             target_file = os.path.join(target_path, "POSCAR")

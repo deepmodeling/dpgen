@@ -39,7 +39,7 @@ def stat_sys(target_folder, param_file="param.json", verbose=True, mute=False):
         )
         iter_tasks.sort()
         if verbose:
-            print("# check iter " + ii + " with %6d tasks" % len(iter_tasks))
+            print("# check iter " + ii + " with %6d tasks" % len(iter_tasks))  # noqa: UP031
         for jj in iter_tasks:
             sys_idx = int(os.path.basename(jj).split(".")[-2])
             sys_tasks_count[sys_idx] += 1
@@ -72,7 +72,7 @@ def stat_sys(target_folder, param_file="param.json", verbose=True, mute=False):
     for ii in sys_tasks_all:
         ii.sort()
     max_str_len = max([len(str(ii)) for ii in sys])
-    sys_fmt = "%%%ds   %%6d" % (max_str_len + 1)
+    sys_fmt = "%%%ds   %%6d" % (max_str_len + 1)  # noqa: UP031
     blank = max_str_len - 50
     str_blk = ""
     for ii in range(blank):

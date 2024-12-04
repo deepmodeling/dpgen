@@ -269,22 +269,22 @@ def make_vasp_static_incar(
     isif = 2
     ret = ""
     ret += "PREC=A\n"
-    ret += "ENCUT=%d\n" % ecut
+    ret += "ENCUT=%d\n" % ecut  # noqa: UP031
     ret += "# ISYM=0\n"
     ret += "ALGO=normal\n"
     ret += f"EDIFF={ediff:e}\n"
     ret += "EDIFFG=-0.01\n"
     ret += "LREAL=A\n"
-    ret += "NPAR=%d\n" % npar
-    ret += "KPAR=%d\n" % kpar
+    ret += "NPAR=%d\n" % npar  # noqa: UP031
+    ret += "KPAR=%d\n" % kpar  # noqa: UP031
     ret += "\n"
-    ret += "ISMEAR=%d\n" % ismear
+    ret += "ISMEAR=%d\n" % ismear  # noqa: UP031
     ret += f"SIGMA={sigma:f}\n"
     ret += "\n"
     ret += "ISTART=0\n"
     ret += "ICHARG=2\n"
     ret += "NELMIN=6\n"
-    ret += "ISIF=%d\n" % isif
+    ret += "ISIF=%d\n" % isif  # noqa: UP031
     ret += "IBRION=-1\n"
     ret += "\n"
     ret += "NSW=0\n"
@@ -319,23 +319,23 @@ def make_vasp_relax_incar(
     isif = _compute_isif(relax_ion, relax_shape, relax_volume)
     ret = ""
     ret += "PREC=A\n"
-    ret += "ENCUT=%d\n" % ecut
+    ret += "ENCUT=%d\n" % ecut  # noqa: UP031
     ret += "# ISYM=0\n"
     ret += "ALGO=normal\n"
     ret += f"EDIFF={ediff:e}\n"
     ret += "EDIFFG=-0.01\n"
     ret += "LREAL=A\n"
-    ret += "NPAR=%d\n" % npar
-    ret += "KPAR=%d\n" % kpar
+    ret += "NPAR=%d\n" % npar  # noqa: UP031
+    ret += "KPAR=%d\n" % kpar  # noqa: UP031
     ret += "\n"
-    ret += "ISMEAR=%d\n" % ismear
+    ret += "ISMEAR=%d\n" % ismear  # noqa: UP031
     ret += f"SIGMA={sigma:f}\n"
     ret += "\n"
     ret += "ISTART=0\n"
     ret += "ICHARG=2\n"
     ret += "NELM=100\n"
     ret += "NELMIN=6\n"
-    ret += "ISIF=%d\n" % isif
+    ret += "ISIF=%d\n" % isif  # noqa: UP031
     ret += "IBRION=2\n"
     ret += "\n"
     ret += "NSW=50\n"
@@ -360,22 +360,22 @@ def make_vasp_phonon_incar(
     isif = 2
     ret = ""
     ret += "PREC=A\n"
-    ret += "ENCUT=%d\n" % ecut
+    ret += "ENCUT=%d\n" % ecut  # noqa: UP031
     ret += "# ISYM=0\n"
     ret += "ALGO=normal\n"
     ret += f"EDIFF={ediff:e}\n"
     ret += "EDIFFG=-0.01\n"
     ret += "LREAL=A\n"
     # ret += 'NPAR=%d\n' % npar
-    ret += "KPAR=%d\n" % kpar
+    ret += "KPAR=%d\n" % kpar  # noqa: UP031
     ret += "\n"
-    ret += "ISMEAR=%d\n" % ismear
+    ret += "ISMEAR=%d\n" % ismear  # noqa: UP031
     ret += f"SIGMA={sigma:f}\n"
     ret += "\n"
     ret += "ISTART=0\n"
     ret += "ICHARG=2\n"
     ret += "NELMIN=4\n"
-    ret += "ISIF=%d\n" % isif
+    ret += "ISIF=%d\n" % isif  # noqa: UP031
     ret += "IBRION=8\n"
     ret += "\n"
     ret += "NSW=1\n"
@@ -478,7 +478,7 @@ def _make_vasp_kp_gamma(kpoints):
     ret += "Automatic mesh\n"
     ret += "0\n"
     ret += "Gamma\n"
-    ret += "%d %d %d\n" % (kpoints[0], kpoints[1], kpoints[2])
+    ret += "%d %d %d\n" % (kpoints[0], kpoints[1], kpoints[2])  # noqa: UP031
     ret += "0  0  0\n"
     return ret
 
@@ -488,7 +488,7 @@ def _make_vasp_kp_mp(kpoints):
     ret += "K-Points\n"
     ret += " 0\n"
     ret += "Monkhorst Pack\n"
-    ret += "%d %d %d\n" % (kpoints[0], kpoints[1], kpoints[2])
+    ret += "%d %d %d\n" % (kpoints[0], kpoints[1], kpoints[2])  # noqa: UP031
     ret += " 0  0  0\n"
     return ret
 
