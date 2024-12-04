@@ -206,7 +206,7 @@ def _make_fake_fp(iter_idx, sys_idx, nframes):
         dirname = os.path.join(
             "iter.%06d" % iter_idx,  # noqa: UP031
             "02.fp",
-            "task.%03d.%06d" % (sys_idx, ii),  # noqa: UP031  # noqa: UP031
+            "task.%03d.%06d" % (sys_idx, ii),  # noqa: UP031
         )
         os.makedirs(dirname, exist_ok=True)
     dirname = os.path.join("iter.%06d" % iter_idx, "02.fp", "data.%03d" % sys_idx)  # noqa: UP031  # noqa: UP031
@@ -549,7 +549,7 @@ class TestMakeTrain(unittest.TestCase):
                         "00.train",
                         "%03d" % ii,  # noqa: UP031
                         "old",
-                        "init.pb",  # noqa: UP031
+                        "init.pb",
                     )
                 )
             )
@@ -604,7 +604,7 @@ class TestMakeTrain(unittest.TestCase):
                         "00.train",
                         "%03d" % ii,  # noqa: UP031
                         "old",
-                        "init.pb",  # noqa: UP031
+                        "init.pb",
                     )
                 )
             )

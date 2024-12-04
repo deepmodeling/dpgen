@@ -265,7 +265,7 @@ def _make_fake_md(idx, md_descript, atom_types, type_map, ele_temp=None):
             task_dir = os.path.join(
                 "iter.%06d" % idx,  # noqa: UP031
                 "01.model_devi",
-                "task.%03d.%06d" % (sidx, midx),  # noqa: UP031  # noqa: UP031
+                "task.%03d.%06d" % (sidx, midx),  # noqa: UP031
             )
             os.makedirs(os.path.join(task_dir, "traj"), exist_ok=True)
             for ii in range(nframes):
@@ -306,7 +306,7 @@ def _make_fake_md_merge_traj(idx, md_descript, atom_types, type_map, ele_temp=No
             task_dir = os.path.join(
                 "iter.%06d" % idx,  # noqa: UP031
                 "01.model_devi",
-                "task.%03d.%06d" % (sidx, midx),  # noqa: UP031  # noqa: UP031
+                "task.%03d.%06d" % (sidx, midx),  # noqa: UP031
             )
             cwd = os.getcwd()
             os.makedirs(task_dir, exist_ok=True)
@@ -851,7 +851,7 @@ class TestMakeFPAMBERDiff(unittest.TestCase):
         task_dir = os.path.join(
             "iter.%06d" % 0,  # noqa: UP031
             "01.model_devi",
-            "task.%03d.%06d" % (0, 0),  # noqa: UP031  # noqa: UP031
+            "task.%03d.%06d" % (0, 0),  # noqa: UP031
         )
         os.makedirs(task_dir, exist_ok=True)
         with open(os.path.join(task_dir, "rc.mdout"), "w") as f:

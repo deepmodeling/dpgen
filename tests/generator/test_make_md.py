@@ -701,7 +701,7 @@ class TestMakeMDAMBER(unittest.TestCase):
                 "iter.%06d" % 0,  # noqa: UP031
                 "01.model_devi",
                 "task.000.000000",
-                "rc.rst7",  # noqa: UP031
+                "rc.rst7",
             ),
             "w",
         ) as fw:
@@ -715,7 +715,7 @@ class TestMakeMDAMBER(unittest.TestCase):
                 "iter.%06d" % 1,  # noqa: UP031
                 "01.model_devi",
                 "task.000.000000",
-                "init.rst7",  # noqa: UP031
+                "init.rst7",
             )
         ) as f:
             assert f.read() == restart_text
