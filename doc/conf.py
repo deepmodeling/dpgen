@@ -19,7 +19,7 @@ from datetime import date
 # -- Project information -----------------------------------------------------
 
 project = "DP-GEN"
-copyright = "2020-%d, DeepModeling" % date.today().year
+copyright = "2020-%d, DeepModeling" % date.today().year  # noqa: UP031
 author = "DeepModeling"
 
 

@@ -74,7 +74,7 @@ def create_disturbs_ase(
             dpos[i, :] = dr
             if write_d:
                 dnorm = np.linalg.norm(dr)
-                fw.write("%d\t%f\t%f\t%f\t%f\n" % (i + 1, dr[0], dr[1], dr[2], dnorm))
+                fw.write("%d\t%f\t%f\t%f\t%f\n" % (i + 1, dr[0], dr[1], dr[2], dnorm))  # noqa: UP031
                 fw.flush()
         pos = pos0 + dpos
         atoms_d.set_positions(pos)
@@ -136,7 +136,7 @@ def create_disturbs_ase_dev(
             dpos[i, :] = dr
             if write_d:
                 dnorm = np.linalg.norm(dr)
-                fw.write("%d\t%f\t%f\t%f\t%f\n" % (i + 1, dr[0], dr[1], dr[2], dnorm))
+                fw.write("%d\t%f\t%f\t%f\t%f\n" % (i + 1, dr[0], dr[1], dr[2], dnorm))  # noqa: UP031
                 fw.flush()
 
         # random flux for volumes
@@ -207,7 +207,7 @@ def create_disturbs_abacus_dev(
             dpos[i, :] = dr
             if write_d:
                 dnorm = np.linalg.norm(dr)
-                fw.write("%d\t%f\t%f\t%f\t%f\n" % (i + 1, dr[0], dr[1], dr[2], dnorm))
+                fw.write("%d\t%f\t%f\t%f\t%f\n" % (i + 1, dr[0], dr[1], dr[2], dnorm))  # noqa: UP031
                 fw.flush()
 
         # random flux for volumes

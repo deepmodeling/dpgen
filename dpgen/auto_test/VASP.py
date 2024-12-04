@@ -112,7 +112,7 @@ class VASP(Task):
                     isif = 2
                     if not ("NSW" in incar and incar.get("NSW") == nsw):
                         dlog.info(
-                            "%s setting NSW to %d"
+                            "%s setting NSW to %d"  # noqa: UP031
                             % (self.make_input_file.__name__, nsw)
                         )
                         incar["NSW"] = nsw
@@ -121,7 +121,7 @@ class VASP(Task):
 
                 if not ("ISIF" in incar and incar.get("ISIF") == isif):
                     dlog.info(
-                        "%s setting ISIF to %d" % (self.make_input_file.__name__, isif)
+                        "%s setting ISIF to %d" % (self.make_input_file.__name__, isif)  # noqa: UP031
                     )
                     incar["ISIF"] = isif
 
@@ -129,7 +129,7 @@ class VASP(Task):
                 nsw = 0
                 if not ("NSW" in incar and incar.get("NSW") == nsw):
                     dlog.info(
-                        "%s setting NSW to %d" % (self.make_input_file.__name__, nsw)
+                        "%s setting NSW to %d" % (self.make_input_file.__name__, nsw)  # noqa: UP031
                     )
                     incar["NSW"] = nsw
 

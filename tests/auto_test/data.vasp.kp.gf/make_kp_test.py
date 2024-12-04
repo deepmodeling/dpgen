@@ -22,5 +22,5 @@ def make_one(out_dir):
 
 ntest = 30
 for ii in range(ntest):
-    out_dir = "test.%03d" % ii
+    out_dir = "test.%03d" % ii  # noqa: UP031
     make_one(out_dir)

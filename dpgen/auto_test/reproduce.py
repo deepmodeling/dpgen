@@ -60,7 +60,7 @@ def make_repro(
         for jj in range(nframe):
             if property_type == "interstitial":
                 print(insert_element, file=fout_element)
-            output_task = os.path.join(path_to_work, "task.%06d" % task_num)
+            output_task = os.path.join(path_to_work, "task.%06d" % task_num)  # noqa: UP031
             task_num += 1
             task_list.append(output_task)
             os.makedirs(output_task, exist_ok=True)

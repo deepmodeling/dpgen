@@ -164,12 +164,12 @@ def ase2lammpsdata(atoms, typeids=None, fout="out.lmp"):
 
     # write number of atoms
     natoms = atoms.get_global_number_of_atoms()
-    fw.write("%d atoms\n" % natoms)
+    fw.write("%d atoms\n" % natoms)  # noqa: UP031
     fw.write("\n")
 
     # write number of types
     ntypes = get_atoms_ntypes(atoms)
-    fw.write("%d atom types\n" % ntypes)
+    fw.write("%d atom types\n" % ntypes)  # noqa: UP031
     fw.write("\n")
 
     # write cell information
@@ -196,7 +196,7 @@ def ase2lammpsdata(atoms, typeids=None, fout="out.lmp"):
     fw.write("Masses\n")
     fw.write("\n")
     for i in range(ntypes):
-        fw.write("%d\t%f\n" % (i + 1, masses[i]))
+        fw.write("%d\t%f\n" % (i + 1, masses[i]))  # noqa: UP031
         fw.flush()
     fw.write("\n")
 
@@ -219,7 +219,7 @@ def ase2lammpsdata(atoms, typeids=None, fout="out.lmp"):
         # typeid = ase.data.atomic_numbers[cs]  # typeid as their atomic
         # numbers
         fw.write(
-            "%d\t%d\t%f\t%f\t%f\n" % (i + 1, typeid, pos[i][0], pos[i][1], pos[i][2])
+            "%d\t%d\t%f\t%f\t%f\n" % (i + 1, typeid, pos[i][0], pos[i][1], pos[i][2])  # noqa: UP031
         )
         fw.flush()
     fw.close()
