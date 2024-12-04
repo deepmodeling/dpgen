@@ -37,23 +37,23 @@ from .context import (
 
 
 def _make_fake_models(idx, numb_models):
-    train_dir = os.path.join("iter.%06d" % idx, "00.train")
+    train_dir = os.path.join("iter.%06d" % idx, "00.train")  # noqa: UP031
     os.makedirs(train_dir, exist_ok=True)
     pwd = os.getcwd()
     os.chdir(train_dir)
     for ii in range(numb_models):
-        os.makedirs("%03d" % ii, exist_ok=True)
-        with open(os.path.join("%03d" % ii, "forzen_model.pb"), "w") as fp:
+        os.makedirs("%03d" % ii, exist_ok=True)  # noqa: UP031
+        with open(os.path.join("%03d" % ii, "forzen_model.pb"), "w") as fp:  # noqa: UP031
             fp.write(str(ii))
-        if not os.path.isfile("graph.%03d.pb" % ii):
+        if not os.path.isfile("graph.%03d.pb" % ii):  # noqa: UP031
             os.symlink(
-                os.path.join("%03d" % ii, "forzen_model.pb"), "graph.%03d.pb" % ii
+                os.path.join("%03d" % ii, "forzen_model.pb"), "graph.%03d.pb" % ii  # noqa: UP031  # noqa: UP031
             )
     os.chdir(pwd)
 
 
 def _check_confs(testCase, idx, jdata):
-    md_dir = os.path.join("iter.%06d" % idx, "01.model_devi")
+    md_dir = os.path.join("iter.%06d" % idx, "01.model_devi")  # noqa: UP031
     tasks = glob.glob(os.path.join(md_dir, "task.*"))
     tasks.sort()
     cur_job = jdata["model_devi_jobs"][idx]
@@ -81,8 +81,8 @@ def _check_confs(testCase, idx, jdata):
 
 
 def _check_pb(testCase, idx):
-    md_dir = os.path.join("iter.%06d" % idx, "01.model_devi")
-    tr_dir = os.path.join("iter.%06d" % idx, "00.train")
+    md_dir = os.path.join("iter.%06d" % idx, "01.model_devi")  # noqa: UP031
+    tr_dir = os.path.join("iter.%06d" % idx, "00.train")  # noqa: UP031
     md_pb = glob.glob(os.path.join(md_dir, "grapb*pb"))
     tr_pb = glob.glob(os.path.join(tr_dir, "grapb*pb"))
     md_pb.sort()
@@ -92,7 +92,7 @@ def _check_pb(testCase, idx):
 
 
 def _check_traj_dir(testCase, idx):
-    md_dir = os.path.join("iter.%06d" % idx, "01.model_devi")
+    md_dir = os.path.join("iter.%06d" % idx, "01.model_devi")  # noqa: UP031
     tasks = glob.glob(os.path.join(md_dir, "task.*"))
     tasks.sort()
     for ii in tasks:
@@ -110,7 +110,7 @@ def _get_lammps_pt(lmp_input):
 
 
 def _check_pt(testCase, idx, jdata):
-    md_dir = os.path.join("iter.%06d" % idx, "01.model_devi")
+    md_dir = os.path.join("iter.%06d" % idx, "01.model_devi")  # noqa: UP031
     tasks = glob.glob(os.path.join(md_dir, "task.*"))
     tasks.sort()
     cur_job = jdata["model_devi_jobs"][idx]
@@ -132,7 +132,7 @@ def _check_pt(testCase, idx, jdata):
         for ss in ii:
             for tt in temps:
                 for pp in press:
-                    task_dir = os.path.join(md_dir, "task.%03d.%06d" % (sidx, count))
+                    task_dir = os.path.join(md_dir, "task.%03d.%06d" % (sidx, count))  # noqa: UP031
                     lt, lp = _get_lammps_pt(os.path.join(task_dir, "input.lammps"))
                     testCase.assertAlmostEqual(lt, tt)
                     testCase.assertAlmostEqual(lp, pp)
@@ -362,7 +362,7 @@ class TestMakeModelDeviRevMat(unittest.TestCase):
         _check_confs(self, 0, jdata)
         _check_traj_dir(self, 0)
         # check the first task
-        md_dir = os.path.join("iter.%06d" % 0, "01.model_devi")
+        md_dir = os.path.join("iter.%06d" % 0, "01.model_devi")  # noqa: UP031
         tasks = glob.glob(os.path.join(md_dir, "task.*"))
         tasks.sort()
         # each system contains 2 frames
@@ -486,7 +486,7 @@ class TestMakeModelDeviRevMat(unittest.TestCase):
         _check_confs(self, 0, jdata)
         _check_traj_dir(self, 0)
         # check the first task
-        md_dir = os.path.join("iter.%06d" % 0, "01.model_devi")
+        md_dir = os.path.join("iter.%06d" % 0, "01.model_devi")  # noqa: UP031
         tasks = glob.glob(os.path.join(md_dir, "task.*"))
         # 4 accounts for 2 systems each with 2 frames
         self.assertEqual(len(tasks), (4))
@@ -697,7 +697,7 @@ class TestMakeMDAMBER(unittest.TestCase):
         restart_text = "This is the fake restart file to test `restart_from_iter`"
         with open(
             os.path.join(
-                "iter.%06d" % 0, "01.model_devi", "task.000.000000", "rc.rst7"
+                "iter.%06d" % 0, "01.model_devi", "task.000.000000", "rc.rst7"  # noqa: UP031
             ),
             "w",
         ) as fw:
@@ -708,13 +708,13 @@ class TestMakeMDAMBER(unittest.TestCase):
         self._check_input(1)
         with open(
             os.path.join(
-                "iter.%06d" % 1, "01.model_devi", "task.000.000000", "init.rst7"
+                "iter.%06d" % 1, "01.model_devi", "task.000.000000", "init.rst7"  # noqa: UP031
             )
         ) as f:
             assert f.read() == restart_text
 
     def _check_input(self, iter_idx: int):
-        md_dir = os.path.join("iter.%06d" % iter_idx, "01.model_devi")
+        md_dir = os.path.join("iter.%06d" % iter_idx, "01.model_devi")  # noqa: UP031
         assert os.path.isfile(os.path.join(md_dir, "init0.mdin"))
         assert os.path.isfile(os.path.join(md_dir, "qmmm0.parm7"))
         tasks = glob.glob(os.path.join(md_dir, "task.*"))
