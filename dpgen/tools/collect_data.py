@@ -31,7 +31,7 @@ def collect_data(target_folder, param_file, output, verbose=True):
     sys = jdata["sys_configs"]
     if verbose:
         max_str_len = max([len(str(ii)) for ii in sys])
-        ptr_fmt = "%%%ds   %%6d" % (max_str_len + 5)
+        ptr_fmt = "%%%ds   %%6d" % (max_str_len + 5)  # noqa: UP031
     # collect systems from iter dirs
     coll_sys = [[] for ii in sys]
     numb_sys = len(sys)
@@ -50,7 +50,7 @@ def collect_data(target_folder, param_file, output, verbose=True):
         if len(ii) == 0:
             continue
         # link iter data dirs
-        out_sys_path = os.path.join(output, "system.%03d" % idx)
+        out_sys_path = os.path.join(output, "system.%03d" % idx)  # noqa: UP031
         os.makedirs(out_sys_path, exist_ok=True)
         cwd_ = os.getcwd()
         os.chdir(out_sys_path)

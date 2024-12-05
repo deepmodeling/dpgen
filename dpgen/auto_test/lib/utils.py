@@ -20,7 +20,7 @@ def create_path(path):
         dirname = os.path.dirname(path)
         counter = 0
         while True:
-            bk_dirname = dirname + ".bk%03d" % counter
+            bk_dirname = dirname + ".bk%03d" % counter  # noqa: UP031
             if not os.path.isdir(bk_dirname):
                 shutil.move(dirname, bk_dirname)
                 break

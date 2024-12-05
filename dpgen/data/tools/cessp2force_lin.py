@@ -162,7 +162,7 @@ def process_outcar_file_v5_dev(
                             fw.write(f" {data[i][1][j]}")
                     fw.write("\n")
                     fw.write(
-                        "## force file generated from file %s config %d\n"
+                        "## force file generated from file %s config %d\n"  # noqa: UP031
                         % (outcars[i], count)
                     )
                     fw.write(f"#X {box_x[0]:13.8f} {box_x[1]:13.8f} {box_x[2]:13.8f}\n")
@@ -179,7 +179,7 @@ def process_outcar_file_v5_dev(
                     fw.flush()
                     for adata in atom_data:
                         fw.write(
-                            "%d %11.7g %11.7g %11.7g %11.7g %11.7g %11.7g\n"
+                            "%d %11.7g %11.7g %11.7g %11.7g %11.7g %11.7g\n"  # noqa: UP031
                             % (
                                 adata[0],
                                 adata[1],

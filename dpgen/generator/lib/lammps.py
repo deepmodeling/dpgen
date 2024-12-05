@@ -49,7 +49,7 @@ def make_lammps_input(
         raise RuntimeError(
             "the frame style ele_temp and atom style ele_temp should not be set at the same time"
         )
-    ret = "variable        NSTEPS          equal %d\n" % nsteps
+    ret = "variable        NSTEPS          equal %d\n" % nsteps  # noqa: UP031
     if nbeads is not None:
         if nbeads <= 0:
             raise ValueError(
@@ -58,11 +58,11 @@ def make_lammps_input(
         power = 1
         while power < nbeads:
             power *= 10
-        ret += "variable        ibead           uloop %d pad\n" % (power - 1)
+        ret += "variable        ibead           uloop %d pad\n" % (power - 1)  # noqa: UP031
     if nbeads is not None:
         ret += "atom_modify        map yes\n"
-    ret += "variable        THERMO_FREQ     equal %d\n" % trj_freq
-    ret += "variable        DUMP_FREQ       equal %d\n" % trj_freq
+    ret += "variable        THERMO_FREQ     equal %d\n" % trj_freq  # noqa: UP031
+    ret += "variable        DUMP_FREQ       equal %d\n" % trj_freq  # noqa: UP031
     ret += f"variable        TEMP            equal {temp:f}\n"
     if nbeads is not None:
         ret += "variable        TEMP_NBEADS            equal %f\n" % (temp * nbeads)
@@ -83,7 +83,7 @@ def make_lammps_input(
     ret += "\n"
     ret += "neighbor        1.0 bin\n"
     if neidelay is not None:
-        ret += "neigh_modify    delay %d\n" % neidelay
+        ret += "neigh_modify    delay %d\n" % neidelay  # noqa: UP031
     ret += "\n"
     ret += "box          tilt large\n"
     if nbeads is None:
@@ -92,7 +92,7 @@ def make_lammps_input(
         ret += f'if "${{restart}} > 0" then "read_restart dpgen.restart${{ibead}}.*" else "read_data {conf_file}"\n'
     ret += "change_box   all triclinic\n"
     for jj in range(len(mass_map)):
-        ret += "mass            %d %f\n" % (jj + 1, mass_map[jj])
+        ret += "mass            %d %f\n" % (jj + 1, mass_map[jj])  # noqa: UP031
     graph_list = ""
     for ii in graphs:
         graph_list += ii + " "
@@ -141,12 +141,12 @@ def make_lammps_input(
     if pka_e is None:
         if nbeads is None:
             ret += (
-                'if "${restart} == 0" then "velocity        all create ${TEMP} %d"'
+                'if "${restart} == 0" then "velocity        all create ${TEMP} %d"'  # noqa: UP031
                 % (random.randrange(max_seed - 1) + 1)
             )
         else:
             ret += (
-                'if "${restart} == 0" then "velocity        all create ${TEMP_NBEADS} %d"'
+                'if "${restart} == 0" then "velocity        all create ${TEMP_NBEADS} %d"'  # noqa: UP031
                 % (random.randrange(max_seed - 1) + 1)
             )
     else:

@@ -52,6 +52,6 @@ if __name__ == "__main__":
     if not os.path.isdir("traj"):
         os.mkdir("traj")
     for i in range(system.get_nframes()):
-        system[i].to_gromacs_gro("traj/%d.gromacstrj" % (trj_freq * i))
+        system[i].to_gromacs_gro("traj/%d.gromacstrj" % (trj_freq * i))  # noqa: UP031
     models = [DP(f"../graph.{ii:03}.pb") for ii in range(4)]
     write_model_devi_out(system, models, "model_devi.out", trj_freq)

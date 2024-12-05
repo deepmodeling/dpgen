@@ -20,8 +20,8 @@ def _make_pwscf_01_runctrl(sys_data, ecut, ediff, smearing, degauss):
     ret += "/\n"
     ret += "&system\n"
     ret += "ibrav= 0,\n"
-    ret += "nat  = %d,\n" % tot_natoms
-    ret += "ntyp = %d,\n" % ntypes
+    ret += "nat  = %d,\n" % tot_natoms  # noqa: UP031
+    ret += "ntyp = %d,\n" % ntypes  # noqa: UP031
     ret += "vdw_corr = 'TS',\n"
     ret += f"ecutwfc = {ecut:f},\n"
     ret += f"ts_vdw_econv_thr={ediff:e},\n"
@@ -50,7 +50,7 @@ def _make_pwscf_02_species(sys_data, pps):
     assert ntypes == len(atom_masses)
     assert ntypes == len(pps)
     for ii in range(ntypes):
-        ret += "%s %d %s\n" % (atom_names[ii], atom_masses[ii], pps[ii])
+        ret += "%s %d %s\n" % (atom_names[ii], atom_masses[ii], pps[ii])  # noqa: UP031
     return ret
 
 
@@ -95,9 +95,9 @@ def _make_pwscf_04_kpoints(sys_data, kspacing):
     ret = ""
     ret += "K_POINTS { automatic }\n"
     for ii in range(3):
-        ret += "%d " % kpoints[ii]
+        ret += "%d " % kpoints[ii]  # noqa: UP031
     for ii in range(3):
-        ret += "%d " % _kshift(kpoints[ii])
+        ret += "%d " % _kshift(kpoints[ii])  # noqa: UP031
     ret += "\n"
     return ret
 

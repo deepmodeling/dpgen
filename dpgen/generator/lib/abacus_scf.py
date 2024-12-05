@@ -65,7 +65,7 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
             assert fp_params["scf_nmax"] >= 0 and isinstance(
                 fp_params["scf_nmax"], int
             ), "'scf_nmax' should be a positive integer."
-            ret += "scf_nmax %d\n" % fp_params["scf_nmax"]
+            ret += "scf_nmax %d\n" % fp_params["scf_nmax"]  # noqa: UP031
         elif key == "basis_type":
             assert fp_params["basis_type"] in [
                 "pw",
@@ -81,7 +81,7 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
             assert (
                 fp_params["gamma_only"] == 0 or fp_params["gamma_only"] == 1
             ), "'gamma_only' should be either 0 or 1."
-            ret += "gamma_only %d\n" % fp_params["gamma_only"]
+            ret += "gamma_only %d\n" % fp_params["gamma_only"]  # noqa: UP031
         elif key == "mixing_type":
             assert fp_params["mixing_type"] in [
                 "plain",
@@ -103,13 +103,13 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
             assert (
                 fp_params["symmetry"] == 0 or fp_params["symmetry"] == 1
             ), "'symmetry' should be either 0 or 1."
-            ret += "symmetry %d\n" % fp_params["symmetry"]
+            ret += "symmetry %d\n" % fp_params["symmetry"]  # noqa: UP031
         elif key == "nbands":
             fp_params["nbands"] = int(fp_params["nbands"])
             assert fp_params["nbands"] > 0 and isinstance(
                 fp_params["nbands"], int
             ), "'nbands' should be a positive integer."
-            ret += "nbands %d\n" % fp_params["nbands"]
+            ret += "nbands %d\n" % fp_params["nbands"]  # noqa: UP031
         elif key == "nspin":
             fp_params["nspin"] = int(fp_params["nspin"])
             assert (
@@ -117,7 +117,7 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
                 or fp_params["nspin"] == 2
                 or fp_params["nspin"] == 4
             ), "'nspin' can anly take 1, 2 or 4"
-            ret += "nspin %d\n" % fp_params["nspin"]
+            ret += "nspin %d\n" % fp_params["nspin"]  # noqa: UP031
         elif key == "ks_solver":
             assert (
                 fp_params["ks_solver"]
@@ -157,14 +157,14 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
             assert (
                 fp_params["cal_force"] == 0 or fp_params["cal_force"] == 1
             ), "'cal_force' should be either 0 or 1."
-            ret += "cal_force %d\n" % fp_params["cal_force"]
+            ret += "cal_force %d\n" % fp_params["cal_force"]  # noqa: UP031
         elif key == "cal_stress":
             if isinstance(fp_params["cal_stress"], str):
                 fp_params["cal_stress"] = int(eval(fp_params["cal_stress"]))
             assert (
                 fp_params["cal_stress"] == 0 or fp_params["cal_stress"] == 1
             ), "'cal_stress' should be either 0 or 1."
-            ret += "cal_stress %d\n" % fp_params["cal_stress"]
+            ret += "cal_stress %d\n" % fp_params["cal_stress"]  # noqa: UP031
         # paras for deepks
         elif key == "deepks_out_labels":
             if isinstance(fp_params["deepks_out_labels"], str):
@@ -175,7 +175,7 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
                 fp_params["deepks_out_labels"] == 0
                 or fp_params["deepks_out_labels"] == 1
             ), "'deepks_out_labels' should be either 0 or 1."
-            ret += "deepks_out_labels %d\n" % fp_params["deepks_out_labels"]
+            ret += "deepks_out_labels %d\n" % fp_params["deepks_out_labels"]  # noqa: UP031
         elif key == "deepks_descriptor_lmax":
             fp_params["deepks_descriptor_lmax"] = int(
                 fp_params["deepks_descriptor_lmax"]
@@ -183,14 +183,14 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
             assert (
                 fp_params["deepks_descriptor_lmax"] >= 0
             ), "'deepks_descriptor_lmax' should be  a positive integer."
-            ret += "deepks_descriptor_lmax %d\n" % fp_params["deepks_descriptor_lmax"]
+            ret += "deepks_descriptor_lmax %d\n" % fp_params["deepks_descriptor_lmax"]  # noqa: UP031
         elif key == "deepks_scf":
             if isinstance(fp_params["deepks_scf"], str):
                 fp_params["deepks_scf"] = int(eval(fp_params["deepks_scf"]))
             assert (
                 fp_params["deepks_scf"] == 0 or fp_params["deepks_scf"] == 1
             ), "'deepks_scf' should be either 0 or 1."
-            ret += "deepks_scf %d\n" % fp_params["deepks_scf"]
+            ret += "deepks_scf %d\n" % fp_params["deepks_scf"]  # noqa: UP031
         elif key == "deepks_model":
             ret += "deepks_model {}\n".format(
                 os.path.join(
@@ -272,7 +272,7 @@ def make_abacus_scf_stru(
         ret += "0.0\n"
         ret += str(atom_numbs[iele]) + "\n"
         for iatom in range(atom_numbs[iele]):
-            ret += "%.12f %.12f %.12f %d %d %d\n" % (
+            ret += "%.12f %.12f %.12f %d %d %d\n" % (  # noqa: UP031
                 coord[natom_tot, 0],
                 coord[natom_tot, 1],
                 coord[natom_tot, 2],

@@ -333,7 +333,7 @@ def final_stru(abacus_path):
             if lines[-i][1:27] == "STEP OF MOLECULAR DYNAMICS":
                 max_step = int(lines[-i].split()[-1])
                 break
-        return "OUT.%s/STRU_MD_%d" % (suffix, max_step)
+        return "OUT.%s/STRU_MD_%d" % (suffix, max_step)  # noqa: UP031
     elif calculation == "scf":
         return "STRU"
     else:

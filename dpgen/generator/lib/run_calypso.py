@@ -80,7 +80,7 @@ def gen_structures(
             ftag.close()
             os.remove("step")
             fstep = open("step", "w")
-            fstep.write("%12s" % str(PickUpStep))
+            fstep.write("%12s" % str(PickUpStep))  # noqa: UP031
             fstep.close()
         else:
             PickUpStep = 1
@@ -103,24 +103,25 @@ def gen_structures(
 
             for pop in range(ii * int(popsize), (ii + 1) * int(popsize)):
                 try:
-                    os.mkdir("task.%03d" % pop)
+                    os.mkdir("task.%03d" % pop)  # noqa: UP031
                 except Exception:
-                    shutil.rmtree("task.%03d" % pop)
-                    os.mkdir("task.%03d" % pop)
+                    shutil.rmtree("task.%03d" % pop)  # noqa: UP031
+                    os.mkdir("task.%03d" % pop)  # noqa: UP031
                 shutil.copyfile(
                     "calypso_run_opt.py",
-                    os.path.join("task.%03d" % pop, "calypso_run_opt.py"),
+                    os.path.join("task.%03d" % pop, "calypso_run_opt.py"),  # noqa: UP031
                 )
                 shutil.copyfile(
                     "check_outcar.py",
-                    os.path.join("task.%03d" % pop, "check_outcar.py"),
+                    os.path.join("task.%03d" % pop, "check_outcar.py"),  # noqa: UP031
                 )
                 shutil.copyfile(
                     f"POSCAR_{str(pop - ii * int(popsize) + 1)}",
-                    os.path.join("task.%03d" % (pop), "POSCAR"),
+                    os.path.join("task.%03d" % (pop), "POSCAR"),  # noqa: UP031
                 )
                 shutil.copyfile(
-                    "input.dat", os.path.join("task.%03d" % pop, "input.dat")
+                    "input.dat",
+                    os.path.join("task.%03d" % pop, "input.dat"),  # noqa: UP031
                 )
             # for iii in range(1,popsize+1):
             #    shutil.copyfile('POSCAR_%s'%str(iii),os.path.join('task.%03d'%(iii-1),'POSCAR'))
@@ -166,25 +167,25 @@ def gen_structures(
                     os.path.join(sstep, f"POSCAR_{str(jjj + 1 - ii * int(popsize))}"),
                 )
                 shutil.copyfile(
-                    os.path.join("task.%03d" % (jjj), "OUTCAR"),
+                    os.path.join("task.%03d" % (jjj), "OUTCAR"),  # noqa: UP031
                     os.path.join(sstep, f"OUTCAR_{str(jjj + 1 - ii * int(popsize))}"),
                 )
                 shutil.copyfile(
-                    os.path.join("task.%03d" % (jjj), "CONTCAR"),
+                    os.path.join("task.%03d" % (jjj), "CONTCAR"),  # noqa: UP031
                     os.path.join(sstep, f"CONTCAR_{str(jjj + 1 - ii * int(popsize))}"),
                 )
                 # to run calypso directory
                 shutil.copyfile(
-                    os.path.join("task.%03d" % (jjj), "OUTCAR"),
+                    os.path.join("task.%03d" % (jjj), "OUTCAR"),  # noqa: UP031
                     f"OUTCAR_{str(jjj + 1 - ii * int(popsize))}",
                 )
                 shutil.copyfile(
-                    os.path.join("task.%03d" % (jjj), "CONTCAR"),
+                    os.path.join("task.%03d" % (jjj), "CONTCAR"),  # noqa: UP031
                     f"CONTCAR_{str(jjj + 1 - ii * int(popsize))}",
                 )
                 # to traj
                 shutil.copyfile(
-                    os.path.join("task.%03d" % (jjj), "traj.traj"),
+                    os.path.join("task.%03d" % (jjj), "traj.traj"),  # noqa: UP031
                     os.path.join("traj", f"{str(jjj + 1)}.traj"),
                 )
 
@@ -232,24 +233,25 @@ def gen_structures(
         for idx, name in enumerate(name_list):
             shutil.copyfile(name, "POSCAR_%s" % (idx + 1))
             try:
-                os.mkdir("task.%04d" % (idx + 1))
+                os.mkdir("task.%04d" % (idx + 1))  # noqa: UP031
             except Exception:
-                shutil.rmtree("task.%04d" % (idx + 1))
-                os.mkdir("task.%04d" % (idx + 1))
+                shutil.rmtree("task.%04d" % (idx + 1))  # noqa: UP031
+                os.mkdir("task.%04d" % (idx + 1))  # noqa: UP031
             shutil.copyfile(
                 "calypso_run_opt.py",
-                os.path.join("task.%04d" % (idx + 1), "calypso_run_opt.py"),
+                os.path.join("task.%04d" % (idx + 1), "calypso_run_opt.py"),  # noqa: UP031
             )
             shutil.copyfile(
                 "check_outcar.py",
-                os.path.join("task.%04d" % (idx + 1), "check_outcar.py"),
+                os.path.join("task.%04d" % (idx + 1), "check_outcar.py"),  # noqa: UP031
             )
             shutil.copyfile(
                 f"POSCAR_{str(idx + 1)}",
-                os.path.join("task.%04d" % (idx + 1), "POSCAR"),
+                os.path.join("task.%04d" % (idx + 1), "POSCAR"),  # noqa: UP031
             )
             shutil.copyfile(
-                "input.dat", os.path.join("task.%04d" % (idx + 1), "input.dat")
+                "input.dat",
+                os.path.join("task.%04d" % (idx + 1), "input.dat"),  # noqa: UP031
             )
 
         # sys.exit()
@@ -293,25 +295,25 @@ def gen_structures(
                 os.path.join("opt", f"POSCAR_{str(jjj + 1)}"),
             )
             shutil.copyfile(
-                os.path.join("task.%04d" % (jjj + 1), "OUTCAR"),
+                os.path.join("task.%04d" % (jjj + 1), "OUTCAR"),  # noqa: UP031
                 os.path.join("opt", f"OUTCAR_{str(jjj + 1)}"),
             )
             shutil.copyfile(
-                os.path.join("task.%04d" % (jjj + 1), "CONTCAR"),
+                os.path.join("task.%04d" % (jjj + 1), "CONTCAR"),  # noqa: UP031
                 os.path.join("opt", f"CONTCAR_{str(jjj + 1)}"),
             )
             # to run calypso directory
             shutil.copyfile(
-                os.path.join("task.%04d" % (jjj + 1), "OUTCAR"),
+                os.path.join("task.%04d" % (jjj + 1), "OUTCAR"),  # noqa: UP031
                 f"OUTCAR_{str(jjj + 1)}",
             )
             shutil.copyfile(
-                os.path.join("task.%04d" % (jjj + 1), "CONTCAR"),
+                os.path.join("task.%04d" % (jjj + 1), "CONTCAR"),  # noqa: UP031
                 f"CONTCAR_{str(jjj + 1)}",
             )
             # to traj
             shutil.copyfile(
-                os.path.join("task.%04d" % (jjj + 1), "traj.traj"),
+                os.path.join("task.%04d" % (jjj + 1), "traj.traj"),  # noqa: UP031
                 os.path.join("traj", f"{str(jjj + 1)}.traj"),
             )
 
@@ -338,7 +340,8 @@ def gen_main(iter_index, jdata, mdata, caly_run_opt_list, gen_idx):
     work_path = os.path.join(iter_name, model_devi_name)
 
     current_gen_path = os.path.join(
-        work_path, "%s.%03d" % (calypso_run_opt_name, int(gen_idx))
+        work_path,
+        "%s.%03d" % (calypso_run_opt_name, int(gen_idx)),  # noqa: UP031
     )
     if current_gen_path not in caly_run_opt_list:
         dlog.info(
@@ -404,7 +407,7 @@ def analysis(iter_index, jdata, calypso_model_devi_path):
             write_vasp(
                 os.path.join(
                     traj_pos_path,
-                    "%d.%03d.%03d.poscar" % (int(press_num), int(traj_num), int(idx)),
+                    "%d.%03d.%03d.poscar" % (int(press_num), int(traj_num), int(idx)),  # noqa: UP031
                 ),
                 traj,
             )
@@ -430,7 +433,7 @@ def analysis(iter_index, jdata, calypso_model_devi_path):
 
     split_lists = glob.glob(os.path.join(deepmd_data_path, "*"))
     for i, split_list in enumerate(split_lists):
-        strus_path = os.path.join(calypso_model_devi_path, "%03d.structures" % i)
+        strus_path = os.path.join(calypso_model_devi_path, "%03d.structures" % i)  # noqa: UP031
         if not os.path.exists(strus_path):
             shutil.copytree(split_list, strus_path)
         else:

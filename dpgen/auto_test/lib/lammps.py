@@ -181,7 +181,7 @@ def make_lammps_eval(conf, type_map, interaction, param):
     ret += "box         tilt large\n"
     ret += f"read_data   {conf}\n"
     for ii in range(len(type_map)):
-        ret += "mass            %d %.3f\n" % (ii + 1, Element(type_map_list[ii]).mass)
+        ret += "mass            %d %.3f\n" % (ii + 1, Element(type_map_list[ii]).mass)  # noqa: UP031
     ret += "neigh_modify    every 1 delay 0 check no\n"
     ret += interaction(param)
     ret += "compute         mype all pe\n"
@@ -239,7 +239,7 @@ def make_lammps_equi(
     ret += "box         tilt large\n"
     ret += f"read_data   {conf}\n"
     for ii in range(len(type_map)):
-        ret += "mass            %d %.3f\n" % (ii + 1, Element(type_map_list[ii]).mass)
+        ret += "mass            %d %.3f\n" % (ii + 1, Element(type_map_list[ii]).mass)  # noqa: UP031
     ret += "neigh_modify    every 1 delay 0 check no\n"
     ret += interaction(param)
     ret += "compute         mype all pe\n"
@@ -251,11 +251,11 @@ def make_lammps_equi(
     ret += "min_style       cg\n"
     if change_box:
         ret += "fix             1 all box/relax iso 0.0 \n"
-        ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)
+        ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)  # noqa: UP031
         ret += "fix             1 all box/relax aniso 0.0 \n"
-        ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)
+        ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)  # noqa: UP031
         ret += "fix             1 all box/relax tri 0.0 \n"
-    ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)
+    ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)  # noqa: UP031
     ret += "variable        N equal count(all)\n"
     ret += "variable        V equal vol\n"
     ret += 'variable        E equal "c_mype"\n'
@@ -296,7 +296,7 @@ def make_lammps_elastic(
     ret += "box         tilt large\n"
     ret += f"read_data   {conf}\n"
     for ii in range(len(type_map)):
-        ret += "mass            %d %.3f\n" % (ii + 1, Element(type_map_list[ii]).mass)
+        ret += "mass            %d %.3f\n" % (ii + 1, Element(type_map_list[ii]).mass)  # noqa: UP031
     ret += "neigh_modify    every 1 delay 0 check no\n"
     ret += interaction(param)
     ret += "compute         mype all pe\n"
@@ -306,7 +306,7 @@ def make_lammps_elastic(
     )
     ret += "dump            1 all custom 100 dump.relax id type xs ys zs fx fy fz\n"
     ret += "min_style       cg\n"
-    ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)
+    ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)  # noqa: UP031
     ret += "variable        N equal count(all)\n"
     ret += "variable        V equal vol\n"
     ret += 'variable        E equal "c_mype"\n'
@@ -361,7 +361,7 @@ def make_lammps_press_relax(
     ret += "box         tilt large\n"
     ret += f"read_data   {conf}\n"
     for ii in range(len(type_map)):
-        ret += "mass            %d %.3f\n" % (ii + 1, Element(type_map_list[ii]).mass)
+        ret += "mass            %d %.3f\n" % (ii + 1, Element(type_map_list[ii]).mass)  # noqa: UP031
     ret += "neigh_modify    every 1 delay 0 check no\n"
     ret += interaction(param)
     ret += "compute         mype all pe\n"
@@ -372,9 +372,9 @@ def make_lammps_press_relax(
     ret += "dump            1 all custom 100 dump.relax id type xs ys zs fx fy fz\n"
     ret += "min_style       cg\n"
     ret += "fix             1 all box/relax iso ${Px} \n"
-    ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)
+    ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)  # noqa: UP031
     ret += "fix             1 all box/relax aniso ${Px} \n"
-    ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)
+    ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)  # noqa: UP031
     ret += "variable        N equal count(all)\n"
     ret += "variable        V equal vol\n"
     ret += 'variable        E equal "c_mype"\n'
@@ -409,7 +409,7 @@ def make_lammps_phonon(
     ret += f"read_data   {conf}\n"
     ntypes = len(masses)
     for ii in range(ntypes):
-        ret += "mass            %d %f\n" % (ii + 1, masses[ii])
+        ret += "mass            %d %f\n" % (ii + 1, masses[ii])  # noqa: UP031
     ret += "neigh_modify    every 1 delay 0 check no\n"
     ret += interaction(param)
     return ret

@@ -124,7 +124,7 @@ def init_model_dp(iter_index, jdata, mdata):
         iter0_models += [os.path.abspath(ii) for ii in model_is]
     numb_models = jdata["numb_models"]
     assert numb_models == len(iter0_models), (
-        "training_iter0_model_path should be provided, and the number of models should be equal to %d"
+        "training_iter0_model_path should be provided, and the number of models should be equal to %d"  # noqa: UP031
         % numb_models
     )
     work_path = os.path.join(make_iter_name(iter_index), train_name)
@@ -553,7 +553,7 @@ def run_iter(param_file, machine_file):
         with open(record) as frec:
             for line in frec:
                 iter_rec = [int(x) for x in line.split()]
-        dlog.info("continue from iter %03d task %02d" % (iter_rec[0], iter_rec[1]))
+        dlog.info("continue from iter %03d task %02d" % (iter_rec[0], iter_rec[1]))  # noqa: UP031
 
     cont = True
     ii = -1
@@ -566,7 +566,7 @@ def run_iter(param_file, machine_file):
         for jj in range(numb_task):
             if ii * max_tasks + jj <= iter_rec[0] * max_tasks + iter_rec[1]:
                 continue
-            task_name = "task %02d" % jj
+            task_name = "task %02d" % jj  # noqa: UP031
             sepline(f"{iter_name} {task_name}", "-")
             jdata["model_devi_jobs"] = [{} for _ in range(ii + 1)]
             if ii == 0 and jj < 6 and (jj >= 3 or not jdata.get("init_data_sys", [])):
@@ -617,7 +617,7 @@ def run_iter(param_file, machine_file):
                 else:
                     post_fp(ii, jdata)
             else:
-                raise RuntimeError("unknown task %d, something wrong" % jj)
+                raise RuntimeError("unknown task %d, something wrong" % jj)  # noqa: UP031
             record_iter(record, ii, jj)
 
 

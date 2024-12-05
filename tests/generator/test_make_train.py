@@ -49,7 +49,7 @@ def _comp_sys_files(sys0, sys1):
 def _comp_init_data(testCase, iter_idx, init_data_prefix, init_data_sys):
     for ii in init_data_sys:
         sys0 = os.path.join(init_data_prefix, ii)
-        sys1 = os.path.join("iter.%06d" % iter_idx, "00.train", "data.init", ii)
+        sys1 = os.path.join("iter.%06d" % iter_idx, "00.train", "data.init", ii)  # noqa: UP031
         testCase.assertTrue(
             _comp_sys_files(sys0, sys1),
             f"systems {sys0} {sys1} are not identical",
@@ -58,7 +58,7 @@ def _comp_init_data(testCase, iter_idx, init_data_prefix, init_data_sys):
 
 def _check_numb_models(testCase, iter_idx, numb_models):
     models = glob.glob(
-        os.path.join("iter.%06d" % iter_idx, "00.train", "[0-9][0-9][0-9]")
+        os.path.join("iter.%06d" % iter_idx, "00.train", "[0-9][0-9][0-9]")  # noqa: UP031
     )
     testCase.assertTrue(len(models), numb_models)
 
@@ -80,7 +80,7 @@ def _check_model_inputs(testCase, iter_idx, jdata):
             init_batch_size.append(sys_batch_size[sys_idx])
     for kk in range(numb_models):
         with open(
-            os.path.join("iter.%06d" % iter_idx, "00.train", "%03d" % kk, train_param)
+            os.path.join("iter.%06d" % iter_idx, "00.train", "%03d" % kk, train_param)  # noqa: UP031  # noqa: UP031
         ) as fp:
             jdata0 = json.load(fp)
         # keys except 'systems', 'batch_size', 'seed' should be identical
@@ -136,7 +136,7 @@ def _check_model_inputs_v1(testCase, iter_idx, jdata, reuse=False):
             init_batch_size.append(sys_batch_size[sys_idx])
     for kk in range(numb_models):
         with open(
-            os.path.join("iter.%06d" % iter_idx, "00.train", "%03d" % kk, train_param)
+            os.path.join("iter.%06d" % iter_idx, "00.train", "%03d" % kk, train_param)  # noqa: UP031  # noqa: UP031
         ) as fp:
             jdata0 = json.load(fp)
         # keys except 'systems', 'batch_size', 'seed' should be identical
@@ -204,10 +204,12 @@ def _check_model_inputs_v1(testCase, iter_idx, jdata, reuse=False):
 def _make_fake_fp(iter_idx, sys_idx, nframes):
     for ii in range(nframes):
         dirname = os.path.join(
-            "iter.%06d" % iter_idx, "02.fp", "task.%03d.%06d" % (sys_idx, ii)
+            "iter.%06d" % iter_idx,  # noqa: UP031
+            "02.fp",
+            "task.%03d.%06d" % (sys_idx, ii),  # noqa: UP031
         )
         os.makedirs(dirname, exist_ok=True)
-    dirname = os.path.join("iter.%06d" % iter_idx, "02.fp", "data.%03d" % sys_idx)
+    dirname = os.path.join("iter.%06d" % iter_idx, "02.fp", "data.%03d" % sys_idx)  # noqa: UP031  # noqa: UP031
     os.makedirs(dirname, exist_ok=True)
     tmp_sys = dpdata.LabeledSystem("out_data_post_fp_vasp/02.fp/task.000.000000/OUTCAR")
     tmp_sys1 = tmp_sys.sub_system([0])
@@ -219,10 +221,10 @@ def _make_fake_fp(iter_idx, sys_idx, nframes):
 
 def _check_pb_link(testCase, iter_idx, numb_models):
     pwd = os.getcwd()
-    os.chdir(os.path.join("iter.%06d" % iter_idx, "00.train"))
+    os.chdir(os.path.join("iter.%06d" % iter_idx, "00.train"))  # noqa: UP031
     for ii in range(numb_models):
-        lnk = os.readlink("graph.%03d.pb" % ii)
-        testCase.assertEqual(lnk, os.path.join("%03d" % ii, "frozen_model.pb"))
+        lnk = os.readlink("graph.%03d.pb" % ii)  # noqa: UP031
+        testCase.assertEqual(lnk, os.path.join("%03d" % ii, "frozen_model.pb"))  # noqa: UP031
     os.chdir(pwd)
 
 
@@ -414,7 +416,7 @@ class TestMakeTrain(unittest.TestCase):
         )
         # check models inputs
         with open(
-            os.path.join("iter.%06d" % 1, "00.train", "%03d" % 0, "input.json")
+            os.path.join("iter.%06d" % 1, "00.train", "%03d" % 0, "input.json")  # noqa: UP031  # noqa: UP031
         ) as fp:
             jdata0 = json.load(fp)
         self.assertEqual(
@@ -484,7 +486,7 @@ class TestMakeTrain(unittest.TestCase):
         )
         # check models inputs
         with open(
-            os.path.join("iter.%06d" % 1, "00.train", "%03d" % 0, "input.json")
+            os.path.join("iter.%06d" % 1, "00.train", "%03d" % 0, "input.json")  # noqa: UP031  # noqa: UP031
         ) as fp:
             jdata0 = json.load(fp)
         self.assertEqual(
@@ -543,7 +545,11 @@ class TestMakeTrain(unittest.TestCase):
             self.assertTrue(
                 os.path.isfile(
                     os.path.join(
-                        "iter.000000", "00.train", "%03d" % ii, "old", "init.pb"
+                        "iter.000000",
+                        "00.train",
+                        "%03d" % ii,  # noqa: UP031
+                        "old",
+                        "init.pb",
                     )
                 )
             )
@@ -594,7 +600,11 @@ class TestMakeTrain(unittest.TestCase):
             self.assertTrue(
                 os.path.isfile(
                     os.path.join(
-                        "iter.000000", "00.train", "%03d" % ii, "old", "init.pb"
+                        "iter.000000",
+                        "00.train",
+                        "%03d" % ii,  # noqa: UP031
+                        "old",
+                        "init.pb",
                     )
                 )
             )

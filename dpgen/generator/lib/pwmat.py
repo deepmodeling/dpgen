@@ -12,7 +12,7 @@ def _reciprocal_box(box):
 
 def _make_pwmat_kp_mp(kpoints):
     ret = ""
-    ret += "%d %d %d 0 0 0 " % (kpoints[0], kpoints[1], kpoints[2])
+    ret += "%d %d %d 0 0 0 " % (kpoints[0], kpoints[1], kpoints[2])  # noqa: UP031
     return ret
 
 

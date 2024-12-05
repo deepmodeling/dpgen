@@ -198,7 +198,7 @@ class Surface(Property):
                 os.symlink(os.path.relpath(equi_contcar), POSCAR)
                 #           task_poscar = os.path.join(output, 'POSCAR')
                 for ii in range(len(all_slabs)):
-                    output_task = os.path.join(path_to_work, "task.%06d" % ii)
+                    output_task = os.path.join(path_to_work, "task.%06d" % ii)  # noqa: UP031
                     os.makedirs(output_task, exist_ok=True)
                     os.chdir(output_task)
                     for jj in [
@@ -213,9 +213,9 @@ class Surface(Property):
                             os.remove(jj)
                     task_list.append(output_task)
                     print(
-                        "# %03d generate " % ii,
+                        "# %03d generate " % ii,  # noqa: UP031
                         output_task,
-                        " \t %d atoms" % len(all_slabs[ii].sites),
+                        " \t %d atoms" % len(all_slabs[ii].sites),  # noqa: UP031
                     )
                     # make confs
                     all_slabs[ii].to("POSCAR.tmp", "POSCAR")
@@ -270,7 +270,7 @@ class Surface(Property):
                 evac = (task_result["energies"][-1] - equi_epa * natoms) / AA * Cf
 
                 miller_index = loadfn(os.path.join(ii, "miller.json"))
-                ptr_data += "%-25s     %7.3f    %8.3f %8.3f\n" % (
+                ptr_data += "%-25s     %7.3f    %8.3f %8.3f\n" % (  # noqa: UP031
                     str(miller_index) + "-" + structure_dir + ":",
                     evac,
                     epa,

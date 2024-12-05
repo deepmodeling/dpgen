@@ -18,7 +18,7 @@ def poscar_unit(latt):
     ret += f"{box[1][0]:.16f} {box[1][1]:.16f} {box[1][2]:.16f}\n"
     ret += f"{box[2][0]:.16f} {box[2][1]:.16f} {box[2][2]:.16f}\n"
     ret += "X\n"
-    ret += "%d\n" % numb_atoms()
+    ret += "%d\n" % numb_atoms()  # noqa: UP031
     ret += "Direct\n"
     ret += f"{0.0:.16f} {0.0:.16f} {0.0:.16f}\n"
     ret += f"{0.5:.16f} {0.5:.16f} {0.5:.16f}\n"
