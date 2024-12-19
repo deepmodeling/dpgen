@@ -474,7 +474,7 @@ def make_train_dp(iter_index, jdata, mdata):
             raise RuntimeError("invalid setting for use_ele_temp " + str(use_ele_temp))
     elif Version(mdata["deepmd_version"]) >= Version("2") and Version(
         mdata["deepmd_version"]
-    ) < Version("3"):
+    ) < Version("4"):
         # 2.x
         jinput["training"].setdefault("training_data", {})
         jinput["training"]["training_data"]["systems"] = init_data_sys
@@ -497,7 +497,7 @@ def make_train_dp(iter_index, jdata, mdata):
             raise RuntimeError("invalid setting for use_ele_temp " + str(use_ele_temp))
     else:
         raise RuntimeError(
-            "DP-GEN currently only supports for DeePMD-kit 1.x or 2.x version!"
+            "DP-GEN currently only supports for DeePMD-kit 1.x to 3.x version!"
         )
     # set training reuse model
     if auto_ratio:
@@ -522,7 +522,7 @@ def make_train_dp(iter_index, jdata, mdata):
                     1.0 - training_reuse_old_ratio,
                 )
             )
-        elif Version("2") <= Version(mdata["deepmd_version"]) < Version("3"):
+        elif Version("2") <= Version(mdata["deepmd_version"]) < Version("4"):
             jinput["training"]["training_data"]["auto_prob"] = (
                 "prob_sys_size; 0:%d:%f; %d:%d:%f"  # noqa: UP031
                 % (
@@ -571,7 +571,7 @@ def make_train_dp(iter_index, jdata, mdata):
         # set random seed for each model
         if Version(mdata["deepmd_version"]) >= Version("1") and Version(
             mdata["deepmd_version"]
-        ) < Version("3"):
+        ) < Version("4"):
             # 1.x
             if "descriptor" not in jinput["model"]:
                 pass
@@ -595,7 +595,7 @@ def make_train_dp(iter_index, jdata, mdata):
             jinput["training"]["seed"] = random.randrange(sys.maxsize) % (2**32)
         else:
             raise RuntimeError(
-                "DP-GEN currently only supports for DeePMD-kit 1.x or 2.x version!"
+                "DP-GEN currently only supports for DeePMD-kit 1.x to 3.x version!"
             )
         # set model activation function
         if model_devi_activation_func is not None:
@@ -785,7 +785,7 @@ def run_train_dp(iter_index, jdata, mdata):
     commands = []
     if Version(mdata["deepmd_version"]) >= Version("1") and Version(
         mdata["deepmd_version"]
-    ) < Version("3"):
+    ) < Version("4"):
         # 1.x
         ## Commands are like `dp train` and `dp freeze`
         ## train_command should not be None
@@ -818,7 +818,7 @@ def run_train_dp(iter_index, jdata, mdata):
             commands.append(f"{train_command} compress")
     else:
         raise RuntimeError(
-            "DP-GEN currently only supports for DeePMD-kit 1.x or 2.x version!"
+            "DP-GEN currently only supports for DeePMD-kit 1.x to 3.x version!"
         )
 
     # _tasks = [os.path.basename(ii) for ii in all_task]
@@ -1695,7 +1695,7 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
     # only support for deepmd v2.0
     if Version(mdata["deepmd_version"]) < Version("2.0"):
         raise RuntimeError(
-            "Only support deepmd-kit 2.x for model_devi_engine='gromacs'"
+            "Only support deepmd-kit v2 or above for model_devi_engine='gromacs'"
         )
     model_devi_jobs = jdata["model_devi_jobs"]
     if iter_index >= len(model_devi_jobs):
