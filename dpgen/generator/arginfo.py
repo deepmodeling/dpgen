@@ -297,8 +297,8 @@ def model_devi_jobs_args() -> list[Argument]:
     doc_taup = "Coupling time of barostat (ps)."
     doc_model_devi_f_trust_lo = "Lower bound of forces for the selection. If dict, should be set for each index in sys_idx, respectively."
     doc_model_devi_f_trust_hi = "Upper bound of forces for the selection. If dict, should be set for each index in sys_idx, respectively."
-    doc_model_devi_v_trust_lo = "Lower bound of virial for the selection. If dict, should be set for each index in sys_idx, respectively. Should be used with DeePMD-kit v2.x."
-    doc_model_devi_v_trust_hi = "Upper bound of virial for the selection. If dict, should be set for each index in sys_idx, respectively. Should be used with DeePMD-kit v2.x."
+    doc_model_devi_v_trust_lo = "Lower bound of virial for the selection. If dict, should be set for each index in sys_idx, respectively. Should be used with DeePMD-kit v2 or above."
+    doc_model_devi_v_trust_hi = "Upper bound of virial for the selection. If dict, should be set for each index in sys_idx, respectively. Should be used with DeePMD-kit v2 or above."
 
     args = [
         model_devi_jobs_template_args(),
@@ -351,8 +351,8 @@ def model_devi_lmp_args() -> list[Argument]:
     doc_model_devi_skip = "Number of structures skipped for fp in each MD."
     doc_model_devi_f_trust_lo = "Lower bound of forces for the selection. If list or dict, should be set for each index in sys_configs, respectively."
     doc_model_devi_f_trust_hi = "Upper bound of forces for the selection. If list or dict, should be set for each index in sys_configs, respectively."
-    doc_model_devi_v_trust_lo = "Lower bound of virial for the selection. If list or dict, should be set for each index in sys_configs, respectively. Should be used with DeePMD-kit v2.x."
-    doc_model_devi_v_trust_hi = "Upper bound of virial for the selection. If list or dict, should be set for each index in sys_configs, respectively. Should be used with DeePMD-kit v2.x."
+    doc_model_devi_v_trust_lo = "Lower bound of virial for the selection. If list or dict, should be set for each index in sys_configs, respectively. Should be used with DeePMD-kit v2 or above."
+    doc_model_devi_v_trust_hi = "Upper bound of virial for the selection. If list or dict, should be set for each index in sys_configs, respectively. Should be used with DeePMD-kit v2 or above."
     doc_model_devi_adapt_trust_lo = (
         "Adaptively determines the lower trust levels of force and virial. This option should be used together with model_devi_numb_candi_f, model_devi_numb_candi_v and optionally with model_devi_perc_candi_f and model_devi_perc_candi_v. dpgen will make two sets:\n\n\
 - 1. From the frames with force model deviation lower than model_devi_f_trust_hi, select max(model_devi_numb_candi_f, model_devi_perc_candi_f*n_frames) frames with largest force model deviation. \n\n\
