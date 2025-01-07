@@ -21,7 +21,10 @@ jobs:
     - name: Install dependencies
       run: uv pip install --system -e .[test]
     - name: Test
-      run: coverage run --source=./dpgen -m unittest -v && coverage report
+      run: |
+        # https://github.com/materialsproject/pymatgen/issues/4243#issuecomment-2573310051
+        unset CI
+        coverage run --source=./dpgen -m unittest -v && coverage report
     - uses: codecov/codecov-action@v5
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
