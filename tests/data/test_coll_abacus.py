@@ -22,9 +22,9 @@ class TestCollAbacus(unittest.TestCase):
         with open(abacus_param_file) as fp:
             jdata = json.load(fp)
         self.odir = out_dir_name(jdata)
-        assert os.path.isdir(
-            "out_data_02_md_abacus"
-        ), "out data for post fp vasp should exist"
+        assert os.path.isdir("out_data_02_md_abacus"), (
+            "out data for post fp vasp should exist"
+        )
         if os.path.isdir(self.odir):
             shutil.rmtree(self.odir)
         shutil.copytree("out_data_02_md_abacus", self.odir)

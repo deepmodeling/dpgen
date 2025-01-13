@@ -584,9 +584,9 @@ def make_abacus_relax(jdata, mdata):
                     raise RuntimeError("Cannot find any k-points information.")
                 else:
                     relax_kpt_path = jdata["relax_kpt"]
-                    assert os.path.isfile(
-                        relax_kpt_path
-                    ), f"file {relax_kpt_path} should exists"
+                    assert os.path.isfile(relax_kpt_path), (
+                        f"file {relax_kpt_path} should exists"
+                    )
             else:
                 gamma_param = {"k_points": [1, 1, 1, 0, 0, 0]}
                 ret_kpt = make_abacus_scf_kpt(gamma_param)
@@ -595,9 +595,9 @@ def make_abacus_relax(jdata, mdata):
                 raise RuntimeError("Cannot find any k-points information.")
             else:
                 relax_kpt_path = jdata["relax_kpt"]
-                assert os.path.isfile(
-                    relax_kpt_path
-                ), f"file {relax_kpt_path} should exists"
+                assert os.path.isfile(relax_kpt_path), (
+                    f"file {relax_kpt_path} should exists"
+                )
 
     out_dir = jdata["out_dir"]
     cwd = os.getcwd()
@@ -779,10 +779,10 @@ def pert_scaled(jdata):
             ### Loop over each perturbation
             for kk in range(pert_numb):
                 if fp_style == "vasp":
-                    pos_in = f"POSCAR{kk+1}.vasp"
+                    pos_in = f"POSCAR{kk + 1}.vasp"
                 elif fp_style == "abacus":
-                    pos_in = f"STRU{kk+1}.abacus"
-                dir_out = f"{kk+1:06d}"
+                    pos_in = f"STRU{kk + 1}.abacus"
+                dir_out = f"{kk + 1:06d}"
                 create_path(dir_out)
                 if fp_style == "vasp":
                     pos_out = os.path.join(dir_out, "POSCAR")
@@ -814,7 +814,7 @@ def pert_scaled(jdata):
                 pos_in = "POSCAR"
             elif fp_style == "abacus":
                 pos_in = "STRU"
-            dir_out = f"{kk+1:06d}"
+            dir_out = f"{kk + 1:06d}"
             create_path(dir_out)
             if fp_style == "vasp":
                 pos_out = os.path.join(dir_out, "POSCAR")
@@ -928,9 +928,9 @@ def make_abacus_md(jdata, mdata):
                     raise RuntimeError("Cannot find any k-points information.")
                 else:
                     md_kpt_path = jdata["md_kpt"]
-                    assert os.path.isfile(
-                        md_kpt_path
-                    ), f"file {md_kpt_path} should exists"
+                    assert os.path.isfile(md_kpt_path), (
+                        f"file {md_kpt_path} should exists"
+                    )
             else:
                 ret_kpt = make_abacus_scf_kpt({"k_points": [1, 1, 1, 0, 0, 0]})
         else:
