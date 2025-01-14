@@ -94,9 +94,9 @@ def read_stress_fmax():
     try:
         f = open("input.dat")
     except Exception:
-        assert os.path.exists(
-            "../input.dat"
-        ), f" now we are in {os.getcwd()}, do not find ../input.dat"
+        assert os.path.exists("../input.dat"), (
+            f" now we are in {os.getcwd()}, do not find ../input.dat"
+        )
         f = open("../input.dat")
     lines = f.readlines()
     f.close()

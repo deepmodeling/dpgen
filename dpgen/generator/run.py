@@ -2042,7 +2042,7 @@ def run_md_model_devi(iter_index, jdata, mdata):
         else:
             num_digits = np.ceil(np.log10(nbeads + 1)).astype(int)
             backward_files += [
-                f"model_devi{i+1:0{num_digits}d}.out" for i in range(nbeads)
+                f"model_devi{i + 1:0{num_digits}d}.out" for i in range(nbeads)
             ]
             backward_files += [f"log.lammps.{i:d}" for i in range(nbeads)]
         if model_devi_merge_traj:
@@ -2116,11 +2116,7 @@ def run_md_model_devi(iter_index, jdata, mdata):
         ]
     elif model_devi_engine == "amber":
         commands = [
-            (
-                "TASK=$(basename $(pwd)) && "
-                "SYS1=${TASK:5:3} && "
-                "SYS=$((10#$SYS1)) && "
-            )
+            ("TASK=$(basename $(pwd)) && SYS1=${TASK:5:3} && SYS=$((10#$SYS1)) && ")
             + model_devi_exec
             + (
                 " -O -p ../qmmm$SYS.parm7 -c init.rst7 -i ../init$SYS.mdin -o rc.mdout -r rc.rst7 -x rc.nc -inf rc.mdinfo -ref init.rst7"
@@ -2263,7 +2259,9 @@ def _read_model_devi_file(
         assert all(
             model_devi_content.shape[0] == model_devi_contents[0].shape[0]
             for model_devi_content in model_devi_contents
-        ), r"Not all beads generated the same number of lines in the model_devi${ibead}.out file. Check your pimd task carefully."
+        ), (
+            r"Not all beads generated the same number of lines in the model_devi${ibead}.out file. Check your pimd task carefully."
+        )
         last_step = model_devi_contents[0][-1, 0]
         for ibead in range(1, num_beads):
             model_devi_contents[ibead][:, 0] = model_devi_contents[ibead][
@@ -2286,7 +2284,7 @@ def _read_model_devi_file(
             for ibead in range(num_beads):
                 traj_files = glob.glob(
                     os.path.join(
-                        task_path, "traj", f"*lammpstrj{ibead+1:0{num_digits}d}"
+                        task_path, "traj", f"*lammpstrj{ibead + 1:0{num_digits}d}"
                     )
                 )
                 traj_files_sorted.append(
@@ -2302,7 +2300,9 @@ def _read_model_devi_file(
             assert all(
                 len(traj_list) == len(traj_files_sorted[0])
                 for traj_list in traj_files_sorted
-            ), "Not all beads generated the same number of frames. Check your pimd task carefully."
+            ), (
+                "Not all beads generated the same number of frames. Check your pimd task carefully."
+            )
             for ibead in range(num_beads):
                 for itraj in range(len(traj_files_sorted[0])):
                     base_path, original_filename = os.path.split(
@@ -2311,7 +2311,7 @@ def _read_model_devi_file(
                     frame_number = int(original_filename.split(".")[0])
                     new_filename = os.path.join(
                         base_path,
-                        f"{frame_number + ibead * (int(last_step)+1):d}.lammpstrj",
+                        f"{frame_number + ibead * (int(last_step) + 1):d}.lammpstrj",
                     )
                     os.rename(traj_files_sorted[ibead][itraj], new_filename)
     model_devi = np.loadtxt(os.path.join(task_path, "model_devi.out"))
@@ -3247,9 +3247,9 @@ def sys_link_fp_vasp_pp(iter_index, jdata):
     fp_pp_path = os.path.abspath(fp_pp_path)
     type_map = jdata["type_map"]
     assert os.path.exists(fp_pp_path)
-    assert len(fp_pp_files) == len(
-        type_map
-    ), "size of fp_pp_files should be the same as the size of type_map"
+    assert len(fp_pp_files) == len(type_map), (
+        "size of fp_pp_files should be the same as the size of type_map"
+    )
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -3306,9 +3306,9 @@ def _link_fp_abacus_pporb_descript(iter_index, jdata):
             model_file = os.path.join(
                 fp_pp_path, os.path.split(fp_dpks_model)[1]
             )  # only the filename
-            assert os.path.isfile(
-                model_file
-            ), f"Can not find the deepks model file {model_file}, which is defined in {ii}/INPUT"
+            assert os.path.isfile(model_file), (
+                f"Can not find the deepks model file {model_file}, which is defined in {ii}/INPUT"
+            )
             os.symlink(model_file, fp_dpks_model)  # link to the model file
 
         # get pp, orb, descriptor filenames from STRU
@@ -3323,9 +3323,9 @@ def _link_fp_abacus_pporb_descript(iter_index, jdata):
         if orb_files_stru:
             assert "fp_orb_files" in jdata, "need to define fp_orb_files in jdata"
         if descriptor_file_stru:
-            assert (
-                "fp_dpks_descriptor" in jdata
-            ), "need to define fp_dpks_descriptor in jdata"
+            assert "fp_dpks_descriptor" in jdata, (
+                "need to define fp_dpks_descriptor in jdata"
+            )
 
         for idx, iatom in enumerate(atom_names):
             type_map_idx = type_map.index(iatom)
@@ -3335,21 +3335,21 @@ def _link_fp_abacus_pporb_descript(iter_index, jdata):
                 )
             if pp_files_stru:
                 src_file = os.path.join(fp_pp_path, jdata["fp_pp_files"][type_map_idx])
-                assert os.path.isfile(
-                    src_file
-                ), f"Can not find the pseudopotential file {src_file}"
+                assert os.path.isfile(src_file), (
+                    f"Can not find the pseudopotential file {src_file}"
+                )
                 os.symlink(src_file, pp_files_stru[idx])
             if orb_files_stru:
                 src_file = os.path.join(fp_pp_path, jdata["fp_orb_files"][type_map_idx])
-                assert os.path.isfile(
-                    src_file
-                ), f"Can not find the orbital file {src_file}"
+                assert os.path.isfile(src_file), (
+                    f"Can not find the orbital file {src_file}"
+                )
                 os.symlink(src_file, orb_files_stru[idx])
         if descriptor_file_stru:
             src_file = os.path.join(fp_pp_path, jdata["fp_dpks_descriptor"])
-            assert os.path.isfile(
-                src_file
-            ), f"Can not find the descriptor file {src_file}"
+            assert os.path.isfile(src_file), (
+                f"Can not find the descriptor file {src_file}"
+            )
             os.symlink(src_file, descriptor_file_stru)
 
         os.chdir(cwd)

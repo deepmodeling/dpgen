@@ -280,7 +280,7 @@ class TestMakeModelDevi(unittest.TestCase):
         os.makedirs(os.path.join(path, "traj"), exist_ok=True)
         for i in range(4):
             for j in range(0, 5, 2):
-                with open(os.path.join(path, f"traj/{j}.lammpstrj{i+1}"), "a") as fp:
+                with open(os.path.join(path, f"traj/{j}.lammpstrj{i + 1}"), "a") as fp:
                     fp.write(f"{i} {j}\n")
         model_devi_array = np.zeros([3, 7])
         model_devi_array[:, 0] = np.array([0, 2, 4])
@@ -291,7 +291,7 @@ class TestMakeModelDevi(unittest.TestCase):
             model_devi_array[:, 4] = 0.1 * (i + 1) * np.arange(1, 4)
             model_devi_total_array[i * 3 : (i + 1) * 3, 4] = model_devi_array[:, 4]
             np.savetxt(
-                os.path.join(path, f"model_devi{i+1}.out"),
+                os.path.join(path, f"model_devi{i + 1}.out"),
                 model_devi_array,
                 fmt="%.12e",
             )
