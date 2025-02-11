@@ -3482,7 +3482,6 @@ def make_fp_abacus_scf(iter_index, jdata):
             fp_pp_files,
             fp_orb_files,
             fp_dpks_descriptor,
-            fp_params,
             type_map=jdata["type_map"],
             pporb=pporb_path,
         )
