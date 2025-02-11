@@ -246,10 +246,22 @@ class TestABACUS(unittest.TestCase):
                         )
                     else:
                         self.assertTrue(dict1[key] == dict2[key])
-        compare_keys = ["atom_numbs", "atom_names", "atom_types", "cells", "coords", 
-                        'energies', 'forces', 'virials', 'stress']
-        compare_dict({k:ret["data"][k] for k in compare_keys}, 
-                      {k: ret_ref.data[k] for k in compare_keys})
+
+        compare_keys = [
+            "atom_numbs",
+            "atom_names",
+            "atom_types",
+            "cells",
+            "coords",
+            "energies",
+            "forces",
+            "virials",
+            "stress",
+        ]
+        compare_dict(
+            {k: ret["data"][k] for k in compare_keys},
+            {k: ret_ref.data[k] for k in compare_keys},
+        )
 
 
 class TestABACUSDeepKS(unittest.TestCase):

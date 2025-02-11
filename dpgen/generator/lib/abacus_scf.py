@@ -3,7 +3,6 @@ import os
 import re
 
 import numpy as np
-
 from dpdata.abacus.stru import get_frame_from_stru, make_unlabeled_stru
 
 from dpgen.auto_test.lib import vasp
@@ -218,9 +217,15 @@ def make_abacus_scf_stru(
         fp_orb_files = [os.path.join(pporb, i) for i in fp_orb_files]
     if fp_dpks_descriptor is not None:
         fp_dpks_descriptor = os.path.join(pporb, fp_dpks_descriptor)
-    
-    c = make_unlabeled_stru(sys_data, 0, pp_files=fp_pp_files, numerical_orbital=fp_orb_files, numerical_descriptor=fp_dpks_descriptor)
-    
+
+    c = make_unlabeled_stru(
+        sys_data,
+        0,
+        pp_files=fp_pp_files,
+        numerical_orbital=fp_orb_files,
+        numerical_descriptor=fp_dpks_descriptor,
+    )
+
     return c
 
 
