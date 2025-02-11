@@ -204,7 +204,7 @@ def convert_data(jdata):
         type_map=jdata["type_map"],
     )
     s.to_deepmd_npy(data_path)
-    dlog.info("Initial data is avaiable in %s" % os.path.abspath(data_path))
+    dlog.info(f"Initial data is avaiable in {os.path.abspath(data_path)}")
 
 
 def gen_init_reaction(args):
@@ -222,7 +222,7 @@ def gen_init_reaction(args):
         with open(record) as frec:
             for line in frec:
                 iter_rec = int(line.strip())
-        dlog.info("continue from task %02d" % iter_rec)
+        dlog.info("continue from task %02d" % iter_rec)  # noqa: UP031
     for ii in range(numb_task):
         sepline(str(ii), "-")
         if ii <= iter_rec:

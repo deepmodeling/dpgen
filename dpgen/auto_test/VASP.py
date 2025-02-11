@@ -2,8 +2,6 @@ import os
 
 from dpdata import LabeledSystem
 from monty.serialization import dumpfn
-from pymatgen.core.structure import Structure
-from pymatgen.io.vasp import Incar, Kpoints
 
 import dpgen.auto_test.lib.vasp as vasp
 from dpgen import dlog
@@ -22,6 +20,8 @@ class VASP(Task):
         self.path_to_poscar = path_to_poscar
 
     def make_potential_files(self, output_dir):
+        from pymatgen.core.structure import Structure
+
         potcar_not_link_list = ["vacancy", "interstitial"]
         task_type = output_dir.split("/")[-2].split("_")[0]
 
@@ -69,6 +69,8 @@ class VASP(Task):
         dumpfn(self.inter, os.path.join(output_dir, "inter.json"), indent=4)
 
     def make_input_file(self, output_dir, task_type, task_param):
+        from pymatgen.io.vasp import Incar, Kpoints
+
         sepline(ch=output_dir)
         dumpfn(task_param, os.path.join(output_dir, "task.json"), indent=4)
 
@@ -110,7 +112,7 @@ class VASP(Task):
                     isif = 2
                     if not ("NSW" in incar and incar.get("NSW") == nsw):
                         dlog.info(
-                            "%s setting NSW to %d"
+                            "%s setting NSW to %d"  # noqa: UP031
                             % (self.make_input_file.__name__, nsw)
                         )
                         incar["NSW"] = nsw
@@ -119,7 +121,7 @@ class VASP(Task):
 
                 if not ("ISIF" in incar and incar.get("ISIF") == isif):
                     dlog.info(
-                        "%s setting ISIF to %d" % (self.make_input_file.__name__, isif)
+                        "%s setting ISIF to %d" % (self.make_input_file.__name__, isif)  # noqa: UP031
                     )
                     incar["ISIF"] = isif
 
@@ -127,7 +129,7 @@ class VASP(Task):
                 nsw = 0
                 if not ("NSW" in incar and incar.get("NSW") == nsw):
                     dlog.info(
-                        "%s setting NSW to %d" % (self.make_input_file.__name__, nsw)
+                        "%s setting NSW to %d" % (self.make_input_file.__name__, nsw)  # noqa: UP031
                     )
                     incar["NSW"] = nsw
 

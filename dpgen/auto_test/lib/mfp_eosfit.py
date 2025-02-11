@@ -1085,7 +1085,7 @@ def calc_props_SJX_5p(par):
 
 def read_ve(fin):
     if not os.path.exists(fin):
-        print("Could not find input file: [%s]" % fin)
+        print(f"Could not find input file: [{fin}]")
         os.sys.exit(-1)
     lines = open(fin).readlines()
     nline = len(lines)
@@ -1107,11 +1107,11 @@ def read_ve(fin):
 
 def read_vlp(fin, fstart, fend):
     if not os.path.exists(fin):
-        print(">> Could not find input file: [%s]" % fin)
+        print(f">> Could not find input file: [{fin}]")
         os.sys.exit(-1)
     lines = open(fin).readlines()
     nline = len(lines)
-    print("\n** Totally, there are %d data points reading..." % nline)
+    print("\n** Totally, there are %d data points reading..." % nline)  # noqa: UP031
     vol = []
     cella = []
     cellb = []
@@ -1157,13 +1157,13 @@ def read_vlp(fin, fstart, fend):
             fend = tmp
     if fend > nline:
         print(
-            "\n** EoSfit fit range exceed available data numbers, Reset it to be %d now."
+            "\n** EoSfit fit range exceed available data numbers, Reset it to be %d now."  # noqa: UP031
             % nline
         )
         fend = nline
     if fstart > nline:
         print(
-            "EoSfit fit range exceed available data numbers, Reset it to be 1: %d now."
+            "EoSfit fit range exceed available data numbers, Reset it to be 1: %d now."  # noqa: UP031
             % nline
         )
         fstart = 1
@@ -1192,11 +1192,11 @@ def read_vlp(fin, fstart, fend):
 
 def read_velp(fin, fstart, fend):
     if not os.path.exists(fin):
-        print(">> Could not find input file: [%s]" % fin)
+        print(f">> Could not find input file: [{fin}]")
         os.sys.exit(-1)
     lines = open(fin).readlines()
     nline = len(lines)
-    print("\n** Totally, there are %d data points reading..." % nline)
+    print("\n** Totally, there are %d data points reading..." % nline)  # noqa: UP031
     vol = []
     eng = []
     cella = []
@@ -1237,13 +1237,13 @@ def read_velp(fin, fstart, fend):
             fend = tmp
     if fend > nline:
         print(
-            "\n** EoSfit fit range exceed available data numbers, Reset it to be %d now."
+            "\n** EoSfit fit range exceed available data numbers, Reset it to be %d now."  # noqa: UP031
             % nline
         )
         fend = -1
     if fstart > nline:
         print(
-            "EoSfit fit range exceed available data numbers, Reset it to be 1: %d now."
+            "EoSfit fit range exceed available data numbers, Reset it to be 1: %d now."  # noqa: UP031
             % nline
         )
         fstart = 1
@@ -1319,14 +1319,14 @@ def ext_vec(
     sca = ext_splint(vol, cellca)
 
     # define extrapolate range
-    print("\n** Vext_start = %f, Vext_end = %f, N_ext = %d" % (vols, vole, ndata))
+    print("\n** Vext_start = %f, Vext_end = %f, N_ext = %d" % (vols, vole, ndata))  # noqa: UP031
     vol_ext = np.linspace(vols, vole, ndata)
     en_ext = eval(func)(vol_ext, pars)
 
     # en_ext = np.zeros(ndata)
     fout = "ext_ve_" + func + ".dat"
     fw = open(fout, "w+")
-    fw.write("%d\n" % ndata)
+    fw.write("%d\n" % ndata)  # noqa: UP031
     for i in range(ndata):
         vx = vol_ext[i]
         ex = en_ext[i]
@@ -1348,7 +1348,7 @@ def ext_vec(
     if show_fig:
         plt.show()
     plt.close()
-    print("\n>> Storing the extrapolate results in %s\n" % fout)
+    print(f"\n>> Storing the extrapolate results in {fout}\n")
     print("\n>> DONE!")
 
     return
@@ -1389,7 +1389,7 @@ def ext_velp(
     vol, eng, cella, cellb, cellc, cellba, cellca = read_velp(fin, fstart, fend)
 
     # define extrapolate range
-    print("\n** Vext_start = %f, Vext_end = %f, N_ext = %d" % (vols, vole, ndata))
+    print("\n** Vext_start = %f, Vext_end = %f, N_ext = %d" % (vols, vole, ndata))  # noqa: UP031
     vv = np.linspace(vols, vole, ndata)
 
     # spline order = 3 by default
@@ -1436,7 +1436,7 @@ def ext_velp(
     # get vba.dat
     fw = open(fout, "w+")
     fw.write(
-        "#%12s\t%12s\t%12s\t%12s\t%12s\t%12s\t%12s\t%12s\n"
+        "#%12s\t%12s\t%12s\t%12s\t%12s\t%12s\t%12s\t%12s\n"  # noqa: UP031
         % ("volume", "eng", "cella", "cellb", "cellc", "b/a", "c/a", "cext/aext")
     )
     for i in range(ndata):
@@ -1445,7 +1445,7 @@ def ext_velp(
         )
         fw.flush()
     fw.close()
-    print("\n>> Storing the extrapolate results in %s\n" % fout)
+    print(f"\n>> Storing the extrapolate results in {fout}\n")
     print("\n>> DONE!")
     return
 
@@ -1455,7 +1455,7 @@ def lsqfit_eos(
 ):
     # make the screen output better.
     print("\n")
-    print("\t>> We are using [ %s ] to fit the V-E relationship << \t" % func)
+    print(f"\t>> We are using [ {func} ] to fit the V-E relationship << \t")
     print("\n")
 
     fs = fstart
@@ -1504,15 +1504,15 @@ def lsqfit_eos(
     if fe > ndata:
         fe = ndata
         print(
-            "\n[WARNING]: f_end exceed available data numbers, Reset it to be %d now."
+            "\n[WARNING]: f_end exceed available data numbers, Reset it to be %d now."  # noqa: UP031
             % ndata
         )
     if fs > ndata:
         print(
-            "\n[WARNING]: f_start exceed available data numbers, Reset it to be 1: %d now."
+            "\n[WARNING]: f_start exceed available data numbers, Reset it to be 1: %d now."  # noqa: UP031
             % ndata
         )
-        print("and Reset f_end to be %d now." % ndata)
+        print("and Reset f_end to be %d now." % ndata)  # noqa: UP031
         fs = 1
         fe = ndata
 
@@ -1524,7 +1524,7 @@ def lsqfit_eos(
 
     vol = vol[fs - 1 : fe]
     en = en[fs - 1 : fe]
-    print("\n%d/%d data was used in the fitting ...\n" % (num, ndata))
+    print("\n%d/%d data was used in the fitting ...\n" % (num, ndata))  # noqa: UP031
 
     # *************************************************************************
     # fit it: step 1.
@@ -1550,27 +1550,27 @@ def lsqfit_eos(
     # *************************************************************************
 
     print("*" * 80)
-    print(">> fitted parameters (with %d iterations):" % nfev)
+    print(">> fitted parameters (with %d iterations):" % nfev)  # noqa: UP031
     # p0 = [e0, b0, bp, v0, bpp]
     if func == "morse_AB":
         e0, A, B, v0 = popt
-        print("%12s\t%12s\t%12s\t%12s" % ("V0(A**3)", "A", "B", "E0(eV)"))
+        print("%12s\t%12s\t%12s\t%12s" % ("V0(A**3)", "A", "B", "E0(eV)"))  # noqa: UP031
         print(f"{v0:12f}\t{A:12f}\t{B:12f}\t{e0:12f}\n")
     elif func == "morse_3p":
         e0, A, v0 = popt
         B = 0.5 * A
-        print("%12s\t%12s\t%12s\t%12s" % ("V0(A**3)", "A", "B", "E0(eV)"))
+        print("%12s\t%12s\t%12s\t%12s" % ("V0(A**3)", "A", "B", "E0(eV)"))  # noqa: UP031
         print(f"{v0:12f}\t{A:12f}\t{B:12f}\t{e0:12f}\n")
     elif func in ["mie", "mie_simple"]:
         e0, m, n, v0 = popt
-        print("%12s\t%12s\t%12s\t%12s" % ("V0(A**3)", "m", "n", "E0(eV)"))
+        print("%12s\t%12s\t%12s\t%12s" % ("V0(A**3)", "m", "n", "E0(eV)"))  # noqa: UP031
         print(f"{v0:12f}\t{m:12f}\t{n:12f}\t{e0:12f}\n")
     elif func == "morse_6p":
         e0, b0, bp, v0, bpp, m, n = calc_props_morse_6p(popt)
         b0 = eV2GPa * b0
         bpp = bpp / eV2GPa
         print(
-            "%12s\t%12s\t%12s\t%12s\t%12s\t%12s\t%12s"
+            "%12s\t%12s\t%12s\t%12s\t%12s\t%12s\t%12s"  # noqa: UP031
             % ("V0(A**3)", "B0(GPa)", "Bp", "E0(eV)", "Bpp(1/GPa)", "m", "n")
         )
         print(f"{v0:12f}\t{b0:12f}\t{bp:12f}\t{e0:12f}\t{bpp:12f}\t{m:12f}\t{n:12f}\n")
@@ -1578,7 +1578,7 @@ def lsqfit_eos(
         e0, b0, bp, v0, n = calc_props_SJX_5p(popt)
         b0 = eV2GPa * b0
         print(
-            "%12s\t%12s\t%12s\t%12s\t%12s"
+            "%12s\t%12s\t%12s\t%12s\t%12s"  # noqa: UP031
             % ("V0(A**3)", "B0(GPa)", "Bp", "E0(eV)", "n")
         )
         print(f"{v0:12f}\t{b0:12f}\t{bp:12f}\t{e0:12f}\t{n:12f}\n")
@@ -1588,7 +1588,7 @@ def lsqfit_eos(
         b0 = eV2GPa * b0
         bpp = bpp / eV2GPa
         print(
-            "%12s\t%12s\t%12s\t%12s\t%12s"
+            "%12s\t%12s\t%12s\t%12s\t%12s"  # noqa: UP031
             % ("V0(A**3)", "B0(GPa)", "Bp", "E0(eV)", "Bpp(1/GPa)")
         )
         print(f"{v0:12f}\t{b0:12f}\t{bp:12f}\t{e0:12f}\t{bpp:12f}\n")
@@ -1597,7 +1597,7 @@ def lsqfit_eos(
         b0 = eV2GPa * b0
         bpp = bpp / eV2GPa
         print(
-            "%12s\t%12s\t%12s\t%12s\t%12s"
+            "%12s\t%12s\t%12s\t%12s\t%12s"  # noqa: UP031
             % ("V0(A**3)", "B0(GPa)", "Bp", "E0(eV)", "Bpp(1/GPa)")
         )
         print(f"{v0:12f}\t{b0:12f}\t{bp:12f}\t{e0:12f}\t{bpp:12f}\n")
@@ -1605,7 +1605,7 @@ def lsqfit_eos(
     # write the fitted results in fit.out
     fw = open(fout, "w+")
     for i in range(len(popt)):
-        fw.write("%f\n" % popt[i])
+        fw.write(f"{popt[i]:f}\n")
         fw.flush()
     fw.close()
 
@@ -1621,14 +1621,14 @@ def lsqfit_eos(
     fit_res = sum(res_opt)
     fit_var = np.var(fvec)
     fit_std = np.std(fvec)
-    print("\nfitted residuals\t= %16e\n" % fit_res)
-    print("fitted variations\t= %16e\n" % fit_var)
-    print("standard deviations\t= %16e\n" % fit_std)
+    print(f"\nfitted residuals\t= {fit_res:16e}\n")
+    print(f"fitted variations\t= {fit_var:16e}\n")
+    print(f"standard deviations\t= {fit_std:16e}\n")
     # if fit_res > 1e-4:
     #    print("\n>> Residuals seems too large, please refit it by swithing argument --refit 1!\n")
     #    show = 'F'  # reset show tag, not to show the figure.
     plt.plot(vol, en, "o", vol_i, en_i)
-    plt.title("EoS fitted by: %s model" % str(func))
+    plt.title(f"EoS fitted by: {str(func)} model")
     plt.legend(["calc", func + "-fit"], loc="best")
     plt.xlabel("Volume (A**3)")
     plt.ylabel("Energy (eV)")
@@ -1644,11 +1644,11 @@ def lsqfit_eos(
     fve = open(func + "_ve_fit.dat", "w+")
     fvp = open(func + "_vp_fit.dat", "w+")
     fve.write(
-        "#%20s\t%20s\t%20s\t%20s\n"
+        "#%20s\t%20s\t%20s\t%20s\n"  # noqa: UP031
         % ("volume(A**3)", "energy(fit)", "energy(cal)", "dE(%)")
     )
     fvp.write(
-        "#%20s\t%20s\t%20s\t%20s\n"
+        "#%20s\t%20s\t%20s\t%20s\n"  # noqa: UP031
         % ("volume(A**3)", "pressure(GPa)", "pressure(Mbar)", "pressure(kbar)")
     )
     for i in range(len(vol)):
@@ -1774,7 +1774,7 @@ if __name__ == "__main__":
             print("ERROR, range setting must be a positive value!")
             exit(1)
         if ExtNum % 2 == 0:
-            print("[WARNING]: ndata = %d, reset it to be %d" % (ExtNum, ExtNum + 1))
+            print("[WARNING]: ndata = %d, reset it to be %d" % (ExtNum, ExtNum + 1))  # noqa: UP031
             ExtNum = ExtNum + 1
         ext_velp(fin, fs, fe, ExtVS, ExtVE, ExtNum, order=EORDER, method="unispl")
     else:

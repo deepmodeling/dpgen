@@ -40,7 +40,7 @@ import sys
 def get_outcar_files(directory, recursive):
     # walk directory (recursively) and return all OUTCAR* files
     # return list of outcars' path
-    sys.stderr.write("Searching directory %s for OUTCAR* files ...\n" % directory)
+    sys.stderr.write(f"Searching directory {directory} for OUTCAR* files ...\n")
     outcars = []
     if not recursive:
         for item in os.listdir(directory):
@@ -132,7 +132,7 @@ def process_outcar_file_v5_dev(
             windex = [nconfs - 1]
 
         # reading current OUTCAR
-        print("Reading %s ..." % outcars[i])
+        print(f"Reading {outcars[i]} ...")
         count = -1
         line = f.readline()
         while line != "":
@@ -150,36 +150,36 @@ def process_outcar_file_v5_dev(
             if "free  energy   TOTEN" in line:
                 energy = float(line.split()[4]) / natoms
                 if count in windex:
-                    fw.write("#N %s 1\n" % natoms)
+                    fw.write(f"#N {natoms} 1\n")
                     fw.write("#C ")
                     if elements:
-                        fw.write("%s " % numbers[0])
+                        fw.write(f"{numbers[0]} ")
                         for j in range(1, max_types):
-                            fw.write("%s\t" % numbers[j])
+                            fw.write(f"{numbers[j]}\t")
                     else:
-                        fw.write(" %s" % data[i][1][0])
+                        fw.write(f" {data[i][1][0]}")
                         for j in range(1, max_types):
-                            fw.write(" %s" % data[i][1][j])
+                            fw.write(f" {data[i][1][j]}")
                     fw.write("\n")
                     fw.write(
-                        "## force file generated from file %s config %d\n"
+                        "## force file generated from file %s config %d\n"  # noqa: UP031
                         % (outcars[i], count)
                     )
                     fw.write(f"#X {box_x[0]:13.8f} {box_x[1]:13.8f} {box_x[2]:13.8f}\n")
                     fw.write(f"#Y {box_y[0]:13.8f} {box_y[1]:13.8f} {box_y[2]:13.8f}\n")
                     fw.write(f"#Z {box_z[0]:13.8f} {box_z[1]:13.8f} {box_z[2]:13.8f}\n")
-                    fw.write("#W %f\n" % (args.weight))
-                    fw.write("#E %.10f\n" % (energy))
+                    fw.write(f"#W {args.weight:f}\n")
+                    fw.write(f"#E {energy:.10f}\n")
                     if stress:
                         fw.write("#S ")
                         for num in range(6):
-                            fw.write("%8.7g\t" % (stress[num]))
+                            fw.write(f"{stress[num]:8.7g}\t")
                         fw.write("\n")
                     fw.write("#F\n")
                     fw.flush()
                     for adata in atom_data:
                         fw.write(
-                            "%d %11.7g %11.7g %11.7g %11.7g %11.7g %11.7g\n"
+                            "%d %11.7g %11.7g %11.7g %11.7g %11.7g %11.7g\n"  # noqa: UP031
                             % (
                                 adata[0],
                                 adata[1],
@@ -325,9 +325,7 @@ if __name__ == "__main__":
                     sys.stderr.write("\nERROR: Could not read the -c string\n")
                     sys.exit()
                 if number >= max_types:
-                    sys.stderr.write(
-                        "\nERROR: The atom type for %s is invalid!\n" % name
-                    )
+                    sys.stderr.write(f"\nERROR: The atom type for {name} is invalid!\n")
                     sys.exit()
                 if name in types:
                     sys.stderr.write(

@@ -26,7 +26,7 @@ def collect_data(
     if verbose:
         max_str_len = max([len(str(ii)) for ii in sys_configs])
         max_form_len = 16
-        ptr_fmt = "%%%ds %%%ds natoms %%6d nframes %%6d" % (
+        ptr_fmt = "%%%ds %%%ds natoms %%6d nframes %%6d" % (  # noqa: UP031
             max_str_len + 5,
             max_form_len,
         )
@@ -43,7 +43,7 @@ def collect_data(
     numb_sys = len(sys_configs)
     model_devi_jobs = jdata.get("model_devi_jobs", {})
     numb_jobs = len(model_devi_jobs)
-    iters = ["iter.%06d" % ii for ii in range(numb_jobs)]
+    iters = ["iter.%06d" % ii for ii in range(numb_jobs)]  # noqa: UP031
     # loop over iters to collect data
     for ii in range(len(iters)):
         iter_data = glob.glob(os.path.join(iters[ii], "02.fp", "data.[0-9]*[0-9]"))
@@ -100,7 +100,7 @@ def collect_data(
         ii.to("deepmd/npy", os.path.join(output, out_dir))
     # dump iter data
     for kk in coll_data.keys():
-        out_dir = "sys.%s" % kk
+        out_dir = f"sys.{kk}"
         nframes = coll_data[kk].get_nframes()
         coll_data[kk].to("deepmd/npy", os.path.join(output, out_dir), set_size=nframes)
         # coll_data[kk].to('deepmd/npy', os.path.join(output, out_dir))

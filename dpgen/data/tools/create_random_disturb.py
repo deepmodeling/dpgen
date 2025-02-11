@@ -74,12 +74,12 @@ def create_disturbs_ase(
             dpos[i, :] = dr
             if write_d:
                 dnorm = np.linalg.norm(dr)
-                fw.write("%d\t%f\t%f\t%f\t%f\n" % (i + 1, dr[0], dr[1], dr[2], dnorm))
+                fw.write("%d\t%f\t%f\t%f\t%f\n" % (i + 1, dr[0], dr[1], dr[2], dnorm))  # noqa: UP031
                 fw.flush()
         pos = pos0 + dpos
         atoms_d.set_positions(pos)
         fout = fin + str(fid) + "." + ofmt
-        print("Creating %s ..." % fout)
+        print(f"Creating {fout} ...")
         if ofmt in ["lmp", "lammps_data"]:
             # for lammps, use my personal output functions
             io_lammps.ase2lammpsdata(atoms_d, fout)
@@ -136,7 +136,7 @@ def create_disturbs_ase_dev(
             dpos[i, :] = dr
             if write_d:
                 dnorm = np.linalg.norm(dr)
-                fw.write("%d\t%f\t%f\t%f\t%f\n" % (i + 1, dr[0], dr[1], dr[2], dnorm))
+                fw.write("%d\t%f\t%f\t%f\t%f\n" % (i + 1, dr[0], dr[1], dr[2], dnorm))  # noqa: UP031
                 fw.flush()
 
         # random flux for volumes
@@ -158,7 +158,7 @@ def create_disturbs_ase_dev(
 
         # Writing it
         fout = fin + str(fid) + "." + ofmt
-        print("Creating %s ..." % fout)
+        print(f"Creating {fout} ...")
         if ofmt in ["lmp", "lammps_data"]:
             # for lammps, use my personal output functions
             io_lammps.ase2lammpsdata(atoms_d, fout=fout)
@@ -207,7 +207,7 @@ def create_disturbs_abacus_dev(
             dpos[i, :] = dr
             if write_d:
                 dnorm = np.linalg.norm(dr)
-                fw.write("%d\t%f\t%f\t%f\t%f\n" % (i + 1, dr[0], dr[1], dr[2], dnorm))
+                fw.write("%d\t%f\t%f\t%f\t%f\n" % (i + 1, dr[0], dr[1], dr[2], dnorm))  # noqa: UP031
                 fw.flush()
 
         # random flux for volumes
@@ -230,7 +230,7 @@ def create_disturbs_abacus_dev(
 
         # Writing it
         fout = fin + str(fid) + "." + ofmt
-        print("Creating %s ..." % fout)
+        print(f"Creating {fout} ...")
         ret = make_abacus_scf_stru(
             stru_d, stru_d["pp_files"], stru_d["orb_files"], stru_d["dpks_descriptor"]
         )

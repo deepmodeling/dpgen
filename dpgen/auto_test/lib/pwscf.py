@@ -20,19 +20,19 @@ def _make_pwscf_01_runctrl(sys_data, ecut, ediff, smearing, degauss):
     ret += "/\n"
     ret += "&system\n"
     ret += "ibrav= 0,\n"
-    ret += "nat  = %d,\n" % tot_natoms
-    ret += "ntyp = %d,\n" % ntypes
+    ret += "nat  = %d,\n" % tot_natoms  # noqa: UP031
+    ret += "ntyp = %d,\n" % ntypes  # noqa: UP031
     ret += "vdw_corr = 'TS',\n"
-    ret += "ecutwfc = %f,\n" % ecut
-    ret += "ts_vdw_econv_thr=%e,\n" % ediff
+    ret += f"ecutwfc = {ecut:f},\n"
+    ret += f"ts_vdw_econv_thr={ediff:e},\n"
     ret += "nosym = .TRUE.,\n"
     if degauss is not None:
-        ret += "degauss = %f,\n" % degauss
+        ret += f"degauss = {degauss:f},\n"
     if smearing is not None:
-        ret += "smearing = '%s',\n" % (smearing.lower())
+        ret += f"smearing = '{smearing.lower()}',\n"
     ret += "/\n"
     ret += "&electrons\n"
-    ret += "conv_thr = %e,\n" % ediff
+    ret += f"conv_thr = {ediff:e},\n"
     ret += "/\n"
     return ret
 
@@ -50,7 +50,7 @@ def _make_pwscf_02_species(sys_data, pps):
     assert ntypes == len(atom_masses)
     assert ntypes == len(pps)
     for ii in range(ntypes):
-        ret += "%s %d %s\n" % (atom_names[ii], atom_masses[ii], pps[ii])
+        ret += "%s %d %s\n" % (atom_names[ii], atom_masses[ii], pps[ii])  # noqa: UP031
     return ret
 
 
@@ -65,7 +65,7 @@ def _make_pwscf_03_config(sys_data):
     ret += "CELL_PARAMETERS { angstrom }\n"
     for ii in range(3):
         for jj in range(3):
-            ret += "%f " % cell[ii][jj]
+            ret += f"{cell[ii][jj]:f} "
         ret += "\n"
     ret += "\n"
     ret += "ATOMIC_POSITIONS { angstrom }\n"
@@ -95,9 +95,9 @@ def _make_pwscf_04_kpoints(sys_data, kspacing):
     ret = ""
     ret += "K_POINTS { automatic }\n"
     for ii in range(3):
-        ret += "%d " % kpoints[ii]
+        ret += "%d " % kpoints[ii]  # noqa: UP031
     for ii in range(3):
-        ret += "%d " % _kshift(kpoints[ii])
+        ret += "%d " % _kshift(kpoints[ii])  # noqa: UP031
     ret += "\n"
     return ret
 

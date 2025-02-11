@@ -5,8 +5,6 @@ import re
 
 import numpy as np
 from monty.serialization import dumpfn, loadfn
-from pymatgen.analysis.defects.generators import VacancyGenerator
-from pymatgen.core.structure import Structure
 
 import dpgen.auto_test.lib.abacus as abacus
 from dpgen import dlog
@@ -77,9 +75,12 @@ class Vacancy(Property):
         self.inter_param = inter_param if inter_param is not None else {"type": "vasp"}
 
     def make_confs(self, path_to_work, path_to_equi, refine=False):
+        from pymatgen.analysis.defects.generators import VacancyGenerator
+        from pymatgen.core.structure import Structure
+
         path_to_work = os.path.abspath(path_to_work)
         if os.path.exists(path_to_work):
-            dlog.warning("%s already exists" % path_to_work)
+            dlog.warning(f"{path_to_work} already exists")
         else:
             os.makedirs(path_to_work)
         path_to_equi = os.path.abspath(path_to_equi)
@@ -186,7 +187,7 @@ class Vacancy(Property):
                 #           task_poscar = os.path.join(output, 'POSCAR')
 
                 for ii in range(len(dss)):
-                    output_task = os.path.join(path_to_work, "task.%06d" % ii)
+                    output_task = os.path.join(path_to_work, "task.%06d" % ii)  # noqa: UP031
                     os.makedirs(output_task, exist_ok=True)
                     os.chdir(output_task)
                     for jj in [

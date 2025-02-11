@@ -36,7 +36,7 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
         if key == "ecutwfc":
             fp_params["ecutwfc"] = float(fp_params["ecutwfc"])
             assert fp_params["ecutwfc"] >= 0, "'ecutwfc' should be non-negative."
-            ret += "ecutwfc %f\n" % fp_params["ecutwfc"]
+            ret += "ecutwfc {:f}\n".format(fp_params["ecutwfc"])
         elif key == "kspacing":
             if isinstance(fp_params["kspacing"], (int, float)):
                 fp_params["kspacing"] = [float(fp_params["kspacing"])]
@@ -46,43 +46,42 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
                 fp_params["kspacing"] = [
                     float(i) for i in fp_params["kspacing"].split()
                 ]
-            assert (
-                len(fp_params["kspacing"])
-                in [
-                    1,
-                    3,
-                ]
-            ), "'kspacing' only accept a float, or a list of one or three float, or a string of one or three float"
+            assert len(fp_params["kspacing"]) in [
+                1,
+                3,
+            ], (
+                "'kspacing' only accept a float, or a list of one or three float, or a string of one or three float"
+            )
             ret += "kspacing "
             for ikspacing in fp_params["kspacing"]:
                 assert ikspacing >= 0, "'kspacing' should be non-negative."
-                ret += "%f " % ikspacing
+                ret += f"{ikspacing:f} "
             ret += "\n"
         elif key == "scf_thr":
             fp_params["scf_thr"] = float(fp_params["scf_thr"])
-            ret += "scf_thr %e\n" % fp_params["scf_thr"]
+            ret += "scf_thr {:e}\n".format(fp_params["scf_thr"])
         elif key == "scf_nmax":
             fp_params["scf_nmax"] = int(fp_params["scf_nmax"])
             assert fp_params["scf_nmax"] >= 0 and isinstance(
                 fp_params["scf_nmax"], int
             ), "'scf_nmax' should be a positive integer."
-            ret += "scf_nmax %d\n" % fp_params["scf_nmax"]
+            ret += "scf_nmax %d\n" % fp_params["scf_nmax"]  # noqa: UP031
         elif key == "basis_type":
             assert fp_params["basis_type"] in [
                 "pw",
                 "lcao",
                 "lcao_in_pw",
             ], "'basis_type' must in 'pw', 'lcao' or 'lcao_in_pw'."
-            ret += "basis_type %s\n" % fp_params["basis_type"]
+            ret += "basis_type {}\n".format(fp_params["basis_type"])
         elif key == "dft_functional":
-            ret += "dft_functional %s\n" % fp_params["dft_functional"]
+            ret += "dft_functional {}\n".format(fp_params["dft_functional"])
         elif key == "gamma_only":
             if isinstance(fp_params["gamma_only"], str):
                 fp_params["gamma_only"] = int(eval(fp_params["gamma_only"]))
-            assert (
-                fp_params["gamma_only"] == 0 or fp_params["gamma_only"] == 1
-            ), "'gamma_only' should be either 0 or 1."
-            ret += "gamma_only %d\n" % fp_params["gamma_only"]
+            assert fp_params["gamma_only"] == 0 or fp_params["gamma_only"] == 1, (
+                "'gamma_only' should be either 0 or 1."
+            )
+            ret += "gamma_only %d\n" % fp_params["gamma_only"]  # noqa: UP031
         elif key == "mixing_type":
             assert fp_params["mixing_type"] in [
                 "plain",
@@ -91,26 +90,26 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
                 "pulay-kerker",
                 "broyden",
             ]
-            ret += "mixing_type %s\n" % fp_params["mixing_type"]
+            ret += "mixing_type {}\n".format(fp_params["mixing_type"])
         elif key == "mixing_beta":
             fp_params["mixing_beta"] = float(fp_params["mixing_beta"])
-            assert (
-                fp_params["mixing_beta"] >= 0 and fp_params["mixing_beta"] < 1
-            ), "'mixing_beta' should between 0 and 1."
-            ret += "mixing_beta %f\n" % fp_params["mixing_beta"]
+            assert fp_params["mixing_beta"] >= 0 and fp_params["mixing_beta"] < 1, (
+                "'mixing_beta' should between 0 and 1."
+            )
+            ret += "mixing_beta {:f}\n".format(fp_params["mixing_beta"])
         elif key == "symmetry":
             if isinstance(fp_params["symmetry"], str):
                 fp_params["symmetry"] = int(eval(fp_params["symmetry"]))
-            assert (
-                fp_params["symmetry"] == 0 or fp_params["symmetry"] == 1
-            ), "'symmetry' should be either 0 or 1."
-            ret += "symmetry %d\n" % fp_params["symmetry"]
+            assert fp_params["symmetry"] == 0 or fp_params["symmetry"] == 1, (
+                "'symmetry' should be either 0 or 1."
+            )
+            ret += "symmetry %d\n" % fp_params["symmetry"]  # noqa: UP031
         elif key == "nbands":
             fp_params["nbands"] = int(fp_params["nbands"])
-            assert fp_params["nbands"] > 0 and isinstance(
-                fp_params["nbands"], int
-            ), "'nbands' should be a positive integer."
-            ret += "nbands %d\n" % fp_params["nbands"]
+            assert fp_params["nbands"] > 0 and isinstance(fp_params["nbands"], int), (
+                "'nbands' should be a positive integer."
+            )
+            ret += "nbands %d\n" % fp_params["nbands"]  # noqa: UP031
         elif key == "nspin":
             fp_params["nspin"] = int(fp_params["nspin"])
             assert (
@@ -118,54 +117,52 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
                 or fp_params["nspin"] == 2
                 or fp_params["nspin"] == 4
             ), "'nspin' can anly take 1, 2 or 4"
-            ret += "nspin %d\n" % fp_params["nspin"]
+            ret += "nspin %d\n" % fp_params["nspin"]  # noqa: UP031
         elif key == "ks_solver":
-            assert (
-                fp_params["ks_solver"]
-                in [
-                    "cg",
-                    "dav",
-                    "lapack",
-                    "genelpa",
-                    "hpseps",
-                    "scalapack_gvx",
-                ]
-            ), "'ks_sover' should in 'cgx', 'dav', 'lapack', 'genelpa', 'hpseps', 'scalapack_gvx'."
-            ret += "ks_solver %s\n" % fp_params["ks_solver"]
+            assert fp_params["ks_solver"] in [
+                "cg",
+                "dav",
+                "lapack",
+                "genelpa",
+                "hpseps",
+                "scalapack_gvx",
+            ], (
+                "'ks_sover' should in 'cgx', 'dav', 'lapack', 'genelpa', 'hpseps', 'scalapack_gvx'."
+            )
+            ret += "ks_solver {}\n".format(fp_params["ks_solver"])
         elif key == "smearing_method":
-            assert (
-                fp_params["smearing_method"]
-                in [
-                    "gauss",
-                    "gaussian",
-                    "fd",
-                    "fixed",
-                    "mp",
-                    "mp2",
-                    "mv",
-                ]
-            ), "'smearing_method' should in 'gauss', 'gaussian', 'fd', 'fixed', 'mp', 'mp2', 'mv'. "
-            ret += "smearing_method %s\n" % fp_params["smearing_method"]
+            assert fp_params["smearing_method"] in [
+                "gauss",
+                "gaussian",
+                "fd",
+                "fixed",
+                "mp",
+                "mp2",
+                "mv",
+            ], (
+                "'smearing_method' should in 'gauss', 'gaussian', 'fd', 'fixed', 'mp', 'mp2', 'mv'. "
+            )
+            ret += "smearing_method {}\n".format(fp_params["smearing_method"])
         elif key == "smearing_sigma":
             fp_params["smearing_sigma"] = float(fp_params["smearing_sigma"])
-            assert (
-                fp_params["smearing_sigma"] >= 0
-            ), "'smearing_sigma' should be non-negative."
-            ret += "smearing_sigma %f\n" % fp_params["smearing_sigma"]
+            assert fp_params["smearing_sigma"] >= 0, (
+                "'smearing_sigma' should be non-negative."
+            )
+            ret += "smearing_sigma {:f}\n".format(fp_params["smearing_sigma"])
         elif key == "cal_force":
             if isinstance(fp_params["cal_force"], str):
                 fp_params["cal_force"] = int(eval(fp_params["cal_force"]))
-            assert (
-                fp_params["cal_force"] == 0 or fp_params["cal_force"] == 1
-            ), "'cal_force' should be either 0 or 1."
-            ret += "cal_force %d\n" % fp_params["cal_force"]
+            assert fp_params["cal_force"] == 0 or fp_params["cal_force"] == 1, (
+                "'cal_force' should be either 0 or 1."
+            )
+            ret += "cal_force %d\n" % fp_params["cal_force"]  # noqa: UP031
         elif key == "cal_stress":
             if isinstance(fp_params["cal_stress"], str):
                 fp_params["cal_stress"] = int(eval(fp_params["cal_stress"]))
-            assert (
-                fp_params["cal_stress"] == 0 or fp_params["cal_stress"] == 1
-            ), "'cal_stress' should be either 0 or 1."
-            ret += "cal_stress %d\n" % fp_params["cal_stress"]
+            assert fp_params["cal_stress"] == 0 or fp_params["cal_stress"] == 1, (
+                "'cal_stress' should be either 0 or 1."
+            )
+            ret += "cal_stress %d\n" % fp_params["cal_stress"]  # noqa: UP031
         # paras for deepks
         elif key == "deepks_out_labels":
             if isinstance(fp_params["deepks_out_labels"], str):
@@ -176,25 +173,27 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
                 fp_params["deepks_out_labels"] == 0
                 or fp_params["deepks_out_labels"] == 1
             ), "'deepks_out_labels' should be either 0 or 1."
-            ret += "deepks_out_labels %d\n" % fp_params["deepks_out_labels"]
+            ret += "deepks_out_labels %d\n" % fp_params["deepks_out_labels"]  # noqa: UP031
         elif key == "deepks_descriptor_lmax":
             fp_params["deepks_descriptor_lmax"] = int(
                 fp_params["deepks_descriptor_lmax"]
             )
-            assert (
-                fp_params["deepks_descriptor_lmax"] >= 0
-            ), "'deepks_descriptor_lmax' should be  a positive integer."
-            ret += "deepks_descriptor_lmax %d\n" % fp_params["deepks_descriptor_lmax"]
+            assert fp_params["deepks_descriptor_lmax"] >= 0, (
+                "'deepks_descriptor_lmax' should be  a positive integer."
+            )
+            ret += "deepks_descriptor_lmax %d\n" % fp_params["deepks_descriptor_lmax"]  # noqa: UP031
         elif key == "deepks_scf":
             if isinstance(fp_params["deepks_scf"], str):
                 fp_params["deepks_scf"] = int(eval(fp_params["deepks_scf"]))
-            assert (
-                fp_params["deepks_scf"] == 0 or fp_params["deepks_scf"] == 1
-            ), "'deepks_scf' should be either 0 or 1."
-            ret += "deepks_scf %d\n" % fp_params["deepks_scf"]
+            assert fp_params["deepks_scf"] == 0 or fp_params["deepks_scf"] == 1, (
+                "'deepks_scf' should be either 0 or 1."
+            )
+            ret += "deepks_scf %d\n" % fp_params["deepks_scf"]  # noqa: UP031
         elif key == "deepks_model":
-            ret += "deepks_model %s\n" % os.path.join(
-                extra_file_path, os.path.split(fp_params["deepks_model"])[1]
+            ret += "deepks_model {}\n".format(
+                os.path.join(
+                    extra_file_path, os.path.split(fp_params["deepks_model"])[1]
+                )
             )
         elif key[0] == "_":
             pass

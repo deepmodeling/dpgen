@@ -102,7 +102,7 @@ def run_property(confs, inter_param, property_list, mdata):
     # conf_dirs.sort()
     processes = len(property_list)
     pool = Pool(processes=processes)
-    print("Submit job via %d processes" % processes)
+    print("Submit job via %d processes" % processes)  # noqa: UP031
     conf_dirs = []
     for conf in confs:
         conf_dirs.extend(glob.glob(conf))
@@ -155,7 +155,7 @@ def run_property(confs, inter_param, property_list, mdata):
             elif inter_type in lammps_task_type:
                 mdata = convert_mdata(mdata, ["model_devi"])
             else:
-                raise RuntimeError("unknown task %s, something wrong" % inter_type)
+                raise RuntimeError(f"unknown task {inter_type}, something wrong")
 
             work_path = path_to_work
             all_task = tmp_task_list
@@ -181,8 +181,8 @@ def run_property(confs, inter_param, property_list, mdata):
     for ii in range(len(multiple_ret)):
         if not multiple_ret[ii].successful():
             print("ERROR:", multiple_ret[ii].get())
-            raise RuntimeError("Job %d is not successful!" % ii)
-    print("%d jobs are finished" % len(multiple_ret))
+            raise RuntimeError("Job %d is not successful!" % ii)  # noqa: UP031
+    print("%d jobs are finished" % len(multiple_ret))  # noqa: UP031
 
 
 def worker(
@@ -199,7 +199,7 @@ def worker(
     api_version = mdata.get("api_version", "1.0")
     if Version(api_version) < Version("1.0"):
         raise RuntimeError(
-            "API version %s has been removed. Please upgrade to 1.0." % api_version
+            f"API version {api_version} has been removed. Please upgrade to 1.0."
         )
     elif Version(api_version) >= Version("1.0"):
         submission = make_submission(

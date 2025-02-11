@@ -107,13 +107,13 @@ def inter_deepmd(param):
     if Version(deepmd_version) < Version("1"):
         ## DeePMD-kit version == 0.x
         if len(models) > 1:
-            ret += "%s 10 model_devi.out\n" % model_list
+            ret += f"{model_list} 10 model_devi.out\n"
         else:
             ret += models[0] + "\n"
     else:
         ## DeePMD-kit version >= 1
         if len(models) > 1:
-            ret += "%s out_freq 10 out_file model_devi.out\n" % model_list
+            ret += f"{model_list} out_freq 10 out_file model_devi.out\n"
         else:
             ret += models[0] + "\n"
     ret += "pair_coeff * *\n"
@@ -123,10 +123,10 @@ def inter_deepmd(param):
 def inter_meam(param):
     ret = ""
     line = "pair_style      meam \n"
-    line += "pair_coeff      * * %s " % param["model_name"][0]
+    line += "pair_coeff      * * {} ".format(param["model_name"][0])
     for ii in param["param_type"]:
         line += ii + " "
-    line += "%s " % param["model_name"][1]
+    line += "{} ".format(param["model_name"][1])
     for ii in param["param_type"]:
         line += ii + " "
     line += "\n"
@@ -137,7 +137,7 @@ def inter_meam(param):
 def inter_eam_fs(param):  # 06/08 eam.fs interaction
     ret = ""
     line = "pair_style      eam/fs \n"
-    line += "pair_coeff      * * %s " % param["model_name"][0]
+    line += "pair_coeff      * * {} ".format(param["model_name"][0])
     for ii in param["param_type"]:
         line += ii + " "
     line += "\n"
@@ -148,7 +148,7 @@ def inter_eam_fs(param):  # 06/08 eam.fs interaction
 def inter_eam_alloy(param):  # 06/08 eam.alloy interaction
     ret = ""
     line = "pair_style      eam/alloy \n"
-    line += "pair_coeff      * * %s " % param["model_name"]
+    line += "pair_coeff      * * {} ".format(param["model_name"])
     for ii in param["param_type"]:
         line += ii + " "
     line += "\n"
@@ -179,9 +179,9 @@ def make_lammps_eval(conf, type_map, interaction, param):
     ret += "boundary	p p p\n"
     ret += "atom_style	atomic\n"
     ret += "box         tilt large\n"
-    ret += "read_data   %s\n" % conf
+    ret += f"read_data   {conf}\n"
     for ii in range(len(type_map)):
-        ret += "mass            %d %.3f\n" % (ii + 1, Element(type_map_list[ii]).mass)
+        ret += "mass            %d %.3f\n" % (ii + 1, Element(type_map_list[ii]).mass)  # noqa: UP031
     ret += "neigh_modify    every 1 delay 0 check no\n"
     ret += interaction(param)
     ret += "compute         mype all pe\n"
@@ -237,9 +237,9 @@ def make_lammps_equi(
     ret += "boundary	p p p\n"
     ret += "atom_style	atomic\n"
     ret += "box         tilt large\n"
-    ret += "read_data   %s\n" % conf
+    ret += f"read_data   {conf}\n"
     for ii in range(len(type_map)):
-        ret += "mass            %d %.3f\n" % (ii + 1, Element(type_map_list[ii]).mass)
+        ret += "mass            %d %.3f\n" % (ii + 1, Element(type_map_list[ii]).mass)  # noqa: UP031
     ret += "neigh_modify    every 1 delay 0 check no\n"
     ret += interaction(param)
     ret += "compute         mype all pe\n"
@@ -251,11 +251,11 @@ def make_lammps_equi(
     ret += "min_style       cg\n"
     if change_box:
         ret += "fix             1 all box/relax iso 0.0 \n"
-        ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)
+        ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)  # noqa: UP031
         ret += "fix             1 all box/relax aniso 0.0 \n"
-        ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)
+        ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)  # noqa: UP031
         ret += "fix             1 all box/relax tri 0.0 \n"
-    ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)
+    ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)  # noqa: UP031
     ret += "variable        N equal count(all)\n"
     ret += "variable        V equal vol\n"
     ret += 'variable        E equal "c_mype"\n'
@@ -294,9 +294,9 @@ def make_lammps_elastic(
     ret += "boundary	p p p\n"
     ret += "atom_style	atomic\n"
     ret += "box         tilt large\n"
-    ret += "read_data   %s\n" % conf
+    ret += f"read_data   {conf}\n"
     for ii in range(len(type_map)):
-        ret += "mass            %d %.3f\n" % (ii + 1, Element(type_map_list[ii]).mass)
+        ret += "mass            %d %.3f\n" % (ii + 1, Element(type_map_list[ii]).mass)  # noqa: UP031
     ret += "neigh_modify    every 1 delay 0 check no\n"
     ret += interaction(param)
     ret += "compute         mype all pe\n"
@@ -306,7 +306,7 @@ def make_lammps_elastic(
     )
     ret += "dump            1 all custom 100 dump.relax id type xs ys zs fx fy fz\n"
     ret += "min_style       cg\n"
-    ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)
+    ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)  # noqa: UP031
     ret += "variable        N equal count(all)\n"
     ret += "variable        V equal vol\n"
     ret += 'variable        E equal "c_mype"\n'
@@ -348,9 +348,9 @@ def make_lammps_press_relax(
     ret = ""
     ret += "clear\n"
     ret += "variable        GPa2bar	equal 1e4\n"
-    ret += "variable        B0		equal %f\n" % B0
-    ret += "variable        bp		equal %f\n" % bp
-    ret += "variable	    xx		equal %f\n" % scale2equi
+    ret += f"variable        B0		equal {B0:f}\n"
+    ret += f"variable        bp		equal {bp:f}\n"
+    ret += f"variable	    xx		equal {scale2equi:f}\n"
     ret += "variable        yeta	equal 1.5*(${bp}-1)\n"
     ret += "variable        Px0		equal 3*${B0}*(1-${xx})/${xx}^2*exp(${yeta}*(1-${xx}))\n"
     ret += "variable        Px		equal ${Px0}*${GPa2bar}\n"
@@ -359,9 +359,9 @@ def make_lammps_press_relax(
     ret += "boundary	p p p\n"
     ret += "atom_style	atomic\n"
     ret += "box         tilt large\n"
-    ret += "read_data   %s\n" % conf
+    ret += f"read_data   {conf}\n"
     for ii in range(len(type_map)):
-        ret += "mass            %d %.3f\n" % (ii + 1, Element(type_map_list[ii]).mass)
+        ret += "mass            %d %.3f\n" % (ii + 1, Element(type_map_list[ii]).mass)  # noqa: UP031
     ret += "neigh_modify    every 1 delay 0 check no\n"
     ret += interaction(param)
     ret += "compute         mype all pe\n"
@@ -372,9 +372,9 @@ def make_lammps_press_relax(
     ret += "dump            1 all custom 100 dump.relax id type xs ys zs fx fy fz\n"
     ret += "min_style       cg\n"
     ret += "fix             1 all box/relax iso ${Px} \n"
-    ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)
+    ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)  # noqa: UP031
     ret += "fix             1 all box/relax aniso ${Px} \n"
-    ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)
+    ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)  # noqa: UP031
     ret += "variable        N equal count(all)\n"
     ret += "variable        V equal vol\n"
     ret += 'variable        E equal "c_mype"\n'
@@ -406,10 +406,10 @@ def make_lammps_phonon(
     ret += "boundary	p p p\n"
     ret += "atom_style	atomic\n"
     ret += "box         tilt large\n"
-    ret += "read_data   %s\n" % conf
+    ret += f"read_data   {conf}\n"
     ntypes = len(masses)
     for ii in range(ntypes):
-        ret += "mass            %d %f\n" % (ii + 1, masses[ii])
+        ret += "mass            %d %f\n" % (ii + 1, masses[ii])  # noqa: UP031
     ret += "neigh_modify    every 1 delay 0 check no\n"
     ret += interaction(param)
     return ret

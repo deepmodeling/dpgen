@@ -1,13 +1,13 @@
 import os
 
-from pymatgen.ext.matproj import MPRester, MPRestError
-
 from dpgen import dlog
 
 web = "materials.org"
 
 
 def check_apikey():
+    from pymatgen.ext.matproj import MPRester, MPRestError
+
     try:
         apikey = os.environ["MAPI_KEY"]
     except KeyError:

@@ -81,7 +81,7 @@ class EOS(Property):
     def make_confs(self, path_to_work, path_to_equi, refine=False):
         path_to_work = os.path.abspath(path_to_work)
         if os.path.exists(path_to_work):
-            dlog.warning("%s already exists" % path_to_work)
+            dlog.warning(f"{path_to_work} already exists")
         else:
             os.makedirs(path_to_work)
         path_to_equi = os.path.abspath(path_to_equi)
@@ -177,7 +177,7 @@ class EOS(Property):
 
                 if not os.path.isfile(equi_contcar):
                     raise RuntimeError(
-                        "Can not find %s, please do relaxation first" % equi_contcar
+                        f"Can not find {equi_contcar}, please do relaxation first"
                     )
 
                 if self.inter_param["type"] == "abacus":
@@ -198,7 +198,7 @@ class EOS(Property):
                     # vol = vol / 100.0
                     vol = self.vol_start + task_num * self.vol_step
                     # task_num = int((vol - self.vol_start) / self.vol_step)
-                    output_task = os.path.join(path_to_work, "task.%06d" % task_num)
+                    output_task = os.path.join(path_to_work, "task.%06d" % task_num)  # noqa: UP031
                     os.makedirs(output_task, exist_ok=True)
                     os.chdir(output_task)
                     if self.inter_param["type"] == "abacus":

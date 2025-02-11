@@ -32,8 +32,8 @@ def make_pwscf_01_runctrl_dict(sys_data, idict):
     lines.append("&system")
     lines += _convert_dict(idict["system"])
     lines.append("ibrav=0,")
-    lines.append("nat=%d," % tot_natoms)
-    lines.append("ntyp=%d," % ntypes)
+    lines.append("nat=%d," % tot_natoms)  # noqa: UP031
+    lines.append("ntyp=%d," % ntypes)  # noqa: UP031
     lines.append("/")
     if "electrons" in idict:
         lines.append("&electrons")
@@ -58,19 +58,19 @@ def _make_pwscf_01_runctrl(sys_data, ecut, ediff, smearing, degauss):
     ret += "/\n"
     ret += "&system\n"
     ret += "vdw_corr='TS',\n"
-    ret += "ecutwfc=%s,\n" % str(ecut)
-    ret += "ts_vdw_econv_thr=%s,\n" % str(ediff)
+    ret += f"ecutwfc={str(ecut)},\n"
+    ret += f"ts_vdw_econv_thr={str(ediff)},\n"
     ret += "nosym=.TRUE.,\n"
     ret += "ibrav=0,\n"
-    ret += "nat=%d,\n" % tot_natoms
-    ret += "ntyp=%d,\n" % ntypes
+    ret += "nat=%d,\n" % tot_natoms  # noqa: UP031
+    ret += "ntyp=%d,\n" % ntypes  # noqa: UP031
     if degauss is not None:
-        ret += "degauss=%f,\n" % degauss
+        ret += f"degauss={degauss:f},\n"
     if smearing is not None:
-        ret += "smearing='%s',\n" % (smearing.lower())
+        ret += f"smearing='{smearing.lower()}',\n"
     ret += "/\n"
     ret += "&electrons\n"
-    ret += "conv_thr=%s,\n" % str(ediff)
+    ret += f"conv_thr={str(ediff)},\n"
     ret += "/\n"
     return ret
 
@@ -103,7 +103,7 @@ def _make_pwscf_03_config(sys_data):
     ret += "CELL_PARAMETERS { angstrom }\n"
     for ii in range(3):
         for jj in range(3):
-            ret += "%f " % cell[ii][jj]
+            ret += f"{cell[ii][jj]:f} "
         ret += "\n"
     ret += "\n"
     ret += "ATOMIC_POSITIONS { angstrom }\n"
@@ -136,9 +136,9 @@ def _make_pwscf_04_kpoints(sys_data, kspacing):
     else:
         ret += "K_POINTS { automatic }\n"
         for ii in range(3):
-            ret += "%d " % kpoints[ii]
+            ret += "%d " % kpoints[ii]  # noqa: UP031
         for ii in range(3):
-            ret += "%d " % _kshift(kpoints[ii])
+            ret += "%d " % _kshift(kpoints[ii])  # noqa: UP031
     ret += "\n"
     return ret
 

@@ -5,8 +5,6 @@ import re
 
 import numpy as np
 from monty.serialization import dumpfn, loadfn
-from pymatgen.analysis.defects.generators import InterstitialGenerator
-from pymatgen.core.structure import Structure
 
 import dpgen.auto_test.lib.abacus as abacus
 import dpgen.auto_test.lib.lammps as lammps
@@ -78,6 +76,9 @@ class Interstitial(Property):
         self.inter_param = inter_param if inter_param is not None else {"type": "vasp"}
 
     def make_confs(self, path_to_work, path_to_equi, refine=False):
+        from pymatgen.analysis.defects.generators import InterstitialGenerator
+        from pymatgen.core.structure import Structure
+
         path_to_work = os.path.abspath(path_to_work)
         path_to_equi = os.path.abspath(path_to_equi)
 
@@ -221,7 +222,7 @@ class Interstitial(Property):
                 #           task_poscar = os.path.join(output, 'POSCAR')
 
                 for ii in range(len(dss)):
-                    output_task = os.path.join(path_to_work, "task.%06d" % ii)
+                    output_task = os.path.join(path_to_work, "task.%06d" % ii)  # noqa: UP031
                     os.makedirs(output_task, exist_ok=True)
                     os.chdir(output_task)
                     for jj in [
@@ -261,7 +262,7 @@ class Interstitial(Property):
 
                     super_latt_param = float(pos_line[2].split()[0])
 
-                    output_task1 = os.path.join(path_to_work, "task.%06d" % (len(dss)))
+                    output_task1 = os.path.join(path_to_work, "task.%06d" % (len(dss)))  # noqa: UP031
                     os.makedirs(output_task1, exist_ok=True)
                     os.chdir(output_task1)
                     task_list.append(output_task1)
@@ -269,9 +270,9 @@ class Interstitial(Property):
                         print(self.insert_ele[0], file=fout)
                     dumpfn(self.supercell, "supercell.json")
                     pos_line[chl] = (
-                        "%.6f" % float(latt_param / 4 / super_latt_param)
+                        f"{float(latt_param / 4 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f" % float(latt_param / 2 / super_latt_param)
+                        + f"{float(latt_param / 2 / super_latt_param):.6f}"
                         + " 0.000000 "
                         + self.insert_ele[0]
                     )
@@ -282,7 +283,8 @@ class Interstitial(Property):
                     os.chdir(cwd)
 
                     output_task2 = os.path.join(
-                        path_to_work, "task.%06d" % (len(dss) + 1)
+                        path_to_work,
+                        "task.%06d" % (len(dss) + 1),  # noqa: UP031
                     )
                     os.makedirs(output_task2, exist_ok=True)
                     os.chdir(output_task2)
@@ -291,9 +293,9 @@ class Interstitial(Property):
                         print(self.insert_ele[0], file=fout)
                     dumpfn(self.supercell, "supercell.json")
                     pos_line[chl] = (
-                        "%.6f" % float(latt_param / 2 / super_latt_param)
+                        f"{float(latt_param / 2 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f" % float(latt_param / 2 / super_latt_param)
+                        + f"{float(latt_param / 2 / super_latt_param):.6f}"
                         + " 0.000000 "
                         + self.insert_ele[0]
                     )
@@ -304,7 +306,8 @@ class Interstitial(Property):
                     os.chdir(cwd)
 
                     output_task3 = os.path.join(
-                        path_to_work, "task.%06d" % (len(dss) + 2)
+                        path_to_work,
+                        "task.%06d" % (len(dss) + 2),  # noqa: UP031
                     )
                     os.makedirs(output_task3, exist_ok=True)
                     os.chdir(output_task3)
@@ -313,11 +316,11 @@ class Interstitial(Property):
                         print(self.insert_ele[0], file=fout)
                     dumpfn(self.supercell, "supercell.json")
                     pos_line[chl] = (
-                        "%.6f" % float(latt_param / 4 / super_latt_param)
+                        f"{float(latt_param / 4 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f" % float(latt_param / 4 / super_latt_param)
+                        + f"{float(latt_param / 4 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f" % float(latt_param / 4 / super_latt_param)
+                        + f"{float(latt_param / 4 / super_latt_param):.6f}"
                         + " "
                         + self.insert_ele[0]
                     )
@@ -345,7 +348,8 @@ class Interstitial(Property):
                                 replace_label = idx
 
                     output_task4 = os.path.join(
-                        path_to_work, "task.%06d" % (len(dss) + 3)
+                        path_to_work,
+                        "task.%06d" % (len(dss) + 3),  # noqa: UP031
                     )
                     os.makedirs(output_task4, exist_ok=True)
                     os.chdir(output_task4)
@@ -354,20 +358,20 @@ class Interstitial(Property):
                         print(self.insert_ele[0], file=fout)
                     dumpfn(self.supercell, "supercell.json")
                     pos_line[chl] = (
-                        "%.6f" % float(latt_param / 3 / super_latt_param)
+                        f"{float(latt_param / 3 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f" % float(latt_param / 3 / super_latt_param)
+                        + f"{float(latt_param / 3 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f" % float(latt_param / 3 / super_latt_param)
+                        + f"{float(latt_param / 3 / super_latt_param):.6f}"
                         + " "
                         + self.insert_ele[0]
                     )
                     pos_line[replace_label] = (
-                        "%.6f" % float(latt_param / 3 * 2 / super_latt_param)
+                        f"{float(latt_param / 3 * 2 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f" % float(latt_param / 3 * 2 / super_latt_param)
+                        + f"{float(latt_param / 3 * 2 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f" % float(latt_param / 3 * 2 / super_latt_param)
+                        + f"{float(latt_param / 3 * 2 / super_latt_param):.6f}"
                         + " "
                         + self.insert_ele[0]
                     )
@@ -379,7 +383,8 @@ class Interstitial(Property):
                     os.chdir(cwd)
 
                     output_task5 = os.path.join(
-                        path_to_work, "task.%06d" % (len(dss) + 4)
+                        path_to_work,
+                        "task.%06d" % (len(dss) + 4),  # noqa: UP031
                     )
                     os.makedirs(output_task5, exist_ok=True)
                     os.chdir(output_task5)
@@ -388,24 +393,20 @@ class Interstitial(Property):
                         print(self.insert_ele[0], file=fout)
                     dumpfn(self.supercell, "supercell.json")
                     pos_line[chl] = (
-                        "%.6f"
-                        % float((latt_param + 2.1 / 2**0.5) / 2 / super_latt_param)
+                        f"{float((latt_param + 2.1 / 2**0.5) / 2 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f"
-                        % float((latt_param - 2.1 / 2**0.5) / 2 / super_latt_param)
+                        + f"{float((latt_param - 2.1 / 2**0.5) / 2 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f" % float(latt_param / 2 / super_latt_param)
+                        + f"{float(latt_param / 2 / super_latt_param):.6f}"
                         + " "
                         + self.insert_ele[0]
                     )
                     pos_line[replace_label] = (
-                        "%.6f"
-                        % float((latt_param - 2.1 / 2**0.5) / 2 / super_latt_param)
+                        f"{float((latt_param - 2.1 / 2**0.5) / 2 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f"
-                        % float((latt_param + 2.1 / 2**0.5) / 2 / super_latt_param)
+                        + f"{float((latt_param + 2.1 / 2**0.5) / 2 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f" % float(latt_param / 2 / super_latt_param)
+                        + f"{float(latt_param / 2 / super_latt_param):.6f}"
                         + " "
                         + self.insert_ele[0]
                     )
@@ -417,7 +418,8 @@ class Interstitial(Property):
                     os.chdir(cwd)
 
                     output_task6 = os.path.join(
-                        path_to_work, "task.%06d" % (len(dss) + 5)
+                        path_to_work,
+                        "task.%06d" % (len(dss) + 5),  # noqa: UP031
                     )
                     os.makedirs(output_task6, exist_ok=True)
                     os.chdir(output_task6)
@@ -426,20 +428,20 @@ class Interstitial(Property):
                         print(self.insert_ele[0], file=fout)
                     dumpfn(self.supercell, "supercell.json")
                     pos_line[chl] = (
-                        "%.6f" % float(latt_param / 2 / super_latt_param)
+                        f"{float(latt_param / 2 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f" % float(latt_param / 2 / super_latt_param)
+                        + f"{float(latt_param / 2 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f" % float((latt_param - 2.1) / 2 / super_latt_param)
+                        + f"{float((latt_param - 2.1) / 2 / super_latt_param):.6f}"
                         + " "
                         + self.insert_ele[0]
                     )
                     pos_line[replace_label] = (
-                        "%.6f" % float(latt_param / 2 / super_latt_param)
+                        f"{float(latt_param / 2 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f" % float(latt_param / 2 / super_latt_param)
+                        + f"{float(latt_param / 2 / super_latt_param):.6f}"
                         + " "
-                        + "%.6f" % float((latt_param + 2.1) / 2 / super_latt_param)
+                        + f"{float((latt_param + 2.1) / 2 / super_latt_param):.6f}"
                         + " "
                         + self.insert_ele[0]
                     )
@@ -456,7 +458,7 @@ class Interstitial(Property):
 
                 if self.inter_param["type"] == "abacus":
                     for ii in range(total_task):
-                        output_task = os.path.join(path_to_work, "task.%06d" % ii)
+                        output_task = os.path.join(path_to_work, "task.%06d" % ii)  # noqa: UP031
                         os.chdir(output_task)
                         abacus.poscar2stru("POSCAR", self.inter_param, "STRU")
                         os.remove("POSCAR")
@@ -481,11 +483,11 @@ class Interstitial(Property):
                         type_num = type_map[insert_ele] + 1
                         conf_line[2] = str(len(type_map_list)) + " atom types"
                         conf_line[-2] = (
-                            "%6.d" % int(insert_line.split()[0])
-                            + "%7.d" % type_num
-                            + "%16.10f" % float(insert_line.split()[2])
-                            + "%16.10f" % float(insert_line.split()[3])
-                            + "%16.10f" % float(insert_line.split()[4])
+                            "%6.d" % int(insert_line.split()[0])  # noqa: UP031
+                            + "%7.d" % type_num  # noqa: UP031
+                            + f"{float(insert_line.split()[2]):16.10f}"
+                            + f"{float(insert_line.split()[3]):16.10f}"
+                            + f"{float(insert_line.split()[4]):16.10f}"
                         )
                         with open(conf, "w+") as fout:
                             for jj in conf_line:

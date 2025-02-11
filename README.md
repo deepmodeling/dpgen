@@ -53,7 +53,7 @@ For detailed usage and parameters, read [DP-GEN documentation](https://docs.deep
 
 * [Tutorials](https://tutorials.deepmodeling.com/en/latest/Tutorials/DP-GEN/): basic tutorials for DP-GEN.
 * [Examples](examples): input files in [JSON](https://docs.python.org/3/library/json.html) format.
-* [Publications](https://deepmodeling.com/blog/papers/dpgen/): Published research articles using DP-GEN.
+* [Publications](https://blogs.deepmodeling.com/papers/dpgen/): Published research articles using DP-GEN.
 * [User guide](https://docs.deepmodeling.com/projects/dpgen/en/latest/user-guide/): frequently asked questions listed in troubleshooting.
 
 ## License

@@ -18,19 +18,20 @@ from typing import Union
 
 import dpdata
 import numpy as np
-from packaging.version import Version
 
 from dpgen import dlog
 from dpgen.dispatcher.Dispatcher import make_submission
 
 # TODO: maybe the following functions can be moved to dpgen.util
 from dpgen.generator.lib.utils import (
+    check_api_version,
     create_path,
     log_iter,
     make_iter_name,
     record_iter,
 )
 from dpgen.generator.run import (
+    _get_model_suffix,
     data_system_fmt,
     fp_name,
     fp_task_fmt,
@@ -102,6 +103,14 @@ def get_multi_system(path: Union[str, list[str]], jdata: dict) -> dpdata.MultiSy
 
 
 def init_model(iter_index, jdata, mdata):
+    mlp_engine = jdata.get("mlp_engine", "dp")
+    if mlp_engine == "dp":
+        init_model_dp(iter_index, jdata, mdata)
+    else:
+        raise TypeError(f"unsupported engine {mlp_engine}")
+
+
+def init_model_dp(iter_index, jdata, mdata):
     training_init_model = jdata.get("training_init_model", False)
     if not training_init_model:
         return
@@ -115,7 +124,7 @@ def init_model(iter_index, jdata, mdata):
         iter0_models += [os.path.abspath(ii) for ii in model_is]
     numb_models = jdata["numb_models"]
     assert numb_models == len(iter0_models), (
-        "training_iter0_model_path should be provided, and the number of models should be equal to %d"
+        "training_iter0_model_path should be provided, and the number of models should be equal to %d"  # noqa: UP031
         % numb_models
     )
     work_path = os.path.join(make_iter_name(iter_index), train_name)
@@ -186,7 +195,9 @@ def make_model_devi(iter_index, jdata, mdata):
     # link the model
     train_path = os.path.join(iter_name, train_name)
     train_path = os.path.abspath(train_path)
-    models = glob.glob(os.path.join(train_path, "graph*pb"))
+    suffix = _get_model_suffix(jdata)
+    models = glob.glob(os.path.join(train_path, f"graph*{suffix}"))
+
     for mm in models:
         model_name = os.path.basename(mm)
         os.symlink(mm, os.path.join(work_path, model_name))
@@ -210,7 +221,9 @@ def run_model_devi(iter_index, jdata, mdata):
     commands = []
     run_tasks = ["."]
     # get models
-    models = glob.glob(os.path.join(work_path, "graph*pb"))
+    suffix = _get_model_suffix(jdata)
+    models = glob.glob(os.path.join(work_path, f"graph*{suffix}"))
+    assert len(models) > 0, "No model file found."
     model_names = [os.path.basename(ii) for ii in models]
     task_model_list = []
     for ii in model_names:
@@ -252,27 +265,23 @@ def run_model_devi(iter_index, jdata, mdata):
         commands.append(command_true_error)
         backward_files.append(true_error_file_name)
 
-    api_version = mdata.get("api_version", "1.0")
-    if Version(api_version) < Version("1.0"):
-        raise RuntimeError(
-            "API version %s has been removed. Please upgrade to 1.0." % api_version
-        )
+    ### Submit jobs
+    check_api_version(mdata)
 
-    elif Version(api_version) >= Version("1.0"):
-        submission = make_submission(
-            mdata["model_devi_machine"],
-            mdata["model_devi_resources"],
-            commands=commands,
-            work_path=work_path,
-            run_tasks=run_tasks,
-            group_size=model_devi_group_size,
-            forward_common_files=model_names,
-            forward_files=forward_files,
-            backward_files=backward_files,
-            outlog="model_devi.log",
-            errlog="model_devi.log",
-        )
-        submission.run_submission()
+    submission = make_submission(
+        mdata["model_devi_machine"],
+        mdata["model_devi_resources"],
+        commands=commands,
+        work_path=work_path,
+        run_tasks=run_tasks,
+        group_size=model_devi_group_size,
+        forward_common_files=model_names,
+        forward_files=forward_files,
+        backward_files=backward_files,
+        outlog="model_devi.log",
+        errlog="model_devi.log",
+    )
+    submission.run_submission()
 
 
 def post_model_devi(iter_index, jdata, mdata):
@@ -544,7 +553,7 @@ def run_iter(param_file, machine_file):
         with open(record) as frec:
             for line in frec:
                 iter_rec = [int(x) for x in line.split()]
-        dlog.info("continue from iter %03d task %02d" % (iter_rec[0], iter_rec[1]))
+        dlog.info("continue from iter %03d task %02d" % (iter_rec[0], iter_rec[1]))  # noqa: UP031
 
     cont = True
     ii = -1
@@ -557,7 +566,7 @@ def run_iter(param_file, machine_file):
         for jj in range(numb_task):
             if ii * max_tasks + jj <= iter_rec[0] * max_tasks + iter_rec[1]:
                 continue
-            task_name = "task %02d" % jj
+            task_name = "task %02d" % jj  # noqa: UP031
             sepline(f"{iter_name} {task_name}", "-")
             jdata["model_devi_jobs"] = [{} for _ in range(ii + 1)]
             if ii == 0 and jj < 6 and (jj >= 3 or not jdata.get("init_data_sys", [])):
@@ -608,7 +617,7 @@ def run_iter(param_file, machine_file):
                 else:
                     post_fp(ii, jdata)
             else:
-                raise RuntimeError("unknown task %d, something wrong" % jj)
+                raise RuntimeError("unknown task %d, something wrong" % jj)  # noqa: UP031
             record_iter(record, ii, jj)
 
 

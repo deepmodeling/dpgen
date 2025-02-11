@@ -19,7 +19,7 @@ from datetime import date
 # -- Project information -----------------------------------------------------
 
 project = "DP-GEN"
-copyright = "2020-%d, DeepModeling" % date.today().year
+copyright = "2020-%d, DeepModeling" % date.today().year  # noqa: UP031
 author = "DeepModeling"
 
 
@@ -30,7 +30,7 @@ author = "DeepModeling"
 # ones.
 # extensions = [
 #     'recommonmark',
-#     "sphinx_rtd_theme",
+#     "sphinx_book_theme",
 #     'myst_parser',
 #     'sphinx_markdown_tables',
 #     'sphinx.ext.autosummary'
@@ -39,7 +39,7 @@ author = "DeepModeling"
 extensions = [
     "deepmodeling_sphinx",
     "dargs.sphinx",
-    "sphinx_rtd_theme",
+    "sphinx_book_theme",
     "myst_parser",
     "sphinx.ext.autosummary",
     "sphinx.ext.viewcode",
@@ -71,7 +71,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_rtd_theme"
+html_theme = "sphinx_book_theme"
 html_logo = "_static/logo.svg"
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -79,6 +79,12 @@ html_logo = "_static/logo.svg"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
+html_theme_options = {
+    "logo": {
+        "image_light": "_static/logo.svg",
+        "image_dark": "_static/logo-dark.svg",
+    }
+}
 
 autodoc_default_flags = ["members"]
 autosummary_generate = True

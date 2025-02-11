@@ -145,7 +145,7 @@ def system_data(lines):
     system["atom_numbs"] = get_natoms_vec(lines)
     system["atom_names"] = []
     for ii in range(len(system["atom_numbs"])):
-        system["atom_names"].append("Type_%d" % ii)
+        system["atom_names"].append("Type_%d" % ii)  # noqa: UP031
     lohi, tilt = get_lmpbox(lines)
     orig, cell = lmpbox2box(lohi, tilt)
     system["orig"] = np.array(orig)
@@ -165,11 +165,11 @@ def from_system_data(system):
     ret += "\n"
     natoms = sum(system["atom_numbs"])
     ntypes = len(system["atom_numbs"])
-    ret += "%d atoms\n" % natoms
-    ret += "%d atom types\n" % ntypes
-    ret += "0 %f xlo xhi\n" % system["cell"][0][0]
-    ret += "0 %f ylo yhi\n" % system["cell"][1][1]
-    ret += "0 %f zlo zhi\n" % system["cell"][2][2]
+    ret += "%d atoms\n" % natoms  # noqa: UP031
+    ret += "%d atom types\n" % ntypes  # noqa: UP031
+    ret += "0 {:f} xlo xhi\n".format(system["cell"][0][0])
+    ret += "0 {:f} ylo yhi\n".format(system["cell"][1][1])
+    ret += "0 {:f} zlo zhi\n".format(system["cell"][2][2])
     ret += "{:f} {:f} {:f} xy xz yz\n".format(
         system["cell"][1][0],
         system["cell"][2][0],
@@ -179,7 +179,7 @@ def from_system_data(system):
     ret += "Atoms # atomic\n"
     ret += "\n"
     for ii in range(natoms):
-        ret += "%d %d %f %f %f\n" % (
+        ret += "%d %d %f %f %f\n" % (  # noqa: UP031
             ii + 1,
             system["atom_types"][ii],
             system["coordinates"][ii][0] - system["orig"][0],

@@ -11,6 +11,7 @@ dlogf_formatter = logging.Formatter("%(asctime)s - %(levelname)s : %(message)s")
 # dlogf_formatter=logging.Formatter('%(asctime)s - %(name)s - [%(filename)s:%(funcName)s - %(lineno)d ] - %(levelname)s \n %(message)s')
 dlogf.setFormatter(dlogf_formatter)
 dlog.addHandler(dlogf)
+logging.basicConfig(level=logging.WARNING)
 
 __author__ = "Han Wang"
 __copyright__ = "Copyright 2019"
@@ -47,11 +48,11 @@ def info():
     ]:
         try:
             mm = __import__(modui)
-            print("%10s %10s   %s" % (modui, mm.__version__, mm.__path__[0]))
+            print("%10s %10s   %s" % (modui, mm.__version__, mm.__path__[0]))  # noqa: UP031
         except ImportError:
-            print("%10s %10s Not Found" % (modui, ""))
+            print("%10s %10s Not Found" % (modui, ""))  # noqa: UP031
         except AttributeError:
-            print("%10s %10s unknown version or path" % (modui, ""))
+            print("%10s %10s unknown version or path" % (modui, ""))  # noqa: UP031
     print()
 
     # reference

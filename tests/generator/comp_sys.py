@@ -19,7 +19,7 @@ def test_cell(testCase, system_1, system_2, places=5):
                     system_1.data["cells"][ff][ii][jj],
                     system_2.data["cells"][ff][ii][jj],
                     places=places,
-                    msg="cell[%d][%d][%d] failed" % (ff, ii, jj),
+                    msg="cell[%d][%d][%d] failed" % (ff, ii, jj),  # noqa: UP031
                 )
 
 
@@ -36,7 +36,7 @@ def test_coord(testCase, system_1, system_2, places=5):
                     system_1.data["coords"][ff][ii][jj] / tmp_cell_norm[ff][jj],
                     system_2.data["coords"][ff][ii][jj] / tmp_cell_norm[ff][jj],
                     places=places,
-                    msg="coord[%d][%d][%d] failed" % (ff, ii, jj),
+                    msg="coord[%d][%d][%d] failed" % (ff, ii, jj),  # noqa: UP031
                 )
 
 
@@ -77,7 +77,7 @@ class CompSys:
                         self.system_1.data["cells"][ff][ii][jj],
                         self.system_2.data["cells"][ff][ii][jj],
                         places=self.places,
-                        msg="cell[%d][%d][%d] failed" % (ff, ii, jj),
+                        msg="cell[%d][%d][%d] failed" % (ff, ii, jj),  # noqa: UP031
                     )
 
     def test_coord(self):
@@ -86,6 +86,9 @@ class CompSys:
         tmp_cell = self.system_1.data["cells"]
         tmp_cell = np.reshape(tmp_cell, [-1, 3])
         tmp_cell_norm = np.reshape(np.linalg.norm(tmp_cell, axis=1), [-1, 3])
+        if np.max(np.abs(tmp_cell_norm)) < 1e-12:
+            # zero cell, no pbc case, set to [1., 1., 1.]
+            tmp_cell_norm = np.ones(tmp_cell_norm.shape)
         for ff in range(self.system_1.get_nframes()):
             for ii in range(sum(self.system_1.data["atom_numbs"])):
                 for jj in range(3):
@@ -95,7 +98,7 @@ class CompSys:
                         self.system_2.data["coords"][ff][ii][jj]
                         / tmp_cell_norm[ff][jj],
                         places=self.places,
-                        msg="coord[%d][%d][%d] failed" % (ff, ii, jj),
+                        msg="coord[%d][%d][%d] failed" % (ff, ii, jj),  # noqa: UP031
                     )
 
 
@@ -103,12 +106,21 @@ class CompLabeledSys(CompSys):
     def test_energy(self):
         self.assertEqual(self.system_1.get_nframes(), self.system_2.get_nframes())
         for ff in range(self.system_1.get_nframes()):
-            self.assertAlmostEqual(
-                self.system_1.data["energies"][ff],
-                self.system_2.data["energies"][ff],
-                places=self.e_places,
-                msg="energies[%d] failed" % (ff),
-            )
+            if abs(self.system_2.data["energies"][ff]) < 1e-12:
+                self.assertAlmostEqual(
+                    self.system_1.data["energies"][ff],
+                    self.system_2.data["energies"][ff],
+                    places=self.e_places,
+                    msg="energies[%d] failed" % (ff),  # noqa: UP031
+                )
+            else:
+                self.assertAlmostEqual(
+                    self.system_1.data["energies"][ff]
+                    / self.system_2.data["energies"][ff],
+                    1.0,
+                    places=self.e_places,
+                    msg="energies[%d] failed" % (ff),  # noqa: UP031
+                )
 
     def test_force(self):
         self.assertEqual(self.system_1.get_nframes(), self.system_2.get_nframes())
@@ -119,7 +131,7 @@ class CompLabeledSys(CompSys):
                         self.system_1.data["forces"][ff][ii][jj],
                         self.system_2.data["forces"][ff][ii][jj],
                         places=self.f_places,
-                        msg="forces[%d][%d][%d] failed" % (ff, ii, jj),
+                        msg="forces[%d][%d][%d] failed" % (ff, ii, jj),  # noqa: UP031
                     )
 
     def test_virial(self):
@@ -133,5 +145,5 @@ class CompLabeledSys(CompSys):
                         self.system_1["virials"][ff][ii][jj],
                         self.system_2["virials"][ff][ii][jj],
                         places=self.v_places,
-                        msg="virials[%d][%d][%d] failed" % (ff, ii, jj),
+                        msg="virials[%d][%d][%d] failed" % (ff, ii, jj),  # noqa: UP031
                     )

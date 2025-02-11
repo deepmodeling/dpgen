@@ -154,8 +154,8 @@ def make_gaussian_input(sys_data, fp_params):
             mult_frags.append(detect_multiplicity(np.array(symbols)[idx]))
         if use_fragment_guesses:
             multiplicity = sum(mult_frags) - frag_numb + 1
-            chargekeywords_frag = "%d %d" % (charge, multiplicity) + "".join(
-                [" %d %d" % (charge, mult_frag) for mult_frag in mult_frags]
+            chargekeywords_frag = "%d %d" % (charge, multiplicity) + "".join(  # noqa: UP031
+                [" %d %d" % (charge, mult_frag) for mult_frag in mult_frags]  # noqa: UP031
             )
         else:
             multi_frags = np.array(mult_frags)
@@ -190,7 +190,7 @@ def make_gaussian_input(sys_data, fp_params):
     for ii, (symbol, coordinate) in enumerate(zip(symbols, coordinates)):
         if use_fragment_guesses:
             buff.append(
-                "%s(Fragment=%d) %f %f %f" % (symbol, frag_index[ii] + 1, *coordinate)
+                "%s(Fragment=%d) %f %f %f" % (symbol, frag_index[ii] + 1, *coordinate)  # noqa: UP031
             )
         else:
             buff.append("{} {:f} {:f} {:f}".format(symbol, *coordinate))

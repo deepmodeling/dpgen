@@ -6,6 +6,8 @@ import os
 import re
 import shutil
 
+from packaging.version import Version
+
 iter_format = "%06d"
 task_format = "%02d"
 log_iter_head = "iter " + iter_format + " task " + task_format + ": "
@@ -21,7 +23,7 @@ def create_path(path):
         dirname = os.path.dirname(path)
         counter = 0
         while True:
-            bk_dirname = dirname + ".bk%03d" % counter
+            bk_dirname = dirname + ".bk%03d" % counter  # noqa: UP031
             if not os.path.isdir(bk_dirname):
                 shutil.move(dirname, bk_dirname)
                 break
@@ -72,7 +74,7 @@ def log_task(message):
 
 def record_iter(record, ii, jj):
     with open(record, "a") as frec:
-        frec.write("%d %d\n" % (ii, jj))
+        frec.write("%d %d\n" % (ii, jj))  # noqa: UP031
 
 
 def symlink_user_forward_files(mdata, task_type, work_path, task_format=None):
@@ -100,13 +102,22 @@ def symlink_user_forward_files(mdata, task_type, work_path, task_format=None):
         task_format = {"train": "0*", "model_devi": "task.*", "fp": "task.*"}
         # "init_relax" : "sys-*", "init_md" : "sys-*/scale*/00*"
     for file in user_forward_files:
-        assert os.path.isfile(
-            file
-        ), f"user_forward_file {file} of {task_type} stage doesn't exist. "
+        assert os.path.isfile(file), (
+            f"user_forward_file {file} of {task_type} stage doesn't exist. "
+        )
         tasks = glob.glob(os.path.join(work_path, task_format[task_type]))
         for task in tasks:
             if os.path.isfile(os.path.join(task, os.path.basename(file))):
                 os.remove(os.path.join(task, os.path.basename(file)))
             abs_file = os.path.abspath(file)
             os.symlink(abs_file, os.path.join(task, os.path.basename(file)))
+    return
+
+
+def check_api_version(mdata):
+    """Check if the API version in mdata is at least 1.0."""
+    if Version(mdata.get("api_version", "1.0")) < Version("1.0"):
+        raise RuntimeError(
+            "API version below 1.0 is no longer supported. Please upgrade to version 1.0 or newer."
+        )
     return

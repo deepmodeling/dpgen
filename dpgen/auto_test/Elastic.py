@@ -4,11 +4,6 @@ import re
 from shutil import copyfile
 
 from monty.serialization import dumpfn, loadfn
-from pymatgen.analysis.elasticity.elastic import ElasticTensor
-from pymatgen.analysis.elasticity.strain import DeformedStructureSet, Strain
-from pymatgen.analysis.elasticity.stress import Stress
-from pymatgen.core.structure import Structure
-from pymatgen.io.vasp import Incar, Kpoints
 
 import dpgen.auto_test.lib.abacus as abacus
 import dpgen.auto_test.lib.vasp as vasp
@@ -53,9 +48,12 @@ class Elastic(Property):
         self.inter_param = inter_param if inter_param is not None else {"type": "vasp"}
 
     def make_confs(self, path_to_work, path_to_equi, refine=False):
+        from pymatgen.analysis.elasticity.strain import DeformedStructureSet, Strain
+        from pymatgen.core.structure import Structure
+
         path_to_work = os.path.abspath(path_to_work)
         if os.path.exists(path_to_work):
-            dlog.warning("%s already exists" % path_to_work)
+            dlog.warning(f"{path_to_work} already exists")
         else:
             os.makedirs(path_to_work)
         path_to_equi = os.path.abspath(path_to_equi)
@@ -164,7 +162,7 @@ class Elastic(Property):
             print("gen with norm " + str(norm_strains))
             print("gen with shear " + str(shear_strains))
             for ii in range(n_dfm):
-                output_task = os.path.join(path_to_work, "task.%06d" % ii)
+                output_task = os.path.join(path_to_work, "task.%06d" % ii)  # noqa: UP031
                 os.makedirs(output_task, exist_ok=True)
                 os.chdir(output_task)
                 for jj in [
@@ -189,6 +187,8 @@ class Elastic(Property):
         return task_list
 
     def post_process(self, task_list):
+        from pymatgen.io.vasp import Incar, Kpoints
+
         if self.inter_param["type"] == "abacus":
             POSCAR = "STRU"
             INCAR = "INPUT"
@@ -250,6 +250,9 @@ class Elastic(Property):
         return self.parameter
 
     def _compute_lower(self, output_file, all_tasks, all_res):
+        from pymatgen.analysis.elasticity.elastic import ElasticTensor
+        from pymatgen.analysis.elasticity.stress import Stress
+
         output_file = os.path.abspath(output_file)
         res_data = {}
         ptr_data = os.path.dirname(output_file) + "\n"
@@ -288,10 +291,10 @@ class Elastic(Property):
         res_data["GV"] = GV
         res_data["EV"] = EV
         res_data["uV"] = uV
-        ptr_data += "# Bulk   Modulus BV = %.2f GPa\n" % BV
-        ptr_data += "# Shear  Modulus GV = %.2f GPa\n" % GV
-        ptr_data += "# Youngs Modulus EV = %.2f GPa\n" % EV
-        ptr_data += "# Poission Ratio uV = %.2f\n " % uV
+        ptr_data += f"# Bulk   Modulus BV = {BV:.2f} GPa\n"
+        ptr_data += f"# Shear  Modulus GV = {GV:.2f} GPa\n"
+        ptr_data += f"# Youngs Modulus EV = {EV:.2f} GPa\n"
+        ptr_data += f"# Poission Ratio uV = {uV:.2f}\n "
 
         dumpfn(res_data, output_file, indent=4)
 

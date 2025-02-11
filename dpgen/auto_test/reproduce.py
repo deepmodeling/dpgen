@@ -34,9 +34,9 @@ def make_repro(
     init_data_task_todo = glob.glob(
         os.path.join(init_data_path_todo, "task.[0-9]*[0-9]")
     )
-    assert (
-        len(init_data_task_todo) > 0
-    ), "There is no task in previous calculations path"
+    assert len(init_data_task_todo) > 0, (
+        "There is no task in previous calculations path"
+    )
     init_data_task_todo.sort()
 
     task_list = []
@@ -60,7 +60,7 @@ def make_repro(
         for jj in range(nframe):
             if property_type == "interstitial":
                 print(insert_element, file=fout_element)
-            output_task = os.path.join(path_to_work, "task.%06d" % task_num)
+            output_task = os.path.join(path_to_work, "task.%06d" % task_num)  # noqa: UP031
             task_num += 1
             task_list.append(output_task)
             os.makedirs(output_task, exist_ok=True)
@@ -122,9 +122,9 @@ def post_repro(
     init_data_task_todo = glob.glob(
         os.path.join(init_data_path_todo, "task.[0-9]*[0-9]")
     )
-    assert (
-        len(init_data_task_todo) > 0
-    ), "There is no task in previous calculations path"
+    assert len(init_data_task_todo) > 0, (
+        "There is no task in previous calculations path"
+    )
     init_data_task_todo.sort()
 
     idid = 0

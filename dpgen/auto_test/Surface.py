@@ -6,8 +6,6 @@ import re
 import dpdata
 import numpy as np
 from monty.serialization import dumpfn, loadfn
-from pymatgen.core.structure import Structure
-from pymatgen.core.surface import generate_all_slabs
 
 import dpgen.auto_test.lib.abacus as abacus
 import dpgen.auto_test.lib.vasp as vasp
@@ -85,9 +83,12 @@ class Surface(Property):
         self.inter_param = inter_param if inter_param is not None else {"type": "vasp"}
 
     def make_confs(self, path_to_work, path_to_equi, refine=False):
+        from pymatgen.core.structure import Structure
+        from pymatgen.core.surface import generate_all_slabs
+
         path_to_work = os.path.abspath(path_to_work)
         if os.path.exists(path_to_work):
-            dlog.warning("%s already exists" % path_to_work)
+            dlog.warning(f"{path_to_work} already exists")
         else:
             os.makedirs(path_to_work)
         path_to_equi = os.path.abspath(path_to_equi)
@@ -197,7 +198,7 @@ class Surface(Property):
                 os.symlink(os.path.relpath(equi_contcar), POSCAR)
                 #           task_poscar = os.path.join(output, 'POSCAR')
                 for ii in range(len(all_slabs)):
-                    output_task = os.path.join(path_to_work, "task.%06d" % ii)
+                    output_task = os.path.join(path_to_work, "task.%06d" % ii)  # noqa: UP031
                     os.makedirs(output_task, exist_ok=True)
                     os.chdir(output_task)
                     for jj in [
@@ -212,9 +213,9 @@ class Surface(Property):
                             os.remove(jj)
                     task_list.append(output_task)
                     print(
-                        "# %03d generate " % ii,
+                        "# %03d generate " % ii,  # noqa: UP031
                         output_task,
-                        " \t %d atoms" % len(all_slabs[ii].sites),
+                        " \t %d atoms" % len(all_slabs[ii].sites),  # noqa: UP031
                     )
                     # make confs
                     all_slabs[ii].to("POSCAR.tmp", "POSCAR")
@@ -269,7 +270,7 @@ class Surface(Property):
                 evac = (task_result["energies"][-1] - equi_epa * natoms) / AA * Cf
 
                 miller_index = loadfn(os.path.join(ii, "miller.json"))
-                ptr_data += "%-25s     %7.3f    %8.3f %8.3f\n" % (
+                ptr_data += "%-25s     %7.3f    %8.3f %8.3f\n" % (  # noqa: UP031
                     str(miller_index) + "-" + structure_dir + ":",
                     evac,
                     epa,

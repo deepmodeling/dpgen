@@ -14,14 +14,14 @@ from deepmd.infer import calc_model_devi
 def write_model_devi_out(devi, fname):
     assert devi.shape[1] == 8
     # assert devi.shape[1] == 7
-    header = "%5s" % "step"
+    header = "%5s" % "step"  # noqa: UP031
     for item in "vf":
-        header += "%16s%16s%16s" % (
+        header += "%16s%16s%16s" % (  # noqa: UP031
             f"max_devi_{item}",
             f"min_devi_{item}",
             f"avg_devi_{item}",
         )
-    header += "%16s" % "min_dis"
+    header += "%16s" % "min_dis"  # noqa: UP031
     np.savetxt(
         fname,
         devi,
@@ -52,7 +52,7 @@ def Modd(all_models, type_map):
             num_per_task = math.ceil(nnum / 500)
 
         for temp in range(num_per_task):
-            task_name = os.path.join(cwd, "task.%03d.%03d" % (num, temp))
+            task_name = os.path.join(cwd, "task.%03d.%03d" % (num, temp))  # noqa: UP031
             put_poscar = os.path.join(task_name, "traj")
             if not os.path.exists(task_name):
                 os.mkdir(task_name)
@@ -70,7 +70,7 @@ def Modd(all_models, type_map):
             new_index = 0
             for index, frameid in enumerate(temp_sl):
                 pdata = structures_data[frameid]
-                pdata.to_vasp_poscar(os.path.join(put_poscar, "%s.poscar" % str(index)))
+                pdata.to_vasp_poscar(os.path.join(put_poscar, f"{str(index)}.poscar"))
                 nopbc = pdata.nopbc
                 coord = pdata.data["coords"]
                 cell = pdata.data["cells"] if not nopbc else None

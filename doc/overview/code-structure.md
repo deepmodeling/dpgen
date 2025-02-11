@@ -19,7 +19,7 @@ Let's look at the home page of DP-GEN. https://github.com/deepmodeling/dpgen
 - `tests` : unittest tools for developers.
 - `examples`: templates for PARAM and MACHINE files for different software, versions and tasks.
 For details of the parameters in PARAM, you can refer to `TASK parameters` chapters in this document.
-If you are confused about how to set up a JSON file, you can also use [dpgui](https://mobile.deepmodeling.com/dpgui/)
+If you are confused about how to set up a JSON file, you can also use [dpgui](https://mobile.dpgui.deepmodeling.com/)
 
 Most of the code related to DP-GEN functions is in the `dpgen` directory. Open the `dpgen` directory, and we can see
 ````

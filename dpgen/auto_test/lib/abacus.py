@@ -7,7 +7,6 @@ import numpy as np
 from dpdata.abacus.stru import make_unlabeled_stru
 from dpdata.utils import uniq_atom_names
 from dpdata.vasp import poscar as dpdata_poscar
-from pymatgen.core.structure import Structure
 
 import dpgen.generator.lib.abacus_scf as abacus_scf
 
@@ -163,7 +162,7 @@ def poscar2stru(poscar, inter_param, stru="STRU"):
         atom_mass_dict = inter_param["atom_masses"]
     for atom in stru_data["atom_names"]:
         assert atom in atom_mass_dict, (
-            "the mass of %s is not defined in interaction:atom_masses" % atom
+            f"the mass of {atom} is not defined in interaction:atom_masses"
         )
         atom_mass.append(atom_mass_dict[atom])
 
@@ -171,7 +170,7 @@ def poscar2stru(poscar, inter_param, stru="STRU"):
         pseudo = []
         for atom in stru_data["atom_names"]:
             assert atom in inter_param["potcars"], (
-                "the pseudopotential of %s is not defined in interaction:potcars" % atom
+                f"the pseudopotential of {atom} is not defined in interaction:potcars"
             )
             pseudo.append("./pp_orb/" + inter_param["potcars"][atom].split("/")[-1])
 
@@ -179,12 +178,12 @@ def poscar2stru(poscar, inter_param, stru="STRU"):
         orb = []
         for atom in stru_data["atom_names"]:
             assert atom in inter_param["orb_files"], (
-                "orbital file of %s is not defined in interaction:orb_files" % atom
+                f"orbital file of {atom} is not defined in interaction:orb_files"
             )
             orb.append("./pp_orb/" + inter_param["orb_files"][atom].split("/")[-1])
 
     if "deepks_desc" in inter_param:
-        deepks_desc = "./pp_orb/%s\n" % inter_param["deepks_desc"]
+        deepks_desc = "./pp_orb/{}\n".format(inter_param["deepks_desc"])
 
     stru_string = make_unlabeled_stru(
         data=stru_data,
@@ -240,7 +239,7 @@ def stru_fix_atom(struf, fix_atom=[True, True, True]):
             f1.writelines(lines)
     else:
         raise RuntimeError(
-            "Error: Try to modify struc file %s, but can not find it" % struf
+            f"Error: Try to modify struc file {struf}, but can not find it"
         )
 
 
@@ -310,8 +309,8 @@ def final_stru(abacus_path):
             out_stru = bool(line.split()[1])
     logf = os.path.join(abacus_path, f"OUT.{suffix}/running_{calculation}.log")
     if calculation in ["relax", "cell-relax"]:
-        if os.path.isfile(os.path.join(abacus_path, "OUT.%s/STRU_ION_D" % suffix)):
-            return "OUT.%s/STRU_ION_D" % suffix
+        if os.path.isfile(os.path.join(abacus_path, f"OUT.{suffix}/STRU_ION_D")):
+            return f"OUT.{suffix}/STRU_ION_D"
         else:
             # find the final name by STRU_ION*_D,
             # for abacus version < v3.2.2, there has no STRU_ION_D file but has STRU_ION0_D STRU_ION1_D ... STRU_ION10_D ...
@@ -334,15 +333,17 @@ def final_stru(abacus_path):
             if lines[-i][1:27] == "STEP OF MOLECULAR DYNAMICS":
                 max_step = int(lines[-i].split()[-1])
                 break
-        return "OUT.%s/STRU_MD_%d" % (suffix, max_step)
+        return "OUT.%s/STRU_MD_%d" % (suffix, max_step)  # noqa: UP031
     elif calculation == "scf":
         return "STRU"
     else:
-        print("Unrecognized calculation type in %s/INPUT" % abacus_path)
+        print(f"Unrecognized calculation type in {abacus_path}/INPUT")
         return "STRU"
 
 
 def stru2Structure(struf):
+    from pymatgen.core.structure import Structure
+
     stru = dpdata.System(struf, fmt="stru")
     stru.to("poscar", "POSCAR.tmp")
     ss = Structure.from_file("POSCAR.tmp")

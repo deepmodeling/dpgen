@@ -15,13 +15,13 @@ def gen_box():
 def poscar_unit(latt):
     box = gen_box()
     ret = ""
-    ret += "HCP : a = %f / sqrt(2)\n" % latt
+    ret += f"HCP : a = {latt:f} / sqrt(2)\n"
     ret += "%.16f\n" % (latt / np.sqrt(2))
     ret += f"{box[0][0]:.16f} {box[0][1]:.16f} {box[0][2]:.16f}\n"
     ret += f"{box[1][0]:.16f} {box[1][1]:.16f} {box[1][2]:.16f}\n"
     ret += f"{box[2][0]:.16f} {box[2][1]:.16f} {box[2][2]:.16f}\n"
     ret += "X\n"
-    ret += "%d\n" % numb_atoms()
+    ret += "%d\n" % numb_atoms()  # noqa: UP031
     ret += "Direct\n"
     ret += f"{0:.16f} {0:.16f} {0:.16f}\n"
     ret += f"{1.0 / 3:.16f} {1.0 / 3:.16f} {1.0 / 2:.16f}\n"

@@ -27,7 +27,7 @@ def make_equi(confs, inter_param, relax_param):
     else:
         ele_list = [key for key in inter_param["potcars"].keys()]
     # ele_list = inter_param['type_map']
-    dlog.debug("ele_list %s" % ":".join(ele_list))
+    dlog.debug("ele_list {}".format(":".join(ele_list)))
     conf_dirs = []
     for conf in confs:
         conf_dirs.extend(glob.glob(conf))
@@ -45,8 +45,8 @@ def make_equi(confs, inter_param, relax_param):
         for ii in conf_dirs:
             os.chdir(ii)
             crys_type = ii.split("/")[-1]
-            dlog.debug("crys_type: %s" % crys_type)
-            dlog.debug("pwd: %s" % os.getcwd())
+            dlog.debug(f"crys_type: {crys_type}")
+            dlog.debug(f"pwd: {os.getcwd()}")
             if crys_type == "std-fcc":
                 if not os.path.exists("POSCAR"):
                     crys.fcc1(ele_list[element_label]).to("POSCAR", "POSCAR")
@@ -77,7 +77,7 @@ def make_equi(confs, inter_param, relax_param):
     # ...
     for ii in conf_dirs:
         crys_type = ii.split("/")[-1]
-        dlog.debug("crys_type: %s" % crys_type)
+        dlog.debug(f"crys_type: {crys_type}")
 
         if "mp-" in crys_type and not os.path.exists(os.path.join(ii, "POSCAR")):
             get_structure(crys_type).to("POSCAR", os.path.join(ii, "POSCAR"))
@@ -130,7 +130,7 @@ def make_equi(confs, inter_param, relax_param):
 
     for ii in task_dirs:
         poscar = os.path.join(ii, "POSCAR")
-        dlog.debug("task_dir %s" % ii)
+        dlog.debug(f"task_dir {ii}")
         inter = make_calculator(inter_param, poscar)
         inter.make_potential_files(ii)
         inter.make_input_file(ii, "relaxation", relax_param)
@@ -162,7 +162,7 @@ def run_equi(confs, inter_param, mdata):
     elif inter_type in lammps_task_type:
         mdata = convert_mdata(mdata, ["model_devi"])
     else:
-        raise RuntimeError("unknown task %s, something wrong" % inter_type)
+        raise RuntimeError(f"unknown task {inter_type}, something wrong")
 
     # dispatch the tasks
     # POSCAR here is useless
@@ -173,12 +173,12 @@ def run_equi(confs, inter_param, mdata):
     #    backward_files += logs
     machine, resources, command, group_size = util.get_machine_info(mdata, inter_type)
     work_path = os.getcwd()
-    print("%s --> Runing... " % (work_path))
+    print(f"{work_path} --> Runing... ")
 
     api_version = mdata.get("api_version", "1.0")
     if Version(api_version) < Version("1.0"):
         raise RuntimeError(
-            "API version %s has been removed. Please upgrade to 1.0." % api_version
+            f"API version {api_version} has been removed. Please upgrade to 1.0."
         )
     elif Version(api_version) >= Version("1.0"):
         submission = make_submission(

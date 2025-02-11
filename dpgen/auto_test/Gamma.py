@@ -8,8 +8,6 @@ import numpy as np
 from ase.lattice.cubic import BodyCenteredCubic as bcc
 from ase.lattice.cubic import FaceCenteredCubic as fcc
 from monty.serialization import dumpfn, loadfn
-from pymatgen.core.structure import Structure
-from pymatgen.io.ase import AseAtomsAdaptor
 
 import dpgen.auto_test.lib.abacus as abacus
 import dpgen.auto_test.lib.vasp as vasp
@@ -94,9 +92,11 @@ class Gamma(Property):
         self.inter_param = inter_param if inter_param is not None else {"type": "vasp"}
 
     def make_confs(self, path_to_work, path_to_equi, refine=False):
+        from pymatgen.core.structure import Structure
+
         path_to_work = os.path.abspath(path_to_work)
         if os.path.exists(path_to_work):
-            dlog.warning("%s already exists" % path_to_work)
+            dlog.warning(f"{path_to_work} already exists")
         else:
             os.makedirs(path_to_work)
         path_to_equi = os.path.abspath(path_to_equi)
@@ -223,7 +223,7 @@ class Gamma(Property):
                 os.symlink(os.path.relpath(equi_contcar), POSCAR)
                 #           task_poscar = os.path.join(output, 'POSCAR')
                 for ii in range(len(all_slabs)):
-                    output_task = os.path.join(path_to_work, "task.%06d" % ii)
+                    output_task = os.path.join(path_to_work, "task.%06d" % ii)  # noqa: UP031
                     os.makedirs(output_task, exist_ok=True)
                     os.chdir(output_task)
                     for jj in ["INCAR", "POTCAR", POSCAR, "conf.lmp", "in.lammps"]:
@@ -232,9 +232,9 @@ class Gamma(Property):
                     task_list.append(output_task)
                     # print("# %03d generate " % ii, output_task)
                     print(
-                        "# %03d generate " % ii,
+                        "# %03d generate " % ii,  # noqa: UP031
                         output_task,
-                        " \t %d atoms" % self.atom_num,
+                        " \t %d atoms" % self.atom_num,  # noqa: UP031
                     )
                     # make confs
                     all_slabs[ii].to("POSCAR.tmp", "POSCAR")
@@ -287,6 +287,8 @@ class Gamma(Property):
         return directions
 
     def __gen_slab_ase(self, symbol, lat_param):
+        from pymatgen.io.ase import AseAtomsAdaptor
+
         if not self.lattice_type:
             raise RuntimeError("Error! Please provide the input lattice type!")
         elif self.lattice_type == "bcc":
@@ -386,7 +388,7 @@ class Gamma(Property):
         with open(inLammps) as fin1:
             contents = fin1.readlines()
             for ii in range(len(contents)):
-                upper = re.search("variable        N equal count\(all\)", contents[ii])
+                upper = re.search(r"variable        N equal count\(all\)", contents[ii])
                 lower = re.search("min_style       cg", contents[ii])
                 if lower:
                     lower_id = ii
@@ -470,12 +472,15 @@ class Gamma(Property):
                 )
 
                 miller_index = loadfn(os.path.join(ii, "miller.json"))
-                ptr_data += "%-25s     %7.2f   %7.3f    %8.3f %8.3f\n" % (
-                    str(miller_index) + "-" + structure_dir + ":",
-                    int(ii[-4:]) / self.n_steps,
-                    sfe,
-                    epa,
-                    equi_epa_slab,
+                ptr_data += (
+                    "%-25s     %7.2f   %7.3f    %8.3f %8.3f\n"  # noqa: UP031
+                    % (
+                        str(miller_index) + "-" + structure_dir + ":",
+                        int(ii[-4:]) / self.n_steps,
+                        sfe,
+                        epa,
+                        equi_epa_slab,
+                    )
                 )
                 res_data[int(ii[-4:]) / self.n_steps] = [sfe, epa, equi_epa]
 

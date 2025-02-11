@@ -27,6 +27,7 @@ dependencies = [
     'paramiko',
     'custodian',
     'GromacsWrapper>=0.8.0',
+    'GromacsWrapper>=0.9.0; python_version >= "3.12"',
     'dpdispatcher>=0.3.11',
     'netCDF4',
     'dargs>=0.4.0',
@@ -63,9 +64,7 @@ dpgen = "dpgen.main:main"
 test = [
     "dpgui",
     "coverage",
-    "pymatgen-analysis-defects<2023.08.22",
-    # To be fixed: https://github.com/Becksteinlab/GromacsWrapper/issues/263
-    'setuptools; python_version >= "3.12"',
+    "pymatgen-analysis-defects>=2024.10.22;python_version>='3.10'",
 ]
 gui = [
     "dpgui",
@@ -87,6 +86,7 @@ select = [
     "F", # pyflakes
     "D", # pydocstyle
     "UP", # pyupgrade
+    "TID253", # banned-module-level-imports
 ]
 ignore = [
     "E501", # line too long
@@ -109,6 +109,14 @@ ignore = [
     "D404", # TODO: first word of the docstring should not be This
 ]
 ignore-init-module-imports = true
+
+[tool.ruff.lint.flake8-tidy-imports]
+banned-module-level-imports = [
+    "pymatgen",
+]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**" = ["TID253"]
 
 [tool.ruff.pydocstyle]
 convention = "numpy"
