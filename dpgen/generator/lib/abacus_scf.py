@@ -218,18 +218,26 @@ def make_abacus_scf_stru(
         fp_orb_files = [os.path.join(pporb, i) for i in fp_orb_files]
     if fp_dpks_descriptor is not None:
         fp_dpks_descriptor = os.path.join(pporb, fp_dpks_descriptor)
-    
+
     # we need to make sure that the shape of cells and coords are the same
     # and if they are 2D, we need to convert them to 3D
     cells = np.array(sys_data["cells"])
     coords = np.array(sys_data["coords"])
-    assert len(cells.shape) == len(coords.shape), "cells and coords should have the same shape."
-    
+    assert len(cells.shape) == len(coords.shape), (
+        "cells and coords should have the same shape."
+    )
+
     if len(cells.shape) == 2:
         sys_data_copy["cells"] = np.array([cells])
         sys_data_copy["coords"] = np.array([coords])
-    c = make_unlabeled_stru(sys_data_copy, 0, pp_file=fp_pp_files, numerical_orbital=fp_orb_files, numerical_descriptor=fp_dpks_descriptor)
-    
+    c = make_unlabeled_stru(
+        sys_data_copy,
+        0,
+        pp_file=fp_pp_files,
+        numerical_orbital=fp_orb_files,
+        numerical_descriptor=fp_dpks_descriptor,
+    )
+
     return c
 
 
@@ -251,18 +259,19 @@ def get_abacus_STRU(STRU):
     Args:
         STRU (str): The path of STRU file.
 
-    Returns:
-        dict: A dictionary containing the structure information.
-        {
-            "atom_names": list of str,
-            "atom_numbs": list of int,
-            "atom_masses": list of float,
-            "coords": np.ndarray,
-            "cells": np.ndarray,
-            "pp_files": list of str,
-            "orb_files": list of str,
-            "dpks_descriptor": str,        
-        }
+    Returns
+    -------
+    dict: A dictionary containing the structure information.
+    {
+        "atom_names": list of str,
+        "atom_numbs": list of int,
+        "atom_masses": list of float,
+        "coords": np.ndarray,
+        "cells": np.ndarray,
+        "pp_files": list of str,
+        "orb_files": list of str,
+        "dpks_descriptor": str,
+    }
     """
     data = get_frame_from_stru(STRU)
     data["atom_masses"] = data.pop("masses")
@@ -289,13 +298,18 @@ def make_supercell_abacus(from_struct, super_cell):
         for idx_atm in from_struct["atom_types"]:
             new_types += [idx_atm] * super_cell[0] * super_cell[1] * super_cell[2]
         to_struct["atom_types"] = np.array(new_types)
-    
+
     # expand move, spins
     for ikey in ["move", "spins"]:
         if ikey in from_struct:
             new_list = []
             for ia in range(sum(from_struct["atom_numbs"])):
-                new_list += [from_struct[ikey][0][ia]] * super_cell[0] * super_cell[1] * super_cell[2]
+                new_list += (
+                    [from_struct[ikey][0][ia]]
+                    * super_cell[0]
+                    * super_cell[1]
+                    * super_cell[2]
+                )
             to_struct[ikey] = np.array([new_list])
 
     to_atom_num = (
