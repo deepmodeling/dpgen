@@ -3,7 +3,6 @@ import os
 import re
 
 import numpy as np
-
 from dpdata.abacus.stru import get_frame_from_stru, make_unlabeled_stru
 
 from dpgen.auto_test.lib import vasp
