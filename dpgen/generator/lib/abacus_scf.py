@@ -212,6 +212,7 @@ def make_abacus_scf_stru(
     type_map=None,
     pporb="",  # pull all pp orb dpks files to pporb folder
 ):
+    sys_data_copy = copy.deepcopy(sys_data)
     # re-construct the path of files by pporb + file name
     fp_pp_files = [os.path.join(pporb, i) for i in fp_pp_files]
     if fp_orb_files is not None:
@@ -219,7 +220,16 @@ def make_abacus_scf_stru(
     if fp_dpks_descriptor is not None:
         fp_dpks_descriptor = os.path.join(pporb, fp_dpks_descriptor)
     
-    c = make_unlabeled_stru(sys_data, 0, pp_files=fp_pp_files, numerical_orbital=fp_orb_files, numerical_descriptor=fp_dpks_descriptor)
+    # we need to make sure that the shape of cells and coords are the same
+    # and if they are 2D, we need to convert them to 3D
+    cells = np.array(sys_data["cells"])
+    coords = np.array(sys_data["coords"])
+    assert len(cells.shape) == len(coords.shape), "cells and coords should have the same shape."
+    
+    if len(cells.shape) == 2:
+        sys_data_copy["cells"] = np.array([cells])
+        sys_data_copy["coords"] = np.array([coords])
+    c = make_unlabeled_stru(sys_data_copy, 0, pp_file=fp_pp_files, numerical_orbital=fp_orb_files, numerical_descriptor=fp_dpks_descriptor)
     
     return c
 
@@ -236,13 +246,32 @@ def get_abacus_input_parameters(INPUT):
     return input_parameters
 
 
-def get_abacus_STRU(STRU, INPUT=None, n_ele=None):
-    # read in geometry from STRU file. n_ele is the number of elements.
-    # Either n_ele or INPUT should be provided.
+def get_abacus_STRU(STRU):
+    """Read STRU file and return a dictionary containing the structure information.
+
+    Args:
+        STRU (str): The path of STRU file.
+
+    Returns:
+        dict: A dictionary containing the structure information.
+        {
+            "atom_names": list of str,
+            "atom_numbs": list of int,
+            "atom_masses": list of float,
+            "coords": np.ndarray,
+            "cells": np.ndarray,
+            "pp_files": list of str,
+            "orb_files": list of str,
+            "dpks_descriptor": str,        
+        }
+    """
     data = get_frame_from_stru(STRU)
     data["atom_masses"] = data.pop("masses")
     data["cells"] = data.pop("cells")[0]
     data["coords"] = data.pop("coords")[0]
+    assert "pp_files" in data, "pp_files should be provided in STRU file."
+    if None in data["pp_files"]:
+        data["pp_files"] = None
     if "orb_files" not in data:
         data["orb_files"] = None
     if "dpks_descriptor" not in data:
@@ -260,7 +289,16 @@ def make_supercell_abacus(from_struct, super_cell):
         # )
         for idx_atm in from_struct["atom_types"]:
             new_types += [idx_atm] * super_cell[0] * super_cell[1] * super_cell[2]
-        to_struct["atom_types"] = new_types
+        to_struct["atom_types"] = np.array(new_types)
+    
+    # expand move, spins
+    for ikey in ["move", "spins"]:
+        if ikey in from_struct:
+            new_list = []
+            for ia in range(sum(from_struct["atom_numbs"])):
+                new_list += [from_struct[ikey][0][ia]] * super_cell[0] * super_cell[1] * super_cell[2]
+            to_struct[ikey] = np.array([new_list])
+
     to_atom_num = (
         sum(from_struct["atom_numbs"]) * super_cell[0] * super_cell[1] * super_cell[2]
     )
