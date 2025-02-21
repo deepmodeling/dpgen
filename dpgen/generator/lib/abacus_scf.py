@@ -3,7 +3,7 @@ import os
 import re
 
 import numpy as np
-from dpdata.abacus.scf import get_cell, get_coords, get_nele_from_stru
+from dpdata.abacus.stru import get_frame_from_stru, make_unlabeled_stru
 
 from dpgen.auto_test.lib import vasp
 
@@ -208,90 +208,37 @@ def make_abacus_scf_stru(
     fp_pp_files,
     fp_orb_files=None,
     fp_dpks_descriptor=None,
-    fp_params=None,
     type_map=None,
     pporb="",  # pull all pp orb dpks files to pporb folder
 ):
-    atom_names = sys_data["atom_names"]
-    atom_numbs = sys_data["atom_numbs"]
-    if type_map is None:
-        type_map = atom_names
-
-    assert len(atom_names) == len(atom_numbs), "Please check the name of atoms. "
-    cell = sys_data["cells"].reshape([3, 3])
-    coord = sys_data["coords"].reshape([sum(atom_numbs), 3])
-    # volume = np.linalg.det(cell)
-    # lattice_const = np.power(volume, 1/3)
-
-    ret = "ATOMIC_SPECIES\n"
-    for iatom in range(len(atom_names)):
-        assert atom_names[iatom] in type_map, (
-            f"element {atom_names[iatom]} is not defined in type_map"
-        )
-        idx = type_map.index(atom_names[iatom])
-        if "atom_masses" not in sys_data:
-            ret += (
-                atom_names[iatom]
-                + " 1.00 "
-                + os.path.join(pporb, fp_pp_files[idx])
-                + "\n"
-            )
-        else:
-            ret += (
-                atom_names[iatom]
-                + " {:.3f} ".format(sys_data["atom_masses"][iatom])
-                + os.path.join(pporb, fp_pp_files[idx])
-                + "\n"
-            )
-
-    if fp_params is not None and "lattice_constant" in fp_params:
-        ret += "\nLATTICE_CONSTANT\n"
-        ret += (
-            str(fp_params["lattice_constant"]) + "\n\n"
-        )  # in Bohr, in this way coord and cell are in Angstrom
-    else:
-        ret += "\nLATTICE_CONSTANT\n"
-        ret += str(1 / bohr2ang) + "\n\n"
-
-    ret += "LATTICE_VECTORS\n"
-    for ix in range(3):
-        for iy in range(3):
-            ret += str(cell[ix][iy]) + " "
-        ret += "\n"
-    ret += "\n"
-
-    ret += "ATOMIC_POSITIONS\n"
-    ret += "Cartesian    # Cartesian(Unit is LATTICE_CONSTANT)\n"
-    # ret += "\n"
-    natom_tot = 0
-    for iele in range(len(atom_names)):
-        ret += atom_names[iele] + "\n"
-        ret += "0.0\n"
-        ret += str(atom_numbs[iele]) + "\n"
-        for iatom in range(atom_numbs[iele]):
-            ret += "%.12f %.12f %.12f %d %d %d\n" % (  # noqa: UP031
-                coord[natom_tot, 0],
-                coord[natom_tot, 1],
-                coord[natom_tot, 2],
-                1,
-                1,
-                1,
-            )
-            natom_tot += 1
-    assert natom_tot == sum(atom_numbs)
-
+    sys_data_copy = copy.deepcopy(sys_data)
+    # re-construct the path of files by pporb + file name
+    fp_pp_files = [os.path.join(pporb, i) for i in fp_pp_files]
     if fp_orb_files is not None:
-        ret += "\nNUMERICAL_ORBITAL\n"
-        assert len(fp_orb_files) == len(type_map)
-        for iatom in range(len(atom_names)):
-            idx = type_map.index(atom_names[iatom])
-            ret += os.path.join(pporb, fp_orb_files[idx]) + "\n"
-
+        fp_orb_files = [os.path.join(pporb, i) for i in fp_orb_files]
     if fp_dpks_descriptor is not None:
-        ret += "\nNUMERICAL_DESCRIPTOR\n"
-        ret += os.path.join(pporb, fp_dpks_descriptor) + "\n"
+        fp_dpks_descriptor = os.path.join(pporb, fp_dpks_descriptor)
 
-    return ret
+    # we need to make sure that the shape of cells and coords are the same
+    # and if they are 2D, we need to convert them to 3D
+    cells = np.array(sys_data["cells"])
+    coords = np.array(sys_data["coords"])
+    assert len(cells.shape) == len(coords.shape), (
+        "cells and coords should have the same shape."
+    )
+
+    if len(cells.shape) == 2:
+        sys_data_copy["cells"] = np.array([cells])
+        sys_data_copy["coords"] = np.array([coords])
+    c = make_unlabeled_stru(
+        sys_data_copy,
+        0,
+        pp_file=fp_pp_files,
+        numerical_orbital=fp_orb_files,
+        numerical_descriptor=fp_dpks_descriptor,
+    )
+
+    return c
 
 
 def get_abacus_input_parameters(INPUT):
@@ -306,106 +253,37 @@ def get_abacus_input_parameters(INPUT):
     return input_parameters
 
 
-def get_mass_from_STRU(geometry_inlines, atom_names):
-    nele = get_nele_from_stru(geometry_inlines)
-    assert nele > 0
-    mass_list = [0 for i in atom_names]
-    pp_file_list = [i for i in atom_names]
-    for iline, line in enumerate(geometry_inlines):
-        if line.split() == []:
-            continue
-        if "ATOMIC_SPECIES" == line.split()[0]:
-            for iele1 in range(1, 1 + nele):
-                for iele2 in range(nele):
-                    if geometry_inlines[iline + iele1].split()[0] == atom_names[iele2]:
-                        mass_list[iele2] = float(
-                            geometry_inlines[iline + iele1].split()[1]
-                        )
-                        pp_file_list[iele2] = geometry_inlines[iline + iele1].split()[2]
-    for iele in range(len(mass_list)):
-        assert mass_list[iele] > 0
-    return mass_list, pp_file_list
+def get_abacus_STRU(STRU):
+    """Read STRU file and return a dictionary containing the structure information.
 
+    Args:
+        STRU (str): The path of STRU file.
 
-def get_natoms_from_stru(geometry_inlines):
-    key_words_list = [
-        "ATOMIC_SPECIES",
-        "NUMERICAL_ORBITAL",
-        "LATTICE_CONSTANT",
-        "LATTICE_VECTORS",
-        "ATOMIC_POSITIONS",
-        "NUMERICAL_DESCRIPTOR",
-    ]
-    keyword_sequence = []
-    keyword_line_index = []
-    atom_names = []
-    atom_numbs = []
-    tmp_line = []
-    for i in geometry_inlines:
-        if i.strip() != "":
-            tmp_line.append(i)
-    for iline, line in enumerate(tmp_line):
-        if line.split() == []:
-            continue
-        have_key_word = False
-        for keyword in key_words_list:
-            if keyword in line and keyword == line.split()[0]:
-                keyword_sequence.append(keyword)
-                keyword_line_index.append(iline)
-    assert len(keyword_line_index) == len(keyword_sequence)
-    assert len(keyword_sequence) > 0
-    keyword_line_index.append(len(tmp_line))
-    for idx, keyword in enumerate(keyword_sequence):
-        if keyword == "ATOMIC_POSITIONS":
-            iline = keyword_line_index[idx] + 2
-            while iline < keyword_line_index[idx + 1] - 1:
-                atom_names.append(tmp_line[iline].split()[0])
-                atom_numbs.append(int(tmp_line[iline + 2].split()[0]))
-                iline += 3 + atom_numbs[-1]
-    return atom_names, atom_numbs
-
-
-def get_additional_from_STRU(geometry_inlines, nele):
-    dpks_descriptor_kw = "NUMERICAL_DESCRIPTOR"
-    orb_file_kw = "NUMERICAL_ORBITAL"
-    dpks_descriptor = None
-    orb_file = None
-    for iline in range(len(geometry_inlines)):
-        if len(geometry_inlines[iline]) > 0:
-            if orb_file_kw == geometry_inlines[iline].split()[0]:
-                orb_file = []
-                for iele in range(nele):
-                    orb_file.append(geometry_inlines[iline + iele + 1].strip())
-            if dpks_descriptor_kw == geometry_inlines[iline].split()[0]:
-                dpks_descriptor = geometry_inlines[iline + 1].strip()
-    return orb_file, dpks_descriptor
-
-
-def get_abacus_STRU(STRU, INPUT=None, n_ele=None):
-    # read in geometry from STRU file. n_ele is the number of elements.
-    # Either n_ele or INPUT should be provided.
-    with open(STRU) as fp:
-        geometry_inlines = fp.read().split("\n")
-    for iline, line in enumerate(geometry_inlines):
-        if line.split() == [] or len(line) == 0:
-            del geometry_inlines[iline]
-    geometry_inlines.append("")
-    celldm, cell = get_cell(geometry_inlines)
-    atom_names, natoms, types, coords = get_coords(celldm, cell, geometry_inlines)
-    masses, pp_files = get_mass_from_STRU(geometry_inlines, atom_names)
-    orb_files, dpks_descriptor = get_additional_from_STRU(geometry_inlines, len(masses))
-    data = {}
-    data["atom_names"] = atom_names
-    data["atom_numbs"] = natoms
-    data["atom_types"] = types
-    data["cells"] = cell
-    data["coords"] = coords
-    data["atom_masses"] = (
-        masses  # Notice that this key is not defined in dpdata system.
-    )
-    data["pp_files"] = pp_files
-    data["orb_files"] = orb_files
-    data["dpks_descriptor"] = dpks_descriptor
+    Returns
+    -------
+    dict: A dictionary containing the structure information.
+    {
+        "atom_names": list of str,
+        "atom_numbs": list of int,
+        "atom_masses": list of float,
+        "coords": np.ndarray,
+        "cells": np.ndarray,
+        "pp_files": list of str,
+        "orb_files": list of str,
+        "dpks_descriptor": str,
+    }
+    """
+    data = get_frame_from_stru(STRU)
+    data["atom_masses"] = data.pop("masses")
+    data["cells"] = data.pop("cells")[0]
+    data["coords"] = data.pop("coords")[0]
+    assert "pp_files" in data, "pp_files should be provided in STRU file."
+    if None in data["pp_files"]:
+        data["pp_files"] = None
+    if "orb_files" not in data:
+        data["orb_files"] = None
+    if "dpks_descriptor" not in data:
+        data["dpks_descriptor"] = None
     return data
 
 
@@ -419,7 +297,21 @@ def make_supercell_abacus(from_struct, super_cell):
         # )
         for idx_atm in from_struct["atom_types"]:
             new_types += [idx_atm] * super_cell[0] * super_cell[1] * super_cell[2]
-        to_struct["atom_types"] = new_types
+        to_struct["atom_types"] = np.array(new_types)
+
+    # expand move, spins
+    for ikey in ["move", "spins"]:
+        if ikey in from_struct:
+            new_list = []
+            for ia in range(sum(from_struct["atom_numbs"])):
+                new_list += (
+                    [from_struct[ikey][0][ia]]
+                    * super_cell[0]
+                    * super_cell[1]
+                    * super_cell[2]
+                )
+            to_struct[ikey] = np.array([new_list])
+
     to_atom_num = (
         sum(from_struct["atom_numbs"]) * super_cell[0] * super_cell[1] * super_cell[2]
     )

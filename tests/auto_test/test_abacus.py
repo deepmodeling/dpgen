@@ -216,7 +216,7 @@ class TestABACUS(unittest.TestCase):
             kpt = f1.read().strip().split("\n")[-1].split()
         self.assertEqual(kpt, ["9", "5", "3", "0", "0", "0"])
 
-    def test_compuate(self):
+    def test_compute(self):
         ret = self.ABACUS.compute(os.path.join(self.equi_path))
         self.assertIsNone(ret)
         shutil.copy(
@@ -247,7 +247,21 @@ class TestABACUS(unittest.TestCase):
                     else:
                         self.assertTrue(dict1[key] == dict2[key])
 
-        compare_dict(ret, ret_ref.as_dict())
+        compare_keys = [
+            "atom_numbs",
+            "atom_names",
+            "atom_types",
+            "cells",
+            "coords",
+            "energies",
+            "forces",
+            "virials",
+            "stress",
+        ]
+        compare_dict(
+            {k: ret["data"][k] for k in compare_keys},
+            {k: ret_ref.data[k] for k in compare_keys},
+        )
 
 
 class TestABACUSDeepKS(unittest.TestCase):

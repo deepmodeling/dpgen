@@ -192,6 +192,7 @@ def create_disturbs_abacus_dev(
     stru = get_abacus_STRU(fin)
     natoms = sum(stru["atom_numbs"])
     cell0 = stru["cells"]
+    stru["masses"] = stru["atom_masses"]  # in dpdata, it is masses that should be used.
 
     # creat nfile ofmt files.
     for fid in range(1, nfile + 1):

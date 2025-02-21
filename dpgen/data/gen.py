@@ -145,6 +145,7 @@ def stru_ele(supercell_stru, stru_out, eles, natoms, jdata, path_work):
         dpks_descriptor_name = os.path.basename(jdata["dpks_descriptor"])
     supercell_stru["atom_masses"] = jdata["atom_masses"]
     supercell_stru["atom_names"] = eles
+    supercell_stru["atom_types"] = np.array(supercell_stru["types"])
     stru_text = make_abacus_scf_stru(
         supercell_stru,
         pp_file_names,
