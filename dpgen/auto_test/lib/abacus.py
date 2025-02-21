@@ -4,7 +4,7 @@ import os
 
 import dpdata
 import numpy as np
-from dpdata.abacus.scf import make_unlabeled_stru
+from dpdata.abacus.stru import make_unlabeled_stru
 from dpdata.utils import uniq_atom_names
 from dpdata.vasp import poscar as dpdata_poscar
 
