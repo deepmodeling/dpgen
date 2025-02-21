@@ -48,11 +48,11 @@ def info():
     ]:
         try:
             mm = __import__(modui)
-            print("%10s %10s   %s" % (modui, mm.__version__, mm.__path__[0]))
+            print("%10s %10s   %s" % (modui, mm.__version__, mm.__path__[0]))  # noqa: UP031
         except ImportError:
-            print("%10s %10s Not Found" % (modui, ""))
+            print("%10s %10s Not Found" % (modui, ""))  # noqa: UP031
         except AttributeError:
-            print("%10s %10s unknown version or path" % (modui, ""))
+            print("%10s %10s unknown version or path" % (modui, ""))  # noqa: UP031
     print()
 
     # reference

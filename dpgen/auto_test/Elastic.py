@@ -162,7 +162,7 @@ class Elastic(Property):
             print("gen with norm " + str(norm_strains))
             print("gen with shear " + str(shear_strains))
             for ii in range(n_dfm):
-                output_task = os.path.join(path_to_work, "task.%06d" % ii)
+                output_task = os.path.join(path_to_work, "task.%06d" % ii)  # noqa: UP031
                 os.makedirs(output_task, exist_ok=True)
                 os.chdir(output_task)
                 for jj in [

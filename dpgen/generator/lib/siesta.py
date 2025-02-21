@@ -9,8 +9,8 @@ def _make_siesta_01_common(sys_data, fp_params):
     ret = ""
     ret += "SystemName        system\n"
     ret += "SystemLabel       system\n"
-    ret += "NumberOfAtoms     %d\n" % tot_natoms
-    ret += "NumberOfSpecies   %d\n" % ntypes
+    ret += "NumberOfAtoms     %d\n" % tot_natoms  # noqa: UP031
+    ret += "NumberOfSpecies   %d\n" % ntypes  # noqa: UP031
     ret += "\n"
     ret += "WriteForces       T\n"
     ret += "WriteCoorStep     T\n"
@@ -30,7 +30,7 @@ def _make_siesta_01_common(sys_data, fp_params):
         ret += f"DM.MixingWeight       {mixingWeight:f}\n"
     if "NumberPulay" in fp_params.keys():
         NumberPulay = fp_params["NumberPulay"]
-        ret += "DM.NumberPulay         %d\n" % NumberPulay
+        ret += "DM.NumberPulay         %d\n" % NumberPulay  # noqa: UP031
     ret += "DM.UseSaveDM          true\n"
     ret += "XC.functional          GGA\n"
     ret += "XC.authors             PBE\n"
@@ -78,15 +78,15 @@ def _make_siesta_03_kpoint(sys_data, fp_param):
 
         ret = ""
         ret += "%block kgrid_Monkhorst_Pack\n"
-        ret += "%d" % kpoints[0]
+        ret += "%d" % kpoints[0]  # noqa: UP031
         ret += "\t0\t0\t0.0\n"
 
         ret += "0\t"
-        ret += "%d" % kpoints[1]
+        ret += "%d" % kpoints[1]  # noqa: UP031
         ret += "\t0\t0.0\n"
 
         ret += "0\t0\t"
-        ret += "%d" % kpoints[2]
+        ret += "%d" % kpoints[2]  # noqa: UP031
         ret += "\t0.0\n"
 
         ret += "%endblock kgrid_Monkhorst_Pack\n"
@@ -118,7 +118,7 @@ def _make_siesta_04_ucVectorCoord(sys_data):
     cc = 0
     for ii in range(ntypes):
         for jj in range(atom_numbs[ii]):
-            ret += "%f %f %f %d %s\n" % (
+            ret += "%f %f %f %d %s\n" % (  # noqa: UP031
                 coordinates[cc][0],
                 coordinates[cc][1],
                 coordinates[cc][2],

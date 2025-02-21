@@ -39,7 +39,7 @@ def create_path(path, back=False):
             dirname = os.path.dirname(path)
             counter = 0
             while True:
-                bk_dirname = dirname + ".bk%03d" % counter
+                bk_dirname = dirname + ".bk%03d" % counter  # noqa: UP031
                 if not os.path.isdir(bk_dirname):
                     shutil.move(dirname, bk_dirname)
                     break
@@ -83,18 +83,18 @@ def out_dir_name(jdata):
     if from_poscar:
         from_poscar_path = jdata["from_poscar_path"]
         poscar_name = os.path.basename(from_poscar_path)
-        cell_str = "%02d" % (super_cell[0])
+        cell_str = "%02d" % (super_cell[0])  # noqa: UP031
         for ii in range(1, len(super_cell)):
-            cell_str = cell_str + ("x%02d" % super_cell[ii])
+            cell_str = cell_str + ("x%02d" % super_cell[ii])  # noqa: UP031
         return poscar_name + "." + cell_str
     else:
         cell_type = jdata["cell_type"]
         ele_str = ""
         for ii in elements:
             ele_str = ele_str + ii.lower()
-        cell_str = "%02d" % (super_cell[0])
+        cell_str = "%02d" % (super_cell[0])  # noqa: UP031
         for ii in range(1, len(super_cell)):
-            cell_str = cell_str + ("x%02d" % super_cell[ii])
+            cell_str = cell_str + ("x%02d" % super_cell[ii])  # noqa: UP031
         return ele_str + "." + cell_type + "." + cell_str
 
 
@@ -145,6 +145,7 @@ def stru_ele(supercell_stru, stru_out, eles, natoms, jdata, path_work):
         dpks_descriptor_name = os.path.basename(jdata["dpks_descriptor"])
     supercell_stru["atom_masses"] = jdata["atom_masses"]
     supercell_stru["atom_names"] = eles
+    supercell_stru["atom_types"] = np.array(supercell_stru["types"])
     stru_text = make_abacus_scf_stru(
         supercell_stru,
         pp_file_names,
@@ -368,7 +369,7 @@ def make_super_cell_poscar(jdata):
     dlog.info(natoms_list)
     comb_name = "sys-"
     for idx, ii in enumerate(natoms_list):
-        comb_name += "%04d" % ii
+        comb_name += "%04d" % ii  # noqa: UP031
         if idx != len(natoms_list) - 1:
             comb_name += "-"
     path_work = os.path.join(path_sc, comb_name)
@@ -419,7 +420,7 @@ def make_super_cell_STRU(jdata):
     dlog.info(natoms_list)
     comb_name = "sys-"
     for idx, ii in enumerate(natoms_list):
-        comb_name += "%04d" % ii
+        comb_name += "%04d" % ii  # noqa: UP031
         if idx != len(natoms_list) - 1:
             comb_name += "-"
     path_work = os.path.join(path_sc, comb_name)
@@ -479,7 +480,7 @@ def place_element(jdata):
             continue
         comb_name = "sys-"
         for idx, jj in enumerate(ii):
-            comb_name += "%04d" % jj
+            comb_name += "%04d" % jj  # noqa: UP031
             if idx != len(ii) - 1:
                 comb_name += "-"
         path_pos_in = path_sc
@@ -507,7 +508,7 @@ def place_element_ABACUS(jdata, supercell_stru):
             continue
         comb_name = "sys-"
         for idx, jj in enumerate(ii):
-            comb_name += "%04d" % jj
+            comb_name += "%04d" % jj  # noqa: UP031
             if idx != len(ii) - 1:
                 comb_name += "-"
         # path_pos_in = path_sc
@@ -584,9 +585,9 @@ def make_abacus_relax(jdata, mdata):
                     raise RuntimeError("Cannot find any k-points information.")
                 else:
                     relax_kpt_path = jdata["relax_kpt"]
-                    assert os.path.isfile(
-                        relax_kpt_path
-                    ), f"file {relax_kpt_path} should exists"
+                    assert os.path.isfile(relax_kpt_path), (
+                        f"file {relax_kpt_path} should exists"
+                    )
             else:
                 gamma_param = {"k_points": [1, 1, 1, 0, 0, 0]}
                 ret_kpt = make_abacus_scf_kpt(gamma_param)
@@ -595,9 +596,9 @@ def make_abacus_relax(jdata, mdata):
                 raise RuntimeError("Cannot find any k-points information.")
             else:
                 relax_kpt_path = jdata["relax_kpt"]
-                assert os.path.isfile(
-                    relax_kpt_path
-                ), f"file {relax_kpt_path} should exists"
+                assert os.path.isfile(relax_kpt_path), (
+                    f"file {relax_kpt_path} should exists"
+                )
 
     out_dir = jdata["out_dir"]
     cwd = os.getcwd()
@@ -779,10 +780,10 @@ def pert_scaled(jdata):
             ### Loop over each perturbation
             for kk in range(pert_numb):
                 if fp_style == "vasp":
-                    pos_in = f"POSCAR{kk+1}.vasp"
+                    pos_in = f"POSCAR{kk + 1}.vasp"
                 elif fp_style == "abacus":
-                    pos_in = f"STRU{kk+1}.abacus"
-                dir_out = f"{kk+1:06d}"
+                    pos_in = f"STRU{kk + 1}.abacus"
+                dir_out = f"{kk + 1:06d}"
                 create_path(dir_out)
                 if fp_style == "vasp":
                     pos_out = os.path.join(dir_out, "POSCAR")
@@ -814,7 +815,7 @@ def pert_scaled(jdata):
                 pos_in = "POSCAR"
             elif fp_style == "abacus":
                 pos_in = "STRU"
-            dir_out = f"{kk+1:06d}"
+            dir_out = f"{kk + 1:06d}"
             create_path(dir_out)
             if fp_style == "vasp":
                 pos_out = os.path.join(dir_out, "POSCAR")
@@ -875,13 +876,13 @@ def make_vasp_md(jdata, mdata):
                 path_work = path_md
                 path_work = os.path.join(path_work, ii)
                 path_work = os.path.join(path_work, f"scale-{jj:.3f}")
-                path_work = os.path.join(path_work, "%06d" % kk)
+                path_work = os.path.join(path_work, "%06d" % kk)  # noqa: UP031
                 create_path(path_work)
                 os.chdir(path_work)
                 path_pos = path_ps
                 path_pos = os.path.join(path_pos, ii)
                 path_pos = os.path.join(path_pos, f"scale-{jj:.3f}")
-                path_pos = os.path.join(path_pos, "%06d" % kk)
+                path_pos = os.path.join(path_pos, "%06d" % kk)  # noqa: UP031
                 init_pos = os.path.join(path_pos, "POSCAR")
                 shutil.copy2(init_pos, "POSCAR")
                 file_incar = os.path.join(path_md, "INCAR")
@@ -928,9 +929,9 @@ def make_abacus_md(jdata, mdata):
                     raise RuntimeError("Cannot find any k-points information.")
                 else:
                     md_kpt_path = jdata["md_kpt"]
-                    assert os.path.isfile(
-                        md_kpt_path
-                    ), f"file {md_kpt_path} should exists"
+                    assert os.path.isfile(md_kpt_path), (
+                        f"file {md_kpt_path} should exists"
+                    )
             else:
                 ret_kpt = make_abacus_scf_kpt({"k_points": [1, 1, 1, 0, 0, 0]})
         else:
@@ -996,13 +997,13 @@ def make_abacus_md(jdata, mdata):
                 path_work = path_md
                 path_work = os.path.join(path_work, ii)
                 path_work = os.path.join(path_work, f"scale-{jj:.3f}")
-                path_work = os.path.join(path_work, "%06d" % kk)
+                path_work = os.path.join(path_work, "%06d" % kk)  # noqa: UP031
                 create_path(path_work)
                 os.chdir(path_work)
                 path_pos = path_ps
                 path_pos = os.path.join(path_pos, ii)
                 path_pos = os.path.join(path_pos, f"scale-{jj:.3f}")
-                path_pos = os.path.join(path_pos, "%06d" % kk)
+                path_pos = os.path.join(path_pos, "%06d" % kk)  # noqa: UP031
                 init_pos = os.path.join(path_pos, "STRU")
                 if "kspacing" not in standard_incar:
                     file_kpt = os.path.join(path_md, "KPT")
@@ -1071,7 +1072,7 @@ def coll_vasp_md(jdata):
         valid_outcars = []
         for jj in scale:
             for kk in range(pert_numb):
-                path_work = os.path.join(f"scale-{jj:.3f}", "%06d" % kk)
+                path_work = os.path.join(f"scale-{jj:.3f}", "%06d" % kk)  # noqa: UP031
                 outcar = os.path.join(path_work, "OUTCAR")
                 # dlog.info("OUTCAR",outcar)
                 if os.path.isfile(outcar):
@@ -1202,7 +1203,7 @@ def coll_abacus_md(jdata):
         valid_outcars = []
         for jj in scale:
             for kk in range(pert_numb + 1):
-                path_work = os.path.join(f"scale-{jj:.3f}", "%06d" % kk)
+                path_work = os.path.join(f"scale-{jj:.3f}", "%06d" % kk)  # noqa: UP031
                 print(f"path_work = {path_work}")
                 # outcar = os.path.join(path_work, 'OUT.ABACUS/')
                 outcar = path_work
@@ -1492,8 +1493,8 @@ def gen_init_bulk(args):
                     dlog.info(
                         "WARNING: your set-up for MD steps in PARAM and md_incar are not consistent!"
                     )
-                    dlog.info("MD steps in PARAM is %d" % (md_nstep_jdata))
-                    dlog.info("MD steps in md_incar is %d" % (nsw_steps))
+                    dlog.info("MD steps in PARAM is %d" % (md_nstep_jdata))  # noqa: UP031
+                    dlog.info("MD steps in md_incar is %d" % (nsw_steps))  # noqa: UP031
                     dlog.info("DP-GEN will use settings in md_incar!")
                     jdata["md_nstep"] = nsw_steps
     except KeyError:
@@ -1568,7 +1569,7 @@ def gen_init_bulk(args):
             elif jdata["init_fp_style"] == "ABACUS":
                 coll_abacus_md(jdata)
         else:
-            raise RuntimeError("unknown stage %d" % stage)
+            raise RuntimeError("unknown stage %d" % stage)  # noqa: UP031
 
 
 if __name__ == "__main__":
