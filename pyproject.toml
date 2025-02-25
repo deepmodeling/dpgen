@@ -86,6 +86,7 @@ select = [
     "F", # pyflakes
     "D", # pydocstyle
     "UP", # pyupgrade
+    "B905", # zip-without-explicit-strict
     "TID253", # banned-module-level-imports
 ]
 ignore = [
