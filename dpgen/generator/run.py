@@ -1305,7 +1305,7 @@ def make_model_devi(iter_index, jdata, mdata):
                     type_map=jdata["type_map"],
                 )
                 if shuffle_poscar:
-                    system.data["coords"] = rng.permuted(system.data["coords"], axis=1)
+                    rng.shuffle(system.data["coords"], axis=1) 
                 if jdata.get("model_devi_nopbc", False):
                     system.remove_pbc()
                 system.to_lammps_lmp(os.path.join(conf_path, lmp_name))
