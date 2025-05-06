@@ -1071,7 +1071,7 @@ def coll_vasp_md(jdata):
         # convert outcars
         valid_outcars = []
         for jj in scale:
-            for kk in range(pert_numb):
+            for kk in range(pert_numb + 1):
                 path_work = os.path.join(f"scale-{jj:.3f}", "%06d" % kk)  # noqa: UP031
                 outcar = os.path.join(path_work, "OUTCAR")
                 # dlog.info("OUTCAR",outcar)
