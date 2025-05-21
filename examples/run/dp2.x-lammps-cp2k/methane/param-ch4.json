@@ -24,8 +24,6 @@
     ],
     "sys_batch_size": [
         8,
-        8,
-        8,
         8
     ],
     "_comment1": " that's all ",
