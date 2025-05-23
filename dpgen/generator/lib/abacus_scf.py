@@ -217,12 +217,18 @@ def make_abacus_scf_stru(
     # we need to only pass the pp_file in sys_data, but not all pp_files
     if type_map is None:
         type_map = sys_data_copy.data["atom_names"]
-    
-    fp_pp_files = [os.path.join(pporb, fp_pp_files[type_map.index(atom_name)]) for atom_name in sys_data_copy.data["atom_names"]]
+
+    fp_pp_files = [
+        os.path.join(pporb, fp_pp_files[type_map.index(atom_name)])
+        for atom_name in sys_data_copy.data["atom_names"]
+    ]
 
     if fp_orb_files is not None:
-        fp_orb_files = [os.path.join(pporb, fp_orb_files[type_map.index(atom_name)]) for atom_name in sys_data_copy.data["atom_names"]]
-        
+        fp_orb_files = [
+            os.path.join(pporb, fp_orb_files[type_map.index(atom_name)])
+            for atom_name in sys_data_copy.data["atom_names"]
+        ]
+
     if fp_dpks_descriptor is not None:
         fp_dpks_descriptor = os.path.join(pporb, fp_dpks_descriptor)
 
