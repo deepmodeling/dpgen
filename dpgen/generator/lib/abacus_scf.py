@@ -224,7 +224,7 @@ def make_abacus_scf_stru(
             f"Some atoms in sys_data are not in type_map: {missing_atoms}. "
             "Please provide a valid type_map."
         )
-    
+
     if len(fp_pp_files) != len(type_map):
         raise ValueError(
             "The length of fp_pp_files should be equal to the length of type_map."
@@ -233,8 +233,7 @@ def make_abacus_scf_stru(
         raise ValueError(
             "The length of fp_orb_files should be equal to the length of type_map."
         )
-          
-    
+
     fp_pp_files = [
         os.path.join(pporb, fp_pp_files[type_map.index(atom_name)])
         for atom_name in sys_data_copy["atom_names"]
