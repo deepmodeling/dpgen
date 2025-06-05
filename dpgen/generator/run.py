@@ -2477,7 +2477,6 @@ def _select_by_model_devi_adaptive_trust_low(
     for tt in modd_system_task:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            model_devi = np.loadtxt(os.path.join(tt, "model_devi.out"))
             model_devi = _read_model_devi_file(
                 tt, model_devi_f_avg_relative, model_devi_merge_traj
             )
