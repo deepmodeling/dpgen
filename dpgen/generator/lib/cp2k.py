@@ -257,7 +257,7 @@ def calculate_multiplicity(atom_names, atom_types, charge=0):
     for idx in atom_types:
         element = atom_names[idx]
         total_electrons += atomic_numbers.get(element, 0)
-    
+
     # Subtract/add electrons based on system charge
     # Positive charge means we remove electrons, negative charge means we add electrons
     total_electrons -= charge
