@@ -244,11 +244,12 @@ def iterdict(d, out_list, flag=None, indent=0):
                     out_list.insert(index, " " * indent + k + " " + v)
 
 
-def calculate_multiplicity(atom_names, atom_types):
+def calculate_multiplicity(atom_names, atom_types, charge=0):
     """
-    Calculate the multiplicity based on atom species and quantities.
+    Calculate the multiplicity based on atom species, quantities, and system charge.
     :param atom_names: List of element symbols.
     :param atom_types: List of atom type indices.
+    :param charge: System charge (default: 0).
     :return: Multiplicity.
     """
     # Calculate the total number of electrons
@@ -256,6 +257,10 @@ def calculate_multiplicity(atom_names, atom_types):
     for idx in atom_types:
         element = atom_names[idx]
         total_electrons += atomic_numbers.get(element, 0)
+    
+    # Subtract/add electrons based on system charge
+    # Positive charge means we remove electrons, negative charge means we add electrons
+    total_electrons -= charge
 
     # Determine multiplicity based on the total number of electrons
     # Even number of electrons -> singlet (multiplicity = 1)
@@ -279,7 +284,12 @@ def make_cp2k_input(sys_data, fp_params):
 
     atom_names = sys_data["atom_names"]
     atom_types = sys_data["atom_types"]
-    multiplicity = calculate_multiplicity(atom_names, atom_types)
+    # Get system charge if provided, default to 0
+    charge = sys_data.get("charge", 0)
+    if "MULTIPLICITY" in fp_params.get("FORCE_EVAL", {}).get("DFT", {}):
+        multiplicity = fp_params["FORCE_EVAL"]["DFT"]["MULTIPLICITY"]
+    else:
+        multiplicity = calculate_multiplicity(atom_names, atom_types, charge)
 
     # get update from user
     user_config = fp_params
