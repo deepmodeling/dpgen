@@ -246,11 +246,11 @@ def iterdict(d, out_list, flag=None, indent=0):
 def calculate_multiplicity(atom_names, atom_types, charge=0):
     """
     Calculate the multiplicity based on atom species, quantities, and system charge.
-    
+
     This function provides a basic heuristic for determining multiplicity:
     - Even number of electrons -> singlet (multiplicity = 1)
     - Odd number of electrons -> doublet (multiplicity = 2)
-    
+
     Note: This approach assumes that an odd electron count always results in a doublet state.
     It does not account for systems with multiple unpaired electrons, which can have higher
     multiplicities (e.g., triplet, quartet, etc.). Users should be aware of this limitation
