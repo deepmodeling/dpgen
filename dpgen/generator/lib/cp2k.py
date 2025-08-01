@@ -121,7 +121,6 @@ atomic_numbers = {
     "Og": 118,
 }
 
-element_names = {v: k for k, v in atomic_numbers.items()}
 
 default_config = {
     "GLOBAL": {"PROJECT": "DPGEN"},
