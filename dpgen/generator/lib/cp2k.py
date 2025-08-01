@@ -255,7 +255,7 @@ def calculate_multiplicity(atom_names, atom_types, charge=0):
     It does not account for systems with multiple unpaired electrons, which can have higher
     multiplicities (e.g., triplet, quartet, etc.). Users should be aware of this limitation
     and use the function accordingly.
-    
+
     :param atom_names: List of element symbols.
     :param atom_types: List of atom type indices.
     :param charge: System charge (default: 0).
@@ -265,7 +265,10 @@ def calculate_multiplicity(atom_names, atom_types, charge=0):
     total_electrons = 0
     for idx in atom_types:
         element = atom_names[idx]
-        total_electrons += atomic_numbers.get(element, 0)
+        try:
+            total_electrons += atomic_numbers[element]
+        except KeyError:
+            raise ValueError(f"Unknown element '{element}' encountered in atom_names.")
 
     # Subtract/add electrons based on system charge
     # Positive charge means we remove electrons, negative charge means we add electrons
