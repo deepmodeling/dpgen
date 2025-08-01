@@ -213,9 +213,38 @@ def make_abacus_scf_stru(
 ):
     sys_data_copy = copy.deepcopy(sys_data)
     # re-construct the path of files by pporb + file name
-    fp_pp_files = [os.path.join(pporb, i) for i in fp_pp_files]
+    # when element in sys_data is part of type_map/fp_pp_files
+    # we need to only pass the pp_file in sys_data, but not all pp_files
+    if type_map is None:
+        type_map = sys_data_copy["atom_names"]
+
+    missing_atoms = set(sys_data_copy["atom_names"]) - set(type_map)
+    if len(missing_atoms) > 0:
+        raise ValueError(
+            f"Some atoms in sys_data are not in type_map: {missing_atoms}. "
+            "Please provide a valid type_map."
+        )
+
+    if len(fp_pp_files) != len(type_map):
+        raise ValueError(
+            "The length of fp_pp_files should be equal to the length of type_map."
+        )
+    if fp_orb_files is not None and len(fp_orb_files) != len(type_map):
+        raise ValueError(
+            "The length of fp_orb_files should be equal to the length of type_map."
+        )
+
+    fp_pp_files = [
+        os.path.join(pporb, fp_pp_files[type_map.index(atom_name)])
+        for atom_name in sys_data_copy["atom_names"]
+    ]
+
     if fp_orb_files is not None:
-        fp_orb_files = [os.path.join(pporb, i) for i in fp_orb_files]
+        fp_orb_files = [
+            os.path.join(pporb, fp_orb_files[type_map.index(atom_name)])
+            for atom_name in sys_data_copy["atom_names"]
+        ]
+
     if fp_dpks_descriptor is not None:
         fp_dpks_descriptor = os.path.join(pporb, fp_dpks_descriptor)
 

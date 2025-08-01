@@ -76,7 +76,6 @@ class TestGenBulkABACUS(unittest.TestCase):
     def testSTRU(self):
         jdata = self.jdata
         jdata["from_poscar_path"] = "./Cu.STRU"
-        jdata["potcars"] = ["abacus.in/Cu_ONCV_PBE-1.0.upf"]
         make_super_cell_STRU(jdata)
         make_abacus_relax(jdata, {"fp_resources": {}})
         make_scale_ABACUS(jdata)
