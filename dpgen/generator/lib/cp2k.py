@@ -298,8 +298,9 @@ def make_cp2k_input(sys_data, fp_params):
     atom_types = sys_data["atom_types"]
     # Get system charge if provided, default to 0
     charge = sys_data.get("charge", 0)
-    if "MULTIPLICITY" in fp_params.get("FORCE_EVAL", {}).get("DFT", {}):
-        multiplicity = fp_params["FORCE_EVAL"]["DFT"]["MULTIPLICITY"]
+    dft_params = fp_params.get("FORCE_EVAL", {}).get("DFT", {})
+    if "MULTIPLICITY" in dft_params:
+        multiplicity = dft_params["MULTIPLICITY"]
     else:
         multiplicity = calculate_multiplicity(atom_names, atom_types, charge)
 
