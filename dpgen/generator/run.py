@@ -4523,8 +4523,9 @@ def post_fp_cp2k(iter_index, jdata, rfailed=None):
             _sys = dpdata.LabeledSystem(
                 oo, fmt="cp2kdata/e_f", type_map=jdata["type_map"]
             )
-            all_sys.append(_sys)
-            icount += 1
+            if len(_sys) > 0:
+                all_sys.append(_sys)
+                icount += 1
 
         if (all_sys is not None) and (len(all_sys) > 0):
             sys_data_path = os.path.join(work_path, f"data.{ss}")
