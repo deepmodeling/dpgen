@@ -923,6 +923,58 @@ def fp_style_custom_args() -> list[Argument]:
     ]
 
 
+# pwmat
+def fp_style_pwmat_args() -> list[Argument]:
+    """Arguments for FP style pwmat.
+
+    Returns
+    -------
+    list[dargs.Argument]
+        list of pwmat fp style arguments
+    """
+    doc_fp_pp_path = "Directory of psuedo-potential file to be used for 02.fp exists."
+    doc_fp_pp_files = "Psuedo-potential file to be used for 02.fp. Note that the order of elements should correspond to the order in type_map."
+    doc_fp_incar = "Path to the pwmat input file template (etot.input). If provided, this file will be used directly instead of generating from fp_params or user_fp_params."
+    doc_user_fp_params = "Parameters for pwmat calculation. When user_fp_params is set, the settings in fp_params will be ignored. This allows direct specification of all pwmat input parameters."
+    doc_fp_params = (
+        "Parameters for pwmat calculation. It has lower priority than user_fp_params."
+    )
+    doc_node1 = "node1 in pwmat (number of MPI processes for the first direction)."
+    doc_node2 = "node2 in pwmat (number of MPI processes for the second direction)."
+    doc_in_atom = "Path to atom configuration file (in.atom) for pwmat."
+    doc_ecut = "Energy cutoff (ecut) in pwmat."
+    doc_e_error = "Energy convergence criterion (e_error) in pwmat."
+    doc_rho_error = "Density convergence criterion (rho_error) in pwmat."
+    doc_kspacing = "The spacing between kpoints. Helps to determine KPOINTS in pwmat."
+    doc_icmix = "Mixing method parameter (icmix) in pwmat for SCF iteration."
+    doc_smearing = "Smearing method for electronic states in pwmat."
+    doc_sigma = "Smearing width parameter (sigma) in pwmat."
+    doc_flag_symm = "Symmetry flag (flag_symm) in pwmat. Can be 0, 1, 2, or 3."
+    doc_user_pwmat_params = "Additional user-defined pwmat parameters that will override the generated input."
+
+    args = [
+        Argument("node1", int, optional=False, doc=doc_node1),
+        Argument("node2", int, optional=False, doc=doc_node2),
+        Argument("in.atom", str, optional=False, doc=doc_in_atom),
+        Argument("ecut", float, optional=False, doc=doc_ecut),
+        Argument("e_error", float, optional=False, doc=doc_e_error),
+        Argument("rho_error", float, optional=False, doc=doc_rho_error),
+        Argument("kspacing", float, optional=False, doc=doc_kspacing),
+        Argument("icmix", float, optional=True, doc=doc_icmix),
+        Argument("smearing", int, optional=True, doc=doc_smearing),
+        Argument("sigma", float, optional=True, doc=doc_sigma),
+        Argument("flag_symm", [int, str], optional=True, doc=doc_flag_symm),
+        Argument("user_pwmat_params", dict, optional=True, doc=doc_user_pwmat_params),
+    ]
+    return [
+        Argument("fp_pp_path", str, optional=False, doc=doc_fp_pp_path),
+        Argument("fp_pp_files", list[str], optional=False, doc=doc_fp_pp_files),
+        Argument("fp_incar", str, optional=True, doc=doc_fp_incar),
+        Argument("fp_params", dict, args, [], optional=True, doc=doc_fp_params),
+        Argument("user_fp_params", dict, optional=True, doc=doc_user_fp_params),
+    ]
+
+
 def fp_style_variant_type_args() -> Variant:
     doc_fp_style = "Software for First Principles."
     doc_amber_diff = (
@@ -931,6 +983,11 @@ def fp_style_variant_type_args() -> Variant:
         "where some arguments are reused. "
         "The command argument in the machine file should be path to sander. "
         "One should also install dpamber and make it visible in the PATH."
+    )
+    doc_pwmat = (
+        "PWmat is an ab initio calculation software for density functional theory. "
+        "It supports various calculation types including SCF calculations with k-point meshes. "
+        "The command argument in the machine file should be the path to PWmat executable."
     )
     doc_custom = (
         "Custom FP code. You need to provide the input and output file format and name. "
@@ -949,7 +1006,7 @@ def fp_style_variant_type_args() -> Variant:
             Argument(
                 "amber/diff", dict, fp_style_amber_diff_args(), doc=doc_amber_diff
             ),
-            Argument("pwmat", dict, [], doc="TODO: add doc"),
+            Argument("pwmat", dict, fp_style_pwmat_args(), doc=doc_pwmat),
             Argument("pwscf", dict, fp_style_pwscf_args()),
             Argument("custom", dict, fp_style_custom_args(), doc=doc_custom),
         ],
