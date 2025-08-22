@@ -593,9 +593,54 @@ def model_devi_amber_args() -> list[Argument]:
     ]
 
 
+def model_devi_gromacs_args() -> list[Argument]:
+    """GROMACS engine arguments."""
+    doc_model_devi_dt = "Timestep for MD. 0.002 is recommend."
+    doc_gromacs_settings = "Settings for GROMACS files and parameters."
+    doc_mdp_filename = "MDP (molecular dynamics parameters) filename. Default: md.mdp"
+    doc_topol_filename = "Topology filename. Default: processed.top"
+    doc_conf_filename = "Configuration filename. Default: conf.gro"
+    doc_index_filename = "Index filename. Default: index.raw"
+    doc_type_filename = "Type filename. Default: type.raw"
+    doc_ndx_filename = "Index file for GROMACS trjconv. Default: empty string (not used)"
+    doc_ref_filename = "Reference filename for processing PBC condition. Default: em.tpr"
+    doc_deffnm = "Default filename prefix for GROMACS output files. Default: deepmd"
+    doc_maxwarn = "Maximum number of warnings allowed for GROMACS grompp. Default: 1"
+    doc_traj_filename = "Trajectory filename. Default: deepmd_traj.gro"
+    doc_group_name = "Group name for GROMACS trjconv. Default: Other"
+
+    gromacs_settings_args = [
+        Argument("mdp_filename", str, optional=True, default="md.mdp", doc=doc_mdp_filename),
+        Argument("topol_filename", str, optional=True, default="processed.top", doc=doc_topol_filename),
+        Argument("conf_filename", str, optional=True, default="conf.gro", doc=doc_conf_filename),
+        Argument("index_filename", str, optional=True, default="index.raw", doc=doc_index_filename),
+        Argument("type_filename", str, optional=True, default="type.raw", doc=doc_type_filename),
+        Argument("ndx_filename", str, optional=True, default="", doc=doc_ndx_filename),
+        Argument("ref_filename", str, optional=True, default="em.tpr", doc=doc_ref_filename),
+        Argument("deffnm", str, optional=True, default="deepmd", doc=doc_deffnm),
+        Argument("maxwarn", int, optional=True, default=1, doc=doc_maxwarn),
+        Argument("traj_filename", str, optional=True, default="deepmd_traj.gro", doc=doc_traj_filename),
+        Argument("group_name", str, optional=True, default="Other", doc=doc_group_name),
+    ]
+
+    return [
+        model_devi_jobs_args(),
+        Argument("model_devi_dt", float, optional=False, doc=doc_model_devi_dt),
+        Argument(
+            "gromacs_settings",
+            dict,
+            gromacs_settings_args,
+            [],
+            optional=True,
+            doc=doc_gromacs_settings,
+        ),
+    ]
+
+
 def model_devi_args() -> list[Variant]:
     doc_model_devi_engine = "Engine for the model deviation task."
     doc_amber = "Amber DPRc engine. The command argument in the machine file should be path to sander."
+    doc_gromacs = "GROMACS engine. Requires GromacsWrapper>=0.8.0 and DeePMD-kit v2 or above. The command argument in the machine file should be path to gmx."
     return [
         Variant(
             "model_devi_engine",
@@ -603,7 +648,7 @@ def model_devi_args() -> list[Variant]:
                 Argument("lammps", dict, model_devi_lmp_args(), doc="LAMMPS"),
                 Argument("amber", dict, model_devi_amber_args(), doc=doc_amber),
                 Argument("calypso", dict, [], doc="TODO: add doc"),
-                Argument("gromacs", dict, [], doc="TODO: add doc"),
+                Argument("gromacs", dict, model_devi_gromacs_args(), doc=doc_gromacs),
             ],
             default_tag="lammps",
             optional=True,
