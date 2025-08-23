@@ -952,7 +952,8 @@ def fp_style_pwmat_args() -> list[Argument]:
     doc_flag_symm = "Symmetry flag (flag_symm) in pwmat. Can be 0, 1, 2, or 3."
     doc_user_pwmat_params = "Additional user-defined pwmat parameters that will override the generated input."
 
-    args = [
+    # Arguments for fp_params (used via make_pwmat_input_user_dict)
+    fp_params_args = [
         Argument("node1", int, optional=False, doc=doc_node1),
         Argument("node2", int, optional=False, doc=doc_node2),
         Argument("in.atom", str, optional=False, doc=doc_in_atom),
@@ -966,12 +967,27 @@ def fp_style_pwmat_args() -> list[Argument]:
         Argument("flag_symm", [int, str], optional=True, doc=doc_flag_symm),
         Argument("user_pwmat_params", dict, optional=True, doc=doc_user_pwmat_params),
     ]
+    
+    # Arguments for user_fp_params (used directly in make_pwmat_input)
+    # Note: icmix, smearing, sigma are not used in user_fp_params path (hardcoded as None)
+    # flag_symm is required because it's accessed directly without checking
+    user_fp_params_args = [
+        Argument("node1", int, optional=False, doc=doc_node1),
+        Argument("node2", int, optional=False, doc=doc_node2),
+        Argument("in.atom", str, optional=False, doc=doc_in_atom),
+        Argument("ecut", float, optional=False, doc=doc_ecut),
+        Argument("e_error", float, optional=False, doc=doc_e_error),
+        Argument("rho_error", float, optional=False, doc=doc_rho_error),
+        Argument("kspacing", float, optional=False, doc=doc_kspacing),
+        Argument("flag_symm", [int, str], optional=False, doc=doc_flag_symm),
+    ]
+    
     return [
         Argument("fp_pp_path", str, optional=False, doc=doc_fp_pp_path),
         Argument("fp_pp_files", list[str], optional=False, doc=doc_fp_pp_files),
         Argument("fp_incar", str, optional=True, doc=doc_fp_incar),
-        Argument("fp_params", dict, args, [], optional=True, doc=doc_fp_params),
-        Argument("user_fp_params", dict, optional=True, doc=doc_user_fp_params),
+        Argument("fp_params", dict, fp_params_args, [], optional=True, doc=doc_fp_params),
+        Argument("user_fp_params", dict, user_fp_params_args, [], optional=True, doc=doc_user_fp_params),
     ]
 
 
