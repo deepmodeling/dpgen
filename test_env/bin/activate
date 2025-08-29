@@ -39,10 +39,10 @@ deactivate nondestructive
 if [ "${OSTYPE:-}" = "cygwin" ] || [ "${OSTYPE:-}" = "msys" ] ; then
     # transform D:\path\to\venv to /d/path/to/venv on MSYS
     # and to /cygdrive/d/path/to/venv on Cygwin
-    export VIRTUAL_ENV=$(cygpath /home/runner/work/dpgen/dpgen/dpgen_venv)
+    export VIRTUAL_ENV=$(cygpath /home/runner/work/dpgen/dpgen/test_env)
 else
     # use the path as-is
-    export VIRTUAL_ENV=/home/runner/work/dpgen/dpgen/dpgen_venv
+    export VIRTUAL_ENV=/home/runner/work/dpgen/dpgen/test_env
 fi
 
 _OLD_VIRTUAL_PATH="$PATH"
@@ -59,9 +59,9 @@ fi
 
 if [ -z "${VIRTUAL_ENV_DISABLE_PROMPT:-}" ] ; then
     _OLD_VIRTUAL_PS1="${PS1:-}"
-    PS1='(dpgen_venv) '"${PS1:-}"
+    PS1='(test_env) '"${PS1:-}"
     export PS1
-    VIRTUAL_ENV_PROMPT='(dpgen_venv) '
+    VIRTUAL_ENV_PROMPT='(test_env) '
     export VIRTUAL_ENV_PROMPT
 fi
 

@@ -1,4 +1,4 @@
-#!/home/runner/work/dpgen/dpgen/dpgen_venv/bin/python
+#!/home/runner/work/dpgen/dpgen/test_env/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys
