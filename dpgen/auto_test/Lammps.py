@@ -510,7 +510,9 @@ class Lammps(Task):
         # Use actual in_lammps path if specified, otherwise use default "in.lammps"
         in_lammps_file = self.in_lammps if self.in_lammps != "auto" else "in.lammps"
         if self.inter_type == "meam":
-            return ["conf.lmp", in_lammps_file] + list(map(os.path.basename, self.model))
+            return ["conf.lmp", in_lammps_file] + list(
+                map(os.path.basename, self.model)
+            )
         else:
             return ["conf.lmp", in_lammps_file, os.path.basename(self.model)]
 
