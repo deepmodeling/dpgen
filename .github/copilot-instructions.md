@@ -55,14 +55,14 @@ Always reference these instructions first and fallback to search or bash command
 ### dpgen run - Core Workflow
 - **Purpose**: Main deep potential generation with iterative training/exploration/labeling
 - **Usage**: `dpgen run param.json machine.json`
-- **Key Files**: 
+- **Key Files**:
   - `param.json`: System parameters, training config, exploration settings
   - `machine.json`: HPC/computation resource configuration
 - **Process**: Creates iterations (iter.000001, iter.000002, etc.) with 00.train, 01.model_devi, 02.fp subdirectories
 
 ### dpgen init_* - Data Preparation
 - **init_bulk**: `dpgen init_bulk param.json [machine.json]` -- bulk systems
-- **init_surf**: `dpgen init_surf param.json [machine.json]` -- surface systems  
+- **init_surf**: `dpgen init_surf param.json [machine.json]` -- surface systems
 - **init_reaction**: `dpgen init_reaction param.json [machine.json]` -- reactive systems
 - **Purpose**: Generate initial training data for deep potential models
 
@@ -89,7 +89,7 @@ Always reference these instructions first and fallback to search or bash command
 - **Location**: `examples/` directory contains templates for different scenarios
 - **Key Examples**:
   - `examples/run/deprecated/dp2.x-lammps-vasp/param.json` -- VASP with LAMMPS
-  - `examples/run/dp2.x-lammps-gaussian/param.json` -- Gaussian calculations  
+  - `examples/run/dp2.x-lammps-gaussian/param.json` -- Gaussian calculations
   - `examples/run/dp-calypso-vasp/param.json` -- CALYPSO with VASP
   - `examples/run/ch4/param.json` -- CH4 system example
 - **Format**: JSON with extensive nested parameters for system, training, exploration settings
@@ -121,7 +121,7 @@ Always reference these instructions first and fallback to search or bash command
 ### Key Directories
 - `dpgen/` -- Main source code
   - `generator/` -- Core DP-GEN functionality (`dpgen run`)
-  - `auto_test/` -- Testing framework (`dpgen autotest`) 
+  - `auto_test/` -- Testing framework (`dpgen autotest`)
   - `data/` -- Data preparation (`dpgen init_*`)
   - `simplify/` -- Dataset optimization
   - `main.py` -- CLI entry point
