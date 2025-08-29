@@ -99,3 +99,29 @@ class TestLammps(unittest.TestCase):
     def test_backward_files(self):
         backward_files = ["log.lammps", "outlog", "dump.relax"]
         self.assertEqual(self.Lammps.backward_files(), backward_files)
+
+    def test_forward_common_files_with_custom_in_lammps(self):
+        """Test forward_common_files with custom in_lammps path (fixes #1757)"""
+        # Test custom in_lammps path
+        custom_inter_param = {
+            "type": "deepmd",
+            "model": "lammps_input/frozen_model.pb",
+            "in_lammps": "lammps_input/in.lammps",  # Custom path
+            "deepmd_version": "1.1.0",
+            "type_map": {"Al": 0},
+        }
+        
+        lammps_custom = Lammps(custom_inter_param, self.source_path + "/Al-fcc.vasp")
+        fc_files_custom = lammps_custom.forward_common_files()
+        expected_custom = ["lammps_input/in.lammps", "frozen_model.pb"]
+        self.assertEqual(fc_files_custom, expected_custom)
+        
+        # Test that forward_files also uses custom path
+        forward_files_custom = lammps_custom.forward_files()
+        expected_forward = ["conf.lmp", "lammps_input/in.lammps", "frozen_model.pb"]
+        self.assertEqual(forward_files_custom, expected_forward)
+        
+        # Test EOS property type (should not include in.lammps)
+        fc_files_eos = lammps_custom.forward_common_files(property_type="eos")
+        expected_eos = ["frozen_model.pb"]
+        self.assertEqual(fc_files_eos, expected_eos)

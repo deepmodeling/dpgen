@@ -507,17 +507,21 @@ class Lammps(Task):
             return result_dict
 
     def forward_files(self, property_type="relaxation"):
+        # Use actual in_lammps path if specified, otherwise use default "in.lammps"
+        in_lammps_file = self.in_lammps if self.in_lammps != "auto" else "in.lammps"
         if self.inter_type == "meam":
-            return ["conf.lmp", "in.lammps"] + list(map(os.path.basename, self.model))
+            return ["conf.lmp", in_lammps_file] + list(map(os.path.basename, self.model))
         else:
-            return ["conf.lmp", "in.lammps", os.path.basename(self.model)]
+            return ["conf.lmp", in_lammps_file, os.path.basename(self.model)]
 
     def forward_common_files(self, property_type="relaxation"):
         if property_type not in ["eos"]:
+            # Use actual in_lammps path if specified, otherwise use default "in.lammps"
+            in_lammps_file = self.in_lammps if self.in_lammps != "auto" else "in.lammps"
             if self.inter_type == "meam":
-                return ["in.lammps"] + list(map(os.path.basename, self.model))
+                return [in_lammps_file] + list(map(os.path.basename, self.model))
             else:
-                return ["in.lammps", os.path.basename(self.model)]
+                return [in_lammps_file, os.path.basename(self.model)]
         else:
             if self.inter_type == "meam":
                 return list(map(os.path.basename, self.model))
