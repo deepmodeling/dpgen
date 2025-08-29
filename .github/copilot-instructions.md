@@ -10,26 +10,26 @@ Always reference these instructions first and fallback to search or bash command
 - **Environment Setup**:
   - Ensure Python 3.9+ is available: `python --version`
   - Create virtual environment: `python -m venv dpgen_env && source dpgen_env/bin/activate`
-  - **Preferred**: Install with uv: `uv pip install -e .` -- takes 15-30 minutes due to heavy scientific dependencies. NEVER CANCEL. Set timeout to 45+ minutes.
+  - **Preferred**: Install with uv: `uv pip install -e .` -- takes 1-5 minutes due to scientific dependencies. Set timeout to 10+ minutes.
   - Alternative: `pip install -e .` (fallback if uv not available)
   - Released version: `uv pip install dpgen` or `pip install dpgen`
   - Test installation: `dpgen -h`
 
 ### Core Dependencies Installation Times
-- **CRITICAL**: Dependencies include large scientific packages (numpy, pymatgen, ASE, etc.)
-- **NEVER CANCEL**: Full installation takes 15-30 minutes. Use timeout of 45+ minutes minimum.
+- **Dependencies**: Include large scientific packages (numpy, pymatgen, ASE, etc.)
+- **Installation Time**: Full installation takes 1-5 minutes with uv, 3-10 minutes with pip. Use timeout of 10+ minutes.
 - If network timeouts occur, retry with: `uv pip install --timeout 600 -e .` or `pip install --timeout 600 -e .`
 - For faster testing: `uv pip install --no-deps -e .` or `pip install --no-deps -e .` (installs without dependencies, will fail at runtime)
 
 ### Testing
-- **Unit Tests**: `python -m unittest discover tests -v` -- takes 2-5 minutes. NEVER CANCEL. Set timeout to 10+ minutes.
-- **Coverage**: `coverage run --source=./dpgen -m unittest -v && coverage report` -- takes 3-8 minutes. NEVER CANCEL.
+- **Unit Tests**: `python -m unittest discover tests -v` -- takes 2-5 minutes. Set timeout to 10+ minutes.
+- **Coverage**: `coverage run --source=./dpgen -m unittest -v && coverage report` -- takes 3-8 minutes. Set timeout to 15+ minutes.
 - **Quick Test**: `python -m unittest tests.test_load_file -v` -- takes <1 second (will fail without dependencies but tests framework)
 - **CLI Test**: `python -m unittest tests.test_cli -v` -- tests all dpgen subcommands
 
 ### Build Process
 - **No Traditional Build**: This is a pure Python package using setuptools
-- **Documentation Build**: `cd doc && make html` -- takes 2-5 minutes. NEVER CANCEL.
+- **Documentation Build**: `cd doc && make html` -- takes 2-5 minutes. Set timeout to 10+ minutes.
 - **Package Build**: `python -m build` -- takes 1-3 minutes
 
 ## Development Requirements
@@ -105,7 +105,7 @@ Always reference these instructions first and fallback to search or bash command
 ## Validation
 
 ### Always Run Before Committing
-- **Full Dependencies Required**: All validation requires `uv pip install -e .` or `pip install -e .` (15-30 min install)
+- **Full Dependencies Required**: All validation requires `uv pip install -e .` or `pip install -e .` (1-5 min install)
 - `python -m unittest discover tests -v` -- full test suite (requires dependencies)
 - `dpgen -h && dpgen run -h && dpgen autotest -h` -- CLI validation (requires installation)
 
@@ -157,9 +157,9 @@ Always reference these instructions first and fallback to search or bash command
 
 ## Timing Expectations
 
-- **Installation**: 15-30 minutes (NEVER CANCEL, timeout 45+ minutes)
-- **Full Test Suite**: 2-5 minutes (NEVER CANCEL, timeout 10+ minutes)
-- **Documentation Build**: 2-5 minutes (NEVER CANCEL, timeout 10+ minutes)
+- **Installation**: 1-5 minutes with uv, 3-10 minutes with pip (timeout 10+ minutes)
+- **Full Test Suite**: 2-5 minutes (timeout 10+ minutes)
+- **Documentation Build**: 2-5 minutes (timeout 10+ minutes)
 - **Quick Import Test**: <1 second
 - **CI Pipeline**: Runs on Python 3.9 and 3.12, full cycle ~10-15 minutes
 
