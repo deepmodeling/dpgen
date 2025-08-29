@@ -10,15 +10,16 @@ Always reference these instructions first and fallback to search or bash command
 - **Environment Setup**:
   - Ensure Python 3.9+ is available: `python --version`
   - Create virtual environment: `python -m venv dpgen_env && source dpgen_env/bin/activate`
-  - Install from source: `pip install -e .` -- takes 15-30 minutes due to heavy scientific dependencies. NEVER CANCEL. Set timeout to 45+ minutes.
-  - Alternative: `pip install dpgen` for released version
+  - **Preferred**: Install with uv: `uv pip install -e .` -- takes 15-30 minutes due to heavy scientific dependencies. NEVER CANCEL. Set timeout to 45+ minutes.
+  - Alternative: `pip install -e .` (fallback if uv not available)
+  - Released version: `uv pip install dpgen` or `pip install dpgen`
   - Test installation: `dpgen -h`
 
 ### Core Dependencies Installation Times
 - **CRITICAL**: Dependencies include large scientific packages (numpy, pymatgen, ASE, etc.)
 - **NEVER CANCEL**: Full installation takes 15-30 minutes. Use timeout of 45+ minutes minimum.
-- If network timeouts occur, retry with: `pip install --timeout 600 -e .`
-- For faster testing: `pip install --no-deps -e .` (installs without dependencies, will fail at runtime)
+- If network timeouts occur, retry with: `uv pip install --timeout 600 -e .` or `pip install --timeout 600 -e .`
+- For faster testing: `uv pip install --no-deps -e .` or `pip install --no-deps -e .` (installs without dependencies, will fail at runtime)
 
 ### Testing
 - **Unit Tests**: `python -m unittest discover tests -v` -- takes 2-5 minutes. NEVER CANCEL. Set timeout to 10+ minutes.
@@ -30,6 +31,24 @@ Always reference these instructions first and fallback to search or bash command
 - **No Traditional Build**: This is a pure Python package using setuptools
 - **Documentation Build**: `cd doc && make html` -- takes 2-5 minutes. NEVER CANCEL.
 - **Package Build**: `python -m build` -- takes 1-3 minutes
+
+## Development Requirements
+
+### Commit Messages and PR Titles
+- **Use Semantic Commit Messages**: Follow conventional commit format for all commits and PR titles
+  - `feat:` for new features
+  - `fix:` for bug fixes
+  - `docs:` for documentation changes
+  - `test:` for test additions/modifications
+  - `refactor:` for code refactoring
+  - `chore:` for maintenance tasks
+  - Examples: `feat: add comprehensive GitHub Copilot instructions`, `fix: resolve timeout in dependency installation`
+
+### Package Management
+- **Prefer uv**: Use `uv` for Python dependency management when available
+  - Installation: `uv pip install -e .`
+  - Adding dependencies: `uv add package-name`
+  - Fallback to `pip` only when `uv` is not available in the environment
 
 ## Main Workflows and Commands
 
@@ -86,7 +105,7 @@ Always reference these instructions first and fallback to search or bash command
 ## Validation
 
 ### Always Run Before Committing
-- **Full Dependencies Required**: All validation requires `pip install -e .` (15-30 min install)
+- **Full Dependencies Required**: All validation requires `uv pip install -e .` or `pip install -e .` (15-30 min install)
 - `python -m unittest discover tests -v` -- full test suite (requires dependencies)
 - `dpgen -h && dpgen run -h && dpgen autotest -h` -- CLI validation (requires installation)
 
