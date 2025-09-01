@@ -653,21 +653,23 @@ class MakeModelDeviByReviseMatrix(unittest.TestCase):
         """Test that revise_lmp_input_model properly handles use_relative and epsilon for DeepMD v1+."""
         lines = ["foo\n", "pair_style deepmd aaa ccc fff\n", "bar\n", "\n"]
         ref_lines = copy.deepcopy(lines)
-        
+
         # Create jdata with relative parameters
         jdata = {
             "use_relative": True,
             "epsilon": 1.5,
             "use_relative_v": True,
-            "epsilon_v": 2.0
+            "epsilon_v": 2.0,
         }
-        
-        lines_result = revise_lmp_input_model(lines, ["model0", "model1"], 10, "1", jdata=jdata)
-        
+
+        lines_result = revise_lmp_input_model(
+            lines, ["model0", "model1"], 10, "1", jdata=jdata
+        )
+
         # Check that other lines remain unchanged
         for ii in [0, 2, 3]:
             self.assertEqual(lines_result[ii], ref_lines[ii])
-        
+
         # The pair_style line should include relative keywords
         tmp = " ".join(lines_result[1].split())
         expected = "pair_style deepmd model0 model1 out_freq 10 out_file model_devi.out relative 1.5 relative_v 2.0"
@@ -677,19 +679,18 @@ class MakeModelDeviByReviseMatrix(unittest.TestCase):
         """Test with only use_relative enabled."""
         lines = ["foo\n", "pair_style deepmd aaa ccc fff\n", "bar\n", "\n"]
         ref_lines = copy.deepcopy(lines)
-        
+
         # Create jdata with only force relative parameters
-        jdata = {
-            "use_relative": True,
-            "epsilon": 1.0
-        }
-        
-        lines_result = revise_lmp_input_model(lines, ["model0", "model1"], 10, "1", jdata=jdata)
-        
+        jdata = {"use_relative": True, "epsilon": 1.0}
+
+        lines_result = revise_lmp_input_model(
+            lines, ["model0", "model1"], 10, "1", jdata=jdata
+        )
+
         # Check that other lines remain unchanged
         for ii in [0, 2, 3]:
             self.assertEqual(lines_result[ii], ref_lines[ii])
-        
+
         # The pair_style line should include relative keyword for force only
         tmp = " ".join(lines_result[1].split())
         expected = "pair_style deepmd model0 model1 out_freq 10 out_file model_devi.out relative 1.0"
@@ -699,14 +700,14 @@ class MakeModelDeviByReviseMatrix(unittest.TestCase):
         """Test behavior when no relative parameters are provided (should work as before)."""
         lines = ["foo\n", "pair_style deepmd aaa ccc fff\n", "bar\n", "\n"]
         ref_lines = copy.deepcopy(lines)
-        
+
         # No jdata provided
         lines_result = revise_lmp_input_model(lines, ["model0", "model1"], 10, "1")
-        
+
         # Check that other lines remain unchanged
         for ii in [0, 2, 3]:
             self.assertEqual(lines_result[ii], ref_lines[ii])
-        
+
         # The pair_style line should be the basic version
         tmp = " ".join(lines_result[1].split())
         expected = "pair_style deepmd model0 model1 out_freq 10 out_file model_devi.out"
@@ -716,19 +717,18 @@ class MakeModelDeviByReviseMatrix(unittest.TestCase):
         """Test that relative parameters work together with electron temperature."""
         lines = ["foo\n", "pair_style deepmd aaa ccc fff\n", "bar\n", "\n"]
         ref_lines = copy.deepcopy(lines)
-        
+
         # Create jdata with relative parameters
-        jdata = {
-            "use_relative": True,
-            "epsilon": 1.0
-        }
-        
-        lines_result = revise_lmp_input_model(lines, ["model0", "model1"], 10, "1", use_ele_temp=1, jdata=jdata)
-        
+        jdata = {"use_relative": True, "epsilon": 1.0}
+
+        lines_result = revise_lmp_input_model(
+            lines, ["model0", "model1"], 10, "1", use_ele_temp=1, jdata=jdata
+        )
+
         # Check that other lines remain unchanged
         for ii in [0, 2, 3]:
             self.assertEqual(lines_result[ii], ref_lines[ii])
-        
+
         # The pair_style line should include both relative and electron temperature
         tmp = " ".join(lines_result[1].split())
         expected = "pair_style deepmd model0 model1 out_freq 10 out_file model_devi.out relative 1.0 fparam ${ELE_TEMP}"

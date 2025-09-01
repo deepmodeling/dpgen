@@ -1093,10 +1093,10 @@ def revise_lmp_input_model(
                 keywords += "relative {} ".format(jdata["epsilon"])
             if jdata.get("use_relative_v", False):
                 keywords += "relative_v {} ".format(jdata["epsilon_v"])
-        
+
         if use_ele_temp == 1:
             keywords += "fparam ${ELE_TEMP}"
-        
+
         lmp_lines[idx] = (
             "pair_style      deepmd %s out_freq %d out_file model_devi.out %s\n"  # noqa: UP031
             % (
