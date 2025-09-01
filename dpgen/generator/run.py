@@ -1074,7 +1074,7 @@ def find_only_one_key(lmp_lines, key):
 
 
 def revise_lmp_input_model(
-    lmp_lines, task_model_list, trj_freq, deepmd_version="1", use_ele_temp=0
+    lmp_lines, task_model_list, trj_freq, deepmd_version="1", use_ele_temp=0, jdata=None
 ):
     idx = find_only_one_key(lmp_lines, ["pair_style", "deepmd"])
     graph_list = " ".join(task_model_list)
@@ -1084,20 +1084,33 @@ def revise_lmp_input_model(
             trj_freq,
         )
     else:
+        # Build keywords string like in make_lammps_input
+        keywords = ""
+        if jdata is not None:
+            if jdata.get("use_clusters", False):
+                keywords += "atomic "
+            if jdata.get("use_relative", False):
+                keywords += "relative {} ".format(jdata["epsilon"])
+            if jdata.get("use_relative_v", False):
+                keywords += "relative_v {} ".format(jdata["epsilon_v"])
+        
         if use_ele_temp == 0:
             lmp_lines[idx] = (
-                "pair_style      deepmd %s out_freq %d out_file model_devi.out\n"  # noqa: UP031
+                "pair_style      deepmd %s out_freq %d out_file model_devi.out %s\n"  # noqa: UP031
                 % (
                     graph_list,
                     trj_freq,
+                    keywords.rstrip(),
                 )
             )
         elif use_ele_temp == 1:
+            keywords += "fparam ${ELE_TEMP}"
             lmp_lines[idx] = (
-                "pair_style      deepmd %s out_freq %d out_file model_devi.out fparam ${ELE_TEMP}\n"  # noqa: UP031
+                "pair_style      deepmd %s out_freq %d out_file model_devi.out %s\n"  # noqa: UP031
                 % (
                     graph_list,
                     trj_freq,
+                    keywords.rstrip(),
                 )
             )
     return lmp_lines
@@ -1472,6 +1485,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                                 trj_freq,
                                 deepmd_version=deepmd_version,
                                 use_ele_temp=use_ele_temp,
+                                jdata=jdata,
                             )
                     else:
                         if len(lmp_lines[template_pair_deepmd_idx].split()) != (
@@ -1493,6 +1507,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                                 trj_freq,
                                 deepmd_version=deepmd_version,
                                 use_ele_temp=use_ele_temp,
+                                jdata=jdata,
                             )
                 # use revise_lmp_input_model to raise error message if "part_style" or "deepmd" not found
                 else:
@@ -1502,6 +1517,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                         trj_freq,
                         deepmd_version=deepmd_version,
                         use_ele_temp=use_ele_temp,
+                        jdata=jdata,
                     )
 
                 lmp_lines = revise_lmp_input_dump(
