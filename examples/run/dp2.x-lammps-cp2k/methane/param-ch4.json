@@ -131,8 +131,5 @@
     "shuffle_poscar": false,
     "fp_task_max": 20,
     "fp_task_min": 5,
-    "external_input_path": "/data/ybzhuang/methane-dpgen/dpgen-tutorial-2020-08-23/dpgen-tutorial-mathane/cp2k_dpgen/template.inp",
-    "_comment": "For CP2K, fp_pp_path and fp_pp_files are optional. CP2K typically manages pseudopotentials via input templates and environment variables. Uncomment and set the following if you need to link specific files:",
-    "_optional_fp_pp_path": "/path/to/your/cp2k/data/directory",
-    "_optional_fp_pp_files": []
+    "external_input_path": "/data/ybzhuang/methane-dpgen/dpgen-tutorial-2020-08-23/dpgen-tutorial-mathane/cp2k_dpgen/template.inp"
 }

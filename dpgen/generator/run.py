@@ -3670,10 +3670,6 @@ def make_fp_cp2k(iter_index, jdata):
             fp.close()
         os.chdir(cwd)
 
-    # link pp files (optional for CP2K - only if specified)
-    if "fp_pp_path" in jdata and "fp_pp_files" in jdata:
-        _link_fp_vasp_pp(iter_index, jdata)
-
 
 def make_fp_pwmat(iter_index, jdata):
     # abs path for fp_incar if it exists
