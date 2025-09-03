@@ -1144,6 +1144,10 @@ def revise_lmp_input_pair_coeff(lmp_lines, jdata=None):
     if not d3_enabled:
         return lmp_lines
     
+    # D3 requires type maps (element symbols)
+    type_map = jdata.get("type_map", [])
+    type_map_str = " ".join(type_map)
+    
     # Find pair_coeff line
     pair_coeff_idx = None
     for idx, line in enumerate(lmp_lines):
@@ -1155,11 +1159,11 @@ def revise_lmp_input_pair_coeff(lmp_lines, jdata=None):
         # If no pair_coeff found, add them after pair_style
         pair_style_idx = find_only_one_key(lmp_lines, ["pair_style"])
         lmp_lines.insert(pair_style_idx + 1, "pair_coeff      * * deepmd\n")
-        lmp_lines.insert(pair_style_idx + 2, "pair_coeff      * * dispersion/d3\n")
+        lmp_lines.insert(pair_style_idx + 2, f"pair_coeff      * * dispersion/d3 {type_map_str}\n")
     else:
         # Replace existing pair_coeff with D3 version
         lmp_lines[pair_coeff_idx] = "pair_coeff      * * deepmd\n"
-        lmp_lines.insert(pair_coeff_idx + 1, "pair_coeff      * * dispersion/d3\n")
+        lmp_lines.insert(pair_coeff_idx + 1, f"pair_coeff      * * dispersion/d3 {type_map_str}\n")
     
     return lmp_lines
 
