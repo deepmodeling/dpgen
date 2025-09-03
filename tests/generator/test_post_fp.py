@@ -78,7 +78,9 @@ class TestPostFPVasp(unittest.TestCase):
         post_fp_vasp(0, jdata, rfailed=0.3)
 
         # MultiSystems creates subdirectories based on chemical formula
-        sys = dpdata.LabeledSystem("iter.000000/02.fp/data.000/Mg0Al2/", fmt="deepmd/raw")
+        sys = dpdata.LabeledSystem(
+            "iter.000000/02.fp/data.000/Mg0Al2/", fmt="deepmd/raw"
+        )
         self.assertEqual(sys.get_nframes(), 2)
 
         if sys.data["coords"][0][1][0] < sys.data["coords"][1][1][0]:
@@ -115,7 +117,9 @@ class TestPostFPVasp(unittest.TestCase):
                         ref_cell[ff][ii][jj], sys.data["cells"][ff][ii][jj]
                     )
 
-        self.assertTrue(os.path.isfile("iter.000000/02.fp/data.000/Mg0Al2/set.000/aparam.npy"))
+        self.assertTrue(
+            os.path.isfile("iter.000000/02.fp/data.000/Mg0Al2/set.000/aparam.npy")
+        )
         aparam = np.load("iter.000000/02.fp/data.000/Mg0Al2/set.000/aparam.npy")
         natoms = sys.get_natoms()
         self.assertEqual(natoms, 2)
@@ -130,7 +134,9 @@ class TestPostFPVasp(unittest.TestCase):
         post_fp_vasp(0, jdata, rfailed=0.3)
 
         # MultiSystems creates subdirectories based on chemical formula
-        sys = dpdata.LabeledSystem("iter.000000/02.fp/data.001/Mg0Al2/", fmt="deepmd/raw")
+        sys = dpdata.LabeledSystem(
+            "iter.000000/02.fp/data.001/Mg0Al2/", fmt="deepmd/raw"
+        )
         self.assertEqual(sys.get_nframes(), 1)
 
         # if sys.data['coords'][0][1][0] < sys.data['coords'][1][1][0]:
