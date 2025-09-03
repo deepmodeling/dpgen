@@ -1078,11 +1078,24 @@ def revise_lmp_input_model(
 ):
     idx = find_only_one_key(lmp_lines, ["pair_style", "deepmd"])
     graph_list = " ".join(task_model_list)
+    
+    # Check if D3 dispersion is configured
+    lmp_d3 = jdata.get("lmp_d3", {}) if jdata else {}
+    d3_enabled = lmp_d3.get("enable", False) if lmp_d3 else False
+    
     if Version(deepmd_version) < Version("1"):
-        lmp_lines[idx] = "pair_style      deepmd %s %d model_devi.out\n" % (  # noqa: UP031
-            graph_list,
-            trj_freq,
-        )
+        if d3_enabled:
+            d3_params = f"{lmp_d3['damping_function']} {lmp_d3['functional']} {lmp_d3['cutoff']} {lmp_d3['cn_cutoff']}"
+            lmp_lines[idx] = "pair_style      hybrid/overlay deepmd %s %d model_devi.out dispersion/d3 %s\n" % (  # noqa: UP031
+                graph_list,
+                trj_freq,
+                d3_params,
+            )
+        else:
+            lmp_lines[idx] = "pair_style      deepmd %s %d model_devi.out\n" % (  # noqa: UP031
+                graph_list,
+                trj_freq,
+            )
     else:
         # Build keywords string like in make_lammps_input
         keywords = ""
@@ -1096,15 +1109,94 @@ def revise_lmp_input_model(
 
         if use_ele_temp == 1:
             keywords += "fparam ${ELE_TEMP}"
-
-        lmp_lines[idx] = (
-            "pair_style      deepmd %s out_freq %d out_file model_devi.out %s\n"  # noqa: UP031
-            % (
-                graph_list,
-                trj_freq,
-                keywords.rstrip(),
+        
+        if d3_enabled:
+            d3_params = f"{lmp_d3['damping_function']} {lmp_d3['functional']} {lmp_d3['cutoff']} {lmp_d3['cn_cutoff']}"
+            lmp_lines[idx] = (
+                "pair_style      hybrid/overlay deepmd %s out_freq %d out_file model_devi.out %s dispersion/d3 %s\n"  # noqa: UP031
+                % (
+                    graph_list,
+                    trj_freq,
+                    keywords.rstrip(),
+                    d3_params,
+                )
             )
-        )
+        else:
+            lmp_lines[idx] = (
+                "pair_style      deepmd %s out_freq %d out_file model_devi.out %s\n"  # noqa: UP031
+                % (
+                    graph_list,
+                    trj_freq,
+                    keywords.rstrip(),
+                )
+            )
+    return lmp_lines
+
+
+def revise_lmp_input_pair_coeff(lmp_lines, jdata=None):
+    """Update pair_coeff lines for D3 support."""
+    if jdata is None:
+        return lmp_lines
+    
+    lmp_d3 = jdata.get("lmp_d3", {})
+    d3_enabled = lmp_d3.get("enable", False) if lmp_d3 else False
+    
+    if not d3_enabled:
+        return lmp_lines
+    
+    # Find pair_coeff line
+    pair_coeff_idx = None
+    for idx, line in enumerate(lmp_lines):
+        if line.strip().startswith("pair_coeff") and "* *" in line:
+            pair_coeff_idx = idx
+            break
+    
+    if pair_coeff_idx is None:
+        # If no pair_coeff found, add them after pair_style
+        pair_style_idx = find_only_one_key(lmp_lines, ["pair_style"])
+        lmp_lines.insert(pair_style_idx + 1, "pair_coeff      * * deepmd\n")
+        lmp_lines.insert(pair_style_idx + 2, "pair_coeff      * * dispersion/d3\n")
+    else:
+        # Replace existing pair_coeff with D3 version
+        lmp_lines[pair_coeff_idx] = "pair_coeff      * * deepmd\n"
+        lmp_lines.insert(pair_coeff_idx + 1, "pair_coeff      * * dispersion/d3\n")
+    
+    return lmp_lines
+
+
+def revise_lmp_input_neigh_modify(lmp_lines, jdata=None):
+    """Add neigh_modify one yes if requested."""
+    if jdata is None:
+        return lmp_lines
+    
+    if not jdata.get("lmp_neigh_modify_one", False):
+        return lmp_lines
+    
+    # Find where to insert neigh_modify one yes
+    # Look for existing neigh_modify lines or insert after neighbor command
+    neigh_modify_found = False
+    neighbor_idx = None
+    
+    for idx, line in enumerate(lmp_lines):
+        if line.strip().startswith("neigh_modify") and "one yes" in line:
+            neigh_modify_found = True
+            break
+        elif line.strip().startswith("neighbor"):
+            neighbor_idx = idx
+    
+    if not neigh_modify_found:
+        if neighbor_idx is not None:
+            lmp_lines.insert(neighbor_idx + 1, "neigh_modify    one yes\n")
+        else:
+            # Insert after units command if neighbor not found
+            units_idx = None
+            for idx, line in enumerate(lmp_lines):
+                if line.strip().startswith("units"):
+                    units_idx = idx
+                    break
+            if units_idx is not None:
+                lmp_lines.insert(units_idx + 1, "neigh_modify    one yes\n")
+    
     return lmp_lines
 
 
@@ -1479,6 +1571,9 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                                 use_ele_temp=use_ele_temp,
                                 jdata=jdata,
                             )
+                            # Add D3 pair_coeff and neigh_modify support for templates
+                            lmp_lines = revise_lmp_input_pair_coeff(lmp_lines, jdata)
+                            lmp_lines = revise_lmp_input_neigh_modify(lmp_lines, jdata)
                     else:
                         if len(lmp_lines[template_pair_deepmd_idx].split()) != (
                             len(models)
@@ -1501,6 +1596,9 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                                 use_ele_temp=use_ele_temp,
                                 jdata=jdata,
                             )
+                            # Add D3 pair_coeff and neigh_modify support for templates
+                            lmp_lines = revise_lmp_input_pair_coeff(lmp_lines, jdata)
+                            lmp_lines = revise_lmp_input_neigh_modify(lmp_lines, jdata)
                 # use revise_lmp_input_model to raise error message if "part_style" or "deepmd" not found
                 else:
                     lmp_lines = revise_lmp_input_model(
@@ -1511,6 +1609,10 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                         use_ele_temp=use_ele_temp,
                         jdata=jdata,
                     )
+
+                # Add D3 pair_coeff and neigh_modify support for templates
+                lmp_lines = revise_lmp_input_pair_coeff(lmp_lines, jdata)
+                lmp_lines = revise_lmp_input_neigh_modify(lmp_lines, jdata)
 
                 lmp_lines = revise_lmp_input_dump(
                     lmp_lines, trj_freq, model_devi_merge_traj

@@ -378,6 +378,13 @@ The union of the two sets is made as candidate dataset."
     doc_epsilon_v = (
         "The level parameter for computing the relative virial model deviation."
     )
+    doc_lmp_d3 = "D3 dispersion configuration for LAMMPS. When present, all sub-parameters are required."
+    doc_lmp_d3_enable = "Enable D3 dispersion correction. If false, D3 will be disabled even if other parameters are present."
+    doc_lmp_d3_damping_function = "Damping function for D3 dispersion. Common values include 'original' and 'bj'."
+    doc_lmp_d3_functional = "Exchange-correlation functional for D3 dispersion. Common values include 'pbe', 'pbe0', 'b3lyp'."
+    doc_lmp_d3_cutoff = "Cutoff radius for D3 dispersion (in Angstrom). Typical values are 25-30."
+    doc_lmp_d3_cn_cutoff = "Coordination number cutoff for D3 dispersion (in Angstrom). Typical values are 15-20."
+    doc_lmp_neigh_modify_one = "Add 'neigh_modify one yes' command for D3 compatibility. Recommended when using D3 dispersion."
 
     return [
         model_devi_jobs_args(),
@@ -491,6 +498,22 @@ The union of the two sets is made as candidate dataset."
             "use_relative_v", bool, optional=True, default=False, doc=doc_use_relative_v
         ),
         Argument("epsilon_v", float, optional=True, doc=doc_epsilon_v),
+        Argument(
+            "lmp_d3",
+            dict,
+            optional=True,
+            doc=doc_lmp_d3,
+            sub_fields=[
+                Argument("enable", bool, optional=False, doc=doc_lmp_d3_enable),
+                Argument("damping_function", str, optional=False, doc=doc_lmp_d3_damping_function),
+                Argument("functional", str, optional=False, doc=doc_lmp_d3_functional),
+                Argument("cutoff", float, optional=False, doc=doc_lmp_d3_cutoff),
+                Argument("cn_cutoff", float, optional=False, doc=doc_lmp_d3_cn_cutoff),
+            ],
+        ),
+        Argument(
+            "lmp_neigh_modify_one", bool, optional=True, default=False, doc=doc_lmp_neigh_modify_one
+        ),
     ]
 
 

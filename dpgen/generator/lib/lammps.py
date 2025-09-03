@@ -103,17 +103,10 @@ def make_lammps_input(
     
     # Check if D3 dispersion is configured
     lmp_d3 = jdata.get("lmp_d3", {})
-    
-    if lmp_d3:  # If lmp_d3 section exists, validate all required parameters
-        required_d3_params = ["enable", "damping_function", "functional", "cutoff", "cn_cutoff"]
-        for param in required_d3_params:
-            if param not in lmp_d3:
-                raise KeyError(f"lmp_d3.{param} is required when lmp_d3 section is provided")
-    
-    d3_enabled = lmp_d3.get("enable", False)
+    d3_enabled = lmp_d3.get("enable", False) if lmp_d3 else False
     
     if d3_enabled:
-        # Build D3 parameter string
+        # Build D3 parameter string from validated arguments
         d3_params = f"{lmp_d3['damping_function']} {lmp_d3['functional']} {lmp_d3['cutoff']} {lmp_d3['cn_cutoff']}"
     
     if Version(deepmd_version) < Version("1"):
