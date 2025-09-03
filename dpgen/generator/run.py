@@ -4248,6 +4248,7 @@ def post_fp_vasp(iter_index, jdata, rfailed=None):
         tcount += len(sys_outcars)
         all_sys = None
         all_te = []
+        use_multisystems = False
         for oo in sys_outcars:
             try:
                 _sys = dpdata.LabeledSystem(oo, type_map=jdata["type_map"])
@@ -4289,7 +4290,22 @@ def post_fp_vasp(iter_index, jdata, rfailed=None):
                 if all_sys is None:
                     all_sys = _sys
                 else:
-                    all_sys.append(_sys)
+                    try:
+                        all_sys.append(_sys)
+                    except Exception as e:
+                        # If append fails (likely due to inconsistent atom numbers),
+                        # switch to MultiSystems approach
+                        if not use_multisystems:
+                            dlog.info(f"Switching to MultiSystems due to append error: {e}")
+                            # Convert current all_sys to MultiSystems
+                            multi_sys = dpdata.MultiSystems(type_map=jdata["type_map"])
+                            multi_sys.append(all_sys)
+                            multi_sys.append(_sys)
+                            all_sys = multi_sys
+                            use_multisystems = True
+                        else:
+                            # Already using MultiSystems, this shouldn't fail
+                            raise
             elif len(_sys) >= 2:
                 raise RuntimeError("The vasp parameter NSW should be set as 1")
             else:
