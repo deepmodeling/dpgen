@@ -1165,20 +1165,21 @@ def revise_lmp_input_pair_coeff(lmp_lines, jdata=None):
 
 
 def revise_lmp_input_neigh_modify(lmp_lines, jdata=None):
-    """Add neigh_modify one yes if requested."""
+    """Add neigh_modify one N if requested."""
     if jdata is None:
         return lmp_lines
     
-    if not jdata.get("lmp_neigh_modify_one", False):
+    neigh_modify_one = jdata.get("lmp_neigh_modify_one")
+    if neigh_modify_one is None:
         return lmp_lines
     
-    # Find where to insert neigh_modify one yes
+    # Find where to insert neigh_modify one N
     # Look for existing neigh_modify lines or insert after neighbor command
     neigh_modify_found = False
     neighbor_idx = None
     
     for idx, line in enumerate(lmp_lines):
-        if line.strip().startswith("neigh_modify") and "one yes" in line:
+        if line.strip().startswith("neigh_modify") and " one " in line:
             neigh_modify_found = True
             break
         elif line.strip().startswith("neighbor"):
@@ -1186,7 +1187,7 @@ def revise_lmp_input_neigh_modify(lmp_lines, jdata=None):
     
     if not neigh_modify_found:
         if neighbor_idx is not None:
-            lmp_lines.insert(neighbor_idx + 1, "neigh_modify    one yes\n")
+            lmp_lines.insert(neighbor_idx + 1, f"neigh_modify    one {neigh_modify_one}\n")
         else:
             # Insert after units command if neighbor not found
             units_idx = None
@@ -1195,7 +1196,9 @@ def revise_lmp_input_neigh_modify(lmp_lines, jdata=None):
                     units_idx = idx
                     break
             if units_idx is not None:
-                lmp_lines.insert(units_idx + 1, "neigh_modify    one yes\n")
+                lmp_lines.insert(units_idx + 1, f"neigh_modify    one {neigh_modify_one}\n")
+    
+    return lmp_lines
     
     return lmp_lines
 

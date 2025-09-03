@@ -130,7 +130,7 @@ class TestMakeLammpsInput(unittest.TestCase):
                 "cutoff": 30.0,
                 "cn_cutoff": 20.0
             },
-            "lmp_neigh_modify_one": True
+            "lmp_neigh_modify_one": 2000
         }
         
         result = make_lammps_input(
@@ -139,8 +139,8 @@ class TestMakeLammpsInput(unittest.TestCase):
             self.temp, jdata, pres=1.0, deepmd_version=self.deepmd_version
         )
         
-        # Should contain neigh_modify one yes
-        self.assertIn("neigh_modify    one yes", result)
+        # Should contain neigh_modify one 2000
+        self.assertIn("neigh_modify    one 2000", result)
         # Should also contain D3 configuration
         self.assertIn("hybrid/overlay", result)
         self.assertIn("dispersion/d3", result)

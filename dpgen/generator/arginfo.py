@@ -380,11 +380,11 @@ The union of the two sets is made as candidate dataset."
     )
     doc_lmp_d3 = "D3 dispersion configuration for LAMMPS. When present, all sub-parameters are required."
     doc_lmp_d3_enable = "Enable D3 dispersion correction. If false, D3 will be disabled even if other parameters are present."
-    doc_lmp_d3_damping_function = "Damping function for D3 dispersion. Common values include 'original' and 'bj'."
-    doc_lmp_d3_functional = "Exchange-correlation functional for D3 dispersion. Common values include 'pbe', 'pbe0', 'b3lyp'."
-    doc_lmp_d3_cutoff = "Cutoff radius for D3 dispersion (in Angstrom). Typical values are 25-30."
-    doc_lmp_d3_cn_cutoff = "Coordination number cutoff for D3 dispersion (in Angstrom). Typical values are 15-20."
-    doc_lmp_neigh_modify_one = "Add 'neigh_modify one yes' command for D3 compatibility. Recommended when using D3 dispersion."
+    doc_lmp_d3_damping_function = "Damping function for D3 dispersion. Options include 'original', 'zerom', 'bj', 'bjm'."
+    doc_lmp_d3_functional = "Exchange-correlation functional for D3 dispersion. The functional should match that used to train MLPs."
+    doc_lmp_d3_cutoff = "Cutoff radius for D3 dispersion (in Angstrom)."
+    doc_lmp_d3_cn_cutoff = "Coordination number cutoff for D3 dispersion (in Angstrom)."
+    doc_lmp_neigh_modify_one = "Maximum number of neighbors of one atom for 'neigh_modify one N' command. Helps with D3 compatibility."
 
     return [
         model_devi_jobs_args(),
@@ -512,7 +512,7 @@ The union of the two sets is made as candidate dataset."
             ],
         ),
         Argument(
-            "lmp_neigh_modify_one", bool, optional=True, default=False, doc=doc_lmp_neigh_modify_one
+            "lmp_neigh_modify_one", int, optional=True, doc=doc_lmp_neigh_modify_one
         ),
     ]
 

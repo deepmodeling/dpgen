@@ -86,8 +86,9 @@ def make_lammps_input(
         ret += "neigh_modify    delay %d\n" % neidelay  # noqa: UP031
     
     # Add optional neigh_modify one parameter for D3 support
-    if jdata.get("lmp_neigh_modify_one", False):
-        ret += "neigh_modify    one yes\n"
+    neigh_modify_one = jdata.get("lmp_neigh_modify_one")
+    if neigh_modify_one is not None:
+        ret += f"neigh_modify    one {neigh_modify_one}\n"
     ret += "\n"
     ret += "box          tilt large\n"
     if nbeads is None:
