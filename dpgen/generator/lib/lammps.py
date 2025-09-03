@@ -82,13 +82,17 @@ def make_lammps_input(
     ret += "atom_style      atomic\n"
     ret += "\n"
     ret += "neighbor        1.0 bin\n"
-    if neidelay is not None:
-        ret += "neigh_modify    delay %d\n" % neidelay  # noqa: UP031
     
-    # Add optional neigh_modify one parameter for D3 support
+    # Build neigh_modify command with applicable options
     neigh_modify_one = jdata.get("lmp_neigh_modify_one")
+    neigh_modify_options = []
+    if neidelay is not None:
+        neigh_modify_options.append(f"delay {neidelay}")
     if neigh_modify_one is not None:
-        ret += f"neigh_modify    one {neigh_modify_one}\n"
+        neigh_modify_options.append(f"one {neigh_modify_one}")
+    
+    if neigh_modify_options:
+        ret += f"neigh_modify    {' '.join(neigh_modify_options)}\n"
     ret += "\n"
     ret += "box          tilt large\n"
     if nbeads is None:

@@ -1199,8 +1199,6 @@ def revise_lmp_input_neigh_modify(lmp_lines, jdata=None):
                 lmp_lines.insert(units_idx + 1, f"neigh_modify    one {neigh_modify_one}\n")
     
     return lmp_lines
-    
-    return lmp_lines
 
 
 def revise_lmp_input_dump(lmp_lines, trj_freq, model_devi_merge_traj=False):
