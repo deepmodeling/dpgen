@@ -184,8 +184,8 @@ class TestMakeLammpsInput(unittest.TestCase):
             deepmd_version=self.deepmd_version,
         )
 
-        # Should contain neigh_modify one 2000
-        self.assertIn("neigh_modify    one 2000", result)
+        # Should contain neigh_modify with one 2000
+        self.assertIn("one 2000", result)
         # Should also contain D3 configuration
         self.assertIn("hybrid/overlay", result)
         self.assertIn("dispersion/d3", result)

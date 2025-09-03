@@ -1087,12 +1087,7 @@ def revise_lmp_input_model(
         if d3_enabled:
             d3_params = f"{lmp_d3['damping_function']} {lmp_d3['functional']} {lmp_d3['cutoff']} {lmp_d3['cn_cutoff']}"
             lmp_lines[idx] = (
-                "pair_style      hybrid/overlay deepmd %s %d model_devi.out dispersion/d3 %s\n"
-                % (  # noqa: UP031
-                    graph_list,
-                    trj_freq,
-                    d3_params,
-                )
+                f"pair_style      hybrid/overlay deepmd {graph_list} {trj_freq} model_devi.out dispersion/d3 {d3_params}\n"
             )
         else:
             lmp_lines[idx] = "pair_style      deepmd %s %d model_devi.out\n" % (  # noqa: UP031
