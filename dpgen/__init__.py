@@ -54,6 +54,7 @@ def info():
                 # Fallback to importlib.metadata for packages without __version__
                 try:
                     import importlib.metadata
+
                     version = importlib.metadata.version(modui)
                 except Exception:
                     version = "unknown version"
