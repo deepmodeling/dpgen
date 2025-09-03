@@ -84,6 +84,10 @@ def make_lammps_input(
     ret += "neighbor        1.0 bin\n"
     if neidelay is not None:
         ret += "neigh_modify    delay %d\n" % neidelay  # noqa: UP031
+    
+    # Add optional neigh_modify one parameter for D3 support
+    if jdata.get("lmp_neigh_modify_one", False):
+        ret += "neigh_modify    one yes\n"
     ret += "\n"
     ret += "box          tilt large\n"
     if nbeads is None:
@@ -96,9 +100,28 @@ def make_lammps_input(
     graph_list = ""
     for ii in graphs:
         graph_list += ii + " "
+    
+    # Check if D3 dispersion is configured
+    lmp_d3 = jdata.get("lmp_d3", {})
+    
+    if lmp_d3:  # If lmp_d3 section exists, validate all required parameters
+        required_d3_params = ["enable", "damping_function", "functional", "cutoff", "cn_cutoff"]
+        for param in required_d3_params:
+            if param not in lmp_d3:
+                raise KeyError(f"lmp_d3.{param} is required when lmp_d3 section is provided")
+    
+    d3_enabled = lmp_d3.get("enable", False)
+    
+    if d3_enabled:
+        # Build D3 parameter string
+        d3_params = f"{lmp_d3['damping_function']} {lmp_d3['functional']} {lmp_d3['cutoff']} {lmp_d3['cn_cutoff']}"
+    
     if Version(deepmd_version) < Version("1"):
         # 0.x
-        ret += f"pair_style      deepmd {graph_list} ${{THERMO_FREQ}} model_devi.out\n"
+        if d3_enabled:
+            ret += f"pair_style      hybrid/overlay deepmd {graph_list} ${{THERMO_FREQ}} model_devi.out dispersion/d3 {d3_params}\n"
+        else:
+            ret += f"pair_style      deepmd {graph_list} ${{THERMO_FREQ}} model_devi.out\n"
     else:
         # 1.x
         keywords = ""
@@ -112,11 +135,26 @@ def make_lammps_input(
             keywords += "fparam ${ELE_TEMP}"
         if ele_temp_a is not None:
             keywords += "aparam ${ELE_TEMP}"
-        if nbeads is None:
-            ret += f"pair_style      deepmd {graph_list} out_freq ${{THERMO_FREQ}} out_file model_devi.out {keywords}\n"
+        
+        if d3_enabled:
+            # Use hybrid/overlay with D3
+            if nbeads is None:
+                ret += f"pair_style      hybrid/overlay deepmd {graph_list} out_freq ${{THERMO_FREQ}} out_file model_devi.out {keywords} dispersion/d3 {d3_params}\n"
+            else:
+                ret += f"pair_style      hybrid/overlay deepmd {graph_list} out_freq ${{THERMO_FREQ}} out_file model_devi${{ibead}}.out {keywords} dispersion/d3 {d3_params}\n"
         else:
-            ret += f"pair_style      deepmd {graph_list} out_freq ${{THERMO_FREQ}} out_file model_devi${{ibead}}.out {keywords}\n"
-    ret += "pair_coeff      * *\n"
+            # Standard deepmd only
+            if nbeads is None:
+                ret += f"pair_style      deepmd {graph_list} out_freq ${{THERMO_FREQ}} out_file model_devi.out {keywords}\n"
+            else:
+                ret += f"pair_style      deepmd {graph_list} out_freq ${{THERMO_FREQ}} out_file model_devi${{ibead}}.out {keywords}\n"
+    
+    # Add pair_coeff lines
+    if d3_enabled:
+        ret += "pair_coeff      * * deepmd\n"
+        ret += "pair_coeff      * * dispersion/d3\n"
+    else:
+        ret += "pair_coeff      * *\n"
     ret += "\n"
     ret += "thermo_style    custom step temp pe ke etotal press vol lx ly lz xy xz yz\n"
     ret += "thermo          ${THERMO_FREQ}\n"
