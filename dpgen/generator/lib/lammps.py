@@ -82,7 +82,7 @@ def make_lammps_input(
     ret += "atom_style      atomic\n"
     ret += "\n"
     ret += "neighbor        1.0 bin\n"
-    
+
     # Build neigh_modify command with applicable options
     neigh_modify_one = jdata.get("lmp_neigh_modify_one")
     neigh_modify_options = []
@@ -90,7 +90,7 @@ def make_lammps_input(
         neigh_modify_options.append(f"delay {neidelay}")
     if neigh_modify_one is not None:
         neigh_modify_options.append(f"one {neigh_modify_one}")
-    
+
     if neigh_modify_options:
         ret += f"neigh_modify    {' '.join(neigh_modify_options)}\n"
     ret += "\n"
@@ -105,21 +105,23 @@ def make_lammps_input(
     graph_list = ""
     for ii in graphs:
         graph_list += ii + " "
-    
+
     # Check if D3 dispersion is configured
     lmp_d3 = jdata.get("lmp_d3", {})
     d3_enabled = lmp_d3.get("enable", False) if lmp_d3 else False
-    
+
     if d3_enabled:
         # Build D3 parameter string from validated arguments
         d3_params = f"{lmp_d3['damping_function']} {lmp_d3['functional']} {lmp_d3['cutoff']} {lmp_d3['cn_cutoff']}"
-    
+
     if Version(deepmd_version) < Version("1"):
         # 0.x
         if d3_enabled:
             ret += f"pair_style      hybrid/overlay deepmd {graph_list} ${{THERMO_FREQ}} model_devi.out dispersion/d3 {d3_params}\n"
         else:
-            ret += f"pair_style      deepmd {graph_list} ${{THERMO_FREQ}} model_devi.out\n"
+            ret += (
+                f"pair_style      deepmd {graph_list} ${{THERMO_FREQ}} model_devi.out\n"
+            )
     else:
         # 1.x
         keywords = ""
@@ -133,7 +135,7 @@ def make_lammps_input(
             keywords += "fparam ${ELE_TEMP}"
         if ele_temp_a is not None:
             keywords += "aparam ${ELE_TEMP}"
-        
+
         if d3_enabled:
             # Use hybrid/overlay with D3
             if nbeads is None:
@@ -146,7 +148,7 @@ def make_lammps_input(
                 ret += f"pair_style      deepmd {graph_list} out_freq ${{THERMO_FREQ}} out_file model_devi.out {keywords}\n"
             else:
                 ret += f"pair_style      deepmd {graph_list} out_freq ${{THERMO_FREQ}} out_file model_devi${{ibead}}.out {keywords}\n"
-    
+
     # Add pair_coeff lines
     if d3_enabled:
         # D3 requires type maps (element symbols)

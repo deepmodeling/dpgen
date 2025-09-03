@@ -7,13 +7,13 @@ import numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
+from dpgen.generator.lib.lammps import make_lammps_input
+
 from .context import (
     get_all_dumped_forces,
     get_dumped_forces,
     setUpModule,  # noqa: F401
 )
-
-from dpgen.generator.lib.lammps import make_lammps_input
 
 
 class TestMakeLammpsInput(unittest.TestCase):
@@ -21,7 +21,7 @@ class TestMakeLammpsInput(unittest.TestCase):
 
     def setUp(self):
         self.ensemble = "nvt"
-        self.conf_file = "test.lmp"  
+        self.conf_file = "test.lmp"
         self.graphs = ["model.pb"]
         self.nsteps = 1000
         self.dt = 0.001
@@ -35,11 +35,20 @@ class TestMakeLammpsInput(unittest.TestCase):
         """Test basic LAMMPS input without D3 (backward compatibility)."""
         jdata = {}
         result = make_lammps_input(
-            self.ensemble, self.conf_file, self.graphs, self.nsteps, 
-            self.dt, self.neidelay, self.trj_freq, self.mass_map, 
-            self.temp, jdata, pres=1.0, deepmd_version=self.deepmd_version
+            self.ensemble,
+            self.conf_file,
+            self.graphs,
+            self.nsteps,
+            self.dt,
+            self.neidelay,
+            self.trj_freq,
+            self.mass_map,
+            self.temp,
+            jdata,
+            pres=1.0,
+            deepmd_version=self.deepmd_version,
         )
-        
+
         # Should contain basic deepmd pair_style
         self.assertIn("pair_style      deepmd model.pb", result)
         self.assertIn("pair_coeff      * *", result)
@@ -53,24 +62,33 @@ class TestMakeLammpsInput(unittest.TestCase):
             "lmp_d3": {
                 "enable": True,
                 "damping_function": "original",
-                "functional": "pbe", 
+                "functional": "pbe",
                 "cutoff": 30.0,
-                "cn_cutoff": 20.0
+                "cn_cutoff": 20.0,
             }
         }
-        
+
         result = make_lammps_input(
-            self.ensemble, self.conf_file, self.graphs, self.nsteps,
-            self.dt, self.neidelay, self.trj_freq, self.mass_map,
-            self.temp, jdata, pres=1.0, deepmd_version=self.deepmd_version
+            self.ensemble,
+            self.conf_file,
+            self.graphs,
+            self.nsteps,
+            self.dt,
+            self.neidelay,
+            self.trj_freq,
+            self.mass_map,
+            self.temp,
+            jdata,
+            pres=1.0,
+            deepmd_version=self.deepmd_version,
         )
-        
+
         # Should contain hybrid/overlay pair_style
         self.assertIn("pair_style      hybrid/overlay deepmd model.pb", result)
         self.assertIn("dispersion/d3 original pbe 30.0 20.0", result)
-        
+
         # Should contain both pair_coeff lines
-        lines = result.split('\n')
+        lines = result.split("\n")
         deepmd_coeff_found = False
         d3_coeff_found = False
         for line in lines:
@@ -78,7 +96,7 @@ class TestMakeLammpsInput(unittest.TestCase):
                 deepmd_coeff_found = True
             elif "pair_coeff      * * dispersion/d3" in line:
                 d3_coeff_found = True
-        
+
         self.assertTrue(deepmd_coeff_found, "deepmd pair_coeff not found")
         self.assertTrue(d3_coeff_found, "dispersion/d3 pair_coeff not found")
 
@@ -88,11 +106,20 @@ class TestMakeLammpsInput(unittest.TestCase):
         # For now, test that incomplete D3 config still allows basic operation
         jdata = {"lmp_d3": {"enable": False}}  # Incomplete but with enable=False
         result = make_lammps_input(
-            self.ensemble, self.conf_file, self.graphs, self.nsteps,
-            self.dt, self.neidelay, self.trj_freq, self.mass_map,
-            self.temp, jdata, pres=1.0, deepmd_version=self.deepmd_version
+            self.ensemble,
+            self.conf_file,
+            self.graphs,
+            self.nsteps,
+            self.dt,
+            self.neidelay,
+            self.trj_freq,
+            self.mass_map,
+            self.temp,
+            jdata,
+            pres=1.0,
+            deepmd_version=self.deepmd_version,
         )
-        
+
         # Should behave like basic deepmd since enable=False
         self.assertIn("pair_style      deepmd model.pb", result)
         self.assertNotIn("hybrid/overlay", result)
@@ -105,16 +132,25 @@ class TestMakeLammpsInput(unittest.TestCase):
                 "damping_function": "original",
                 "functional": "pbe",
                 "cutoff": 30.0,
-                "cn_cutoff": 20.0
+                "cn_cutoff": 20.0,
             }
         }
-        
+
         result = make_lammps_input(
-            self.ensemble, self.conf_file, self.graphs, self.nsteps,
-            self.dt, self.neidelay, self.trj_freq, self.mass_map,
-            self.temp, jdata, pres=1.0, deepmd_version=self.deepmd_version
+            self.ensemble,
+            self.conf_file,
+            self.graphs,
+            self.nsteps,
+            self.dt,
+            self.neidelay,
+            self.trj_freq,
+            self.mass_map,
+            self.temp,
+            jdata,
+            pres=1.0,
+            deepmd_version=self.deepmd_version,
         )
-        
+
         # Should behave like basic deepmd
         self.assertIn("pair_style      deepmd model.pb", result)
         self.assertNotIn("hybrid/overlay", result)
@@ -128,17 +164,26 @@ class TestMakeLammpsInput(unittest.TestCase):
                 "damping_function": "original",
                 "functional": "pbe",
                 "cutoff": 30.0,
-                "cn_cutoff": 20.0
+                "cn_cutoff": 20.0,
             },
-            "lmp_neigh_modify_one": 2000
+            "lmp_neigh_modify_one": 2000,
         }
-        
+
         result = make_lammps_input(
-            self.ensemble, self.conf_file, self.graphs, self.nsteps,
-            self.dt, self.neidelay, self.trj_freq, self.mass_map,
-            self.temp, jdata, pres=1.0, deepmd_version=self.deepmd_version
+            self.ensemble,
+            self.conf_file,
+            self.graphs,
+            self.nsteps,
+            self.dt,
+            self.neidelay,
+            self.trj_freq,
+            self.mass_map,
+            self.temp,
+            jdata,
+            pres=1.0,
+            deepmd_version=self.deepmd_version,
         )
-        
+
         # Should contain neigh_modify one 2000
         self.assertIn("neigh_modify    one 2000", result)
         # Should also contain D3 configuration
@@ -151,18 +196,27 @@ class TestMakeLammpsInput(unittest.TestCase):
             "lmp_d3": {
                 "enable": True,
                 "damping_function": "bj",
-                "functional": "pbe0", 
+                "functional": "pbe0",
                 "cutoff": 25.0,
-                "cn_cutoff": 15.0
+                "cn_cutoff": 15.0,
             }
         }
-        
+
         result = make_lammps_input(
-            self.ensemble, self.conf_file, self.graphs, self.nsteps,
-            self.dt, self.neidelay, self.trj_freq, self.mass_map,
-            self.temp, jdata, pres=1.0, deepmd_version=self.deepmd_version
+            self.ensemble,
+            self.conf_file,
+            self.graphs,
+            self.nsteps,
+            self.dt,
+            self.neidelay,
+            self.trj_freq,
+            self.mass_map,
+            self.temp,
+            jdata,
+            pres=1.0,
+            deepmd_version=self.deepmd_version,
         )
-        
+
         # Check specific parameter values
         self.assertIn("dispersion/d3 bj pbe0 25.0 15.0", result)
 

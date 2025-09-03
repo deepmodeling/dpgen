@@ -1078,18 +1078,21 @@ def revise_lmp_input_model(
 ):
     idx = find_only_one_key(lmp_lines, ["pair_style", "deepmd"])
     graph_list = " ".join(task_model_list)
-    
+
     # Check if D3 dispersion is configured
     lmp_d3 = jdata.get("lmp_d3", {}) if jdata else {}
     d3_enabled = lmp_d3.get("enable", False) if lmp_d3 else False
-    
+
     if Version(deepmd_version) < Version("1"):
         if d3_enabled:
             d3_params = f"{lmp_d3['damping_function']} {lmp_d3['functional']} {lmp_d3['cutoff']} {lmp_d3['cn_cutoff']}"
-            lmp_lines[idx] = "pair_style      hybrid/overlay deepmd %s %d model_devi.out dispersion/d3 %s\n" % (  # noqa: UP031
-                graph_list,
-                trj_freq,
-                d3_params,
+            lmp_lines[idx] = (
+                "pair_style      hybrid/overlay deepmd %s %d model_devi.out dispersion/d3 %s\n"
+                % (  # noqa: UP031
+                    graph_list,
+                    trj_freq,
+                    d3_params,
+                )
             )
         else:
             lmp_lines[idx] = "pair_style      deepmd %s %d model_devi.out\n" % (  # noqa: UP031
@@ -1109,7 +1112,7 @@ def revise_lmp_input_model(
 
         if use_ele_temp == 1:
             keywords += "fparam ${ELE_TEMP}"
-        
+
         if d3_enabled:
             d3_params = f"{lmp_d3['damping_function']} {lmp_d3['functional']} {lmp_d3['cutoff']} {lmp_d3['cn_cutoff']}"
             lmp_lines[idx] = (
@@ -1137,34 +1140,38 @@ def revise_lmp_input_pair_coeff(lmp_lines, jdata=None):
     """Update pair_coeff lines for D3 support."""
     if jdata is None:
         return lmp_lines
-    
+
     lmp_d3 = jdata.get("lmp_d3", {})
     d3_enabled = lmp_d3.get("enable", False) if lmp_d3 else False
-    
+
     if not d3_enabled:
         return lmp_lines
-    
+
     # D3 requires type maps (element symbols)
     type_map = jdata.get("type_map", [])
     type_map_str = " ".join(type_map)
-    
+
     # Find pair_coeff line
     pair_coeff_idx = None
     for idx, line in enumerate(lmp_lines):
         if line.strip().startswith("pair_coeff") and "* *" in line:
             pair_coeff_idx = idx
             break
-    
+
     if pair_coeff_idx is None:
         # If no pair_coeff found, add them after pair_style
         pair_style_idx = find_only_one_key(lmp_lines, ["pair_style"])
         lmp_lines.insert(pair_style_idx + 1, "pair_coeff      * * deepmd\n")
-        lmp_lines.insert(pair_style_idx + 2, f"pair_coeff      * * dispersion/d3 {type_map_str}\n")
+        lmp_lines.insert(
+            pair_style_idx + 2, f"pair_coeff      * * dispersion/d3 {type_map_str}\n"
+        )
     else:
         # Replace existing pair_coeff with D3 version
         lmp_lines[pair_coeff_idx] = "pair_coeff      * * deepmd\n"
-        lmp_lines.insert(pair_coeff_idx + 1, f"pair_coeff      * * dispersion/d3 {type_map_str}\n")
-    
+        lmp_lines.insert(
+            pair_coeff_idx + 1, f"pair_coeff      * * dispersion/d3 {type_map_str}\n"
+        )
+
     return lmp_lines
 
 
@@ -1172,26 +1179,28 @@ def revise_lmp_input_neigh_modify(lmp_lines, jdata=None):
     """Add neigh_modify one N if requested."""
     if jdata is None:
         return lmp_lines
-    
+
     neigh_modify_one = jdata.get("lmp_neigh_modify_one")
     if neigh_modify_one is None:
         return lmp_lines
-    
+
     # Find where to insert neigh_modify one N
     # Look for existing neigh_modify lines or insert after neighbor command
     neigh_modify_found = False
     neighbor_idx = None
-    
+
     for idx, line in enumerate(lmp_lines):
         if line.strip().startswith("neigh_modify") and " one " in line:
             neigh_modify_found = True
             break
         elif line.strip().startswith("neighbor"):
             neighbor_idx = idx
-    
+
     if not neigh_modify_found:
         if neighbor_idx is not None:
-            lmp_lines.insert(neighbor_idx + 1, f"neigh_modify    one {neigh_modify_one}\n")
+            lmp_lines.insert(
+                neighbor_idx + 1, f"neigh_modify    one {neigh_modify_one}\n"
+            )
         else:
             # Insert after units command if neighbor not found
             units_idx = None
@@ -1200,8 +1209,10 @@ def revise_lmp_input_neigh_modify(lmp_lines, jdata=None):
                     units_idx = idx
                     break
             if units_idx is not None:
-                lmp_lines.insert(units_idx + 1, f"neigh_modify    one {neigh_modify_one}\n")
-    
+                lmp_lines.insert(
+                    units_idx + 1, f"neigh_modify    one {neigh_modify_one}\n"
+                )
+
     return lmp_lines
 
 

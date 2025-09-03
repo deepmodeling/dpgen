@@ -505,7 +505,12 @@ The union of the two sets is made as candidate dataset."
             doc=doc_lmp_d3,
             sub_fields=[
                 Argument("enable", bool, optional=False, doc=doc_lmp_d3_enable),
-                Argument("damping_function", str, optional=False, doc=doc_lmp_d3_damping_function),
+                Argument(
+                    "damping_function",
+                    str,
+                    optional=False,
+                    doc=doc_lmp_d3_damping_function,
+                ),
                 Argument("functional", str, optional=False, doc=doc_lmp_d3_functional),
                 Argument("cutoff", float, optional=False, doc=doc_lmp_d3_cutoff),
                 Argument("cn_cutoff", float, optional=False, doc=doc_lmp_d3_cn_cutoff),
