@@ -102,26 +102,44 @@ class TestLammps(unittest.TestCase):
 
     def test_forward_common_files_with_custom_in_lammps(self):
         """Test forward_common_files with custom in_lammps path (fixes #1757)"""
-        # Test custom in_lammps path
+        # Test custom in_lammps path with different filename (not "in.lammps")
         custom_inter_param = {
             "type": "deepmd",
             "model": "lammps_input/frozen_model.pb",
-            "in_lammps": "lammps_input/in.lammps",  # Custom path
+            "in_lammps": "lammps_input/custom_input.lmp",  # Custom path with different filename
             "deepmd_version": "1.1.0",
             "type_map": {"Al": 0},
         }
 
         lammps_custom = Lammps(custom_inter_param, self.source_path + "/Al-fcc.vasp")
         fc_files_custom = lammps_custom.forward_common_files()
-        expected_custom = ["lammps_input/in.lammps", "frozen_model.pb"]
+        expected_custom = ["lammps_input/custom_input.lmp", "frozen_model.pb"]
         self.assertEqual(fc_files_custom, expected_custom)
 
         # Test that forward_files also uses custom path
         forward_files_custom = lammps_custom.forward_files()
-        expected_forward = ["conf.lmp", "lammps_input/in.lammps", "frozen_model.pb"]
+        expected_forward = ["conf.lmp", "lammps_input/custom_input.lmp", "frozen_model.pb"]
         self.assertEqual(forward_files_custom, expected_forward)
 
         # Test EOS property type (should not include in.lammps)
         fc_files_eos = lammps_custom.forward_common_files(property_type="eos")
         expected_eos = ["frozen_model.pb"]
         self.assertEqual(fc_files_eos, expected_eos)
+
+        # Test with another completely different filename to ensure robustness
+        alternate_inter_param = {
+            "type": "deepmd",
+            "model": "frozen_model.pb",
+            "in_lammps": "input_files/my_lammps_script.in",  # Different extension and path
+            "deepmd_version": "1.1.0",
+            "type_map": {"Al": 0},
+        }
+
+        lammps_alternate = Lammps(alternate_inter_param, self.source_path + "/Al-fcc.vasp")
+        fc_files_alternate = lammps_alternate.forward_common_files()
+        expected_alternate = ["input_files/my_lammps_script.in", "frozen_model.pb"]
+        self.assertEqual(fc_files_alternate, expected_alternate)
+
+        forward_files_alternate = lammps_alternate.forward_files()
+        expected_forward_alternate = ["conf.lmp", "input_files/my_lammps_script.in", "frozen_model.pb"]
+        self.assertEqual(forward_files_alternate, expected_forward_alternate)
