@@ -118,7 +118,7 @@ class TestLammps(unittest.TestCase):
 
         # Test that forward_files also uses custom path
         forward_files_custom = lammps_custom.forward_files()
-        expected_forward = ["conf.lmp", "lammps_input/custom_input.lmp", "frozen_model.pb"]
+        expected_forward = ["conf.lmp", "in.lammps", "frozen_model.pb"]  # Uses "in.lammps", not custom path
         self.assertEqual(forward_files_custom, expected_forward)
 
         # Test EOS property type (should not include in.lammps)
@@ -141,5 +141,5 @@ class TestLammps(unittest.TestCase):
         self.assertEqual(fc_files_alternate, expected_alternate)
 
         forward_files_alternate = lammps_alternate.forward_files()
-        expected_forward_alternate = ["conf.lmp", "input_files/my_lammps_script.in", "frozen_model.pb"]
+        expected_forward_alternate = ["conf.lmp", "in.lammps", "frozen_model.pb"]  # Uses "in.lammps", not custom path
         self.assertEqual(forward_files_alternate, expected_forward_alternate)

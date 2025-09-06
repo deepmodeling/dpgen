@@ -507,14 +507,14 @@ class Lammps(Task):
             return result_dict
 
     def forward_files(self, property_type="relaxation"):
-        # Use actual in_lammps path if specified, otherwise use default "in.lammps"
-        in_lammps_file = self.in_lammps if self.in_lammps != "auto" else "in.lammps"
+        # Always use "in.lammps" because that's what gets created in the task directory
+        # regardless of the custom in_lammps path
         if self.inter_type == "meam":
-            return ["conf.lmp", in_lammps_file] + list(
+            return ["conf.lmp", "in.lammps"] + list(
                 map(os.path.basename, self.model)
             )
         else:
-            return ["conf.lmp", in_lammps_file, os.path.basename(self.model)]
+            return ["conf.lmp", "in.lammps", os.path.basename(self.model)]
 
     def forward_common_files(self, property_type="relaxation"):
         if property_type not in ["eos"]:
