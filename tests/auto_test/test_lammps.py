@@ -148,6 +148,7 @@ class TestLammps(unittest.TestCase):
 
     def test_run_equi_with_custom_in_lammps(self):
         """Test run_equi locally with custom in_lammps path to verify fix works end-to-end"""
+        import tempfile
         
         # Create temporary directories for the test
         test_work_dir = "test_custom_lammps_run"
@@ -156,86 +157,104 @@ class TestLammps(unittest.TestCase):
         os.makedirs(test_work_dir)
         
         try:
-            # Set up configuration structure
-            conf_dir = os.path.join(test_work_dir, "confs", "std-fcc")
-            os.makedirs(conf_dir, exist_ok=True)
-            
-            # Copy structure file
-            shutil.copy(
-                os.path.join("equi/lammps", "Al-fcc.vasp"),
-                os.path.join(conf_dir, "POSCAR")
-            )
-            
-            # Create the custom in_lammps file
-            custom_lammps_dir = os.path.join(test_work_dir, "input_files") 
-            os.makedirs(custom_lammps_dir, exist_ok=True)
-            custom_lammps_file = os.path.join(custom_lammps_dir, "my_custom.lmp")
-            shutil.copy(
-                "lammps_input/custom_lammps_input.lmp",
-                custom_lammps_file
-            )
-            
-            # Create a dummy frozen model
-            model_file = os.path.join(test_work_dir, "frozen_model.pb")
-            with open(model_file, "w") as f:
-                f.write("dummy model file for testing")
-            
-            # Change to test directory 
-            original_cwd = os.getcwd()
-            os.chdir(test_work_dir)
-            
-            try:
-                # Test configuration with custom in_lammps path
-                jdata = {
-                    "structures": ["confs/std-fcc"],
-                    "interaction": {
-                        "type": "deepmd",
-                        "model": "frozen_model.pb",
-                        "in_lammps": "input_files/my_custom.lmp",  # Custom path with different filename
-                        "deepmd_version": "1.1.0",
-                        "type_map": {"Al": 0},
-                    },
-                    "relaxation": {
-                        "cal_type": "relaxation",
-                        "cal_setting": {
-                            "relax_pos": True,
-                            "relax_shape": True,
-                            "relax_vol": True,
+            with tempfile.TemporaryDirectory() as remote_root:
+                # Set up configuration structure
+                conf_dir = os.path.join(test_work_dir, "confs", "std-fcc")
+                os.makedirs(conf_dir, exist_ok=True)
+                
+                # Copy structure file
+                shutil.copy(
+                    os.path.join("equi/lammps", "Al-fcc.vasp"),
+                    os.path.join(conf_dir, "POSCAR")
+                )
+                
+                # Create the custom in_lammps file
+                custom_lammps_dir = os.path.join(test_work_dir, "input_files") 
+                os.makedirs(custom_lammps_dir, exist_ok=True)
+                custom_lammps_file = os.path.join(custom_lammps_dir, "my_custom.lmp")
+                shutil.copy(
+                    "lammps_input/custom_lammps_input.lmp",
+                    custom_lammps_file
+                )
+                
+                # Create a dummy frozen model
+                model_file = os.path.join(test_work_dir, "frozen_model.pb")
+                with open(model_file, "w") as f:
+                    f.write("dummy model file for testing")
+                
+                # Change to test directory 
+                original_cwd = os.getcwd()
+                os.chdir(test_work_dir)
+                
+                try:
+                    # Test configuration with custom in_lammps path
+                    jdata = {
+                        "structures": ["confs/std-fcc"],
+                        "interaction": {
+                            "type": "deepmd",
+                            "model": "frozen_model.pb",
+                            "in_lammps": "input_files/my_custom.lmp",  # Custom path with different filename
+                            "deepmd_version": "1.1.0",
+                            "type_map": {"Al": 0},
                         },
-                    },
-                }
-                
-                # First create the equi structure
-                make_equi(jdata["structures"], jdata["interaction"], jdata["relaxation"])
-                
-                # Verify that the task was created correctly
-                task_dir = "confs/std-fcc/relaxation/relax_task"
-                self.assertTrue(os.path.exists(task_dir))
-                self.assertTrue(os.path.exists(os.path.join(task_dir, "inter.json")))
-                
-                # Test the key functionality: verify that forward_common_files 
-                # returns the custom path, which proves the fix works
-                virtual_calculator = Lammps(jdata["interaction"], "confs/std-fcc/POSCAR")
-                forward_common = virtual_calculator.forward_common_files()
-                
-                # This is the core test - the custom path should be included
-                self.assertIn("input_files/my_custom.lmp", forward_common)
-                self.assertIn("frozen_model.pb", forward_common)
-                
-                # Verify that forward_files still uses "in.lammps" (for task directories)
-                forward_files = virtual_calculator.forward_files()
-                self.assertIn("in.lammps", forward_files)
-                self.assertNotIn("input_files/my_custom.lmp", forward_files)
-                
-                # Verify that the custom file actually exists at the specified path
-                self.assertTrue(os.path.exists("input_files/my_custom.lmp"))
-                
-                # This proves that before the fix, the dispatcher would fail to find
-                # the file because forward_common_files would return "in.lammps" 
-                # instead of "input_files/my_custom.lmp"
-                
-            finally:
-                os.chdir(original_cwd)
+                        "relaxation": {
+                            "cal_type": "relaxation",
+                            "cal_setting": {
+                                "relax_pos": True,
+                                "relax_shape": True,
+                                "relax_vol": True,
+                            },
+                        },
+                    }
+                    
+                    # Machine configuration for LocalContext  
+                    mdata = {
+                        "equi_machine": {
+                            "context_type": "LocalContext",
+                            "batch_type": "shell",
+                            "local_root": "./",
+                            "remote_root": remote_root,
+                        },
+                        "equi_resources": {
+                            "group_size": 1,
+                        },
+                    }
+                    
+                    # First create the equi structure
+                    make_equi(jdata["structures"], jdata["interaction"], jdata["relaxation"])
+                    
+                    # Verify that the task was created correctly
+                    task_dir = "confs/std-fcc/relaxation/relax_task"
+                    self.assertTrue(os.path.exists(task_dir))
+                    self.assertTrue(os.path.exists(os.path.join(task_dir, "inter.json")))
+                    
+                    # Test the key functionality: verify that forward_common_files 
+                    # returns the custom path, which proves the fix works
+                    virtual_calculator = Lammps(jdata["interaction"], "confs/std-fcc/POSCAR")
+                    forward_common = virtual_calculator.forward_common_files()
+                    
+                    # This is the core test - the custom path should be included
+                    self.assertIn("input_files/my_custom.lmp", forward_common)
+                    self.assertIn("frozen_model.pb", forward_common)
+                    
+                    # Verify that forward_files still uses "in.lammps" (for task directories)
+                    forward_files = virtual_calculator.forward_files()
+                    self.assertIn("in.lammps", forward_files)
+                    self.assertNotIn("input_files/my_custom.lmp", forward_files)
+                    
+                    # Verify that the custom file actually exists at the specified path
+                    self.assertTrue(os.path.exists("input_files/my_custom.lmp"))
+                    
+                    # Now actually run run_equi to test end-to-end functionality
+                    # This will fail with FileNotFoundError if the fix doesn't work
+                    run_equi(jdata["structures"], jdata["interaction"], mdata)
+                    
+                    # If we reach here without exception, the fix works correctly
+                    # The dispatcher was able to find the custom file because 
+                    # forward_common_files() returned the correct path
+                    
+                finally:
+                    os.chdir(original_cwd)
                 
         finally:
             # Clean up test directory
