@@ -170,17 +170,17 @@ class TestLammps(unittest.TestCase):
                 conf_dir = os.path.join(test_work_dir, "confs", "fcc-Al")
                 os.makedirs(conf_dir, exist_ok=True)
 
-                # Copy structure file from existing conf
-                shutil.copy(
-                    os.path.join("confs", "fcc-Al", "POSCAR"),
-                    os.path.join(conf_dir, "POSCAR"),
-                )
+                # Copy structure file from existing conf (use POSCAR file for deepmd interaction)
+                test_dir = os.path.dirname(os.path.abspath(__file__))
+                poscar_path = os.path.join(test_dir, "equi", "lammps", "Al-fcc.vasp")
+                shutil.copy(poscar_path, os.path.join(conf_dir, "POSCAR"))
 
                 # Create the custom in_lammps file
                 custom_lammps_dir = os.path.join(test_work_dir, "input_files")
                 os.makedirs(custom_lammps_dir, exist_ok=True)
                 custom_lammps_file = os.path.join(custom_lammps_dir, "my_custom.lmp")
-                shutil.copy("lammps_input/custom_lammps_input.lmp", custom_lammps_file)
+                custom_lammps_source = os.path.join(test_dir, "lammps_input", "custom_lammps_input.lmp")
+                shutil.copy(custom_lammps_source, custom_lammps_file)
 
                 # Create a dummy frozen model
                 model_file = os.path.join(test_work_dir, "frozen_model.pb")
@@ -233,7 +233,7 @@ class TestLammps(unittest.TestCase):
                     )
 
                     # Verify that the task was created correctly
-                    task_dir = "confs/std-fcc/relaxation/relax_task"
+                    task_dir = "confs/fcc-Al/relaxation/relax_task"
                     self.assertTrue(os.path.exists(task_dir))
                     self.assertTrue(
                         os.path.exists(os.path.join(task_dir, "inter.json"))
