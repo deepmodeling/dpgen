@@ -209,15 +209,17 @@ class TestLammps(unittest.TestCase):
                     
                     # Machine configuration for LocalContext  
                     mdata = {
-                        "equi_machine": {
+                        "model_devi_command": "touch log.lammps dump.relax; echo lmp",
+                        "model_devi_machine": {
                             "context_type": "LocalContext",
                             "batch_type": "shell",
                             "local_root": "./",
                             "remote_root": remote_root,
                         },
-                        "equi_resources": {
+                        "model_devi_resources": {
                             "group_size": 1,
                         },
+                        "model_devi_group_size": 1,
                     }
                     
                     # First create the equi structure
