@@ -84,7 +84,7 @@ Configure input templates carefully and ensure proper basis set and pseudopotent
 
 {dargs:argument}`fp_style <run_jdata/fp_style>`: `siesta`
 
-[SIESTA](https://departments.icmab.es/leem/siesta/) is an electronic structure code for large systems using density functional theory. SIESTA is efficient for extended systems and large-scale materials calculations due to its localized atomic orbital basis sets and linear scaling algorithms. It provides reduced computational cost for calculations involving structures with thousands of atoms.
+[SIESTA](https://siesta-project.org/siesta/) is an electronic structure code for large systems using density functional theory. SIESTA is efficient for extended systems and large-scale materials calculations due to its localized atomic orbital basis sets and linear scaling algorithms. It provides reduced computational cost for calculations involving structures with thousands of atoms.
 
 Configure basis sets and exchange-correlation functionals properly in input files. SIESTA is particularly suitable for calculations requiring good scaling with system size.
 
