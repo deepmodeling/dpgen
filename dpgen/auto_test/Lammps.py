@@ -510,9 +510,7 @@ class Lammps(Task):
         # Always use "in.lammps" because that's what gets created in the task directory
         # regardless of the custom in_lammps path
         if self.inter_type == "meam":
-            return ["conf.lmp", "in.lammps"] + list(
-                map(os.path.basename, self.model)
-            )
+            return ["conf.lmp", "in.lammps"] + list(map(os.path.basename, self.model))
         else:
             return ["conf.lmp", "in.lammps", os.path.basename(self.model)]
 

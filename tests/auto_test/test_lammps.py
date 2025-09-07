@@ -9,8 +9,8 @@ from monty.serialization import loadfn
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "auto_test"
 
-from dpgen.auto_test.Lammps import Lammps
 from dpgen.auto_test.common_equi import make_equi, run_equi
+from dpgen.auto_test.Lammps import Lammps
 from dpgen.auto_test.lib.lammps import inter_deepmd
 
 from .context import setUpModule  # noqa: F401
@@ -120,7 +120,11 @@ class TestLammps(unittest.TestCase):
 
         # Test that forward_files also uses custom path
         forward_files_custom = lammps_custom.forward_files()
-        expected_forward = ["conf.lmp", "in.lammps", "frozen_model.pb"]  # Uses "in.lammps", not custom path
+        expected_forward = [
+            "conf.lmp",
+            "in.lammps",
+            "frozen_model.pb",
+        ]  # Uses "in.lammps", not custom path
         self.assertEqual(forward_files_custom, expected_forward)
 
         # Test EOS property type (should not include in.lammps)
@@ -137,55 +141,56 @@ class TestLammps(unittest.TestCase):
             "type_map": {"Al": 0},
         }
 
-        lammps_alternate = Lammps(alternate_inter_param, self.source_path + "/Al-fcc.vasp")
+        lammps_alternate = Lammps(
+            alternate_inter_param, self.source_path + "/Al-fcc.vasp"
+        )
         fc_files_alternate = lammps_alternate.forward_common_files()
         expected_alternate = ["input_files/my_lammps_script.in", "frozen_model.pb"]
         self.assertEqual(fc_files_alternate, expected_alternate)
 
         forward_files_alternate = lammps_alternate.forward_files()
-        expected_forward_alternate = ["conf.lmp", "in.lammps", "frozen_model.pb"]  # Uses "in.lammps", not custom path
+        expected_forward_alternate = [
+            "conf.lmp",
+            "in.lammps",
+            "frozen_model.pb",
+        ]  # Uses "in.lammps", not custom path
         self.assertEqual(forward_files_alternate, expected_forward_alternate)
 
     def test_run_equi_with_custom_in_lammps(self):
         """Test run_equi locally with custom in_lammps path to verify fix works end-to-end"""
-        import tempfile
-        
         # Create temporary directories for the test
         test_work_dir = "test_custom_lammps_run"
         if os.path.exists(test_work_dir):
             shutil.rmtree(test_work_dir)
         os.makedirs(test_work_dir)
-        
+
         try:
             with tempfile.TemporaryDirectory() as remote_root:
                 # Set up configuration structure
                 conf_dir = os.path.join(test_work_dir, "confs", "std-fcc")
                 os.makedirs(conf_dir, exist_ok=True)
-                
+
                 # Copy structure file
                 shutil.copy(
                     os.path.join("equi/lammps", "Al-fcc.vasp"),
-                    os.path.join(conf_dir, "POSCAR")
+                    os.path.join(conf_dir, "POSCAR"),
                 )
-                
+
                 # Create the custom in_lammps file
-                custom_lammps_dir = os.path.join(test_work_dir, "input_files") 
+                custom_lammps_dir = os.path.join(test_work_dir, "input_files")
                 os.makedirs(custom_lammps_dir, exist_ok=True)
                 custom_lammps_file = os.path.join(custom_lammps_dir, "my_custom.lmp")
-                shutil.copy(
-                    "lammps_input/custom_lammps_input.lmp",
-                    custom_lammps_file
-                )
-                
+                shutil.copy("lammps_input/custom_lammps_input.lmp", custom_lammps_file)
+
                 # Create a dummy frozen model
                 model_file = os.path.join(test_work_dir, "frozen_model.pb")
                 with open(model_file, "w") as f:
                     f.write("dummy model file for testing")
-                
-                # Change to test directory 
+
+                # Change to test directory
                 original_cwd = os.getcwd()
                 os.chdir(test_work_dir)
-                
+
                 try:
                     # Test configuration with custom in_lammps path
                     jdata = {
@@ -206,8 +211,8 @@ class TestLammps(unittest.TestCase):
                             },
                         },
                     }
-                    
-                    # Machine configuration for LocalContext  
+
+                    # Machine configuration for LocalContext
                     mdata = {
                         "model_devi_command": "touch log.lammps dump.relax; echo lmp",
                         "model_devi_machine": {
@@ -221,43 +226,49 @@ class TestLammps(unittest.TestCase):
                         },
                         "model_devi_group_size": 1,
                     }
-                    
+
                     # First create the equi structure
-                    make_equi(jdata["structures"], jdata["interaction"], jdata["relaxation"])
-                    
+                    make_equi(
+                        jdata["structures"], jdata["interaction"], jdata["relaxation"]
+                    )
+
                     # Verify that the task was created correctly
                     task_dir = "confs/std-fcc/relaxation/relax_task"
                     self.assertTrue(os.path.exists(task_dir))
-                    self.assertTrue(os.path.exists(os.path.join(task_dir, "inter.json")))
-                    
-                    # Test the key functionality: verify that forward_common_files 
+                    self.assertTrue(
+                        os.path.exists(os.path.join(task_dir, "inter.json"))
+                    )
+
+                    # Test the key functionality: verify that forward_common_files
                     # returns the custom path, which proves the fix works
-                    virtual_calculator = Lammps(jdata["interaction"], "confs/std-fcc/POSCAR")
+                    virtual_calculator = Lammps(
+                        jdata["interaction"], "confs/std-fcc/POSCAR"
+                    )
                     forward_common = virtual_calculator.forward_common_files()
-                    
+
                     # This is the core test - the custom path should be included
                     self.assertIn("input_files/my_custom.lmp", forward_common)
                     self.assertIn("frozen_model.pb", forward_common)
-                    
+
                     # Verify that forward_files still uses "in.lammps" (for task directories)
                     forward_files = virtual_calculator.forward_files()
                     self.assertIn("in.lammps", forward_files)
                     self.assertNotIn("input_files/my_custom.lmp", forward_files)
-                    
+
                     # Verify that the custom file actually exists at the specified path
                     self.assertTrue(os.path.exists("input_files/my_custom.lmp"))
-                    
+
                     # Now actually run run_equi to test end-to-end functionality
                     # This will fail with FileNotFoundError if the fix doesn't work
                     run_equi(jdata["structures"], jdata["interaction"], mdata)
-                    
+
                     # If we reach here without exception, the fix works correctly
-                    # The dispatcher was able to find the custom file because 
+                    # The dispatcher was able to find the custom file because
                     # forward_common_files() returned the correct path
-                    
+
                 finally:
                     os.chdir(original_cwd)
-                
+
         finally:
             # Clean up test directory
             if os.path.exists(test_work_dir):
