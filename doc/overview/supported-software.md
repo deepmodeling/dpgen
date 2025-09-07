@@ -116,7 +116,7 @@ Configure GPU settings appropriately if available, and ensure proper setup of th
 
 Amber DPRc is a specialized interface for using Amber within the first-principles calculation workflow. This interface in DP-GEN enables biomolecular system labeling where sander is used to label the structure rather than perform energy calculations. It provides specialized capabilities for systems requiring Amber-based structural analysis and labeling.
 
-This fp_style only supports being used with {dargs:argument}`model_devi_engine <run_jdata/model_devi_engine>` set to `amber`. The {dargs:argument}`command <run_mdata/fp/command>` in the machine file should be set to the path to sander, and the dpamber package (https://github.com/njzjz/dpamber) must be installed in the environment.
+This fp_style only supports being used with {dargs:argument}`model_devi_engine <run_jdata/model_devi_engine>` set to `amber`. The {dargs:argument}`command <run_mdata/fp/command>` in the machine file should be set to the path to sander, and the [dpamber](https://github.com/njzjz/dpamber) package must be installed in the environment.
 
 ### Custom
 
