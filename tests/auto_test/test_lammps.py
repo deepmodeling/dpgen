@@ -103,7 +103,7 @@ class TestLammps(unittest.TestCase):
         self.assertEqual(self.Lammps.backward_files(), backward_files)
 
     def test_forward_common_files_with_custom_in_lammps(self):
-        """Test forward_common_files with custom in_lammps path (fixes #1757)"""
+        """Test forward_common_files with custom in_lammps path (fixes #1757)."""
         # Test custom in_lammps path with different filename (not "in.lammps")
         custom_inter_param = {
             "type": "deepmd",
@@ -157,7 +157,7 @@ class TestLammps(unittest.TestCase):
         self.assertEqual(forward_files_alternate, expected_forward_alternate)
 
     def test_run_equi_with_custom_in_lammps(self):
-        """Test run_equi locally with custom in_lammps path to verify fix works end-to-end"""
+        """Test run_equi locally with custom in_lammps path to verify fix works end-to-end."""
         # Create temporary directories for the test
         test_work_dir = "test_custom_lammps_run"
         if os.path.exists(test_work_dir):
@@ -166,13 +166,13 @@ class TestLammps(unittest.TestCase):
 
         try:
             with tempfile.TemporaryDirectory() as remote_root:
-                # Set up configuration structure
-                conf_dir = os.path.join(test_work_dir, "confs", "std-fcc")
+                # Set up configuration structure - use existing fcc-Al conf
+                conf_dir = os.path.join(test_work_dir, "confs", "fcc-Al")
                 os.makedirs(conf_dir, exist_ok=True)
 
-                # Copy structure file
+                # Copy structure file from existing conf
                 shutil.copy(
-                    os.path.join("equi/lammps", "Al-fcc.vasp"),
+                    os.path.join("confs", "fcc-Al", "POSCAR"),
                     os.path.join(conf_dir, "POSCAR"),
                 )
 
@@ -194,7 +194,7 @@ class TestLammps(unittest.TestCase):
                 try:
                     # Test configuration with custom in_lammps path
                     jdata = {
-                        "structures": ["confs/std-fcc"],
+                        "structures": ["confs/fcc-Al"],
                         "interaction": {
                             "type": "deepmd",
                             "model": "frozen_model.pb",
