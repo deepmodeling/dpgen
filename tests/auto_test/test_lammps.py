@@ -179,7 +179,9 @@ class TestLammps(unittest.TestCase):
                 custom_lammps_dir = os.path.join(test_work_dir, "input_files")
                 os.makedirs(custom_lammps_dir, exist_ok=True)
                 custom_lammps_file = os.path.join(custom_lammps_dir, "my_custom.lmp")
-                custom_lammps_source = os.path.join(test_dir, "lammps_input", "custom_lammps_input.lmp")
+                custom_lammps_source = os.path.join(
+                    test_dir, "lammps_input", "custom_lammps_input.lmp"
+                )
                 shutil.copy(custom_lammps_source, custom_lammps_file)
 
                 # Create a dummy frozen model
