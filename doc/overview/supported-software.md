@@ -2,9 +2,15 @@
 
 DP-GEN provides interfaces to various molecular dynamics (MD) and first-principles (FP) calculation software packages. This page summarizes all the supported software and their key features in the DP-GEN workflow. When used with these software packages, they must build integration with DeePMD-kit.
 
+The calculation results from first-principles software are stored in **dpdata** formats (see [dpdata formats](https://docs.deepmodeling.com/projects/dpdata/en/master/formats.html) for more information).
+
 ## Machine Learning Potentials (MLP)
 
+Machine learning potential engines are specified using the `mlp_engine` parameter and are used in the training phase to construct deep potential models.
+
 ### DeePMD-kit
+
+{dargs:argument}`mlp_engine <run_jdata/mlp_engine>: dp`
 
 [DeePMD-kit](https://github.com/deepmodeling/deepmd-kit) is a package for constructing deep potential models for molecular dynamics simulations. DeePMD-kit is the only supported machine learning potential software in DP-GEN and serves as the foundation for all deep potential training and inference. It provides the neural network models that are used by MD engines for force field calculations during the exploration phase.
 
@@ -16,17 +22,17 @@ MD engines are used in the exploration phase (`01.model_devi`) to generate candi
 
 {dargs:argument}`model_devi_engine <run_jdata/model_devi_engine>: lammps`
 
-[LAMMPS](https://www.lammps.org/) (Large-scale Atomic/Molecular Massively Parallel Simulator) is a classical molecular dynamics code with a focus on materials modeling. LAMMPS serves as the primary MD engine for structure exploration in DP-GEN and integrates seamlessly with DeePMD-kit through the USER-DEEPMD package. The integration allows LAMMPS to use deep potential models for highly accurate force field calculations during molecular dynamics simulations.
+[LAMMPS](https://www.lammps.org/) (Large-scale Atomic/Molecular Massively Parallel Simulator) is a classical molecular dynamics code with a focus on materials modeling. LAMMPS serves as the primary MD engine for structure exploration in DP-GEN and integrates seamlessly with DeePMD-kit through the USER-DEEPMD package. The integration allows LAMMPS to use deep potential models for highly accurate force field calculations during molecular dynamics simulations. LAMMPS simulations in DP-GEN can be automatically restarted if they fail, providing robust handling of long-running molecular dynamics calculations.
 
-When configuring LAMMPS, ensure that the DeePMD-kit plugin is properly installed and that the {dargs:argument}`command <run_mdata/model_devi/command>` in the machine file points to the correct LAMMPS executable with DeePMD support.
+LAMMPS integrated with DeePMD-kit can be installed following the [easy install guide](https://docs.deepmodeling.com/projects/deepmd/en/stable/install/easy-install.html) or by [building from source](https://docs.deepmodeling.com/projects/deepmd/en/stable/install/install-lammps.html). When configuring LAMMPS, ensure that the DeePMD-kit plugin is properly installed and that the {dargs:argument}`command <run_mdata/model_devi/command>` in the machine file points to the correct LAMMPS executable with DeePMD support.
 
 ### Amber
 
 {dargs:argument}`model_devi_engine <run_jdata/model_devi_engine>: amber`
 
-[Amber](https://ambermd.org/) is a suite of biomolecular simulation programs primarily used for biological systems. Amber in DP-GEN integrates with DPRc (Deep Potential Reactive) models for reactive force field simulations, particularly useful for biomolecular systems where chemical bonds may form or break. This requires the dpamber package to be installed and properly configured.
+[Amber](https://ambermd.org/) is a suite of biomolecular simulation programs primarily used for biological systems. Amber in DP-GEN is designed for biomolecular simulations and integrates with DeePMD-kit models for enhanced force field accuracy in biological systems. This integration is particularly useful for complex biomolecular systems requiring high-precision force field calculations.
 
-The {dargs:argument}`command <run_mdata/model_devi/command>` in the machine file should be set to the path to sander. Additionally, dpamber must be installed and visible in the PATH for proper integration.
+AmberTools needs to enable the DeePMD-kit integration - refer to [Amber documentation](https://ambermd.org/) for installation details. The {dargs:argument}`command <run_mdata/model_devi/command>` in the machine file should be set to the path to sander for proper execution.
 
 ### Calypso
 
@@ -42,11 +48,11 @@ Configuration requires proper setup of the Calypso executable and ensuring compa
 
 [Gromacs](http://www.gromacs.org/) is a versatile package for molecular dynamics simulations, particularly popular for biochemical molecules. Gromacs integration with DP-GEN enables high-performance biomolecular system exploration using deep potential models. The integration provides enhanced sampling techniques optimized for biological systems.
 
-Ensure that Gromacs is compiled with DeePMD-kit support and that the {dargs:argument}`command <run_mdata/model_devi/command>` in the machine file is properly configured for the Gromacs executable.
+Gromacs integrated with DeePMD-kit should be installed following the [installation guide](https://docs.deepmodeling.com/projects/deepmd/en/stable/install/install-gromacs.html). Ensure that the {dargs:argument}`command <run_mdata/model_devi/command>` in the machine file is properly configured for the Gromacs executable.
 
 ## First-Principles (FP) Calculation Software
 
-FP software packages are used in the labeling phase (`02.fp`) to calculate accurate energies and forces for selected structures. These are specified using the `fp_style` parameter. The calculation results are stored in **dpdata** formats (see [dpdata](https://github.com/deepmodeling/dpdata) for more information).
+FP software packages are used in the labeling phase (`02.fp`) to calculate accurate energies and forces for selected structures. These are specified using the `fp_style` parameter. The input/output format is **dpdata** format - refer to [dpdata formats](https://docs.deepmodeling.com/projects/dpdata/en/master/formats.html) for all supported formats.
 
 ### VASP
 
@@ -84,7 +90,7 @@ Ensure proper configuration of basis sets and exchange-correlation functionals i
 
 {dargs:argument}`fp_style <run_jdata/fp_style>: abacus`
 
-[ABACUS](https://abacus.ustc.edu.cn/) (Atomic-orbital Based Ab-initio Computation at UStc) is a DFT software package with support for both plane-wave and localized atomic orbital basis sets. ABACUS in DP-GEN provides versatile DFT calculations with native machine learning integration and optimization for high-performance computing. It offers excellent efficiency for various system types from molecules to materials.
+[ABACUS](https://abacus.ustc.edu.cn/) (Atomic-orbital Based Ab-initio Computation at UStc) is a DFT software package with support for both plane-wave and localized atomic orbital basis sets. ABACUS in DP-GEN provides versatile DFT calculations with excellent efficiency for various system types from molecules to materials. It offers optimization for high-performance computing and flexibility for different calculation requirements.
 
 Configure the INPUT file properly with appropriate basis sets and k-point sampling. ABACUS supports both plane-wave and localized atomic orbital basis sets, providing flexibility for different calculation requirements.
 
@@ -108,9 +114,9 @@ Configure GPU settings appropriately if available, and ensure proper setup of th
 
 {dargs:argument}`fp_style <run_jdata/fp_style>: amber/diff`
 
-Amber DPRc is a specialized interface for using Deep Potential Reactive (DPRc) models within the Amber MD package for reactive force field simulations. This interface in DP-GEN enables reactive system labeling and chemical reaction modeling, particularly for biomolecular reactive processes. It provides specialized capabilities for systems where chemical bonds may form or break during the simulation.
+Amber DPRc is a specialized interface for using Amber within the first-principles calculation workflow. This interface in DP-GEN enables biomolecular system labeling where sander is used to label the structure rather than perform energy calculations. It provides specialized capabilities for systems requiring Amber-based structural analysis and labeling.
 
-This fp_style only supports being used with {dargs:argument}`model_devi_engine <run_jdata/model_devi_engine>` set to `amber`. The {dargs:argument}`command <run_mdata/fp/command>` in the machine file should be set to the path to sander, and dpamber must be installed and visible in the PATH.
+This fp_style only supports being used with {dargs:argument}`model_devi_engine <run_jdata/model_devi_engine>` set to `amber`. The {dargs:argument}`command <run_mdata/fp/command>` in the machine file should be set to the path to sander, and the dpamber package (https://github.com/njzjz/dpamber) must be installed in the environment.
 
 ### Custom
 
