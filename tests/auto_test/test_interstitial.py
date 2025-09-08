@@ -105,3 +105,111 @@ class TestInterstitial(unittest.TestCase):
             center = (inter_site1.coords + inter_site2.coords) / 2
             self.assertTrue((center[0] - center[1]) < 1e-4)
             self.assertTrue((center[1] - center[2]) < 1e-4)
+
+    def test_make_confs_filtered_out(self):
+        """Test that element.out is created even when all defects are filtered out."""
+        # Create a configuration that filters out all defects
+        _jdata_filtered = {
+            "structures": ["confs/std-bcc"],
+            "interaction": {
+                "type": "vasp",
+                "incar": "vasp_input/INCAR.rlx",
+                "potcar_prefix": "vasp_input",
+                "potcars": {"V": "POTCAR"},
+            },
+            "properties": [
+                {
+                    "type": "interstitial",
+                    "supercell": [1, 1, 1],
+                    "insert_ele": ["V"],
+                    "conf_filters": {"min_dist": 100.0},  # Very high filter - all defects filtered
+                    "bcc_self": False,  # Don't add bcc tasks
+                }
+            ],
+        }
+
+        filtered_target_path = "confs/std-bcc/interstitial_filtered"
+        if not os.path.exists(filtered_target_path):
+            os.makedirs(filtered_target_path)
+
+        try:
+            # Copy the test structure
+            shutil.copy(
+                os.path.join(self.source_path, "CONTCAR_V_bcc"),
+                os.path.join(self.equi_path, "CONTCAR"),
+            )
+
+            interstitial_filtered = Interstitial(_jdata_filtered["properties"][0])
+            task_list = interstitial_filtered.make_confs(filtered_target_path, self.equi_path)
+
+            # Should have no tasks since all are filtered
+            self.assertEqual(len(task_list), 0)
+
+            # element.out should exist even if empty
+            element_out_path = os.path.join(filtered_target_path, "element.out")
+            self.assertTrue(os.path.exists(element_out_path), "element.out should exist even when empty")
+
+            # Test that post_process doesn't crash with empty task list
+            try:
+                interstitial_filtered.post_process(task_list)
+            except Exception as e:
+                self.fail(f"post_process should handle empty task list gracefully, but got: {e}")
+
+        finally:
+            # Clean up
+            if os.path.exists(filtered_target_path):
+                shutil.rmtree(filtered_target_path)
+
+    def test_make_confs_partial_filtering(self):
+        """Test that post_process handles mismatched element.out entries gracefully."""
+        # Create a configuration that might have some defects filtered
+        _jdata_partial = {
+            "structures": ["confs/std-bcc"],
+            "interaction": {
+                "type": "vasp",
+                "incar": "vasp_input/INCAR.rlx",
+                "potcar_prefix": "vasp_input",
+                "potcars": {"V": "POTCAR"},
+            },
+            "properties": [
+                {
+                    "type": "interstitial",
+                    "supercell": [1, 1, 1],
+                    "insert_ele": ["V"],
+                    # No conf_filters to ensure some tasks are created
+                    "bcc_self": True,  # Add bcc tasks that always create more tasks
+                }
+            ],
+        }
+
+        partial_target_path = "confs/std-bcc/interstitial_partial"
+        if not os.path.exists(partial_target_path):
+            os.makedirs(partial_target_path)
+
+        try:
+            # Copy the test structure
+            shutil.copy(
+                os.path.join(self.source_path, "CONTCAR_V_bcc"),
+                os.path.join(self.equi_path, "CONTCAR"),
+            )
+
+            interstitial_partial = Interstitial(_jdata_partial["properties"][0])
+            task_list = interstitial_partial.make_confs(partial_target_path, self.equi_path)
+
+            # Should have some tasks (at least the bcc_self ones)
+            self.assertGreater(len(task_list), 0)
+
+            # element.out should exist
+            element_out_path = os.path.join(partial_target_path, "element.out")
+            self.assertTrue(os.path.exists(element_out_path), "element.out should exist")
+
+            # Test that post_process doesn't crash even if element.out and task count don't match
+            try:
+                interstitial_partial.post_process(task_list)
+            except Exception as e:
+                self.fail(f"post_process should handle mismatched element.out gracefully, but got: {e}")
+
+        finally:
+            # Clean up
+            if os.path.exists(partial_target_path):
+                shutil.rmtree(partial_target_path)

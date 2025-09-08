@@ -183,6 +183,9 @@ class Interstitial(Property):
                 insert_element_task = os.path.join(path_to_work, "element.out")
                 if os.path.isfile(insert_element_task):
                     os.remove(insert_element_task)
+                # Always create element.out file, even if it will be empty
+                with open(insert_element_task, "w") as f:
+                    pass
 
                 for ii in self.insert_ele:
                     pre_vds = InterstitialGenerator()
@@ -467,32 +470,52 @@ class Interstitial(Property):
         return task_list
 
     def post_process(self, task_list):
-        if True:
-            fin1 = open(os.path.join(task_list[0], "..", "element.out"))
-            for ii in task_list:
-                conf = os.path.join(ii, "conf.lmp")
-                inter = os.path.join(ii, "inter.json")
-                insert_ele = fin1.readline().split()[0]
-                if os.path.isfile(conf):
-                    with open(conf) as fin2:
-                        conf_line = fin2.read().split("\n")
-                        insert_line = conf_line[-2]
-                    type_map = loadfn(inter)["type_map"]
-                    type_map_list = lammps.element_list(type_map)
-                    if int(insert_line.split()[1]) > len(type_map_list):
-                        type_num = type_map[insert_ele] + 1
-                        conf_line[2] = str(len(type_map_list)) + " atom types"
-                        conf_line[-2] = (
-                            "%6.d" % int(insert_line.split()[0])  # noqa: UP031
-                            + "%7.d" % type_num  # noqa: UP031
-                            + f"{float(insert_line.split()[2]):16.10f}"
-                            + f"{float(insert_line.split()[3]):16.10f}"
-                            + f"{float(insert_line.split()[4]):16.10f}"
-                        )
-                        with open(conf, "w+") as fout:
-                            for jj in conf_line:
-                                print(jj, file=fout)
-            fin1.close()
+        if not task_list:
+            # No tasks to process
+            return
+            
+        element_out_path = os.path.join(task_list[0], "..", "element.out")
+        if not os.path.exists(element_out_path):
+            # element.out doesn't exist, nothing to process
+            return
+            
+        with open(element_out_path) as fin1:
+            element_lines = fin1.readlines()
+        
+        for idx, ii in enumerate(task_list):
+            conf = os.path.join(ii, "conf.lmp")
+            inter = os.path.join(ii, "inter.json")
+            
+            # Check if we have a corresponding element line
+            if idx >= len(element_lines):
+                # No more element entries, skip this task
+                continue
+                
+            element_line = element_lines[idx].strip()
+            if not element_line:
+                # Empty line, skip this task
+                continue
+                
+            insert_ele = element_line.split()[0]
+            if os.path.isfile(conf):
+                with open(conf) as fin2:
+                    conf_line = fin2.read().split("\n")
+                    insert_line = conf_line[-2]
+                type_map = loadfn(inter)["type_map"]
+                type_map_list = lammps.element_list(type_map)
+                if int(insert_line.split()[1]) > len(type_map_list):
+                    type_num = type_map[insert_ele] + 1
+                    conf_line[2] = str(len(type_map_list)) + " atom types"
+                    conf_line[-2] = (
+                        "%6.d" % int(insert_line.split()[0])  # noqa: UP031
+                        + "%7.d" % type_num  # noqa: UP031
+                        + f"{float(insert_line.split()[2]):16.10f}"
+                        + f"{float(insert_line.split()[3]):16.10f}"
+                        + f"{float(insert_line.split()[4]):16.10f}"
+                    )
+                    with open(conf, "w+") as fout:
+                        for jj in conf_line:
+                            print(jj, file=fout)
 
     def task_type(self):
         return self.parameter["type"]
