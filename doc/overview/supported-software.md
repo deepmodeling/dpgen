@@ -14,17 +14,17 @@ Machine learning potential engines are specified using the `mlp_engine` paramete
 
 {dargs:argument}`mlp_engine <run_jdata/mlp_engine>`: `dp`
 
-[DeePMD-kit](https://github.com/deepmodeling/deepmd-kit) is a deep potential modeling package for molecular dynamics simulations. DeePMD-kit is the only supported machine learning potential software and serves as the foundation for all deep potential training and inference. The trained neural network models are used by MD engines for accurate force field calculations during structure exploration.
+[DeePMD-kit](https://github.com/deepmodeling/deepmd-kit) is a deep potential modeling package for molecular dynamics simulations. DeePMD-kit is the only supported machine learning potential software and serves as the foundation for all deep potential training and inference. The trained neural network models are used by molecular simulation engines for accurate force field calculations during structure exploration.
 
-## Molecular Dynamics (MD) Engines
+## Molecular Simulation Engines
 
-MD engines are used in the exploration phase (`01.model_devi`) to generate candidate structures. These engines are specified using the `model_devi_engine` parameter.
+Molecular simulation engines are used in the exploration phase (`01.model_devi`) to generate candidate structures. These engines are specified using the `model_devi_engine` parameter.
 
 ### LAMMPS
 
 {dargs:argument}`model_devi_engine <run_jdata/model_devi_engine>`: `lammps`
 
-[LAMMPS](https://www.lammps.org/) (Large-scale Atomic/Molecular Massively Parallel Simulator) is a classical molecular dynamics code focused on materials modeling. LAMMPS serves as the primary MD engine for structure exploration and integrates with DeePMD-kit through the USER-DEEPMD package. This integration enables accurate force field calculations using deep potential models during molecular dynamics simulations. LAMMPS simulations can be automatically restarted if they fail, providing robust handling of long-running calculations.
+[LAMMPS](https://www.lammps.org/) (Large-scale Atomic/Molecular Massively Parallel Simulator) is a classical molecular dynamics code focused on materials modeling. LAMMPS serves as the primary molecular simulation engine for structure exploration and integrates with DeePMD-kit through the USER-DEEPMD package. This integration enables accurate force field calculations using deep potential models during molecular dynamics simulations. LAMMPS simulations can be automatically restarted if they fail, providing robust handling of long-running calculations.
 
 LAMMPS with DeePMD-kit integration can be installed via [easy install](https://docs.deepmodeling.com/projects/deepmd/en/stable/install/easy-install.html) or by [building from source](https://docs.deepmodeling.com/projects/deepmd/en/stable/install/install-lammps.html). Ensure the {dargs:argument}`command <run_mdata/model_devi/command>` in the machine file points to the correct LAMMPS executable with DeePMD support.
 
