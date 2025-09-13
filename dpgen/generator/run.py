@@ -3902,6 +3902,53 @@ def make_fp_amber_diff(iter_index: int, jdata: dict):
     os.chdir(cwd)
 
 
+def make_fp_cpx(iter_index, jdata): # TODO: test
+    """Make input file for Quantum Espresso Car-Parrinello (cp.x) run.
+
+    Convert the POSCAR file to cp.x input file using prepared template.
+
+    Parameters
+    ----------
+    iter_index : int
+        iter index
+    jdata : dict
+        Run parameters.
+    """
+    work_path = os.path.join(make_iter_name(iter_index), fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, "task.*"))
+    fp_params = jdata["fp_params"]
+    input_fn = fp_params["input_fn"]
+    template_fn = fp_params["template_fn"]
+
+    with open(template_fn, "r") as tn:
+        template = tn.read()
+
+    for ii in fp_tasks:
+        itemp = copy(template)
+        with set_directory(Path(ii)):
+            system = dpdata.System("POSCAR", fmt="vasp/poscar")
+            # convert POSCAR to cp.in
+            cell_param = ""
+            for a in system["cells"][0]:
+                for v in a:
+                    cell_param += f"{v:.16e} "
+                cell_param += "\n"
+            itemp.replace("%CELL%", cell_param)
+
+            pos = ""
+            ntypes = system.get_ntypes()
+            numbs = system.get_atom_numbs()
+            names = system.get_atom_names()
+            coords = system["coords"][0]
+            for t in range(ntypes):
+                ts = sum(numbs[:t])
+                for a in range(numbs[t]):
+                    pos += f"{names[t]:2} {coords[a + ts, 0]:20.16f} {coords[a + ts, 1]:20.16f} {coords[a + ts, 2]:20.16f}\n"
+            itemp.replace("%POSITIONS%", cell_param)
+            with open(input_fn + ".in", "w") as fp:
+                fp.write(itemp)
+
+
 def make_fp_custom(iter_index, jdata):
     """Make input file for customized FP style.
 
@@ -3973,6 +4020,8 @@ def make_fp_calculation(iter_index, jdata, mdata):
         make_fp_pwmat(iter_index, jdata)
     elif fp_style == "amber/diff":
         make_fp_amber_diff(iter_index, jdata)
+    elif fp_style == "cpx":
+        make_fp_cpx(iter_index, jdata)
     elif fp_style == "custom":
         make_fp_custom(iter_index, jdata)
     else:
