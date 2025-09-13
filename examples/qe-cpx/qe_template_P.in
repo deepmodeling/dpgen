@@ -1,0 +1,45 @@
+&CONTROL
+  calculation='cp',
+  restart_mode='from_scratch'
+  outdir='.',
+  prefix='P',
+  pseudo_dir='../ps',
+  nstep=1,
+  iprint=1,
+  isave=2,
+  dt=5.0,
+  ndw=50,
+  tprnfor=.true.
+  tstress=.true.
+/
+
+&SYSTEM
+  ibrav=0,
+  nat=16,
+  ntyp=1,
+  ecutwfc=60,
+  ecutrho=360,
+  nr1b=20, nr2b=20, nr3b=20,
+/
+
+&ELECTRONS
+  electron_dynamics='none',
+  electron_velocities='zero',
+  emass=300,
+  orthogonalization='ortho',
+  ortho_eps=1d-11
+/
+
+&IONS
+  ion_dynamics='none'
+  ion_velocities='zero'
+/
+
+ATOMIC_SPECIES
+  P 30.973762d0 P.pbesol-n-rrkjus_psl.1.0.0.UPF
+
+ATOMIC_POSITIONS {angstrom}
+%POSITIONS%
+
+CELL_PARAMETERS {angstrom}
+%CELL%
