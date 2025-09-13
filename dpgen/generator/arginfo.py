@@ -922,6 +922,31 @@ def fp_style_pwscf_args() -> list[Argument]:
     ]
 
 
+def fp_style_cpx_args() -> list[Argument]:
+    """Arguments for FP style cpx (Car-Parrinello Quantum Espresso).
+
+    Returns
+    -------
+    list[dargs.Argument]
+        list of cpx fp style arguments
+    """
+    doc_fp_params_cpx = "Parameters for FP calculation."
+    doc_input_fn = "Input file name for cp.x without file extension (.in). Essentially must be the same as the prefix in the template."
+    doc_template = "Template file name. Is used for completing the input file. Should contain all necessary FP configurations besides ATOMIC_POSITIONS and CELL_PARAMETERS"
+    return [
+        Argument(
+            "fp_params",
+            dict,
+            optional=False,
+            doc=doc_fp_params_cpx,
+            sub_fields=[
+                Argument("input_fn", str, optional=False, doc=doc_input_fn),
+                Argument("template_fn", str, optional=False, doc=doc_template),
+            ],
+        ),
+    ]
+
+
 def fp_style_custom_args() -> list[Argument]:
     """Arguments for FP style custom.
 
@@ -979,6 +1004,7 @@ def fp_style_variant_type_args() -> Variant:
             ),
             Argument("pwmat", dict, [], doc="TODO: add doc"),
             Argument("pwscf", dict, fp_style_pwscf_args()),
+            Argument("cpx", dict, fp_style_cpx_args()),
             Argument("custom", dict, fp_style_custom_args(), doc=doc_custom),
         ],
         optional=False,
