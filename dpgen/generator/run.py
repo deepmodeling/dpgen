@@ -4813,6 +4813,50 @@ def post_fp_amber_diff(iter_index, jdata):
         all_sys.to_deepmd_npy(sys_data_path, set_size=len(sys_output), prec=np.float64)
 
 
+def post_fp_cpx(iter_index, jdata): # TODO: test
+    """Post fp for cp.x. Collect data from qe/cp/traj labeled system.
+
+    Parameters
+    ----------
+    iter_index : int
+        The index of the current iteration.
+    jdata : dict
+        The parameter data.
+    """
+    model_devi_jobs = jdata["model_devi_jobs"]
+    assert iter_index < len(model_devi_jobs)
+
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, "task.*"))
+    fp_tasks.sort()
+    if len(fp_tasks) == 0:
+        return
+
+    system_index = []
+    for ii in fp_tasks:
+        system_index.append(os.path.basename(ii).split(".")[1])
+    system_index.sort()
+    set_tmp = set(system_index)
+    system_index = list(set_tmp)
+    system_index.sort()
+
+    fp_params = jdata["fp_params"]
+    output_fn = fp_params["input_fn"]
+
+    for ss in system_index:
+        sys_output = glob.glob(os.path.join(work_path, f"task.{ss}.*"))
+        sys_output.sort()
+        all_sys = dpdata.MultiSystems(type_map=jdata["type_map"])
+        for oo in sys_output:
+            if os.path.exists(os.path.join(oo, output_fn)):
+                sys = dpdata.LabeledSystem(os.path.join(oo, output_fn), fmt="qe/cp/traj")
+                all_sys.append(sys)
+        sys_data_path = os.path.join(work_path, f"data.{ss}")
+        all_sys.to_deepmd_raw(sys_data_path)
+        all_sys.to_deepmd_npy(sys_data_path, set_size=len(sys_output), prec=np.float64)
+
+
 def post_fp_custom(iter_index, jdata):
     """Post fp for custom fp. Collect data from user-defined `output_fn`.
 
@@ -4876,6 +4920,8 @@ def post_fp(iter_index, jdata):
         post_fp_pwmat(iter_index, jdata)
     elif fp_style == "amber/diff":
         post_fp_amber_diff(iter_index, jdata)
+    elif fp_style == "cpx":
+        post_fp_cpx(iter_index, jdata)
     elif fp_style == "custom":
         post_fp_custom(iter_index, jdata)
     else:
