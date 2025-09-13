@@ -4329,6 +4329,20 @@ def run_fp(iter_index, jdata, mdata):
             log_file="output",
             forward_common_files=forward_common_files,
         )
+    elif fp_style == "cpx": # TODO: test
+        extensions = [".cel", ".evp", ".for", ".pos", ".str"]
+        input_fn = jdata["fp_params"]["input_fn"]
+        forward_files = [input_fn + ".in"]
+        backward_files = [input_fn + ext for ext in extensions]
+        run_fp_inner(
+            iter_index,
+            jdata,
+            mdata,
+            forward_files,
+            backward_files,
+            _qe_check_fin,
+            log_file="output",
+        )
     elif fp_style == "custom":
         fp_params = jdata["fp_params"]
         forward_files = [fp_params["input_fn"]]
