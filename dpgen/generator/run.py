@@ -3924,7 +3924,7 @@ def make_fp_cpx(iter_index, jdata): # TODO: test
         template = tn.read()
 
     for ii in fp_tasks:
-        itemp = copy(template)
+        itemp = copy.deepcopy(template)
         with set_directory(Path(ii)):
             system = dpdata.System("POSCAR", fmt="vasp/poscar")
             # convert POSCAR to cp.in
