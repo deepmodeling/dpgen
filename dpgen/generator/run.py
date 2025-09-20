@@ -3902,7 +3902,7 @@ def make_fp_amber_diff(iter_index: int, jdata: dict):
     os.chdir(cwd)
 
 
-def make_fp_cpx(iter_index, jdata): # TODO: test
+def make_fp_cpx(iter_index, jdata):
     """Make input file for Quantum Espresso Car-Parrinello (cp.x) run.
 
     Convert the POSCAR file to cp.x input file using prepared template.
@@ -4329,7 +4329,7 @@ def run_fp(iter_index, jdata, mdata):
             log_file="output",
             forward_common_files=forward_common_files,
         )
-    elif fp_style == "cpx": # TODO: test
+    elif fp_style == "cpx":
         extensions = [".cel", ".evp", ".for", ".pos", ".str"]
         input_fn = jdata["fp_params"]["input_fn"]
         forward_files = [input_fn + ".in"]
@@ -4813,7 +4813,7 @@ def post_fp_amber_diff(iter_index, jdata):
         all_sys.to_deepmd_npy(sys_data_path, set_size=len(sys_output), prec=np.float64)
 
 
-def post_fp_cpx(iter_index, jdata): # TODO: test
+def post_fp_cpx(iter_index, jdata):
     """Post fp for cp.x. Collect data from qe/cp/traj labeled system.
 
     Parameters
