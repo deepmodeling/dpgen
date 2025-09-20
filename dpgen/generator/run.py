@@ -4333,7 +4333,7 @@ def run_fp(iter_index, jdata, mdata):
         extensions = [".cel", ".evp", ".for", ".pos", ".str"]
         input_fn = jdata["fp_params"]["input_fn"]
         forward_files = [input_fn + ".in"]
-        backward_files = [input_fn + ext for ext in extensions]
+        backward_files = [input_fn + ext for ext in extensions] + ["output"]
         run_fp_inner(
             iter_index,
             jdata,
