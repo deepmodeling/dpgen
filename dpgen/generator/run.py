@@ -3933,7 +3933,7 @@ def make_fp_cpx(iter_index, jdata): # TODO: test
                 for v in a:
                     cell_param += f"{v:.16e} "
                 cell_param += "\n"
-            itemp.replace("%CELL%", cell_param)
+            itemp = itemp.replace("%CELL%", cell_param)
 
             pos = ""
             ntypes = system.get_ntypes()
@@ -3944,7 +3944,7 @@ def make_fp_cpx(iter_index, jdata): # TODO: test
                 ts = sum(numbs[:t])
                 for a in range(numbs[t]):
                     pos += f"{names[t]:2} {coords[a + ts, 0]:20.16f} {coords[a + ts, 1]:20.16f} {coords[a + ts, 2]:20.16f}\n"
-            itemp.replace("%POSITIONS%", cell_param)
+            itemp = itemp.replace("%POSITIONS%", pos)
             with open(input_fn + ".in", "w") as fp:
                 fp.write(itemp)
 
