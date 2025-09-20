@@ -662,8 +662,7 @@ def fp_style_vasp_args() -> list[Argument]:
         "(3) 'wrap_ratio': maximum absolute ratio of off-diagonal to diagonal "
         "cell matrix elements, controlling triclinic wrapping; "
         "(4) 'tilt_ratio': maximum absolute tilt ratio for triclinic cells. "
-        "Configurations exceeding any specified threshold are skipped. "
-        "Suggested values: length_ratio:3, height_ratio:3, wrap_ratio:0.5, tilt_ratio:0.5."
+        "Configurations exceeding any specified threshold are skipped."
     )
 
     return [

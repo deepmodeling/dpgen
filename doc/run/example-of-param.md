@@ -117,14 +117,11 @@ The labeling related keys in param.json are given as follows
   "fp_pp_files": [
     "POTCAR"
   ],
-  "fp_incar": "....../INCAR_methane",
-  "fp_skip_bad_box": "length_ratio:3;height_ratio:3;wrap_ratio:0.5;tilt_ratio:0.5"
+  "fp_incar": "....../INCAR_methane"
 ```
 
-The labeling related keys specify the details of labeling tasks. {dargs:argument}`fp_style <run_jdata/fp_style>` specifies software for First Principles. {dargs:argument}`fp_task_max <run_jdata/fp_task_max>` and {dargs:argument}`fp_task_min <run_jdata/fp_task_min>` specify the minimum and maximum of structures to be calculated in `02.fp` of each iteration. {dargs:argument}`fp_pp_path <run_jdata[fp_style=vasp]/fp_pp_path>` and {dargs:argument}`fp_pp_files <run_jdata[fp_style=vasp]/fp_pp_files>` specify the location of the psuedo-potential file to be used for 02.fp. {dargs:argument}`run_jdata[fp_style=vasp]/fp_incar` specifies input file for VASP. INCAR must specify KSPACING and KGAMMA. {dargs:argument}`fp_skip_bad_box <run_jdata/fp_skip_bad_box>` optionally filters out configurations with unreasonable simulation box geometries before first-principles calculations.
+The labeling related keys specify the details of labeling tasks. {dargs:argument}`fp_style <run_jdata/fp_style>` specifies software for First Principles. {dargs:argument}`fp_task_max <run_jdata/fp_task_max>` and {dargs:argument}`fp_task_min <run_jdata/fp_task_min>` specify the minimum and maximum of structures to be calculated in `02.fp` of each iteration. {dargs:argument}`fp_pp_path <run_jdata[fp_style=vasp]/fp_pp_path>` and {dargs:argument}`fp_pp_files <run_jdata[fp_style=vasp]/fp_pp_files>` specify the location of the psuedo-potential file to be used for 02.fp. {dargs:argument}`run_jdata[fp_style=vasp]/fp_incar` specifies input file for VASP. INCAR must specify KSPACING and KGAMMA.
 
-Here, a minimum of 1 and a maximum of 20 structures will be labeled using the VASP code with the INCAR provided at "....../INCAR_methane" and POTCAR provided at "....../methane/POTCAR" in each iteration. Note that the order of elements in POTCAR should correspond to the order in {dargs:argument}`type_map <run_jdata/type_map>`. 
-
-The optional `fp_skip_bad_box` parameter helps improve calculation efficiency by filtering out configurations with problematic geometries such as highly elongated cells, extreme tilt angles, or poor aspect ratios before expensive first-principles calculations. In this example, configurations with length ratios exceeding 3:1, height ratios exceeding 3:1, wrap ratios above 0.5, or tilt ratios above 0.5 will be automatically skipped.
+Here, a minimum of 1 and a maximum of 20 structures will be labeled using the VASP code with the INCAR provided at "....../INCAR_methane" and POTCAR provided at "....../methane/POTCAR" in each iteration. Note that the order of elements in POTCAR should correspond to the order in {dargs:argument}`type_map <run_jdata/type_map>`.
 
 All the keys of the DP-GEN are explained in detail in the section Parameters.
