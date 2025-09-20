@@ -4842,15 +4842,15 @@ def post_fp_cpx(iter_index, jdata): # TODO: test
     system_index.sort()
 
     fp_params = jdata["fp_params"]
-    output_fn = fp_params["input_fn"]
+    input_fn = fp_params["input_fn"]
 
     for ss in system_index:
         sys_output = glob.glob(os.path.join(work_path, f"task.{ss}.*"))
         sys_output.sort()
         all_sys = dpdata.MultiSystems(type_map=jdata["type_map"])
         for oo in sys_output:
-            if os.path.exists(os.path.join(oo, output_fn)):
-                sys = dpdata.LabeledSystem(os.path.join(oo, output_fn), fmt="qe/cp/traj")
+            if os.path.exists(os.path.join(oo, "output")):
+                sys = dpdata.LabeledSystem(os.path.join(oo, input_fn), fmt="qe/cp/traj")
                 all_sys.append(sys)
         sys_data_path = os.path.join(work_path, f"data.{ss}")
         all_sys.to_deepmd_raw(sys_data_path)
