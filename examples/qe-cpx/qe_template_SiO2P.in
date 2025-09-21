@@ -3,14 +3,16 @@
   restart_mode='from_scratch'
   outdir='.',
   prefix='SiO2P',
-  pseudo_dir='../ps',
-  nstep=1,
-  iprint=1,
-  isave=2,
+  pseudo_dir='/home/constant/Workshop/dpgen/P/ps',
+  nstep=100,
+  iprint=100,
+  isave=200,
   dt=5.0,
   ndw=50,
   tprnfor=.true.
   tstress=.true.
+  etot_conv_thr=1.d-9
+  ekin_conv_thr=1.d-7
 /
 
 &SYSTEM
@@ -23,16 +25,16 @@
 /
 
 &ELECTRONS
-  electron_dynamics='none',
-  electron_velocities='zero',
+  electron_dynamics='damp',
+  electron_damping=0.1,
   emass=300,
   orthogonalization='ortho',
-  ortho_eps=1d-11
+  ortho_eps=1d-11,
+  ortho_max=1000
 /
 
 &IONS
   ion_dynamics='none'
-  ion_velocities='zero'
 /
 
 ATOMIC_SPECIES
