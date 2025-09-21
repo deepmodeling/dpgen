@@ -12,8 +12,8 @@
         "resources": {
             "number_node": 1,
             "cpu_per_node": 1,
-            "gpu_per_node": 1,
-            "group_size": 2,
+            "gpu_per_node": 2,
+            "group_size": 0,
             "source_list": ["/home/constant/Workshop/dpgen/deepmd.env"],
             "para_deg": 1
         }
@@ -31,8 +31,9 @@
             "number_node": 1,
             "cpu_per_node": 1,
             "gpu_per_node": 0,
-            "group_size": 1,
-            "source_list": ["/home/constant/Workshop/dpgen/lammps.env"]
+            "group_size": 0,
+            "source_list": ["/home/constant/Workshop/dpgen/lammps.env"],
+            "para_deg": 2
         }
     },
     "fp":
@@ -48,9 +49,9 @@
             "number_node": 1,
             "cpu_per_node": 1,
             "gpu_per_node": 0,
-            "group_size": 1,
+            "group_size": 0,
             "source_list": [],
-            "para_deg": 16
+            "para_deg": 24
         }
     }
 }
