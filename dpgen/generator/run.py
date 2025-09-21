@@ -3920,7 +3920,7 @@ def make_fp_cpx(iter_index, jdata):
     input_fn = fp_params["input_fn"]
     template_fn = fp_params["template_fn"]
 
-    with open(template_fn, "r") as tn:
+    with open(template_fn) as tn:
         template = tn.read()
 
     for ii in fp_tasks:

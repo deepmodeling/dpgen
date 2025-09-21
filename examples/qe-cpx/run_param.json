@@ -1,31 +1,47 @@
 {
-    "type_map": ["P"],
+    "type_map": [
+        "P"
+    ],
     "init_data_prefix": "/home/constant/Workshop/dpgen/P/",
-    "init_data_sys": ["init_data"],
+    "init_data_sys": [
+        "init_data"
+    ],
     "sys_configs_prefix": "/home/constant/Workshop/dpgen/P/",
-    "sys_configs": [["POSCAR"]],
+    "sys_configs": [
+        [
+            "POSCAR"
+        ]
+    ],
     "sys_format": "vasp/poscar",
     "numb_models": 2,
     "default_training_param": {
-        "model":{
+        "model": {
             "descriptor": {
                 "type": "se_e2_a",
-                "sel": [32],
+                "sel": [
+                    32
+                ],
                 "rcut_smth": 5.8,
                 "rcut": 6.0
             },
             "fitting_net": {
-                "neuron": [240, 120, 60, 30, 15],
+                "neuron": [
+                    240,
+                    120,
+                    60,
+                    30,
+                    15
+                ],
                 "resnet_dt": true
             }
         },
-        "learning_rate" :{
+        "learning_rate": {
             "type": "exp",
             "decay_steps": 5000,
             "start_lr": 0.001,
-            "stop_lr": 3.51e-8
+            "stop_lr": 3.51e-08
         },
-        "loss" : {
+        "loss": {
             "start_pref_e": 0.02,
             "limit_pref_e": 8,
             "start_pref_f": 1000,
@@ -77,7 +93,8 @@
                 0
             ],
             "temps": [
-                100, 200
+                100,
+                200
             ],
             "taut": 0.2,
             "press": [

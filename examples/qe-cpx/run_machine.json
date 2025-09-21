@@ -1,7 +1,6 @@
 {
     "deepmd_version": "3",
-    "train":
-    {
+    "train": {
         "command": "dp",
         "machine": {
             "batch_type": "Shell",
@@ -12,14 +11,15 @@
         "resources": {
             "number_node": 1,
             "cpu_per_node": 1,
-            "gpu_per_node": 2,
+            "gpu_per_node": 1,
             "group_size": 0,
-            "source_list": ["/home/constant/Workshop/dpgen/deepmd.env"],
+            "source_list": [
+                "/home/constant/Workshop/dpgen/deepmd.env"
+            ],
             "para_deg": 1
         }
     },
-    "model_devi":
-    {
+    "model_devi": {
         "command": "lmp",
         "machine": {
             "batch_type": "Shell",
@@ -32,12 +32,13 @@
             "cpu_per_node": 1,
             "gpu_per_node": 0,
             "group_size": 0,
-            "source_list": ["/home/constant/Workshop/dpgen/lammps.env"],
+            "source_list": [
+                "/home/constant/Workshop/dpgen/lammps.env"
+            ],
             "para_deg": 2
         }
     },
-    "fp":
-    {
+    "fp": {
         "command": "cp.x -in P.in",
         "machine": {
             "batch_type": "Shell",
