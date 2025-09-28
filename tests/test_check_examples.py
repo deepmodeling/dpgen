@@ -163,6 +163,7 @@ input_files = (
         / "param_C4H16N4_deepmd-kit-2.0.1.json",
     ),
     (run_jdata, p_examples / "run" / "dprc" / "generator.json"),
+    (run_jdata, p_examples / "qe-cpx" / "run_param.json"),
     # machines
     (run_mdata, p_examples / "machine" / "DeePMD-kit-2.x" / "lebesgue_v2_machine.json"),
     (run_mdata, p_examples / "machine" / "DeePMD-kit-1.x" / "machine-local.json"),
@@ -194,6 +195,7 @@ input_files = (
         / "simplify_example"
         / "machine.json",
     ),
+    (run_mdata, p_examples / "qe-cpx" / "run_machine.json"),
 )
 
 
