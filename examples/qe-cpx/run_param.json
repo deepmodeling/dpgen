@@ -2,11 +2,11 @@
     "type_map": [
         "P"
     ],
-    "init_data_prefix": "/home/constant/Workshop/dpgen/P/",
+    "init_data_prefix": "./init_data/",
     "init_data_sys": [
         "init_data"
     ],
-    "sys_configs_prefix": "/home/constant/Workshop/dpgen/P/",
+    "sys_configs_prefix": "./",
     "sys_configs": [
         [
             "POSCAR"
@@ -109,7 +109,7 @@
     "fp_style": "cpx",
     "fp_params": {
         "input_fn": "P",
-        "template_fn": "/home/constant/Workshop/dpgen/P/qe_template_P.in"
+        "template_fn": "dpgen/examples/qe-cpx/qe_template_P.in"
     },
     "shuffle_poscar": false,
     "fp_task_max": 2000,

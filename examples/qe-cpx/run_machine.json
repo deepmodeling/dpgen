@@ -6,7 +6,7 @@
             "batch_type": "Shell",
             "context_type": "local",
             "local_root": "./",
-            "remote_root": "/home/constant/Workshop/dpgen/P/workflow"
+            "remote_root": "./workflow"
         },
         "resources": {
             "number_node": 1,
@@ -14,7 +14,7 @@
             "gpu_per_node": 1,
             "group_size": 0,
             "source_list": [
-                "/home/constant/Workshop/dpgen/deepmd.env"
+                "./deepmd.env"
             ],
             "para_deg": 1
         }
@@ -25,7 +25,7 @@
             "batch_type": "Shell",
             "context_type": "local",
             "local_root": "./",
-            "remote_root": "/home/constant/Workshop/dpgen/P/workflow"
+            "remote_root": "./workflow"
         },
         "resources": {
             "number_node": 1,
@@ -33,7 +33,7 @@
             "gpu_per_node": 0,
             "group_size": 0,
             "source_list": [
-                "/home/constant/Workshop/dpgen/lammps.env"
+                "./lammps.env"
             ],
             "para_deg": 2
         }
@@ -44,7 +44,7 @@
             "batch_type": "Shell",
             "context_type": "local",
             "local_root": "./",
-            "remote_root": "/home/constant/Workshop/dpgen/P/workflow"
+            "remote_root": "./workflow"
         },
         "resources": {
             "number_node": 1,
