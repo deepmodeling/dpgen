@@ -3,7 +3,7 @@
   restart_mode='from_scratch'
   outdir='.',
   prefix='SiO2P',
-  pseudo_dir='/home/constant/Workshop/dpgen/P/ps',
+  pseudo_dir='/your/path/to/pseudopotentials',
   nstep=100,
   iprint=100,
   isave=200,
