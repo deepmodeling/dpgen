@@ -104,6 +104,14 @@ Configure the INPUT file properly with appropriate basis sets and k-point sampli
 
 Ensure proper pseudopotential selection and k-point convergence for calculations. The extensive documentation and large user community provide good support for troubleshooting.
 
+### CPMD (Quantum ESPRESSO)
+
+{dargs:argument}`fp_style <run_jdata/fp_style>`: `cpx`
+
+CPMD (Car-Parrinello Molecular Dynamics) is another integration from [Quantum ESPRESSO](https://www.quantum-espresso.org/) suite, specifically the `cp.x` executable. This interface is well-suited for calculating energies and forces of various types of structures, even large molecules, using Car-Parrinello method. It utilizes a plane-wave basis set and pseudopotentials, optimized for efficient molecular dynamics simulations.
+
+To use it with DP-GEN, one must prepare a template for the `cp.x` program configured for an electron relaxation procedure to obtain accurate ground-state properties, which is usually achieved after several tens to several hundred minimization steps. Be cautious to set `iprint` equal to `nstep` to ensure the output contains the final relaxed structure and its properties. Other key configuration requirements for the template are: both `ATOMIC_POSITIONS` and `CELL_PARAMETERS` cards must contain the `{angstrom}` keyword; the `%POSITIONS%` string must be in place of actual atomic coordinates, while the `%CELL%` string must be in place of actual cell vectors. It is also recommended to use absolute path for pseudopotentials. Ensure proper pseudopotential selection and electron dynamics configuration for reliable results.
+
 ### PWmat
 
 {dargs:argument}`fp_style <run_jdata/fp_style>`: `pwmat`
