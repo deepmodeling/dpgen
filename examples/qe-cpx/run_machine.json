@@ -9,6 +9,7 @@
             "remote_root": "./workflow"
         },
         "resources": {
+            "batch_type": "Shell",
             "number_node": 1,
             "cpu_per_node": 1,
             "gpu_per_node": 1,
@@ -28,6 +29,7 @@
             "remote_root": "./workflow"
         },
         "resources": {
+            "batch_type": "Shell",
             "number_node": 1,
             "cpu_per_node": 1,
             "gpu_per_node": 0,
@@ -47,6 +49,7 @@
             "remote_root": "./workflow"
         },
         "resources": {
+            "batch_type": "Shell",
             "number_node": 1,
             "cpu_per_node": 1,
             "gpu_per_node": 0,
