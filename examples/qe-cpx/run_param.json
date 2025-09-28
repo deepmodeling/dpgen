@@ -2,7 +2,7 @@
     "type_map": [
         "P"
     ],
-    "init_data_prefix": "./init_data/",
+    "init_data_prefix": "./",
     "init_data_sys": [
         "init_data"
     ],
