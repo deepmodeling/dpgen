@@ -597,10 +597,10 @@ def _check_cpx_input_head(testCase, idx):
         testCase.assertTrue(os.path.isfile(ifile))
         with open(ifile) as fp:
             lines = fp.read().split("\n")
-        for idx, jj in enumerate(lines):
-            if "ATOMIC_POSITIONS" in jj:
+        for jj, line in enumerate(lines):
+            if "ATOMIC_POSITIONS" in line:
                 break
-        lines = lines[:idx]
+        lines = lines[:jj]
         testCase.assertEqual(("\n".join(lines)).strip(), cpx_input_ref.strip())
 
 
