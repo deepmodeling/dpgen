@@ -163,6 +163,11 @@ input_files = (
         / "param_C4H16N4_deepmd-kit-2.0.1.json",
     ),
     (run_jdata, p_examples / "run" / "dprc" / "generator.json"),
+    # pwmat test file from examples
+    (
+        run_jdata,
+        p_examples / "run" / "deprecated" / "dp2.x-lammps-pwmat" / "param_CH4.json",
+    ),
     # machines
     (run_mdata, p_examples / "machine" / "DeePMD-kit-2.x" / "lebesgue_v2_machine.json"),
     (run_mdata, p_examples / "machine" / "DeePMD-kit-1.x" / "machine-local.json"),
