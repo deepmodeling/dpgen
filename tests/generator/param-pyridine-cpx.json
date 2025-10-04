@@ -5,8 +5,8 @@
         "N"
     ],
     "mass_map": [
-        16,
-        2,
+        12,
+        1,
         14
     ],
     "init_data_prefix": "/home/linfengz/SCR/wanghan/deepgen.pyridine/init",
