@@ -307,7 +307,7 @@
     "fp_style": "cpx",
     "fp_params": {
         "input_fn": "C5H5N",
-        "template_fn": "dpgen/tests/generator/cpx_pyridine_template.in"
+        "template_fn": "/home/runner/work/dpgen/dpgen/tests/generator/cpx_pyridine_template.in"
     },
     "shuffle_poscar": false,
     "fp_task_max": 100,
