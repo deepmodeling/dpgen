@@ -1,0 +1,45 @@
+&CONTROL
+  calculation='cp',
+  restart_mode='from_scratch'
+  outdir='.',
+  prefix='C5H5N',
+  pseudo_dir='dpgen/tests/generator',
+  nstep=1,
+  iprint=1,
+  isave=2,
+  dt=5.0,
+  ndw=50,
+  tprnfor=.true.
+  tstress=.true.
+  etot_conv_thr=1.d-9
+  ekin_conv_thr=1.d-7
+/
+&SYSTEM
+  ibrav=0,
+  nat=176,
+  ntyp=3,
+  ecutwfc=60,
+  ecutrho=360,
+  nr1b=20, nr2b=20, nr3b=20,
+/
+&ELECTRONS
+  electron_dynamics='damp',
+  electron_damping=0.1,
+  emass=300,
+  orthogonalization='ortho',
+  ortho_eps=1d-11,
+  ortho_max=1000
+/
+&IONS
+  ion_dynamics='none'
+/
+ATOMIC_SPECIES
+  C 12.0d0 C_HSCV_PBE-1.0.UPF
+  H 1.00782503223d0 H_HSCV_PBE-1.0.UPF
+  N 14.00307400443d0 N_HSCV_PBE-1.0.UPF
+
+ATOMIC_POSITIONS {angstrom}
+%POSITIONS%
+
+CELL_PARAMETERS {angstrom}
+%CELL%
