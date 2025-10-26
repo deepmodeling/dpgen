@@ -9,6 +9,7 @@ DPGEN's documentation
    :caption: Overview
 
    overview/overview
+   overview/supported-software
    overview/cli
    overview/code-structure
 

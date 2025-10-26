@@ -1,0 +1,47 @@
+&CONTROL
+  calculation='cp',
+  restart_mode='from_scratch'
+  outdir='.',
+  prefix='P',
+  pseudo_dir='/your/path/to/pseudopotentials',
+  nstep=100,
+  iprint=100,
+  isave=200,
+  dt=5.0,
+  ndw=50,
+  tprnfor=.true.
+  tstress=.true.
+  etot_conv_thr=1.d-9
+  ekin_conv_thr=1.d-7
+/
+
+&SYSTEM
+  ibrav=0,
+  nat=16,
+  ntyp=1,
+  ecutwfc=60,
+  ecutrho=360,
+  nr1b=20, nr2b=20, nr3b=20,
+/
+
+&ELECTRONS
+  electron_dynamics='damp',
+  electron_damping=0.1,
+  emass=300,
+  orthogonalization='ortho',
+  ortho_eps=1d-11,
+  ortho_max=1000
+/
+
+&IONS
+  ion_dynamics='none'
+/
+
+ATOMIC_SPECIES
+  P 30.973762d0 P.pbesol-n-rrkjus_psl.1.0.0.UPF
+
+ATOMIC_POSITIONS {angstrom}
+%POSITIONS%
+
+CELL_PARAMETERS {angstrom}
+%CELL%

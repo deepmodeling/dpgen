@@ -42,3 +42,5 @@ dbconfig.json
 _build
 tests/generator/calypso_test_path
 doc/api/
+dpgen_venv/
+test_env/

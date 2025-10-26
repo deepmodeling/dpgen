@@ -1074,32 +1074,140 @@ def find_only_one_key(lmp_lines, key):
 
 
 def revise_lmp_input_model(
-    lmp_lines, task_model_list, trj_freq, deepmd_version="1", use_ele_temp=0
+    lmp_lines, task_model_list, trj_freq, deepmd_version="1", use_ele_temp=0, jdata=None
 ):
     idx = find_only_one_key(lmp_lines, ["pair_style", "deepmd"])
     graph_list = " ".join(task_model_list)
+
+    # Check if D3 dispersion is configured
+    lmp_d3 = jdata.get("lmp_d3", {}) if jdata else {}
+    d3_enabled = lmp_d3.get("enable", False) if lmp_d3 else False
+
     if Version(deepmd_version) < Version("1"):
-        lmp_lines[idx] = "pair_style      deepmd %s %d model_devi.out\n" % (  # noqa: UP031
-            graph_list,
-            trj_freq,
+        if d3_enabled:
+            d3_params = f"{lmp_d3['damping_function']} {lmp_d3['functional']} {lmp_d3['cutoff']} {lmp_d3['cn_cutoff']}"
+            lmp_lines[idx] = (
+                f"pair_style      hybrid/overlay deepmd {graph_list} {trj_freq} model_devi.out dispersion/d3 {d3_params}\n"
+            )
+        else:
+            lmp_lines[idx] = "pair_style      deepmd %s %d model_devi.out\n" % (  # noqa: UP031
+                graph_list,
+                trj_freq,
+            )
+    else:
+        # Build keywords string like in make_lammps_input
+        keywords = ""
+        if jdata is not None:
+            if jdata.get("use_clusters", False):
+                keywords += "atomic "
+            if jdata.get("use_relative", False):
+                keywords += "relative {} ".format(jdata["epsilon"])
+            if jdata.get("use_relative_v", False):
+                keywords += "relative_v {} ".format(jdata["epsilon_v"])
+
+        if use_ele_temp == 1:
+            keywords += "fparam ${ELE_TEMP}"
+
+        if d3_enabled:
+            d3_params = f"{lmp_d3['damping_function']} {lmp_d3['functional']} {lmp_d3['cutoff']} {lmp_d3['cn_cutoff']}"
+            lmp_lines[idx] = (
+                "pair_style      hybrid/overlay deepmd %s out_freq %d out_file model_devi.out %s dispersion/d3 %s\n"  # noqa: UP031
+                % (
+                    graph_list,
+                    trj_freq,
+                    keywords.rstrip(),
+                    d3_params,
+                )
+            )
+        else:
+            lmp_lines[idx] = (
+                "pair_style      deepmd %s out_freq %d out_file model_devi.out %s\n"  # noqa: UP031
+                % (
+                    graph_list,
+                    trj_freq,
+                    keywords.rstrip(),
+                )
+            )
+    return lmp_lines
+
+
+def revise_lmp_input_pair_coeff(lmp_lines, jdata=None):
+    """Update pair_coeff lines for D3 support."""
+    if jdata is None:
+        return lmp_lines
+
+    lmp_d3 = jdata.get("lmp_d3", {})
+    d3_enabled = lmp_d3.get("enable", False) if lmp_d3 else False
+
+    if not d3_enabled:
+        return lmp_lines
+
+    # D3 requires type maps (element symbols)
+    type_map = jdata.get("type_map", [])
+    type_map_str = " ".join(type_map)
+
+    # Find pair_coeff line
+    pair_coeff_idx = None
+    for idx, line in enumerate(lmp_lines):
+        if line.strip().startswith("pair_coeff") and "* *" in line:
+            pair_coeff_idx = idx
+            break
+
+    if pair_coeff_idx is None:
+        # If no pair_coeff found, add them after pair_style
+        pair_style_idx = find_only_one_key(lmp_lines, ["pair_style"])
+        lmp_lines.insert(pair_style_idx + 1, "pair_coeff      * * deepmd\n")
+        lmp_lines.insert(
+            pair_style_idx + 2, f"pair_coeff      * * dispersion/d3 {type_map_str}\n"
         )
     else:
-        if use_ele_temp == 0:
-            lmp_lines[idx] = (
-                "pair_style      deepmd %s out_freq %d out_file model_devi.out\n"  # noqa: UP031
-                % (
-                    graph_list,
-                    trj_freq,
-                )
+        # Replace existing pair_coeff with D3 version
+        lmp_lines[pair_coeff_idx] = "pair_coeff      * * deepmd\n"
+        lmp_lines.insert(
+            pair_coeff_idx + 1, f"pair_coeff      * * dispersion/d3 {type_map_str}\n"
+        )
+
+    return lmp_lines
+
+
+def revise_lmp_input_neigh_modify(lmp_lines, jdata=None):
+    """Add neigh_modify one N if requested."""
+    if jdata is None:
+        return lmp_lines
+
+    neigh_modify_one = jdata.get("lmp_neigh_modify_one")
+    if neigh_modify_one is None:
+        return lmp_lines
+
+    # Find where to insert neigh_modify one N
+    # Look for existing neigh_modify lines or insert after neighbor command
+    neigh_modify_found = False
+    neighbor_idx = None
+
+    for idx, line in enumerate(lmp_lines):
+        if line.strip().startswith("neigh_modify") and " one " in line:
+            neigh_modify_found = True
+            break
+        elif line.strip().startswith("neighbor"):
+            neighbor_idx = idx
+
+    if not neigh_modify_found:
+        if neighbor_idx is not None:
+            lmp_lines.insert(
+                neighbor_idx + 1, f"neigh_modify    one {neigh_modify_one}\n"
             )
-        elif use_ele_temp == 1:
-            lmp_lines[idx] = (
-                "pair_style      deepmd %s out_freq %d out_file model_devi.out fparam ${ELE_TEMP}\n"  # noqa: UP031
-                % (
-                    graph_list,
-                    trj_freq,
+        else:
+            # Insert after units command if neighbor not found
+            units_idx = None
+            for idx, line in enumerate(lmp_lines):
+                if line.strip().startswith("units"):
+                    units_idx = idx
+                    break
+            if units_idx is not None:
+                lmp_lines.insert(
+                    units_idx + 1, f"neigh_modify    one {neigh_modify_one}\n"
                 )
-            )
+
     return lmp_lines
 
 
@@ -1472,7 +1580,11 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                                 trj_freq,
                                 deepmd_version=deepmd_version,
                                 use_ele_temp=use_ele_temp,
+                                jdata=jdata,
                             )
+                            # Add D3 pair_coeff and neigh_modify support for templates
+                            lmp_lines = revise_lmp_input_pair_coeff(lmp_lines, jdata)
+                            lmp_lines = revise_lmp_input_neigh_modify(lmp_lines, jdata)
                     else:
                         if len(lmp_lines[template_pair_deepmd_idx].split()) != (
                             len(models)
@@ -1493,7 +1605,11 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                                 trj_freq,
                                 deepmd_version=deepmd_version,
                                 use_ele_temp=use_ele_temp,
+                                jdata=jdata,
                             )
+                            # Add D3 pair_coeff and neigh_modify support for templates
+                            lmp_lines = revise_lmp_input_pair_coeff(lmp_lines, jdata)
+                            lmp_lines = revise_lmp_input_neigh_modify(lmp_lines, jdata)
                 # use revise_lmp_input_model to raise error message if "part_style" or "deepmd" not found
                 else:
                     lmp_lines = revise_lmp_input_model(
@@ -1502,7 +1618,12 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                         trj_freq,
                         deepmd_version=deepmd_version,
                         use_ele_temp=use_ele_temp,
+                        jdata=jdata,
                     )
+
+                # Add D3 pair_coeff and neigh_modify support for templates
+                lmp_lines = revise_lmp_input_pair_coeff(lmp_lines, jdata)
+                lmp_lines = revise_lmp_input_neigh_modify(lmp_lines, jdata)
 
                 lmp_lines = revise_lmp_input_dump(
                     lmp_lines, trj_freq, model_devi_merge_traj
@@ -3800,6 +3921,53 @@ def make_fp_amber_diff(iter_index: int, jdata: dict):
     os.chdir(cwd)
 
 
+def make_fp_cpx(iter_index, jdata):
+    """Make input file for Quantum Espresso Car-Parrinello (cp.x) run.
+
+    Convert the POSCAR file to cp.x input file using prepared template.
+
+    Parameters
+    ----------
+    iter_index : int
+        iter index
+    jdata : dict
+        Run parameters.
+    """
+    work_path = os.path.join(make_iter_name(iter_index), fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, "task.*"))
+    fp_params = jdata["fp_params"]
+    input_fn = fp_params["input_fn"]
+    template_fn = fp_params["template_fn"]
+
+    with open(template_fn) as tn:
+        template = tn.read()
+
+    for ii in fp_tasks:
+        itemp = copy.deepcopy(template)
+        with set_directory(Path(ii)):
+            system = dpdata.System("POSCAR", fmt="vasp/poscar")
+            # convert POSCAR to cp.in
+            cell_param = ""
+            for a in system["cells"][0]:
+                for v in a:
+                    cell_param += f"{v:.16e} "
+                cell_param += "\n"
+            itemp = itemp.replace("%CELL%", cell_param)
+
+            pos = ""
+            ntypes = system.get_ntypes()
+            numbs = system.get_atom_numbs()
+            names = system.get_atom_names()
+            coords = system["coords"][0]
+            for t in range(ntypes):
+                ts = sum(numbs[:t])
+                for a in range(numbs[t]):
+                    pos += f"{names[t]:2} {coords[a + ts, 0]:20.16f} {coords[a + ts, 1]:20.16f} {coords[a + ts, 2]:20.16f}\n"
+            itemp = itemp.replace("%POSITIONS%", pos)
+            with open(input_fn + ".in", "w") as fp:
+                fp.write(itemp)
+
+
 def make_fp_custom(iter_index, jdata):
     """Make input file for customized FP style.
 
@@ -3871,6 +4039,8 @@ def make_fp_calculation(iter_index, jdata, mdata):
         make_fp_pwmat(iter_index, jdata)
     elif fp_style == "amber/diff":
         make_fp_amber_diff(iter_index, jdata)
+    elif fp_style == "cpx":
+        make_fp_cpx(iter_index, jdata)
     elif fp_style == "custom":
         make_fp_custom(iter_index, jdata)
     else:
@@ -4178,6 +4348,20 @@ def run_fp(iter_index, jdata, mdata):
             log_file="output",
             forward_common_files=forward_common_files,
         )
+    elif fp_style == "cpx":
+        extensions = [".cel", ".evp", ".for", ".pos", ".str"]
+        input_fn = jdata["fp_params"]["input_fn"]
+        forward_files = [input_fn + ".in"]
+        backward_files = [input_fn + ext for ext in extensions] + ["output"]
+        run_fp_inner(
+            iter_index,
+            jdata,
+            mdata,
+            forward_files,
+            backward_files,
+            _qe_check_fin,
+            log_file="output",
+        )
     elif fp_style == "custom":
         fp_params = jdata["fp_params"]
         forward_files = [fp_params["input_fn"]]
@@ -4295,7 +4479,7 @@ def post_fp_vasp(iter_index, jdata, rfailed=None):
                         # check if ele_temp shape is correct
                         _sys.check_data()
                 if all_sys is None:
-                    all_sys = _sys
+                    all_sys = dpdata.MultiSystems(_sys, type_map=jdata["type_map"])
                 else:
                     all_sys.append(_sys)
             elif len(_sys) >= 2:
@@ -4648,6 +4832,50 @@ def post_fp_amber_diff(iter_index, jdata):
         all_sys.to_deepmd_npy(sys_data_path, set_size=len(sys_output), prec=np.float64)
 
 
+def post_fp_cpx(iter_index, jdata):
+    """Post fp for cp.x. Collect data from qe/cp/traj labeled system.
+
+    Parameters
+    ----------
+    iter_index : int
+        The index of the current iteration.
+    jdata : dict
+        The parameter data.
+    """
+    model_devi_jobs = jdata["model_devi_jobs"]
+    assert iter_index < len(model_devi_jobs)
+
+    iter_name = make_iter_name(iter_index)
+    work_path = os.path.join(iter_name, fp_name)
+    fp_tasks = glob.glob(os.path.join(work_path, "task.*"))
+    fp_tasks.sort()
+    if len(fp_tasks) == 0:
+        return
+
+    system_index = []
+    for ii in fp_tasks:
+        system_index.append(os.path.basename(ii).split(".")[1])
+    system_index.sort()
+    set_tmp = set(system_index)
+    system_index = list(set_tmp)
+    system_index.sort()
+
+    fp_params = jdata["fp_params"]
+    input_fn = fp_params["input_fn"]
+
+    for ss in system_index:
+        sys_output = glob.glob(os.path.join(work_path, f"task.{ss}.*"))
+        sys_output.sort()
+        all_sys = dpdata.MultiSystems(type_map=jdata["type_map"])
+        for oo in sys_output:
+            if os.path.exists(os.path.join(oo, "output")):
+                sys = dpdata.LabeledSystem(os.path.join(oo, input_fn), fmt="qe/cp/traj")
+                all_sys.append(sys)
+        sys_data_path = os.path.join(work_path, f"data.{ss}")
+        all_sys.to_deepmd_raw(sys_data_path)
+        all_sys.to_deepmd_npy(sys_data_path, set_size=len(sys_output), prec=np.float64)
+
+
 def post_fp_custom(iter_index, jdata):
     """Post fp for custom fp. Collect data from user-defined `output_fn`.
 
@@ -4711,6 +4939,8 @@ def post_fp(iter_index, jdata):
         post_fp_pwmat(iter_index, jdata)
     elif fp_style == "amber/diff":
         post_fp_amber_diff(iter_index, jdata)
+    elif fp_style == "cpx":
+        post_fp_cpx(iter_index, jdata)
     elif fp_style == "custom":
         post_fp_custom(iter_index, jdata)
     else:

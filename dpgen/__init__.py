@@ -48,7 +48,17 @@ def info():
     ]:
         try:
             mm = __import__(modui)
-            print("%10s %10s   %s" % (modui, mm.__version__, mm.__path__[0]))  # noqa: UP031
+            try:
+                version = mm.__version__
+            except AttributeError:
+                # Fallback to importlib.metadata for packages without __version__
+                try:
+                    import importlib.metadata
+
+                    version = importlib.metadata.version(modui)
+                except Exception:
+                    version = "unknown version"
+            print("%10s %10s   %s" % (modui, version, mm.__path__[0]))  # noqa: UP031
         except ImportError:
             print("%10s %10s Not Found" % (modui, ""))  # noqa: UP031
         except AttributeError:

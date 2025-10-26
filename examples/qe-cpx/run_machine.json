@@ -1,0 +1,61 @@
+{
+    "deepmd_version": "3",
+    "train": {
+        "command": "dp",
+        "machine": {
+            "batch_type": "Shell",
+            "context_type": "local",
+            "local_root": "./",
+            "remote_root": "./workflow"
+        },
+        "resources": {
+            "batch_type": "Shell",
+            "number_node": 1,
+            "cpu_per_node": 1,
+            "gpu_per_node": 1,
+            "group_size": 0,
+            "source_list": [
+                "./deepmd.env"
+            ],
+            "para_deg": 1
+        }
+    },
+    "model_devi": {
+        "command": "lmp",
+        "machine": {
+            "batch_type": "Shell",
+            "context_type": "local",
+            "local_root": "./",
+            "remote_root": "./workflow"
+        },
+        "resources": {
+            "batch_type": "Shell",
+            "number_node": 1,
+            "cpu_per_node": 1,
+            "gpu_per_node": 0,
+            "group_size": 0,
+            "source_list": [
+                "./lammps.env"
+            ],
+            "para_deg": 2
+        }
+    },
+    "fp": {
+        "command": "cp.x -in P.in",
+        "machine": {
+            "batch_type": "Shell",
+            "context_type": "local",
+            "local_root": "./",
+            "remote_root": "./workflow"
+        },
+        "resources": {
+            "batch_type": "Shell",
+            "number_node": 1,
+            "cpu_per_node": 1,
+            "gpu_per_node": 0,
+            "group_size": 0,
+            "source_list": [],
+            "para_deg": 24
+        }
+    }
+}

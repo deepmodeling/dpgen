@@ -1,0 +1,118 @@
+{
+    "type_map": [
+        "P"
+    ],
+    "init_data_prefix": "./",
+    "init_data_sys": [
+        "init_data"
+    ],
+    "sys_configs_prefix": "./",
+    "sys_configs": [
+        [
+            "POSCAR"
+        ]
+    ],
+    "sys_format": "vasp/poscar",
+    "numb_models": 2,
+    "default_training_param": {
+        "model": {
+            "descriptor": {
+                "type": "se_e2_a",
+                "sel": [
+                    32
+                ],
+                "rcut_smth": 5.8,
+                "rcut": 6.0
+            },
+            "fitting_net": {
+                "neuron": [
+                    240,
+                    120,
+                    60,
+                    30,
+                    15
+                ],
+                "resnet_dt": true
+            }
+        },
+        "learning_rate": {
+            "type": "exp",
+            "decay_steps": 5000,
+            "start_lr": 0.001,
+            "stop_lr": 3.51e-08
+        },
+        "loss": {
+            "start_pref_e": 0.02,
+            "limit_pref_e": 8,
+            "start_pref_f": 1000,
+            "limit_pref_f": 1,
+            "start_pref_v": 0,
+            "limit_pref_v": 0
+        },
+        "training": {
+            "stop_batch": 100000,
+            "disp_file": "lcurve.out",
+            "disp_freq": 1000,
+            "save_freq": 1000,
+            "save_ckpt": "model.ckpt",
+            "disp_training": true,
+            "time_training": true,
+            "training_data": {
+                "systems": [],
+                "batch_size": 2
+            }
+        }
+    },
+    "training_reuse_iter": 1,
+    "training_reuse_numb_steps": 10000,
+    "model_devi_engine": "lammps",
+    "model_devi_dt": 0.002,
+    "model_devi_skip": 0,
+    "model_devi_f_trust_lo": 0.05,
+    "model_devi_f_trust_hi": 0.15,
+    "model_devi_clean_traj": true,
+    "model_devi_jobs": [
+        {
+            "sys_idx": [
+                0
+            ],
+            "temps": [
+                100
+            ],
+            "taut": 0.2,
+            "press": [
+                1.0
+            ],
+            "trj_freq": 10,
+            "nsteps": 3000,
+            "ensemble": "nvt",
+            "_idx": "00"
+        },
+        {
+            "sys_idx": [
+                0
+            ],
+            "temps": [
+                100,
+                200
+            ],
+            "taut": 0.2,
+            "press": [
+                1.0
+            ],
+            "trj_freq": 10,
+            "nsteps": 3000,
+            "ensemble": "nvt",
+            "_idx": "01"
+        }
+    ],
+    "fp_style": "cpx",
+    "fp_params": {
+        "input_fn": "P",
+        "template_fn": "dpgen/examples/qe-cpx/qe_template_P.in"
+    },
+    "shuffle_poscar": false,
+    "fp_task_max": 2000,
+    "fp_task_min": 5,
+    "_comment": " that's all "
+}

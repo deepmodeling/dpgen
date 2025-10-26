@@ -77,7 +77,10 @@ class TestPostFPVasp(unittest.TestCase):
         setup_ele_temp(True)
         post_fp_vasp(0, jdata, rfailed=0.3)
 
-        sys = dpdata.LabeledSystem("iter.000000/02.fp/data.000/", fmt="deepmd/raw")
+        # MultiSystems creates subdirectories based on chemical formula
+        sys = dpdata.LabeledSystem(
+            "iter.000000/02.fp/data.000/Mg0Al2/", fmt="deepmd/raw"
+        )
         self.assertEqual(sys.get_nframes(), 2)
 
         if sys.data["coords"][0][1][0] < sys.data["coords"][1][1][0]:
@@ -114,8 +117,10 @@ class TestPostFPVasp(unittest.TestCase):
                         ref_cell[ff][ii][jj], sys.data["cells"][ff][ii][jj]
                     )
 
-        self.assertTrue(os.path.isfile("iter.000000/02.fp/data.000/set.000/aparam.npy"))
-        aparam = np.load("iter.000000/02.fp/data.000/set.000/aparam.npy")
+        self.assertTrue(
+            os.path.isfile("iter.000000/02.fp/data.000/Mg0Al2/set.000/aparam.npy")
+        )
+        aparam = np.load("iter.000000/02.fp/data.000/Mg0Al2/set.000/aparam.npy")
         natoms = sys.get_natoms()
         self.assertEqual(natoms, 2)
         self.assertEqual(list(list(aparam)[0]), [0, 0])
@@ -128,7 +133,10 @@ class TestPostFPVasp(unittest.TestCase):
         setup_ele_temp(False)
         post_fp_vasp(0, jdata, rfailed=0.3)
 
-        sys = dpdata.LabeledSystem("iter.000000/02.fp/data.001/", fmt="deepmd/raw")
+        # MultiSystems creates subdirectories based on chemical formula
+        sys = dpdata.LabeledSystem(
+            "iter.000000/02.fp/data.001/Mg0Al2/", fmt="deepmd/raw"
+        )
         self.assertEqual(sys.get_nframes(), 1)
 
         # if sys.data['coords'][0][1][0] < sys.data['coords'][1][1][0]:
@@ -165,7 +173,7 @@ class TestPostFPVasp(unittest.TestCase):
                         ref_cell[ff][ii][jj], sys.data["cells"][ff][ii][jj]
                     )
 
-        fparam = np.load("iter.000000/02.fp/data.001/set.000/fparam.npy")
+        fparam = np.load("iter.000000/02.fp/data.001/Mg0Al2/set.000/fparam.npy")
         self.assertEqual(fparam.shape[0], 1)
         self.assertEqual(list(fparam), [100000])
 

@@ -25,6 +25,7 @@ from .context import (
     param_amber_file,
     param_cp2k_file,
     param_cp2k_file_exinput,
+    param_cpx_file,
     param_custom_fp_file,
     param_diy_abacus_post_file,
     param_diy_file,
@@ -103,6 +104,46 @@ ntyp=3,\n\
 &electrons\n\
 conv_thr=1e-08,\n\
 /\n"
+
+cpx_input_ref = "&CONTROL\n\
+  calculation='cp',\n\
+  restart_mode='from_scratch'\n\
+  outdir='.',\n\
+  prefix='C5H5N',\n\
+  pseudo_dir='dpgen/tests/generator',\n\
+  nstep=1,\n\
+  iprint=1,\n\
+  isave=2,\n\
+  dt=5.0,\n\
+  ndw=50,\n\
+  tprnfor=.true.\n\
+  tstress=.true.\n\
+  etot_conv_thr=1.d-9\n\
+  ekin_conv_thr=1.d-7\n\
+/\n\
+&SYSTEM\n\
+  ibrav=0,\n\
+  nat=176,\n\
+  ntyp=3,\n\
+  ecutwfc=60,\n\
+  ecutrho=360,\n\
+  nr1b=20, nr2b=20, nr3b=20,\n\
+/\n\
+&ELECTRONS\n\
+  electron_dynamics='damp',\n\
+  electron_damping=0.1,\n\
+  emass=300,\n\
+  orthogonalization='ortho',\n\
+  ortho_eps=1d-11,\n\
+  ortho_max=1000\n\
+/\n\
+&IONS\n\
+  ion_dynamics='none'\n\
+/\n\
+ATOMIC_SPECIES\n\
+  C 12.0d0 C_HSCV_PBE-1.0.UPF\n\
+  H 1.00782503223d0 H_HSCV_PBE-1.0.UPF\n\
+  N 14.00307400443d0 N_HSCV_PBE-1.0.UPF\n\n"
 
 siesta_input_ref = "\
 SystemName        system\n\
@@ -548,6 +589,21 @@ def _check_pwscf_input_head(testCase, idx):
         testCase.assertEqual(("\n".join(lines)).strip(), pwscf_input_ref.strip())
 
 
+def _check_cpx_input_head(testCase, idx):
+    fp_path = os.path.join("iter.%06d" % idx, "02.fp")  # noqa: UP031
+    tasks = glob.glob(os.path.join(fp_path, "task.*"))
+    for ii in tasks:
+        ifile = os.path.join(ii, "C5H5N.in")
+        testCase.assertTrue(os.path.isfile(ifile))
+        with open(ifile) as fp:
+            lines = fp.read().split("\n")
+        for jj, line in enumerate(lines):
+            if "ATOMIC_POSITIONS" in line:
+                break
+        lines = lines[:jj]
+        testCase.assertEqual(("\n".join(lines)).strip(), cpx_input_ref.strip())
+
+
 def _check_abacus_input(testCase, idx):
     fp_path = os.path.join("iter.%06d" % idx, "02.fp")  # noqa: UP031
     tasks = glob.glob(os.path.join(fp_path, "task.*"))
@@ -705,6 +761,40 @@ class TestMakeFPPwscf(unittest.TestCase):
         _check_poscars(self, 0, jdata["fp_task_max"], jdata["type_map"])
         _check_pwscf_input_head(self, 0)
         _check_potcar(self, 0, jdata["fp_pp_path"], jdata["fp_pp_files"])
+        shutil.rmtree("iter.000000")
+
+
+class TestMakeFPcpx(unittest.TestCase):
+    def test_make_fp_cpx(self):
+        setUpModule()
+        if os.path.isdir("iter.000000"):
+            shutil.rmtree("iter.000000")
+        with open(param_cpx_file) as fp:
+            jdata = json.load(fp)
+        with open(machine_file) as fp:
+            mdata = json.load(fp)
+        md_descript = []
+        nsys = 2
+        nmd = 3
+        n_frame = 10
+        for ii in range(nsys):
+            tmp = []
+            for jj in range(nmd):
+                tmp.append(np.arange(0, 0.29, 0.29 / 10))
+            md_descript.append(tmp)
+        atom_types = [0, 1, 2, 2, 0, 1]
+        type_map = jdata["type_map"]
+        _make_fake_md(0, md_descript, atom_types, type_map)
+        make_fp(0, jdata, {})
+        _check_sel(
+            self,
+            0,
+            jdata["fp_task_max"],
+            jdata["model_devi_f_trust_lo"],
+            jdata["model_devi_f_trust_hi"],
+        )
+        _check_poscars(self, 0, jdata["fp_task_max"], jdata["type_map"])
+        _check_cpx_input_head(self, 0)
         shutil.rmtree("iter.000000")
 
 

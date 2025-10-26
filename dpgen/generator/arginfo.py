@@ -378,6 +378,13 @@ The union of the two sets is made as candidate dataset."
     doc_epsilon_v = (
         "The level parameter for computing the relative virial model deviation."
     )
+    doc_lmp_d3 = "D3 dispersion configuration for LAMMPS. When present, all sub-parameters are required."
+    doc_lmp_d3_enable = "Enable D3 dispersion correction. If false, D3 will be disabled even if other parameters are present."
+    doc_lmp_d3_damping_function = "Damping function for D3 dispersion. Options include 'original', 'zerom', 'bj', 'bjm'."
+    doc_lmp_d3_functional = "Exchange-correlation functional for D3 dispersion. The functional should match that used to train MLPs."
+    doc_lmp_d3_cutoff = "Cutoff radius for D3 dispersion (in Angstrom)."
+    doc_lmp_d3_cn_cutoff = "Coordination number cutoff for D3 dispersion (in Angstrom)."
+    doc_lmp_neigh_modify_one = "Maximum number of neighbors of one atom for 'neigh_modify one N' command. Helps with D3 compatibility."
 
     return [
         model_devi_jobs_args(),
@@ -491,6 +498,27 @@ The union of the two sets is made as candidate dataset."
             "use_relative_v", bool, optional=True, default=False, doc=doc_use_relative_v
         ),
         Argument("epsilon_v", float, optional=True, doc=doc_epsilon_v),
+        Argument(
+            "lmp_d3",
+            dict,
+            optional=True,
+            doc=doc_lmp_d3,
+            sub_fields=[
+                Argument("enable", bool, optional=False, doc=doc_lmp_d3_enable),
+                Argument(
+                    "damping_function",
+                    str,
+                    optional=False,
+                    doc=doc_lmp_d3_damping_function,
+                ),
+                Argument("functional", str, optional=False, doc=doc_lmp_d3_functional),
+                Argument("cutoff", float, optional=False, doc=doc_lmp_d3_cutoff),
+                Argument("cn_cutoff", float, optional=False, doc=doc_lmp_d3_cn_cutoff),
+            ],
+        ),
+        Argument(
+            "lmp_neigh_modify_one", int, optional=True, doc=doc_lmp_neigh_modify_one
+        ),
     ]
 
 
@@ -623,7 +651,18 @@ def fp_style_vasp_args() -> list[Argument]:
         "If cvasp is true, DP-GEN will use Custodian to help control VASP calculation."
     )
     doc_fp_skip_bad_box = (
-        "Skip the configurations that are obviously unreasonable before 02.fp"
+        "Skip configurations with unreasonable simulation box geometries before "
+        "first-principles calculations. This parameter accepts a semicolon-separated "
+        "string of colon-separated key-value pairs defining geometric criteria. "
+        "Example: 'length_ratio:3;height_ratio:3;wrap_ratio:0.5;tilt_ratio:0.5'. "
+        "Available criteria: "
+        "(1) 'length_ratio': maximum ratio of cell edge lengths (max/min); "
+        "(2) 'height_ratio': ratio of maximum cell edge length to minimum "
+        "face-to-face distance; "
+        "(3) 'wrap_ratio': maximum absolute ratio of off-diagonal to diagonal "
+        "cell matrix elements, controlling triclinic wrapping; "
+        "(4) 'tilt_ratio': maximum absolute tilt ratio for triclinic cells. "
+        "Configurations exceeding any specified threshold are skipped."
     )
 
     return [
@@ -894,6 +933,31 @@ def fp_style_pwscf_args() -> list[Argument]:
     ]
 
 
+def fp_style_cpx_args() -> list[Argument]:
+    """Arguments for FP style cpx (Car-Parrinello Quantum Espresso).
+
+    Returns
+    -------
+    list[dargs.Argument]
+        list of cpx fp style arguments
+    """
+    doc_fp_params_cpx = "Parameters for FP calculation."
+    doc_input_fn = "Input file name for cp.x without file extension (.in). Essentially must be the same as the prefix in the template."
+    doc_template = "Template file name. Is used for completing the input file. Should contain all necessary FP configurations besides ATOMIC_POSITIONS and CELL_PARAMETERS"
+    return [
+        Argument(
+            "fp_params",
+            dict,
+            optional=False,
+            doc=doc_fp_params_cpx,
+            sub_fields=[
+                Argument("input_fn", str, optional=False, doc=doc_input_fn),
+                Argument("template_fn", str, optional=False, doc=doc_template),
+            ],
+        ),
+    ]
+
+
 def fp_style_custom_args() -> list[Argument]:
     """Arguments for FP style custom.
 
@@ -951,6 +1015,7 @@ def fp_style_variant_type_args() -> Variant:
             ),
             Argument("pwmat", dict, [], doc="TODO: add doc"),
             Argument("pwscf", dict, fp_style_pwscf_args()),
+            Argument("cpx", dict, fp_style_cpx_args()),
             Argument("custom", dict, fp_style_custom_args(), doc=doc_custom),
         ],
         optional=False,
