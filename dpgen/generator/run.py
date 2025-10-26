@@ -3787,6 +3787,7 @@ def make_fp_cp2k(iter_index, jdata):
             if skip:
                 count_bad_box += 1
                 os.chdir(cwd)
+                shutil.rmtree(ii)  # Clean up inconsistent task directory
                 continue
 
         if fp_params:
