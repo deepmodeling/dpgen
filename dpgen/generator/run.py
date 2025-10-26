@@ -3650,11 +3650,24 @@ def make_fp_cp2k(iter_index, jdata):
     else:
         fp_params = jdata["fp_params"]
     cwd = os.getcwd()
+    
+    # skip bad box criteria
+    skip_bad_box = jdata.get("fp_skip_bad_box")
+    count_bad_box = 0
+    
     for ii in fp_tasks:
         os.chdir(ii)
         sys_data = dpdata.System("POSCAR").data
         # make input for every task
         # if fp_params exits, make keys
+        if skip_bad_box is not None:
+            # Check the box directly from POSCAR
+            skip = check_bad_box("POSCAR", skip_bad_box, fmt="vasp/poscar")
+            if skip:
+                count_bad_box += 1
+                os.chdir(cwd)
+                continue
+                
         if fp_params:
             cp2k_input = make_cp2k_input(sys_data, fp_params)
         else:
@@ -3662,13 +3675,16 @@ def make_fp_cp2k(iter_index, jdata):
             cp2k_input = make_cp2k_input_from_external(sys_data, exinput_path)
         with open("input.inp", "w") as fp:
             fp.write(cp2k_input)
-            fp.close()
         # make coord.xyz used by cp2k for every task
         cp2k_coord = make_cp2k_xyz(sys_data)
         with open("coord.xyz", "w") as fp:
             fp.write(cp2k_coord)
-            fp.close()
         os.chdir(cwd)
+        
+    if count_bad_box > 0:
+        dlog.info(
+            f"skipped {count_bad_box:6d} confs with bad box, {len(fp_tasks) - count_bad_box:6d} remains"
+        )
 
     # link pp files
     _link_fp_vasp_pp(iter_index, jdata)
