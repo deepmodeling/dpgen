@@ -3650,11 +3650,11 @@ def make_fp_cp2k(iter_index, jdata):
     else:
         fp_params = jdata["fp_params"]
     cwd = os.getcwd()
-    
+
     # skip bad box criteria
     skip_bad_box = jdata.get("fp_skip_bad_box")
     count_bad_box = 0
-    
+
     for ii in fp_tasks:
         os.chdir(ii)
         sys_data = dpdata.System("POSCAR").data
@@ -3667,7 +3667,7 @@ def make_fp_cp2k(iter_index, jdata):
                 count_bad_box += 1
                 os.chdir(cwd)
                 continue
-                
+
         if fp_params:
             cp2k_input = make_cp2k_input(sys_data, fp_params)
         else:
@@ -3680,7 +3680,7 @@ def make_fp_cp2k(iter_index, jdata):
         with open("coord.xyz", "w") as fp:
             fp.write(cp2k_coord)
         os.chdir(cwd)
-        
+
     if count_bad_box > 0:
         dlog.info(
             f"skipped {count_bad_box:6d} confs with bad box, {len(fp_tasks) - count_bad_box:6d} remains"
