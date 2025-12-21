@@ -53,7 +53,7 @@ default_training_param:
       list:
         # QM-QM descriptor
         - type: se_a
-          # sel: refer https://docs.deepmodeling.org/projects/deepmd/en/latest/model/sel.html to obatin the proper sel
+          # sel: refer https://docs.deepmodeling.com/projects/deepmd/en/latest/model/sel.html to obatin the proper sel
           # In a DPRc model, sel of MM atoms for the QM-QM descriptor should be set to zero.
           sel:
             - 6
