@@ -1,8 +1,8 @@
 name: Python package
 
 on:
-  - push
-  - pull_request
+- push
+- pull_request
 
 jobs:
   build:
@@ -25,6 +25,8 @@ jobs:
     - uses: codecov/codecov-action@v5
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      with:
+        use_oidc: true
   pass:
     needs: [build]
     runs-on: ubuntu-latest
@@ -34,3 +36,5 @@ jobs:
       uses: re-actors/alls-green@release/v1
       with:
         jobs: ${{ toJSON(needs) }}
+permissions:
+  id-token: write
