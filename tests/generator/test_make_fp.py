@@ -1491,7 +1491,7 @@ class TestMakeFPSIESTASubsetElements(unittest.TestCase):
             jdata = json.load(fp)
         with open(machine_file) as fp:
             mdata = json.load(fp)
-        
+
         # Create a system with only C atoms (type 0), even though type_map includes C, H, N
         md_descript = []
         nsys = 2

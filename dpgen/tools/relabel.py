@@ -152,7 +152,7 @@ def create_init_tasks(target_folder, param_file, output, fp_json, verbose=True):
                     ".", fp_params, mass_map, fp_pp_files, fp_pp_files, user_input
                 )
             elif fp_style == "siesta":
-                make_siesta(".", fp_params, fp_pp_files, fp_pp_files, type_map)
+                make_siesta(".", fp_params, fp_pp_path, fp_pp_files, type_map)
             os.chdir(cwd_)
 
 
@@ -288,7 +288,7 @@ def create_tasks(
                     ".", fp_params, mass_map, fp_pp_files, fp_pp_files, user_input
                 )
             elif fp_style == "siesta":
-                make_siesta(".", fp_params, mass_map, fp_pp_files, type_map)
+                make_siesta(".", fp_params, fp_pp_path, fp_pp_files, type_map)
             os.chdir(cwd_)
     os.chdir(cwd)
 
