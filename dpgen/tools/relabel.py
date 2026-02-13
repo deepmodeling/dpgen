@@ -81,11 +81,14 @@ def make_pwscf(tdir, fp_params, mass_map, fp_pp_path, fp_pp_files, user_input):
     os.chdir(cwd)
 
 
-def make_siesta(tdir, fp_params, fp_pp_path, fp_pp_files):
+def make_siesta(tdir, fp_params, fp_pp_path, fp_pp_files, type_map):
     cwd = os.getcwd()
     os.chdir(tdir)
     sys_data = dpdata.System("POSCAR").data
-    ret = make_siesta_input(sys_data, fp_pp_files, fp_params)
+    pps = []
+    for iii in sys_data["atom_names"]:
+        pps.append(fp_pp_files[type_map.index(iii)])
+    ret = make_siesta_input(sys_data, pps, fp_params)
     open("input", "w").write(ret)
     os.chdir(cwd)
 
@@ -149,7 +152,7 @@ def create_init_tasks(target_folder, param_file, output, fp_json, verbose=True):
                     ".", fp_params, mass_map, fp_pp_files, fp_pp_files, user_input
                 )
             elif fp_style == "siesta":
-                make_siesta(".", fp_params, fp_pp_files, fp_pp_files)
+                make_siesta(".", fp_params, fp_pp_files, fp_pp_files, type_map)
             os.chdir(cwd_)
 
 
@@ -170,6 +173,7 @@ def create_tasks(
     sys = jdata["sys_configs"]
     # fp settings
     mass_map = jdata["mass_map"]
+    type_map = jdata["type_map"]
     fp_style = fp_jdata["fp_style"]
     fp_pp_path = fp_jdata["fp_pp_path"]
     fp_pp_files = fp_jdata["fp_pp_files"]
@@ -284,7 +288,7 @@ def create_tasks(
                     ".", fp_params, mass_map, fp_pp_files, fp_pp_files, user_input
                 )
             elif fp_style == "siesta":
-                make_siesta(".", fp_params, mass_map, fp_pp_files, fp_pp_files)
+                make_siesta(".", fp_params, mass_map, fp_pp_files, type_map)
             os.chdir(cwd_)
     os.chdir(cwd)
 

@@ -1480,5 +1480,66 @@ class TestMakeFPCustom(unittest.TestCase):
         shutil.rmtree("iter.000000")
 
 
+class TestMakeFPSIESTASubsetElements(unittest.TestCase):
+    """Test SIESTA with subset of elements (e.g., only C when C and H pseudopotentials are provided)."""
+
+    def test_make_fp_siesta_subset_elements(self):
+        setUpModule()
+        if os.path.isdir("iter.000000"):
+            shutil.rmtree("iter.000000")
+        with open(param_siesta_file) as fp:
+            jdata = json.load(fp)
+        with open(machine_file) as fp:
+            mdata = json.load(fp)
+        
+        # Create a system with only C atoms (type 0), even though type_map includes C, H, N
+        md_descript = []
+        nsys = 2
+        nmd = 3
+        n_frame = 10
+        for ii in range(nsys):
+            tmp = []
+            for jj in range(nmd):
+                tmp.append(np.arange(0, 0.29, 0.29 / 10))
+            md_descript.append(tmp)
+        
+        # Only C atoms (all type 0) - this is the key part of the test
+        atom_types = [0, 0, 0, 0, 0, 0]
+        type_map = jdata["type_map"]  # This is ["C", "H", "N"]
+        
+        _make_fake_md(0, md_descript, atom_types, type_map)
+        make_fp(0, jdata, {})
+        
+        # Verify that the input file was created successfully
+        fp_path = os.path.join("iter.000000", "02.fp")
+        tasks = glob.glob(os.path.join(fp_path, "task.*"))
+        self.assertGreater(len(tasks), 0, "No FP tasks were created")
+        
+        # Check that input files exist and contain only C species
+        for task in tasks:
+            input_file = os.path.join(task, "input")
+            self.assertTrue(os.path.isfile(input_file), f"Input file not found in {task}")
+            
+            with open(input_file) as fp:
+                content = fp.read()
+                # Verify the input contains only C in the species block
+                self.assertIn("%block Chemical_Species_label", content)
+                self.assertIn("C", content)
+                # The species block should only have 1 species (C), not 3 (C, H, N)
+                lines = content.split("\n")
+                in_species_block = False
+                species_count = 0
+                for line in lines:
+                    if "%block Chemical_Species_label" in line:
+                        in_species_block = True
+                    elif "%endblock Chemical_Species_label" in line:
+                        in_species_block = False
+                    elif in_species_block and line.strip():
+                        species_count += 1
+                self.assertEqual(species_count, 1, f"Expected 1 species (C), but found {species_count}")
+        
+        shutil.rmtree("iter.000000")
+
+
 if __name__ == "__main__":
     unittest.main()
