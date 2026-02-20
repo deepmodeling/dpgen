@@ -44,7 +44,7 @@ After you clone it to your PC, you can open it with Github Desktop.
 
 <div align=center><href="https://sm.ms/image/NMApYxjaqS4DGEz" target="_blank"><img src="https://s2.loli.net/2022/08/16/NMApYxjaqS4DGEz.png" width="40%"></div>
 
-Firstly, create your new branch based on devel branch.
+Firstly, create your new branch based on the default branch.
 
 <div align=center><href="https://sm.ms/image/3Eqm162oQ8Lcg9P" target="_blank"><img src="https://s2.loli.net/2022/08/16/3Eqm162oQ8Lcg9P.png" width="40%"></div>
 
@@ -59,7 +59,7 @@ Thirdly, select the changes that you what to push, and commit to it. Press "Publ
 
 Finally, you can check it on github and make a pull request. Press "Compare & pull request" to make a PR.
 
-(Note: please commit pr to the devel branch)
+(Note: please commit PR to the default branch)
 
 <div align=center><href="https://sm.ms/image/Uj9m6zGtXRh1L3a" target="_blank"><img src="https://s2.loli.net/2022/08/16/Uj9m6zGtXRh1L3a.png" width="80%"></div>
 
@@ -113,7 +113,7 @@ If you add or modify a parameter in DP-GEN and intend to export it to the main r
 
 2. Please briefly describe what you do with `git commit -m "<conclude-the-change-you-make>"`! "No description provided." will make the maintainer feel confused.
 
-3. It is not recommended to make changes directly in the `devel` branch. It is recommended to pull a branch from devel: `git checkout -b <new-branch-name>`
+3. It is not recommended to make changes directly in the default branch. It is recommended to pull a branch from the default branch: `git checkout -b <new-branch-name>`
 
 4. When switching branches, remember to check if you want to bring the changes to the next branch!
 

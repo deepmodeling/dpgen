@@ -39,5 +39,3 @@ repos:
     hooks:
     - id: velin
       args: ["--write"]
-ci:
-  autoupdate_branch: devel
