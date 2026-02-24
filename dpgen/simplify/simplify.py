@@ -521,6 +521,16 @@ def run_iter(param_file, machine_file, allow_ref: bool = False):
     06 make_fp
     07 run_fp (same as generator)
     08 post_fp (same as generator)
+
+    Parameters
+    ----------
+    param_file : str
+        parameter file (json/yaml)
+    machine_file : str
+        machine file (json/yaml)
+    allow_ref : bool, default=False
+        Whether to allow loading external JSON/YAML snippets via ``$ref``.
+        Disabled by default for security.
     """
     jdata = load_file(param_file)
     mdata = load_file(machine_file)
