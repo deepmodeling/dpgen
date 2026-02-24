@@ -78,7 +78,12 @@ def expand_sys_str(root_dir: Union[str, Path]) -> list[str]:
     return matches
 
 
-def normalize(arginfo: Argument, data: dict, strict_check: bool = True) -> dict:
+def normalize(
+    arginfo: Argument,
+    data: dict,
+    strict_check: bool = True,
+    allow_ref: bool = False,
+) -> dict:
     """Normalize and check input data.
 
     Parameters
@@ -95,8 +100,8 @@ def normalize(arginfo: Argument, data: dict, strict_check: bool = True) -> dict:
     dict
         normalized data
     """
-    data = arginfo.normalize_value(data, trim_pattern="_*")
-    arginfo.check_value(data, strict=strict_check)
+    data = arginfo.normalize_value(data, trim_pattern="_*", allow_ref=allow_ref)
+    arginfo.check_value(data, strict=strict_check, allow_ref=allow_ref)
     return data
 
 

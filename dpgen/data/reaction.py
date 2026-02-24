@@ -212,7 +212,7 @@ def gen_init_reaction(args):
     mdata = load_file(args.MACHINE)
 
     jdata_arginfo = init_reaction_jdata_arginfo()
-    jdata = normalize(jdata_arginfo, jdata)
+    jdata = normalize(jdata_arginfo, jdata, allow_ref=args.allow_ref)
 
     mdata = convert_mdata(mdata, ["reaxff", "build", "fp"])
     record = "record.reaction"

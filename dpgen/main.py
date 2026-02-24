@@ -101,6 +101,11 @@ def main_parser() -> argparse.ArgumentParser:
         nargs="?",
         help="machine file, json/yaml format",
     )
+    parser_init_reaction.add_argument(
+        "--allow-ref",
+        action="store_true",
+        help="Allow loading external JSON/YAML snippets through `$ref`. Disabled by default for security.",
+    )
     parser_init_reaction.set_defaults(func=gen_init_reaction)
 
     # run
@@ -110,6 +115,11 @@ def main_parser() -> argparse.ArgumentParser:
     parser_run.add_argument("PARAM", type=str, help="parameter file, json/yaml format")
     parser_run.add_argument("MACHINE", type=str, help="machine file, json/yaml format")
     parser_run.add_argument("-d", "--debug", action="store_true", help="log debug info")
+    parser_run.add_argument(
+        "--allow-ref",
+        action="store_true",
+        help="Allow loading external JSON/YAML snippets through `$ref`. Disabled by default for security.",
+    )
     parser_run.set_defaults(func=gen_run)
 
     # run/report
@@ -181,6 +191,11 @@ def main_parser() -> argparse.ArgumentParser:
     parser_run.add_argument("PARAM", type=str, help="parameter file, json/yaml format")
     parser_run.add_argument("MACHINE", type=str, help="machine file, json/yaml format")
     parser_run.add_argument("-d", "--debug", action="store_true", help="log debug info")
+    parser_run.add_argument(
+        "--allow-ref",
+        action="store_true",
+        help="Allow loading external JSON/YAML snippets through `$ref`. Disabled by default for security.",
+    )
     parser_run.set_defaults(func=gen_simplify)
 
     # test

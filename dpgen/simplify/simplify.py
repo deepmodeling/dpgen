@@ -508,7 +508,7 @@ def make_fp(iter_index, jdata, mdata):
         make_fp_calculation(iter_index, jdata, mdata)
 
 
-def run_iter(param_file, machine_file):
+def run_iter(param_file, machine_file, allow_ref: bool = False):
     """Init (iter 0): init_pick.
 
     tasks (iter > 0):
@@ -526,7 +526,7 @@ def run_iter(param_file, machine_file):
     mdata = load_file(machine_file)
 
     jdata_arginfo = simplify_jdata_arginfo()
-    jdata = normalize(jdata_arginfo, jdata)
+    jdata = normalize(jdata_arginfo, jdata, allow_ref=allow_ref)
 
     # set up electron temperature
     use_ele_temp = jdata.get("use_ele_temp", 0)
@@ -626,5 +626,5 @@ def gen_simplify(args):
         if args.debug:
             dlog.setLevel(logging.DEBUG)
         dlog.info("start simplifying")
-        run_iter(args.PARAM, args.MACHINE)
+        run_iter(args.PARAM, args.MACHINE, allow_ref=args.allow_ref)
         dlog.info("finished")

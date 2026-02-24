@@ -4972,12 +4972,14 @@ def set_version(mdata):
     return mdata
 
 
-def run_iter(param_file, machine_file):
+def run_iter(param_file, machine_file, allow_ref: bool = False):
     jdata = load_file(param_file)
     mdata = load_file(machine_file)
 
     jdata_arginfo = run_jdata_arginfo()
-    jdata = normalize(jdata_arginfo, jdata, strict_check=False)
+    jdata = normalize(
+        jdata_arginfo, jdata, strict_check=False, allow_ref=allow_ref
+    )
 
     update_mass_map(jdata)
 
@@ -5718,7 +5720,7 @@ def gen_run(args):
         if args.debug:
             dlog.setLevel(logging.DEBUG)
         dlog.info("start running")
-        run_iter(args.PARAM, args.MACHINE)
+        run_iter(args.PARAM, args.MACHINE, allow_ref=args.allow_ref)
         dlog.info("finished")
 
 
