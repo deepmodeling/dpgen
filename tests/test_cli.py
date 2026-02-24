@@ -1,10 +1,11 @@
 import subprocess as sp
+import sys
 import unittest
 
 
 class TestCLI(unittest.TestCase):
     def test_cli(self):
-        sp.check_output(["dpgen", "-h"])
+        sp.check_output([sys.executable, "-m", "dpgen", "-h"])
         for subcommand in (
             "run",
             "simplify",
@@ -13,6 +14,6 @@ class TestCLI(unittest.TestCase):
             "init_reaction",
             "autotest",
         ):
-            output = sp.check_output(["dpgen", subcommand, "-h"])
+            output = sp.check_output([sys.executable, "-m", "dpgen", subcommand, "-h"])
             if subcommand in ("run", "simplify", "init_reaction"):
                 self.assertIn(b"--allow-ref", output)
