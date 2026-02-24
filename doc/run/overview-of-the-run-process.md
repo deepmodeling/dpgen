@@ -16,6 +16,12 @@ Here, we give a general description of the run process. We can execute the run p
 dpgen run param.json machine.json
 ```
 
+To enable loading external JSON/YAML snippets via `$ref` in `param.json`, add `--allow-ref` explicitly (disabled by default for security):
+
+```sh
+dpgen run param.json machine.json --allow-ref
+```
+
 The following files or folders will be created and upgraded by codes：
 
 - iter.00000x contains the main results that DP-GEN generates in the first iteration.

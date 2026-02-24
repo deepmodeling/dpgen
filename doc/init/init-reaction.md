@@ -18,4 +18,10 @@ An example of `reaction.json` is given below:
 
 For detailed parameters, see [parametes](init-reaction-jdata.rst) and [machine parameters](init-reaction-mdata.rst).
 
+To enable loading external JSON/YAML snippets via `$ref` in the reaction parameter file, add `--allow-ref` explicitly (disabled by default for security):
+
+```bash
+dpgen init_reaction reaction.json machine.json --allow-ref
+```
+
 The genereated data can be used to continue DP-GEN concurrent learning workflow. Read [Energy & Fuels, 2021, 35 (1), 762–769](https://10.1021/acs.energyfuels.0c03211) for details.

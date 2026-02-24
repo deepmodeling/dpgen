@@ -94,6 +94,9 @@ def normalize(
         input data
     strict_check : bool, default=True
         strict check data or not
+    allow_ref : bool, default=False
+        Whether to allow loading external JSON/YAML snippets via ``$ref``.
+        Disabled by default for security.
 
     Returns
     -------

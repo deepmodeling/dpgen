@@ -6,6 +6,12 @@ Use the following script to start the workflow:
 dpgen simplify param.json machine.json
 ```
 
+To enable loading external JSON/YAML snippets via `$ref`, add `--allow-ref` explicitly (disabled by default for security):
+
+```bash
+dpgen simplify param.json machine.json --allow-ref
+```
+
 Here is an example of `param.json` for QM7 dataset:
 ```json
 {
