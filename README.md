@@ -49,14 +49,6 @@ DP-GEN contains the following workflows:
 
 For detailed usage and parameters, read [DP-GEN documentation](https://docs.deepmodeling.com/projects/dpgen/).
 
-### `$ref` support (secure by default)
-
-DP-GEN now supports loading external JSON/YAML snippets through `"$ref"` in relevant workflows (via `dargs>=0.5.0`).
-For security reasons, it is **disabled by default** and must be enabled explicitly.
-
-- CLI: add `--allow-ref` to `dpgen run`, `dpgen simplify`, and `dpgen init_reaction`
-- Python API path (`dpgen.util.normalize`): pass `allow_ref=True`
-
 ## Tutorials and examples
 
 * [Tutorials](https://tutorials.deepmodeling.com/en/latest/Tutorials/DP-GEN/): basic tutorials for DP-GEN.
