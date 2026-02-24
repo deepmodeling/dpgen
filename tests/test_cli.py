@@ -13,4 +13,6 @@ class TestCLI(unittest.TestCase):
             "init_reaction",
             "autotest",
         ):
-            sp.check_output(["dpgen", subcommand, "-h"])
+            output = sp.check_output(["dpgen", subcommand, "-h"])
+            if subcommand in ("run", "simplify", "init_reaction"):
+                self.assertIn(b"--allow-ref", output)
