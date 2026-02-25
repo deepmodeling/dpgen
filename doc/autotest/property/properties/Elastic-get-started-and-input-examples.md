@@ -6,19 +6,26 @@ Here we calculate the mechanical properties which include elastic constants (C11
 
 ```json
 {
-	"structures":	["confs/mp-*","confs/std-*","confs/test-*"],
-	"interaction": {
-		"type": "deepmd",
-        "model": "frozen_model.pb",
-		"type_map":	{"Al": 0, "Mg": 1}
-	},
-	"properties": [
-            {
-                "type": "elastic",
-                "norm_deform": 1e-2,
-	            "shear_deform": 1e-2
-	        }
-        ]
+  "structures": [
+    "confs/mp-*",
+    "confs/std-*",
+    "confs/test-*"
+  ],
+  "interaction": {
+    "type": "deepmd",
+    "model": "frozen_model.pb",
+    "type_map": {
+      "Al": 0,
+      "Mg": 1
+    }
+  },
+  "properties": [
+    {
+      "type": "elastic",
+      "norm_deform": 0.01,
+      "shear_deform": 0.01
+    }
+  ]
 }
 ```
 

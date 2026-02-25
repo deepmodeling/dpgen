@@ -6,21 +6,28 @@ Equation of State (EOS) here calculates the energies of the most stable structur
 
 ```json
 {
-	"structures":	["confs/mp-*","confs/std-*","confs/test-*"],
-	"interaction": {
-		"type":		"vasp",
-		"incar":	"vasp_input/INCAR",
-                "potcar_prefix":"vasp_input",
-		"potcars":	{"Al": "POTCAR.al", "Mg": "POTCAR.mg"}
-	},
-	"properties": [
-        {
-         "type":         "eos",
-         "vol_start":    0.9,
-         "vol_end":      1.1,
-         "vol_step":     0.01
-        }
-        ]
+  "structures": [
+    "confs/mp-*",
+    "confs/std-*",
+    "confs/test-*"
+  ],
+  "interaction": {
+    "type": "vasp",
+    "incar": "vasp_input/INCAR",
+    "potcar_prefix": "vasp_input",
+    "potcars": {
+      "Al": "POTCAR.al",
+      "Mg": "POTCAR.mg"
+    }
+  },
+  "properties": [
+    {
+      "type": "eos",
+      "vol_start": 0.9,
+      "vol_end": 1.1,
+      "vol_step": 0.01
+    }
+  ]
 }
 ```
 

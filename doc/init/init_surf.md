@@ -5,17 +5,20 @@ You may prepare initial data for surface systems with VASP by:
 ```bash
 dpgen init_surf PARAM [MACHINE]
 ```
+
 The MACHINE configure file is optional. If this parameter exists, then the optimization
 tasks or MD tasks will be submitted automatically according to MACHINE.json. That is to say, if one only wants to prepare `surf-xxx/sys-xxx` folders for the second stage but wants to skip relaxation, `dpgen init_surf PARAM` should be used (without `MACHINE`).
 "stages" and "skip_relax" in `PARAM` should be set as:
+
 ```json
   "stages": [1,2],
   "skip_relax": true,
 ```
 
 Basically `init_surf` can be divided into two parts , denoted as {dargs:argument}`stages <init_surf_jdata/stages>` in `PARAM`:
+
 1. Build specific surface in folder `00.place_ele`
-2. Pertub and scale in folder `01.scale_pert`
+1. Pertub and scale in folder `01.scale_pert`
 
 All stages must be **in order**.
 
@@ -40,6 +43,7 @@ One can use the machine parameter `forward_files` to upload other files besides 
 See [the document of task parameters](https://docs.deepmodeling.com/projects/dpdispatcher/en/latest/task.html#argument:task/forward_files).
 
 Following is an example for `PARAM`, which generates data from a typical structure fcc.
+
 ```json
 {
   "stages": [
@@ -104,8 +108,8 @@ Another example is `from_poscar` method. Here you need to specify the POSCAR fil
     2
   ],
   "cell_type": "fcc",
-  "from_poscar":	true,
-  "from_poscar_path":	"POSCAR",
+  "from_poscar": true,
+  "from_poscar_path": "POSCAR",
   "super_cell": [
     1,
     1,
@@ -113,7 +117,10 @@ Another example is `from_poscar` method. Here you need to specify the POSCAR fil
   ],
   "layer_numb": 3,
   "vacuum_max": 5.0,
-  "vacuum_resol": [0.5,2],
+  "vacuum_resol": [
+    0.5,
+    2
+  ],
   "mid_point": 2.0,
   "millers": [
     [
@@ -128,7 +135,7 @@ Another example is `from_poscar` method. Here you need to specify the POSCAR fil
   "potcars": [
     "./POTCAR"
   ],
-  "relax_incar" : "INCAR_metal_rlx_low",
+  "relax_incar": "INCAR_metal_rlx_low",
   "scale": [
     1.0
   ],

@@ -6,21 +6,34 @@
 
 ```json
 {
-	"structures":	"confs/mp-*",
-	"interaction": {
-		"type":		"deepmd",
-                "model":        "frozen_model.pb",
-		"type_map":	{"Al": 0, "Mg": 1}
-	},
-	"properties": [
-            {
-                "type":        "interstitial",
-                "supercell":   [3, 3, 3],
-                "insert_ele":  ["Al"],
-                "conf_filters":{"min_dist": 1.5},
-                "cal_setting": {"input_prop": "lammps_input/lammps_high"}
-            }
-        ]
+  "structures": "confs/mp-*",
+  "interaction": {
+    "type": "deepmd",
+    "model": "frozen_model.pb",
+    "type_map": {
+      "Al": 0,
+      "Mg": 1
+    }
+  },
+  "properties": [
+    {
+      "type": "interstitial",
+      "supercell": [
+        3,
+        3,
+        3
+      ],
+      "insert_ele": [
+        "Al"
+      ],
+      "conf_filters": {
+        "min_dist": 1.5
+      },
+      "cal_setting": {
+        "input_prop": "lammps_input/lammps_high"
+      }
+    }
+  ]
 }
 ```
 

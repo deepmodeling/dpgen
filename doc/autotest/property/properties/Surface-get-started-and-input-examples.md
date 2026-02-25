@@ -6,20 +6,23 @@
 
 ```json
 {
-	"structures":	"confs/mp-*",
-	"interaction": {
-		"type":		"deepmd",
-                "model":        "frozen_model.pb",
-		"type_map":	{"Al": 0, "Mg": 1}
-	},
-	"properties": [
-            {
-                "type":           "surface",
-                "min_slab_size":  10,
-                "min_vacuum_size":11,
-                "max_miller":     2,
-                "cal_type":       "static"
-	    }
-        ]
+  "structures": "confs/mp-*",
+  "interaction": {
+    "type": "deepmd",
+    "model": "frozen_model.pb",
+    "type_map": {
+      "Al": 0,
+      "Mg": 1
+    }
+  },
+  "properties": [
+    {
+      "type": "surface",
+      "min_slab_size": 10,
+      "min_vacuum_size": 11,
+      "max_miller": 2,
+      "cal_type": "static"
+    }
+  ]
 }
 ```

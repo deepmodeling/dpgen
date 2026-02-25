@@ -4,6 +4,7 @@
 dpgen autotest make reproduce.json
 tree confs/std-fcc/interstitial_reprod/
 ```
+
 the output will be:
 
 ```

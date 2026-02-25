@@ -58,14 +58,14 @@ the comparison of the initial and reproduced results as well as the absolute pat
 
 ```json
 {
-    "/root/auto_test_example/vasp/confs/std-fcc/interstitial_00/task.000000": {
-        "nframes": 18,
-        "error": 0.0009738182472213228
-    },
-    "/root/auto_test_example/vasp/confs/std-fcc/interstitial_00/task.000001": {
-        "nframes": 21,
-        "error": 0.0006417039154057605
-    }
+  "/root/auto_test_example/vasp/confs/std-fcc/interstitial_00/task.000000": {
+    "nframes": 18,
+    "error": 0.0009738182472213228
+  },
+  "/root/auto_test_example/vasp/confs/std-fcc/interstitial_00/task.000001": {
+    "nframes": 21,
+    "error": 0.0006417039154057605
+  }
 }
 ```
 

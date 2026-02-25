@@ -3,6 +3,7 @@
 ```bash
 dpgen autotest make property.json
 ```
+
 **EOS output:**
 
 ```
@@ -93,6 +94,7 @@ confs/std-fcc/vacancy_00/
     |-- supercell.json
     `-- task.json
 ```
+
 `supercell.json` records the supercell size information of the corresponding task.
 
 **Interstitial output:**

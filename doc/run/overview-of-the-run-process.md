@@ -41,24 +41,24 @@ In folder iter.000000/ 01.model_devi：
 
 In folder iter.000000/ 02.fp：
 
-- candidate.shuffle.000.out records which structures will be selected from last step 01.model_devi.  There are always far more candidates than the maximum you expect to calculate at one time. In this condition, DP-GEN will randomly choose up to {dargs:argument}`fp_task_max <run_jdata/fp_task_max>` structures and form the folder task.*.
+- candidate.shuffle.000.out records which structures will be selected from last step 01.model_devi. There are always far more candidates than the maximum you expect to calculate at one time. In this condition, DP-GEN will randomly choose up to {dargs:argument}`fp_task_max <run_jdata/fp_task_max>` structures and form the folder task.\*.
 - rest_accurate.shuffle.000.out records the other structures where our model is accurate (`max_devi_f` is less than {dargs:argument}`model_devi_f_trust_lo <run_jdata[model_devi_engine=lammps]/model_devi_jobs/model_devi_f_trust_lo>`, no need to calculate any more),
 - rest_failed.shuffled.000.out records the other structures where our model is too inaccurate (larger than {dargs:argument}`model_devi_f_trust_hi <run_jdata[model_devi_engine=lammps]/model_devi_jobs/model_devi_f_trust_hi>`, there may be some error).
 - data.000: After first-principle calculations, DP-GEN will collect these data and change them into the format DeePMD-kit needs. In the next iteration's 00.train, these data will be trained together as well as the initial data.
 
 DP-GEN identifies the stage of the run process by a record file, record.dpgen, which will be created and upgraded by codes. Each line contains two numbers: the first is the index of iteration, and the second, ranging from 0 to 9, records which stage in each iteration is currently running.
 
-| Index of iterations  | Stage in eachiteration      | Process          |
-|:---------------------|:----------------------------|:-----------------|
-| 0                    | 0                           | make_train       |
-| 0                    | 1                           | run_train        |
-| 0                    | 2                           | post_train       |
-| 0                    | 3                           | make_model_devi  |
-| 0                    | 4                           | run_model_devi   |
-| 0                    | 5                           | post_model_devi  |
-| 0                    | 6                           | make_fp          |
-| 0                    | 7                           | run_fp           |
-| 0                    | 8                           | post_fp          |
+| Index of iterations | Stage in eachiteration | Process         |
+| :------------------ | :--------------------- | :-------------- |
+| 0                   | 0                      | make_train      |
+| 0                   | 1                      | run_train       |
+| 0                   | 2                      | post_train      |
+| 0                   | 3                      | make_model_devi |
+| 0                   | 4                      | run_model_devi  |
+| 0                   | 5                      | post_model_devi |
+| 0                   | 6                      | make_fp         |
+| 0                   | 7                      | run_fp          |
+| 0                   | 8                      | post_fp         |
 
 0,1,2 correspond to make_train, run_train, post_train. DP-GEN will write scripts in make_train, run the task by specific machine in run_train and collect result in post_train. The records for model_devi and fp stage follow similar rules.
 

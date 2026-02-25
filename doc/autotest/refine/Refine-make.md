@@ -4,6 +4,7 @@
 dpgen autotest make refine.json
 tree confs/std-fcc/vacancy_01/
 ```
+
 the output will be:
 
 ```

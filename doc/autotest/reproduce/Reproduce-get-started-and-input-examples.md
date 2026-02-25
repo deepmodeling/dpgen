@@ -4,21 +4,25 @@ Sometimes we want to reproduce the initial results with the same configurations 
 
 ```json
 {
-    "structures":       ["confs/std-*"],
-    "interaction": {
-        "type":          "deepmd",
-        "model":         "frozen_model.pb",
-        "type_map":     {"Al": 0}
-    },
-    "properties": [
-        {
-        "type":             "interstitial",
-        "reproduce":        true,
-        "init_from_suffix": "00",
-        "init_data_path":   "../vasp/confs",
-        "reprod_last_frame":       false
-        }
-        ]
+  "structures": [
+    "confs/std-*"
+  ],
+  "interaction": {
+    "type": "deepmd",
+    "model": "frozen_model.pb",
+    "type_map": {
+      "Al": 0
+    }
+  },
+  "properties": [
+    {
+      "type": "interstitial",
+      "reproduce": true,
+      "init_from_suffix": "00",
+      "init_data_path": "../vasp/confs",
+      "reprod_last_frame": false
+    }
+  ]
 }
 ```
 

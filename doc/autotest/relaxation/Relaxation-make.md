@@ -3,11 +3,15 @@
 The list of the directories storing structures are `["confs/std-*"]` in the previous example. For single element system, if `POSCAR` doesn't exist in the directories: `std-fcc`, `std-hcp`, `std-dhcp`, `std-bcc`, `std-diamond`, and `std-sc`, the package will automatically generate the standard crystal structures **`fcc`**, **`hcp`**, **`dhcp`**, **`bcc`**, **`diamond`**, and **`sc`** in the corresponding directories, respectively. In other conditions and for multi-component system (more than 1), if `POSCAR` doesn't exist, the package will terminate and print the error **"no configuration for autotest"**.
 
 ### VASP relaxation
+
 Take the input example of Al in the previous section, when we do `make` as follows:
+
 ```bash
 dpgen autotest make relaxation.json
 ```
+
 the following files would be generated:
+
 ```bash
 tree confs/std-fcc/relaxation/
 ```
@@ -24,14 +28,18 @@ confs/std-fcc/relaxation/
     |-- POTCAR -> ../POTCAR
     `-- task.json
 ```
+
 `inter.json` records the information in the `interaction` dictionary and `task.json` records the information in the `relaxation` dictionary.
 
 ### LAMMPS relaxation
+
 ```bash
 dpgen autotest make relaxation.json
 tree confs/std-fcc/
 ```
+
 the output would be:
+
 ```
 confs/std-fcc/
 |-- POSCAR
@@ -46,6 +54,7 @@ confs/std-fcc/
         |-- POSCAR -> ../../POSCAR
         `-- task.json
 ```
+
 the `conf.lmp` is the input configuration and `in.lammps` is the input command file for lammps.
 
 **in.lammps**: the package would generate the file `confs/mp-*/relaxation/in.lammps` as follows and we refer the user to the further information of [fix box/relax](https://lammps.sandia.gov/doc/fix_box_relax.html) function in lammps:

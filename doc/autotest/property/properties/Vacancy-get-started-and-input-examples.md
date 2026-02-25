@@ -6,17 +6,24 @@
 
 ```json
 {
-	"structures":	"confs/mp-*",
-	"interaction": {
-		"type":		"deepmd",
-                "model":        "frozen_model.pb",
-		"type_map":	{"Al": 0, "Mg": 1}
-	},
-	"properties": [
-            {
-                "type":         "vacancy",
-                "supercell":	[1, 1, 1]
-	    }
-        ]
+  "structures": "confs/mp-*",
+  "interaction": {
+    "type": "deepmd",
+    "model": "frozen_model.pb",
+    "type_map": {
+      "Al": 0,
+      "Mg": 1
+    }
+  },
+  "properties": [
+    {
+      "type": "vacancy",
+      "supercell": [
+        1,
+        1,
+        1
+      ]
+    }
+  ]
 }
 ```
