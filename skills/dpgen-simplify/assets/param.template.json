@@ -1,0 +1,12 @@
+{
+  "type_map": null,
+  "mass_map": null,
+  "pick_data": null,
+  "init_pick_number": null,
+  "iter_pick_number": null,
+  "model_devi_f_trust_lo": null,
+  "model_devi_f_trust_hi": null,
+  "numb_models": 4,
+  "fp_style": "none",
+  "default_training_param": null
+}

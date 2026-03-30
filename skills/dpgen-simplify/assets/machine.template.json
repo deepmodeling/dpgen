@@ -1,0 +1,49 @@
+{
+  "api_version": "1.0",
+  "deepmd_version": "2.0",
+  "train": {
+    "command": "dp",
+    "machine": {
+      "batch_type": null,
+      "context_type": null,
+      "local_root": "./",
+      "remote_root": null
+    },
+    "resources": {
+      "number_node": null,
+      "cpu_per_node": null,
+      "gpu_per_node": null,
+      "group_size": null
+    }
+  },
+  "model_devi": {
+    "command": "dp",
+    "machine": {
+      "batch_type": null,
+      "context_type": null,
+      "local_root": "./",
+      "remote_root": null
+    },
+    "resources": {
+      "number_node": null,
+      "cpu_per_node": null,
+      "gpu_per_node": null,
+      "group_size": null
+    }
+  },
+  "fp": {
+    "command": null,
+    "machine": {
+      "batch_type": null,
+      "context_type": null,
+      "local_root": "./",
+      "remote_root": null
+    },
+    "resources": {
+      "number_node": null,
+      "cpu_per_node": null,
+      "gpu_per_node": null,
+      "group_size": null
+    }
+  }
+}
