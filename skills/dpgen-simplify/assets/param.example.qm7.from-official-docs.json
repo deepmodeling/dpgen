@@ -1,0 +1,105 @@
+{
+  "type_map": [
+    "C",
+    "H",
+    "N",
+    "O",
+    "S"
+  ],
+  "mass_map": [
+    12.011,
+    1.008,
+    14.007,
+    15.999,
+    32.065
+  ],
+  "_comment": "Adapted from official DP-GEN simplify QM7 example with path placeholders.",
+  "pick_data": "/path/to/qm7/deepmd_npy",
+  "init_data_prefix": "",
+  "init_data_sys": [],
+  "sys_batch_size": [
+    "auto"
+  ],
+  "numb_models": 4,
+  "default_training_param": {
+    "model": {
+      "type_map": [
+        "C",
+        "H",
+        "N",
+        "O",
+        "S"
+      ],
+      "descriptor": {
+        "type": "se_a",
+        "sel": [
+          7,
+          16,
+          3,
+          3,
+          1
+        ],
+        "rcut_smth": 1.0,
+        "rcut": 6.0,
+        "neuron": [
+          25,
+          50,
+          100
+        ],
+        "resnet_dt": false,
+        "axis_neuron": 12
+      },
+      "fitting_net": {
+        "neuron": [
+          240,
+          240,
+          240
+        ],
+        "resnet_dt": true
+      }
+    },
+    "learning_rate": {
+      "type": "exp",
+      "start_lr": 0.001,
+      "stop_lr": 5e-08,
+      "decay_rate": 0.99
+    },
+    "loss": {
+      "start_pref_e": 0.02,
+      "limit_pref_e": 1,
+      "start_pref_f": 1000,
+      "limit_pref_f": 1,
+      "start_pref_v": 0,
+      "limit_pref_v": 0,
+      "start_pref_pf": 0,
+      "limit_pref_pf": 0
+    },
+    "training": {
+      "numb_steps": 10000,
+      "disp_file": "lcurve.out",
+      "disp_freq": 1000,
+      "numb_test": 1,
+      "save_freq": 1000,
+      "disp_training": true,
+      "time_training": true,
+      "profiling": false,
+      "profiling_file": "timeline.json"
+    }
+  },
+  "fp_style": "gaussian",
+  "shuffle_poscar": false,
+  "fp_task_max": 1000,
+  "fp_task_min": 10,
+  "fp_pp_path": "/path/to/fp/support/files",
+  "fp_pp_files": [],
+  "fp_params": {
+    "keywords": "mn15/6-31g** force nosymm scf(maxcyc=512)",
+    "nproc": 28,
+    "multiplicity": 1
+  },
+  "init_pick_number": 100,
+  "iter_pick_number": 100,
+  "model_devi_f_trust_lo": 0.25,
+  "model_devi_f_trust_hi": 0.45,
+  "_comment_tail": "Official example source: docs.deepmodeling.com/projects/dpgen/en/latest/simplify/simplify.html"
+}

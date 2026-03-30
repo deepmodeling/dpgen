@@ -1,7 +1,7 @@
 ---
 name: dpgen-simplify
-description: Prepare, explain, validate, and run DP-GEN simplify workflows for reducing repeated or redundant DeepMD datasets. Use when the user wants to generate or modify `param.json` and `machine.json`, run `dpgen simplify param.json machine.json`, organize repeated simplify experiments, or inspect simplify outputs. Prefer local `dpgen` when available; otherwise use `uvx` as a launcher fallback.
-compatibility: Requires a runnable environment with Python. Prefer local `dpgen` in PATH; fallback launcher requires `uv` and internet access (`uvx --from dpgen dpgen ...`). Real execution also requires DeePMD-kit and any backend-specific software required by the selected `fp_style`. For scheduler execution, the user must provide a valid runtime environment and scheduler settings.
+description: Prepare, explain, validate, and run DP-GEN simplify workflows for reducing repeated or redundant DeepMD datasets. Use when the user wants to generate or modify `param.json` and `machine.json`, run `dpgen simplify param.json machine.json`, organize repeated simplify experiments, or inspect simplify outputs.
+compatibility: Requires a runnable environment with Python and an activated DP-GEN runtime where `dpgen` is available in PATH for the outer simplify command. Real execution also requires DeePMD-kit and any backend-specific software required by the selected `fp_style`. For scheduler execution, each stage environment must be explicitly activated in `resources.source_list`.
 license: LGPL-3.0-or-later
 metadata:
   author: hyb1109
@@ -28,10 +28,10 @@ Run exactly:
 dpgen simplify param.json machine.json
 ```
 
-Run this command with a valid launcher:
+Environment boundary rule:
 
-- local: `dpgen simplify param.json machine.json`
-- uvx fallback: `uvx --from dpgen dpgen simplify param.json machine.json`
+- Outer layer: run `dpgen simplify param.json machine.json` in an activated environment where `dpgen --version` works.
+- Inner layer: for scheduler stages, explicitly activate runtime in `resources.source_list` on the server side.
 
 ## Agent responsibilities
 
@@ -97,17 +97,26 @@ If execution is requested and the activation method is unknown, ask the user for
 
 Do not guess conda environment names, module names, or site-specific paths.
 
-### 4.1 Launcher fallback policy (`dpgen` vs `uvx`)
+### 4.1 Outer launcher policy
 
-Use this order:
+Use an activated DP-GEN environment and verify with:
 
-1. Try local launcher: `dpgen --version`
-1. If `dpgen` is not available and network is allowed, use fallback launcher: `uvx --from dpgen dpgen --version`
-1. Use the same launcher choice for execution:
-   - local: `dpgen simplify param.json machine.json`
-   - fallback: `uvx --from dpgen dpgen simplify param.json machine.json`
+```bash
+dpgen --version
+```
 
-Do not switch launchers silently after validation. Keep preflight and run commands consistent.
+Do not start simplify from a shell where `dpgen` is unavailable.
+
+### 4.2 Outer vs inner runtime boundaries (critical)
+
+Treat simplify execution as two separate environment layers:
+
+1. Outer layer: the shell that launches `dpgen simplify param.json machine.json` (must have `dpgen` in PATH)
+1. Inner layer: stage tasks dispatched by DP-GEN (`train` / `model_devi` / `fp`) on server/runtime side
+
+Even if the outer layer is correct, inner stage tasks still need explicit runtime setup in `machine.json`.
+Do not assume the outer shell environment will be inherited by dispatched stage jobs.
+For scheduler-style execution, `resources.source_list` must explicitly activate the required runtime environment.
 
 ### 5. Prefer reproducible output layout
 
@@ -142,10 +151,14 @@ Collect the following information before generating files.
 ### Dataset information
 
 - `pick_data`
+- `sys_configs`
+- `init_data_prefix`
+- `init_data_sys`
+- `sys_batch_size`
 - dataset format
 - `type_map`
 - `mass_map` if needed
-- whether the input data is already labeled
+- `labeled`
 
 ### Simplify controls
 
@@ -153,10 +166,12 @@ Collect the following information before generating files.
 - `iter_pick_number`
 - `model_devi_f_trust_lo`
 - `model_devi_f_trust_hi`
+- `model_devi_e_trust_lo` / `model_devi_e_trust_hi` if energy trust is used
 - `numb_models` if not already specified
 
 ### Training setup
 
+- `train_backend` if required by environment (for example `pytorch`)
 - `default_training_param`
   - descriptor settings
   - fitting network settings
@@ -167,6 +182,7 @@ Collect the following information before generating files.
 ### FP setup
 
 - `fp_style`
+- If data is already labeled (energy/force/virial available) and no re-labeling is requested, set `fp_style` to `none`.
 - if `fp_style != "none"`, collect matching FP runtime settings such as:
   - `fp_task_max`
   - `fp_task_min`
@@ -186,7 +202,14 @@ For each stage `train`, `model_devi`, and `fp`, collect or preserve:
 - `resources.cpu_per_node`
 - `resources.gpu_per_node`
 - `resources.group_size`
+- `resources.source_list` (required for scheduler jobs; use it to activate environment explicitly)
 - any explicit queue / partition / custom scheduler flags if the user already uses them
+
+Choose a runtime profile first, then fill the matching template:
+
+- server-local Slurm: `assets/machine.template.server-local-slurm.json`
+- local machine -> remote Slurm via SSH: `assets/machine.template.ssh-remote-slurm.json`
+- pure local shell testing: `assets/machine.template.local-shell.json`
 
 ## How to build `param.json`
 
@@ -224,6 +247,10 @@ Key fields usually include:
 
 If the user is doing grid experiments, keep a base template and derive variants from it.
 
+Official reference example (QM7-style, adapted with path placeholders):
+
+- `assets/param.example.qm7.from-official-docs.json`
+
 ## How to build `machine.json`
 
 Construct `machine.json` with separate stage blocks for:
@@ -248,16 +275,10 @@ Do not merge all stages into one vague machine block.
 
 Before execution, validate the workflow in this order:
 
-1. confirm `dpgen` is available:
+1. confirm outer-layer `dpgen` is available:
 
 ```bash
 dpgen --version
-```
-
-Fallback check when local `dpgen` is unavailable:
-
-```bash
-uvx --from dpgen dpgen --version
 ```
 
 2. validate JSON syntax:
@@ -276,18 +297,12 @@ python -m json.tool machine.json
 dpgen simplify param.json machine.json
 ```
 
-or fallback launcher:
-
-```bash
-uvx --from dpgen dpgen simplify param.json machine.json
-```
-
 ## Output contract
 
 Always provide:
 
 1. final absolute paths to `param.json` and `machine.json`
-1. the exact simplify command to run (local `dpgen` or `uvx` fallback)
+1. the exact simplify command to run (`dpgen simplify param.json machine.json`)
 1. a short pre-run checklist
 1. any unresolved required fields
 1. if execution was performed, the main output locations and next files to inspect
@@ -301,6 +316,8 @@ Always provide:
 - Keep `type_map` ordering consistent with dataset typing.
 - If required inputs are missing, stop and ask instead of guessing.
 - If `fp_style` is `none`, skip FP-specific prompts and keep FP-specific settings disabled or unset.
+- If data is already labeled and the user does not request new labels, enforce `fp_style = "none"` and do not require active FP runtime fields.
+- Do not assume outer-shell activation is inherited by stage jobs; for scheduler execution, require explicit `source_list` per stage.
 - If the user already has working templates, patch them rather than overwriting them blindly.
 
 ## References and bundled files
@@ -308,7 +325,11 @@ Always provide:
 Use these bundled files:
 
 - `assets/param.template.json`
+- `assets/param.example.qm7.from-official-docs.json`
 - `assets/machine.template.json`
+- `assets/machine.template.server-local-slurm.json`
+- `assets/machine.template.ssh-remote-slurm.json`
+- `assets/machine.template.local-shell.json`
 - `references/param-fields.md`
 - `references/machine-fields.md`
 - `references/workflow-notes.md`

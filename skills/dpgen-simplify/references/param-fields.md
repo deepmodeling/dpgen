@@ -2,6 +2,10 @@
 
 This file gives concise notes for the most important fields in `param.json` for `dpgen simplify`.
 
+For a complete official-style example template, see:
+
+- `assets/param.example.qm7.from-official-docs.json`
+
 ## Core dataset fields
 
 ### `pick_data`
@@ -9,6 +13,26 @@ This file gives concise notes for the most important fields in `param.json` for 
 Path to the candidate dataset to simplify.
 
 Use this field to point to the existing DeepMD-compatible data source.
+
+### `sys_configs`
+
+Configuration discovery pattern for systems.
+
+Often provided as nested lists of path patterns.
+
+### `init_data_prefix`
+
+Prefix used by DP-GEN when resolving initial data systems.
+
+### `init_data_sys`
+
+List of initial system indices for training.
+
+Can be empty when starting fully from `pick_data`.
+
+### `sys_batch_size`
+
+Batch size policy per system, often set to `["auto"]`.
 
 ### `type_map`
 
@@ -42,11 +66,27 @@ Upper bound of the force-deviation trust window.
 
 In general, these two values define the force-deviation region used during structure selection.
 
+### `model_devi_e_trust_lo`
+
+Lower bound of the energy-deviation trust window (optional).
+
+### `model_devi_e_trust_hi`
+
+Upper bound of the energy-deviation trust window (optional).
+
 ## Training-related fields
 
 ### `numb_models`
 
 Number of DeePMD models trained as an ensemble.
+
+### `train_backend`
+
+Training backend (for example `pytorch`) when needed by your environment.
+
+### `labeled`
+
+Whether the input candidate data is already labeled.
 
 ### `default_training_param`
 
@@ -67,6 +107,7 @@ This usually contains:
 Backend used for first-principles calculations.
 
 Set to `none` if no FP stage is intended.
+If data is already labeled and no re-labeling is requested, use `none`.
 
 ### `fp_task_max`
 

@@ -12,6 +12,31 @@ Keep three stage blocks separate:
 
 Do not collapse them into one ambiguous runtime block.
 
+## Runtime profiles
+
+Use one of these profiles based on where `dpgen` is launched:
+
+1. Server-local Slurm (already logged into cluster login node)
+
+   - `context_type = "LocalContext"`
+   - `batch_type = "Slurm"`
+   - template: `assets/machine.template.server-local-slurm.json`
+
+1. Local workstation -> remote Slurm cluster
+
+   - `context_type = "SSHContext"`
+   - `batch_type = "Slurm"`
+   - requires `remote_profile`
+   - template: `assets/machine.template.ssh-remote-slurm.json`
+
+1. Local single-machine shell testing
+
+   - `context_type = "LazyLocalContext"`
+   - `batch_type = "Shell"`
+   - template: `assets/machine.template.local-shell.json`
+
+If your current workflow is "on server, submit Slurm jobs", use profile 1.
+
 ## Each stage should make these explicit
 
 - `command`
@@ -22,6 +47,10 @@ Do not collapse them into one ambiguous runtime block.
 - gpu count
 - environment activation commands
 - custom scheduler flags if needed
+
+Important boundary: outer `dpgen simplify` environment and inner stage-job environments are different layers.
+Outer layer must be an activated DP-GEN environment (`dpgen --version` passes).
+Do not assume outer activation is inherited by stage jobs. For scheduler profiles, set `resources.source_list` explicitly.
 
 ## `train`
 
@@ -54,6 +83,8 @@ Typical concerns:
 - pseudopotential / basis support files
 - scheduler settings
 - backend-specific environment
+
+If `fp_style` is `none`, keep this stage disabled/unset and do not require active FP executable settings.
 
 ## Practical advice
 

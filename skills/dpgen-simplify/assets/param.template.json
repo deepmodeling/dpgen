@@ -2,6 +2,18 @@
   "type_map": null,
   "mass_map": null,
   "pick_data": null,
+  "sys_configs": null,
+  "init_data_prefix": "",
+  "init_data_sys": [],
+  "sys_batch_size": [
+    "auto"
+  ],
+  "train_backend": null,
+  "labeled": true,
+  "fp_task_max": null,
+  "fp_task_min": null,
+  "model_devi_e_trust_lo": null,
+  "model_devi_e_trust_hi": null,
   "init_pick_number": null,
   "iter_pick_number": null,
   "model_devi_f_trust_lo": null,
