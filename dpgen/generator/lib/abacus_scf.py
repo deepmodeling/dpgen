@@ -1,9 +1,10 @@
 import copy
 import os
 import re
+import tempfile
 
+import dpdata
 import numpy as np
-from dpdata.abacus.stru import get_frame_from_stru, make_unlabeled_stru
 
 from dpgen.auto_test.lib import vasp
 
@@ -259,13 +260,19 @@ def make_abacus_scf_stru(
     if len(cells.shape) == 2:
         sys_data_copy["cells"] = np.array([cells])
         sys_data_copy["coords"] = np.array([coords])
-    c = make_unlabeled_stru(
-        sys_data_copy,
-        0,
-        pp_file=fp_pp_files,
-        numerical_orbital=fp_orb_files,
-        numerical_descriptor=fp_dpks_descriptor,
-    )
+    with tempfile.NamedTemporaryFile(
+        mode="r+", prefix="dpgen-abacus-", suffix=".stru"
+    ) as fp:
+        dpdata.System(data=sys_data_copy).to(
+            "abacus/stru",
+            fp.name,
+            frame_idx=0,
+            pp_file=fp_pp_files,
+            numerical_orbital=fp_orb_files,
+            numerical_descriptor=fp_dpks_descriptor,
+        )
+        fp.seek(0)
+        c = fp.read()
 
     return c
 
@@ -302,7 +309,7 @@ def get_abacus_STRU(STRU):
         "dpks_descriptor": str,
     }
     """
-    data = get_frame_from_stru(STRU)
+    data = dpdata.System(STRU, fmt="abacus/stru").data
     data["atom_masses"] = data.pop("masses")
     data["cells"] = data.pop("cells")[0]
     data["coords"] = data.pop("coords")[0]

@@ -4585,9 +4585,10 @@ def post_fp_abacus_scf(iter_index, jdata):
 
         all_sys = None
         for ii, oo in zip(sys_input, sys_output):
-            _sys = dpdata.LabeledSystem(
-                oo, fmt="abacus/scf", type_map=jdata["type_map"]
-            )
+            _sys = dpdata.LabeledSystem(oo, fmt="abacus/scf")
+            if len(_sys) > 0:
+                _sys.data["atom_types"] = np.asarray(_sys.data["atom_types"], dtype=int)
+                _sys.apply_type_map(jdata["type_map"])
             if len(_sys) > 0:
                 if all_sys is None:
                     all_sys = _sys
@@ -4626,17 +4627,7 @@ def post_fp_siesta(iter_index, jdata):
         sys_output.sort()
         sys_input.sort()
         for idx, oo in enumerate(sys_output):
-            _sys = dpdata.LabeledSystem()
-            (
-                _sys.data["atom_names"],
-                _sys.data["atom_numbs"],
-                _sys.data["atom_types"],
-                _sys.data["cells"],
-                _sys.data["coords"],
-                _sys.data["energies"],
-                _sys.data["forces"],
-                _sys.data["virials"],
-            ) = dpdata.siesta.output.obtain_frame(oo)
+            _sys = dpdata.LabeledSystem(oo, fmt="siesta/output")
             if idx == 0:
                 all_sys = _sys
             else:
