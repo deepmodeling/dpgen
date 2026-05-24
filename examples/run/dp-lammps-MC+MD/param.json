@@ -1,0 +1,126 @@
+{
+  "type_map": ["Sr", "Pb", "Ti", "O"],
+  "mass_map": [87.62, 207.2, 47.867, 15.999],
+  "init_data_prefix": "./data",
+  "init_data_sys": [
+	"deepmd"
+  ],
+
+  "sys_configs": [
+    ["someplace/POSCAR"]
+  ],
+
+  "_comment": " 00.train ",
+  "numb_models": 4,
+  "default_training_param": {
+        "model":{
+            "type_map":[
+                         "Sr",
+                         "Pb",
+                         "Ti",
+                         "O"
+             ],
+        "descriptor": {
+                "type": "se_e2_a",
+                "sel": "auto",
+	"rcut_smth":	0.5,
+	"rcut":		6.00,
+	"neuron":	[25, 50, 100],
+	"resnet_dt":	false,
+	"axis_neuron":	16,
+	"seed":		1
+        },
+        "fitting_net": {
+        "neuron": [
+                240,
+                240,
+                240
+         ],
+	"resnet_dt":	true,
+	"seed":		1
+        }
+   },
+   "learning_rate": {
+            "type": "exp",
+            "start_lr": 0.001,
+            "stop_lr":3.51e-8,
+            "decay_steps": 2000
+   },
+   "loss": {
+            "type":"ener",
+            "start_pref_e": 0.02,
+            "limit_pref_e": 1,
+            "start_pref_f": 1000,
+            "limit_pref_f": 1,
+            "start_pref_v": 0.0,
+            "limit_pref_v": 0.0
+   },
+   "training": {
+            "set_prefix": "set",
+            "stop_batch": 400000,
+            "batch_size": "auto",
+            "disp_file": "lcurve.out",
+            "disp_freq": 1000,
+            "numb_test": 4,
+            "save_freq": 1000,
+            "save_ckpt": "model.ckpt",
+            "disp_training": true,
+            "time_training": true,
+            "profiling": false,
+            "profiling_file": "timeline.json",
+            "_comment": "that's all"
+        }
+    },
+
+   "model_devi_dt": 0.002,
+   "model_devi_skip": 0,
+   "model_devi_f_trust_lo": 0.1,
+   "model_devi_f_trust_hi": 0.20,
+   "model_devi_clean_traj": true,
+   "model_devi_jobs": [
+    {"_idx": 0, "ensemble": "npt","sys_idx": [0], "trj_freq": 10,
+     "rev_mat":{"lmp":{
+                      "${MC_NSTEPS}":[50],
+                      "${MD_NSTEPS}":[1000],
+                      "${PRES}":[0,100],
+                      "${TEMP_MD}":[100,300],
+                      "${TEMP_MC}":[100,300],
+                      "${RANDOM_SEED}":[15196],
+                      "${ELEMENT_TYPE_1}":[1],
+                      "${ELEMENT_TYPE_2}":[2],
+                      "${N_LOOP}":[10]
+                      }
+               },
+     "template":{"lmp":"template/lammps.in"}
+
+               },
+    {"_idx": 1, "ensemble": "npt","press": [1,100],"sys_idx": [0], "trj_freq": 10,
+     "rev_mat":{"lmp":{
+                      "${MC_NSTEPS}":[50],
+                      "${MD_NSTEPS}":[1000],
+                      "${PRES}":[0,100],
+                      "${TEMP_MD}":[100],
+                      "${TEMP_MC}":[100],
+                      "${RANDOM_SEED}":[15196],
+                      "${ELEMENT_TYPE_1}":[1],
+                      "${ELEMENT_TYPE_2}":[2],
+                      "${N_LOOP}":[10]
+                      }
+               },
+     "template":{"lmp":"template/lammps.in"}
+
+               }
+  ],
+  "fp_style": "vasp",
+  "shuffle_poscar": false,
+  "fp_task_max": 100,
+  "fp_task_min": 10,
+  "fp_pp_path": "workplace",
+  "fp_pp_files": [
+    "POTCAR_Sr",
+    "POTCAR_Pb",
+    "POTCAR_Ti",
+    "POTCAR_O"
+  ],
+  "fp_incar": "workplace/INCAR"
+}

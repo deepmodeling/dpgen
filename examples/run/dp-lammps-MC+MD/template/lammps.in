@@ -1,0 +1,55 @@
+variable        MD_NSTEPS         equal MD_NSTEPS
+variable        MC_NSTEPS         equal MC_NSTEPS
+variable        THERMO_FREQ       equal 10
+variable        TEMP_MD           equal TEMP_MD
+variable        TEMP_MC           equal TEMP_MC
+variable        PRES              equal press
+variable        TAU_T             equal 0.100000
+variable        TAU_P             equal 0.500000
+variable        RANDOM_SEED       equal RANDOM_SEED
+variable        ELEMENT_TYPE_1    equal ELEMENT_TYPE_1
+variable        ELEMENT_TYPE_2    equal ELEMENT_TYPE_2
+variable        N_LOOP            equal N_LOOP
+
+#Initialization
+units           metal
+boundary        p p p
+atom_style      atomic
+neighbor        1.0 bin
+
+#read data
+read_data conf.lmp
+mass            1 87.620000
+mass            2 207.200000
+mass            3 47.867000
+mass            4 15.999000
+
+# read in the potentia
+pair_style      deepmd ../graph.001.pb ../graph.000.pb ../graph.003.pb ../graph.002.pb  out_freq ${THERMO_FREQ} out_file model_devi.out
+pair_coeff
+
+# output observables
+thermo_style    custom step temp pe ke etotal press vol lx ly lz xy xz yz
+thermo          ${THERMO_FREQ}
+dump            dpgen_dump
+
+timestep        0.002000
+
+variable loop1 loop ${N_LOOP}
+label     runloop1
+
+# Monte Carlo followed by short md
+fix             mc1 all atom/swap 1 1 500 ${TEMP_MC} ke no semi-grand no types ${ELEMENT_TYPE_1} ${ELEMENT_TYPE_2}
+run             ${MC_NSTEPS}
+unfix           mc1
+
+velocity        all create ${TEMP_MD} ${RANDOM_SEED}"
+velocity        all zero linear
+fix             md1 all npt temp ${TEMP_MD} ${TEMP_MD} ${TAU_T} iso ${PRES} ${PRES}  ${TAU_P}
+run             ${MD_NSTEPS}
+unfix           md1
+
+variable        idx  equal "(v_loop1-1)"
+write_data      conf.${idx}.lmp
+next            loop1
+jump            SELF runloop1
