@@ -39,23 +39,23 @@ These are verified failure modes discovered through testing. Treat as hard rules
 
 1. **`se_atten_v2` spelling** — The descriptor type is `se_atten_v2` (double-t in "atten"). Writing `se_attn_v2` will silently fail or error. Always verify the exact string.
 
-2. **`remote_root` is mandatory** — dpdispatcher requires `remote_root` even for local Shell execution. Set it to a writable path like `/tmp/dpgen_train`. Omitting it causes runtime errors.
+1. **`remote_root` is mandatory** — dpdispatcher requires `remote_root` even for local Shell execution. Set it to a writable path like `/tmp/dpgen_train`. Omitting it causes runtime errors.
 
-3. **`batch_type: "Shell"` is case-sensitive** — Must be capitalized `"Shell"`, not `"shell"` or `"SHELL"`. Same for `"Slurm"`, `"PBS"`, etc.
+1. **`batch_type: "Shell"` is case-sensitive** — Must be capitalized `"Shell"`, not `"shell"` or `"SHELL"`. Same for `"Slurm"`, `"PBS"`, etc.
 
-4. **CP2K `user_fp_params` KIND format** — When multiple element kinds are needed, use `"_": ["H", "O"]` with parallel arrays for `POTENTIAL` and `BASIS_SET`. This maps to repeated KIND sections.
+1. **CP2K `user_fp_params` KIND format** — When multiple element kinds are needed, use `"_": ["H", "O"]` with parallel arrays for `POTENTIAL` and `BASIS_SET`. This maps to repeated KIND sections.
 
-5. **`type_map.raw` ordering** — The `type_map.raw` in your `init_data_sys` directories must exactly match the `type_map` array in `param.json`. Mismatches cause silent data corruption.
+1. **`type_map.raw` ordering** — The `type_map.raw` in your `init_data_sys` directories must exactly match the `type_map` array in `param.json`. Mismatches cause silent data corruption.
 
-6. **DeePMD-kit 3.x format** — `default_training_param` uses nested structure: `model.descriptor`, `model.fitting_net`, `learning_rate`, `loss`, `training`. The `training` block includes `training_data.systems` (left empty — dpgen fills it).
+1. **DeePMD-kit 3.x format** — `default_training_param` uses nested structure: `model.descriptor`, `model.fitting_net`, `learning_rate`, `loss`, `training`. The `training` block includes `training_data.systems` (left empty — dpgen fills it).
 
-7. **`model_devi_engine` defaults to LAMMPS** — No need to set `model_devi_engine` explicitly when using LAMMPS. Only set it for alternative engines.
+1. **`model_devi_engine` defaults to LAMMPS** — No need to set `model_devi_engine` explicitly when using LAMMPS. Only set it for alternative engines.
 
-8. **`fp_style: "cp2k"` is native** — dpgen v0.12+ supports CP2K natively via `user_fp_params` dict. No external plugins required.
+1. **`fp_style: "cp2k"` is native** — dpgen v0.12+ supports CP2K natively via `user_fp_params` dict. No external plugins required.
 
-9. **`sys_configs` format** — List of lists: outer list = systems, inner list = file paths (POSCAR/xyz) for that system. Example: `[["path/to/POSCAR_1"], ["path/to/POSCAR_2"]]`.
+1. **`sys_configs` format** — List of lists: outer list = systems, inner list = file paths (POSCAR/xyz) for that system. Example: `[["path/to/POSCAR_1"], ["path/to/POSCAR_2"]]`.
 
-10. **`init_data_sys` format** — List of paths to directories in deepmd/npy format. Each directory must contain `type_map.raw`, `type.raw`, and `set.000/` with numpy arrays.
+1. **`init_data_sys` format** — List of paths to directories in deepmd/npy format. Each directory must contain `type_map.raw`, `type.raw`, and `set.000/` with numpy arrays.
 
 ## Agent responsibilities
 
@@ -107,11 +107,11 @@ dpgen (v0.13.x) only supports the **TensorFlow backend** of DeePMD-kit. It does 
 
 When the user has not specified a descriptor type, recommend based on:
 
-| Descriptor | Use case | Notes |
-|---|---|---|
-| `se_e2_a` | Simple systems, fast training, well-tested | Classic two-body embedding, requires explicit `sel` list |
-| `se_atten` | Multi-component systems, moderate complexity | Attention-based, supports `sel: "auto"` |
-| `se_atten_v2` | Modern default, best accuracy/cost balance | **Spell exactly `se_atten_v2`** (double-t). Supports `sel: "auto"`, `attn_layer: 0` |
+| Descriptor    | Use case                                     | Notes                                                                               |
+| ------------- | -------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `se_e2_a`     | Simple systems, fast training, well-tested   | Classic two-body embedding, requires explicit `sel` list                            |
+| `se_atten`    | Multi-component systems, moderate complexity | Attention-based, supports `sel: "auto"`                                             |
+| `se_atten_v2` | Modern default, best accuracy/cost balance   | **Spell exactly `se_atten_v2`** (double-t). Supports `sel: "auto"`, `attn_layer: 0` |
 
 For new projects, prefer `se_atten_v2` unless the user has specific needs. If the user requires DPA-2/DPA-3 or PyTorch models, redirect them to **dpgen2** which supports the PyTorch backend.
 
@@ -346,10 +346,10 @@ ls init_data/*/type_map.raw
 ```
 
 4. verify `type_map.raw` content matches `param.json` `type_map` ordering
-5. verify `sys_configs` structure files exist
-6. verify stage commands match the selected software stack
-7. for CP2K: verify basis set and potential files are accessible
-8. only then run:
+1. verify `sys_configs` structure files exist
+1. verify stage commands match the selected software stack
+1. for CP2K: verify basis set and potential files are accessible
+1. only then run:
 
 ```bash
 dpgen run param.json machine.json
