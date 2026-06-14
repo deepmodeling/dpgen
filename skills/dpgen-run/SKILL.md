@@ -47,7 +47,7 @@ These are verified failure modes discovered through testing. Treat as hard rules
 
 1. **`type_map.raw` ordering** — The `type_map.raw` in your `init_data_sys` directories must exactly match the `type_map` array in `param.json`. Mismatches cause silent data corruption.
 
-1. **DeePMD-kit 3.x format** — `default_training_param` uses nested structure: `model.descriptor`, `model.fitting_net`, `learning_rate`, `loss`, `training`. The `training` block includes `training_data.systems` (left empty — dpgen fills it).
+1. **DeePMD-kit input format** — `default_training_param` uses nested structure: `model.descriptor`, `model.fitting_net`, `learning_rate`, `loss`, `training`. The `training` block may leave `training_data.systems` unset or empty — dpgen fills it. Check the configured `deepmd_version` and installed DeePMD-kit before using 3.x-specific features.
 
 1. **`model_devi_engine` defaults to LAMMPS** — No need to set `model_devi_engine` explicitly when using LAMMPS. Only set it for alternative engines.
 
@@ -103,7 +103,7 @@ If a value looks scientifically questionable, explain the concern instead of sil
 
 ### 3. Descriptor selection guidance
 
-dpgen includes `train_backend` options for both `"tensorflow"` and `"pytorch"`, so backend support may include PyTorch depending on the installed DeePMD-kit stack. If backend or descriptor compatibility is unclear, verify it against the repo's supported `train_backend` values (`"tensorflow"`, `"pytorch"`) and the user's installed software before generating configs.
+dpgen exposes `train_backend` options for `"tensorflow"` and `"pytorch"`, but that option alone does not guarantee every PyTorch descriptor or every DeePMD-kit 3.x feature works in the user's installed stack. If backend or descriptor compatibility is unclear, verify it against the repo's `train_backend` options, the configured `deepmd_version`, and the installed DeePMD-kit version before generating configs.
 
 When the user has not specified a descriptor type, recommend based on:
 
@@ -325,35 +325,35 @@ Stage-specific commands:
 
 Before execution, validate the workflow in this order:
 
-1. confirm outer-layer `dpgen` is available:
+- Step 1: confirm outer-layer `dpgen` is available:
 
-```bash
-dpgen --version
-```
+  ```bash
+  dpgen --version
+  ```
 
-2. validate JSON syntax:
+- Step 2: validate JSON syntax:
 
-```bash
-python -m json.tool param.json
-python -m json.tool machine.json
-```
+  ```bash
+  python -m json.tool param.json
+  python -m json.tool machine.json
+  ```
 
-3. verify `init_data_sys` directories exist and contain proper deepmd/npy format:
+- Step 3: verify `init_data_sys` directories exist and contain proper deepmd/npy format:
 
-```bash
-# Each directory must have type_map.raw, type.raw, set.000/
-ls init_data/*/type_map.raw
-```
+  ```bash
+  # Each directory must have type_map.raw, type.raw, set.000/
+  ls init_data/*/type_map.raw
+  ```
 
-4. verify `type_map.raw` content matches `param.json` `type_map` ordering
-1. verify `sys_configs` structure files exist
-1. verify stage commands match the selected software stack
-1. for CP2K: verify basis set and potential files are accessible
-1. only then run:
+- Step 4: verify `type_map.raw` content matches `param.json` `type_map` ordering.
+- Step 5: verify `sys_configs` structure files exist.
+- Step 6: verify stage commands match the selected software stack.
+- Step 7: for CP2K, verify basis set and potential files are accessible.
+- Step 8: only then run:
 
-```bash
-dpgen run param.json machine.json
-```
+  ```bash
+  dpgen run param.json machine.json
+  ```
 
 ## Output contract
 
