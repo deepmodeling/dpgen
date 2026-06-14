@@ -346,10 +346,10 @@ ls init_data/*/type_map.raw
 ```
 
 4. verify `type_map.raw` content matches `param.json` `type_map` ordering
-5. verify `sys_configs` structure files exist
-6. verify stage commands match the selected software stack
-7. for CP2K: verify basis set and potential files are accessible
-8. only then run:
+1. verify `sys_configs` structure files exist
+1. verify stage commands match the selected software stack
+1. for CP2K: verify basis set and potential files are accessible
+1. only then run:
 
 ```bash
 dpgen run param.json machine.json
