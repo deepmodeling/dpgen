@@ -103,7 +103,7 @@ If a value looks scientifically questionable, explain the concern instead of sil
 
 ### 3. Descriptor selection guidance
 
-dpgen (v0.13.x) only supports the **TensorFlow backend** of DeePMD-kit. It does NOT support PyTorch-only models (such as DPA-2, DPA-3). Do not recommend or generate configs for PyTorch-only descriptors.
+dpgen includes `train_backend` options for both `"tensorflow"` and `"pytorch"`, so backend support may include PyTorch depending on the installed DeePMD-kit stack. If backend or descriptor compatibility is unclear, verify it against the repo's supported `train_backend` values (`"tensorflow"`, `"pytorch"`) and the user's installed software before generating configs.
 
 When the user has not specified a descriptor type, recommend based on:
 
@@ -113,7 +113,7 @@ When the user has not specified a descriptor type, recommend based on:
 | `se_atten`    | Multi-component systems, moderate complexity | Attention-based, supports `sel: "auto"`                                             |
 | `se_atten_v2` | Modern default, best accuracy/cost balance   | **Spell exactly `se_atten_v2`** (double-t). Supports `sel: "auto"`, `attn_layer: 0` |
 
-For new projects, prefer `se_atten_v2` unless the user has specific needs. If the user requires DPA-2/DPA-3 or PyTorch models, redirect them to **dpgen2** which supports the PyTorch backend.
+For new projects, prefer `se_atten_v2` unless the user has specific needs. If the user requires PyTorch-only models or DPA-2/DPA-3, prefer **dpgen2** unless the current dpgen and DeePMD-kit installation are verified to support the requested model.
 
 ### 4. Keep local and scheduler execution explicit
 
@@ -346,10 +346,10 @@ ls init_data/*/type_map.raw
 ```
 
 4. verify `type_map.raw` content matches `param.json` `type_map` ordering
-1. verify `sys_configs` structure files exist
-1. verify stage commands match the selected software stack
-1. for CP2K: verify basis set and potential files are accessible
-1. only then run:
+5. verify `sys_configs` structure files exist
+6. verify stage commands match the selected software stack
+7. for CP2K: verify basis set and potential files are accessible
+8. only then run:
 
 ```bash
 dpgen run param.json machine.json
@@ -380,7 +380,7 @@ Always provide:
 - Do not assume outer-shell activation is inherited by stage jobs; for scheduler execution, require explicit `source_list` per stage.
 - If the user already has working templates, patch them rather than overwriting them blindly.
 - Do not set `model_devi_engine` unless using a non-LAMMPS engine (it defaults to LAMMPS).
-- Leave `training.training_data.systems` as an empty list `[]` in `default_training_param` — dpgen fills this automatically.
+- In `default_training_param`, leave `training.training_data.systems` unset or empty — `dpgen/generator/run.py` fills it from `init_data_sys` automatically.
 
 ## References and bundled files
 
