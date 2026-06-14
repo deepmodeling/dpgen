@@ -346,9 +346,13 @@ Before execution, validate the workflow in this order:
   ```
 
 - Step 4: verify `type_map.raw` content matches `param.json` `type_map` ordering.
+
 - Step 5: verify `sys_configs` structure files exist.
+
 - Step 6: verify stage commands match the selected software stack.
+
 - Step 7: for CP2K, verify basis set and potential files are accessible.
+
 - Step 8: only then run:
 
   ```bash
