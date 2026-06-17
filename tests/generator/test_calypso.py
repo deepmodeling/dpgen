@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 import unittest
 from pathlib import Path
@@ -7,6 +8,8 @@ import numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
+
+from dpgen.generator.lib.make_calypso import _make_model_devi_native_calypso
 
 from .context import (
     _parse_calypso_dis_mtx,
@@ -131,6 +134,24 @@ class TestCALYPSOScript(unittest.TestCase):
                 self.assertEqual(int(temp_2), 3)
                 os.remove("input.dat")
                 break
+
+    def test_make_native_calypso_accepts_single_item_lists(self):
+        work_path = Path("calypso_native_test")
+        run_path = work_path / "gen_stru_analy.000"
+        if work_path.exists():
+            shutil.rmtree(work_path)
+        run_path.mkdir(parents=True)
+        job = model_devi_jobs["model_devi_jobs"].copy()
+
+        _make_model_devi_native_calypso(0, [{**job, "times": [0]}], [str(run_path)])
+
+        text = (run_path / "input.dat").read_text()
+        self.assertIn("Volume = 30", text)
+        self.assertIn("PsoRatio = 0.6", text)
+        self.assertIn("PopSize = 5", text)
+        self.assertIn("PSTRESS = 0.000000", text)
+        self.assertIn("fmax = 0.010000", text)
+        shutil.rmtree(work_path)
 
     def test_parse_calypso_input(self):
         ret = make_calypso_input(
