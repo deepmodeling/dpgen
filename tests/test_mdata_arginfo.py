@@ -56,6 +56,12 @@ class TestRunMdataArginfo(unittest.TestCase):
         with self.assertRaises(ArgumentValueError):
             normalize(run_mdata_arginfo(), data, strict_check=False)
 
+    def test_rejects_empty_list_section(self):
+        data = _mdata(lambda item: item)
+        data["train"] = []
+        with self.assertRaises(ArgumentValueError):
+            normalize(run_mdata_arginfo(), data, strict_check=False)
+
     def test_rejects_scalar_section(self):
         data = _mdata(lambda item: item)
         data["train"] = "not-a-task-section"

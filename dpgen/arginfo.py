@@ -2,11 +2,22 @@ from dargs import Argument
 
 
 def _is_mdata_task_config(value):
-    """Return whether a machine task section matches runtime accepted shapes."""
+    """Return whether a machine task section matches runtime accepted shapes.
+
+    Parameters
+    ----------
+    value : object
+        Candidate value for one machine task section, such as ``train``.
+
+    Returns
+    -------
+    bool
+        Whether the value is a dict or a non-empty list of dicts.
+    """
     if isinstance(value, dict):
         return True
     if isinstance(value, list):
-        return all(isinstance(item, dict) for item in value)
+        return len(value) > 0 and all(isinstance(item, dict) for item in value)
     return False
 
 
