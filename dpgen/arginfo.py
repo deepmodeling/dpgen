@@ -1,5 +1,15 @@
 from dargs import Argument
 
+
+def _is_mdata_task_config(value):
+    """Return whether a machine task section matches runtime accepted shapes."""
+    if isinstance(value, dict):
+        return True
+    if isinstance(value, list):
+        return all(isinstance(item, dict) for item in value)
+    return False
+
+
 from dpgen.dispatcher.Dispatcher import mdata_arginfo
 
 
@@ -34,9 +44,14 @@ def general_mdata_arginfo(name: str, tasks: tuple[str]) -> Argument:
         sub_fields.append(
             Argument(
                 task,
-                dict,
+                (dict, list),
                 optional=False,
                 sub_fields=mdata_arginfo(),
+                extra_check=_is_mdata_task_config,
+                extra_check_errmsg=(
+                    "expected a dict or a list of dicts, matching "
+                    "convert_mdata() runtime semantics"
+                ),
                 doc=doc_mdata % task,
             )
         )
