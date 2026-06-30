@@ -369,7 +369,7 @@ class Gamma(Property):
 
     def __stru_fix(self, stru) -> None:
         fix_dict = {"true": True, "false": False}
-        fix_xyz = [fix_dict[i] for i in self.addfix]
+        fix_xyz = [fix_dict[i] for i in self.add_fix]
         abacus.stru_fix_atom(stru, fix_atom=fix_xyz)
 
     def __inLammpes_fix(self, inLammps) -> None:
