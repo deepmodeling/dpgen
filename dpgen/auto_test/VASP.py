@@ -239,13 +239,11 @@ class VASP(Task):
         return ["INCAR", "POSCAR", "KPOINTS", "POTCAR"]
 
     def forward_common_files(self, property_type="relaxation"):
-        potcar_not_link_list = ["vacancy", "interstitial"]
-        if property_type == "elastic":
-            return ["INCAR", "KPOINTS", "POTCAR"]
-        elif property_type in potcar_not_link_list:
-            return ["INCAR"]
-        else:
-            return ["INCAR", "POTCAR"]
+        # VASP creates INCAR and POTCAR files per-task in subdirectories and symlinks them,
+        # rather than having true common files in the work_path.
+        # Return empty list to avoid upload errors when dispatcher looks for these files
+        # in the work_path directory.
+        return []
 
     def backward_files(self, property_type="relaxation"):
         return ["OUTCAR", "outlog", "CONTCAR", "OSZICAR", "XDATCAR"]
