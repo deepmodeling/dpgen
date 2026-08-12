@@ -39,9 +39,14 @@ These are verified failure modes discovered through testing. Treat as hard rules
 
 1. **`se_atten_v2` spelling** — The descriptor type is `se_atten_v2` (double-t in "atten"). Writing `se_attn_v2` will silently fail or error. Always verify the exact string.
 
-1. **`remote_root` is mandatory** — dpdispatcher requires `remote_root` even for local Shell execution. Set it to a writable path like `/tmp/dpgen_train`. Omitting it causes runtime errors.
+1. **`remote_root` is context-dependent** — require it for remote or scheduler
+   contexts whose installed dpdispatcher schema needs a remote working root.
+   Lazy/local contexts can omit it. Preserve an existing working omission and
+   validate against the installed dpdispatcher version.
 
-1. **`batch_type: "Shell"` is case-sensitive** — Must be capitalized `"Shell"`, not `"shell"` or `"SHELL"`. Same for `"Slurm"`, `"PBS"`, etc.
+1. **`batch_type` must be registered** — canonical names and lowercase aliases
+   can both be valid. Preserve an existing working value and validate new values
+   against the installed dpdispatcher version.
 
 1. **CP2K `user_fp_params` KIND format** — When multiple element kinds are needed, use `"_": ["H", "O"]` with parallel arrays for `POTENTIAL` and `BASIS_SET`. This maps to repeated KIND sections.
 
@@ -73,6 +78,13 @@ When using this skill, the agent should:
 1. after execution, summarize outputs and next inspection targets
 
 ## Working policy
+
+### 0. Treat execution as separately authorized
+
+Prepare, explain, and validate by default. Execute `dpgen run` only when the
+user has explicitly requested execution and, after validation, confirmed the
+exact command. Supplying configuration files, passing validation, or showing the
+command does not by itself authorize an HPC or first-principles workload.
 
 ### 1. Ask only for missing inputs
 
@@ -240,7 +252,8 @@ For each stage `train`, `model_devi`, and `fp`, collect or preserve:
 - `machine.batch_type`
 - `machine.context_type`
 - `machine.local_root`
-- `machine.remote_root` **(mandatory — even for local Shell)**
+- `machine.remote_root` when required by the selected context; preserve a
+  working omission for lazy/local execution
 - `resources.number_node`
 - `resources.cpu_per_node`
 - `resources.gpu_per_node`
@@ -250,8 +263,10 @@ For each stage `train`, `model_devi`, and `fp`, collect or preserve:
 
 Choose a runtime profile first, then fill the matching template:
 
-- server-local Slurm: `assets/machine.template.server-local-slurm.json`
-- pure local shell testing: `assets/machine.template.local-shell.json`
+- server-local scheduler:
+  [existing scheduler example](../../examples/machine/DeePMD-kit-1.x/machine-lsf-slurm-cp2k.json)
+- pure local shell testing:
+  [existing local example](../../examples/run/ch4/machine.json)
 
 ## How to build `param.json`
 
@@ -292,8 +307,10 @@ Trust level guidance:
 
 Official reference examples:
 
-- `assets/param.example.water-cp2k.json`
-- `assets/param.example.water-vasp.json`
+- CP2K:
+  [methane example](../../examples/run/dp2.x-lammps-cp2k/param_CH4_deepmd-kit-2.0.1.json)
+- VASP:
+  [CH4 example](../../examples/run/dp2.x-lammps-vasp/CH4/param_CH4_deepmd-kit-2.x.json)
 
 ## How to build `machine.json`
 
@@ -378,28 +395,25 @@ Always provide:
 - Keep `type_map` ordering consistent with `init_data_sys` type_map.raw files.
 - If required inputs are missing, stop and ask instead of guessing.
 - Always spell `se_atten_v2` correctly (not `se_attn_v2`).
-- Always include `remote_root` in machine config — it is mandatory even for local execution.
-- Always capitalize `batch_type` values: `"Shell"`, `"Slurm"`, `"PBS"`.
+- Include `remote_root` when the selected context requires it; do not add it
+  solely to rewrite a working lazy/local configuration.
+- Use a `batch_type` accepted by the installed dpdispatcher version and
+  preserve an existing working canonical name or alias.
 - For CP2K KIND sections with multiple elements, use `"_": ["elem1", "elem2"]` array format.
 - Do not assume outer-shell activation is inherited by stage jobs; for scheduler execution, require explicit `source_list` per stage.
 - If the user already has working templates, patch them rather than overwriting them blindly.
 - Do not set `model_devi_engine` unless using a non-LAMMPS engine (it defaults to LAMMPS).
 - In `default_training_param`, leave `training.training_data.systems` unset or empty — `dpgen/generator/run.py` fills it from `init_data_sys` automatically.
 
-## References and bundled files
+## Repository examples and references
 
-Use these bundled files:
+Use these checked-in repository examples as starting points:
 
-- `assets/param.template.json`
-- `assets/param.example.water-cp2k.json`
-- `assets/param.example.water-vasp.json`
-- `assets/machine.template.json`
-- `assets/machine.template.server-local-slurm.json`
-- `assets/machine.template.local-shell.json`
-- `references/param-fields.md`
-- `references/machine-fields.md`
-- `references/workflow-notes.md`
-- `references/descriptor-types.md`
+- [local CH4 parameter example](../../examples/run/ch4/param.json)
+- [local CH4 machine example](../../examples/run/ch4/machine.json)
+- [CP2K parameter example](../../examples/run/dp2.x-lammps-cp2k/param_CH4_deepmd-kit-2.0.1.json)
+- [VASP parameter example](../../examples/run/dp2.x-lammps-vasp/CH4/param_CH4_deepmd-kit-2.x.json)
+- [scheduler machine example](../../examples/machine/DeePMD-kit-1.x/machine-lsf-slurm-cp2k.json)
 
 External references:
 
