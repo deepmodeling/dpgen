@@ -266,7 +266,7 @@ Choose a runtime profile first, then fill the matching template:
 - server-local scheduler:
   [existing scheduler example](../../examples/machine/DeePMD-kit-1.x/machine-lsf-slurm-cp2k.json)
 - pure local shell testing:
-  [existing local example](../../examples/run/ch4/machine.json)
+  [existing local example](../../examples/machine/DeePMD-kit-1.x/machine-local.json)
 
 ## How to build `param.json`
 
@@ -410,7 +410,7 @@ Always provide:
 Use these checked-in repository examples as starting points:
 
 - [local CH4 parameter example](../../examples/run/ch4/param.json)
-- [local CH4 machine example](../../examples/run/ch4/machine.json)
+- [local machine example](../../examples/machine/DeePMD-kit-1.x/machine-local.json)
 - [CP2K parameter example](../../examples/run/dp2.x-lammps-cp2k/param_CH4_deepmd-kit-2.0.1.json)
 - [VASP parameter example](../../examples/run/dp2.x-lammps-vasp/CH4/param_CH4_deepmd-kit-2.x.json)
 - [scheduler machine example](../../examples/machine/DeePMD-kit-1.x/machine-lsf-slurm-cp2k.json)
