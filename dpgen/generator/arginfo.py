@@ -118,7 +118,7 @@ def training_args_dp() -> list[Argument]:
         deviation. It defaults to ``train_backend``. A model trained with
         ``pytorch`` can be deployed with ``pytorch-exportable`` to preserve its
         ``.pt`` training checkpoint while producing a graph-lowered ``.pt2``
-        model for LAMMPS/Kokkos. Other cross-backend exports are not supported.
+        model for model deviation. Other cross-backend exports are not supported.
         """
     )
     doc_training_iter0_model_path = "The model used to init the first iter training. Number of element should be equal to numb_models."

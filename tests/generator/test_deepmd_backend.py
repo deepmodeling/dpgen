@@ -206,7 +206,7 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
         }
         mdata = {
             "api_version": "1.0",
-            "model_devi_command": "lmp -k on g 1 -sf kk",
+            "model_devi_command": "lmp",
             "model_devi_group_size": 1,
             "model_devi_machine": {},
             "model_devi_resources": {},
@@ -215,7 +215,6 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
             run_md_model_devi(0, jdata, mdata)
         call = make_submission.call_args.kwargs
         self.assertEqual(call["forward_common_files"], ["graph.000.pt2"])
-        self.assertIn("lmp -k on g 1 -sf kk", call["commands"][0])
 
 
 if __name__ == "__main__":

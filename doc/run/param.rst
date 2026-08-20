@@ -40,6 +40,4 @@ checkpoints keep the ``.pt`` suffix independently of the frozen model format.
 The ``model_devi_backend`` setting makes ``dpgen`` train with ``dp --pt`` but
 freeze (and optionally compress) with ``dp --pt-expt``. The resulting ``.pt2``
 models are automatically linked into the model-deviation stage and listed in
-the generated LAMMPS input. For Kokkos execution, configure the model-deviation
-command to invoke a Kokkos-enabled LAMMPS build, for example
-``lmp -k on g 1 -sf kk``.
+the generated LAMMPS input.
