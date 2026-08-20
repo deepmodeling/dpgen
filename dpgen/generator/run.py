@@ -125,21 +125,84 @@ check_outcar_file = os.path.join(ROOT_PATH, "generator/lib/calypso_check_outcar.
 run_opt_file = os.path.join(ROOT_PATH, "generator/lib/calypso_run_opt.py")
 
 
-def _get_model_suffix(jdata) -> str:
-    """Return the model suffix based on the backend."""
+_BACKEND_ALIASES = {"pt-expt": "pytorch-exportable"}
+_BACKEND_CONFIG = {
+    "tensorflow": {
+        "flag": "",
+        "checkpoint_suffix": ".index",
+        "default_model_format": "pb",
+        "model_formats": {"pb"},
+    },
+    "pytorch": {
+        "flag": "--pt",
+        "checkpoint_suffix": ".pt",
+        "default_model_format": "pth",
+        "model_formats": {"pth", "pt2"},
+    },
+    "pytorch-exportable": {
+        "flag": "--pt-expt",
+        "checkpoint_suffix": ".pt",
+        "default_model_format": "pte",
+        "model_formats": {"pte", "pt2"},
+    },
+    "jax": {
+        "flag": "--jax",
+        "checkpoint_suffix": ".jax",
+        "default_model_format": "savedmodel",
+        "model_formats": {"savedmodel"},
+    },
+}
+
+
+def _get_backend_config(jdata) -> tuple[str, dict, str]:
+    """Return and validate the DeePMD backend and deployment format."""
     mlp_engine = jdata.get("mlp_engine", "dp")
-    if mlp_engine == "dp":
-        suffix_map = {"tensorflow": ".pb", "pytorch": ".pth", "jax": ".savedmodel"}
-        backend = jdata.get("train_backend", "tensorflow")
-        if backend in suffix_map:
-            suffix = suffix_map[backend]
-        else:
-            raise ValueError(
-                f"The backend {backend} is not available. Supported backends are: 'tensorflow', 'pytorch', 'jax'."
-            )
-        return suffix
-    else:
+    if mlp_engine != "dp":
         raise ValueError(f"Unsupported engine: {mlp_engine}")
+
+    backend = jdata.get("train_backend", "tensorflow")
+    backend = _BACKEND_ALIASES.get(backend, backend)
+    if backend not in _BACKEND_CONFIG:
+        supported = "', '".join(_BACKEND_CONFIG)
+        raise ValueError(
+            f"The backend {backend} is not available. Supported backends are: '{supported}'."
+        )
+
+    config = _BACKEND_CONFIG[backend]
+    model_format = jdata.get("model_format", config["default_model_format"])
+    if model_format not in config["model_formats"]:
+        supported = "', '".join(sorted(config["model_formats"]))
+        raise ValueError(
+            f"The model format {model_format} is not available for backend {backend}. "
+            f"Supported formats are: '{supported}'."
+        )
+    return backend, config, model_format
+
+
+def _get_model_suffix(jdata) -> str:
+    """Return the frozen model suffix."""
+    _, _, model_format = _get_backend_config(jdata)
+    return f".{model_format}"
+
+
+def _get_checkpoint_suffix(jdata) -> str:
+    """Return the training checkpoint suffix."""
+    _, config, _ = _get_backend_config(jdata)
+    return config["checkpoint_suffix"]
+
+
+def _get_train_backend_flag(jdata) -> str:
+    """Return the DeePMD CLI backend flag."""
+    _, config, _ = _get_backend_config(jdata)
+    return config["flag"]
+
+
+def _get_input_model_suffix(models) -> str:
+    """Return the common suffix of input models."""
+    suffixes = {Path(model).suffix.lower() for model in models}
+    if "" in suffixes or len(suffixes) != 1:
+        raise ValueError("Input models must have the same non-empty file suffix.")
+    return suffixes.pop()
 
 
 def get_job_names(jdata):
@@ -667,9 +730,13 @@ def make_train_dp(iter_index, jdata, mdata):
         None,
     )
     if copied_models is not None:
+        input_model_suffix = _get_input_model_suffix(copied_models)
         for ii in range(len(copied_models)):
             _link_old_models(
-                work_path, [copied_models[ii]], ii, basename=f"init{suffix}"
+                work_path,
+                [copied_models[ii]],
+                ii,
+                basename=f"init{input_model_suffix}",
             )
     # Copy user defined forward files
     symlink_user_forward_files(mdata=mdata, task_type="train", work_path=work_path)
@@ -730,7 +797,9 @@ def run_train_dp(iter_index, jdata, mdata):
     # print("debug:run_train:mdata", mdata)
     # load json param
     numb_models = jdata["numb_models"]
+    backend, _, model_format = _get_backend_config(jdata)
     suffix = _get_model_suffix(jdata)
+    checkpoint_suffix = _get_checkpoint_suffix(jdata)
     # train_param = jdata['train_param']
     train_input_file = default_train_input_file
     training_reuse_iter = jdata.get("training_reuse_iter")
@@ -752,6 +821,27 @@ def run_train_dp(iter_index, jdata, mdata):
     except KeyError:
         mdata = set_version(mdata)
 
+    if (backend == "pytorch-exportable" or model_format == "pt2") and Version(
+        mdata["deepmd_version"]
+    ) < Version("3.2"):
+        raise RuntimeError(
+            "The pytorch-exportable backend and pt2 models require DeePMD-kit 3.2 or later."
+        )
+    if backend == "pytorch-exportable" and training_init_frozen_model is not None:
+        raise RuntimeError(
+            "The pytorch-exportable backend does not support training_init_frozen_model; "
+            "use training_finetune_model or a checkpoint instead."
+        )
+    if (
+        backend == "pytorch"
+        and model_format == "pt2"
+        and jdata.get("dp_compress", False)
+    ):
+        raise RuntimeError(
+            "The pytorch backend cannot compress pt2 models; use "
+            "pytorch-exportable for a compressible pt2 model."
+        )
+
     if (
         training_init_model
         + (training_init_frozen_model is not None)
@@ -764,10 +854,9 @@ def run_train_dp(iter_index, jdata, mdata):
 
     train_command = mdata.get("train_command", "dp").strip()
     # assert train_command == "dp", "The 'train_command' should be 'dp'"     # the tests should be updated to run this command
-    if suffix == ".pth":
-        train_command += " --pt"
-    elif suffix == ".savedmodel":
-        train_command += " --jax"
+    backend_flag = _get_train_backend_flag(jdata)
+    if backend_flag:
+        train_command += f" {backend_flag}"
 
     # paths
     iter_name = make_iter_name(iter_index)
@@ -797,25 +886,32 @@ def run_train_dp(iter_index, jdata, mdata):
         if training_init_model:
             init_flag = " --init-model old/model.ckpt"
         elif training_init_frozen_model is not None:
-            init_flag = f" --init-frz-model old/init{suffix}"
+            input_model_suffix = _get_input_model_suffix(training_init_frozen_model)
+            init_flag = f" --init-frz-model old/init{input_model_suffix}"
         elif training_finetune_model is not None:
-            init_flag = f" --finetune old/init{suffix}"
+            input_model_suffix = _get_input_model_suffix(training_finetune_model)
+            init_flag = f" --finetune old/init{input_model_suffix}"
         command = f"{train_command} train {train_input_file}{extra_flags}"
-        if suffix == ".pb":
-            ckpt_suffix = ".index"
-        elif suffix == ".pth":
-            ckpt_suffix = ".pt"
-        elif suffix == ".savedmodel":
-            ckpt_suffix = ".jax"
-        else:
-            raise RuntimeError(f"Unknown suffix {suffix}")
-        command = f"{{ if [ ! -f model.ckpt{ckpt_suffix} ]; then {command}{init_flag}; else {command} --restart model.ckpt; fi }}"
+        command = f"{{ if [ ! -f model.ckpt{checkpoint_suffix} ]; then {command}{init_flag}; else {command} --restart model.ckpt; fi }}"
         command = f"/bin/sh -c {shlex.quote(command)}"
         commands.append(command)
-        command = f"{train_command} freeze"
+        if backend == "pytorch-exportable":
+            command = f"{train_command} freeze -o frozen_model{suffix}"
+            if model_format == "pt2":
+                command += " --lower-kind graph"
+        elif backend == "pytorch" and model_format == "pt2":
+            command = f"{train_command} freeze -o frozen_model{suffix}"
+        else:
+            command = f"{train_command} freeze"
         commands.append(command)
         if jdata.get("dp_compress", False):
-            commands.append(f"{train_command} compress")
+            if backend == "pytorch-exportable":
+                commands.append(
+                    f"{train_command} compress -i frozen_model{suffix} "
+                    f"-o frozen_model_compressed{suffix}"
+                )
+            else:
+                commands.append(f"{train_command} compress")
     else:
         raise RuntimeError(
             "DP-GEN currently only supports for DeePMD-kit 1.x to 3.x version!"
@@ -836,20 +932,26 @@ def run_train_dp(iter_index, jdata, mdata):
     if "srtab_file_path" in jdata.keys():
         forward_files.append(zbl_file)
     if training_init_model:
-        if suffix == ".pb":
+        if checkpoint_suffix == ".index":
             forward_files += [
                 os.path.join("old", "model.ckpt.meta"),
                 os.path.join("old", "model.ckpt.index"),
                 os.path.join("old", "model.ckpt.data-00000-of-00001"),
             ]
-        elif suffix == ".pth":
+        elif checkpoint_suffix == ".pt":
             forward_files += [os.path.join("old", "model.ckpt.pt")]
-        elif suffix == ".savedmodel":
+        elif checkpoint_suffix == ".jax":
             forward_files += [os.path.join("old", "model.ckpt.jax")]
         else:
-            raise RuntimeError(f"Unknown suffix {suffix}")
+            raise RuntimeError(f"Unknown checkpoint suffix {checkpoint_suffix}")
     elif training_init_frozen_model is not None or training_finetune_model is not None:
-        forward_files.append(os.path.join("old", f"init{suffix}"))
+        input_models = (
+            training_init_frozen_model
+            if training_init_frozen_model is not None
+            else training_finetune_model
+        )
+        input_model_suffix = _get_input_model_suffix(input_models)
+        forward_files.append(os.path.join("old", f"init{input_model_suffix}"))
 
     backward_files = [
         f"frozen_model{suffix}",
@@ -860,18 +962,18 @@ def run_train_dp(iter_index, jdata, mdata):
     if jdata.get("dp_compress", False):
         backward_files.append(f"frozen_model_compressed{suffix}")
 
-    if suffix == ".pb":
+    if checkpoint_suffix == ".index":
         backward_files += [
             "model.ckpt.meta",
             "model.ckpt.index",
             "model.ckpt.data-00000-of-00001",
         ]
-    elif suffix == ".pth":
+    elif checkpoint_suffix == ".pt":
         backward_files += ["model.ckpt.pt"]
-    elif suffix == ".savedmodel":
+    elif checkpoint_suffix == ".jax":
         backward_files += ["model.ckpt.jax"]
     else:
-        raise RuntimeError(f"Unknown suffix {suffix}")
+        raise RuntimeError(f"Unknown checkpoint suffix {checkpoint_suffix}")
 
     if not jdata.get("one_h5", False):
         init_data_sys_ = jdata["init_data_sys"]

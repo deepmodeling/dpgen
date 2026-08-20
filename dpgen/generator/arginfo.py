@@ -94,8 +94,22 @@ def training_args_dp() -> list[Argument]:
     list[dargs.Argument]
         List of training arguments.
     """
-    doc_train_backend = (
-        "The backend of the training. Currently only support tensorflow and pytorch."
+    doc_train_backend = textwrap.dedent(
+        """\
+        The DeePMD-kit training backend. Supported values are ``tensorflow``,
+        ``pytorch``, ``pytorch-exportable`` (or its ``pt-expt`` alias), and ``jax``.
+        The PyTorch-exportable backend and DPA4 ``pt2`` export require DeePMD-kit
+        3.2 or later.
+        """
+    )
+    doc_model_format = textwrap.dedent(
+        """\
+        The frozen model format. Defaults depend on ``train_backend``:
+        ``pb`` for TensorFlow, ``pth`` for PyTorch, ``pte`` for
+        PyTorch-exportable, and ``savedmodel`` for JAX. PyTorch also supports
+        ``pt2`` for DPA4. PyTorch-exportable supports ``pte`` and ``pt2``;
+        use ``pt2`` for the graph export used by DPA4 and DPA4C.
+        """
     )
     doc_training_iter0_model_path = "The model used to init the first iter training. Number of element should be equal to numb_models."
     doc_training_init_model = "Iteration > 0, the model parameters will be initilized from the model trained at the previous iteration. Iteration == 0, the model parameters will be initialized from training_iter0_model_path."
@@ -138,6 +152,12 @@ def training_args_dp() -> list[Argument]:
             optional=True,
             default="tensorflow",
             doc=doc_train_backend,
+        ),
+        Argument(
+            "model_format",
+            str,
+            optional=True,
+            doc=doc_model_format,
         ),
         Argument(
             "training_iter0_model_path",
