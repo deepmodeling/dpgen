@@ -104,11 +104,21 @@ def training_args_dp() -> list[Argument]:
     )
     doc_model_format = textwrap.dedent(
         """\
-        The frozen model format. Defaults depend on ``train_backend``:
+        The frozen model format. Defaults depend on ``model_devi_backend`` (or
+        ``train_backend`` when no deployment backend is set):
         ``pb`` for TensorFlow, ``pth`` for PyTorch, ``pte`` for
         PyTorch-exportable, and ``savedmodel`` for JAX. PyTorch also supports
         ``pt2`` for DPA4. PyTorch-exportable supports ``pte`` and ``pt2``;
         use ``pt2`` for the graph export used by DPA4 and DPA4C.
+        """
+    )
+    doc_model_devi_backend = textwrap.dedent(
+        """\
+        The DeePMD backend used to freeze and compress models for model
+        deviation. It defaults to ``train_backend``. A model trained with
+        ``pytorch`` can be deployed with ``pytorch-exportable`` to preserve its
+        ``.pt`` training checkpoint while producing a graph-lowered ``.pt2``
+        model for LAMMPS/Kokkos. Other cross-backend exports are not supported.
         """
     )
     doc_training_iter0_model_path = "The model used to init the first iter training. Number of element should be equal to numb_models."
@@ -152,6 +162,12 @@ def training_args_dp() -> list[Argument]:
             optional=True,
             default="tensorflow",
             doc=doc_train_backend,
+        ),
+        Argument(
+            "model_devi_backend",
+            str,
+            optional=True,
+            doc=doc_model_devi_backend,
         ),
         Argument(
             "model_format",

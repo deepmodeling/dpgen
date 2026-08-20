@@ -1,3 +1,4 @@
+import json
 import os
 import tempfile
 import unittest
@@ -7,9 +8,11 @@ from unittest.mock import patch
 from dpgen.generator.run import (
     _get_checkpoint_suffix,
     _get_input_model_suffix,
+    _get_model_backend_flag,
     _get_model_suffix,
     _get_train_backend_flag,
     post_train_dp,
+    run_md_model_devi,
     run_train_dp,
 )
 
@@ -36,11 +39,38 @@ class TestDeepmdBackendConfig(unittest.TestCase):
                 self.assertEqual(_get_train_backend_flag(jdata), "--pt-expt")
 
     def test_explicit_pt2_formats(self):
-        for backend in ("pytorch", "pytorch-exportable", "pt-expt"):
-            with self.subTest(backend=backend):
-                jdata = {"train_backend": backend, "model_format": "pt2"}
+        cases = [
+            {"train_backend": "pytorch", "model_format": "pt2"},
+            {"train_backend": "pytorch-exportable", "model_format": "pt2"},
+            {"train_backend": "pt-expt", "model_format": "pt2"},
+            {
+                "train_backend": "pytorch",
+                "model_devi_backend": "pytorch-exportable",
+                "model_format": "pt2",
+            },
+        ]
+        for jdata in cases:
+            with self.subTest(jdata=jdata):
                 self.assertEqual(_get_model_suffix(jdata), ".pt2")
                 self.assertEqual(_get_checkpoint_suffix(jdata), ".pt")
+
+    def test_pytorch_checkpoint_can_use_exportable_deployment(self):
+        jdata = {
+            "train_backend": "pytorch",
+            "model_devi_backend": "pt-expt",
+            "model_format": "pt2",
+        }
+        self.assertEqual(_get_train_backend_flag(jdata), "--pt")
+        self.assertEqual(_get_model_backend_flag(jdata), "--pt-expt")
+
+    def test_rejects_other_cross_backend_exports(self):
+        with self.assertRaisesRegex(ValueError, "Cannot export models"):
+            _get_model_suffix(
+                {
+                    "train_backend": "tensorflow",
+                    "model_devi_backend": "pytorch-exportable",
+                }
+            )
 
     def test_rejects_incompatible_model_format(self):
         with self.assertRaisesRegex(ValueError, "not available for backend"):
@@ -81,11 +111,18 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
         self.assertIn("frozen_model.pb", call["backward_files"])
         self.assertIn("model.ckpt.index", call["backward_files"])
 
-    def test_regular_pytorch_dpa4_pt2(self):
-        call = self._run(train_backend="pytorch", model_format="pt2")
+    def test_pytorch_dpa4_uses_exportable_pt2_deployment(self):
+        call = self._run(
+            train_backend="pytorch",
+            model_devi_backend="pytorch-exportable",
+            model_format="pt2",
+        )
         self.assertIn("dp --pt train", call["commands"][0])
         self.assertIn("model.ckpt.pt", call["commands"][0])
-        self.assertEqual(call["commands"][1], "dp --pt freeze -o frozen_model.pt2")
+        self.assertEqual(
+            call["commands"][1],
+            "dp --pt-expt freeze -o frozen_model.pt2 --lower-kind graph",
+        )
         self.assertIn("frozen_model.pt2", call["backward_files"])
         self.assertIn("model.ckpt.pt", call["backward_files"])
 
@@ -155,6 +192,30 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
             str(Path("000") / "frozen_model.pt2"),
             str(Path("iter.000000") / "00.train" / "graph.000.pt2"),
         )
+
+    def test_model_deviation_forwards_pt2_models(self):
+        work_path = Path("iter.000000") / "01.model_devi"
+        (work_path / "task.000.000000").mkdir(parents=True)
+        (work_path / "graph.000.pt2").touch()
+        (work_path / "cur_job.json").write_text(json.dumps({}), encoding="utf-8")
+        jdata = {
+            "train_backend": "pytorch",
+            "model_devi_backend": "pytorch-exportable",
+            "model_format": "pt2",
+            "model_devi_jobs": [{}],
+        }
+        mdata = {
+            "api_version": "1.0",
+            "model_devi_command": "lmp -k on g 1 -sf kk",
+            "model_devi_group_size": 1,
+            "model_devi_machine": {},
+            "model_devi_resources": {},
+        }
+        with patch("dpgen.generator.run.make_submission") as make_submission:
+            run_md_model_devi(0, jdata, mdata)
+        call = make_submission.call_args.kwargs
+        self.assertEqual(call["forward_common_files"], ["graph.000.pt2"])
+        self.assertIn("lmp -k on g 1 -sf kk", call["commands"][0])
 
 
 if __name__ == "__main__":

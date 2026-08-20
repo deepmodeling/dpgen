@@ -19,6 +19,7 @@ regular PyTorch DPA4 model can be exported as an AOTInductor archive with:
 
    {
      "train_backend": "pytorch",
+     "model_devi_backend": "pytorch-exportable",
      "model_format": "pt2"
    }
 
@@ -36,3 +37,9 @@ export explicitly:
 ``pt-expt`` is accepted as an alias of ``pytorch-exportable``. The ``pte``
 format remains available for dense PyTorch-exportable models. Training
 checkpoints keep the ``.pt`` suffix independently of the frozen model format.
+The ``model_devi_backend`` setting makes ``dpgen`` train with ``dp --pt`` but
+freeze (and optionally compress) with ``dp --pt-expt``. The resulting ``.pt2``
+models are automatically linked into the model-deviation stage and listed in
+the generated LAMMPS input. For Kokkos execution, configure the model-deviation
+command to invoke a Kokkos-enabled LAMMPS build, for example
+``lmp -k on g 1 -sf kk``.
