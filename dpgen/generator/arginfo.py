@@ -116,9 +116,11 @@ def training_args_dp() -> list[Argument]:
         """\
         The DeePMD backend used to freeze and compress models for model
         deviation. It defaults to ``train_backend``. A model trained with
-        ``pytorch`` can be deployed with ``pytorch-exportable`` to preserve its
-        ``.pt`` training checkpoint while producing a graph-lowered ``.pt2``
-        model for model deviation. Other cross-backend exports are not supported.
+        ``pytorch`` can be deployed with ``pytorch-exportable`` and
+        ``model_format=pt2`` to preserve its ``.pt`` training checkpoint while
+        producing a graph-lowered ``.pt2`` model for model deviation. If
+        ``model_format`` is omitted, the deployment backend's default format is
+        used. Other cross-backend exports are not supported.
         """
     )
     doc_training_iter0_model_path = "The model used to init the first iter training. Number of element should be equal to numb_models."
