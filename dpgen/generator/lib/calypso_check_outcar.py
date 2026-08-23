@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import glob
 import os
 
 import numpy as np
@@ -8,6 +9,14 @@ import numpy as np
 check if structure optimization worked well
 if not, this script will generate a fake outcar
 """
+
+
+def find_model_path():
+    """Find the first backend-specific model forwarded by DP-GEN."""
+    models = sorted(glob.glob(os.path.join("..", "graph.*")))
+    if not models:
+        raise FileNotFoundError("No graph model was forwarded for CALYPSO recovery")
+    return models[0]
 
 
 def Get_Element_Num(elements):
@@ -86,7 +95,7 @@ def check():
     from ase.io import read
     from deepmd.calculator import DP
 
-    calc = DP(model="../graph.000.pb")  # init the model before iteration
+    calc = DP(model=find_model_path())  # initialize one model before iteration
 
     to_be_opti = read("POSCAR")
     to_be_opti.calc = calc
