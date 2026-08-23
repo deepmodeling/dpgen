@@ -11,7 +11,7 @@ __package__ = "auto_test"
 
 from pymatgen.io.vasp import Incar
 
-from dpgen.auto_test.common_prop import make_property
+from dpgen.auto_test.common_prop import _property_suffix, make_property
 
 from .context import setUpModule  # noqa: F401
 
@@ -97,3 +97,12 @@ class TestMakeProperty(unittest.TestCase):
             with open(os.path.join(ii, "POTCAR")) as fp:
                 poti = fp.read()
             self.assertEqual(pot0, poti)
+
+    def test_output_suffix_alone_is_not_refine(self):
+        self.assertEqual(_property_suffix({"output_suffix": "02"}), ("00", False))
+
+    def test_both_suffixes_enable_refine(self):
+        self.assertEqual(
+            _property_suffix({"init_from_suffix": "00", "output_suffix": "02"}),
+            ("02", True),
+        )
