@@ -3710,6 +3710,10 @@ def make_fp_siesta(iter_index, jdata):
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
     fp_pp_files = jdata["fp_pp_files"]
+    type_map = jdata["type_map"]
+    if len(type_map) != len(fp_pp_files):
+        raise RuntimeError("fp_pp_files must correspond one-to-one with type_map")
+    pp_by_element = dict(zip(type_map, fp_pp_files))
     if "user_fp_params" in jdata.keys():
         fp_params = jdata["user_fp_params"]
         user_input = True
@@ -3720,7 +3724,10 @@ def make_fp_siesta(iter_index, jdata):
     for ii in fp_tasks:
         os.chdir(ii)
         sys_data = dpdata.System("POSCAR").data
-        ret = make_siesta_input(sys_data, fp_pp_files, fp_params)
+        # A workflow may share a global type map while an individual system
+        # contains only a subset of those elements.
+        task_pp_files = [pp_by_element[name] for name in sys_data["atom_names"]]
+        ret = make_siesta_input(sys_data, task_pp_files, fp_params)
         with open("input", "w") as fp:
             fp.write(ret)
         os.chdir(cwd)
