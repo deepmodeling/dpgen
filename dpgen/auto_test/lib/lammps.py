@@ -148,7 +148,7 @@ def inter_eam_fs(param):  # 06/08 eam.fs interaction
 def inter_eam_alloy(param):  # 06/08 eam.alloy interaction
     ret = ""
     line = "pair_style      eam/alloy \n"
-    line += "pair_coeff      * * {} ".format(param["model_name"])
+    line += "pair_coeff      * * {} ".format(param["model_name"][0])
     for ii in param["param_type"]:
         line += ii + " "
     line += "\n"
