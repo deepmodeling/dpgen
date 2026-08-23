@@ -183,6 +183,10 @@ class Interstitial(Property):
                 insert_element_task = os.path.join(path_to_work, "element.out")
                 if os.path.isfile(insert_element_task):
                     os.remove(insert_element_task)
+                # Keep the task metadata present even when every generated
+                # interstitial is rejected by a configuration filter.
+                with open(insert_element_task, "w"):
+                    pass
 
                 for ii in self.insert_ele:
                     pre_vds = InterstitialGenerator()
@@ -467,8 +471,11 @@ class Interstitial(Property):
         return task_list
 
     def post_process(self, task_list):
-        if True:
-            fin1 = open(os.path.join(task_list[0], "..", "element.out"))
+        """Adjust generated LAMMPS atom types for interstitial tasks."""
+        if not task_list:
+            return
+
+        with open(os.path.join(task_list[0], "..", "element.out")) as fin1:
             for ii in task_list:
                 conf = os.path.join(ii, "conf.lmp")
                 inter = os.path.join(ii, "inter.json")
@@ -492,7 +499,6 @@ class Interstitial(Property):
                         with open(conf, "w+") as fout:
                             for jj in conf_line:
                                 print(jj, file=fout)
-            fin1.close()
 
     def task_type(self):
         return self.parameter["type"]
