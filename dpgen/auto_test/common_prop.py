@@ -167,7 +167,7 @@ def run_property(confs, inter_param, property_list, mdata):
                     worker,
                     (
                         work_path,
-                        all_task,
+                        run_tasks,
                         forward_common_files,
                         forward_files,
                         backward_files,
@@ -187,14 +187,13 @@ def run_property(confs, inter_param, property_list, mdata):
 
 def worker(
     work_path,
-    all_task,
+    run_tasks,
     forward_common_files,
     forward_files,
     backward_files,
     mdata,
     inter_type,
 ):
-    run_tasks = [os.path.basename(ii) for ii in all_task]
     machine, resources, command, group_size = util.get_machine_info(mdata, inter_type)
     api_version = mdata.get("api_version", "1.0")
     if Version(api_version) < Version("1.0"):
