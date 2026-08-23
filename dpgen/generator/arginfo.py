@@ -621,9 +621,189 @@ def model_devi_amber_args() -> list[Argument]:
     ]
 
 
+def model_devi_gromacs_jobs_args() -> Argument:
+    """Return per-iteration exploration settings used by GROMACS."""
+    return Argument(
+        "model_devi_jobs",
+        list,
+        repeat=True,
+        doc=(
+            "GROMACS exploration settings. Each entry corresponds to one "
+            "DP-GEN iteration."
+        ),
+        sub_fields=[
+            Argument(
+                "sys_idx",
+                list[int],
+                optional=False,
+                doc="Indices of systems selected from sys_configs.",
+            ),
+            Argument(
+                "temps",
+                list[float],
+                optional=True,
+                doc="Temperatures written to ref_t/ref-t in the MDP file.",
+            ),
+            Argument(
+                "press",
+                list[float],
+                optional=True,
+                doc="Accepted for compatibility; pressure is configured by the MDP file.",
+            ),
+            Argument(
+                "trj_freq",
+                int,
+                optional=False,
+                doc="Frequency for trajectory, log, and energy output.",
+            ),
+            Argument("nsteps", int, optional=False, doc="Number of GROMACS MD steps."),
+            Argument(
+                "ensemble",
+                str,
+                optional=True,
+                doc="Accepted for compatibility; the MDP file controls the ensemble.",
+            ),
+            Argument(
+                "lambdas",
+                list[float],
+                optional=True,
+                doc="Deep potential scaling factors in the inclusive range [0, 1].",
+            ),
+            Argument(
+                "dt",
+                float,
+                optional=True,
+                doc="Per-iteration timestep overriding model_devi_dt.",
+            ),
+        ],
+    )
+
+
+def model_devi_gromacs_args() -> list[Argument]:
+    """Return model-deviation arguments supported by the GROMACS engine."""
+    common_names = {
+        "model_devi_dt",
+        "model_devi_skip",
+        "model_devi_f_trust_lo",
+        "model_devi_f_trust_hi",
+        "model_devi_v_trust_lo",
+        "model_devi_v_trust_hi",
+        "model_devi_adapt_trust_lo",
+        "model_devi_numb_candi_f",
+        "model_devi_numb_candi_v",
+        "model_devi_perc_candi_f",
+        "model_devi_perc_candi_v",
+        "model_devi_f_avg_relative",
+        "model_devi_clean_traj",
+        "shuffle_poscar",
+    }
+    common_args = [
+        argument for argument in model_devi_lmp_args() if argument.name in common_names
+    ]
+    settings_args = [
+        Argument(
+            "mdp_filename",
+            str,
+            optional=False,
+            doc="GROMACS molecular-dynamics parameter file.",
+        ),
+        Argument(
+            "topol_filename",
+            str,
+            optional=False,
+            doc="GROMACS topology file.",
+        ),
+        Argument(
+            "conf_filename",
+            str,
+            optional=False,
+            doc="Initial GROMACS coordinate file.",
+        ),
+        Argument(
+            "index_filename",
+            str,
+            optional=False,
+            doc="DeepMD atom-index file.",
+        ),
+        Argument(
+            "type_filename",
+            str,
+            optional=False,
+            doc="DeepMD atom-type file.",
+        ),
+        Argument(
+            "ref_filename",
+            str,
+            optional=False,
+            doc="Reference TPR file used by trjconv for periodic-boundary processing.",
+        ),
+        Argument(
+            "ndx_filename",
+            str,
+            optional=True,
+            doc="Optional GROMACS index file passed to trjconv.",
+        ),
+        Argument(
+            "model_devi_script",
+            str,
+            optional=True,
+            doc="Optional user file forwarded with each GROMACS task.",
+        ),
+        Argument(
+            "deffnm",
+            str,
+            optional=True,
+            doc="GROMACS output prefix; defaults to 'deepmd' at runtime.",
+        ),
+        Argument(
+            "maxwarn",
+            int,
+            optional=True,
+            doc="Maximum warnings accepted by grompp; defaults to 1.",
+        ),
+        Argument(
+            "traj_filename",
+            str,
+            optional=True,
+            doc="Processed trajectory filename; defaults to 'deepmd_traj.gro'.",
+        ),
+        Argument(
+            "group_name",
+            str,
+            optional=True,
+            doc="Group selected twice for trjconv; defaults to 'Other'.",
+        ),
+    ]
+    return [
+        model_devi_gromacs_jobs_args(),
+        *common_args,
+        Argument(
+            "model_devi_nopbc",
+            bool,
+            optional=True,
+            default=False,
+            doc=(
+                "Accepted for compatibility with existing inputs. GROMACS "
+                "trajectory processing currently applies periodic-boundary handling."
+            ),
+        ),
+        Argument(
+            "gromacs_settings",
+            dict,
+            optional=False,
+            sub_fields=settings_args,
+            doc="GROMACS input filenames and trajectory-processing settings.",
+        ),
+    ]
+
+
 def model_devi_args() -> list[Variant]:
     doc_model_devi_engine = "Engine for the model deviation task."
     doc_amber = "Amber DPRc engine. The command argument in the machine file should be path to sander."
+    doc_gromacs = (
+        "GROMACS engine. Requires GromacsWrapper and DeePMD-kit 2 or later. "
+        "The machine command should invoke the gmx executable."
+    )
     return [
         Variant(
             "model_devi_engine",
@@ -631,7 +811,7 @@ def model_devi_args() -> list[Variant]:
                 Argument("lammps", dict, model_devi_lmp_args(), doc="LAMMPS"),
                 Argument("amber", dict, model_devi_amber_args(), doc=doc_amber),
                 Argument("calypso", dict, [], doc="TODO: add doc"),
-                Argument("gromacs", dict, [], doc="TODO: add doc"),
+                Argument("gromacs", dict, model_devi_gromacs_args(), doc=doc_gromacs),
             ],
             default_tag="lammps",
             optional=True,
