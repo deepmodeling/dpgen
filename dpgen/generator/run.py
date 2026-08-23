@@ -2973,7 +2973,7 @@ def _make_fp_vasp_inner(
                 ffmt = "lammps/dump"
             elif model_devi_engine == "gromacs":
                 conf_name = os.path.join(conf_name, str(ii) + ".gromacstrj")
-                ffmt = "lammps/dump"
+                ffmt = "gromacs/gro"
             elif model_devi_engine == "amber":
                 conf_name = os.path.join(tt, "rc.nc")
                 rst_name = os.path.abspath(os.path.join(tt, "init.rst7"))
