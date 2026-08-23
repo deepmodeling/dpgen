@@ -129,6 +129,7 @@ class Gamma(Property):
                 raise RuntimeError("please provide the initial data path to reproduce")
             init_data_path = os.path.abspath(self.parameter["init_data_path"])
             task_list = make_repro(
+                self.inter_param,
                 init_data_path,
                 self.init_from_suffix,
                 path_to_work,
