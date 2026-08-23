@@ -13,6 +13,15 @@ from dpgen.auto_test.refine import make_refine
 from dpgen.auto_test.reproduce import make_repro, post_repro
 
 
+def _smallest_nonzero_distance(distance_matrix):
+    """Return the minimum positive distance from a structure distance matrix."""
+    distances = np.asarray(distance_matrix)
+    positive_distances = distances[distances > 0]
+    if positive_distances.size == 0:
+        raise ValueError("distance matrix does not contain a positive distance")
+    return float(np.min(positive_distances))
+
+
 class Interstitial(Property):
     def __init__(self, parameter, inter_param=None):
         parameter["reproduce"] = parameter.get("reproduce", False)
@@ -191,7 +200,9 @@ class Interstitial(Property):
                         temp = jj.get_supercell_structure(
                             sc_mat=np.diag(self.supercell, k=0)
                         )
-                        smallest_distance = list(set(temp.distance_matrix.ravel()))[1]
+                        smallest_distance = _smallest_nonzero_distance(
+                            temp.distance_matrix
+                        )
                         if (
                             "conf_filters" in self.parameter
                             and "min_dist" in self.parameter["conf_filters"]
