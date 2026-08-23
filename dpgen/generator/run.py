@@ -2319,6 +2319,7 @@ def check_cluster(conf_name, fp_cluster_vacuum, fmt="lammps/dump"):
 
 
 def check_bad_box(conf_name, criteria, fmt="lammps/dump"):
+    """Return whether a configuration violates any FP screening criterion."""
     all_c = criteria.split(";")
     sys = dpdata.System(conf_name, fmt)
     assert sys.get_nframes() == 1
@@ -2353,6 +2354,18 @@ def check_bad_box(conf_name, criteria, fmt="lammps/dump"):
             ]
             if np.max(np.abs(ratio)) > float(value):
                 is_bad = True
+        elif key in {"min_distance", "min_dist"}:
+            from ase.geometry import find_mic
+
+            natoms = sys.get_natoms()
+            if natoms > 1:
+                atom_pairs = np.triu_indices(natoms, k=1)
+                vectors = (
+                    sys["coords"][0][atom_pairs[0]] - sys["coords"][0][atom_pairs[1]]
+                )
+                _, distances = find_mic(vectors, sys["cells"][0], pbc=True)
+                if np.min(distances) < float(value):
+                    is_bad = True
         else:
             raise RuntimeError("unknow key", key)
     return is_bad
