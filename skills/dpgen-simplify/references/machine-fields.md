@@ -49,7 +49,7 @@ If your current workflow is "on server, submit Slurm jobs", use profile 1.
 - custom scheduler flags if needed
 
 Important boundary: outer `dpgen simplify` environment and inner stage-job environments are different layers.
-Outer layer must be an activated DP-GEN environment (`dpgen --version` passes).
+Outer layer must be an activated DP-GEN environment (`dpgen -h` passes).
 Do not assume outer activation is inherited by stage jobs. For scheduler profiles, set `resources.source_list` explicitly.
 
 ## `train`
