@@ -55,6 +55,46 @@ class TestMakeLammpsInput(unittest.TestCase):
         # Should NOT contain hybrid/overlay or dispersion/d3
         self.assertNotIn("hybrid/overlay", result)
         self.assertNotIn("dispersion/d3", result)
+        self.assertNotIn("atom_modify        map yes", result)
+
+    def test_pt2_enables_atom_map_before_read(self):
+        """Test that pt2 models enable one atom map before defining the box."""
+        result = make_lammps_input(
+            self.ensemble,
+            self.conf_file,
+            self.graphs,
+            self.nsteps,
+            self.dt,
+            self.neidelay,
+            self.trj_freq,
+            self.mass_map,
+            self.temp,
+            {"model_format": "pt2"},
+            pres=1.0,
+            deepmd_version=self.deepmd_version,
+        )
+
+        atom_map = "atom_modify        map yes"
+        self.assertEqual(result.count(atom_map), 1)
+        self.assertLess(result.index(atom_map), result.index("read_restart"))
+        self.assertLess(result.index(atom_map), result.index("read_data"))
+
+        pimd_result = make_lammps_input(
+            self.ensemble,
+            self.conf_file,
+            self.graphs,
+            self.nsteps,
+            self.dt,
+            self.neidelay,
+            self.trj_freq,
+            self.mass_map,
+            self.temp,
+            {"model_format": "pt2"},
+            pres=1.0,
+            deepmd_version=self.deepmd_version,
+            nbeads=4,
+        )
+        self.assertEqual(pimd_result.count(atom_map), 1)
 
     def test_d3_enabled_basic(self):
         """Test LAMMPS input with D3 dispersion enabled."""

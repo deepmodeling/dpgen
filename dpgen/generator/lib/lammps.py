@@ -59,7 +59,7 @@ def make_lammps_input(
         while power < nbeads:
             power *= 10
         ret += "variable        ibead           uloop %d pad\n" % (power - 1)  # noqa: UP031
-    if nbeads is not None:
+    if nbeads is not None or jdata.get("model_format") == "pt2":
         ret += "atom_modify        map yes\n"
     ret += "variable        THERMO_FREQ     equal %d\n" % trj_freq  # noqa: UP031
     ret += "variable        DUMP_FREQ       equal %d\n" % trj_freq  # noqa: UP031
