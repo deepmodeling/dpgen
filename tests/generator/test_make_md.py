@@ -312,6 +312,25 @@ class TestMakeModelDevi(unittest.TestCase):
                 os.path.isfile(os.path.join(path, f"traj/{istep}.lammpstrj"))
             )
 
+    def test_read_model_devi_file_keeps_last_row_per_timestep(self):
+        """Intermediate model evaluations must not select stale structures."""
+        with tempfile.TemporaryDirectory() as task_path:
+            model_devi = np.array(
+                [
+                    [0, 0.01, 0, 0, 0.02, 0, 0],
+                    [10, 0.03, 0, 0, 0.04, 0, 0],
+                    [10, 0.05, 0, 0, 0.06, 0, 0],
+                    [20, 0.07, 0, 0, 0.08, 0, 0],
+                    [20, 0.09, 0, 0, 0.10, 0, 0],
+                    [20, 0.11, 0, 0, 0.12, 0, 0],
+                ]
+            )
+            np.savetxt(os.path.join(task_path, "model_devi.out"), model_devi)
+
+            result = _read_model_devi_file(task_path)
+
+        np.testing.assert_array_equal(result, model_devi[[0, 2, 5]])
+
 
 class TestMakeModelDeviRevMat(unittest.TestCase):
     def tearDown(self):
