@@ -79,7 +79,7 @@ class TestLammps(unittest.TestCase):
         self.assertTrue(os.path.islink(os.path.join(self.equi_path, "frozen_model.pb")))
         self.assertTrue(os.path.isfile(os.path.join(self.equi_path, "inter.json")))
         ret = loadfn(os.path.join(self.equi_path, "inter.json"))
-        self.assertTrue(self.inter_param, ret)
+        self.assertEqual(ret, self.inter_param)
         os.chdir(cwd)
 
     def test_make_input_file(self):
