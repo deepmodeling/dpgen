@@ -229,8 +229,7 @@ def make_super_cell_pymatgen(jdata):
 
     if from_poscar:
         from_poscar_path = jdata["from_poscar_path"]
-        poscar_name = os.path.basename(from_poscar_path)
-        ss = Structure.from_file(poscar_name)
+        ss = Structure.from_file(from_poscar_path)
     else:
         from_path = path_uc
         from_file = os.path.join(from_path, "POSCAR.unit")

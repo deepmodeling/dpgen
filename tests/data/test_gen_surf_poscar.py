@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 import sys
+import tempfile
 import unittest
 
 from pymatgen.core import Element, Structure
@@ -34,6 +35,10 @@ class TestGenSurfPOSCAR(unittest.TestCase):
         ]
         with open(param_file) as fp:
             jdata = json.load(fp)
+        self.input_dir = tempfile.mkdtemp()
+        from_poscar_path = os.path.join(self.input_dir, "nested.POSCAR")
+        shutil.copy2("POSCAR", from_poscar_path)
+        jdata["from_poscar_path"] = from_poscar_path
         out_dir = out_dir_name(jdata)
         jdata["out_dir"] = out_dir
         self.root_dir = out_dir
@@ -47,13 +52,16 @@ class TestGenSurfPOSCAR(unittest.TestCase):
 
     def tearDown(self):
         shutil.rmtree(self.root_dir)
+        shutil.rmtree(self.input_dir)
 
     def test(self):
-        surfs = glob.glob("POSCAR.01x01x01/01.scale_pert/surf*")
+        surfs = glob.glob(os.path.join(self.root_dir, "01.scale_pert", "surf*"))
         surfs = [ii.split("/")[-1] for ii in surfs]
         surfs.sort()
         self.assertEqual(surfs, self.surfs)
-        poscars = glob.glob("POSCAR.01x01x01/00.place_ele/surf*/sys*/POSCAR")
+        poscars = glob.glob(
+            os.path.join(self.root_dir, "00.place_ele", "surf*", "sys*", "POSCAR")
+        )
         for poscar in poscars:
             surf = poscar.split("/")[-3]
             st1 = Structure.from_file(surf + ".POSCAR")
@@ -63,7 +71,14 @@ class TestGenSurfPOSCAR(unittest.TestCase):
 
         for surf in self.surfs:
             elongs = glob.glob(
-                "POSCAR.01x01x01/01.scale_pert/" + surf + "/sys-*/scale-1.000/el*"
+                os.path.join(
+                    self.root_dir,
+                    "01.scale_pert",
+                    surf,
+                    "sys-*",
+                    "scale-1.000",
+                    "el*",
+                )
             )
             elongs = [ii.split("/")[-1] for ii in elongs]
             elongs.sort()
