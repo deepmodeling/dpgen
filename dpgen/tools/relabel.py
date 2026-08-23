@@ -55,13 +55,9 @@ def copy_pp_files(tdir, fp_pp_path, fp_pp_files):
     os.chdir(cwd)
 
 
-def make_vasp(tdir, fp_params):
-    cwd = os.getcwd()
-    os.chdir(tdir)
-    incar = make_vasp_incar(fp_params)
-    with open("INCAR", "w") as fp:
-        fp.write(incar)
-    os.chdir(cwd)
+def make_vasp(tdir, fp_incar):
+    """Copy a user-provided INCAR into a relabel task directory."""
+    make_vasp_incar(tdir, fp_incar)
 
 
 def make_vasp_incar(tdir, fp_incar):
@@ -90,15 +86,39 @@ def make_siesta(tdir, fp_params, fp_pp_path, fp_pp_files):
     os.chdir(cwd)
 
 
+def make_non_vasp_input(tdir, fp_style, fp_jdata, mass_map, fp_pp_path, fp_pp_files):
+    """Generate a PWSCF or Siesta input using the matching backend arguments."""
+    if "user_fp_params" in fp_jdata:
+        fp_params = fp_jdata["user_fp_params"]
+        user_input = True
+    else:
+        fp_params = fp_jdata["fp_params"]
+        user_input = False
+
+    if fp_style == "pwscf":
+        make_pwscf(
+            tdir,
+            fp_params,
+            mass_map,
+            fp_pp_path,
+            fp_pp_files,
+            user_input,
+        )
+    elif fp_style == "siesta":
+        make_siesta(tdir, fp_params, fp_pp_path, fp_pp_files)
+
+
 def create_init_tasks(target_folder, param_file, output, fp_json, verbose=True):
     target_folder = os.path.abspath(target_folder)
     output = os.path.abspath(output)
     tool_path = os.path.join(
         os.path.dirname(os.path.realpath(__file__)), "..", "template"
     )
-    jdata = json.load(open(os.path.join(target_folder, param_file)))
+    with open(os.path.join(target_folder, param_file)) as param_fp:
+        jdata = json.load(param_fp)
     update_mass_map(jdata)
-    fp_jdata = json.load(open(fp_json))
+    with open(fp_json) as fp_config:
+        fp_jdata = json.load(fp_config)
     # fp settings
     mass_map = jdata["mass_map"]
     type_map = jdata["type_map"]
@@ -138,18 +158,10 @@ def create_init_tasks(target_folder, param_file, output, fp_json, verbose=True):
                 if os.path.lexists("INCAR"):
                     os.remove("INCAR")
                 os.symlink(os.path.relpath(os.path.join(output, "INCAR")), "INCAR")
-            elif fp_style == "pwscf":
-                try:
-                    fp_params = fp_jdata["user_fp_params"]
-                    user_input = True
-                except Exception:
-                    fp_params = fp_jdata["fp_params"]
-                    user_input = False
-                make_pwscf(
-                    ".", fp_params, mass_map, fp_pp_files, fp_pp_files, user_input
+            elif fp_style in {"pwscf", "siesta"}:
+                make_non_vasp_input(
+                    ".", fp_style, fp_jdata, mass_map, fp_pp_path, fp_pp_files
                 )
-            elif fp_style == "siesta":
-                make_siesta(".", fp_params, fp_pp_files, fp_pp_files)
             os.chdir(cwd_)
 
 
@@ -161,9 +173,11 @@ def create_tasks(
     tool_path = os.path.join(
         os.path.dirname(os.path.realpath(__file__)), "..", "template"
     )
-    jdata = json.load(open(os.path.join(target_folder, param_file)))
+    with open(os.path.join(target_folder, param_file)) as param_fp:
+        jdata = json.load(param_fp)
     update_mass_map(jdata)
-    fp_jdata = json.load(open(fp_json))
+    with open(fp_json) as fp_config:
+        fp_jdata = json.load(fp_config)
     # goto input
     cwd = os.getcwd()
     os.chdir(target_folder)
@@ -176,8 +190,10 @@ def create_tasks(
     cwd_ = os.getcwd()
     os.chdir(target_folder)
     fp_pp_path = os.path.abspath(fp_pp_path)
+    fp_incar = None
+    if fp_style == "vasp":
+        fp_incar = os.path.abspath(fp_jdata["fp_incar"])
     os.chdir(cwd_)
-    fp_params = fp_jdata["fp_params"]
     # collect tasks from iter dirs
     sys_tasks = [[] for ii in sys]
     sys_tasks_record = [[] for ii in sys]
@@ -237,7 +253,7 @@ def create_tasks(
     os.makedirs(output, exist_ok=True)
     if fp_style == "vasp":
         copy_pp_files(output, fp_pp_path, fp_pp_files)
-        make_vasp_incar(fp_params, output)
+        make_vasp_incar(output, fp_incar)
     if fp_style == "pwscf":
         copy_pp_files(output, fp_pp_path, fp_pp_files)
     if fp_style == "siesta":
@@ -273,18 +289,10 @@ def create_tasks(
                 if os.path.lexists("INCAR"):
                     os.remove("INCAR")
                 os.symlink(os.path.relpath(os.path.join(output, "INCAR")), "INCAR")
-            elif fp_style == "pwscf":
-                try:
-                    fp_params = fp_jdata["user_fp_params"]
-                    user_input = True
-                except Exception:
-                    fp_params = fp_jdata["fp_params"]
-                    user_input = False
-                make_pwscf(
-                    ".", fp_params, mass_map, fp_pp_files, fp_pp_files, user_input
+            elif fp_style in {"pwscf", "siesta"}:
+                make_non_vasp_input(
+                    ".", fp_style, fp_jdata, mass_map, fp_pp_path, fp_pp_files
                 )
-            elif fp_style == "siesta":
-                make_siesta(".", fp_params, mass_map, fp_pp_files, fp_pp_files)
             os.chdir(cwd_)
     os.chdir(cwd)
 
