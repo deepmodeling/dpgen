@@ -601,7 +601,7 @@ def run_vasp_relax(jdata, mdata):
         forward_common_files,
         forward_files,
         backward_files,
-        api_version=mdata.get("api_version", "0.9"),
+        api_version=mdata.get("api_version", "1.0"),
     )
 
 
