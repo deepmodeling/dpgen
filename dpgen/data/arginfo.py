@@ -37,7 +37,19 @@ def init_reaction_mdata_arginfo() -> Argument:
 
 
 def init_bulk_vasp_args() -> list[Argument]:
-    return []
+    return [
+        Argument(
+            "reuse_relax_chgcar",
+            bool,
+            optional=True,
+            default=False,
+            doc=(
+                "Download each stage-1 relaxation CHGCAR and forward it to all "
+                "stage-3 VASP MD tasks derived from the same system. The MD "
+                "INCAR must enable charge-density restart settings as needed."
+            ),
+        )
+    ]
 
 
 def init_bulk_abacus_args() -> list[Argument]:
