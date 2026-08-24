@@ -6,6 +6,7 @@ import re
 import shutil
 import sys
 import unittest
+from unittest.mock import patch
 
 import dpdata
 import numpy as np
@@ -514,6 +515,68 @@ class TestMakeModelDeviRevMat(unittest.TestCase):
                         " ".join(ii.split()),
                     )
         os.chdir(cwd_)
+
+    def test_pt2_template_with_atom_map(self):
+        test_dir = os.path.dirname(__file__)
+        with open(os.path.join(test_dir, "lmp", "input.lammps")) as fp:
+            template = fp.read()
+        template = template.replace(
+            "read_data       conf.lmp",
+            "atom_modify     map yes\nread_data       conf.lmp",
+        )
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".lammps", dir=".", delete=False
+        ) as fp:
+            fp.write(template)
+            template_path = os.path.abspath(fp.name)
+        self.addCleanup(os.remove, template_path)
+
+        jdata = {
+            "type_map": ["Mg", "Al"],
+            "mass_map": [24, 27],
+            "init_data_prefix": "data",
+            "init_data_sys": ["deepmd"],
+            "init_batch_size": [16],
+            "sys_configs_prefix": test_dir,
+            "sys_configs": [
+                ["data/al.fcc.02x02x02/01.scale_pert/sys-0032/scale*/000001/POSCAR"]
+            ],
+            "numb_models": 1,
+            "shuffle_poscar": False,
+            "model_devi_f_trust_lo": 0.050,
+            "model_devi_f_trust_hi": 0.150,
+            "train_backend": "pytorch",
+            "model_format": "pt2",
+            "model_devi_jobs": [
+                {
+                    "sys_idx": [0],
+                    "traj_freq": 10,
+                    "template": {"lmp": template_path},
+                }
+            ],
+        }
+        train_path = os.path.join("iter.000000", "00.train")
+        os.makedirs(train_path, exist_ok=True)
+        with open(os.path.join(train_path, "graph.000.pt2"), "w") as fp:
+            fp.write("model")
+
+        def copy_link(source, target):
+            if not os.path.isabs(source):
+                source = os.path.join(os.path.dirname(target), source)
+            shutil.copyfile(os.path.normpath(source), target)
+
+        with patch("dpgen.generator.run.os.symlink", side_effect=copy_link):
+            make_model_devi(0, jdata, {"deepmd_version": "3.2"})
+        task = sorted(glob.glob("iter.000000/01.model_devi/task.*"))[0]
+        with open(os.path.join(task, "input.lammps")) as fp:
+            lines = fp.readlines()
+        atom_map_index = next(
+            index for index, line in enumerate(lines) if "atom_modify" in line
+        )
+        read_data_index = next(
+            index for index, line in enumerate(lines) if "read_data" in line
+        )
+        self.assertLess(atom_map_index, read_data_index)
 
 
 class TestParseCurJobRevMat(unittest.TestCase):

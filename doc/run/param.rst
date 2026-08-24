@@ -12,19 +12,17 @@ dpgen run param parameters
 DPA4 and DPA4C
 ---------------
 
-DPA4 and the PyTorch-exportable backend require DeePMD-kit 3.2 or later. A
-regular PyTorch DPA4 model can be exported as an AOTInductor archive with:
+DPA4 and the PyTorch-exportable backend require DeePMD-kit 3.2 or later. DPA4
+uses the regular PyTorch backend for both training and export:
 
 .. code-block:: json
 
    {
      "train_backend": "pytorch",
-     "model_devi_backend": "pytorch-exportable",
      "model_format": "pt2"
    }
 
-For DPA4C, and for DPA4 using the PyTorch-exportable backend, select the graph
-export explicitly:
+DPA4C uses the PyTorch-exportable backend for both training and graph export:
 
 .. code-block:: json
 
@@ -34,10 +32,18 @@ export explicitly:
      "dp_compress": true
    }
 
-``pt-expt`` is accepted as an alias of ``pytorch-exportable``. The ``pte``
-format remains available for dense PyTorch-exportable models. Training
-checkpoints keep the ``.pt`` suffix independently of the frozen model format.
-The ``model_devi_backend`` setting makes ``dpgen`` train with ``dp --pt`` but
-freeze (and optionally compress) with ``dp --pt-expt``. The resulting ``.pt2``
-models are automatically linked into the model-deviation stage and listed in
-the generated LAMMPS input.
+The default ``train_backend`` remains ``tensorflow``. ``pt-expt`` is accepted
+as an alias of ``pytorch-exportable``. PyTorch-exportable model deviation with
+LAMMPS defaults to ``pt2``. Training checkpoints keep the ``.pt`` suffix
+independently of the frozen model format.
+
+AOTInductor ``.pt2`` archives are specific to the target CPU or GPU, GPU
+compute capability, and libtorch version. DP-GEN therefore finishes the
+training submission with the checkpoint, then runs ``freeze`` and optional
+``compress`` in a separate submission using ``model_devi_machine`` and
+``model_devi_resources``. Those resources must select the same hardware and
+software target used by all subsequent model-deviation jobs. The resulting
+models are linked into the model-deviation stage automatically.
+
+The dense PyTorch-exportable ``pte`` format remains available for non-LAMMPS
+workflows but is not supported by LAMMPS model deviation.

@@ -8,9 +8,9 @@ from unittest.mock import patch
 from dpgen.generator.run import (
     _get_checkpoint_suffix,
     _get_input_model_suffix,
-    _get_model_backend_flag,
     _get_model_suffix,
     _get_train_backend_flag,
+    _validate_pt2_template_atom_map,
     post_train_dp,
     run_md_model_devi,
     run_train_dp,
@@ -34,7 +34,7 @@ class TestDeepmdBackendConfig(unittest.TestCase):
         for backend in ("pytorch-exportable", "pt-expt"):
             with self.subTest(backend=backend):
                 jdata = {"train_backend": backend}
-                self.assertEqual(_get_model_suffix(jdata), ".pte")
+                self.assertEqual(_get_model_suffix(jdata), ".pt2")
                 self.assertEqual(_get_checkpoint_suffix(jdata), ".pt")
                 self.assertEqual(_get_train_backend_flag(jdata), "--pt-expt")
 
@@ -43,34 +43,23 @@ class TestDeepmdBackendConfig(unittest.TestCase):
             {"train_backend": "pytorch", "model_format": "pt2"},
             {"train_backend": "pytorch-exportable", "model_format": "pt2"},
             {"train_backend": "pt-expt", "model_format": "pt2"},
-            {
-                "train_backend": "pytorch",
-                "model_devi_backend": "pytorch-exportable",
-                "model_format": "pt2",
-            },
         ]
         for jdata in cases:
             with self.subTest(jdata=jdata):
                 self.assertEqual(_get_model_suffix(jdata), ".pt2")
                 self.assertEqual(_get_checkpoint_suffix(jdata), ".pt")
 
-    def test_pytorch_checkpoint_can_use_exportable_deployment(self):
-        jdata = {
-            "train_backend": "pytorch",
-            "model_devi_backend": "pt-expt",
-            "model_format": "pt2",
-        }
-        self.assertEqual(_get_train_backend_flag(jdata), "--pt")
-        self.assertEqual(_get_model_backend_flag(jdata), "--pt-expt")
-
-    def test_rejects_other_cross_backend_exports(self):
-        with self.assertRaisesRegex(ValueError, "Cannot export models"):
+    def test_pte_is_rejected_for_lammps(self):
+        with self.assertRaisesRegex(ValueError, "not supported by LAMMPS"):
             _get_model_suffix(
-                {
-                    "train_backend": "tensorflow",
-                    "model_devi_backend": "pytorch-exportable",
-                }
+                {"train_backend": "pytorch-exportable", "model_format": "pte"}
             )
+        self.assertEqual(
+            _get_model_suffix(
+                {"train_backend": "pt-expt", "model_devi_engine": "calypso"}
+            ),
+            ".pte",
+        )
 
     def test_rejects_incompatible_model_format(self):
         with self.assertRaisesRegex(ValueError, "not available for backend"):
@@ -80,6 +69,18 @@ class TestDeepmdBackendConfig(unittest.TestCase):
         self.assertEqual(_get_input_model_suffix(["a.pt", "b.pt"]), ".pt")
         with self.assertRaisesRegex(ValueError, "same non-empty file suffix"):
             _get_input_model_suffix(["a.pte", "b.pt2"])
+
+    def test_pt2_template_requires_atom_map_before_read(self):
+        _validate_pt2_template_atom_map(
+            ["atom_modify map yes\n", "read_data conf.lmp\n"]
+        )
+        for lines in (
+            ["read_data conf.lmp\n"],
+            ["read_restart restart.100\n", "atom_modify map yes\n"],
+        ):
+            with self.subTest(lines=lines):
+                with self.assertRaisesRegex(ValueError, "atom_modify map yes"):
+                    _validate_pt2_template_atom_map(lines)
 
 
 class TestRunTrainDeepmdBackend(unittest.TestCase):
@@ -93,8 +94,10 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
             "api_version": "1.0",
             "deepmd_version": "3.2.0",
             "train_command": "dp",
-            "train_machine": {},
-            "train_resources": {},
+            "train_machine": {"name": "train"},
+            "train_resources": {"queue": "train"},
+            "model_devi_machine": {"name": "model-devi"},
+            "model_devi_resources": {"queue": "model-devi"},
         }
 
     def _run(self, **updates):
@@ -102,7 +105,12 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
         jdata.update(updates)
         with patch("dpgen.generator.run.make_submission") as make_submission:
             run_train_dp(0, jdata, self.mdata)
-        return make_submission.call_args.kwargs
+        calls = []
+        for call in make_submission.call_args_list:
+            details = dict(call.kwargs)
+            details["machine"], details["resources"] = call.args[:2]
+            calls.append(details)
+        return calls[0] if len(calls) == 1 else calls
 
     def test_legacy_tensorflow_commands_are_preserved(self):
         call = self._run()
@@ -111,20 +119,24 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
         self.assertIn("frozen_model.pb", call["backward_files"])
         self.assertIn("model.ckpt.index", call["backward_files"])
 
-    def test_pytorch_dpa4_uses_exportable_pt2_deployment(self):
-        call = self._run(
+    def test_pytorch_dpa4_exports_pt2_on_model_devi_resources(self):
+        train_call, export_call = self._run(
             train_backend="pytorch",
-            model_devi_backend="pytorch-exportable",
             model_format="pt2",
         )
-        self.assertIn("dp --pt train", call["commands"][0])
-        self.assertIn("model.ckpt.pt", call["commands"][0])
+        self.assertEqual(train_call["machine"], self.mdata["train_machine"])
+        self.assertEqual(len(train_call["commands"]), 1)
+        self.assertIn("dp --pt train", train_call["commands"][0])
+        self.assertIn("model.ckpt.pt", train_call["backward_files"])
+        self.assertNotIn("frozen_model.pt2", train_call["backward_files"])
+        self.assertEqual(export_call["machine"], self.mdata["model_devi_machine"])
+        self.assertEqual(export_call["resources"], self.mdata["model_devi_resources"])
         self.assertEqual(
-            call["commands"][1],
-            "dp --pt-expt freeze -o frozen_model.pt2 --lower-kind graph",
+            export_call["commands"],
+            ["dp --pt freeze -c model.ckpt.pt -o frozen_model"],
         )
-        self.assertIn("frozen_model.pt2", call["backward_files"])
-        self.assertIn("model.ckpt.pt", call["backward_files"])
+        self.assertEqual(export_call["forward_files"], ["model.ckpt.pt"])
+        self.assertIn("frozen_model.pt2", export_call["backward_files"])
 
     def test_legacy_pytorch_commands_are_preserved(self):
         call = self._run(train_backend="pytorch")
@@ -135,7 +147,9 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
         self.assertIn("model.ckpt.pt", call["backward_files"])
 
     def test_pytorch_exportable_dense_pte(self):
-        call = self._run(train_backend="pytorch-exportable")
+        call = self._run(
+            train_backend="pytorch-exportable", model_devi_engine="calypso"
+        )
         self.assertIn("dp --pt-expt train", call["commands"][0])
         self.assertEqual(
             call["commands"][1],
@@ -144,16 +158,22 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
         self.assertIn("frozen_model.pte", call["backward_files"])
 
     def test_pytorch_exportable_dpa4c_pt2_compression(self):
-        call = self._run(train_backend="pt-expt", model_format="pt2", dp_compress=True)
-        self.assertEqual(
-            call["commands"][1],
-            "dp --pt-expt freeze -o frozen_model.pt2 --lower-kind graph",
+        train_call, export_call = self._run(
+            train_backend="pt-expt",
+            model_format="pt2",
+            dp_compress=True,
         )
+        self.assertIn("dp --pt-expt train", train_call["commands"][0])
+        self.assertEqual(len(train_call["commands"]), 1)
         self.assertEqual(
-            call["commands"][2],
-            "dp --pt-expt compress -i frozen_model.pt2 -o frozen_model_compressed.pt2",
+            export_call["commands"],
+            [
+                "dp --pt-expt freeze -c model.ckpt.pt -o frozen_model --lower-kind graph",
+                "dp --pt-expt compress -i frozen_model.pt2 -o frozen_model_compressed.pt2",
+            ],
         )
-        self.assertIn("frozen_model_compressed.pt2", call["backward_files"])
+        self.assertEqual(export_call["forward_files"], ["model.ckpt.pt"])
+        self.assertIn("frozen_model_compressed.pt2", export_call["backward_files"])
 
     def test_regular_pytorch_pt2_compression_is_rejected(self):
         with self.assertRaisesRegex(RuntimeError, "cannot compress pt2"):
@@ -172,13 +192,13 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
             self._run(train_backend="pytorch", model_format="pt2")
 
     def test_finetune_keeps_source_model_suffix(self):
-        call = self._run(
+        train_call, _ = self._run(
             train_backend="pt-expt",
             model_format="pt2",
             training_finetune_model=["source.pt"],
         )
-        self.assertIn("--finetune old/init.pt", call["commands"][0])
-        self.assertIn(str(Path("old") / "init.pt"), call["forward_files"])
+        self.assertIn("--finetune old/init.pt", train_call["commands"][0])
+        self.assertIn(str(Path("old") / "init.pt"), train_call["forward_files"])
 
     def test_post_train_links_pt2_model(self):
         jdata = {
@@ -200,7 +220,6 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
         (work_path / "cur_job.json").write_text(json.dumps({}), encoding="utf-8")
         jdata = {
             "train_backend": "pytorch",
-            "model_devi_backend": "pytorch-exportable",
             "model_format": "pt2",
             "model_devi_jobs": [{}],
         }

@@ -177,21 +177,27 @@ def _get_train_backend_config(jdata) -> tuple[str, dict]:
 
 def _get_model_backend_config(jdata) -> tuple[str, dict, str]:
     """Return and validate the deployment backend and model format."""
-    train_backend, _ = _get_train_backend_config(jdata)
-    backend, config = _get_backend(jdata, "model_devi_backend", train_backend)
-    if backend != train_backend and not (
-        train_backend == "pytorch" and backend == "pytorch-exportable"
+    backend, config = _get_train_backend_config(jdata)
+    default_model_format = config["default_model_format"]
+    if (
+        backend == "pytorch-exportable"
+        and jdata.get("model_devi_engine", "lammps") == "lammps"
     ):
-        raise ValueError(
-            f"Cannot export models trained with backend {train_backend} using "
-            f"backend {backend}."
-        )
-    model_format = jdata.get("model_format", config["default_model_format"])
+        default_model_format = "pt2"
+    model_format = jdata.get("model_format", default_model_format)
     if model_format not in config["model_formats"]:
         supported = "', '".join(sorted(config["model_formats"]))
         raise ValueError(
             f"The model format {model_format} is not available for backend {backend}. "
             f"Supported formats are: '{supported}'."
+        )
+    if (
+        backend == "pytorch-exportable"
+        and model_format == "pte"
+        and jdata.get("model_devi_engine", "lammps") == "lammps"
+    ):
+        raise ValueError(
+            "The pte model format is not supported by LAMMPS; use model_format=pt2."
         )
     return backend, config, model_format
 
@@ -211,12 +217,6 @@ def _get_checkpoint_suffix(jdata) -> str:
 def _get_train_backend_flag(jdata) -> str:
     """Return the DeePMD CLI backend flag."""
     _, config = _get_train_backend_config(jdata)
-    return config["flag"]
-
-
-def _get_model_backend_flag(jdata) -> str:
-    """Return the DeePMD CLI deployment backend flag."""
-    _, config, _ = _get_model_backend_config(jdata)
     return config["flag"]
 
 
@@ -821,7 +821,7 @@ def run_train_dp(iter_index, jdata, mdata):
     # load json param
     numb_models = jdata["numb_models"]
     train_backend, _ = _get_train_backend_config(jdata)
-    model_backend, _, model_format = _get_model_backend_config(jdata)
+    _, _, model_format = _get_model_backend_config(jdata)
     suffix = _get_model_suffix(jdata)
     checkpoint_suffix = _get_checkpoint_suffix(jdata)
     # train_param = jdata['train_param']
@@ -845,11 +845,9 @@ def run_train_dp(iter_index, jdata, mdata):
     except KeyError:
         mdata = set_version(mdata)
 
-    if (
-        train_backend == "pytorch-exportable"
-        or model_backend == "pytorch-exportable"
-        or model_format == "pt2"
-    ) and Version(mdata["deepmd_version"]) < Version("3.2"):
+    if (train_backend == "pytorch-exportable" or model_format == "pt2") and Version(
+        mdata["deepmd_version"]
+    ) < Version("3.2"):
         raise RuntimeError(
             "The pytorch-exportable backend and pt2 models require DeePMD-kit 3.2 or later."
         )
@@ -859,7 +857,7 @@ def run_train_dp(iter_index, jdata, mdata):
             "use training_finetune_model or a checkpoint instead."
         )
     if (
-        model_backend == "pytorch"
+        train_backend == "pytorch"
         and model_format == "pt2"
         and jdata.get("dp_compress", False)
     ):
@@ -883,10 +881,6 @@ def run_train_dp(iter_index, jdata, mdata):
     backend_flag = _get_train_backend_flag(jdata)
     if backend_flag:
         train_command += f" {backend_flag}"
-    model_command = mdata.get("train_command", "dp").strip()
-    model_backend_flag = _get_model_backend_flag(jdata)
-    if model_backend_flag:
-        model_command += f" {model_backend_flag}"
 
     # paths
     iter_name = make_iter_name(iter_index)
@@ -902,6 +896,7 @@ def run_train_dp(iter_index, jdata, mdata):
         task_path = os.path.join(work_path, train_task_fmt % ii)
         all_task.append(task_path)
     commands = []
+    export_commands = []
     if Version(mdata["deepmd_version"]) >= Version("1") and Version(
         mdata["deepmd_version"]
     ) < Version("4"):
@@ -925,23 +920,34 @@ def run_train_dp(iter_index, jdata, mdata):
         command = f"{{ if [ ! -f model.ckpt{checkpoint_suffix} ]; then {command}{init_flag}; else {command} --restart model.ckpt; fi }}"
         command = f"/bin/sh -c {shlex.quote(command)}"
         commands.append(command)
-        if model_backend == "pytorch-exportable":
-            command = f"{model_command} freeze -o frozen_model{suffix}"
-            if model_format == "pt2":
-                command += " --lower-kind graph"
-        elif model_backend == "pytorch" and model_format == "pt2":
-            command = f"{model_command} freeze -o frozen_model{suffix}"
-        else:
-            command = f"{model_command} freeze"
-        commands.append(command)
-        if jdata.get("dp_compress", False):
-            if model_backend == "pytorch-exportable":
-                commands.append(
-                    f"{model_command} compress -i frozen_model{suffix} "
-                    f"-o frozen_model_compressed{suffix}"
+        if model_format == "pt2":
+            if train_backend == "pytorch-exportable":
+                command = (
+                    f"{train_command} freeze -c model.ckpt.pt -o frozen_model "
+                    "--lower-kind graph"
                 )
             else:
-                commands.append(f"{model_command} compress")
+                command = f"{train_command} freeze -c model.ckpt.pt -o frozen_model"
+            export_commands.append(command)
+            if jdata.get("dp_compress", False):
+                export_commands.append(
+                    f"{train_command} compress -i frozen_model{suffix} "
+                    f"-o frozen_model_compressed{suffix}"
+                )
+        else:
+            if train_backend == "pytorch-exportable":
+                command = f"{train_command} freeze -o frozen_model{suffix}"
+            else:
+                command = f"{train_command} freeze"
+            commands.append(command)
+            if jdata.get("dp_compress", False):
+                if train_backend == "pytorch-exportable":
+                    commands.append(
+                        f"{train_command} compress -i frozen_model{suffix} "
+                        f"-o frozen_model_compressed{suffix}"
+                    )
+                else:
+                    commands.append(f"{train_command} compress")
     else:
         raise RuntimeError(
             "DP-GEN currently only supports for DeePMD-kit 1.x to 3.x version!"
@@ -984,13 +990,14 @@ def run_train_dp(iter_index, jdata, mdata):
         forward_files.append(os.path.join("old", f"init{input_model_suffix}"))
 
     backward_files = [
-        f"frozen_model{suffix}",
         "lcurve.out",
         "train.log",
         "checkpoint",
     ]
-    if jdata.get("dp_compress", False):
-        backward_files.append(f"frozen_model_compressed{suffix}")
+    if not export_commands:
+        backward_files.append(f"frozen_model{suffix}")
+        if jdata.get("dp_compress", False):
+            backward_files.append(f"frozen_model_compressed{suffix}")
 
     if checkpoint_suffix == ".index":
         backward_files += [
@@ -1057,6 +1064,24 @@ def run_train_dp(iter_index, jdata, mdata):
         errlog="train.log",
     )
     submission.run_submission()
+    if export_commands:
+        export_backward_files = [f"frozen_model{suffix}"]
+        if jdata.get("dp_compress", False):
+            export_backward_files.append(f"frozen_model_compressed{suffix}")
+        export_submission = make_submission(
+            mdata["model_devi_machine"],
+            mdata["model_devi_resources"],
+            commands=export_commands,
+            work_path=work_path,
+            run_tasks=run_tasks,
+            group_size=1,
+            forward_common_files=[],
+            forward_files=[f"model.ckpt{checkpoint_suffix}"],
+            backward_files=export_backward_files,
+            outlog="model_export.log",
+            errlog="model_export.log",
+        )
+        export_submission.run_submission()
 
 
 def post_train(iter_index, jdata, mdata):
@@ -1595,6 +1620,29 @@ def make_model_devi(iter_index, jdata, mdata):
     return True
 
 
+def _validate_pt2_template_atom_map(lmp_lines):
+    """Validate the atom map required by pt2 LAMMPS templates."""
+    atom_map_index = None
+    read_index = None
+    for line_index, line in enumerate(lmp_lines):
+        tokens = line.partition("#")[0].split()
+        if not tokens:
+            continue
+        if tokens[0] == "atom_modify" and any(
+            tokens[index : index + 2] == ["map", "yes"]
+            for index in range(1, len(tokens) - 1)
+        ):
+            atom_map_index = line_index
+        elif tokens[0] in {"read_data", "read_restart"} and read_index is None:
+            read_index = line_index
+    if atom_map_index is None or (
+        read_index is not None and atom_map_index > read_index
+    ):
+        raise ValueError(
+            "pt2 LAMMPS templates require 'atom_modify map yes' before read_data or read_restart."
+        )
+
+
 def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
     model_devi_jobs = jdata["model_devi_jobs"]
     if iter_index >= len(model_devi_jobs):
@@ -1690,6 +1738,8 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                 # revise input of lammps
                 with open("input.lammps") as fp:
                     lmp_lines = fp.readlines()
+                if jdata.get("model_format") == "pt2":
+                    _validate_pt2_template_atom_map(lmp_lines)
                 # only revise the line "pair_style deepmd" if the user has not written the full line (checked by then length of the line)
                 template_has_pair_deepmd = 1
                 for line_idx, line_context in enumerate(lmp_lines):
