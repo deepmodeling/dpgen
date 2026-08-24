@@ -23,3 +23,8 @@ class TestCheckBadBox(unittest.TestCase):
         conf_bad = os.path.join(dirname, "check_bad_box", "bad.height.POSCAR")
         self.assertTrue(check_bad_box(conf_bad, "height_ratio:5", fmt="vasp/POSCAR"))
         self.assertFalse(check_bad_box(conf_bad, "length_ratio:5", fmt="vasp/POSCAR"))
+
+    def test_gromacs_frame_format(self):
+        dirname = os.path.dirname(__file__)
+        conf = os.path.join(dirname, "gromacs", "outputs", "traj", "0.gromacstrj")
+        self.assertFalse(check_bad_box(conf, "length_ratio:5", fmt="gromacs/gro"))
