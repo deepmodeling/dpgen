@@ -19,7 +19,14 @@ uses the regular PyTorch backend for both training and export:
 
    {
      "train_backend": "pytorch",
-     "model_format": "pt2"
+       "model_format": "pt2",
+       "default_training_param": {
+          "model": {
+             "type": "dpa4",
+             "use_compile": true,
+             "enable_tf32": true
+          }
+       }
    }
 
 DPA4C uses the PyTorch-exportable backend for both training and graph export:
@@ -29,13 +36,28 @@ DPA4C uses the PyTorch-exportable backend for both training and graph export:
    {
      "train_backend": "pytorch-exportable",
      "model_format": "pt2",
-     "dp_compress": true
+       "dp_compress": true,
+       "default_training_param": {
+          "model": {
+             "descriptor": {"type": "dpa4c"}
+          },
+          "training": {
+             "enable_compile": true,
+             "enable_tf32": true
+          }
+       }
    }
 
 The default ``train_backend`` remains ``tensorflow``. ``pt-expt`` is accepted
 as an alias of ``pytorch-exportable``. PyTorch-exportable model deviation with
 LAMMPS defaults to ``pt2``. Training checkpoints keep the ``.pt`` suffix
 independently of the frozen model format.
+
+The acceleration controls belong to different sections of the DeePMD training
+template: DPA4 uses ``model.use_compile`` and ``model.enable_tf32``; DPA4C uses
+``training.enable_compile`` and ``training.enable_tf32``. DP-GEN validates the
+backend and these locations but does not inject either policy. A template cannot
+mix DPA4 and DPA4C branches because they require different training backends.
 
 AOTInductor ``.pt2`` archives are specific to the target CPU or GPU, GPU
 compute capability, and libtorch version. DP-GEN therefore finishes the

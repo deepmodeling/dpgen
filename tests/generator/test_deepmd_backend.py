@@ -5,11 +5,13 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from dpgen.generator.lib.run_calypso import _find_models
 from dpgen.generator.run import (
     _get_checkpoint_suffix,
     _get_input_model_suffix,
     _get_model_suffix,
     _get_train_backend_flag,
+    _validate_dpa_training_config,
     _validate_pt2_template_atom_map,
     post_train_dp,
     run_md_model_devi,
@@ -77,10 +79,95 @@ class TestDeepmdBackendConfig(unittest.TestCase):
         for lines in (
             ["read_data conf.lmp\n"],
             ["read_restart restart.100\n", "atom_modify map yes\n"],
+            [
+                'if "${restart} > 0" then "read_restart restart.100" '
+                'else "read_data conf.lmp"\n',
+                "atom_modify map yes\n",
+            ],
         ):
             with self.subTest(lines=lines):
                 with self.assertRaisesRegex(ValueError, "atom_modify map yes"):
                     _validate_pt2_template_atom_map(lines)
+        with self.assertRaisesRegex(ValueError, "read_data or read_restart"):
+            _validate_pt2_template_atom_map(["atom_modify map yes\n"])
+
+    def test_dpa_backend_and_compile_option_validation(self):
+        _validate_dpa_training_config(
+            {
+                "train_backend": "pytorch",
+                "model_format": "pt2",
+                "default_training_param": {
+                    "model": {
+                        "type": "DPA4",
+                        "use_compile": True,
+                        "enable_tf32": True,
+                    },
+                    "training": {},
+                },
+            }
+        )
+        _validate_dpa_training_config(
+            {
+                "train_backend": "pt-expt",
+                "model_format": "pt2",
+                "default_training_param": {
+                    "model": {"descriptor": {"type": "DPA4C"}},
+                    "training": {
+                        "enable_compile": True,
+                        "enable_tf32": True,
+                    },
+                },
+            }
+        )
+        with self.assertRaisesRegex(ValueError, "requires train_backend='pytorch'"):
+            _validate_dpa_training_config(
+                {
+                    "train_backend": "pytorch-exportable",
+                    "model_format": "pt2",
+                    "default_training_param": {
+                        "model": {"descriptor": {"type": "dpa4"}},
+                        "training": {},
+                    },
+                }
+            )
+        with self.assertRaisesRegex(ValueError, "training.enable_compile"):
+            _validate_dpa_training_config(
+                {
+                    "train_backend": "pytorch-exportable",
+                    "model_format": "pt2",
+                    "default_training_param": {
+                        "model": {
+                            "descriptor": {"type": "dpa4c"},
+                            "use_compile": True,
+                        },
+                        "training": {},
+                    },
+                }
+            )
+        with self.assertRaisesRegex(ValueError, "cannot mix DPA4 and DPA4C"):
+            _validate_dpa_training_config(
+                {
+                    "train_backend": "pytorch-exportable",
+                    "model_format": "pt2",
+                    "default_training_param": {
+                        "model": {
+                            "model_dict": {
+                                "dpa4": {"descriptor": {"type": "dpa4"}},
+                                "dpa4c": {"descriptor": {"type": "dpa4c"}},
+                            }
+                        },
+                        "training": {},
+                    },
+                }
+            )
+
+    def test_calypso_discovers_resolved_model_suffix(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir)
+            for name in ("graph.000.pb", "graph.000.pte", "graph.001.pte"):
+                (path / name).touch()
+            self.assertEqual(len(_find_models(path, ".pb")), 1)
+            self.assertEqual(len(_find_models(path, ".pte")), 2)
 
 
 class TestRunTrainDeepmdBackend(unittest.TestCase):
@@ -174,6 +261,16 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
         )
         self.assertEqual(export_call["forward_files"], ["model.ckpt.pt"])
         self.assertIn("frozen_model_compressed.pt2", export_call["backward_files"])
+
+    def test_multiple_pt2_models_are_exported(self):
+        train_call, export_call = self._run(
+            numb_models=4,
+            train_backend="pt-expt",
+            model_format="pt2",
+        )
+        expected_tasks = [f"{index:03d}" for index in range(4)]
+        self.assertEqual(train_call["run_tasks"], expected_tasks)
+        self.assertEqual(export_call["run_tasks"], expected_tasks)
 
     def test_regular_pytorch_pt2_compression_is_rejected(self):
         with self.assertRaisesRegex(RuntimeError, "cannot compress pt2"):

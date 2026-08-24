@@ -113,7 +113,16 @@ def training_args_dp() -> list[Argument]:
     )
     doc_training_iter0_model_path = "The model used to init the first iter training. Number of element should be equal to numb_models."
     doc_training_init_model = "Iteration > 0, the model parameters will be initilized from the model trained at the previous iteration. Iteration == 0, the model parameters will be initialized from training_iter0_model_path."
-    doc_default_training_param = "Training parameters for deepmd-kit in 00.train. You can find instructions from `DeePMD-kit documentation <https://docs.deepmodeling.com/projects/deepmd/>`_."
+    doc_default_training_param = textwrap.dedent(
+        """\
+        Training parameters for DeePMD-kit in 00.train. DPA4 uses
+        ``model.use_compile`` and ``model.enable_tf32`` with the PyTorch backend.
+        DPA4C uses ``training.enable_compile`` and ``training.enable_tf32`` with
+        the PyTorch-exportable backend. DP-GEN validates these locations but does
+        not inject numerical-policy settings. See the `DeePMD-kit documentation
+        <https://docs.deepmodeling.com/projects/deepmd/>`_.
+        """
+    )
     doc_dp_train_skip_neighbor_stat = "Append --skip-neighbor-stat flag to dp train."
     doc_dp_compress = "Use dp compress to compress the model."
     doc_training_reuse_iter = "The minimal index of iteration that continues training models from old models of last iteration."

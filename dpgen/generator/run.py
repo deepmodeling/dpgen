@@ -228,6 +228,86 @@ def _get_input_model_suffix(models) -> str:
     return suffixes.pop()
 
 
+def _iter_model_sections(training_param):
+    model = training_param.get("model", {})
+    yield "model", model
+    for name, branch in (model.get("model_dict") or {}).items():
+        yield f"model.model_dict.{name}", branch
+
+
+def _get_dpa_model_family(training_param) -> Optional[str]:
+    families = set()
+    for _, model in _iter_model_sections(training_param):
+        model_type = model.get("type")
+        descriptor = model.get("descriptor", {})
+        descriptor_type = (
+            descriptor.get("type") if isinstance(descriptor, dict) else None
+        )
+        model_type = model_type.lower() if isinstance(model_type, str) else model_type
+        descriptor_type = (
+            descriptor_type.lower()
+            if isinstance(descriptor_type, str)
+            else descriptor_type
+        )
+        if descriptor_type == "dpa4c":
+            families.add("dpa4c")
+        if model_type == "dpa4" or descriptor_type in {"dpa4", "sezm"}:
+            families.add("dpa4")
+    if len(families) > 1:
+        raise ValueError(
+            "default_training_param cannot mix DPA4 and DPA4C branches because "
+            "they require different DeePMD backends"
+        )
+    return next(iter(families), None)
+
+
+def _validate_dpa_training_config(jdata) -> None:
+    """Validate DPA4/DPA4C backend and acceleration-option placement."""
+    training_param = jdata.get("default_training_param", {})
+    family = _get_dpa_model_family(training_param)
+    if family is None:
+        return
+
+    train_backend, _ = _get_train_backend_config(jdata)
+    expected_backend = "pytorch" if family == "dpa4" else "pytorch-exportable"
+    if train_backend != expected_backend:
+        raise ValueError(
+            f"{family.upper()} training requires train_backend='{expected_backend}', "
+            f"not '{train_backend}'"
+        )
+
+    if jdata.get("model_devi_engine", "lammps") == "lammps":
+        _, _, model_format = _get_model_backend_config(jdata)
+        if model_format != "pt2":
+            raise ValueError(
+                f"{family.upper()} LAMMPS model deviation requires model_format='pt2'"
+            )
+
+    if family == "dpa4c":
+        misplaced = []
+        for scope, model in _iter_model_sections(training_param):
+            for key in ("use_compile", "enable_tf32"):
+                if key in model:
+                    misplaced.append(f"{scope}.{key}")
+        if misplaced:
+            raise ValueError(
+                "DPA4C uses training.enable_compile and training.enable_tf32; "
+                f"remove misplaced {', '.join(misplaced)}"
+            )
+    else:
+        training = training_param.get("training", {})
+        misplaced = [
+            f"training.{key}"
+            for key in ("enable_compile", "enable_tf32")
+            if key in training
+        ]
+        if misplaced:
+            raise ValueError(
+                "DPA4 uses model.use_compile and model.enable_tf32; "
+                f"remove misplaced {', '.join(misplaced)}"
+            )
+
+
 def get_job_names(jdata):
     jobkeys = []
     for ii in jdata.keys():
@@ -819,6 +899,7 @@ def run_train(iter_index, jdata, mdata):
 def run_train_dp(iter_index, jdata, mdata):
     # print("debug:run_train:mdata", mdata)
     # load json param
+    _validate_dpa_training_config(jdata)
     numb_models = jdata["numb_models"]
     train_backend, _ = _get_train_backend_config(jdata)
     _, _, model_format = _get_model_backend_config(jdata)
@@ -1637,7 +1718,8 @@ def _validate_pt2_template_atom_map(lmp_lines):
     atom_map_index = None
     read_index = None
     for line_index, line in enumerate(lmp_lines):
-        tokens = line.partition("#")[0].split()
+        command = line.partition("#")[0]
+        tokens = command.split()
         if not tokens:
             continue
         if tokens[0] == "atom_modify" and any(
@@ -1645,11 +1727,11 @@ def _validate_pt2_template_atom_map(lmp_lines):
             for index in range(1, len(tokens) - 1)
         ):
             atom_map_index = line_index
-        elif tokens[0] in {"read_data", "read_restart"} and read_index is None:
+        if read_index is None and re.search(r"\bread_(?:data|restart)\b", command):
             read_index = line_index
-    if atom_map_index is None or (
-        read_index is not None and atom_map_index > read_index
-    ):
+    if read_index is None:
+        raise ValueError("pt2 LAMMPS templates require read_data or read_restart.")
+    if atom_map_index is None or atom_map_index > read_index:
         raise ValueError(
             "pt2 LAMMPS templates require 'atom_modify map yes' before read_data or read_restart."
         )
@@ -2475,7 +2557,12 @@ def run_model_devi(iter_index, jdata, mdata):
     if model_devi_engine != "calypso":
         run_md_model_devi(iter_index, jdata, mdata)
     else:
-        run_calypso_model_devi(iter_index, jdata, mdata)
+        run_calypso_model_devi(
+            iter_index,
+            jdata,
+            mdata,
+            model_suffix=_get_model_suffix(jdata),
+        )
 
 
 def post_model_devi(iter_index, jdata, mdata):

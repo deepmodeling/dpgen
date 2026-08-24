@@ -29,8 +29,19 @@ calypso_run_opt_name = "gen_stru_analy"
 calypso_model_devi_name = "model_devi_results"
 
 
+def _find_models(path, model_suffix=".pb"):
+    """Return model-deviation artifacts for the resolved deployment format."""
+    return glob.glob(os.path.join(path, f"graph*{model_suffix}"))
+
+
 def gen_structures(
-    iter_index, jdata, mdata, caly_run_path, current_idx, length_of_caly_runopt_list
+    iter_index,
+    jdata,
+    mdata,
+    caly_run_path,
+    current_idx,
+    length_of_caly_runopt_list,
+    model_suffix=".pb",
 ):
     # run calypso
     # vsc means generate elemental, binary and ternary at the same time
@@ -50,7 +61,7 @@ def gen_structures(
     calypso_path = mdata.get("model_devi_calypso_path")
     # calypso_input_path = jdata.get('calypso_input_path')
 
-    all_models = glob.glob(os.path.join(calypso_run_opt_path, "graph*pb"))
+    all_models = _find_models(calypso_run_opt_path, model_suffix)
     model_names = [os.path.basename(ii) for ii in all_models]
 
     deepmdkit_python = mdata.get("model_devi_deepmdkit_python")
@@ -335,7 +346,7 @@ def gen_structures(
     os.chdir(cwd)
 
 
-def gen_main(iter_index, jdata, mdata, caly_run_opt_list, gen_idx):
+def gen_main(iter_index, jdata, mdata, caly_run_opt_list, gen_idx, model_suffix=".pb"):
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, model_devi_name)
 
@@ -353,7 +364,13 @@ def gen_main(iter_index, jdata, mdata, caly_run_opt_list, gen_idx):
     for iidx, temp_path in enumerate(caly_run_opt_list):
         if iidx >= indice:
             gen_structures(
-                iter_index, jdata, mdata, temp_path, iidx, len(caly_run_opt_list)
+                iter_index,
+                jdata,
+                mdata,
+                temp_path,
+                iidx,
+                len(caly_run_opt_list),
+                model_suffix=model_suffix,
             )
 
 
@@ -448,7 +465,7 @@ def analysis(iter_index, jdata, calypso_model_devi_path):
     os.chdir(cwd)
 
 
-def run_calypso_model_devi(iter_index, jdata, mdata):
+def run_calypso_model_devi(iter_index, jdata, mdata, model_suffix=".pb"):
     dlog.info("start running CALYPSO")
 
     iter_name = make_iter_name(iter_index)
@@ -483,7 +500,14 @@ def run_calypso_model_devi(iter_index, jdata, mdata):
         if lines[-1].strip().strip("\n").split()[0] == "1":
             # Gen Structures
             gen_index = lines[-1].strip().strip("\n").split()[1]
-            gen_main(iter_index, jdata, mdata, caly_run_opt_list, gen_index)
+            gen_main(
+                iter_index,
+                jdata,
+                mdata,
+                caly_run_opt_list,
+                gen_index,
+                model_suffix=model_suffix,
+            )
 
         elif lines[-1].strip().strip("\n") == "2":
             # Analysis & to deepmd/raw
@@ -492,7 +516,7 @@ def run_calypso_model_devi(iter_index, jdata, mdata):
         elif lines[-1].strip().strip("\n") == "3":
             # Model Devi
             _calypso_run_opt_path = os.path.abspath(caly_run_opt_list[0])
-            all_models = glob.glob(os.path.join(_calypso_run_opt_path, "graph*pb"))
+            all_models = _find_models(_calypso_run_opt_path, model_suffix)
             cwd = os.getcwd()
             os.chdir(calypso_model_devi_path)
             args = " ".join(
