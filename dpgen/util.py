@@ -140,6 +140,9 @@ def convert_training_data_to_hdf5(input_files: list[str], h5_file: str):
                 systems.append(pp)
             f.seek(0)
             json.dump(jinput, f, indent=4)
+            # The rewritten configuration can be shorter than the original.
+            # Remove any bytes left after the new JSON document.
+            f.truncate()
     systems = list(set(systems))
 
     dlog.info("Combining %d training systems to %s...", len(systems), h5_file)
