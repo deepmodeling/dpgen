@@ -252,8 +252,11 @@ def make_lammps_equi(
     if change_box:
         ret += "fix             1 all box/relax iso 0.0 \n"
         ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)  # noqa: UP031
+        # Align dump and thermo output at the start of each minimization stage.
+        ret += "reset_timestep  0\n"
         ret += "fix             1 all box/relax aniso 0.0 \n"
         ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)  # noqa: UP031
+        ret += "reset_timestep  0\n"
         ret += "fix             1 all box/relax tri 0.0 \n"
     ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)  # noqa: UP031
     ret += "variable        N equal count(all)\n"
