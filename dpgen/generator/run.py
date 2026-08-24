@@ -2436,6 +2436,13 @@ def _read_model_devi_file(
                     )
                     os.rename(traj_files_sorted[ibead][itraj], new_filename)
     model_devi = np.loadtxt(os.path.join(task_path, "model_devi.out"))
+    if model_devi.ndim == 2:
+        # Some LAMMPS fixes evaluate a model repeatedly at the same timestep.
+        # The final evaluation describes the accepted configuration that is
+        # written to the trajectory, so discard earlier intermediate rows.
+        _, reverse_indices = np.unique(model_devi[::-1, 0], return_index=True)
+        last_indices = model_devi.shape[0] - 1 - reverse_indices
+        model_devi = model_devi[np.sort(last_indices)]
     if model_devi_f_avg_relative:
         if model_devi_merge_traj is True:
             all_traj = os.path.join(task_path, "all.lammpstrj")
