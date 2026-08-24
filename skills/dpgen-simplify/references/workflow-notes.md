@@ -6,7 +6,7 @@
 dpgen simplify param.json machine.json
 ```
 
-Run this command from an activated DP-GEN environment where `dpgen --version` succeeds.
+Run this command from an activated DP-GEN environment where `dpgen -h` succeeds.
 
 ## Recommended workflow
 
@@ -25,7 +25,7 @@ Run this command from an activated DP-GEN environment where `dpgen --version` su
 Run these before execution:
 
 ```bash
-dpgen --version
+dpgen -h
 python -m json.tool param.json
 python -m json.tool machine.json
 ```

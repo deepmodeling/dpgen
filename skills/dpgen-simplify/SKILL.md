@@ -30,7 +30,7 @@ dpgen simplify param.json machine.json
 
 Environment boundary rule:
 
-- Outer layer: run `dpgen simplify param.json machine.json` in an activated environment where `dpgen --version` works.
+- Outer layer: run `dpgen simplify param.json machine.json` in an activated environment where `dpgen -h` works.
 - Inner layer: for scheduler stages, explicitly activate runtime in `resources.source_list` on the server side.
 
 ## Agent responsibilities
@@ -102,7 +102,7 @@ Do not guess conda environment names, module names, or site-specific paths.
 Use an activated DP-GEN environment and verify with:
 
 ```bash
-dpgen --version
+dpgen -h
 ```
 
 Do not start simplify from a shell where `dpgen` is unavailable.
@@ -278,7 +278,7 @@ Before execution, validate the workflow in this order:
 1. confirm outer-layer `dpgen` is available:
 
 ```bash
-dpgen --version
+dpgen -h
 ```
 
 2. validate JSON syntax:
