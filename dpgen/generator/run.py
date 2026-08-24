@@ -995,6 +995,16 @@ def parse_cur_job(cur_job):
     return ensemble, nsteps, trj_freq, temps, press, pka_e, dt, nbeads
 
 
+def _get_lammps_job_settings(cur_job, jdata):
+    """Resolve per-job LAMMPS settings over workflow-wide defaults."""
+    return (
+        cur_job.get("dt", jdata["model_devi_dt"]),
+        cur_job.get("neidelay", jdata.get("model_devi_neidelay")),
+        cur_job.get("taut", jdata.get("model_devi_taut", 0.1)),
+        cur_job.get("taup", jdata.get("model_devi_taup", 0.5)),
+    )
+
+
 def expand_matrix_values(target_list, cur_idx=0):
     nvar = len(target_list)
     if cur_idx == nvar:
@@ -1667,7 +1677,9 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
     if iter_index >= len(model_devi_jobs):
         return False
     cur_job = model_devi_jobs[iter_index]
-    ensemble, nsteps, trj_freq, temps, press, pka_e, dt, nbeads = parse_cur_job(cur_job)
+    ensemble, nsteps, trj_freq, temps, press, pka_e, _dt, nbeads = parse_cur_job(
+        cur_job
+    )
     model_devi_f_avg_relative = jdata.get("model_devi_f_avg_relative", False)
     model_devi_merge_traj = jdata.get("model_devi_merge_traj", False)
     if (nbeads is not None) and model_devi_f_avg_relative:
@@ -1682,23 +1694,17 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
         raise RuntimeError(
             "trj_freq should be a factor of nsteps for pimd. Please check your input."
         )
-    if dt is not None:
-        model_devi_dt = dt
     sys_idx = expand_idx(cur_job["sys_idx"])
     if len(sys_idx) != len(list(set(sys_idx))):
         raise RuntimeError("system index should be uniq")
 
     use_ele_temp = jdata.get("use_ele_temp", 0)
-    model_devi_dt = jdata["model_devi_dt"]
-    model_devi_neidelay = None
-    if "model_devi_neidelay" in jdata:
-        model_devi_neidelay = jdata["model_devi_neidelay"]
-    model_devi_taut = 0.1
-    if "model_devi_taut" in jdata:
-        model_devi_taut = jdata["model_devi_taut"]
-    model_devi_taup = 0.5
-    if "model_devi_taup" in jdata:
-        model_devi_taup = jdata["model_devi_taup"]
+    (
+        model_devi_dt,
+        model_devi_neidelay,
+        model_devi_taut,
+        model_devi_taup,
+    ) = _get_lammps_job_settings(cur_job, jdata)
     mass_map = jdata["mass_map"]
     nopbc = jdata.get("model_devi_nopbc", False)
 

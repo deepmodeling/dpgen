@@ -292,6 +292,7 @@ def model_devi_jobs_args() -> list[Argument]:
     doc_nsteps = "Running steps of MD. It is not optional when not using a template."
     doc_nbeads = "Number of beads in PIMD. If not given, classical MD will be performed. Only supported for LAMMPS version >= 20230615."
     doc_ensemble = "Determining which ensemble used in MD, options include “npt” and “nvt”. It is not optional when not using a template."
+    doc_dt = "Timestep for this MD job. Overrides the workflow-wide model_devi_dt."
     doc_neidelay = "delay building until this many steps since last build."
     doc_taut = "Coupling time of thermostat (ps)."
     doc_taup = "Coupling time of barostat (ps)."
@@ -311,6 +312,7 @@ def model_devi_jobs_args() -> list[Argument]:
         Argument("nsteps", int, optional=True, doc=doc_nsteps),
         Argument("nbeads", int, optional=True, doc=doc_nbeads),
         Argument("ensemble", str, optional=True, doc=doc_ensemble),
+        Argument("dt", float, optional=True, doc=doc_dt),
         Argument("neidelay", int, optional=True, doc=doc_neidelay),
         Argument("taut", float, optional=True, doc=doc_taut),
         Argument("taup", float, optional=True, doc=doc_taup),
