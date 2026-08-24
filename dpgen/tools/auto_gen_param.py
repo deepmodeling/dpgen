@@ -55,11 +55,11 @@ class Iteration:
 
     @property
     def index_iteration(self):
-        return self._index_iteration  # pylint: disable=no-member
+        return self._index_iteration
 
     @index_iteration.setter
     def index_iteration(self, value):
-        self._index_sub_iteration = value
+        self._index_iteration = value
 
     @classmethod
     def register_iteration(cls):
