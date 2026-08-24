@@ -1,4 +1,5 @@
 import importlib
+import json
 import os
 import shutil
 import sys
@@ -93,6 +94,10 @@ class TestGromacsModelDeviEngine(unittest.TestCase):
                             os.path.join(wdir, self.jdata["gromacs_settings"][key])
                         )
                     )
+
+        with open(os.path.join(wdir, "input.json")) as f:
+            input_json = json.load(f)
+        self.assertEqual(input_json["graph_file"], "../graph.000.pb")
 
     def _copy_outputs(self, path_1, path_2):
         shutil.copy(

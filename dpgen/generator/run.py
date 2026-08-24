@@ -1881,7 +1881,10 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
                     # input.json for DP-Gromacs
                     with open(os.path.join(cc, "input.json")) as f:
                         input_json = json.load(f)
-                    input_json["graph_file"] = models[0]
+                    # Tasks run in a remote staging directory, so a local absolute
+                    # training path would not resolve after DPDispatcher transfers
+                    # the model into the model-deviation work directory.
+                    input_json["graph_file"] = task_model_list[0]
                     input_json["lambda"] = ll
                     with open(os.path.join(task_path, "input.json"), "w") as _outfile:
                         json.dump(input_json, _outfile, indent=4)
