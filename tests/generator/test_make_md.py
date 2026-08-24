@@ -516,7 +516,7 @@ class TestMakeModelDeviRevMat(unittest.TestCase):
                     )
         os.chdir(cwd_)
 
-    def test_pt2_template_with_atom_map(self):
+    def test_default_pt2_template_with_atom_map(self):
         test_dir = os.path.dirname(__file__)
         with open(os.path.join(test_dir, "lmp", "input.lammps")) as fp:
             template = fp.read()
@@ -545,8 +545,7 @@ class TestMakeModelDeviRevMat(unittest.TestCase):
             "shuffle_poscar": False,
             "model_devi_f_trust_lo": 0.050,
             "model_devi_f_trust_hi": 0.150,
-            "train_backend": "pytorch",
-            "model_format": "pt2",
+            "train_backend": "pytorch-exportable",
             "model_devi_jobs": [
                 {
                     "sys_idx": [0],

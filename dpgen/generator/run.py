@@ -1621,7 +1621,19 @@ def make_model_devi(iter_index, jdata, mdata):
 
 
 def _validate_pt2_template_atom_map(lmp_lines):
-    """Validate the atom map required by pt2 LAMMPS templates."""
+    """Validate the atom map required by pt2 LAMMPS templates.
+
+    Parameters
+    ----------
+    lmp_lines : list[str]
+        Lines of the LAMMPS input template.
+
+    Raises
+    ------
+    ValueError
+        If ``atom_modify map yes`` is missing or follows ``read_data`` or
+        ``read_restart``.
+    """
     atom_map_index = None
     read_index = None
     for line_index, line in enumerate(lmp_lines):
@@ -1738,7 +1750,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                 # revise input of lammps
                 with open("input.lammps") as fp:
                     lmp_lines = fp.readlines()
-                if jdata.get("model_format") == "pt2":
+                if suffix == ".pt2":
                     _validate_pt2_template_atom_map(lmp_lines)
                 # only revise the line "pair_style deepmd" if the user has not written the full line (checked by then length of the line)
                 template_has_pair_deepmd = 1
