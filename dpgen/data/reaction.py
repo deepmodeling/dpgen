@@ -98,7 +98,7 @@ def run_reaxff(jdata, mdata, log_file="reaxff_log"):
         [trj_path],
         outlog=log_file,
         errlog=log_file,
-        api_version=mdata.get("api_version", "0.9"),
+        api_version=mdata.get("api_version", "1.0"),
     )
 
 
@@ -146,7 +146,7 @@ def run_build_dataset(jdata, mdata, log_file="build_log"):
         [f"dataset_{dataset_name}_gjf"],
         outlog=log_file,
         errlog=log_file,
-        api_version=mdata.get("api_version", "0.9"),
+        api_version=mdata.get("api_version", "1.0"),
     )
 
 
@@ -191,7 +191,7 @@ def run_fp(jdata, mdata, log_file="output", forward_common_files=[]):
         [log_file],
         outlog=log_file,
         errlog=log_file,
-        api_version=mdata.get("api_version", "0.9"),
+        api_version=mdata.get("api_version", "1.0"),
     )
 
 
