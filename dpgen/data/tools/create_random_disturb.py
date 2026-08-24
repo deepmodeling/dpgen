@@ -31,10 +31,15 @@ def random_range(a, b, ndata=1):
 
 
 def gen_random_disturb(dmax, a, b, dstyle="uniform"):
+    """Generate a random three-dimensional displacement vector.
+
+    For ``normal`` disturbances, the requested maximum displacement scales a
+    zero-centered normal variate with standard deviation 0.5.
+    """
     d0 = np.random.rand(3) * (b - a) + a
     dnorm = np.linalg.norm(d0)
     if dstyle == "normal":
-        dmax = np.random.standard_normal(0, 0.5) * dmax
+        dmax = np.random.normal(loc=0.0, scale=0.5) * dmax
     elif dstyle == "constant":
         pass
     else:
