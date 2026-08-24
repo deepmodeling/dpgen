@@ -163,6 +163,47 @@ class TestMakeModelDevi(unittest.TestCase):
         _check_pt(self, 0, jdata)
         # shutil.rmtree('iter.000000')
 
+    def test_make_model_devi_default_pt2_atom_map(self):
+        test_dir = os.path.dirname(__file__)
+        with open(os.path.join(test_dir, param_file)) as fp:
+            jdata = json.load(fp)
+        with open(os.path.join(test_dir, machine_file)) as fp:
+            mdata = json.load(fp)
+        jdata["train_backend"] = "pytorch-exportable"
+        jdata["sys_configs_prefix"] = test_dir
+        jdata["sys_configs"] = [
+            ["data/al.fcc.02x02x02/01.scale_pert/sys-0032/scale*/000001/POSCAR"]
+        ]
+        jdata["model_devi_jobs"][0]["sys_idx"] = [0]
+        jdata["model_devi_jobs"][0]["temps"] = [50]
+        jdata["model_devi_jobs"][0]["press"] = [1.0]
+        jdata.pop("model_format", None)
+
+        train_dir = os.path.join("iter.000000", "00.train")
+        os.makedirs(train_dir, exist_ok=True)
+        for model_index in range(jdata["numb_models"]):
+            with open(
+                os.path.join(train_dir, f"graph.{model_index:03d}.pt2"), "w"
+            ) as fp:
+                fp.write("model")
+
+        def copy_link(source, target):
+            if not os.path.isabs(source):
+                source = os.path.join(os.path.dirname(target), source)
+            shutil.copyfile(os.path.normpath(source), target)
+
+        with patch("dpgen.generator.run.os.symlink", side_effect=copy_link):
+            make_model_devi(0, jdata, mdata)
+
+        task = sorted(glob.glob("iter.000000/01.model_devi/task.*"))[0]
+        with open(os.path.join(task, "input.lammps")) as fp:
+            lammps_input = fp.read()
+        self.assertEqual(lammps_input.count("atom_modify        map yes"), 1)
+        self.assertLess(
+            lammps_input.index("atom_modify        map yes"),
+            lammps_input.index("read_data"),
+        )
+
     def test_make_model_devi_pimd(self):
         if os.path.isdir("iter.000000"):
             shutil.rmtree("iter.000000")

@@ -1970,7 +1970,7 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
                         trj_freq,
                         mass_map,
                         tt,
-                        jdata=jdata,
+                        jdata={**jdata, "model_format": suffix[1:]},
                         tau_t=model_devi_taut,
                         pres=pp,
                         tau_p=model_devi_taup,
