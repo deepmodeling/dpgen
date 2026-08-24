@@ -11,7 +11,7 @@ __package__ = "auto_test"
 
 from dpgen.auto_test.common_equi import make_equi, run_equi
 from dpgen.auto_test.Lammps import Lammps
-from dpgen.auto_test.lib.lammps import inter_deepmd
+from dpgen.auto_test.lib.lammps import inter_deepmd, inter_eam_alloy, inter_meam
 
 from .context import setUpModule  # noqa: F401
 
@@ -71,6 +71,32 @@ class TestLammps(unittest.TestCase):
             "deepmd_version": "1.1.0",
         }
         self.assertEqual(model_param, self.Lammps.model_param)
+
+    def test_meam_model_parameters_generate_two_file_command(self):
+        interaction = {
+            "type": "meam",
+            "model": ["lammps_input/meam.lib", "lammps_input/Al.meam"],
+            "type_map": {"Al": 0},
+        }
+        calculator = Lammps(interaction, self.source_path + "/Al-fcc.vasp")
+        calculator.set_model_param()
+
+        self.assertEqual(calculator.model_param["model_name"], ["meam.lib", "Al.meam"])
+        command = inter_meam(calculator.model_param)
+        self.assertIn("pair_coeff      * * meam.lib Al Al.meam Al", command)
+
+    def test_eam_alloy_command_uses_plain_filename(self):
+        interaction = {
+            "type": "eam_alloy",
+            "model": "lammps_input/Al.eam.alloy",
+            "type_map": {"Al": 0},
+        }
+        calculator = Lammps(interaction, self.source_path + "/Al-fcc.vasp")
+        calculator.set_model_param()
+
+        command = inter_eam_alloy(calculator.model_param)
+        self.assertIn("pair_coeff      * * Al.eam.alloy Al", command)
+        self.assertNotIn("['Al.eam.alloy']", command)
 
     def test_make_potential_files(self):
         cwd = os.getcwd()

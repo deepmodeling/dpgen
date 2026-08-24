@@ -54,7 +54,7 @@ class Lammps(Task):
             }
         elif self.inter_type == "meam":
             model_name = list(map(os.path.basename, self.model))
-            self.model_param = {"model_name": [model_name], "param_type": self.type_map}
+            self.model_param = {"model_name": model_name, "param_type": self.type_map}
         else:
             model_name = os.path.basename(self.model)
             self.model_param = {"model_name": [model_name], "param_type": self.type_map}
