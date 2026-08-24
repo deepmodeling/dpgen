@@ -105,3 +105,25 @@ class TestInterstitial(unittest.TestCase):
             center = (inter_site1.coords + inter_site2.coords) / 2
             self.assertTrue((center[0] - center[1]) < 1e-4)
             self.assertTrue((center[1] - center[2]) < 1e-4)
+
+    def test_make_confs_when_all_interstitials_are_filtered(self):
+        """An empty filtered result should remain a valid property setup."""
+        shutil.copy(
+            os.path.join(self.source_path, "CONTCAR_V_bcc"),
+            os.path.join(self.equi_path, "CONTCAR"),
+        )
+        parameter = {
+            "type": "interstitial",
+            "supercell": [1, 1, 1],
+            "insert_ele": ["V"],
+            "conf_filters": {"min_dist": 100.0},
+        }
+        interstitial = Interstitial(parameter)
+
+        task_list = interstitial.make_confs(self.target_path, self.equi_path)
+
+        self.assertEqual([], task_list)
+        element_out = os.path.join(self.target_path, "element.out")
+        self.assertTrue(os.path.isfile(element_out))
+        self.assertEqual(0, os.path.getsize(element_out))
+        interstitial.post_process(task_list)
