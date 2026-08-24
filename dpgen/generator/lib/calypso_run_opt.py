@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import glob
 import os
 import time
 
@@ -13,6 +14,14 @@ from deepmd.calculator import DP
 structure optimization with DP model and ASE
 PSTRESS and fmax should exist in input.dat
 """
+
+
+def find_model_path():
+    """Find the first backend-specific model forwarded by DP-GEN."""
+    models = sorted(glob.glob(os.path.join("..", "graph.*")))
+    if not models:
+        raise FileNotFoundError("No graph model was forwarded for CALYPSO optimization")
+    return models[0]
 
 
 def Get_Element_Num(elements):
@@ -112,7 +121,7 @@ def read_stress_fmax():
 
 def run_opt(fmax, stress):
     """Using the ASE&DP to Optimize Configures."""
-    calc = DP(model="../graph.000.pb")  # init the model before iteration
+    calc = DP(model=find_model_path())  # initialize one model before iteration
     os.system("mv OUTCAR OUTCAR-last")
 
     print("Start to Optimize Structures by DP----------")

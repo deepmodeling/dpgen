@@ -29,6 +29,25 @@ calypso_run_opt_name = "gen_stru_analy"
 calypso_model_devi_name = "model_devi_results"
 
 
+def _get_calypso_models(path, jdata):
+    """Return CALYPSO model files for the configured training backend."""
+    backend = jdata.get("train_backend", "tensorflow")
+    suffixes = {
+        "tensorflow": ".pb",
+        "pytorch": ".pth",
+        "jax": ".savedmodel",
+    }
+    try:
+        suffix = suffixes[backend]
+    except KeyError as exc:
+        supported = ", ".join(sorted(suffixes))
+        raise ValueError(
+            f"CALYPSO does not support training backend {backend!r}; "
+            f"supported backends are: {supported}."
+        ) from exc
+    return sorted(glob.glob(os.path.join(path, f"graph*{suffix}")))
+
+
 def gen_structures(
     iter_index, jdata, mdata, caly_run_path, current_idx, length_of_caly_runopt_list
 ):
@@ -50,7 +69,7 @@ def gen_structures(
     calypso_path = mdata.get("model_devi_calypso_path")
     # calypso_input_path = jdata.get('calypso_input_path')
 
-    all_models = glob.glob(os.path.join(calypso_run_opt_path, "graph*pb"))
+    all_models = _get_calypso_models(calypso_run_opt_path, jdata)
     model_names = [os.path.basename(ii) for ii in all_models]
 
     deepmdkit_python = mdata.get("model_devi_deepmdkit_python")
@@ -492,7 +511,7 @@ def run_calypso_model_devi(iter_index, jdata, mdata):
         elif lines[-1].strip().strip("\n") == "3":
             # Model Devi
             _calypso_run_opt_path = os.path.abspath(caly_run_opt_list[0])
-            all_models = glob.glob(os.path.join(_calypso_run_opt_path, "graph*pb"))
+            all_models = _get_calypso_models(_calypso_run_opt_path, jdata)
             cwd = os.getcwd()
             os.chdir(calypso_model_devi_path)
             args = " ".join(

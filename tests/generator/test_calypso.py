@@ -1,5 +1,6 @@
 import os
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -7,6 +8,8 @@ import numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
+
+from dpgen.generator.lib.run_calypso import _get_calypso_models
 
 from .context import (
     _parse_calypso_dis_mtx,
@@ -173,6 +176,24 @@ class TestCALYPSOScript(unittest.TestCase):
             np.nanmin(model_devi_jobs.get("model_devi_jobs").get("DistanceOfIon")),
         )
         os.remove("input.dat")
+
+    def test_backend_specific_model_selection(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            model_dir = Path(tmpdir)
+            for suffix in ("pb", "pth", "savedmodel"):
+                (model_dir / f"graph.000.{suffix}").touch()
+
+            cases = {
+                "tensorflow": ".pb",
+                "pytorch": ".pth",
+                "jax": ".savedmodel",
+            }
+            for backend, suffix in cases.items():
+                with self.subTest(backend=backend):
+                    models = _get_calypso_models(
+                        str(model_dir), {"train_backend": backend}
+                    )
+                    self.assertEqual(models, [str(model_dir / f"graph.000{suffix}")])
 
 
 if __name__ == "__main__":
