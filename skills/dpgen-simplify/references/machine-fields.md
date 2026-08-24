@@ -18,21 +18,24 @@ Use one of these profiles based on where `dpgen` is launched:
 
 1. Server-local Slurm (already logged into cluster login node)
 
-   - `context_type = "LocalContext"`
-   - `batch_type = "Slurm"`
+   - `machine.context_type = "LocalContext"`
+   - `machine.batch_type = "Slurm"`
+   - `resources.batch_type = "Slurm"`
    - template: `assets/machine.template.server-local-slurm.json`
 
 1. Local workstation -> remote Slurm cluster
 
-   - `context_type = "SSHContext"`
-   - `batch_type = "Slurm"`
+   - `machine.context_type = "SSHContext"`
+   - `machine.batch_type = "Slurm"`
+   - `resources.batch_type = "Slurm"`
    - requires `remote_profile`
    - template: `assets/machine.template.ssh-remote-slurm.json`
 
 1. Local single-machine shell testing
 
-   - `context_type = "LazyLocalContext"`
-   - `batch_type = "Shell"`
+   - `machine.context_type = "LazyLocalContext"`
+   - `machine.batch_type = "Shell"`
+   - `resources.batch_type = "Shell"`
    - template: `assets/machine.template.local-shell.json`
 
 If your current workflow is "on server, submit Slurm jobs", use profile 1.
@@ -84,7 +87,9 @@ Typical concerns:
 - scheduler settings
 - backend-specific environment
 
-If `fp_style` is `none`, keep this stage disabled/unset and do not require active FP executable settings.
+If `fp_style` is `none`, keep this stage inactive and do not require active FP
+executable settings. The machine schema still requires the stage and a string
+command, so use the no-op command `true`.
 
 ## Practical advice
 

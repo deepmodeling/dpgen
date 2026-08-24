@@ -7,13 +7,14 @@
             "batch_type": "Slurm",
             "context_type": "LocalContext",
             "local_root": "./",
-            "remote_root": null
+            "remote_root": "./"
         },
         "resources": {
-            "number_node": null,
-            "cpu_per_node": null,
-            "gpu_per_node": null,
-            "queue_name": null,
+            "batch_type": "Slurm",
+            "number_node": 1,
+            "cpu_per_node": 1,
+            "gpu_per_node": 0,
+            "queue_name": "",
             "group_size": 1,
             "custom_flags": [],
             "source_list": []
@@ -25,31 +26,33 @@
             "batch_type": "Slurm",
             "context_type": "LocalContext",
             "local_root": "./",
-            "remote_root": null
+            "remote_root": "./"
         },
         "resources": {
-            "number_node": null,
-            "cpu_per_node": null,
-            "gpu_per_node": null,
-            "queue_name": null,
+            "batch_type": "Slurm",
+            "number_node": 1,
+            "cpu_per_node": 1,
+            "gpu_per_node": 0,
+            "queue_name": "",
             "group_size": 1,
             "custom_flags": [],
             "source_list": []
         }
     },
     "fp": {
-        "command": null,
+        "command": "true",
         "machine": {
             "batch_type": "Slurm",
             "context_type": "LocalContext",
             "local_root": "./",
-            "remote_root": null
+            "remote_root": "./"
         },
         "resources": {
-            "number_node": null,
-            "cpu_per_node": null,
-            "gpu_per_node": null,
-            "queue_name": null,
+            "batch_type": "Slurm",
+            "number_node": 1,
+            "cpu_per_node": 1,
+            "gpu_per_node": 0,
+            "queue_name": "",
             "group_size": 1,
             "custom_flags": [],
             "source_list": []
