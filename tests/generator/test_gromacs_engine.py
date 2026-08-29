@@ -6,6 +6,8 @@ import unittest
 
 import numpy as np
 
+from dpgen.generator.run import _gromacs_input_files
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
 dirname = os.path.join(os.path.abspath(os.path.dirname(__file__)), "gromacs")
@@ -43,6 +45,7 @@ class TestGromacsModelDeviEngine(unittest.TestCase):
                 "ref_filename": "em.tpr",
                 "model_devi_script": "model_devi.py",
                 "traj_filename": "deepmd_traj.gro",
+                "deffnm": "deepmd",
             },
             "model_devi_dt": 0.001,
             "model_devi_f_trust_lo": 0.05,
@@ -80,7 +83,10 @@ class TestGromacsModelDeviEngine(unittest.TestCase):
 
     def _check_dir(self, wdir, post=True):
         for key in self.jdata["gromacs_settings"].keys():
-            if key != "traj_filename":
+            if key == "deffnm":
+                # deffnm names generated outputs and must not be staged as input.
+                self.assertFalse(os.path.exists(os.path.join(wdir, "deepmd")))
+            elif key != "traj_filename":
                 self.assertTrue(
                     os.path.exists(
                         os.path.join(wdir, self.jdata["gromacs_settings"][key])
@@ -104,6 +110,13 @@ class TestGromacsModelDeviEngine(unittest.TestCase):
             os.path.join(path_2, "model_devi.out"),
         )
         shutil.copytree(os.path.join(path_1, "traj"), os.path.join(path_2, "traj"))
+
+    def test_deffnm_is_not_an_input_file(self):
+        """Command/output settings must not be symlinked from the source system."""
+        input_files = _gromacs_input_files(self.jdata["gromacs_settings"])
+
+        self.assertNotIn("deepmd", input_files)
+        self.assertIn("processed.top", input_files)
 
     @unittest.skipIf(
         importlib.util.find_spec("openbabel") is not None,

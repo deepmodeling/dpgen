@@ -6,12 +6,18 @@ import json
 import unittest
 from pathlib import Path
 
+from dargs import Argument
+
 from dpgen.data.arginfo import (
     init_bulk_jdata_arginfo,
     init_reaction_jdata_arginfo,
     init_surf_jdata_arginfo,
 )
-from dpgen.generator.arginfo import run_jdata_arginfo, run_mdata_arginfo
+from dpgen.generator.arginfo import (
+    model_devi_args,
+    run_jdata_arginfo,
+    run_mdata_arginfo,
+)
 from dpgen.simplify.arginfo import simplify_jdata_arginfo, simplify_mdata_arginfo
 from dpgen.util import normalize
 
@@ -207,3 +213,47 @@ class TestExamples(unittest.TestCase):
                 with open(fn) as f:
                     data = json.load(f)
                 normalize(arginfo, data)
+
+    def test_gromacs_model_devi_arguments(self):
+        """The GROMACS schema should accept every setting used by its runner."""
+        arginfo = Argument("model_devi", dict, sub_variants=model_devi_args())
+        data = {
+            "model_devi_engine": "gromacs",
+            "model_devi_jobs": [
+                {
+                    "sys_idx": [0],
+                    "temps": [300.0],
+                    "press": [],
+                    "trj_freq": 10,
+                    "nsteps": 100,
+                    "ensemble": "nvt",
+                    "lambdas": [0.5, 1.0],
+                    "dt": 0.001,
+                }
+            ],
+            "model_devi_dt": 0.002,
+            "model_devi_skip": 0,
+            "model_devi_f_trust_lo": 0.2,
+            "model_devi_f_trust_hi": 0.6,
+            "model_devi_v_trust_lo": 1e10,
+            "model_devi_v_trust_hi": 1e10,
+            "model_devi_clean_traj": False,
+            "model_devi_nopbc": True,
+            "gromacs_settings": {
+                "mdp_filename": "md.mdp",
+                "topol_filename": "processed.top",
+                "conf_filename": "conf.gro",
+                "index_filename": "index.raw",
+                "type_filename": "type.raw",
+                "ref_filename": "em.tpr",
+                "ndx_filename": "index.ndx",
+                "model_devi_script": "model_devi.py",
+                "deffnm": "deepmd",
+                "maxwarn": 1,
+                "traj_filename": "deepmd_traj.gro",
+                "group_name": "Other",
+            },
+        }
+
+        normalized = arginfo.normalize_value(data)
+        arginfo.check_value(normalized, strict=True)
