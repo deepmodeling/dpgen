@@ -1806,6 +1806,20 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
         sys_counter += 1
 
 
+def _gromacs_input_files(gromacs_settings):
+    """Return only settings whose values name files staged for a GROMACS task."""
+    non_input_settings = {
+        "traj_filename",
+        "mdp_filename",
+        "group_name",
+        "maxwarn",
+        "deffnm",
+    }
+    return [
+        file for key, file in gromacs_settings.items() if key not in non_input_settings
+    ]
+
+
 def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
     try:
         from gromacs.fileformats.mdp import MDP
@@ -1868,16 +1882,10 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
                     task_path = os.path.join(work_path, task_name)
                     create_path(task_path)
                     gromacs_settings = jdata.get("gromacs_settings", "")
-                    for key, file in gromacs_settings.items():
-                        if (
-                            key != "traj_filename"
-                            and key != "mdp_filename"
-                            and key != "group_name"
-                            and key != "maxwarn"
-                        ):
-                            os.symlink(
-                                os.path.join(cc, file), os.path.join(task_path, file)
-                            )
+                    for file in _gromacs_input_files(gromacs_settings):
+                        os.symlink(
+                            os.path.join(cc, file), os.path.join(task_path, file)
+                        )
                     # input.json for DP-Gromacs
                     with open(os.path.join(cc, "input.json")) as f:
                         input_json = json.load(f)
