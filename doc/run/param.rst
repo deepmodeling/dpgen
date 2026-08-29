@@ -19,15 +19,14 @@ uses the regular PyTorch backend for both training and export:
 
    {
      "train_backend": "pytorch",
-     "model_devi_backend": "pytorch",
-     "model_format": "pt2",
-     "default_training_param": {
-        "model": {
-           "type": "dpa4",
-           "use_compile": true,
-           "enable_tf32": true
-        }
-     }
+       "model_format": "pt2",
+       "default_training_param": {
+          "model": {
+             "type": "dpa4",
+             "use_compile": true,
+             "enable_tf32": true
+          }
+       }
    }
 
 DPA4C uses the PyTorch-exportable backend for both training and graph export:
@@ -36,27 +35,23 @@ DPA4C uses the PyTorch-exportable backend for both training and graph export:
 
    {
      "train_backend": "pytorch-exportable",
-     "model_devi_backend": "pytorch-exportable",
      "model_format": "pt2",
-     "dp_compress": true,
-     "default_training_param": {
-        "model": {
-           "descriptor": {"type": "dpa4c"}
-        },
-        "training": {
-           "enable_compile": true,
-           "enable_tf32": true
-        }
-     }
+       "dp_compress": true,
+       "default_training_param": {
+          "model": {
+             "descriptor": {"type": "dpa4c"}
+          },
+          "training": {
+             "enable_compile": true,
+             "enable_tf32": true
+          }
+       }
    }
 
-The default ``train_backend`` remains ``tensorflow``.
-``model_devi_backend`` defaults to ``train_backend`` but independently selects
-the backend flag used by ``freeze`` and ``compress``. ``pt-expt`` is accepted as
-an alias of ``pytorch-exportable``. PyTorch-exportable model deviation with
+The default ``train_backend`` remains ``tensorflow``. ``pt-expt`` is accepted
+as an alias of ``pytorch-exportable``. PyTorch-exportable model deviation with
 LAMMPS defaults to ``pt2``. Training checkpoints keep the ``.pt`` suffix
-independently of the frozen model format. Regular PyTorch ``pt2`` export is
-accepted only for DPA4/SeZM training templates.
+independently of the frozen model format.
 
 The acceleration controls belong to different sections of the DeePMD training
 template: DPA4 uses ``model.use_compile`` and ``model.enable_tf32``; DPA4C uses

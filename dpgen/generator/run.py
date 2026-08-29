@@ -177,8 +177,7 @@ def _get_train_backend_config(jdata) -> tuple[str, dict]:
 
 def _get_model_backend_config(jdata) -> tuple[str, dict, str]:
     """Return and validate the deployment backend and model format."""
-    train_backend, _ = _get_train_backend_config(jdata)
-    backend, config = _get_backend(jdata, "model_devi_backend", train_backend)
+    backend, config = _get_train_backend_config(jdata)
     default_model_format = config["default_model_format"]
     if (
         backend == "pytorch-exportable"
@@ -218,12 +217,6 @@ def _get_checkpoint_suffix(jdata) -> str:
 def _get_train_backend_flag(jdata) -> str:
     """Return the DeePMD CLI backend flag."""
     _, config = _get_train_backend_config(jdata)
-    return config["flag"]
-
-
-def _get_model_backend_flag(jdata) -> str:
-    """Return the DeePMD CLI flag used for model export and deployment."""
-    _, config, _ = _get_model_backend_config(jdata)
     return config["flag"]
 
 
@@ -272,32 +265,19 @@ def _validate_dpa_training_config(jdata) -> None:
     """Validate DPA4/DPA4C backend and acceleration-option placement."""
     training_param = jdata.get("default_training_param", {})
     family = _get_dpa_model_family(training_param)
-    train_backend, _ = _get_train_backend_config(jdata)
-    model_backend, _, model_format = _get_model_backend_config(jdata)
     if family is None:
-        if (
-            train_backend == "pytorch"
-            and model_backend == "pytorch"
-            and model_format == "pt2"
-        ):
-            raise ValueError(
-                "The regular PyTorch backend only exports pt2 for DPA4/SeZM models."
-            )
         return
 
+    train_backend, _ = _get_train_backend_config(jdata)
     expected_backend = "pytorch" if family == "dpa4" else "pytorch-exportable"
     if train_backend != expected_backend:
         raise ValueError(
             f"{family.upper()} training requires train_backend='{expected_backend}', "
             f"not '{train_backend}'"
         )
-    if model_backend != expected_backend:
-        raise ValueError(
-            f"{family.upper()} deployment requires model_devi_backend="
-            f"'{expected_backend}', not '{model_backend}'"
-        )
 
     if jdata.get("model_devi_engine", "lammps") == "lammps":
+        _, _, model_format = _get_model_backend_config(jdata)
         if model_format != "pt2":
             raise ValueError(
                 f"{family.upper()} LAMMPS model deviation requires model_format='pt2'"
@@ -922,7 +902,7 @@ def run_train_dp(iter_index, jdata, mdata):
     _validate_dpa_training_config(jdata)
     numb_models = jdata["numb_models"]
     train_backend, _ = _get_train_backend_config(jdata)
-    model_backend, _, model_format = _get_model_backend_config(jdata)
+    _, _, model_format = _get_model_backend_config(jdata)
     suffix = _get_model_suffix(jdata)
     checkpoint_suffix = _get_checkpoint_suffix(jdata)
     # train_param = jdata['train_param']
@@ -946,9 +926,9 @@ def run_train_dp(iter_index, jdata, mdata):
     except KeyError:
         mdata = set_version(mdata)
 
-    if (
-        "pytorch-exportable" in {train_backend, model_backend} or model_format == "pt2"
-    ) and Version(mdata["deepmd_version"]) < Version("3.2"):
+    if (train_backend == "pytorch-exportable" or model_format == "pt2") and Version(
+        mdata["deepmd_version"]
+    ) < Version("3.2"):
         raise RuntimeError(
             "The pytorch-exportable backend and pt2 models require DeePMD-kit 3.2 or later."
         )
@@ -958,7 +938,7 @@ def run_train_dp(iter_index, jdata, mdata):
             "use training_finetune_model or a checkpoint instead."
         )
     if (
-        model_backend == "pytorch"
+        train_backend == "pytorch"
         and model_format == "pt2"
         and jdata.get("dp_compress", False)
     ):
@@ -977,16 +957,11 @@ def run_train_dp(iter_index, jdata, mdata):
             "training_init_model, training_init_frozen_model, and training_finetune_model are mutually exclusive."
         )
 
-    deepmd_command = mdata.get("train_command", "dp").strip()
+    train_command = mdata.get("train_command", "dp").strip()
     # assert train_command == "dp", "The 'train_command' should be 'dp'"     # the tests should be updated to run this command
-    train_command = deepmd_command
-    train_backend_flag = _get_train_backend_flag(jdata)
-    if train_backend_flag:
-        train_command += f" {train_backend_flag}"
-    model_command = deepmd_command
-    model_backend_flag = _get_model_backend_flag(jdata)
-    if model_backend_flag:
-        model_command += f" {model_backend_flag}"
+    backend_flag = _get_train_backend_flag(jdata)
+    if backend_flag:
+        train_command += f" {backend_flag}"
 
     # paths
     iter_name = make_iter_name(iter_index)
@@ -1027,33 +1002,33 @@ def run_train_dp(iter_index, jdata, mdata):
         command = f"/bin/sh -c {shlex.quote(command)}"
         commands.append(command)
         if model_format == "pt2":
-            if model_backend == "pytorch-exportable":
+            if train_backend == "pytorch-exportable":
                 command = (
-                    f"{model_command} freeze -c model.ckpt.pt -o frozen_model "
+                    f"{train_command} freeze -c model.ckpt.pt -o frozen_model "
                     "--lower-kind graph"
                 )
             else:
-                command = f"{model_command} freeze -c model.ckpt.pt -o frozen_model"
+                command = f"{train_command} freeze -c model.ckpt.pt -o frozen_model"
             export_commands.append(command)
             if jdata.get("dp_compress", False):
                 export_commands.append(
-                    f"{model_command} compress -i frozen_model{suffix} "
+                    f"{train_command} compress -i frozen_model{suffix} "
                     f"-o frozen_model_compressed{suffix}"
                 )
         else:
-            if model_backend == "pytorch-exportable":
-                command = f"{model_command} freeze -o frozen_model{suffix}"
+            if train_backend == "pytorch-exportable":
+                command = f"{train_command} freeze -o frozen_model{suffix}"
             else:
-                command = f"{model_command} freeze"
+                command = f"{train_command} freeze"
             commands.append(command)
             if jdata.get("dp_compress", False):
-                if model_backend == "pytorch-exportable":
+                if train_backend == "pytorch-exportable":
                     commands.append(
-                        f"{model_command} compress -i frozen_model{suffix} "
+                        f"{train_command} compress -i frozen_model{suffix} "
                         f"-o frozen_model_compressed{suffix}"
                     )
                 else:
-                    commands.append(f"{model_command} compress")
+                    commands.append(f"{train_command} compress")
     else:
         raise RuntimeError(
             "DP-GEN currently only supports for DeePMD-kit 1.x to 3.x version!"
