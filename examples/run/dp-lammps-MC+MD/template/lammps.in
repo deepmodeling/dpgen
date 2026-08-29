@@ -1,15 +1,15 @@
-variable        MD_NSTEPS         equal MD_NSTEPS
-variable        MC_NSTEPS         equal MC_NSTEPS
+variable        MD_NSTEPS         equal ${MD_NSTEPS}
+variable        MC_NSTEPS         equal ${MC_NSTEPS}
 variable        THERMO_FREQ       equal 10
-variable        TEMP_MD           equal TEMP_MD
-variable        TEMP_MC           equal TEMP_MC
-variable        PRES              equal press
+variable        TEMP_MD           equal ${TEMP_MD}
+variable        TEMP_MC           equal ${TEMP_MC}
+variable        PRES              equal ${PRES}
 variable        TAU_T             equal 0.100000
 variable        TAU_P             equal 0.500000
-variable        RANDOM_SEED       equal RANDOM_SEED
-variable        ELEMENT_TYPE_1    equal ELEMENT_TYPE_1
-variable        ELEMENT_TYPE_2    equal ELEMENT_TYPE_2
-variable        N_LOOP            equal N_LOOP
+variable        RANDOM_SEED       equal ${RANDOM_SEED}
+variable        ELEMENT_TYPE_1    equal ${ELEMENT_TYPE_1}
+variable        ELEMENT_TYPE_2    equal ${ELEMENT_TYPE_2}
+variable        N_LOOP            equal ${N_LOOP}
 
 #Initialization
 units           metal
@@ -31,7 +31,7 @@ pair_coeff
 # output observables
 thermo_style    custom step temp pe ke etotal press vol lx ly lz xy xz yz
 thermo          ${THERMO_FREQ}
-dump            dpgen_dump
+dump            dpgen_dump all custom ${THERMO_FREQ} traj/*.lammpstrj id type x y z
 
 timestep        0.002000
 
@@ -43,7 +43,7 @@ fix             mc1 all atom/swap 1 1 500 ${TEMP_MC} ke no semi-grand no types $
 run             ${MC_NSTEPS}
 unfix           mc1
 
-velocity        all create ${TEMP_MD} ${RANDOM_SEED}"
+velocity        all create ${TEMP_MD} ${RANDOM_SEED}
 velocity        all zero linear
 fix             md1 all npt temp ${TEMP_MD} ${TEMP_MD} ${TAU_T} iso ${PRES} ${PRES}  ${TAU_P}
 run             ${MD_NSTEPS}
