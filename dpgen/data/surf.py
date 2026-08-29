@@ -332,6 +332,15 @@ def make_combines (dim, natoms) :
                 res += tmp_combines
         return res
 
+def _fixed_layers_enabled(jdata):
+    """Validate the paired layer options and report whether they are enabled."""
+    has_fix_layers = "fix_layers" in jdata
+    has_total_layers = "total_layers" in jdata
+    if has_fix_layers != has_total_layers:
+        raise ValueError("fix_layers and total_layers must be provided together")
+    return has_fix_layers
+
+
 def place_element (jdata) :
     out_dir = jdata['out_dir']
     super_cell = jdata['super_cell']
@@ -369,10 +378,8 @@ def place_element (jdata) :
             pos_out = os.path.join(path_work, 'POSCAR')
             if from_poscar:
                 shutil.copy2( pos_in, pos_out)
-                if "fix_layers" and "total_layers" in jdata:
+                if _fixed_layers_enabled(jdata):
                     layer(jdata, pos_in, pos_out)
-                else:
-                    shutil.copy2(pos_in, pos_out) 
             else:
                poscar_ele(pos_in, pos_out, elements, ii)
             poscar_shuffle(jdata, pos_out, pos_out)
