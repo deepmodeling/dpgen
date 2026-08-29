@@ -621,6 +621,11 @@ def model_devi_amber_args() -> list[Argument]:
     ]
 
 
+def _is_scalar_or_singleton(value) -> bool:
+    """Accept legacy one-item lists while rejecting ambiguous CALYPSO values."""
+    return not isinstance(value, list) or len(value) == 1
+
+
 def model_devi_calypso_args() -> list[Argument]:
     """CALYPSO engine arguments."""
     doc_model_devi_jobs = (
@@ -707,7 +712,14 @@ def model_devi_calypso_args() -> list[Argument]:
                     default=[1, 1],
                     doc=doc_numberofformula,
                 ),
-                Argument("Volume", float, optional=True, doc=doc_volume),
+                Argument(
+                    "Volume",
+                    [float, int, list[float], list[int]],
+                    optional=True,
+                    extra_check=_is_scalar_or_singleton,
+                    extra_check_errmsg="Volume must be a scalar or a one-item list.",
+                    doc=doc_volume,
+                ),
                 Argument(
                     "DistanceOfIon",
                     list[list[float]],
@@ -716,17 +728,50 @@ def model_devi_calypso_args() -> list[Argument]:
                 ),
                 Argument(
                     "PsoRatio",
-                    float,
+                    [float, int, list[float], list[int]],
                     optional=True,
                     default=0.6,
+                    extra_check=_is_scalar_or_singleton,
+                    extra_check_errmsg="PsoRatio must be a scalar or a one-item list.",
                     doc=doc_psoratio,
                 ),
-                Argument("PopSize", int, optional=True, default=30, doc=doc_popsize),
-                Argument("MaxStep", int, optional=True, default=5, doc=doc_maxstep),
-                Argument("ICode", int, optional=True, default=1, doc=doc_icode),
+                Argument(
+                    "PopSize",
+                    [int, list[int]],
+                    optional=True,
+                    default=30,
+                    extra_check=_is_scalar_or_singleton,
+                    extra_check_errmsg="PopSize must be an integer or a one-item list.",
+                    doc=doc_popsize,
+                ),
+                Argument(
+                    "MaxStep",
+                    [int, list[int]],
+                    optional=True,
+                    default=5,
+                    extra_check=_is_scalar_or_singleton,
+                    extra_check_errmsg="MaxStep must be an integer or a one-item list.",
+                    doc=doc_maxstep,
+                ),
+                Argument(
+                    "ICode",
+                    [int, list[int]],
+                    optional=True,
+                    default=1,
+                    extra_check=_is_scalar_or_singleton,
+                    extra_check_errmsg="ICode must be an integer or a one-item list.",
+                    doc=doc_icode,
+                ),
                 Argument("Split", str, optional=True, default="T", doc=doc_split),
                 Argument("VSC", str, optional=True, default="F", doc=doc_vsc),
-                Argument("MaxNumAtom", int, optional=True, doc=doc_maxnumatom),
+                Argument(
+                    "MaxNumAtom",
+                    [int, list[int]],
+                    optional=True,
+                    extra_check=_is_scalar_or_singleton,
+                    extra_check_errmsg="MaxNumAtom must be an integer or a one-item list.",
+                    doc=doc_maxnumatom,
+                ),
                 Argument(
                     "CtrlRange", list[list[int]], optional=True, doc=doc_ctrlrange
                 ),
@@ -737,7 +782,15 @@ def model_devi_calypso_args() -> list[Argument]:
                     default=[0.001],
                     doc=doc_pstress,
                 ),
-                Argument("fmax", float, optional=True, default=0.01, doc=doc_fmax),
+                Argument(
+                    "fmax",
+                    [float, int, list[float], list[int]],
+                    optional=True,
+                    default=0.01,
+                    extra_check=_is_scalar_or_singleton,
+                    extra_check_errmsg="fmax must be a scalar or a one-item list.",
+                    doc=doc_fmax,
+                ),
             ],
         ),
         Argument("calypso_input_path", str, optional=True, doc=doc_calypso_input_path),
