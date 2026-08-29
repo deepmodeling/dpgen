@@ -383,7 +383,9 @@ def make_train (iter_index,
         if jinput['loss'].get('start_pref_f') is not None:
             jinput['loss']['start_pref_f'] = training_reuse_start_pref_f
         jinput['learning_rate']['start_lr'] = training_reuse_start_lr
-        jinput['learning_rate']['decay_steps'] = training_reuse_decay_steps
+        # Preserve the template schedule unless the optional reuse override is set.
+        if training_reuse_decay_steps is not None:
+            jinput['learning_rate']['decay_steps'] = training_reuse_decay_steps
         
 
     for ii in range(numb_models) :
