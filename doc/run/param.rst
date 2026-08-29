@@ -19,14 +19,14 @@ uses the regular PyTorch backend for both training and export:
 
    {
      "train_backend": "pytorch",
-       "model_format": "pt2",
-       "default_training_param": {
-          "model": {
-             "type": "dpa4",
-             "use_compile": true,
-             "enable_tf32": true
-          }
+     "model_format": "pt2",
+     "default_training_param": {
+       "model": {
+         "type": "dpa4",
+         "use_compile": true,
+         "enable_tf32": true
        }
+     }
    }
 
 DPA4C uses the PyTorch-exportable backend for both training and graph export:
@@ -36,22 +36,26 @@ DPA4C uses the PyTorch-exportable backend for both training and graph export:
    {
      "train_backend": "pytorch-exportable",
      "model_format": "pt2",
-       "dp_compress": true,
-       "default_training_param": {
-          "model": {
-             "descriptor": {"type": "dpa4c"}
-          },
-          "training": {
-             "enable_compile": true,
-             "enable_tf32": true
-          }
+     "dp_compress": true,
+     "default_training_param": {
+       "model": {
+         "descriptor": {"type": "dpa4c"}
+       },
+       "training": {
+         "enable_compile": true,
+         "enable_tf32": true
        }
+     }
    }
 
 The default ``train_backend`` remains ``tensorflow``. ``pt-expt`` is accepted
 as an alias of ``pytorch-exportable``. PyTorch-exportable model deviation with
 LAMMPS defaults to ``pt2``. Training checkpoints keep the ``.pt`` suffix
 independently of the frozen model format.
+
+Freeze and export use the same backend as training. Regular PyTorch and
+PyTorch-exportable checkpoints are backend-specific and cannot be converted by
+switching the ``dp`` backend flag after training.
 
 The acceleration controls belong to different sections of the DeePMD training
 template: DPA4 uses ``model.use_compile`` and ``model.enable_tf32``; DPA4C uses

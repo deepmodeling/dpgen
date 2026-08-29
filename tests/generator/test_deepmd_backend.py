@@ -108,6 +108,13 @@ class TestDeepmdBackendConfig(unittest.TestCase):
         )
         _validate_dpa_training_config(
             {
+                "train_backend": "pytorch",
+                "model_format": "pt2",
+                "default_training_param": {"model": {"type": "SeZM"}},
+            }
+        )
+        _validate_dpa_training_config(
+            {
                 "train_backend": "pt-expt",
                 "model_format": "pt2",
                 "default_training_param": {
@@ -160,6 +167,10 @@ class TestDeepmdBackendConfig(unittest.TestCase):
                     },
                 }
             )
+        with self.assertRaisesRegex(ValueError, "only exports pt2 for DPA4/SeZM"):
+            _validate_dpa_training_config(
+                {"train_backend": "pytorch", "model_format": "pt2"}
+            )
 
     def test_calypso_discovers_resolved_model_suffix(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -210,6 +221,7 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
         train_call, export_call = self._run(
             train_backend="pytorch",
             model_format="pt2",
+            default_training_param={"model": {"type": "dpa4"}},
         )
         self.assertEqual(train_call["machine"], self.mdata["train_machine"])
         self.assertEqual(len(train_call["commands"]), 1)
@@ -274,7 +286,12 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
 
     def test_regular_pytorch_pt2_compression_is_rejected(self):
         with self.assertRaisesRegex(RuntimeError, "cannot compress pt2"):
-            self._run(train_backend="pytorch", model_format="pt2", dp_compress=True)
+            self._run(
+                train_backend="pytorch",
+                model_format="pt2",
+                dp_compress=True,
+                default_training_param={"model": {"type": "dpa4"}},
+            )
 
     def test_exportable_init_frozen_model_is_rejected(self):
         with self.assertRaisesRegex(RuntimeError, "does not support"):
@@ -286,7 +303,11 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
     def test_deepmd_31_is_rejected_for_pt2(self):
         self.mdata["deepmd_version"] = "3.1.0"
         with self.assertRaisesRegex(RuntimeError, "3.2 or later"):
-            self._run(train_backend="pytorch", model_format="pt2")
+            self._run(
+                train_backend="pytorch",
+                model_format="pt2",
+                default_training_param={"model": {"type": "dpa4"}},
+            )
 
     def test_finetune_keeps_source_model_suffix(self):
         train_call, _ = self._run(

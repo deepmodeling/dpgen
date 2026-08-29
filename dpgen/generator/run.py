@@ -176,7 +176,7 @@ def _get_train_backend_config(jdata) -> tuple[str, dict]:
 
 
 def _get_model_backend_config(jdata) -> tuple[str, dict, str]:
-    """Return and validate the deployment backend and model format."""
+    """Return the training backend and validate its frozen model format."""
     backend, config = _get_train_backend_config(jdata)
     default_model_format = config["default_model_format"]
     if (
@@ -251,7 +251,7 @@ def _get_dpa_model_family(training_param) -> Optional[str]:
         )
         if descriptor_type == "dpa4c":
             families.add("dpa4c")
-        if model_type == "dpa4" or descriptor_type in {"dpa4", "sezm"}:
+        if model_type in {"dpa4", "sezm"} or descriptor_type in {"dpa4", "sezm"}:
             families.add("dpa4")
     if len(families) > 1:
         raise ValueError(
@@ -265,10 +265,14 @@ def _validate_dpa_training_config(jdata) -> None:
     """Validate DPA4/DPA4C backend and acceleration-option placement."""
     training_param = jdata.get("default_training_param", {})
     family = _get_dpa_model_family(training_param)
-    if family is None:
-        return
-
     train_backend, _ = _get_train_backend_config(jdata)
+    _, _, model_format = _get_model_backend_config(jdata)
+    if family is None:
+        if train_backend == "pytorch" and model_format == "pt2":
+            raise ValueError(
+                "The regular PyTorch backend only exports pt2 for DPA4/SeZM models."
+            )
+        return
     expected_backend = "pytorch" if family == "dpa4" else "pytorch-exportable"
     if train_backend != expected_backend:
         raise ValueError(
@@ -277,7 +281,6 @@ def _validate_dpa_training_config(jdata) -> None:
         )
 
     if jdata.get("model_devi_engine", "lammps") == "lammps":
-        _, _, model_format = _get_model_backend_config(jdata)
         if model_format != "pt2":
             raise ValueError(
                 f"{family.upper()} LAMMPS model deviation requires model_format='pt2'"

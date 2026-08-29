@@ -108,7 +108,9 @@ def training_args_dp() -> list[Argument]:
         PyTorch, ``pt2`` for PyTorch-exportable model deviation with LAMMPS,
         and ``savedmodel`` for JAX. PyTorch ``pt2`` is the DPA4 export;
         PyTorch-exportable ``pt2`` is the graph export used by DPA4C. The
-        PyTorch-exportable ``pte`` format is not supported by LAMMPS.
+        PyTorch-exportable ``pte`` format is not supported by LAMMPS. Freeze
+        and export use the training backend; cross-backend checkpoint conversion
+        is not supported.
         """
     )
     doc_training_iter0_model_path = "The model used to init the first iter training. Number of element should be equal to numb_models."
