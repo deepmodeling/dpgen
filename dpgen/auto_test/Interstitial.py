@@ -14,12 +14,17 @@ from dpgen.auto_test.reproduce import make_repro, post_repro
 
 
 def _smallest_nonzero_distance(distance_matrix):
-    """Return the minimum positive distance from a structure distance matrix."""
+    """Return the minimum distance between two distinct atoms.
+
+    Selecting by matrix index, instead of by value, keeps a real zero distance
+    caused by coincident atoms while excluding the zero-valued diagonal.
+    """
     distances = np.asarray(distance_matrix)
-    positive_distances = distances[distances > 0]
-    if positive_distances.size == 0:
-        raise ValueError("distance matrix does not contain a positive distance")
-    return float(np.min(positive_distances))
+    atom_pairs = np.triu_indices_from(distances, k=1)
+    pair_distances = distances[atom_pairs]
+    if pair_distances.size == 0:
+        raise ValueError("distance matrix does not contain a pair of atoms")
+    return float(np.min(pair_distances))
 
 
 class Interstitial(Property):
