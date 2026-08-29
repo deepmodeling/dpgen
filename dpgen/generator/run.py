@@ -59,6 +59,7 @@ from dpgen.generator.lib.lammps import (
 from dpgen.generator.lib.make_calypso import (
     _make_model_devi_buffet,
     _make_model_devi_native_calypso,
+    _normalize_calypso_pressures,
 )
 from dpgen.generator.lib.parse_calypso import (
     _parse_calypso_dis_mtx,
@@ -1356,7 +1357,9 @@ def make_model_devi(iter_index, jdata, mdata):
                 if iter_index in jobbs.get("times"):
                     cur_job = model_devi_jobs[iiidx]
 
-            pressures_list = cur_job.get("PSTRESS", [0.0001])
+            pressures_list = _normalize_calypso_pressures(
+                cur_job.get("PSTRESS", [0.0001])
+            )
             for temp_idx in range(len(pressures_list)):
                 calypso_run_opt_path.append(
                     "%s.%03d" % (_calypso_run_opt_path, temp_idx)  # noqa: UP031
