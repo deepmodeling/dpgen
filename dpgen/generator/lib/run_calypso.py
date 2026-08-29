@@ -34,6 +34,14 @@ def _find_models(path, model_suffix=".pb"):
     return glob.glob(os.path.join(path, f"graph*{model_suffix}"))
 
 
+def _make_calypso_opt_command(deepmdkit_python, model_name):
+    """Return the CALYPSO optimization command for the resolved model."""
+    return (
+        f"{deepmdkit_python} calypso_run_opt.py --model ../{model_name} "
+        "1>> model_devi.log 2>> model_devi.log"
+    )
+
+
 def gen_structures(
     iter_index,
     jdata,
@@ -65,9 +73,7 @@ def gen_structures(
     model_names = [os.path.basename(ii) for ii in all_models]
 
     deepmdkit_python = mdata.get("model_devi_deepmdkit_python")
-    command = (
-        f"{deepmdkit_python} calypso_run_opt.py  1>> model_devi.log 2>> model_devi.log"
-    )
+    command = _make_calypso_opt_command(deepmdkit_python, sorted(model_names)[0])
     # command = "%s calypso_run_opt.py %s 1>> model_devi.log 2>> model_devi.log" % (deepmdkit_python,os.path.abspath(calypso_run_opt_path))
     # command += "  ||  %s check_outcar.py %s " % (deepmdkit_python,os.path.abspath(calypso_run_opt_path))
     command += f"  ||  {deepmdkit_python} check_outcar.py  "

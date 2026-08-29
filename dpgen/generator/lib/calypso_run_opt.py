@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import os
 import time
 
@@ -110,9 +111,9 @@ def read_stress_fmax():
     return fmax, pstress
 
 
-def run_opt(fmax, stress):
+def run_opt(fmax, stress, model):
     """Using the ASE&DP to Optimize Configures."""
-    calc = DP(model="../graph.000.pb")  # init the model before iteration
+    calc = DP(model=model)  # init the model before iteration
     os.system("mv OUTCAR OUTCAR-last")
 
     print("Start to Optimize Structures by DP----------")
@@ -164,8 +165,11 @@ def run_opt(fmax, stress):
 
 
 def run():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model", default="../graph.000.pb")
+    args = parser.parse_args()
     fmax, stress = read_stress_fmax()
-    run_opt(fmax, stress)
+    run_opt(fmax, stress, args.model)
 
 
 if __name__ == "__main__":

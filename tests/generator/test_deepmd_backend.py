@@ -5,7 +5,10 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from dpgen.generator.lib.run_calypso import _find_models
+from dpgen.generator.lib.run_calypso import (
+    _find_models,
+    _make_calypso_opt_command,
+)
 from dpgen.generator.run import (
     _get_checkpoint_suffix,
     _get_input_model_suffix,
@@ -179,6 +182,10 @@ class TestDeepmdBackendConfig(unittest.TestCase):
                 (path / name).touch()
             self.assertEqual(len(_find_models(path, ".pb")), 1)
             self.assertEqual(len(_find_models(path, ".pte")), 2)
+
+    def test_calypso_optimizer_uses_resolved_model(self):
+        command = _make_calypso_opt_command("python", "graph.000.pt2")
+        self.assertIn("calypso_run_opt.py --model ../graph.000.pt2", command)
 
 
 class TestRunTrainDeepmdBackend(unittest.TestCase):
