@@ -33,7 +33,8 @@ dependencies = [
     'dargs>=0.4.0',
     'h5py',
     'pymatgen-analysis-defects',
-    'openbabel>=3.2.0',
+    'openbabel-wheel>=3.1.1.22; python_version < "3.10"',
+    'openbabel>=3.2.0; python_version >= "3.10"',
     'packaging',
 ]
 requires-python = ">=3.9"
