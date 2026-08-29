@@ -1,7 +1,8 @@
 import textwrap
-from typing import Union
+from typing import Optional, Union
 
 from dargs import Argument, Variant
+from dargs.dargs import ArgumentValueError
 
 from dpgen.arginfo import general_mdata_arginfo
 
@@ -987,6 +988,155 @@ def fp_style_custom_args() -> list[Argument]:
     ]
 
 
+def fp_style_pwmat_args() -> list[Argument]:
+    """Return first-principles arguments for PWmat labeling."""
+    required_generated_keys = {
+        "node1",
+        "node2",
+        "in.atom",
+        "ecut",
+        "e_error",
+        "rho_error",
+        "kspacing",
+        "flag_symm",
+    }
+
+    def has_required_generated_keys(params):
+        return required_generated_keys.issubset(params)
+
+    generated_args = [
+        Argument("node1", int, optional=False, doc="First PWmat node-grid size."),
+        Argument("node2", int, optional=False, doc="Second PWmat node-grid size."),
+        Argument(
+            "in.atom",
+            str,
+            optional=False,
+            doc="Atom-configuration filename written to the PWmat input.",
+        ),
+        Argument(
+            "ecut",
+            [int, float],
+            optional=False,
+            doc="Plane-wave energy cutoff.",
+        ),
+        Argument(
+            "e_error",
+            [int, float],
+            optional=False,
+            doc="Electronic-energy convergence threshold.",
+        ),
+        Argument(
+            "rho_error",
+            [int, float],
+            optional=False,
+            doc="Charge-density convergence threshold.",
+        ),
+        Argument(
+            "kspacing",
+            [int, float],
+            optional=False,
+            doc="Reciprocal-space spacing used to generate MP_N123.",
+        ),
+        Argument(
+            "flag_symm",
+            [int, str],
+            optional=True,
+            default="NONE",
+            doc="PWmat symmetry flag: 0, 1, 2, 3, or 'NONE'.",
+        ),
+        Argument(
+            "icmix",
+            [int, float],
+            optional=True,
+            doc="SCF mixing parameter used to build scf_iter0_2.",
+        ),
+        Argument(
+            "smearing",
+            int,
+            optional=True,
+            doc="PWmat smearing method written to SCF iteration settings.",
+        ),
+        Argument(
+            "sigma",
+            [int, float],
+            optional=True,
+            doc="Smearing width written to SCF iteration settings.",
+        ),
+        Argument(
+            "user_pwmat_params",
+            dict,
+            optional=True,
+            doc="Arbitrary PWmat keys overriding the generated input dictionary.",
+        ),
+    ]
+
+    return [
+        Argument(
+            "fp_pp_path",
+            str,
+            optional=False,
+            doc="Directory containing PWmat pseudopotential files.",
+        ),
+        Argument(
+            "fp_pp_files",
+            list[str],
+            optional=False,
+            doc="Pseudopotential filenames ordered consistently with type_map.",
+        ),
+        Argument(
+            "fp_incar",
+            str,
+            optional=True,
+            doc="Existing etot.input template; this takes highest priority.",
+        ),
+        Argument(
+            "user_fp_params",
+            dict,
+            optional=True,
+            extra_check=has_required_generated_keys,
+            extra_check_errmsg=(
+                "user_fp_params must define node1, node2, in.atom, ecut, "
+                "e_error, rho_error, kspacing, and flag_symm"
+            ),
+            doc=(
+                "Compatibility input mapping. The current generator consumes "
+                "node1, node2, in.atom, ecut, e_error, rho_error, kspacing, and "
+                "flag_symm, regenerates etot.input, and ignores other keys."
+            ),
+        ),
+        Argument(
+            "fp_params",
+            dict,
+            optional=True,
+            sub_fields=generated_args,
+            doc=(
+                "Parameters used by make_pwmat_input_user_dict when neither "
+                "fp_incar nor user_fp_params is supplied."
+            ),
+        ),
+    ]
+
+
+class _FpStyleVariant(Variant):
+    """Validate cross-field requirements for first-principles backends."""
+
+    def get_choice(self, argdict: dict, path: Optional[list[str]] = None) -> Argument:
+        """Return the selected backend after validating PWmat input sources.
+
+        Dargs flattens variant fields into their parent mapping, so a regular
+        field-level extra check cannot express this at-least-one constraint.
+        """
+        choice = super().get_choice(argdict, path)
+        input_sources = {"fp_incar", "user_fp_params", "fp_params"}
+        if choice.name == "pwmat" and input_sources.isdisjoint(argdict):
+            raise ArgumentValueError(
+                path,
+                "PWmat requires at least one input source: fp_incar, "
+                "user_fp_params, or fp_params.",
+            )
+        return choice
+
+
 def fp_style_variant_type_args() -> Variant:
     doc_fp_style = "Software for First Principles."
     doc_amber_diff = (
@@ -1001,8 +1151,12 @@ def fp_style_variant_type_args() -> Variant:
         "The command argument in the machine file should be the script to run custom FP codes. "
         "The extra forward and backward files can be defined in the machine file."
     )
+    doc_pwmat = (
+        "PWmat density-functional labeling. The machine command should invoke "
+        "the site-specific PWmat executable."
+    )
 
-    return Variant(
+    return _FpStyleVariant(
         "fp_style",
         [
             Argument("vasp", dict, fp_style_vasp_args()),
@@ -1013,7 +1167,7 @@ def fp_style_variant_type_args() -> Variant:
             Argument(
                 "amber/diff", dict, fp_style_amber_diff_args(), doc=doc_amber_diff
             ),
-            Argument("pwmat", dict, [], doc="TODO: add doc"),
+            Argument("pwmat", dict, fp_style_pwmat_args(), doc=doc_pwmat),
             Argument("pwscf", dict, fp_style_pwscf_args()),
             Argument("cpx", dict, fp_style_cpx_args()),
             Argument("custom", dict, fp_style_custom_args(), doc=doc_custom),
