@@ -3,6 +3,7 @@
 import unittest
 
 from dargs import Argument
+from dargs.dargs import ArgumentValueError
 
 from dpgen.generator.arginfo import fp_style_variant_type_args
 
@@ -22,6 +23,11 @@ class TestPWmatArginfo(unittest.TestCase):
 
     def test_existing_input_file(self):
         self.check({**self.pseudopotentials, "fp_incar": "etot.input"})
+
+    def test_requires_an_input_source(self):
+        """A valid PWmat configuration must select one supported input path."""
+        with self.assertRaisesRegex(ArgumentValueError, "at least one input source"):
+            self.check(self.pseudopotentials)
 
     def test_generated_fp_params(self):
         self.check(

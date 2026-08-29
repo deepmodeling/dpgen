@@ -2,6 +2,7 @@ import textwrap
 from typing import Union
 
 from dargs import Argument, Variant
+from dargs.dargs import ArgumentValueError
 
 from dpgen.arginfo import general_mdata_arginfo
 
@@ -1116,6 +1117,26 @@ def fp_style_pwmat_args() -> list[Argument]:
     ]
 
 
+class _FpStyleVariant(Variant):
+    """Validate cross-field requirements for first-principles backends."""
+
+    def get_choice(self, argdict: dict, path: list[str] | None = None) -> Argument:
+        """Return the selected backend after validating PWmat input sources.
+
+        Dargs flattens variant fields into their parent mapping, so a regular
+        field-level extra check cannot express this at-least-one constraint.
+        """
+        choice = super().get_choice(argdict, path)
+        input_sources = {"fp_incar", "user_fp_params", "fp_params"}
+        if choice.name == "pwmat" and input_sources.isdisjoint(argdict):
+            raise ArgumentValueError(
+                path,
+                "PWmat requires at least one input source: fp_incar, "
+                "user_fp_params, or fp_params.",
+            )
+        return choice
+
+
 def fp_style_variant_type_args() -> Variant:
     doc_fp_style = "Software for First Principles."
     doc_amber_diff = (
@@ -1135,7 +1156,7 @@ def fp_style_variant_type_args() -> Variant:
         "the site-specific PWmat executable."
     )
 
-    return Variant(
+    return _FpStyleVariant(
         "fp_style",
         [
             Argument("vasp", dict, fp_style_vasp_args()),
