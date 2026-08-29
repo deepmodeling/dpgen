@@ -20,6 +20,7 @@ class TestLegacyCollectData(unittest.TestCase):
             merge=False,
             include_init_data=False,
             iter_output_prefix="system.",
+            discover_existing_iters=True,
         )
 
 

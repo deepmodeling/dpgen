@@ -20,12 +20,14 @@ def collect_data(
     merge=True,
     include_init_data=True,
     iter_output_prefix="sys.",
+    discover_existing_iters=False,
 ):
     """Collect initial and iterative datasets from a DP-GEN job.
 
-    ``include_init_data`` and ``iter_output_prefix`` preserve the historical
-    layout used by :mod:`dpgen.tools.collect_data` without duplicating the data
-    loading and serialization implementation.
+    ``include_init_data``, ``iter_output_prefix``, and
+    ``discover_existing_iters`` preserve the historical behavior used by
+    :mod:`dpgen.tools.collect_data` without duplicating the data loading and
+    serialization implementation.
     """
     target_folder = os.path.abspath(target_folder)
     output = os.path.abspath(output)
@@ -54,9 +56,14 @@ def collect_data(
     # collect systems from iter dirs
     coll_data = {}
     numb_sys = len(sys_configs)
-    model_devi_jobs = jdata.get("model_devi_jobs", {})
-    numb_jobs = len(model_devi_jobs)
-    iters = ["iter.%06d" % ii for ii in range(numb_jobs)]  # noqa: UP031
+    if discover_existing_iters:
+        # The deprecated collector operated on completed directories rather
+        # than assuming one iteration per current model_devi_jobs entry.
+        iters = sorted(glob.glob("iter.[0-9]*[0-9]"))
+    else:
+        model_devi_jobs = jdata.get("model_devi_jobs", {})
+        numb_jobs = len(model_devi_jobs)
+        iters = ["iter.%06d" % ii for ii in range(numb_jobs)]  # noqa: UP031
     # loop over iters to collect data
     for ii in range(len(iters)):
         iter_data = glob.glob(os.path.join(iters[ii], "02.fp", "data.[0-9]*[0-9]"))
