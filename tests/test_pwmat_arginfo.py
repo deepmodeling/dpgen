@@ -44,6 +44,23 @@ class TestPWmatArginfo(unittest.TestCase):
             }
         )
 
+    def test_generated_fp_params_default_symmetry(self):
+        """PWmat accepts generated inputs without an explicit symmetry override."""
+        self.check(
+            {
+                **self.pseudopotentials,
+                "fp_params": {
+                    "node1": 4,
+                    "node2": 1,
+                    "in.atom": "atom.config",
+                    "ecut": 50,
+                    "e_error": 1e-4,
+                    "rho_error": 1e-4,
+                    "kspacing": 0.1,
+                },
+            }
+        )
+
     def test_compatibility_user_fp_params(self):
         self.check(
             {

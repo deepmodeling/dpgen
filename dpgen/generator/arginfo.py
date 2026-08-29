@@ -1039,7 +1039,8 @@ def fp_style_pwmat_args() -> list[Argument]:
         Argument(
             "flag_symm",
             [int, str],
-            optional=False,
+            optional=True,
+            default="NONE",
             doc="PWmat symmetry flag: 0, 1, 2, 3, or 'NONE'.",
         ),
         Argument(
