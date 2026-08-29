@@ -799,6 +799,13 @@ def model_devi_calypso_args() -> list[Argument]:
         ),
         Argument("vsc", bool, optional=True, default=False, doc=doc_vsc_mode),
         Argument("model_devi_dt", float, optional=True, doc=doc_model_devi_dt),
+        Argument(
+            "shuffle_poscar",
+            bool,
+            optional=True,
+            default=False,
+            doc="Shuffle atoms in generated configurations before downstream use.",
+        ),
         Argument("model_devi_skip", int, optional=False, doc=doc_model_devi_skip),
         Argument(
             "model_devi_f_trust_lo",
