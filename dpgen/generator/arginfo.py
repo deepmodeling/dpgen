@@ -670,7 +670,7 @@ def model_devi_calypso_args() -> list[Argument]:
     scalar_or_singleton_float = [float, list[float]]
     scalar_or_singleton_int = [int, list[int]]
 
-    return [
+    calypso_args = [
         Argument(
             "model_devi_jobs",
             list,
@@ -769,6 +769,25 @@ def model_devi_calypso_args() -> list[Argument]:
         ),
         Argument("vsc", bool, optional=True, default=False, doc=doc_vsc_mode),
     ]
+    # CALYPSO uses the same downstream candidate-selection controls as LAMMPS.
+    common_names = {
+        "model_devi_skip",
+        "model_devi_f_trust_lo",
+        "model_devi_f_trust_hi",
+        "model_devi_v_trust_lo",
+        "model_devi_v_trust_hi",
+        "model_devi_adapt_trust_lo",
+        "model_devi_numb_candi_f",
+        "model_devi_numb_candi_v",
+        "model_devi_perc_candi_f",
+        "model_devi_perc_candi_v",
+        "model_devi_clean_traj",
+        "shuffle_poscar",
+    }
+    common_args = [
+        argument for argument in model_devi_lmp_args() if argument.name in common_names
+    ]
+    return [*calypso_args, *common_args]
 
 
 def model_devi_args() -> list[Variant]:
