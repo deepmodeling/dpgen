@@ -30,7 +30,7 @@ dpgen run param.json machine.json
 
 Environment boundary rule:
 
-- Outer layer: run `dpgen run param.json machine.json` in an activated environment where `dpgen --version` works.
+- Outer layer: run `dpgen run param.json machine.json` in an activated environment where `dpgen -h` works.
 - Inner layer: for scheduler stages, explicitly activate runtime in `resources.source_list` on the server side.
 
 ## Critical Pitfalls (Must Embed)
@@ -154,7 +154,7 @@ Do not guess conda environment names, module names, or site-specific paths.
 Use an activated DP-GEN environment and verify with:
 
 ```bash
-dpgen --version
+dpgen -h
 ```
 
 Do not start run from a shell where `dpgen` is unavailable.
@@ -238,7 +238,7 @@ Collect the following information before generating files.
 - `fp_task_max` — maximum number of FP tasks per iteration
 - `fp_task_min` — minimum number to trigger FP
 - Backend-specific settings:
-  - VASP: `fp_pp_path`, `fp_pp_files`, `fp_incar` or `fp_params`
+  - VASP: `fp_pp_path`, `fp_pp_files`, and `fp_incar`
   - CP2K: `user_fp_params` (nested dict representing cp2k input)
   - ABACUS: `user_fp_params`, `fp_pp_path`, `fp_pp_files`, `fp_orb_files`
   - Gaussian: `fp_params` (keywords, nproc, multiplicity)
@@ -345,7 +345,7 @@ Before execution, validate the workflow in this order:
 - Step 1: confirm outer-layer `dpgen` is available:
 
   ```bash
-  dpgen --version
+  dpgen -h
   ```
 
 - Step 2: validate JSON syntax:
