@@ -21,6 +21,8 @@ def collect_data(target_folder, param_file, output, verbose=True):
         verbose=verbose,
         shuffle=True,
         merge=False,
+        include_init_data=False,
+        iter_output_prefix="system.",
     )
 
 

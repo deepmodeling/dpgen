@@ -18,6 +18,8 @@ class TestLegacyCollectData(unittest.TestCase):
             verbose=False,
             shuffle=True,
             merge=False,
+            include_init_data=False,
+            iter_output_prefix="system.",
         )
 
 

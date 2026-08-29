@@ -12,8 +12,21 @@ from dpgen.util import expand_sys_str
 
 
 def collect_data(
-    target_folder, param_file, output, verbose=True, shuffle=True, merge=True
+    target_folder,
+    param_file,
+    output,
+    verbose=True,
+    shuffle=True,
+    merge=True,
+    include_init_data=True,
+    iter_output_prefix="sys.",
 ):
+    """Collect initial and iterative datasets from a DP-GEN job.
+
+    ``include_init_data`` and ``iter_output_prefix`` preserve the historical
+    layout used by :mod:`dpgen.tools.collect_data` without duplicating the data
+    loading and serialization implementation.
+    """
     target_folder = os.path.abspath(target_folder)
     output = os.path.abspath(output)
     # goto input
@@ -33,7 +46,7 @@ def collect_data(
     # init systems
     init_data = []
     init_data_prefix = jdata.get("init_data_prefix", "")
-    init_data_sys = jdata.get("init_data_sys", [])
+    init_data_sys = jdata.get("init_data_sys", []) if include_init_data else []
     for ii in init_data_sys:
         init_data.append(
             dpdata.LabeledSystem(os.path.join(init_data_prefix, ii), fmt="deepmd/npy")
@@ -95,12 +108,13 @@ def collect_data(
     os.chdir(cwd)
     os.makedirs(output, exist_ok=True)
     # dump init data
-    for idx, ii in enumerate(init_data):
-        out_dir = "init." + (data_system_fmt % idx)
-        ii.to("deepmd/npy", os.path.join(output, out_dir))
+    if include_init_data:
+        for idx, ii in enumerate(init_data):
+            out_dir = "init." + (data_system_fmt % idx)
+            ii.to("deepmd/npy", os.path.join(output, out_dir))
     # dump iter data
     for kk in coll_data.keys():
-        out_dir = f"sys.{kk}"
+        out_dir = f"{iter_output_prefix}{kk}"
         nframes = coll_data[kk].get_nframes()
         coll_data[kk].to("deepmd/npy", os.path.join(output, out_dir), set_size=nframes)
         # coll_data[kk].to('deepmd/npy', os.path.join(output, out_dir))
