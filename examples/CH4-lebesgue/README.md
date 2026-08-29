@@ -16,7 +16,7 @@ Generate the initial data with:
 dpgen init_bulk init.json lebesgue_v2_machine.json
 ```
 
-Then run the iterative workflow from the generated data directory with:
+Then run the iterative workflow from this directory with:
 
 ```bash
 dpgen run param_CH4_deepmd-kit-2.0.1.json lebesgue_v2_machine.json
