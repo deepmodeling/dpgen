@@ -4512,7 +4512,7 @@ def post_fp_cp2k(iter_index, jdata, rfailed=None):
             all_sys.append(_sys)
             icount += 1
 
-        icount += len(all_sys)
+        # Each converged output increments icount exactly once in the loop above.
         if (all_sys is not None) and (len(all_sys) > 0):
             sys_data_path = os.path.join(work_path, f"data.{ss}")
             all_sys.to_deepmd_raw(sys_data_path)
