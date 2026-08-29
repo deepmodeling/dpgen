@@ -62,6 +62,33 @@ class TestCalypsoArginfo(unittest.TestCase):
         normalized = self.arginfo.normalize_value(data)
         self.arginfo.check_value(normalized, strict=True)
 
+    def test_legacy_singleton_scalars(self):
+        """Checked-in CALYPSO inputs retain their historical list spelling."""
+        data = {
+            "model_devi_engine": "calypso",
+            **self.selection,
+            "model_devi_jobs": [
+                {
+                    "times": [0],
+                    "NameOfAtoms": ["Mg"],
+                    "NumberOfAtoms": [1],
+                    "Volume": [30],
+                    "DistanceOfIon": [[1.4]],
+                    "PsoRatio": [0.6],
+                    "PopSize": [30],
+                    "MaxStep": [5],
+                    "ICode": [1],
+                    "VSC": "T",
+                    "MaxNumAtom": [20],
+                    "CtrlRange": [[1, 20]],
+                    "fmax": [0.01],
+                }
+            ],
+        }
+
+        normalized = self.arginfo.normalize_value(data)
+        self.arginfo.check_value(normalized, strict=True)
+
 
 if __name__ == "__main__":
     unittest.main()
