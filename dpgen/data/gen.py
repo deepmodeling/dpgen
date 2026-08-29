@@ -216,7 +216,8 @@ def poscar_scale_direct(str_in, scale):
     return lines
 
 
-def poscar_scale_cartesian(str_in, scale):
+def poscar_scale_cartesian(str_in, scale, coordinate_start=8):
+    """Scale Cartesian coordinates while preserving Selective Dynamics flags."""
     lines = str_in.copy()
     numb_atoms = poscar_natoms(lines)
     # scale box
@@ -226,11 +227,12 @@ def poscar_scale_cartesian(str_in, scale):
         boxv = np.array(boxv) * scale
         lines[ii] = f"{boxv[0]:.16e} {boxv[1]:.16e} {boxv[2]:.16e}\n"
     # scale coord
-    for ii in range(8, 8 + numb_atoms):
-        cl = lines[ii].split()
-        cv = [float(ii) for ii in cl]
+    for ii in range(coordinate_start, coordinate_start + numb_atoms):
+        fields = lines[ii].split()
+        cv = [float(value) for value in fields[:3]]
         cv = np.array(cv) * scale
-        lines[ii] = f"{cv[0]:.16e} {cv[1]:.16e} {cv[2]:.16e}\n"
+        suffix = f" {' '.join(fields[3:])}" if len(fields) > 3 else ""
+        lines[ii] = f"{cv[0]:.16e} {cv[1]:.16e} {cv[2]:.16e}{suffix}\n"
     return lines
 
 
@@ -248,7 +250,7 @@ def poscar_scale(poscar_in, poscar_out, scale):
     if "D" == lines[coord_type_line][0] or "d" == lines[coord_type_line][0]:
         lines = poscar_scale_direct(lines, scale)
     elif "C" == lines[coord_type_line][0] or "c" == lines[coord_type_line][0]:
-        lines = poscar_scale_cartesian(lines, scale)
+        lines = poscar_scale_cartesian(lines, scale, coord_type_line + 1)
     else:
         raise RuntimeError(
             f"Unknown poscar style at line {coord_type_line + 1}: {lines[coord_type_line]}"
