@@ -9,6 +9,7 @@ from dpgen.generator.lib.run_calypso import _find_models
 from dpgen.generator.run import (
     _get_checkpoint_suffix,
     _get_input_model_suffix,
+    _get_model_backend_flag,
     _get_model_suffix,
     _get_train_backend_flag,
     _validate_dpa_training_config,
@@ -39,6 +40,17 @@ class TestDeepmdBackendConfig(unittest.TestCase):
                 self.assertEqual(_get_model_suffix(jdata), ".pt2")
                 self.assertEqual(_get_checkpoint_suffix(jdata), ".pt")
                 self.assertEqual(_get_train_backend_flag(jdata), "--pt-expt")
+
+    def test_model_deviation_backend_is_independent(self):
+        jdata = {
+            "train_backend": "pytorch",
+            "model_devi_backend": "pytorch-exportable",
+            "model_format": "pt2",
+        }
+        self.assertEqual(_get_checkpoint_suffix(jdata), ".pt")
+        self.assertEqual(_get_train_backend_flag(jdata), "--pt")
+        self.assertEqual(_get_model_backend_flag(jdata), "--pt-expt")
+        self.assertEqual(_get_model_suffix(jdata), ".pt2")
 
     def test_explicit_pt2_formats(self):
         cases = [
@@ -210,6 +222,10 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
         train_call, export_call = self._run(
             train_backend="pytorch",
             model_format="pt2",
+            default_training_param={
+                "model": {"descriptor": {"type": "sezm"}},
+                "training": {},
+            },
         )
         self.assertEqual(train_call["machine"], self.mdata["train_machine"])
         self.assertEqual(len(train_call["commands"]), 1)
@@ -224,6 +240,18 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
         )
         self.assertEqual(export_call["forward_files"], ["model.ckpt.pt"])
         self.assertIn("frozen_model.pt2", export_call["backward_files"])
+
+    def test_separate_model_backend_controls_export_command(self):
+        train_call, export_call = self._run(
+            train_backend="pytorch",
+            model_devi_backend="pytorch-exportable",
+            model_format="pt2",
+        )
+        self.assertIn("dp --pt train", train_call["commands"][0])
+        self.assertEqual(
+            export_call["commands"],
+            ["dp --pt-expt freeze -c model.ckpt.pt -o frozen_model --lower-kind graph"],
+        )
 
     def test_legacy_pytorch_commands_are_preserved(self):
         call = self._run(train_backend="pytorch")
@@ -274,7 +302,19 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
 
     def test_regular_pytorch_pt2_compression_is_rejected(self):
         with self.assertRaisesRegex(RuntimeError, "cannot compress pt2"):
-            self._run(train_backend="pytorch", model_format="pt2", dp_compress=True)
+            self._run(
+                train_backend="pytorch",
+                model_format="pt2",
+                dp_compress=True,
+                default_training_param={
+                    "model": {"descriptor": {"type": "sezm"}},
+                    "training": {},
+                },
+            )
+
+    def test_regular_pytorch_pt2_requires_dpa4_family(self):
+        with self.assertRaisesRegex(ValueError, "only exports pt2 for DPA4/SeZM"):
+            self._run(train_backend="pytorch", model_format="pt2")
 
     def test_exportable_init_frozen_model_is_rejected(self):
         with self.assertRaisesRegex(RuntimeError, "does not support"):
@@ -286,7 +326,14 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
     def test_deepmd_31_is_rejected_for_pt2(self):
         self.mdata["deepmd_version"] = "3.1.0"
         with self.assertRaisesRegex(RuntimeError, "3.2 or later"):
-            self._run(train_backend="pytorch", model_format="pt2")
+            self._run(
+                train_backend="pytorch",
+                model_format="pt2",
+                default_training_param={
+                    "model": {"descriptor": {"type": "sezm"}},
+                    "training": {},
+                },
+            )
 
     def test_finetune_keeps_source_model_suffix(self):
         train_call, _ = self._run(

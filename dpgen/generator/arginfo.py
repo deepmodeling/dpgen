@@ -102,6 +102,14 @@ def training_args_dp() -> list[Argument]:
         3.2 or later.
         """
     )
+    doc_model_devi_backend = textwrap.dedent(
+        """\
+        The DeePMD-kit backend used to freeze and deploy trained checkpoints for
+        model deviation. It defaults to ``train_backend`` for backward
+        compatibility, but may be selected independently when the deployment
+        toolchain requires a different backend flag.
+        """
+    )
     doc_model_format = textwrap.dedent(
         """\
         The frozen model format. Defaults are ``pb`` for TensorFlow, ``pth`` for
@@ -161,6 +169,12 @@ def training_args_dp() -> list[Argument]:
             optional=True,
             default="tensorflow",
             doc=doc_train_backend,
+        ),
+        Argument(
+            "model_devi_backend",
+            str,
+            optional=True,
+            doc=doc_model_devi_backend,
         ),
         Argument(
             "model_format",
