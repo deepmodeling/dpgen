@@ -1,5 +1,5 @@
 import textwrap
-from typing import Union
+from typing import Optional, Union
 
 from dargs import Argument, Variant
 from dargs.dargs import ArgumentValueError
@@ -1120,7 +1120,7 @@ def fp_style_pwmat_args() -> list[Argument]:
 class _FpStyleVariant(Variant):
     """Validate cross-field requirements for first-principles backends."""
 
-    def get_choice(self, argdict: dict, path: list[str] | None = None) -> Argument:
+    def get_choice(self, argdict: dict, path: Optional[list[str]] = None) -> Argument:
         """Return the selected backend after validating PWmat input sources.
 
         Dargs flattens variant fields into their parent mapping, so a regular
