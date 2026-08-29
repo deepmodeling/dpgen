@@ -666,6 +666,9 @@ def model_devi_calypso_args() -> list[Argument]:
         "Maximum model-deviation iteration index when using calypso_input_path."
     )
     doc_vsc_mode = "Enable variable stoichiometry mode for external input files."
+    doc_model_devi_dt = (
+        "Timestep retained for compatibility with existing CALYPSO parameter files."
+    )
 
     scalar_or_singleton_float = [float, list[float]]
     scalar_or_singleton_int = [int, list[int]]
@@ -768,6 +771,7 @@ def model_devi_calypso_args() -> list[Argument]:
             "model_devi_max_iter", int, optional=True, doc=doc_model_devi_max_iter
         ),
         Argument("vsc", bool, optional=True, default=False, doc=doc_vsc_mode),
+        Argument("model_devi_dt", float, optional=True, doc=doc_model_devi_dt),
     ]
     # CALYPSO uses the same downstream candidate-selection controls as LAMMPS.
     common_names = {

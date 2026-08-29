@@ -1,4 +1,6 @@
+import json
 import unittest
+from pathlib import Path
 
 from dargs import Argument
 
@@ -22,6 +24,34 @@ class TestCalypsoArginfo(unittest.TestCase):
             "shuffle_poscar": False,
         }
 
+        normalized = arginfo.normalize_value(data)
+        arginfo.check_value(normalized, strict=True)
+
+    def test_checked_in_example_is_schema_compatible(self):
+        """The maintained example's CALYPSO section passes strict validation."""
+        param_file = (
+            Path(__file__).parent.parent
+            / "examples"
+            / "run"
+            / "dp-calypso-vasp"
+            / "param.json"
+        )
+        with open(param_file) as fp:
+            example = json.load(fp)
+
+        model_devi_keys = {
+            "model_devi_engine",
+            "model_devi_jobs",
+            "model_devi_dt",
+            "model_devi_skip",
+            "model_devi_f_trust_lo",
+            "model_devi_f_trust_hi",
+            "model_devi_clean_traj",
+            "shuffle_poscar",
+            "vsc",
+        }
+        data = {key: example[key] for key in model_devi_keys}
+        arginfo = Argument("model_devi", dict, sub_variants=model_devi_args())
         normalized = arginfo.normalize_value(data)
         arginfo.check_value(normalized, strict=True)
 
