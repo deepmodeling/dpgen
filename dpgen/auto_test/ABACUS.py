@@ -252,4 +252,6 @@ class ABACUS(Task):
         return []
 
     def backward_files(self, property_type="relaxation"):
-        return []
+        # ABACUS stores completion logs, final structures, and parsed results
+        # under this directory for both relaxation and static calculations.
+        return ["OUT.ABACUS"]

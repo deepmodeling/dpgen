@@ -1,3 +1,21 @@
+cff-version: 1.2.0
+message: "If you use DP-GEN, please cite it using the metadata from this file."
+type: software
+title: "DP-GEN: A concurrent learning platform for the generation of reliable deep learning based potential energy models"
+abstract: "The deep potential generator to generate a deep-learning based model of interatomic potential energy and force field."
+authors:
+- name: "DeepModeling"
+- family-names: "Wang"
+  given-names: "Han"
+  email: "wang_han@iapcm.ac.cn"
+repository-code: "https://github.com/deepmodeling/dpgen"
+url: "https://docs.deepmodeling.com/projects/dpgen"
+license: LGPL-3.0-or-later
+keywords:
+- deep-potential-generator
+- active-learning
+- deepmd-kit
+
 preferred-citation:
   type: article
   authors:
