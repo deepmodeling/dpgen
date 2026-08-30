@@ -27,7 +27,9 @@ Keep separate `train`, `model_devi`, and `fp` blocks. For each stage, collect or
 - `resources.source_list` for scheduler runtime activation
 - queue, partition, account, and custom scheduler flags when applicable
 
-Typical commands are `dp` for training, `lmp` for LAMMPS exploration, and a backend executable such as `vasp_std`, `cp2k.popt`, `abacus`, `pw.x`, or `g16` for labeling. Preserve known working commands.
+`train_backend` does not rewrite the machine command. `dp` selects the DeePMD installation's default backend; a DeePMD-kit 3.x PyTorch installation may require `dp --pt`. Verify the installed entry point with `dp train -h` or `dp --pt train -h`, then make the `train` command agree with `train_backend`.
+
+Typical later-stage commands are `lmp` for LAMMPS exploration and a backend executable such as `vasp_std`, `cp2k.popt`, `abacus`, `pw.x`, or `g16` for labeling. Preserve known working commands.
 
 ## Context and batch compatibility
 
@@ -51,6 +53,6 @@ Patch the closest existing working configuration. Do not transplant site-specifi
 - Keep CPU, GPU, node, and grouping requests explicit.
 - Require explicit `source_list` activation for scheduler stages.
 - Preserve working local omissions and installed-version aliases.
-- Ensure commands match the scientific stack selected in `param.json`.
+- Ensure the training command selects the same backend as `train_backend` and all commands match the scientific stack selected in `param.json`.
 
 External machine reference: https://docs.deepmodeling.com/projects/dpgen/en/latest/run/mdata.html

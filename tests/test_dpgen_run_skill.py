@@ -1,7 +1,14 @@
+import copy
 import json
 import re
 import unittest
 from pathlib import Path
+
+from dargs.dargs import (
+    ArgumentKeyError,
+    ArgumentTypeError,
+    ArgumentValueError,
+)
 
 from dpgen.generator.arginfo import run_jdata_arginfo
 from dpgen.remote.decide_machine import convert_mdata
@@ -87,6 +94,72 @@ class TestDPGenRunSkill(unittest.TestCase):
                 )
                 self.assertIsInstance(normalized, dict)
                 self.assertTrue(normalized)
+
+    def test_documented_parameter_schema_invariants(self):
+        repository_root = Path(__file__).resolve().parents[1]
+        example = (
+            repository_root
+            / "examples"
+            / "run"
+            / "dp2.x-lammps-cp2k"
+            / "param_CH4_deepmd-kit-2.0.1.json"
+        )
+        parameter_data = json.loads(example.read_text())
+        normalized = normalize(
+            run_jdata_arginfo(),
+            copy.deepcopy(parameter_data),
+            strict_check=False,
+        )
+
+        self.assertEqual(normalized["model_devi_engine"], "lammps")
+        self.assertEqual(normalized["train_backend"], "tensorflow")
+
+        without_mass_map = copy.deepcopy(parameter_data)
+        without_mass_map.pop("mass_map", None)
+        normalized_without_mass_map = normalize(
+            run_jdata_arginfo(),
+            without_mass_map,
+            strict_check=False,
+        )
+        self.assertEqual(normalized_without_mass_map["mass_map"], "auto")
+
+        invalid_fp_style = copy.deepcopy(parameter_data)
+        invalid_fp_style["fp_style"] = "none"
+        with self.assertRaises(ArgumentValueError):
+            normalize(
+                run_jdata_arginfo(),
+                invalid_fp_style,
+                strict_check=False,
+            )
+
+        missing_model_devi_skip = copy.deepcopy(parameter_data)
+        missing_model_devi_skip.pop("model_devi_skip")
+        with self.assertRaises(ArgumentKeyError):
+            normalize(
+                run_jdata_arginfo(),
+                missing_model_devi_skip,
+                strict_check=False,
+            )
+
+        flat_sys_configs = copy.deepcopy(parameter_data)
+        flat_sys_configs["sys_configs"] = ["POSCAR"]
+        with self.assertRaises(ArgumentTypeError):
+            normalize(
+                run_jdata_arginfo(),
+                flat_sys_configs,
+                strict_check=False,
+            )
+
+        for backend in ("tensorflow", "pytorch"):
+            with self.subTest(backend=backend):
+                backend_data = copy.deepcopy(parameter_data)
+                backend_data["train_backend"] = backend
+                normalized_backend = normalize(
+                    run_jdata_arginfo(),
+                    backend_data,
+                    strict_check=False,
+                )
+                self.assertEqual(normalized_backend["train_backend"], backend)
 
     def test_linked_machine_examples_use_current_schema(self):
         repository_root = Path(__file__).resolve().parents[1]

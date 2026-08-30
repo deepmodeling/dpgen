@@ -52,6 +52,7 @@ Compare every `type_map.raw` line-for-line with `param.json.type_map`. Verify ev
 Confirm:
 
 - DeePMD-kit version, backend, descriptor, and training-input layout agree
+- `train_backend` and the machine `train.command` select the same backend; for DeePMD-kit 3.x PyTorch, verify `dp --pt train -h` and use `dp --pt` when required
 - each exploration job references valid systems and MD settings
 - force trust thresholds are ordered and scientifically intentional
 - FP inputs and support files match `fp_style`
