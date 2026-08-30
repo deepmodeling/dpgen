@@ -1,7 +1,6 @@
 ---
 name: dpgen-run
 description: Prepare, explain, validate, and run DP-GEN concurrent learning workflows for training deep potential models via iterative exploration. Use when the user wants to generate or modify `param.json` and `machine.json` for `dpgen run`, configure training/exploration/labeling iterations, select descriptor types, set trust levels, define model_devi_jobs, or inspect run outputs.
-compatibility: Requires a runnable environment with Python and an activated DP-GEN runtime where `dpgen` is available in PATH for the outer run command. Real execution also requires DeePMD-kit, LAMMPS (with DeePMD plugin for model_devi), and any backend-specific software required by the selected `fp_style`. For scheduler execution, each stage environment must be explicitly activated in `resources.source_list`.
 license: LGPL-3.0-or-later
 metadata:
   author: MatMaster
@@ -14,6 +13,13 @@ metadata:
 Use this skill when the user wants to prepare, explain, validate, or execute the `dpgen run` concurrent learning workflow.
 
 This skill is for the main DP-GEN iterative loop: train an ensemble of deep potential models, explore configuration space via LAMMPS MD, select uncertain structures, label them with first-principles calculations, and feed new data back into training.
+
+## Requirements
+
+Preparation and validation require Python and DP-GEN. Actual workflow execution
+also requires DeePMD-kit, a compatible exploration engine such as LAMMPS, and
+the software selected by `fp_style`. Scheduler stages must activate their
+runtime explicitly in `resources.source_list`.
 
 ## Core Rule (Critical)
 
@@ -52,7 +58,7 @@ These are verified failure modes discovered through testing. Treat as hard rules
 
 1. **`type_map.raw` ordering** — The `type_map.raw` in your `init_data_sys` directories must exactly match the `type_map` array in `param.json`. Mismatches cause silent data corruption.
 
-1. **DeePMD-kit input format** — `default_training_param` uses nested structure: `model.descriptor`, `model.fitting_net`, `learning_rate`, `loss`, `training`. The `training` block may leave `training_data.systems` unset or empty — dpgen fills it. Check the configured `deepmd_version` and installed DeePMD-kit before using 3.x-specific features.
+1. **DeePMD-kit input format** — `default_training_param` uses `model`, `learning_rate`, `loss`, and `training` blocks. DeePMD-kit 2.x–3.x place systems under `training.training_data`, while 1.x uses `training.systems`; dpgen fills the version-appropriate systems field. Check the configured `deepmd_version` and installed DeePMD-kit before generating the rest of the training input or using 3.x-specific features.
 
 1. **`model_devi_engine` defaults to LAMMPS** — No need to set `model_devi_engine` explicitly when using LAMMPS. Only set it for alternative engines.
 
@@ -201,15 +207,15 @@ Collect the following information before generating files.
 ### System information
 
 - `type_map` — ordered element symbols
-- `mass_map` — atomic masses matching `type_map` order
-- `init_data_prefix` — prefix for init_data_sys paths
+- `mass_map` — optional atomic masses matching `type_map` order; defaults to `"auto"`
+- `init_data_prefix` — optional prefix for `init_data_sys` paths
 - `init_data_sys` — list of paths to initial training data (deepmd/npy format)
-- `sys_configs_prefix` — prefix for sys_configs paths
+- `sys_configs_prefix` — optional prefix for `sys_configs` paths
 - `sys_configs` — list of lists of structure file paths
 
 ### Training setup
 
-- `numb_models` — number of ensemble models (default: 4)
+- `numb_models` — number of ensemble models (4 is recommended)
 - `default_training_param` — full DeePMD training input:
   - `model.descriptor` — descriptor type and settings
   - `model.fitting_net` — fitting network settings
@@ -234,7 +240,7 @@ Collect the following information before generating files.
 
 ### FP setup
 
-- `fp_style` — backend: `"vasp"`, `"cp2k"`, `"abacus"`, `"gaussian"`, `"pwscf"`, or `"none"`
+- `fp_style` — a labeling backend registered in the [run argument schema](../../dpgen/generator/arginfo.py), such as `"vasp"`, `"cp2k"`, `"abacus"`, `"gaussian"`, or `"pwscf"`; `"none"` is not a valid current choice
 - `fp_task_max` — maximum number of FP tasks per iteration
 - `fp_task_min` — minimum number to trigger FP
 - Backend-specific settings:
@@ -283,12 +289,12 @@ Construct `param.json` around these logical blocks:
 Key fields always required:
 
 - `type_map`
-- `mass_map`
 - `init_data_sys`
 - `sys_configs`
 - `numb_models`
 - `default_training_param`
 - `model_devi_dt`
+- `model_devi_skip`
 - `model_devi_f_trust_lo`
 - `model_devi_f_trust_hi`
 - `model_devi_jobs`
@@ -357,10 +363,9 @@ Before execution, validate the workflow in this order:
 
 - Step 3: verify `init_data_sys` directories exist and contain proper deepmd/npy format:
 
-  ```bash
-  # Each directory must have type_map.raw, type.raw, set.000/
-  ls init_data/*/type_map.raw
-  ```
+  Resolve each `init_data_sys` entry against `init_data_prefix` when a prefix
+  is set; do not assume the literal directory `init_data/`. Each NumPy system
+  must contain `type_map.raw`, `type.raw`, and `set.000/`.
 
 - Step 4: verify `type_map.raw` content matches `param.json` `type_map` ordering.
 
@@ -395,6 +400,7 @@ Always provide:
 - Keep `type_map` ordering consistent with `init_data_sys` type_map.raw files.
 - If required inputs are missing, stop and ask instead of guessing.
 - Always spell `se_atten_v2` correctly (not `se_attn_v2`).
+- Do not use `fp_style: "none"`; stop before `dpgen run` when only preparation or validation was authorized.
 - Include `remote_root` when the selected context requires it; do not add it
   solely to rewrite a working lazy/local configuration.
 - Use a `batch_type` accepted by the installed dpdispatcher version and
@@ -403,13 +409,12 @@ Always provide:
 - Do not assume outer-shell activation is inherited by stage jobs; for scheduler execution, require explicit `source_list` per stage.
 - If the user already has working templates, patch them rather than overwriting them blindly.
 - Do not set `model_devi_engine` unless using a non-LAMMPS engine (it defaults to LAMMPS).
-- In `default_training_param`, leave `training.training_data.systems` unset or empty — `dpgen/generator/run.py` fills it from `init_data_sys` automatically.
+- In `default_training_param`, leave `training.training_data.systems` unset or empty for DeePMD-kit 2.x–3.x, or `training.systems` unset or empty for 1.x — `dpgen/generator/run.py` fills it from `init_data_sys` automatically.
 
 ## Repository examples and references
 
 Use these checked-in repository examples as starting points:
 
-- [local CH4 parameter example](../../examples/run/ch4/param.json)
 - [local machine example](../../examples/machine/DeePMD-kit-1.x/machine-local.json)
 - [CP2K parameter example](../../examples/run/dp2.x-lammps-cp2k/param_CH4_deepmd-kit-2.0.1.json)
 - [VASP parameter example](../../examples/run/dp2.x-lammps-vasp/CH4/param_CH4_deepmd-kit-2.x.json)

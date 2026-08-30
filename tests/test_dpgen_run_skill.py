@@ -3,7 +3,9 @@ import re
 import unittest
 from pathlib import Path
 
+from dpgen.generator.arginfo import run_jdata_arginfo
 from dpgen.remote.decide_machine import convert_mdata
+from dpgen.util import normalize
 
 LINK_PATTERN = re.compile(r"\[[^]]+\]\(([^)]+)\)")
 
@@ -32,6 +34,34 @@ class TestDPGenRunSkill(unittest.TestCase):
             "Missing repository-relative links in dpgen-run skill: "
             + ", ".join(missing),
         )
+
+    def test_linked_parameter_examples_use_current_schema(self):
+        repository_root = Path(__file__).resolve().parents[1]
+        skill_path = repository_root / "skills" / "dpgen-run" / "SKILL.md"
+        parameter_examples_root = repository_root / "examples" / "run"
+        examples = set()
+        for target in LINK_PATTERN.findall(skill_path.read_text()):
+            target_path = target.split("#", 1)[0]
+            if not target_path.endswith(".json"):
+                continue
+            resolved_target = (skill_path.parent / target_path).resolve()
+            try:
+                resolved_target.relative_to(parameter_examples_root)
+            except ValueError:
+                continue
+            examples.add(resolved_target)
+        self.assertTrue(examples, "No examples/run/*.json links found")
+
+        for example in examples:
+            with self.subTest(example=example):
+                parameter_data = json.loads(example.read_text())
+                normalized = normalize(
+                    run_jdata_arginfo(),
+                    parameter_data,
+                    strict_check=False,
+                )
+                self.assertIsInstance(normalized, dict)
+                self.assertTrue(normalized)
 
     def test_linked_machine_examples_use_current_schema(self):
         repository_root = Path(__file__).resolve().parents[1]
