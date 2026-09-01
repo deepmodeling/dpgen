@@ -125,21 +125,235 @@ check_outcar_file = os.path.join(ROOT_PATH, "generator/lib/calypso_check_outcar.
 run_opt_file = os.path.join(ROOT_PATH, "generator/lib/calypso_run_opt.py")
 
 
-def _get_model_suffix(jdata) -> str:
-    """Return the model suffix based on the backend."""
+_BACKEND_ALIASES = {"pt-expt": "pytorch-exportable"}
+_BACKEND_CONFIG = {
+    "tensorflow": {
+        "flag": "",
+        "checkpoint_suffix": ".index",
+        "default_model_format": "pb",
+        "model_formats": {"pb"},
+    },
+    "pytorch": {
+        "flag": "--pt",
+        "checkpoint_suffix": ".pt",
+        "default_model_format": "pth",
+        "model_formats": {"pth", "pt2"},
+    },
+    "pytorch-exportable": {
+        "flag": "--pt-expt",
+        "checkpoint_suffix": ".pt",
+        "default_model_format": "pte",
+        "model_formats": {"pte", "pt2"},
+    },
+    "jax": {
+        "flag": "--jax",
+        "checkpoint_suffix": ".jax",
+        "default_model_format": "savedmodel",
+        "model_formats": {"savedmodel"},
+    },
+}
+
+
+def _get_backend(jdata, key, default) -> tuple[str, dict]:
+    """Return and validate a DeePMD backend."""
     mlp_engine = jdata.get("mlp_engine", "dp")
-    if mlp_engine == "dp":
-        suffix_map = {"tensorflow": ".pb", "pytorch": ".pth", "jax": ".savedmodel"}
-        backend = jdata.get("train_backend", "tensorflow")
-        if backend in suffix_map:
-            suffix = suffix_map[backend]
-        else:
-            raise ValueError(
-                f"The backend {backend} is not available. Supported backends are: 'tensorflow', 'pytorch', 'jax'."
-            )
-        return suffix
-    else:
+    if mlp_engine != "dp":
         raise ValueError(f"Unsupported engine: {mlp_engine}")
+
+    backend = jdata.get(key, default)
+    backend = _BACKEND_ALIASES.get(backend, backend)
+    if backend not in _BACKEND_CONFIG:
+        supported = "', '".join(_BACKEND_CONFIG)
+        raise ValueError(
+            f"The backend {backend} is not available. Supported backends are: '{supported}'."
+        )
+    return backend, _BACKEND_CONFIG[backend]
+
+
+def _get_train_backend_config(jdata) -> tuple[str, dict]:
+    """Return the training backend configuration."""
+    return _get_backend(jdata, "train_backend", "tensorflow")
+
+
+def _get_model_backend_config(jdata) -> tuple[str, dict, str]:
+    """Return the training backend and validate its frozen model format."""
+    backend, config = _get_train_backend_config(jdata)
+    default_model_format = config["default_model_format"]
+    if (
+        backend == "pytorch-exportable"
+        and jdata.get("model_devi_engine", "lammps") == "lammps"
+    ):
+        default_model_format = "pt2"
+    model_format = jdata.get("model_format", default_model_format)
+    if model_format not in config["model_formats"]:
+        supported = "', '".join(sorted(config["model_formats"]))
+        raise ValueError(
+            f"The model format {model_format} is not available for backend {backend}. "
+            f"Supported formats are: '{supported}'."
+        )
+    if (
+        backend == "pytorch-exportable"
+        and model_format == "pte"
+        and jdata.get("model_devi_engine", "lammps") == "lammps"
+    ):
+        raise ValueError(
+            "The pte model format is not supported by LAMMPS; use model_format=pt2."
+        )
+    return backend, config, model_format
+
+
+def _get_model_suffix(jdata) -> str:
+    """Return the frozen model suffix."""
+    _, _, model_format = _get_model_backend_config(jdata)
+    return f".{model_format}"
+
+
+def _get_checkpoint_suffix(jdata) -> str:
+    """Return the training checkpoint suffix."""
+    _, config = _get_train_backend_config(jdata)
+    return config["checkpoint_suffix"]
+
+
+def _get_train_backend_flag(jdata) -> str:
+    """Return the DeePMD CLI backend flag."""
+    _, config = _get_train_backend_config(jdata)
+    return config["flag"]
+
+
+def _get_input_model_suffix(models) -> str:
+    """Return the common suffix of input models."""
+    suffixes = {Path(model).suffix.lower() for model in models}
+    if "" in suffixes or len(suffixes) != 1:
+        raise ValueError("Input models must have the same non-empty file suffix.")
+    return suffixes.pop()
+
+
+def _iter_model_sections(training_param):
+    """Yield the top-level model and each model-dictionary branch.
+
+    Parameters
+    ----------
+    training_param : dict
+        DeePMD training parameters.
+
+    Yields
+    ------
+    tuple[str, dict]
+        The dotted configuration path and corresponding model section.
+    """
+    model = training_param.get("model", {})
+    yield "model", model
+    for name, branch in (model.get("model_dict") or {}).items():
+        yield f"model.model_dict.{name}", branch
+
+
+def _get_dpa_model_family(training_param) -> Optional[str]:
+    """Identify the DPA model family in a training configuration.
+
+    Parameters
+    ----------
+    training_param : dict
+        DeePMD training parameters.
+
+    Returns
+    -------
+    str or None
+        "dpa4", "dpa4c", or None when neither family is present.
+
+    Raises
+    ------
+    ValueError
+        If DPA4 and DPA4C branches are mixed in one configuration.
+    """
+    families = set()
+    for _, model in _iter_model_sections(training_param):
+        model_type = model.get("type")
+        descriptor = model.get("descriptor", {})
+        descriptor_type = (
+            descriptor.get("type") if isinstance(descriptor, dict) else None
+        )
+        model_type = model_type.lower() if isinstance(model_type, str) else model_type
+        descriptor_type = (
+            descriptor_type.lower()
+            if isinstance(descriptor_type, str)
+            else descriptor_type
+        )
+        if descriptor_type == "dpa4c":
+            families.add("dpa4c")
+        if model_type in {"dpa4", "sezm"} or descriptor_type in {"dpa4", "sezm"}:
+            families.add("dpa4")
+    if len(families) > 1:
+        raise ValueError(
+            "default_training_param cannot mix DPA4 and DPA4C branches because "
+            "they require different DeePMD backends"
+        )
+    return next(iter(families), None)
+
+
+def _validate_dpa_training_config(jdata) -> None:
+    """Validate DPA backend, format, and acceleration-option placement.
+
+    Parameters
+    ----------
+    jdata : dict
+        DP-GEN parameters containing the training and deployment configuration.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    ValueError
+        If the model family, backend, deployment format, or acceleration
+        options are incompatible.
+    """
+    training_param = jdata.get("default_training_param", {})
+    family = _get_dpa_model_family(training_param)
+    train_backend, _ = _get_train_backend_config(jdata)
+    _, _, model_format = _get_model_backend_config(jdata)
+    if family is None:
+        if train_backend == "pytorch" and model_format == "pt2":
+            raise ValueError(
+                "The regular PyTorch backend only exports pt2 for DPA4/SeZM models."
+            )
+        return
+    expected_backend = "pytorch" if family == "dpa4" else "pytorch-exportable"
+    if train_backend != expected_backend:
+        raise ValueError(
+            f"{family.upper()} training requires train_backend='{expected_backend}', "
+            f"not '{train_backend}'"
+        )
+
+    if jdata.get("model_devi_engine", "lammps") == "lammps":
+        if model_format != "pt2":
+            raise ValueError(
+                f"{family.upper()} LAMMPS model deviation requires model_format='pt2'"
+            )
+
+    if family == "dpa4c":
+        misplaced = []
+        for scope, model in _iter_model_sections(training_param):
+            for key in ("use_compile", "enable_tf32"):
+                if key in model:
+                    misplaced.append(f"{scope}.{key}")
+        if misplaced:
+            raise ValueError(
+                "DPA4C uses training.enable_compile and training.enable_tf32; "
+                f"remove misplaced {', '.join(misplaced)}"
+            )
+    else:
+        training = training_param.get("training", {})
+        misplaced = [
+            f"training.{key}"
+            for key in ("enable_compile", "enable_tf32")
+            if key in training
+        ]
+        if misplaced:
+            raise ValueError(
+                "DPA4 uses model.use_compile and model.enable_tf32; "
+                f"remove misplaced {', '.join(misplaced)}"
+            )
 
 
 def get_job_names(jdata):
@@ -667,9 +881,13 @@ def make_train_dp(iter_index, jdata, mdata):
         None,
     )
     if copied_models is not None:
+        input_model_suffix = _get_input_model_suffix(copied_models)
         for ii in range(len(copied_models)):
             _link_old_models(
-                work_path, [copied_models[ii]], ii, basename=f"init{suffix}"
+                work_path,
+                [copied_models[ii]],
+                ii,
+                basename=f"init{input_model_suffix}",
             )
     # Copy user defined forward files
     symlink_user_forward_files(mdata=mdata, task_type="train", work_path=work_path)
@@ -729,8 +947,12 @@ def run_train(iter_index, jdata, mdata):
 def run_train_dp(iter_index, jdata, mdata):
     # print("debug:run_train:mdata", mdata)
     # load json param
+    _validate_dpa_training_config(jdata)
     numb_models = jdata["numb_models"]
+    train_backend, _ = _get_train_backend_config(jdata)
+    _, _, model_format = _get_model_backend_config(jdata)
     suffix = _get_model_suffix(jdata)
+    checkpoint_suffix = _get_checkpoint_suffix(jdata)
     # train_param = jdata['train_param']
     train_input_file = default_train_input_file
     training_reuse_iter = jdata.get("training_reuse_iter")
@@ -752,6 +974,27 @@ def run_train_dp(iter_index, jdata, mdata):
     except KeyError:
         mdata = set_version(mdata)
 
+    if (train_backend == "pytorch-exportable" or model_format == "pt2") and Version(
+        mdata["deepmd_version"]
+    ) < Version("3.2"):
+        raise RuntimeError(
+            "The pytorch-exportable backend and pt2 models require DeePMD-kit 3.2 or later."
+        )
+    if train_backend == "pytorch-exportable" and training_init_frozen_model is not None:
+        raise RuntimeError(
+            "The pytorch-exportable backend does not support training_init_frozen_model; "
+            "use training_finetune_model or a checkpoint instead."
+        )
+    if (
+        train_backend == "pytorch"
+        and model_format == "pt2"
+        and jdata.get("dp_compress", False)
+    ):
+        raise RuntimeError(
+            "The pytorch backend cannot compress pt2 models; use "
+            "pytorch-exportable for a compressible pt2 model."
+        )
+
     if (
         training_init_model
         + (training_init_frozen_model is not None)
@@ -764,10 +1007,9 @@ def run_train_dp(iter_index, jdata, mdata):
 
     train_command = mdata.get("train_command", "dp").strip()
     # assert train_command == "dp", "The 'train_command' should be 'dp'"     # the tests should be updated to run this command
-    if suffix == ".pth":
-        train_command += " --pt"
-    elif suffix == ".savedmodel":
-        train_command += " --jax"
+    backend_flag = _get_train_backend_flag(jdata)
+    if backend_flag:
+        train_command += f" {backend_flag}"
 
     # paths
     iter_name = make_iter_name(iter_index)
@@ -783,6 +1025,7 @@ def run_train_dp(iter_index, jdata, mdata):
         task_path = os.path.join(work_path, train_task_fmt % ii)
         all_task.append(task_path)
     commands = []
+    export_commands = []
     if Version(mdata["deepmd_version"]) >= Version("1") and Version(
         mdata["deepmd_version"]
     ) < Version("4"):
@@ -797,25 +1040,43 @@ def run_train_dp(iter_index, jdata, mdata):
         if training_init_model:
             init_flag = " --init-model old/model.ckpt"
         elif training_init_frozen_model is not None:
-            init_flag = f" --init-frz-model old/init{suffix}"
+            input_model_suffix = _get_input_model_suffix(training_init_frozen_model)
+            init_flag = f" --init-frz-model old/init{input_model_suffix}"
         elif training_finetune_model is not None:
-            init_flag = f" --finetune old/init{suffix}"
+            input_model_suffix = _get_input_model_suffix(training_finetune_model)
+            init_flag = f" --finetune old/init{input_model_suffix}"
         command = f"{train_command} train {train_input_file}{extra_flags}"
-        if suffix == ".pb":
-            ckpt_suffix = ".index"
-        elif suffix == ".pth":
-            ckpt_suffix = ".pt"
-        elif suffix == ".savedmodel":
-            ckpt_suffix = ".jax"
-        else:
-            raise RuntimeError(f"Unknown suffix {suffix}")
-        command = f"{{ if [ ! -f model.ckpt{ckpt_suffix} ]; then {command}{init_flag}; else {command} --restart model.ckpt; fi }}"
+        command = f"{{ if [ ! -f model.ckpt{checkpoint_suffix} ]; then {command}{init_flag}; else {command} --restart model.ckpt; fi }}"
         command = f"/bin/sh -c {shlex.quote(command)}"
         commands.append(command)
-        command = f"{train_command} freeze"
-        commands.append(command)
-        if jdata.get("dp_compress", False):
-            commands.append(f"{train_command} compress")
+        if model_format == "pt2":
+            if train_backend == "pytorch-exportable":
+                command = (
+                    f"{train_command} freeze -c model.ckpt.pt -o frozen_model "
+                    "--lower-kind graph"
+                )
+            else:
+                command = f"{train_command} freeze -c model.ckpt.pt -o frozen_model"
+            export_commands.append(command)
+            if jdata.get("dp_compress", False):
+                export_commands.append(
+                    f"{train_command} compress -i frozen_model{suffix} "
+                    f"-o frozen_model_compressed{suffix}"
+                )
+        else:
+            if train_backend == "pytorch-exportable":
+                command = f"{train_command} freeze -o frozen_model{suffix}"
+            else:
+                command = f"{train_command} freeze"
+            commands.append(command)
+            if jdata.get("dp_compress", False):
+                if train_backend == "pytorch-exportable":
+                    commands.append(
+                        f"{train_command} compress -i frozen_model{suffix} "
+                        f"-o frozen_model_compressed{suffix}"
+                    )
+                else:
+                    commands.append(f"{train_command} compress")
     else:
         raise RuntimeError(
             "DP-GEN currently only supports for DeePMD-kit 1.x to 3.x version!"
@@ -836,42 +1097,49 @@ def run_train_dp(iter_index, jdata, mdata):
     if "srtab_file_path" in jdata.keys():
         forward_files.append(zbl_file)
     if training_init_model:
-        if suffix == ".pb":
+        if checkpoint_suffix == ".index":
             forward_files += [
                 os.path.join("old", "model.ckpt.meta"),
                 os.path.join("old", "model.ckpt.index"),
                 os.path.join("old", "model.ckpt.data-00000-of-00001"),
             ]
-        elif suffix == ".pth":
+        elif checkpoint_suffix == ".pt":
             forward_files += [os.path.join("old", "model.ckpt.pt")]
-        elif suffix == ".savedmodel":
+        elif checkpoint_suffix == ".jax":
             forward_files += [os.path.join("old", "model.ckpt.jax")]
         else:
-            raise RuntimeError(f"Unknown suffix {suffix}")
+            raise RuntimeError(f"Unknown checkpoint suffix {checkpoint_suffix}")
     elif training_init_frozen_model is not None or training_finetune_model is not None:
-        forward_files.append(os.path.join("old", f"init{suffix}"))
+        input_models = (
+            training_init_frozen_model
+            if training_init_frozen_model is not None
+            else training_finetune_model
+        )
+        input_model_suffix = _get_input_model_suffix(input_models)
+        forward_files.append(os.path.join("old", f"init{input_model_suffix}"))
 
     backward_files = [
-        f"frozen_model{suffix}",
         "lcurve.out",
         "train.log",
         "checkpoint",
     ]
-    if jdata.get("dp_compress", False):
-        backward_files.append(f"frozen_model_compressed{suffix}")
+    if not export_commands:
+        backward_files.append(f"frozen_model{suffix}")
+        if jdata.get("dp_compress", False):
+            backward_files.append(f"frozen_model_compressed{suffix}")
 
-    if suffix == ".pb":
+    if checkpoint_suffix == ".index":
         backward_files += [
             "model.ckpt.meta",
             "model.ckpt.index",
             "model.ckpt.data-00000-of-00001",
         ]
-    elif suffix == ".pth":
+    elif checkpoint_suffix == ".pt":
         backward_files += ["model.ckpt.pt"]
-    elif suffix == ".savedmodel":
+    elif checkpoint_suffix == ".jax":
         backward_files += ["model.ckpt.jax"]
     else:
-        raise RuntimeError(f"Unknown suffix {suffix}")
+        raise RuntimeError(f"Unknown checkpoint suffix {checkpoint_suffix}")
 
     if not jdata.get("one_h5", False):
         init_data_sys_ = jdata["init_data_sys"]
@@ -925,6 +1193,24 @@ def run_train_dp(iter_index, jdata, mdata):
         errlog="train.log",
     )
     submission.run_submission()
+    if export_commands:
+        export_backward_files = [f"frozen_model{suffix}"]
+        if jdata.get("dp_compress", False):
+            export_backward_files.append(f"frozen_model_compressed{suffix}")
+        export_submission = make_submission(
+            mdata["model_devi_machine"],
+            mdata["model_devi_resources"],
+            commands=export_commands,
+            work_path=work_path,
+            run_tasks=run_tasks,
+            group_size=1,
+            forward_common_files=[],
+            forward_files=[f"model.ckpt{checkpoint_suffix}"],
+            backward_files=export_backward_files,
+            outlog="model_export.log",
+            errlog="model_export.log",
+        )
+        export_submission.run_submission()
 
 
 def post_train(iter_index, jdata, mdata):
@@ -1132,40 +1418,101 @@ def revise_lmp_input_model(
 
 
 def revise_lmp_input_pair_coeff(lmp_lines, jdata=None):
-    """Update pair_coeff lines for D3 support."""
+    """Add explicit DeepMD element mapping and D3 pair coefficients.
+
+    Parameters
+    ----------
+    lmp_lines : list[str]
+        Lines from a LAMMPS input template.
+    jdata : dict, optional
+        DP-GEN parameters, including type_map and optional D3 settings.
+
+    Returns
+    -------
+    list[str]
+        The updated LAMMPS input lines.
+
+    Raises
+    ------
+    RuntimeError
+        If a coefficient must be inserted but the template does not contain
+        exactly one pair_style line.
+    """
     if jdata is None:
         return lmp_lines
 
     lmp_d3 = jdata.get("lmp_d3", {})
     d3_enabled = lmp_d3.get("enable", False) if lmp_d3 else False
-
-    if not d3_enabled:
-        return lmp_lines
-
-    # D3 requires type maps (element symbols)
     type_map = jdata.get("type_map", [])
     type_map_str = " ".join(type_map)
+    type_map_args = f" {type_map_str}" if type_map_str else ""
 
-    # Find pair_coeff line
-    pair_coeff_idx = None
+    if not d3_enabled and not type_map:
+        return lmp_lines
+
+    pair_style_idx = find_only_one_key(lmp_lines, ["pair_style"])
+    pair_style_tokens = lmp_lines[pair_style_idx].partition("#")[0].split()
+    hybrid_pair_style = pair_style_tokens[1].startswith("hybrid")
+
+    deepmd_coeff_idx = None
+    fallback_coeff_idx = None
+    d3_coeff_idx = None
     for idx, line in enumerate(lmp_lines):
-        if line.strip().startswith("pair_coeff") and "* *" in line:
-            pair_coeff_idx = idx
-            break
+        tokens = line.partition("#")[0].split()
+        if not tokens or tokens[0] != "pair_coeff":
+            continue
+        if "dispersion/d3" in tokens:
+            d3_coeff_idx = idx
+        elif tokens[3:4] == ["deepmd"] and deepmd_coeff_idx is None:
+            deepmd_coeff_idx = idx
+        elif fallback_coeff_idx is None:
+            fallback_coeff_idx = idx
 
-    if pair_coeff_idx is None:
-        # If no pair_coeff found, add them after pair_style
-        pair_style_idx = find_only_one_key(lmp_lines, ["pair_style"])
-        lmp_lines.insert(pair_style_idx + 1, "pair_coeff      * * deepmd\n")
-        lmp_lines.insert(
-            pair_style_idx + 2, f"pair_coeff      * * dispersion/d3 {type_map_str}\n"
+    if deepmd_coeff_idx is None and fallback_coeff_idx is not None:
+        fallback_tokens = lmp_lines[fallback_coeff_idx].partition("#")[0].split()
+        fallback_is_bare = fallback_tokens in (
+            ["pair_coeff"],
+            ["pair_coeff", "*", "*"],
         )
+        if not hybrid_pair_style or (d3_enabled and fallback_is_bare):
+            deepmd_coeff_idx = fallback_coeff_idx
+
+    if deepmd_coeff_idx is None:
+        deepmd_coeff_idx = pair_style_idx + 1
+        style = " deepmd" if d3_enabled or hybrid_pair_style else ""
+        line = f"pair_coeff      * *{style}{type_map_args}\n"
+        lmp_lines.insert(deepmd_coeff_idx, line)
+        if d3_coeff_idx is not None and d3_coeff_idx >= deepmd_coeff_idx:
+            d3_coeff_idx += 1
     else:
-        # Replace existing pair_coeff with D3 version
-        lmp_lines[pair_coeff_idx] = "pair_coeff      * * deepmd\n"
-        lmp_lines.insert(
-            pair_coeff_idx + 1, f"pair_coeff      * * dispersion/d3 {type_map_str}\n"
+        tokens = lmp_lines[deepmd_coeff_idx].partition("#")[0].split()
+        bare_coeff = tokens in (
+            ["pair_coeff"],
+            ["pair_coeff", "*", "*"],
+            ["pair_coeff", "*", "*", "deepmd"],
         )
+        if d3_enabled:
+            if tokens[:3] == ["pair_coeff", "*", "*"]:
+                if tokens[3:4] == ["deepmd"]:
+                    elements = tokens[4:]
+                else:
+                    elements = tokens[3:]
+            else:
+                elements = []
+            element_args = f" {' '.join(elements)}" if elements else type_map_args
+            lmp_lines[deepmd_coeff_idx] = f"pair_coeff      * * deepmd{element_args}\n"
+        elif bare_coeff:
+            style = " deepmd" if tokens[3:4] == ["deepmd"] else ""
+            lmp_lines[deepmd_coeff_idx] = f"pair_coeff      * *{style}{type_map_args}\n"
+
+    if d3_enabled:
+        d3_line = f"pair_coeff      * * dispersion/d3 {type_map_str}\n"
+        if d3_coeff_idx is None:
+            lmp_lines.insert(deepmd_coeff_idx + 1, d3_line)
+        else:
+            d3_tokens = lmp_lines[d3_coeff_idx].partition("#")[0].split()
+            if d3_tokens == ["pair_coeff", "*", "*", "dispersion/d3"]:
+                lmp_lines[d3_coeff_idx] = d3_line
 
     return lmp_lines
 
@@ -1463,6 +1810,42 @@ def make_model_devi(iter_index, jdata, mdata):
     return True
 
 
+def _validate_pt2_template_atom_map(lmp_lines):
+    """Validate the atom map required by pt2 LAMMPS templates.
+
+    Parameters
+    ----------
+    lmp_lines : list[str]
+        Lines of the LAMMPS input template.
+
+    Raises
+    ------
+    ValueError
+        If ``atom_modify map yes`` is missing or follows ``read_data`` or
+        ``read_restart``.
+    """
+    atom_map_index = None
+    read_index = None
+    for line_index, line in enumerate(lmp_lines):
+        command = line.partition("#")[0]
+        tokens = command.split()
+        if not tokens:
+            continue
+        if tokens[0] == "atom_modify" and any(
+            tokens[index : index + 2] == ["map", "yes"]
+            for index in range(1, len(tokens) - 1)
+        ):
+            atom_map_index = line_index
+        if read_index is None and re.search(r"\bread_(?:data|restart)\b", command):
+            read_index = line_index
+    if read_index is None:
+        raise ValueError("pt2 LAMMPS templates require read_data or read_restart.")
+    if atom_map_index is None or atom_map_index > read_index:
+        raise ValueError(
+            "pt2 LAMMPS templates require 'atom_modify map yes' before read_data or read_restart."
+        )
+
+
 def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
     model_devi_jobs = jdata["model_devi_jobs"]
     if iter_index >= len(model_devi_jobs):
@@ -1558,6 +1941,8 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                 # revise input of lammps
                 with open("input.lammps") as fp:
                     lmp_lines = fp.readlines()
+                if suffix == ".pt2":
+                    _validate_pt2_template_atom_map(lmp_lines)
                 # only revise the line "pair_style deepmd" if the user has not written the full line (checked by then length of the line)
                 template_has_pair_deepmd = 1
                 for line_idx, line_context in enumerate(lmp_lines):
@@ -1776,7 +2161,7 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
                         trj_freq,
                         mass_map,
                         tt,
-                        jdata=jdata,
+                        jdata={**jdata, "model_format": suffix[1:]},
                         tau_t=model_devi_taut,
                         pres=pp,
                         tau_p=model_devi_taup,
@@ -2281,7 +2666,12 @@ def run_model_devi(iter_index, jdata, mdata):
     if model_devi_engine != "calypso":
         run_md_model_devi(iter_index, jdata, mdata)
     else:
-        run_calypso_model_devi(iter_index, jdata, mdata)
+        run_calypso_model_devi(
+            iter_index,
+            jdata,
+            mdata,
+            model_suffix=_get_model_suffix(jdata),
+        )
 
 
 def post_model_devi(iter_index, jdata, mdata):

@@ -6,11 +6,16 @@ import re
 import shutil
 import sys
 import unittest
+from unittest.mock import patch
 
 import dpdata
 import numpy as np
 
-from dpgen.generator.run import _read_model_devi_file, parse_cur_job_sys_revmat
+from dpgen.generator.run import (
+    _read_model_devi_file,
+    parse_cur_job_sys_revmat,
+    revise_lmp_input_pair_coeff,
+)
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
@@ -161,6 +166,48 @@ class TestMakeModelDevi(unittest.TestCase):
         _check_traj_dir(self, 0)
         _check_pt(self, 0, jdata)
         # shutil.rmtree('iter.000000')
+
+    def test_make_model_devi_default_pt2_atom_map(self):
+        test_dir = os.path.dirname(__file__)
+        with open(os.path.join(test_dir, param_file)) as fp:
+            jdata = json.load(fp)
+        with open(os.path.join(test_dir, machine_file)) as fp:
+            mdata = json.load(fp)
+        jdata["train_backend"] = "pytorch-exportable"
+        jdata["sys_configs_prefix"] = test_dir
+        jdata["sys_configs"] = [
+            ["data/al.fcc.02x02x02/01.scale_pert/sys-0032/scale*/000001/POSCAR"]
+        ]
+        jdata["model_devi_jobs"][0]["sys_idx"] = [0]
+        jdata["model_devi_jobs"][0]["temps"] = [50]
+        jdata["model_devi_jobs"][0]["press"] = [1.0]
+        jdata.pop("model_format", None)
+
+        train_dir = os.path.join("iter.000000", "00.train")
+        os.makedirs(train_dir, exist_ok=True)
+        for model_index in range(jdata["numb_models"]):
+            with open(
+                os.path.join(train_dir, f"graph.{model_index:03d}.pt2"), "w"
+            ) as fp:
+                fp.write("model")
+
+        def copy_link(source, target):
+            if not os.path.isabs(source):
+                source = os.path.join(os.path.dirname(target), source)
+            shutil.copyfile(os.path.normpath(source), target)
+
+        with patch("dpgen.generator.run.os.symlink", side_effect=copy_link):
+            make_model_devi(0, jdata, mdata)
+
+        task = sorted(glob.glob("iter.000000/01.model_devi/task.*"))[0]
+        with open(os.path.join(task, "input.lammps")) as fp:
+            lammps_input = fp.read()
+        self.assertEqual(lammps_input.count("atom_modify        map yes"), 1)
+        self.assertLess(
+            lammps_input.index("atom_modify        map yes"),
+            lammps_input.index("read_data"),
+        )
+        self.assertIn("pair_coeff      * * Mg Al\n", lammps_input)
 
     def test_make_model_devi_pimd(self):
         if os.path.isdir("iter.000000"):
@@ -515,6 +562,67 @@ class TestMakeModelDeviRevMat(unittest.TestCase):
                     )
         os.chdir(cwd_)
 
+    def test_default_pt2_template_with_atom_map(self):
+        test_dir = os.path.dirname(__file__)
+        with open(os.path.join(test_dir, "lmp", "input.lammps")) as fp:
+            template = fp.read()
+        template = template.replace(
+            "read_data       conf.lmp",
+            "atom_modify     map yes\nread_data       conf.lmp",
+        )
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".lammps", dir=".", delete=False
+        ) as fp:
+            fp.write(template)
+            template_path = os.path.abspath(fp.name)
+        self.addCleanup(os.remove, template_path)
+
+        jdata = {
+            "type_map": ["Mg", "Al"],
+            "mass_map": [24, 27],
+            "init_data_prefix": "data",
+            "init_data_sys": ["deepmd"],
+            "init_batch_size": [16],
+            "sys_configs_prefix": test_dir,
+            "sys_configs": [
+                ["data/al.fcc.02x02x02/01.scale_pert/sys-0032/scale*/000001/POSCAR"]
+            ],
+            "numb_models": 1,
+            "shuffle_poscar": False,
+            "model_devi_f_trust_lo": 0.050,
+            "model_devi_f_trust_hi": 0.150,
+            "train_backend": "pytorch-exportable",
+            "model_devi_jobs": [
+                {
+                    "sys_idx": [0],
+                    "traj_freq": 10,
+                    "template": {"lmp": template_path},
+                }
+            ],
+        }
+        train_path = os.path.join("iter.000000", "00.train")
+        os.makedirs(train_path, exist_ok=True)
+        with open(os.path.join(train_path, "graph.000.pt2"), "w") as fp:
+            fp.write("model")
+
+        def copy_link(source, target):
+            if not os.path.isabs(source):
+                source = os.path.join(os.path.dirname(target), source)
+            shutil.copyfile(os.path.normpath(source), target)
+
+        with patch("dpgen.generator.run.os.symlink", side_effect=copy_link):
+            make_model_devi(0, jdata, {"deepmd_version": "3.2"})
+        task = sorted(glob.glob("iter.000000/01.model_devi/task.*"))[0]
+        with open(os.path.join(task, "input.lammps")) as fp:
+            lines = fp.readlines()
+        atom_map_index = next(
+            index for index, line in enumerate(lines) if "atom_modify" in line
+        )
+        read_data_index = next(
+            index for index, line in enumerate(lines) if "read_data" in line
+        )
+        self.assertLess(atom_map_index, read_data_index)
+
 
 class TestParseCurJobRevMat(unittest.TestCase):
     def setUp(self):
@@ -580,6 +688,64 @@ class TestParseCurJobSysRevMat(unittest.TestCase):
 
 
 class MakeModelDeviByReviseMatrix(unittest.TestCase):
+    def test_revise_lmp_input_pair_coeff_adds_type_map(self):
+        jdata = {"type_map": ["C", "Cl", "H", "O"]}
+        cases = (
+            ("pair_coeff\n", "pair_coeff      * * C Cl H O\n"),
+            ("pair_coeff * *\n", "pair_coeff      * * C Cl H O\n"),
+            (
+                "pair_coeff * * deepmd\n",
+                "pair_coeff      * * deepmd C Cl H O\n",
+            ),
+        )
+
+        for pair_coeff, expected in cases:
+            with self.subTest(pair_coeff=pair_coeff):
+                lines = ["pair_style deepmd graph.pb\n", pair_coeff]
+                result = revise_lmp_input_pair_coeff(lines, jdata)
+                self.assertEqual(result[1], expected)
+
+    def test_revise_lmp_input_pair_coeff_preserves_explicit_mapping(self):
+        jdata = {"type_map": ["C", "Cl", "H", "O"]}
+        cases = (
+            "pair_coeff * * H O\n",
+            "pair_coeff * * deepmd H O\n",
+        )
+
+        for pair_coeff in cases:
+            with self.subTest(pair_coeff=pair_coeff):
+                lines = ["pair_style deepmd graph.pb\n", pair_coeff]
+                result = revise_lmp_input_pair_coeff(lines, jdata)
+                self.assertEqual(result[1], pair_coeff)
+
+    def test_revise_lmp_input_pair_coeff_selects_deepmd_in_hybrid(self):
+        jdata = {"type_map": ["C", "Cl", "H", "O"]}
+        lines = [
+            "pair_style hybrid/overlay deepmd graph.pb zero 10.0\n",
+            "pair_coeff * * zero 10.0\n",
+            "pair_coeff * * deepmd\n",
+        ]
+
+        result = revise_lmp_input_pair_coeff(lines, jdata)
+
+        self.assertEqual(result[1], "pair_coeff * * zero 10.0\n")
+        self.assertEqual(result[2], "pair_coeff      * * deepmd C Cl H O\n")
+
+    def test_revise_lmp_input_pair_coeff_d3_is_idempotent(self):
+        jdata = {
+            "type_map": ["C", "Cl", "H", "O"],
+            "lmp_d3": {"enable": True},
+        }
+        lines = ["pair_style deepmd graph.pb\n", "pair_coeff * *\n"]
+
+        result = revise_lmp_input_pair_coeff(lines, jdata)
+        result = revise_lmp_input_pair_coeff(result, jdata)
+
+        self.assertEqual(result.count("pair_coeff      * * deepmd C Cl H O\n"), 1)
+        self.assertEqual(
+            result.count("pair_coeff      * * dispersion/d3 C Cl H O\n"), 1
+        )
+
     def test_find_only_one_key_1(self):
         lines = ["aaa bbb ccc\n", "bbb ccc\n", "ccc bbb ccc\n"]
         idx = find_only_one_key(lines, ["bbb", "ccc"])

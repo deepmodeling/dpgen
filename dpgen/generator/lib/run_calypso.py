@@ -29,9 +29,77 @@ calypso_run_opt_name = "gen_stru_analy"
 calypso_model_devi_name = "model_devi_results"
 
 
+def _find_models(path, model_suffix=".pb"):
+    """Find model-deviation artifacts for a deployment format.
+
+    Parameters
+    ----------
+    path : str or os.PathLike
+        Directory containing committee model artifacts.
+    model_suffix : str, optional
+        Resolved model filename suffix.
+
+    Returns
+    -------
+    list[str]
+        Paths matching the resolved committee model suffix.
+    """
+    return glob.glob(os.path.join(path, f"graph*{model_suffix}"))
+
+
+def _make_calypso_opt_command(deepmdkit_python, model_name):
+    """Build the CALYPSO optimization command for a resolved model.
+
+    Parameters
+    ----------
+    deepmdkit_python : str
+        Python executable used by the DeePMD environment.
+    model_name : str
+        Filename of the model artifact forwarded to CALYPSO.
+
+    Returns
+    -------
+    str
+        Shell command that invokes the optimization script.
+    """
+    return (
+        f"{deepmdkit_python} calypso_run_opt.py --model ../{model_name} "
+        "1>> model_devi.log 2>> model_devi.log"
+    )
+
+
 def gen_structures(
-    iter_index, jdata, mdata, caly_run_path, current_idx, length_of_caly_runopt_list
+    iter_index,
+    jdata,
+    mdata,
+    caly_run_path,
+    current_idx,
+    length_of_caly_runopt_list,
+    model_suffix=".pb",
 ):
+    """Generate and optimize one CALYPSO structure batch.
+
+    Parameters
+    ----------
+    iter_index : int
+        DP-GEN iteration index.
+    jdata : dict
+        DP-GEN workflow parameters.
+    mdata : dict
+        Machine and resource parameters.
+    caly_run_path : str
+        CALYPSO generation and optimization working directory.
+    current_idx : int
+        Index of the current CALYPSO generation.
+    length_of_caly_runopt_list : int
+        Number of CALYPSO generation directories.
+    model_suffix : str, optional
+        Resolved deployment-model suffix.
+
+    Returns
+    -------
+    None
+    """
     # run calypso
     # vsc means generate elemental, binary and ternary at the same time
     vsc = jdata.get("vsc", False)  # take CALYPSO as confs generator
@@ -50,13 +118,11 @@ def gen_structures(
     calypso_path = mdata.get("model_devi_calypso_path")
     # calypso_input_path = jdata.get('calypso_input_path')
 
-    all_models = glob.glob(os.path.join(calypso_run_opt_path, "graph*pb"))
+    all_models = _find_models(calypso_run_opt_path, model_suffix)
     model_names = [os.path.basename(ii) for ii in all_models]
 
     deepmdkit_python = mdata.get("model_devi_deepmdkit_python")
-    command = (
-        f"{deepmdkit_python} calypso_run_opt.py  1>> model_devi.log 2>> model_devi.log"
-    )
+    command = _make_calypso_opt_command(deepmdkit_python, sorted(model_names)[0])
     # command = "%s calypso_run_opt.py %s 1>> model_devi.log 2>> model_devi.log" % (deepmdkit_python,os.path.abspath(calypso_run_opt_path))
     # command += "  ||  %s check_outcar.py %s " % (deepmdkit_python,os.path.abspath(calypso_run_opt_path))
     command += f"  ||  {deepmdkit_python} check_outcar.py  "
@@ -335,7 +401,28 @@ def gen_structures(
     os.chdir(cwd)
 
 
-def gen_main(iter_index, jdata, mdata, caly_run_opt_list, gen_idx):
+def gen_main(iter_index, jdata, mdata, caly_run_opt_list, gen_idx, model_suffix=".pb"):
+    """Run CALYPSO generation from the selected generation index.
+
+    Parameters
+    ----------
+    iter_index : int
+        DP-GEN iteration index.
+    jdata : dict
+        DP-GEN workflow parameters.
+    mdata : dict
+        Machine and resource parameters.
+    caly_run_opt_list : list[str]
+        Ordered CALYPSO generation directories.
+    gen_idx : int
+        Generation index from which to resume.
+    model_suffix : str, optional
+        Resolved deployment-model suffix.
+
+    Returns
+    -------
+    None
+    """
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, model_devi_name)
 
@@ -353,7 +440,13 @@ def gen_main(iter_index, jdata, mdata, caly_run_opt_list, gen_idx):
     for iidx, temp_path in enumerate(caly_run_opt_list):
         if iidx >= indice:
             gen_structures(
-                iter_index, jdata, mdata, temp_path, iidx, len(caly_run_opt_list)
+                iter_index,
+                jdata,
+                mdata,
+                temp_path,
+                iidx,
+                len(caly_run_opt_list),
+                model_suffix=model_suffix,
             )
 
 
@@ -448,7 +541,24 @@ def analysis(iter_index, jdata, calypso_model_devi_path):
     os.chdir(cwd)
 
 
-def run_calypso_model_devi(iter_index, jdata, mdata):
+def run_calypso_model_devi(iter_index, jdata, mdata, model_suffix=".pb"):
+    """Run the CALYPSO model-deviation workflow.
+
+    Parameters
+    ----------
+    iter_index : int
+        DP-GEN iteration index.
+    jdata : dict
+        DP-GEN workflow parameters.
+    mdata : dict
+        Machine and resource parameters.
+    model_suffix : str, optional
+        Resolved deployment-model suffix.
+
+    Returns
+    -------
+    None
+    """
     dlog.info("start running CALYPSO")
 
     iter_name = make_iter_name(iter_index)
@@ -483,7 +593,14 @@ def run_calypso_model_devi(iter_index, jdata, mdata):
         if lines[-1].strip().strip("\n").split()[0] == "1":
             # Gen Structures
             gen_index = lines[-1].strip().strip("\n").split()[1]
-            gen_main(iter_index, jdata, mdata, caly_run_opt_list, gen_index)
+            gen_main(
+                iter_index,
+                jdata,
+                mdata,
+                caly_run_opt_list,
+                gen_index,
+                model_suffix=model_suffix,
+            )
 
         elif lines[-1].strip().strip("\n") == "2":
             # Analysis & to deepmd/raw
@@ -492,7 +609,7 @@ def run_calypso_model_devi(iter_index, jdata, mdata):
         elif lines[-1].strip().strip("\n") == "3":
             # Model Devi
             _calypso_run_opt_path = os.path.abspath(caly_run_opt_list[0])
-            all_models = glob.glob(os.path.join(_calypso_run_opt_path, "graph*pb"))
+            all_models = _find_models(_calypso_run_opt_path, model_suffix)
             cwd = os.getcwd()
             os.chdir(calypso_model_devi_path)
             args = " ".join(
