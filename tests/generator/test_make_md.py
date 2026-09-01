@@ -11,7 +11,11 @@ from unittest.mock import patch
 import dpdata
 import numpy as np
 
-from dpgen.generator.run import _read_model_devi_file, parse_cur_job_sys_revmat
+from dpgen.generator.run import (
+    _read_model_devi_file,
+    parse_cur_job_sys_revmat,
+    revise_lmp_input_pair_coeff,
+)
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
@@ -203,6 +207,7 @@ class TestMakeModelDevi(unittest.TestCase):
             lammps_input.index("atom_modify        map yes"),
             lammps_input.index("read_data"),
         )
+        self.assertIn("pair_coeff      * * Mg Al\n", lammps_input)
 
     def test_make_model_devi_pimd(self):
         if os.path.isdir("iter.000000"):
@@ -683,6 +688,51 @@ class TestParseCurJobSysRevMat(unittest.TestCase):
 
 
 class MakeModelDeviByReviseMatrix(unittest.TestCase):
+    def test_revise_lmp_input_pair_coeff_adds_type_map(self):
+        jdata = {"type_map": ["C", "Cl", "H", "O"]}
+        cases = (
+            ("pair_coeff\n", "pair_coeff      * * C Cl H O\n"),
+            ("pair_coeff * *\n", "pair_coeff      * * C Cl H O\n"),
+            (
+                "pair_coeff * * deepmd\n",
+                "pair_coeff      * * deepmd C Cl H O\n",
+            ),
+        )
+
+        for pair_coeff, expected in cases:
+            with self.subTest(pair_coeff=pair_coeff):
+                lines = ["pair_style deepmd graph.pb\n", pair_coeff]
+                result = revise_lmp_input_pair_coeff(lines, jdata)
+                self.assertEqual(result[1], expected)
+
+    def test_revise_lmp_input_pair_coeff_preserves_explicit_mapping(self):
+        jdata = {"type_map": ["C", "Cl", "H", "O"]}
+        cases = (
+            "pair_coeff * * H O\n",
+            "pair_coeff * * deepmd H O\n",
+        )
+
+        for pair_coeff in cases:
+            with self.subTest(pair_coeff=pair_coeff):
+                lines = ["pair_style deepmd graph.pb\n", pair_coeff]
+                result = revise_lmp_input_pair_coeff(lines, jdata)
+                self.assertEqual(result[1], pair_coeff)
+
+    def test_revise_lmp_input_pair_coeff_d3_is_idempotent(self):
+        jdata = {
+            "type_map": ["C", "Cl", "H", "O"],
+            "lmp_d3": {"enable": True},
+        }
+        lines = ["pair_style deepmd graph.pb\n", "pair_coeff * *\n"]
+
+        result = revise_lmp_input_pair_coeff(lines, jdata)
+        result = revise_lmp_input_pair_coeff(result, jdata)
+
+        self.assertEqual(result.count("pair_coeff      * * deepmd C Cl H O\n"), 1)
+        self.assertEqual(
+            result.count("pair_coeff      * * dispersion/d3 C Cl H O\n"), 1
+        )
+
     def test_find_only_one_key_1(self):
         lines = ["aaa bbb ccc\n", "bbb ccc\n", "ccc bbb ccc\n"]
         idx = find_only_one_key(lines, ["bbb", "ccc"])
