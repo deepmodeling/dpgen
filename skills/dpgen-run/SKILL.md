@@ -4,7 +4,7 @@ description: Prepare, explain, validate, and run DP-GEN concurrent-learning work
 license: LGPL-3.0-or-later
 metadata:
   author: MatMaster
-  version: 0.2.0
+  version: 0.2.1
   repository: https://github.com/deepmodeling/dpgen
 ---
 

@@ -85,6 +85,29 @@ job hash. SSH contexts place work beneath a submission-hash-specific remote
 directory, so a new identity does not recover the old submission JSON, job IDs,
 or completion tags and may submit the stage as fresh work.
 
+### What the machine-file checksum means
+
+DPDispatcher does not hash the raw bytes of `machine.json`. The checksum is
+useful provenance, but restart behavior follows the resolved current-stage
+submission identity:
+
+| Restart situation | Expected behavior |
+| --- | --- |
+| `machine.json` is byte-identical, the DP-GEN/DPDispatcher versions are unchanged, and the same stage generates the same tasks and common-file lists | The same submission hash is expected, so DPDispatcher can recover the existing submission JSON and scheduler job IDs. |
+| The file checksum changed, but the resolved block for the active stage did not (for example, only `fp` changed while `train` is active) | The active-stage submission hash may remain unchanged and recover normally. The raw checksum alone cannot decide this. |
+| A resolved machine/resource field for the active stage changed, or the generated tasks/common-file lists changed | A new submission hash is expected. DP-GEN re-enters the stage named by `record.dpgen`, but DPDispatcher treats its generated task list as a fresh submission rather than importing completion state from the old identity. |
+
+An unchanged machine file is therefore not sufficient if `param.json`, task
+generation, common files, or serialization behavior changed. Conversely, a
+changed file checksum does not necessarily restart the active stage.
+
+After restart, require positive evidence of recovery: the log should report
+`Find old submission; recover submission from json file` with the previous
+submission hash, the scheduler job IDs should be unchanged, and no new
+`was submitted` message should appear. `record.dpgen` is a workflow-stage
+pointer; it is not a scheduler completion record and does not cancel an older
+active job when a new submission identity is created.
+
 `ratio_unfinished` controls how many tasks may remain unfinished while
 evaluating one submission. It does not select only unfinished tasks from a
 different submission identity and does not migrate completion state between
