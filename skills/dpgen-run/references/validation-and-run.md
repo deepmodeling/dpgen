@@ -71,7 +71,50 @@ For `train`, `model_devi`, and `fp`, verify:
 
 A successful outer `dpgen -h` does not validate dispatched environments.
 
-## 7. Confirm before launch
+## 7. Restart and recovery safety
+
+Treat a restart from an existing `record.dpgen` as a potentially cost-bearing
+operation, especially after changing `machine.json`.
+
+Current DPDispatcher submission identity includes the resolved machine,
+resources, common files, work path, and generated jobs. Job identity includes
+the resources and tasks. Consequently, changes such as command, context,
+remote root, queue, node count, `group_size`, scheduler flags, environment
+activation, or `strategy.ratio_unfinished` can produce a new submission or
+job hash. SSH contexts place work beneath a submission-hash-specific remote
+directory, so a new identity does not recover the old submission JSON, job IDs,
+or completion tags and may submit the stage as fresh work.
+
+`ratio_unfinished` controls how many tasks may remain unfinished while
+evaluating one submission. It does not select only unfinished tasks from a
+different submission identity and does not migrate completion state between
+hashes.
+
+Before restarting:
+
+1. Stop or rule out another active `dpgen run` controller for the same work
+   directory.
+1. Record the current `record.dpgen`, scheduler job IDs, submission records,
+   and the old and proposed stage configuration. A file checksum is useful for
+   provenance, but inspect the resolved stage values to judge identity changes.
+1. Query the scheduler before retrying an ambiguous submission. Do not infer
+   that a timeout or disconnected SSH session means nothing was submitted.
+1. If the old submission is active, either let it finish under the exact old
+   configuration or deliberately cancel/migrate it after preserving job IDs
+   and logs. Do not start a second controller against the edited stage.
+1. If enough outputs already exist, verify task counts, completion markers,
+   parser-readable results, and the configured failure policy before moving to
+   post-processing. Prefer completing retrieval with the old configuration.
+   Advance or repair `record.dpgen` only when the installed DP-GEN stage
+   semantics are verified and the recovery is documented.
+1. If a new submission is intentional, independently enumerate its exact task
+   set and confirm it contains only the work meant to be rerun. Do not assume
+   DPDispatcher will infer this from existing local outputs.
+
+Apply machine changes intended for later iterations only after the current
+cost-bearing stage has advanced beyond them.
+
+## 8. Confirm before launch
 
 Show the exact files, validation summary, unresolved risks, and command:
 
@@ -81,6 +124,6 @@ dpgen run param.json machine.json
 
 Execute only after the user explicitly requests the run and confirms this exact validated command. If the user requested only preparation or validation, stop here.
 
-## 8. Inspect outputs
+## 9. Inspect outputs
 
 After launch, report the current `iter.*` directory and the status of training, model-deviation, and FP tasks. Summarize failures from stage logs and report selected and labeled structure counts when available.

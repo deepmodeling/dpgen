@@ -54,5 +54,8 @@ Patch the closest existing working configuration. Do not transplant site-specifi
 - Require explicit `source_list` activation for scheduler stages.
 - Preserve working local omissions and installed-version aliases.
 - Ensure the training command selects the same backend as `train_backend` and all commands match the scientific stack selected in `param.json`.
+- Do not treat a mid-stage `machine.json` edit as an in-place scheduler update.
+  Before restarting an existing iteration after any stage-machine or resource
+  change, follow the [restart and recovery checks](validation-and-run.md#7-restart-and-recovery-safety).
 
 External machine reference: https://docs.deepmodeling.com/projects/dpgen/en/latest/run/mdata.html
