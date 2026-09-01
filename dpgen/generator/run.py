@@ -229,6 +229,18 @@ def _get_input_model_suffix(models) -> str:
 
 
 def _iter_model_sections(training_param):
+    """Yield the top-level model and each model-dictionary branch.
+
+    Parameters
+    ----------
+    training_param : dict
+        DeePMD training parameters.
+
+    Yields
+    ------
+    tuple[str, dict]
+        The dotted configuration path and corresponding model section.
+    """
     model = training_param.get("model", {})
     yield "model", model
     for name, branch in (model.get("model_dict") or {}).items():
@@ -236,6 +248,23 @@ def _iter_model_sections(training_param):
 
 
 def _get_dpa_model_family(training_param) -> Optional[str]:
+    """Identify the DPA model family in a training configuration.
+
+    Parameters
+    ----------
+    training_param : dict
+        DeePMD training parameters.
+
+    Returns
+    -------
+    str or None
+        "dpa4", "dpa4c", or None when neither family is present.
+
+    Raises
+    ------
+    ValueError
+        If DPA4 and DPA4C branches are mixed in one configuration.
+    """
     families = set()
     for _, model in _iter_model_sections(training_param):
         model_type = model.get("type")
@@ -262,7 +291,23 @@ def _get_dpa_model_family(training_param) -> Optional[str]:
 
 
 def _validate_dpa_training_config(jdata) -> None:
-    """Validate DPA4/DPA4C backend and acceleration-option placement."""
+    """Validate DPA backend, format, and acceleration-option placement.
+
+    Parameters
+    ----------
+    jdata : dict
+        DP-GEN parameters containing the training and deployment configuration.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    ValueError
+        If the model family, backend, deployment format, or acceleration
+        options are incompatible.
+    """
     training_param = jdata.get("default_training_param", {})
     family = _get_dpa_model_family(training_param)
     train_backend, _ = _get_train_backend_config(jdata)
@@ -1373,7 +1418,26 @@ def revise_lmp_input_model(
 
 
 def revise_lmp_input_pair_coeff(lmp_lines, jdata=None):
-    """Add explicit DeepMD element mapping and D3 pair coefficients."""
+    """Add explicit DeepMD element mapping and D3 pair coefficients.
+
+    Parameters
+    ----------
+    lmp_lines : list[str]
+        Lines from a LAMMPS input template.
+    jdata : dict, optional
+        DP-GEN parameters, including type_map and optional D3 settings.
+
+    Returns
+    -------
+    list[str]
+        The updated LAMMPS input lines.
+
+    Raises
+    ------
+    RuntimeError
+        If a coefficient must be inserted but the template does not contain
+        exactly one pair_style line.
+    """
     if jdata is None:
         return lmp_lines
 
@@ -1386,7 +1450,12 @@ def revise_lmp_input_pair_coeff(lmp_lines, jdata=None):
     if not d3_enabled and not type_map:
         return lmp_lines
 
+    pair_style_idx = find_only_one_key(lmp_lines, ["pair_style"])
+    pair_style_tokens = lmp_lines[pair_style_idx].partition("#")[0].split()
+    hybrid_pair_style = pair_style_tokens[1].startswith("hybrid")
+
     deepmd_coeff_idx = None
+    fallback_coeff_idx = None
     d3_coeff_idx = None
     for idx, line in enumerate(lmp_lines):
         tokens = line.partition("#")[0].split()
@@ -1394,16 +1463,24 @@ def revise_lmp_input_pair_coeff(lmp_lines, jdata=None):
             continue
         if "dispersion/d3" in tokens:
             d3_coeff_idx = idx
-        elif deepmd_coeff_idx is None:
+        elif tokens[3:4] == ["deepmd"] and deepmd_coeff_idx is None:
             deepmd_coeff_idx = idx
+        elif fallback_coeff_idx is None:
+            fallback_coeff_idx = idx
+
+    if deepmd_coeff_idx is None and fallback_coeff_idx is not None:
+        fallback_tokens = lmp_lines[fallback_coeff_idx].partition("#")[0].split()
+        fallback_is_bare = fallback_tokens in (
+            ["pair_coeff"],
+            ["pair_coeff", "*", "*"],
+        )
+        if not hybrid_pair_style or (d3_enabled and fallback_is_bare):
+            deepmd_coeff_idx = fallback_coeff_idx
 
     if deepmd_coeff_idx is None:
-        pair_style_idx = find_only_one_key(lmp_lines, ["pair_style"])
         deepmd_coeff_idx = pair_style_idx + 1
-        if d3_enabled:
-            line = f"pair_coeff      * * deepmd{type_map_args}\n"
-        else:
-            line = f"pair_coeff      * *{type_map_args}\n"
+        style = " deepmd" if d3_enabled or hybrid_pair_style else ""
+        line = f"pair_coeff      * *{style}{type_map_args}\n"
         lmp_lines.insert(deepmd_coeff_idx, line)
         if d3_coeff_idx is not None and d3_coeff_idx >= deepmd_coeff_idx:
             d3_coeff_idx += 1

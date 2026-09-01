@@ -718,6 +718,19 @@ class MakeModelDeviByReviseMatrix(unittest.TestCase):
                 result = revise_lmp_input_pair_coeff(lines, jdata)
                 self.assertEqual(result[1], pair_coeff)
 
+    def test_revise_lmp_input_pair_coeff_selects_deepmd_in_hybrid(self):
+        jdata = {"type_map": ["C", "Cl", "H", "O"]}
+        lines = [
+            "pair_style hybrid/overlay deepmd graph.pb zero 10.0\n",
+            "pair_coeff * * zero 10.0\n",
+            "pair_coeff * * deepmd\n",
+        ]
+
+        result = revise_lmp_input_pair_coeff(lines, jdata)
+
+        self.assertEqual(result[1], "pair_coeff * * zero 10.0\n")
+        self.assertEqual(result[2], "pair_coeff      * * deepmd C Cl H O\n")
+
     def test_revise_lmp_input_pair_coeff_d3_is_idempotent(self):
         jdata = {
             "type_map": ["C", "Cl", "H", "O"],

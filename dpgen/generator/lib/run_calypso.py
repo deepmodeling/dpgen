@@ -30,12 +30,38 @@ calypso_model_devi_name = "model_devi_results"
 
 
 def _find_models(path, model_suffix=".pb"):
-    """Return model-deviation artifacts for the resolved deployment format."""
+    """Find model-deviation artifacts for a deployment format.
+
+    Parameters
+    ----------
+    path : str or os.PathLike
+        Directory containing committee model artifacts.
+    model_suffix : str, optional
+        Resolved model filename suffix.
+
+    Returns
+    -------
+    list[str]
+        Paths matching the resolved committee model suffix.
+    """
     return glob.glob(os.path.join(path, f"graph*{model_suffix}"))
 
 
 def _make_calypso_opt_command(deepmdkit_python, model_name):
-    """Return the CALYPSO optimization command for the resolved model."""
+    """Build the CALYPSO optimization command for a resolved model.
+
+    Parameters
+    ----------
+    deepmdkit_python : str
+        Python executable used by the DeePMD environment.
+    model_name : str
+        Filename of the model artifact forwarded to CALYPSO.
+
+    Returns
+    -------
+    str
+        Shell command that invokes the optimization script.
+    """
     return (
         f"{deepmdkit_python} calypso_run_opt.py --model ../{model_name} "
         "1>> model_devi.log 2>> model_devi.log"
@@ -51,6 +77,29 @@ def gen_structures(
     length_of_caly_runopt_list,
     model_suffix=".pb",
 ):
+    """Generate and optimize one CALYPSO structure batch.
+
+    Parameters
+    ----------
+    iter_index : int
+        DP-GEN iteration index.
+    jdata : dict
+        DP-GEN workflow parameters.
+    mdata : dict
+        Machine and resource parameters.
+    caly_run_path : str
+        CALYPSO generation and optimization working directory.
+    current_idx : int
+        Index of the current CALYPSO generation.
+    length_of_caly_runopt_list : int
+        Number of CALYPSO generation directories.
+    model_suffix : str, optional
+        Resolved deployment-model suffix.
+
+    Returns
+    -------
+    None
+    """
     # run calypso
     # vsc means generate elemental, binary and ternary at the same time
     vsc = jdata.get("vsc", False)  # take CALYPSO as confs generator
@@ -353,6 +402,27 @@ def gen_structures(
 
 
 def gen_main(iter_index, jdata, mdata, caly_run_opt_list, gen_idx, model_suffix=".pb"):
+    """Run CALYPSO generation from the selected generation index.
+
+    Parameters
+    ----------
+    iter_index : int
+        DP-GEN iteration index.
+    jdata : dict
+        DP-GEN workflow parameters.
+    mdata : dict
+        Machine and resource parameters.
+    caly_run_opt_list : list[str]
+        Ordered CALYPSO generation directories.
+    gen_idx : int
+        Generation index from which to resume.
+    model_suffix : str, optional
+        Resolved deployment-model suffix.
+
+    Returns
+    -------
+    None
+    """
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, model_devi_name)
 
@@ -472,6 +542,23 @@ def analysis(iter_index, jdata, calypso_model_devi_path):
 
 
 def run_calypso_model_devi(iter_index, jdata, mdata, model_suffix=".pb"):
+    """Run the CALYPSO model-deviation workflow.
+
+    Parameters
+    ----------
+    iter_index : int
+        DP-GEN iteration index.
+    jdata : dict
+        DP-GEN workflow parameters.
+    mdata : dict
+        Machine and resource parameters.
+    model_suffix : str, optional
+        Resolved deployment-model suffix.
+
+    Returns
+    -------
+    None
+    """
     dlog.info("start running CALYPSO")
 
     iter_name = make_iter_name(iter_index)

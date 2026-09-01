@@ -112,7 +112,21 @@ def read_stress_fmax():
 
 
 def run_opt(fmax, stress, model):
-    """Using the ASE&DP to Optimize Configures."""
+    """Optimize a CALYPSO structure with ASE and a DeePMD model.
+
+    Parameters
+    ----------
+    fmax : float
+        Maximum force convergence threshold for the ASE optimizer.
+    stress : float
+        Target external pressure in kbar.
+    model : str
+        Path to the frozen DeePMD model artifact.
+
+    Returns
+    -------
+    None
+    """
     calc = DP(model=model)  # init the model before iteration
     os.system("mv OUTCAR OUTCAR-last")
 
@@ -165,6 +179,12 @@ def run_opt(fmax, stress, model):
 
 
 def run():
+    """Run the CALYPSO optimization command-line entry point.
+
+    Returns
+    -------
+    None
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", default="../graph.000.pb")
     args = parser.parse_args()
