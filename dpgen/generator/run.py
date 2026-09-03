@@ -460,7 +460,6 @@ def make_train_dp(iter_index, jdata, mdata):
         # 1.x
         jinput["training"]["systems"] = init_data_sys
         jinput["training"]["batch_size"] = init_batch_size
-        jinput["model"]["type_map"] = jdata["type_map"]
         # electron temperature
         if use_ele_temp == 0:
             pass
@@ -483,7 +482,6 @@ def make_train_dp(iter_index, jdata, mdata):
             isinstance(old_batch_size, str) and old_batch_size.startswith("mixed:")
         ):
             jinput["training"]["training_data"]["batch_size"] = init_batch_size
-        jinput["model"]["type_map"] = jdata["type_map"]
         # electron temperature
         if use_ele_temp == 0:
             pass

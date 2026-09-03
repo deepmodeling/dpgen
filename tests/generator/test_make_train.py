@@ -580,6 +580,34 @@ class TestMakeTrain(unittest.TestCase):
         # remove testing dirs
         shutil.rmtree("iter.000000")
 
+    def test_model_type_map_is_not_overwritten(self):
+        """Keep explicit model maps and do not inject the top-level map."""
+        for param_name, machine_name in (
+            (param_file_v1, machine_file_v1),
+            (param_file, machine_file),
+        ):
+            with open(param_name) as fp:
+                jdata = json.load(fp)
+            jdata["default_training_param"]["model"]["type_map"] = ["Al", "Mg"]
+            with open(machine_name) as fp:
+                mdata = json.load(fp)
+            make_train(0, jdata, mdata)
+            input_path = os.path.join("iter.000000", "00.train", "000", "input.json")
+            with open(input_path) as fp:
+                model_input = json.load(fp)
+            self.assertEqual(model_input["model"]["type_map"], ["Al", "Mg"])
+            shutil.rmtree("iter.000000")
+
+            with open(param_name) as fp:
+                jdata = json.load(fp)
+            jdata["default_training_param"]["model"].pop("type_map", None)
+            make_train(0, jdata, mdata)
+            input_path = os.path.join("iter.000000", "00.train", "000", "input.json")
+            with open(input_path) as fp:
+                model_input = json.load(fp)
+            self.assertNotIn("type_map", model_input["model"])
+            shutil.rmtree("iter.000000")
+
     def test_training_init_frozen_model(self):
         """Test `training_init_frozen_model`."""
         with open(param_file_v1) as fp:
