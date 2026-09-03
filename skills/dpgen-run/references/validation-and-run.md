@@ -43,7 +43,7 @@ not inherited reliably. The training command must select the same backend as
 commands, context types, batch aliases, roots, and resources against installed
 DPDispatcher rather than normalizing by assumption.
 
-## 3. Validate before launch
+## 3. Validate generated inputs before launch
 
 ```bash
 dpgen -h
@@ -52,22 +52,37 @@ python -m json.tool machine.json
 ```
 
 Normalize `param.json` with `run_jdata_arginfo()` and convert `machine.json` with
-`convert_mdata()`. Then resolve all data/structure paths, compare type maps,
-check executables and scheduler access, and verify FP inputs and cost limits.
+`convert_mdata()`. Resolve all data/structure paths, compare type maps, check
+executables and scheduler access, and verify FP inputs and cost limits.
+
+Before submission, inspect the generated `input.json` for every stage/task. Do
+not infer the effective configuration from the root files: check model count,
+seed, checkpoint, data systems, `sys_idx`, temperatures/pressures, and final
+training steps. When reuse or iteration overrides exist, assert both the default
+and effective values.
+
+Cross-check the intended iteration against `record.dpgen`, stage directories,
+DPDispatcher work base/submission metadata, and logs. A stage is not complete
+because a directory or job exists.
 
 ## 4. Restart and recovery
 
-Treat a restart from `record.dpgen` as cost-bearing. A changed active-stage
-command, context, remote root, queue, resources, `group_size`, flags,
-activation, task list, or common files can create a new DPDispatcher submission
-identity. It will not import completion state from the old identity.
+Treat a restart from `record.dpgen` as cost-bearing. Keep one controller for a
+work directory. Before editing state, stop it, back up the state file, record
+stage/job IDs and old/new settings, and query the scheduler.
 
-Before retrying, stop or rule out another controller, record stage/job IDs and
-old/new settings, query the scheduler, and preserve logs. Positive recovery
-evidence is the old submission hash, unchanged job IDs, and a recovery message;
-absence of a new-submission message is required. `record.dpgen` is a workflow
-pointer, not a scheduler completion record. Apply later-iteration machine
-changes only after the current cost-bearing stage advances.
+A changed active-stage command, context, remote root, queue, resources,
+`group_size`, flags, activation, task list, or common files can create a new
+DPDispatcher submission identity. It will not import completion state from the
+old identity. Distinguish recovery of the old submission from an intentional
+rerun with a new remote root; never resubmit solely because a connection timed
+out.
+
+Positive recovery evidence is the old submission hash, unchanged job IDs, and a
+recovery message; absence of a new-submission message is required.
+`record.dpgen` is a workflow pointer, not a scheduler completion record.
+Apply later-iteration machine changes only after the current cost-bearing stage
+advances.
 
 ## 5. Confirm and inspect
 

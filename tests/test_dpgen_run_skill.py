@@ -71,12 +71,48 @@ class TestDPGenRunSkill(unittest.TestCase):
             "labeling",
             "rmse",
             "model deviation",
+            "labeling",
+            "fp failure",
+            "system",
+            "condition",
+            "override",
         ):
             self.assertIn(term, monitoring)
+
+        validation = (
+            (
+                repository_root
+                / "skills"
+                / "dpgen-run"
+                / "references"
+                / "validation-and-run.md"
+            )
+            .read_text()
+            .lower()
+        )
+        for term in (
+            "record.dpgen",
+            "input.json",
+            "submission identity",
+            "sys_idx",
+            "generated",
+        ):
+            self.assertIn(term, validation)
 
         references = repository_root / "skills" / "dpgen-run" / "references"
         self.assertFalse((references / "param-json.md").exists())
         self.assertFalse((references / "machine-json.md").exists())
+
+    def test_skill_docs_are_project_agnostic(self):
+        repository_root = Path(__file__).resolve().parents[1]
+        documents = [
+            path.read_text()
+            for path in skill_markdown_files(repository_root)
+            if path.name != "test_dpgen_run_skill.py"
+        ]
+        text = "\n".join(documents)
+        self.assertNotRegex(text, r"(?m)(?:^|\s)/(?:[A-Za-z0-9_.-]+/)+")
+        self.assertNotRegex(text, r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b")
 
     def test_all_repository_relative_links_exist(self):
         repository_root = Path(__file__).resolve().parents[1]

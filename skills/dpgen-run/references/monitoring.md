@@ -1,45 +1,54 @@
 # DP-GEN Monitoring and Troubleshooting
 
-Load this reference after each iteration or whenever training accuracy stalls.
-Here "accuracy" means energy/force train and validation RMSE; model deviation
-measures sampling uncertainty, not accuracy.
+Load this reference after each iteration or whenever accuracy or stage progress
+stalls. Here "accuracy" means energy/force train and validation RMSE; model
+deviation and FP failure ratio are separate signals.
 
-## Record every iteration
+## Evidence loop
 
-- train/validation energy and force RMSE from `lcurve.out` or equivalent logs;
-- model-deviation distributions and the low/high trust-window counts;
-- candidate, FP-success, FP-failure, and newly labeled structure counts;
-- current `iter.*`, `record.dpgen`, pending jobs, and whether the next iteration
-  actually contains the new data.
+For each iteration, record the parameter/configuration identity, systems and
+temperature/pressure conditions, train/validation RMSE, model-deviation
+accurate/candidate/failed counts, FP success/failure counts, current stage, and
+whether new labels reached the next training input. Report per-system and
+per-condition results before any global aggregate.
 
 ## Diagnose in this order
 
-| Symptom                                              | First checks                                                                   | Focused adjustment                                                                                    |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| Train and validation RMSE both stay high             | Units, labels, `type_map`, data coverage, descriptor capacity                  | Fix data/schema first; then review descriptor, fitting net, learning rate, and steps                  |
-| Train RMSE falls but validation RMSE stalls or rises | Split leakage, duplicates, outliers, validation coverage                       | Deduplicate/re-split; add representative labels; reduce overfitting only after data is sound          |
-| RMSE is good but model deviation is high             | Unseen compositions/geometries, temperature/pressure range, initial structures | Broaden `model_devi_jobs`, temperatures, ensembles, or initial structures; label the candidate window |
-| Candidate count is zero                              | Trust thresholds, MD stability, trajectory frequency, model diversity          | Check thresholds and sampling settings before changing the model                                      |
-| Candidate count is excessive or mostly failed FP     | Thresholds too loose, unstable MD, bad structures, FP convergence              | Tighten/repair sampling and FP inputs; do not flood training with failed labels                       |
-| New labels do not improve the next round             | FP failures, wrong paths, stale `record.dpgen`, data not appended              | Verify stage completion, merged systems, and restart identity                                         |
+| Symptom                                              | First checks                                                                 | Focused adjustment                                                          |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Train and validation RMSE both stay high             | Units, labels, type map, coverage, descriptor capacity                       | Fix data/schema first; then review fitting net, learning rate, and steps    |
+| Train RMSE falls but validation RMSE stalls or rises | Split leakage, duplicates, outliers, validation coverage                     | Re-split or deduplicate; add representative labels before changing capacity |
+| RMSE is good but model deviation is high             | Unseen systems/geometries or conditions, initial structures                  | Broaden targeted sampling and labeling the candidate window                 |
+| Candidate count is zero                              | Trust thresholds, MD stability, trajectory frequency, model diversity        | Check thresholds and sampling settings before changing training             |
+| Candidate count is excessive or FP failures rise     | Thresholds, unstable MD, malformed structures, FP convergence                | Repair inputs/sampling; do not add failed labels                            |
+| Stage does not advance or task count is wrong        | record state, schedule length, sys_idx, generated input, submission metadata | Reconcile state and actual tasks; do not restart blindly                    |
+| Effective steps differ from requested steps          | Reuse/iteration override in generated input                                  | Compare root and task-level values; fix the override deliberately           |
 
-## Data checks
+## Data and label checks
 
-Check units and signs, atom ordering, `type_map.raw`, duplicate structures,
-energy/force/stress consistency, abnormal magnitudes, and FP convergence.
-Ensure train/validation data cover every composition, geometry, and target
-temperature/pressure rather than only adding more near-duplicates.
+Check units and signs, atom ordering, type maps, duplicates, abnormal
+magnitudes, and train/validation coverage. Every training frame must have
+finite, parseable energy and force; include virial/stress only when configured
+and verified. Reject incomplete, duplicated, or unconverged labels before
+merging them into training data.
 
 ## Training checks
 
-Compare train versus validation curves, loss components, learning-rate decay,
-step budget, batch size, model capacity, ensemble seeds, and backend/version
-compatibility. Change one major factor at a time and retain the previous curve
-for comparison.
+Compare train and validation curves, loss components, learning-rate decay, step
+budget, batch size, model capacity, ensemble seeds, and backend/version
+compatibility. A good global metric must not hide a failing system or condition.
+Change one major factor at a time and retain the previous evidence.
 
-## Sampling and labeling checks
+## Sampling and decision checks
 
 Inspect MD stability, temperatures, pressures, ensembles, `nsteps`, `trj_freq`,
-and trust-window placement. Confirm selected structures are labeled successfully,
-new data are included in the next training systems, and old/new data remain
-balanced. Record conclusions in the project journal; never retune silently.
+trust-window placement, and per-condition distributions. Distinguish a model
+problem from missing coverage: good RMSE with high deviation usually calls for
+targeted sampling, while high RMSE on covered data calls for data or training
+review.
+
+Monitoring is an evidence-based decision stage, not only status reporting.
+Before extending sampling, changing thresholds, increasing steps, or restarting,
+record the evidence, exact parameter delta, expected effect, and controller
+state. Afterward record the new task identity and outcome; never retune or
+restart silently.

@@ -23,14 +23,14 @@ Use this skill for the iterative train, explore, label, and retrain workflow.
 1. Inspect existing data and configurations before asking for inputs.
 1. Patch working files and preserve scientific/site-specific choices.
 1. Load only the references needed for the task.
-1. Validate data, schemas, commands, environments, and monitoring signals.
-1. Report paths, command, risks, iteration status, and next checks.
+1. Validate schemas, generated task inputs, stage state, and monitoring signals.
+1. Report paths, command, per-system evidence, risks, and next checks.
 
 ## References
 
 - [Workflow guidance](references/workflow.md): scope, layout, policy, and reporting.
-- [Configuration, validation, and execution](references/validation-and-run.md): both JSON files and safe launch/restart checks.
-- [Monitoring and troubleshooting](references/monitoring.md): accuracy trends and diagnosis.
+- [Configuration, validation, and execution](references/validation-and-run.md): both JSON files, generated-input checks, and safe launch/restart checks.
+- [Monitoring and troubleshooting](references/monitoring.md): accuracy trends, stage progress, and evidence-based diagnosis.
 
 ## Guardrails
 
