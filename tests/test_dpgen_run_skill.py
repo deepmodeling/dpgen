@@ -45,13 +45,38 @@ class TestDPGenRunSkill(unittest.TestCase):
         skill_path = repository_root / SKILL_RELATIVE_PATH
         skill_text = skill_path.read_text()
 
-        self.assertLessEqual(len(skill_text.splitlines()), 50)
+        self.assertLessEqual(len(skill_text.splitlines()), 40)
         reference_targets = {
             target
             for target in LINK_PATTERN.findall(skill_text)
             if target.startswith("references/")
         }
-        self.assertEqual(len(reference_targets), 4)
+        self.assertEqual(len(reference_targets), 3)
+
+    def test_reference_files_are_small_and_monitoring_is_actionable(self):
+        repository_root = Path(__file__).resolve().parents[1]
+        for markdown_path in skill_markdown_files(repository_root):
+            with self.subTest(markdown_path=markdown_path):
+                self.assertLessEqual(len(markdown_path.read_text().splitlines()), 100)
+
+        monitoring = (
+            (repository_root / "skills" / "dpgen-run" / "references" / "monitoring.md")
+            .read_text()
+            .lower()
+        )
+        for term in (
+            "data",
+            "training",
+            "sampling",
+            "labeling",
+            "rmse",
+            "model deviation",
+        ):
+            self.assertIn(term, monitoring)
+
+        references = repository_root / "skills" / "dpgen-run" / "references"
+        self.assertFalse((references / "param-json.md").exists())
+        self.assertFalse((references / "machine-json.md").exists())
 
     def test_all_repository_relative_links_exist(self):
         repository_root = Path(__file__).resolve().parents[1]
@@ -78,11 +103,21 @@ class TestDPGenRunSkill(unittest.TestCase):
             + ", ".join(missing),
         )
 
-    def test_linked_parameter_examples_use_current_schema(self):
+    def test_parameter_examples_use_current_schema(self):
         repository_root = Path(__file__).resolve().parents[1]
-        examples_root = repository_root / "examples" / "run"
-        examples = linked_json_examples(repository_root, examples_root)
-        self.assertTrue(examples, "No examples/run/*.json links found")
+        examples = [
+            repository_root
+            / "examples"
+            / "run"
+            / "dp2.x-lammps-cp2k"
+            / "param_CH4_deepmd-kit-2.0.1.json",
+            repository_root
+            / "examples"
+            / "run"
+            / "dp2.x-lammps-vasp"
+            / "CH4"
+            / "param_CH4_deepmd-kit-2.x.json",
+        ]
 
         for example in examples:
             with self.subTest(example=example):
@@ -161,11 +196,15 @@ class TestDPGenRunSkill(unittest.TestCase):
                 )
                 self.assertEqual(normalized_backend["train_backend"], backend)
 
-    def test_linked_machine_examples_use_current_schema(self):
+    def test_current_machine_example_uses_current_schema(self):
         repository_root = Path(__file__).resolve().parents[1]
-        examples_root = repository_root / "examples" / "machine"
-        examples = linked_json_examples(repository_root, examples_root)
-        self.assertTrue(examples, "No examples/machine/*.json links found")
+        examples = [
+            repository_root
+            / "examples"
+            / "run"
+            / "dp2.x-lammps-gaussian"
+            / "machine.json",
+        ]
 
         for example in examples:
             with self.subTest(example=example):
@@ -205,25 +244,16 @@ class TestDPGenRunSkill(unittest.TestCase):
                     self.assertIn(f"{stage}_machine", converted)
                     self.assertIn(f"{stage}_resources", converted)
                     self.assertIn(f"{stage}_command", converted)
-                    converted_machine = converted[f"{stage}_machine"]
-                    converted_resources = converted[f"{stage}_resources"]
-                    converted_command = converted[f"{stage}_command"]
-                    self.assertIsInstance(converted_machine, dict)
-                    self.assertTrue(converted_machine)
-                    self.assertIsInstance(converted_resources, dict)
-                    self.assertTrue(converted_resources)
-                    self.assertIsInstance(converted_command, str)
-                    self.assertTrue(converted_command.strip())
                     self.assertEqual(
-                        converted_machine,
+                        converted[f"{stage}_machine"],
                         stage_values[stage]["machine"],
                     )
                     self.assertEqual(
-                        converted_resources,
+                        converted[f"{stage}_resources"],
                         stage_values[stage]["resources"],
                     )
                     self.assertEqual(
-                        converted_command,
+                        converted[f"{stage}_command"],
                         stage_values[stage]["command"],
                     )
 

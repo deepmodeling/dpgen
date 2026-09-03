@@ -1,97 +1,67 @@
-# DP-GEN Run Workflow Policy
+# DP-GEN Run Workflow Guidance
 
-Load this reference for end-to-end preparation, task scoping, project layout, or result reporting.
+Load this reference for scope, preparation policy, project layout, or reporting.
 
-## Scope and requirements
+## Loop
 
-`dpgen run` implements the concurrent-learning loop:
+`dpgen run` repeats five activities:
 
-1. train an ensemble of Deep Potential models
-1. explore configuration space, normally with LAMMPS MD
-1. select configurations in the model-deviation candidate window
-1. label selected structures with the configured first-principles backend
-1. add labeled data to the next training iteration
+1. train an ensemble of Deep Potential models;
+1. explore configurations, normally with LAMMPS MD;
+1. select structures in the model-deviation candidate window;
+1. label selected structures with the configured first-principles backend;
+1. add labels to the next training iteration.
 
-Preparation and validation require Python and DP-GEN. Execution additionally requires DeePMD-kit, a compatible exploration engine, the software selected by `fp_style`, and any scheduler runtime.
+Use `param.json` for scientific/workflow settings, `machine.json` for commands,
+contexts, and resources, and `dpgen run param.json machine.json` as the launcher.
+Preparation needs Python and DP-GEN. Execution also needs DeePMD-kit, the
+exploration engine, the selected FP software, and any scheduler runtime.
 
-The workflow always uses:
+## Preparation policy
 
-- `param.json` for scientific and workflow parameters
-- `machine.json` for commands, contexts, and resources
-- `dpgen run param.json machine.json` as the launcher
+Inspect existing configuration files, training inputs, dataset metadata, and
+machine templates first. Ask only for values that cannot be discovered. Patch
+working files instead of rebuilding them.
 
-## Working policy
+Preserve descriptor and fitting settings, training and FP backends, thresholds,
+`type_map` ordering, `model_devi_jobs`, ensemble size, temperatures, pressures,
+and MD ensembles. Explain concerns and request direction before changing them.
 
-### Inspect before asking
+Reuse known activation commands, executables, queues, partitions, accounts,
+paths, and scheduler flags exactly. Never guess site policy or conda/module setup.
 
-Look for existing configuration files, training inputs, dataset metadata, and machine templates. Ask only for values that cannot be discovered. Patch existing working files rather than rebuilding them without need.
-
-### Preserve scientific choices
-
-Do not silently change:
-
-- descriptor family or settings
-- fitting network
-- training backend
-- first-principles backend
-- trust thresholds
-- `type_map` ordering
-- `model_devi_jobs` schedule
-- ensemble size, temperatures, pressures, or MD ensembles
-
-Explain a concern and request direction before changing a scientific choice.
-
-### Preserve site-specific choices
-
-Reuse known activation commands, executable names, queues, partitions, accounts, paths, and scheduler flags exactly. Never guess conda environments, modules, personal paths, or cluster policy.
-
-### Keep execution separately authorized
-
-Preparing files, validating them, or displaying a command does not authorize an HPC, MD, training, or first-principles workload. Run only when the user explicitly requests execution and confirms the exact validated command.
-
-## Recommended layout
+## Generic layout
 
 ```text
 project/
 |-- param.json
 |-- machine.json
 |-- init_data/
-|   `-- system_000/
-|       |-- type_map.raw
-|       |-- type.raw
-|       `-- set.000/
-|-- assets/
-|   `-- structures/
-|-- cp2k_basis_pp_file/   # only when CP2K needs it
-`-- iter.*/              # created by DP-GEN
+|   `-- raw_xxx/          # DeepMD NumPy system(s)
+|-- assets/               # structures and runtime support files
+`-- iter.*/               # created by DP-GEN
 ```
 
-Keep repeated experiments in separate, clearly named directories derived from one reviewed base configuration.
+Keep repeated experiments in separate, clearly named directories derived from a
+reviewed base configuration. Backend-specific files belong under `assets/` or
+the path explicitly required by the selected backend.
 
-## Result contract
+## Reporting contract
 
-Before execution, report:
+Before execution, report absolute JSON paths, the exact command, validation
+results, unresolved inputs, and cost-bearing stages. Execute only after the user
+confirms that exact validated command.
 
-1. absolute paths to `param.json` and `machine.json`
-1. exact launcher command
-1. validation results
-1. unresolved required inputs
-1. expected cost-bearing stages
+After execution, report the current iteration and stage status, failed/pending
+tasks, main logs and outputs, candidate and labeled counts, accuracy trends, and
+the next files to inspect. Use [monitoring guidance](monitoring.md) when an
+iteration stalls or accuracy fails to improve.
 
-After execution, report:
-
-1. run and current iteration status
-1. failed or pending stages
-1. main output and log locations
-1. candidate and labeled counts when available
-1. the next files that need inspection
-
-## General guardrails
+## Guardrails
 
 - Never run before both JSON files exist and pass validation.
-- Keep `type_map` consistent from data through training and labeling.
-- Do not overwrite working user templates blindly.
-- Do not assume outer-shell activation reaches dispatched jobs.
+- Keep `type_map` consistent through data, training, and labeling.
+- Do not overwrite working templates blindly or assume outer activation reaches jobs.
 - Stop rather than guess a missing scientific or site-specific value.
 
 Official overview: https://docs.deepmodeling.com/projects/dpgen/en/latest/run/index.html
