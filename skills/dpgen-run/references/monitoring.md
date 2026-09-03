@@ -14,14 +14,14 @@ measures sampling uncertainty, not accuracy.
 
 ## Diagnose in this order
 
-| Symptom | First checks | Focused adjustment |
-| --- | --- | --- |
-| Train and validation RMSE both stay high | Units, labels, `type_map`, data coverage, descriptor capacity | Fix data/schema first; then review descriptor, fitting net, learning rate, and steps |
-| Train RMSE falls but validation RMSE stalls or rises | Split leakage, duplicates, outliers, validation coverage | Deduplicate/re-split; add representative labels; reduce overfitting only after data is sound |
-| RMSE is good but model deviation is high | Unseen compositions/geometries, temperature/pressure range, initial structures | Broaden `model_devi_jobs`, temperatures, ensembles, or initial structures; label the candidate window |
-| Candidate count is zero | Trust thresholds, MD stability, trajectory frequency, model diversity | Check thresholds and sampling settings before changing the model |
-| Candidate count is excessive or mostly failed FP | Thresholds too loose, unstable MD, bad structures, FP convergence | Tighten/repair sampling and FP inputs; do not flood training with failed labels |
-| New labels do not improve the next round | FP failures, wrong paths, stale `record.dpgen`, data not appended | Verify stage completion, merged systems, and restart identity |
+| Symptom                                              | First checks                                                                   | Focused adjustment                                                                                    |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| Train and validation RMSE both stay high             | Units, labels, `type_map`, data coverage, descriptor capacity                  | Fix data/schema first; then review descriptor, fitting net, learning rate, and steps                  |
+| Train RMSE falls but validation RMSE stalls or rises | Split leakage, duplicates, outliers, validation coverage                       | Deduplicate/re-split; add representative labels; reduce overfitting only after data is sound          |
+| RMSE is good but model deviation is high             | Unseen compositions/geometries, temperature/pressure range, initial structures | Broaden `model_devi_jobs`, temperatures, ensembles, or initial structures; label the candidate window |
+| Candidate count is zero                              | Trust thresholds, MD stability, trajectory frequency, model diversity          | Check thresholds and sampling settings before changing the model                                      |
+| Candidate count is excessive or mostly failed FP     | Thresholds too loose, unstable MD, bad structures, FP convergence              | Tighten/repair sampling and FP inputs; do not flood training with failed labels                       |
+| New labels do not improve the next round             | FP failures, wrong paths, stale `record.dpgen`, data not appended              | Verify stage completion, merged systems, and restart identity                                         |
 
 ## Data checks
 
