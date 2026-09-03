@@ -592,9 +592,7 @@ class TestMakeTrain(unittest.TestCase):
             with open(machine_name) as fp:
                 mdata = json.load(fp)
             make_train(0, jdata, mdata)
-            input_path = os.path.join(
-                "iter.000000", "00.train", "000", "input.json"
-            )
+            input_path = os.path.join("iter.000000", "00.train", "000", "input.json")
             with open(input_path) as fp:
                 model_input = json.load(fp)
             self.assertEqual(model_input["model"]["type_map"], ["Al", "Mg"])
@@ -604,9 +602,7 @@ class TestMakeTrain(unittest.TestCase):
                 jdata = json.load(fp)
             jdata["default_training_param"]["model"].pop("type_map", None)
             make_train(0, jdata, mdata)
-            input_path = os.path.join(
-                "iter.000000", "00.train", "000", "input.json"
-            )
+            input_path = os.path.join("iter.000000", "00.train", "000", "input.json")
             with open(input_path) as fp:
                 model_input = json.load(fp)
             self.assertNotIn("type_map", model_input["model"])
