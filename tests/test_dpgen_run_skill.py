@@ -65,13 +65,12 @@ class TestDPGenRunSkill(unittest.TestCase):
             .lower()
         )
         for term in (
-            "data",
-            "training",
-            "sampling",
-            "labeling",
+            "数据",
+            "训练",
+            "采样",
+            "标注",
             "rmse",
             "model deviation",
-            "labeling",
             "fp failure",
             "system",
             "condition",
@@ -95,7 +94,7 @@ class TestDPGenRunSkill(unittest.TestCase):
             "input.json",
             "submission identity",
             "sys_idx",
-            "generated",
+            "生成",
         ):
             self.assertIn(term, validation)
 

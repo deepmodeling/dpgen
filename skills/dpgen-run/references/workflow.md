@@ -1,36 +1,34 @@
-# DP-GEN Run Workflow Guidance
+# DP-GEN Run 工作流说明
 
-Load this reference for scope, preparation policy, project layout, or reporting.
+在需要了解范围、准备策略、项目布局或结果汇报时加载本 reference。
 
-## Loop
+## 循环
 
-`dpgen run` repeats five activities:
+`dpgen run` 会重复以下五个活动：
 
-1. train an ensemble of Deep Potential models;
-1. explore configurations, normally with LAMMPS MD;
-1. select structures in the model-deviation candidate window;
-1. label selected structures with the configured first-principles backend;
-1. add labels to the next training iteration.
+1. 训练一组 Deep Potential 模型；
+1. 通常使用 LAMMPS MD 探索构型空间；
+1. 选取处于 model-deviation 候选区间的构型；
+1. 使用配置的第一性原理后端标注选中构型；
+1. 将标注加入下一轮训练。
 
-Use `param.json` for scientific/workflow settings, `machine.json` for commands,
-contexts, and resources, and `dpgen run param.json machine.json` as the launcher.
-Preparation needs Python and DP-GEN. Execution also needs DeePMD-kit, the
-exploration engine, the selected FP software, and any scheduler runtime.
+`param.json` 保存科学/工作流设置，`machine.json` 保存命令、上下文和资源，
+启动命令为 `dpgen run param.json machine.json`。准备阶段需要 Python 和 DP-GEN；
+执行阶段还需要 DeePMD-kit、探索引擎、选定的 FP 软件和调度器运行环境。
 
-## Preparation policy
+## 准备策略
 
-Inspect existing configuration files, training inputs, dataset metadata, and
-machine templates first. Ask only for values that cannot be discovered. Patch
-working files instead of rebuilding them.
+先检查已有配置、训练输入、数据集元数据和 machine 模板。只询问无法发现的值，
+修改现有文件而不是无必要地重建。
 
-Preserve descriptor and fitting settings, training and FP backends, thresholds,
-`type_map` ordering, `model_devi_jobs`, ensemble size, temperatures, pressures,
-and MD ensembles. Explain concerns and request direction before changing them.
+保留 descriptor 与 fitting 设置、训练和 FP 后端、阈值、`type_map` 顺序、
+`model_devi_jobs`、ensemble 数量、温度、压力和 MD ensemble。发现问题时先说明并
+请求方向，不要静默修改。
 
-Reuse known activation commands, executables, queues, partitions, accounts,
-paths, and scheduler flags exactly. Never guess site policy or conda/module setup.
+原有的激活命令、可执行文件、队列、分区、账号、路径和调度器参数必须原样复用。
+不得猜测站点策略、conda 环境或 module 配置。
 
-## Generic layout
+## 通用布局
 
 ```text
 project/
@@ -38,30 +36,27 @@ project/
 |-- machine.json
 |-- init_data/
 |   `-- raw_xxx/          # DeepMD NumPy system(s)
-|-- assets/               # structures and runtime support files
-`-- iter.*/               # created by DP-GEN
+|-- assets/               # 构型和运行所需支持文件
+`-- iter.*/               # 由 DP-GEN 创建
 ```
 
-Keep repeated experiments in separate, clearly named directories derived from a
-reviewed base configuration. Backend-specific files belong under `assets/` or
-the path explicitly required by the selected backend.
+重复实验应放在独立且命名清晰的目录中，并从审阅过的基础配置派生。后端专用文件
+放在 `assets/` 或选定后端明确要求的路径下。
 
-## Reporting contract
+## 汇报契约
 
-Before execution, report absolute JSON paths, the exact command, validation
-results, unresolved inputs, and cost-bearing stages. Execute only after the user
-confirms that exact validated command.
+执行前汇报两个 JSON 的绝对路径、精确命令、验证结果、未解决输入和计费阶段。只有用户
+确认该精确命令后才执行。
 
-After execution, report the current iteration and stage status, failed/pending
-tasks, main logs and outputs, candidate and labeled counts, accuracy trends, and
-the next files to inspect. Use [monitoring guidance](monitoring.md) when an
-iteration stalls or accuracy fails to improve.
+执行后汇报当前迭代和阶段状态、失败/等待任务、主要日志和输出、候选与标注数量、
+准确率趋势以及下一步要检查的文件。迭代停滞或准确率不提升时，使用
+[监控说明](monitoring.md)。
 
-## Guardrails
+## 防护规则
 
-- Never run before both JSON files exist and pass validation.
-- Keep `type_map` consistent through data, training, and labeling.
-- Do not overwrite working templates blindly or assume outer activation reaches jobs.
-- Stop rather than guess a missing scientific or site-specific value.
+- 两个 JSON 都存在且通过验证前不得运行。
+- 数据、训练和标注过程中的 `type_map` 必须一致。
+- 不得盲目覆盖可用模板，也不能假设外层激活会传递到任务环境。
+- 无法发现缺失的科学或站点值时，停止而不是猜测。
 
-Official overview: https://docs.deepmodeling.com/projects/dpgen/en/latest/run/index.html
+官方概览：https://docs.deepmodeling.com/projects/dpgen/en/latest/run/index.html

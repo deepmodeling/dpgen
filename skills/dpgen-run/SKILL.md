@@ -1,40 +1,40 @@
 ---
 name: dpgen-run
-description: Prepare, explain, validate, and run DP-GEN concurrent-learning workflows using param.json and machine.json.
+description: 使用 param.json 和 machine.json 准备、解释、验证并运行 DP-GEN 并行学习流程。
 license: LGPL-3.0-or-later
 metadata:
   author: MatMaster
-  version: 0.3.0
+  version: 0.4.0
   repository: https://github.com/deepmodeling/dpgen
 ---
 
 # DP-GEN Run
 
-Use this skill for the iterative train, explore, label, and retrain workflow.
+用于迭代训练、探索、标注和再训练流程。
 
-## Contract
+## 使用契约
 
-- Keep scientific settings in `param.json` and execution settings in `machine.json`.
-- Run exactly `dpgen run param.json machine.json`.
-- Prepare and validate by default; execute only after explicit confirmation.
+- 科学参数放在 `param.json`，执行参数放在 `machine.json`。
+- 精确运行命令为 `dpgen run param.json machine.json`。
+- 默认只准备和验证；只有用户明确确认后才执行。
 
-## Workflow
+## 工作流程
 
-1. Inspect existing data and configurations before asking for inputs.
-1. Patch working files and preserve scientific/site-specific choices.
-1. Load only the references needed for the task.
-1. Validate schemas, generated task inputs, stage state, and monitoring signals.
-1. Report paths, command, per-system evidence, risks, and next checks.
+1. 先检查已有数据和配置，再询问缺失输入。
+1. 修改现有可用文件，并保留科学及站点选择。
+1. 只加载当前任务需要的 reference。
+1. 验证 schema、生成的任务输入、阶段状态和监控信号。
+1. 汇报路径、命令、分体系证据、风险和后续检查。
 
-## References
+## Reference
 
-- [Workflow guidance](references/workflow.md): scope, layout, policy, and reporting.
-- [Configuration, validation, and execution](references/validation-and-run.md): both JSON files, generated-input checks, and safe launch/restart checks.
-- [Monitoring and troubleshooting](references/monitoring.md): accuracy trends, stage progress, and evidence-based diagnosis.
+- [工作流说明](references/workflow.md)：范围、布局、策略和汇报。
+- [配置、验证与执行](references/validation-and-run.md)：两个 JSON、生成输入检查及安全启动/恢复。
+- [监控与排障](references/monitoring.md)：准确率趋势、阶段进度和证据化诊断。
 
-## Guardrails
+## 防护规则
 
-- Never merge the JSON files or invent paths, queues, modules, or commands.
-- Preserve descriptor, backend, thresholds, schedules, ensemble, and `type_map` choices.
-- Spell `se_atten_v2` exactly; `fp_style: "none"` is invalid for current `dpgen run`.
-- Stop and ask when required scientific or execution inputs are undiscoverable.
+- 不得合并两个 JSON，也不得臆造路径、队列、模块或命令。
+- 保留 descriptor、backend、阈值、计划、ensemble 和 `type_map` 选择。
+- 必须准确写成 `se_atten_v2`；当前 `dpgen run` 不接受 `fp_style: "none"`。
+- 无法安全发现必需的科学或执行输入时，停止并询问。
