@@ -1,44 +1,54 @@
-# DP-GEN 监控与排障
+# DP-GEN Monitoring and Troubleshooting
 
-在每轮迭代后，或准确率/阶段进度停滞时加载本 reference。“准确率”指能量/力的训练与
-验证 RMSE；model deviation 和 FP failure ratio 是独立信号。
+Load this reference after each iteration or whenever accuracy or stage progress
+stalls. Here "accuracy" means energy/force train and validation RMSE; model
+deviation and FP failure ratio are separate signals.
 
-## 证据循环
+## Evidence loop
 
-每轮记录参数/配置身份、系统及温度/压力条件、训练/验证 RMSE、model-deviation 的
-accurate/candidate/failed 数量、FP 成功/失败数量、当前阶段，以及新标注是否进入下一轮
-训练输入。先汇报分 system、分 condition 结果，再给全局汇总。
+For each iteration, record the parameter/configuration identity, systems and
+temperature/pressure conditions, train/validation RMSE, model-deviation
+accurate/candidate/failed counts, FP success/failure counts, current stage, and
+whether new labels reached the next training input. Report per-system and
+per-condition results before any global aggregate.
 
-## 按顺序诊断
+## Diagnose in this order
 
-| 现象                                 | 首先检查                                             | 针对性调整                                        |
-| ------------------------------------ | ---------------------------------------------------- | ------------------------------------------------- |
-| 训练和验证 RMSE 都长期偏高           | 单位、标签、type map、覆盖范围、descriptor 容量      | 先修数据/schema，再检查 fitting net、学习率和步数 |
-| 训练 RMSE 下降但验证 RMSE 停滞或上升 | 数据泄漏、重复样本、异常值、验证覆盖                 | 先重新划分/去重并补代表性标注，再改模型容量       |
-| RMSE 良好但 model deviation 偏高     | 未见过的体系/构型或条件、初始结构                    | 定向扩展采样并标注候选区间                        |
-| candidate 数为零                     | 信任阈值、MD 稳定性、轨迹频率、模型多样性            | 先检查阈值和采样设置，不要直接改训练              |
-| candidate 过多或 FP 失败增加         | 阈值、MD 不稳定、结构损坏、FP 收敛                   | 修复输入/采样，不要把失败标签加入训练             |
-| 阶段不推进或任务数不对               | record 状态、计划长度、sys_idx、生成输入、提交元数据 | 对齐状态与实际任务，禁止盲目重启                  |
-| 生效步数与请求步数不同               | 生成输入中的 reuse/迭代 override                     | 对比根配置和任务配置，有意修正 override           |
+| Symptom                                              | First checks                                                                 | Focused adjustment                                                          |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Train and validation RMSE both stay high             | Units, labels, type map, coverage, descriptor capacity                       | Fix data/schema first; then review fitting net, learning rate, and steps    |
+| Train RMSE falls but validation RMSE stalls or rises | Split leakage, duplicates, outliers, validation coverage                     | Re-split or deduplicate; add representative labels before changing capacity |
+| RMSE is good but model deviation is high             | Unseen systems/geometries or conditions, initial structures                  | Broaden targeted sampling and labeling the candidate window                 |
+| Candidate count is zero                              | Trust thresholds, MD stability, trajectory frequency, model diversity        | Check thresholds and sampling settings before changing training             |
+| Candidate count is excessive or FP failures rise     | Thresholds, unstable MD, malformed structures, FP convergence                | Repair inputs/sampling; do not add failed labels                            |
+| Stage does not advance or task count is wrong        | record state, schedule length, sys_idx, generated input, submission metadata | Reconcile state and actual tasks; do not restart blindly                    |
+| Effective steps differ from requested steps          | Reuse/iteration override in generated input                                  | Compare root and task-level values; fix the override deliberately           |
 
-## 数据与标签检查
+## Data and label checks
 
-检查单位和符号、原子顺序、type map、重复样本、异常幅值以及训练/验证覆盖。每个训练帧
-必须有有限且可解析的 energy 和 force；只有在配置并验证后才纳入 virial/stress。合并前拒绝
-缺失、重复或未收敛的标签。
+Check units and signs, atom ordering, type maps, duplicates, abnormal
+magnitudes, and train/validation coverage. Every training frame must have
+finite, parseable energy and force; include virial/stress only when configured
+and verified. Reject incomplete, duplicated, or unconverged labels before
+merging them into training data.
 
-## 训练检查
+## Training checks
 
-比较训练/验证曲线、loss 分量、学习率衰减、步数预算、batch size、模型容量、ensemble seed
-和 backend/version 兼容性。全局指标良好也不能掩盖某个 system 或 condition 的失败。一次只
-改变一个主要因素，并保留修改前的证据。
+Compare train and validation curves, loss components, learning-rate decay, step
+budget, batch size, model capacity, ensemble seeds, and backend/version
+compatibility. A good global metric must not hide a failing system or condition.
+Change one major factor at a time and retain the previous evidence.
 
-## 采样与决策检查
+## Sampling and decision checks
 
-检查 MD 稳定性、温度、压力、ensemble、`nsteps`、`trj_freq`、信任区间位置及分 condition
-分布。区分模型问题和覆盖不足：RMSE 良好但 deviation 偏高通常需要定向采样；已覆盖区域
-RMSE 仍高则优先检查数据或训练。
+Inspect MD stability, temperatures, pressures, ensembles, `nsteps`, `trj_freq`,
+trust-window placement, and per-condition distributions. Distinguish a model
+problem from missing coverage: good RMSE with high deviation usually calls for
+targeted sampling, while high RMSE on covered data calls for data or training
+review.
 
-监控是基于证据的决策阶段，不只是状态播报。扩展采样、修改阈值、增加步数或重启前，先记录
-证据、精确参数差异、预期效果和 controller 状态；之后记录新任务身份与结果。禁止静默调参
-或重启。
+Monitoring is an evidence-based decision stage, not only status reporting.
+Before extending sampling, changing thresholds, increasing steps, or restarting,
+record the evidence, exact parameter delta, expected effect, and controller
+state. Afterward record the new task identity and outcome; never retune or
+restart silently.
