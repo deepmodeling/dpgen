@@ -17,6 +17,12 @@ contexts, and resources, and `dpgen run param.json machine.json` as the launcher
 Preparation needs Python and DP-GEN. Execution also needs DeePMD-kit, the
 exploration engine, the selected FP software, and any scheduler runtime.
 
+## Monitoring stage
+
+After each iteration, record RMSE, model-deviation, and FP outcomes by system
+and condition. Use [monitoring guidance](monitoring.md) before changing settings
+or restarting a stalled iteration.
+
 ## Preparation policy
 
 Inspect existing configuration files, training inputs, dataset metadata, and
@@ -38,12 +44,12 @@ project/
 |-- machine.json
 |-- init_data/
 |   `-- raw_xxx/          # DeepMD NumPy system(s)
-|-- assets/               # structures and runtime support files
+|-- inputs/               # optional structures and backend inputs
 `-- iter.*/               # created by DP-GEN
 ```
 
 Keep repeated experiments in separate, clearly named directories derived from a
-reviewed base configuration. Backend-specific files belong under `assets/` or
+reviewed base configuration. Backend-specific files belong under `inputs/` or
 the path explicitly required by the selected backend.
 
 ## Reporting contract

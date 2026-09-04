@@ -36,5 +36,5 @@ Use this skill for the iterative train, explore, label, and retrain workflow.
 
 - Never merge the JSON files or invent paths, queues, modules, or commands.
 - Preserve descriptor, backend, thresholds, schedules, ensemble, and `type_map` choices.
-- Spell `se_atten_v2` exactly; `fp_style: "none"` is invalid for current `dpgen run`.
+- Check `se_atten_v2` against the installed backend; `fp_style: "none"` is invalid.
 - Stop and ask when required scientific or execution inputs are undiscoverable.

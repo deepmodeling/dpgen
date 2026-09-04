@@ -19,13 +19,15 @@ DP-GEN can fill it from `init_data_sys`. Verify `deepmd_version` and the
 installed stack before using version-specific descriptors or features.
 
 `train_backend` accepts `tensorflow` and `pytorch`, but compatibility still
-depends on the installed DeePMD-kit and descriptor. Verify the combination;
-spell `se_atten_v2` exactly. Ordinary LAMMPS exploration uses the default
+depends on the installed DeePMD-kit and descriptor. Verify descriptor spelling
+against that backend; current releases register `se_atten_v2`.
+Ordinary LAMMPS exploration uses the default
 `model_devi_engine`; set an alternative only when verified. Current `dpgen run`
 does not accept `fp_style: "none"`.
 
-Each `init_data_sys` directory must contain `type_map.raw`, `type.raw`, and
-`set.000/`; every `type_map.raw` must match `param.json.type_map` exactly.
+Each `init_data_sys` entry may be a DeepMD NumPy system directory or an HDF5
+file. Each NumPy directory must contain at least `type.raw` and `set.000/`.
+When `type_map.raw` is present, it must match `param.json.type_map` exactly.
 
 ## 2. `machine.json` essentials
 
@@ -38,8 +40,8 @@ for generic local, scheduler, and SSH shapes.
 
 The launcher shell and dispatched tasks are different environments. Scheduler
 jobs must activate their own runtime through `source_list`; outer activation is
-not inherited reliably. The training command must select the same backend as
-`train_backend` (for DeePMD-kit 3.x PyTorch this may be `dp --pt`). Validate
+not inherited reliably. Keep the training command as `dp`; DP-GEN appends
+backend flags such as `--pt` or `--jax` from `train_backend`. Validate
 commands, context types, batch aliases, roots, and resources against installed
 DPDispatcher rather than normalizing by assumption.
 
