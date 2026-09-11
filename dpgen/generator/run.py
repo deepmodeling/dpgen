@@ -1137,7 +1137,20 @@ def revise_lmp_input_model(
 
 
 def revise_lmp_input_pair_coeff(lmp_lines, jdata=None):
-    """Add explicit DeepMD element mapping and D3 pair coefficients."""
+    """Add explicit DeepMD element mapping and D3 pair coefficients.
+
+    Parameters
+    ----------
+    lmp_lines : list[str]
+        Lines from a LAMMPS input template.
+    jdata : dict, optional
+        DP-GEN configuration containing ``type_map`` and optional D3 settings.
+
+    Returns
+    -------
+    list[str]
+        The revised LAMMPS input lines.
+    """
     if jdata is None:
         return lmp_lines
 
