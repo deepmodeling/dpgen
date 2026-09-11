@@ -22,6 +22,7 @@ from dpgen.generator.run import (
     post_train_dp,
     run_md_model_devi,
     run_train_dp,
+    training_complete_file,
 )
 
 
@@ -258,6 +259,8 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
         self.assertEqual(train_call["machine"], self.mdata["train_machine"])
         self.assertEqual(len(train_call["commands"]), 1)
         self.assertIn("dp --pt train", train_call["commands"][0])
+        self.assertIn(f"touch {training_complete_file}", train_call["commands"][0])
+        self.assertIn(training_complete_file, train_call["backward_files"])
         self.assertIn("model.ckpt.pt", train_call["backward_files"])
         self.assertNotIn("frozen_model.pt2", train_call["backward_files"])
         self.assertEqual(export_call["machine"], self.mdata["model_devi_machine"])
@@ -268,6 +271,22 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
         )
         self.assertEqual(export_call["forward_files"], ["model.ckpt.pt"])
         self.assertIn("frozen_model.pt2", export_call["backward_files"])
+
+    def test_pytorch_exportable_nlist_pt2_export(self):
+        _, export_call = self._run(
+            train_backend="pt-expt",
+            model_format="pt2",
+            default_training_param={
+                "model": {"descriptor": {"type": "se_e2_a"}}
+            },
+        )
+        self.assertEqual(
+            export_call["commands"],
+            [
+                "dp --pt-expt freeze -c model.ckpt.pt "
+                "-o frozen_model.pt2 --lower-kind nlist"
+            ],
+        )
 
     def test_pt2_export_uses_deployment_command(self):
         self.mdata["train_command"] = "/train/dp"
@@ -286,6 +305,7 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
         task = Path("iter.000000") / "00.train" / "000"
         task.mkdir(parents=True)
         (task / "model.ckpt.pt").touch()
+        (task / training_complete_file).touch()
         with patch("dpgen.generator.run.make_submission") as make_submission:
             run_train_dp(
                 0,
@@ -303,6 +323,24 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
             make_submission.call_args.kwargs["commands"],
             ["dp --pt freeze -c model.ckpt.pt -o frozen_model"],
         )
+
+    def test_pt2_export_does_not_skip_incomplete_training(self):
+        task = Path("iter.000000") / "00.train" / "000"
+        task.mkdir(parents=True)
+        (task / "model.ckpt.pt").touch()
+        with patch("dpgen.generator.run.make_submission") as make_submission:
+            run_train_dp(
+                0,
+                {
+                    "numb_models": 1,
+                    "one_h5": True,
+                    "train_backend": "pytorch",
+                    "model_format": "pt2",
+                    "default_training_param": {"model": {"type": "dpa4"}},
+                },
+                self.mdata,
+            )
+        self.assertEqual(make_submission.call_count, 2)
 
     def test_legacy_pytorch_commands_are_preserved(self):
         call = self._run(train_backend="pytorch")
@@ -328,13 +366,17 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
             train_backend="pt-expt",
             model_format="pt2",
             dp_compress=True,
+            default_training_param={
+                "model": {"descriptor": {"type": "dpa4c"}}
+            },
         )
         self.assertIn("dp --pt-expt train", train_call["commands"][0])
         self.assertEqual(len(train_call["commands"]), 1)
         self.assertEqual(
             export_call["commands"],
             [
-                "dp --pt-expt freeze -c model.ckpt.pt -o frozen_model --lower-kind graph",
+                "dp --pt-expt freeze -c model.ckpt.pt "
+                "-o frozen_model.pt2 --lower-kind graph",
                 "dp --pt-expt compress -i frozen_model.pt2 -o frozen_model_compressed.pt2",
             ],
         )

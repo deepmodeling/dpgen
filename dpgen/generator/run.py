@@ -108,6 +108,7 @@ train_name = "00.train"
 train_task_fmt = "%03d"
 train_tmpl_path = os.path.join(template_name, train_name)
 default_train_input_file = "input.json"
+training_complete_file = ".dpgen_train_complete"
 data_system_fmt = "%03d"
 model_devi_name = "01.model_devi"
 model_devi_task_fmt = data_system_fmt + ".%06d"
@@ -249,6 +250,12 @@ def _get_input_model_suffix(models) -> str:
     if "" in suffixes or len(suffixes) != 1:
         raise ValueError("Input models must have the same non-empty file suffix.")
     return suffixes.pop()
+
+
+def _get_pt2_lower_kind(jdata) -> str:
+    """Return the compatible lower kind for a PyTorch-exportable PT2 model."""
+    family = _get_dpa_model_family(jdata.get("default_training_param", {}))
+    return "graph" if family in {"dpa4", "dpa4c"} else "nlist"
 
 
 def _iter_model_sections(training_param):
@@ -1071,13 +1078,16 @@ def run_train_dp(iter_index, jdata, mdata):
             init_flag = f" --finetune old/init{input_model_suffix}"
         command = f"{train_command} train {train_input_file}{extra_flags}"
         command = f"{{ if [ ! -f model.ckpt{checkpoint_suffix} ]; then {command}{init_flag}; else {command} --restart model.ckpt; fi }}"
+        if model_format == "pt2":
+            command += f" && touch {training_complete_file}"
         command = f"/bin/sh -c {shlex.quote(command)}"
         commands.append(command)
         if model_format == "pt2":
             if train_backend == "pytorch-exportable":
                 command = (
-                    f"{export_command} freeze -c model.ckpt.pt -o frozen_model "
-                    "--lower-kind graph"
+                    f"{export_command} freeze -c model.ckpt.pt "
+                    f"-o frozen_model{suffix} --lower-kind "
+                    f"{_get_pt2_lower_kind(jdata)}"
                 )
             else:
                 command = f"{export_command} freeze -c model.ckpt.pt -o frozen_model"
@@ -1151,6 +1161,8 @@ def run_train_dp(iter_index, jdata, mdata):
         backward_files.append(f"frozen_model{suffix}")
         if jdata.get("dp_compress", False):
             backward_files.append(f"frozen_model_compressed{suffix}")
+    else:
+        backward_files.append(training_complete_file)
 
     if checkpoint_suffix == ".index":
         backward_files += [
@@ -1205,6 +1217,7 @@ def run_train_dp(iter_index, jdata, mdata):
 
     checkpoints_complete = export_commands and all(
         os.path.isfile(os.path.join(task, f"model.ckpt{checkpoint_suffix}"))
+        and os.path.isfile(os.path.join(task, training_complete_file))
         for task in all_task
     )
     if checkpoints_complete:
@@ -1481,7 +1494,17 @@ def revise_lmp_input_pair_coeff(lmp_lines, jdata=None):
     if not d3_enabled and not type_map:
         return lmp_lines
 
-    pair_style_idx = find_only_one_key(lmp_lines, ["pair_style"])
+    pair_style_indices = []
+    for idx, line in enumerate(lmp_lines):
+        tokens = line.partition("#")[0].split()
+        if tokens and tokens[0] == "pair_style" and "deepmd" in tokens[1:]:
+            pair_style_indices.append(idx)
+    if len(pair_style_indices) != 1:
+        raise RuntimeError(
+            "expected exactly one pair_style containing deepmd, found "
+            f"{len(pair_style_indices)}"
+        )
+    pair_style_idx = pair_style_indices[0]
     pair_style_tokens = lmp_lines[pair_style_idx].partition("#")[0].split()
     hybrid_pair_style = pair_style_tokens[1].startswith("hybrid")
 
