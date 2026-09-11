@@ -25,9 +25,13 @@ Ordinary LAMMPS exploration uses the default
 `model_devi_engine`; set an alternative only when verified. Current `dpgen run`
 does not accept `fp_style: "none"`.
 
-Each `init_data_sys` entry may be a DeepMD NumPy system directory or an HDF5
-file. Each NumPy directory must contain at least `type.raw` and `set.000/`.
-When `type_map.raw` is present, it must match `param.json.type_map` exactly.
+Each `init_data_sys` entry may be a DeepMD NumPy system directory, a parent
+directory containing multiple systems, or an HDF5 file. Resolve entries with
+DP-GEN's `init_data_prefix` and discovery rules, then validate each NumPy leaf:
+it needs `type.raw` and one loadable `set.*` directory. `type_map.raw` is
+optional; when present, its symbols must be included in `param.json.type_map`.
+Subsets and different orders are valid because DeePMD remaps by element name;
+without it, `type.raw` must already use the configured model order.
 
 ## 2. `machine.json` essentials
 
@@ -57,11 +61,12 @@ Normalize `param.json` with `run_jdata_arginfo()` and convert `machine.json` wit
 `convert_mdata()`. Resolve all data/structure paths, compare type maps, check
 executables and scheduler access, and verify FP inputs and cost limits.
 
-Before submission, inspect the generated `input.json` for every stage/task. Do
-not infer the effective configuration from the root files: check model count,
-seed, checkpoint, data systems, `sys_idx`, temperatures/pressures, and final
-training steps. When reuse or iteration overrides exist, assert both the default
-and effective values.
+Before submission, inspect each stage's generated backend artifact. For training,
+check task `input.json` for model count, seeds, checkpoints, data systems, and
+final steps; for LAMMPS exploration, check `input.lammps` and `job.json` for
+`sys_idx`, temperatures/pressures, and effective MD settings; for first-principles
+labeling, inspect backend inputs such as VASP `INCAR`. When reuse or iteration
+overrides exist, assert both default and effective values.
 
 Cross-check the intended iteration against `record.dpgen`, stage directories,
 DPDispatcher work base/submission metadata, and logs. A stage is not complete
@@ -92,5 +97,4 @@ Show the exact files, validation summary, unresolved risks, and
 `dpgen run param.json machine.json`. Execute only after explicit confirmation.
 After launch, inspect `iter.*`, stage logs, failure/pending states, selected and
 labeled counts, and [monitoring outputs](monitoring.md).
-
 External references: https://docs.deepmodeling.com/projects/dpgen/en/latest/run/index.html
