@@ -276,9 +276,7 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
         _, export_call = self._run(
             train_backend="pt-expt",
             model_format="pt2",
-            default_training_param={
-                "model": {"descriptor": {"type": "se_e2_a"}}
-            },
+            default_training_param={"model": {"descriptor": {"type": "se_e2_a"}}},
         )
         self.assertEqual(
             export_call["commands"],
@@ -366,9 +364,7 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
             train_backend="pt-expt",
             model_format="pt2",
             dp_compress=True,
-            default_training_param={
-                "model": {"descriptor": {"type": "dpa4c"}}
-            },
+            default_training_param={"model": {"descriptor": {"type": "dpa4c"}}},
         )
         self.assertIn("dp --pt-expt train", train_call["commands"][0])
         self.assertEqual(len(train_call["commands"]), 1)
