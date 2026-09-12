@@ -2913,6 +2913,7 @@ def check_cluster(conf_name, fp_cluster_vacuum, fmt="lammps/dump"):
 
 
 def check_bad_box(conf_name, criteria, fmt="lammps/dump"):
+    """Return whether a configuration violates any FP screening criterion."""
     all_c = criteria.split(";")
     sys = dpdata.System(conf_name, fmt)
     assert sys.get_nframes() == 1
@@ -2946,6 +2947,16 @@ def check_bad_box(conf_name, criteria, fmt="lammps/dump"):
                 sys["cells"][0][2][0] / sys["cells"][0][2][2],
             ]
             if np.max(np.abs(ratio)) > float(value):
+                is_bad = True
+        elif key in {"min_distance", "min_dist"}:
+            from ase import Atoms
+            from ase.neighborlist import neighbor_list
+
+            atoms = Atoms(positions=sys["coords"][0], cell=sys["cells"][0], pbc=True)
+            # Exclude only the zero-shift self pair; a periodic image of the
+            # same atom can be the closest neighbor in a compressed cell.
+            distances = neighbor_list("d", atoms, float(value), self_interaction=False)
+            if distances.size:
                 is_bad = True
         else:
             raise RuntimeError("unknow key", key)
