@@ -252,11 +252,17 @@ def make_lammps_equi(
     if change_box:
         ret += "fix             1 all box/relax iso 0.0 \n"
         ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)  # noqa: UP031
-        # Align dump and thermo output at the start of each minimization stage.
+        # Restart the dump around each timestep reset, preserving earlier frames.
+        ret += "undump          1\n"
         ret += "reset_timestep  0\n"
+        ret += "dump            1 all custom 100 dump.relax id type xs ys zs fx fy fz\n"
+        ret += "dump_modify     1 append yes\n"
         ret += "fix             1 all box/relax aniso 0.0 \n"
         ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)  # noqa: UP031
+        ret += "undump          1\n"
         ret += "reset_timestep  0\n"
+        ret += "dump            1 all custom 100 dump.relax id type xs ys zs fx fy fz\n"
+        ret += "dump_modify     1 append yes\n"
         ret += "fix             1 all box/relax tri 0.0 \n"
     ret += "minimize        %e %e %d %d\n" % (etol, ftol, maxiter, maxeval)  # noqa: UP031
     ret += "variable        N equal count(all)\n"

@@ -117,7 +117,31 @@ class TestLammps(unittest.TestCase):
         ]
 
         self.assertEqual(3, len(minimize_lines))
-        self.assertEqual([minimize_lines[0] + 1, minimize_lines[1] + 1], reset_lines)
+        self.assertEqual([minimize_lines[0] + 2, minimize_lines[1] + 2], reset_lines)
+        for index in reset_lines:
+            self.assertEqual(lines[index - 1].split(), ["undump", "1"])
+            self.assertEqual(
+                lines[index + 1].split(),
+                [
+                    "dump",
+                    "1",
+                    "all",
+                    "custom",
+                    "100",
+                    "dump.relax",
+                    "id",
+                    "type",
+                    "xs",
+                    "ys",
+                    "zs",
+                    "fx",
+                    "fy",
+                    "fz",
+                ],
+            )
+            self.assertEqual(
+                lines[index + 2].split(), ["dump_modify", "1", "append", "yes"]
+            )
 
     def test_forward_common_files(self):
         fc_files = ["in.lammps", "frozen_model.pb"]
