@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import os
 import time
 
@@ -110,9 +111,23 @@ def read_stress_fmax():
     return fmax, pstress
 
 
-def run_opt(fmax, stress):
-    """Using the ASE&DP to Optimize Configures."""
-    calc = DP(model="../graph.000.pb")  # init the model before iteration
+def run_opt(fmax, stress, model):
+    """Optimize a CALYPSO structure with ASE and a DeePMD model.
+
+    Parameters
+    ----------
+    fmax : float
+        Maximum force convergence threshold for the ASE optimizer.
+    stress : float
+        Target external pressure in kbar.
+    model : str
+        Path to the frozen DeePMD model artifact.
+
+    Returns
+    -------
+    None
+    """
+    calc = DP(model=model)  # init the model before iteration
     os.system("mv OUTCAR OUTCAR-last")
 
     print("Start to Optimize Structures by DP----------")
@@ -164,8 +179,17 @@ def run_opt(fmax, stress):
 
 
 def run():
+    """Run the CALYPSO optimization command-line entry point.
+
+    Returns
+    -------
+    None
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model", default="../graph.000.pb")
+    args = parser.parse_args()
     fmax, stress = read_stress_fmax()
-    run_opt(fmax, stress)
+    run_opt(fmax, stress, args.model)
 
 
 if __name__ == "__main__":
