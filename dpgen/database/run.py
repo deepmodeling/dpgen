@@ -63,16 +63,21 @@ def parsing_vasp(path, config_info_dict, skip_init, output=OUTPUT, id_prefix=Non
     else:
         dlog.info(f"len initialization data: {len(f_fp_init)}")
         entries = _parsing_vasp(f_fp_init, config_info_dict, id_prefix, iters=False)
-        entries.extend(_parsing_vasp(f_fp_iters, config_info_dict, id_prefix))
+        entries.extend(
+            _parsing_vasp(
+                f_fp_iters, config_info_dict, id_prefix, start_index=len(entries)
+            )
+        )
         dlog.info(f"len collected data: {len(entries)}")
     # print(output)
     # print(entries)
     dumpfn(entries, output, indent=4)
 
 
-def _parsing_vasp(paths, config_info_dict, id_prefix, iters=True):
+def _parsing_vasp(paths, config_info_dict, id_prefix, iters=True, start_index=0):
+    """Parse frames, continuing prefixed IDs after previously collected entries."""
     entries = []
-    icount = 0
+    icount = start_index
     iter_record = []
     iter_record_new = []
     if iters:
