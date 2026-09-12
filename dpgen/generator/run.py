@@ -2355,17 +2355,15 @@ def check_bad_box(conf_name, criteria, fmt="lammps/dump"):
             if np.max(np.abs(ratio)) > float(value):
                 is_bad = True
         elif key in {"min_distance", "min_dist"}:
-            from ase.geometry import find_mic
+            from ase import Atoms
+            from ase.neighborlist import neighbor_list
 
-            natoms = sys.get_natoms()
-            if natoms > 1:
-                atom_pairs = np.triu_indices(natoms, k=1)
-                vectors = (
-                    sys["coords"][0][atom_pairs[0]] - sys["coords"][0][atom_pairs[1]]
-                )
-                _, distances = find_mic(vectors, sys["cells"][0], pbc=True)
-                if np.min(distances) < float(value):
-                    is_bad = True
+            atoms = Atoms(positions=sys["coords"][0], cell=sys["cells"][0], pbc=True)
+            # Exclude only the zero-shift self pair; a periodic image of the
+            # same atom can be the closest neighbor in a compressed cell.
+            distances = neighbor_list("d", atoms, float(value), self_interaction=False)
+            if distances.size:
+                is_bad = True
         else:
             raise RuntimeError("unknow key", key)
     return is_bad

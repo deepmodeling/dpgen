@@ -1,6 +1,10 @@
 import os
 import sys
+import tempfile
 import unittest
+
+from ase import Atoms
+from ase.io import write
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
@@ -30,3 +34,25 @@ class TestCheckBadBox(unittest.TestCase):
         self.assertFalse(check_bad_box(conf, "min_distance:2.0"))
         self.assertTrue(check_bad_box(conf, "min_distance:2.2"))
         self.assertTrue(check_bad_box(conf, "min_dist:2.2"))
+
+    def test_min_distance_includes_periodic_self_images(self):
+        """Compressed single-atom and skewed cells have real periodic neighbors."""
+        for cell, positions, expected in (
+            ([0.4, 4, 4], [[0, 0, 0]], True),
+            ([4, 4, 4], [[0, 0, 0]], False),
+            ([1, 4, 4], [[0, 0, 0]], False),
+            ([[4, 0, 0], [3.8, 0.4, 0], [0, 0, 4]], [[0, 0, 0]], True),
+            ([4, 4, 4], [[0, 0, 0], [3.8, 0, 0]], True),
+            ([4, 4, 4], [[0, 0, 0], [0, 0, 0]], True),
+        ):
+            with self.subTest(cell=cell, positions=positions):
+                atoms = Atoms(
+                    "H" * len(positions), positions=positions, cell=cell, pbc=True
+                )
+                with tempfile.TemporaryDirectory() as tmp:
+                    path = os.path.join(tmp, "POSCAR")
+                    write(path, atoms, format="vasp")
+                    for criterion in ("min_distance:1.0", "min_dist:1.0"):
+                        self.assertEqual(
+                            check_bad_box(path, criterion, fmt="vasp/poscar"), expected
+                        )
