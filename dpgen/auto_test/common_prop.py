@@ -40,6 +40,15 @@ def make_property_instance(parameters, inter_param):
         raise RuntimeError(f"unknown property type {prop_type}")
 
 
+def _property_suffix(parameters):
+    """Return the work suffix and whether the property is a refine job."""
+    if "init_from_suffix" in parameters and "output_suffix" in parameters:
+        return parameters["output_suffix"], True
+    if parameters.get("reproduce", False):
+        return "reprod", False
+    return "00", False
+
+
 def make_property(confs, inter_param, property_list):
     # find all POSCARs and their name like mp-xxx
     # ...
@@ -54,15 +63,7 @@ def make_property(confs, inter_param, property_list):
         for jj in property_list:
             if jj.get("skip", False):
                 continue
-            if "init_from_suffix" and "output_suffix" in jj:
-                do_refine = True
-                suffix = jj["output_suffix"]
-            elif "reproduce" in jj and jj["reproduce"]:
-                do_refine = False
-                suffix = "reprod"
-            else:
-                do_refine = False
-                suffix = "00"
+            suffix, do_refine = _property_suffix(jj)
             # generate working directory like mp-xxx/eos_00 if jj['type'] == 'eos'
             # handel the exception that the working directory exists
             # ...
@@ -117,12 +118,7 @@ def run_property(confs, inter_param, property_list, mdata):
             # ...
             if jj.get("skip", False):
                 continue
-            if "init_from_suffix" and "output_suffix" in jj:
-                suffix = jj["output_suffix"]
-            elif "reproduce" in jj and jj["reproduce"]:
-                suffix = "reprod"
-            else:
-                suffix = "00"
+            suffix, _ = _property_suffix(jj)
 
             property_type = jj["type"]
             path_to_work = os.path.abspath(
@@ -167,7 +163,7 @@ def run_property(confs, inter_param, property_list, mdata):
                     worker,
                     (
                         work_path,
-                        all_task,
+                        run_tasks,
                         forward_common_files,
                         forward_files,
                         backward_files,
@@ -187,14 +183,13 @@ def run_property(confs, inter_param, property_list, mdata):
 
 def worker(
     work_path,
-    all_task,
+    run_tasks,
     forward_common_files,
     forward_files,
     backward_files,
     mdata,
     inter_type,
 ):
-    run_tasks = [os.path.basename(ii) for ii in all_task]
     machine, resources, command, group_size = util.get_machine_info(mdata, inter_type)
     api_version = mdata.get("api_version", "1.0")
     if Version(api_version) < Version("1.0"):
@@ -234,12 +229,7 @@ def post_property(confs, inter_param, property_list):
             # ...
             if jj.get("skip", False):
                 continue
-            if "init_from_suffix" and "output_suffix" in jj:
-                suffix = jj["output_suffix"]
-            elif "reproduce" in jj and jj["reproduce"]:
-                suffix = "reprod"
-            else:
-                suffix = "00"
+            suffix, _ = _property_suffix(jj)
 
             inter_param_prop = inter_param
             if "cal_setting" in jj and "overwrite_interaction" in jj["cal_setting"]:
