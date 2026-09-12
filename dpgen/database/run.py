@@ -63,19 +63,24 @@ def parsing_vasp(path, config_info_dict, skip_init, output=OUTPUT, id_prefix=Non
     else:
         dlog.info(f"len initialization data: {len(f_fp_init)}")
         entries = _parsing_vasp(f_fp_init, config_info_dict, id_prefix, iters=False)
-        entries.extend(_parsing_vasp(f_fp_iters, config_info_dict, id_prefix))
+        entries.extend(
+            _parsing_vasp(
+                f_fp_iters, config_info_dict, id_prefix, start_index=len(entries)
+            )
+        )
         dlog.info(f"len collected data: {len(entries)}")
     # print(output)
     # print(entries)
     dumpfn(entries, output, indent=4)
 
 
-def _parsing_vasp(paths, config_info_dict, id_prefix, iters=True):
+def _parsing_vasp(paths, config_info_dict, id_prefix, iters=True, start_index=0):
+    """Parse frames, continuing prefixed IDs after previously collected entries."""
     entries = []
-    icount = 0
+    icount = start_index
+    iter_record = []
+    iter_record_new = []
     if iters:
-        iter_record = []
-        iter_record_new = []
         try:
             with open("record.database") as f_record:
                 iter_record = [i.split()[0] for i in f_record.readlines()]
@@ -89,9 +94,9 @@ def _parsing_vasp(paths, config_info_dict, id_prefix, iters=True):
             f_outcar = os.path.join(path, "OUTCAR")
             f_job = os.path.join(path, "job.json")
             tmp_iter = path.split("/")[-3]
-            if (tmp_iter in iter_record) and (tmp_iter != iter_record[-1]):
+            if iters and (tmp_iter in iter_record) and (tmp_iter != iter_record[-1]):
                 continue
-            if tmp_iter not in iter_record_new:
+            if iters and tmp_iter not in iter_record_new:
                 iter_record_new.append(tmp_iter)
             vi = VaspInput.from_directory(path)
             if os.path.isfile(f_job):
@@ -135,11 +140,16 @@ def _parsing_vasp(paths, config_info_dict, id_prefix, iters=True):
                     eid = id_prefix + "_" + str(icount)
                 else:
                     eid = str(uuid4())
-            entry = Entry(
-                comp, "vasp", vi.as_dict(), ls.as_dict(), attribute=attrib, entry_id=eid
-            )
-            entries.append(entry)
-            icount += 1
+                entry = Entry(
+                    comp,
+                    "vasp",
+                    vi.as_dict(),
+                    ls.as_dict(),
+                    attribute=attrib,
+                    entry_id=eid,
+                )
+                entries.append(entry)
+                icount += 1
         except Exception:
             # dlog.info(str(Exception))
             dlog.info(f"failed for {path}")
