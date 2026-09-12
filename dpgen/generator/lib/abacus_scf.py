@@ -11,6 +11,22 @@ from dpgen.auto_test.lib import vasp
 bohr2ang = 0.52917721067
 
 
+def _parse_abacus_binary(value, field_name):
+    """Parse an ABACUS binary option without evaluating Python expressions."""
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "t", "yes", "y", "on"}:
+            return 1
+        if normalized in {"0", "false", "f", "no", "n", "off"}:
+            return 0
+    elif isinstance(value, (bool, int, float, np.integer, np.floating)) and value in {
+        0,
+        1,
+    }:
+        return int(value)
+    raise ValueError(f"{field_name!r} should be either 0 or 1")
+
+
 def make_abacus_scf_kpt(fp_params):
     # Make KPT file for abacus pw scf calculation.
     # KPT file is the file containing k points infomation in ABACUS scf calculation.
@@ -76,10 +92,8 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
         elif key == "dft_functional":
             ret += "dft_functional {}\n".format(fp_params["dft_functional"])
         elif key == "gamma_only":
-            if isinstance(fp_params["gamma_only"], str):
-                fp_params["gamma_only"] = int(eval(fp_params["gamma_only"]))
-            assert fp_params["gamma_only"] == 0 or fp_params["gamma_only"] == 1, (
-                "'gamma_only' should be either 0 or 1."
+            fp_params["gamma_only"] = _parse_abacus_binary(
+                fp_params["gamma_only"], "gamma_only"
             )
             ret += "gamma_only %d\n" % fp_params["gamma_only"]  # noqa: UP031
         elif key == "mixing_type":
@@ -98,10 +112,8 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
             )
             ret += "mixing_beta {:f}\n".format(fp_params["mixing_beta"])
         elif key == "symmetry":
-            if isinstance(fp_params["symmetry"], str):
-                fp_params["symmetry"] = int(eval(fp_params["symmetry"]))
-            assert fp_params["symmetry"] == 0 or fp_params["symmetry"] == 1, (
-                "'symmetry' should be either 0 or 1."
+            fp_params["symmetry"] = _parse_abacus_binary(
+                fp_params["symmetry"], "symmetry"
             )
             ret += "symmetry %d\n" % fp_params["symmetry"]  # noqa: UP031
         elif key == "nbands":
@@ -150,29 +162,20 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
             )
             ret += "smearing_sigma {:f}\n".format(fp_params["smearing_sigma"])
         elif key == "cal_force":
-            if isinstance(fp_params["cal_force"], str):
-                fp_params["cal_force"] = int(eval(fp_params["cal_force"]))
-            assert fp_params["cal_force"] == 0 or fp_params["cal_force"] == 1, (
-                "'cal_force' should be either 0 or 1."
+            fp_params["cal_force"] = _parse_abacus_binary(
+                fp_params["cal_force"], "cal_force"
             )
             ret += "cal_force %d\n" % fp_params["cal_force"]  # noqa: UP031
         elif key == "cal_stress":
-            if isinstance(fp_params["cal_stress"], str):
-                fp_params["cal_stress"] = int(eval(fp_params["cal_stress"]))
-            assert fp_params["cal_stress"] == 0 or fp_params["cal_stress"] == 1, (
-                "'cal_stress' should be either 0 or 1."
+            fp_params["cal_stress"] = _parse_abacus_binary(
+                fp_params["cal_stress"], "cal_stress"
             )
             ret += "cal_stress %d\n" % fp_params["cal_stress"]  # noqa: UP031
         # paras for deepks
         elif key == "deepks_out_labels":
-            if isinstance(fp_params["deepks_out_labels"], str):
-                fp_params["deepks_out_labels"] = int(
-                    eval(fp_params["deepks_out_labels"])
-                )
-            assert (
-                fp_params["deepks_out_labels"] == 0
-                or fp_params["deepks_out_labels"] == 1
-            ), "'deepks_out_labels' should be either 0 or 1."
+            fp_params["deepks_out_labels"] = _parse_abacus_binary(
+                fp_params["deepks_out_labels"], "deepks_out_labels"
+            )
             ret += "deepks_out_labels %d\n" % fp_params["deepks_out_labels"]  # noqa: UP031
         elif key == "deepks_descriptor_lmax":
             fp_params["deepks_descriptor_lmax"] = int(
@@ -183,10 +186,8 @@ def make_abacus_scf_input(fp_params, extra_file_path=""):
             )
             ret += "deepks_descriptor_lmax %d\n" % fp_params["deepks_descriptor_lmax"]  # noqa: UP031
         elif key == "deepks_scf":
-            if isinstance(fp_params["deepks_scf"], str):
-                fp_params["deepks_scf"] = int(eval(fp_params["deepks_scf"]))
-            assert fp_params["deepks_scf"] == 0 or fp_params["deepks_scf"] == 1, (
-                "'deepks_scf' should be either 0 or 1."
+            fp_params["deepks_scf"] = _parse_abacus_binary(
+                fp_params["deepks_scf"], "deepks_scf"
             )
             ret += "deepks_scf %d\n" % fp_params["deepks_scf"]  # noqa: UP031
         elif key == "deepks_model":

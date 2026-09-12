@@ -56,3 +56,8 @@ class TestCheckBadBox(unittest.TestCase):
                         self.assertEqual(
                             check_bad_box(path, criterion, fmt="vasp/poscar"), expected
                         )
+
+    def test_gromacs_frame_format(self):
+        dirname = os.path.dirname(__file__)
+        conf = os.path.join(dirname, "gromacs", "outputs", "traj", "0.gromacstrj")
+        self.assertFalse(check_bad_box(conf, "length_ratio:5", fmt="gromacs/gro"))

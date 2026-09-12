@@ -59,7 +59,7 @@ def make_lammps_input(
         while power < nbeads:
             power *= 10
         ret += "variable        ibead           uloop %d pad\n" % (power - 1)  # noqa: UP031
-    if nbeads is not None:
+    if nbeads is not None or jdata.get("model_format") == "pt2":
         ret += "atom_modify        map yes\n"
     ret += "variable        THERMO_FREQ     equal %d\n" % trj_freq  # noqa: UP031
     ret += "variable        DUMP_FREQ       equal %d\n" % trj_freq  # noqa: UP031
@@ -149,15 +149,15 @@ def make_lammps_input(
             else:
                 ret += f"pair_style      deepmd {graph_list} out_freq ${{THERMO_FREQ}} out_file model_devi${{ibead}}.out {keywords}\n"
 
-    # Add pair_coeff lines
+    # Use DP-GEN's LAMMPS type order when it is available. Direct callers that
+    # omit type_map retain the historical bare pair_coeff behavior.
+    type_map_str = " ".join(jdata.get("type_map", []))
+    type_map_args = f" {type_map_str}" if type_map_str else ""
     if d3_enabled:
-        # D3 requires type maps (element symbols)
-        type_map = jdata.get("type_map", [])
-        type_map_str = " ".join(type_map)
-        ret += "pair_coeff      * * deepmd\n"
+        ret += f"pair_coeff      * * deepmd{type_map_args}\n"
         ret += f"pair_coeff      * * dispersion/d3 {type_map_str}\n"
     else:
-        ret += "pair_coeff      * *\n"
+        ret += f"pair_coeff      * *{type_map_args}\n"
     ret += "\n"
     ret += "thermo_style    custom step temp pe ke etotal press vol lx ly lz xy xz yz\n"
     ret += "thermo          ${THERMO_FREQ}\n"

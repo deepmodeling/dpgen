@@ -160,3 +160,19 @@ class TestVASP(unittest.TestCase):
     def test_backward_files(self):
         backward_files = ["OUTCAR", "outlog", "CONTCAR", "OSZICAR", "XDATCAR"]
         self.assertEqual(self.VASP.backward_files(), backward_files)
+
+    def test_forward_files(self):
+        self.assertEqual(
+            ["INCAR", "POSCAR", "KPOINTS", "POTCAR"], self.VASP.forward_files()
+        )
+
+    def test_forward_common_files(self):
+        """Task-local VASP inputs must not be uploaded from the work root."""
+        for property_type in [
+            "relaxation",
+            "elastic",
+            "vacancy",
+            "interstitial",
+        ]:
+            with self.subTest(property_type=property_type):
+                self.assertEqual([], self.VASP.forward_common_files(property_type))

@@ -30,7 +30,7 @@ dpgen simplify param.json machine.json
 
 Environment boundary rule:
 
-- Outer layer: run `dpgen simplify param.json machine.json` in an activated environment where `dpgen --version` works.
+- Outer layer: run `dpgen simplify param.json machine.json` in an activated environment where `dpgen -h` works.
 - Inner layer: for scheduler stages, explicitly activate runtime in `resources.source_list` on the server side.
 
 ## Agent responsibilities
@@ -102,7 +102,7 @@ Do not guess conda environment names, module names, or site-specific paths.
 Use an activated DP-GEN environment and verify with:
 
 ```bash
-dpgen --version
+dpgen -h
 ```
 
 Do not start simplify from a shell where `dpgen` is unavailable.
@@ -198,6 +198,7 @@ For each stage `train`, `model_devi`, and `fp`, collect or preserve:
 - `machine.context_type`
 - `machine.local_root`
 - `machine.remote_root`
+- `resources.batch_type` (use the same backend as `machine.batch_type`)
 - `resources.number_node`
 - `resources.cpu_per_node`
 - `resources.gpu_per_node`
@@ -234,12 +235,11 @@ Key fields usually include:
 - `numb_models`
 - `default_training_param`
 - `fp_style`
-- `shuffle_poscar`
 - `fp_task_max`
 - `fp_task_min`
-- `fp_pp_path`
-- `fp_pp_files`
 - `fp_params`
+- backend support fields such as `fp_pp_path` and `fp_pp_files` only when the
+  selected FP schema requires them
 - `init_pick_number`
 - `iter_pick_number`
 - `model_devi_f_trust_lo`
@@ -263,7 +263,7 @@ For each stage, keep the following explicit:
 
 - `command`
 - machine or context configuration
-- resources
+- resources, including the same `batch_type` used by the machine block
 - queue or partition if needed
 - cpu and gpu counts
 - custom scheduler flags
@@ -278,7 +278,7 @@ Before execution, validate the workflow in this order:
 1. confirm outer-layer `dpgen` is available:
 
 ```bash
-dpgen --version
+dpgen -h
 ```
 
 2. validate JSON syntax:
@@ -316,6 +316,8 @@ Always provide:
 - Keep `type_map` ordering consistent with dataset typing.
 - If required inputs are missing, stop and ask instead of guessing.
 - If `fp_style` is `none`, skip FP-specific prompts and keep FP-specific settings disabled or unset.
+- The machine schema still requires an `fp` stage and a string command. Use the
+  no-op command `true` when `fp_style` is `none`.
 - If data is already labeled and the user does not request new labels, enforce `fp_style = "none"` and do not require active FP runtime fields.
 - Do not assume outer-shell activation is inherited by stage jobs; for scheduler execution, require explicit `source_list` per stage.
 - If the user already has working templates, patch them rather than overwriting them blindly.
