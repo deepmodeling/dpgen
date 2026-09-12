@@ -55,6 +55,65 @@ class TestMakeLammpsInput(unittest.TestCase):
         # Should NOT contain hybrid/overlay or dispersion/d3
         self.assertNotIn("hybrid/overlay", result)
         self.assertNotIn("dispersion/d3", result)
+        self.assertNotIn("atom_modify        map yes", result)
+
+    def test_pt2_enables_atom_map_before_read(self):
+        """Test that pt2 models enable one atom map before defining the box."""
+        result = make_lammps_input(
+            self.ensemble,
+            self.conf_file,
+            self.graphs,
+            self.nsteps,
+            self.dt,
+            self.neidelay,
+            self.trj_freq,
+            self.mass_map,
+            self.temp,
+            {"model_format": "pt2"},
+            pres=1.0,
+            deepmd_version=self.deepmd_version,
+        )
+
+        atom_map = "atom_modify        map yes"
+        self.assertEqual(result.count(atom_map), 1)
+        self.assertLess(result.index(atom_map), result.index("read_restart"))
+        self.assertLess(result.index(atom_map), result.index("read_data"))
+
+        pimd_result = make_lammps_input(
+            self.ensemble,
+            self.conf_file,
+            self.graphs,
+            self.nsteps,
+            self.dt,
+            self.neidelay,
+            self.trj_freq,
+            self.mass_map,
+            self.temp,
+            {"model_format": "pt2"},
+            pres=1.0,
+            deepmd_version=self.deepmd_version,
+            nbeads=4,
+        )
+        self.assertEqual(pimd_result.count(atom_map), 1)
+
+    def test_pt2_uses_explicit_type_mapping(self):
+        """Test that DP-GEN's LAMMPS type order is passed to DeepMD."""
+        result = make_lammps_input(
+            self.ensemble,
+            self.conf_file,
+            self.graphs,
+            self.nsteps,
+            self.dt,
+            self.neidelay,
+            self.trj_freq,
+            self.mass_map,
+            self.temp,
+            {"model_format": "pt2", "type_map": ["C", "Cl", "H", "O"]},
+            pres=1.0,
+            deepmd_version=self.deepmd_version,
+        )
+
+        self.assertIn("pair_coeff      * * C Cl H O\n", result)
 
     def test_type_map_is_passed_to_deepmd(self):
         """Map LAMMPS types even when the model order is reversed."""
@@ -111,6 +170,9 @@ class TestMakeLammpsInput(unittest.TestCase):
         self.assertIn("dispersion/d3 original pbe 30.0 20.0", result)
         self.assertIn("pair_coeff      * * deepmd H O", result)
         self.assertIn("pair_coeff      * * dispersion/d3 H O", result)
+
+        self.assertIn("pair_coeff      * * deepmd H O\n", result)
+        self.assertIn("pair_coeff      * * dispersion/d3 H O\n", result)
 
         # Should contain both pair_coeff lines
         lines = result.split("\n")

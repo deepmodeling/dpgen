@@ -8,6 +8,11 @@ from monty.serialization import dumpfn
 from dpgen.auto_test.calculator import make_calculator
 
 
+def _total_atom_count(result):
+    """Return the total number of atoms across all species in a result."""
+    return sum(result["atom_numbs"])
+
+
 class Property(ABC):
     @abstractmethod
     def __init__(self, parameter):

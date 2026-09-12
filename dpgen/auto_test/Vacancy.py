@@ -8,7 +8,7 @@ from monty.serialization import dumpfn, loadfn
 
 import dpgen.auto_test.lib.abacus as abacus
 from dpgen import dlog
-from dpgen.auto_test.Property import Property
+from dpgen.auto_test.Property import Property, _total_atom_count
 from dpgen.auto_test.refine import make_refine
 from dpgen.auto_test.reproduce import make_repro, post_repro
 
@@ -231,14 +231,14 @@ class Vacancy(Property):
                 idid += 1
                 structure_dir = os.path.basename(ii)
                 task_result = loadfn(all_res[idid])
-                natoms = task_result["atom_numbs"][0]
+                natoms = _total_atom_count(task_result)
                 equi_path = os.path.abspath(
                     os.path.join(
                         os.path.dirname(output_file), "../relaxation/relax_task"
                     )
                 )
                 equi_result = loadfn(os.path.join(equi_path, "result.json"))
-                equi_epa = equi_result["energies"][-1] / equi_result["atom_numbs"][0]
+                equi_epa = equi_result["energies"][-1] / _total_atom_count(equi_result)
                 evac = task_result["energies"][-1] - equi_epa * natoms
 
                 supercell_index = loadfn(os.path.join(ii, "supercell.json"))

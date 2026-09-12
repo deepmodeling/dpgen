@@ -61,7 +61,7 @@ def _check_numb_models(testCase, iter_idx, numb_models):
     models = glob.glob(
         os.path.join("iter.%06d" % iter_idx, "00.train", "[0-9][0-9][0-9]")  # noqa: UP031
     )
-    testCase.assertTrue(len(models), numb_models)
+    testCase.assertEqual(len(models), numb_models)
 
 
 def _check_model_inputs(testCase, iter_idx, jdata):
@@ -608,7 +608,7 @@ class TestMakeTrain(unittest.TestCase):
             input_path = os.path.join("iter.000000", "00.train", "000", "input.json")
             with open(input_path) as fp:
                 model_input = json.load(fp)
-            self.assertNotIn("type_map", model_input["model"])
+            self.assertEqual(model_input["model"]["type_map"], jdata["type_map"])
             shutil.rmtree("iter.000000")
 
     def test_pytorch_3_uses_top_level_type_map_as_fallback(self):

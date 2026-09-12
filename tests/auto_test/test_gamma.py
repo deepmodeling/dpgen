@@ -2,7 +2,9 @@ import glob
 import os
 import shutil
 import sys
+import tempfile
 import unittest
+from unittest.mock import patch
 
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp import Incar
@@ -71,6 +73,25 @@ class TestGamma(unittest.TestCase):
 
     def test_task_param(self):
         self.assertEqual(self.prop_param[0], self.gamma.task_param())
+
+    @patch("dpgen.auto_test.Gamma.make_repro", return_value=[])
+    def test_reproduce_passes_interaction_parameters(self, make_repro):
+        inter_param = {"type": "deepmd", "model": "graph.pb"}
+        gamma = Gamma(
+            {"type": "gamma", "reproduce": True, "init_data_path": "."},
+            inter_param,
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path_to_work = os.path.join(tmpdir, "gamma_reprod")
+            gamma.make_confs(path_to_work, tmpdir)
+
+        make_repro.assert_called_once_with(
+            inter_param,
+            os.path.abspath("."),
+            "00",
+            os.path.abspath(path_to_work),
+            True,
+        )
 
     def test_make_confs_bcc(self):
         if not os.path.exists(os.path.join(self.equi_path, "CONTCAR")):
