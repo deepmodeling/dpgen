@@ -156,7 +156,27 @@ _BACKEND_CONFIG = {
 
 
 def _get_backend(jdata, key, default) -> tuple[str, dict]:
-    """Return and validate a DeePMD backend."""
+    """Return and validate a DeePMD backend.
+
+    Parameters
+    ----------
+    jdata : dict
+        DP-GEN workflow parameters.
+    key : str
+        Parameter containing the backend name or alias.
+    default : str
+        Backend to use when the parameter is absent.
+
+    Returns
+    -------
+    tuple[str, dict]
+        Canonical backend name and its shared configuration.
+
+    Raises
+    ------
+    ValueError
+        If the engine is not DeePMD or the backend is unsupported.
+    """
     mlp_engine = jdata.get("mlp_engine", "dp")
     if mlp_engine != "dp":
         raise ValueError(f"Unsupported engine: {mlp_engine}")
@@ -172,12 +192,47 @@ def _get_backend(jdata, key, default) -> tuple[str, dict]:
 
 
 def _get_train_backend_config(jdata) -> tuple[str, dict]:
-    """Return the training backend configuration."""
+    """Return the training backend configuration.
+
+    Parameters
+    ----------
+    jdata : dict
+        DP-GEN parameters, optionally including ``train_backend``.
+
+    Returns
+    -------
+    tuple[str, dict]
+        Canonical backend name and configuration, defaulting to TensorFlow.
+
+    Raises
+    ------
+    ValueError
+        If the engine or training backend is unsupported.
+    """
     return _get_backend(jdata, "train_backend", "tensorflow")
 
 
 def _get_model_backend_config(jdata) -> tuple[str, dict, str]:
-    """Return the training backend and validate its frozen model format."""
+    """Return the training backend and validate its frozen model format.
+
+    Parameters
+    ----------
+    jdata : dict
+        DP-GEN training and model-deviation parameters.
+
+    Returns
+    -------
+    tuple[str, dict, str]
+        Canonical backend name, configuration, and resolved model format.
+        PyTorch-exportable defaults to ``pt2`` for LAMMPS and ``pte`` otherwise.
+        Export uses the training backend because checkpoints are backend-specific.
+
+    Raises
+    ------
+    ValueError
+        If the engine, backend, or model format is unsupported, or if LAMMPS
+        is configured to consume a ``pte`` artifact.
+    """
     backend, config = _get_train_backend_config(jdata)
     default_model_format = config["default_model_format"]
     if (
@@ -204,19 +259,67 @@ def _get_model_backend_config(jdata) -> tuple[str, dict, str]:
 
 
 def _get_model_suffix(jdata) -> str:
-    """Return the frozen model suffix."""
+    """Return the frozen model suffix.
+
+    Parameters
+    ----------
+    jdata : dict
+        DP-GEN training and model-deviation parameters.
+
+    Returns
+    -------
+    str
+        Resolved deployment-artifact suffix, including the leading dot.
+
+    Raises
+    ------
+    ValueError
+        If the backend or deployment format is unsupported.
+    """
     _, _, model_format = _get_model_backend_config(jdata)
     return f".{model_format}"
 
 
 def _get_checkpoint_suffix(jdata) -> str:
-    """Return the training checkpoint suffix."""
+    """Return the training checkpoint suffix.
+
+    Parameters
+    ----------
+    jdata : dict
+        DP-GEN parameters, optionally including ``train_backend``.
+
+    Returns
+    -------
+    str
+        Backend-specific checkpoint suffix, independent of the export format.
+
+    Raises
+    ------
+    ValueError
+        If the engine or training backend is unsupported.
+    """
     _, config = _get_train_backend_config(jdata)
     return config["checkpoint_suffix"]
 
 
 def _get_train_backend_flag(jdata) -> str:
-    """Return the DeePMD CLI backend flag."""
+    """Return the DeePMD CLI backend flag.
+
+    Parameters
+    ----------
+    jdata : dict
+        DP-GEN parameters, optionally including ``train_backend``.
+
+    Returns
+    -------
+    str
+        Backend selection flag, or an empty string for TensorFlow.
+
+    Raises
+    ------
+    ValueError
+        If the engine or training backend is unsupported.
+    """
     _, config = _get_train_backend_config(jdata)
     return config["flag"]
 
@@ -245,7 +348,23 @@ def _get_export_command(mdata, backend_flag) -> str:
 
 
 def _get_input_model_suffix(models) -> str:
-    """Return the common suffix of input models."""
+    """Return the common suffix of input models.
+
+    Parameters
+    ----------
+    models : iterable[str or os.PathLike]
+        Model paths used to initialize or fine-tune training.
+
+    Returns
+    -------
+    str
+        Common lowercase filename suffix, including the leading dot.
+
+    Raises
+    ------
+    ValueError
+        If no models are supplied, a suffix is missing, or suffixes differ.
+    """
     suffixes = {Path(model).suffix.lower() for model in models}
     if "" in suffixes or len(suffixes) != 1:
         raise ValueError("Input models must have the same non-empty file suffix.")
@@ -253,7 +372,23 @@ def _get_input_model_suffix(models) -> str:
 
 
 def _get_pt2_lower_kind(jdata) -> str:
-    """Return the compatible lower kind for a PyTorch-exportable PT2 model."""
+    """Return the compatible lower kind for a PyTorch-exportable PT2 model.
+
+    Parameters
+    ----------
+    jdata : dict
+        DP-GEN parameters containing ``default_training_param``.
+
+    Returns
+    -------
+    str
+        ``graph`` for DPA4/DPA4C or ``nlist`` for other descriptors.
+
+    Raises
+    ------
+    ValueError
+        If the training configuration mixes DPA4 and DPA4C branches.
+    """
     family = _get_dpa_model_family(jdata.get("default_training_param", {}))
     return "graph" if family in {"dpa4", "dpa4c"} else "nlist"
 
@@ -1474,13 +1609,14 @@ def revise_lmp_input_pair_coeff(lmp_lines, jdata=None):
     Returns
     -------
     list[str]
-        The updated LAMMPS input lines.
+        The input lines, updated in place only within the DeepMD potential
+        stage, ending at the next ``pair_style`` command.
 
     Raises
     ------
     RuntimeError
-        If a coefficient must be inserted but the template does not contain
-        exactly one pair_style line.
+        If coefficients need revision but the template does not contain
+        exactly one ``pair_style`` command containing ``deepmd``.
     """
     if jdata is None:
         return lmp_lines
@@ -1511,8 +1647,12 @@ def revise_lmp_input_pair_coeff(lmp_lines, jdata=None):
     deepmd_coeff_idx = None
     fallback_coeff_idx = None
     d3_coeff_idx = None
-    for idx, line in enumerate(lmp_lines):
-        tokens = line.partition("#")[0].split()
+    # Each pair_style resets the active potential. Keep original line indices
+    # while excluding coefficients from preceding and following stages.
+    for idx in range(pair_style_idx + 1, len(lmp_lines)):
+        tokens = lmp_lines[idx].partition("#")[0].split()
+        if tokens and tokens[0] == "pair_style":
+            break
         if not tokens or tokens[0] != "pair_coeff":
             continue
         if "dispersion/d3" in tokens:

@@ -732,17 +732,68 @@ class MakeModelDeviByReviseMatrix(unittest.TestCase):
         self.assertEqual(result[2], "pair_coeff      * * deepmd C Cl H O\n")
 
     def test_revise_lmp_input_pair_coeff_ignores_other_pair_styles(self):
+        """Only the DeepMD stage receives the configured element mapping."""
         jdata = {"type_map": ["C", "Cl", "H", "O"]}
-        lines = [
+        prefix = [
             "pair_style soft 1.0\n",
-            "pair_style deepmd graph.pb\n",
-            "pair_coeff * *\n",
+            "pair_coeff * * 10.0\n",
+            "run 100\n",
         ]
+        suffix = ["pair_style zero 10.0\n", "pair_coeff * *\n"]
+        for coeff_lines in ([], ["pair_coeff * *\n"]):
+            with self.subTest(coeff_lines=coeff_lines):
+                lines = prefix + ["pair_style deepmd graph.pb\n"] + coeff_lines + suffix
+                expected = (
+                    prefix
+                    + [
+                        "pair_style deepmd graph.pb\n",
+                        "pair_coeff      * * C Cl H O\n",
+                    ]
+                    + suffix
+                )
 
-        result = revise_lmp_input_pair_coeff(lines, jdata)
+                result = revise_lmp_input_pair_coeff(lines, jdata)
+                self.assertEqual(result, expected)
+                self.assertEqual(revise_lmp_input_pair_coeff(result, jdata), expected)
 
-        self.assertEqual(result[0], "pair_style soft 1.0\n")
-        self.assertEqual(result[2], "pair_coeff      * * C Cl H O\n")
+    def test_revise_lmp_input_pair_coeff_d3_stays_in_deepmd_stage(self):
+        """D3 coefficients from other stages neither suppress nor receive edits."""
+        jdata = {
+            "type_map": ["C", "Cl", "H", "O"],
+            "lmp_d3": {"enable": True},
+        }
+        other_stage = [
+            "pair_style hybrid/overlay zero 10.0 dispersion/d3 zero pbe 10 10\n",
+            "pair_coeff * * zero\n",
+            "pair_coeff * * dispersion/d3 H O C Cl\n",
+            "run 100\n",
+        ]
+        deepmd_style = (
+            "pair_style hybrid/overlay deepmd graph.pt2 dispersion/d3 zero pbe 10 10\n"
+        )
+        # Exercise insertion as well as updates, including the index shift when
+        # an existing D3 coefficient follows a newly inserted DeepMD coefficient.
+        for coeff_lines in (
+            [],
+            ["pair_coeff * *\n"],
+            ["pair_coeff * * dispersion/d3\n"],
+            ["pair_coeff * * deepmd\n", "pair_coeff * * dispersion/d3\n"],
+        ):
+            with self.subTest(coeff_lines=coeff_lines):
+                lines = other_stage + [deepmd_style] + coeff_lines + other_stage
+                expected = (
+                    other_stage
+                    + [
+                        deepmd_style,
+                        "pair_coeff      * * deepmd C Cl H O\n",
+                        "pair_coeff      * * dispersion/d3 C Cl H O\n",
+                    ]
+                    + other_stage
+                )
+
+                result = revise_lmp_input_pair_coeff(lines, jdata)
+                self.assertEqual(result, expected)
+                self.assertEqual(revise_lmp_input_pair_coeff(result, jdata), expected)
 
     def test_revise_lmp_input_pair_coeff_d3_is_idempotent(self):
         jdata = {
