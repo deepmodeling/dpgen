@@ -239,13 +239,12 @@ class VASP(Task):
         return ["INCAR", "POSCAR", "KPOINTS", "POTCAR"]
 
     def forward_common_files(self, property_type="relaxation"):
-        potcar_not_link_list = ["vacancy", "interstitial"]
-        if property_type == "elastic":
-            return ["INCAR", "KPOINTS", "POTCAR"]
-        elif property_type in potcar_not_link_list:
-            return ["INCAR"]
-        else:
-            return ["INCAR", "POTCAR"]
+        """Return files shared from the submission's top-level work directory.
+
+        VASP inputs are generated inside each property directory and forwarded
+        through :meth:`forward_files`; none of them live at the submission root.
+        """
+        return []
 
     def backward_files(self, property_type="relaxation"):
         return ["OUTCAR", "outlog", "CONTCAR", "OSZICAR", "XDATCAR"]
