@@ -79,7 +79,7 @@ write_to = "dpgen/_version.py"
 [tool.isort]
 profile = "black"
 
-[tool.ruff]
+[tool.ruff.lint]
 select = [
     "I", # isort
     "E", # errors
@@ -108,7 +108,6 @@ ignore = [
     "D401", # TODO: first line should be in imperative mood
     "D404", # TODO: first word of the docstring should not be This
 ]
-ignore-init-module-imports = true
 
 [tool.ruff.lint.flake8-tidy-imports]
 banned-module-level-imports = [
@@ -118,5 +117,5 @@ banned-module-level-imports = [
 [tool.ruff.lint.extend-per-file-ignores]
 "tests/**" = ["TID253"]
 
-[tool.ruff.pydocstyle]
+[tool.ruff.lint.pydocstyle]
 convention = "numpy"
