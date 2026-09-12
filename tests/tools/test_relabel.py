@@ -1,4 +1,5 @@
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -59,6 +60,38 @@ class TestRelabelInputs(unittest.TestCase):
         make_pwscf.assert_called_once_with(
             "task", params, [1.0], "/pp", ["H.UPF"], True
         )
+
+    def test_pwscf_writes_inputs_for_both_parameter_modes(self):
+        """Exercise the final formatter without mocking either PWSCF helper."""
+        for params in (
+            {"fp_params": {"ecut": 50, "ediff": 1e-6, "kspacing": 0.2}},
+            {
+                "user_fp_params": {
+                    "control": {"calculation": "scf"},
+                    "system": {"ecutwfc": 50},
+                    "electrons": {"conv_thr": 1e-6},
+                    "kspacing": 0.2,
+                }
+            },
+        ):
+            with self.subTest(params=params), tempfile.TemporaryDirectory() as tmp:
+                task = Path(tmp)
+                (task / "POSCAR").write_text(
+                    "H\n1.0\n4 0 0\n0 4 0\n0 0 4\nH\n1\nDirect\n0 0 0\n"
+                )
+                cwd = os.getcwd()
+                try:
+                    relabel.make_non_vasp_input(
+                        task, "pwscf", params, [1.0], tmp, ["H.UPF"]
+                    )
+                    self.assertEqual(os.getcwd(), cwd)
+                finally:
+                    os.chdir(cwd)
+                text = (task / "input").read_text()
+                self.assertIn("&control", text)
+                self.assertIn("ecutwfc=50", text.replace(" ", ""))
+                self.assertIn("H.UPF", text)
+                self.assertIn("K_POINTS", text)
 
     @patch("dpgen.tools.relabel.make_siesta")
     def test_siesta_arguments_match_helper_signature(self, make_siesta):

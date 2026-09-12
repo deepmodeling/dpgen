@@ -68,11 +68,12 @@ def make_vasp_incar(tdir, fp_incar):
 
 
 def make_pwscf(tdir, fp_params, mass_map, fp_pp_path, fp_pp_files, user_input):
+    """Generate PWSCF input in either legacy or user-namelist parameter mode."""
     cwd = os.getcwd()
     os.chdir(tdir)
     sys_data = dpdata.System("POSCAR").data
     sys_data["atom_masses"] = mass_map
-    ret = make_pwscf_input(sys_data, fp_pp_files, fp_params)
+    ret = make_pwscf_input(sys_data, fp_pp_files, fp_params, user_input=user_input)
     open("input", "w").write(ret)
     os.chdir(cwd)
 
