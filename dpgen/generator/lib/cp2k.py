@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import numpy as np
 
 atomic_numbers = {
@@ -312,12 +314,15 @@ def make_cp2k_input(sys_data, fp_params):
     }
     # get update for multiplicity
     multiplicity_config = {"FORCE_EVAL": {"DFT": {"MULTIPLICITY": multiplicity}}}
-    update_dict(default_config, user_config)
-    update_dict(default_config, cell_config)
-    update_dict(default_config, multiplicity_config)
+    # Each generated input must start from pristine defaults; ``update_dict``
+    # mutates nested mappings in place.
+    config = deepcopy(default_config)
+    update_dict(config, user_config)
+    update_dict(config, cell_config)
+    update_dict(config, multiplicity_config)
     # output list
     input_str = []
-    iterdict(default_config, input_str)
+    iterdict(config, input_str)
     string = "\n".join(input_str)
     return string
 
