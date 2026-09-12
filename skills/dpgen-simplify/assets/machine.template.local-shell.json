@@ -10,9 +10,10 @@
             "remote_root": "./"
         },
         "resources": {
+            "batch_type": "Shell",
             "number_node": 1,
-            "cpu_per_node": null,
-            "gpu_per_node": null,
+            "cpu_per_node": 1,
+            "gpu_per_node": 0,
             "group_size": 1
         }
     },
@@ -25,14 +26,15 @@
             "remote_root": "./"
         },
         "resources": {
+            "batch_type": "Shell",
             "number_node": 1,
-            "cpu_per_node": null,
-            "gpu_per_node": null,
+            "cpu_per_node": 1,
+            "gpu_per_node": 0,
             "group_size": 1
         }
     },
     "fp": {
-        "command": null,
+        "command": "true",
         "machine": {
             "batch_type": "Shell",
             "context_type": "LazyLocalContext",
@@ -40,9 +42,10 @@
             "remote_root": "./"
         },
         "resources": {
+            "batch_type": "Shell",
             "number_node": 1,
-            "cpu_per_node": null,
-            "gpu_per_node": null,
+            "cpu_per_node": 1,
+            "gpu_per_node": 0,
             "group_size": 1
         }
     }

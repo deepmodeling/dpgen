@@ -1,24 +1,22 @@
 {
-    "type_map": null,
-    "mass_map": null,
-    "pick_data": null,
-    "sys_configs": null,
+    "type_map": [
+        "REPLACE_ME"
+    ],
+    "mass_map": "auto",
+    "pick_data": "/path/to/deepmd/data",
+    "sys_configs": [],
     "init_data_prefix": "",
     "init_data_sys": [],
     "sys_batch_size": [
         "auto"
     ],
-    "train_backend": null,
+    "train_backend": "tensorflow",
     "labeled": true,
-    "fp_task_max": null,
-    "fp_task_min": null,
-    "model_devi_e_trust_lo": null,
-    "model_devi_e_trust_hi": null,
-    "init_pick_number": null,
-    "iter_pick_number": null,
-    "model_devi_f_trust_lo": null,
-    "model_devi_f_trust_hi": null,
+    "init_pick_number": 100,
+    "iter_pick_number": 100,
+    "model_devi_f_trust_lo": 0.1,
+    "model_devi_f_trust_hi": 0.3,
     "numb_models": 4,
     "fp_style": "none",
-    "default_training_param": null
+    "default_training_param": {}
 }
