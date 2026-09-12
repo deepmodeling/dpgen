@@ -371,6 +371,134 @@ def _get_input_model_suffix(models) -> str:
     return suffixes.pop()
 
 
+def _normalize_training_params(jdata) -> list[dict]:
+    """Return one independent DeePMD configuration for each committee member."""
+    training_param = jdata.get("default_training_param", {})
+    numb_models = jdata.get("numb_models", 0)
+    if isinstance(training_param, dict):
+        return [copy.deepcopy(training_param) for _ in range(numb_models)]
+    if isinstance(training_param, list):
+        if len(training_param) != numb_models:
+            raise ValueError(
+                "default_training_param must contain exactly "
+                f"numb_models ({numb_models}) configurations, got "
+                f"{len(training_param)}."
+            )
+        if not all(isinstance(item, dict) for item in training_param):
+            raise TypeError(
+                "Each default_training_param committee member must be a dict."
+            )
+        return copy.deepcopy(training_param)
+    raise TypeError("default_training_param must be a dict or a list of dicts.")
+
+
+def _get_committee_model_sections(training_param):
+    """Yield all model branches used to derive committee compatibility."""
+    model = training_param.get("model", {})
+    model_dict = model.get("model_dict") or {}
+    if model_dict:
+        yield from model_dict.values()
+    else:
+        yield model
+
+
+def _get_committee_rcut(training_param):
+    """Return the effective descriptor cutoff from a training configuration."""
+    rcuts = set()
+    for model in _get_committee_model_sections(training_param):
+        descriptor = model.get("descriptor", {})
+        descriptor_type = (
+            descriptor.get("type") if isinstance(descriptor, dict) else None
+        )
+        descriptor_type = (
+            descriptor_type.lower() if isinstance(descriptor_type, str) else ""
+        )
+        if descriptor_type == "dpa2":
+            rcut = (descriptor.get("repinit") or {}).get("rcut")
+        elif descriptor_type == "dpa3":
+            rcut = (descriptor.get("repflow") or {}).get("rcut")
+        else:
+            rcut = descriptor.get("rcut") if isinstance(descriptor, dict) else None
+        rcuts.add(rcut)
+    return tuple(sorted(rcuts, key=repr))
+
+
+def _get_committee_output_class(training_param):
+    """Return the configured output class for a committee member."""
+    output_classes = set()
+    for model in _get_committee_model_sections(training_param):
+        fitting_net = model.get("fitting_net", {})
+        if isinstance(fitting_net, dict):
+            output_class = fitting_net.get("type", "ener")
+        else:
+            model_type = model.get("type")
+            if model_type in {"dpa2", "dpa3", "dpa4", "dpa4c", "sezm"}:
+                output_class = "ener"
+            else:
+                output_class = model_type
+        output_classes.add(output_class)
+    return tuple(sorted(output_classes, key=repr))
+
+
+def _get_committee_param_dims(training_param):
+    """Return frame and atomic parameter dimensions for a committee member."""
+    fparam_dims = set()
+    aparam_dims = set()
+    for model in _get_committee_model_sections(training_param):
+        fitting_net = model.get("fitting_net", {})
+        if not isinstance(fitting_net, dict):
+            continue
+        fparam_dims.add(fitting_net.get("numb_fparam", 0) or 0)
+        aparam_dims.add(fitting_net.get("numb_aparam", 0) or 0)
+    return tuple(sorted(fparam_dims, key=repr)), tuple(sorted(aparam_dims, key=repr))
+
+
+def _get_committee_signature(training_param, type_map):
+    """Return fields that must agree across model-deviation committee members."""
+    model_type_map = training_param.get("model", {}).get("type_map")
+    return (
+        tuple(model_type_map if model_type_map is not None else type_map),
+        _get_committee_rcut(training_param),
+        _get_committee_output_class(training_param),
+        *_get_committee_param_dims(training_param),
+    )
+
+
+def _validate_committee_compatibility(jdata, training_params) -> None:
+    """Validate shared model-deviation metadata for per-member configurations."""
+    if not isinstance(jdata.get("default_training_param"), list):
+        return
+    type_map = jdata.get("type_map", [])
+    signatures = [_get_committee_signature(item, type_map) for item in training_params]
+    reference = signatures[0]
+    fields = (
+        "type_map",
+        "cutoff",
+        "output class",
+        "fparam dimensions",
+        "aparam dimensions",
+    )
+    for index, signature in enumerate(signatures[1:], start=1):
+        for field, expected, actual in zip(fields, reference, signature):
+            if actual != expected:
+                raise ValueError(
+                    f"Committee member {index} has incompatible {field}: "
+                    f"expected {expected!r}, got {actual!r}."
+                )
+
+    _, _, model_format = _get_model_backend_config(jdata)
+    if model_format == "pt2":
+        lower_kinds = {
+            "graph" if _get_dpa_model_family(item) in {"dpa4", "dpa4c"} else "nlist"
+            for item in training_params
+        }
+        if len(lower_kinds) > 1:
+            raise ValueError(
+                "PT2 committee members must use the same export lower kind; "
+                f"got {sorted(lower_kinds)}."
+            )
+
+
 def _get_pt2_lower_kind(jdata) -> str:
     """Return the compatible lower kind for a PyTorch-exportable PT2 model.
 
@@ -389,7 +517,21 @@ def _get_pt2_lower_kind(jdata) -> str:
     ValueError
         If the training configuration mixes DPA4 and DPA4C branches.
     """
-    family = _get_dpa_model_family(jdata.get("default_training_param", {}))
+    training_param = jdata.get("default_training_param", {})
+    if isinstance(training_param, list):
+        families = {
+            _get_dpa_model_family(item)
+            for item in training_param
+            if _get_dpa_model_family(item) is not None
+        }
+        if len(families) > 1:
+            raise ValueError(
+                "default_training_param cannot mix DPA4 and DPA4C branches because "
+                "they require different DeePMD backends"
+            )
+        family = next(iter(families), None)
+    else:
+        family = _get_dpa_model_family(training_param)
     return "graph" if family in {"dpa4", "dpa4c"} else "nlist"
 
 
@@ -474,9 +616,73 @@ def _validate_dpa_training_config(jdata) -> None:
         options are incompatible.
     """
     training_param = jdata.get("default_training_param", {})
-    family = _get_dpa_model_family(training_param)
+    family = (
+        None
+        if isinstance(training_param, list)
+        else _get_dpa_model_family(training_param)
+    )
     train_backend, _ = _get_train_backend_config(jdata)
     _, _, model_format = _get_model_backend_config(jdata)
+    if isinstance(training_param, list):
+        training_params = _normalize_training_params(jdata)
+        if not training_params:
+            return
+        families = [_get_dpa_model_family(item) for item in training_params]
+        if "dpa4" in families and "dpa4c" in families:
+            raise ValueError(
+                "default_training_param cannot mix DPA4 and DPA4C branches because "
+                "they require different DeePMD backends"
+            )
+        if "dpa4" in families and train_backend != "pytorch":
+            raise ValueError(
+                f"DPA4 training requires train_backend='pytorch', not '{train_backend}'"
+            )
+        if "dpa4c" in families and train_backend != "pytorch-exportable":
+            raise ValueError(
+                "DPA4C training requires train_backend='pytorch-exportable', "
+                f"not '{train_backend}'"
+            )
+        if (
+            ("dpa4" in families or "dpa4c" in families)
+            and jdata.get("model_devi_engine", "lammps") == "lammps"
+            and model_format != "pt2"
+        ):
+            raise ValueError(
+                "DPA4/DPA4C LAMMPS model deviation requires model_format='pt2'"
+            )
+        if (
+            train_backend == "pytorch"
+            and model_format == "pt2"
+            and any(family is None for family in families)
+        ):
+            raise ValueError(
+                "The regular PyTorch backend only exports pt2 for DPA4/SeZM models."
+            )
+        for item, item_family in zip(training_params, families):
+            if item_family == "dpa4c":
+                misplaced = []
+                for scope, model in _iter_model_sections(item):
+                    for key in ("use_compile", "enable_tf32"):
+                        if key in model:
+                            misplaced.append(f"{scope}.{key}")
+                if misplaced:
+                    raise ValueError(
+                        "DPA4C uses training.enable_compile and training.enable_tf32; "
+                        f"remove misplaced {', '.join(misplaced)}"
+                    )
+            elif item_family == "dpa4":
+                misplaced = [
+                    f"training.{key}"
+                    for key in ("enable_compile", "enable_tf32")
+                    if key in item.get("training", {})
+                ]
+                if misplaced:
+                    raise ValueError(
+                        "DPA4 uses model.use_compile and model.enable_tf32; "
+                        f"remove misplaced {', '.join(misplaced)}"
+                    )
+        _validate_committee_compatibility(jdata, training_params)
+        return
     if family is None:
         if train_backend == "pytorch" and model_format == "pt2":
             raise ValueError(
@@ -644,6 +850,105 @@ def make_train(iter_index, jdata, mdata):
         return make_train_dp(iter_index, jdata, mdata)
     else:
         raise ValueError(f"Unsupported engine: {mlp_engine}")
+
+
+def _prepare_training_input(
+    jinput,
+    deepmd_version,
+    init_data_sys,
+    init_batch_size,
+    type_map,
+    use_ele_temp,
+    training_reuse_iter,
+    iter_index,
+    training_reuse_stop_batch,
+    training_reuse_old_ratio,
+    old_range,
+    training_reuse_start_lr,
+    training_reuse_start_pref_e,
+    training_reuse_start_pref_f,
+):
+    """Inject DP-GEN data and per-iteration settings into one model config."""
+    if Version(deepmd_version) >= Version("1") and Version(deepmd_version) < Version(
+        "2"
+    ):
+        jinput["training"]["systems"] = init_data_sys
+        jinput["training"]["batch_size"] = init_batch_size
+        jinput["model"]["type_map"] = type_map
+        if use_ele_temp == 1:
+            jinput["model"]["fitting_net"]["numb_fparam"] = 1
+            jinput["model"]["fitting_net"].pop("numb_aparam", None)
+        elif use_ele_temp == 2:
+            jinput["model"]["fitting_net"]["numb_aparam"] = 1
+            jinput["model"]["fitting_net"].pop("numb_fparam", None)
+        elif use_ele_temp != 0:
+            raise RuntimeError("invalid setting for use_ele_temp " + str(use_ele_temp))
+    elif Version(deepmd_version) >= Version("2") and Version(deepmd_version) < Version(
+        "4"
+    ):
+        jinput["training"].setdefault("training_data", {})
+        jinput["training"]["training_data"]["systems"] = init_data_sys
+        old_batch_size = jinput["training"]["training_data"].get("batch_size", "")
+        if not (
+            isinstance(old_batch_size, str) and old_batch_size.startswith("mixed:")
+        ):
+            jinput["training"]["training_data"]["batch_size"] = init_batch_size
+        jinput["model"]["type_map"] = type_map
+        if use_ele_temp == 1:
+            jinput["model"]["fitting_net"]["numb_fparam"] = 1
+            jinput["model"]["fitting_net"].pop("numb_aparam", None)
+        elif use_ele_temp == 2:
+            jinput["model"]["fitting_net"]["numb_aparam"] = 1
+            jinput["model"]["fitting_net"].pop("numb_fparam", None)
+        elif use_ele_temp != 0:
+            raise RuntimeError("invalid setting for use_ele_temp " + str(use_ele_temp))
+    else:
+        raise RuntimeError(
+            "DP-GEN currently only supports for DeePMD-kit 1.x to 3.x version!"
+        )
+
+    if training_reuse_iter is not None and iter_index >= training_reuse_iter:
+        training = jinput["training"]
+        if "numb_steps" in training and training_reuse_stop_batch is not None:
+            training["numb_steps"] = training_reuse_stop_batch
+        elif "stop_batch" in training and training_reuse_stop_batch is not None:
+            training["stop_batch"] = training_reuse_stop_batch
+        if Version("1") <= Version(deepmd_version) < Version("2"):
+            training["auto_prob_style"] = (
+                "prob_sys_size; 0:%d:%f; %d:%d:%f"  # noqa: UP031
+                % (
+                    old_range,
+                    training_reuse_old_ratio,
+                    old_range,
+                    len(init_data_sys),
+                    1.0 - training_reuse_old_ratio,
+                )
+            )
+        elif Version("2") <= Version(deepmd_version) < Version("4"):
+            training["training_data"]["auto_prob"] = (
+                "prob_sys_size; 0:%d:%f; %d:%d:%f"  # noqa: UP031
+                % (
+                    old_range,
+                    training_reuse_old_ratio,
+                    old_range,
+                    len(init_data_sys),
+                    1.0 - training_reuse_old_ratio,
+                )
+            )
+        else:
+            raise RuntimeError(f"Unsupported DeePMD-kit version: {deepmd_version}")
+        if (
+            jinput.get("loss", {}).get("start_pref_e") is not None
+            and training_reuse_start_pref_e is not None
+        ):
+            jinput["loss"]["start_pref_e"] = training_reuse_start_pref_e
+        if (
+            jinput.get("loss", {}).get("start_pref_f") is not None
+            and training_reuse_start_pref_f is not None
+        ):
+            jinput["loss"]["start_pref_f"] = training_reuse_start_pref_f
+        if training_reuse_start_lr is not None:
+            jinput["learning_rate"]["start_lr"] = training_reuse_start_lr
 
 
 def make_train_dp(iter_index, jdata, mdata):
@@ -827,110 +1132,44 @@ def make_train_dp(iter_index, jdata, mdata):
                     )
                     init_batch_size.append(detect_batch_size(batch_size, sys_single))
     # establish tasks
-    jinput = jdata["default_training_param"]
     try:
         mdata["deepmd_version"]
     except KeyError:
         mdata = set_version(mdata)
-    # setup data systems
-    if Version(mdata["deepmd_version"]) >= Version("1") and Version(
-        mdata["deepmd_version"]
-    ) < Version("2"):
-        # 1.x
-        jinput["training"]["systems"] = init_data_sys
-        jinput["training"]["batch_size"] = init_batch_size
-        jinput["model"]["type_map"] = jdata["type_map"]
-        # electron temperature
-        if use_ele_temp == 0:
-            pass
-        elif use_ele_temp == 1:
-            jinput["model"]["fitting_net"]["numb_fparam"] = 1
-            jinput["model"]["fitting_net"].pop("numb_aparam", None)
-        elif use_ele_temp == 2:
-            jinput["model"]["fitting_net"]["numb_aparam"] = 1
-            jinput["model"]["fitting_net"].pop("numb_fparam", None)
-        else:
-            raise RuntimeError("invalid setting for use_ele_temp " + str(use_ele_temp))
-    elif Version(mdata["deepmd_version"]) >= Version("2") and Version(
-        mdata["deepmd_version"]
-    ) < Version("4"):
-        # 2.x
-        jinput["training"].setdefault("training_data", {})
-        jinput["training"]["training_data"]["systems"] = init_data_sys
-        old_batch_size = jinput["training"]["training_data"].get("batch_size", "")
-        if not (
-            isinstance(old_batch_size, str) and old_batch_size.startswith("mixed:")
-        ):
-            jinput["training"]["training_data"]["batch_size"] = init_batch_size
-        jinput["model"]["type_map"] = jdata["type_map"]
-        # electron temperature
-        if use_ele_temp == 0:
-            pass
-        elif use_ele_temp == 1:
-            jinput["model"]["fitting_net"]["numb_fparam"] = 1
-            jinput["model"]["fitting_net"].pop("numb_aparam", None)
-        elif use_ele_temp == 2:
-            jinput["model"]["fitting_net"]["numb_aparam"] = 1
-            jinput["model"]["fitting_net"].pop("numb_fparam", None)
-        else:
-            raise RuntimeError("invalid setting for use_ele_temp " + str(use_ele_temp))
-    else:
-        raise RuntimeError(
-            "DP-GEN currently only supports for DeePMD-kit 1.x to 3.x version!"
-        )
-    # set training reuse model
+
     if auto_ratio:
         training_reuse_old_ratio = number_old_frames / (
             number_old_frames + number_new_frames * new_to_old_ratio
         )
-    if training_reuse_iter is not None and iter_index >= training_reuse_iter:
-        if "numb_steps" in jinput["training"] and training_reuse_stop_batch is not None:
-            jinput["training"]["numb_steps"] = training_reuse_stop_batch
-        elif (
-            "stop_batch" in jinput["training"] and training_reuse_stop_batch is not None
-        ):
-            jinput["training"]["stop_batch"] = training_reuse_stop_batch
-        if Version("1") <= Version(mdata["deepmd_version"]) < Version("2"):
-            jinput["training"]["auto_prob_style"] = (
-                "prob_sys_size; 0:%d:%f; %d:%d:%f"  # noqa: UP031
-                % (
-                    old_range,
-                    training_reuse_old_ratio,
-                    old_range,
-                    len(init_data_sys),
-                    1.0 - training_reuse_old_ratio,
-                )
-            )
-        elif Version("2") <= Version(mdata["deepmd_version"]) < Version("4"):
-            jinput["training"]["training_data"]["auto_prob"] = (
-                "prob_sys_size; 0:%d:%f; %d:%d:%f"  # noqa: UP031
-                % (
-                    old_range,
-                    training_reuse_old_ratio,
-                    old_range,
-                    len(init_data_sys),
-                    1.0 - training_reuse_old_ratio,
-                )
-            )
-        else:
-            raise RuntimeError(
-                "Unsupported DeePMD-kit version: {}".format(mdata["deepmd_version"])
-            )
-        if (
-            jinput["loss"].get("start_pref_e") is not None
-            and training_reuse_start_pref_e is not None
-        ):
-            jinput["loss"]["start_pref_e"] = training_reuse_start_pref_e
-        if (
-            jinput["loss"].get("start_pref_f") is not None
-            and training_reuse_start_pref_f is not None
-        ):
-            jinput["loss"]["start_pref_f"] = training_reuse_start_pref_f
-        if training_reuse_start_lr is not None:
-            jinput["learning_rate"]["start_lr"] = training_reuse_start_lr
+
+    training_params = _normalize_training_params(jdata)
+    prepared_inputs = []
+    for jinput in training_params:
+        _prepare_training_input(
+            jinput,
+            mdata["deepmd_version"],
+            init_data_sys,
+            init_batch_size,
+            jdata["type_map"],
+            use_ele_temp,
+            training_reuse_iter,
+            iter_index,
+            training_reuse_stop_batch,
+            training_reuse_old_ratio,
+            old_range,
+            training_reuse_start_lr,
+            training_reuse_start_pref_e,
+            training_reuse_start_pref_f,
+        )
+        prepared_inputs.append(jinput)
+    if isinstance(jdata.get("default_training_param"), dict) and prepared_inputs:
+        # Keep the legacy single-dict view synchronized after preparation while
+        # keeping all in-place mutations isolated from the shared input object.
+        jdata["default_training_param"] = copy.deepcopy(prepared_inputs[0])
 
     input_files = []
     for ii in range(numb_models):
+        jinput = prepared_inputs[ii]
         task_path = os.path.join(work_path, train_task_fmt % ii)
         create_path(task_path)
         os.chdir(task_path)

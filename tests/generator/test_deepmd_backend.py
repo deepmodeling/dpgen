@@ -17,8 +17,11 @@ from dpgen.generator.run import (
     _get_input_model_suffix,
     _get_model_suffix,
     _get_train_backend_flag,
+    _normalize_training_params,
+    _prepare_training_input,
     _validate_dpa_training_config,
     _validate_pt2_template_atom_map,
+    make_train_dp,
     post_train_dp,
     run_md_model_devi,
     run_train_dp,
@@ -27,6 +30,113 @@ from dpgen.generator.run import (
 
 
 class TestDeepmdBackendConfig(unittest.TestCase):
+    def test_per_member_training_params_are_independent(self):
+        jdata = {
+            "numb_models": 2,
+            "default_training_param": [
+                {"model": {"descriptor": {"type": "dpa2"}}},
+                {"model": {"descriptor": {"type": "dpa3"}}},
+            ],
+        }
+        params = _normalize_training_params(jdata)
+        self.assertEqual(params[0]["model"]["descriptor"]["type"], "dpa2")
+        params[0]["model"]["descriptor"]["type"] = "changed"
+        self.assertEqual(params[1]["model"]["descriptor"]["type"], "dpa3")
+
+    def test_per_member_training_params_require_numb_models(self):
+        with self.assertRaisesRegex(ValueError, "exactly numb_models"):
+            _normalize_training_params(
+                {
+                    "numb_models": 2,
+                    "default_training_param": [{"model": {}}],
+                }
+            )
+
+    def test_cross_architecture_committee_compatibility(self):
+        _validate_dpa_training_config(
+            {
+                "numb_models": 3,
+                "train_backend": "pytorch",
+                "model_devi_engine": "calypso",
+                "type_map": ["H", "O"],
+                "default_training_param": [
+                    {"model": {"descriptor": {"type": "dpa2"}}},
+                    {"model": {"descriptor": {"type": "dpa3"}}},
+                    {"model": {"descriptor": {"type": "dpa4"}}},
+                ],
+            }
+        )
+
+    def test_cross_architecture_committee_rejects_cutoff_mismatch(self):
+        with self.assertRaisesRegex(ValueError, "incompatible cutoff"):
+            _validate_dpa_training_config(
+                {
+                    "numb_models": 2,
+                    "type_map": ["H"],
+                    "default_training_param": [
+                        {
+                            "model": {
+                                "descriptor": {
+                                    "type": "dpa2",
+                                    "repinit": {"rcut": 6.0},
+                                }
+                            }
+                        },
+                        {
+                            "model": {
+                                "descriptor": {
+                                    "type": "dpa3",
+                                    "repflow": {"rcut": 8.0},
+                                }
+                            }
+                        },
+                    ],
+                }
+            )
+
+    def test_cross_architecture_committee_rejects_parameter_mismatch(self):
+        with self.assertRaisesRegex(ValueError, "incompatible fparam dimensions"):
+            _validate_dpa_training_config(
+                {
+                    "numb_models": 2,
+                    "type_map": ["H"],
+                    "default_training_param": [
+                        {
+                            "model": {
+                                "descriptor": {"type": "dpa2"},
+                                "fitting_net": {
+                                    "type": "ener",
+                                    "numb_fparam": 1,
+                                },
+                            }
+                        },
+                        {
+                            "model": {
+                                "descriptor": {"type": "dpa3"},
+                                "fitting_net": {
+                                    "type": "ener",
+                                    "numb_fparam": 2,
+                                },
+                            }
+                        },
+                    ],
+                }
+            )
+
+    def test_cross_architecture_pt2_rejects_lower_kind_mismatch(self):
+        with self.assertRaisesRegex(ValueError, "same export lower kind"):
+            _validate_dpa_training_config(
+                {
+                    "numb_models": 2,
+                    "train_backend": "pt-expt",
+                    "model_format": "pt2",
+                    "default_training_param": [
+                        {"model": {"descriptor": {"type": "dpa2"}}},
+                        {"model": {"descriptor": {"type": "dpa4c"}}},
+                    ],
+                }
+            )
+
     def test_legacy_defaults(self):
         cases = [
             ({}, ".pb", ".index", ""),
@@ -249,6 +359,70 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
         self.assertEqual(call["commands"][1], "dp freeze")
         self.assertIn("frozen_model.pb", call["backward_files"])
         self.assertIn("model.ckpt.index", call["backward_files"])
+
+    def test_prepare_training_input_preserves_member_specific_model(self):
+        first = {"model": {"descriptor": {"type": "dpa2"}}, "training": {}}
+        second = {"model": {"descriptor": {"type": "dpa3"}}, "training": {}}
+        for item in (first, second):
+            _prepare_training_input(
+                item,
+                "3.2.0",
+                ["system"],
+                [1],
+                ["H"],
+                0,
+                None,
+                0,
+                None,
+                "auto",
+                None,
+                None,
+                None,
+                None,
+            )
+        self.assertEqual(first["model"]["descriptor"]["type"], "dpa2")
+        self.assertEqual(second["model"]["descriptor"]["type"], "dpa3")
+        self.assertEqual(first["model"]["type_map"], ["H"])
+        self.assertEqual(second["model"]["type_map"], ["H"])
+
+    def test_make_train_generates_cross_architecture_inputs(self):
+        jdata = {
+            "numb_models": 3,
+            "init_data_prefix": "data",
+            "init_data_sys": [],
+            "sys_configs": [],
+            "model_devi_jobs": [{}],
+            "fp_task_min": 0,
+            "type_map": ["H"],
+            "default_training_param": [
+                {"model": {"descriptor": {"type": "dpa2"}}, "training": {}},
+                {"model": {"descriptor": {"type": "dpa3"}}, "training": {}},
+                {"model": {"descriptor": {"type": "dpa4"}}, "training": {}},
+            ],
+        }
+        mdata = {"deepmd_version": "3.2.0"}
+        with patch("dpgen.generator.run.os.symlink"):
+            make_train_dp(0, jdata, mdata)
+        descriptors = []
+        for index in range(3):
+            with open(
+                Path("iter.000000") / "00.train" / f"{index:03d}" / "input.json"
+            ) as fp:
+                descriptors.append(json.load(fp)["model"]["descriptor"]["type"])
+        self.assertEqual(descriptors, ["dpa2", "dpa3", "dpa4"])
+
+    def test_cross_architecture_submission_tracks_all_members(self):
+        calls = self._run(
+            numb_models=3,
+            train_backend="pytorch",
+            model_devi_engine="calypso",
+            default_training_param=[
+                {"model": {"descriptor": {"type": "dpa2"}}},
+                {"model": {"descriptor": {"type": "dpa3"}}},
+                {"model": {"descriptor": {"type": "dpa4"}}},
+            ],
+        )
+        self.assertEqual(calls["run_tasks"], ["000", "001", "002"])
 
     def test_pytorch_dpa4_exports_pt2_on_model_devi_resources(self):
         train_call, export_call = self._run(
