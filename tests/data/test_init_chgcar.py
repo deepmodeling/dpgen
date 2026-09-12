@@ -40,8 +40,8 @@ class TestInitChgcar(unittest.TestCase):
     def tearDown(self):
         self.tempdir.cleanup()
 
-    def _make_md_source(self):
-        source = self.out_dir / "01.scale_pert" / "sys-0001" / "scale-1.000" / "000000"
+    def _make_md_source(self, task="000000"):
+        source = self.out_dir / "01.scale_pert" / "sys-0001" / "scale-1.000" / task
         source.mkdir(parents=True)
         (source / "POSCAR").write_text("structure\n")
 
@@ -69,7 +69,7 @@ class TestInitChgcar(unittest.TestCase):
         normalized = arginfo.normalize_value(data)
         arginfo.check_value(normalized, strict=True)
 
-    def test_make_vasp_md_links_system_relax_chgcar(self):
+    def test_make_vasp_md_copies_system_relax_chgcar(self):
         self._make_md_source()
         relax_dir = self.out_dir / "00.place_ele" / "sys-0001"
         relax_dir.mkdir(parents=True)
@@ -81,14 +81,51 @@ class TestInitChgcar(unittest.TestCase):
         task_chgcar = (
             self.out_dir / "02.md" / "sys-0001" / "scale-1.000" / "000000" / "CHGCAR"
         )
-        self.assertTrue(task_chgcar.is_symlink())
-        self.assertTrue(os.path.samefile(task_chgcar, relax_chgcar))
+        self.assertFalse(task_chgcar.is_symlink())
+        self.assertFalse(os.path.samefile(task_chgcar, relax_chgcar))
+        self.assertEqual(task_chgcar.read_text(), relax_chgcar.read_text())
+        task_chgcar.write_text("updated by VASP\n")
+        self.assertEqual(relax_chgcar.read_text(), "charge density\n")
+
+    def test_md_tasks_have_independent_charge_densities(self):
+        """A local VASP write must not modify sibling tasks or the seed."""
+        self.jdata["pert_numb"] = 1
+        self._make_md_source()
+        self._make_md_source("000001")
+        relax_dir = self.out_dir / "00.place_ele" / "sys-0001"
+        relax_dir.mkdir(parents=True)
+        seed = relax_dir / "CHGCAR"
+        seed.write_text("seed\n")
+        make_vasp_md(self.jdata, {"fp_resources": {}})
+        scale_dir = self.out_dir / "02.md" / "sys-0001" / "scale-1.000"
+        (scale_dir / "000000" / "CHGCAR").write_text("task 0 output\n")
+        self.assertEqual((scale_dir / "000001" / "CHGCAR").read_text(), "seed\n")
+        self.assertEqual(seed.read_text(), "seed\n")
 
     def test_make_vasp_md_requires_relax_chgcar(self):
         self._make_md_source()
 
         with self.assertRaisesRegex(RuntimeError, "stage-1 VASP relaxation"):
             make_vasp_md(self.jdata, {"fp_resources": {}})
+
+    def test_repeated_setup_migrates_links_and_keeps_restart_files(self):
+        """Existing shared links become copies; a VASP restart stays intact."""
+        self._make_md_source()
+        relax_dir = self.out_dir / "00.place_ele" / "sys-0001"
+        relax_dir.mkdir(parents=True)
+        seed = relax_dir / "CHGCAR"
+        seed.write_text("seed\n")
+        task = self.out_dir / "02.md" / "sys-0001" / "scale-1.000" / "000000"
+        task.mkdir(parents=True)
+        charge = task / "CHGCAR"
+        charge.symlink_to(seed)
+        make_vasp_md(self.jdata, {"fp_resources": {}})
+        self.assertFalse(charge.is_symlink())
+        self.assertEqual(charge.read_text(), "seed\n")
+        charge.write_text("restart\n")
+        make_vasp_md(self.jdata, {"fp_resources": {}})
+        self.assertEqual(charge.read_text(), "restart\n")
+        self.assertEqual(seed.read_text(), "seed\n")
 
     @patch("dpgen.data.gen.check_api_version")
     @patch("dpgen.data.gen.make_submission")

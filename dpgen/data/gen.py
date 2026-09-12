@@ -904,12 +904,13 @@ def make_vasp_md(jdata, mdata):
                 except FileExistsError:
                     pass
                 if jdata.get("reuse_relax_chgcar", False):
-                    # One relaxed charge density seeds every scaled/perturbed MD
-                    # task belonging to the same chemical system.
-                    try:
-                        os.symlink(os.path.relpath(relax_chgcar), "CHGCAR")
-                    except FileExistsError:
-                        pass
+                    # VASP may overwrite CHGCAR. Isolate each task from the
+                    # relaxation seed and migrate old links, retaining real
+                    # task-local restart files when setup is repeated.
+                    if os.path.islink("CHGCAR"):
+                        os.unlink("CHGCAR")
+                    if not os.path.exists("CHGCAR"):
+                        shutil.copy2(relax_chgcar, "CHGCAR")
 
                 is_cvasp = False
                 if "cvasp" in mdata["fp_resources"].keys():
