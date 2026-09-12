@@ -118,12 +118,15 @@ class TestInterstitial(unittest.TestCase):
             "insert_ele": ["V"],
             "conf_filters": {"min_dist": 100.0},
         }
-        interstitial = Interstitial(parameter)
-
-        task_list = interstitial.make_confs(self.target_path, self.equi_path)
-
-        self.assertEqual([], task_list)
-        element_out = os.path.join(self.target_path, "element.out")
-        self.assertTrue(os.path.isfile(element_out))
-        self.assertEqual(0, os.path.getsize(element_out))
-        interstitial.post_process(task_list)
+        for bcc_self in (False, True):
+            with self.subTest(bcc_self=bcc_self):
+                parameter["bcc_self"] = bcc_self
+                interstitial = Interstitial(parameter)
+                cwd = os.getcwd()
+                task_list = interstitial.make_confs(self.target_path, self.equi_path)
+                self.assertEqual(os.getcwd(), cwd)
+                self.assertEqual([], task_list)
+                element_out = os.path.join(self.target_path, "element.out")
+                self.assertTrue(os.path.isfile(element_out))
+                self.assertEqual(0, os.path.getsize(element_out))
+                interstitial.post_process(task_list)

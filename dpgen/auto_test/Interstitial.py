@@ -245,7 +245,9 @@ class Interstitial(Property):
                     dumpfn(self.supercell, "supercell.json")
                 os.chdir(cwd)
 
-                if "bcc_self" in self.parameter and self.parameter["bcc_self"]:
+                # The BCC extension derives its reference from the first
+                # accepted defect. An all-filtered result has no such reference.
+                if dss and self.parameter.get("bcc_self", False):
                     super_size = (
                         self.supercell[0] * self.supercell[1] * self.supercell[2]
                     )
