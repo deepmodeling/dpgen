@@ -5598,7 +5598,7 @@ def run_iter(param_file, machine_file):
     mdata = load_file(machine_file)
 
     jdata_arginfo = run_jdata_arginfo()
-    jdata = normalize(jdata_arginfo, jdata, strict_check=False)
+    jdata = normalize(jdata_arginfo, jdata)
 
     update_mass_map(jdata)
 
