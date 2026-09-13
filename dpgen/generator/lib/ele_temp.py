@@ -66,7 +66,7 @@ class NBandsEsti:
     @classmethod
     def _get_default_nbands(self, res):
         ret = 0
-        for ii, jj in zip(res["natoms"], res["nvalence"]):
+        for ii, jj in zip(res["natoms"], res["nvalence"], strict=True):
             ret += ii * jj // 2 + ii // 2 + 2
         return ret
 

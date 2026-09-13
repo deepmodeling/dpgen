@@ -349,7 +349,7 @@ def post_model_devi(iter_index, jdata, mdata):
             open(os.path.join(work_path, detail_file_name)) as f,
             open(os.path.join(work_path, true_error_file_name)) as f_err,
         ):
-            for line, line_err in zip(f, f_err):
+            for line, line_err in zip(f, f_err, strict=True):
                 if line.startswith("# data.rest.old"):
                     name = (line.split()[1]).split("/")[-1]
                 elif line.startswith("#"):

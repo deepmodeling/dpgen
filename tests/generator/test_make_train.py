@@ -87,10 +87,10 @@ def _check_model_inputs(testCase, iter_idx, jdata):
         # keys except 'systems', 'batch_size', 'seed' should be identical
         for ii in jdata0.keys():
             if ii == "systems":
-                for jj, kk in zip(jdata0[ii], init_data_sys):
+                for jj, kk in zip(jdata0[ii], init_data_sys, strict=True):
                     testCase.assertEqual(jj, kk)
             elif ii == "batch_size":
-                for jj, kk in zip(jdata0[ii], init_batch_size):
+                for jj, kk in zip(jdata0[ii], init_batch_size, strict=True):
                     testCase.assertEqual(jj, kk)
             elif ii == "seed":
                 pass
@@ -103,10 +103,10 @@ def _check_model_input_dict(
 ):
     for ii in input_dict.keys():
         if ii == "systems":
-            for jj, kk in zip(input_dict[ii], init_data_sys):
+            for jj, kk in zip(input_dict[ii], init_data_sys, strict=True):
                 testCase.assertEqual(jj, kk)
         elif ii == "batch_size":
-            for jj, kk in zip(input_dict[ii], init_batch_size):
+            for jj, kk in zip(input_dict[ii], init_batch_size, strict=True):
                 testCase.assertEqual(jj, kk)
         elif ii == "seed":
             # can be anything

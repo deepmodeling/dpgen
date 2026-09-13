@@ -56,7 +56,7 @@ class TestGenBulk(unittest.TestCase):
         for ii in alloys:
             elem_numb = [int(i) for i in ii.split("/")[-1].split("-")[1:]]
             comp = ""
-            for num, el in zip(elem_numb, self.elements):
+            for num, el in zip(elem_numb, self.elements, strict=True):
                 comp += el + str(num)
             comp = Composition(comp)
             struct = Structure.from_file(os.path.join(ii, "POSCAR"))

@@ -209,7 +209,7 @@ def iterdict(d, out_list, flag=None, indent=0):
             for k_tmp, v_tmp in d.items():
                 k_tmp_list.append(str(k_tmp))
                 v_list_tmp_list.append(v_tmp)
-            for repeat_keyword in zip(*v_list_tmp_list):
+            for repeat_keyword in zip(*v_list_tmp_list, strict=True):
                 out_list.insert(index, " " * (indent - 2) + "&" + flag)
                 out_list.insert(index + 1, " " * (indent - 2) + "&END " + flag)
                 for idx, k_tmp in enumerate(k_tmp_list):
@@ -337,7 +337,7 @@ def make_cp2k_xyz(sys_data):
     u = np.array(atom_names)
     atom_list = u[atom_types]
     x = "\n"
-    for kind, coord in zip(atom_list, coord_list):
+    for kind, coord in zip(atom_list, coord_list, strict=True):
         x += str(kind) + " " + str(coord[:])[1:-1] + "\n"
     return x
 

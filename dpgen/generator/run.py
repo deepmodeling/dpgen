@@ -763,7 +763,8 @@ def make_train_dp(iter_index, jdata, mdata):
 
     # make sure all init_data_sys has the batch size -- for the following `zip`
     assert len(init_data_sys_) <= len(init_batch_size_)
-    for ii, ss in zip(init_data_sys_, init_batch_size_):
+    # Extra batch-size entries are allowed by the legacy input format.
+    for ii, ss in zip(init_data_sys_, init_batch_size_):  # noqa: B905
         sys_paths = expand_sys_str(os.path.join(init_data_prefix, ii))
         for single_sys in sys_paths:
             init_data_sys.append(
@@ -1787,7 +1788,7 @@ def revise_lmp_input_plm(lmp_lines, in_plm, out_plm="output.plumed"):
 
 
 def revise_by_keys(lmp_lines, keys, values):
-    for kk, vv in zip(keys, values):
+    for kk, vv in zip(keys, values, strict=True):
         for ii in range(len(lmp_lines)):
             lmp_lines[ii] = lmp_lines[ii].replace(kk, str(vv))
     return lmp_lines
@@ -2243,7 +2244,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                     fp.write("".join(lmp_lines))
                 with open("job.json", "w") as fp:
                     job = {}
-                    for ii, jj in zip(total_rev_keys, total_rev_item):
+                    for ii, jj in zip(total_rev_keys, total_rev_item, strict=True):
                         job[ii] = jj
                     json.dump(job, fp, indent=4)
                 os.chdir(cwd_)
@@ -4333,7 +4334,7 @@ def make_fp_siesta(iter_index, jdata):
     type_map = jdata["type_map"]
     if len(type_map) != len(fp_pp_files):
         raise RuntimeError("fp_pp_files must correspond one-to-one with type_map")
-    pp_by_element = dict(zip(type_map, fp_pp_files))
+    pp_by_element = dict(zip(type_map, fp_pp_files, strict=True))
     if "user_fp_params" in jdata.keys():
         fp_params = jdata["user_fp_params"]
         user_input = True
@@ -5162,7 +5163,8 @@ def post_fp_pwscf(iter_index, jdata):
         sys_input.sort()
 
         flag = True
-        for ii, oo in zip(sys_input, sys_output):
+        # Incomplete FP tasks can produce unequal input/output lists.
+        for ii, oo in zip(sys_input, sys_output):  # noqa: B905
             if flag:
                 _sys = dpdata.LabeledSystem(
                     oo, fmt="qe/pw/scf", type_map=jdata["type_map"]
@@ -5211,7 +5213,8 @@ def post_fp_abacus_scf(iter_index, jdata):
         sys_input.sort()
 
         all_sys = None
-        for ii, oo in zip(sys_input, sys_output):
+        # Incomplete FP tasks can produce unequal input/output lists.
+        for ii, oo in zip(sys_input, sys_output):  # noqa: B905
             _sys = dpdata.LabeledSystem(oo, fmt="abacus/scf")
             if len(_sys) > 0:
                 _sys.data["atom_types"] = np.asarray(_sys.data["atom_types"], dtype=int)

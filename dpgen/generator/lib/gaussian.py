@@ -29,7 +29,7 @@ def _crd2frag(symbols, crds, pbc=False, cell=None, return_bonds=False):
     mol = openbabel.OBMol()
     mol.BeginModify()
     for idx, (num, position) in enumerate(
-        zip(all_atoms.get_atomic_numbers(), all_atoms.positions)
+        zip(all_atoms.get_atomic_numbers(), all_atoms.positions, strict=True)
     ):
         atom = mol.NewAtom(idx)
         atom.SetAtomicNum(int(num))
@@ -73,7 +73,7 @@ def _crd2mul(symbols, crds):
             "\n".join(
                 [
                     f"{s:2s} {x:22.15f} {y:22.15f} {z:22.15f}"
-                    for s, (x, y, z) in zip(symbols, crds)
+                    for s, (x, y, z) in zip(symbols, crds, strict=True)
                 ]
             ),
         )
@@ -187,7 +187,7 @@ def make_gaussian_input(sys_data, fp_params):
         (chargekeywords_frag if use_fragment_guesses else chargekeywords),
     ]
 
-    for ii, (symbol, coordinate) in enumerate(zip(symbols, coordinates)):
+    for ii, (symbol, coordinate) in enumerate(zip(symbols, coordinates, strict=True)):
         if use_fragment_guesses:
             buff.append(
                 "%s(Fragment=%d) %f %f %f" % (symbol, frag_index[ii] + 1, *coordinate)  # noqa: UP031
