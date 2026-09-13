@@ -377,7 +377,7 @@ def _check_poscars(testCase, idx, fp_task_max, type_map):
     candi_files = glob.glob(os.path.join(fp_path, "candidate.shuffled.*.out"))
     candi_files.sort()
     sys_idx = [str(os.path.basename(ii).split(".")[2]) for ii in candi_files]
-    for sidx, ii in zip(sys_idx, candi_files):
+    for sidx, ii in zip(sys_idx, candi_files, strict=True):
         md_task = []
         f_idx = []
         with open(ii) as fp:
@@ -387,7 +387,7 @@ def _check_poscars(testCase, idx, fp_task_max, type_map):
         md_task = md_task[:fp_task_max]
         f_idx = f_idx[:fp_task_max]
         cc = 0
-        for tt, ff in zip(md_task, f_idx):
+        for tt, ff in zip(md_task, f_idx, strict=True):
             traj_file = os.path.join(tt, "traj", "%d.lammpstrj" % int(ff))  # noqa: UP031
             poscar_file = os.path.join(
                 fp_path,
@@ -405,7 +405,7 @@ def _check_poscars_merge_traj(testCase, idx, fp_task_max, type_map):
     candi_files = glob.glob(os.path.join(fp_path, "candidate.shuffled.*.out"))
     candi_files.sort()
     sys_idx = [str(os.path.basename(ii).split(".")[2]) for ii in candi_files]
-    for sidx, ii in zip(sys_idx, candi_files):
+    for sidx, ii in zip(sys_idx, candi_files, strict=True):
         md_task = []
         f_idx = []
         with open(ii) as fp:
@@ -418,7 +418,7 @@ def _check_poscars_merge_traj(testCase, idx, fp_task_max, type_map):
         label_0 = 0
         label_1 = 0
 
-        for tt, ff in zip(md_task, f_idx):
+        for tt, ff in zip(md_task, f_idx, strict=True):
             traj_file = os.path.join(tt, "all.lammpstrj")
             poscar_file = os.path.join(
                 fp_path,
@@ -508,7 +508,7 @@ def _check_sel(testCase, idx, fp_task_max, flo, fhi):
     candi_files = glob.glob(os.path.join(fp_path, "candidate.shuffled.*.out"))
     candi_files.sort()
     sys_idx = [str(os.path.basename(ii).split(".")[2]) for ii in candi_files]
-    for sidx, ii in zip(sys_idx, candi_files):
+    for sidx, ii in zip(sys_idx, candi_files, strict=True):
         md_task = []
         f_idx = []
         with open(ii) as fp:
@@ -519,7 +519,7 @@ def _check_sel(testCase, idx, fp_task_max, flo, fhi):
         f_idx = f_idx[:fp_task_max]
         flo = _trust_limitation_check(int(sidx), flo)
         fhi = _trust_limitation_check(int(sidx), fhi)
-        for tt, ff in zip(md_task, f_idx):
+        for tt, ff in zip(md_task, f_idx, strict=True):
             md_value = np.loadtxt(os.path.join(tt, "model_devi.out"))
             fvalue = md_value[int(ff)][4]
             testCase.assertTrue(fvalue >= flo)
@@ -1494,7 +1494,7 @@ class TestMakeFPCustom(unittest.TestCase):
         candi_files = glob.glob(os.path.join(fp_path, "candidate.shuffled.*.out"))
         candi_files.sort()
         sys_idx = [str(os.path.basename(ii).split(".")[2]) for ii in candi_files]
-        for sidx, ii in zip(sys_idx, candi_files):
+        for sidx, ii in zip(sys_idx, candi_files, strict=True):
             md_task = []
             f_idx = []
             with open(ii) as fp:
@@ -1503,7 +1503,7 @@ class TestMakeFPCustom(unittest.TestCase):
                     f_idx.append(line.split()[1])
             md_task = md_task[:fp_task_max]
             f_idx = f_idx[:fp_task_max]
-            for cc, (tt, ff) in enumerate(zip(md_task, f_idx)):
+            for cc, (tt, ff) in enumerate(zip(md_task, f_idx, strict=True)):
                 traj_file = os.path.join(tt, "traj", "%d.lammpstrj" % int(ff))  # noqa: UP031
                 input_file = os.path.join(
                     fp_path,

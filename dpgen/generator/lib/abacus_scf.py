@@ -390,7 +390,7 @@ def make_kspacing_kpoints_stru(stru, kspacing):
     rbox = vasp.reciprocal_box(box)
     kpoints = [
         max(1, (np.ceil(2 * np.pi * np.linalg.norm(ii) / ks).astype(int)))
-        for ii, ks in zip(rbox, kspacing)
+        for ii, ks in zip(rbox, kspacing, strict=True)
     ]
     kpoints += [0, 0, 0]
     return kpoints

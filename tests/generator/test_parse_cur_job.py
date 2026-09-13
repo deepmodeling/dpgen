@@ -27,7 +27,7 @@ class TestParseCurJob(unittest.TestCase):
         cur_job["nsteps"] = ns
         cur_job["t_freq"] = tf
         res = parse_cur_job(cur_job)
-        for ii, jj in zip(res, [ens, ns, tf, ts, ps, None, None]):
+        for ii, jj in zip(res, [ens, ns, tf, ts, ps, None, None, None], strict=True):
             self.assertEqual(ii, jj)
 
     def test_nvt(self):
@@ -43,7 +43,7 @@ class TestParseCurJob(unittest.TestCase):
         cur_job["nsteps"] = ns
         cur_job["t_freq"] = tf
         res = parse_cur_job(cur_job)
-        for ii, jj in zip(res, [ens, ns, tf, ts, [-1], None, None]):
+        for ii, jj in zip(res, [ens, ns, tf, ts, [-1], None, None, None], strict=True):
             self.assertEqual(ii, jj)
 
     def test_pka(self):
@@ -63,7 +63,7 @@ class TestParseCurJob(unittest.TestCase):
         cur_job["pka_e"] = pka
         cur_job["dt"] = dt
         res = parse_cur_job(cur_job)
-        for ii, jj in zip(res, [ens, ns, tf, ts, [-1], pka, dt]):
+        for ii, jj in zip(res, [ens, ns, tf, ts, [-1], pka, dt, None], strict=True):
             self.assertEqual(ii, jj)
 
     def test_job_local_lammps_settings_override_global_defaults(self):

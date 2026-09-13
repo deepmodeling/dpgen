@@ -93,7 +93,7 @@ def _check_pb(testCase, idx):
     tr_pb = glob.glob(os.path.join(tr_dir, "grapb*pb"))
     md_pb.sort()
     tr_pb.sort()
-    for ii, jj in zip(md_pb, tr_pb):
+    for ii, jj in zip(md_pb, tr_pb, strict=True):
         my_file_cmp(testCase, ii, jj)
 
 

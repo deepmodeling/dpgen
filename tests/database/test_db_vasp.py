@@ -147,7 +147,7 @@ class Test(unittest.TestCase):
         refd = loadfn(ref)
         refd = sorted(refd, key=lambda x: int(x.entry_id.split("_")[-1]))
         self.assertEqual(len(retd), len(refd))
-        for i, j in zip(retd, refd):
+        for i, j in zip(retd, refd, strict=True):
             self.assertEqual(i.entry_id, j.entry_id)
             self.assertEqual(i.calculator, j.calculator)
             self.assertEqual(len(i.data), len(j.data))
