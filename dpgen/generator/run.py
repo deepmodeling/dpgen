@@ -903,6 +903,36 @@ def make_train(iter_index, jdata, mdata):
         raise ValueError(f"Unsupported engine: {mlp_engine}")
 
 
+def _set_ele_temp_params(jinput, use_ele_temp) -> None:
+    """Apply electron-temperature dimensions to every model section.
+
+    Parameters
+    ----------
+    jinput : dict
+        DeePMD configuration mutated in place.
+    use_ele_temp : int
+        ``0`` leaves dimensions unchanged, ``1`` enables fparam, and ``2``
+        enables aparam.
+
+    Raises
+    ------
+    RuntimeError
+        If ``use_ele_temp`` is not 0, 1, or 2.
+    """
+    if use_ele_temp not in (0, 1, 2):
+        raise RuntimeError("invalid setting for use_ele_temp " + str(use_ele_temp))
+    for _, model in _iter_model_sections(jinput):
+        fitting_net = model.get("fitting_net")
+        if not isinstance(fitting_net, dict):
+            continue
+        if use_ele_temp == 1:
+            fitting_net["numb_fparam"] = 1
+            fitting_net.pop("numb_aparam", None)
+        elif use_ele_temp == 2:
+            fitting_net["numb_aparam"] = 1
+            fitting_net.pop("numb_fparam", None)
+
+
 def _prepare_training_input(
     jinput,
     deepmd_version,
@@ -961,14 +991,6 @@ def _prepare_training_input(
         jinput["training"]["systems"] = init_data_sys
         jinput["training"]["batch_size"] = init_batch_size
         jinput["model"]["type_map"] = type_map
-        if use_ele_temp == 1:
-            jinput["model"]["fitting_net"]["numb_fparam"] = 1
-            jinput["model"]["fitting_net"].pop("numb_aparam", None)
-        elif use_ele_temp == 2:
-            jinput["model"]["fitting_net"]["numb_aparam"] = 1
-            jinput["model"]["fitting_net"].pop("numb_fparam", None)
-        elif use_ele_temp != 0:
-            raise RuntimeError("invalid setting for use_ele_temp " + str(use_ele_temp))
     elif Version(deepmd_version) >= Version("2") and Version(deepmd_version) < Version(
         "4"
     ):
@@ -980,18 +1002,11 @@ def _prepare_training_input(
         ):
             jinput["training"]["training_data"]["batch_size"] = init_batch_size
         jinput["model"]["type_map"] = type_map
-        if use_ele_temp == 1:
-            jinput["model"]["fitting_net"]["numb_fparam"] = 1
-            jinput["model"]["fitting_net"].pop("numb_aparam", None)
-        elif use_ele_temp == 2:
-            jinput["model"]["fitting_net"]["numb_aparam"] = 1
-            jinput["model"]["fitting_net"].pop("numb_fparam", None)
-        elif use_ele_temp != 0:
-            raise RuntimeError("invalid setting for use_ele_temp " + str(use_ele_temp))
     else:
         raise RuntimeError(
             "DP-GEN currently only supports for DeePMD-kit 1.x to 3.x version!"
         )
+    _set_ele_temp_params(jinput, use_ele_temp)
 
     if training_reuse_iter is not None and iter_index >= training_reuse_iter:
         training = jinput["training"]

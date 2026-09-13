@@ -449,6 +449,40 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
         self.assertEqual(first["model"]["type_map"], ["H"])
         self.assertEqual(second["model"]["type_map"], ["H"])
 
+    def test_prepare_training_input_sets_ele_temp_for_model_dict(self):
+        for mode, enabled, removed in (
+            (1, "numb_fparam", "numb_aparam"),
+            (2, "numb_aparam", "numb_fparam"),
+        ):
+            item = {
+                "model": {
+                    "model_dict": {
+                        "a": {"fitting_net": {}},
+                        "b": {"fitting_net": {}},
+                    }
+                },
+                "training": {},
+            }
+            _prepare_training_input(
+                item,
+                "3.2.0",
+                ["system"],
+                [1],
+                ["H"],
+                mode,
+                None,
+                0,
+                None,
+                "auto",
+                None,
+                None,
+                None,
+                None,
+            )
+            for branch in item["model"]["model_dict"].values():
+                self.assertEqual(branch["fitting_net"][enabled], 1)
+                self.assertNotIn(removed, branch["fitting_net"])
+
     def test_make_train_generates_cross_architecture_inputs(self):
         jdata = {
             "numb_models": 3,
