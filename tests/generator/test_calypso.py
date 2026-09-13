@@ -1,15 +1,15 @@
 import os
-import shutil
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
 import numpy as np
 
+from dpgen.generator.lib.make_calypso import _make_model_devi_native_calypso
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
-
-from dpgen.generator.lib.make_calypso import _make_model_devi_native_calypso
 
 from .context import (
     _parse_calypso_dis_mtx,
@@ -135,23 +135,35 @@ class TestCALYPSOScript(unittest.TestCase):
                 os.remove("input.dat")
                 break
 
-    def test_make_native_calypso_accepts_single_item_lists(self):
-        work_path = Path("calypso_native_test")
-        run_path = work_path / "gen_stru_analy.000"
-        if work_path.exists():
-            shutil.rmtree(work_path)
-        run_path.mkdir(parents=True)
-        job = model_devi_jobs["model_devi_jobs"].copy()
+    def test_native_input_normalizes_singleton_scalars(self):
+        """Legacy singleton lists are rendered as scalar CALYPSO values."""
+        job = {
+            "times": [0],
+            "NameOfAtoms": ["Mg"],
+            "NumberOfAtoms": [1],
+            "NumberOfFormula": [1, 1],
+            "Volume": [30],
+            "DistanceOfIon": [[1.4]],
+            "PsoRatio": [0.6],
+            "PopSize": [5],
+            "MaxStep": [3],
+            "ICode": [1],
+            "VSC": "T",
+            "MaxNumAtom": [20],
+            "CtrlRange": [[1, 20]],
+            "PSTRESS": [0.0],
+            "fmax": [0.01],
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            run_path = Path(tmpdir) / "calypso.000"
+            run_path.mkdir()
+            _make_model_devi_native_calypso(0, [job], [str(run_path)])
+            generated = (run_path / "input.dat").read_text()
 
-        _make_model_devi_native_calypso(0, [{**job, "times": [0]}], [str(run_path)])
-
-        text = (run_path / "input.dat").read_text()
-        self.assertIn("Volume = 30", text)
-        self.assertIn("PsoRatio = 0.6", text)
-        self.assertIn("PopSize = 5", text)
-        self.assertIn("PSTRESS = 0.000000", text)
-        self.assertIn("fmax = 0.010000", text)
-        shutil.rmtree(work_path)
+        self.assertIn("Volume = 30", generated)
+        self.assertIn("PsoRatio = 0.6", generated)
+        self.assertIn("PopSize = 5", generated)
+        self.assertNotIn("[", generated)
 
     def test_parse_calypso_input(self):
         ret = make_calypso_input(
@@ -194,6 +206,33 @@ class TestCALYPSOScript(unittest.TestCase):
             np.nanmin(model_devi_jobs.get("model_devi_jobs").get("DistanceOfIon")),
         )
         os.remove("input.dat")
+
+    def test_native_input_accepts_pressure_forms(self):
+        """Scalar pressures and pressure lists generate the same native inputs."""
+        for pressures in (0.0, [0.0], [0.0, 2.5]):
+            with (
+                self.subTest(pressures=pressures),
+                tempfile.TemporaryDirectory() as tmpdir,
+            ):
+                job = {
+                    **model_devi_jobs["model_devi_jobs"],
+                    "times": [0],
+                    "PSTRESS": pressures,
+                }
+                expected = pressures if isinstance(pressures, list) else [pressures]
+                run_paths = [
+                    Path(tmpdir) / f"calypso.{i:03d}" for i in range(len(expected))
+                ]
+                for run_path in run_paths:
+                    run_path.mkdir()
+                _make_model_devi_native_calypso(0, [job], [str(p) for p in run_paths])
+                for run_path, pressure in zip(run_paths, expected):
+                    generated = (run_path / "input.dat").read_text()
+                    self.assertIn("Volume = 30", generated)
+                    self.assertIn("PsoRatio = 0.6", generated)
+                    self.assertIn("PopSize = 5", generated)
+                    self.assertIn(f"PSTRESS = {pressure:f}", generated)
+                    self.assertIn("fmax = 0.010000", generated)
 
 
 if __name__ == "__main__":

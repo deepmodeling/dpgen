@@ -7,20 +7,6 @@ import shutil
 import numpy as np
 
 
-def _normalize_calypso_scalar(value, name):
-    if isinstance(value, list):
-        if len(value) != 1:
-            raise ValueError(f"{name} should be a scalar or a single-item list")
-        return value[0]
-    return value
-
-
-def _normalize_calypso_pressures(value):
-    if isinstance(value, list):
-        return value
-    return [value]
-
-
 def make_calypso_input(
     nameofatoms,
     numberofatoms,
@@ -176,6 +162,22 @@ def _make_model_devi_buffet(jdata, calypso_run_opt_path):
             raise FileNotFoundError("input.dat")
 
 
+def _unwrap_calypso_scalar(value, name):
+    """Normalize a legacy one-item CALYPSO list to its scalar value."""
+    if not isinstance(value, list):
+        return value
+    if len(value) != 1:
+        raise ValueError(f"{name} must be a scalar or a one-item list")
+    return value[0]
+
+
+def _normalize_calypso_pressures(value):
+    """Return one pressure per CALYPSO directory, accepting scalar inputs."""
+    if isinstance(value, list):
+        return value
+    return [value]
+
+
 def _make_model_devi_native_calypso(iter_index, model_devi_jobs, calypso_run_opt_path):
     for iiidx, jobbs in enumerate(model_devi_jobs):
         if iter_index in jobbs.get("times"):
@@ -190,14 +192,12 @@ def _make_model_devi_native_calypso(iter_index, model_devi_jobs, calypso_run_opt
     nameofatoms = cur_job.get("NameOfAtoms")
     numberofatoms = cur_job.get("NumberOfAtoms")
     numberofformula = cur_job.get("NumberOfFormula", [1, 1])
-    volume = cur_job.get("Volume")
-    if volume is not None:
-        volume = _normalize_calypso_scalar(volume, "Volume")
+    volume = _unwrap_calypso_scalar(cur_job.get("Volume"), "Volume")
     distanceofion = cur_job.get("DistanceOfIon")
-    psoratio = _normalize_calypso_scalar(cur_job.get("PsoRatio", 0.6), "PsoRatio")
-    popsize = _normalize_calypso_scalar(cur_job.get("PopSize", 30), "PopSize")
-    maxstep = _normalize_calypso_scalar(cur_job.get("MaxStep", 5), "MaxStep")
-    icode = _normalize_calypso_scalar(cur_job.get("ICode", 1), "ICode")
+    psoratio = _unwrap_calypso_scalar(cur_job.get("PsoRatio", 0.6), "PsoRatio")
+    popsize = _unwrap_calypso_scalar(cur_job.get("PopSize", 30), "PopSize")
+    maxstep = _unwrap_calypso_scalar(cur_job.get("MaxStep", 5), "MaxStep")
+    icode = _unwrap_calypso_scalar(cur_job.get("ICode", 1), "ICode")
     split = cur_job.get("Split", "T")
     # Cluster
 
@@ -208,10 +208,10 @@ def _make_model_devi_native_calypso(iter_index, model_devi_jobs, calypso_run_opt
     ctrlrange = None
     vsc = cur_job.get("VSC", "F")
     if vsc == "T":
-        maxnumatom = _normalize_calypso_scalar(cur_job.get("MaxNumAtom"), "MaxNumAtom")
+        maxnumatom = _unwrap_calypso_scalar(cur_job.get("MaxNumAtom"), "MaxNumAtom")
         ctrlrange = cur_job.get("CtrlRange")
     # Optimization
-    fmax = _normalize_calypso_scalar(cur_job.get("fmax", 0.01), "fmax")
+    fmax = _unwrap_calypso_scalar(cur_job.get("fmax", 0.01), "fmax")
     # pstress is a List which contains the target stress
     pstress = _normalize_calypso_pressures(cur_job.get("PSTRESS", [0.001]))
     # pressures
