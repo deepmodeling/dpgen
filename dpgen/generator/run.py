@@ -2393,6 +2393,20 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
         sys_counter += 1
 
 
+def _gromacs_input_files(gromacs_settings):
+    """Return only settings whose values name files staged for a GROMACS task."""
+    non_input_settings = {
+        "traj_filename",
+        "mdp_filename",
+        "group_name",
+        "maxwarn",
+        "deffnm",
+    }
+    return [
+        file for key, file in gromacs_settings.items() if key not in non_input_settings
+    ]
+
+
 def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
     try:
         from gromacs.fileformats.mdp import MDP
@@ -2417,9 +2431,6 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
     nsteps = cur_job.get("nsteps", None)
     lambdas = cur_job.get("lambdas", [1.0])
     temps = cur_job.get("temps", [298.0])
-
-    for ll in lambdas:
-        assert ll >= 0.0 and ll <= 1.0, "Lambda should be in [0,1]"
 
     if nsteps is None:
         raise RuntimeError("nsteps is None, you should set nsteps in model_devi_jobs!")
@@ -2455,16 +2466,10 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
                     task_path = os.path.join(work_path, task_name)
                     create_path(task_path)
                     gromacs_settings = jdata.get("gromacs_settings", "")
-                    for key, file in gromacs_settings.items():
-                        if (
-                            key != "traj_filename"
-                            and key != "mdp_filename"
-                            and key != "group_name"
-                            and key != "maxwarn"
-                        ):
-                            os.symlink(
-                                os.path.join(cc, file), os.path.join(task_path, file)
-                            )
+                    for file in _gromacs_input_files(gromacs_settings):
+                        os.symlink(
+                            os.path.join(cc, file), os.path.join(task_path, file)
+                        )
                     # input.json for DP-Gromacs
                     with open(os.path.join(cc, "input.json")) as f:
                         input_json = json.load(f)
@@ -2817,6 +2822,9 @@ def run_md_model_devi(iter_index, jdata, mdata):
         ]
         if ndx_filename:
             forward_files.append(ndx_filename)
+        model_devi_script = gromacs_settings.get("model_devi_script")
+        if model_devi_script:
+            forward_files.append(model_devi_script)
         backward_files = [
             f"{deffnm}.tpr",
             f"{deffnm}.log",

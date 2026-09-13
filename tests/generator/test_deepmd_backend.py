@@ -459,6 +459,29 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
         self.assertEqual(call["forward_common_files"], ["graph.000.pt2"])
         self.assertIn("lmp -k on g 1 -sf kk", call["commands"][0])
 
+    def test_gromacs_model_deviation_forwards_configured_script(self):
+        work_path = Path("iter.000000") / "01.model_devi"
+        (work_path / "task.000.000000").mkdir(parents=True)
+        (work_path / "graph.000.pb").touch()
+        (work_path / "cur_job.json").write_text(json.dumps({}), encoding="utf-8")
+        jdata = {
+            "model_devi_engine": "gromacs",
+            "gromacs_settings": {"model_devi_script": "model_devi.py"},
+            "model_devi_jobs": [{}],
+        }
+        mdata = {
+            "api_version": "1.0",
+            "model_devi_command": "gmx",
+            "model_devi_group_size": 1,
+            "model_devi_machine": {},
+            "model_devi_resources": {},
+        }
+        with patch("dpgen.generator.run.make_submission") as make_submission:
+            run_md_model_devi(0, jdata, mdata)
+
+        forward_files = make_submission.call_args.kwargs["forward_files"]
+        self.assertIn("model_devi.py", forward_files)
+
 
 if __name__ == "__main__":
     unittest.main()
