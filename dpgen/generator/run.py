@@ -402,9 +402,13 @@ def _get_committee_model_sections(training_param):
         yield model
 
 
-def _get_committee_rcut(training_param):
-    """Return the effective descriptor cutoff from a training configuration."""
+def _get_committee_signature(training_param, type_map):
+    """Return fields that must agree across model-deviation committee members."""
+    model_type_map = training_param.get("model", {}).get("type_map")
     rcuts = set()
+    output_classes = set()
+    fparam_dims = set()
+    aparam_dims = set()
     for model in _get_committee_model_sections(training_param):
         descriptor = model.get("descriptor", {})
         descriptor_type = (
@@ -420,47 +424,25 @@ def _get_committee_rcut(training_param):
         else:
             rcut = descriptor.get("rcut") if isinstance(descriptor, dict) else None
         rcuts.add(rcut)
-    return tuple(sorted(rcuts, key=repr))
 
-
-def _get_committee_output_class(training_param):
-    """Return the configured output class for a committee member."""
-    output_classes = set()
-    for model in _get_committee_model_sections(training_param):
         fitting_net = model.get("fitting_net", {})
         if isinstance(fitting_net, dict):
-            output_class = fitting_net.get("type", "ener")
+            output_classes.add(fitting_net.get("type", "ener"))
+            fparam_dims.add(fitting_net.get("numb_fparam", 0) or 0)
+            aparam_dims.add(fitting_net.get("numb_aparam", 0) or 0)
         else:
             model_type = model.get("type")
-            if model_type in {"dpa2", "dpa3", "dpa4", "dpa4c", "sezm"}:
-                output_class = "ener"
-            else:
-                output_class = model_type
-        output_classes.add(output_class)
-    return tuple(sorted(output_classes, key=repr))
-
-
-def _get_committee_param_dims(training_param):
-    """Return frame and atomic parameter dimensions for a committee member."""
-    fparam_dims = set()
-    aparam_dims = set()
-    for model in _get_committee_model_sections(training_param):
-        fitting_net = model.get("fitting_net", {})
-        if not isinstance(fitting_net, dict):
-            continue
-        fparam_dims.add(fitting_net.get("numb_fparam", 0) or 0)
-        aparam_dims.add(fitting_net.get("numb_aparam", 0) or 0)
-    return tuple(sorted(fparam_dims, key=repr)), tuple(sorted(aparam_dims, key=repr))
-
-
-def _get_committee_signature(training_param, type_map):
-    """Return fields that must agree across model-deviation committee members."""
-    model_type_map = training_param.get("model", {}).get("type_map")
+            output_classes.add(
+                "ener"
+                if model_type in {"dpa2", "dpa3", "dpa4", "dpa4c", "sezm"}
+                else model_type
+            )
     return (
         tuple(model_type_map if model_type_map is not None else type_map),
-        _get_committee_rcut(training_param),
-        _get_committee_output_class(training_param),
-        *_get_committee_param_dims(training_param),
+        tuple(sorted(rcuts, key=repr)),
+        tuple(sorted(output_classes, key=repr)),
+        tuple(sorted(fparam_dims, key=repr)),
+        tuple(sorted(aparam_dims, key=repr)),
     )
 
 
@@ -517,21 +499,17 @@ def _get_pt2_lower_kind(jdata) -> str:
     ValueError
         If the training configuration mixes DPA4 and DPA4C branches.
     """
-    training_param = jdata.get("default_training_param", {})
-    if isinstance(training_param, list):
-        families = {
-            _get_dpa_model_family(item)
-            for item in training_param
-            if _get_dpa_model_family(item) is not None
-        }
-        if len(families) > 1:
-            raise ValueError(
-                "default_training_param cannot mix DPA4 and DPA4C branches because "
-                "they require different DeePMD backends"
-            )
-        family = next(iter(families), None)
-    else:
-        family = _get_dpa_model_family(training_param)
+    families = {
+        family
+        for family in _get_dpa_model_families(jdata.get("default_training_param", {}))
+        if family is not None
+    }
+    if len(families) > 1:
+        raise ValueError(
+            "default_training_param cannot mix DPA4 and DPA4C branches because "
+            "they require different DeePMD backends"
+        )
+    family = next(iter(families), None)
     return "graph" if family in {"dpa4", "dpa4c"} else "nlist"
 
 
@@ -597,6 +575,12 @@ def _get_dpa_model_family(training_param) -> Optional[str]:
     return next(iter(families), None)
 
 
+def _get_dpa_model_families(training_param) -> list[Optional[str]]:
+    """Return the DPA family for each configured committee member."""
+    params = training_param if isinstance(training_param, list) else [training_param]
+    return [_get_dpa_model_family(item) for item in params]
+
+
 def _validate_dpa_training_config(jdata) -> None:
     """Validate DPA backend, format, and acceleration-option placement.
 
@@ -627,7 +611,7 @@ def _validate_dpa_training_config(jdata) -> None:
         training_params = _normalize_training_params(jdata)
         if not training_params:
             return
-        families = [_get_dpa_model_family(item) for item in training_params]
+        families = _get_dpa_model_families(training_param)
         if "dpa4" in families and "dpa4c" in families:
             raise ValueError(
                 "default_training_param cannot mix DPA4 and DPA4C branches because "
@@ -1143,8 +1127,9 @@ def make_train_dp(iter_index, jdata, mdata):
         )
 
     training_params = _normalize_training_params(jdata)
-    prepared_inputs = []
-    for jinput in training_params:
+    legacy_single = isinstance(jdata.get("default_training_param"), dict)
+    input_files = []
+    for ii, jinput in enumerate(training_params):
         _prepare_training_input(
             jinput,
             mdata["deepmd_version"],
@@ -1161,15 +1146,10 @@ def make_train_dp(iter_index, jdata, mdata):
             training_reuse_start_pref_e,
             training_reuse_start_pref_f,
         )
-        prepared_inputs.append(jinput)
-    if isinstance(jdata.get("default_training_param"), dict) and prepared_inputs:
-        # Keep the legacy single-dict view synchronized after preparation while
-        # keeping all in-place mutations isolated from the shared input object.
-        jdata["default_training_param"] = copy.deepcopy(prepared_inputs[0])
-
-    input_files = []
-    for ii in range(numb_models):
-        jinput = prepared_inputs[ii]
+        if ii == 0 and legacy_single:
+            # Keep the legacy single-dict view synchronized after preparation while
+            # keeping all in-place mutations isolated from the shared input object.
+            jdata["default_training_param"] = copy.deepcopy(jinput)
         task_path = os.path.join(work_path, train_task_fmt % ii)
         create_path(task_path)
         os.chdir(task_path)

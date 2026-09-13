@@ -123,6 +123,70 @@ class TestDeepmdBackendConfig(unittest.TestCase):
                 }
             )
 
+    def test_model_dict_cutoffs_are_all_part_of_committee_signature(self):
+        with self.assertRaisesRegex(ValueError, "incompatible cutoff"):
+            _validate_dpa_training_config(
+                {
+                    "numb_models": 2,
+                    "type_map": ["H"],
+                    "default_training_param": [
+                        {
+                            "model": {
+                                "model_dict": {
+                                    "a": {
+                                        "descriptor": {
+                                            "type": "dpa2",
+                                            "repinit": {"rcut": 6.0},
+                                        }
+                                    },
+                                    "b": {
+                                        "descriptor": {
+                                            "type": "dpa3",
+                                            "repflow": {"rcut": 8.0},
+                                        }
+                                    },
+                                }
+                            }
+                        },
+                        {
+                            "model": {
+                                "model_dict": {
+                                    "a": {
+                                        "descriptor": {
+                                            "type": "dpa2",
+                                            "repinit": {"rcut": 6.0},
+                                        }
+                                    },
+                                    "b": {
+                                        "descriptor": {
+                                            "type": "dpa3",
+                                            "repflow": {"rcut": 9.0},
+                                        }
+                                    },
+                                }
+                            }
+                        },
+                    ],
+                }
+            )
+
+    def test_omitted_fitting_type_defaults_to_energy(self):
+        _validate_dpa_training_config(
+            {
+                "numb_models": 2,
+                "type_map": ["H"],
+                "default_training_param": [
+                    {"model": {"descriptor": {"type": "se_e2_a"}, "fitting_net": {}}},
+                    {
+                        "model": {
+                            "descriptor": {"type": "se_e2_a"},
+                            "fitting_net": {"type": "ener"},
+                        }
+                    },
+                ],
+            }
+        )
+
     def test_cross_architecture_pt2_rejects_lower_kind_mismatch(self):
         with self.assertRaisesRegex(ValueError, "same export lower kind"):
             _validate_dpa_training_config(
