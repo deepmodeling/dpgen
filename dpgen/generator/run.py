@@ -26,7 +26,6 @@ import warnings
 from collections import Counter
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Optional
 
 import dpdata
 import numpy as np
@@ -412,7 +411,7 @@ def _iter_model_sections(training_param):
         yield f"model.model_dict.{name}", branch
 
 
-def _get_dpa_model_family(training_param) -> Optional[str]:
+def _get_dpa_model_family(training_param) -> str | None:
     """Identify the DPA model family in a training configuration.
 
     Parameters
@@ -1062,7 +1061,7 @@ def make_train_dp(iter_index, jdata, mdata):
         convert_training_data_to_hdf5(input_files, os.path.join(work_path, "data.hdf5"))
 
 
-def _link_old_models(work_path, old_model_files, ii, basename: Optional[str] = None):
+def _link_old_models(work_path, old_model_files, ii, basename: str | None = None):
     """Link the `ii`th old model given by `old_model_files` to
     the `ii`th training task in `work_path`.
     """

@@ -1,5 +1,4 @@
 import textwrap
-from typing import Optional, Union
 
 from dargs import Argument, Variant
 from dargs.dargs import ArgumentValueError
@@ -68,7 +67,7 @@ def data_args() -> list[Argument]:
         ),
         Argument(
             "init_batch_size",
-            [list[Union[int, str]], str],
+            [list[int | str], str],
             optional=True,
             doc=doc_init_batch_size,
         ),
@@ -81,7 +80,7 @@ def data_args() -> list[Argument]:
         ),
         Argument(
             "sys_batch_size",
-            list[Union[int, str]],
+            list[int | str],
             optional=True,
             doc=doc_sys_batch_size,
         ),
@@ -644,7 +643,7 @@ def model_devi_amber_args() -> list[Argument]:
         Argument("nsteps", list[int], optional=False, doc=doc_nsteps),
         Argument(
             "r",
-            list[list[Union[float, list[float]]]],
+            list[list[float | list[float]]],
             optional=False,
             doc=doc_r,
         ),
@@ -1390,7 +1389,7 @@ def fp_style_pwmat_args() -> list[Argument]:
 class _FpStyleVariant(Variant):
     """Validate cross-field requirements for first-principles backends."""
 
-    def get_choice(self, argdict: dict, path: Optional[list[str]] = None) -> Argument:
+    def get_choice(self, argdict: dict, path: list[str] | None = None) -> Argument:
         """Return the selected backend after validating PWmat input sources.
 
         Dargs flattens variant fields into their parent mapping, so a regular
