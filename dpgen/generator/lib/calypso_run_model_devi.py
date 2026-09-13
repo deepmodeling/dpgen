@@ -7,8 +7,6 @@ import shutil
 
 import dpdata
 import numpy as np
-from deepmd.infer import DeepPot as DP
-from deepmd.infer import calc_model_devi
 
 
 def write_model_devi_out(devi, fname):
@@ -32,11 +30,22 @@ def write_model_devi_out(devi, fname):
     return devi
 
 
-def Modd(all_models, type_map):
+def _remap_atom_types(atom_types, type_map, model_type_map):
+    """Map DP-GEN's top-level type order to the model type order."""
+    model_type_indices = np.asarray(
+        [model_type_map.index(element) for element in type_map], dtype=int
+    )
+    return model_type_indices[np.asarray(atom_types, dtype=int)]
+
+
+def Modd(all_models, type_map, model_type_map=None):
     # Model Devi
+    from deepmd.infer import DeepPot as DP
+    from deepmd.infer import calc_model_devi
 
     cwd = os.getcwd()
     graphs = [DP(model) for model in all_models]
+    model_type_map = type_map if model_type_map is None else model_type_map
 
     Devis = []
     pcount = 0
@@ -74,7 +83,9 @@ def Modd(all_models, type_map):
                 nopbc = pdata.nopbc
                 coord = pdata.data["coords"]
                 cell = pdata.data["cells"] if not nopbc else None
-                atom_types = pdata.data["atom_types"]
+                atom_types = _remap_atom_types(
+                    pdata.data["atom_types"], type_map, model_type_map
+                )
                 try:
                     devi = calc_model_devi(coord, cell, atom_types, graphs, nopbc=nopbc)
                 except TypeError:
@@ -131,7 +142,12 @@ if __name__ == "__main__":
         nargs="+",
         help="the type map of models which will be used to do model-deviation",
     )
+    parser.add_argument(
+        "--model_type_map",
+        nargs="+",
+        help="the type map used by the model artifacts",
+    )
     args = parser.parse_args()
     # print(vars(args))
-    Modd(args.all_models, args.type_map)
+    Modd(args.all_models, args.type_map, args.model_type_map)
     # Modd(sys.argv[1],sys.argv[2])

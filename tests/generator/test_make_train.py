@@ -13,6 +13,7 @@ import numpy as np
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
 import tempfile
+from unittest.mock import patch
 
 from .context import (
     machine_file,
@@ -579,6 +580,71 @@ class TestMakeTrain(unittest.TestCase):
 
         # remove testing dirs
         shutil.rmtree("iter.000000")
+
+    def test_model_type_map_is_not_overwritten(self):
+        """Keep explicit model maps for TensorFlow training inputs."""
+        for param_name, machine_name in (
+            (param_file_v1, machine_file_v1),
+            (param_file, machine_file),
+        ):
+            if os.path.isdir("iter.000000"):
+                shutil.rmtree("iter.000000")
+            with open(param_name) as fp:
+                jdata = json.load(fp)
+            jdata["default_training_param"]["model"]["type_map"] = ["Al", "Mg"]
+            with open(machine_name) as fp:
+                mdata = json.load(fp)
+            make_train(0, jdata, mdata)
+            input_path = os.path.join("iter.000000", "00.train", "000", "input.json")
+            with open(input_path) as fp:
+                model_input = json.load(fp)
+            self.assertEqual(model_input["model"]["type_map"], ["Al", "Mg"])
+            shutil.rmtree("iter.000000")
+
+            with open(param_name) as fp:
+                jdata = json.load(fp)
+            jdata["default_training_param"]["model"].pop("type_map", None)
+            make_train(0, jdata, mdata)
+            input_path = os.path.join("iter.000000", "00.train", "000", "input.json")
+            with open(input_path) as fp:
+                model_input = json.load(fp)
+            self.assertEqual(model_input["model"]["type_map"], jdata["type_map"])
+            shutil.rmtree("iter.000000")
+
+    def test_pytorch_3_uses_top_level_type_map_as_fallback(self):
+        """DeePMD-kit 3.x PyTorch needs a model type_map to train."""
+
+        def copy_directory(source, target):
+            shutil.copytree(source, target)
+
+        for model_type_map in (None, ["Al", "Mg"]):
+            with self.subTest(model_type_map=model_type_map):
+                if os.path.isdir("iter.000000"):
+                    shutil.rmtree("iter.000000")
+                with open(param_file) as fp:
+                    jdata = json.load(fp)
+                jdata["train_backend"] = "pytorch"
+                if model_type_map is None:
+                    jdata["default_training_param"]["model"].pop("type_map", None)
+                else:
+                    jdata["default_training_param"]["model"]["type_map"] = (
+                        model_type_map
+                    )
+
+                with patch(
+                    "dpgen.generator.run.os.symlink", side_effect=copy_directory
+                ):
+                    make_train(0, jdata, {"deepmd_version": "3.0"})
+                input_path = os.path.join(
+                    "iter.000000", "00.train", "000", "input.json"
+                )
+                with open(input_path) as fp:
+                    model_input = json.load(fp)
+                self.assertEqual(
+                    model_input["model"]["type_map"],
+                    jdata["type_map"] if model_type_map is None else model_type_map,
+                )
+                shutil.rmtree("iter.000000")
 
     def test_training_init_frozen_model(self):
         """Test `training_init_frozen_model`."""

@@ -828,6 +828,9 @@ def make_train_dp(iter_index, jdata, mdata):
                     init_batch_size.append(detect_batch_size(batch_size, sys_single))
     # establish tasks
     jinput = jdata["default_training_param"]
+    # Explicit maps support pretrained models with a different element order.
+    # Every backend still needs a default map for element-based exploration.
+    jinput["model"].setdefault("type_map", jdata["type_map"])
     try:
         mdata["deepmd_version"]
     except KeyError:
@@ -839,7 +842,6 @@ def make_train_dp(iter_index, jdata, mdata):
         # 1.x
         jinput["training"]["systems"] = init_data_sys
         jinput["training"]["batch_size"] = init_batch_size
-        jinput["model"]["type_map"] = jdata["type_map"]
         # electron temperature
         if use_ele_temp == 0:
             pass
@@ -862,7 +864,6 @@ def make_train_dp(iter_index, jdata, mdata):
             isinstance(old_batch_size, str) and old_batch_size.startswith("mixed:")
         ):
             jinput["training"]["training_data"]["batch_size"] = init_batch_size
-        jinput["model"]["type_map"] = jdata["type_map"]
         # electron temperature
         if use_ele_temp == 0:
             pass

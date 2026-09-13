@@ -11,6 +11,8 @@ from dpgen.generator.lib.make_calypso import _make_model_devi_native_calypso
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
 
+from dpgen.generator.lib.calypso_run_model_devi import _remap_atom_types
+
 from .context import (
     _parse_calypso_dis_mtx,
     _parse_calypso_input,
@@ -97,6 +99,12 @@ class TestCALYPSOScript(unittest.TestCase):
         ndevi = np.loadtxt("model_devi.out")
         self.assertEqual(ndevi[2, 4], model_devi[2, 4])
         os.remove("model_devi.out")
+
+    def test_remap_atom_types_to_model_order(self):
+        """CALYPSO passes model-order type indices to model deviation."""
+        atom_types = np.array([0, 1, 0, 1])
+        remapped = _remap_atom_types(atom_types, ["Mg", "Al"], ["Al", "Mg"])
+        np.testing.assert_array_equal(remapped, [1, 0, 1, 0])
 
     def test_make_calypso_input(self):
         ret = make_calypso_input(
