@@ -35,3 +35,63 @@ class TestCollectData(unittest.TestCase):
             collect_data(inpdir, param_file.name, outdir, verbose=True)
             ms = dpdata.MultiSystems().from_deepmd_npy(outdir)
             self.assertEqual(ms.get_nframes(), self.data.get_nframes() * 3)
+
+    def test_legacy_iterative_output_layout(self):
+        """Compatibility mode omits initial data and keeps system.* names."""
+        with (
+            tempfile.TemporaryDirectory() as inpdir,
+            tempfile.TemporaryDirectory() as outdir,
+            tempfile.NamedTemporaryFile() as param_file,
+        ):
+            self.data.to_deepmd_npy(Path(inpdir) / "iter.000000" / "02.fp" / "data.000")
+            init_path = Path(inpdir) / "init-data"
+            self.data.to_deepmd_npy(init_path)
+            with open(param_file.name, "w") as fp:
+                json.dump(
+                    {
+                        "sys_configs": ["sys1"],
+                        "model_devi_jobs": [{}],
+                        "init_data_sys": [str(init_path)],
+                    },
+                    fp,
+                )
+
+            collect_data(
+                inpdir,
+                param_file.name,
+                outdir,
+                verbose=False,
+                merge=False,
+                include_init_data=False,
+                iter_output_prefix="system.",
+            )
+
+            self.assertTrue((Path(outdir) / "system.000").is_dir())
+            self.assertFalse(any(Path(outdir).glob("init.*")))
+
+    def test_discovers_completed_iteration_directories(self):
+        """Compatibility mode includes iterations beyond the parameter list."""
+        with (
+            tempfile.TemporaryDirectory() as inpdir,
+            tempfile.TemporaryDirectory() as outdir,
+            tempfile.NamedTemporaryFile() as param_file,
+        ):
+            self.data.to_deepmd_npy(Path(inpdir) / "iter.000000" / "02.fp" / "data.000")
+            self.data.to_deepmd_npy(Path(inpdir) / "iter.000001" / "02.fp" / "data.000")
+            with open(param_file.name, "w") as fp:
+                json.dump(
+                    {"sys_configs": ["sys1"], "model_devi_jobs": [{}]},
+                    fp,
+                )
+
+            collect_data(
+                inpdir,
+                param_file.name,
+                outdir,
+                verbose=False,
+                shuffle=False,
+                discover_existing_iters=True,
+            )
+
+            systems = dpdata.MultiSystems().from_deepmd_npy(outdir)
+            self.assertEqual(systems.get_nframes(), self.data.get_nframes() * 2)

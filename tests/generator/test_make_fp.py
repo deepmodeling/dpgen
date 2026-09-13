@@ -991,6 +991,42 @@ class TestMakeFPSIESTA(unittest.TestCase):
         _check_potcar(self, 0, jdata["fp_pp_path"], jdata["fp_pp_files"])
         shutil.rmtree("iter.000000")
 
+    def test_make_fp_siesta_with_element_subset(self):
+        """Each SIESTA input should select PPs for its present elements."""
+        setUpModule()
+        if os.path.isdir("iter.000000"):
+            shutil.rmtree("iter.000000")
+        with open(param_siesta_file) as fp:
+            jdata = json.load(fp)
+        md_descript = []
+        for _ in range(2):
+            system_deviations = []
+            for _ in range(3):
+                system_deviations.append(np.arange(0, 0.29, 0.29 / 10))
+            md_descript.append(system_deviations)
+
+        try:
+            _make_fake_md(0, md_descript, [0] * 6, jdata["type_map"])
+            make_fp(0, jdata, {})
+
+            tasks = glob.glob(os.path.join("iter.000000", "02.fp", "task.*"))
+            self.assertGreater(len(tasks), 0)
+            for task in tasks:
+                with open(os.path.join(task, "input")) as fp:
+                    input_text = fp.read()
+                self.assertIn("NumberOfSpecies   1", input_text)
+                species_block = input_text.split(
+                    "%block Chemical_Species_label\n", maxsplit=1
+                )[1].split("%endblock Chemical_Species_label", maxsplit=1)[0]
+                species_lines = [
+                    line for line in species_block.splitlines() if line.strip()
+                ]
+                self.assertEqual(1, len(species_lines))
+                self.assertEqual("C", species_lines[0].split()[-1])
+        finally:
+            if os.path.isdir("iter.000000"):
+                shutil.rmtree("iter.000000")
+
 
 class TestMakeFPVasp(unittest.TestCase):
     def test_make_fp_vasp(self):

@@ -17,6 +17,7 @@
     "pick_data": "/path/to/qm7/deepmd_npy",
     "init_data_prefix": "",
     "init_data_sys": [],
+    "sys_configs": [],
     "sys_batch_size": [
         "auto"
     ],
@@ -87,11 +88,8 @@
         }
     },
     "fp_style": "gaussian",
-    "shuffle_poscar": false,
     "fp_task_max": 1000,
     "fp_task_min": 10,
-    "fp_pp_path": "/path/to/fp/support/files",
-    "fp_pp_files": [],
     "fp_params": {
         "keywords": "mn15/6-31g** force nosymm scf(maxcyc=512)",
         "nproc": 28,

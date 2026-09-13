@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import glob
+import argparse
 import os
 
 import numpy as np
@@ -9,14 +9,6 @@ import numpy as np
 check if structure optimization worked well
 if not, this script will generate a fake outcar
 """
-
-
-def find_model_path():
-    """Find the first backend-specific model forwarded by DP-GEN."""
-    models = sorted(glob.glob(os.path.join("..", "graph.*")))
-    if not models:
-        raise FileNotFoundError("No graph model was forwarded for CALYPSO recovery")
-    return models[0]
 
 
 def Get_Element_Num(elements):
@@ -91,11 +83,11 @@ def Write_Outcar(element, ele, volume, lat, pos, ene, force, stress, pstress):
     f.write(f"enthalpy is  TOTEN    = {enthalpy:20.6f} {enthalpy:20.6f}\n")
 
 
-def check():
+def check(model):
     from ase.io import read
     from deepmd.calculator import DP
 
-    calc = DP(model=find_model_path())  # initialize one model before iteration
+    calc = DP(model=model)  # init the model before iteration
 
     to_be_opti = read("POSCAR")
     to_be_opti.calc = calc
@@ -127,4 +119,6 @@ def check():
 
 cwd = os.getcwd()
 if not os.path.exists(os.path.join(cwd, "OUTCAR")):
-    check()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model", default="../graph.000.pb")
+    check(parser.parse_args().model)

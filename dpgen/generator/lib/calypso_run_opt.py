@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import glob
+import argparse
 import os
 import time
 
@@ -14,14 +14,6 @@ from deepmd.calculator import DP
 structure optimization with DP model and ASE
 PSTRESS and fmax should exist in input.dat
 """
-
-
-def find_model_path():
-    """Find the first backend-specific model forwarded by DP-GEN."""
-    models = sorted(glob.glob(os.path.join("..", "graph.*")))
-    if not models:
-        raise FileNotFoundError("No graph model was forwarded for CALYPSO optimization")
-    return models[0]
 
 
 def Get_Element_Num(elements):
@@ -119,9 +111,23 @@ def read_stress_fmax():
     return fmax, pstress
 
 
-def run_opt(fmax, stress):
-    """Using the ASE&DP to Optimize Configures."""
-    calc = DP(model=find_model_path())  # initialize one model before iteration
+def run_opt(fmax, stress, model):
+    """Optimize a CALYPSO structure with ASE and a DeePMD model.
+
+    Parameters
+    ----------
+    fmax : float
+        Maximum force convergence threshold for the ASE optimizer.
+    stress : float
+        Target external pressure in kbar.
+    model : str
+        Path to the frozen DeePMD model artifact.
+
+    Returns
+    -------
+    None
+    """
+    calc = DP(model=model)  # init the model before iteration
     os.system("mv OUTCAR OUTCAR-last")
 
     print("Start to Optimize Structures by DP----------")
@@ -173,8 +179,17 @@ def run_opt(fmax, stress):
 
 
 def run():
+    """Run the CALYPSO optimization command-line entry point.
+
+    Returns
+    -------
+    None
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model", default="../graph.000.pb")
+    args = parser.parse_args()
     fmax, stress = read_stress_fmax()
-    run_opt(fmax, stress)
+    run_opt(fmax, stress, args.model)
 
 
 if __name__ == "__main__":

@@ -6,10 +6,13 @@ from pathlib import Path
 
 import numpy as np
 
+from dpgen.generator.lib.make_calypso import _make_model_devi_native_calypso
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 __package__ = "generator"
 
-from dpgen.generator.lib.run_calypso import _get_calypso_models
+from dpgen.generator.lib.run_calypso import _find_models
+from dpgen.generator.run import _get_model_suffix
 
 from .context import (
     _parse_calypso_dis_mtx,
@@ -135,6 +138,36 @@ class TestCALYPSOScript(unittest.TestCase):
                 os.remove("input.dat")
                 break
 
+    def test_native_input_normalizes_singleton_scalars(self):
+        """Legacy singleton lists are rendered as scalar CALYPSO values."""
+        job = {
+            "times": [0],
+            "NameOfAtoms": ["Mg"],
+            "NumberOfAtoms": [1],
+            "NumberOfFormula": [1, 1],
+            "Volume": [30],
+            "DistanceOfIon": [[1.4]],
+            "PsoRatio": [0.6],
+            "PopSize": [5],
+            "MaxStep": [3],
+            "ICode": [1],
+            "VSC": "T",
+            "MaxNumAtom": [20],
+            "CtrlRange": [[1, 20]],
+            "PSTRESS": [0.0],
+            "fmax": [0.01],
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            run_path = Path(tmpdir) / "calypso.000"
+            run_path.mkdir()
+            _make_model_devi_native_calypso(0, [job], [str(run_path)])
+            generated = (run_path / "input.dat").read_text()
+
+        self.assertIn("Volume = 30", generated)
+        self.assertIn("PsoRatio = 0.6", generated)
+        self.assertIn("PopSize = 5", generated)
+        self.assertNotIn("[", generated)
+
     def test_parse_calypso_input(self):
         ret = make_calypso_input(
             ["Mg", "Al", "Cu"],
@@ -178,6 +211,7 @@ class TestCALYPSOScript(unittest.TestCase):
         os.remove("input.dat")
 
     def test_backend_specific_model_selection(self):
+        """Backend selection feeds the shared CALYPSO artifact discovery path."""
         with tempfile.TemporaryDirectory() as tmpdir:
             model_dir = Path(tmpdir)
             for suffix in ("pb", "pth", "savedmodel"):
@@ -190,8 +224,8 @@ class TestCALYPSOScript(unittest.TestCase):
             }
             for backend, suffix in cases.items():
                 with self.subTest(backend=backend):
-                    models = _get_calypso_models(
-                        str(model_dir), {"train_backend": backend}
+                    models = _find_models(
+                        model_dir, _get_model_suffix({"train_backend": backend})
                     )
                     self.assertEqual(models, [str(model_dir / f"graph.000{suffix}")])
 
