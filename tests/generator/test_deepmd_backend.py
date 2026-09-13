@@ -86,7 +86,7 @@ class TestDeepmdBackendConfig(unittest.TestCase):
                             "model": {
                                 "descriptor": {
                                     "type": "dpa3",
-                                    "repflow": {"rcut": 8.0},
+                                    "repflow": {"e_rcut": 8.0},
                                 }
                             }
                         },
@@ -142,7 +142,7 @@ class TestDeepmdBackendConfig(unittest.TestCase):
                                     "b": {
                                         "descriptor": {
                                             "type": "dpa3",
-                                            "repflow": {"rcut": 8.0},
+                                            "repflow": {"e_rcut": 8.0},
                                         }
                                     },
                                 }
@@ -160,7 +160,7 @@ class TestDeepmdBackendConfig(unittest.TestCase):
                                     "b": {
                                         "descriptor": {
                                             "type": "dpa3",
-                                            "repflow": {"rcut": 9.0},
+                                            "repflow": {"e_rcut": 9.0},
                                         }
                                     },
                                 }
@@ -474,6 +474,39 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
             ) as fp:
                 descriptors.append(json.load(fp)["model"]["descriptor"]["type"])
         self.assertEqual(descriptors, ["dpa2", "dpa3", "dpa4"])
+
+    def test_make_train_seeds_model_dict_branches(self):
+        jdata = {
+            "numb_models": 1,
+            "init_data_prefix": "data",
+            "init_data_sys": [],
+            "sys_configs": [],
+            "model_devi_jobs": [{}],
+            "fp_task_min": 0,
+            "type_map": ["H"],
+            "default_training_param": {
+                "model": {
+                    "model_dict": {
+                        "a": {
+                            "descriptor": {"type": "dpa2"},
+                            "fitting_net": {},
+                        },
+                        "b": {
+                            "descriptor": {"type": "dpa3"},
+                            "fitting_net": {},
+                        },
+                    }
+                },
+                "training": {},
+            },
+        }
+        with patch("dpgen.generator.run.os.symlink"):
+            make_train_dp(0, jdata, {"deepmd_version": "3.2.0"})
+        with open(Path("iter.000000") / "00.train" / "000" / "input.json") as fp:
+            model_dict = json.load(fp)["model"]["model_dict"]
+        for branch in model_dict.values():
+            self.assertIn("seed", branch["descriptor"])
+            self.assertIn("seed", branch["fitting_net"])
 
     def test_cross_architecture_submission_tracks_all_members(self):
         calls = self._run(

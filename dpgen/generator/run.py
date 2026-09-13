@@ -372,7 +372,26 @@ def _get_input_model_suffix(models) -> str:
 
 
 def _normalize_training_params(jdata) -> list[dict]:
-    """Return one independent DeePMD configuration for each committee member."""
+    """Return one independent DeePMD configuration for each committee member.
+
+    Parameters
+    ----------
+    jdata : dict
+        DP-GEN parameters containing ``numb_models`` and
+        ``default_training_param``.
+
+    Returns
+    -------
+    list[dict]
+        Deep-copied configuration dictionaries in committee order.
+
+    Raises
+    ------
+    ValueError
+        If a list does not have ``numb_models`` entries.
+    TypeError
+        If the configuration is neither a dictionary nor a list of dictionaries.
+    """
     training_param = jdata.get("default_training_param", {})
     numb_models = jdata.get("numb_models", 0)
     if isinstance(training_param, dict):
@@ -393,7 +412,18 @@ def _normalize_training_params(jdata) -> list[dict]:
 
 
 def _get_committee_model_sections(training_param):
-    """Yield all model branches used to derive committee compatibility."""
+    """Yield model sections used to derive committee compatibility.
+
+    Parameters
+    ----------
+    training_param : dict
+        One DeePMD training configuration.
+
+    Yields
+    ------
+    dict
+        The top-level model or each branch in ``model_dict``.
+    """
     model = training_param.get("model", {})
     model_dict = model.get("model_dict") or {}
     if model_dict:
@@ -403,7 +433,20 @@ def _get_committee_model_sections(training_param):
 
 
 def _get_committee_signature(training_param, type_map):
-    """Return fields that must agree across model-deviation committee members."""
+    """Return fields that must agree across committee members.
+
+    Parameters
+    ----------
+    training_param : dict
+        One DeePMD training configuration.
+    type_map : list[str]
+        Global DP-GEN type map used when the model omits one.
+
+    Returns
+    -------
+    tuple
+        Type map, cutoffs, output classes, and parameter dimensions.
+    """
     model_type_map = training_param.get("model", {}).get("type_map")
     rcuts = set()
     output_classes = set()
@@ -420,7 +463,7 @@ def _get_committee_signature(training_param, type_map):
         if descriptor_type == "dpa2":
             rcut = (descriptor.get("repinit") or {}).get("rcut")
         elif descriptor_type == "dpa3":
-            rcut = (descriptor.get("repflow") or {}).get("rcut")
+            rcut = (descriptor.get("repflow") or {}).get("e_rcut")
         else:
             rcut = descriptor.get("rcut") if isinstance(descriptor, dict) else None
         rcuts.add(rcut)
@@ -447,7 +490,20 @@ def _get_committee_signature(training_param, type_map):
 
 
 def _validate_committee_compatibility(jdata, training_params) -> None:
-    """Validate shared model-deviation metadata for per-member configurations."""
+    """Validate shared model-deviation metadata for committee members.
+
+    Parameters
+    ----------
+    jdata : dict
+        DP-GEN parameters containing the global model format and type map.
+    training_params : list[dict]
+        Independent member configurations.
+
+    Raises
+    ------
+    ValueError
+        If model metadata or PT2 lower kinds are incompatible.
+    """
     if not isinstance(jdata.get("default_training_param"), list):
         return
     type_map = jdata.get("type_map", [])
@@ -576,7 +632,18 @@ def _get_dpa_model_family(training_param) -> Optional[str]:
 
 
 def _get_dpa_model_families(training_param) -> list[Optional[str]]:
-    """Return the DPA family for each configured committee member."""
+    """Return the DPA family for each configured committee member.
+
+    Parameters
+    ----------
+    training_param : dict or list[dict]
+        One configuration or a committee configuration list.
+
+    Returns
+    -------
+    list[str or None]
+        One family name per configuration.
+    """
     params = training_param if isinstance(training_param, list) else [training_param]
     return [_get_dpa_model_family(item) for item in params]
 
@@ -852,7 +919,42 @@ def _prepare_training_input(
     training_reuse_start_pref_e,
     training_reuse_start_pref_f,
 ):
-    """Inject DP-GEN data and per-iteration settings into one model config."""
+    """Inject DP-GEN data and per-iteration settings into one model config.
+
+    Parameters
+    ----------
+    jinput : dict
+        Model configuration mutated in place.
+    deepmd_version : str
+        DeePMD-kit version used to select the input schema.
+    init_data_sys : list
+        Training systems prepared by DP-GEN.
+    init_batch_size : list
+        Batch sizes corresponding to ``init_data_sys``.
+    type_map : list[str]
+        Global DP-GEN type map.
+    use_ele_temp : int
+        Electron-temperature parameter mode.
+    training_reuse_iter : int or None
+        First iteration using reuse overrides.
+    iter_index : int
+        Current iteration index.
+    training_reuse_stop_batch : int or None
+        Optional reuse stop step.
+    training_reuse_old_ratio : float or str
+        Old-data probability or automatic ratio specification.
+    old_range : int or None
+        Boundary between old and new systems.
+    training_reuse_start_lr : float or None
+        Optional reuse learning rate.
+    training_reuse_start_pref_e, training_reuse_start_pref_f : float or None
+        Optional reuse loss prefactors.
+
+    Raises
+    ------
+    RuntimeError
+        If the DeePMD version or electron-temperature mode is unsupported.
+    """
     if Version(deepmd_version) >= Version("1") and Version(deepmd_version) < Version(
         "2"
     ):
@@ -1171,25 +1273,21 @@ def make_train_dp(iter_index, jdata, mdata):
             mdata["deepmd_version"]
         ) < Version("4"):
             # 1.x
-            if "descriptor" not in jinput["model"]:
-                pass
-            elif jinput["model"]["descriptor"]["type"] == "hybrid":
-                for desc in jinput["model"]["descriptor"]["list"]:
-                    desc["seed"] = random.randrange(sys.maxsize) % (2**32)
-            elif jinput["model"]["descriptor"]["type"] == "loc_frame":
-                pass
-            else:
-                jinput["model"]["descriptor"]["seed"] = random.randrange(
-                    sys.maxsize
-                ) % (2**32)
-            if "fitting_net" in jinput["model"]:
-                jinput["model"]["fitting_net"]["seed"] = random.randrange(
-                    sys.maxsize
-                ) % (2**32)
-            if "type_embedding" in jinput["model"]:
-                jinput["model"]["type_embedding"]["seed"] = random.randrange(
-                    sys.maxsize
-                ) % (2**32)
+            for _, model in _iter_model_sections(jinput):
+                descriptor = model.get("descriptor")
+                if not isinstance(descriptor, dict):
+                    continue
+                if descriptor.get("type") == "hybrid":
+                    for desc in descriptor["list"]:
+                        desc["seed"] = random.randrange(sys.maxsize) % (2**32)
+                elif descriptor.get("type") != "loc_frame":
+                    descriptor["seed"] = random.randrange(sys.maxsize) % (2**32)
+                fitting_net = model.get("fitting_net")
+                if isinstance(fitting_net, dict):
+                    fitting_net["seed"] = random.randrange(sys.maxsize) % (2**32)
+                type_embedding = model.get("type_embedding")
+                if isinstance(type_embedding, dict):
+                    type_embedding["seed"] = random.randrange(sys.maxsize) % (2**32)
             jinput["training"]["seed"] = random.randrange(sys.maxsize) % (2**32)
         else:
             raise RuntimeError(
