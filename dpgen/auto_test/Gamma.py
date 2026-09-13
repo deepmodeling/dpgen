@@ -129,6 +129,7 @@ class Gamma(Property):
                 raise RuntimeError("please provide the initial data path to reproduce")
             init_data_path = os.path.abspath(self.parameter["init_data_path"])
             task_list = make_repro(
+                self.inter_param,
                 init_data_path,
                 self.init_from_suffix,
                 path_to_work,
@@ -369,7 +370,7 @@ class Gamma(Property):
 
     def __stru_fix(self, stru) -> None:
         fix_dict = {"true": True, "false": False}
-        fix_xyz = [fix_dict[i] for i in self.addfix]
+        fix_xyz = [fix_dict[i] for i in self.add_fix]
         abacus.stru_fix_atom(stru, fix_atom=fix_xyz)
 
     def __inLammpes_fix(self, inLammps) -> None:

@@ -19,6 +19,7 @@ import dpgen.data.tools.sc as sc
 from dpgen import ROOT_PATH, dlog
 from dpgen.dispatcher.Dispatcher import make_submission
 from dpgen.generator.lib.abacus_scf import (
+    _parse_abacus_binary,
     get_abacus_input_parameters,
     get_abacus_STRU,
     make_abacus_scf_kpt,
@@ -578,8 +579,9 @@ def make_abacus_relax(jdata, mdata):
     )  # a dictionary in which all of the values are strings
     if "kspacing" not in standard_incar:
         if "gamma_only" in standard_incar:
-            if isinstance(standard_incar["gamma_only"], str):
-                standard_incar["gamma_only"] = int(eval(standard_incar["gamma_only"]))
+            standard_incar["gamma_only"] = _parse_abacus_binary(
+                standard_incar["gamma_only"], "gamma_only"
+            )
             if standard_incar["gamma_only"] == 0:
                 if "relax_kpt" not in jdata:
                     raise RuntimeError("Cannot find any k-points information.")
@@ -871,6 +873,14 @@ def make_vasp_md(jdata, mdata):
     os.chdir(cwd)
 
     for ii in sys_ps:
+        relax_chgcar = os.path.abspath(
+            os.path.join(out_dir, global_dirname_02, ii, "CHGCAR")
+        )
+        if jdata.get("reuse_relax_chgcar", False) and not os.path.isfile(relax_chgcar):
+            raise RuntimeError(
+                f"file {relax_chgcar} not found; stage-1 VASP relaxation must "
+                "produce CHGCAR before reuse_relax_chgcar can be enabled"
+            )
         for jj in scale:
             for kk in range(pert_numb + 1):
                 path_work = path_md
@@ -895,6 +905,14 @@ def make_vasp_md(jdata, mdata):
                     os.symlink(os.path.relpath(file_potcar), "POTCAR")
                 except FileExistsError:
                     pass
+                if jdata.get("reuse_relax_chgcar", False):
+                    # VASP may overwrite CHGCAR. Isolate each task from the
+                    # relaxation seed and migrate old links, retaining real
+                    # task-local restart files when setup is repeated.
+                    if os.path.islink("CHGCAR"):
+                        os.unlink("CHGCAR")
+                    if not os.path.exists("CHGCAR"):
+                        shutil.copy2(relax_chgcar, "CHGCAR")
 
                 is_cvasp = False
                 if "cvasp" in mdata["fp_resources"].keys():
@@ -922,8 +940,9 @@ def make_abacus_md(jdata, mdata):
     #        "Cannot find any k-points information."
     if "kspacing" not in standard_incar:
         if "gamma_only" in standard_incar:
-            if isinstance(standard_incar["gamma_only"], str):
-                standard_incar["gamma_only"] = int(eval(standard_incar["gamma_only"]))
+            standard_incar["gamma_only"] = _parse_abacus_binary(
+                standard_incar["gamma_only"], "gamma_only"
+            )
             if standard_incar["gamma_only"] == 0:
                 if "md_kpt" not in jdata:
                     raise RuntimeError("Cannot find any k-points information.")
@@ -1145,6 +1164,8 @@ def run_vasp_relax(jdata, mdata):
     user_forward_files = mdata.get("fp" + "_user_forward_files", [])
     forward_files += [os.path.basename(file) for file in user_forward_files]
     backward_files = ["OUTCAR", "CONTCAR"]
+    if jdata.get("reuse_relax_chgcar", False):
+        backward_files.append("CHGCAR")
     backward_files += mdata.get("fp" + "_user_backward_files", [])
     forward_common_files = []
     if "cvasp" in mdata["fp_resources"]:
@@ -1329,6 +1350,8 @@ def run_vasp_md(jdata, mdata):
     md_nstep = jdata["md_nstep"]
 
     forward_files = ["POSCAR", "INCAR", "POTCAR"]
+    if jdata.get("reuse_relax_chgcar", False):
+        forward_files.append("CHGCAR")
     user_forward_files = mdata.get("fp" + "_user_forward_files", [])
     forward_files += [os.path.basename(file) for file in user_forward_files]
     backward_files = ["OUTCAR"]

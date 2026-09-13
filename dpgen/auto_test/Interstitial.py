@@ -8,9 +8,23 @@ from monty.serialization import dumpfn, loadfn
 
 import dpgen.auto_test.lib.abacus as abacus
 import dpgen.auto_test.lib.lammps as lammps
-from dpgen.auto_test.Property import Property
+from dpgen.auto_test.Property import Property, _total_atom_count
 from dpgen.auto_test.refine import make_refine
 from dpgen.auto_test.reproduce import make_repro, post_repro
+
+
+def _smallest_nonzero_distance(distance_matrix):
+    """Return the minimum distance between two distinct atoms.
+
+    Selecting by matrix index, instead of by value, keeps a real zero distance
+    caused by coincident atoms while excluding the zero-valued diagonal.
+    """
+    distances = np.asarray(distance_matrix)
+    atom_pairs = np.triu_indices_from(distances, k=1)
+    pair_distances = distances[atom_pairs]
+    if pair_distances.size == 0:
+        raise ValueError("distance matrix does not contain a pair of atoms")
+    return float(np.min(pair_distances))
 
 
 class Interstitial(Property):
@@ -183,6 +197,10 @@ class Interstitial(Property):
                 insert_element_task = os.path.join(path_to_work, "element.out")
                 if os.path.isfile(insert_element_task):
                     os.remove(insert_element_task)
+                # Keep the task metadata present even when every generated
+                # interstitial is rejected by a configuration filter.
+                with open(insert_element_task, "w"):
+                    pass
 
                 for ii in self.insert_ele:
                     pre_vds = InterstitialGenerator()
@@ -191,7 +209,9 @@ class Interstitial(Property):
                         temp = jj.get_supercell_structure(
                             sc_mat=np.diag(self.supercell, k=0)
                         )
-                        smallest_distance = list(set(temp.distance_matrix.ravel()))[1]
+                        smallest_distance = _smallest_nonzero_distance(
+                            temp.distance_matrix
+                        )
                         if (
                             "conf_filters" in self.parameter
                             and "min_dist" in self.parameter["conf_filters"]
@@ -241,7 +261,9 @@ class Interstitial(Property):
                     dumpfn(self.supercell, "supercell.json")
                 os.chdir(cwd)
 
-                if "bcc_self" in self.parameter and self.parameter["bcc_self"]:
+                # The BCC extension derives its reference from the first
+                # accepted defect. An all-filtered result has no such reference.
+                if dss and self.parameter.get("bcc_self", False):
                     super_size = (
                         self.supercell[0] * self.supercell[1] * self.supercell[2]
                     )
@@ -467,8 +489,11 @@ class Interstitial(Property):
         return task_list
 
     def post_process(self, task_list):
-        if True:
-            fin1 = open(os.path.join(task_list[0], "..", "element.out"))
+        """Adjust generated LAMMPS atom types for interstitial tasks."""
+        if not task_list:
+            return
+
+        with open(os.path.join(task_list[0], "..", "element.out")) as fin1:
             for ii in task_list:
                 conf = os.path.join(ii, "conf.lmp")
                 inter = os.path.join(ii, "inter.json")
@@ -492,7 +517,6 @@ class Interstitial(Property):
                         with open(conf, "w+") as fout:
                             for jj in conf_line:
                                 print(jj, file=fout)
-            fin1.close()
 
     def task_type(self):
         return self.parameter["type"]
@@ -514,14 +538,14 @@ class Interstitial(Property):
                 idid += 1
                 structure_dir = os.path.basename(ii)
                 task_result = loadfn(all_res[idid])
-                natoms = task_result["atom_numbs"][0]
+                natoms = _total_atom_count(task_result)
                 equi_path = os.path.abspath(
                     os.path.join(
                         os.path.dirname(output_file), "../relaxation/relax_task"
                     )
                 )
                 equi_result = loadfn(os.path.join(equi_path, "result.json"))
-                equi_epa = equi_result["energies"][-1] / equi_result["atom_numbs"][0]
+                equi_epa = equi_result["energies"][-1] / _total_atom_count(equi_result)
                 evac = task_result["energies"][-1] - equi_epa * natoms
 
                 supercell_index = loadfn(os.path.join(ii, "supercell.json"))

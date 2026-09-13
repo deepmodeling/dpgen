@@ -1,7 +1,8 @@
 import textwrap
-from typing import Union
+from typing import Optional, Union
 
 from dargs import Argument, Variant
+from dargs.dargs import ArgumentValueError
 
 from dpgen.arginfo import general_mdata_arginfo
 
@@ -14,7 +15,18 @@ def run_mdata_arginfo() -> Argument:
     Argument
         arginfo
     """
-    return general_mdata_arginfo("run_mdata", ("train", "model_devi", "fp"))
+    arginfo = general_mdata_arginfo("run_mdata", ("train", "model_devi", "fp"))
+    train = arginfo.sub_fields["train"]
+    train.sub_fields["export_command"] = Argument(
+        "export_command",
+        str,
+        optional=True,
+        doc=(
+            "DeePMD command used to freeze and compress pt2 models on the "
+            "model-deviation machine. Defaults to train.command."
+        ),
+    )
+    return arginfo
 
 
 # basics
@@ -94,12 +106,37 @@ def training_args_dp() -> list[Argument]:
     list[dargs.Argument]
         List of training arguments.
     """
-    doc_train_backend = (
-        "The backend of the training. Currently only support tensorflow and pytorch."
+    doc_train_backend = textwrap.dedent(
+        """\
+        The DeePMD-kit training backend. Supported values are ``tensorflow``,
+        ``pytorch``, ``pytorch-exportable`` (or its ``pt-expt`` alias), and ``jax``.
+        The PyTorch-exportable backend and DPA4 ``pt2`` export require DeePMD-kit
+        3.2 or later.
+        """
+    )
+    doc_model_format = textwrap.dedent(
+        """\
+        The frozen model format. Defaults are ``pb`` for TensorFlow, ``pth`` for
+        PyTorch, ``pt2`` for PyTorch-exportable model deviation with LAMMPS,
+        and ``savedmodel`` for JAX. PyTorch ``pt2`` is the DPA4 export;
+        PyTorch-exportable ``pt2`` is the graph export used by DPA4C. The
+        PyTorch-exportable ``pte`` format is not supported by LAMMPS. Freeze
+        and export use the training backend; cross-backend checkpoint conversion
+        is not supported.
+        """
     )
     doc_training_iter0_model_path = "The model used to init the first iter training. Number of element should be equal to numb_models."
     doc_training_init_model = "Iteration > 0, the model parameters will be initilized from the model trained at the previous iteration. Iteration == 0, the model parameters will be initialized from training_iter0_model_path."
-    doc_default_training_param = "Training parameters for deepmd-kit in 00.train. You can find instructions from `DeePMD-kit documentation <https://docs.deepmodeling.com/projects/deepmd/>`_."
+    doc_default_training_param = textwrap.dedent(
+        """\
+        Training parameters for DeePMD-kit in 00.train. DPA4 uses
+        ``model.use_compile`` and ``model.enable_tf32`` with the PyTorch backend.
+        DPA4C uses ``training.enable_compile`` and ``training.enable_tf32`` with
+        the PyTorch-exportable backend. DP-GEN validates these locations but does
+        not inject numerical-policy settings. See the `DeePMD-kit documentation
+        <https://docs.deepmodeling.com/projects/deepmd/>`_.
+        """
+    )
     doc_dp_train_skip_neighbor_stat = "Append --skip-neighbor-stat flag to dp train."
     doc_dp_compress = "Use dp compress to compress the model."
     doc_training_reuse_iter = "The minimal index of iteration that continues training models from old models of last iteration."
@@ -138,6 +175,12 @@ def training_args_dp() -> list[Argument]:
             optional=True,
             default="tensorflow",
             doc=doc_train_backend,
+        ),
+        Argument(
+            "model_format",
+            str,
+            optional=True,
+            doc=doc_model_format,
         ),
         Argument(
             "training_iter0_model_path",
@@ -292,6 +335,7 @@ def model_devi_jobs_args() -> list[Argument]:
     doc_nsteps = "Running steps of MD. It is not optional when not using a template."
     doc_nbeads = "Number of beads in PIMD. If not given, classical MD will be performed. Only supported for LAMMPS version >= 20230615."
     doc_ensemble = "Determining which ensemble used in MD, options include “npt” and “nvt”. It is not optional when not using a template."
+    doc_dt = "Timestep for this MD job. Overrides the workflow-wide model_devi_dt."
     doc_neidelay = "delay building until this many steps since last build."
     doc_taut = "Coupling time of thermostat (ps)."
     doc_taup = "Coupling time of barostat (ps)."
@@ -311,6 +355,7 @@ def model_devi_jobs_args() -> list[Argument]:
         Argument("nsteps", int, optional=True, doc=doc_nsteps),
         Argument("nbeads", int, optional=True, doc=doc_nbeads),
         Argument("ensemble", str, optional=True, doc=doc_ensemble),
+        Argument("dt", float, optional=True, doc=doc_dt),
         Argument("neidelay", int, optional=True, doc=doc_neidelay),
         Argument("taut", float, optional=True, doc=doc_taut),
         Argument("taup", float, optional=True, doc=doc_taup),
@@ -626,285 +671,238 @@ def _is_scalar_or_singleton(value) -> bool:
     return not isinstance(value, list) or len(value) == 1
 
 
-def model_devi_calypso_args() -> list[Argument]:
-    """CALYPSO engine arguments."""
-    doc_model_devi_jobs = (
-        "Settings for CALYPSO structure generation and model deviation. "
-        "Each dict in the list describes the CALYPSO input used for one or more "
-        "iterations selected by `times`."
+def model_devi_calypso_jobs_args() -> Argument:
+    """Return native CALYPSO structure-generation settings."""
+    return Argument(
+        "model_devi_jobs",
+        list,
+        repeat=True,
+        optional=False,
+        doc=(
+            "CALYPSO generation settings. Each entry applies to the iterations "
+            "listed in times. An empty list is accepted in external-input mode."
+        ),
+        sub_fields=[
+            Argument(
+                "times",
+                list[int],
+                optional=False,
+                doc="Iteration indices that use this generation setup.",
+            ),
+            Argument(
+                "NameOfAtoms",
+                list[str],
+                optional=False,
+                doc="Element symbols for all generated species.",
+            ),
+            Argument(
+                "NumberOfAtoms",
+                list[int],
+                optional=False,
+                doc="Atoms of each species in one formula unit.",
+            ),
+            Argument(
+                "NumberOfFormula",
+                list[int],
+                optional=True,
+                default=[1, 1],
+                doc="Inclusive minimum and maximum formula units per cell.",
+            ),
+            Argument(
+                "Volume",
+                [None, float, int, list[float], list[int]],
+                optional=True,
+                extra_check=_is_scalar_or_singleton,
+                extra_check_errmsg="Volume must be a scalar or a one-item list.",
+                doc="Volume per formula unit in cubic Angstrom.",
+            ),
+            Argument(
+                "DistanceOfIon",
+                list[list[float]],
+                optional=False,
+                doc="Square matrix of minimum inter-species distances in Angstrom.",
+            ),
+            Argument(
+                "PsoRatio",
+                [float, int, list[float], list[int]],
+                optional=True,
+                default=0.6,
+                extra_check=_is_scalar_or_singleton,
+                extra_check_errmsg="PsoRatio must be a scalar or a one-item list.",
+                doc="Fraction of structures generated by particle-swarm optimization.",
+            ),
+            Argument(
+                "PopSize",
+                [int, list[int]],
+                optional=True,
+                default=30,
+                extra_check=_is_scalar_or_singleton,
+                extra_check_errmsg="PopSize must be an integer or a one-item list.",
+                doc="CALYPSO population size.",
+            ),
+            Argument(
+                "MaxStep",
+                [int, list[int]],
+                optional=True,
+                default=5,
+                extra_check=_is_scalar_or_singleton,
+                extra_check_errmsg="MaxStep must be an integer or a one-item list.",
+                doc="Maximum particle-swarm optimization steps.",
+            ),
+            Argument(
+                "ICode",
+                [int, list[int]],
+                optional=True,
+                default=1,
+                extra_check=_is_scalar_or_singleton,
+                extra_check_errmsg="ICode must be an integer or a one-item list.",
+                doc="CALYPSO local-optimization interface code.",
+            ),
+            Argument(
+                "Split",
+                str,
+                optional=True,
+                default="T",
+                doc="CALYPSO Split flag, written as 'T' or 'F'.",
+            ),
+            Argument(
+                "VSC",
+                str,
+                optional=True,
+                default="F",
+                doc="Variable-stoichiometry flag, written as 'T' or 'F'.",
+            ),
+            Argument(
+                "MaxNumAtom",
+                [int, list[int]],
+                optional=True,
+                extra_check=_is_scalar_or_singleton,
+                extra_check_errmsg="MaxNumAtom must be an integer or a one-item list.",
+                doc="Maximum atoms per cell when VSC is enabled.",
+            ),
+            Argument(
+                "CtrlRange",
+                list[list[int]],
+                optional=True,
+                doc="Per-species atom-count ranges when VSC is enabled.",
+            ),
+            Argument(
+                "PSTRESS",
+                list[float],
+                optional=True,
+                default=[0.001],
+                doc="Target pressures in GPa; one CALYPSO directory is made per value.",
+            ),
+            Argument(
+                "fmax",
+                [float, int, list[float], list[int]],
+                optional=True,
+                default=0.01,
+                extra_check=_is_scalar_or_singleton,
+                extra_check_errmsg="fmax must be a scalar or a one-item list.",
+                doc="Force convergence threshold in eV/Angstrom.",
+            ),
+            Argument(
+                "task_min",
+                int,
+                optional=True,
+                doc="Per-job override of the minimum number of labeling tasks.",
+            ),
+            Argument(
+                "model_devi_f_trust_lo",
+                [float, dict],
+                optional=True,
+                doc="Per-job lower force-deviation threshold.",
+            ),
+            Argument(
+                "model_devi_f_trust_hi",
+                [float, dict],
+                optional=True,
+                doc="Per-job upper force-deviation threshold.",
+            ),
+            Argument(
+                "model_devi_v_trust_lo",
+                [float, dict],
+                optional=True,
+                doc="Per-job lower virial-deviation threshold.",
+            ),
+            Argument(
+                "model_devi_v_trust_hi",
+                [float, dict],
+                optional=True,
+                doc="Per-job upper virial-deviation threshold.",
+            ),
+        ],
     )
-    doc_times = "List of iteration indices when this CALYPSO job should be executed."
-    doc_nameofatoms = "Element symbols of the chemical species."
-    doc_numberofatoms = "Number of atoms for each chemical species in one formula unit."
-    doc_numberofformula = "Range of formula units per cell as [min, max]."
-    doc_volume = "Volume per formula unit in angstrom^3. If not provided, CALYPSO determines it automatically."
-    doc_distanceofion = "Minimal distances between atom types in angstrom. Shape should match the number of species."
-    doc_psoratio = (
-        "Proportion of structures generated by the PSO algorithm, between 0.0 and 1.0."
-    )
-    doc_popsize = "Population size for structure generation."
-    doc_maxstep = "Maximum number of CALYPSO optimization steps."
-    doc_icode = "CALYPSO interface code for local optimization, such as 1 for VASP."
-    doc_split = "Whether to split calculations. Use 'T' or 'F'."
-    doc_vsc = "Variable stoichiometry control. Use 'T' to enable or 'F' to disable."
-    doc_maxnumatom = (
-        "Maximum number of atoms in the unit cell. Required when VSC is 'T'."
-    )
-    doc_ctrlrange = "Variation range for each atom type. Required when VSC is 'T'."
-    doc_pstress = "Target pressure list in GPa. One CALYPSO input directory is created for each pressure."
-    doc_fmax = "Force convergence criterion for local optimization, in eV/angstrom."
-    doc_calypso_input_path = (
-        "Path to a directory containing pre-existing CALYPSO input.dat files. "
-        "When set, DP-GEN copies those files instead of generating input.dat from "
-        "the CALYPSO fields in model_devi_jobs."
-    )
-    doc_model_devi_max_iter = "Maximum iteration index when using calypso_input_path."
-    doc_vsc_mode = (
-        "Enable variable stoichiometry mode when using external CALYPSO input files."
-    )
-    doc_model_devi_dt = (
-        "Timestep retained for compatibility with existing CALYPSO parameter files."
-    )
-    doc_model_devi_skip = (
-        "Number of structures skipped during model deviation selection."
-    )
-    doc_model_devi_f_trust_lo = "Lower bound of force model deviation for selection."
-    doc_model_devi_f_trust_hi = "Upper bound of force model deviation for selection."
-    doc_model_devi_v_trust_lo = "Lower bound of virial model deviation for selection."
-    doc_model_devi_v_trust_hi = "Upper bound of virial model deviation for selection."
-    doc_model_devi_e_trust_lo = "Lower bound of energy model deviation for selection."
-    doc_model_devi_e_trust_hi = "Upper bound of energy model deviation for selection."
-    doc_model_devi_clean_traj = (
-        "Whether to clean large trajectory folders after model deviation."
-    )
-    doc_model_devi_adapt_trust_lo = (
-        "Adaptively determine the lower force and virial trust levels."
-    )
-    doc_model_devi_numb_candi_f = "See model_devi_adapt_trust_lo."
-    doc_model_devi_numb_candi_v = "See model_devi_adapt_trust_lo."
-    doc_model_devi_perc_candi_f = "See model_devi_adapt_trust_lo."
-    doc_model_devi_perc_candi_v = "See model_devi_adapt_trust_lo."
-    doc_model_devi_f_avg_relative = (
-        "Normalize force model deviations by the RMS force magnitude."
-    )
-    doc_use_relative = "Calculate relative force model deviation."
-    doc_epsilon = "Level parameter for computing the relative force model deviation."
-    doc_use_relative_v = "Calculate relative virial model deviation."
-    doc_epsilon_v = "Level parameter for computing the relative virial model deviation."
 
+
+def model_devi_calypso_args() -> list[Argument]:
+    """Return model-deviation arguments supported by CALYPSO workflows."""
+    common_names = {
+        "model_devi_skip",
+        "model_devi_f_trust_lo",
+        "model_devi_f_trust_hi",
+        "model_devi_v_trust_lo",
+        "model_devi_v_trust_hi",
+        "model_devi_adapt_trust_lo",
+        "model_devi_numb_candi_f",
+        "model_devi_numb_candi_v",
+        "model_devi_perc_candi_f",
+        "model_devi_perc_candi_v",
+        "model_devi_clean_traj",
+        "shuffle_poscar",
+        "model_devi_f_avg_relative",
+        "use_relative",
+        "epsilon",
+        "use_relative_v",
+        "epsilon_v",
+    }
+    common_args = [
+        argument for argument in model_devi_lmp_args() if argument.name in common_names
+    ]
     return [
-        Argument(
-            "model_devi_jobs",
-            list,
-            optional=False,
-            repeat=True,
-            doc=doc_model_devi_jobs,
-            sub_fields=[
-                Argument(
-                    "task_min",
-                    int,
-                    optional=True,
-                    doc="Minimum candidate count for this job before FP tasks are created. "
-                    "No per-job minimum is applied when omitted.",
-                ),
-                Argument("times", list[int], optional=False, doc=doc_times),
-                Argument("NameOfAtoms", list[str], optional=False, doc=doc_nameofatoms),
-                Argument(
-                    "NumberOfAtoms", list[int], optional=False, doc=doc_numberofatoms
-                ),
-                Argument(
-                    "NumberOfFormula",
-                    list[int],
-                    optional=True,
-                    default=[1, 1],
-                    doc=doc_numberofformula,
-                ),
-                Argument(
-                    "Volume",
-                    [float, int, list[float], list[int]],
-                    optional=True,
-                    extra_check=_is_scalar_or_singleton,
-                    extra_check_errmsg="Volume must be a scalar or a one-item list.",
-                    doc=doc_volume,
-                ),
-                Argument(
-                    "DistanceOfIon",
-                    list[list[float]],
-                    optional=False,
-                    doc=doc_distanceofion,
-                ),
-                Argument(
-                    "PsoRatio",
-                    [float, int, list[float], list[int]],
-                    optional=True,
-                    default=0.6,
-                    extra_check=_is_scalar_or_singleton,
-                    extra_check_errmsg="PsoRatio must be a scalar or a one-item list.",
-                    doc=doc_psoratio,
-                ),
-                Argument(
-                    "PopSize",
-                    [int, list[int]],
-                    optional=True,
-                    default=30,
-                    extra_check=_is_scalar_or_singleton,
-                    extra_check_errmsg="PopSize must be an integer or a one-item list.",
-                    doc=doc_popsize,
-                ),
-                Argument(
-                    "MaxStep",
-                    [int, list[int]],
-                    optional=True,
-                    default=5,
-                    extra_check=_is_scalar_or_singleton,
-                    extra_check_errmsg="MaxStep must be an integer or a one-item list.",
-                    doc=doc_maxstep,
-                ),
-                Argument(
-                    "ICode",
-                    [int, list[int]],
-                    optional=True,
-                    default=1,
-                    extra_check=_is_scalar_or_singleton,
-                    extra_check_errmsg="ICode must be an integer or a one-item list.",
-                    doc=doc_icode,
-                ),
-                Argument("Split", str, optional=True, default="T", doc=doc_split),
-                Argument("VSC", str, optional=True, default="F", doc=doc_vsc),
-                Argument(
-                    "MaxNumAtom",
-                    [int, list[int]],
-                    optional=True,
-                    extra_check=_is_scalar_or_singleton,
-                    extra_check_errmsg="MaxNumAtom must be an integer or a one-item list.",
-                    doc=doc_maxnumatom,
-                ),
-                Argument(
-                    "CtrlRange", list[list[int]], optional=True, doc=doc_ctrlrange
-                ),
-                Argument(
-                    "PSTRESS",
-                    list[float],
-                    optional=True,
-                    default=[0.001],
-                    doc=doc_pstress,
-                ),
-                Argument(
-                    "fmax",
-                    [float, int, list[float], list[int]],
-                    optional=True,
-                    default=0.01,
-                    extra_check=_is_scalar_or_singleton,
-                    extra_check_errmsg="fmax must be a scalar or a one-item list.",
-                    doc=doc_fmax,
-                ),
-            ],
-        ),
-        Argument("calypso_input_path", str, optional=True, doc=doc_calypso_input_path),
-        Argument(
-            "model_devi_max_iter", int, optional=True, doc=doc_model_devi_max_iter
-        ),
-        Argument("vsc", bool, optional=True, default=False, doc=doc_vsc_mode),
-        Argument("model_devi_dt", float, optional=True, doc=doc_model_devi_dt),
-        Argument(
-            "shuffle_poscar",
-            bool,
-            optional=True,
-            default=False,
-            doc="Shuffle atoms in generated configurations before downstream use.",
-        ),
-        Argument("model_devi_skip", int, optional=False, doc=doc_model_devi_skip),
-        Argument(
-            "model_devi_f_trust_lo",
-            [float, list[float], dict],
-            optional=False,
-            doc=doc_model_devi_f_trust_lo,
-        ),
-        Argument(
-            "model_devi_f_trust_hi",
-            [float, list[float], dict],
-            optional=False,
-            doc=doc_model_devi_f_trust_hi,
-        ),
-        Argument(
-            "model_devi_v_trust_lo",
-            [float, list[float], dict],
-            optional=True,
-            default=1e10,
-            doc=doc_model_devi_v_trust_lo,
-        ),
-        Argument(
-            "model_devi_v_trust_hi",
-            [float, list[float], dict],
-            optional=True,
-            default=1e10,
-            doc=doc_model_devi_v_trust_hi,
-        ),
+        model_devi_calypso_jobs_args(),
+        *common_args,
+        # Preserve legacy input keys; CALYPSO selects by force/virial deviation.
         Argument(
             "model_devi_e_trust_lo",
             [float, list[float], dict],
             optional=True,
             default=1e10,
-            doc=doc_model_devi_e_trust_lo,
+            doc="Legacy lower energy-deviation threshold; unused by CALYPSO selection.",
         ),
         Argument(
             "model_devi_e_trust_hi",
             [float, list[float], dict],
             optional=True,
             default=1e10,
-            doc=doc_model_devi_e_trust_hi,
+            doc="Legacy upper energy-deviation threshold; unused by CALYPSO selection.",
         ),
         Argument(
-            "model_devi_adapt_trust_lo",
-            bool,
-            optional=True,
-            doc=doc_model_devi_adapt_trust_lo,
-        ),
-        Argument(
-            "model_devi_numb_candi_f",
-            int,
-            optional=True,
-            doc=doc_model_devi_numb_candi_f,
-        ),
-        Argument(
-            "model_devi_numb_candi_v",
-            int,
-            optional=True,
-            doc=doc_model_devi_numb_candi_v,
-        ),
-        Argument(
-            "model_devi_perc_candi_f",
+            "model_devi_dt",
             float,
             optional=True,
-            doc=doc_model_devi_perc_candi_f,
+            doc="Accepted for compatibility; CALYPSO does not run MD timesteps.",
         ),
         Argument(
-            "model_devi_perc_candi_v",
-            float,
+            "calypso_input_path",
+            str,
             optional=True,
-            doc=doc_model_devi_perc_candi_v,
+            doc="Directory containing user-provided CALYPSO input.dat files.",
         ),
         Argument(
-            "model_devi_f_avg_relative",
+            "model_devi_max_iter",
+            int,
+            optional=True,
+            doc="Last iteration generated when calypso_input_path is used.",
+        ),
+        Argument(
+            "vsc",
             bool,
             optional=True,
-            doc=doc_model_devi_f_avg_relative,
+            default=False,
+            doc="Use variable-stoichiometry input files in external-input mode.",
         ),
-        Argument(
-            "model_devi_clean_traj",
-            [bool, int],
-            optional=True,
-            default=True,
-            doc=doc_model_devi_clean_traj,
-        ),
-        Argument(
-            "use_relative", bool, optional=True, default=False, doc=doc_use_relative
-        ),
-        Argument("epsilon", float, optional=True, doc=doc_epsilon),
-        Argument(
-            "use_relative_v", bool, optional=True, default=False, doc=doc_use_relative_v
-        ),
-        Argument("epsilon_v", float, optional=True, doc=doc_epsilon_v),
     ]
 
 
@@ -912,7 +910,8 @@ def model_devi_args() -> list[Variant]:
     doc_model_devi_engine = "Engine for the model deviation task."
     doc_amber = "Amber DPRc engine. The command argument in the machine file should be path to sander."
     doc_calypso = (
-        "CALYPSO structure generation engine for crystal structure prediction."
+        "CALYPSO crystal-structure generation and model-deviation workflow. "
+        "It supports native per-iteration settings or external input.dat files."
     )
     return [
         Variant(
@@ -944,15 +943,17 @@ def fp_style_vasp_args() -> list[Argument]:
         "Skip configurations with unreasonable simulation box geometries before "
         "first-principles calculations. This parameter accepts a semicolon-separated "
         "string of colon-separated key-value pairs defining geometric criteria. "
-        "Example: 'length_ratio:3;height_ratio:3;wrap_ratio:0.5;tilt_ratio:0.5'. "
+        "Example: 'length_ratio:3;height_ratio:3;min_distance:1.0'. "
         "Available criteria: "
         "(1) 'length_ratio': maximum ratio of cell edge lengths (max/min); "
         "(2) 'height_ratio': ratio of maximum cell edge length to minimum "
         "face-to-face distance; "
         "(3) 'wrap_ratio': maximum absolute ratio of off-diagonal to diagonal "
         "cell matrix elements, controlling triclinic wrapping; "
-        "(4) 'tilt_ratio': maximum absolute tilt ratio for triclinic cells. "
-        "Configurations exceeding any specified threshold are skipped."
+        "(4) 'tilt_ratio': maximum absolute tilt ratio for triclinic cells; "
+        "(5) 'min_distance' (alias 'min_dist'): minimum allowed periodic "
+        "interatomic distance in Angstrom. Configurations violating any "
+        "specified threshold are skipped."
     )
 
     return [
@@ -1277,6 +1278,155 @@ def fp_style_custom_args() -> list[Argument]:
     ]
 
 
+def fp_style_pwmat_args() -> list[Argument]:
+    """Return first-principles arguments for PWmat labeling."""
+    required_generated_keys = {
+        "node1",
+        "node2",
+        "in.atom",
+        "ecut",
+        "e_error",
+        "rho_error",
+        "kspacing",
+        "flag_symm",
+    }
+
+    def has_required_generated_keys(params):
+        return required_generated_keys.issubset(params)
+
+    generated_args = [
+        Argument("node1", int, optional=False, doc="First PWmat node-grid size."),
+        Argument("node2", int, optional=False, doc="Second PWmat node-grid size."),
+        Argument(
+            "in.atom",
+            str,
+            optional=False,
+            doc="Atom-configuration filename written to the PWmat input.",
+        ),
+        Argument(
+            "ecut",
+            [int, float],
+            optional=False,
+            doc="Plane-wave energy cutoff.",
+        ),
+        Argument(
+            "e_error",
+            [int, float],
+            optional=False,
+            doc="Electronic-energy convergence threshold.",
+        ),
+        Argument(
+            "rho_error",
+            [int, float],
+            optional=False,
+            doc="Charge-density convergence threshold.",
+        ),
+        Argument(
+            "kspacing",
+            [int, float],
+            optional=False,
+            doc="Reciprocal-space spacing used to generate MP_N123.",
+        ),
+        Argument(
+            "flag_symm",
+            [int, str],
+            optional=True,
+            default="NONE",
+            doc="PWmat symmetry flag: 0, 1, 2, 3, or 'NONE'.",
+        ),
+        Argument(
+            "icmix",
+            [int, float],
+            optional=True,
+            doc="SCF mixing parameter used to build scf_iter0_2.",
+        ),
+        Argument(
+            "smearing",
+            int,
+            optional=True,
+            doc="PWmat smearing method written to SCF iteration settings.",
+        ),
+        Argument(
+            "sigma",
+            [int, float],
+            optional=True,
+            doc="Smearing width written to SCF iteration settings.",
+        ),
+        Argument(
+            "user_pwmat_params",
+            dict,
+            optional=True,
+            doc="Arbitrary PWmat keys overriding the generated input dictionary.",
+        ),
+    ]
+
+    return [
+        Argument(
+            "fp_pp_path",
+            str,
+            optional=False,
+            doc="Directory containing PWmat pseudopotential files.",
+        ),
+        Argument(
+            "fp_pp_files",
+            list[str],
+            optional=False,
+            doc="Pseudopotential filenames ordered consistently with type_map.",
+        ),
+        Argument(
+            "fp_incar",
+            str,
+            optional=True,
+            doc="Existing etot.input template; this takes highest priority.",
+        ),
+        Argument(
+            "user_fp_params",
+            dict,
+            optional=True,
+            extra_check=has_required_generated_keys,
+            extra_check_errmsg=(
+                "user_fp_params must define node1, node2, in.atom, ecut, "
+                "e_error, rho_error, kspacing, and flag_symm"
+            ),
+            doc=(
+                "Compatibility input mapping. The current generator consumes "
+                "node1, node2, in.atom, ecut, e_error, rho_error, kspacing, and "
+                "flag_symm, regenerates etot.input, and ignores other keys."
+            ),
+        ),
+        Argument(
+            "fp_params",
+            dict,
+            optional=True,
+            sub_fields=generated_args,
+            doc=(
+                "Parameters used by make_pwmat_input_user_dict when neither "
+                "fp_incar nor user_fp_params is supplied."
+            ),
+        ),
+    ]
+
+
+class _FpStyleVariant(Variant):
+    """Validate cross-field requirements for first-principles backends."""
+
+    def get_choice(self, argdict: dict, path: Optional[list[str]] = None) -> Argument:
+        """Return the selected backend after validating PWmat input sources.
+
+        Dargs flattens variant fields into their parent mapping, so a regular
+        field-level extra check cannot express this at-least-one constraint.
+        """
+        choice = super().get_choice(argdict, path)
+        input_sources = {"fp_incar", "user_fp_params", "fp_params"}
+        if choice.name == "pwmat" and input_sources.isdisjoint(argdict):
+            raise ArgumentValueError(
+                path,
+                "PWmat requires at least one input source: fp_incar, "
+                "user_fp_params, or fp_params.",
+            )
+        return choice
+
+
 def fp_style_variant_type_args() -> Variant:
     doc_fp_style = "Software for First Principles."
     doc_amber_diff = (
@@ -1291,8 +1441,12 @@ def fp_style_variant_type_args() -> Variant:
         "The command argument in the machine file should be the script to run custom FP codes. "
         "The extra forward and backward files can be defined in the machine file."
     )
+    doc_pwmat = (
+        "PWmat density-functional labeling. The machine command should invoke "
+        "the site-specific PWmat executable."
+    )
 
-    return Variant(
+    return _FpStyleVariant(
         "fp_style",
         [
             Argument("vasp", dict, fp_style_vasp_args()),
@@ -1303,7 +1457,7 @@ def fp_style_variant_type_args() -> Variant:
             Argument(
                 "amber/diff", dict, fp_style_amber_diff_args(), doc=doc_amber_diff
             ),
-            Argument("pwmat", dict, [], doc="TODO: add doc"),
+            Argument("pwmat", dict, fp_style_pwmat_args(), doc=doc_pwmat),
             Argument("pwscf", dict, fp_style_pwscf_args()),
             Argument("cpx", dict, fp_style_cpx_args()),
             Argument("custom", dict, fp_style_custom_args(), doc=doc_custom),
