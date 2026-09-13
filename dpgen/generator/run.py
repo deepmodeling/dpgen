@@ -2431,9 +2431,6 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
     lambdas = cur_job.get("lambdas", [1.0])
     temps = cur_job.get("temps", [298.0])
 
-    for ll in lambdas:
-        assert ll >= 0.0 and ll <= 1.0, "Lambda should be in [0,1]"
-
     if nsteps is None:
         raise RuntimeError("nsteps is None, you should set nsteps in model_devi_jobs!")
     # Currently Gromacs engine is not supported for different temperatures!
@@ -2824,6 +2821,9 @@ def run_md_model_devi(iter_index, jdata, mdata):
         ]
         if ndx_filename:
             forward_files.append(ndx_filename)
+        model_devi_script = gromacs_settings.get("model_devi_script")
+        if model_devi_script:
+            forward_files.append(model_devi_script)
         backward_files = [
             f"{deffnm}.tpr",
             f"{deffnm}.log",

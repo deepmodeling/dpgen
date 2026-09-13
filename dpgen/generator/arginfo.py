@@ -932,6 +932,12 @@ def model_devi_gromacs_jobs_args() -> Argument:
                 "lambdas",
                 list[float],
                 optional=True,
+                extra_check=lambda values: all(
+                    0.0 <= value <= 1.0 for value in values
+                ),
+                extra_check_errmsg=(
+                    "All lambda values must be in the inclusive range [0, 1]."
+                ),
                 doc="Deep potential scaling factors in the inclusive range [0, 1].",
             ),
             Argument(

@@ -7,6 +7,7 @@ import unittest
 from pathlib import Path
 
 from dargs import Argument
+from dargs.dargs import ArgumentValueError
 
 from dpgen.data.arginfo import (
     init_bulk_jdata_arginfo,
@@ -257,3 +258,9 @@ class TestExamples(unittest.TestCase):
 
         normalized = arginfo.normalize_value(data)
         arginfo.check_value(normalized, strict=True)
+
+        for invalid_lambda in (-0.1, 1.1):
+            with self.subTest(invalid_lambda=invalid_lambda):
+                data["model_devi_jobs"][0]["lambdas"] = [invalid_lambda]
+                with self.assertRaisesRegex(ArgumentValueError, "inclusive range"):
+                    normalize(arginfo, data)
