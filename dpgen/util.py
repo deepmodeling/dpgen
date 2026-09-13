@@ -5,7 +5,6 @@ from contextlib import (
     contextmanager,
 )
 from pathlib import Path
-from typing import Union
 
 import dpdata
 import h5py
@@ -37,7 +36,7 @@ def box_center(ch="", fill=" ", sp="|"):
     dlog.info(sp + strs[1 : len(strs) - 1 :] + sp)
 
 
-def expand_sys_str(root_dir: Union[str, Path]) -> list[str]:
+def expand_sys_str(root_dir: str | Path) -> list[str]:
     """Recursively iterate over directories taking those that contain `type.raw` file.
 
     If root_dir is a file but not a directory, it will be assumed as an HDF5 file.
@@ -189,7 +188,7 @@ def set_directory(path: Path):
         os.chdir(cwd)
 
 
-def load_file(filename: Union[str, os.PathLike]) -> dict:
+def load_file(filename: str | os.PathLike) -> dict:
     """Load data from a JSON or YAML file.
 
     Parameters
