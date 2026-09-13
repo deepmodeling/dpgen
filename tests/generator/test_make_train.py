@@ -60,7 +60,7 @@ def _check_numb_models(testCase, iter_idx, numb_models):
     models = glob.glob(
         os.path.join("iter.%06d" % iter_idx, "00.train", "[0-9][0-9][0-9]")  # noqa: UP031
     )
-    testCase.assertTrue(len(models), numb_models)
+    testCase.assertEqual(len(models), numb_models)
 
 
 def _check_model_inputs(testCase, iter_idx, jdata):

@@ -69,6 +69,9 @@ class TestABACUS(unittest.TestCase):
         )
         self.assertTrue(os.path.isfile(os.path.join(self.equi_path, "inter.json")))
 
+    def test_backward_files(self):
+        self.assertEqual(self.ABACUS.backward_files(), ["OUT.ABACUS"])
+
     def test_make_input_file_1(self):
         param = self.task_param.copy()
         param["cal_setting"] = {

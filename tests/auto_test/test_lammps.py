@@ -11,7 +11,12 @@ __package__ = "auto_test"
 
 from dpgen.auto_test.common_equi import make_equi, run_equi
 from dpgen.auto_test.Lammps import Lammps
-from dpgen.auto_test.lib.lammps import inter_deepmd, inter_eam_alloy, inter_meam
+from dpgen.auto_test.lib.lammps import (
+    inter_deepmd,
+    inter_eam_alloy,
+    inter_meam,
+    make_lammps_equi,
+)
 
 from .context import setUpModule  # noqa: F401
 
@@ -105,7 +110,7 @@ class TestLammps(unittest.TestCase):
         self.assertTrue(os.path.islink(os.path.join(self.equi_path, "frozen_model.pb")))
         self.assertTrue(os.path.isfile(os.path.join(self.equi_path, "inter.json")))
         ret = loadfn(os.path.join(self.equi_path, "inter.json"))
-        self.assertTrue(self.inter_param, ret)
+        self.assertEqual(ret, self.inter_param)
         os.chdir(cwd)
 
     def test_make_input_file(self):
@@ -119,6 +124,55 @@ class TestLammps(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(abs_equi_path, "conf.lmp")))
         self.assertTrue(os.path.islink(os.path.join(abs_equi_path, "in.lammps")))
         self.assertTrue(os.path.isfile(os.path.join(abs_equi_path, "task.json")))
+
+    def test_make_lammps_equi_resets_successive_minimizations(self):
+        """Successive box relaxations should share aligned output timesteps."""
+        input_text = make_lammps_equi(
+            "conf.lmp",
+            {"Al": 0},
+            inter_deepmd,
+            {
+                "model_name": ["frozen_model.pb"],
+                "param_type": {"Al": 0},
+                "deepmd_version": "1.1.0",
+            },
+        )
+        lines = input_text.splitlines()
+        minimize_lines = [
+            index for index, line in enumerate(lines) if line.startswith("minimize")
+        ]
+        reset_lines = [
+            index
+            for index, line in enumerate(lines)
+            if line.startswith("reset_timestep")
+        ]
+
+        self.assertEqual(3, len(minimize_lines))
+        self.assertEqual([minimize_lines[0] + 2, minimize_lines[1] + 2], reset_lines)
+        for index in reset_lines:
+            self.assertEqual(lines[index - 1].split(), ["undump", "1"])
+            self.assertEqual(
+                lines[index + 1].split(),
+                [
+                    "dump",
+                    "1",
+                    "all",
+                    "custom",
+                    "100",
+                    "dump.relax",
+                    "id",
+                    "type",
+                    "xs",
+                    "ys",
+                    "zs",
+                    "fx",
+                    "fy",
+                    "fz",
+                ],
+            )
+            self.assertEqual(
+                lines[index + 2].split(), ["dump_modify", "1", "append", "yes"]
+            )
 
     def test_forward_common_files(self):
         fc_files = ["in.lammps", "frozen_model.pb"]
