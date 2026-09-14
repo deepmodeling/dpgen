@@ -170,6 +170,45 @@ class TestDeepmdBackendConfig(unittest.TestCase):
                 }
             )
 
+    def test_shared_references_are_part_of_committee_signature(self):
+        def member(rcut, numb_fparam):
+            return {
+                "model": {
+                    "shared_dict": {
+                        "types": ["H"],
+                        "descriptor": {
+                            "type": "dpa2",
+                            "repinit": {"rcut": rcut},
+                        },
+                        "fitting": {
+                            "type": "ener",
+                            "numb_fparam": numb_fparam,
+                        },
+                    },
+                    "model_dict": {
+                        "a": {
+                            "type_map": "types",
+                            "descriptor": "descriptor:0",
+                            "fitting_net": "fitting",
+                        }
+                    },
+                }
+            }
+
+        for changed, mismatch in (((8.0, 1), "cutoff"), ((6.0, 2), "fparam")):
+            with self.subTest(mismatch=mismatch):
+                with self.assertRaisesRegex(ValueError, f"incompatible {mismatch}"):
+                    _validate_dpa_training_config(
+                        {
+                            "numb_models": 2,
+                            "type_map": ["H"],
+                            "default_training_param": [
+                                member(6.0, 1),
+                                member(*changed),
+                            ],
+                        }
+                    )
+
     def test_omitted_fitting_type_defaults_to_energy(self):
         _validate_dpa_training_config(
             {
@@ -544,7 +583,7 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
 
     def test_make_train_seeds_shared_descriptor_branch_heads(self):
         jdata = {
-            "numb_models": 1,
+            "numb_models": 2,
             "init_data_prefix": "data",
             "init_data_sys": [],
             "sys_configs": [],
@@ -553,11 +592,14 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
             "type_map": ["H"],
             "default_training_param": {
                 "model": {
-                    "shared_dict": {"descriptor": {"type": "dpa2"}},
+                    "shared_dict": {
+                        "descriptor": {"type": "dpa2", "seed": 1},
+                        "fitting": {"type": "ener", "seed": 1},
+                    },
                     "model_dict": {
                         "a": {
-                            "descriptor": "descriptor",
-                            "fitting_net": {},
+                            "descriptor": "descriptor:0",
+                            "fitting_net": "fitting",
                             "type_embedding": {},
                         }
                     },
@@ -567,11 +609,23 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
         }
         with patch("dpgen.generator.run.os.symlink"):
             make_train_dp(0, jdata, {"deepmd_version": "3.2.0"})
-        with open(Path("iter.000000") / "00.train" / "000" / "input.json") as fp:
-            branch = json.load(fp)["model"]["model_dict"]["a"]
-        self.assertEqual(branch["descriptor"], "descriptor")
-        self.assertIn("seed", branch["fitting_net"])
-        self.assertIn("seed", branch["type_embedding"])
+        shared_seeds = []
+        for index in range(2):
+            with open(
+                Path("iter.000000") / "00.train" / f"{index:03d}" / "input.json"
+            ) as fp:
+                model = json.load(fp)["model"]
+            branch = model["model_dict"]["a"]
+            self.assertEqual(branch["descriptor"], "descriptor:0")
+            self.assertEqual(branch["fitting_net"], "fitting")
+            self.assertIn("seed", branch["type_embedding"])
+            shared_seeds.append(
+                (
+                    model["shared_dict"]["descriptor"]["seed"],
+                    model["shared_dict"]["fitting"]["seed"],
+                )
+            )
+        self.assertNotEqual(shared_seeds[0], shared_seeds[1])
 
     def test_cross_architecture_submission_tracks_all_members(self):
         calls = self._run(

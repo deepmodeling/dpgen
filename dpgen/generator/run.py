@@ -431,6 +431,61 @@ def _get_committee_model_sections(training_param):
         yield model
 
 
+def _resolve_shared_component(model, component, shared_dict):
+    """Resolve a model component reference from ``model.shared_dict``.
+
+    Parameters
+    ----------
+    model : dict
+        One model branch.
+    component : str
+        Component key such as ``descriptor`` or ``fitting_net``.
+    shared_dict : dict
+        Shared component definitions keyed by reference name.
+
+    Returns
+    -------
+    object
+        The inline value or resolved shared definition.
+    """
+    value = model.get(component)
+    if not isinstance(value, str):
+        return value
+    shared_name = value.split(":", 1)[0]
+    return shared_dict.get(shared_name, value)
+
+
+def _iter_model_components(training_param):
+    """Yield model sections and referenced shared components.
+
+    Parameters
+    ----------
+    training_param : dict
+        One DeePMD training configuration.
+
+    Yields
+    ------
+    dict
+        A model section or a wrapper around one referenced shared component.
+    """
+    for _, model in _iter_model_sections(training_param):
+        yield model
+    model = training_param.get("model", {})
+    shared_dict = model.get("shared_dict", {})
+    seen = set()
+    for branch in (model.get("model_dict") or {}).values():
+        for component in ("descriptor", "fitting_net", "type_embedding"):
+            reference = branch.get(component)
+            if not isinstance(reference, str):
+                continue
+            shared_name = reference.split(":", 1)[0]
+            shared = shared_dict.get(shared_name)
+            if not isinstance(shared, dict) or (component, shared_name) in seen:
+                continue
+            seen.add((component, shared_name))
+            yield {component: shared}
+
+
 def _get_committee_signature(training_param, type_map):
     """Return fields that must agree across committee members.
 
@@ -446,13 +501,16 @@ def _get_committee_signature(training_param, type_map):
     tuple
         Type map, cutoffs, output classes, and parameter dimensions.
     """
-    model_type_map = training_param.get("model", {}).get("type_map")
+    shared_dict = training_param.get("model", {}).get("shared_dict", {})
+    type_maps = set()
     rcuts = set()
     output_classes = set()
     fparam_dims = set()
     aparam_dims = set()
     for model in _get_committee_model_sections(training_param):
-        descriptor = model.get("descriptor", {})
+        model_type_map = _resolve_shared_component(model, "type_map", shared_dict)
+        type_maps.add(tuple(model_type_map if model_type_map is not None else type_map))
+        descriptor = _resolve_shared_component(model, "descriptor", shared_dict) or {}
         descriptor_type = (
             descriptor.get("type") if isinstance(descriptor, dict) else None
         )
@@ -467,7 +525,7 @@ def _get_committee_signature(training_param, type_map):
             rcut = descriptor.get("rcut") if isinstance(descriptor, dict) else None
         rcuts.add(rcut)
 
-        fitting_net = model.get("fitting_net", {})
+        fitting_net = _resolve_shared_component(model, "fitting_net", shared_dict) or {}
         if isinstance(fitting_net, dict):
             output_classes.add(fitting_net.get("type", "ener"))
             fparam_dims.add(fitting_net.get("numb_fparam", 0) or 0)
@@ -480,7 +538,7 @@ def _get_committee_signature(training_param, type_map):
                 else model_type
             )
     return (
-        tuple(model_type_map if model_type_map is not None else type_map),
+        tuple(sorted(type_maps, key=repr)),
         tuple(sorted(rcuts, key=repr)),
         tuple(sorted(output_classes, key=repr)),
         tuple(sorted(fparam_dims, key=repr)),
@@ -920,7 +978,7 @@ def _set_ele_temp_params(jinput, use_ele_temp) -> None:
     """
     if use_ele_temp not in (0, 1, 2):
         raise RuntimeError("invalid setting for use_ele_temp " + str(use_ele_temp))
-    for _, model in _iter_model_sections(jinput):
+    for model in _iter_model_components(jinput):
         fitting_net = model.get("fitting_net")
         if not isinstance(fitting_net, dict):
             continue
@@ -1288,7 +1346,7 @@ def make_train_dp(iter_index, jdata, mdata):
             mdata["deepmd_version"]
         ) < Version("4"):
             # 1.x
-            for _, model in _iter_model_sections(jinput):
+            for model in _iter_model_components(jinput):
                 descriptor = model.get("descriptor")
                 if isinstance(descriptor, dict):
                     if descriptor.get("type") == "hybrid":
