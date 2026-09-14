@@ -14,7 +14,7 @@ from dpgen.database.entry import Entry
 from dpgen.database.vasp import VaspInput
 
 OUTPUT = SHORT_CMD + "_db.json"
-SUPPORTED_CACULATOR = ["vasp", "pwscf", "gaussian"]
+SUPPORTED_CALCULATORS = ["vasp", "pwscf", "gaussian"]
 ITERS_PAT = "iter.*/02.fp/task*"
 INIT_PAT = "init/*/02.md/sys-*/scale-*/*"
 
@@ -29,9 +29,8 @@ def db_run(args):
 def _main(param):
     with open(param) as fp:
         jdata = json.load(fp)
-    calculator = jdata["calculator"]
+    calculator = jdata["calculator"].lower()
     path = jdata["path"]
-    calulator = jdata["calculator"]
     output = jdata["output"]
     config_info_dict = jdata["config_info_dict"]
     id_prefix = jdata["id_prefix"]
@@ -39,7 +38,11 @@ def _main(param):
     if "skip_init" in jdata:
         skip_init = jdata["skip_init"]
     ## The mapping from sys_info to sys_configs
-    assert calculator.lower() in SUPPORTED_CACULATOR
+    if calculator not in SUPPORTED_CALCULATORS:
+        supported = ", ".join(SUPPORTED_CALCULATORS)
+        raise ValueError(
+            f"Unsupported calculator {calculator!r}. Supported calculators: {supported}"
+        )
     dlog.info(f"data collection from: {path}")
     if calculator == "vasp":
         parsing_vasp(path, config_info_dict, skip_init, output, id_prefix)
@@ -87,7 +90,7 @@ def _parsing_vasp(paths, config_info_dict, id_prefix, iters=True, start_index=0)
             iter_record.sort()
             dlog.info("iter_record")
             dlog.info(iter_record)
-        except Exception:
+        except FileNotFoundError:
             pass
     for path in paths:
         try:
@@ -150,10 +153,8 @@ def _parsing_vasp(paths, config_info_dict, id_prefix, iters=True, start_index=0)
                 )
                 entries.append(entry)
                 icount += 1
-        except Exception:
-            # dlog.info(str(Exception))
-            dlog.info(f"failed for {path}")
-            # pass
+        except Exception as exc:
+            dlog.warning("failed for %s: %s", path, exc)
     if iters:
         iter_record.sort()
         iter_record_new.sort()
@@ -166,8 +167,8 @@ def _parsing_vasp(paths, config_info_dict, id_prefix, iters=True, start_index=0)
 
 
 def parsing_pwscf(path, output=OUTPUT):
-    pass
+    raise NotImplementedError("PWSCF database collection is not implemented.")
 
 
 def parsing_gaussian(path, output=OUTPUT):
-    pass
+    raise NotImplementedError("Gaussian database collection is not implemented.")
