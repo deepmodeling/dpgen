@@ -4,9 +4,11 @@ import glob
 import json
 import os
 import sys
+from pathlib import Path
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 from dpgen.tools.relabel import get_lmp_info
+from dpgen.util import set_directory
 
 
 def ascii_hist(count):
@@ -18,12 +20,14 @@ def ascii_hist(count):
 
 
 def stat_sys(target_folder, param_file="param.json", verbose=True, mute=False):
-    target_folder = os.path.abspath(target_folder)
-    with open(os.path.join(target_folder, param_file)) as fp:
+    target_folder = Path(target_folder).resolve()
+    with open(target_folder / param_file) as fp:
         jdata = json.load(fp)
-    # goto input
-    cwd = os.getcwd()
-    os.chdir(target_folder)
+    with set_directory(target_folder):
+        return _stat_sys(jdata, verbose=verbose, mute=mute)
+
+
+def _stat_sys(jdata, verbose=True, mute=False):
     sys = jdata["sys_configs"]
     numb_sys = len(sys)
     sys_tasks_count = [0 for ii in sys]
@@ -93,7 +97,6 @@ def stat_sys(target_folder, param_file="param.json", verbose=True, mute=False):
                         sys_tasks_all[ii][jj][3],
                     )
                 )
-    os.chdir(cwd)
     return sys, sys_tasks_count, sys_tasks_all
 
 

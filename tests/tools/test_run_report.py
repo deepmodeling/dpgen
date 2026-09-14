@@ -1,7 +1,10 @@
 import json
 import os
 import sys
+import tempfile
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 
 test_dir = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 sys.path.insert(0, os.path.join(test_dir, ".."))
@@ -32,3 +35,15 @@ class TestRunReport(unittest.TestCase):
             [["npt", 50.0, 1.0, 2], ["npt", 50.0, 2.0, 4], ["npt", 100.0, 1.0, 2]],
         ]
         self.assertEqual(sys_all, ref_all)
+
+    def test_stat_sys_restores_cwd_on_failure(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp)
+            (target / "param.json").write_text(json.dumps({"sys_configs": ["sys"]}))
+            cwd = Path.cwd()
+            with (
+                patch("dpgen.tools.stat_sys.glob.glob", side_effect=RuntimeError("boom")),
+                self.assertRaisesRegex(RuntimeError, "boom"),
+            ):
+                stat_sys(target, verbose=False, mute=True)
+            self.assertEqual(Path.cwd(), cwd)
