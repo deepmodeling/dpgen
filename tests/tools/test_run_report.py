@@ -42,7 +42,9 @@ class TestRunReport(unittest.TestCase):
             (target / "param.json").write_text(json.dumps({"sys_configs": ["sys"]}))
             cwd = Path.cwd()
             with (
-                patch("dpgen.tools.stat_sys.glob.glob", side_effect=RuntimeError("boom")),
+                patch(
+                    "dpgen.tools.stat_sys.glob.glob", side_effect=RuntimeError("boom")
+                ),
                 self.assertRaisesRegex(RuntimeError, "boom"),
             ):
                 stat_sys(target, verbose=False, mute=True)
