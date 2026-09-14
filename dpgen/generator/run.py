@@ -26,7 +26,6 @@ import warnings
 from collections import Counter
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Optional
 
 import dpdata
 import numpy as np
@@ -517,7 +516,7 @@ def _validate_committee_compatibility(jdata, training_params) -> None:
         "aparam dimensions",
     )
     for index, signature in enumerate(signatures[1:], start=1):
-        for field, expected, actual in zip(fields, reference, signature):
+        for field, expected, actual in zip(fields, reference, signature, strict=True):
             if actual != expected:
                 raise ValueError(
                     f"Committee member {index} has incompatible {field}: "
@@ -588,7 +587,7 @@ def _iter_model_sections(training_param):
         yield f"model.model_dict.{name}", branch
 
 
-def _get_dpa_model_family(training_param) -> Optional[str]:
+def _get_dpa_model_family(training_param) -> str | None:
     """Identify the DPA model family in a training configuration.
 
     Parameters
@@ -631,7 +630,7 @@ def _get_dpa_model_family(training_param) -> Optional[str]:
     return next(iter(families), None)
 
 
-def _get_dpa_model_families(training_param) -> list[Optional[str]]:
+def _get_dpa_model_families(training_param) -> list[str | None]:
     """Return the DPA family for each configured committee member.
 
     Parameters
@@ -709,7 +708,7 @@ def _validate_dpa_training_config(jdata) -> None:
             raise ValueError(
                 "The regular PyTorch backend only exports pt2 for DPA4/SeZM models."
             )
-        for item, item_family in zip(training_params, families):
+        for item, item_family in zip(training_params, families, strict=True):
             if item_family == "dpa4c":
                 misplaced = []
                 for scope, model in _iter_model_sections(item):
@@ -990,7 +989,7 @@ def _prepare_training_input(
     ):
         jinput["training"]["systems"] = init_data_sys
         jinput["training"]["batch_size"] = init_batch_size
-        jinput["model"]["type_map"] = type_map
+        jinput["model"].setdefault("type_map", type_map)
     elif Version(deepmd_version) >= Version("2") and Version(deepmd_version) < Version(
         "4"
     ):
@@ -1001,7 +1000,7 @@ def _prepare_training_input(
             isinstance(old_batch_size, str) and old_batch_size.startswith("mixed:")
         ):
             jinput["training"]["training_data"]["batch_size"] = init_batch_size
-        jinput["model"]["type_map"] = type_map
+        jinput["model"].setdefault("type_map", type_map)
     else:
         raise RuntimeError(
             "DP-GEN currently only supports for DeePMD-kit 1.x to 3.x version!"
@@ -1170,7 +1169,8 @@ def make_train_dp(iter_index, jdata, mdata):
 
     # make sure all init_data_sys has the batch size -- for the following `zip`
     assert len(init_data_sys_) <= len(init_batch_size_)
-    for ii, ss in zip(init_data_sys_, init_batch_size_):
+    # Extra batch-size entries are allowed by the legacy input format.
+    for ii, ss in zip(init_data_sys_, init_batch_size_):  # noqa: B905
         sys_paths = expand_sys_str(os.path.join(init_data_prefix, ii))
         for single_sys in sys_paths:
             init_data_sys.append(
@@ -1237,7 +1237,7 @@ def make_train_dp(iter_index, jdata, mdata):
         mdata["deepmd_version"]
     except KeyError:
         mdata = set_version(mdata)
-
+    # set training reuse model
     if auto_ratio:
         training_reuse_old_ratio = number_old_frames / (
             number_old_frames + number_new_frames * new_to_old_ratio
@@ -1290,13 +1290,12 @@ def make_train_dp(iter_index, jdata, mdata):
             # 1.x
             for _, model in _iter_model_sections(jinput):
                 descriptor = model.get("descriptor")
-                if not isinstance(descriptor, dict):
-                    continue
-                if descriptor.get("type") == "hybrid":
-                    for desc in descriptor["list"]:
-                        desc["seed"] = random.randrange(sys.maxsize) % (2**32)
-                elif descriptor.get("type") != "loc_frame":
-                    descriptor["seed"] = random.randrange(sys.maxsize) % (2**32)
+                if isinstance(descriptor, dict):
+                    if descriptor.get("type") == "hybrid":
+                        for desc in descriptor["list"]:
+                            desc["seed"] = random.randrange(sys.maxsize) % (2**32)
+                    elif descriptor.get("type") != "loc_frame":
+                        descriptor["seed"] = random.randrange(sys.maxsize) % (2**32)
                 fitting_net = model.get("fitting_net")
                 if isinstance(fitting_net, dict):
                     fitting_net["seed"] = random.randrange(sys.maxsize) % (2**32)
@@ -1393,7 +1392,7 @@ def make_train_dp(iter_index, jdata, mdata):
         convert_training_data_to_hdf5(input_files, os.path.join(work_path, "data.hdf5"))
 
 
-def _link_old_models(work_path, old_model_files, ii, basename: Optional[str] = None):
+def _link_old_models(work_path, old_model_files, ii, basename: str | None = None):
     """Link the `ii`th old model given by `old_model_files` to
     the `ii`th training task in `work_path`.
     """
@@ -2119,7 +2118,7 @@ def revise_lmp_input_plm(lmp_lines, in_plm, out_plm="output.plumed"):
 
 
 def revise_by_keys(lmp_lines, keys, values):
-    for kk, vv in zip(keys, values):
+    for kk, vv in zip(keys, values, strict=True):
         for ii in range(len(lmp_lines)):
             lmp_lines[ii] = lmp_lines[ii].replace(kk, str(vv))
     return lmp_lines
@@ -2575,7 +2574,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                     fp.write("".join(lmp_lines))
                 with open("job.json", "w") as fp:
                     job = {}
-                    for ii, jj in zip(total_rev_keys, total_rev_item):
+                    for ii, jj in zip(total_rev_keys, total_rev_item, strict=True):
                         job[ii] = jj
                     json.dump(job, fp, indent=4)
                 os.chdir(cwd_)
@@ -2724,6 +2723,20 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
         sys_counter += 1
 
 
+def _gromacs_input_files(gromacs_settings):
+    """Return only settings whose values name files staged for a GROMACS task."""
+    non_input_settings = {
+        "traj_filename",
+        "mdp_filename",
+        "group_name",
+        "maxwarn",
+        "deffnm",
+    }
+    return [
+        file for key, file in gromacs_settings.items() if key not in non_input_settings
+    ]
+
+
 def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
     try:
         from gromacs.fileformats.mdp import MDP
@@ -2748,9 +2761,6 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
     nsteps = cur_job.get("nsteps", None)
     lambdas = cur_job.get("lambdas", [1.0])
     temps = cur_job.get("temps", [298.0])
-
-    for ll in lambdas:
-        assert ll >= 0.0 and ll <= 1.0, "Lambda should be in [0,1]"
 
     if nsteps is None:
         raise RuntimeError("nsteps is None, you should set nsteps in model_devi_jobs!")
@@ -2786,16 +2796,10 @@ def _make_model_devi_native_gromacs(iter_index, jdata, mdata, conf_systems):
                     task_path = os.path.join(work_path, task_name)
                     create_path(task_path)
                     gromacs_settings = jdata.get("gromacs_settings", "")
-                    for key, file in gromacs_settings.items():
-                        if (
-                            key != "traj_filename"
-                            and key != "mdp_filename"
-                            and key != "group_name"
-                            and key != "maxwarn"
-                        ):
-                            os.symlink(
-                                os.path.join(cc, file), os.path.join(task_path, file)
-                            )
+                    for file in _gromacs_input_files(gromacs_settings):
+                        os.symlink(
+                            os.path.join(cc, file), os.path.join(task_path, file)
+                        )
                     # input.json for DP-Gromacs
                     with open(os.path.join(cc, "input.json")) as f:
                         input_json = json.load(f)
@@ -3148,6 +3152,9 @@ def run_md_model_devi(iter_index, jdata, mdata):
         ]
         if ndx_filename:
             forward_files.append(ndx_filename)
+        model_devi_script = gromacs_settings.get("model_devi_script")
+        if model_devi_script:
+            forward_files.append(model_devi_script)
         backward_files = [
             f"{deffnm}.tpr",
             f"{deffnm}.log",
@@ -4657,7 +4664,7 @@ def make_fp_siesta(iter_index, jdata):
     type_map = jdata["type_map"]
     if len(type_map) != len(fp_pp_files):
         raise RuntimeError("fp_pp_files must correspond one-to-one with type_map")
-    pp_by_element = dict(zip(type_map, fp_pp_files))
+    pp_by_element = dict(zip(type_map, fp_pp_files, strict=True))
     if "user_fp_params" in jdata.keys():
         fp_params = jdata["user_fp_params"]
         user_input = True
@@ -5486,7 +5493,8 @@ def post_fp_pwscf(iter_index, jdata):
         sys_input.sort()
 
         flag = True
-        for ii, oo in zip(sys_input, sys_output):
+        # Incomplete FP tasks can produce unequal input/output lists.
+        for ii, oo in zip(sys_input, sys_output):  # noqa: B905
             if flag:
                 _sys = dpdata.LabeledSystem(
                     oo, fmt="qe/pw/scf", type_map=jdata["type_map"]
@@ -5535,7 +5543,8 @@ def post_fp_abacus_scf(iter_index, jdata):
         sys_input.sort()
 
         all_sys = None
-        for ii, oo in zip(sys_input, sys_output):
+        # Incomplete FP tasks can produce unequal input/output lists.
+        for ii, oo in zip(sys_input, sys_output):  # noqa: B905
             _sys = dpdata.LabeledSystem(oo, fmt="abacus/scf")
             if len(_sys) > 0:
                 _sys.data["atom_types"] = np.asarray(_sys.data["atom_types"], dtype=int)
@@ -5919,7 +5928,7 @@ def run_iter(param_file, machine_file):
     mdata = load_file(machine_file)
 
     jdata_arginfo = run_jdata_arginfo()
-    jdata = normalize(jdata_arginfo, jdata, strict_check=False)
+    jdata = normalize(jdata_arginfo, jdata)
 
     update_mass_map(jdata)
 

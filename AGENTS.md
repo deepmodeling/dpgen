@@ -9,7 +9,7 @@ Always reference these instructions first and fallback to search or bash command
 ### Bootstrap and Install
 
 - **Environment Setup**:
-  - Ensure Python 3.9+ is available: `python --version`
+  - Ensure Python 3.10+ is available: `python --version`
   - Create virtual environment: `python -m venv dpgen_env && source dpgen_env/bin/activate`
   - **Preferred**: Install with uv: `uv pip install -e .` -- takes 1-5 minutes due to scientific dependencies. Set timeout to 10+ minutes.
   - Alternative: `pip install -e .` (fallback if uv not available)
@@ -148,7 +148,7 @@ Always reference these instructions first and fallback to search or bash command
 ### Important Files
 
 - `pyproject.toml` -- Modern Python packaging configuration
-- `.github/workflows/test.yml` -- CI pipeline (Python 3.9, 3.12)
+- `.github/workflows/test.yml` -- CI pipeline (Python 3.10, 3.12)
 - `dpgen/main.py` -- CLI command definitions and entry points
 - `examples/init/surf.json` -- Surface initialization example
 - `examples/run/ch4/param.json` -- Complete run parameter example
@@ -181,7 +181,7 @@ Always reference these instructions first and fallback to search or bash command
 - **Full Test Suite**: 2-5 minutes (timeout 10+ minutes)
 - **Documentation Build**: 2-5 minutes (timeout 10+ minutes)
 - **Quick Import Test**: \<1 second
-- **CI Pipeline**: Runs on Python 3.9 and 3.12, full cycle ~10-15 minutes
+- **CI Pipeline**: Runs on Python 3.10 and 3.12, full cycle ~10-15 minutes
 
 ## Error Patterns
 
@@ -189,7 +189,7 @@ Always reference these instructions first and fallback to search or bash command
 
 - **Network Timeouts**: Scientific packages are large, increase pip timeout
 - **Missing System Dependencies**: Some packages require system libraries
-- **Version Conflicts**: Pin to specific Python versions (3.9-3.12)
+- **Version Conflicts**: Pin to specific Python versions (3.10-3.12)
 
 ### Runtime Issues
 

@@ -38,7 +38,7 @@ def regulate_poscar(poscar_in, poscar_out):
         if ii not in uniq_name:
             uniq_name.append(ii)
     uniq_count = np.zeros(len(uniq_name), dtype=int)
-    for nn, cc in zip(names, counts):
+    for nn, cc in zip(names, counts, strict=True):
         uniq_count[uniq_name.index(nn)] += cc
     natoms = np.sum(uniq_count)
     posis = lines[8 : 8 + natoms]
@@ -66,7 +66,7 @@ def sort_poscar(poscar_in, poscar_out, new_names):
     names = lines[5].split()
     counts = [int(ii) for ii in lines[6].split()]
     new_counts = np.zeros(len(counts), dtype=int)
-    for nn, cc in zip(names, counts):
+    for nn, cc in zip(names, counts, strict=True):
         new_counts[new_names.index(nn)] += cc
     natoms = np.sum(new_counts)
     posis = lines[8 : 8 + natoms]
@@ -124,7 +124,7 @@ def make_kspacing_kpoints(poscar, kspacing, kgamma):
     rbox = reciprocal_box(box)
     kpoints = [
         max(1, (np.ceil(2 * np.pi * np.linalg.norm(ii) / ks).astype(int)))
-        for ii, ks in zip(rbox, kspacing)
+        for ii, ks in zip(rbox, kspacing, strict=True)
     ]
     ret = make_vasp_kpoints(kpoints, kgamma)
     return ret

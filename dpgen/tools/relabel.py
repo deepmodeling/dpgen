@@ -263,7 +263,7 @@ def create_tasks(
         sys_dir = os.path.join(output, "system.%03d" % si)  # noqa: UP031
         if verbose:
             print("# working on " + sys_dir)
-        for tt, rr in zip(sys_tasks[si], sys_tasks_record[si]):
+        for tt, rr in zip(sys_tasks[si], sys_tasks_record[si], strict=True):
             # copy poscar
             source_path = os.path.join((f"iter.{rr.split()[1]}/02.fp"), rr.split()[9])
             source_file = os.path.join(source_path, "POSCAR")

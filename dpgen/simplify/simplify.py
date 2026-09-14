@@ -14,7 +14,6 @@ import logging
 import os
 import queue
 from collections import defaultdict
-from typing import Union
 
 import dpdata
 import numpy as np
@@ -65,7 +64,7 @@ def get_system_cls(jdata):
     return dpdata.System
 
 
-def get_multi_system(path: Union[str, list[str]], jdata: dict) -> dpdata.MultiSystems:
+def get_multi_system(path: str | list[str], jdata: dict) -> dpdata.MultiSystems:
     """Get MultiSystems from a path or list of paths.
 
     Both NumPy and HDF5 formats are supported. For details
@@ -350,7 +349,7 @@ def post_model_devi(iter_index, jdata, mdata):
             open(os.path.join(work_path, detail_file_name)) as f,
             open(os.path.join(work_path, true_error_file_name)) as f_err,
         ):
-            for line, line_err in zip(f, f_err):
+            for line, line_err in zip(f, f_err, strict=True):
                 if line.startswith("# data.rest.old"):
                     name = (line.split()[1]).split("/")[-1]
                 elif line.startswith("#"):

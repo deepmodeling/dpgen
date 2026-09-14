@@ -542,6 +542,37 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
             self.assertIn("seed", branch["descriptor"])
             self.assertIn("seed", branch["fitting_net"])
 
+    def test_make_train_seeds_shared_descriptor_branch_heads(self):
+        jdata = {
+            "numb_models": 1,
+            "init_data_prefix": "data",
+            "init_data_sys": [],
+            "sys_configs": [],
+            "model_devi_jobs": [{}],
+            "fp_task_min": 0,
+            "type_map": ["H"],
+            "default_training_param": {
+                "model": {
+                    "shared_dict": {"descriptor": {"type": "dpa2"}},
+                    "model_dict": {
+                        "a": {
+                            "descriptor": "descriptor",
+                            "fitting_net": {},
+                            "type_embedding": {},
+                        }
+                    },
+                },
+                "training": {},
+            },
+        }
+        with patch("dpgen.generator.run.os.symlink"):
+            make_train_dp(0, jdata, {"deepmd_version": "3.2.0"})
+        with open(Path("iter.000000") / "00.train" / "000" / "input.json") as fp:
+            branch = json.load(fp)["model"]["model_dict"]["a"]
+        self.assertEqual(branch["descriptor"], "descriptor")
+        self.assertIn("seed", branch["fitting_net"])
+        self.assertIn("seed", branch["type_embedding"])
+
     def test_cross_architecture_submission_tracks_all_members(self):
         calls = self._run(
             numb_models=3,
@@ -763,6 +794,29 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
         call = make_submission.call_args.kwargs
         self.assertEqual(call["forward_common_files"], ["graph.000.pt2"])
         self.assertIn("lmp -k on g 1 -sf kk", call["commands"][0])
+
+    def test_gromacs_model_deviation_forwards_configured_script(self):
+        work_path = Path("iter.000000") / "01.model_devi"
+        (work_path / "task.000.000000").mkdir(parents=True)
+        (work_path / "graph.000.pb").touch()
+        (work_path / "cur_job.json").write_text(json.dumps({}), encoding="utf-8")
+        jdata = {
+            "model_devi_engine": "gromacs",
+            "gromacs_settings": {"model_devi_script": "model_devi.py"},
+            "model_devi_jobs": [{}],
+        }
+        mdata = {
+            "api_version": "1.0",
+            "model_devi_command": "gmx",
+            "model_devi_group_size": 1,
+            "model_devi_machine": {},
+            "model_devi_resources": {},
+        }
+        with patch("dpgen.generator.run.make_submission") as make_submission:
+            run_md_model_devi(0, jdata, mdata)
+
+        forward_files = make_submission.call_args.kwargs["forward_files"]
+        self.assertIn("model_devi.py", forward_files)
 
 
 if __name__ == "__main__":

@@ -22,7 +22,7 @@ Yuzhi Zhang, Haidi Wang, Weijie Chen, Jinzhe Zeng, Linfeng Zhang, Han Wang, and 
 
 ## Download and install
 
-DP-GEN only supports Python 3.9 and above. You can use one of the following methods to install DP-GEN:
+DP-GEN only supports Python 3.10 and above. You can use one of the following methods to install DP-GEN:
 
 - Install via pip: `pip install dpgen`
 - Install via conda: \`conda install -c conda-forge dpgen\`\`
