@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -21,9 +22,11 @@ from dpgen.generator.run import (
     _prepare_training_input,
     _validate_dpa_training_config,
     _validate_pt2_template_atom_map,
+    make_model_devi,
     make_train_dp,
     post_train_dp,
     run_md_model_devi,
+    run_model_devi,
     run_train_dp,
     training_complete_file,
 )
@@ -854,41 +857,94 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
             "numb_models": 3,
             "train_backend": "pytorch",
             "model_devi_engine": "calypso",
+            "type_map": ["H", "O"],
+            "model_devi_jobs": [{"times": [0], "PSTRESS": [0.0]}],
+            "sys_configs": [],
             "default_training_param": [
-                {"model": {"descriptor": {"type": "dpa2"}}},
-                {"model": {"descriptor": {"type": "dpa3"}}},
-                {"model": {"descriptor": {"type": "dpa4"}}},
+                {
+                    "model": {
+                        "type_map": ["O", "H"],
+                        "descriptor": {"type": "dpa2"},
+                    }
+                },
+                {
+                    "model": {
+                        "type_map": ["O", "H"],
+                        "descriptor": {"type": "dpa3"},
+                    }
+                },
+                {
+                    "model": {
+                        "type_map": ["O", "H"],
+                        "descriptor": {"type": "dpa4"},
+                    }
+                },
             ],
         }
         train_call = self._run(**train_jdata)
         self.assertEqual(train_call["run_tasks"], ["000", "001", "002"])
 
-        with patch("dpgen.generator.run.os.symlink") as symlink:
-            post_train_dp(0, train_jdata, self.mdata)
-        self.assertEqual(symlink.call_count, 3)
-
-        work_path = Path("iter.000000") / "01.model_devi"
-        (work_path / "task.000.000000").mkdir(parents=True)
+        train_path = Path("iter.000000") / "00.train"
         for index in range(3):
-            (work_path / f"graph.{index:03d}.pth").touch()
-        (work_path / "cur_job.json").write_text(json.dumps({}), encoding="utf-8")
-        md_jdata = {
-            "train_backend": "pytorch",
-            "model_format": "pth",
-            "model_devi_jobs": [{}],
-        }
-        md_mdata = {
-            "api_version": "1.0",
-            "model_devi_command": "lmp",
-            "model_devi_group_size": 1,
-            "model_devi_machine": {},
-            "model_devi_resources": {},
-        }
-        with patch("dpgen.generator.run.make_submission") as make_submission:
-            run_md_model_devi(0, md_jdata, md_mdata)
+            task_path = train_path / f"{index:03d}"
+            task_path.mkdir(parents=True)
+            (task_path / "frozen_model.pth").write_text(
+                f"committee member {index}", encoding="utf-8"
+            )
+
+        def copy_link(source, destination):
+            destination = Path(destination)
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(destination.parent / source, destination)
+
+        with patch("dpgen.generator.run.os.symlink", side_effect=copy_link):
+            post_train_dp(0, train_jdata, self.mdata)
+        train_models = sorted(train_path.glob("graph.*.pth"))
         self.assertEqual(
-            make_submission.call_args.kwargs["forward_common_files"],
-            [f"graph.{index:03d}.pth" for index in range(3)],
+            [model.name for model in train_models],
+            ["graph.000.pth", "graph.001.pth", "graph.002.pth"],
+        )
+        self.assertEqual(
+            [model.read_text(encoding="utf-8") for model in train_models],
+            ["committee member 0", "committee member 1", "committee member 2"],
+        )
+
+        with patch("dpgen.generator.run._make_model_devi_native_calypso"):
+            with patch("dpgen.generator.run.os.symlink", side_effect=shutil.copyfile):
+                self.assertTrue(make_model_devi(0, train_jdata, self.mdata))
+
+        calypso_path = Path("iter.000000") / "01.model_devi"
+        staged_models = sorted(
+            (calypso_path / "gen_stru_analy.000").glob("graph.*.pth")
+        )
+        self.assertEqual(
+            [model.name for model in staged_models],
+            ["graph.000.pth", "graph.001.pth", "graph.002.pth"],
+        )
+        self.assertEqual(
+            [model.read_text(encoding="utf-8") for model in staged_models],
+            ["committee member 0", "committee member 1", "committee member 2"],
+        )
+
+        expected_models = " ".join(str(model.resolve()) for model in staged_models)
+        record_path = (calypso_path / "record.calypso").resolve()
+        record_path.write_text("3\n", encoding="utf-8")
+        commands = []
+
+        def run_calypso(command):
+            commands.append(command)
+            record_path.write_text("3\n4\n", encoding="utf-8")
+            return 0
+
+        with patch(
+            "dpgen.generator.lib.run_calypso.os.system", side_effect=run_calypso
+        ):
+            run_model_devi(0, train_jdata, {"model_devi_deepmdkit_python": "python"})
+
+        self.assertEqual(len(commands), 1)
+        self.assertIn(
+            f"--all_models {expected_models} --type_map H O --model_type_map O H",
+            commands[0],
         )
 
     def test_gromacs_model_deviation_forwards_configured_script(self):
