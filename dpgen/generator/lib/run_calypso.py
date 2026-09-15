@@ -44,7 +44,7 @@ def _find_models(path, model_suffix=".pb"):
     list[str]
         Paths matching the resolved committee model suffix.
     """
-    return glob.glob(os.path.join(path, f"graph*{model_suffix}"))
+    return sorted(glob.glob(os.path.join(path, f"graph*{model_suffix}")))
 
 
 def _get_calypso_model_type_map(jdata):

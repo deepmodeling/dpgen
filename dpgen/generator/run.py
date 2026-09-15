@@ -3127,7 +3127,7 @@ def run_md_model_devi(iter_index, jdata, mdata):
     # dlog.info("run_tasks in run_model_deviation",run_tasks_)
 
     suffix = _get_model_suffix(jdata)
-    all_models = glob.glob(os.path.join(work_path, f"graph*{suffix}"))
+    all_models = sorted(glob.glob(os.path.join(work_path, f"graph*{suffix}")))
     model_names = [os.path.basename(ii) for ii in all_models]
 
     model_devi_engine = jdata.get("model_devi_engine", "lammps")
