@@ -849,6 +849,48 @@ class TestRunTrainDeepmdBackend(unittest.TestCase):
         self.assertEqual(call["forward_common_files"], ["graph.000.pt2"])
         self.assertIn("lmp -k on g 1 -sf kk", call["commands"][0])
 
+    def test_committee_training_to_model_deviation_handoff(self):
+        train_jdata = {
+            "numb_models": 3,
+            "train_backend": "pytorch",
+            "model_devi_engine": "calypso",
+            "default_training_param": [
+                {"model": {"descriptor": {"type": "dpa2"}}},
+                {"model": {"descriptor": {"type": "dpa3"}}},
+                {"model": {"descriptor": {"type": "dpa4"}}},
+            ],
+        }
+        train_call = self._run(**train_jdata)
+        self.assertEqual(train_call["run_tasks"], ["000", "001", "002"])
+
+        with patch("dpgen.generator.run.os.symlink") as symlink:
+            post_train_dp(0, train_jdata, self.mdata)
+        self.assertEqual(symlink.call_count, 3)
+
+        work_path = Path("iter.000000") / "01.model_devi"
+        (work_path / "task.000.000000").mkdir(parents=True)
+        for index in range(3):
+            (work_path / f"graph.{index:03d}.pth").touch()
+        (work_path / "cur_job.json").write_text(json.dumps({}), encoding="utf-8")
+        md_jdata = {
+            "train_backend": "pytorch",
+            "model_format": "pth",
+            "model_devi_jobs": [{}],
+        }
+        md_mdata = {
+            "api_version": "1.0",
+            "model_devi_command": "lmp",
+            "model_devi_group_size": 1,
+            "model_devi_machine": {},
+            "model_devi_resources": {},
+        }
+        with patch("dpgen.generator.run.make_submission") as make_submission:
+            run_md_model_devi(0, md_jdata, md_mdata)
+        self.assertEqual(
+            make_submission.call_args.kwargs["forward_common_files"],
+            [f"graph.{index:03d}.pth" for index in range(3)],
+        )
+
     def test_gromacs_model_deviation_forwards_configured_script(self):
         work_path = Path("iter.000000") / "01.model_devi"
         (work_path / "task.000.000000").mkdir(parents=True)
