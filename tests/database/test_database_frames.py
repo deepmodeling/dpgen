@@ -2,10 +2,21 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import MagicMock, mock_open, patch
 
-from dpgen.database.run import _parsing_vasp, parsing_vasp
+from dpgen.database.run import (
+    _parsing_vasp,
+    parsing_gaussian,
+    parsing_pwscf,
+    parsing_vasp,
+)
 
 
 class TestVaspDatabaseFrames(unittest.TestCase):
+    def test_unimplemented_collectors_fail_explicitly(self):
+        for collector in (parsing_pwscf, parsing_gaussian):
+            with self.subTest(collector=collector.__name__):
+                with self.assertRaises(NotImplementedError):
+                    collector(".")
+
     @patch("dpgen.database.run.Entry", side_effect=lambda *args, **kwargs: kwargs)
     @patch("dpgen.database.run.LabeledSystem")
     @patch("dpgen.database.run.VaspInput.from_directory")
