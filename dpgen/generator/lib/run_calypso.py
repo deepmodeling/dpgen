@@ -44,7 +44,20 @@ def _find_models(path, model_suffix=".pb"):
     list[str]
         Paths matching the resolved committee model suffix.
     """
-    return glob.glob(os.path.join(path, f"graph*{model_suffix}"))
+    return sorted(glob.glob(os.path.join(path, f"graph*{model_suffix}")))
+
+
+def _get_calypso_model_type_map(jdata):
+    """Resolve the model type map for a single or committee configuration."""
+    training_param = jdata.get("default_training_param", {})
+    if isinstance(training_param, list):
+        training_param = training_param[0] if training_param else {}
+    model = training_param.get("model", {})
+    model_type_map = model.get("type_map", jdata["type_map"])
+    if isinstance(model_type_map, str):
+        shared_dict = model.get("shared_dict", {})
+        model_type_map = shared_dict[model_type_map.split(":", 1)[0]]
+    return model_type_map
 
 
 def _make_calypso_opt_command(deepmdkit_python, model_name):
@@ -629,11 +642,7 @@ def run_calypso_model_devi(iter_index, jdata, mdata, model_suffix=".pb"):
             # Model Devi
             _calypso_run_opt_path = os.path.abspath(caly_run_opt_list[0])
             all_models = _find_models(_calypso_run_opt_path, model_suffix)
-            model_type_map = (
-                jdata.get("default_training_param", {})
-                .get("model", {})
-                .get("type_map", jdata["type_map"])
-            )
+            model_type_map = _get_calypso_model_type_map(jdata)
             cwd = os.getcwd()
             os.chdir(calypso_model_devi_path)
             args = " ".join(

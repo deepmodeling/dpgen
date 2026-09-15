@@ -128,11 +128,13 @@ def training_args_dp() -> list[Argument]:
     doc_training_init_model = "Iteration > 0, the model parameters will be initilized from the model trained at the previous iteration. Iteration == 0, the model parameters will be initialized from training_iter0_model_path."
     doc_default_training_param = textwrap.dedent(
         """\
-        Training parameters for DeePMD-kit in 00.train. DPA4 uses
-        ``model.use_compile`` and ``model.enable_tf32`` with the PyTorch backend.
+        Training parameters for DeePMD-kit in 00.train. A dictionary is reused
+        for every committee member. A list supplies one independent dictionary
+        per member and its length must equal ``numb_models``. Cross-architecture
+        committees share the global ``train_backend`` and ``model_format``.
+        DPA4 uses ``model.use_compile`` and ``model.enable_tf32`` with the PyTorch backend.
         DPA4C uses ``training.enable_compile`` and ``training.enable_tf32`` with
-        the PyTorch-exportable backend. DP-GEN validates these locations but does
-        not inject numerical-policy settings. See the `DeePMD-kit documentation
+        the PyTorch-exportable backend. See the `DeePMD-kit documentation
         <https://docs.deepmodeling.com/projects/deepmd/>`_.
         """
     )
@@ -192,7 +194,7 @@ def training_args_dp() -> list[Argument]:
         ),
         Argument(
             "default_training_param",
-            dict,
+            [dict, list[dict]],
             optional=False,
             doc=doc_default_training_param,
         ),

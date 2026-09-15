@@ -73,3 +73,30 @@ models are linked into the model-deviation stage automatically.
 
 The dense PyTorch-exportable ``pte`` format remains available for non-LAMMPS
 workflows but is not supported by LAMMPS model deviation.
+
+Cross-architecture committees
+------------------------------
+
+``default_training_param`` may also be a list with one configuration per
+committee member. Its length must equal ``numb_models``. The members share the
+global training backend and frozen model format, while their DeePMD model,
+loss, and other training settings are independent. DPA4 retains its existing
+PyTorch backend requirement, so a committee containing DPA4 uses the PyTorch
+backend; the TensorFlow default remains unchanged for ordinary runs:
+
+.. code-block:: json
+
+   {
+     "numb_models": 3,
+     "train_backend": "pytorch",
+     "model_devi_engine": "calypso",
+     "default_training_param": [
+       {"model": {"descriptor": {"type": "dpa2"}}},
+       {"model": {"descriptor": {"type": "dpa3"}}},
+       {"model": {"descriptor": {"type": "dpa4"}}}
+     ]
+   }
+
+Before training is submitted, DP-GEN checks that the committee members have
+the same type-map order, cutoff, output class, and frame/atomic parameter
+dimensions. PT2 committees must also resolve to one export lower kind.
