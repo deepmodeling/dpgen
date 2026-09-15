@@ -3,6 +3,7 @@
 import argparse
 import glob
 import os
+import subprocess
 
 import ase.io
 import numpy as np
@@ -20,8 +21,10 @@ def create_disturbs_atomsk(fin, nfile, dmax=1.0, ofmt="lmp"):
     # constant value of dmax for atomsk
     for i in range(1, nfile + 1):
         fout = fin + str(i) + "." + ofmt
-        cmd = "atomsk " + fin + " -disturb " + str(dmax) + " -wrap -ow " + fout
-        os.system(cmd)
+        subprocess.run(
+            ["atomsk", fin, "-disturb", str(dmax), "-wrap", "-ow", fout],
+            check=True,
+        )
     return
 
 
