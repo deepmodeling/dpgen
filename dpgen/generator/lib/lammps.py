@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import random
+import re
 
 import dpdata
 import numpy as np
@@ -15,6 +16,29 @@ def _sample_sphere():
         if vn < 0.2:
             continue
         return vv / vn
+
+
+def conditioning_variable_names(conditioning, location, item):
+    """Return stable LAMMPS variable names for one conditioning item."""
+    base = re.sub(r"[^A-Za-z0-9_]", "_", item["source"]).upper()
+    prefix = f"DPGEN_{location.upper()}_{base}"
+    if item["dim"] == 1:
+        return [prefix]
+    return [f"{prefix}_{idx}" for idx in range(item["dim"])]
+
+
+def conditioning_keywords(conditioning):
+    """Return pair-style fparam/aparam keywords for conditioning."""
+    parts = []
+    for location in ("fparam", "aparam"):
+        variables = []
+        for item in conditioning.get(location, []):
+            variables.extend(conditioning_variable_names(conditioning, location, item))
+        if variables:
+            parts.append(
+                location + " " + " ".join(f"${{{name}}}" for name in variables)
+            )
+    return " ".join(parts)
 
 
 def make_lammps_input(
@@ -34,6 +58,8 @@ def make_lammps_input(
     pka_e=None,
     ele_temp_f=None,
     ele_temp_a=None,
+    conditioning=None,
+    param_values=None,
     max_seed=1000000,
     nopbc=False,
     deepmd_version="0.1",
@@ -70,6 +96,27 @@ def make_lammps_input(
         ret += f"variable        ELE_TEMP        equal {ele_temp_f:f}\n"
     if ele_temp_a is not None:
         ret += f"variable        ELE_TEMP        equal {ele_temp_a:f}\n"
+    if conditioning:
+        param_values = param_values or {}
+        for location in ("fparam", "aparam"):
+            for item in conditioning.get(location, []):
+                value = param_values.get(item["source"], param_values.get(item["name"]))
+                if value is None:
+                    raise ValueError(
+                        f"missing value for conditioning source {item['source']!r}"
+                    )
+                values = np.asarray(value, dtype=float).reshape(-1)
+                if values.size != item["dim"]:
+                    raise ValueError(
+                        f"conditioning source {item['source']!r} has width "
+                        f"{values.size}, expected {item['dim']}"
+                    )
+                for name, scalar in zip(
+                    conditioning_variable_names(conditioning, location, item),
+                    values,
+                    strict=True,
+                ):
+                    ret += f"variable        {name:<16} equal {scalar:f}\n"
     ret += f"variable        PRES            equal {pres:f}\n"
     ret += f"variable        TAU_T           equal {tau_t:f}\n"
     ret += f"variable        TAU_P           equal {tau_p:f}\n"
@@ -135,6 +182,10 @@ def make_lammps_input(
             keywords += "fparam ${ELE_TEMP}"
         if ele_temp_a is not None:
             keywords += "aparam ${ELE_TEMP}"
+        if conditioning:
+            conditioning_text = conditioning_keywords(conditioning)
+            if conditioning_text:
+                keywords += conditioning_text + " "
 
         if d3_enabled:
             # Use hybrid/overlay with D3

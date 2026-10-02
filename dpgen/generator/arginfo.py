@@ -36,6 +36,10 @@ def basic_args() -> list[Argument]:
 - 0: no electron temperature. \n\n\
 - 1: eletron temperature as frame parameter. \n\n\
 - 2: electron temperature as atom parameter."
+    doc_conditioning = (
+        "Generic DeePMD conditioning declarations. Use fparam/aparam lists of "
+        "{name, source, dim} mappings; source values are read from FP job.json."
+    )
 
     return [
         Argument("type_map", list[str], optional=False, doc=doc_type_map),
@@ -47,6 +51,7 @@ def basic_args() -> list[Argument]:
             doc=doc_mass_map,
         ),
         Argument("use_ele_temp", int, optional=True, default=0, doc=doc_use_ele_temp),
+        Argument("conditioning", dict, optional=True, default={}, doc=doc_conditioning),
     ]
 
 
@@ -350,7 +355,7 @@ def model_devi_jobs_args() -> list[Argument]:
         model_devi_jobs_rev_mat_args(),
         Argument("sys_rev_mat", dict, optional=True, doc=doc_sys_rev_mat),
         Argument("sys_idx", list[int], optional=False, doc=doc_sys_idx),
-        Argument("temps", list[float], optional=True, doc=doc_temps),
+        Argument("temps", [list[float], list[dict]], optional=True, doc=doc_temps),
         Argument("press", list[float], optional=True, doc=doc_press),
         Argument("trj_freq", int, optional=False, doc=doc_trj_freq),
         Argument("nsteps", int, optional=True, doc=doc_nsteps),

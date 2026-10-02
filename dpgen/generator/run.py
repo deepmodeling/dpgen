@@ -51,6 +51,7 @@ from dpgen.generator.lib.cp2k import (
 from dpgen.generator.lib.ele_temp import NBandsEsti
 from dpgen.generator.lib.gaussian import make_gaussian_input, take_cluster
 from dpgen.generator.lib.lammps import (
+    conditioning_keywords,
     get_all_dumped_forces,
     get_dumped_forces,
     make_lammps_input,
@@ -98,6 +99,7 @@ from dpgen.util import (
     normalize,
     sepline,
     set_directory,
+    setup_conditioning,
     setup_ele_temp,
 )
 
@@ -961,6 +963,125 @@ def make_train(iter_index, jdata, mdata):
         raise ValueError(f"Unsupported engine: {mlp_engine}")
 
 
+def _normalize_conditioning(jdata):
+    """Normalize generic frame/atom conditioning declarations.
+
+    ``conditioning`` is a mapping with ``fparam`` and ``aparam`` lists. Each
+    item contains ``name``, ``source`` and a positive integer ``dim``. The
+    source is read from the FP task's ``job.json`` metadata.
+    """
+    raw = jdata.get("conditioning")
+    use_ele_temp = jdata.get("use_ele_temp", 0)
+    if raw == {}:
+        raw = None
+    if raw is not None and not isinstance(raw, dict):
+        raise TypeError("conditioning must be a mapping when provided")
+    if raw and use_ele_temp:
+        raise ValueError(
+            "conditioning and nonzero use_ele_temp cannot be configured together"
+        )
+    if raw is None:
+        if use_ele_temp == 0:
+            return {"fparam": [], "aparam": []}
+        if use_ele_temp == 1:
+            raw = {"fparam": [{"name": "ele_temp", "source": "ele_temp", "dim": 1}]}
+        elif use_ele_temp == 2:
+            raw = {"aparam": [{"name": "ele_temp", "source": "ele_temp", "dim": 1}]}
+        else:
+            raise RuntimeError("invalid setting for use_ele_temp " + str(use_ele_temp))
+    normalized = {"fparam": [], "aparam": []}
+    for location in ("fparam", "aparam"):
+        entries = raw.get(location, [])
+        if entries is None:
+            entries = []
+        if not isinstance(entries, list):
+            raise TypeError(f"conditioning.{location} must be a list")
+        names = set()
+        for entry in entries:
+            if not isinstance(entry, dict):
+                raise TypeError(f"conditioning.{location} entries must be mappings")
+            name = entry.get("name")
+            source = entry.get("source", name)
+            dim = entry.get("dim", 1)
+            if not isinstance(name, str) or not name:
+                raise ValueError(f"conditioning.{location} entry needs a name")
+            if not isinstance(source, str) or not source:
+                raise ValueError(f"conditioning.{location}.{name} entry needs a source")
+            if not isinstance(dim, int) or isinstance(dim, bool) or dim <= 0:
+                raise ValueError(
+                    f"conditioning.{location}.{name}.dim must be a positive integer"
+                )
+            if name in names:
+                raise ValueError(
+                    f"conditioning.{location} contains duplicate name {name!r}"
+                )
+            names.add(name)
+            normalized[location].append({"name": name, "source": source, "dim": dim})
+    return normalized
+
+
+def _conditioning_dims(conditioning):
+    """Return total fparam and aparam widths."""
+    return tuple(
+        sum(item["dim"] for item in conditioning[location])
+        for location in ("fparam", "aparam")
+    )
+
+
+def _set_conditioning_params(jinput, conditioning) -> None:
+    """Apply generic conditioning widths to every model branch."""
+    fparam_dim, aparam_dim = _conditioning_dims(conditioning)
+    for model in _iter_model_components(jinput):
+        fitting_net = model.get("fitting_net")
+        if not isinstance(fitting_net, dict):
+            continue
+        if fparam_dim:
+            fitting_net["numb_fparam"] = fparam_dim
+        if aparam_dim:
+            fitting_net["numb_aparam"] = aparam_dim
+
+
+def _extract_conditioning_arrays(job_data, conditioning, natoms):
+    """Read configured conditioning values from one FP job metadata mapping."""
+    arrays = {}
+    for location in ("fparam", "aparam"):
+        values = []
+        for item in conditioning[location]:
+            params = job_data.get("params", {})
+            if not isinstance(params, dict):
+                raise RuntimeError("job.json.params must be a mapping")
+            value = params.get(
+                item["source"],
+                params.get(
+                    item["name"],
+                    job_data.get(item["source"], job_data.get(item["name"])),
+                ),
+            )
+            if value is None:
+                raise RuntimeError(
+                    f"conditioning source {item['source']!r} is missing from job.json"
+                )
+            array = np.asarray(value, dtype=float).reshape(-1)
+            if array.size != item["dim"]:
+                raise RuntimeError(
+                    f"conditioning source {item['source']!r} has width "
+                    f"{array.size}, expected {item['dim']}"
+                )
+            if not np.all(np.isfinite(array)):
+                raise RuntimeError(
+                    f"conditioning source {item['source']!r} contains non-finite values"
+                )
+            values.extend(array.tolist())
+        if values:
+            if location == "fparam":
+                arrays[location] = np.asarray(values, dtype=float).reshape(1, -1)
+            else:
+                arrays[location] = np.tile(
+                    np.asarray(values, dtype=float), (natoms, 1)
+                ).reshape(1, natoms, -1)
+    return arrays
+
+
 def _set_ele_temp_params(jinput, use_ele_temp) -> None:
     """Apply electron-temperature dimensions to every model section.
 
@@ -1006,6 +1127,7 @@ def _prepare_training_input(
     training_reuse_start_lr,
     training_reuse_start_pref_e,
     training_reuse_start_pref_f,
+    conditioning=None,
 ):
     """Inject DP-GEN data and per-iteration settings into one model config.
 
@@ -1064,7 +1186,10 @@ def _prepare_training_input(
         raise RuntimeError(
             "DP-GEN currently only supports for DeePMD-kit 1.x to 3.x version!"
         )
-    _set_ele_temp_params(jinput, use_ele_temp)
+    if conditioning is None:
+        _set_ele_temp_params(jinput, use_ele_temp)
+    else:
+        _set_conditioning_params(jinput, conditioning)
 
     if training_reuse_iter is not None and iter_index >= training_reuse_iter:
         training = jinput["training"]
@@ -1120,6 +1245,8 @@ def make_train_dp(iter_index, jdata, mdata):
     fp_task_min = jdata["fp_task_min"]
     model_devi_jobs = jdata["model_devi_jobs"]
     use_ele_temp = jdata.get("use_ele_temp", 0)
+    conditioning = _normalize_conditioning(jdata)
+    explicit_conditioning = bool(jdata.get("conditioning"))
     training_iter0_model = jdata.get("training_iter0_model_path", [])
     training_init_model = jdata.get("training_init_model", False)
     training_reuse_iter = jdata.get("training_reuse_iter")
@@ -1321,6 +1448,7 @@ def make_train_dp(iter_index, jdata, mdata):
             training_reuse_start_lr,
             training_reuse_start_pref_e,
             training_reuse_start_pref_f,
+            conditioning=conditioning if explicit_conditioning else None,
         )
         if ii == 0 and legacy_single:
             # Keep the legacy single-dict view synchronized after preparation while
@@ -1939,7 +2067,13 @@ def find_only_one_key(lmp_lines, key):
 
 
 def revise_lmp_input_model(
-    lmp_lines, task_model_list, trj_freq, deepmd_version="1", use_ele_temp=0, jdata=None
+    lmp_lines,
+    task_model_list,
+    trj_freq,
+    deepmd_version="1",
+    use_ele_temp=0,
+    jdata=None,
+    conditioning=None,
 ):
     idx = find_only_one_key(lmp_lines, ["pair_style", "deepmd"])
     graph_list = " ".join(task_model_list)
@@ -1972,6 +2106,10 @@ def revise_lmp_input_model(
 
         if use_ele_temp == 1:
             keywords += "fparam ${ELE_TEMP}"
+        if conditioning:
+            conditioning_text = conditioning_keywords(conditioning)
+            if conditioning_text:
+                keywords += conditioning_text + " "
 
         if d3_enabled:
             d3_params = f"{lmp_d3['damping_function']} {lmp_d3['functional']} {lmp_d3['cutoff']} {lmp_d3['cn_cutoff']}"
@@ -2451,6 +2589,11 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
         raise RuntimeError("system index should be uniq")
 
     use_ele_temp = jdata.get("use_ele_temp", 0)
+    conditioning = (
+        _normalize_conditioning(jdata)
+        if jdata.get("conditioning")
+        else {"fparam": [], "aparam": []}
+    )
     mass_map = jdata["mass_map"]
     use_plm = jdata.get("model_devi_plumed", False)
     use_plm_path = jdata.get("model_devi_plumed_path", False)
@@ -2561,6 +2704,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                                 deepmd_version=deepmd_version,
                                 use_ele_temp=use_ele_temp,
                                 jdata=jdata,
+                                conditioning=conditioning,
                             )
                             # Add D3 pair_coeff and neigh_modify support for templates
                             lmp_lines = revise_lmp_input_pair_coeff(lmp_lines, jdata)
@@ -2586,6 +2730,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                                 deepmd_version=deepmd_version,
                                 use_ele_temp=use_ele_temp,
                                 jdata=jdata,
+                                conditioning=conditioning,
                             )
                             # Add D3 pair_coeff and neigh_modify support for templates
                             lmp_lines = revise_lmp_input_pair_coeff(lmp_lines, jdata)
@@ -2599,6 +2744,7 @@ def _make_model_devi_revmat(iter_index, jdata, mdata, conf_systems):
                         deepmd_version=deepmd_version,
                         use_ele_temp=use_ele_temp,
                         jdata=jdata,
+                        conditioning=conditioning,
                     )
 
                 # Add D3 pair_coeff and neigh_modify support for templates
@@ -2669,6 +2815,11 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
         raise RuntimeError("system index should be uniq")
 
     use_ele_temp = jdata.get("use_ele_temp", 0)
+    conditioning = (
+        _normalize_conditioning(jdata)
+        if jdata.get("conditioning")
+        else {"fparam": [], "aparam": []}
+    )
     (
         model_devi_dt,
         model_devi_neidelay,
@@ -2694,7 +2845,17 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
         task_counter = 0
         for cc in ss:
             for tt_ in temps:
-                if use_ele_temp:
+                param_values = {}
+                if conditioning and isinstance(tt_, dict):
+                    tt = tt_.get("temperature", tt_.get("temp"))
+                    param_values = dict(tt_.get("params", {}))
+                    if tt is None:
+                        raise ValueError(
+                            "conditioning temperature entries need temperature"
+                        )
+                    te_f = None
+                    te_a = None
+                elif use_ele_temp:
                     if isinstance(tt_, list):
                         tt = tt_[0]
                         if use_ele_temp == 1:
@@ -2712,6 +2873,10 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
                         else:
                             te_f = None
                             te_a = tt
+                elif conditioning:
+                    tt = tt_
+                    te_f = None
+                    te_a = None
                 else:
                     tt = tt_
                     te_f = None
@@ -2759,6 +2924,8 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
                         pka_e=pka_e,
                         ele_temp_f=te_f,
                         ele_temp_a=te_a,
+                        conditioning=conditioning,
+                        param_values=param_values,
                         nopbc=nopbc,
                         deepmd_version=deepmd_version,
                         nbeads=nbeads,
@@ -2771,6 +2938,8 @@ def _make_model_devi_native(iter_index, jdata, mdata, conf_systems):
                         job["ele_temp"] = te_f
                     if te_a is not None:
                         job["ele_temp"] = te_a
+                    if param_values:
+                        job["params"] = param_values
                     job["model_devi_dt"] = model_devi_dt
                     with open("job.json", "w") as _outfile:
                         json.dump(job, _outfile, indent=4)
@@ -5432,6 +5601,9 @@ def post_fp_vasp(iter_index, jdata, rfailed=None):
         model_devi_jobs = jdata["model_devi_jobs"]
         assert iter_index < len(model_devi_jobs)
     use_ele_temp = jdata.get("use_ele_temp", 0)
+    conditioning = _normalize_conditioning(jdata)
+    if conditioning:
+        setup_conditioning(conditioning)
 
     iter_name = make_iter_name(iter_index)
     work_path = os.path.join(iter_name, fp_name)
@@ -5475,7 +5647,13 @@ def post_fp_vasp(iter_index, jdata, rfailed=None):
                 if os.path.exists(oo.replace("OUTCAR", "job.json")):
                     with open(oo.replace("OUTCAR", "job.json")) as fp:
                         job_data = json.load(fp)
-                    if "ele_temp" in job_data:
+                    if conditioning:
+                        arrays = _extract_conditioning_arrays(
+                            job_data, conditioning, _sys.get_natoms()
+                        )
+                        _sys.data.update(arrays)
+                        _sys.check_data()
+                    elif "ele_temp" in job_data:
                         assert use_ele_temp
                         ele_temp = job_data["ele_temp"]
                         all_te.append(ele_temp)
@@ -5602,9 +5780,11 @@ def run_iter(param_file, machine_file):
 
     update_mass_map(jdata)
 
-    # set up electron temperature
+    # set up generic conditioning data types, or the legacy alias
     use_ele_temp = jdata.get("use_ele_temp", 0)
-    if use_ele_temp == 1:
+    if jdata.get("conditioning"):
+        setup_conditioning(_normalize_conditioning(jdata))
+    elif use_ele_temp == 1:
         setup_ele_temp(False)
     elif use_ele_temp == 2:
         setup_ele_temp(True)

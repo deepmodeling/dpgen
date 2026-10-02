@@ -221,6 +221,30 @@ def load_file(filename: str | os.PathLike) -> dict:
     return data
 
 
+def setup_conditioning(conditioning):
+    """Register generic DeePMD frame/atom parameter data types."""
+    fdim = sum(item["dim"] for item in conditioning.get("fparam", []))
+    adim = sum(item["dim"] for item in conditioning.get("aparam", []))
+    if fdim:
+        dtype = DataType(
+            "fparam",
+            np.ndarray,
+            shape=(Axis.NFRAMES, fdim),
+            required=False,
+        )
+        dpdata.System.register_data_type(dtype)
+        dpdata.LabeledSystem.register_data_type(dtype)
+    if adim:
+        dtype = DataType(
+            "aparam",
+            np.ndarray,
+            shape=(Axis.NFRAMES, Axis.NATOMS, adim),
+            required=False,
+        )
+        dpdata.System.register_data_type(dtype)
+        dpdata.LabeledSystem.register_data_type(dtype)
+
+
 def setup_ele_temp(atomic: bool):
     """Set electronic temperature as required input data.
 
