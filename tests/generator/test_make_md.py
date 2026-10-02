@@ -342,6 +342,10 @@ class TestMakeModelDevi(unittest.TestCase):
                 model_devi_array,
                 fmt="%.12e",
             )
+        # The relative-force normalization output is not a PIMD bead file.
+        # It must not be matched by the bead-file discovery regex.
+        with open(os.path.join(path, "model_devi_avgf.out"), "w") as fp:
+            fp.write("this file is intentionally not numeric\n")
         _read_model_devi_file(path)
         model_devi_out = np.loadtxt(os.path.join(path, "model_devi.out"))
         traj_files = glob.glob(os.path.join(path, "traj/*.lammpstrj"))
@@ -358,6 +362,13 @@ class TestMakeModelDevi(unittest.TestCase):
             self.assertTrue(
                 os.path.isfile(os.path.join(path, f"traj/{istep}.lammpstrj"))
             )
+
+    def test_read_model_devi_file_missing(self):
+        with tempfile.TemporaryDirectory() as path:
+            with self.assertRaisesRegex(
+                FileNotFoundError, "No model deviation output found"
+            ):
+                _read_model_devi_file(path)
 
     def test_read_model_devi_file_keeps_last_row_per_timestep(self):
         """Intermediate model evaluations must not select stale structures."""

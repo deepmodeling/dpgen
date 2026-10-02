@@ -3366,11 +3366,19 @@ def _read_model_devi_file(
     model_devi_f_avg_relative: bool = False,
     model_devi_merge_traj: bool = False,
 ):
-    model_devi_files = glob.glob(os.path.join(task_path, "model_devi*.out"))
-    if len(model_devi_files) > 1:
+    model_devi_file = os.path.join(task_path, "model_devi.out")
+    model_devi_bead_files = glob.glob(os.path.join(task_path, "model_devi[0-9]*.out"))
+    if not os.path.isfile(model_devi_file) and not model_devi_bead_files:
+        raise FileNotFoundError(
+            f"No model deviation output found in {task_path!r}; expected "
+            "model_devi.out or model_devi[0-9]+.out."
+        )
+    if model_devi_bead_files:
         model_devi_files_sorted = sorted(
-            model_devi_files,
-            key=lambda x: int(re.search(r"model_devi(\d+)\.out", x).group(1)),
+            model_devi_bead_files,
+            key=lambda x: int(
+                re.search(r"^model_devi(\d+)\.out$", os.path.basename(x)).group(1)
+            ),
         )
         with open(model_devi_files_sorted[0]) as f:
             first_line = f.readline()
@@ -3438,7 +3446,7 @@ def _read_model_devi_file(
                         f"{frame_number + ibead * (int(last_step) + 1):d}.lammpstrj",
                     )
                     os.rename(traj_files_sorted[ibead][itraj], new_filename)
-    model_devi = np.loadtxt(os.path.join(task_path, "model_devi.out"))
+    model_devi = np.loadtxt(model_devi_file)
     if model_devi.ndim == 2:
         # Some LAMMPS fixes evaluate a model repeatedly at the same timestep.
         # The final evaluation describes the accepted configuration that is
