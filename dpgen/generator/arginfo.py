@@ -410,6 +410,14 @@ The union of the two sets is made as candidate dataset."
     doc_model_devi_perc_candi_f = "See model_devi_adapt_trust_lo."
     doc_model_devi_perc_candi_v = "See model_devi_adapt_trust_lo."
     doc_model_devi_f_avg_relative = "Normalized the force model deviations by the RMS force magnitude along the trajectory. This key should not be used with use_relative."
+    doc_model_devi_recovery = (
+        "Opt-in recovery for failed exploration tasks. Set enabled=true to "
+        "validate task outputs. To salvage prefix frames from failed tasks, also "
+        "set salvage_prefix=true and choose nonzero max_failed_tasks and "
+        "max_failed_ratio budgets. Recovery requires a DPDispatcher build with "
+        "the failed-result policy API (continue_on_failure, raise_on_failure, "
+        "and include_failed_results)."
+    )
     doc_model_devi_clean_traj = "If type of model_devi_clean_traj is bool type then it denote whether to clean traj folders in MD since they are too large. If it is Int type, then the most recent n iterations of traj folders will be retained, others will be removed."
     doc_model_devi_merge_traj = "If model_devi_merge_traj is set as True, only all.lammpstrj will be generated, instead of lots of small traj files."
     doc_model_devi_nopbc = "Assume open boundary condition in MD simulations."
@@ -497,6 +505,19 @@ The union of the two sets is made as candidate dataset."
             bool,
             optional=True,
             doc=doc_model_devi_f_avg_relative,
+        ),
+        Argument(
+            "model_devi_recovery",
+            dict,
+            optional=True,
+            default={
+                "enabled": False,
+                "max_failed_tasks": 0,
+                "max_failed_ratio": 0.0,
+                "salvage_prefix": False,
+                "min_valid_frames": 1,
+            },
+            doc=doc_model_devi_recovery,
         ),
         Argument(
             "model_devi_clean_traj",
