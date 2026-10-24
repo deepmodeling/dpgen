@@ -64,3 +64,16 @@ The project dpgen is licensed under [GNU LGPLv3.0](./LICENSE).
 ## Contributing
 
 DP-GEN is maintained by [DeepModeling's developers](https://docs.deepmodeling.com/projects/dpgen/en/latest/credits.html). Contributors are always welcome.
+
+## Offline workflow instructions
+
+```sh
+dpgen skills list
+dpgen skills read dpgen-run
+dpgen skills read dpgen-run references/monitoring.md
+dpgen skills read dpgen-simplify assets/param.template.json
+```
+
+These commands display the public skills bundled with the installed release.
+They work offline without loading workflow backends or installing skills
+separately. Reading documentation does not execute its commands or submit jobs.

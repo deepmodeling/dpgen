@@ -2,3 +2,4 @@ prune conda
 prune doc
 prune tests
 prune examples
+graft skills
