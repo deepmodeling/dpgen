@@ -3,20 +3,12 @@
 
 
 import argparse
+import importlib
 import sys
+from functools import partial
 
 from dpgen import info
-from dpgen.auto_test.run import gen_test
-from dpgen.collect.collect import gen_collect
-from dpgen.data.gen import gen_init_bulk
-from dpgen.data.reaction import gen_init_reaction
-from dpgen.data.surf import gen_init_surf
-from dpgen.database.run import db_run
-from dpgen.generator.run import gen_run
-from dpgen.gui import start_dpgui
-from dpgen.simplify.simplify import gen_simplify
-from dpgen.tools.auto_gen_param import auto_gen_param
-from dpgen.tools.run_report import run_report
+from dpgen.skills import configure_parser, show_skills, workflow_help
 
 """
 A master convenience script with many tools for driving dpgen.
@@ -26,6 +18,11 @@ __author__ = "Han Wang"
 __copyright__ = "Copyright 2019, The DP-GEN Project"
 __maintainer__ = "Haidi Wang"
 __email__ = ""
+
+
+def _run_command(module, name, args):
+    """Load only the requested workflow when it is actually executed."""
+    return getattr(importlib.import_module(module), name)(args)
 
 
 def main_parser() -> argparse.ArgumentParser:
@@ -44,7 +41,13 @@ def main_parser() -> argparse.ArgumentParser:
     sub-commands, type "dpgen sub-command -h"."""
     )
 
+    parser.epilog = "Discover bundled workflow guides: dpgen skills list."
     subparsers = parser.add_subparsers()
+    configure_parser(
+        subparsers.add_parser(
+            "skills", help="Read bundled offline workflow instructions."
+        )
+    )
 
     # init surf model
     parser_init_surf = subparsers.add_parser(
@@ -60,7 +63,9 @@ def main_parser() -> argparse.ArgumentParser:
         nargs="?",
         help="machine file, json/yaml format",
     )
-    parser_init_surf.set_defaults(func=gen_init_surf)
+    parser_init_surf.set_defaults(
+        func=partial(_run_command, "dpgen.data.surf", "gen_init_surf")
+    )
 
     # init bulk model
     parser_init_bulk = subparsers.add_parser(
@@ -76,7 +81,9 @@ def main_parser() -> argparse.ArgumentParser:
         nargs="?",
         help="machine file, json/yaml format",
     )
-    parser_init_bulk.set_defaults(func=gen_init_bulk)
+    parser_init_bulk.set_defaults(
+        func=partial(_run_command, "dpgen.data.gen", "gen_init_bulk")
+    )
 
     parser_auto_gen_param = subparsers.add_parser(
         "auto_gen_param", help="auto gen param.json"
@@ -85,7 +92,9 @@ def main_parser() -> argparse.ArgumentParser:
     parser_auto_gen_param.add_argument(
         "PARAM", type=str, help="parameter file, json/yaml format"
     )
-    parser_auto_gen_param.set_defaults(func=auto_gen_param)
+    parser_auto_gen_param.set_defaults(
+        func=partial(_run_command, "dpgen.tools.auto_gen_param", "auto_gen_param")
+    )
 
     # parser_init_reaction
     parser_init_reaction = subparsers.add_parser(
@@ -101,16 +110,22 @@ def main_parser() -> argparse.ArgumentParser:
         nargs="?",
         help="machine file, json/yaml format",
     )
-    parser_init_reaction.set_defaults(func=gen_init_reaction)
+    parser_init_reaction.set_defaults(
+        func=partial(_run_command, "dpgen.data.reaction", "gen_init_reaction")
+    )
 
     # run
     parser_run = subparsers.add_parser(
-        "run", help="Main process of Deep Potential Generator."
+        "run",
+        help="Main process of Deep Potential Generator.",
+        epilog=workflow_help("dpgen-run"),
     )
     parser_run.add_argument("PARAM", type=str, help="parameter file, json/yaml format")
     parser_run.add_argument("MACHINE", type=str, help="machine file, json/yaml format")
     parser_run.add_argument("-d", "--debug", action="store_true", help="log debug info")
-    parser_run.set_defaults(func=gen_run)
+    parser_run.set_defaults(
+        func=partial(_run_command, "dpgen.generator.run", "gen_run")
+    )
 
     # run/report
     parser_rr = subparsers.add_parser(
@@ -144,7 +159,9 @@ def main_parser() -> argparse.ArgumentParser:
         help="the json file provides DP-GEN paramters, should be located in JOB_DIR",
     )
     parser_rr.add_argument("-v", "--verbose", action="store_true", help="being loud")
-    parser_rr.set_defaults(func=run_report)
+    parser_rr.set_defaults(
+        func=partial(_run_command, "dpgen.tools.run_report", "run_report")
+    )
 
     # collect
     parser_coll = subparsers.add_parser("collect", help="Collect data.")
@@ -174,14 +191,20 @@ def main_parser() -> argparse.ArgumentParser:
     parser_coll.add_argument(
         "-s", "--shuffle", action="store_true", help="shuffle the data systems"
     )
-    parser_coll.set_defaults(func=gen_collect)
+    parser_coll.set_defaults(
+        func=partial(_run_command, "dpgen.collect.collect", "gen_collect")
+    )
 
     # simplify
-    parser_run = subparsers.add_parser("simplify", help="Simplify data.")
+    parser_run = subparsers.add_parser(
+        "simplify", help="Simplify data.", epilog=workflow_help("dpgen-simplify")
+    )
     parser_run.add_argument("PARAM", type=str, help="parameter file, json/yaml format")
     parser_run.add_argument("MACHINE", type=str, help="machine file, json/yaml format")
     parser_run.add_argument("-d", "--debug", action="store_true", help="log debug info")
-    parser_run.set_defaults(func=gen_simplify)
+    parser_run.set_defaults(
+        func=partial(_run_command, "dpgen.simplify.simplify", "gen_simplify")
+    )
 
     # test
     parser_test = subparsers.add_parser(
@@ -199,14 +222,16 @@ def main_parser() -> argparse.ArgumentParser:
     parser_test.add_argument(
         "-d", "--debug", action="store_true", help="log debug info"
     )
-    parser_test.set_defaults(func=gen_test)
+    parser_test.set_defaults(
+        func=partial(_run_command, "dpgen.auto_test.run", "gen_test")
+    )
 
     # db
     parser_db = subparsers.add_parser("db", help="Collecting data from DP-GEN.")
 
     parser_db.add_argument("PARAM", type=str, help="parameter file, json format")
 
-    parser_db.set_defaults(func=db_run)
+    parser_db.set_defaults(func=partial(_run_command, "dpgen.database.run", "db_run"))
 
     # gui
     parser_gui = subparsers.add_parser(
@@ -229,13 +254,11 @@ def main_parser() -> argparse.ArgumentParser:
             "to the network on both IPv4 and IPv6 (where available)."
         ),
     )
-    parser_gui.set_defaults(func=start_dpgui)
+    parser_gui.set_defaults(func=partial(_run_command, "dpgen.gui", "start_dpgui"))
     return parser
 
 
 def main():
-    info()
-    print("Description\n------------")
     parser = main_parser()
     try:
         import argcomplete
@@ -252,6 +275,9 @@ def main():
     except AttributeError:
         parser.print_help()
         sys.exit(0)
+    if args.func is not show_skills:
+        info()
+        print("Description\n------------")
     args.func(args)
 
 
