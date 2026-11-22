@@ -106,27 +106,14 @@ def make_gaussian_input(sys_data, fp_params):
     symbols = [atom_names[atom_type] for atom_type in atom_types]
     nproc = fp_params["nproc"]
 
-    if (
-        "keywords_high_multiplicity" in fp_params
-        and _crd2mul(symbols, coordinates) >= 3
-    ):
-        # multiplicity >= 3, meaning at least 2 radicals
-        keywords = fp_params["keywords_high_multiplicity"]
-    else:
-        keywords = fp_params["keywords"]
-
-    if isinstance(keywords, str):
-        keywords = [keywords]
-    else:
-        keywords = keywords.copy()
-
     # assume default charge is zero and default spin multiplicity is 1
     if "charge" in sys_data.keys():
         charge = sys_data["charge"]
     else:
         charge = fp_params.get("charge", 0)
 
-    use_fragment_guesses = False
+    fragment_guesses = fp_params.get("fragment_guesses", False)
+    use_fragment_guesses = fragment_guesses
     multiplicity = fp_params.get("multiplicity", "auto")
     if isinstance(multiplicity, int):
         multiplicity = fp_params["multiplicity"]
@@ -136,13 +123,9 @@ def make_gaussian_input(sys_data, fp_params):
     else:
         raise RuntimeError('The keyword "multiplicity" is illegal.')
 
-    if fp_params.get("fragment_guesses", False):
-        # Initial guess generated from fragment guesses
-        # New feature of Gaussian 16
-        use_fragment_guesses = True
-        if not mult_auto:
-            warnings.warn("Automatically set multiplicity to auto!")
-            mult_auto = True
+    if fragment_guesses and not mult_auto:
+        warnings.warn("Automatically set multiplicity to auto!")
+        mult_auto = True
 
     if mult_auto:
         frag_numb, frag_index = _crd2frag(symbols, coordinates)
@@ -164,8 +147,19 @@ def make_gaussian_input(sys_data, fp_params):
                 + np.count_nonzero(multi_frags == 2) % 2
                 + np.count_nonzero(multi_frags == 3) * 2
             )
-    buff = []
-    # keywords, e.g., force b3lyp/6-31g**
+    keywords_key = "keywords"
+    if "keywords_high_multiplicity" in fp_params:
+        route_multiplicity = (
+            multiplicity if fragment_guesses else _crd2mul(symbols, coordinates)
+        )
+        if route_multiplicity >= 3:
+            keywords_key = "keywords_high_multiplicity"
+    keywords = fp_params[keywords_key]
+    if isinstance(keywords, str):
+        keywords = [keywords]
+    else:
+        keywords = keywords.copy()
+
     if use_fragment_guesses:
         keywords[0] = f"{keywords[0]} guess=fragment={frag_numb}"
 
